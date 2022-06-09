@@ -38,8 +38,14 @@ export class CompressedTreeModel extends TreeModelImpl {
     @inject(CompressionToggle) protected readonly compressionToggle: CompressionToggle;
     @inject(TreeCompressionService) protected readonly compressionService: TreeCompressionService;
 
-    protected selectAdjacentRow(direction: BackOrForward, type: TreeSelection.SelectionType = TreeSelection.SelectionType.DEFAULT): void {
-        let startingPoint: TreeNode = this.selectedNodes[0];
+    protected selectAdjacentRow(
+        direction: BackOrForward,
+        type: TreeSelection.SelectionType = TreeSelection.SelectionType.DEFAULT,
+        startingPoint: Readonly<TreeNode> | undefined = this.getFocusedNode()
+    ): void {
+        if (!startingPoint && this.root) {
+            this.selectAdjacentRow(BackOrForward.Forward, type, this.root);
+        }
         if (this.compressionService.isCompressionParticipant(startingPoint)) {
             const chain = this.compressionService.getCompressionChain(startingPoint);
             startingPoint = (direction === BackOrForward.Backward ? chain?.head() : chain?.tail()) ?? startingPoint;

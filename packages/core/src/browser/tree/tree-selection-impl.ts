@@ -19,12 +19,14 @@ import { Tree, TreeNode } from './tree';
 import { Event, Emitter } from '../../common';
 import { TreeSelectionState, FocusableTreeSelection } from './tree-selection-state';
 import { TreeSelectionService, SelectableTreeNode, TreeSelection } from './tree-selection';
+import { TreeFocusService } from './tree-focus-service';
 
 @injectable()
 export class TreeSelectionServiceImpl implements TreeSelectionService {
 
-    @inject(Tree)
-    protected readonly tree: Tree;
+    @inject(Tree) protected readonly tree: Tree;
+    @inject(TreeFocusService) protected readonly focusService: TreeFocusService;
+
     protected readonly onSelectionChangedEmitter = new Emitter<ReadonlyArray<Readonly<SelectableTreeNode>>>();
 
     protected state: TreeSelectionState;
@@ -75,7 +77,11 @@ export class TreeSelectionServiceImpl implements TreeSelectionService {
         this.transiteTo(newState);
     }
 
-    protected transiteTo(newState: TreeSelectionState): void {
+    clearSelection(): void {
+        this.transiteTo(new TreeSelectionState(this.tree), false);
+    }
+
+    protected transiteTo(newState: TreeSelectionState, setFocus = true): void {
         const oldNodes = this.state.selection();
         const newNodes = newState.selection();
 
@@ -85,7 +91,9 @@ export class TreeSelectionServiceImpl implements TreeSelectionService {
         this.unselect(toUnselect);
         this.select(toSelect);
         this.removeFocus(oldNodes, newNodes);
-        this.addFocus(newState.focus);
+        if (setFocus) {
+            this.addFocus(newState.node);
+        }
 
         this.state = newState;
         this.fireSelectionChanged();
@@ -107,6 +115,7 @@ export class TreeSelectionServiceImpl implements TreeSelectionService {
         if (node) {
             node.focus = true;
         }
+        this.focusService.setFocus(node);
     }
 
     /**

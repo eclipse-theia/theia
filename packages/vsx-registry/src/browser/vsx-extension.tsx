@@ -19,7 +19,7 @@ import * as React from '@theia/core/shared/react';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { TreeElement } from '@theia/core/lib/browser/source-tree';
+import { TreeElement, TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { OpenerService, open, OpenerOptions } from '@theia/core/lib/browser/opener-service';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin';
 import { PluginServer, DeployedPlugin, PluginType } from '@theia/plugin-ext/lib/common/plugin-protocol';
@@ -29,7 +29,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { MenuPath } from '@theia/core/lib/common';
-import { codicon, ContextMenuRenderer, TooltipService } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer, TooltipService, TreeWidget } from '@theia/core/lib/browser';
 import { VSXExtensionNamespaceAccess, VSXUser } from '@theia/ovsx-client/lib/ovsx-types';
 
 export const EXTENSIONS_CONTEXT_MENU: MenuPath = ['extensions_context_menu'];
@@ -348,14 +348,14 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
         await open(this.openerService, uri, options);
     }
 
-    render(): React.ReactNode {
-        const node = <VSXExtensionComponent extension={this} />;
+    render(host: TreeWidget): React.ReactNode {
+        const node = <VSXExtensionComponent extension={this} host={host} />;
         this.tooltipService.update();
         return node;
     }
 }
 
-export abstract class AbstractVSXExtensionComponent extends React.Component<AbstractVSXExtensionComponent.Props> {
+export abstract class AbstractVSXExtensionComponent<Props extends AbstractVSXExtensionComponent.Props = AbstractVSXExtensionComponent.Props> extends React.Component<Props> {
 
     readonly install = async (event?: React.MouseEvent) => {
         event?.stopPropagation();
@@ -385,11 +385,13 @@ export abstract class AbstractVSXExtensionComponent extends React.Component<Abst
         this.props.extension.handleContextMenu(e);
     };
 
-    protected renderAction(): React.ReactNode {
+    protected renderAction(host?: TreeWidget): React.ReactNode {
         const extension = this.props.extension;
         const { builtin, busy, installed } = extension;
+        const isFocused = (host?.model.getFocusedNode() as TreeElementNode)?.element === this.props.extension;
+        const tabIndex = (!host || isFocused) ? 0 : undefined;
         if (builtin) {
-            return <div className="codicon codicon-settings-gear action" onClick={this.manage}></div>;
+            return <div className="codicon codicon-settings-gear action" tabIndex={tabIndex} onClick={this.manage}></div>;
         }
         if (busy) {
             if (installed) {
@@ -398,10 +400,10 @@ export abstract class AbstractVSXExtensionComponent extends React.Component<Abst
             return <button className="theia-button action prominent theia-mod-disabled">Installing</button>;
         }
         if (installed) {
-            return <div><button className="theia-button action" onClick={this.uninstall}>Uninstall</button>
-                <div className="codicon codicon-settings-gear action" onClick={this.manage}></div></div>;
+            return <div><button className="theia-button action" tabIndex={tabIndex} onClick={this.uninstall}>Uninstall</button>
+                <div className="codicon codicon-settings-gear action" tabIndex={tabIndex} onClick={this.manage}></div></div>;
         }
-        return <button className="theia-button prominent action" onClick={this.install}>Install</button>;
+        return <button className="theia-button prominent action" tabIndex={tabIndex} onClick={this.install}>Install</button>;
     }
 
 }
@@ -415,7 +417,13 @@ const downloadFormatter = new Intl.NumberFormat();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const downloadCompactFormatter = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as any);
 
-export class VSXExtensionComponent extends AbstractVSXExtensionComponent {
+export namespace VSXExtensionComponent {
+    export interface Props extends AbstractVSXExtensionComponent.Props {
+        host: TreeWidget;
+    }
+}
+
+export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = VSXExtensionComponent.Props> extends AbstractVSXExtensionComponent<Props> {
     override render(): React.ReactNode {
         const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltipId, tooltip } = this.props.extension;
 
@@ -436,7 +444,7 @@ export class VSXExtensionComponent extends AbstractVSXExtensionComponent {
                 <div className='noWrapInfo theia-vsx-extension-description'>{description}</div>
                 <div className='theia-vsx-extension-action-bar'>
                     <span className='noWrapInfo theia-vsx-extension-publisher'>{publisher}</span>
-                    {this.renderAction()}
+                    {this.renderAction(this.props.host)}
                 </div>
             </div>
         </div >;

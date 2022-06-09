@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as React from '@theia/core/shared/react';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { LabelProvider, BreadcrumbsService, Widget, TreeNode, OpenerService, open, SelectableTreeNode, BreadcrumbsContribution, Breadcrumb } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
@@ -31,11 +30,11 @@ export interface BreadcrumbPopupOutlineViewFactory {
 export class BreadcrumbPopupOutlineView extends OutlineViewWidget {
     @inject(OpenerService) protected readonly openerService: OpenerService;
 
-    protected override handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected override tapNode(node?: TreeNode): void {
         if (UriSelection.is(node) && OutlineSymbolInformationNode.hasRange(node)) {
             open(this.openerService, node.uri, { selection: node.range });
         } else {
-            super.handleClickEvent(node, event);
+            super.tapNode(node);
         }
     }
 

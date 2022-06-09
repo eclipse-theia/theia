@@ -31,7 +31,7 @@ export class OutlineViewTreeModel extends TreeModelImpl {
     }
 
     override async collapseAll(raw?: Readonly<CompositeTreeNode>): Promise<boolean> {
-        const node = raw || this.selectedNodes[0];
+        const node = raw || this.getFocusedNode();
         if (CompositeTreeNode.is(node)) {
             return this.expansionService.collapseAll(node);
         }
@@ -44,7 +44,7 @@ export class OutlineViewTreeModel extends TreeModelImpl {
      * allow for the `onOpenNode` event to still fire on a double-click event.
      */
     override openNode(raw?: TreeNode | undefined): void {
-        const node = raw || this.selectedNodes[0];
+        const node = raw || this.getFocusedNode();
         if (node) {
             this.onOpenNodeEmitter.fire(node);
         }

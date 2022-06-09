@@ -95,8 +95,13 @@ export class TreeSelectionState {
 
     get focus(): SelectableTreeNode | undefined {
         const copy = this.checkNoDefaultSelection(this.selectionStack);
-        const candidate = copy[copy.length - 1].focus;
+        const candidate = copy[copy.length - 1]?.focus;
         return this.toSelectableTreeNode(candidate);
+    }
+
+    get node(): SelectableTreeNode | undefined {
+        const copy = this.checkNoDefaultSelection(this.selectionStack);
+        return this.toSelectableTreeNode(copy[copy.length - 1]?.node);
     }
 
     protected handleDefault(state: TreeSelectionState, node: Readonly<SelectableTreeNode>): TreeSelectionState {
@@ -116,7 +121,7 @@ export class TreeSelectionState {
             for (let i = allRanges.length - 1; i >= 0; i--) {
                 const latestRangeIndex = copy.indexOf(allRanges[i]);
                 const latestRangeSelection = copy[latestRangeIndex];
-                const latestRange = latestRangeSelection && latestRangeSelection.focus ? this.selectionRange(latestRangeSelection) : [];
+                const latestRange = latestRangeSelection?.focus ? this.selectionRange(latestRangeSelection) : [];
                 if (latestRange.indexOf(node) !== -1) {
                     if (this.focus === latestRangeSelection.focus) {
                         return latestRangeSelection.focus || node;

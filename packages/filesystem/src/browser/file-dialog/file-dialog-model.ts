@@ -69,7 +69,7 @@ export class FileDialogModel extends FileTreeModel {
         }
     }
 
-    override getNextSelectableNode(node: SelectableTreeNode = this.selectedNodes[0]): SelectableTreeNode | undefined {
+    override getNextSelectableNode(node: SelectableTreeNode | undefined = this.getFocusedNode()): SelectableTreeNode | undefined {
         let nextNode: SelectableTreeNode | undefined = node;
         do {
             nextNode = super.getNextSelectableNode(nextNode);
@@ -77,7 +77,7 @@ export class FileDialogModel extends FileTreeModel {
         return nextNode;
     }
 
-    override getPrevSelectableNode(node: SelectableTreeNode = this.selectedNodes[0]): SelectableTreeNode | undefined {
+    override getPrevSelectableNode(node: SelectableTreeNode | undefined = this.getFocusedNode()): SelectableTreeNode | undefined {
         let prevNode: SelectableTreeNode | undefined = node;
         do {
             prevNode = super.getPrevSelectableNode(prevNode);

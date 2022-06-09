@@ -26,6 +26,7 @@ import { FuzzySearch } from '../fuzzy-search';
 import { MockLogger } from '../../../common/test/mock-logger';
 import { ILogger, bindContributionProvider } from '../../../common';
 import { LabelProviderContribution, LabelProvider } from '../../label-provider';
+import { TreeFocusService, TreeFocusServiceImpl } from '../tree-focus-service';
 
 export function createTreeTestContainer(): Container {
     const container = new Container({ defaultScope: 'Singleton' });
@@ -41,6 +42,7 @@ export function createTreeTestContainer(): Container {
     container.bind(TreeSearch).toSelf();
     container.bind(FuzzySearch).toSelf();
     container.bind(MockLogger).toSelf();
+    container.bind(TreeFocusService).to(TreeFocusServiceImpl);
     container.bind(ILogger).to(MockLogger);
     bindContributionProvider(container, LabelProviderContribution);
     container.bind(LabelProvider).toSelf().inSingletonScope();

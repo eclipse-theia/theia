@@ -26,6 +26,7 @@ import { TreeExpansionService, ExpandableTreeNode } from './tree-expansion';
 import { TreeNavigationService } from './tree-navigation';
 import { TreeIterator, BottomUpTreeIterator, TopDownTreeIterator, Iterators } from './tree-iterator';
 import { TreeSearch } from './tree-search';
+import { TreeFocusService } from './tree-focus-service';
 
 /**
  * The tree model.
@@ -134,6 +135,11 @@ export interface TreeModel extends Tree, TreeSelectionService, TreeExpansionServ
      * If no node was selected previously, invoking this method does nothing.
      */
     selectRange(node: Readonly<SelectableTreeNode>): void;
+
+    /**
+     * Returns the node currently in focus in this tree, or undefined if no node is focused.
+     */
+    getFocusedNode(): SelectableTreeNode | undefined
 }
 
 @injectable()
@@ -144,6 +150,7 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
     @inject(TreeSelectionService) protected readonly selectionService: TreeSelectionService;
     @inject(TreeExpansionService) protected readonly expansionService: TreeExpansionService;
     @inject(TreeNavigationService) protected readonly navigationService: TreeNavigationService;
+    @inject(TreeFocusService) protected readonly focusService: TreeFocusService;
     @inject(TreeSearch) protected readonly treeSearch: TreeSearch;
 
     protected readonly onChangedEmitter = new Emitter<void>();
@@ -215,6 +222,10 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         return this.tree.getNode(id);
     }
 
+    getFocusedNode(): SelectableTreeNode | undefined {
+        return this.focusService.focusedNode;
+    }
+
     validateNode(node: TreeNode | undefined): TreeNode | undefined {
         return this.tree.validateNode(node);
     }
@@ -241,7 +252,7 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
     }
 
     async expandNode(raw?: Readonly<ExpandableTreeNode>): Promise<ExpandableTreeNode | undefined> {
-        for (const node of raw ? [raw] : this.selectedNodes) {
+        for (const node of this.getExpansionCandidates(raw)) {
             if (ExpandableTreeNode.is(node)) {
                 return this.expansionService.expandNode(node);
             }
@@ -249,8 +260,14 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         return undefined;
     }
 
+    protected *getExpansionCandidates(raw?: Readonly<TreeNode>): IterableIterator<TreeNode | undefined> {
+        yield raw;
+        yield this.getFocusedNode();
+        yield* this.selectedNodes;
+    }
+
     async collapseNode(raw?: Readonly<ExpandableTreeNode>): Promise<boolean> {
-        for (const node of raw ? [raw] : this.selectedNodes) {
+        for (const node of this.getExpansionCandidates(raw)) {
             if (ExpandableTreeNode.is(node)) {
                 return this.expansionService.collapseNode(node);
             }
@@ -259,7 +276,7 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
     }
 
     async collapseAll(raw?: Readonly<CompositeTreeNode>): Promise<boolean> {
-        const node = raw || this.selectedNodes[0];
+        const node = raw || this.getFocusedNode();
         if (SelectableTreeNode.is(node)) {
             this.selectNode(node);
         }
@@ -284,7 +301,10 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         }
     }
 
-    getPrevSelectableNode(node: TreeNode = this.selectedNodes[0]): SelectableTreeNode | undefined {
+    getPrevSelectableNode(node: TreeNode | undefined = this.getFocusedNode()): SelectableTreeNode | undefined {
+        if (!node) {
+            return this.getNextSelectableNode(this.root);
+        }
         const iterator = this.createBackwardIterator(node);
         return iterator && this.doGetNextNode(iterator, this.isVisibleSelectableNode.bind(this));
     }
@@ -296,7 +316,7 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         }
     }
 
-    getNextSelectableNode(node: TreeNode = this.selectedNodes[0]): SelectableTreeNode | undefined {
+    getNextSelectableNode(node: TreeNode | undefined = this.getFocusedNode() ?? this.root): SelectableTreeNode | undefined {
         const iterator = this.createIterator(node);
         return iterator && this.doGetNextNode(iterator, this.isVisibleSelectableNode.bind(this));
     }
@@ -345,7 +365,7 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
     }
 
     openNode(raw?: TreeNode | undefined): void {
-        const node = raw || this.selectedNodes[0];
+        const node = raw ?? this.focusService.focusedNode;
         if (node) {
             this.doOpenNode(node);
             this.onOpenNodeEmitter.fire(node);
@@ -359,8 +379,8 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
     }
 
     selectParent(): void {
-        if (this.selectedNodes.length === 1) {
-            const node = this.selectedNodes[0];
+        const node = this.getFocusedNode();
+        if (node) {
             const parent = SelectableTreeNode.getVisibleParent(node);
             if (parent) {
                 this.selectNode(parent);
@@ -414,6 +434,10 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
 
     addSelection(selectionOrTreeNode: TreeSelection | Readonly<SelectableTreeNode>): void {
         this.selectionService.addSelection(selectionOrTreeNode);
+    }
+
+    clearSelection(): void {
+        this.selectionService.clearSelection();
     }
 
     selectNode(node: Readonly<SelectableTreeNode>): void {

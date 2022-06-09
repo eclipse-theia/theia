@@ -226,12 +226,11 @@ export class FileNavigatorWidget extends FileTreeWidget {
         return WorkspaceNode.is(model.root) && model.root.children.length === 0;
     }
 
-    protected override handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
-        const modifierKeyCombined: boolean = isOSX ? (event.shiftKey || event.metaKey) : (event.shiftKey || event.ctrlKey);
-        if (!modifierKeyCombined && node && this.corePreferences['workbench.list.openMode'] === 'singleClick') {
+    protected override tapNode(node?: TreeNode): void {
+        if (node && this.corePreferences['workbench.list.openMode'] === 'singleClick') {
             this.model.previewNode(node);
         }
-        super.handleClickEvent(node, event);
+        super.tapNode(node);
     }
 
     protected override onAfterShow(msg: Message): void {

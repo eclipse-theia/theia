@@ -27,6 +27,7 @@ import { TreeSearch } from './tree-search';
 import { FuzzySearch } from './fuzzy-search';
 import { SearchBox, SearchBoxFactory } from './search-box';
 import { SearchBoxDebounce } from './search-box-debounce';
+import { TreeFocusService, TreeFocusServiceImpl } from './tree-focus-service';
 
 export function isTreeServices(candidate?: Partial<TreeProps> | Partial<TreeContainerProps>): candidate is TreeContainerProps {
     if (candidate) {
@@ -110,6 +111,7 @@ interface TreeServices {
     search: TreeSearch,
     fuzzy: FuzzySearch,
     decoratorService: TreeDecoratorService,
+    focusService: TreeFocusService,
 }
 
 interface TreeTypes extends TreeServices, TreeConstants { }
@@ -132,6 +134,7 @@ const defaultImplementations: TreeContainerProps & { props: TreeProps } = {
     search: TreeSearch,
     fuzzy: FuzzySearch,
     decoratorService: NoopTreeDecoratorService,
+    focusService: TreeFocusServiceImpl,
     props: defaultTreeProps,
     searchBoxFactory: defaultSearchBoxFactoryFactory,
 };
@@ -148,4 +151,5 @@ const serviceIdentifiers: TreeIdentifiers = {
     fuzzy: FuzzySearch,
     searchBoxFactory: SearchBoxFactory,
     decoratorService: TreeDecoratorService,
+    focusService: TreeFocusService
 };

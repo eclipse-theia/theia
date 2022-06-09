@@ -27,7 +27,16 @@
     position: relative;
 }
 
-.theia-Tree:focus .theia-TreeContainer.empty {
+.theia-Tree:focus .theia-TreeContainer.empty::before,
+.theia-Tree:focus .theia-TreeContainer.focused::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+    content: "";
     outline-width: 1px;
     outline-style: solid;
     outline-offset: -1px;
@@ -88,20 +97,24 @@
     transform: rotate(-90deg);
 }
 
-.theia-Tree:focus .theia-TreeNode.theia-mod-selected,
-.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected {
+.theia-Tree:focus-within .theia-TreeNode.theia-mod-selected {
     background: var(--theia-list-activeSelectionBackground);
     color: var(--theia-list-activeSelectionForeground) !important;
 }
 
-.theia-Tree:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeTail,
-.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeTail,
-.theia-Tree:focus .theia-TreeNode.theia-mod-selected .theia-caption-suffix,
-.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .theia-caption-suffix,
-.theia-Tree:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeInfo,
-.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeInfo,
-.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeSegment {
+.theia-Tree:focus-within .theia-TreeNode.theia-mod-selected .theia-TreeNodeTail,
+.theia-Tree:focus-within .theia-TreeNode.theia-mod-selected .theia-caption-suffix,
+.theia-Tree:focus-within .theia-TreeNode.theia-mod-selected .theia-TreeNodeInfo,
+.theia-Tree:focus-within .theia-TreeNode.theia-mod-selected .theia-TreeNodeSegment {
     color: var(--theia-list-activeSelectionForeground) !important;
+}
+
+.theia-Tree:focus .theia-TreeNode.theia-mod-focus,
+.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-focus {
+    outline-width: 1px;
+    outline-style: solid;
+    outline-offset: -1px;
+    outline-color: var(--theia-focusBorder);
 }
 
 .theia-TreeNodeInfo {

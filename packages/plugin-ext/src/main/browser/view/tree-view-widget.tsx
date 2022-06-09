@@ -369,7 +369,9 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
             const inlineCommands = menu.children.filter((item): item is ActionMenuNode => item instanceof ActionMenuNode);
             const tailDecorations = super.renderTailDecorations(node, props);
             return <React.Fragment>
-                {inlineCommands.length > 0 && <div className={TREE_NODE_SEGMENT_CLASS}>{inlineCommands.map((item, index) => this.renderInlineCommand(item, index, arg))}</div>}
+                {inlineCommands.length > 0 && <div className={TREE_NODE_SEGMENT_CLASS}>
+                    {inlineCommands.map((item, index) => this.renderInlineCommand(item, index, this.focusService.hasFocus(node), arg))}
+                </div>}
                 {tailDecorations !== undefined && <div className={TREE_NODE_SEGMENT_CLASS}>{super.renderTailDecorations(node, props)}</div>}
             </React.Fragment>;
         });
@@ -380,13 +382,14 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected renderInlineCommand(node: ActionMenuNode, index: number, arg: any): React.ReactNode {
+    protected renderInlineCommand(node: ActionMenuNode, index: number, tabbable: boolean, arg: any): React.ReactNode {
         const { icon } = node;
         if (!icon || !this.commands.isVisible(node.action.commandId, arg) || !node.action.when || !this.contextKeys.match(node.action.when)) {
             return false;
         }
         const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, icon, ACTION_ITEM, 'theia-tree-view-inline-action'].join(' ');
-        return <div key={index} className={className} title={node.label} onClick={e => {
+        const tabIndex = tabbable ? 0 : undefined;
+        return <div key={index} className={className} title={node.label} tabIndex={tabIndex} onClick={e => {
             e.stopPropagation();
             this.commands.executeCommand(node.action.commandId, arg);
         }} />;
@@ -415,13 +418,12 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         this.tryExecuteCommand();
     }
 
-    override handleClickEvent(node: TreeNode, event: React.MouseEvent<HTMLElement>): void {
-        super.handleClickEvent(node, event);
-        // If clicked on item (not collapsable icon) - execute command or toggle expansion if item has no command
+    protected override tapNode(node?: TreeNode): void {
+        super.tapNode(node);
         const commandMap = this.findCommands(node);
         if (commandMap.size > 0) {
             this.tryExecuteCommandMap(commandMap);
-        } else if (this.isExpandable(node) && !this.hasShiftMask(event) && !this.hasCtrlCmdMask(event)) {
+        } else if (node && this.isExpandable(node)) {
             this.model.toggleNodeExpansion(node);
         }
     }
