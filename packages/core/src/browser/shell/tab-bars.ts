@@ -32,6 +32,7 @@ import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/
 import { NavigatableWidget } from '../navigatable-types';
 import { IDragEvent } from '@phosphor/dragdrop';
 import { PINNED_CLASS } from '../widgets/widget';
+import { CorePreferences } from '../core-preferences';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -88,7 +89,8 @@ export class TabBarRenderer extends TabBar.Renderer {
         protected readonly decoratorService?: TabBarDecoratorService,
         protected readonly iconThemeService?: IconThemeService,
         protected readonly selectionService?: SelectionService,
-        protected readonly commandService?: CommandService
+        protected readonly commandService?: CommandService,
+        protected readonly corePreferences?: CorePreferences
     ) {
         super();
         if (this.decoratorService) {
@@ -487,6 +489,9 @@ export class TabBarRenderer extends TabBar.Renderer {
     };
 
     protected handleDblClickEvent = (event: MouseEvent) => {
+        if (!this.corePreferences?.get('workbench.tab.maximize')) {
+            return;
+        }
         if (this.tabBar && event.currentTarget instanceof HTMLElement) {
             const id = event.currentTarget.id;
             // eslint-disable-next-line no-null/no-null
@@ -497,6 +502,7 @@ export class TabBarRenderer extends TabBar.Renderer {
             }
         }
     };
+
 }
 
 /**

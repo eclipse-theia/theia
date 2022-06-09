@@ -176,7 +176,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         const iconThemeService = container.get(IconThemeService);
         const selectionService = container.get(SelectionService);
         const commandService = container.get<CommandService>(CommandService);
-        return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService, commandService);
+        const corePreferences = container.get<CorePreferences>(CorePreferences);
+        return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService, commandService, corePreferences);
     });
     bind(TheiaDockPanel.Factory).toFactory(({ container }) => options => {
         const corePreferences = container.get<CorePreferences>(CorePreferences);
