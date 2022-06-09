@@ -44,8 +44,6 @@
 
 .p-MenuBar-item {
   padding: 0px 8px;
-  border-left: var(--theia-border-width) solid var(--theia-menu-border);
-  border-right: var(--theia-border-width) solid var(--theia-menu-border);
   line-height: var(--theia-private-menubar-height);
 }
 
@@ -113,6 +111,10 @@
   font-size: var(--theia-ui-font-size1);
   box-shadow: 0px 1px 6px var(--theia-widget-shadow);
   border: 1px solid var(--theia-menu-border);
+}
+
+.p-Menu:focus {
+  outline: none;
 }
 
 .p-Menu-item {

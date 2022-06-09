@@ -94,12 +94,6 @@
     box-shadow: 0 1px 0 var(--theia-tab-unfocusedHoverBorder) inset;
 }
 
-#theia-main-content-panel .p-TabBar .p-TabBar-tab.p-mod-current {
-    background: var(--theia-tab-activeBackground);
-    color: var(--theia-tab-activeForeground);
-    box-shadow: 0 1px 0 var(--theia-tab-activeBorderTop) inset, 0 -1px 0 var(--theia-tab-activeBorder) inset;
-}
-
 #theia-main-content-panel .p-TabBar:not(.theia-tabBar-active) .p-TabBar-tab {
     color: var(--theia-tab-unfocusedInactiveForeground);
 }

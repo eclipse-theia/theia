@@ -44,7 +44,7 @@ import { ColorContribution } from './color-application-contribution';
 import { ColorRegistry } from './color-registry';
 import { Color } from '../common/color';
 import { CoreConfiguration, CorePreferences } from './core-preferences';
-import { ThemeService } from './theming';
+import { isHighContrast, ThemeService } from './theming';
 import { PreferenceService, PreferenceScope, PreferenceChangeEvent } from './preferences';
 import { ClipboardService } from './clipboard-service';
 import { EncodingRegistry } from './encoding-registry';
@@ -64,6 +64,7 @@ import { isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveResourceService } from './save-resource-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
 import { createUntitledURI } from '../common';
+import { ColorTheme, CssStyleCollector, StylingParticipant } from './styling-service';
 
 export namespace CommonMenus {
 
@@ -341,7 +342,13 @@ export const supportPaste = browser.isNative || (!browser.isChrome && document.q
 export const RECENT_COMMANDS_STORAGE_KEY = 'commands';
 
 @injectable()
-export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution, ColorContribution {
+export class CommonFrontendContribution implements
+    FrontendApplicationContribution,
+    MenuContribution,
+    CommandContribution,
+    KeybindingContribution,
+    ColorContribution,
+    StylingParticipant {
 
     protected commonDecorationsStyleSheet: CSSStyleSheet = DecorationStyle.createStyleSheet('coreCommonDecorationsStyle');
 
@@ -1625,16 +1632,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // if not yet contributed by Monaco, check runtime css variables to learn.
             {
                 id: 'quickInput.background', defaults: {
-                    dark: 'sideBar.background',
-                    light: 'sideBar.background',
-                    hc: 'sideBar.background'
+                    dark: 'editorWidget.background',
+                    light: 'editorWidget.background',
+                    hc: 'editorWidget.background'
                 }, description: 'Quick Input background color. The Quick Input widget is the container for views like the color theme picker.'
             },
             {
                 id: 'quickInput.foreground', defaults: {
-                    dark: 'sideBar.foreground',
-                    light: 'sideBar.foreground',
-                    hc: 'sideBar.foreground'
+                    dark: 'editorWidget.foreground',
+                    light: 'editorWidget.foreground',
+                    hc: 'editorWidget.foreground'
                 }, description: 'Quick Input foreground color. The Quick Input widget is the container for views like the color theme picker.'
             },
             {
@@ -2238,5 +2245,165 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 description: 'The border between subelements of a hover widget'
             }
         );
+    }
+
+    registerThemeStyle(theme: ColorTheme, collector: CssStyleCollector): void {
+        const focusBorder = theme.getColor('focusBorder');
+        const contrastBorder = theme.getColor('contrastBorder');
+        const highContrast = isHighContrast(theme.type);
+
+        if (highContrast) {
+            if (focusBorder) {
+                // Action labels (codicon buttons)
+                collector.addRule(`
+                    .action-label:hover {
+                        outline: 1px dashed ${focusBorder};
+                    }
+                `);
+                // Menus
+                collector.addRule(`
+                    .p-Menu .p-Menu-item.p-mod-active {
+                        outline: 1px solid ${focusBorder};
+                        outline-offset: -1px;
+                    }
+                    .p-MenuBar .p-MenuBar-item.p-mod-active {
+                        outline: 1px dashed ${focusBorder};
+                    }
+                    .p-MenuBar.p-mod-active .p-MenuBar-item.p-mod-active {
+                        outline: 1px solid ${focusBorder};
+                    }
+                `);
+                // Sidebar Menu
+                // Menus
+                collector.addRule(`
+                    .theia-sidebar-menu > :hover {
+                        outline: 1px dashed ${focusBorder};
+                        outline-offset: -7px;
+                    }
+                `);
+                // Tabs
+                collector.addRule(`
+                    #theia-main-content-panel .p-TabBar .p-TabBar-tab {
+                        outline-offset: -4px;
+                    }
+                    #theia-main-content-panel .p-TabBar .p-TabBar-tab.p-mod-current {
+                        outline: 1px solid ${focusBorder};
+                    }
+                    #theia-main-content-panel .p-TabBar .p-TabBar-tab:not(.p-mod-current):hover {
+                        outline: 1px dashed ${focusBorder};
+                    }
+                `);
+                // Trees
+                collector.addRule(`
+                    .theia-TreeNode {
+                        outline-offset: -1px;
+                    }
+                    .theia-TreeNode:hover {
+                        outline: 1px dashed ${focusBorder};
+                    }
+                    .theia-Tree .theia-TreeNode.theia-mod-selected {
+                        outline: 1px dotted ${focusBorder};
+                    }
+                    .theia-Tree:focus .theia-TreeNode.theia-mod-selected,
+                    .theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected {
+                        outline: 1px solid ${focusBorder};
+                    }
+                `);
+            }
+            if (contrastBorder) {
+                // Buttons
+                collector.addRule(`
+                    .theia-button {
+                        border: 1px solid ${contrastBorder};
+                    }
+                `);
+                // Breadcrumbs
+                collector.addRule(`
+                    .theia-tabBar-breadcrumb-row {
+                        outline: 1px solid ${contrastBorder};
+                    }
+                `);
+                // Badges
+                collector.addRule(`.p-TabBar .theia-badge-decorator-sidebar {
+                    outline: 1px solid ${contrastBorder};
+                }`);
+            }
+        }
+
+        // Buttons
+        const buttonBackground = theme.getColor('button.background');
+        collector.addRule(`
+            .theia-button {
+                background: ${buttonBackground || 'none'};
+            }
+        `);
+        const buttonHoverBackground = theme.getColor('button.hoverBackground');
+        if (buttonHoverBackground) {
+            collector.addRule(`
+                .theia-button:hover {
+                    background-color: ${buttonHoverBackground};
+                }
+            `);
+        }
+        const secondaryButtonBackground = theme.getColor('secondaryButton.background');
+        collector.addRule(`
+            .theia-button.secondary {
+                background: ${secondaryButtonBackground || 'none'};
+            }
+        `);
+        const secondaryButtonHoverBackground = theme.getColor('secondaryButton.hoverBackground');
+        if (secondaryButtonHoverBackground) {
+            collector.addRule(`
+                .theia-button.secondary:hover {
+                    background-color: ${secondaryButtonHoverBackground};
+                }
+            `);
+        }
+        // Tabs
+        const tabActiveBackground = theme.getColor('tab.activeBackground');
+        const tabActiveBorderTop = theme.getColor('tab.activeBorderTop') || (highContrast && contrastBorder) || 'transparent';
+        const tabActiveBorder = theme.getColor('tab.activeBorder') || (highContrast && contrastBorder) || 'transparent';
+        collector.addRule(`
+            #theia-main-content-panel .p-TabBar .p-TabBar-tab.p-mod-current {
+                color: var(--theia-tab-activeForeground);
+                ${tabActiveBackground && `background: ${tabActiveBackground};`}
+                box-shadow: 0 1px 0 ${tabActiveBorderTop}, 0 -1px 0 ${tabActiveBorder} inset;
+            }
+        `);
+        // Status bar
+        if (isHighContrast(theme.type) && focusBorder) {
+            collector.addRule(`
+                #theia-statusBar .area .element.hasCommand:hover {
+                    outline: 1px dashed ${focusBorder};
+                    cursor: pointer;
+                }
+                #theia-statusBar .area .element.hasCommand:active {
+                    outline: 1px solid ${focusBorder};
+                    cursor: pointer;
+                }
+                .theia-mod-offline #theia-statusBar .area .element.hasCommand:hover {
+                    outline: none;
+                }
+                .theia-mod-offline #theia-statusBar .area .element.hasCommand:active {
+                    outline: none;
+                }
+            `);
+        } else {
+            collector.addRule(`
+                #theia-statusBar .area .element.hasCommand:hover {
+                    background-color: var(--theia-statusBarItem-hoverBackground);
+                    cursor: pointer;
+                }
+                #theia-statusBar .area .element.hasCommand:active {
+                    background-color: var(--theia-statusBarItem-activeBackground);
+                }
+                .theia-mod-offline #theia-statusBar .area .element.hasCommand:hover {
+                    background-color: var(--theia-statusBarItem-offlineHoverBackground) !important;
+                }
+                .theia-mod-offline #theia-statusBar .area .element.hasCommand:active {
+                    background-color: var(--theia-statusBarItem-offlineActiveBackground) !important;
+                }
+            `);
+        }
     }
 }

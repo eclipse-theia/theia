@@ -21,6 +21,58 @@
 | General
 |----------------------------------------------------------------------------*/
 
+:root {
+
+  /* Borders: Width and color (dark to bright) */
+
+  --theia-border-width: 1px;
+  --theia-panel-border-width: 1px;
+
+
+  /* UI fonts: Family, size and color (bright to dark)
+      ---------------------------------------------------
+       The UI font CSS variables are used for the typography all of the Theia
+       user interface elements that are not directly user-generated content.
+    */
+
+  --theia-ui-font-scale-factor: 1.2;
+  --theia-ui-font-size0: calc(var(--theia-ui-font-size1) / var(--theia-ui-font-scale-factor));
+  --theia-ui-font-size1: 13px;
+  /* Base font size */
+  --theia-ui-font-size2: calc(var(--theia-ui-font-size1) * var(--theia-ui-font-scale-factor));
+  --theia-ui-font-size3: calc(var(--theia-ui-font-size2) * var(--theia-ui-font-scale-factor));
+  --theia-ui-icon-font-size: 14px;
+  /* Ensures px perfect FontAwesome icons */
+  --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  /* Content fonts: Family, size and color (bright to dark)
+       Content font variables are used for typography of user-generated content.
+    */
+
+  --theia-content-font-size: 13px;
+  --theia-content-line-height: 22px;
+
+  --theia-code-font-size: 13px;
+  --theia-code-line-height: 17px;
+  --theia-code-padding: 5px;
+  --theia-code-font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+  --theia-monospace-font-family: monospace;
+  --theia-ui-padding: 6px;
+
+  /* Icons */
+  --theia-icon-size: 16px;
+
+  /* Scrollbars */
+  --theia-scrollbar-width: 10px;
+  --theia-scrollbar-rail-width: 10px;
+
+  /* Statusbar */
+  --theia-statusBar-font-size: 12px;
+
+  /* Opacity for disabled mod  */
+  --theia-mod-disabled-opacity: 0.4;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -173,12 +225,7 @@ blockquote {
 }
 
 ::selection {
-    background: var(--theia-selection-background);
-}
-
-.p-Widget:focus {
-    border: none;
-    outline: none;
+  background: var(--theia-selection-background);
 }
 
 .action-label {
@@ -188,22 +235,17 @@ blockquote {
 }
 
 .action-label:hover {
-    background-color: var(--theia-toolbar-hoverBackground);
+  background-color: var(--theia-toolbar-hoverBackground);
 }
 
-button.theia-button, .theia-button {
-    border: none;
-    color: var(--theia-button-foreground);
-    background-color: var(--theia-button-background);
-    min-width: 65px;
-    outline: none;
-    cursor: pointer;
-    padding: 4px 9px;
-    margin-left: calc(var(--theia-ui-padding)*2);
-}
-
-.theia-button:hover {
-  background-color: var(--theia-button-hoverBackground);
+.theia-button {
+  border: none;
+  color: var(--theia-button-foreground);
+  min-width: 65px;
+  outline: none;
+  cursor: pointer;
+  padding: 4px 9px;
+  margin-left: calc(var(--theia-ui-padding)*2);
 }
 
 .theia-button:focus {
@@ -211,16 +253,11 @@ button.theia-button, .theia-button {
   outline-offset: 1px;
 }
 
-button.secondary, .theia-button.secondary {
+.theia-button.secondary {
   color: var(--theia-secondaryButton-foreground);
-  background-color: var(--theia-secondaryButton-background);
 }
 
-button.secondary:hover, .theia-button.secondary:hover {
-  background-color: var(--theia-secondaryButton-hoverBackground);
-}
-
-button.theia-button[disabled], .theia-button[disabled] {
+.theia-button[disabled] {
   opacity: 0.6;
   color: var(--theia-button-disabledForeground);
   background-color: var(--theia-button-disabledBackground);

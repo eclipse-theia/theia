@@ -106,11 +106,7 @@
     border-color: var(--theia-focusBorder);
 }
 
-.theia-notification-list-item:hover:not(:focus) {
-    background-color: var(--theia-list-hoverBackground);
-}
-
-.theia-notification-list > .theia-notification-list-item:not(:last-child) {
+.theia-notification-center .theia-notification-list-item:not(:last-child) {
     border-top: 1px var(--theia-notifications-border) solid;
 }
 

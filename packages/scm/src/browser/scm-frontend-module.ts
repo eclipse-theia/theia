@@ -21,7 +21,7 @@ import {
     bindViewContribution, FrontendApplicationContribution,
     WidgetFactory, ViewContainer,
     WidgetManager, ApplicationShellLayoutMigration,
-    createTreeContainer, TreeModel, TreeModelImpl
+    createTreeContainer, TreeModel, TreeModelImpl, StylingParticipant
 } from '@theia/core/lib/browser';
 import { ScmService } from './scm-service';
 import { SCM_WIDGET_FACTORY_ID, ScmContribution, SCM_VIEW_CONTAINER_ID, SCM_VIEW_CONTAINER_TITLE_OPTIONS } from './scm-contribution';
@@ -105,6 +105,7 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(ScmContribution);
     bind(TabBarToolbarContribution).toService(ScmContribution);
     bind(ColorContribution).toService(ScmContribution);
+    bind(StylingParticipant).toService(ScmContribution);
 
     bind(ScmDecorationsService).toSelf().inSingletonScope();
 

@@ -16,7 +16,8 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
-    FrontendApplicationContribution, StatusBar, FrontendApplication, StatusBarAlignment, KeybindingContribution, KeybindingRegistry, KeybindingContext
+    FrontendApplicationContribution, StatusBar, FrontendApplication, StatusBarAlignment,
+    KeybindingContribution, KeybindingRegistry, KeybindingContext, StylingParticipant, ColorTheme, CssStyleCollector
 } from '@theia/core/lib/browser';
 import { Keybinding } from '@theia/core/lib/common/keybinding';
 import { NotificationsCommands } from './notifications-commands';
@@ -27,9 +28,10 @@ import { ColorContribution } from '@theia/core/lib/browser/color-application-con
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Color } from '@theia/core/lib/common/color';
 import { nls } from '@theia/core/lib/common/nls';
+import { isHighContrast } from '@theia/core/lib/common/theme';
 
 @injectable()
-export class NotificationsContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, ColorContribution {
+export class NotificationsContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, ColorContribution, StylingParticipant {
 
     protected readonly id = 'theia-notification-center';
 
@@ -177,6 +179,25 @@ export class NotificationsContribution implements FrontendApplicationContributio
         );
     }
 
+    registerThemeStyle(theme: ColorTheme, collector: CssStyleCollector): void {
+        const notificationHover = theme.getColor('list.hoverBackground');
+        if (notificationHover) {
+            collector.addRule(`
+                .theia-notification-list-item:hover:not(:focus) {
+                    background-color: ${notificationHover};
+                }
+            `);
+        }
+        const focusBorder = theme.getColor('focusBorder');
+        if (focusBorder && isHighContrast(theme.type)) {
+            collector.addRule(`
+                .theia-notification-list-item:hover:not(:focus) {
+                    outline: 1px dashed ${focusBorder};
+                    outline-offset: -2px;
+                }
+            `);
+        }
+    }
 }
 
 @injectable()

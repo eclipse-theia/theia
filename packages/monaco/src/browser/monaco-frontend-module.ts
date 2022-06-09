@@ -38,7 +38,7 @@ import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
 import {
     FrontendApplicationContribution, KeybindingContribution,
     PreferenceService, PreferenceSchemaProvider, createPreferenceProxy,
-    PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService
+    PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService, StylingParticipant
 } from '@theia/core/lib/browser';
 import { TextEditorProvider, DiffNavigatorProvider } from '@theia/editor/lib/browser';
 import { StrictEditorTextFocusContext } from '@theia/editor/lib/browser/editor-keybinding-contexts';
@@ -100,7 +100,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(ContextKeyService).toService(MonacoContextKeyService);
 
     bind(MonacoSnippetSuggestProvider).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).to(MonacoFrontendApplicationContribution).inSingletonScope();
+    bind(MonacoFrontendApplicationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(MonacoFrontendApplicationContribution);
+    bind(StylingParticipant).toService(MonacoFrontendApplicationContribution);
 
     bind(MonacoToProtocolConverter).toSelf().inSingletonScope();
     bind(ProtocolToMonacoConverter).toSelf().inSingletonScope();

@@ -21,7 +21,8 @@ import { SearchInWorkspaceService, SearchInWorkspaceClientImpl } from './search-
 import { SearchInWorkspaceServer, SIW_WS_PATH } from '../common/search-in-workspace-interface';
 import {
     WebSocketConnectionProvider, WidgetFactory, createTreeContainer, bindViewContribution, FrontendApplicationContribution, LabelProviderContribution,
-    ApplicationShellLayoutMigration
+    ApplicationShellLayoutMigration,
+    StylingParticipant
 } from '@theia/core/lib/browser';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
@@ -49,6 +50,7 @@ export default new ContainerModule(bind => {
     bindViewContribution(bind, SearchInWorkspaceFrontendContribution);
     bind(FrontendApplicationContribution).toService(SearchInWorkspaceFrontendContribution);
     bind(TabBarToolbarContribution).toService(SearchInWorkspaceFrontendContribution);
+    bind(StylingParticipant).toService(SearchInWorkspaceFrontendContribution);
 
     // The object that gets notified of search results.
     bind(SearchInWorkspaceClientImpl).toSelf().inSingletonScope();
