@@ -732,7 +732,7 @@ export class ThemeIcon {
 
     static readonly Folder: ThemeIcon = new ThemeIcon('folder');
 
-    private constructor(public id: string) {
+    private constructor(public id: string, public color?: ThemeColor) {
     }
 
 }

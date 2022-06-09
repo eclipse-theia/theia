@@ -2652,7 +2652,22 @@ export module '@theia/plugin' {
          */
         static readonly Folder: ThemeIcon;
 
-        private constructor(public id: string);
+        /**
+         * The id of the icon. The available icons are listed in https://code.visualstudio.com/api/references/icons-in-labels#icon-listing.
+         */
+        readonly id: string;
+
+        /**
+         * The optional ThemeColor of the icon. The color is currently only used in {@link TreeItem}.
+         */
+        readonly color?: ThemeColor | undefined;
+
+        /**
+         * Creates a reference to a theme icon.
+         * @param id id of the icon. The available icons are listed in https://code.visualstudio.com/api/references/icons-in-labels#icon-listing.
+         * @param color optional `ThemeColor` for the icon. The color is currently only used in {@link TreeItem}.
+         */
+        private constructor(public id: string, public color?: ThemeColor);
     }
 
     /**

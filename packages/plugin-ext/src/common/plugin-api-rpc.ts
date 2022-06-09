@@ -709,7 +709,7 @@ export interface TreeViewItem {
     icon?: string;
     iconUrl?: IconUrl;
 
-    themeIconId?: string;
+    themeIcon?: ThemeIcon;
 
     resourceUri?: UriComponents;
 
@@ -1075,6 +1075,11 @@ export interface ApplyEditsOptions extends UndoStopOptions {
 
 export interface ThemeColor {
     id: string;
+}
+
+export interface ThemeIcon {
+    id: string;
+    color?: ThemeColor;
 }
 
 /**
