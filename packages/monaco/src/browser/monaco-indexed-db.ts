@@ -16,7 +16,7 @@
 
 import * as idb from 'idb';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { BuiltinThemeProvider, ThemeService } from '@theia/core/lib/browser/theming';
+import { ThemeService } from '@theia/core/lib/browser/theming';
 import * as monaco from '@theia/monaco-editor-core';
 import { injectable } from '@theia/core/shared/inversify';
 import type { ThemeMix } from './textmate/monaco-theme-registry';

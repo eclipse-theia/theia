@@ -97,6 +97,14 @@ body.theia-no-open-workspace #theia-statusBar {
     margin-left: calc(-1 * var(--theia-ui-padding));
 }
 
+#theia-statusBar .area .element.hasCommand:hover {
+    cursor: pointer;
+}
+
+#theia-statusBar .area .element.hasCommand:active {
+    cursor: pointer;
+}
+
 
 #theia-statusBar .element {
     /* https://css-tricks.com/os-specific-fonts-css/#article-header-id-0 */

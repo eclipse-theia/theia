@@ -30,24 +30,22 @@
 
 
   /* UI fonts: Family, size and color (bright to dark)
-      ---------------------------------------------------
-       The UI font CSS variables are used for the typography all of the Theia
-       user interface elements that are not directly user-generated content.
-    */
+     ---------------------------------------------------
+     The UI font CSS variables are used for the typography all of the Theia
+     user interface elements that are not directly user-generated content.
+   */
 
   --theia-ui-font-scale-factor: 1.2;
   --theia-ui-font-size0: calc(var(--theia-ui-font-size1) / var(--theia-ui-font-scale-factor));
-  --theia-ui-font-size1: 13px;
-  /* Base font size */
+  --theia-ui-font-size1: 13px; /* Base font size */
   --theia-ui-font-size2: calc(var(--theia-ui-font-size1) * var(--theia-ui-font-scale-factor));
   --theia-ui-font-size3: calc(var(--theia-ui-font-size2) * var(--theia-ui-font-scale-factor));
-  --theia-ui-icon-font-size: 14px;
-  /* Ensures px perfect FontAwesome icons */
+  --theia-ui-icon-font-size: 14px; /* Ensures px perfect FontAwesome icons */
   --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 
   /* Content fonts: Family, size and color (bright to dark)
-       Content font variables are used for typography of user-generated content.
-    */
+     Content font variables are used for typography of user-generated content.
+   */
 
   --theia-content-font-size: 13px;
   --theia-content-line-height: 22px;

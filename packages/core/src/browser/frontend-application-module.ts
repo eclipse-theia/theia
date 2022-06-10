@@ -127,6 +127,7 @@ import { TheiaDockPanel } from './shell/theia-dock-panel';
 import { bindStatusBar } from './status-bar';
 import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from './markdown-rendering/markdown-renderer';
 import { StylingParticipant, StylingService } from './styling-service';
+import { bindCommonStylingParticipants } from './common-styling-participants';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -258,9 +259,11 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(ResourceContextKey).toSelf().inSingletonScope();
     bind(CommonFrontendContribution).toSelf().inSingletonScope();
-    [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution, ColorContribution, StylingParticipant].forEach(serviceIdentifier =>
+    [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution, ColorContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(CommonFrontendContribution)
     );
+
+    bindCommonStylingParticipants(bind);
 
     bind(QuickCommandFrontendContribution).toSelf().inSingletonScope();
     [CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>

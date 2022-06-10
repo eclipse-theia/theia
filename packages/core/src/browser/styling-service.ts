@@ -18,6 +18,7 @@ import { inject, injectable, named } from 'inversify';
 import { ContributionProvider } from '../common/contribution-provider';
 import { Theme, ThemeType } from '../common/theme';
 import { ColorRegistry } from './color-registry';
+import { DecorationStyle } from './decoration-style';
 import { FrontendApplicationContribution } from './frontend-application';
 import { ThemeService } from './theming';
 
@@ -40,7 +41,7 @@ export interface CssStyleCollector {
 @injectable()
 export class StylingService implements FrontendApplicationContribution {
 
-    protected cssElement = this.createStyleElement('contributedColorTheme');
+    protected cssElement = DecorationStyle.createStyleElement('contributedColorTheme');
 
     @inject(ThemeService)
     protected readonly themeService: ThemeService;
@@ -71,12 +72,5 @@ export class StylingService implements FrontendApplicationContribution {
         }
         const fullCss = rules.join('\n');
         this.cssElement.innerText = fullCss;
-    }
-
-    protected createStyleElement(className?: string): HTMLStyleElement {
-        const style = document.createElement('style');
-        style.className = className || '';
-        document.head.appendChild(style);
-        return style;
     }
 }
