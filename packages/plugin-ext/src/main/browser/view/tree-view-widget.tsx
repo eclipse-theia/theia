@@ -47,6 +47,8 @@ import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
 import { AccessibilityInformation } from '@theia/plugin';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { DecoratedTreeNode } from '@theia/core/lib/browser/tree/tree-decorator';
+import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
@@ -57,7 +59,7 @@ export interface SelectionEventHandler {
     readonly contextSelection: boolean;
 }
 
-export interface TreeViewNode extends SelectableTreeNode {
+export interface TreeViewNode extends SelectableTreeNode, DecoratedTreeNode {
     contextValue?: string;
     command?: Command;
     resourceUri?: string;
@@ -69,7 +71,7 @@ export interface TreeViewNode extends SelectableTreeNode {
 }
 export namespace TreeViewNode {
     export function is(arg: TreeNode | undefined): arg is TreeViewNode {
-        return !!arg && SelectableTreeNode.is(arg);
+        return !!arg && SelectableTreeNode.is(arg) && DecoratedTreeNode.is(arg);
     }
 }
 
@@ -79,7 +81,7 @@ export interface CompositeTreeViewNode extends TreeViewNode, ExpandableTreeNode,
 }
 export namespace CompositeTreeViewNode {
     export function is(arg: TreeNode | undefined): arg is CompositeTreeViewNode {
-        return !!arg && SelectableTreeNode.is(arg) && ExpandableTreeNode.is(arg) && CompositeTreeNode.is(arg);
+        return TreeViewNode.is(arg) && ExpandableTreeNode.is(arg) && CompositeTreeNode.is(arg);
     }
 }
 
@@ -150,11 +152,13 @@ export class PluginTree extends TreeImpl {
     }
 
     protected createTreeNode(item: TreeViewItem, parent: CompositeTreeNode): TreeNode {
+        const decorationData = this.toDecorationData(item);
         const icon = this.toIconClass(item);
         const resourceUri = item.resourceUri && URI.revive(item.resourceUri).toString();
         const themeIcon = item.themeIcon ? item.themeIcon : item.collapsibleState !== TreeViewItemCollapsibleState.None ? { id: 'folder' } : { id: 'file' };
         const update: Partial<TreeViewNode> = {
             name: item.label,
+            decorationData,
             icon,
             description: item.description,
             themeIcon,
@@ -189,6 +193,17 @@ export class PluginTree extends TreeImpl {
             selected: false,
             command: item.command,
         }, update);
+    }
+
+    protected toDecorationData(item: TreeViewItem): WidgetDecoration.Data {
+        let decoration: WidgetDecoration.Data = {};
+        if (item.highlights) {
+            const highlight = {
+                ranges: item.highlights.map(h => ({ offset: h[0], length: h[1] - h[0] }))
+            };
+            decoration = { highlight };
+        }
+        return decoration;
     }
 
     protected toIconClass(item: TreeViewItem): string | undefined {
