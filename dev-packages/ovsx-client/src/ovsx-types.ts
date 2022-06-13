@@ -76,6 +76,7 @@ export interface VSXSearchEntry {
     readonly url: string;
     readonly files: {
         download: string
+        manifest?: string
         readme?: string
         license?: string
         icon?: string

@@ -488,11 +488,13 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
     }
 
     set items(itms: readonly (T | QuickPickSeparator)[]) {
+        const active = this.activeItems;
         this.wrapped.items = itms.map(item => QuickPickSeparator.is(item) ? item : new MonacoQuickPickItem<T>(item, this.keybindingRegistry));
+        this.activeItems = active;
     }
 
     set activeItems(itms: readonly T[]) {
-        this.wrapped.activeItems = itms.map(item => new MonacoQuickPickItem<T>(item, this.keybindingRegistry));
+        this.wrapped.activeItems = findActualItems(this.wrapped.items, itms);
     }
 
     get activeItems(): readonly (T)[] {
@@ -500,7 +502,7 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
     }
 
     set selectedItems(itms: readonly T[]) {
-        this.wrapped.selectedItems = itms.map(item => new MonacoQuickPickItem<T>(item, this.keybindingRegistry));
+        this.wrapped.selectedItems = findActualItems(this.wrapped.items, itms);
     }
 
     get selectedItems(): readonly (T)[] {
@@ -520,6 +522,18 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
         (items: MonacoQuickPickItem<T>[]) => items.map(item => item.item));
     readonly onDidChangeSelection: Event<T[]> = Event.map(
         this.wrapped.onDidChangeSelection, (items: MonacoQuickPickItem<T>[]) => items.map(item => item.item));
+}
+
+function findActualItems<T extends QuickPickItem>(source: readonly (MonacoQuickPickItem<T> | IQuickPickSeparator)[], items: readonly QuickPickItem[]): MonacoQuickPickItem<T>[] {
+    const actualItems: MonacoQuickPickItem<T>[] = [];
+    for (const item of items) {
+        for (const wrappedItem of source) {
+            if (!QuickPickSeparator.is(wrappedItem) && wrappedItem.item === item) {
+                actualItems.push(wrappedItem);
+            }
+        }
+    }
+    return actualItems;
 }
 
 export class MonacoQuickPickItem<T extends QuickPickItem> implements IQuickPickItem {

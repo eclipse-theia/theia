@@ -55,6 +55,17 @@ export namespace nls {
     export function localize(key: string, defaultValue: string, ...args: FormatType[]): string {
         return Localization.localize(localization, key, defaultValue, ...args);
     }
+
+    export function isSelectedLocale(id: string): boolean {
+        if (locale === undefined && id === 'en') {
+            return true;
+        }
+        return locale === id;
+    }
+
+    export function setLocale(id: string): void {
+        window.localStorage.setItem(localeId, id);
+    }
 }
 
 interface NlsKeys {
