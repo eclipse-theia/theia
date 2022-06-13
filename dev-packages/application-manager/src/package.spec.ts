@@ -21,6 +21,7 @@
    showing 0% coverage, instead of no report.
    This file can be removed once we have real unit
    tests in place. */
+import { describe, it } from 'mocha';
 
 describe('application-manager package', () => {
 
