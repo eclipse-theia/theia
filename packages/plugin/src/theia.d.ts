@@ -5349,7 +5349,7 @@ export module '@theia/plugin' {
         /**
          * A human-readable string describing this item. When `falsy`, it is derived from [resourceUri](#TreeItem.resourceUri).
          */
-        label?: string;
+        label?: string | TreeItemLabel;
 
         /**
          * Optional id for the tree item that has to be unique across tree. The id is used to preserve the selection and expansion state of the tree item.
@@ -5425,7 +5425,7 @@ export module '@theia/plugin' {
          * @param label A human-readable string describing this item
          * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
          */
-        constructor(label: string, collapsibleState?: TreeItemCollapsibleState);
+        constructor(label: string | TreeItemLabel, collapsibleState?: TreeItemCollapsibleState);
 
         /**
          * @param resourceUri The [uri](#Uri) of the resource representing this item.
@@ -5450,6 +5450,23 @@ export module '@theia/plugin' {
          * Determines an item is expanded
          */
         Expanded = 2
+    }
+
+    /**
+     * Label describing the {@link TreeItem Tree item}
+     */
+    export interface TreeItemLabel {
+
+        /**
+         * A human-readable string describing the {@link TreeItem Tree item}.
+         */
+        label: string;
+
+        /**
+         * Ranges in the label to highlight. A range is defined as a tuple of two numbers where the
+         * first is the inclusive start index and the second the exclusive end index
+         */
+        highlights?: [number, number][];
     }
 
     /**

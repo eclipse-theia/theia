@@ -702,6 +702,8 @@ export interface TreeViewItem {
     id: string;
 
     label: string;
+    /** Label highlights given as tuples of inclusive start index and exclusive end index. */
+    highlights?: [number, number][];
 
     description?: string | boolean;
 
