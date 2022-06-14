@@ -25,7 +25,7 @@ import { Git, Repository } from '../common';
 import { DugiteGit } from '../node/dugite-git';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileStat, FileChangesEvent } from '@theia/filesystem/lib/common/files';
-import { Emitter, CommandService } from '@theia/core';
+import { Emitter, CommandService, Disposable } from '@theia/core';
 import { LocalStorageService, StorageService, LabelProvider } from '@theia/core/lib/browser';
 import { GitRepositoryProvider } from './git-repository-provider';
 import * as sinon from 'sinon';
@@ -101,7 +101,7 @@ describe('GitRepositoryProvider', () => {
         testContainer.bind(GitErrorHandler).toConstantValue(<GitErrorHandler>{});
         testContainer.bind(CommandService).toConstantValue(<CommandService>{});
         testContainer.bind(LabelProvider).toConstantValue(<LabelProvider>{});
-        testContainer.bind(GitPreferences).toConstantValue(<GitPreferences>{});
+        testContainer.bind(GitPreferences).toConstantValue({ onPreferenceChanged: () => Disposable.NULL });
         testContainer.bind(GitRepositoryTracker).toConstantValue(mockGitRepositoryTracker);
 
         sinon.stub(mockWorkspaceService, 'onWorkspaceChanged').value(mockRootChangeEmitter.event);
