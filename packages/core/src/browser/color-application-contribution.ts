@@ -46,6 +46,7 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
         for (const contribution of this.colorContributions.getContributions()) {
             contribution.registerColors(this.colors);
         }
+        this.themeService.initialized.then(() => this.update());
         this.themeService.onDidColorThemeChange(() => {
             this.update();
             this.updateThemeBackground();

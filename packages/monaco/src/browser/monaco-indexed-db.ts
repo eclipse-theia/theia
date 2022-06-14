@@ -120,6 +120,11 @@ export class ThemeServiceWithDB extends ThemeService {
     protected async loadUserThemeWithDB(): Promise<void> {
         const themeId = window.localStorage.getItem('theme') || this.defaultTheme.id;
         const theme = this.themes[themeId] ?? await getThemeFromDB(themeId) ?? this.defaultTheme;
+        // In case the theme comes from the DB.
+        if (!this.themes[theme.id]) {
+            this.themes[theme.id] = theme;
+        }
         this.setCurrentTheme(theme.id);
+        this.deferredInitializer.resolve();
     }
 }

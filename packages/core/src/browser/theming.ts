@@ -20,6 +20,7 @@ import { FrontendApplicationConfigProvider } from './frontend-application-config
 import { ApplicationProps } from '@theia/application-package/lib/application-props';
 import { Theme, ThemeChangeEvent } from '../common/theme';
 import { injectable, postConstruct } from 'inversify';
+import { Deferred } from '../common/promise-util';
 
 @injectable()
 export class ThemeService {
@@ -27,6 +28,10 @@ export class ThemeService {
     protected themes: { [id: string]: Theme } = {};
     protected activeTheme: Theme | undefined;
     protected readonly themeChange = new Emitter<ThemeChangeEvent>();
+    protected readonly deferredInitializer = new Deferred();
+    get initialized(): Promise<void> {
+        return this.deferredInitializer.promise;
+    }
 
     readonly onDidColorThemeChange: Event<ThemeChangeEvent> = this.themeChange.event;
 
@@ -84,6 +89,7 @@ export class ThemeService {
     loadUserTheme(): void {
         const theme = this.getCurrentTheme();
         this.setCurrentTheme(theme.id);
+        this.deferredInitializer.resolve();
     }
 
     setCurrentTheme(themeId: string): void {
