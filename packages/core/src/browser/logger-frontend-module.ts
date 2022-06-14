@@ -20,6 +20,7 @@ import { ILogger, Logger, LoggerFactory, setRootLogger, LoggerName, rootLoggerNa
 import { LoggerWatcher } from '../common/logger-watcher';
 import { WebSocketConnectionProvider } from './messaging';
 import { FrontendApplicationContribution } from './frontend-application';
+import { EncodingError } from '../common/message-rpc/rpc-message-encoder';
 
 export const loggerFrontendModule = new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
@@ -39,7 +40,13 @@ export const loggerFrontendModule = new ContainerModule(bind => {
             if (property === 'log') {
                 return (name, logLevel, message, params) => {
                     ConsoleLogger.log(name, logLevel, message, params);
-                    return target.log(name, logLevel, message, params);
+                    return target.log(name, logLevel, message, params).catch(err => {
+                        if (err instanceof EncodingError) {
+                            // In case of an EncodingError no RPC call is sent to the backend `ILoggerServer`. Nevertheless, we want to continue normally.
+                            return;
+                        }
+                        throw err;
+                    });
                 };
             }
             return target[property];

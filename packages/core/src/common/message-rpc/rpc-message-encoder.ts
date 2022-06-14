@@ -99,7 +99,10 @@ export enum ObjectType {
     Number = 7,
     // eslint-disable-next-line @typescript-eslint/no-shadow
     ResponseError = 8,
-    Error = 9
+    Error = 9,
+    Map = 10,
+    Set = 11,
+    Function = 12
 
 }
 
@@ -107,7 +110,7 @@ export enum ObjectType {
  * A value encoder writes javascript values to a write buffer. Encoders will be asked
  * in turn (ordered by their tag value, descending) whether they can encode a given value
  * This means encoders with higher tag values have priority. Since the default encoders
- * have tag values from 1-7, they can be easily overridden.
+ * have tag values from 1-12, they can be easily overridden.
  */
 export interface ValueEncoder {
     /**
@@ -119,11 +122,12 @@ export interface ValueEncoder {
      * Write the given value to the buffer. Will only be called if {@link is(value)} returns true.
      * @param buf The buffer to write to
      * @param value The value to be written
+     * @param visitedObjects The collection of already visited (i.e. encoded) objects. Used to detect circular references
      * @param recursiveEncode A function that will use the encoders registered on the {@link MessageEncoder}
      * to write a value to the underlying buffer. This is used mostly to write structures like an array
      * without having to know how to encode the values in the array
      */
-    write(buf: WriteBuffer, value: any, recursiveEncode?: (buf: WriteBuffer, value: any) => void): void;
+    write(buf: WriteBuffer, value: any, visitedObjects: WeakSet<object>, recursiveEncode?: (buf: WriteBuffer, value: any, visitedObjects: WeakSet<object>) => void): void;
 }
 
 /**
@@ -142,6 +146,16 @@ export interface ValueDecoder {
 }
 
 /**
+ * Custom error thrown by the {@link RpcMessageEncoder} if an error occurred during the encoding and the
+ * object could not be written to the given {@link WriteBuffer}
+ */
+export class EncodingError extends Error {
+    constructor(msg: string) {
+        super(msg);
+    }
+}
+
+/**
  * A `RpcMessageDecoder` parses a a binary message received via {@link ReadBuffer} into a {@link RpcMessage}
  */
 export class RpcMessageDecoder {
@@ -149,6 +163,10 @@ export class RpcMessageDecoder {
     protected decoders: Map<number, ValueDecoder> = new Map();
 
     constructor() {
+        this.registerDecoders();
+    }
+
+    registerDecoders(): void {
         this.registerDecoder(ObjectType.JSON, {
             read: buf => {
                 const json = buf.readString();
@@ -207,6 +225,18 @@ export class RpcMessageDecoder {
             read: buf => buf.readNumber()
         });
 
+        this.registerDecoder(ObjectType.Map, {
+            read: buf => new Map(this.readArray(buf))
+        });
+
+        this.registerDecoder(ObjectType.Set, {
+            read: buf => new Set(this.readArray(buf))
+        });
+
+        this.registerDecoder(ObjectType.Function, {
+            read: () => ({})
+        });
+
     }
 
     /**
@@ -257,9 +287,7 @@ export class RpcMessageDecoder {
     protected parseRequest(msg: ReadBuffer): RequestMessage {
         const callId = msg.readUint32();
         const method = msg.readString();
-        let args = this.readArray(msg);
-        // convert `null` to `undefined`, since we don't use `null` in internal plugin APIs
-        args = args.map(arg => arg === null ? undefined : arg); // eslint-disable-line no-null/no-null
+        const args = this.readArray(msg);
 
         return {
             type: RpcMessageType.Request,
@@ -272,9 +300,7 @@ export class RpcMessageDecoder {
     protected parseNotification(msg: ReadBuffer): NotificationMessage {
         const callId = msg.readUint32();
         const method = msg.readString();
-        let args = this.readArray(msg);
-        // convert `null` to `undefined`, since we don't use `null` in internal plugin APIs
-        args = args.map(arg => arg === null ? undefined : arg); // eslint-disable-line no-null/no-null
+        const args = this.readArray(msg);
 
         return {
             type: RpcMessageType.Notification,
@@ -348,22 +374,36 @@ export class RpcMessageEncoder {
             }
         });
 
+        this.registerEncoder(ObjectType.Function, {
+            is: value => typeof value === 'function',
+            write: () => { }
+        });
+
         this.registerEncoder(ObjectType.Object, {
             is: value => typeof value === 'object',
-            write: (buf, object, recursiveEncode) => {
-                const properties = Object.keys(object);
-                const relevant = [];
-                for (const property of properties) {
-                    const value = object[property];
-                    if (typeof value !== 'function') {
-                        relevant.push([property, value]);
+            write: (buf, object, visitedObjects, recursiveEncode) => {
+                try {
+                    if (visitedObjects.has(object)) {
+                        throw new EncodingError('Object to encode contains circular references!');
                     }
-                }
+                    visitedObjects.add(object);
 
-                buf.writeLength(relevant.length);
-                for (const [property, value] of relevant) {
-                    buf.writeString(property);
-                    recursiveEncode?.(buf, value);
+                    const properties = Object.keys(object);
+                    const relevant = [];
+                    for (const property of properties) {
+                        const value = object[property];
+                        if (typeof value !== 'function') {
+                            relevant.push([property, value]);
+                        }
+                    }
+
+                    buf.writeLength(relevant.length);
+                    for (const [property, value] of relevant) {
+                        buf.writeString(property);
+                        recursiveEncode?.(buf, value, visitedObjects);
+                    }
+                } finally {
+                    visitedObjects.delete(object);
                 }
             }
         });
@@ -388,6 +428,16 @@ export class RpcMessageEncoder {
             write: (buf, value) => buf.writeString(JSON.stringify(value))
         });
 
+        this.registerEncoder(ObjectType.Map, {
+            is: value => value instanceof Map,
+            write: (buf, value: Map<any, any>, visitedObjects) => this.writeArray(buf, Array.from(value.entries()), visitedObjects)
+        });
+
+        this.registerEncoder(ObjectType.Set, {
+            is: value => value instanceof Set,
+            write: (buf, value: Set<any>, visitedObjects) => this.writeArray(buf, [...value], visitedObjects)
+        });
+
         this.registerEncoder(ObjectType.Undefined, {
             // eslint-disable-next-line no-null/no-null
             is: value => value == null,
@@ -396,8 +446,8 @@ export class RpcMessageEncoder {
 
         this.registerEncoder(ObjectType.ObjectArray, {
             is: value => Array.isArray(value),
-            write: (buf, value) => {
-                this.writeArray(buf, value);
+            write: (buf, value, visitedObjects) => {
+                this.writeArray(buf, value, visitedObjects);
             }
         });
 
@@ -476,22 +526,23 @@ export class RpcMessageEncoder {
         this.writeTypedValue(buf, err);
     }
 
-    writeTypedValue(buf: WriteBuffer, value: any): void {
+    writeTypedValue(buf: WriteBuffer, value: any, visitedObjects = new WeakSet()): void {
         for (let i: number = this.encoders.length - 1; i >= 0; i--) {
             if (this.encoders[i][1].is(value)) {
                 buf.writeUint8(this.encoders[i][0]);
-                this.encoders[i][1].write(buf, value, (innerBuffer, innerValue) => {
-                    this.writeTypedValue(innerBuffer, innerValue);
+                this.encoders[i][1].write(buf, value, visitedObjects, (innerBuffer, innerValue, _visitedObjects) => {
+                    this.writeTypedValue(innerBuffer, innerValue, _visitedObjects);
                 });
                 return;
             }
         }
+        throw new EncodingError(`No suitable value encoder found for ${value}`);
     }
 
-    writeArray(buf: WriteBuffer, value: any[]): void {
+    writeArray(buf: WriteBuffer, value: any[], visitedObjects = new WeakSet()): void {
         buf.writeLength(value.length);
         for (let i = 0; i < value.length; i++) {
-            this.writeTypedValue(buf, value[i]);
+            this.writeTypedValue(buf, value[i], visitedObjects);
         }
     }
 }

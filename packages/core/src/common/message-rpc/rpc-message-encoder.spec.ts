@@ -26,6 +26,9 @@ describe('PPC Message Codex', () => {
 
             const encoder = new RpcMessageEncoder();
             const jsonMangled = JSON.parse(JSON.stringify(encoder));
+            // The RpcMessageEncoder can decode/encode collections, whereas JSON.parse can't. => We have to manually restore the set
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            jsonMangled.registeredTags = (encoder as any).registeredTags;
 
             encoder.writeTypedValue(writer, encoder);
 
