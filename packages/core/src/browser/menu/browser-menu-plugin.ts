@@ -35,6 +35,12 @@ export abstract class MenuBarWidget extends MenuBar {
     abstract triggerMenuItem(label: string, ...labels: string[]): Promise<MenuWidget.IItem>;
 }
 
+export interface BrowserMenuOptions extends MenuWidget.IOptions {
+    commands: MenuCommandRegistry,
+    context?: HTMLElement,
+    rootMenuPath: MenuPath
+};
+
 @injectable()
 export class BrowserMainMenuFactory implements MenuWidgetFactory {
 
@@ -108,7 +114,7 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
         return contextMenu;
     }
 
-    createMenuWidget(menu: CompositeMenuNode, options: MenuWidget.IOptions & { commands: MenuCommandRegistry, context?: HTMLElement, rootMenuPath: MenuPath }): DynamicMenuWidget {
+    createMenuWidget(menu: CompositeMenuNode, options: BrowserMenuOptions): DynamicMenuWidget {
         return new DynamicMenuWidget(menu, options, this.services);
     }
 
@@ -230,7 +236,7 @@ export class MenuServices {
 }
 
 export interface MenuWidgetFactory {
-    createMenuWidget(menu: MenuNode & Required<Pick<MenuNode, 'children'>>, options: MenuWidget.IOptions & { commands: MenuCommandRegistry }): MenuWidget;
+    createMenuWidget(menu: MenuNode & Required<Pick<MenuNode, 'children'>>, options: BrowserMenuOptions): MenuWidget;
 }
 
 /**
@@ -245,7 +251,7 @@ export class DynamicMenuWidget extends MenuWidget {
 
     constructor(
         protected menu: CompositeMenuNode,
-        protected options: MenuWidget.IOptions & { commands: MenuCommandRegistry, context?: HTMLElement, rootMenuPath: MenuPath },
+        protected options: BrowserMenuOptions,
         protected services: MenuServices
     ) {
         super(options);

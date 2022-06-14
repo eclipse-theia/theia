@@ -18,9 +18,7 @@
 
 import * as electronRemote from '../../../electron-shared/@electron/remote';
 import { inject, injectable, postConstruct } from 'inversify';
-import {
-    isOSX, ActionMenuNode, MAIN_MENU_BAR, MenuPath, MenuNode
-} from '../../common';
+import { isOSX, ActionMenuNode, MAIN_MENU_BAR, MenuPath, MenuNode } from '../../common';
 import { Keybinding } from '../../common/keybinding';
 import { PreferenceService, CommonCommands } from '../../browser';
 import debounce = require('lodash.debounce');
