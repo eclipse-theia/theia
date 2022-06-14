@@ -63,7 +63,6 @@ export class DebugViewModel implements Disposable {
     @inject(DebugWatchManager)
     protected readonly watch: DebugWatchManager;
 
-    // protected readonly _sessions = new Set<DebugSession>();
     get sessions(): IterableIterator<DebugSession> {
         return this.manager.sessions[Symbol.iterator]();
     }
@@ -148,6 +147,7 @@ export class DebugViewModel implements Disposable {
         if (!session) {
             return;
         }
+        await this.manager.restartSession(session);
         this.fireDidChange();
     }
 

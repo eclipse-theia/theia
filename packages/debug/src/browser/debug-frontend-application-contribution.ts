@@ -333,15 +333,6 @@ export namespace DebugSessionContextCommands {
     export const REVEAL = {
         id: 'debug.session.context.reveal'
     };
-    export const OPEN_LEFT = {
-        id: 'debug.session.context.openLeft'
-    };
-    export const OPEN_RIGHT = {
-        id: 'debug.session.context.openRight'
-    };
-    export const OPEN_BOTTOM = {
-        id: 'debug.session.context.openBottom'
-    };
 }
 export namespace DebugEditorContextCommands {
     export const ADD_BREAKPOINT = {
@@ -552,12 +543,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             { ...DebugCommands.STOP, ...DebugSessionContextCommands.STOP },
             { ...DebugThreadContextCommands.TERMINATE, label: nls.localizeByDefault('Terminate Thread') }
         );
-        registerMenuActions(DebugThreadsWidget.OPEN_MENU,
-            { ...DebugSessionContextCommands.REVEAL, label: nls.localize('theia/debug/reveal', 'Reveal') },
-            { ...DebugSessionContextCommands.OPEN_LEFT, label: nls.localize('theia/debug/openLeft', 'Open Left') },
-            { ...DebugSessionContextCommands.OPEN_RIGHT, label: nls.localize('theia/debug/openRight', 'Open Right') },
-            { ...DebugSessionContextCommands.OPEN_BOTTOM, label: nls.localize('theia/debug/openBottom', 'Open Bottom') }
-        );
+        registerMenuActions(DebugThreadsWidget.OPEN_MENU, { ...DebugSessionContextCommands.REVEAL, label: nls.localize('theia/debug/reveal', 'Reveal') });
 
         registerMenuActions(DebugStackFramesWidget.CONTEXT_MENU,
             DebugCommands.RESTART_FRAME,

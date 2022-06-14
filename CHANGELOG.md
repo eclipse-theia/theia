@@ -54,6 +54,7 @@
 - [workspace] removed deprecated `getDefaultWorkspacePath` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
 - [vsx-registry] removed deprecated `VSXExtensionsCommands` re-export [#11185](https://github.com/eclipse-theia/theia/pull/11185)
 - [plugin] Remove `TreeItem2` from proposed plugin API. `TreeItem` can be used instead. [#11288](https://github.com/eclipse-theia/theia/pull/11288) - Contributed on behalf of STMicroelectronics
+- [debug] A single `DebugSessionWidget` is now used for all debug sessions. Code related to opening debug sessions in different areas has been removed, including `DebugViewLocation`, `DebugSessionWidgetFactory`, `DebugSessionContextCommands.OPEN_LEFT`, `...OPEN_RIGHT`, `...OPEN_BOTTOM`, the preference `debug.debugViewLocation`, `DebugViewOptions`. The bindings of the component widgets have also been changed to allow them to be created using the `WidgetManager` rather than via `inversify` injection. [#11277](https://github.com/eclipse-theia/theia/pull/11277)
 
 ## v1.26.0 - 5/26/2022
 
