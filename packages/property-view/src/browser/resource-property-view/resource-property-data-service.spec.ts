@@ -18,13 +18,10 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 
 let disableJSDOM = enableJSDOM();
 
-import { expect } from 'chai';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-import { ApplicationProps } from '@theia/application-package/lib/application-props';
-FrontendApplicationConfigProvider.set({
-    ...ApplicationProps.DEFAULT.frontend.config
-});
+FrontendApplicationConfigProvider.set({});
 
+import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { ResourcePropertyDataService } from './resource-property-data-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';

@@ -22,10 +22,7 @@ import { URI as Uri } from 'vscode-uri';
 let disableJSDOM = enableJSDOM();
 
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-import { ApplicationProps } from '@theia/application-package/lib/application-props';
-FrontendApplicationConfigProvider.set({
-    ...ApplicationProps.DEFAULT.frontend.config
-});
+FrontendApplicationConfigProvider.set({});
 
 import { Container } from '@theia/core/shared/inversify';
 import { BulkEditInfoNode, BulkEditTree } from './bulk-edit-tree';
