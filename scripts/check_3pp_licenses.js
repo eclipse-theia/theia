@@ -22,8 +22,8 @@ const readline = require('readline');
 
 const NO_COLOR = Boolean(process.env['NO_COLOR']);
 const dashLicensesJar = path.resolve(__dirname, 'download/dash-licenses.jar');
-const dashLicensesSummary = path.resolve(__dirname, '../license-check-summary.txt');
-const dashLicensesBaseline = path.resolve(__dirname, '../license-check-baseline.json');
+const dashLicensesSummary = path.resolve(__dirname, '../dependency-check-summary.txt');
+const dashLicensesBaseline = path.resolve(__dirname, '../dependency-check-baseline.json');
 const dashLicensesUrl = 'https://repo.eclipse.org/service/local/artifact/maven/redirect?r=dash-licenses&g=org.eclipse.dash&a=org.eclipse.dash.licenses&v=LATEST';
 
 main().catch(error => {
