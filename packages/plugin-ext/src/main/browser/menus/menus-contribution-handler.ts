@@ -20,7 +20,7 @@ import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { MenuPath, CommandRegistry, Disposable, DisposableCollection, ActionMenuNode, MenuCommandAdapterRegistry, Emitter } from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { DeployedPlugin, Menu } from '../../../common';
+import { DeployedPlugin, IconUrl, Menu } from '../../../common';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { PluginViewWidget } from '../view/plugin-view-widget';
 import { QuickCommandService } from '@theia/core/lib/browser';
@@ -31,6 +31,8 @@ import {
 import { PluginMenuCommandAdapter, ReferenceCountingSet } from './plugin-menu-command-adapter';
 import { ContextKeyExpr } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { PluginSharedStyle } from '../plugin-shared-style';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -42,6 +44,7 @@ export class MenusContributionPointHandler {
     @inject(PluginMenuCommandAdapter) protected readonly commandAdapter: PluginMenuCommandAdapter;
     @inject(MenuCommandAdapterRegistry) protected readonly commandAdapterRegistry: MenuCommandAdapterRegistry;
     @inject(ContextKeyService) protected readonly contextKeySerivce: ContextKeyService;
+    @inject(PluginSharedStyle) protected readonly style: PluginSharedStyle;
     @inject(QuickCommandService) @optional()
     private readonly quickCommandService: QuickCommandService;
 
@@ -82,7 +85,8 @@ export class MenusContributionPointHandler {
         const toDispose = new DisposableCollection();
         const submenus = plugin.contributes?.submenus ?? [];
         for (const submenu of submenus) {
-            this.menuRegistry.registerIndependentSubmenu(submenu.id, submenu.label);
+            const iconClass = submenu.icon && this.toIconClass(submenu.icon, toDispose);
+            this.menuRegistry.registerIndependentSubmenu(submenu.id, submenu.label, iconClass ? { iconClass } : undefined);
         }
 
         for (const [contributionPoint, items] of Object.entries(allMenus)) {
@@ -147,5 +151,17 @@ export class MenusContributionPointHandler {
                 toDispose.push(Disposable.create(() => this.onDidChangeTitleContributionEmitter.fire()));
             }
         }
+    }
+
+    protected toIconClass(url: IconUrl, toDispose: DisposableCollection): string | undefined {
+        if (typeof url === 'string') {
+            const asThemeIcon = ThemeIcon.fromString(url);
+            if (asThemeIcon) {
+                return ThemeIcon.asClassName(asThemeIcon);
+            }
+        }
+        const reference = this.style.toIconClass(url);
+        toDispose.push(reference);
+        return reference.object.iconClass;
     }
 }

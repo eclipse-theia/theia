@@ -224,11 +224,11 @@ export class MenuModelRegistry {
         }
     }
 
-    registerIndependentSubmenu(id: string, label: string): Disposable {
+    registerIndependentSubmenu(id: string, label: string, options?: SubMenuOptions): Disposable {
         if (this.independentSubmenus.has(id)) {
             console.debug(`Independent submenu with path ${id} registered, but given ID already exists.`);
         }
-        this.independentSubmenus.set(id, new CompositeMenuNode(id, label));
+        this.independentSubmenus.set(id, new CompositeMenuNode(id, label, options));
         return { dispose: () => this.independentSubmenus.delete(id) };
     }
 
@@ -388,6 +388,10 @@ export class CompositeMenuNode implements MenuNode {
         }
     }
 
+    get icon(): string | undefined {
+        return this.iconClass;
+    }
+
     get children(): ReadonlyArray<MenuNode> {
         return this._children;
     }
@@ -471,11 +475,13 @@ export class CompositeMenuNodeWrapper implements MenuNode {
 
     get isSubmenu(): boolean { return this.label !== undefined; }
 
-    get iconClass(): string | undefined { return this.options?.iconClass; }
+    get icon(): string | undefined { return this.iconClass; }
 
-    get order(): string | undefined { return this.options?.order; }
+    get iconClass(): string | undefined { return this.options?.iconClass ?? this.wrapped.iconClass; }
 
-    get when(): string | undefined { return this.options?.when; }
+    get order(): string | undefined { return this.options?.order ?? this.wrapped.order; }
+
+    get when(): string | undefined { return this.options?.when ?? this.wrapped.when; }
 
     get children(): ReadonlyArray<MenuNode> { return this.wrapped.children; }
 }

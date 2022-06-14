@@ -171,6 +171,7 @@ export interface PluginPackageMenu {
 export interface PluginPackageSubmenu {
     id: string;
     label: string;
+    icon: IconUrl;
 }
 
 export interface PluginPackageKeybinding {

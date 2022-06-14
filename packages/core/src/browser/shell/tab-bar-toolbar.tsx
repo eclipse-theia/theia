@@ -142,6 +142,16 @@ export namespace MenuDelegateToolbarItem {
     }
 }
 
+interface SubmenuToolbarItem extends TabBarToolbarItem {
+    prefix: string;
+}
+
+namespace SubmenuToolbarItem {
+    export function is(candidate: TabBarToolbarItem): candidate is SubmenuToolbarItem {
+        return typeof (candidate as SubmenuToolbarItem).prefix === 'string';
+    }
+}
+
 /**
  * Tab-bar toolbar item backed by a `React.ReactNode`.
  * Unlike the `TabBarToolbarItem`, this item is not connected to the command service.
@@ -278,6 +288,19 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                         const nextGroup = item === menu
                             ? group
                             : this.formatGroupForSubmenus(group, item.id, item.label);
+                        if (group === 'navigation') {
+                            const asSubmenuItem: SubmenuToolbarItem = {
+                                id: `submenu_as_toolbar_item_${item.id}`,
+                                command: '_never_',
+                                prefix: item.id,
+                                when: item.when,
+                                icon: item.icon,
+                                group,
+                            };
+                            if (!asSubmenuItem.when || this.contextKeyService.match(asSubmenuItem.when, widget.node)) {
+                                result.push(asSubmenuItem);
+                            }
+                        }
                         item.children.forEach(child => menuToTabbarItems(child, nextGroup));
                     } else if (!Array.isArray(item.children)) {
                         const asToolbarItem: MenuDelegateToolbarItem = {
@@ -452,7 +475,7 @@ export class TabBarToolbar extends ReactWidget {
             classNames.push(iconClass);
         }
         const tooltip = item.tooltip || (command && command.label);
-        const toolbarItemClassNames = this.getToolbarItemClassNames(command?.id);
+        const toolbarItemClassNames = this.getToolbarItemClassNames(command?.id ?? item.command);
         return <div key={item.id}
             className={toolbarItemClassNames}
             onMouseDown={this.onMouseDownEvent}
@@ -468,7 +491,7 @@ export class TabBarToolbar extends ReactWidget {
     protected getToolbarItemClassNames(commandId: string | undefined): string {
         const classNames = [TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM];
         if (commandId) {
-            if (this.commandIsEnabled(commandId)) {
+            if (commandId === '_never_' || this.commandIsEnabled(commandId)) {
                 classNames.push('enabled');
             }
             if (this.commandIsToggled(commandId)) {
@@ -492,13 +515,16 @@ export class TabBarToolbar extends ReactWidget {
         this.renderMoreContextMenu(event.nativeEvent);
     };
 
-    renderMoreContextMenu(anchor: Anchor): ContextMenuAccess {
+    renderMoreContextMenu(anchor: Anchor, prefix?: string): ContextMenuAccess {
         const menuPath = TAB_BAR_TOOLBAR_CONTEXT_MENU;
         const toDisposeOnHide = new DisposableCollection();
         this.addClass('menu-open');
         toDisposeOnHide.push(Disposable.create(() => this.removeClass('menu-open')));
         for (const item of this.more.values()) {
             const separator = item.group && [menuDelegateSeparator, '/'].find(candidate => item.group?.includes(candidate));
+            if (prefix && !item.group?.startsWith(`navigation${separator}${prefix}`) || !prefix && item.group?.startsWith(`navigation${separator}`)) {
+                continue;
+            }
             // Register a submenu for the item, if the group is in format `<submenu group>/<submenu name>/.../<item group>`
             if (separator) {
                 const split = item.group.split(separator);
@@ -543,6 +569,9 @@ export class TabBarToolbar extends ReactWidget {
 
         const item = this.inline.get(e.currentTarget.id);
         if (TabBarToolbarItem.is(item)) {
+            if (SubmenuToolbarItem.is(item)) {
+                return this.renderMoreContextMenu(e.nativeEvent, item.prefix);
+            }
             const menuPath = MenuDelegateToolbarItem.getMenuPath(item);
             if (menuPath) {
                 this.menuCommandExecutor.executeCommand(menuPath, item.command, this.current);

@@ -190,7 +190,7 @@ export class TheiaPluginScanner implements PluginScanner {
 
         try {
             if (rawPlugin.contributes!.submenus) {
-                contributions.submenus = this.readSubmenus(rawPlugin.contributes.submenus!);
+                contributions.submenus = this.readSubmenus(rawPlugin.contributes.submenus!, rawPlugin);
             }
         } catch (err) {
             console.error(`Could not read '${rawPlugin.name}' contribution 'submenus'.`, rawPlugin.contributes!.submenus, err);
@@ -390,23 +390,27 @@ export class TheiaPluginScanner implements PluginScanner {
     }
 
     protected readCommand({ command, title, original, category, icon, enablement }: PluginPackageCommand, pck: PluginPackage): PluginCommand {
-        let themeIcon: string | undefined;
-        let iconUrl: IconUrl | undefined;
-        if (icon) {
-            if (typeof icon === 'string') {
-                if (icon.startsWith('$(')) {
-                    themeIcon = icon;
+        const { themeIcon, iconUrl } = this.transformIconUrl(pck, icon) ?? {};
+        return { command, title, originalTitle: original, category, iconUrl, themeIcon, enablement };
+    }
+
+    protected transformIconUrl(plugin: PluginPackage, original?: IconUrl): { iconUrl?: IconUrl; themeIcon?: string } | undefined {
+        if (original) {
+            if (typeof original === 'string') {
+                if (original.startsWith('$(')) {
+                    return { themeIcon: original };
                 } else {
-                    iconUrl = this.toPluginUrl(pck, icon);
+                    return { iconUrl: this.toPluginUrl(plugin, original) };
                 }
             } else {
-                iconUrl = {
-                    light: this.toPluginUrl(pck, icon.light),
-                    dark: this.toPluginUrl(pck, icon.dark)
+                return {
+                    iconUrl: {
+                        light: this.toPluginUrl(plugin, original.light),
+                        dark: this.toPluginUrl(plugin, original.dark)
+                    }
                 };
             }
         }
-        return { command, title, originalTitle: original, category, iconUrl, themeIcon, enablement };
     }
 
     protected toPluginUrl(pck: PluginPackage, relativePath: string): string {
@@ -629,12 +633,14 @@ export class TheiaPluginScanner implements PluginScanner {
         return rawLanguages.map(language => this.readLanguage(language, pluginPath));
     }
 
-    private readSubmenus(rawSubmenus: PluginPackageSubmenu[]): Submenu[] {
-        return rawSubmenus.map(submenu => this.readSubmenu(submenu));
+    private readSubmenus(rawSubmenus: PluginPackageSubmenu[], plugin: PluginPackage): Submenu[] {
+        return rawSubmenus.map(submenu => this.readSubmenu(submenu, plugin));
     }
 
-    private readSubmenu(rawSubmenu: PluginPackageSubmenu): Submenu {
+    private readSubmenu(rawSubmenu: PluginPackageSubmenu, plugin: PluginPackage): Submenu {
+        const icon = this.transformIconUrl(plugin, rawSubmenu.icon);
         return {
+            icon: icon?.iconUrl ?? icon?.themeIcon,
             id: rawSubmenu.id,
             label: rawSubmenu.label
         };
