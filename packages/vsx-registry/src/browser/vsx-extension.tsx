@@ -22,15 +22,16 @@ import URI from '@theia/core/lib/common/uri';
 import { TreeElement, TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { OpenerService, open, OpenerOptions } from '@theia/core/lib/browser/opener-service';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin';
-import { PluginServer, DeployedPlugin, PluginType } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { VSXExtensionUri } from '../common/vsx-extension-uri';
+import { PluginServer, DeployedPlugin, PluginType, PluginIdentifiers } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
-import { MenuPath } from '@theia/core/lib/common';
+import { MenuPath, nls } from '@theia/core/lib/common';
 import { codicon, ContextMenuRenderer, TooltipService, TreeWidget } from '@theia/core/lib/browser';
 import { VSXExtensionNamespaceAccess, VSXUser } from '@theia/ovsx-client/lib/ovsx-types';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
 
 export const EXTENSIONS_CONTEXT_MENU: MenuPath = ['extensions_context_menu'];
 
@@ -116,10 +117,13 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     @inject(TooltipService)
     readonly tooltipService: TooltipService;
 
+    @inject(WindowService)
+    readonly windowService: WindowService;
+
     protected readonly data: Partial<VSXExtensionData> = {};
 
     get uri(): URI {
-        return VSXExtensionUri.toUri(this.id);
+        return VSCodeExtensionUri.toUri(this.id);
     }
 
     get id(): string {
@@ -131,7 +135,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get plugin(): DeployedPlugin | undefined {
-        return this.pluginSupport.getPlugin(this.id);
+        return this.pluginSupport.getPlugin(this.id as PluginIdentifiers.UnversionedId);
     }
 
     get installed(): boolean {
@@ -150,6 +154,10 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
                 Object.assign(this.data, { [key]: data[key] });
             }
         }
+    }
+
+    reloadWindow(): void {
+        this.windowService.reload();
     }
 
     protected getData<K extends keyof VSXExtensionData>(key: K): VSXExtensionData[K] {
@@ -285,7 +293,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     async install(): Promise<void> {
         this._busy++;
         try {
-            await this.progressService.withProgress(`"Installing '${this.id}' extension...`, 'extensions', () =>
+            await this.progressService.withProgress(nls.localizeByDefault("Installing extension '{0}' v{1}...", this.id, this.version ?? 0), 'extensions', () =>
                 this.pluginServer.deploy(this.uri.toString())
             );
         } finally {
@@ -296,9 +304,13 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     async uninstall(): Promise<void> {
         this._busy++;
         try {
-            await this.progressService.withProgress(`Uninstalling '${this.id}' extension...`, 'extensions', () =>
-                this.pluginServer.undeploy(this.id)
-            );
+            const { plugin } = this;
+            if (plugin) {
+                await this.progressService.withProgress(
+                    nls.localizeByDefault('Uninstalling {0}...', this.id), 'extensions',
+                    () => this.pluginServer.uninstall(PluginIdentifiers.componentsToVersionedId(plugin.metadata.model))
+                );
+            }
         } finally {
             this._busy--;
         }
@@ -380,30 +392,43 @@ export abstract class AbstractVSXExtensionComponent<Props extends AbstractVSXExt
         }
     };
 
+    readonly reloadWindow = (event?: React.MouseEvent) => {
+        event?.stopPropagation();
+        this.props.extension.reloadWindow();
+    };
+
     protected readonly manage = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
         e.stopPropagation();
         this.props.extension.handleContextMenu(e);
     };
 
     protected renderAction(host?: TreeWidget): React.ReactNode {
-        const extension = this.props.extension;
-        const { builtin, busy, installed } = extension;
+        const { builtin, busy, plugin } = this.props.extension;
         const isFocused = (host?.model.getFocusedNode() as TreeElementNode)?.element === this.props.extension;
         const tabIndex = (!host || isFocused) ? 0 : undefined;
+        const installed = !!plugin;
+        const outOfSynch = plugin?.metadata.outOfSync;
         if (builtin) {
             return <div className="codicon codicon-settings-gear action" tabIndex={tabIndex} onClick={this.manage}></div>;
         }
         if (busy) {
             if (installed) {
-                return <button className="theia-button action theia-mod-disabled">Uninstalling</button>;
+                return <button className="theia-button action theia-mod-disabled">{nls.localizeByDefault('Uninstalling')}</button>;
             }
-            return <button className="theia-button action prominent theia-mod-disabled">Installing</button>;
+            return <button className="theia-button action prominent theia-mod-disabled">{nls.localizeByDefault('Installing')}</button>;
         }
         if (installed) {
-            return <div><button className="theia-button action" tabIndex={tabIndex} onClick={this.uninstall}>Uninstall</button>
-                <div className="codicon codicon-settings-gear action" tabIndex={tabIndex} onClick={this.manage}></div></div>;
+            return <div>
+                {
+                    outOfSynch
+                        ? <button className="theia-button action" onClick={this.reloadWindow}>{nls.localizeByDefault('Reload Required')}</button>
+                        : <button className="theia-button action" onClick={this.uninstall}>{nls.localizeByDefault('Uninstall')}</button>
+                }
+
+                <div className="codicon codicon-settings-gear action" onClick={this.manage}></div>
+            </div>;
         }
-        return <button className="theia-button prominent action" tabIndex={tabIndex} onClick={this.install}>Install</button>;
+        return <button className="theia-button prominent action" onClick={this.install}>{nls.localizeByDefault('Install')}</button>;
     }
 
 }

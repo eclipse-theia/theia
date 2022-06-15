@@ -58,7 +58,8 @@ import {
     PluginPackageLocalization,
     Localization,
     PluginPackageTranslation,
-    Translation
+    Translation,
+    PluginIdentifiers
 } from '../../../common/plugin-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -109,13 +110,14 @@ export class TheiaPluginScanner implements PluginScanner {
     }
 
     getModel(plugin: PluginPackage): PluginModel {
+        const publisher = plugin.publisher ?? PluginIdentifiers.UNPUBLISHED;
         const result: PluginModel = {
             packagePath: plugin.packagePath,
             packageUri: this.pluginUriFactory.createUri(plugin).toString(),
             // see id definition: https://github.com/microsoft/vscode/blob/15916055fe0cb9411a5f36119b3b012458fe0a1d/src/vs/platform/extensions/common/extensions.ts#L167-L169
-            id: `${plugin.publisher.toLowerCase()}.${plugin.name.toLowerCase()}`,
+            id: `${publisher.toLowerCase()}.${plugin.name.toLowerCase()}`,
             name: plugin.name,
-            publisher: plugin.publisher,
+            publisher,
             version: plugin.version,
             displayName: plugin.displayName,
             description: plugin.description,

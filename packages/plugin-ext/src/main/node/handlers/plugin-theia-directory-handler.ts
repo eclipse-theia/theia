@@ -14,17 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import {
-    PluginDeployerDirectoryHandler,
-    PluginDeployerEntry, PluginPackage, PluginDeployerDirectoryHandlerContext,
-    PluginDeployerEntryType
-} from '../../../common/plugin-protocol';
-import { injectable } from '@theia/core/shared/inversify';
-import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
+import * as filenamify from 'filenamify';
+import * as fs from '@theia/core/shared/fs-extra';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { FileUri } from '@theia/core/lib/node';
+import {
+    PluginDeployerDirectoryHandler, PluginDeployerEntry, PluginPackage, PluginDeployerDirectoryHandlerContext, PluginDeployerEntryType, PluginType, PluginIdentifiers
+} from '../../../common/plugin-protocol';
+import { PluginCliContribution } from '../plugin-cli-contribution';
+import { getTempDir } from '../temp-dir-util';
 
 @injectable()
 export class PluginTheiaDirectoryHandler implements PluginDeployerDirectoryHandler {
+
+    protected readonly deploymentDirectory = FileUri.create(getTempDir('theia-copied'));
+
+    @inject(PluginCliContribution) protected readonly pluginCli: PluginCliContribution;
 
     accept(resolvedPlugin: PluginDeployerEntry): boolean {
 
@@ -37,33 +43,26 @@ export class PluginTheiaDirectoryHandler implements PluginDeployerDirectoryHandl
 
         // is there a package.json ?
         const packageJsonPath = path.resolve(resolvedPlugin.path(), 'package.json');
-        const existsPackageJson: boolean = fs.existsSync(packageJsonPath);
-        if (!existsPackageJson) {
-            return false;
-        }
 
-        let packageJson: PluginPackage = resolvedPlugin.getValue('package.json');
-        if (!packageJson) {
-            packageJson = fs.readJSONSync(packageJsonPath);
-            resolvedPlugin.storeValue('package.json', packageJson);
-        }
+        try {
+            let packageJson = resolvedPlugin.getValue<PluginPackage>('package.json');
+            if (!packageJson) {
+                packageJson = fs.readJSONSync(packageJsonPath);
+                packageJson.publisher ??= PluginIdentifiers.UNPUBLISHED;
+                resolvedPlugin.storeValue('package.json', packageJson);
+            }
 
-        if (!packageJson.engines) {
-            return false;
-        }
-
-        if (packageJson.engines && packageJson.engines.theiaPlugin) {
-            return true;
-        }
-
+            if (packageJson?.engines?.theiaPlugin) {
+                return true;
+            }
+        } catch { /* Failed to read file. Fall through. */ }
         return false;
-
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    handle(context: PluginDeployerDirectoryHandlerContext): Promise<any> {
+    async handle(context: PluginDeployerDirectoryHandlerContext): Promise<void> {
+        await this.copyDirectory(context);
         const types: PluginDeployerEntryType[] = [];
-        const packageJson: PluginPackage = context.pluginEntry().getValue('package.json');
+        const packageJson = context.pluginEntry().getValue<PluginPackage>('package.json');
         if (packageJson.theiaPlugin && packageJson.theiaPlugin.backend) {
             types.push(PluginDeployerEntryType.BACKEND);
         }
@@ -72,6 +71,35 @@ export class PluginTheiaDirectoryHandler implements PluginDeployerDirectoryHandl
         }
 
         context.pluginEntry().accept(...types);
-        return Promise.resolve(true);
+    }
+
+    protected async copyDirectory(context: PluginDeployerDirectoryHandlerContext): Promise<void> {
+        if (this.pluginCli.copyUncompressedPlugins() && context.pluginEntry().type === PluginType.User) {
+            const entry = context.pluginEntry();
+            const id = entry.id();
+            const pathToRestore = entry.path();
+            const origin = entry.originalPath();
+            const targetDir = await this.getExtensionDir(context);
+            try {
+                if (fs.existsSync(targetDir) || !entry.path().startsWith(origin)) {
+                    console.log(`[${id}]: already copied.`);
+                } else {
+                    console.log(`[${id}]: copying to "${targetDir}"`);
+                    await fs.mkdirp(FileUri.fsPath(this.deploymentDirectory));
+                    await context.copy(origin, targetDir);
+                    entry.updatePath(targetDir);
+                    if (!this.accept(entry)) {
+                        throw new Error('Unable to resolve plugin metadata after copying');
+                    }
+                }
+            } catch (e) {
+                console.warn(`[${id}]: Error when copying.`, e);
+                entry.updatePath(pathToRestore);
+            }
+        }
+    }
+
+    protected async getExtensionDir(context: PluginDeployerDirectoryHandlerContext): Promise<string> {
+        return FileUri.fsPath(this.deploymentDirectory.resolve(filenamify(context.pluginEntry().id(), { replacement: '_' })));
     }
 }

@@ -14,16 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import URI from '@theia/core/lib/common/uri';
+import { VSCodeExtensionUri as VSXExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
+/** @deprecated since 1.25.0. Import `VSCodeExtensionUri from `plugin-ext-vscode` package instead. */
+export { VSXExtensionUri };
 
-export namespace VSXExtensionUri {
-    export function toUri(id: string): URI {
-        return new URI(`vscode:extension/${id}`);
-    }
-    export function toId(uri: URI): string | undefined {
-        if (uri.scheme === 'vscode' && uri.path.dir.toString() === 'extension') {
-            return uri.path.base;
-        }
-        return undefined;
-    }
-}

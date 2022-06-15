@@ -22,7 +22,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { PluginDeployerHandler, PluginDeployerResolver, PluginDeployerResolverContext } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { VSXExtensionUri } from '../common/vsx-extension-uri';
+import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { VSXExtensionRaw } from '@theia/ovsx-client';
 import { RequestService } from '@theia/core/shared/@theia/request';
@@ -48,11 +48,11 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
     }
 
     accept(pluginId: string): boolean {
-        return !!VSXExtensionUri.toId(new URI(pluginId));
+        return !!VSCodeExtensionUri.toId(new URI(pluginId));
     }
 
     async resolve(context: PluginDeployerResolverContext): Promise<void> {
-        const id = VSXExtensionUri.toId(new URI(context.getOriginId()));
+        const id = VSCodeExtensionUri.toId(new URI(context.getOriginId()));
         if (!id) {
             return;
         }
@@ -86,15 +86,15 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
     }
 
     protected hasSameOrNewerVersion(id: string, extension: VSXExtensionRaw): string | undefined {
-        const existingPlugin = this.pluginDeployerHandler.getDeployedPlugin(id);
-        if (existingPlugin) {
+        const existingPlugins = this.pluginDeployerHandler.getDeployedPluginsById(id);
+        const sufficientVersion = existingPlugins.find(existingPlugin => {
             const existingVersion = semver.clean(existingPlugin.metadata.model.version);
             const desiredVersion = semver.clean(extension.version);
             if (desiredVersion && existingVersion && semver.gte(existingVersion, desiredVersion)) {
                 return existingVersion;
             }
-        }
-        return undefined;
+        });
+        return sufficientVersion?.metadata.model.version;
     }
 
     protected async download(downloadUrl: string, downloadPath: string): Promise<boolean> {

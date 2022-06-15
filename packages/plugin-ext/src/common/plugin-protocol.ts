@@ -25,7 +25,9 @@ import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/co
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common';
 import { ColorDefinition } from '@theia/core/lib/common/color';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
+import { PluginIdentifiers } from './plugin-identifiers';
 
+export { PluginIdentifiers };
 export const hostedServicePath = '/services/hostedPlugin';
 
 /**
@@ -38,7 +40,8 @@ export type PluginEngine = string;
  */
 export interface PluginPackage {
     name: string;
-    publisher: string;
+    // The publisher is not guaranteed to be defined for unpublished plugins. https://github.com/microsoft/vscode-vsce/commit/a38657ece04c20e4fbde15d5ac1ed39ca51cb856
+    publisher: string | undefined;
     version: string;
     engines: {
         [type in PluginEngine]: string;
@@ -487,6 +490,8 @@ export interface PluginDeployerFileHandlerContext {
 
 export interface PluginDeployerDirectoryHandlerContext {
 
+    copy(origin: string, target: string): Promise<void>;
+
     pluginEntry(): PluginDeployerEntry;
 
 }
@@ -811,6 +816,7 @@ export interface PluginMetadata {
     model: PluginModel;
     lifecycle: PluginLifecycle;
     isUnderDevelopment?: boolean;
+    outOfSync: boolean;
 }
 
 export const MetadataProcessor = Symbol('MetadataProcessor');
@@ -837,6 +843,11 @@ export interface HostedPluginClient {
 
 export interface PluginDependencies {
     metadata: PluginMetadata
+    /**
+     * Actual listing of plugin dependencies.
+     * Mapping from {@link PluginIdentifiers.UnversionedId external representation} of plugin identity to a string
+     * that can be used to identify the resolver for the specific plugin case, e.g. with scheme `vscode://<id>`.
+     */
     mapping?: Map<string, string>
 }
 
@@ -845,14 +856,25 @@ export interface PluginDeployerHandler {
     deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void>;
     deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void>;
 
-    getDeployedPlugin(pluginId: string): DeployedPlugin | undefined;
-    undeployPlugin(pluginId: string): Promise<boolean>;
+    getDeployedPluginsById(pluginId: string): DeployedPlugin[];
+
+    getDeployedPlugin(pluginId: PluginIdentifiers.VersionedId): DeployedPlugin | undefined;
+    /**
+     * Removes the plugin from the location it originally resided on disk.
+     * Unless `--uncompressed-plugins-in-place` is passed to the CLI, this operation is safe.
+     */
+    uninstallPlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean>;
+    /**
+     * Removes the plugin from the locations to which it had been deployed.
+     * This operation is not safe - references to deleted assets may remain.
+     */
+    undeployPlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean>;
 
     getPluginDependencies(pluginToBeInstalled: PluginDeployerEntry): Promise<PluginDependencies | undefined>;
 }
 
 export interface GetDeployedPluginsParams {
-    pluginIds: string[]
+    pluginIds: PluginIdentifiers.VersionedId[]
 }
 
 export interface DeployedPlugin {
@@ -867,7 +889,9 @@ export interface DeployedPlugin {
 export const HostedPluginServer = Symbol('HostedPluginServer');
 export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
 
-    getDeployedPluginIds(): Promise<string[]>;
+    getDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]>;
+
+    getUninstalledPluginIds(): Promise<readonly PluginIdentifiers.VersionedId[]>;
 
     getDeployedPlugins(params: GetDeployedPluginsParams): Promise<DeployedPlugin[]>;
 
@@ -899,8 +923,8 @@ export interface PluginServer {
      * @param type whether a plugin is installed by a system or a user, defaults to a user
      */
     deploy(pluginEntry: string, type?: PluginType): Promise<void>;
-
-    undeploy(pluginId: string): Promise<void>;
+    uninstall(pluginId: PluginIdentifiers.VersionedId): Promise<void>;
+    undeploy(pluginId: PluginIdentifiers.VersionedId): Promise<void>;
 
     setStorageValue(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean>;
     getStorageValue(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues>;
@@ -925,7 +949,7 @@ export interface ServerPluginRunner {
     /**
      * Provides additional plugin ids.
      */
-    getExtraDeployedPluginIds(): Promise<string[]>;
+    getExtraDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]>;
 
 }
 
