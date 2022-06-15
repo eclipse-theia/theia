@@ -167,9 +167,10 @@
     padding-top: 0;
     max-width: 1000px;
     margin: 0 auto;
+    line-height: 22px;
 }
 
-.theia-vsx-extension-editor .body h2:first-of-type {
+.theia-vsx-extension-editor .body h1 {
     padding-bottom: var(--theia-ui-padding);
     border-bottom: 1px solid hsla(0, 0%, 50%, .5);
     margin-top: calc(var(--theia-ui-padding) * 5);
