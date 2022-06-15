@@ -39,7 +39,7 @@ export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: inter
     bind(FrontendApplicationContribution).toService(MonacoTextmateService);
     bindContributionProvider(bind, LanguageGrammarDefinitionContribution);
     bind(TextmateRegistry).toSelf().inSingletonScope();
-    bind(MonacoThemeRegistry).toDynamicValue(() => MonacoThemeRegistry.SINGLETON).inSingletonScope();
+    bind(MonacoThemeRegistry).toSelf().inSingletonScope();
 };
 
 export async function dynamicOnigasmLib(ctx: interfaces.Context): Promise<IOnigLib> {

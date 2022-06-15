@@ -58,6 +58,7 @@ import { WebviewViewsMainImpl } from './webview-views/webview-views-main';
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import { NotificationExtImpl } from '../../plugin/notification';
 import { UntitledResourceResolver } from '@theia/core/lib/common/resource';
+import { ThemeService } from '@theia/core/lib/browser/theming';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -178,7 +179,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const timelineMain = new TimelineMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.TIMELINE_MAIN, timelineMain);
 
-    const themingMain = new ThemingMainImpl(rpc);
+    const themingMain = new ThemingMainImpl(rpc, container.get(ThemeService));
     rpc.set(PLUGIN_RPC_CONTEXT.THEMING_MAIN, themingMain);
 
     const commentsMain = new CommentsMainImp(rpc, container);

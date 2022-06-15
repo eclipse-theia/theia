@@ -19,26 +19,26 @@ import { Disposable } from '../common/disposable';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { ApplicationProps } from '@theia/application-package/lib/application-props';
 import { Theme, ThemeChangeEvent } from '../common/theme';
+import { injectable, postConstruct } from 'inversify';
+import { Deferred } from '../common/promise-util';
 
-export const ThemeServiceSymbol = Symbol('ThemeService');
-
+@injectable()
 export class ThemeService {
 
     protected themes: { [id: string]: Theme } = {};
     protected activeTheme: Theme | undefined;
     protected readonly themeChange = new Emitter<ThemeChangeEvent>();
+    protected readonly deferredInitializer = new Deferred();
+    get initialized(): Promise<void> {
+        return this.deferredInitializer.promise;
+    }
 
     readonly onDidColorThemeChange: Event<ThemeChangeEvent> = this.themeChange.event;
 
-    static get(): ThemeService {
-        const global = window as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-        if (!global[ThemeServiceSymbol]) {
-            const themeService = new ThemeService();
-            themeService.register(...BuiltinThemeProvider.themes);
-            themeService.startupTheme();
-            global[ThemeServiceSymbol] = themeService;
-        }
-        return global[ThemeServiceSymbol];
+    @postConstruct()
+    protected init(): void {
+        this.register(...BuiltinThemeProvider.themes);
+        this.loadUserTheme();
     }
 
     register(...themes: Theme[]): Disposable {
@@ -89,6 +89,7 @@ export class ThemeService {
     loadUserTheme(): void {
         const theme = this.getCurrentTheme();
         this.setCurrentTheme(theme.id);
+        this.deferredInitializer.resolve();
     }
 
     setCurrentTheme(themeId: string): void {
@@ -126,7 +127,6 @@ export class ThemeService {
     reset(): void {
         this.setCurrentTheme(this.defaultTheme.id);
     }
-
 }
 
 export class BuiltinThemeProvider {

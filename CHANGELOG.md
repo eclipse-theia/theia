@@ -10,6 +10,7 @@
 - [plugin] Add support for property `color` of `ThemeIcon`. [#11243](https://github.com/eclipse-theia/theia/pull/11243) - Contributed on behalf of STMicroelectronics
 - [plugin] Add support for `TreeItemLabel` in `TreeItem`. [#11288](https://github.com/eclipse-theia/theia/pull/11288) - Contributed on behalf of STMicroelectronics
 - [plugin] Support `TextEditor#show()` and `TextEditor#hide()` [#11168](https://github.com/eclipse-theia/theia/pull/11168) - Contributed on behalf of STMicroelectronics
+- [core, monaco] refactored theme initialization to occur within application lifecycle rather than at import time. [#11213](https://github.com/eclipse-theia/theia/pull/11213)
 
 <a name="breaking_changes_1.27.0">[Breaking Changes:](#breaking_changes_1.27.0)</a>
 
@@ -54,6 +55,8 @@
 - [workspace] removed deprecated `getDefaultWorkspacePath` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
 - [vsx-registry] removed deprecated `VSXExtensionsCommands` re-export [#11185](https://github.com/eclipse-theia/theia/pull/11185)
 - [plugin] Remove `TreeItem2` from proposed plugin API. `TreeItem` can be used instead. [#11288](https://github.com/eclipse-theia/theia/pull/11288) - Contributed on behalf of STMicroelectronics
+- [core] removed `ThemeService.get()`; inject the `ThemeService` instead. Removed `ColorApplicationContribution.initBackground()`; by default the `editor.background` color variable will be initialized through the normal theme initialization process. It is now expected that the `ThemeService` will call `this.deferredInitializer.resolve()` when the `ThemeService` finishes its initialization. Failure to do so in any overrides may cause failures to apply default themes.  [#11213](https://github.com/eclipse-theia/theia/pull/11213)
+- [monaco] removed static methods `init()`, `register()`, `restore(), `updateBodyUiTheme()` from `MonacoThemingService`; use instance methods `initialize()`, `registerParsedTheme()`, `restore()`, `updateBodyUiTheme()` instead. Removed `MonacoThemeRegistry.SINGLETON`, inject `MonacoThemeRegistry` instead. [#11213](https://github.com/eclipse-theia/theia/pull/11213)
 
 ## v1.26.0 - 5/26/2022
 

@@ -88,10 +88,10 @@ import { StandaloneConfigurationService, StandaloneServices } from '@theia/monac
 import { Configuration } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationModels';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MonacoMarkdownRenderer } from './markdown-renderer/monaco-markdown-renderer';
+import { ThemeService } from '@theia/core/lib/browser/theming';
+import { ThemeServiceWithDB } from './monaco-indexed-db';
 
 decorate(injectable(), VSCodeContextKeyService);
-
-MonacoThemingService.init();
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoThemingService).toSelf().inSingletonScope();
@@ -183,6 +183,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoColorRegistry).toSelf().inSingletonScope();
     rebind(ColorRegistry).toService(MonacoColorRegistry);
+
+    bind(ThemeServiceWithDB).toSelf().inSingletonScope();
+    rebind(ThemeService).toService(ThemeServiceWithDB);
 });
 
 export const MonacoConfigurationService = Symbol('MonacoConfigurationService');

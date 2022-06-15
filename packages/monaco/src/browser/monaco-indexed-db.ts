@@ -16,11 +16,11 @@
 
 import * as idb from 'idb';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { BuiltinThemeProvider, ThemeService, ThemeServiceSymbol } from '@theia/core/lib/browser/theming';
-import { Theme } from '@theia/core/lib/common/theme';
+import { BuiltinThemeProvider, ThemeService } from '@theia/core/lib/browser/theming';
 import * as monaco from '@theia/monaco-editor-core';
-
-type ThemeMix = import('./textmate/monaco-theme-registry').ThemeMix;
+import { injectable } from '@theia/core/shared/inversify';
+import type { ThemeMix } from './textmate/monaco-theme-registry';
+import { Theme } from '@theia/core/lib/common/theme';
 
 let _monacoDB: Promise<idb.IDBPDatabase> | undefined;
 if ('indexedDB' in window) {
@@ -111,18 +111,8 @@ async function getThemeFromDB(id: string): Promise<Theme | undefined> {
     return matchingState && stateToTheme(matchingState);
 }
 
+@injectable()
 export class ThemeServiceWithDB extends ThemeService {
-    static override get(): ThemeService {
-        const global = window as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-        if (!global[ThemeServiceSymbol]) {
-            const themeService = new ThemeServiceWithDB();
-            themeService.register(...BuiltinThemeProvider.themes);
-            themeService.startupTheme();
-            global[ThemeServiceSymbol] = themeService;
-        }
-        return global[ThemeServiceSymbol];
-    }
-
     override loadUserTheme(): void {
         this.loadUserThemeWithDB();
     }
@@ -130,8 +120,11 @@ export class ThemeServiceWithDB extends ThemeService {
     protected async loadUserThemeWithDB(): Promise<void> {
         const themeId = window.localStorage.getItem('theme') || this.defaultTheme.id;
         const theme = this.themes[themeId] ?? await getThemeFromDB(themeId) ?? this.defaultTheme;
+        // In case the theme comes from the DB.
+        if (!this.themes[theme.id]) {
+            this.themes[theme.id] = theme;
+        }
         this.setCurrentTheme(theme.id);
+        this.deferredInitializer.resolve();
     }
 }
-
-ThemeService.get = ThemeServiceWithDB.get;

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, PreferenceSchemaProvider, QuickAccessRegistry } from '@theia/core/lib/browser';
 import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider';
 import * as monaco from '@theia/monaco-editor-core';
@@ -29,6 +29,7 @@ import { ITextModelService } from '@theia/monaco-editor-core/esm/vs/editor/commo
 import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
 import { MonacoContextMenuService } from './monaco-context-menu';
+import { MonacoThemingService } from './monaco-theming-service';
 
 @injectable()
 export class MonacoFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -54,7 +55,10 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     @inject(MonacoContextMenuService)
     protected readonly contextMenuService: MonacoContextMenuService;
 
-    async initialize(): Promise<void> {
+    @inject(MonacoThemingService) protected readonly monacoThemingService: MonacoThemingService;
+
+    @postConstruct()
+    protected init(): void {
         const { codeEditorService, textModelService, contextKeyService, contextMenuService } = this;
         StandaloneServices.initialize({
             [ICodeEditorService.toString()]: codeEditorService,
@@ -77,6 +81,9 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
             this.preferenceSchema.registerOverrideIdentifier(language.id);
             registerLanguage(language);
         };
+
+        this.monacoThemingService.initialize();
     }
 
+    initialize(): void { }
 }

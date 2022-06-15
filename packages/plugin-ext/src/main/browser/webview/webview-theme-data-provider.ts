@@ -40,14 +40,10 @@ export class WebviewThemeDataProvider {
     protected readonly onDidChangeThemeDataEmitter = new Emitter<void>();
     readonly onDidChangeThemeData = this.onDidChangeThemeDataEmitter.event;
 
-    @inject(EditorPreferences)
-    protected readonly editorPreferences: EditorPreferences;
-
-    @inject(ColorRegistry)
-    protected readonly colors: ColorRegistry;
-
-    @inject(ColorApplicationContribution)
-    protected readonly colorContribution: ColorApplicationContribution;
+    @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences;
+    @inject(ColorRegistry) protected readonly colors: ColorRegistry;
+    @inject(ColorApplicationContribution) protected readonly colorContribution: ColorApplicationContribution;
+    @inject(ThemeService) protected readonly themeService: ThemeService;
 
     protected themeData: WebviewThemeData | undefined;
 
@@ -114,7 +110,7 @@ export class WebviewThemeDataProvider {
     }
 
     protected getActiveTheme(): Theme {
-        return ThemeService.get().getCurrentTheme();
+        return this.themeService.getCurrentTheme();
     }
 
     protected getThemeType(theme: Theme): WebviewThemeType {

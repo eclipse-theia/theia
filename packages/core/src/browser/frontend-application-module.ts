@@ -129,8 +129,6 @@ import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from 
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
-ColorApplicationContribution.initBackground();
-
 export const frontendApplicationModule = new ContainerModule((bind, _unbind, _isBound, _rebind) => {
     bind(NoneIconTheme).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(NoneIconTheme);
@@ -338,7 +336,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         return connection.createProxy<EnvVariablesServer>(envVariablesPath);
     }).inSingletonScope();
 
-    bind(ThemeService).toDynamicValue(() => ThemeService.get());
+    bind(ThemeService).toSelf().inSingletonScope();
 
     bindCorePreferences(bind);
 
