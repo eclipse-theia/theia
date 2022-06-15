@@ -1416,6 +1416,7 @@ export interface TaskPresentationOptionsDTO {
     echo?: boolean;
     panel?: number;
     showReuseMessage?: boolean;
+    clear?: boolean;
 }
 
 export interface TaskExecutionDto {
