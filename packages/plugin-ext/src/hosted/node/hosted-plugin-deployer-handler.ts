@@ -46,7 +46,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
     protected readonly uninstallationManager: PluginUninstallationManager;
 
     private readonly deployedLocations = new Map<PluginIdentifiers.VersionedId, Set<string>>();
-    protected readonly originalLocations = new Map<PluginIdentifiers.VersionedId, string>();
+    protected readonly sourceLocations = new Map<PluginIdentifiers.VersionedId, Set<string>>();
 
     /**
      * Managed plugin metadata backend entries.
@@ -80,7 +80,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         const matches: DeployedPlugin[] = [];
         const handle = (plugins: Iterable<DeployedPlugin>): void => {
             for (const plugin of plugins) {
-                if (PluginIdentifiers.componentsToVersionWithId(plugin.metadata.model).version === pluginId) {
+                if (PluginIdentifiers.componentsToVersionWithId(plugin.metadata.model).id === pluginId) {
                     matches.push(plugin);
                 }
             }
@@ -117,28 +117,33 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         }
     }
 
-    async deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void> {
+    async deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<number> {
+        let successes = 0;
         for (const plugin of frontendPlugins) {
-            await this.deployPlugin(plugin, 'frontend');
+            if (await this.deployPlugin(plugin, 'frontend')) { successes++; }
         }
         // resolve on first deploy
         this.frontendPluginsMetadataDeferred.resolve(undefined);
+        return successes;
     }
 
-    async deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void> {
+    async deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<number> {
+        let successes = 0;
         for (const plugin of backendPlugins) {
-            await this.deployPlugin(plugin, 'backend');
+            if (await this.deployPlugin(plugin, 'backend')) { successes++; }
         }
         // rebuild translation config after deployment
         this.localizationService.buildTranslationConfig([...this.deployedBackendPlugins.values()]);
         // resolve on first deploy
         this.backendPluginsMetadataDeferred.resolve(undefined);
+        return successes;
     }
 
     /**
-     * @throws never! in order to isolate plugin deployment
+     * @throws never! in order to isolate plugin deployment.
+     * @returns whether the plugin is deployed after running this function. If the plugin was already installed, will still return `true`.
      */
-    protected async deployPlugin(entry: PluginDeployerEntry, entryPoint: keyof PluginEntryPoint): Promise<void> {
+    protected async deployPlugin(entry: PluginDeployerEntry, entryPoint: keyof PluginEntryPoint): Promise<boolean> {
         const pluginPath = entry.path();
         const deployPlugin = this.stopwatch.start('deployPlugin');
         let id;
@@ -147,7 +152,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             const manifest = await this.reader.readPackage(pluginPath);
             if (!manifest) {
                 deployPlugin.error(`Failed to read ${entryPoint} plugin manifest from '${pluginPath}''`);
-                return;
+                return success = false;
             }
 
             const metadata = this.reader.readMetadata(manifest);
@@ -155,15 +160,15 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
 
             id = PluginIdentifiers.componentsToVersionedId(metadata.model);
 
-            const deployedLocations = this.deployedLocations.get(id) || new Set<string>();
+            const deployedLocations = this.deployedLocations.get(id) ?? new Set<string>();
             deployedLocations.add(entry.rootPath);
             this.deployedLocations.set(id, deployedLocations);
-            this.originalLocations.set(id, entry.originalPath());
+            this.setSourceLocationsForPlugin(id, entry);
 
             const deployedPlugins = entryPoint === 'backend' ? this.deployedBackendPlugins : this.deployedFrontendPlugins;
             if (deployedPlugins.has(id)) {
                 deployPlugin.debug(`Skipped ${entryPoint} plugin ${metadata.model.name} already deployed`);
-                return;
+                return true;
             }
 
             const { type } = entry;
@@ -173,28 +178,50 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             deployedPlugins.set(id, deployed);
             deployPlugin.log(`Deployed ${entryPoint} plugin "${id}" from "${metadata.model.entryPoint[entryPoint] || pluginPath}"`);
         } catch (e) {
-            success = false;
             deployPlugin.error(`Failed to deploy ${entryPoint} plugin from '${pluginPath}' path`, e);
+            return success = false;
         } finally {
             if (success && id) {
-                this.uninstallationManager.markAsInstalled(id);
+                this.markAsInstalled(id);
             }
         }
+        return success;
     }
 
     async uninstallPlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
         try {
-            const originalPath = this.originalLocations.get(pluginId);
-            if (!originalPath) {
+            const sourceLocations = this.sourceLocations.get(pluginId);
+            if (!sourceLocations) {
                 return false;
             }
-            await fs.remove(originalPath);
-            this.originalLocations.delete(pluginId);
+            await Promise.all(Array.from(sourceLocations,
+                location => fs.remove(location).catch(err => console.error(`Failed to remove source for ${pluginId} at ${location}`, err))));
+            this.sourceLocations.delete(pluginId);
             this.uninstallationManager.markAsUninstalled(pluginId);
             return true;
         } catch (e) {
             console.error('Error uninstalling plugin', e);
             return false;
+        }
+    }
+
+    protected markAsInstalled(id: PluginIdentifiers.VersionedId): void {
+        const metadata = PluginIdentifiers.idAndVersionFromVersionedId(id);
+        if (metadata) {
+            const toMarkAsUninstalled: PluginIdentifiers.VersionedId[] = [];
+            const checkForDifferentVersions = (others: Iterable<PluginIdentifiers.VersionedId>) => {
+                for (const other of others) {
+                    const otherMetadata = PluginIdentifiers.idAndVersionFromVersionedId(other);
+                    if (metadata.id === otherMetadata?.id && metadata.version !== otherMetadata.version) {
+                        toMarkAsUninstalled.push(other);
+                    }
+                }
+            };
+            checkForDifferentVersions(this.deployedFrontendPlugins.keys());
+            checkForDifferentVersions(this.deployedBackendPlugins.keys());
+            this.uninstallationManager.markAsUninstalled(...toMarkAsUninstalled);
+            this.uninstallationManager.markAsInstalled(id);
+            toMarkAsUninstalled.forEach(pluginToUninstall => this.uninstallPlugin(pluginToUninstall));
         }
     }
 
@@ -219,5 +246,15 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         }
 
         return true;
+    }
+
+    protected setSourceLocationsForPlugin(id: PluginIdentifiers.VersionedId, entry: PluginDeployerEntry): void {
+        const knownLocations = this.sourceLocations.get(id) ?? new Set();
+        const maybeStoredLocations = entry.getValue('sourceLocations');
+        const storedLocations = Array.isArray(maybeStoredLocations) && maybeStoredLocations.every(location => typeof location === 'string')
+            ? maybeStoredLocations.concat(entry.originalPath())
+            : [entry.originalPath()];
+        storedLocations.forEach(location => knownLocations.add(location));
+        this.sourceLocations.set(id, knownLocations);
     }
 }

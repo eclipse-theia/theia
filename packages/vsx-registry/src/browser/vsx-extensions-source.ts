@@ -17,6 +17,7 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { TreeSource, TreeElement } from '@theia/core/lib/browser/source-tree';
 import { VSXExtensionsModel } from './vsx-extensions-model';
+import debounce = require('@theia/core/shared/lodash.debounce');
 
 @injectable()
 export class VSXExtensionsSourceOptions {
@@ -39,8 +40,10 @@ export class VSXExtensionsSource extends TreeSource {
     @postConstruct()
     protected async init(): Promise<void> {
         this.fireDidChange();
-        this.toDispose.push(this.model.onDidChange(() => this.fireDidChange()));
+        this.toDispose.push(this.model.onDidChange(() => this.scheduleFireDidChange()));
     }
+
+    protected scheduleFireDidChange = debounce(() => this.fireDidChange(), 100, { leading: false, trailing: true });
 
     *getElements(): IterableIterator<TreeElement> {
         for (const id of this.doGetElements()) {

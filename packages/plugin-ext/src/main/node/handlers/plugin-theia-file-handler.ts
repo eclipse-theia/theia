@@ -66,6 +66,7 @@ export class PluginTheiaFileHandler implements PluginDeployerFileHandler {
                         fs.copyFile(currentPath, newPath, error => error ? reject(error) : resolve());
                     });
                     context.pluginEntry().updatePath(newPath);
+                    context.pluginEntry().storeValue('sourceLocations', [newPath]);
                 } catch (e) {
                     console.error(`[${context.pluginEntry().id}]: Failed to copy to user directory. Future sessions may not have access to this plugin.`);
                 }
