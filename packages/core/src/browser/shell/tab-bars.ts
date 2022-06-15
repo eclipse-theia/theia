@@ -17,7 +17,7 @@
 import PerfectScrollbar from 'perfect-scrollbar';
 import { TabBar, Title, Widget } from '@phosphor/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@phosphor/virtualdom';
-import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService } from '../../common';
+import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { Signal, Slot } from '@phosphor/signaling';
 import { Message, MessageLoop } from '@phosphor/messaging';
@@ -148,6 +148,9 @@ export class TabBarRenderer extends TabBar.Renderer {
         const style = this.createTabStyle(data);
         const className = this.createTabClass(data);
         const dataset = this.createTabDataset(data);
+        const closeIconTitle = data.title.className.includes(PINNED_CLASS)
+            ? nls.localizeByDefault('Unpin')
+            : nls.localizeByDefault('Close');
         return h.li(
             {
                 key, className, id, title: title.caption, style, dataset,
@@ -166,6 +169,7 @@ export class TabBarRenderer extends TabBar.Renderer {
             ),
             h.div({
                 className: 'p-TabBar-tabCloseIcon action-label',
+                title: closeIconTitle,
                 onclick: this.handleCloseClickEvent
             })
         );
