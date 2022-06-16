@@ -382,28 +382,19 @@ export class RpcMessageEncoder {
         this.registerEncoder(ObjectType.Object, {
             is: value => typeof value === 'object',
             write: (buf, object, visitedObjects, recursiveEncode) => {
-                try {
-                    if (visitedObjects.has(object)) {
-                        throw new EncodingError('Object to encode contains circular references!');
+                const properties = Object.keys(object);
+                const relevant = [];
+                for (const property of properties) {
+                    const value = object[property];
+                    if (typeof value !== 'function') {
+                        relevant.push([property, value]);
                     }
-                    visitedObjects.add(object);
+                }
 
-                    const properties = Object.keys(object);
-                    const relevant = [];
-                    for (const property of properties) {
-                        const value = object[property];
-                        if (typeof value !== 'function') {
-                            relevant.push([property, value]);
-                        }
-                    }
-
-                    buf.writeLength(relevant.length);
-                    for (const [property, value] of relevant) {
-                        buf.writeString(property);
-                        recursiveEncode?.(buf, value, visitedObjects);
-                    }
-                } finally {
-                    visitedObjects.delete(object);
+                buf.writeLength(relevant.length);
+                for (const [property, value] of relevant) {
+                    buf.writeString(property);
+                    recursiveEncode?.(buf, value, visitedObjects);
                 }
             }
         });
@@ -504,42 +495,55 @@ export class RpcMessageEncoder {
         buf.writeUint8(RpcMessageType.Notification);
         buf.writeUint32(requestId);
         buf.writeString(method);
-        this.writeArray(buf, args);
+        this.writeArray(buf, args, new WeakSet());
     }
 
     request(buf: WriteBuffer, requestId: number, method: string, args: any[]): void {
         buf.writeUint8(RpcMessageType.Request);
         buf.writeUint32(requestId);
         buf.writeString(method);
-        this.writeArray(buf, args);
+        this.writeArray(buf, args, new WeakSet());
     }
 
     replyOK(buf: WriteBuffer, requestId: number, res: any): void {
         buf.writeUint8(RpcMessageType.Reply);
         buf.writeUint32(requestId);
-        this.writeTypedValue(buf, res);
+        this.writeTypedValue(buf, res, new WeakSet());
     }
 
     replyErr(buf: WriteBuffer, requestId: number, err: any): void {
         buf.writeUint8(RpcMessageType.ReplyErr);
         buf.writeUint32(requestId);
-        this.writeTypedValue(buf, err);
+        this.writeTypedValue(buf, err, new WeakSet());
     }
 
-    writeTypedValue(buf: WriteBuffer, value: any, visitedObjects = new WeakSet()): void {
-        for (let i: number = this.encoders.length - 1; i >= 0; i--) {
-            if (this.encoders[i][1].is(value)) {
-                buf.writeUint8(this.encoders[i][0]);
-                this.encoders[i][1].write(buf, value, visitedObjects, (innerBuffer, innerValue, _visitedObjects) => {
-                    this.writeTypedValue(innerBuffer, innerValue, _visitedObjects);
-                });
-                return;
+    writeTypedValue(buf: WriteBuffer, value: any, visitedObjects: WeakSet<object>): void {
+        if (value && typeof value === 'object') {
+            if (visitedObjects.has(value)) {
+                throw new EncodingError('Object to encode contains circular references!');
+            }
+            visitedObjects.add(value);
+        }
+
+        try {
+            for (let i: number = this.encoders.length - 1; i >= 0; i--) {
+                if (this.encoders[i][1].is(value)) {
+                    buf.writeUint8(this.encoders[i][0]);
+                    this.encoders[i][1].write(buf, value, visitedObjects, (innerBuffer, innerValue, _visitedObjects) => {
+                        this.writeTypedValue(innerBuffer, innerValue, _visitedObjects);
+                    });
+                    return;
+                }
+            }
+            throw new EncodingError(`No suitable value encoder found for ${value}`);
+        } finally {
+            if (value && typeof value === 'object') {
+                visitedObjects.delete(value);
             }
         }
-        throw new EncodingError(`No suitable value encoder found for ${value}`);
     }
 
-    writeArray(buf: WriteBuffer, value: any[], visitedObjects = new WeakSet()): void {
+    writeArray(buf: WriteBuffer, value: any[], visitedObjects: WeakSet<object>): void {
         buf.writeLength(value.length);
         for (let i = 0; i < value.length; i++) {
             this.writeTypedValue(buf, value[i], visitedObjects);
