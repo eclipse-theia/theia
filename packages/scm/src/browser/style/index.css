@@ -108,12 +108,8 @@
     white-space: nowrap;
 }
 
-.theia-scm-input-message-container textarea:not(:focus) {
-    border: var(--theia-border-width) solid var(--theia-input-background);
-}
-
 .theia-scm-input-message-container textarea:focus {
-    border: var(--theia-border-width) solid var(--theia-focusBorder);
+    outline: var(--theia-border-width) solid var(--theia-focusBorder);
 }
 
 .theia-scm-input-message {

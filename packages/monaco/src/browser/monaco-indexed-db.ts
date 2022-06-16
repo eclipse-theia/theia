@@ -16,7 +16,7 @@
 
 import * as idb from 'idb';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { BuiltinThemeProvider, ThemeService } from '@theia/core/lib/browser/theming';
+import { ThemeService } from '@theia/core/lib/browser/theming';
 import * as monaco from '@theia/monaco-editor-core';
 import { injectable } from '@theia/core/shared/inversify';
 import type { ThemeMix } from './textmate/monaco-theme-registry';
@@ -90,19 +90,12 @@ export async function deleteTheme(id: string): Promise<void> {
 export function stateToTheme(state: MonacoThemeState): Theme {
     const { id, label, description, uiTheme, data } = state;
     const type = uiTheme === 'vs' ? 'light' : uiTheme === 'vs-dark' ? 'dark' : 'hc';
-    const builtInTheme = uiTheme === 'vs' ? BuiltinThemeProvider.lightCss : BuiltinThemeProvider.darkCss;
     return {
         type,
         id,
         label,
         description,
-        editorTheme: data.name!,
-        activate(): void {
-            builtInTheme.use();
-        },
-        deactivate(): void {
-            builtInTheme.unuse();
-        }
+        editorTheme: data.name!
     };
 }
 

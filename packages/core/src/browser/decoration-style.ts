@@ -16,14 +16,18 @@
 
 export namespace DecorationStyle {
 
-    export function createStyleSheet(styleId: string, container: HTMLElement = document.getElementsByTagName('head')[0]): CSSStyleSheet {
+    export function createStyleElement(styleId: string, container: HTMLElement = document.head): HTMLStyleElement {
         const style = document.createElement('style');
         style.id = styleId;
         style.type = 'text/css';
         style.media = 'screen';
         style.appendChild(document.createTextNode('')); // trick for webkit
         container.appendChild(style);
-        return <CSSStyleSheet>style.sheet;
+        return style;
+    }
+
+    export function createStyleSheet(styleId: string, container?: HTMLElement): CSSStyleSheet {
+        return <CSSStyleSheet>createStyleElement(styleId, container).sheet;
     }
 
     function getRuleIndex(selector: string, styleSheet: CSSStyleSheet): number {

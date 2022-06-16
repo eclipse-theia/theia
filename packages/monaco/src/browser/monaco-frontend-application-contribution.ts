@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, PreferenceSchemaProvider, QuickAccessRegistry } from '@theia/core/lib/browser';
+import { ColorTheme, CssStyleCollector, FrontendApplicationContribution, PreferenceSchemaProvider, QuickAccessRegistry, StylingParticipant } from '@theia/core/lib/browser';
 import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider';
 import * as monaco from '@theia/monaco-editor-core';
 import { setSnippetSuggestSupport } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
@@ -30,9 +30,10 @@ import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/co
 import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
 import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoThemingService } from './monaco-theming-service';
+import { isHighContrast } from '@theia/core/lib/common/theme';
 
 @injectable()
-export class MonacoFrontendApplicationContribution implements FrontendApplicationContribution {
+export class MonacoFrontendApplicationContribution implements FrontendApplicationContribution, StylingParticipant {
 
     @inject(MonacoEditorService)
     protected readonly codeEditorService: MonacoEditorService;
@@ -86,4 +87,48 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     }
 
     initialize(): void { }
+
+    registerThemeStyle(theme: ColorTheme, collector: CssStyleCollector): void {
+        if (isHighContrast(theme.type)) {
+            const focusBorder = theme.getColor('focusBorder');
+            const contrastBorder = theme.getColor('contrastBorder');
+            if (focusBorder) {
+                // Quick input
+                collector.addRule(`
+                    .quick-input-list .monaco-list-row {
+                        outline-offset: -1px;
+                    }
+                    .quick-input-list .monaco-list-row.focused {
+                        outline: 1px dotted ${focusBorder};
+                    }
+                    .quick-input-list .monaco-list-row:hover {
+                        outline: 1px dashed ${focusBorder};
+                    }
+                `);
+                // Input box always displays an outline, even when unfocused
+                collector.addRule(`
+                    .monaco-editor .find-widget .monaco-inputbox {
+                        outline: var(--theia-border-width) solid;
+                        outline-offset: calc(-1 * var(--theia-border-width));
+                        outline-color: var(--theia-focusBorder);
+                    }
+                `);
+            }
+            if (contrastBorder) {
+                collector.addRule(`
+                    .quick-input-widget {
+                        outline: 1px solid ${contrastBorder};
+                        outline-offset: -1px;
+                    }
+                `);
+            }
+        } else {
+            collector.addRule(`
+                .quick-input-widget {
+                    box-shadow: rgb(0 0 0 / 36%) 0px 0px 8px 2px;
+                }
+            `);
+        }
+    }
+
 }
