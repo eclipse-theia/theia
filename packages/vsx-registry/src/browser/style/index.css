@@ -167,12 +167,41 @@
     padding-top: 0;
     max-width: 1000px;
     margin: 0 auto;
+    line-height: 22px;
 }
 
-.theia-vsx-extension-editor .body h2:first-of-type {
+.theia-vsx-extension-editor .body h1 {
     padding-bottom: var(--theia-ui-padding);
     border-bottom: 1px solid hsla(0, 0%, 50%, .5);
     margin-top: calc(var(--theia-ui-padding) * 5);
+}
+
+.theia-vsx-extension-editor .body a {
+	text-decoration: none;
+}
+
+.theia-vsx-extension-editor .body a:hover {
+	text-decoration: underline;
+}
+
+.theia-vsx-extension-editor .body table {
+	border-collapse: collapse;
+}
+
+.theia-vsx-extension-editor .body table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid var(--theia-extensionEditor-tableHeadBorder);
+}
+
+.theia-vsx-extension-editor .body table > thead > tr > th,
+.theia-vsx-extension-editor .body table > thead > tr > td,
+.theia-vsx-extension-editor .body table > tbody > tr > th,
+.theia-vsx-extension-editor .body table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+.theia-vsx-extension-editor .body table > tbody > tr + tr > td {
+	border-top: 1px solid var(--theia-extensionEditor-tableCellBorder);
 }
 
 .theia-vsx-extension-editor .scroll-container .body pre {

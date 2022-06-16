@@ -48,8 +48,10 @@ code {
 }
 
 blockquote {
-    background: var(--vscode-textBlockQuote-background);
-    border: var(--theia-border-width) solid var(--theia-textBlockQuote-border);
+    margin: 0 7px 0 5px;
+    padding: 0px 16px 0px 10px;
+    background: var(--theia-textBlockQuote-background);
+    border-left: 5px solid var(--theia-textBlockQuote-border);
 }
 
 .theia-input {
