@@ -14,8 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../browser/test/jsdom';
+import { enableJSDOM } from './test/jsdom';
 let disableJSDOM = enableJSDOM();
+
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+FrontendApplicationConfigProvider.set({});
 
 import { Container, injectable, ContainerModule } from 'inversify';
 import { bindContributionProvider } from '../common/contribution-provider';
@@ -36,10 +39,8 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import { Emitter, Event } from '../common/event';
 import { bindPreferenceService } from './frontend-application-bindings';
-import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
-import { ApplicationProps } from '@theia/application-package/lib/';
-import { bindStatusBar } from './status-bar';
 import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from './markdown-rendering/markdown-renderer';
+import { StatusBar } from './status-bar';
 
 disableJSDOM();
 
@@ -51,7 +52,11 @@ let keybindingRegistry: KeybindingRegistry;
 let commandRegistry: CommandRegistry;
 let testContainer: Container;
 
+let stub: sinon.SinonStub;
+
 before(async () => {
+    disableJSDOM = enableJSDOM();
+
     testContainer = new Container();
     const module = new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -84,7 +89,7 @@ before(async () => {
             }
         });
 
-        bindStatusBar(bind);
+        bind(StatusBar).toConstantValue({} as StatusBar);
         bind(MarkdownRendererImpl).toSelf().inSingletonScope();
         bind(MarkdownRenderer).toService(MarkdownRendererImpl);
         bind(MarkdownRendererFactory).toFactory(({ container }) => container.get(MarkdownRenderer));
@@ -103,31 +108,21 @@ before(async () => {
 
 });
 
+after(() => {
+    disableJSDOM();
+});
+
+beforeEach(async () => {
+    stub = sinon.stub(os, 'isOSX').value(false);
+    keybindingRegistry = testContainer.get<KeybindingRegistry>(KeybindingRegistry);
+    await keybindingRegistry.onStart();
+});
+
+afterEach(() => {
+    stub.restore();
+});
+
 describe('keybindings', () => {
-
-    let stub: sinon.SinonStub;
-
-    before(() => {
-        disableJSDOM = enableJSDOM();
-        FrontendApplicationConfigProvider.set({
-            ...ApplicationProps.DEFAULT.frontend.config,
-            'applicationName': 'test'
-        });
-    });
-
-    after(() => {
-        disableJSDOM();
-    });
-
-    beforeEach(async () => {
-        stub = sinon.stub(os, 'isOSX').value(false);
-        keybindingRegistry = testContainer.get<KeybindingRegistry>(KeybindingRegistry);
-        await keybindingRegistry.onStart();
-    });
-
-    afterEach(() => {
-        stub.restore();
-    });
 
     it('should register the default keybindings', () => {
         const keybinding = keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND.id);

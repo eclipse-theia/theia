@@ -18,7 +18,7 @@ import * as cp from 'child_process';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ILogger, ConnectionErrorHandler, ContributionProvider, MessageService } from '@theia/core/lib/common';
 import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
-import { HostedPluginClient, ServerPluginRunner, PluginHostEnvironmentVariable, DeployedPlugin, PLUGIN_HOST_BACKEND } from '../../common/plugin-protocol';
+import { HostedPluginClient, ServerPluginRunner, PluginHostEnvironmentVariable, DeployedPlugin, PLUGIN_HOST_BACKEND, PluginIdentifiers } from '../../common/plugin-protocol';
 import { MessageType } from '../../common/rpc-protocol';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import * as psTree from 'ps-tree';
@@ -225,7 +225,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
     /**
      * Provides additional plugin ids.
      */
-    public async getExtraDeployedPluginIds(): Promise<string[]> {
+    public async getExtraDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]> {
         return [];
     }
 

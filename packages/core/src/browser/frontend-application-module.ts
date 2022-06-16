@@ -126,10 +126,10 @@ import { UserWorkingDirectoryProvider } from './user-working-directory-provider'
 import { TheiaDockPanel } from './shell/theia-dock-panel';
 import { bindStatusBar } from './status-bar';
 import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from './markdown-rendering/markdown-renderer';
+import { StylingParticipant, StylingService } from './styling-service';
+import { bindCommonStylingParticipants } from './common-styling-participants';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
-
-ColorApplicationContribution.initBackground();
 
 export const frontendApplicationModule = new ContainerModule((bind, _unbind, _isBound, _rebind) => {
     bind(NoneIconTheme).toSelf().inSingletonScope();
@@ -178,7 +178,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         const iconThemeService = container.get(IconThemeService);
         const selectionService = container.get(SelectionService);
         const commandService = container.get<CommandService>(CommandService);
-        return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService, commandService);
+        const corePreferences = container.get<CorePreferences>(CorePreferences);
+        return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService, commandService, corePreferences);
     });
     bind(TheiaDockPanel.Factory).toFactory(({ container }) => options => {
         const corePreferences = container.get<CorePreferences>(CorePreferences);
@@ -263,6 +264,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         bind(serviceIdentifier).toService(CommonFrontendContribution)
     );
 
+    bindCommonStylingParticipants(bind);
+
     bind(QuickCommandFrontendContribution).toSelf().inSingletonScope();
     [CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(QuickCommandFrontendContribution)
@@ -338,7 +341,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         return connection.createProxy<EnvVariablesServer>(envVariablesPath);
     }).inSingletonScope();
 
-    bind(ThemeService).toDynamicValue(() => ThemeService.get());
+    bind(ThemeService).toSelf().inSingletonScope();
 
     bindCorePreferences(bind);
 
@@ -417,4 +420,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(SaveResourceService).toSelf().inSingletonScope();
     bind(UserWorkingDirectoryProvider).toSelf().inSingletonScope();
+
+    bind(StylingService).toSelf().inSingletonScope();
+    bindContributionProvider(bind, StylingParticipant);
+    bind(FrontendApplicationContribution).toService(StylingService);
 });

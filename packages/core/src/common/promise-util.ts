@@ -25,22 +25,21 @@ import { CancellationToken, CancellationError, cancelled } from './cancellation'
 export class Deferred<T = void> {
     state: 'resolved' | 'rejected' | 'unresolved' = 'unresolved';
     resolve: (value: T | PromiseLike<T>) => void;
-    reject: (err?: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
+    reject: (err?: unknown) => void;
 
     promise = new Promise<T>((resolve, reject) => {
-        this.resolve = result => {
-            resolve(result);
-            if (this.state === 'unresolved') {
-                this.state = 'resolved';
-            }
-        };
-        this.reject = err => {
-            reject(err);
-            if (this.state === 'unresolved') {
-                this.state = 'rejected';
-            }
-        };
-    });
+        this.resolve = resolve;
+        this.reject = reject;
+    }).then(
+        res => (this.setState('resolved'), res),
+        err => (this.setState('rejected'), Promise.reject(err)),
+    );
+
+    protected setState(state: 'resolved' | 'rejected'): void {
+        if (this.state === 'unresolved') {
+            this.state = state;
+        }
+    }
 }
 
 /**

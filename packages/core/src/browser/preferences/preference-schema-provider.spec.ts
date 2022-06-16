@@ -23,7 +23,6 @@ import { Container } from 'inversify';
 import { bindPreferenceService } from '../frontend-application-bindings';
 import { PreferenceSchemaProperties, PreferenceSchemaProvider } from './preference-contribution';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
-import { ApplicationProps } from '@theia/application-package/lib/application-props';
 
 disableJSDOM();
 
@@ -62,9 +61,7 @@ describe('Preference Schema Provider', () => {
     before(() => {
         disableJSDOM = enableJSDOM();
         FrontendApplicationConfigProvider.set({
-            ...ApplicationProps.DEFAULT.frontend.config,
-            'applicationName': 'test',
-            'preferences': {
+            preferences: {
                 'editor.fontSize': 20,
                 '[typescript]': { 'editor.fontSize': 24 }
             }

@@ -53,7 +53,7 @@ export class EditorPreviewWidget extends EditorWidget {
         });
         oneTimeListeners.push(oneTimeDirtyChangeListener);
         const oneTimeTitleChangeHandler = () => {
-            if (this.title.className.indexOf(PINNED_CLASS) >= 0) {
+            if (this.title.className.includes(PINNED_CLASS)) {
                 this.convertToNonPreview();
                 oneTimeListeners.dispose();
             }

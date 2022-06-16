@@ -169,6 +169,7 @@
     width: 25px;
     top:0;
     right:0;
+    cursor: pointer;
 }
 
 .t-siw-search-container .searchHeader .glob-field-container.hidden {

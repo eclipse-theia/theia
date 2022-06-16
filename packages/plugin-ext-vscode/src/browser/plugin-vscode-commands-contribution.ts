@@ -78,6 +78,7 @@ import { CustomEditorOpener } from '@theia/plugin-ext/lib/main/browser/custom-ed
 import { nls } from '@theia/core/lib/common/nls';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import * as monaco from '@theia/monaco-editor-core';
+import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -305,7 +306,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: VscodeCommands.INSTALL_FROM_VSIX.id }, {
             execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
                 if (typeof vsixUriOrExtensionId === 'string') {
-                    await this.pluginServer.deploy(`vscode:extension/${vsixUriOrExtensionId}`);
+                    await this.pluginServer.deploy(VSCodeExtensionUri.toVsxExtensionUriString(vsixUriOrExtensionId));
                 } else {
                     const uriPath = isUriComponents(vsixUriOrExtensionId) ? URI.revive(vsixUriOrExtensionId).fsPath : await this.fileService.fsPath(vsixUriOrExtensionId);
                     await this.pluginServer.deploy(`local-file:${uriPath}`);

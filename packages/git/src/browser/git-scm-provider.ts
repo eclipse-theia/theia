@@ -34,6 +34,7 @@ import { GitCommitDetailWidgetOptions } from './history/git-commit-detail-widget
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ScmInput } from '@theia/scm/lib/browser/scm-input';
 import { nls } from '@theia/core/lib/common/nls';
+import { GitPreferences } from './git-preferences';
 
 @injectable()
 export class GitScmProviderOptions {
@@ -84,6 +85,9 @@ export class GitScmProvider implements ScmProvider {
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
+    @inject(GitPreferences)
+    protected readonly gitPreferences: GitPreferences;
+
     readonly id = 'git';
     readonly label = nls.localize('vscode.git/package/displayName', 'Git');
 
@@ -94,6 +98,11 @@ export class GitScmProvider implements ScmProvider {
     @postConstruct()
     protected init(): void {
         this._amendSupport = new GitAmendSupport(this, this.repository, this.git);
+        this.toDispose.push(this.gitPreferences.onPreferenceChanged(e => {
+            if (e.preferenceName === 'git.untrackedChanges' && e.affects(this.rootUri)) {
+                this.setStatus(this.getStatus());
+            }
+        }));
     }
 
     get repository(): Repository {
@@ -160,9 +169,18 @@ export class GitScmProvider implements ScmProvider {
                 }
             }
         }
+        const untrackedChangesPreference = this.gitPreferences['git.untrackedChanges'];
+        const forWorkingTree = untrackedChangesPreference === 'mixed'
+            ? state.unstagedChanges
+            : state.unstagedChanges.filter(change => change.status !== GitFileStatus.New);
+        const forUntracked = untrackedChangesPreference === 'separate'
+            ? state.unstagedChanges.filter(change => change.status === GitFileStatus.New)
+            : [];
+        const hideWorkingIfEmpty = forUntracked.length > 0;
         state.groups.push(this.createGroup('merge', nls.localize('vscode.git/repository/merge changes', 'Merge Changes'), state.mergeChanges, true));
         state.groups.push(this.createGroup('index', nls.localize('vscode.git/repository/staged changes', 'Staged changes'), state.stagedChanges, true));
-        state.groups.push(this.createGroup('workingTree', nls.localize('vscode.git/repository/changes', 'Changes'), state.unstagedChanges, false));
+        state.groups.push(this.createGroup('workingTree', nls.localize('vscode.git/repository/changes', 'Changes'), forWorkingTree, hideWorkingIfEmpty));
+        state.groups.push(this.createGroup('untrackedChanges', nls.localize('vscode.git/repository/untracked changes', 'Untracked Changes'), forUntracked, true));
         this.state = state;
         if (status && status.branch) {
             this.input.placeholder = nls.localize('vscode.git/repository/commitMessageWithHeadLabel', 'Message (press {0} to commit on {1})', '{0}', status.branch);
@@ -286,8 +304,7 @@ export class GitScmProvider implements ScmProvider {
                     const resourceUri = new URI(uri);
                     return unstagedChanges.some(change => resourceUri.isEqualOrParent(new URI(change.uri)))
                         || mergeChanges.some(change => resourceUri.isEqualOrParent(new URI(change.uri)));
-                }
-                );
+                });
             if (unstagedUris.length !== 0) {
                 // TODO resolve deletion conflicts
                 // TODO confirm staging of a unresolved file

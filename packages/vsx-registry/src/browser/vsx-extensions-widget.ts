@@ -19,6 +19,8 @@ import { TreeNode } from '@theia/core/lib/browser';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extensions-source';
 import { nls } from '@theia/core/lib/common/nls';
+import { BadgeWidget } from '@theia/core/lib/browser/view-container';
+import { Emitter } from '@theia/core/lib/common';
 
 @injectable()
 export class VSXExtensionsWidgetOptions extends VSXExtensionsSourceOptions {
@@ -28,7 +30,7 @@ export class VSXExtensionsWidgetOptions extends VSXExtensionsSourceOptions {
 export const generateExtensionWidgetId = (widgetId: string): string => VSXExtensionsWidget.ID + ':' + widgetId;
 
 @injectable()
-export class VSXExtensionsWidget extends SourceTreeWidget {
+export class VSXExtensionsWidget extends SourceTreeWidget implements BadgeWidget {
 
     static ID = 'vsx-extensions';
 
@@ -57,13 +59,30 @@ export class VSXExtensionsWidget extends SourceTreeWidget {
         this.addClass('theia-vsx-extensions');
 
         this.id = generateExtensionWidgetId(this.options.id);
+
+        this.toDispose.push(this.extensionsSource);
+        this.source = this.extensionsSource;
+
         const title = this.options.title ?? this.computeTitle();
         this.title.label = title;
         this.title.caption = title;
 
-        this.toDispose.push(this.extensionsSource);
-        this.source = this.extensionsSource;
+        this.toDispose.push(this.source.onDidChange(async () => {
+            this.badge = await this.resolveCount();
+        }));
     }
+
+    private _badge: number | undefined = undefined;
+    get badge(): number | undefined {
+        return this._badge;
+    }
+
+    set badge(count: number | undefined) {
+        this._badge = count;
+        this.onDidChangeBadge.fire();
+    }
+
+    public onDidChangeBadge: Emitter<void> = new Emitter<void>();
 
     protected computeTitle(): string {
         switch (this.options.id) {
@@ -78,6 +97,14 @@ export class VSXExtensionsWidget extends SourceTreeWidget {
             default:
                 return '';
         }
+    }
+
+    protected async resolveCount(): Promise<number | undefined> {
+        if (this.options.id !== VSXExtensionsSourceOptions.SEARCH_RESULT) {
+            const elements = await this.source?.getElements() || [];
+            return [...elements].length;
+        }
+        return undefined;
     }
 
     protected override tapNode(node?: TreeNode): void {

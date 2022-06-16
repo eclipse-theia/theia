@@ -33,6 +33,7 @@ import { ContextMenuRenderer } from '../context-menu-renderer';
 import { MenuPath } from '../../common/menu';
 import { SidebarBottomMenuWidget } from './sidebar-bottom-menu-widget';
 import { SidebarTopMenuWidget } from './sidebar-top-menu-widget';
+import { PINNED_CLASS } from '../widgets';
 
 /** The class name added to the left and right area panels. */
 export const LEFT_RIGHT_AREA_CLASS = 'theia-app-sides';
@@ -274,7 +275,7 @@ export class SidePanelHandler {
             widget: title.owner,
             rank: SidePanelHandler.rankProperty.get(title.owner),
             expanded: title === currentTitle,
-            pinned: title.className.indexOf('theia-mod-pinned') >= 0
+            pinned: title.className.includes(PINNED_CLASS)
         }));
         // eslint-disable-next-line no-null/no-null
         const size = currentTitle !== null ? this.getPanelSize() : this.state.lastPanelSize;
@@ -299,7 +300,7 @@ export class SidePanelHandler {
                         currentTitle = widget.title;
                     }
                     if (pinned) {
-                        widget.title.className += ' theia-mod-pinned';
+                        widget.title.className += ` ${PINNED_CLASS}`;
                         widget.title.closable = false;
                     }
                     // Add the widgets directly to the tab bar in the same order as they are stored

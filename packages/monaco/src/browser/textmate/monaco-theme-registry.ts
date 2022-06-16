@@ -33,6 +33,20 @@ export interface MixStandaloneTheme extends IStandaloneTheme {
 @injectable()
 export class MonacoThemeRegistry {
 
+    initializeDefaultThemes(): void {
+        this.register(require('../../../data/monaco-themes/vscode/dark_theia.json'), {
+            './dark_vs.json': require('../../../data/monaco-themes/vscode/dark_vs.json'),
+            './dark_plus.json': require('../../../data/monaco-themes/vscode/dark_plus.json')
+        }, 'dark-theia', 'vs-dark');
+        this.register(require('../../../data/monaco-themes/vscode/light_theia.json'), {
+            './light_vs.json': require('../../../data/monaco-themes/vscode/light_vs.json'),
+            './light_plus.json': require('../../../data/monaco-themes/vscode/light_plus.json'),
+        }, 'light-theia', 'vs');
+        this.register(require('../../../data/monaco-themes/vscode/hc_theia.json'), {
+            './hc_black.json': require('../../../data/monaco-themes/vscode/hc_black.json')
+        }, 'hc-theia', 'hc-black');
+    }
+
     getThemeData(): ThemeMix;
     getThemeData(name: string): ThemeMix | undefined;
     getThemeData(name?: string): ThemeMix | undefined {
@@ -155,17 +169,7 @@ export class MonacoThemeRegistry {
 }
 
 export namespace MonacoThemeRegistry {
-    export const SINGLETON = new MonacoThemeRegistry();
-
-    export const DARK_DEFAULT_THEME: string = SINGLETON.register(require('../../../data/monaco-themes/vscode/dark_theia.json'), {
-        './dark_vs.json': require('../../../data/monaco-themes/vscode/dark_vs.json'),
-        './dark_plus.json': require('../../../data/monaco-themes/vscode/dark_plus.json')
-    }, 'dark-theia', 'vs-dark').name!;
-    export const LIGHT_DEFAULT_THEME: string = SINGLETON.register(require('../../../data/monaco-themes/vscode/light_theia.json'), {
-        './light_vs.json': require('../../../data/monaco-themes/vscode/light_vs.json'),
-        './light_plus.json': require('../../../data/monaco-themes/vscode/light_plus.json'),
-    }, 'light-theia', 'vs').name!;
-    export const HC_DEFAULT_THEME: string = SINGLETON.register(require('../../../data/monaco-themes/vscode/hc_theia.json'), {
-        './hc_black.json': require('../../../data/monaco-themes/vscode/hc_black.json')
-    }, 'hc-theia', 'hc-black').name!;
+    export const DARK_DEFAULT_THEME = 'dark-theia';
+    export const LIGHT_DEFAULT_THEME = 'light-theia';
+    export const HC_DEFAULT_THEME = 'hc-theia';
 }

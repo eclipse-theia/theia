@@ -198,6 +198,11 @@ export const corePreferenceSchema: PreferenceSchema = {
                 'Controls the feedback area size in pixels of the dragging area in between views/editors. Set it to a larger value if needed.'
             )
         },
+        'workbench.tab.maximize': {
+            type: 'boolean',
+            default: false,
+            description: nls.localize('theia/core/tabMaximize', 'Controls whether to maximize tabs on double click.')
+        }
     }
 };
 
@@ -220,6 +225,7 @@ export interface CoreConfiguration {
     'workbench.hover.delay': number;
     'workbench.sash.hoverDelay': number;
     'workbench.sash.size': number;
+    'workbench.tab.maximize': boolean;
 }
 
 export const CorePreferenceContribution = Symbol('CorePreferenceContribution');

@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 .theia-tooltip {
-    color: var(--theia-list-hoverForeground) !important;
-    background: var(--theia-list-hoverBackground) !important;
+    color: var(--theia-editorHoverWidget-foreground) !important;
+    background: var(--theia-editorHoverWidget-background) !important;
     border: 1px solid !important;
-    border-color: var(--theia-list-hoverForeground) !important;
+    border-color: var(--theia-editorHoverWidget-border) !important;
 }
 
 /* Hide tooltip arrow */

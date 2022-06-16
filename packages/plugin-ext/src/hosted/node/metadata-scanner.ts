@@ -14,15 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, multiInject } from '@theia/core/shared/inversify';
-import { PluginPackage, PluginScanner, PluginMetadata, PLUGIN_HOST_BACKEND } from '../../common/plugin-protocol';
+import { inject, injectable, multiInject } from '@theia/core/shared/inversify';
+import { PluginPackage, PluginScanner, PluginMetadata, PLUGIN_HOST_BACKEND, PluginIdentifiers } from '../../common/plugin-protocol';
+import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager';
 @injectable()
 export class MetadataScanner {
     private scanners: Map<string, PluginScanner> = new Map();
 
-    constructor( // eslint-disable-next-line @typescript-eslint/indent
-        @multiInject(PluginScanner) scanners: PluginScanner[]
-    ) {
+    @inject(PluginUninstallationManager) protected readonly uninstallationManager: PluginUninstallationManager;
+
+    constructor(@multiInject(PluginScanner) scanners: PluginScanner[]) {
         scanners.forEach((scanner: PluginScanner) => {
             this.scanners.set(scanner.apiType, scanner);
         });
@@ -33,7 +34,8 @@ export class MetadataScanner {
         return {
             host: PLUGIN_HOST_BACKEND,
             model: scanner.getModel(plugin),
-            lifecycle: scanner.getLifecycle(plugin)
+            lifecycle: scanner.getLifecycle(plugin),
+            outOfSync: this.uninstallationManager.isUninstalled(PluginIdentifiers.componentsToVersionedId(plugin)),
         };
     }
 
