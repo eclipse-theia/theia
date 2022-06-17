@@ -123,54 +123,48 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.language.brackets": {
-        "default": false,
-        "description": nls.localizeByDefault("Defines the bracket symbols that increase or decrease the indentation."),
-        "anyOf": [
-            { "const": false },
-            {
-                "type": "array",
-                "items": {
-                    "type": "array",
-                    "items": [
-                        {
-                            "type": "string",
-                            "description": nls.localizeByDefault("The opening bracket character or string sequence.")
-                        },
-                        {
-                            "type": "string",
-                            "description": nls.localizeByDefault("The closing bracket character or string sequence.")
-                        }
-                    ]
-                },
-
-            },
+        "type": [
+            "array",
+            "null"
         ],
+        "default": null,
+        "description": nls.localizeByDefault("Defines the bracket symbols that increase or decrease the indentation."),
+        "items": {
+            "type": "array",
+            "items": [
+                {
+                    "type": "string",
+                    "description": nls.localizeByDefault("The opening bracket character or string sequence.")
+                },
+                {
+                    "type": "string",
+                    "description": nls.localizeByDefault("The closing bracket character or string sequence.")
+                }
+            ]
+        },
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.language.colorizedBracketPairs": {
-        "default": false,
-        "description": nls.localize("theia/editor/editor.language.colorizedBracketPairs", "Defines the bracket pairs that are colorized by their nesting level if bracket pair colorization is enabled."),
-        "anyOf": [
-            { "const": false },
-            {
-                "type": "array",
-                "items": {
-                    "type": "array",
-                    "items": [
-                        {
-                            "type": "string",
-                            "description": nls.localizeByDefault("The opening bracket character or string sequence.")
-                        },
-                        {
-                            "type": "string",
-                            "description": nls.localizeByDefault("The closing bracket character or string sequence.")
-                        }
-                    ]
-                },
-
-            },
+        "type": [
+            "array",
+            "null"
         ],
+        "default": null,
+        "description": nls.localize("theia/editor/editor.language.colorizedBracketPairs", "Defines the bracket pairs that are colorized by their nesting level if bracket pair colorization is enabled."),
+        "items": {
+            "type": "array",
+            "items": [
+                {
+                    "type": "string",
+                    "description": nls.localizeByDefault("The opening bracket character or string sequence.")
+                },
+                {
+                    "type": "string",
+                    "description": nls.localizeByDefault("The closing bracket character or string sequence.")
+                }
+            ]
+        },
         "scope": "language-overridable",
         "restricted": false
     },
@@ -396,8 +390,15 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     },
     "editor.bracketPairColorization.enabled": {
         "type": "boolean",
+        "default": true,
+        "markdownDescription": nls.localize("theia/editor/editor.bracketPairColorization.enabled", "Controls whether bracket pair colorization is enabled or not. Use `#workbench.colorCustomizations#` to override the bracket highlight colors."),
+        "scope": "language-overridable",
+        "restricted": false
+    },
+    "editor.bracketPairColorization.independentColorPoolPerBracketType": {
+        "type": "boolean",
         "default": false,
-        "description": nls.localize("theia/editor/editor.bracketPairColorization.enabled", "Controls whether bracket pair colorization is enabled or not. Use 'workbench.colorCustomizations' to override the bracket highlight colors."),
+        "description": nls.localize("theia/editor/editor.bracketPairColorization.independentColorPoolPerBracketType", "Controls whether each bracket type has its own independent color pool."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -456,7 +457,20 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.guides.highlightActiveIndentation": {
-        "type": "boolean",
+        "type": [
+            "boolean",
+            "string"
+        ],
+        "enum": [
+            true,
+            "always",
+            false
+        ],
+        "enumDescriptions": [
+            nls.localize("theia/editor/editor.guides.highlightActiveIndentation0", "Highlights the active indent guide."),
+            nls.localize("theia/editor/editor.guides.highlightActiveIndentation1", "Highlights the active indent guide even if bracket guides are highlighted."),
+            nls.localize("theia/editor/editor.guides.highlightActiveIndentation2", "Do not highlight the active indent guide.")
+        ],
         "default": true,
         "description": nls.localizeByDefault("Controls whether the editor should highlight the active indent guide."),
         "scope": "language-overridable",
@@ -650,6 +664,12 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "description": nls.localizeByDefault('Controls the condition for turning on find in selection automatically.'),
         "scope": "language-overridable",
         "restricted": false
+    },
+    "editor.find.globalFindClipboard": {
+        "type": "boolean",
+        "default": false,
+        "description": nls.localizeByDefault("Controls whether the Find Widget should read or modify the shared find clipboard on macOS."),
+        "included": isOSX
     },
     "editor.find.addExtraSpaceOnTop": {
         "type": "boolean",
@@ -1312,29 +1332,80 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
                 "type": "object",
                 "properties": {
                     "strings": {
-                        "type": "boolean",
-                        "default": false,
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "on",
+                                    "inline",
+                                    "off"
+                                ],
+                                "enumDescriptions": [
+                                    nls.localize("theia/editor/editor.quickSuggestions0", "Quick suggestions show inside the suggest widget"),
+                                    nls.localize("theia/editor/editor.quickSuggestions1", "Quick suggestions show as ghost text"),
+                                    nls.localize("theia/editor/editor.quickSuggestions2", "Quick suggestions are disabled")
+                                ]
+                            }
+                        ],
+                        "default": "off",
                         "description": nls.localizeByDefault("Enable quick suggestions inside strings.")
                     },
                     "comments": {
-                        "type": "boolean",
-                        "default": false,
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "on",
+                                    "inline",
+                                    "off"
+                                ],
+                                "enumDescriptions": [
+                                    nls.localize("theia/editor/editor.quickSuggestions0", "Quick suggestions show inside the suggest widget"),
+                                    nls.localize("theia/editor/editor.quickSuggestions1", "Quick suggestions show as ghost text"),
+                                    nls.localize("theia/editor/editor.quickSuggestions2", "Quick suggestions are disabled")
+                                ]
+                            }
+                        ],
+                        "default": "off",
                         "description": nls.localizeByDefault("Enable quick suggestions inside comments.")
                     },
                     "other": {
-                        "type": "boolean",
-                        "default": true,
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "on",
+                                    "inline",
+                                    "off"
+                                ],
+                                "enumDescriptions": [
+                                    nls.localize("theia/editor/editor.quickSuggestions0", "Quick suggestions show inside the suggest widget"),
+                                    nls.localize("theia/editor/editor.quickSuggestions1", "Quick suggestions show as ghost text"),
+                                    nls.localize("theia/editor/editor.quickSuggestions2", "Quick suggestions are disabled")
+                                ]
+                            }
+                        ],
+                        "default": "on",
                         "description": nls.localizeByDefault("Enable quick suggestions outside of strings and comments.")
                     }
                 }
             }
         ],
         "default": {
-            "other": true,
-            "comments": false,
-            "strings": false
+            "other": "on",
+            "comments": "off",
+            "strings": "off"
         },
-        "description": nls.localizeByDefault("Controls whether suggestions should automatically show up while typing."),
+        "markdownDescription": nls.localizeByDefault("Controls whether suggestions should automatically show up while typing."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -2132,16 +2203,28 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.inlayHints.enabled": {
-        "type": "boolean",
-        "default": true,
+        "type": "string",
+        "default": "on",
         "description": nls.localize("theia/editor/editor.inlayHints.enabled", "Enables the inlay hints in the editor."),
+        "enum": [
+            "on",
+            "onUnlessPressed",
+            "offUnlessPressed",
+            "off"
+        ],
+        "markdownEnumDescriptions": [
+            nls.localize("theia/editor/editor.inlayHints.enabled0", "Inlay hints are enabled"),
+            nls.localize("theia/editor/editor.inlayHints.enabled1", "Inlay hints are showing by default and hide when holding `Ctrl+Alt`"),
+            nls.localize("theia/editor/editor.inlayHints.enabled2", "Inlay hints are hidden by default and show when holding `Ctrl+Alt`"),
+            nls.localize("theia/editor/editor.inlayHints.enabled3", "Inlay hints are disabled")
+        ],
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.inlayHints.fontSize": {
         "type": "number",
         "default": 0,
-        "markdownDescription": nls.localize("theia/editor/editor.inlayHints.fontSize", "Controls font size of inlay hints in the editor. A default of 90% of `#editor.fontSize#` is used when the configured value is less than `5` or greater than the editor font size."),
+        "markdownDescription": nls.localize("theia/editor/editor.inlayHints.fontSize", "Controls font size of inlay hints in the editor. As default the `#editor.fontSize#` is used when the configured value is less than `5` or greater than the editor font size."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -2151,12 +2234,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "markdownDescription": nls.localize("theia/editor/editor.inlayHints.fontFamily", "Controls font family of inlay hints in the editor. When set to empty, the `#editor.fontFamily#` is used."),
         "scope": "language-overridable",
         "restricted": false
-    },
-    "editor.find.globalFindClipboard": {
-        "type": "boolean",
-        "default": false,
-        "description": nls.localizeByDefault("Controls whether the Find Widget should read or modify the shared find clipboard on macOS."),
-        "included": isOSX
     },
     "editor.selectionClipboard": {
         "type": "boolean",
@@ -2180,8 +2257,8 @@ export interface GeneratedEditorPreferences {
     'editor.semanticHighlighting.enabled': true | false | 'configuredByTheme';
     'editor.stablePeek': boolean;
     'editor.maxTokenizationLineLength': number;
-    'editor.language.brackets': Array<[string, string]> | false;
-    'editor.language.colorizedBracketPairs': Array<[string, string]> | false;
+    'editor.language.brackets': Array<[string, string]> | null;
+    'editor.language.colorizedBracketPairs': Array<[string, string]> | null;
     'diffEditor.maxComputationTime': number;
     'diffEditor.maxFileSize': number;
     'diffEditor.renderSideBySide': boolean;
@@ -2200,11 +2277,12 @@ export interface GeneratedEditorPreferences {
     'editor.autoIndent': 'none' | 'keep' | 'brackets' | 'advanced' | 'full';
     'editor.autoSurround': 'languageDefined' | 'quotes' | 'brackets' | 'never';
     'editor.bracketPairColorization.enabled': boolean;
+    'editor.bracketPairColorization.independentColorPoolPerBracketType': boolean;
     'editor.guides.bracketPairs': true | 'active' | false;
     'editor.guides.bracketPairsHorizontal': true | 'active' | false;
     'editor.guides.highlightActiveBracketPair': boolean;
     'editor.guides.indentation': boolean;
-    'editor.guides.highlightActiveIndentation': boolean;
+    'editor.guides.highlightActiveIndentation': true | 'always' | false;
     'editor.codeLens': boolean;
     'editor.codeLensFontFamily': string;
     'editor.codeLensFontSize': number;
@@ -2237,7 +2315,7 @@ export interface GeneratedEditorPreferences {
     'editor.fontFamily': string;
     'editor.fontLigatures': boolean | string;
     'editor.fontSize': number;
-    'editor.fontWeight': number | string;
+    'editor.fontWeight': number | string | 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
     'editor.formatOnPaste': boolean;
     'editor.formatOnType': boolean;
     'editor.glyphMargin': boolean;
@@ -2370,7 +2448,7 @@ export interface GeneratedEditorPreferences {
     'editor.wrappingIndent': 'none' | 'same' | 'indent' | 'deepIndent';
     'editor.wrappingStrategy': 'simple' | 'advanced';
     'editor.showDeprecated': boolean;
-    'editor.inlayHints.enabled': boolean;
+    'editor.inlayHints.enabled': 'on' | 'onUnlessPressed' | 'offUnlessPressed' | 'off';
     'editor.inlayHints.fontSize': number;
     'editor.inlayHints.fontFamily': string;
     'editor.selectionClipboard': boolean;

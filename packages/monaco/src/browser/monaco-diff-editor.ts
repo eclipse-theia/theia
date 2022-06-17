@@ -63,6 +63,10 @@ export class MonacoDiffEditor extends MonacoEditor {
 
     protected override create(options?: IDiffEditorConstructionOptions, override?: EditorServiceOverrides): Disposable {
         const instantiator = this.getInstantiatorWithOverrides(override);
+        /**
+         *  @monaco-uplift. Should be guaranteed to work.
+         *  Incomparable enums prevent TypeScript from believing that public IStandaloneDiffEditor is satisfied by private StandaloneDiffEditor
+         */
         this._diffEditor = instantiator
             .createInstance(StandaloneDiffEditor, this.node, { ...options, fixedOverflowWidgets: true }) as unknown as monaco.editor.IStandaloneDiffEditor;
         this.editor = this._diffEditor.getModifiedEditor();

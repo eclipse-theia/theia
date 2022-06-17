@@ -19,7 +19,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import * as monaco from '@theia/monaco-editor-core';
 import { injectable } from '@theia/core/shared/inversify';
-import type { ThemeMix } from './textmate/monaco-theme-registry';
+import type { ThemeMix } from './textmate/monaco-theme-types';
 import { Theme } from '@theia/core/lib/common/theme';
 
 let _monacoDB: Promise<idb.IDBPDatabase> | undefined;

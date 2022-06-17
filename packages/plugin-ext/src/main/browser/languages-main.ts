@@ -67,6 +67,11 @@ import { IRelativePattern } from '@theia/monaco-editor-core/esm/vs/base/common/g
 import { EditorLanguageStatusService, LanguageStatus as EditorLanguageStatus } from '@theia/editor/lib/browser/language-status/editor-language-status-service';
 import { LanguageSelector, RelativePattern } from '@theia/editor/lib/common/language-selector';
 
+/**
+ * @monaco-uplift The public API declares these functions as (languageId: string, service).
+ * Confirm that the functions delegate to a handler that accepts a LanguageSelector rather than just a string.
+ * Relevant code in node_modules/@theia/monaco-editor-core/src/vs/editor/standalone/browser/standaloneLanguages.ts
+ */
 interface RegistrationFunction<T> {
     (languageId: MonacoLanguageSelector.LanguageSelector, service: T): Disposable;
 }

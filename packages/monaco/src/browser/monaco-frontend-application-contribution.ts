@@ -74,7 +74,10 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
         // Monaco registers certain quick access providers (e.g. QuickCommandAccess) at import time, but we want to use our own.
         this.quickAccessRegistry.clear();
 
-        // Incomparability of enum types between public and private API's
+        /**
+         * @monaco-uplift.Should be guaranteed to work.
+         * Incomparable enums prevent TypeScript from believing that public ITextModel satisfied private ITextModel
+         */
         setSnippetSuggestSupport(this.snippetSuggestProvider as unknown as CompletionItemProvider);
 
         for (const language of monaco.languages.getLanguages()) {
@@ -167,7 +170,7 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
                 new editorBoolConstructor(id++, 'wordBasedSuggestions', true, editorGeneratedPreferenceProperties['editor.wordBasedSuggestions']),
                 new editorStringEnumConstructor(id++, 'wordBasedSuggestionsMode', 'matchingDocuments', editorGeneratedPreferenceProperties['editor.wordBasedSuggestionsMode'].enum, editorGeneratedPreferenceProperties['editor.wordBasedSuggestionsMode']),
                 new editorBoolConstructor(id++, 'stablePeek', false, editorGeneratedPreferenceProperties['editor.stablePeek']),
-                new editorIntConstructor(id++, 'maxTokenizationLength', 20000, 1, MAX_SAFE_INTEGER, editorGeneratedPreferenceProperties['editor.maxTokenizationLength']),
+                new editorIntConstructor(id++, 'maxTokenizationLineLength', 20000, 1, MAX_SAFE_INTEGER, editorGeneratedPreferenceProperties['editor.maxTokenizationLineLength']),
             );
         }
     }
