@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 // eslint-disable-next-line @theia/runtime-import-check
-import { DebugExtImpl } from '../../../plugin/node/debug/debug';
+import { DebugExtImpl } from '../../../plugin/debug/debug-ext';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
