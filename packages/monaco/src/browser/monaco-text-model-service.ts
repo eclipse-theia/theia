@@ -134,7 +134,9 @@ export class MonacoTextModelService implements ITextModelService {
         switch (editorPreference) {
             case 'editor.tabSize': return 'tabSize';
             case 'editor.insertSpaces': return 'insertSpaces';
-            case 'editor.bracketPairColorization.enabled': return 'bracketColorizationOptions';
+            case 'editor.bracketPairColorization.enabled':
+            case 'editor.bracketPairColorization.independentColorPoolPerBracketType':
+                return 'bracketColorizationOptions';
             case 'editor.trimAutoWhitespace': return 'trimAutoWhitespace';
 
         }
@@ -142,28 +144,21 @@ export class MonacoTextModelService implements ITextModelService {
     }
 
     protected updateModel(model: MonacoEditorModel, change?: EditorPreferenceChange): void {
-        if (change) {
-            if (!change.affects(model.uri, model.languageId)) {
-                return;
-            }
+        if (!change) {
+            model.autoSave = this.editorPreferences.get('files.autoSave', undefined, model.uri);
+            model.autoSaveDelay = this.editorPreferences.get('files.autoSaveDelay', undefined, model.uri);
+            model.textEditorModel.updateOptions(this.getModelOptions(model));
+        } else if (change.affects(model.uri, model.languageId)) {
             if (change.preferenceName === 'files.autoSave') {
                 model.autoSave = this.editorPreferences.get('files.autoSave', undefined, model.uri);
             }
             if (change.preferenceName === 'files.autoSaveDelay') {
                 model.autoSaveDelay = this.editorPreferences.get('files.autoSaveDelay', undefined, model.uri);
             }
-            const modelOption = this.modelOptions[change.preferenceName];
+            const modelOption = this.toModelOption(change.preferenceName);
             if (modelOption) {
-                const options: ITextModelUpdateOptions = {};
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const newValue = change.newValue as any;
-                options[modelOption] = change.preferenceName === 'editor.bracketPairColorization.enabled' ? { enabled: newValue } : newValue;
-                model.textEditorModel.updateOptions(options);
+                model.textEditorModel.updateOptions(this.getModelOptions(model));
             }
-        } else {
-            model.autoSave = this.editorPreferences.get('files.autoSave', undefined, model.uri);
-            model.autoSaveDelay = this.editorPreferences.get('files.autoSaveDelay', undefined, model.uri);
-            model.textEditorModel.updateOptions(this.getModelOptions(model));
         }
     }
 
@@ -176,7 +171,11 @@ export class MonacoTextModelService implements ITextModelService {
         return {
             tabSize: this.editorPreferences.get({ preferenceName: 'editor.tabSize', overrideIdentifier }, undefined, uri),
             insertSpaces: this.editorPreferences.get({ preferenceName: 'editor.insertSpaces', overrideIdentifier }, undefined, uri),
-            bracketColorizationOptions: { enabled: this.editorPreferences.get({ preferenceName: 'editor.bracketPairColorization.enabled', overrideIdentifier }, undefined, uri) },
+            bracketColorizationOptions: {
+                enabled: this.editorPreferences.get({ preferenceName: 'editor.bracketPairColorization.enabled', overrideIdentifier }, undefined, uri),
+                independentColorPoolPerBracketType: this.editorPreferences.get(
+                    { preferenceName: 'editor.bracketPairColorization.independentColorPoolPerBracketType', overrideIdentifier }, undefined, uri),
+            },
             trimAutoWhitespace: this.editorPreferences.get({ preferenceName: 'editor.trimAutoWhitespace', overrideIdentifier }, undefined, uri),
         };
     }

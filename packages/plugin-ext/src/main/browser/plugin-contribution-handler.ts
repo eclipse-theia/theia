@@ -222,7 +222,9 @@ export class PluginContributionHandler {
                     pushContribution(`grammar.language.${language}.scope`, () => this.grammarsRegistry.mapLanguageIdToTextmateGrammar(language, grammar.scope));
                     pushContribution(`grammar.language.${language}.configuration`, () => this.grammarsRegistry.registerGrammarConfiguration(language, {
                         embeddedLanguages: this.convertEmbeddedLanguages(grammar.embeddedLanguages, logWarning),
-                        tokenTypes: this.convertTokenTypes(grammar.tokenTypes)
+                        tokenTypes: this.convertTokenTypes(grammar.tokenTypes),
+                        balancedBracketSelectors: grammar.balancedBracketScopes ?? ['*'],
+                        unbalancedBracketSelectors: grammar.balancedBracketScopes,
                     }));
                 }
                 // activate grammars only once everything else is loaded.

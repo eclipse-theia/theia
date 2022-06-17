@@ -229,10 +229,7 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
     protected createProvider(uri: URI, section: string, folder: FileStat): FolderPreferenceProvider {
         const provider = this.folderPreferenceProviderFactory(uri, section, folder);
         this.toDispose.push(provider);
-        this.toDispose.push(provider.onDidPreferencesChanged(change => {
-            this.onDidPreferencesChangedEmitter.fire(change);
-        }
-        ));
+        this.toDispose.push(provider.onDidPreferencesChanged(change => this.onDidPreferencesChangedEmitter.fire(change)));
         return provider;
     }
 

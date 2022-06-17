@@ -162,7 +162,7 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
     private createInlineValueDecoration(lineNumber: number, contentText: string): IDecorationOptions {
         // If decoratorText is too long, trim and add ellipses. This could happen for minified files with everything on a single line
         if (contentText.length > MAX_INLINE_DECORATOR_LENGTH) {
-            contentText = contentText.substr(0, MAX_INLINE_DECORATOR_LENGTH) + '...';
+            contentText = contentText.substring(0, MAX_INLINE_DECORATOR_LENGTH) + '...';
         }
 
         return {
@@ -210,8 +210,8 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
                     continue;
                 }
 
-                model.forceTokenization(lineNumber);
-                const lineTokens = model.getLineTokens(lineNumber);
+                model.tokenization.forceTokenization(lineNumber);
+                const lineTokens = model.tokenization.getLineTokens(lineNumber);
                 for (let tokenIndex = 0, tokenCount = lineTokens.getCount(); tokenIndex < tokenCount; tokenIndex++) {
                     const tokenStartOffset = lineTokens.getStartOffset(tokenIndex);
                     const tokenEndOffset = lineTokens.getEndOffset(tokenIndex);

@@ -214,7 +214,7 @@ export class MonacoQuickInputService implements QuickInputService {
     }
 
     createInputBox(): InputBox {
-        return this.monacoService.createInputBox() as unknown as InputBox;
+        return this.monacoService.createInputBox();
     }
 
     input(options?: InputOptions, token?: monaco.CancellationToken): Promise<string | undefined> {
