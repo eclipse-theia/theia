@@ -28,6 +28,7 @@ import { nls } from '@theia/core/lib/common/nls';
 export class DebugStackFramesWidget extends SourceTreeWidget {
 
     static CONTEXT_MENU: MenuPath = ['debug-frames-context-menu'];
+    static FACTORY_ID = 'debug:frames';
     static override createContainer(parent: interfaces.Container): Container {
         const child = SourceTreeWidget.createContainer(parent, {
             contextMenuPath: DebugStackFramesWidget.CONTEXT_MENU,
@@ -55,7 +56,7 @@ export class DebugStackFramesWidget extends SourceTreeWidget {
     @postConstruct()
     protected override init(): void {
         super.init();
-        this.id = 'debug:frames:' + this.viewModel.id;
+        this.id = DebugStackFramesWidget.FACTORY_ID + ':' + this.viewModel.id;
         this.title.label = nls.localizeByDefault('Call Stack');
         this.toDispose.push(this.frames);
         this.source = this.frames;

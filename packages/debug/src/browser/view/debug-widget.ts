@@ -29,11 +29,12 @@ import { nls } from '@theia/core/lib/common/nls';
 export class DebugWidget extends BaseWidget implements StatefulWidget, ApplicationShell.TrackableWidgetProvider {
 
     static createContainer(parent: interfaces.Container): Container {
-        const child = DebugSessionWidget.createContainer(parent, {});
+        const child = DebugSessionWidget.createContainer(parent);
         child.bind(DebugConfigurationWidget).toSelf();
         child.bind(DebugWidget).toSelf();
         return child;
     }
+
     static createWidget(parent: interfaces.Container): DebugWidget {
         return DebugWidget.createContainer(parent).get(DebugWidget);
     }
@@ -67,12 +68,7 @@ export class DebugWidget extends BaseWidget implements StatefulWidget, Applicati
         this.toDispose.pushAll([
             this.toolbar,
             this.sessionWidget,
-            this.sessionManager.onDidCreateDebugSession(session => this.model.push(session)),
-            this.sessionManager.onDidDestroyDebugSession(session => this.model.delete(session))
         ]);
-        for (const session of this.sessionManager.sessions) {
-            this.model.push(session);
-        }
 
         const layout = this.layout = new PanelLayout();
         layout.addWidget(this.toolbar);

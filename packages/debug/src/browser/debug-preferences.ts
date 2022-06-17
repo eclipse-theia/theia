@@ -26,11 +26,6 @@ export const debugPreferencesSchema: PreferenceSchema = {
             default: false,
             description: nls.localize('theia/debug/toggleTracing', 'Enable/disable tracing communications with debug adapters')
         },
-        'debug.debugViewLocation': {
-            enum: ['default', 'left', 'right', 'bottom'],
-            default: 'default',
-            description: nls.localize('theia/debug/debugViewLocation', 'Controls the location of the debug view.')
-        },
         'debug.openDebug': {
             enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart', 'openOnDebugBreak'],
             default: 'openOnSessionStart',
@@ -71,7 +66,6 @@ export const debugPreferencesSchema: PreferenceSchema = {
 
 export class DebugConfiguration {
     'debug.trace': boolean;
-    'debug.debugViewLocation': 'default' | 'left' | 'right' | 'bottom';
     'debug.openDebug': 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart' | 'openOnDebugBreak';
     'debug.internalConsoleOptions': 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart';
     'debug.inlineValues': boolean;
