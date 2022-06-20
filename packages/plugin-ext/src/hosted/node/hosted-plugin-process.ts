@@ -176,7 +176,9 @@ export class HostedPluginProcess implements ServerPluginRunner {
             silent: true,
             env: env,
             execArgv: [],
-            stdio: ['pipe', 'pipe', 'pipe', 'ipc']
+            stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+            // this option is super important to transfer buffers:
+            serialization: 'advanced'
         };
         const inspectArgPrefix = `--${options.serverName}-inspect`;
         const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));

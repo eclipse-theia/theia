@@ -76,6 +76,7 @@ export class SomeClass {
     - `electron-store` (from [`electron-store@^8.0.0`](https://www.npmjs.com/package/electron-store))
     - `fix-path` (from [`fix-path@^3.0.0`](https://www.npmjs.com/package/fix-path))
 - `@theia/core/shared/...`
+    - `@msgpack/msgpack` (from [`@msgpack/msgpack@^2.7.2`](https://www.npmjs.com/package/@msgpack/msgpack))
     - `@phosphor/algorithm` (from [`@phosphor/algorithm@1`](https://www.npmjs.com/package/@phosphor/algorithm))
     - `@phosphor/commands` (from [`@phosphor/commands@1`](https://www.npmjs.com/package/@phosphor/commands))
     - `@phosphor/coreutils` (from [`@phosphor/coreutils@1`](https://www.npmjs.com/package/@phosphor/coreutils))

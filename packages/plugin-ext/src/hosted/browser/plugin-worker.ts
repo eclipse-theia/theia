@@ -18,7 +18,9 @@ import '@theia/core/shared/reflect-metadata';
 import { injectable } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { PluginRpc, DefaultPluginRpc } from '../../common/rpc-protocol';
-import { BufferedConnection, ConnectionState, DeferredConnection, waitForRemote } from '@theia/core/lib/common/connection';
+import { BufferedConnection, Connection, ConnectionState, DeferredConnection, waitForRemote } from '@theia/core/lib/common/connection';
+import { TransformedConnection } from '@theia/core/lib/common/connection-transformer';
+import { MsgpackMessageTransformer } from '@theia/core/lib/common/msgpack';
 
 @injectable()
 export class PluginWorker {
@@ -39,7 +41,7 @@ export class PluginWorker {
         this.worker.onmessage = m => emitter.fire(m.data);
         this.worker.onerror = e => console.error(e);
 
-        const connectionToWorker = new DeferredConnection(waitForRemote(new BufferedConnection({
+        const connectionToWorker: Connection<unknown[]> = {
             state: ConnectionState.OPENED,
             onClose: () => ({ dispose(): void { } }),
             onError: () => ({ dispose(): void { } }),
@@ -51,8 +53,11 @@ export class PluginWorker {
             close: () => {
                 throw new Error('cannot close this connection');
             }
-        })));
-        this.rpc = new DefaultPluginRpc(connectionToWorker);
+        };
+        const bufferedConnection = new BufferedConnection(connectionToWorker);
+        const msgpackConnection = new TransformedConnection(bufferedConnection, MsgpackMessageTransformer);
+        const deferredConnection = new DeferredConnection(waitForRemote(msgpackConnection));
+        this.rpc = new DefaultPluginRpc(deferredConnection);
     }
 
 }

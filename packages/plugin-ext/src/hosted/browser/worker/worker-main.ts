@@ -36,7 +36,9 @@ import { loadManifest } from './plugin-manifest-loader';
 import { TerminalServiceExtImpl } from '../../../plugin/terminal-ext';
 import { reviver } from '../../../plugin/types-impl';
 import { SecretsExtImpl } from '../../../plugin/secrets-ext';
-import { BufferedConnection, ConnectionState, DeferredConnection, waitForRemote } from '@theia/core/lib/common/connection';
+import { BufferedConnection, Connection, ConnectionState, DeferredConnection, waitForRemote } from '@theia/core/lib/common/connection';
+import { TransformedConnection } from '@theia/core/lib/common/connection-transformer';
+import { MsgpackMessageTransformer } from '@theia/core/lib/common/msgpack';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -45,9 +47,8 @@ const pluginsApiImpl = new Map<string, typeof theia>();
 const pluginsModulesNames = new Map<string, Plugin>();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const messageEmitter = new Emitter<any[]>();
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const connectionToWorkerOwner = new DeferredConnection(waitForRemote(new BufferedConnection<any>({
+const messageEmitter = new Emitter<unknown[]>();
+const connectionToWorkerOwner: Connection<unknown[]> = {
     state: ConnectionState.OPENED,
     onClose: () => ({ dispose(): void { } }),
     onError: () => ({ dispose(): void { } }),
@@ -59,8 +60,11 @@ const connectionToWorkerOwner = new DeferredConnection(waitForRemote(new Buffere
     close: () => {
         throw new Error('cannot close this connection');
     }
-})));
-const rpc = new DefaultPluginRpc(connectionToWorkerOwner, { reviver });
+};
+const bufferedConnection = new BufferedConnection(connectionToWorkerOwner);
+const msgpackConnection = new TransformedConnection(bufferedConnection, MsgpackMessageTransformer);
+const deferredConnection = new DeferredConnection(waitForRemote(msgpackConnection));
+const rpc = new DefaultPluginRpc(deferredConnection, { reviver });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 addEventListener('message', (message: any) => {

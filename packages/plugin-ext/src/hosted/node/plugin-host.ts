@@ -19,7 +19,9 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { DefaultPluginRpc, PluginHostProtocol } from '../../common/rpc-protocol';
 import { PluginHostRPC } from './plugin-host-rpc';
 import { reviver } from '../../plugin/types-impl';
-import { BufferedConnection, ConnectionState, DeferredConnection, waitForRemote } from '@theia/core/lib/common/connection';
+import { BufferedConnection, Connection, ConnectionState, DeferredConnection, waitForRemote } from '@theia/core/lib/common/connection';
+import { TransformedConnection } from '@theia/core/lib/common/connection-transformer';
+import { MsgpackMessageTransformer } from '@theia/core/lib/common/msgpack';
 
 let terminating = false;
 
@@ -80,7 +82,7 @@ process.on('rejectionHandled', (promise: Promise<void>) => {
 // #region RPC initialization
 
 const messageEmitter = new Emitter<unknown[]>();
-const connectionToParentProcess = new DeferredConnection(waitForRemote(new BufferedConnection<unknown>({
+const connectionToParentProcess: Connection<unknown[]> = {
     state: ConnectionState.OPENED,
     onClose: () => ({ dispose(): void { } }),
     onError: () => ({ dispose(): void { } }),
@@ -94,8 +96,11 @@ const connectionToParentProcess = new DeferredConnection(waitForRemote(new Buffe
     close: () => {
         throw new Error('cannot close this connection');
     }
-})));
-const rpc = new DefaultPluginRpc(connectionToParentProcess, { reviver });
+};
+const bufferedConnection = new BufferedConnection(connectionToParentProcess);
+const msgpackConnection = new TransformedConnection(bufferedConnection, MsgpackMessageTransformer);
+const deferredConnection = new DeferredConnection(waitForRemote(msgpackConnection));
+const rpc = new DefaultPluginRpc(deferredConnection, { reviver });
 const pluginHostRpc = new PluginHostRPC(rpc);
 
 process.on('message', message => {
@@ -114,7 +119,7 @@ process.on('message', message => {
         // message for `connectionToParentProcess` buffered connection:
         return messageEmitter.fire(message);
     }
-    console.error('unhandled message');
+    console.debug('unhandled message:', message);
 });
 
 async function terminatePluginHost(timeout?: number): Promise<void> {

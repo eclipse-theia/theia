@@ -23,7 +23,8 @@ import {
     RouteHandlerProvider,
     Rpc,
     ServiceProvider,
-    Rc
+    Rc,
+    ConnectionTransformer
 } from '../../common';
 import { AnyConnection, DeferredConnectionFactory } from '../../common/connection';
 import { ContainerScope } from '../../common/container-scope';
@@ -36,6 +37,7 @@ import { DefaultConnectionMultiplexer } from '../../common/connection-multiplexe
 import { DefaultRouter, Router } from '../../common/routing';
 import { JsonRpc } from '../../common/json-rpc';
 import { ConnectionContainerModule } from './connection-container-module';
+import { MsgpackMessageTransformer } from '../../common/msgpack';
 
 export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind => {
     bindServiceProvider(bind, BackendAndFrontend);
@@ -68,6 +70,7 @@ export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind =
         .toDynamicValue(ctx => {
             const jsonRpc = ctx.container.get(JsonRpc);
             const proxyProvider = ctx.container.get(DefaultRpcProxyProvider);
+            const connectionTransformer = ctx.container.get(ConnectionTransformer);
             const deferredConnectionFactory = ctx.container.get(DeferredConnectionFactory);
             const backendServiceConnection = deferredConnectionFactory(backendServiceConnectionDeferred.promise);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,7 +78,8 @@ export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind =
             return proxyProvider.initialize(serviceId => {
                 const path = JSON_RPC_ROUTE.reverse({ serviceId });
                 const connection = multiplexer.open({ path });
-                const messageConnection = jsonRpc.createMessageConnection(connection);
+                const msgpackConnection = connectionTransformer(connection, MsgpackMessageTransformer);
+                const messageConnection = jsonRpc.createMessageConnection(msgpackConnection);
                 return jsonRpc.createRpcConnection(messageConnection);
             });
         })
@@ -87,13 +91,15 @@ export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind =
             const serviceProvider = ctx.container.getNamed(ServiceProvider, BackendAndFrontend);
             const jsonRpc = ctx.container.get(JsonRpc);
             const rpcProxying = ctx.container.get(Rpc);
+            const connectionTransformer = ctx.container.get(ConnectionTransformer);
             return ctx.container.get(RouteHandlerProvider)
                 .createRouteHandler(JSON_RPC_ROUTE, (params, accept, next) => {
                     const [service, dispose] = serviceProvider.getService(params.route.params.serviceId);
                     if (!service) {
                         return next();
                     }
-                    const messageConnection = jsonRpc.createMessageConnection(accept());
+                    const msgpackConnection = connectionTransformer(accept(), MsgpackMessageTransformer);
+                    const messageConnection = jsonRpc.createMessageConnection(msgpackConnection);
                     const rpcConnection = jsonRpc.createRpcConnection(messageConnection);
                     rpcProxying.serve(service, rpcConnection);
                     rpcConnection.onClose(dispose);

@@ -81,7 +81,7 @@ export class JsonRpcConnection implements RpcConnection {
 
     handleNotification(handler: (method: string, params: any[]) => void): void {
         this.messageConnection.onNotification((method, params) => {
-            if (params === undefined) {
+            if (!params) {
                 handler(method, []);
             } else if (Array.isArray(params)) {
                 handler(method, params);
@@ -93,7 +93,7 @@ export class JsonRpcConnection implements RpcConnection {
 
     handleRequest(handler: (method: string, params: any[], token: CancellationToken) => any): void {
         this.messageConnection.onRequest((method, params, token) => {
-            if (params === undefined) {
+            if (!params) {
                 return this.call(handler, method, [], token);
             } else if (Array.isArray(params)) {
                 return this.call(handler, method, params, token);

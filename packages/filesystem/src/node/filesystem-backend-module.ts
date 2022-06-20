@@ -86,6 +86,7 @@ export function spawnNsfwFileSystemWatcherServerProcess(ctx: interfaces.Context)
     return ctx.container.get(JsonRpcIpcProxyProvider).createIpcProxy<FileSystemWatcherServer>(
         'nsfw',
         ipc => fork(path.join(__dirname, '..', 'nsfw-watcher-server', 'main'), args, {
+            ...ipc.createForkOptions(),
             env: ipc.createEnv(),
             execArgv: ipc.createExecArgv()
         })

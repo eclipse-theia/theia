@@ -6,6 +6,7 @@
   "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@babel/runtime": "^7.10.0",
+    "@msgpack/msgpack": "^2.7.2",
     "@phosphor/algorithm": "1",
     "@phosphor/commands": "1",
     "@phosphor/coreutils": "1",
@@ -92,6 +93,7 @@
     },
     "shared": {
       "export *": [
+        "@msgpack/msgpack",
         "@phosphor/algorithm",
         "@phosphor/commands",
         "@phosphor/coreutils",

@@ -76,6 +76,7 @@ export function bindGit(bind: interfaces.Bind, bindingOptions: GitBindingOptions
             .toDynamicValue(ctx => ctx.container.get(JsonRpcIpcProxyProvider).createIpcProxy(
                 'git-locator',
                 ipc => fork(join(__dirname, '..', 'git-locator-server', 'main'), {
+                    ...ipc.createForkOptions(),
                     silent: true,
                     env: ipc.createEnv(),
                     execArgv: ipc.createExecArgv()

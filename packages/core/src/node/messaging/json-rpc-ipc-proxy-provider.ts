@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { createInterface } from 'readline';
-import { ChildProcess } from 'child_process';
+import { ChildProcess, ForkOptions } from 'child_process';
 import { inject, injectable } from 'inversify';
 import { Proxied } from '../../common/proxy';
 import { createMessageConnection, Logger, IPCMessageReader, IPCMessageWriter } from 'vscode-jsonrpc/node';
@@ -24,14 +24,18 @@ import { JsonRpc } from '../../common/json-rpc';
 import { createIpcEnv } from './ipc-protocol';
 
 export interface IpcApi {
+
     /**
      * @param initialExecArgv default {@link process.execArgv}
      */
     createExecArgv(initialExecArgv?: string[]): string[] | undefined
+
     /**
      * @param initialEnv default {@link process.env}
      */
     createEnv(initialEnv?: NodeJS.ProcessEnv): NodeJS.ProcessEnv | undefined
+
+    createForkOptions(): ForkOptions
 }
 
 /**
@@ -76,7 +80,10 @@ export class JsonRpcIpcProxyProvider {
                 }
                 return execArgv;
             },
-            createEnv: (initialEnv = process.env) => createIpcEnv(initialEnv)
+            createEnv: (initialEnv = process.env) => createIpcEnv(initialEnv),
+            createForkOptions: () => ({
+                serialization: 'advanced'
+            })
         };
     }
 
