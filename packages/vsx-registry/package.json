@@ -10,10 +10,8 @@
     "@theia/plugin-ext-vscode": "1.26.0",
     "@theia/preferences": "1.26.0",
     "@theia/workspace": "1.26.0",
-    "@types/showdown": "^1.7.1",
     "p-debounce": "^2.1.0",
     "semver": "^5.4.1",
-    "showdown": "^1.9.1",
     "uuid": "^8.0.0"
   },
   "publishConfig": {

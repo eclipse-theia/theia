@@ -31,7 +31,6 @@ import { PreferenceScope } from './preference-scope';
 import { PreferenceProvider } from './preference-provider';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
 import { PreferenceProxyOptions, PreferenceProxy, PreferenceChangeEvent, createPreferenceProxy } from './preference-proxy';
-import { ApplicationProps } from '@theia/application-package/lib/application-props';
 import { PreferenceProxyFactory } from './injectable-preference-proxy';
 import { waitForEvent } from '../../common/promise-util';
 
@@ -61,10 +60,7 @@ describe('Preference Proxy', () => {
 
     before(() => {
         disableJSDOM = enableJSDOM();
-        FrontendApplicationConfigProvider.set({
-            ...ApplicationProps.DEFAULT.frontend.config,
-            'applicationName': 'test'
-        });
+        FrontendApplicationConfigProvider.set({});
     });
 
     after(() => {

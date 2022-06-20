@@ -17,11 +17,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, optional, multiInject, inject, named } from '@theia/core/shared/inversify';
+import * as semver from 'semver';
 import {
     PluginDeployerResolver, PluginDeployerFileHandler, PluginDeployerDirectoryHandler,
     PluginDeployerEntry, PluginDeployer, PluginDeployerParticipant, PluginDeployerStartContext,
     PluginDeployerResolverInit, PluginDeployerFileHandlerContext,
-    PluginDeployerDirectoryHandlerContext, PluginDeployerEntryType, PluginDeployerHandler, PluginType, UnresolvedPluginEntry
+    PluginDeployerDirectoryHandlerContext, PluginDeployerEntryType, PluginDeployerHandler, PluginType, UnresolvedPluginEntry, PluginIdentifiers
 } from '../../common/plugin-protocol';
 import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl';
 import {
@@ -135,7 +136,11 @@ export class PluginDeployerImpl implements PluginDeployer {
         deployPlugins.log('Deploy plugins list');
     }
 
-    async undeploy(pluginId: string): Promise<void> {
+    async uninstall(pluginId: PluginIdentifiers.VersionedId): Promise<void> {
+        await this.pluginDeployerHandler.uninstallPlugin(pluginId);
+    }
+
+    async undeploy(pluginId: PluginIdentifiers.VersionedId): Promise<void> {
         if (await this.pluginDeployerHandler.undeployPlugin(pluginId)) {
             this.onDidDeployEmitter.fire();
         }
@@ -163,49 +168,49 @@ export class PluginDeployerImpl implements PluginDeployer {
      */
     async resolvePlugins(plugins: UnresolvedPluginEntry[]): Promise<PluginDeployerEntry[]> {
         const visited = new Set<string>();
-        const pluginsToDeploy = new Map<string, PluginDeployerEntry>();
+        const hasBeenVisited = (id: string) => visited.has(id) || (visited.add(id), false);
+        const pluginsToDeploy = new Map<PluginIdentifiers.VersionedId, PluginDeployerEntry>();
+        const unversionedIdsHandled = new Map<PluginIdentifiers.UnversionedId, string[]>();
 
-        let queue: UnresolvedPluginEntry[] = [...plugins];
+        const queue: UnresolvedPluginEntry[] = [...plugins];
         while (queue.length) {
-            const dependenciesChunk: Array<{
+            const pendingDependencies: Array<{
                 dependencies: Map<string, string>
                 type: PluginType
             }> = [];
-            const workload: UnresolvedPluginEntry[] = [];
-            while (queue.length) {
-                const current = queue.shift()!;
-                if (visited.has(current.id)) {
-                    continue;
-                } else {
-                    workload.push(current);
+            await Promise.all(queue.map(async entry => {
+                if (hasBeenVisited(entry.id)) {
+                    return;
                 }
-                visited.add(current.id);
-            }
-            queue = [];
-            await Promise.all(workload.map(async ({ id, type }) => {
-                if (type === undefined) {
-                    type = PluginType.System;
-                }
+                const type = entry.type ?? PluginType.System;
                 try {
-                    const pluginDeployerEntries = await this.resolvePlugin(id, type);
-                    await this.applyFileHandlers(pluginDeployerEntries);
-                    await this.applyDirectoryFileHandlers(pluginDeployerEntries);
+                    const pluginDeployerEntries = await this.resolveAndHandle(entry.id, type);
                     for (const deployerEntry of pluginDeployerEntries) {
-                        const dependencies = await this.pluginDeployerHandler.getPluginDependencies(deployerEntry);
-                        if (dependencies && !pluginsToDeploy.has(dependencies.metadata.model.id)) {
-                            pluginsToDeploy.set(dependencies.metadata.model.id, deployerEntry);
-                            if (dependencies.mapping) {
-                                dependenciesChunk.push({ dependencies: dependencies.mapping, type });
+                        const pluginData = await this.pluginDeployerHandler.getPluginDependencies(deployerEntry);
+                        const versionedId = pluginData && PluginIdentifiers.componentsToVersionedId(pluginData.metadata.model);
+                        const unversionedId = versionedId && PluginIdentifiers.componentsToUnversionedId(pluginData.metadata.model);
+                        if (unversionedId && !pluginsToDeploy.has(versionedId)) {
+                            pluginsToDeploy.set(versionedId, deployerEntry);
+                            if (pluginData.mapping) {
+                                pendingDependencies.push({ dependencies: pluginData.mapping, type });
+                            }
+                            const otherVersions = unversionedIdsHandled.get(unversionedId) ?? [];
+                            otherVersions.push(pluginData.metadata.model.version);
+                            if (otherVersions.length === 1) {
+                                unversionedIdsHandled.set(unversionedId, otherVersions);
+                            } else {
+                                this.findBestVersion(unversionedId, otherVersions, pluginsToDeploy);
                             }
                         }
                     }
                 } catch (e) {
-                    console.error(`Failed to resolve plugins from '${id}'`, e);
+                    console.error(`Failed to resolve plugins from '${entry.id}'`, e);
                 }
             }));
-            for (const { dependencies, type } of dependenciesChunk) {
+            queue.length = 0;
+            for (const { dependencies, type } of pendingDependencies) {
                 for (const [dependency, deployableDependency] of dependencies) {
-                    if (!pluginsToDeploy.has(dependency)) {
+                    if (!unversionedIdsHandled.has(dependency as PluginIdentifiers.UnversionedId)) {
                         queue.push({
                             id: deployableDependency,
                             type
@@ -215,6 +220,46 @@ export class PluginDeployerImpl implements PluginDeployer {
             }
         }
         return [...pluginsToDeploy.values()];
+    }
+
+    protected async resolveAndHandle(id: string, type: PluginType): Promise<PluginDeployerEntry[]> {
+        const entries = await this.resolvePlugin(id, type);
+        await this.applyFileHandlers(entries);
+        await this.applyDirectoryFileHandlers(entries);
+        return entries;
+    }
+
+    protected findBestVersion(unversionedId: PluginIdentifiers.UnversionedId, versions: string[], knownPlugins: Map<PluginIdentifiers.VersionedId, PluginDeployerEntry>): void {
+        // If left better, return negative. Then best is index 0.
+        versions.map(version => ({ version, plugin: knownPlugins.get(PluginIdentifiers.idAndVersionToVersionedId({ version, id: unversionedId })) }))
+            .sort((left, right) => {
+                const leftPlugin = left.plugin;
+                const rightPlugin = right.plugin;
+                if (!leftPlugin && !rightPlugin) {
+                    return 0;
+                }
+                if (!rightPlugin) {
+                    return -1;
+                }
+                if (!leftPlugin) {
+                    return 1;
+                }
+                if (leftPlugin.type === PluginType.System && rightPlugin.type === PluginType.User) {
+                    return -1;
+                }
+                if (leftPlugin.type === PluginType.User && rightPlugin.type === PluginType.System) {
+                    return 1;
+                }
+                if (semver.gtr(left.version, right.version)) {
+                    return -1;
+                }
+                return 1;
+            }).forEach((versionedEntry, index) => {
+                if (index !== 0) {
+                    // Mark as not accepted to prevent deployment of all but the winner.
+                    versionedEntry.plugin?.accept();
+                }
+            });
     }
 
     /**

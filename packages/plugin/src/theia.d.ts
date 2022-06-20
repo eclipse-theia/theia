@@ -1215,6 +1215,22 @@ export module '@theia/plugin' {
          * @param revealType The scrolling strategy for revealing `range`.
          */
         revealRange(range: Range, revealType?: TextEditorRevealType): void;
+
+        /**
+         * Shows this text editor. A [column](#ViewColumn) can be provided to control where the editor is being shown. Might change the [active editor](#window.activeTextEditor).
+         *
+         * @deprecated use [window.showTextDocument](#Window.showTextDocument) instead.
+         *
+         * @param column A [view column](#ViewColumn) in which this editor should be shown.
+         */
+        show(column?: ViewColumn): void;
+
+        /**
+         * Hides this text editor.
+         *
+         * @deprecated use 'workbench.action.closeActiveEditor' command instead.
+         */
+        hide(): void;
     }
 
     /**
@@ -5349,7 +5365,7 @@ export module '@theia/plugin' {
         /**
          * A human-readable string describing this item. When `falsy`, it is derived from [resourceUri](#TreeItem.resourceUri).
          */
-        label?: string;
+        label?: string | TreeItemLabel;
 
         /**
          * Optional id for the tree item that has to be unique across tree. The id is used to preserve the selection and expansion state of the tree item.
@@ -5425,7 +5441,7 @@ export module '@theia/plugin' {
          * @param label A human-readable string describing this item
          * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
          */
-        constructor(label: string, collapsibleState?: TreeItemCollapsibleState);
+        constructor(label: string | TreeItemLabel, collapsibleState?: TreeItemCollapsibleState);
 
         /**
          * @param resourceUri The [uri](#Uri) of the resource representing this item.
@@ -5450,6 +5466,23 @@ export module '@theia/plugin' {
          * Determines an item is expanded
          */
         Expanded = 2
+    }
+
+    /**
+     * Label describing the {@link TreeItem Tree item}
+     */
+    export interface TreeItemLabel {
+
+        /**
+         * A human-readable string describing the {@link TreeItem Tree item}.
+         */
+        label: string;
+
+        /**
+         * Ranges in the label to highlight. A range is defined as a tuple of two numbers where the
+         * first is the inclusive start index and the second the exclusive end index
+         */
+        highlights?: [number, number][];
     }
 
     /**
@@ -10740,6 +10773,9 @@ export module '@theia/plugin' {
 
         /** Controls whether to show the "Terminal will be reused by tasks, press any key to close it" message. */
         showReuseMessage?: boolean;
+
+        /** Controls whether the terminal is cleared before executing the task. */
+        clear?: boolean;
     }
 
     export class Task {

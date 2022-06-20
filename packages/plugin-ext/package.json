@@ -39,6 +39,7 @@
     "mime": "^2.4.4",
     "ps-tree": "^1.2.0",
     "request": "^2.82.0",
+    "semver": "^5.4.1",
     "uuid": "^8.0.0",
     "vhost": "^3.0.2",
     "vscode-debugprotocol": "^1.32.0",

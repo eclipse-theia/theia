@@ -1487,10 +1487,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 id: 'tab.hoverBackground',
-                defaults: {
-                    dark: 'tab.inactiveBackground',
-                    light: 'tab.inactiveBackground'
-                },
                 description: 'Tab background color when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             },
             {
@@ -1625,16 +1621,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // if not yet contributed by Monaco, check runtime css variables to learn.
             {
                 id: 'quickInput.background', defaults: {
-                    dark: 'sideBar.background',
-                    light: 'sideBar.background',
-                    hc: 'sideBar.background'
+                    dark: 'editorWidget.background',
+                    light: 'editorWidget.background',
+                    hc: 'editorWidget.background'
                 }, description: 'Quick Input background color. The Quick Input widget is the container for views like the color theme picker.'
             },
             {
                 id: 'quickInput.foreground', defaults: {
-                    dark: 'sideBar.foreground',
-                    light: 'sideBar.foreground',
-                    hc: 'sideBar.foreground'
+                    dark: 'editorWidget.foreground',
+                    light: 'editorWidget.foreground',
+                    hc: 'editorWidget.foreground'
                 }, description: 'Quick Input foreground color. The Quick Input widget is the container for views like the color theme picker.'
             },
             {

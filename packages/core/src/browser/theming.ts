@@ -19,26 +19,26 @@ import { Disposable } from '../common/disposable';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { ApplicationProps } from '@theia/application-package/lib/application-props';
 import { Theme, ThemeChangeEvent } from '../common/theme';
+import { injectable, postConstruct } from 'inversify';
+import { Deferred } from '../common/promise-util';
 
-export const ThemeServiceSymbol = Symbol('ThemeService');
-
+@injectable()
 export class ThemeService {
 
     protected themes: { [id: string]: Theme } = {};
     protected activeTheme: Theme | undefined;
     protected readonly themeChange = new Emitter<ThemeChangeEvent>();
+    protected readonly deferredInitializer = new Deferred();
+    get initialized(): Promise<void> {
+        return this.deferredInitializer.promise;
+    }
 
     readonly onDidColorThemeChange: Event<ThemeChangeEvent> = this.themeChange.event;
 
-    static get(): ThemeService {
-        const global = window as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-        if (!global[ThemeServiceSymbol]) {
-            const themeService = new ThemeService();
-            themeService.register(...BuiltinThemeProvider.themes);
-            themeService.startupTheme();
-            global[ThemeServiceSymbol] = themeService;
-        }
-        return global[ThemeServiceSymbol];
+    @postConstruct()
+    protected init(): void {
+        this.register(...BuiltinThemeProvider.themes);
+        this.loadUserTheme();
     }
 
     register(...themes: Theme[]): Disposable {
@@ -83,12 +83,13 @@ export class ThemeService {
 
     startupTheme(): void {
         const theme = this.getCurrentTheme();
-        theme.activate();
+        theme.activate?.();
     }
 
     loadUserTheme(): void {
         const theme = this.getCurrentTheme();
         this.setCurrentTheme(theme.id);
+        this.deferredInitializer.resolve();
     }
 
     setCurrentTheme(themeId: string): void {
@@ -98,9 +99,9 @@ export class ThemeService {
             if (oldTheme.id === newTheme.id) {
                 return;
             }
-            oldTheme.deactivate();
+            oldTheme.deactivate?.();
         }
-        newTheme.activate();
+        newTheme.activate?.();
         this.activeTheme = newTheme;
         window.localStorage.setItem('theme', themeId);
         this.themeChange.fire({
@@ -126,52 +127,29 @@ export class ThemeService {
     reset(): void {
         this.setCurrentTheme(this.defaultTheme.id);
     }
-
 }
 
 export class BuiltinThemeProvider {
-
-    // Webpack converts these `require` in some Javascript object that wraps the `.css` files
-    static readonly darkCss = require('../../src/browser/style/variables-dark.useable.css');
-    static readonly lightCss = require('../../src/browser/style/variables-bright.useable.css');
 
     static readonly darkTheme: Theme = {
         id: 'dark',
         type: 'dark',
         label: 'Dark (Theia)',
-        editorTheme: 'dark-theia', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
-        activate(): void {
-            BuiltinThemeProvider.darkCss.use();
-        },
-        deactivate(): void {
-            BuiltinThemeProvider.darkCss.unuse();
-        }
+        editorTheme: 'dark-theia' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
     };
 
     static readonly lightTheme: Theme = {
         id: 'light',
         type: 'light',
         label: 'Light (Theia)',
-        editorTheme: 'light-theia', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
-        activate(): void {
-            BuiltinThemeProvider.lightCss.use();
-        },
-        deactivate(): void {
-            BuiltinThemeProvider.lightCss.unuse();
-        }
+        editorTheme: 'light-theia' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
     };
 
     static readonly hcTheme: Theme = {
         id: 'hc-theia',
         type: 'hc',
         label: 'High Contrast (Theia)',
-        editorTheme: 'hc-theia', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
-        activate(): void {
-            BuiltinThemeProvider.darkCss.use();
-        },
-        deactivate(): void {
-            BuiltinThemeProvider.darkCss.unuse();
-        }
+        editorTheme: 'hc-theia' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
     };
 
     static readonly themes = [

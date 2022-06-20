@@ -247,16 +247,35 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         }
         /* fall back to side group -> split relative to the active widget */
         let widgetOptions: ApplicationShell.WidgetOptions | undefined = { mode: 'split-right' };
-        const viewColumn = options.viewColumn;
+        let viewColumn = options.viewColumn;
+        if (viewColumn === -2) {
+            /* show besides -> compute current column and adjust viewColumn accordingly */
+            const tabBars = shell.mainAreaTabBars;
+            const currentTabBar = shell.currentTabBar;
+            if (currentTabBar) {
+                const currentColumn = tabBars.indexOf(currentTabBar);
+                if (currentColumn > -1) {
+                    // +2 because conversion from 0-based to 1-based index and increase of 1
+                    viewColumn = currentColumn + 2;
+                }
+            }
+        }
         if (viewColumn === undefined || viewColumn === -1) {
             /* active group -> skip (default behaviour) */
             widgetOptions = undefined;
-        } else if (viewColumn > 0) {
+        } else if (viewColumn > 0 && shell.mainAreaTabBars.length > 0) {
             const tabBars = shell.mainAreaTabBars;
-            // convert to zero-based index
-            const tabBar = tabBars[viewColumn - 1];
-            if (tabBar && tabBar.currentTitle) {
-                widgetOptions = { ref: tabBar.currentTitle.owner };
+            if (viewColumn <= tabBars.length) {
+                // convert to zero-based index
+                const tabBar = tabBars[viewColumn - 1];
+                if (tabBar?.currentTitle) {
+                    widgetOptions = { ref: tabBar.currentTitle.owner };
+                }
+            } else {
+                const tabBar = tabBars[tabBars.length - 1];
+                if (tabBar?.currentTitle) {
+                    widgetOptions!.ref = tabBar.currentTitle.owner;
+                }
             }
         }
         return {

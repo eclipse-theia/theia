@@ -303,15 +303,15 @@ export class GitContribution implements CommandContribution, MenuContribution, T
 
         registerResourceAction('navigation', {
             commandId: GIT_COMMANDS.OPEN_CHANGED_FILE.id,
-            when: 'scmProvider == git && scmResourceGroup == workingTree'
+            when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges'
         });
         registerResourceAction('1_modification', {
             commandId: GIT_COMMANDS.DISCARD.id,
-            when: 'scmProvider == git && scmResourceGroup == workingTree'
+            when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges'
         });
         registerResourceAction('1_modification', {
             commandId: GIT_COMMANDS.STAGE.id,
-            when: 'scmProvider == git && scmResourceGroup == workingTree'
+            when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges'
         });
 
         registerResourceAction('navigation', {
@@ -343,11 +343,11 @@ export class GitContribution implements CommandContribution, MenuContribution, T
 
         registerResourceFolderAction('1_modification', {
             commandId: GIT_COMMANDS.DISCARD.id,
-            when: 'scmProvider == git && scmResourceGroup == workingTree'
+            when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges'
         });
         registerResourceFolderAction('1_modification', {
             commandId: GIT_COMMANDS.STAGE.id,
-            when: 'scmProvider == git && scmResourceGroup == workingTree'
+            when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges'
         });
 
         registerResourceFolderAction('1_modification', {
@@ -379,11 +379,11 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         });
         registerResourceGroupAction('1_modification', {
             commandId: GIT_COMMANDS.STAGE_ALL.id,
-            when: 'scmProvider == git && scmResourceGroup == workingTree',
+            when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges',
         });
         registerResourceGroupAction('1_modification', {
             commandId: GIT_COMMANDS.DISCARD_ALL.id,
-            when: 'scmProvider == git && scmResourceGroup == workingTree',
+            when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges',
         });
     }
 
@@ -435,9 +435,28 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         registry.registerCommand(GIT_COMMANDS.STAGE_ALL, {
             execute: () => {
                 const provider = this.repositoryProvider.selectedScmProvider;
-                return provider && this.withProgress(() => provider.stageAll());
+                if (provider) {
+                    if (this.gitPreferences['git.untrackedChanges'] === 'mixed') {
+                        return this.withProgress(() => provider.stageAll());
+                    } else {
+                        const toStage = provider.unstagedChanges.concat(provider.mergeChanges)
+                            .filter(change => change.status !== GitFileStatus.New)
+                            .map(change => change.uri.toString());
+                        return this.withProgress(() => provider.stage(toStage));
+                    }
+                }
+
             },
-            isEnabled: () => !!this.repositoryProvider.selectedScmProvider
+            isEnabled: () => {
+                const provider = this.repositoryProvider.selectedScmProvider;
+                if (!provider) { return false; }
+                if (this.gitPreferences['git.untrackedChanges'] === 'mixed') {
+                    return Boolean(provider.unstagedChanges.length || provider.mergeChanges.length);
+                } else {
+                    const isNotUntracked = (change: GitFileChange) => change.status !== GitFileStatus.New;
+                    return Boolean(provider.unstagedChanges.filter(isNotUntracked).length || provider.mergeChanges.filter(isNotUntracked).length);
+                }
+            }
         });
         registry.registerCommand(GIT_COMMANDS.UNSTAGE_ALL, {
             execute: () => {

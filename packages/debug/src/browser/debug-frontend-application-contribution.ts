@@ -14,11 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AbstractViewContribution, ApplicationShell, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider, codicon } from '@theia/core/lib/browser';
+import { AbstractViewContribution, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider, codicon } from '@theia/core/lib/browser';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable } from '@theia/core/lib/common';
-import { DebugViewLocation } from '../common/debug-configuration';
 import { EditorKeybindingContexts, EditorManager } from '@theia/editor/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugWidget } from './view/debug-widget';
@@ -34,7 +33,7 @@ import { DebugStackFramesWidget } from './view/debug-stack-frames-widget';
 import { DebugStackFrame } from './model/debug-stack-frame';
 import { DebugVariablesWidget } from './view/debug-variables-widget';
 import { DebugVariable } from './console/debug-console-items';
-import { DebugSessionWidget, DebugSessionWidgetFactory } from './view/debug-session-widget';
+import { DebugSessionWidget } from './view/debug-session-widget';
 import { DebugKeybindingContexts } from './debug-keybinding-contexts';
 import { DebugEditorModel } from './editor/debug-editor-model';
 import { DebugEditorService } from './editor/debug-editor-service';
@@ -334,15 +333,6 @@ export namespace DebugSessionContextCommands {
     export const REVEAL = {
         id: 'debug.session.context.reveal'
     };
-    export const OPEN_LEFT = {
-        id: 'debug.session.context.openLeft'
-    };
-    export const OPEN_RIGHT = {
-        id: 'debug.session.context.openRight'
-    };
-    export const OPEN_BOTTOM = {
-        id: 'debug.session.context.openBottom'
-    };
 }
 export namespace DebugEditorContextCommands {
     export const ADD_BREAKPOINT = {
@@ -402,9 +392,6 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
     @inject(BreakpointManager)
     protected readonly breakpointManager: BreakpointManager;
-
-    @inject(DebugSessionWidgetFactory)
-    protected readonly sessionWidgetFactory: DebugSessionWidgetFactory;
 
     @inject(DebugEditorService)
     protected readonly editors: DebugEditorService;
@@ -556,12 +543,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             { ...DebugCommands.STOP, ...DebugSessionContextCommands.STOP },
             { ...DebugThreadContextCommands.TERMINATE, label: nls.localizeByDefault('Terminate Thread') }
         );
-        registerMenuActions(DebugThreadsWidget.OPEN_MENU,
-            { ...DebugSessionContextCommands.REVEAL, label: nls.localize('theia/debug/reveal', 'Reveal') },
-            { ...DebugSessionContextCommands.OPEN_LEFT, label: nls.localize('theia/debug/openLeft', 'Open Left') },
-            { ...DebugSessionContextCommands.OPEN_RIGHT, label: nls.localize('theia/debug/openRight', 'Open Right') },
-            { ...DebugSessionContextCommands.OPEN_BOTTOM, label: nls.localize('theia/debug/openBottom', 'Open Bottom') }
-        );
+        registerMenuActions(DebugThreadsWidget.OPEN_MENU, { ...DebugSessionContextCommands.REVEAL, label: nls.localize('theia/debug/reveal', 'Reveal') });
 
         registerMenuActions(DebugStackFramesWidget.CONTEXT_MENU,
             DebugCommands.RESTART_FRAME,
@@ -721,31 +703,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
         registry.registerCommand(DebugSessionContextCommands.REVEAL, {
             execute: () => this.selectedSession && this.revealSession(this.selectedSession),
-            isEnabled: () => this.hasSessionWidget,
-            isVisible: () => !this.selectedThread && this.hasSessionWidget
+            isEnabled: () => Boolean(this.selectedSession),
+            isVisible: () => !this.selectedThread && Boolean(this.selectedSession)
         });
-        registry.registerCommand(DebugSessionContextCommands.OPEN_LEFT, {
-            execute: () => this.selectedSession && this.openSession(this.selectedSession, {
-                debugViewLocation: 'left'
-            }),
-            isEnabled: () => !this.hasSessionWidget,
-            isVisible: () => !this.selectedThread && !this.hasSessionWidget
-        });
-        registry.registerCommand(DebugSessionContextCommands.OPEN_RIGHT, {
-            execute: () => this.selectedSession && this.openSession(this.selectedSession, {
-                debugViewLocation: 'right'
-            }),
-            isEnabled: () => !this.hasSessionWidget,
-            isVisible: () => !this.selectedThread && !this.hasSessionWidget
-        });
-        registry.registerCommand(DebugSessionContextCommands.OPEN_BOTTOM, {
-            execute: () => this.selectedSession && this.openSession(this.selectedSession, {
-                debugViewLocation: 'bottom'
-            }),
-            isEnabled: () => !this.hasSessionWidget,
-            isVisible: () => !this.selectedThread && !this.hasSessionWidget
-        });
-
         registry.registerCommand(DebugCommands.TOGGLE_BREAKPOINT, {
             execute: () => this.editors.toggleBreakpoint(),
             isEnabled: () => !!this.editors.model
@@ -1131,43 +1091,23 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
     }
 
-    protected readonly sessionWidgets = new Map<string, DebugSessionWidget>();
-    get hasSessionWidget(): boolean {
-        return !!this.selectedSession && this.sessionWidgets.has(this.selectedSession.label);
-    }
     protected async openSession(
         session: DebugSession,
         options?: {
-            debugViewLocation?: DebugViewLocation;
             reveal?: boolean;
         }
     ): Promise<DebugWidget | DebugSessionWidget> {
-        const { debugViewLocation, reveal } = {
-            debugViewLocation: session.configuration.debugViewLocation || this.preference['debug.debugViewLocation'],
+        const { reveal } = {
             reveal: true,
             ...options
         };
-        const sessionWidget = this.revealSession(session);
-        if (sessionWidget) {
-            return sessionWidget;
-        }
-        const area = ApplicationShell.isSideArea(debugViewLocation) ? debugViewLocation : 'debug';
-        if (area === 'debug') {
-            return this.openView({ reveal });
-        }
-        const newSessionWidget = this.sessionWidgetFactory({ session });
-        this.sessionWidgets.set(session.label, newSessionWidget);
-        newSessionWidget.disposed.connect(() =>
-            this.sessionWidgets.delete(session.label)
-        );
-        this.shell.addWidget(newSessionWidget, { area });
-        if (reveal) {
-            this.shell.revealWidget(newSessionWidget.id);
-        }
-        return newSessionWidget;
+        const debugWidget = await this.openView({ reveal });
+        debugWidget.sessionManager.currentSession = session;
+        return debugWidget['sessionWidget'];
     }
+
     protected revealSession(session: DebugSession): DebugSessionWidget | undefined {
-        const widget = this.sessionWidgets.get(session.label);
+        const widget = this.tryGetWidget()?.['sessionWidget'];
         if (widget) {
             this.shell.revealWidget(widget.id);
         }

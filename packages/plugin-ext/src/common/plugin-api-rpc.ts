@@ -702,6 +702,8 @@ export interface TreeViewItem {
     id: string;
 
     label: string;
+    /** Label highlights given as tuples of inclusive start index and exclusive end index. */
+    highlights?: [number, number][];
 
     description?: string | boolean;
 
@@ -1166,11 +1168,10 @@ export interface DecorationOptions {
 }
 
 export interface TextEditorsMain {
-    // $tryShowTextDocument(resource: UriComponents, options: TextDocumentShowOptions): Promise<string>;
+    $tryShowTextDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void>;
     $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions): void;
     $removeTextEditorDecorationType(key: string): void;
-    // $tryShowEditor(id: string, position: EditorPosition): Promise<void>;
-    // $tryHideEditor(id: string): Promise<void>;
+    $tryHideEditor(id: string): Promise<void>;
     $trySetOptions(id: string, options: TextEditorConfigurationUpdate): Promise<void>;
     $trySetDecorations(id: string, key: string, ranges: DecorationOptions[]): Promise<void>;
     $trySetDecorationsFast(id: string, key: string, ranges: number[]): Promise<void>;
@@ -1415,6 +1416,7 @@ export interface TaskPresentationOptionsDTO {
     echo?: boolean;
     panel?: number;
     showReuseMessage?: boolean;
+    clear?: boolean;
 }
 
 export interface TaskExecutionDto {

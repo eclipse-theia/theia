@@ -8,6 +8,10 @@
 
 - [plugin] moved `WebviewViewResolveContext` from `window` to `root` namespace [#11216](https://github.com/eclipse-theia/theia/pull/11216) - Contributed on behalf of STMicroelectronics
 - [plugin] Add support for property `color` of `ThemeIcon`. [#11243](https://github.com/eclipse-theia/theia/pull/11243) - Contributed on behalf of STMicroelectronics
+- [plugin] Add support for `TreeItemLabel` in `TreeItem`. [#11288](https://github.com/eclipse-theia/theia/pull/11288) - Contributed on behalf of STMicroelectronics
+- [plugin] Support `TextEditor#show()` and `TextEditor#hide()` [#11168](https://github.com/eclipse-theia/theia/pull/11168) - Contributed on behalf of STMicroelectronics
+- [core, monaco] refactored theme initialization to occur within application lifecycle rather than at import time. [#11213](https://github.com/eclipse-theia/theia/pull/11213)
+- [plugin] Support optional property `TaskPresentationOptions#clear` [#11298](https://github.com/eclipse-theia/theia/pull/11298) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.27.0">[Breaking Changes:](#breaking_changes_1.27.0)</a>
 
@@ -51,6 +55,11 @@
 - [process] removed the deprecated getters `input`, `output` and `errorOutput` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
 - [workspace] removed deprecated `getDefaultWorkspacePath` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
 - [vsx-registry] removed deprecated `VSXExtensionsCommands` re-export [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [plugin] Remove `TreeItem2` from proposed plugin API. `TreeItem` can be used instead. [#11288](https://github.com/eclipse-theia/theia/pull/11288) - Contributed on behalf of STMicroelectronics
+- [debug] A single `DebugSessionWidget` is now used for all debug sessions. Code related to opening debug sessions in different areas has been removed, including `DebugViewLocation`, `DebugSessionWidgetFactory`, `DebugSessionContextCommands.OPEN_LEFT`, `...OPEN_RIGHT`, `...OPEN_BOTTOM`, the preference `debug.debugViewLocation`, `DebugViewOptions`. The bindings of the component widgets have also been changed to allow them to be created using the `WidgetManager` rather than via `inversify` injection. [#11277](https://github.com/eclipse-theia/theia/pull/11277)
+- [core] removed `ThemeService.get()`; inject the `ThemeService` instead. Removed `ColorApplicationContribution.initBackground()`; by default the `editor.background` color variable will be initialized through the normal theme initialization process. It is now expected that the `ThemeService` will call `this.deferredInitializer.resolve()` when the `ThemeService` finishes its initialization. Failure to do so in any overrides may cause failures to apply default themes.  [#11213](https://github.com/eclipse-theia/theia/pull/11213)
+- [monaco] removed static methods `init()`, `register()`, `restore(), `updateBodyUiTheme()` from `MonacoThemingService`; use instance methods `initialize()`, `registerParsedTheme()`, `restore()`, `updateBodyUiTheme()` instead. Removed `MonacoThemeRegistry.SINGLETON`, inject `MonacoThemeRegistry` instead. [#11213](https://github.com/eclipse-theia/theia/pull/11213)
+- [core] double-click no longer maximizes a tab by default - controllable through `workbench.tab.maximize` preference [#11279](https://github.com/eclipse-theia/theia/pull/11279)
 
 ## v1.26.0 - 5/26/2022
 

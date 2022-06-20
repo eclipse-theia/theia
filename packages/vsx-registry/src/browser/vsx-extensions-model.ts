@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import debounce from 'p-debounce';
-import * as showdown from 'showdown';
+import * as markdownit from '@theia/core/shared/markdown-it';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
@@ -285,15 +285,7 @@ export class VSXExtensionsModel {
     }
 
     protected compileReadme(readmeMarkdown: string): string {
-        const markdownConverter = new showdown.Converter({
-            headerLevelStart: 2,
-            noHeaderId: true,
-            strikethrough: true,
-            tables: true,
-            underline: true
-        });
-
-        const readmeHtml = markdownConverter.makeHtml(readmeMarkdown);
+        const readmeHtml = markdownit({ html: true }).render(readmeMarkdown);
         return DOMPurify.sanitize(readmeHtml);
     }
 

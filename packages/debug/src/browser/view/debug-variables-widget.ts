@@ -27,6 +27,7 @@ export class DebugVariablesWidget extends SourceTreeWidget {
     static CONTEXT_MENU: MenuPath = ['debug-variables-context-menu'];
     static EDIT_MENU: MenuPath = [...DebugVariablesWidget.CONTEXT_MENU, 'a_edit'];
     static WATCH_MENU: MenuPath = [...DebugVariablesWidget.CONTEXT_MENU, 'b_watch'];
+    static FACTORY_ID = 'debug:variables';
     static override createContainer(parent: interfaces.Container): Container {
         const child = SourceTreeWidget.createContainer(parent, {
             contextMenuPath: DebugVariablesWidget.CONTEXT_MENU,
@@ -51,7 +52,7 @@ export class DebugVariablesWidget extends SourceTreeWidget {
     @postConstruct()
     protected override init(): void {
         super.init();
-        this.id = 'debug:variables:' + this.viewModel.id;
+        this.id = DebugVariablesWidget.FACTORY_ID + ':' + this.viewModel.id;
         this.title.label = nls.localizeByDefault('Variables');
         this.toDispose.push(this.variables);
         this.source = this.variables;

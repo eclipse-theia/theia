@@ -118,7 +118,6 @@
   margin-left: -300px !important;
   background-color: var(--theia-quickInput-background) !important;
   color: var(--theia-foreground) !important;
-  box-shadow: rgb(0 0 0 / 36%) 0px 0px 8px 2px;
 }
 
 .quick-input-list

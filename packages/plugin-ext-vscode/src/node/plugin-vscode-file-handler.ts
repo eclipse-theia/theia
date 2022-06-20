@@ -22,6 +22,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { getTempDir } from '@theia/plugin-ext/lib/main/node/temp-dir-util';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
 import { FileUri } from '@theia/core/lib/node/file-uri';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
@@ -40,6 +41,7 @@ export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
     }
 
     async handle(context: PluginDeployerFileHandlerContext): Promise<void> {
+        await this.ensureDiscoverability(context);
         const id = context.pluginEntry().id();
         const extensionDir = await this.getExtensionDir(context);
         console.log(`[${id}]: trying to decompress into "${extensionDir}"...`);
@@ -54,11 +56,29 @@ export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
     }
 
     protected async getExtensionDir(context: PluginDeployerFileHandlerContext): Promise<string> {
-        let extensionsDirUri = this.systemExtensionsDirUri;
+        return FileUri.fsPath(this.systemExtensionsDirUri.resolve(filenamify(context.pluginEntry().id(), { replacement: '_' })));
+    }
+
+    /**
+     * Ensures that a user-installed plugin file is transferred to the user extension folder.
+     */
+    protected async ensureDiscoverability(context: PluginDeployerFileHandlerContext): Promise<void> {
         if (context.pluginEntry().type === PluginType.User) {
-            extensionsDirUri = await this.environment.getExtensionsDirUri();
+            const userExtensionsDir = await this.environment.getExtensionsDirUri();
+            const currentPath = context.pluginEntry().path();
+            if (!userExtensionsDir.isEqualOrParent(new URI(currentPath)) && !userExtensionsDir.isEqualOrParent(new URI(context.pluginEntry().originalPath()))) {
+                try {
+                    const newPath = FileUri.fsPath(userExtensionsDir.resolve(path.basename(currentPath)));
+                    await fs.mkdirp(FileUri.fsPath(userExtensionsDir));
+                    await new Promise<void>((resolve, reject) => {
+                        fs.copyFile(currentPath, newPath, error => error ? reject(error) : resolve());
+                    });
+                    context.pluginEntry().updatePath(newPath);
+                } catch (e) {
+                    console.error(`[${context.pluginEntry().id}]: Failed to copy to user directory. Future sessions may not have access to this plugin.`);
+                }
+            }
         }
-        return FileUri.fsPath(extensionsDirUri.resolve(filenamify(context.pluginEntry().id(), { replacement: '_' })));
     }
 
     protected async decompress(extensionDir: string, context: PluginDeployerFileHandlerContext): Promise<void> {

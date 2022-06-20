@@ -16,6 +16,7 @@
 
 import * as path from 'path';
 import * as fs from '@theia/core/shared/fs-extra';
+import { PluginIdentifiers } from '../../common';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function loadManifest(pluginPath: string): Promise<any> {
@@ -25,5 +26,6 @@ export async function loadManifest(pluginPath: string): Promise<any> {
     if (manifest && manifest.name && manifest.name.startsWith(built_prefix)) {
         manifest.name = manifest.name.substr(built_prefix.length);
     }
+    manifest.publisher ??= PluginIdentifiers.UNPUBLISHED;
     return manifest;
 }

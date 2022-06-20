@@ -27,11 +27,6 @@ import { DebugWatchExpression } from './debug-watch-expression';
 import { DebugWatchManager } from '../debug-watch-manager';
 import { DebugFunctionBreakpoint } from '../model/debug-function-breakpoint';
 
-export const DebugViewOptions = Symbol('DebugViewOptions');
-export interface DebugViewOptions {
-    session?: DebugSession
-}
-
 @injectable()
 export class DebugViewModel implements Disposable {
 
@@ -62,39 +57,20 @@ export class DebugViewModel implements Disposable {
         this.onDidChangeWatchExpressionsEmitter
     );
 
-    @inject(DebugViewOptions)
-    protected readonly options: DebugViewOptions;
-
     @inject(DebugSessionManager)
     protected readonly manager: DebugSessionManager;
 
     @inject(DebugWatchManager)
     protected readonly watch: DebugWatchManager;
 
-    protected readonly _sessions = new Set<DebugSession>();
     get sessions(): IterableIterator<DebugSession> {
-        return this._sessions.values();
+        return this.manager.sessions[Symbol.iterator]();
     }
     get sessionCount(): number {
-        return this._sessions.size;
+        return this.manager.sessions.length;
     }
-    push(session: DebugSession): void {
-        if (this._sessions.has(session)) {
-            return;
-        }
-        this._sessions.add(session);
-        this.fireDidChange();
-    }
-    delete(session: DebugSession): boolean {
-        if (this._sessions.delete(session)) {
-            this.fireDidChange();
-            return true;
-        }
-        return false;
-    }
-
     get session(): DebugSession | undefined {
-        return this.sessions.next().value;
+        return this.currentSession;
     }
     get id(): string {
         return this.session && this.session.id || '-1';
@@ -102,22 +78,14 @@ export class DebugViewModel implements Disposable {
     get label(): string {
         return this.session && this.session.label || 'Unknown Session';
     }
-    has(session: DebugSession | undefined): session is DebugSession {
-        return !!session && this._sessions.has(session);
-    }
 
     @postConstruct()
     protected init(): void {
-        if (this.options.session) {
-            this.push(this.options.session);
-        }
-        this.toDispose.push(this.manager.onDidChangeActiveDebugSession(({ previous, current }) => {
-            if (this.has(previous) && !this.has(current)) {
-                this.fireDidChange();
-            }
+        this.toDispose.push(this.manager.onDidChangeActiveDebugSession(() => {
+            this.fireDidChange();
         }));
         this.toDispose.push(this.manager.onDidChange(current => {
-            if (this.has(current)) {
+            if (current === this.currentSession) {
                 this.fireDidChange();
             }
         }));
@@ -136,7 +104,7 @@ export class DebugViewModel implements Disposable {
 
     get currentSession(): DebugSession | undefined {
         const { currentSession } = this.manager;
-        return this.has(currentSession) && currentSession || this.session;
+        return currentSession;
     }
     set currentSession(currentSession: DebugSession | undefined) {
         this.manager.currentSession = currentSession;
@@ -170,8 +138,6 @@ export class DebugViewModel implements Disposable {
         }
         const newSession = await this.manager.start(session.options);
         if (newSession) {
-            this._sessions.delete(session);
-            this._sessions.add(newSession);
             this.fireDidChange();
         }
     }
@@ -181,11 +147,7 @@ export class DebugViewModel implements Disposable {
         if (!session) {
             return;
         }
-        const newSession = await this.manager.restartSession(session);
-        if (newSession && newSession !== session) {
-            this._sessions.delete(session);
-            this._sessions.add(newSession);
-        }
+        await this.manager.restartSession(session);
         this.fireDidChange();
     }
 

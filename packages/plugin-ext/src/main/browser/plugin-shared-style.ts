@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { Theme } from '@theia/core/lib/common/theme';
@@ -34,15 +34,18 @@ export interface PluginIcon extends Disposable {
 @injectable()
 export class PluginSharedStyle {
 
+    @inject(ThemeService) protected readonly themeService: ThemeService;
+
     protected style: HTMLStyleElement;
     protected readonly rules: {
         selector: string;
         body: (theme: Theme) => string
     }[] = [];
 
-    constructor() {
+    @postConstruct()
+    protected init(): void {
         this.update();
-        ThemeService.get().onDidColorThemeChange(() => this.update());
+        this.themeService.onDidColorThemeChange(() => this.update());
     }
 
     protected readonly toUpdate = new DisposableCollection();
@@ -79,7 +82,7 @@ export class PluginSharedStyle {
         body: (theme: Theme) => string
     }): void {
         const sheet = (<CSSStyleSheet>this.style.sheet);
-        const cssBody = body(ThemeService.get().getCurrentTheme());
+        const cssBody = body(this.themeService.getCurrentTheme());
         sheet.insertRule(selector + ' {\n' + cssBody + '\n}', 0);
     }
     deleteRule(selector: string): void {
