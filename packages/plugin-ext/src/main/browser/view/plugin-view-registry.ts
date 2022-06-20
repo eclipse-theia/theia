@@ -403,6 +403,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const toDispose = new DisposableCollection();
 
         const viewsWelcome = this.viewsWelcome.get(viewWelcome.view) || [];
+        if (viewsWelcome.some(e => e.content === viewWelcome.content)) {
+            return toDispose;
+        }
         viewsWelcome.push(viewWelcome);
         this.viewsWelcome.set(viewWelcome.view, viewsWelcome);
         this.handleViewWelcomeChange(viewWelcome.view);
