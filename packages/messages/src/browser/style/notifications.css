@@ -242,22 +242,8 @@
 }
 
 .theia-notification-item-progressbar.indeterminate {
+    /* `progress-animation` is defined in `packages/core/src/browser/style/progress-bar.css` */
     animation: progress-animation 1.3s 0s infinite cubic-bezier(0.645, 0.045, 0.355, 1);
-}
-
-@keyframes progress-animation {
-    0% {
-        margin-left: 0%;
-        width: 3%;
-    }
-    60% {
-        margin-left: 45%;
-        width: 20%;
-    }
-    100% {
-        margin-left: 99%;
-        width: 1%;
-    }
 }
 
 /* Perfect scrollbar */

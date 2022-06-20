@@ -21,7 +21,7 @@ import { LanguageInfo } from '@theia/core/lib/common/i18n/localization';
 import { PluginPackage, PluginServer } from '@theia/plugin-ext';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { VSXSearchEntry } from '@theia/ovsx-client';
-import { VSXExtensionUri } from '../common/vsx-extension-uri';
+import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
 
 @injectable()
 export class VSXLanguageQuickPickService extends LanguageQuickPickService {
@@ -54,30 +54,22 @@ export class VSXLanguageQuickPickService extends LanguageQuickPickService {
             }))
         );
 
-        const languages = new Map<string, { language: LanguageInfo, extensionUri: string }>();
+        const languages = new Map<string, LanguageQuickPickItem>();
 
         for (const extension of extensionLanguages) {
             for (const localizationContribution of extension.languages) {
                 if (!languages.has(localizationContribution.languageId)) {
                     languages.set(localizationContribution.languageId, {
-                        language: localizationContribution,
-                        extensionUri: VSXExtensionUri.toUri(extension.extension.name, extension.extension.namespace).toString()
+                        ...this.createLanguageQuickPickItem(localizationContribution),
+                        execute: async () => {
+                            const extensionUri = VSCodeExtensionUri.toUri(extension.extension.name, extension.extension.namespace).toString();
+                            await this.pluginServer.deploy(extensionUri);
+                        }
                     });
                 }
             }
         }
-        const items: LanguageQuickPickItem[] = [];
-
-        for (const { language, extensionUri } of Array.from(languages.values())) {
-            const item: LanguageQuickPickItem = {
-                ...this.createLanguageQuickPickItem(language),
-                execute: async () => {
-                    await this.pluginServer.deploy(extensionUri);
-                }
-            };
-            items.push(item);
-        }
-        return items;
+        return Array.from(languages.values());
     }
 
     protected async loadExtensionLanguages(extension: VSXSearchEntry): Promise<LanguageInfo[]> {
@@ -87,17 +79,19 @@ export class VSXLanguageQuickPickService extends LanguageQuickPickService {
         const downloadUrl = extension.files.download;
         const parentUrl = downloadUrl.substring(0, downloadUrl.lastIndexOf('/'));
         const manifestUrl = parentUrl + '/package.json';
-        const manifestRequest = await this.requestService.request({ url: manifestUrl });
-        const manifestContent = RequestContext.asJson<PluginPackage>(manifestRequest);
-        const localizations = manifestContent.contributes?.localizations;
-        if (localizations) {
+        try {
+            const manifestRequest = await this.requestService.request({ url: manifestUrl });
+            const manifestContent = RequestContext.asJson<PluginPackage>(manifestRequest);
+            const localizations = manifestContent.contributes?.localizations ?? [];
             return localizations.map(e => ({
                 languageId: e.languageId,
                 languageName: e.languageName,
                 localizedLanguageName: e.localizedLanguageName,
                 languagePack: true
             }));
+        } catch {
+            // The `package.json` file might not actually exist, simply return an empty array
+            return [];
         }
-        return [];
     }
 }

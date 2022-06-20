@@ -33,9 +33,9 @@ export class LanguageQuickPickService {
     @inject(WindowService) protected readonly windowService: WindowService;
 
     async pickDisplayLanguage(): Promise<string | undefined> {
-        const quickInput = this.quickInputService.createQuickPick();
+        const quickInput = this.quickInputService.createQuickPick<LanguageQuickPickItem>();
         const installedItems = await this.getInstalledLanguages();
-        const quickInputItems: (QuickPickItem | QuickPickSeparator)[] = [
+        const quickInputItems: (LanguageQuickPickItem | QuickPickSeparator)[] = [
             {
                 type: 'separator',
                 label: nls.localize('theia/core/installedLanguages', 'Installed languages')
@@ -72,11 +72,15 @@ export class LanguageQuickPickService {
 
         return new Promise(resolve => {
             quickInput.onDidAccept(async () => {
-                const selectedItem = quickInput.selectedItems[0] as LanguageQuickPickItem;
-                // Some language quick pick items want to install additional languages
-                // We have to await that before returning the selected locale
-                await selectedItem.execute?.();
-                resolve(selectedItem.languageId);
+                const selectedItem = quickInput.selectedItems[0];
+                if (selectedItem) {
+                    // Some language quick pick items want to install additional languages
+                    // We have to await that before returning the selected locale
+                    await selectedItem.execute?.();
+                    resolve(selectedItem.languageId);
+                } else {
+                    resolve(undefined);
+                }
             });
             quickInput.onDidHide(() => {
                 resolve(undefined);
