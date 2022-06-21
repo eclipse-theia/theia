@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as nsfw from '@theia/core/shared/nsfw';
-import { join } from 'path';
+import { resolve } from 'path';
 import { promises as fsp } from 'fs';
 import { IMinimatch, Minimatch } from 'minimatch';
 import { FileUri } from '@theia/core/lib/node/file-uri';
@@ -252,8 +252,8 @@ export class NsfwWatcher {
                 await Promise.all(events.map(async event => {
                     if (event.action === nsfw.actions.RENAMED) {
                         const [oldPath, newPath] = await Promise.all([
-                            this.resolveEventPath(event.directory, event.oldFile!),
-                            this.resolveEventPath(event.newDirectory || event.directory, event.newFile!),
+                            this.resolveEventPath(event.directory, event.oldFile),
+                            this.resolveEventPath(event.newDirectory, event.newFile),
                         ]);
                         this.pushFileChange(fileChangeCollection, FileChangeType.DELETED, oldPath);
                         this.pushFileChange(fileChangeCollection, FileChangeType.ADDED, newPath);
@@ -281,18 +281,8 @@ export class NsfwWatcher {
     }
 
     protected async resolveEventPath(directory: string, file: string): Promise<string> {
-        const path = join(directory, file);
-        try {
-            return await fsp.realpath(path);
-        } catch {
-            try {
-                // file does not exist try to resolve directory
-                return join(await fsp.realpath(directory), file);
-            } catch {
-                // directory does not exist fall back to symlink
-                return path;
-            }
-        }
+        // nsfw already resolves symlinks, the paths should be clean already:
+        return resolve(directory, file);
     }
 
     protected pushFileChange(changes: FileChangeCollection, type: FileChangeType, path: string): void {
