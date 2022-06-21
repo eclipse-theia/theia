@@ -64,6 +64,7 @@ import { isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveResourceService } from './save-resource-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
 import { createUntitledURI } from '../common';
+import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
 
 export namespace CommonMenus {
 
@@ -399,6 +400,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(UserWorkingDirectoryProvider)
     protected readonly workingDirProvider: UserWorkingDirectoryProvider;
+
+    @inject(LanguageQuickPickService)
+    protected readonly languageQuickPickService: LanguageQuickPickService;
 
     protected pinnedKey: ContextKey<boolean>;
 
@@ -1142,27 +1146,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected async configureDisplayLanguage(): Promise<void> {
-        const availableLanguages = await this.localizationProvider.getAvailableLanguages();
-        const items: QuickPickItem[] = [];
-        for (const languageId of ['en', ...availableLanguages.map(e => e.languageId)]) {
-            if (typeof languageId === 'string') {
-                items.push({
-                    label: languageId,
-                    execute: async () => {
-                        if (languageId !== nls.locale && await this.confirmRestart()) {
-                            this.windowService.setSafeToShutDown();
-                            window.localStorage.setItem(nls.localeId, languageId);
-                            this.windowService.reload();
-                        }
-                    }
-                });
-            }
+        const languageId = await this.languageQuickPickService.pickDisplayLanguage();
+        if (languageId && !nls.isSelectedLocale(languageId) && await this.confirmRestart()) {
+            nls.setLocale(languageId);
+            this.windowService.setSafeToShutDown();
+            this.windowService.reload();
         }
-        this.quickInputService?.showQuickPick(items,
-            {
-                placeholder: CommonCommands.CONFIGURE_DISPLAY_LANGUAGE.label,
-                activeItem: items.find(item => item.label === (nls.locale || 'en'))
-            });
     }
 
     protected async confirmRestart(): Promise<boolean> {

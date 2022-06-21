@@ -227,6 +227,13 @@
   cursor: pointer !important;
 }
 
+.quick-input-progress.active.infinite {
+    background-color: var(--theia-progressBar-background);
+    width: 3%;
+    /* `progress-animation` is defined in `packages/core/src/browser/style/progress-bar.css` */
+    animation: progress-animation 1.3s 0s infinite cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
 .monaco-list:not(.drop-target) .monaco-list-row:hover:not(.selected):not(.focused) {
   background: var(--theia-list-hoverBackground);
 }
