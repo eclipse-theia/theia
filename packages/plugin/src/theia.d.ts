@@ -2929,6 +2929,12 @@ export module '@theia/plugin' {
         readonly exitStatus: TerminalExitStatus | undefined;
 
         /**
+         * The object used to initialize the terminal, this is useful for example to detecting the shell type of when the terminal was not launched by this extension or for
+         * detecting what folder the shell was launched in.
+         */
+        readonly creationOptions: Readonly<TerminalOptions | ExtensionTerminalOptions>
+
+        /**
          * Send text to the terminal.
          * @param text - text content.
          * @param addNewLine - in case true - apply new line after the text, otherwise don't apply new line. This defaults to `true`.
