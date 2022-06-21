@@ -30,9 +30,9 @@ import {
     DebugAdapterContribution,
     DebugAdapterSessionFactory,
     DebugAdapterFactory
-} from './debug-model';
+} from '../common/debug-model';
 import { DebugServiceImpl } from './debug-service-impl';
-import { DebugAdapterContributionRegistry } from './debug-adapter-contribution-registry';
+import { DebugAdapterContributionRegistry } from '../common/debug-adapter-contribution-registry';
 import { DebugAdapterSessionManager } from './debug-adapter-session-manager';
 
 const debugConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {

@@ -22,11 +22,11 @@
 // Some entities copied and modified from https://github.com/Microsoft/vscode/blob/master/src/vs/vscode.d.ts
 // Some entities copied and modified from https://github.com/Microsoft/vscode/blob/master/src/vs/workbench/parts/debug/common/debug.ts
 
-import { DebugConfiguration } from '../common/debug-configuration';
+import { DebugConfiguration } from './debug-configuration';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { Event } from '@theia/core';
-import { DebugChannel } from '../common/debug-service';
+import { DebugChannel } from './debug-service';
 
 // FIXME: break down this file to debug adapter and debug adapter contribution (see Theia file naming conventions)
 

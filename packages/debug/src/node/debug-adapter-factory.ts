@@ -37,8 +37,8 @@ import {
     DebugAdapterFactory,
     DebugAdapterForkExecutable,
     DebugAdapter
-} from './debug-model';
-import { DebugAdapterSessionImpl } from './debug-adapter-session';
+} from '../common/debug-model';
+import { DebugAdapterSessionImpl } from '../common/debug-adapter-session';
 import { environment } from '@theia/core/shared/@theia/application-package';
 import { ProcessDebugAdapter, SocketDebugAdapter } from './stream-debug-adapter';
 
