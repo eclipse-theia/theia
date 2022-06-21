@@ -76,17 +76,23 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
             };
         }
         this.proxy.$createTerminal(id, options, !!pseudoTerminal);
-        return this.obtainTerminal(id, options.name || 'Terminal');
+
+        let creationOptions: theia.TerminalOptions | theia.ExtensionTerminalOptions = options;
+        // make sure to pass ExtensionTerminalOptions as creation options
+        if (typeof nameOrOptions === 'object' && 'pty' in nameOrOptions) {
+            creationOptions = nameOrOptions;
+        }
+        return this.obtainTerminal(id, options.name || 'Terminal', creationOptions);
     }
 
     attachPtyToTerminal(terminalId: number, pty: theia.Pseudoterminal): void {
         this._pseudoTerminals.set(terminalId.toString(), new PseudoTerminal(terminalId, this.proxy, pty, true));
     }
 
-    protected obtainTerminal(id: string, name: string): TerminalExtImpl {
+    protected obtainTerminal(id: string, name: string, options?: theia.TerminalOptions | theia.ExtensionTerminalOptions): TerminalExtImpl {
         let terminal = this._terminals.get(id);
         if (!terminal) {
-            terminal = new TerminalExtImpl(this.proxy);
+            terminal = new TerminalExtImpl(this.proxy, options ?? {});
             this._terminals.set(id, terminal);
         }
         terminal.name = name;
@@ -279,7 +285,11 @@ export class TerminalExtImpl implements Terminal {
         return this.deferredProcessId.promise;
     }
 
-    constructor(private readonly proxy: TerminalServiceMain) { }
+    readonly creationOptions: Readonly<TerminalOptions | ExtensionTerminalOptions>;
+
+    constructor(private readonly proxy: TerminalServiceMain, private readonly options: theia.TerminalOptions | theia.ExtensionTerminalOptions) {
+        this.creationOptions = this.options;
+    }
 
     sendText(text: string, addNewLine: boolean = true): void {
         this.id.promise.then(id => this.proxy.$sendText(id, text, addNewLine));
