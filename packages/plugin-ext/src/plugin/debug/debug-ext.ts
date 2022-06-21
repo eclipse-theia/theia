@@ -17,22 +17,19 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { Path } from '@theia/core/lib/common/path';
 import * as theia from '@theia/plugin';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { Breakpoint } from '../../../common/plugin-api-rpc-model';
-import { DebugConfigurationProviderTriggerKind, DebugExt, DebugMain, PLUGIN_RPC_CONTEXT as Ext, TerminalOptionsExt } from '../../../common/plugin-api-rpc';
-import { PluginPackageDebuggersContribution } from '../../../common/plugin-protocol';
-import { RPCProtocol } from '../../../common/rpc-protocol';
-import { CommandRegistryImpl } from '../../command-registry';
-import { ConnectionImpl } from '../../../common/connection';
-import {
-    Disposable, Breakpoint as BreakpointExt, SourceBreakpoint, FunctionBreakpoint, Location, Range,
-    DebugAdapterServer, DebugAdapterExecutable, DebugAdapterNamedPipeServer, DebugAdapterInlineImplementation
-} from '../../types-impl';
-import { resolveDebugAdapterExecutable } from './plugin-debug-adapter-executable-resolver';
+import { Breakpoint } from '../../common/plugin-api-rpc-model';
+import { DebugConfigurationProviderTriggerKind, DebugExt, DebugMain, PLUGIN_RPC_CONTEXT as Ext, TerminalOptionsExt } from '../../common/plugin-api-rpc';
+import { PluginPackageDebuggersContribution } from '../../common/plugin-protocol';
+import { RPCProtocol } from '../../common/rpc-protocol';
+import { CommandRegistryImpl } from '../command-registry';
+import { ConnectionImpl } from '../../common/connection';
+import { Disposable, Breakpoint as BreakpointExt, SourceBreakpoint, FunctionBreakpoint, Location, Range } from '../types-impl';
 import { PluginDebugAdapterSession } from './plugin-debug-adapter-session';
-import { connectInlineDebugAdapter, connectPipeDebugAdapter, connectSocketDebugAdapter, startDebugAdapter } from './plugin-debug-adapter-starter';
 import { PluginDebugAdapterTracker } from './plugin-debug-adapter-tracker';
 import uuid = require('uuid');
-import { DebugAdapter } from '@theia/debug/lib/node/debug-model';
+import { DebugAdapter } from '@theia/debug/lib/common/debug-model';
+import { PluginDebugAdapterCreator } from './plugin-debug-adapter-creator';
+import { NodeDebugAdapterCreator } from '../node/debug/plugin-node-debug-adapter-creator';
 
 interface ConfigurationProviderRecord {
     handle: number;
@@ -42,10 +39,7 @@ interface ConfigurationProviderRecord {
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// TODO: rename file to `debug-ext.ts`
-/**
- * It is supposed to work at node only.
- */
+
 export class DebugExtImpl implements DebugExt {
     // debug sessions by sessionId
     private sessions = new Map<string, PluginDebugAdapterSession>();
@@ -60,6 +54,7 @@ export class DebugExtImpl implements DebugExt {
     private descriptorFactories = new Map<string, theia.DebugAdapterDescriptorFactory>();
     private trackerFactories: [string, theia.DebugAdapterTrackerFactory][] = [];
     private contributionPaths = new Map<string, string>();
+    private contributionTypes = new Map<string, theia.PluginType>();
 
     private connectionExt: ConnectionImpl;
     private commandRegistryExt: CommandRegistryImpl;
@@ -76,6 +71,9 @@ export class DebugExtImpl implements DebugExt {
     activeDebugConsole: theia.DebugConsole;
 
     private readonly _breakpoints = new Map<string, theia.Breakpoint>();
+
+    private frontendAdapterCreator = new PluginDebugAdapterCreator();
+    private backendAdapterCreator = new NodeDebugAdapterCreator();
 
     get breakpoints(): theia.Breakpoint[] {
         return [...this._breakpoints.values()];
@@ -102,11 +100,13 @@ export class DebugExtImpl implements DebugExt {
     /**
      * Registers contributions.
      * @param pluginFolder plugin folder path
+     * @param pluginType plugin type
      * @param contributions available debuggers contributions
      */
-    registerDebuggersContributions(pluginFolder: string, contributions: PluginPackageDebuggersContribution[]): void {
+    registerDebuggersContributions(pluginFolder: string, pluginType: theia.PluginType, contributions: PluginPackageDebuggersContribution[]): void {
         contributions.forEach(contribution => {
             this.contributionPaths.set(contribution.type, pluginFolder);
+            this.contributionTypes.set(contribution.type, pluginType);
             this.debuggersContributions.set(contribution.type, contribution);
             this.proxy.$registerDebuggerContribution({
                 type: contribution.type,
@@ -397,43 +397,7 @@ export class DebugExtImpl implements DebugExt {
     protected async createDebugAdapter(session: theia.DebugSession, debugConfiguration: theia.DebugConfiguration): Promise<DebugAdapter> {
         const executable = await this.resolveDebugAdapterExecutable(debugConfiguration);
         const descriptorFactory = this.descriptorFactories.get(session.type);
-        if (descriptorFactory) {
-            // 'createDebugAdapterDescriptor' is called at the start of a debug session to provide details about the debug adapter to use.
-            // These details must be returned as objects of type [DebugAdapterDescriptor](#DebugAdapterDescriptor).
-            // Currently two types of debug adapters are supported:
-            // - a debug adapter executable is specified as a command path and arguments (see [DebugAdapterExecutable](#DebugAdapterExecutable)),
-            // - a debug adapter server reachable via a communication port (see [DebugAdapterServer](#DebugAdapterServer)).
-            // If the method is not implemented the default behavior is this:
-            //   createDebugAdapter(session: DebugSession, executable: DebugAdapterExecutable) {
-            //      if (typeof session.configuration.debugServer === 'number') {
-            //         return new DebugAdapterServer(session.configuration.debugServer);
-            //      }
-            //      return executable;
-            //   }
-            //  @param session The [debug session](#DebugSession) for which the debug adapter will be used.
-            //  @param executable The debug adapter's executable information as specified in the package.json (or undefined if no such information exists).
-            const descriptor = await descriptorFactory.createDebugAdapterDescriptor(session, executable);
-            if (descriptor) {
-                if (DebugAdapterServer.is(descriptor)) {
-                    return connectSocketDebugAdapter(descriptor);
-                } else if (DebugAdapterExecutable.is(descriptor)) {
-                    return startDebugAdapter(descriptor);
-                } else if (DebugAdapterNamedPipeServer.is(descriptor)) {
-                    return connectPipeDebugAdapter(descriptor);
-                } else if (DebugAdapterInlineImplementation.is(descriptor)) {
-                    return connectInlineDebugAdapter(descriptor);
-                }
-            }
-        }
-
-        if ('debugServer' in debugConfiguration) {
-            return connectSocketDebugAdapter({ port: debugConfiguration.debugServer });
-        } else {
-            if (!executable) {
-                throw new Error('It is not possible to provide debug adapter executable.');
-            }
-            return startDebugAdapter(executable);
-        }
+        return this.getAdapterCreator(debugConfiguration).createDebugAdapter(session, debugConfiguration, executable, descriptorFactory);
     }
 
     protected async resolveDebugAdapterExecutable(debugConfiguration: theia.DebugConfiguration): Promise<theia.DebugAdapterExecutable | undefined> {
@@ -448,7 +412,7 @@ export class DebugExtImpl implements DebugExt {
             } else {
                 const contributionPath = this.contributionPaths.get(type);
                 if (contributionPath) {
-                    return resolveDebugAdapterExecutable(contributionPath, contribution);
+                    return this.getAdapterCreator(debugConfiguration).resolveDebugAdapterExecutable(contributionPath, contribution);
                 }
             }
         }
@@ -468,5 +432,10 @@ export class DebugExtImpl implements DebugExt {
             name: path.base,
             index: 0
         };
+    }
+
+    private getAdapterCreator(debugConfiguration: theia.DebugConfiguration): PluginDebugAdapterCreator {
+        const pluginType = this.contributionTypes.get(debugConfiguration.type);
+        return pluginType === 'frontend' ? this.frontendAdapterCreator : this.backendAdapterCreator;
     }
 }

@@ -45,6 +45,7 @@ import { WebviewView, WebviewViewResolver } from '../webview-views/webview-views
 import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { v4 } from 'uuid';
+import { nls } from '@theia/core';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -144,12 +145,13 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         });
         this.widgetManager.onDidCreateWidget(event => {
             if (event.widget instanceof FileNavigatorWidget) {
-                this.registerViewWelcome({
+                const disposable = new DisposableCollection();
+                disposable.push(this.registerViewWelcome({
                     view: 'explorer',
-                    // eslint-disable-next-line max-len
-                    content: 'You have not yet opened a folder.\n[Open Folder](command:workbench.action.files.openFolder)',
+                    content: nls.localizeByDefault('You have not yet opened a folder.\n[Open Folder](command:{0})', 'workbench.action.files.openFolder'),
                     order: 0
-                });
+                }));
+                disposable.push(event.widget.onDidDispose(() => disposable.dispose()));
             }
         });
         this.doRegisterViewContainer('test', 'left', {
@@ -401,6 +403,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const toDispose = new DisposableCollection();
 
         const viewsWelcome = this.viewsWelcome.get(viewWelcome.view) || [];
+        if (viewsWelcome.some(e => e.content === viewWelcome.content)) {
+            return toDispose;
+        }
         viewsWelcome.push(viewWelcome);
         this.viewsWelcome.set(viewWelcome.view, viewsWelcome);
         this.handleViewWelcomeChange(viewWelcome.view);

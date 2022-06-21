@@ -20,7 +20,7 @@ import { DebugService, DebuggerDescription } from '../common/debug-service';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { CommandIdVariables } from '@theia/variable-resolver/lib/common/variable-types';
 import { DebugAdapterSessionManager } from './debug-adapter-session-manager';
-import { DebugAdapterContributionRegistry } from './debug-adapter-contribution-registry';
+import { DebugAdapterContributionRegistry } from '../common/debug-adapter-contribution-registry';
 import { Event } from '@theia/core';
 
 /**

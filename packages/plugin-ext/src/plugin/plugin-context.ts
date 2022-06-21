@@ -163,7 +163,7 @@ import { MarkdownString } from './markdown-string';
 import { TreeViewsExtImpl } from './tree/tree-views';
 import { ConnectionImpl } from '../common/connection';
 import { TasksExtImpl } from './tasks/tasks';
-import { DebugExtImpl } from './node/debug/debug';
+import { DebugExtImpl } from './debug/debug-ext';
 import { FileSystemExtImpl } from './file-system-ext-impl';
 import { QuickPick, QuickPickItem, ResourceLabelFormatter, LineChange } from '@theia/plugin';
 import { ScmExtImpl } from './scm';
@@ -811,7 +811,7 @@ export function createAPIFactory(
 
         const debuggersContributions = plugin.rawModel.contributes && plugin.rawModel.contributes.debuggers || [];
         debugExt.assistedInject(connectionExt, commandRegistry);
-        debugExt.registerDebuggersContributions(plugin.pluginFolder, debuggersContributions);
+        debugExt.registerDebuggersContributions(plugin.pluginFolder, plugin.model.entryPoint.frontend ? 'frontend' : 'backend', debuggersContributions);
         const debug: typeof theia.debug = {
             get activeDebugSession(): theia.DebugSession | undefined {
                 return debugExt.activeDebugSession;

@@ -12,6 +12,7 @@
 - [plugin] Support `TextEditor#show()` and `TextEditor#hide()` [#11168](https://github.com/eclipse-theia/theia/pull/11168) - Contributed on behalf of STMicroelectronics
 - [core, monaco] refactored theme initialization to occur within application lifecycle rather than at import time. [#11213](https://github.com/eclipse-theia/theia/pull/11213)
 - [plugin] Support optional property `TaskPresentationOptions#clear` [#11298](https://github.com/eclipse-theia/theia/pull/11298) - Contributed on behalf of STMicroelectronics
+- [plugin] added support for debuggers running in the frontend [#10748](https://github.com/eclipse-theia/theia/pull/10748)
 
 <a name="breaking_changes_1.27.0">[Breaking Changes:](#breaking_changes_1.27.0)</a>
 
@@ -60,6 +61,9 @@
 - [core] removed `ThemeService.get()`; inject the `ThemeService` instead. Removed `ColorApplicationContribution.initBackground()`; by default the `editor.background` color variable will be initialized through the normal theme initialization process. It is now expected that the `ThemeService` will call `this.deferredInitializer.resolve()` when the `ThemeService` finishes its initialization. Failure to do so in any overrides may cause failures to apply default themes.  [#11213](https://github.com/eclipse-theia/theia/pull/11213)
 - [monaco] removed static methods `init()`, `register()`, `restore(), `updateBodyUiTheme()` from `MonacoThemingService`; use instance methods `initialize()`, `registerParsedTheme()`, `restore()`, `updateBodyUiTheme()` instead. Removed `MonacoThemeRegistry.SINGLETON`, inject `MonacoThemeRegistry` instead. [#11213](https://github.com/eclipse-theia/theia/pull/11213)
 - [core] double-click no longer maximizes a tab by default - controllable through `workbench.tab.maximize` preference [#11279](https://github.com/eclipse-theia/theia/pull/11279)
+- [plugin-ext] method `registerDebuggersContributions` has an additional parameter in the signature `pluginType` to specify `frontend` or `backend` [#10748](https://github.com/eclipse-theia/theia/pull/10748)
+- [plugin-ext] file `debug` renamed to `debug-ext` [#10748](https://github.com/eclipse-theia/theia/pull/10748)
+- [debug] debug files not unique to the backend have been moved from `node` to `common` [#10748](https://github.com/eclipse-theia/theia/pull/10748)
 
 ## v1.26.0 - 5/26/2022
 

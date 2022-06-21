@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from './uint8-array-message-buffer';
-import { RpcMessageDecoder, RpcMessageEncoder } from './rpc-message-encoder';
+import { EncodingError, RpcMessageDecoder, RpcMessageEncoder } from './rpc-message-encoder';
 
 describe('PPC Message Codex', () => {
     describe('RPC Message Encoder & Decoder', () => {
@@ -26,8 +26,11 @@ describe('PPC Message Codex', () => {
 
             const encoder = new RpcMessageEncoder();
             const jsonMangled = JSON.parse(JSON.stringify(encoder));
+            // The RpcMessageEncoder can decode/encode collections, whereas JSON.parse can't. => We have to manually restore the set
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            jsonMangled.registeredTags = (encoder as any).registeredTags;
 
-            encoder.writeTypedValue(writer, encoder);
+            encoder.writeTypedValue(writer, encoder, new WeakSet());
 
             const written = writer.getCurrentContents();
 
@@ -37,6 +40,16 @@ describe('PPC Message Codex', () => {
             const decoded = decoder.readTypedValue(reader);
 
             expect(decoded).deep.equal(jsonMangled);
+        });
+        it('should fail with an EncodingError when trying to encode the object ', () => {
+            const x = new Set();
+            const y = new Set();
+            x.add(y);
+            y.add(x);
+            const encoder = new RpcMessageEncoder();
+
+            const writer = new Uint8ArrayWriteBuffer();
+            expect(() => encoder.writeTypedValue(writer, x, new WeakSet())).to.throw(EncodingError);
         });
     });
 });

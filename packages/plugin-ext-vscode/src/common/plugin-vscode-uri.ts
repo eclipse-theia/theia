@@ -29,8 +29,14 @@ export namespace VSCodeExtensionUri {
     export function toVsxExtensionUriString(id: string): string {
         return `${VSCODE_PREFIX}${id}`;
     }
-    export function toUri(id: string): URI {
-        return new URI(toVsxExtensionUriString(id));
+    export function toUri(name: string, namespace: string): URI;
+    export function toUri(id: string): URI;
+    export function toUri(idOrName: string, namespace?: string): URI {
+        if (typeof namespace === 'string') {
+            return new URI(toVsxExtensionUriString(`${namespace}.${idOrName}`));
+        } else {
+            return new URI(toVsxExtensionUriString(idOrName));
+        }
     }
     export function toId(uri: URI): string | undefined {
         if (uri.scheme === 'vscode' && uri.path.dir.toString() === 'extension') {

@@ -36,8 +36,10 @@ import { bindPreferenceProviderOverrides } from './recommended-extensions/prefer
 import { OVSXClientProvider, createOVSXClient } from '../common/ovsx-client-provider';
 import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
 import { RequestService } from '@theia/core/shared/@theia/request';
+import { LanguageQuickPickService } from '@theia/core/lib/browser/i18n/language-quick-pick-service';
+import { VSXLanguageQuickPickService } from './vsx-language-quick-pick-service';
 
-export default new ContainerModule((bind, unbind) => {
+export default new ContainerModule((bind, unbind, _, rebind) => {
     bind<OVSXClientProvider>(OVSXClientProvider).toDynamicValue(ctx => {
         const clientPromise = createOVSXClient(ctx.container.get(VSXEnvironment), ctx.container.get(RequestService));
         return () => clientPromise;
@@ -99,6 +101,8 @@ export default new ContainerModule((bind, unbind) => {
 
     bind(VSXExtensionsSearchModel).toSelf().inSingletonScope();
     bind(VSXExtensionsSearchBar).toSelf().inSingletonScope();
+
+    rebind(LanguageQuickPickService).to(VSXLanguageQuickPickService).inSingletonScope();
 
     bindViewContribution(bind, VSXExtensionsContribution);
     bind(FrontendApplicationContribution).toService(VSXExtensionsContribution);
