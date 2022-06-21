@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as nsfw from '@theia/core/shared/nsfw';
-import { resolve } from 'path';
+import nsfw = require('@theia/core/shared/nsfw');
+import path = require('path');
 import { promises as fsp } from 'fs';
 import { IMinimatch, Minimatch } from 'minimatch';
 import { FileUri } from '@theia/core/lib/node/file-uri';
@@ -258,13 +258,13 @@ export class NsfwWatcher {
                         this.pushFileChange(fileChangeCollection, FileChangeType.DELETED, oldPath);
                         this.pushFileChange(fileChangeCollection, FileChangeType.ADDED, newPath);
                     } else {
-                        const path = await this.resolveEventPath(event.directory, event.file!);
+                        const filePath = await this.resolveEventPath(event.directory, event.file!);
                         if (event.action === nsfw.actions.CREATED) {
-                            this.pushFileChange(fileChangeCollection, FileChangeType.ADDED, path);
+                            this.pushFileChange(fileChangeCollection, FileChangeType.ADDED, filePath);
                         } else if (event.action === nsfw.actions.DELETED) {
-                            this.pushFileChange(fileChangeCollection, FileChangeType.DELETED, path);
+                            this.pushFileChange(fileChangeCollection, FileChangeType.DELETED, filePath);
                         } else if (event.action === nsfw.actions.MODIFIED) {
-                            this.pushFileChange(fileChangeCollection, FileChangeType.UPDATED, path);
+                            this.pushFileChange(fileChangeCollection, FileChangeType.UPDATED, filePath);
                         }
                     }
                 }));
@@ -282,12 +282,12 @@ export class NsfwWatcher {
 
     protected async resolveEventPath(directory: string, file: string): Promise<string> {
         // nsfw already resolves symlinks, the paths should be clean already:
-        return resolve(directory, file);
+        return path.resolve(directory, file);
     }
 
-    protected pushFileChange(changes: FileChangeCollection, type: FileChangeType, path: string): void {
-        if (!this.isIgnored(path)) {
-            const uri = FileUri.create(path).toString();
+    protected pushFileChange(changes: FileChangeCollection, type: FileChangeType, filePath: string): void {
+        if (!this.isIgnored(filePath)) {
+            const uri = FileUri.create(filePath).toString();
             changes.push({ type, uri });
         }
     }
@@ -327,9 +327,9 @@ export class NsfwWatcher {
         }
     }
 
-    protected isIgnored(path: string): boolean {
+    protected isIgnored(filePath: string): boolean {
         return this.watcherOptions.ignored.length > 0
-            && this.watcherOptions.ignored.some(m => m.match(path));
+            && this.watcherOptions.ignored.some(m => m.match(filePath));
     }
 
     /**
