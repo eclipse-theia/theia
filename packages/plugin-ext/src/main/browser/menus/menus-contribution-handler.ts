@@ -43,7 +43,7 @@ export class MenusContributionPointHandler {
     @inject(CodeEditorWidgetUtil) private readonly codeEditorWidgetUtil: CodeEditorWidgetUtil;
     @inject(PluginMenuCommandAdapter) protected readonly commandAdapter: PluginMenuCommandAdapter;
     @inject(MenuCommandAdapterRegistry) protected readonly commandAdapterRegistry: MenuCommandAdapterRegistry;
-    @inject(ContextKeyService) protected readonly contextKeySerivce: ContextKeyService;
+    @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
     @inject(PluginSharedStyle) protected readonly style: PluginSharedStyle;
     @inject(QuickCommandService) @optional()
     private readonly quickCommandService: QuickCommandService;
@@ -63,7 +63,7 @@ export class MenusContributionPointHandler {
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_SCM_TITLE_MENU, widget => widget instanceof ScmWidget);
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_VIEW_TITLE_MENU, widget => widget instanceof PluginViewWidget);
         this.tabBarToolbar.registerItem({ id: 'plugin-menu-contribution-title-contribution', command: '_never_', onDidChange: this.onDidChangeTitleContributionEmitter.event });
-        this.contextKeySerivce.onDidChange(event => {
+        this.contextKeyService.onDidChange(event => {
             if (event.affects(this.titleContributionContextKeys)) {
                 this.onDidChangeTitleContributionEmitter.fire();
             }
