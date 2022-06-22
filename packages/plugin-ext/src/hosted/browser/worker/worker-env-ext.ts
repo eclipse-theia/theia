@@ -34,4 +34,8 @@ export class WorkerEnvExtImpl extends EnvExtImpl {
         throw new Error('There is no app root in worker context');
     }
 
+    get isNewAppInstall(): boolean {
+        throw new Error('Cannot determine the installation date in worker context');
+    }
+
 }

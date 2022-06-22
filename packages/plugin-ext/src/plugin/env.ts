@@ -19,6 +19,7 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { EnvMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { QueryParameters } from '../common/env';
 import { v4 } from 'uuid';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 
 export abstract class EnvExtImpl {
     private proxy: EnvMain;
@@ -29,11 +30,20 @@ export abstract class EnvExtImpl {
     private ui: theia.UIKind;
     private envMachineId: string;
     private envSessionId: string;
+    private host: string;
+    private _isTelemetryEnabled: boolean;
+    private _remoteName: string | undefined;
+    private onDidChangeTelemetryEnabledEmitter: Emitter<boolean>;
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.ENV_MAIN);
         this.envSessionId = v4();
         this.envMachineId = v4();
+        this.host = 'desktop';
+        // we don't support telemetry at the moment
+        this._isTelemetryEnabled = false;
+        this._remoteName = undefined;
+        this.onDidChangeTelemetryEnabledEmitter = new Emitter();
     }
 
     getEnvVariable(envVarName: string): Promise<string | undefined> {
@@ -82,6 +92,24 @@ export abstract class EnvExtImpl {
     }
 
     abstract get appRoot(): string;
+
+    abstract get isNewAppInstall(): boolean;
+
+    get appHost(): string {
+        return this.host;
+    }
+
+    get isTelemetryEnabled(): boolean {
+        return this._isTelemetryEnabled;
+    }
+
+    get onDidChangeTelemetryEnabled(): Event<boolean> {
+        return this.onDidChangeTelemetryEnabledEmitter.event;
+    }
+
+    get remoteName(): string | undefined {
+        return this._remoteName;
+    }
 
     get language(): string {
         return this.lang;

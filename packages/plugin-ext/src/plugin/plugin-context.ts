@@ -639,7 +639,14 @@ export function createAPIFactory(
         const env: typeof theia.env = Object.freeze({
             get appName(): string { return envExt.appName; },
             get appRoot(): string { return envExt.appRoot; },
+            get appHost(): string { return envExt.appHost; },
             get language(): string { return envExt.language; },
+            get isNewAppInstall(): boolean { return envExt.isNewAppInstall; },
+            get isTelemetryEnabled(): boolean { return envExt.isTelemetryEnabled; },
+            get onDidChangeTelemetryEnabled(): theia.Event<boolean> {
+                return envExt.onDidChangeTelemetryEnabled;
+            },
+            get remoteName(): string | undefined { return envExt.remoteName; },
             get machineId(): string { return envExt.machineId; },
             get sessionId(): string { return envExt.sessionId; },
             get uriScheme(): string { return envExt.uriScheme; },
