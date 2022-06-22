@@ -293,7 +293,7 @@ export class DynamicMenuWidget extends MenuWidget {
     private buildSubMenus(items: MenuWidget.IItemOptions[], menu: MenuNode, commands: MenuCommandRegistry): MenuWidget.IItemOptions[] {
         for (const item of (menu.children ?? [])) {
             if (Array.isArray(item.children)) {
-                if (item.children.length) { // do not render empty nodes
+                if (item.children.length && this.undefinedOrMatch(item.when, this.options.context)) { // do not render empty nodes
                     if (item.isSubmenu) { // submenu node
                         const submenu = this.services.menuWidgetFactory.createMenuWidget(item as MenuNode & { children: MenuNode[] }, this.options);
                         if (!submenu.items.length) {
@@ -320,10 +320,9 @@ export class DynamicMenuWidget extends MenuWidget {
                     }
                 }
             } else if (item instanceof ActionMenuNode) {
-                const { context, contextKeyService } = this.services;
+                const { context } = this.services;
                 const node = item.altNode && context.altPressed ? item.altNode : item;
-                const { when } = node.action;
-                if (commands.isVisible(node.action.commandId) && (!when || contextKeyService.match(when, this.options.context))) {
+                if (commands.isVisible(node.action.commandId) && this.undefinedOrMatch(node.action.when, this.options.context)) {
                     items.push({
                         command: node.action.commandId,
                         type: 'command'
@@ -334,6 +333,11 @@ export class DynamicMenuWidget extends MenuWidget {
             }
         }
         return items;
+    }
+
+    protected undefinedOrMatch(expression?: string, context?: HTMLElement): boolean {
+        if (expression) { return this.services.contextKeyService.match(expression, context); }
+        return true;
     }
 
     protected handleDefault(menuNode: MenuNode): MenuWidget.IItemOptions[] {
