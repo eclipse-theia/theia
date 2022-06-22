@@ -336,6 +336,7 @@ export class DisassemblyViewWidget extends BaseWidget {
         }))?.body?.instructions;
         if (session && resultEntries && this._disassembledInstructions) {
             const newEntries: DisassembledInstructionEntry[] = [];
+            const allowBreakpoint = Boolean(session.capabilities.supportsInstructionBreakpoints);
 
             let lastLocation: DebugProtocol.Source | undefined;
             let lastLine: IRange | undefined;
@@ -364,7 +365,7 @@ export class DisassemblyViewWidget extends BaseWidget {
                     }
                 }
 
-                newEntries.push({ allowBreakpoint: true, isBreakpointSet: found !== undefined, isBreakpointEnabled: !!found?.enabled, instruction: instruction });
+                newEntries.push({ allowBreakpoint, isBreakpointSet: found !== undefined, isBreakpointEnabled: !!found?.enabled, instruction: instruction });
             }
 
             const specialEntriesToRemove = this._disassembledInstructions.length === 1 ? 1 : 0;
