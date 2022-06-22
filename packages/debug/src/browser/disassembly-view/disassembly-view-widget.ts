@@ -51,7 +51,7 @@ const disassemblyNotAvailable: DisassembledInstructionEntry = {
     isBreakpointEnabled: false,
     instruction: {
         address: '-1',
-        instruction: nls.localize('instructionNotAvailable', 'Disassembly not available.')
+        instruction: nls.localize('theia/debug/instructionNotAvailable', 'Disassembly not available.')
     },
     instructionAddress: BigInt(-1)
 } as const;
@@ -62,12 +62,12 @@ export class DisassemblyViewWidget extends BaseWidget {
     protected static readonly NUM_INSTRUCTIONS_TO_LOAD = 50;
     protected readonly iconReferenceUri = new URI().withScheme('file').withPath('disassembly-view.disassembly-view');
 
-    @inject(BreakpointManager) private readonly breakpointManager: BreakpointManager;
-    @inject(DebugSessionManager) private readonly debugSessionManager: DebugSessionManager;
-    @inject(EditorPreferences) private readonly editorPreferences: EditorPreferences;
-    @inject(DebugPreferences) private readonly debugPreferences: DebugPreferences;
-    @inject(OpenerService) private readonly openerService: OpenerService;
-    @inject(LabelProvider) private readonly labelProvider: LabelProvider;
+    @inject(BreakpointManager) protected readonly breakpointManager: BreakpointManager;
+    @inject(DebugSessionManager) protected readonly debugSessionManager: DebugSessionManager;
+    @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences;
+    @inject(DebugPreferences) protected readonly debugPreferences: DebugPreferences;
+    @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
     protected _fontInfo: BareFontInfo;
     protected _disassembledInstructions: WorkbenchTable<DisassembledInstructionEntry> | undefined = undefined;
@@ -298,7 +298,7 @@ export class DisassemblyViewWidget extends BaseWidget {
         }
     }
 
-    private async scrollUp_LoadDisassembledInstructions(instructionCount: number): Promise<boolean> {
+    protected async scrollUp_LoadDisassembledInstructions(instructionCount: number): Promise<boolean> {
         if (this._disassembledInstructions && this._disassembledInstructions.length > 0) {
             const address: string | undefined = this._disassembledInstructions?.row(0).instruction.address;
             return this.loadDisassembledInstructions(address, -instructionCount, instructionCount);
@@ -307,7 +307,7 @@ export class DisassemblyViewWidget extends BaseWidget {
         return false;
     }
 
-    private async scrollDown_LoadDisassembledInstructions(instructionCount: number): Promise<boolean> {
+    protected async scrollDown_LoadDisassembledInstructions(instructionCount: number): Promise<boolean> {
         if (this._disassembledInstructions && this._disassembledInstructions.length > 0) {
             const address: string | undefined = this._disassembledInstructions?.row(this._disassembledInstructions?.length - 1).instruction.address;
             return this.loadDisassembledInstructions(address, 1, instructionCount);
@@ -316,7 +316,7 @@ export class DisassemblyViewWidget extends BaseWidget {
         return false;
     }
 
-    private async loadDisassembledInstructions(memoryReference: string | undefined, instructionOffset: number, instructionCount: number): Promise<boolean> {
+    protected async loadDisassembledInstructions(memoryReference: string | undefined, instructionOffset: number, instructionCount: number): Promise<boolean> {
         // if address is null, then use current stack frame.
         if (!memoryReference || memoryReference === '-1') {
             memoryReference = this.focusedInstructionAddress;
@@ -382,7 +382,7 @@ export class DisassemblyViewWidget extends BaseWidget {
         return false;
     }
 
-    private getIndexFromAddress(instructionAddress: string): number {
+    protected getIndexFromAddress(instructionAddress: string): number {
         const disassembledInstructions = this._disassembledInstructions;
         if (disassembledInstructions && disassembledInstructions.length > 0) {
             const address = BigInt(instructionAddress);
@@ -405,7 +405,7 @@ export class DisassemblyViewWidget extends BaseWidget {
         return -1;
     }
 
-    private ensureAddressParsed(entry: DisassembledInstructionEntry): void {
+    protected ensureAddressParsed(entry: DisassembledInstructionEntry): void {
         if (entry.instructionAddress !== undefined) {
             return;
         } else {
@@ -416,7 +416,7 @@ export class DisassemblyViewWidget extends BaseWidget {
     /**
      * Clears the table and reload instructions near the target address
      */
-    private reloadDisassembly(targetAddress?: string): void {
+    protected reloadDisassembly(targetAddress?: string): void {
         if (this._disassembledInstructions) {
             this._loadingLock = true; // stop scrolling during the load.
             this._disassembledInstructions.splice(0, this._disassembledInstructions.length, [disassemblyNotAvailable]);

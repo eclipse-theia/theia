@@ -42,20 +42,20 @@ export class InstructionRenderer extends Disposable implements ITableRenderer<Di
 
     static readonly TEMPLATE_ID = 'instruction';
 
-    private static readonly INSTRUCTION_ADDR_MIN_LENGTH = 25;
-    private static readonly INSTRUCTION_BYTES_MIN_LENGTH = 30;
+    protected static readonly INSTRUCTION_ADDR_MIN_LENGTH = 25;
+    protected static readonly INSTRUCTION_BYTES_MIN_LENGTH = 30;
 
     templateId: string = InstructionRenderer.TEMPLATE_ID;
 
-    private _topStackFrameColor: Color | undefined;
-    private _focusedStackFrameColor: Color | undefined;
+    protected _topStackFrameColor: Color | undefined;
+    protected _focusedStackFrameColor: Color | undefined;
 
     constructor(
-        private readonly _disassemblyView: DisassemblyViewRendererReference,
-        private readonly openerService: OpenerService,
-        private readonly uriService: { asCanonicalUri(uri: URI): URI },
+        protected readonly _disassemblyView: DisassemblyViewRendererReference,
+        protected readonly openerService: OpenerService,
+        protected readonly uriService: { asCanonicalUri(uri: URI): URI },
         @IThemeService themeService: IThemeService,
-        @ITextModelService private readonly textModelService: ITextModelService,
+        @ITextModelService protected readonly textModelService: ITextModelService,
     ) {
         super();
 
@@ -88,10 +88,10 @@ export class InstructionRenderer extends Disposable implements ITableRenderer<Di
         this.renderElementInner(element, index, templateData, height);
     }
 
-    private async renderElementInner(element: DisassembledInstructionEntry, index: number, templateData: InstructionColumnTemplateData, height: number | undefined): Promise<void> {
-        templateData.currentElement.element = element;
+    protected async renderElementInner(element: DisassembledInstructionEntry, index: number, column: InstructionColumnTemplateData, height: number | undefined): Promise<void> {
+        column.currentElement.element = element;
         const instruction = element.instruction;
-        templateData.sourcecode.innerText = '';
+        column.sourcecode.innerText = '';
         const sb = createStringBuilder(1000);
 
         if (this._disassemblyView.isSourceCodeRender && instruction.location?.path && instruction.line) {
@@ -102,10 +102,10 @@ export class InstructionRenderer extends Disposable implements ITableRenderer<Di
                 const sourceSB = createStringBuilder(10000);
                 const ref = await this.textModelService.createModelReference(sourceURI);
                 textModel = ref.object.textEditorModel;
-                templateData.cellDisposable.push(ref);
+                column.cellDisposable.push(ref);
 
                 // templateData could have moved on during async.  Double check if it is still the same source.
-                if (textModel && templateData.currentElement.element === element) {
+                if (textModel && column.currentElement.element === element) {
                     let lineNumber = instruction.line;
 
                     while (lineNumber && lineNumber >= 1 && lineNumber <= textModel.getLineCount()) {
@@ -121,7 +121,7 @@ export class InstructionRenderer extends Disposable implements ITableRenderer<Di
                         break;
                     }
 
-                    templateData.sourcecode.innerText = sourceSB.build();
+                    column.sourcecode.innerText = sourceSB.build();
                 }
             }
         }
@@ -150,9 +150,9 @@ export class InstructionRenderer extends Disposable implements ITableRenderer<Di
         }
 
         sb.appendASCIIString(instruction.instruction);
-        templateData.instruction.innerText = sb.build();
+        column.instruction.innerText = sb.build();
 
-        this.rerenderBackground(templateData.instruction, templateData.sourcecode, element);
+        this.rerenderBackground(column.instruction, column.sourcecode, element);
     }
 
     disposeElement(element: DisassembledInstructionEntry, index: number, templateData: InstructionColumnTemplateData, height: number | undefined): void {
@@ -165,7 +165,7 @@ export class InstructionRenderer extends Disposable implements ITableRenderer<Di
         templateData.disposables = [];
     }
 
-    private rerenderBackground(instruction: HTMLElement, sourceCode: HTMLElement, element?: DisassembledInstructionEntry): void {
+    protected rerenderBackground(instruction: HTMLElement, sourceCode: HTMLElement, element?: DisassembledInstructionEntry): void {
         if (element && this._disassemblyView.currentInstructionAddresses.includes(element.instruction.address)) {
             instruction.style.background = this._topStackFrameColor?.toString() || 'transparent';
         } else if (element?.instruction.address === this._disassemblyView.focusedInstructionAddress) {
@@ -175,7 +175,7 @@ export class InstructionRenderer extends Disposable implements ITableRenderer<Di
         }
     }
 
-    private openSourceCode(instruction: DebugProtocol.DisassembledInstruction | undefined): void {
+    protected openSourceCode(instruction: DebugProtocol.DisassembledInstruction | undefined): void {
         if (instruction) {
             const sourceURI = this.getUriFromSource(instruction);
             const selection: EditorOpenerOptions['selection'] = instruction.endLine ? {
@@ -195,7 +195,7 @@ export class InstructionRenderer extends Disposable implements ITableRenderer<Di
         }
     }
 
-    private getUriFromSource(instruction: DebugProtocol.DisassembledInstruction): URI {
+    protected getUriFromSource(instruction: DebugProtocol.DisassembledInstruction): URI {
         // Try to resolve path before consulting the debugSession.
         const path = instruction.location!.path;
         if (path && isUri(path)) { // path looks like a uri
@@ -209,7 +209,7 @@ export class InstructionRenderer extends Disposable implements ITableRenderer<Di
         return getUriFromSource(instruction.location!, instruction.location!.path, this._disassemblyView.debugSession!.id, this.uriService);
     }
 
-    private applyFontInfo(element: HTMLElement): void {
+    protected applyFontInfo(element: HTMLElement): void {
         applyFontInfo(element, this._disassemblyView.fontInfo);
         element.style.whiteSpace = 'pre';
     }

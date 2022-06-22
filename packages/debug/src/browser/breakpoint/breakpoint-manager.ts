@@ -134,7 +134,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
             }
         }
         let didChangeFunction = false;
-        for (const breakpoint of this.getFunctionBreakpoints()) {
+        for (const breakpoint of (this.getFunctionBreakpoints() as BaseBreakpoint[]).concat(this.getInstructionBreakpoints())) {
             if (breakpoint.enabled !== enabled) {
                 breakpoint.enabled = enabled;
                 didChangeFunction = true;
@@ -232,7 +232,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
     }
 
     hasBreakpoints(): boolean {
-        return !!this.getUris().next().value || !!this.functionBreakpoints.length;
+        return Boolean(this.getUris().next().value || this.functionBreakpoints.length || this.instructionBreakpoints.length);
     }
 
     protected setInstructionBreakpoints(newBreakpoints: InstructionBreakpoint[]): void {
@@ -292,6 +292,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
     removeBreakpoints(): void {
         this.cleanAllMarkers();
         this.setFunctionBreakpoints([]);
+        this.setInstructionBreakpoints([]);
     }
 
     async load(): Promise<void> {

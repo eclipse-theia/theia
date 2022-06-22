@@ -28,7 +28,7 @@ import { DebugStackFramesWidget } from '../view/debug-stack-frames-widget';
 
 export const OPEN_DISASSEMBLY_VIEW_COMMAND: Command = {
     id: 'open-disassembly-view',
-    label: nls.localize('theia/disasessmbly-contribution/open-view-command', 'Open Disassembly View')
+    label: nls.localize('theia/debug/open-disassembly-view', 'Open Disassembly View')
 };
 
 export const LANGUAGE_SUPPORTS_DISASSEMBLE_REQUEST = 'languageSupportsDisassembleRequest';

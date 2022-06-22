@@ -28,15 +28,15 @@ export class BreakpointRenderer implements ITableRenderer<DisassembledInstructio
 
     templateId: string = BreakpointRenderer.TEMPLATE_ID;
 
-    private readonly _breakpointIcon = 'codicon-debug-breakpoint';
-    private readonly _breakpointDisabledIcon = 'codicon-debug-breakpoint-disabled';
-    private readonly _breakpointHintIcon = 'codicon-debug-hint';
-    private readonly _debugStackframe = 'codicon-debug-stackframe';
-    private readonly _debugStackframeFocused = 'codicon-debug-stackframe-focused';
+    protected readonly _breakpointIcon = 'codicon-debug-breakpoint';
+    protected readonly _breakpointDisabledIcon = 'codicon-debug-breakpoint-disabled';
+    protected readonly _breakpointHintIcon = 'codicon-debug-hint';
+    protected readonly _debugStackframe = 'codicon-debug-stackframe';
+    protected readonly _debugStackframeFocused = 'codicon-debug-stackframe-focused';
 
     constructor(
-        private readonly _disassemblyView: DisassemblyViewRendererReference,
-        private readonly _debugService: BreakpointManager,
+        protected readonly _disassemblyView: DisassemblyViewRendererReference,
+        protected readonly _debugService: BreakpointManager,
     ) { }
 
     renderTemplate(container: HTMLElement): BreakpointColumnTemplateData {
@@ -91,7 +91,7 @@ export class BreakpointRenderer implements ITableRenderer<DisassembledInstructio
         templateData.disposables = [];
     }
 
-    private rerenderDebugStackframe(icon: HTMLElement, element?: DisassembledInstructionEntry): void {
+    protected rerenderDebugStackframe(icon: HTMLElement, element?: DisassembledInstructionEntry): void {
         if (element?.instruction.address === this._disassemblyView.focusedCurrentInstructionAddress) {
             icon.classList.add(this._debugStackframe);
         } else if (element?.instruction.address === this._disassemblyView.focusedInstructionAddress) {

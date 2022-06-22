@@ -31,12 +31,12 @@ export class AccessibilityProvider implements IListAccessibilityProvider<Disasse
 
         const instruction = element.instruction;
         if (instruction.address !== '-1') {
-            label += `${nls.localize('instructionAddress', 'Address')}: ${instruction.address}`;
+            label += `${nls.localize('theia/debug/instructionAddress', 'Address')}: ${instruction.address}`;
         }
         if (instruction.instructionBytes) {
-            label += `, ${nls.localize('instructionBytes', 'Bytes')}: ${instruction.instructionBytes}`;
+            label += `, ${nls.localize('theia/debug/instructionBytes', 'Bytes')}: ${instruction.instructionBytes}`;
         }
-        label += `, ${nls.localize('instructionText', 'Instruction')}: ${instruction.instruction}`;
+        label += `, ${nls.localize('theia/debug/instructionText', 'Instruction')}: ${instruction.instruction}`;
 
         return label;
     }
