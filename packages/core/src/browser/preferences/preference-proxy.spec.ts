@@ -68,7 +68,6 @@ describe('Preference Proxy', () => {
         testContainer = createTestContainer();
         prefSchema = testContainer.get(PreferenceSchemaProvider);
         prefService = testContainer.get<PreferenceService>(PreferenceService) as PreferenceServiceImpl;
-        // validator = testContainer.get(PreferenceValidationService);
         getProvider(PreferenceScope.User).markReady();
         getProvider(PreferenceScope.Workspace).markReady();
         getProvider(PreferenceScope.Folder).markReady();

@@ -25,7 +25,7 @@
  * Expectations should be tested and aligned against VS Code.
  * See https://github.com/akosyakov/vscode-launch/blob/master/src/test/extension.test.ts
  */
-describe.skip('Launch Preferences', function () {
+describe('Launch Preferences', function () {
     this.timeout(10_000);
 
     const { assert } = chai;
