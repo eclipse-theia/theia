@@ -18,8 +18,8 @@ import * as http from 'http';
 import * as https from 'https';
 import { AddressInfo } from 'net';
 import { io, Socket } from 'socket.io-client';
-import { Channel, ChannelMultiplexer } from '../../../common/message-rpc/channel';
-import { IWebSocket, WebSocketChannel } from '../../../common/messaging/web-socket-channel';
+import { Channel, ChannelMultiplexer } from '../../../common';
+import { IWebSocket, WebSocketChannel, wsServicePath } from '../../../common/messaging/web-socket-channel';
 
 export class TestWebSocketChannelSetup {
     public readonly multiplexer: ChannelMultiplexer;
@@ -29,11 +29,11 @@ export class TestWebSocketChannelSetup {
         server: http.Server | https.Server,
         path: string
     }) {
-        const socket = io(`ws://localhost:${(server.address() as AddressInfo).port}${WebSocketChannel.wsPath}`);
+        const socket = io(`ws://localhost:${(server.address() as AddressInfo).port}${wsServicePath}`);
         this.channel = new WebSocketChannel(toIWebSocket(socket));
         this.multiplexer = new ChannelMultiplexer(this.channel);
         socket.on('connect', () => {
-            this.multiplexer.open(path);
+            this.multiplexer.openChannel(path);
         });
         socket.connect();
     }

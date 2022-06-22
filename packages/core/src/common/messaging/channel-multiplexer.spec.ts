@@ -13,11 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { assert, expect, spy, use } from 'chai';
 import * as spies from 'chai-spies';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from './uint8-array-message-buffer';
-import { ChannelMultiplexer, ForwardingChannel, MessageProvider } from './channel';
+import { ChannelMultiplexer, SubChannel, } from './channel-multiplexer';
 
 use(spies);
 
@@ -25,20 +25,12 @@ use(spies);
  * A pipe with two channels at each end for testing.
  */
 export class ChannelPipe {
-    readonly left: ForwardingChannel = new ForwardingChannel('left', () => this.right.onCloseEmitter.fire({ reason: 'Left channel has been closed' }), () => {
-        const leftWrite = new Uint8ArrayWriteBuffer();
-        leftWrite.onCommit(buffer => {
-            this.right.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(buffer));
-        });
-        return leftWrite;
-    });
-    readonly right: ForwardingChannel = new ForwardingChannel('right', () => this.left.onCloseEmitter.fire({ reason: 'Right channel has been closed' }), () => {
-        const rightWrite = new Uint8ArrayWriteBuffer();
-        rightWrite.onCommit(buffer => {
-            this.left.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(buffer));
-        });
-        return rightWrite;
-    });
+    readonly left: SubChannel = new SubChannel('left', msg => {
+        this.right.onMessageEmitter.fire(msg);
+    },
+        () => this.right.onCloseEmitter.fire({ reason: 'Left channel has been closed' }));
+    readonly right: SubChannel = new SubChannel('right', msg => this.left.onMessageEmitter.fire(msg),
+        () => this.left.onCloseEmitter.fire({ reason: 'Right channel has been closed' }));
 }
 describe('Message Channel', () => {
     describe('Channel multiplexer', () => {
@@ -53,8 +45,8 @@ describe('Message Channel', () => {
             rightMultiplexer.onDidOpenChannel(openChannelSpy);
             leftMultiplexer.onDidOpenChannel(openChannelSpy);
 
-            const leftFirst = await leftMultiplexer.open('first');
-            const leftSecond = await leftMultiplexer.open('second');
+            const leftFirst = await leftMultiplexer.openChannel('first');
+            const leftSecond = await leftMultiplexer.openChannel('second');
 
             const rightFirst = rightMultiplexer.getOpenChannel('first');
             const rightSecond = rightMultiplexer.getOpenChannel('second');
@@ -62,22 +54,20 @@ describe('Message Channel', () => {
             assert.isNotNull(rightFirst);
             assert.isNotNull(rightSecond);
 
-            const leftSecondSpy = spy((buf: MessageProvider) => {
-                const message = buf().readString();
+            const leftSecondSpy = spy((message: any) => {
                 expect(message).equal('message for second');
             });
 
             leftSecond.onMessage(leftSecondSpy);
 
-            const rightFirstSpy = spy((buf: MessageProvider) => {
-                const message = buf().readString();
+            const rightFirstSpy = spy((message: any) => {
                 expect(message).equal('message for first');
             });
 
             rightFirst!.onMessage(rightFirstSpy);
 
-            leftFirst.getWriteBuffer().writeString('message for first').commit();
-            rightSecond!.getWriteBuffer().writeString('message for second').commit();
+            leftFirst.send('message for first');
+            rightSecond!.send('message for second');
 
             expect(leftSecondSpy).to.be.called();
             expect(rightFirstSpy).to.be.called();

@@ -15,50 +15,37 @@
 // *****************************************************************************
 import { DebugChannel } from '@theia/debug/lib/common/debug-service';
 import { ConnectionExt, ConnectionMain } from './plugin-api-rpc';
-import { Emitter } from '@theia/core/lib/common/event';
+import { AbstractChannel } from '@theia/core/lib/common/messaging/channel';
 
 /**
  * A channel communicating with a counterpart in a plugin host.
  */
-export class PluginChannel implements DebugChannel {
-    private messageEmitter: Emitter<string> = new Emitter();
-    private errorEmitter: Emitter<unknown> = new Emitter();
-    private closedEmitter: Emitter<void> = new Emitter();
+export class PluginChannel extends AbstractChannel<string> implements DebugChannel {
 
     constructor(
         protected readonly id: string,
-        protected readonly connection: ConnectionExt | ConnectionMain) { }
+        protected readonly connection: ConnectionExt | ConnectionMain) {
+        super();
+    }
 
     send(content: string): void {
         this.connection.$sendMessage(this.id, content);
     }
 
     fireMessageReceived(msg: string): void {
-        this.messageEmitter.fire(msg);
+        this.onMessageEmitter.fire(msg);
     }
 
     fireError(error: unknown): void {
-        this.errorEmitter.fire(error);
+        this.onErrorEmitter.fire(error);
     }
 
     fireClosed(): void {
-        this.closedEmitter.fire();
+        this.onCloseEmitter.fire({ reason: 'closed' });
     }
 
-    onMessage(cb: (message: string) => void): void {
-        this.messageEmitter.event(cb);
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError(cb: (reason: any) => void): void {
-        this.errorEmitter.event(cb);
-    }
-
-    onClose(cb: (code: number, reason: string) => void): void {
-        this.closedEmitter.event(() => cb(-1, 'closed'));
-    }
-
-    close(): void {
+    override close(): void {
+        super.close();
         this.connection.$deleteConnection(this.id);
     }
 }

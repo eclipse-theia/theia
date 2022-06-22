@@ -18,7 +18,8 @@ import { injectable, interfaces } from 'inversify';
 import { Emitter, Event } from '../event';
 import { ConnectionHandler } from './handler';
 import { JsonRpcProxy, JsonRpcProxyFactory } from './proxy-factory';
-import { Channel, ChannelMultiplexer } from '../message-rpc/channel';
+import { ChannelMultiplexer } from './channel-multiplexer';
+import { Channel } from './channel';
 
 /**
  * Factor common logic according to `ElectronIpcConnectionProvider` and
@@ -92,11 +93,11 @@ export abstract class AbstractConnectionProvider<AbstractOptions extends object>
         }, options);
     }
 
-    async openChannel(path: string, handler: (channel: Channel) => void, options?: AbstractOptions): Promise<void> {
+    async openChannel<T>(path: string, handler: (channel: Channel<T>) => void, options?: AbstractOptions): Promise<void> {
         if (!this.channelMultiPlexer) {
             throw new Error('The channel multiplexer has not been initialized yet!');
         }
-        const newChannel = await this.channelMultiPlexer.open(path);
+        const newChannel = await this.channelMultiPlexer.openChannel(path);
         newChannel.onClose(() => {
             const { reconnecting } = { reconnecting: true, ...options };
             if (reconnecting) {

@@ -17,3 +17,7 @@
 export * from './handler';
 export * from './proxy-factory';
 export * from './connection-error-handler';
+export * from './channel';
+export { MessageCodec } from './message-codec';
+export { ChannelMultiplexer } from './channel-multiplexer';
+export { RpcProtocol, RequestHandler } from './rpc-protocol';

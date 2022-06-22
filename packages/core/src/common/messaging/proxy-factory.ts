@@ -16,13 +16,13 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ResponseError } from '../message-rpc/rpc-message-encoder';
 import { ApplicationError } from '../application-error';
 import { Disposable } from '../disposable';
 import { Emitter, Event } from '../event';
-import { Channel } from '../message-rpc/channel';
-import { RequestHandler, RpcProtocol } from '../message-rpc/rpc-protocol';
+import { Channel } from '../messaging/channel';
+import { RequestHandler, RpcProtocol } from '../messaging/rpc-protocol';
 import { ConnectionHandler } from './handler';
+import { ResponseError } from './rpc-protocol';
 
 export type JsonRpcServer<Client> = Disposable & {
     /**
@@ -55,11 +55,11 @@ export class JsonRpcConnectionHandler<T extends object> implements ConnectionHan
     }
 }
 /**
- * Factory for creating a new {@link RpcConnection} for a given chanel and {@link RequestHandler}.
+ * Factory for creating a new {@link RpcProtocol} for a given channel and {@link RequestHandler}.
  */
-export type RpcConnectionFactory = (channel: Channel, requestHandler: RequestHandler) => RpcProtocol;
+export type RpcFactory = (channel: Channel, requestHandler: RequestHandler) => RpcProtocol;
 
-const defaultRPCConnectionFactory: RpcConnectionFactory = (channel, requestHandler) => new RpcProtocol(channel, requestHandler);
+export const defaultRpcFactory: RpcFactory = (channel, requestHandler) => new RpcProtocol(channel, requestHandler);
 
 /**
  * Factory for JSON-RPC proxy objects.
@@ -117,8 +117,10 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      *
      * @param target - The object to expose to JSON-RPC methods calls.  If this
      *   is omitted, the proxy won't be able to handle requests, only send them.
+     * @param rpcFactory - The factory used to establish a {@link RpcProtocol}
+     *   on top of the proxy channel.
      */
-    constructor(public target?: any, protected rpcConnectionFactory = defaultRPCConnectionFactory) {
+    constructor(public target?: any, protected rpcFactory = defaultRpcFactory) {
         this.waitForConnection();
     }
 
@@ -143,7 +145,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * response.
      */
     listen(channel: Channel): void {
-        const connection = this.rpcConnectionFactory(channel, (meth, args) => this.onRequest(meth, ...args));
+        const connection = this.rpcFactory(channel, (meth, args) => this.onRequest(meth, ...args));
         connection.onNotification(event => this.onNotification(event.method, ...event.args));
 
         this.connectionPromiseResolve(connection);

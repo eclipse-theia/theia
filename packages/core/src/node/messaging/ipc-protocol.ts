@@ -15,7 +15,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Channel } from '../../common/message-rpc/channel';
+import { Channel } from '../../common';
 
 const THEIA_PARENT_PID = 'THEIA_PARENT_PID';
 const THEIA_ENTRY_POINT = 'THEIA_ENTRY_POINT';

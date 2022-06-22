@@ -18,8 +18,7 @@
 import * as cp from 'child_process';
 import { Socket } from 'net';
 import { Duplex } from 'stream';
-import { Channel, ChannelCloseEvent, Disposable, DisposableCollection, Emitter, Event, MessageProvider, WriteBuffer } from '../../common';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
+import { AbstractChannel, Disposable } from '../../common';
 import { BinaryMessagePipe } from './binary-message-pipe';
 
 /**
@@ -27,36 +26,21 @@ import { BinaryMessagePipe } from './binary-message-pipe';
  * This fd is opened as 5th channel in addition to the default stdios (stdin,stdout,stderr, ipc). This means the default channels
  * are not blocked and can be used by the respective process for additional custom message handling.
  */
-export class IPCChannel implements Channel {
-
-    protected readonly onCloseEmitter: Emitter<ChannelCloseEvent> = new Emitter();
-    get onClose(): Event<ChannelCloseEvent> {
-        return this.onCloseEmitter.event;
-    }
-
-    protected readonly onMessageEmitter: Emitter<MessageProvider> = new Emitter();
-    get onMessage(): Event<MessageProvider> {
-        return this.onMessageEmitter.event;
-    }
-
-    protected readonly onErrorEmitter: Emitter<unknown> = new Emitter();
-    get onError(): Event<unknown> {
-        return this.onErrorEmitter.event;
-    }
+export class IPCChannel extends AbstractChannel<Uint8Array> {
 
     protected messagePipe: BinaryMessagePipe;
-    protected toDispose = new DisposableCollection();
 
     protected ipcErrorListener: (error: Error) => void = error => this.onErrorEmitter.fire(error);
 
     constructor(childProcess?: cp.ChildProcess) {
+        super();
         if (childProcess) {
             this.setupChildProcess(childProcess);
         } else {
             this.setupProcess();
         }
         this.messagePipe.onMessage(message => {
-            this.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(message));
+            this.onMessageEmitter.fire(message);
         });
         this.toDispose.pushAll([this.onCloseEmitter, this.onMessageEmitter, this.onErrorEmitter]);
     }
@@ -81,17 +65,8 @@ export class IPCChannel implements Channel {
         }));
     }
 
-    getWriteBuffer(): WriteBuffer {
-        const result = new Uint8ArrayWriteBuffer();
-        result.onCommit(buffer => {
-            this.messagePipe.send(buffer);
-        });
-
-        return result;
-    }
-
-    close(): void {
-        this.toDispose.dispose();
+    send(message: Uint8Array): void {
+        this.messagePipe.send(message);
     }
 
 }

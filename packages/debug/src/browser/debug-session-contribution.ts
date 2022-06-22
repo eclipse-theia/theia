@@ -26,7 +26,7 @@ import { DebugSessionOptions } from './debug-session-options';
 import { OutputChannelManager, OutputChannel } from '@theia/output/lib/browser/output-channel';
 import { DebugPreferences } from './debug-preferences';
 import { DebugSessionConnection } from './debug-session-connection';
-import { DebugChannel, DebugAdapterPath, ForwardingDebugChannel } from '../common/debug-service';
+import { DebugChannel, DebugAdapterPath } from '../common/debug-service';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DebugContribution } from './debug-contribution';
@@ -123,7 +123,7 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
             sessionId,
             () => new Promise<DebugChannel>(resolve =>
                 this.connectionProvider.openChannel(`${DebugAdapterPath}/${sessionId}`, wsChannel => {
-                    resolve(new ForwardingDebugChannel(wsChannel));
+                    resolve(wsChannel);
                 }, { reconnecting: false })
             ),
             this.getTraceOutputChannel());

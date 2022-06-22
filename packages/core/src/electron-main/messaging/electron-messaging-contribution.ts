@@ -21,9 +21,8 @@ import { MessagingContribution } from '../../node/messaging/messaging-contributi
 import { ElectronConnectionHandler, THEIA_ELECTRON_IPC_CHANNEL_NAME } from '../../electron-common/messaging/electron-connection-handler';
 import { ElectronMainApplicationContribution } from '../electron-main-application';
 import { ElectronMessagingService } from './electron-messaging-service';
-import { Channel, ChannelCloseEvent, ChannelMultiplexer, MessageProvider } from '../../common/message-rpc/channel';
-import { Emitter, Event, WriteBuffer } from '../../common';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
+import { AbstractChannel, Channel, ChannelMultiplexer, MessageCodec, } from '../../common/';
+import { BinaryMessageCodec } from '../../common/messaging/message-codec';
 
 /**
  * This component replicates the role filled by `MessagingContribution` but for Electron.
@@ -50,19 +49,19 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
 
     @postConstruct()
     protected init(): void {
-        ipcMain.on(THEIA_ELECTRON_IPC_CHANNEL_NAME, (event: IpcMainEvent, data: Uint8Array) => {
-            this.handleIpcEvent(event, data);
+        ipcMain.on(THEIA_ELECTRON_IPC_CHANNEL_NAME, (event: IpcMainEvent, message: unknown) => {
+            this.handleIpcEvent(event, message);
         });
     }
 
-    protected handleIpcEvent(event: IpcMainEvent, data: Uint8Array): void {
+    protected handleIpcEvent(event: IpcMainEvent, message: unknown): void {
         const sender = event.sender;
         // Get the multiplexer for a given window id
         try {
             const windowChannelData = this.windowChannelMultiplexer.get(sender.id) ?? this.createWindowChannelData(sender);
-            windowChannelData!.channel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(data));
+            windowChannelData!.channel.handleMessage(message);
         } catch (error) {
-            console.error('IPC: Failed to handle message', { error, data });
+            console.error('IPC: Failed to handle message', { error, message });
         }
     }
 
@@ -78,8 +77,8 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
             }
         });
 
-        sender.once('did-navigate', () => multiPlexer.onUnderlyingChannelClose({ reason: 'Window was refreshed' })); // When refreshing the browser window.
-        sender.once('destroyed', () => multiPlexer.onUnderlyingChannelClose({ reason: 'Window was closed' })); // When closing the browser window.
+        sender.once('did-navigate', () => multiPlexer.handleMainChannelClose({ reason: 'Window was refreshed' })); // When refreshing the browser window.
+        sender.once('destroyed', () => multiPlexer.handleMainChannelClose({ reason: 'Window was closed' })); // When closing the browser window.
         const data = { channel: mainChannel, multiPlexer };
         this.windowChannelMultiplexer.set(sender.id, data);
         return data;
@@ -114,40 +113,25 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
  * Used to establish a connection between the ipcMain and the Electron frontend (window).
  * Messages a transferred via electron IPC.
  */
-export class ElectronWebContentChannel implements Channel {
-    protected readonly onCloseEmitter: Emitter<ChannelCloseEvent> = new Emitter();
-    get onClose(): Event<ChannelCloseEvent> {
-        return this.onCloseEmitter.event;
-    }
+export class ElectronWebContentChannel extends AbstractChannel {
 
-    // Make the message emitter public so that we can easily forward messages received from the ipcMain.
-    readonly onMessageEmitter: Emitter<MessageProvider> = new Emitter();
-    get onMessage(): Event<MessageProvider> {
-        return this.onMessageEmitter.event;
-    }
-
-    protected readonly onErrorEmitter: Emitter<unknown> = new Emitter();
-    get onError(): Event<unknown> {
-        return this.onErrorEmitter.event;
-    }
+    protected messageCodec: MessageCodec<unknown, Uint8Array> = new BinaryMessageCodec();
 
     constructor(protected readonly sender: Electron.WebContents) {
+        super();
     }
 
-    getWriteBuffer(): WriteBuffer {
-        const writer = new Uint8ArrayWriteBuffer();
-
-        writer.onCommit(buffer => {
-            if (!this.sender.isDestroyed()) {
-                this.sender.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, buffer);
-            }
-        });
-
-        return writer;
+    handleMessage(message: unknown): void {
+        if (message instanceof Uint8Array) {
+            const decoded = this.messageCodec.decode(message);
+            this.onMessageEmitter.fire(decoded);
+        }
     }
-    close(): void {
-        this.onCloseEmitter.dispose();
-        this.onMessageEmitter.dispose();
-        this.onErrorEmitter.dispose();
+
+    send(message: unknown): void {
+        if (!this.sender.isDestroyed()) {
+            const encoded = this.messageCodec.encode(message);
+            this.sender.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, encoded);
+        }
     }
 }

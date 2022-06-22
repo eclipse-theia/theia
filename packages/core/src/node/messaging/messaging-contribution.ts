@@ -18,15 +18,14 @@ import * as http from 'http';
 import * as https from 'https';
 import { Server, Socket } from 'socket.io';
 import { injectable, inject, named, postConstruct, interfaces, Container } from 'inversify';
-import { ContributionProvider, ConnectionHandler, bindContributionProvider } from '../../common';
-import { IWebSocket, WebSocketChannel } from '../../common/messaging/web-socket-channel';
+import { ContributionProvider, ConnectionHandler, bindContributionProvider, Channel, ChannelMultiplexer } from '../../common';
+import { IWebSocket, WebSocketChannel, wsServicePath } from '../../common/messaging/web-socket-channel';
 import { BackendApplicationContribution } from '../backend-application';
 import { MessagingService } from './messaging-service';
 import { ConnectionContainerModule } from './connection-container-module';
 import Route = require('route-parser');
 import { WsRequestValidator } from '../ws-request-validators';
 import { MessagingListener } from './messaging-listeners';
-import { Channel, ChannelMultiplexer } from '../../common/message-rpc/channel';
 
 export const MessagingContainer = Symbol('MessagingContainer');
 
@@ -53,7 +52,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
 
     @postConstruct()
     protected init(): void {
-        this.ws(WebSocketChannel.wsPath, (_, socket) => this.handleChannels(socket));
+        this.ws(wsServicePath, (_, socket) => this.handleChannels(socket));
         for (const contribution of this.contributions.getContributions()) {
             contribution.configure(this);
         }
@@ -108,9 +107,9 @@ export class MessagingContribution implements BackendApplicationContribution, Me
 
     protected handleChannels(socket: Socket): void {
         const socketChannel = new WebSocketChannel(this.toIWebSocket(socket));
-        const mulitplexer = new ChannelMultiplexer(socketChannel);
+        const multiplexer = new ChannelMultiplexer(socketChannel);
         const channelHandlers = this.getConnectionChannelHandlers(socket);
-        mulitplexer.onDidOpenChannel(event => {
+        multiplexer.onDidOpenChannel(event => {
             if (channelHandlers.route(event.id, event.channel)) {
                 console.debug(`Opening channel for service path '${event.id}'.`);
                 event.channel.onClose(() => console.debug(`Closing channel on service path '${event.id}'.`));

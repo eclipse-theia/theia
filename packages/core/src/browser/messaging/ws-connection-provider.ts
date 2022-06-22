@@ -14,17 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, interfaces, decorate, unmanaged } from 'inversify';
-import { JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event, Channel } from '../../common';
-import { Endpoint } from '../endpoint';
-import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
+import { decorate, injectable, interfaces, unmanaged } from 'inversify';
 import { io, Socket } from 'socket.io-client';
-import { IWebSocket, WebSocketChannel } from '../../common/messaging/web-socket-channel';
+import { Channel, Emitter, Event, JsonRpcProxy, JsonRpcProxyFactory } from '../../common';
+import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
+import { IWebSocket, WebSocketChannel, wsServicePath } from '../../common/messaging/web-socket-channel';
+import { Endpoint } from '../endpoint';
 
 decorate(injectable(), JsonRpcProxyFactory);
 decorate(unmanaged(), JsonRpcProxyFactory, 0);
 
-export interface WebSocketOptions {
+export interface WebsocketOptions {
     /**
      * True by default.
      */
@@ -32,7 +32,7 @@ export interface WebSocketOptions {
 }
 
 @injectable()
-export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebSocketOptions> {
+export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebsocketOptions> {
 
     protected readonly onSocketDidOpenEmitter: Emitter<void> = new Emitter();
     get onSocketDidOpen(): Event<void> {
@@ -52,7 +52,7 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
 
     constructor() {
         super();
-        const url = this.createWebSocketUrl(WebSocketChannel.wsPath);
+        const url = this.createWebSocketUrl(wsServicePath);
         this.socket = this.createWebSocket(url);
         this.socket.on('connect', () => {
             this.initializeMultiplexer();
@@ -81,12 +81,13 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
             isConnected: () => socket.connected,
             onClose: cb => socket.on('disconnect', reason => cb(reason)),
             onError: cb => socket.on('error', reason => cb(reason)),
-            onMessage: cb => socket.on('message', data => cb(data)),
+            onMessage: cb => socket.on('message', data => cb(new Uint8Array(data))),
             send: message => socket.emit('message', message)
         };
     }
 
-    override async openChannel(path: string, handler: (channel: Channel) => void, options?: WebSocketOptions): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    override async openChannel(path: string, handler: (channel: Channel) => void, options?: WebsocketOptions): Promise<void> {
         if (this.socket.connected) {
             return super.openChannel(path, handler, options);
         } else {

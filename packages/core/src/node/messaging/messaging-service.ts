@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Socket } from 'socket.io';
-import { Channel } from '../../common/message-rpc/channel';
+import { Channel } from '../../common';
 
 export interface MessagingService {
     /**

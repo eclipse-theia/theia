@@ -13,15 +13,15 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Event as ElectronEvent, ipcRenderer } from '@theia/electron/shared/electron';
 import { injectable, interfaces } from 'inversify';
-import { JsonRpcProxy } from '../../common/messaging';
+import { AbstractChannel, Channel, JsonRpcProxy, MessageCodec } from '../../common/messaging';
 import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
 import { THEIA_ELECTRON_IPC_CHANNEL_NAME } from '../../electron-common/messaging/electron-connection-handler';
-import { Emitter, Event } from '../../common';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
-import { Channel, MessageProvider } from '../../common/message-rpc/channel';
+import { BinaryMessageCodec } from '../../common/messaging/message-codec';
+import { Disposable } from 'vscode-languageserver-protocol';
 
 export interface ElectronIpcOptions {
 }
@@ -42,23 +42,30 @@ export class ElectronIpcConnectionProvider extends AbstractConnectionProvider<El
     }
 
     protected createMainChannel(): Channel {
-        const onMessageEmitter = new Emitter<MessageProvider>();
-        ipcRenderer.on(THEIA_ELECTRON_IPC_CHANNEL_NAME, (_event: ElectronEvent, data: Uint8Array) => {
-            onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(data));
-        });
-        return {
-            close: () => Event.None,
-            getWriteBuffer: () => {
-                const writer = new Uint8ArrayWriteBuffer();
-                writer.onCommit(buffer =>
-                    ipcRenderer.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, buffer)
-                );
-                return writer;
-            },
-            onClose: Event.None,
-            onError: Event.None,
-            onMessage: onMessageEmitter.event
-        };
+        return new ElectronIpcRendererChannel();
+    }
+
+}
+
+export class ElectronIpcRendererChannel extends AbstractChannel {
+
+    protected messageCodec: MessageCodec<any, Uint8Array> = new BinaryMessageCodec();
+
+    constructor() {
+        super();
+        const ipcMessageListener = (_event: ElectronEvent, data: Uint8Array) => this.onMessageEmitter.fire(data);
+        ipcRenderer.on(THEIA_ELECTRON_IPC_CHANNEL_NAME, ipcMessageListener);
+        this.toDispose.push(Disposable.create(() => ipcRenderer.removeListener(THEIA_ELECTRON_IPC_CHANNEL_NAME, ipcMessageListener)));
+    }
+
+    protected handleMessage(message: Uint8Array): void {
+        const decoded = this.messageCodec.decode(message);
+        this.onMessageEmitter.fire(decoded);
+    }
+
+    send(message: any): void {
+        const encoded = this.messageCodec.encode(message);
+        ipcRenderer.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, encoded);
     }
 
 }

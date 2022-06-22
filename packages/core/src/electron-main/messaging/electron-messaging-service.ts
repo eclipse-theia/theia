@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Channel } from '../../common/message-rpc/channel';
+import { Channel } from '../../common/';
 
 export interface ElectronMessagingService {
     /**

@@ -13,22 +13,43 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
-import { Disposable } from '../disposable';
-import { Emitter, Event } from '../event';
-import { ReadBuffer, WriteBuffer } from './message-buffer';
+
+/**
+ * A buffer maintaining a write position capable of writing primitive values
+ */
+export interface WriteBuffer {
+    writeUint8(byte: number): this
+    writeUint16(value: number): this
+    writeUint32(value: number): this
+    writeString(value: string): this
+    writeBytes(value: Uint8Array): this
+    writeNumber(value: number): this
+    writeLength(value: number): this
+    getCurrentContents(): Uint8Array;
+
+}
+
+/**
+ * A buffer maintaining a read position in a buffer containing a received message capable of
+ * reading primitive values.
+ */
+export interface ReadBuffer {
+    readUint8(): number;
+    readUint16(): number;
+    readUint32(): number;
+    readString(): string;
+    readNumber(): number,
+    readLength(): number,
+    readBytes(): Uint8Array;
+}
 
 /**
  * The default {@link WriteBuffer} implementation. Uses a {@link Uint8Array} for buffering.
- * The {@link Uint8ArrayWriteBuffer.onCommit} hook can be used to rect to on-commit events.
- * After the {@link Uint8ArrayWriteBuffer.commit} method has been called the buffer is disposed
- * and can no longer be used for writing data. If the writer buffer is no longer needed but the message
- * has not been committed yet it has to be disposed manually.
  */
-export class Uint8ArrayWriteBuffer implements WriteBuffer, Disposable {
+export class WriteBufferImpl implements WriteBuffer {
 
     private encoder = new TextEncoder();
     private msg: DataView;
-    private isDisposed = false;
     private offset: number;
 
     constructor(private buffer: Uint8Array = new Uint8Array(1024), writePosition: number = 0) {
@@ -106,36 +127,16 @@ export class Uint8ArrayWriteBuffer implements WriteBuffer, Disposable {
         return this;
     }
 
-    private onCommitEmitter = new Emitter<Uint8Array>();
-    get onCommit(): Event<Uint8Array> {
-        return this.onCommitEmitter.event;
-    }
-
-    commit(): void {
-        if (this.isDisposed) {
-            throw new Error("Could not invoke 'commit'. The WriteBuffer is already disposed.");
-        }
-        this.onCommitEmitter.fire(this.getCurrentContents());
-        this.dispose();
-    }
-
     getCurrentContents(): Uint8Array {
         return this.buffer.slice(this.buffer.byteOffset, this.offset);
     }
-
-    dispose(): void {
-        if (!this.isDisposed) {
-            this.onCommitEmitter.dispose();
-            this.isDisposed = true;
-        }
-    }
-
 }
+
 /**
  * The default {@link ReadBuffer} implementation. Uses a {@link Uint8Array} for buffering.
  * Is for single message read. A message can only be read once.
  */
-export class Uint8ArrayReadBuffer implements ReadBuffer {
+export class ReadBufferImpl implements ReadBuffer {
     private offset: number = 0;
     private msg: DataView;
     private decoder = new TextDecoder();
@@ -197,10 +198,5 @@ export class Uint8ArrayReadBuffer implements ReadBuffer {
         const result = this.buffer.slice(sliceOffset, sliceOffset + length);
         this.offset += length;
         return result;
-    }
-
-    sliceAtReadPosition(): ReadBuffer {
-        const sliceOffset = this.offset - this.buffer.byteOffset;
-        return new Uint8ArrayReadBuffer(this.buffer, sliceOffset);
     }
 }

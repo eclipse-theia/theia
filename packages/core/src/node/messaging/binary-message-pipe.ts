@@ -16,7 +16,7 @@
 
 import { Duplex } from 'stream';
 import { Disposable, Emitter, Event } from '../../common';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
+import { ReadBufferImpl, WriteBufferImpl } from '../../common/messaging/message-buffer';
 
 /**
  * A `BinaryMessagePipe` is capable of sending and retrieving binary messages i.e. {@link Uint8Array}s over
@@ -116,11 +116,10 @@ export class BinaryMessagePipe implements Disposable {
      * @returns the buffer contains the encoded message start
      */
     protected encodeMessageStart(message: Uint8Array): Uint8Array {
-        const writer = new Uint8ArrayWriteBuffer()
+        const writer = new WriteBufferImpl()
             .writeString(BinaryMessagePipe.MESSAGE_START_IDENTIFIER)
             .writeUint32(message.length);
         const messageStart = writer.getCurrentContents();
-        writer.dispose();
         return messageStart;
     }
 
@@ -140,7 +139,7 @@ export class BinaryMessagePipe implements Disposable {
         const messageData = this.cachedMessageData.partialMessageStart ? Buffer.concat([this.cachedMessageData.partialMessageStart, chunk]) : chunk;
         this.cachedMessageData.partialMessageStart = undefined;
 
-        const reader = new Uint8ArrayReadBuffer(messageData);
+        const reader = new ReadBufferImpl(messageData);
         const identifier = reader.readString();
 
         if (identifier !== BinaryMessagePipe.MESSAGE_START_IDENTIFIER) {

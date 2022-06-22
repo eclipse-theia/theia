@@ -20,7 +20,7 @@ import { ILogger, Logger, LoggerFactory, setRootLogger, LoggerName, rootLoggerNa
 import { LoggerWatcher } from '../common/logger-watcher';
 import { WebSocketConnectionProvider } from './messaging';
 import { FrontendApplicationContribution } from './frontend-application';
-import { EncodingError } from '../common/message-rpc/rpc-message-encoder';
+import { EncodingError } from '../common/messaging/message-codec';
 
 export const loggerFrontendModule = new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ({

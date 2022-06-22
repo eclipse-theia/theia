@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Channel, Disposable, Emitter, Event } from '@theia/core';
+import { Channel, Disposable, Event } from '@theia/core';
 import { ApplicationError } from '@theia/core/lib/common/application-error';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { CommandIdVariables } from '@theia/variable-resolver/lib/common/variable-types';
@@ -36,6 +36,11 @@ export const DebugPath = '/services/debug';
  * DebugService symbol for DI.
  */
 export const DebugService = Symbol('DebugService');
+
+/**
+ * A {@link} Channel to stringified debug protocol messages over with error/close handling
+ */
+export type DebugChannel = Channel<string>;
 
 /**
  * This service provides functionality to configure and to start a new debug adapter session.
@@ -139,48 +144,4 @@ export namespace DebugError {
         message: `'${type}' debugger type is not supported.`,
         data: { type }
     }));
-}
-
-/**
- * A closeable channel to send debug protocol messages over with error/close handling
- */
-export interface DebugChannel {
-    send(content: string): void;
-    onMessage(cb: (message: string) => void): void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError(cb: (reason: any) => void): void;
-    onClose(cb: (code: number, reason: string) => void): void;
-    close(): void;
-}
-
-/**
- * A {@link DebugChannel} wrapper implementation that sends and receives messages to/from an underlying {@link Channel}.
- */
-export class ForwardingDebugChannel implements DebugChannel {
-    private onMessageEmitter = new Emitter<string>();
-
-    constructor(private readonly underlyingChannel: Channel) {
-        this.underlyingChannel.onMessage(msg => this.onMessageEmitter.fire(msg().readString()));
-    }
-
-    send(content: string): void {
-        this.underlyingChannel.getWriteBuffer().writeString(content).commit();
-    }
-
-    onMessage(cb: (message: string) => void): void {
-        this.onMessageEmitter.event(cb);
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError(cb: (reason: any) => void): void {
-        this.underlyingChannel.onError(cb);
-    }
-    onClose(cb: (code: number, reason: string) => void): void {
-        this.underlyingChannel.onClose(event => cb(event.code ?? -1, event.reason));
-    }
-
-    close(): void {
-        this.underlyingChannel.close();
-        this.onMessageEmitter.dispose();
-    }
-
 }
