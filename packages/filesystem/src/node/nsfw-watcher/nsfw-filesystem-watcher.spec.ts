@@ -120,7 +120,7 @@ describe('nsfw-filesystem-watcher', function (): void {
         assert.deepStrictEqual(actualUris.size, 0);
     });
 
-    it.only('Renaming should emit a DELETED change followed by ADDED', async () => {
+    it('Renaming should emit a DELETED change followed by ADDED', async () => {
         const file_txt = root.resolve('file.txt');
         const FILE_txt = root.resolve('FILE.txt');
         const changes: FileChange[] = [];
