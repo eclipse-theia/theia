@@ -21,3 +21,19 @@
 export interface CommandIdVariables {
     [id: string]: string
 }
+
+/**
+ * Holds a common state among variables being resolved by interactions e.g. commands.
+ * A `NOK` state indicates that at least one of the variables did not get resolved successfully.
+ */
+export class InteractionsAggregatedState {
+    protected state: 'NOK' | 'OK' = 'OK';
+
+    setNOK(state: 'NOK'): void {
+        this.state = state;
+    }
+
+    isNOK(): boolean {
+        return this.state !== 'OK';
+    }
+}

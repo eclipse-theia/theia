@@ -76,14 +76,18 @@ export class CommonVariableContribution implements VariableContribution {
         });
         variables.registerVariable({
             name: 'command',
-            resolve: async (_, name, __, commandIdVariables, configuration) => {
+            resolve: async (_, name, __, commandIdVariables, configuration, interactionsState) => {
                 let commandId = name;
                 if (name && commandIdVariables) {
                     const mappedValue = commandIdVariables[name];
                     commandId = mappedValue ? mappedValue : name;
                 }
                 const result = commandId && await this.commands.executeCommand(commandId, configuration);
-                return result ? result : undefined;
+                // eslint-disable-next-line no-null/no-null
+                if (interactionsState && commandId && result === null) {
+                    interactionsState.setNOK('NOK');
+                }
+                return result;
             }
         });
         variables.registerVariable({

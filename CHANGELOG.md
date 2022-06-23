@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.28.0 - Unreleased
+
+<a name="breaking_changes_1.28.0">[Breaking Changes:](#breaking_changes_1.28.0)</a>
+
+- [variable-resolver] The interface `VariableResolveOptions` was updated to remove `checkAllResolved` and introduce `interactionsState` [#11332](https://github.com/eclipse-theia/theia/pull/11332)
+
 ## v1.27.0 - 6/30/2022
 
 - [core] added better styling for active sidepanel borders [#11330](https://github.com/eclipse-theia/theia/pull/11330)

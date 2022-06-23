@@ -20,6 +20,7 @@ import { ILogger } from '@theia/core/lib/common';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Variable, VariableRegistry } from './variable';
 import { VariableResolverService } from './variable-resolver-service';
+import { InteractionsAggregatedState } from '../common/variable-types';
 
 const expect = chai.expect;
 
@@ -59,6 +60,16 @@ describe('variable-resolver-service', () => {
                 name: 'lineNumber',
                 description: 'current line number',
                 resolve: () => Promise.resolve('6')
+            },
+            {
+                name: 'command',
+                description: 'Mock NOK command interaction',
+                resolve: async (_, __, ___, ____, _____, interactionsState) => {
+                    if (interactionsState) {
+                        interactionsState.setNOK('NOK');
+                    }
+                    return 'path';
+                }
             }
         ];
         variables.forEach(v => variableRegistry.registerVariable(v));
@@ -81,11 +92,16 @@ describe('variable-resolver-service', () => {
         expect(resolved).is.equal('workspace: ${workspaceRoot}; file: package.json; line: 6');
     });
 
-    it('should check if all variables are resolved', async () => {
+    it('should resolve to `undefined` when a command interactions reports "NOK"', async () => {
         const options = {
-            checkAllResolved: true
+            interactionsState: new InteractionsAggregatedState()
         };
         const resolved = await variableResolverService.resolve('workspace: ${command:testCommand}; file: ${file}; line: ${lineNumber}', options);
         expect(resolved).equal(undefined);
+    });
+
+    it('should resolve command variable even if an `interactionState` is not provided', async () => {
+        const resolved = await variableResolverService.resolve('workspace: ${command:testCommand}; file: ${file}; line: ${lineNumber}');
+        expect(resolved).is.equal('workspace: path; file: package.json; line: 6');
     });
 });

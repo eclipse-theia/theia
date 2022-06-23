@@ -20,7 +20,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { VariableRegistry } from './variable';
 import URI from '@theia/core/lib/common/uri';
 import { JSONExt, ReadonlyJSONValue } from '@theia/core/shared/@phosphor/coreutils';
-import { CommandIdVariables } from '../common/variable-types';
+import { CommandIdVariables, InteractionsAggregatedState } from '../common/variable-types';
 
 export interface VariableResolveOptions {
     context?: URI;
@@ -30,8 +30,8 @@ export interface VariableResolveOptions {
     configurationSection?: string;
     commandIdVariables?: CommandIdVariables;
     configuration?: unknown;
-    // Return 'undefined' if not all variables were successfully resolved.
-    checkAllResolved?: boolean;
+    // Track an aggregated result from user interactions e.g. from interactive commands
+    interactionsState?: InteractionsAggregatedState;
 }
 
 /**
@@ -65,7 +65,7 @@ export class VariableResolverService {
     async resolve<T>(value: T, options: VariableResolveOptions = {}): Promise<T | undefined> {
         const context = new VariableResolverService.Context(this.variableRegistry, options);
         const resolved = await this.doResolve(value, context);
-        if (options.checkAllResolved && !context.allDefined()) {
+        if (context.isInteractionsNOK()) {
             return undefined;
         }
         return resolved as any;
@@ -150,6 +150,10 @@ export namespace VariableResolverService {
             return true;
         }
 
+        isInteractionsNOK(): boolean {
+            return this.options.interactionsState ? this.options.interactionsState.isNOK() : false;
+        }
+
         async resolve(name: string): Promise<void> {
             if (this.resolved.has(name)) {
                 return;
@@ -170,7 +174,8 @@ export namespace VariableResolverService {
                         argument,
                         this.options.configurationSection,
                         this.options.commandIdVariables,
-                        this.options.configuration
+                        this.options.configuration,
+                        this.options.interactionsState
                     ));
                 // eslint-disable-next-line no-null/no-null
                 const stringValue = value !== undefined && value !== null && JSONExt.isPrimitive(value as ReadonlyJSONValue) ? String(value) : undefined;
