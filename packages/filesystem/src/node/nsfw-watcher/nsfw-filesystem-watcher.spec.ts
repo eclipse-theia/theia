@@ -120,7 +120,7 @@ describe('nsfw-filesystem-watcher', function (): void {
         assert.deepStrictEqual(actualUris.size, 0);
     });
 
-    it('Renaming should emit a DELETED change followed by ADDED', async () => {
+    it('Renaming should emit a DELETED change followed by ADDED', async function (): Promise<void> {
         const file_txt = root.resolve('file.txt');
         const FILE_txt = root.resolve('FILE.txt');
         const changes: FileChange[] = [];
@@ -147,11 +147,12 @@ describe('nsfw-filesystem-watcher', function (): void {
                 { type: FileChangeType.ADDED, uri: FILE_txt.toString() }
             ]);
         } catch (error) {
+            // TODO: remove this try/catch once the bug on macOS is fixed.
+            // See https://github.com/Axosoft/nsfw/issues/146
             if (process.platform !== 'darwin') {
                 throw error;
             }
-            // TODO: remove once the bug is fixed: https://github.com/Axosoft/nsfw/issues/146
-            console.warn('running alternative test because of nsfw bug on macOS...');
+            // On macOS we only get ADDED events for some reason
             expect(changes).deep.eq([
                 // initial file creation change event:
                 { type: FileChangeType.ADDED, uri: file_txt.toString() },
@@ -159,6 +160,8 @@ describe('nsfw-filesystem-watcher', function (): void {
                 { type: FileChangeType.ADDED, uri: file_txt.toString() },
                 { type: FileChangeType.ADDED, uri: FILE_txt.toString() }
             ]);
+            // Mark the test case as skipped so it stands out that the bogus branch got tested
+            this.skip();
         }
     });
 
