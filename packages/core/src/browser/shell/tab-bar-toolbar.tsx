@@ -15,20 +15,15 @@
 // *****************************************************************************
 
 import debounce = require('lodash.debounce');
-import * as React from 'react';
 import { inject, injectable, named } from 'inversify';
-import { Widget, ReactWidget, codicon, ACTION_ITEM } from '../widgets';
-import { LabelParser, LabelIcon } from '../label-parser';
-import { ContributionProvider } from '../../common/contribution-provider';
-import { FrontendApplicationContribution } from '../frontend-application';
-import { CommandRegistry } from '../../common/command';
-import { Disposable, DisposableCollection } from '../../common/disposable';
+import * as React from 'react';
+// eslint-disable-next-line max-len
+import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuCommandExecutor, MenuModelRegistry, MenuNode, MenuPath, nls } from '../../common';
 import { ContextKeyService } from '../context-key-service';
-import { Event, Emitter } from '../../common/event';
-import { ContextMenuRenderer, Anchor, ContextMenuAccess } from '../context-menu-renderer';
-import { MenuModelRegistry, MenuNode, MenuPath } from '../../common/menu';
-import { nls } from '../../common/nls';
-import { MenuCommandExecutor } from '../../common';
+import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../context-menu-renderer';
+import { FrontendApplicationContribution } from '../frontend-application';
+import { LabelIcon, LabelParser } from '../label-parser';
+import { ACTION_ITEM, codicon, ReactWidget, Widget } from '../widgets';
 
 /**
  * Clients should implement this interface if they want to contribute to the tab-bar toolbar.
@@ -324,12 +319,11 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
     }
 
     protected formatGroupForSubmenus(lastGroup: string, currentId?: string, currentLabel?: string): string {
-        const split = lastGroup.length ? lastGroup.split(menuDelegateSeparator).filter(segment => segment.length) : [];
+        const split = lastGroup.length ? lastGroup.split(menuDelegateSeparator) : [];
         // If the submenu is in the 'navigation' group, then it's an item that opens its own context menu, so it should be navigation/id/label...
         const expectedParity = split[0] === 'navigation' ? 1 : 0;
         if (split.length % 2 !== expectedParity && (currentId || currentLabel)) {
-            console.warn('Something went wrong with a contributed tabbar menu delegate.', lastGroup, currentId, currentLabel);
-            split.push('<children but no label>');
+            split.push('');
         }
         if (currentId || currentLabel) {
             split.push(currentId || (currentLabel + '_id'));
@@ -379,6 +373,7 @@ export interface TabBarToolbarFactory {
 }
 
 export const TAB_BAR_TOOLBAR_CONTEXT_MENU = ['TAB_BAR_TOOLBAR_CONTEXT_MENU'];
+const submenuItemPrefix = `navigation${menuDelegateSeparator}`;
 
 /**
  * Tab-bar toolbar widget representing the active [tab-bar toolbar items](TabBarToolbarItem).
@@ -389,6 +384,7 @@ export class TabBarToolbar extends ReactWidget {
     protected current: Widget | undefined;
     protected inline = new Map<string, TabBarToolbarItem | ReactTabBarToolbarItem>();
     protected more = new Map<string, TabBarToolbarItem>();
+    protected submenuItems = new Map<string, Map<string, TabBarToolbarItem>>();
 
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
     @inject(LabelParser) protected readonly labelParser: LabelParser;
@@ -406,11 +402,16 @@ export class TabBarToolbar extends ReactWidget {
     updateItems(items: Array<TabBarToolbarItem | ReactTabBarToolbarItem>, current: Widget | undefined): void {
         this.inline.clear();
         this.more.clear();
+        this.submenuItems.clear();
         for (const item of items.sort(TabBarToolbarItem.PRIORITY_COMPARATOR).reverse()) {
             if ('render' in item || item.group === undefined || item.group === 'navigation') {
                 this.inline.set(item.id, item);
             } else {
-                this.more.set(item.id, item);
+                if (item.group?.startsWith(submenuItemPrefix)) {
+                    this.addSubmenuItem(item);
+                } else {
+                    this.more.set(item.id, item);
+                }
             }
         }
         this.setCurrent(current);
@@ -423,6 +424,21 @@ export class TabBarToolbar extends ReactWidget {
             }
         }));
         this.update();
+    }
+
+    protected addSubmenuItem(item: TabBarToolbarItem): void {
+        if (item.group) {
+            let doSet = false;
+            const secondElementEndIndex = item.group.indexOf(menuDelegateSeparator, submenuItemPrefix.length);
+            const prefix = secondElementEndIndex === -1
+                ? item.group.substring(submenuItemPrefix.length)
+                : item.group.substring(submenuItemPrefix.length, secondElementEndIndex);
+            const prefixItems = this.submenuItems.get(prefix) ?? (doSet = true, new Map());
+            prefixItems.set(item.id, item);
+            if (doSet) {
+                this.submenuItems.set(prefix, prefixItems);
+            }
+        }
     }
 
     updateTarget(current?: Widget): void {
@@ -456,6 +472,9 @@ export class TabBarToolbar extends ReactWidget {
     }
 
     protected renderItem(item: TabBarToolbarItem): React.ReactNode {
+        if (SubmenuToolbarItem.is(item) && !this.submenuItems.get(item.prefix)?.size) {
+            return undefined;
+        }
         let innerText = '';
         const classNames = [];
         if (item.text) {
@@ -511,16 +530,21 @@ export class TabBarToolbar extends ReactWidget {
     protected showMoreContextMenu = (event: React.MouseEvent) => {
         event.stopPropagation();
         event.preventDefault();
-
-        this.renderMoreContextMenu(event.nativeEvent);
+        const anchor = this.toAnchor(event);
+        this.renderMoreContextMenu(anchor);
     };
 
+    protected toAnchor(event: React.MouseEvent): Anchor {
+        const itemBox = event.currentTarget.closest('.' + TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM)?.getBoundingClientRect();
+        return itemBox ? { y: itemBox.bottom, x: itemBox.left } : event.nativeEvent;
+    }
+
     renderMoreContextMenu(anchor: Anchor, prefix?: string): ContextMenuAccess {
-        const menuPath = TAB_BAR_TOOLBAR_CONTEXT_MENU;
         const toDisposeOnHide = new DisposableCollection();
         this.addClass('menu-open');
         toDisposeOnHide.push(Disposable.create(() => this.removeClass('menu-open')));
-        for (const item of this.more.values()) {
+        const items = (prefix ? this.submenuItems.get(prefix) ?? new Map() : this.more);
+        for (const item of items.values()) {
             const separator = item.group && [menuDelegateSeparator, '/'].find(candidate => item.group?.includes(candidate));
             if (prefix && !item.group?.startsWith(`navigation${separator}${prefix}`) || !prefix && item.group?.startsWith(`navigation${separator}`)) {
                 continue;
@@ -532,18 +556,21 @@ export class TabBarToolbar extends ReactWidget {
                 for (let i = 0; i < split.length - 1; i += 2) {
                     paths.push(split[i], split[i + 1]);
                     // TODO order is missing, items sorting will be alphabetic
-                    toDisposeOnHide.push(this.menus.registerSubmenu([...menuPath, ...paths], split[i + 1]));
+                    if (split[i + 1]) {
+                        console.log('SENTINEL FOR REGISTERING A SUBMENU...', { group: item.group, paths, split, label: split[i + 1] });
+                        toDisposeOnHide.push(this.menus.registerSubmenu([...TAB_BAR_TOOLBAR_CONTEXT_MENU, ...paths], split[i + 1]));
+                    }
                 }
             }
             // TODO order is missing, items sorting will be alphabetic
-            toDisposeOnHide.push(this.menus.registerMenuAction([...menuPath, ...item.group!.split('/')], {
+            toDisposeOnHide.push(this.menus.registerMenuAction([...TAB_BAR_TOOLBAR_CONTEXT_MENU, ...item.group!.split(separator)], {
                 label: item.tooltip,
                 commandId: item.command,
                 when: item.when
             }));
         }
         return this.contextMenuRenderer.render({
-            menuPath,
+            menuPath: TAB_BAR_TOOLBAR_CONTEXT_MENU,
             args: [this.current],
             anchor,
             context: this.current?.node,
@@ -570,7 +597,8 @@ export class TabBarToolbar extends ReactWidget {
         const item = this.inline.get(e.currentTarget.id);
         if (TabBarToolbarItem.is(item)) {
             if (SubmenuToolbarItem.is(item)) {
-                return this.renderMoreContextMenu(e.nativeEvent, item.prefix);
+                const anchor = this.toAnchor(e);
+                return this.renderMoreContextMenu(anchor, item.prefix);
             }
             const menuPath = MenuDelegateToolbarItem.getMenuPath(item);
             if (menuPath) {

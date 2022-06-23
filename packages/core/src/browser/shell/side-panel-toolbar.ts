@@ -101,7 +101,6 @@ export class SidePanelToolbar extends BaseWidget {
         }
     }
 
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     showMoreContextMenu(anchor: Anchor): ContextMenuAccess {
         if (this.toolbar) {
             return this.toolbar.renderMoreContextMenu(anchor);
