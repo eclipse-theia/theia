@@ -213,7 +213,7 @@ export function createEditorPreferences(preferences: PreferenceService, schema: 
 export function bindEditorPreferences(bind: interfaces.Bind): void {
     bind(EditorPreferences).toDynamicValue(ctx => {
         const factory = ctx.container.get<PreferenceProxyFactory>(PreferenceProxyFactory);
-        return factory(editorPreferenceSchema, { validated: true });
+        return factory(editorPreferenceSchema);
     }).inSingletonScope();
     bind(EditorPreferenceContribution).toConstantValue({ schema: editorPreferenceSchema });
     bind(PreferenceContribution).toService(EditorPreferenceContribution);

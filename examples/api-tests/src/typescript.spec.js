@@ -62,7 +62,7 @@ describe('TypeScript', function () {
     const rootUri = workspaceService.tryGetRoots()[0].resource;
     const demoFileUri = rootUri.resolveToAbsolute('../api-tests/test-ts-workspace/demo-file.ts');
     const definitionFileUri = rootUri.resolveToAbsolute('../api-tests/test-ts-workspace/demo-definitions-file.ts');
-    let originalAutoSaveValue = preferences.get('files.autoSave', undefined, rootUri.toString());
+    let originalAutoSaveValue = preferences.inspect('files.autoSave').globalValue;
 
     before(async function () {
         await pluginService.didStart;
@@ -71,7 +71,7 @@ describe('TypeScript', function () {
                 throw new Error(pluginId + ' should be started');
             }
             await pluginService.activatePlugin(pluginId);
-        }).concat(preferences.set('files.autoSave', 'off', PreferenceScope.Workspace)));
+        }).concat(preferences.set('files.autoSave', 'off', PreferenceScope.User)));
     });
 
     beforeEach(async function () {
@@ -85,7 +85,7 @@ describe('TypeScript', function () {
     });
 
     after(async () => {
-        await preferences.set('files.autoSave', originalAutoSaveValue, PreferenceScope.Workspace);
+        await preferences.set('files.autoSave', originalAutoSaveValue, PreferenceScope.User);
     })
 
     /**

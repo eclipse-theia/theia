@@ -42,8 +42,6 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 import { expect } from 'chai';
-import { PreferenceValidationService } from './preference-validation-service';
-import { JSONValue } from '@phosphor/coreutils';
 let testContainer: Container;
 
 function createTestContainer(): Container {
@@ -56,7 +54,6 @@ function createTestContainer(): Container {
 describe('Preference Proxy', () => {
     let prefService: PreferenceServiceImpl;
     let prefSchema: PreferenceSchemaProvider;
-    let validator: PreferenceValidationService;
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -71,7 +68,6 @@ describe('Preference Proxy', () => {
         testContainer = createTestContainer();
         prefSchema = testContainer.get(PreferenceSchemaProvider);
         prefService = testContainer.get<PreferenceService>(PreferenceService) as PreferenceServiceImpl;
-        validator = testContainer.get(PreferenceValidationService);
         getProvider(PreferenceScope.User).markReady();
         getProvider(PreferenceScope.Workspace).markReady();
         getProvider(PreferenceScope.Folder).markReady();
@@ -117,13 +113,13 @@ describe('Preference Proxy', () => {
                         prefSchema.setSchema(s);
                         resolve(s);
                     }, 1000));
-                    const proxy = (testOptions.useFactory || options?.validated)
+                    const proxy = testOptions.useFactory
                         ? testContainer.get<PreferenceProxyFactory>(PreferenceProxyFactory)(promisedSchema, options)
                         : createPreferenceProxy(prefService, promisedSchema, options);
                     return { proxy, promisedSchema };
                 } else {
                     prefSchema.setSchema(s);
-                    const proxy = (testOptions.useFactory || options?.validated)
+                    const proxy = testOptions.useFactory
                         ? testContainer.get<PreferenceProxyFactory>(PreferenceProxyFactory)(s, options)
                         : createPreferenceProxy(prefService, s, options);
                     return { proxy };
@@ -270,108 +266,6 @@ describe('Preference Proxy', () => {
                 expect(changesNotAffectingTypescript, 'Two events (one for `my.pref` and one for `[swift].my.pref`) should not have affected TS').to.equal(2);
                 expect(changesAffectingTypescript, 'One event should have been fired that does affect typescript.').to.equal(1);
             });
-
-            if (testOptions.useFactory) {
-                async function prepareValidationTest(): Promise<{ proxy: PreferenceProxy<{ [key: string]: unknown }>, validationCallCounter: { calls: number } }> {
-                    const validationCallCounter = { calls: 0 };
-                    const originalValidateByName = validator.validateByName.bind(validator);
-                    function newValidateByName(...args: unknown[]): JSONValue {
-                        validationCallCounter.calls++;
-                        return originalValidateByName(...args);
-                    };
-                    validator.validateByName = newValidateByName;
-                    const { proxy, promisedSchema } = getProxy({
-                        properties: {
-                            'my.pref': {
-                                type: 'string',
-                                defaultValue: 'foo',
-                                overridable: true,
-                            }
-                        }
-                    }, { style: 'both', validated: true });
-                    await promisedSchema;
-                    return { proxy, validationCallCounter };
-                }
-
-                it('Validated proxies always return good values.', async () => {
-                    const { proxy, validationCallCounter } = await prepareValidationTest();
-                    let event: PreferenceChangeEvent<{ [key: string]: unknown }> | undefined = undefined;
-                    proxy.onPreferenceChanged(change => event = change);
-                    expect(proxy['my.pref']).to.equal('foo', 'Should start with default value.');
-                    expect(validationCallCounter.calls).to.equal(1, 'Should have validated preference retrieval.');
-                    expect(proxy.get('my.pref')).to.equal('foo', 'Should have default value for `get`.');
-                    expect(validationCallCounter.calls).to.equal(1, 'Should have cached first validation.');
-                    const newValue = 'Also a string';
-                    await prefService.set('my.pref', newValue, PreferenceScope.User);
-                    expect(event !== undefined);
-                    expect(event!.newValue).to.equal(newValue, 'Should accept good value');
-                    expect(validationCallCounter.calls).to.equal(2, 'Should have validated event value');
-                    expect(proxy['my.pref']).to.equal(newValue, 'Should return default value on access.');
-                    expect(proxy.get('my.pref')).to.equal(newValue);
-                    expect(validationCallCounter.calls).to.equal(2, 'Should have used cached value for retrievals');
-                    await prefService.set('my.pref', { complete: 'garbage' }, PreferenceScope.User);
-                    expect(event !== undefined);
-                    expect(event!.newValue).to.equal('foo', 'Should have fallen back to default.');
-                    expect(validationCallCounter.calls).to.equal(3, 'Should have validated event');
-                    expect(proxy['my.pref']).to.equal('foo', 'Should return default value on access.');
-                    expect(proxy.get('my.pref')).to.equal('foo');
-                    expect(validationCallCounter.calls).to.equal(3, 'Should have used cached value for retrievals');
-                });
-
-                it('Validated proxies only validate one value if multiple language-override events are emitted for the same change', async () => {
-                    const { proxy, validationCallCounter } = await prepareValidationTest();
-                    prefSchema.registerOverrideIdentifier('swift');
-                    prefSchema.registerOverrideIdentifier('typescript');
-                    const events: Array<PreferenceChangeEvent<{ [key: string]: unknown }>> = [];
-                    proxy.onPreferenceChanged(event => events.push(event));
-                    await prefService.set('my.pref', { complete: 'garbage' }, PreferenceScope.User);
-                    expect(validationCallCounter.calls, 'Validation should have been performed once.').to.equal(1);
-                    expect(events).to.have.length(3, 'One event for base, one for each override');
-                    expect(events.every(event => event.newValue === 'foo'), 'Should have returned the default in case of garbage.');
-                });
-
-                it("Validated proxies don't retain old values for overrides after a change (no emitter).", async () => {
-                    const { proxy, validationCallCounter } = await prepareValidationTest();
-                    prefSchema.registerOverrideIdentifier('swift');
-                    const initialValue = proxy.get({ preferenceName: 'my.pref', overrideIdentifier: 'swift' });
-                    expect(initialValue).to.equal('foo', 'Proxy should start with default value.');
-                    expect(validationCallCounter.calls).to.equal(1, 'Retrieval should validate (1).');
-                    await prefService.set('my.pref', 'bar', PreferenceScope.User);
-                    expect(proxy.get('my.pref')).to.equal('bar', 'The base should have been updated.');
-                    expect(validationCallCounter.calls).to.equal(2, 'Retrieval should validate (2).');
-                    expect(proxy.get({ preferenceName: 'my.pref', overrideIdentifier: 'swift' })).to.equal('bar', 'Proxy should update empty overrides on change.');
-                    expect(validationCallCounter.calls).to.equal(3, 'Retrieval should validate (3).');
-                });
-
-                // The scenario with a listener differs because the proxy will start caching known valid values when a listener is attached.
-                it("Validated proxies don't retain old values for overrides after a change (with emitter)", async () => {
-                    const { proxy, validationCallCounter } = await prepareValidationTest();
-                    prefSchema.registerOverrideIdentifier('swift');
-                    const override = { preferenceName: 'my.pref', overrideIdentifier: 'swift' };
-                    proxy.onPreferenceChanged; // Initialize the listeners.
-                    const initialValue = proxy.get(override);
-                    expect(initialValue).to.equal('foo', 'Proxy should start with default value.');
-                    expect(validationCallCounter.calls).to.equal(1, 'Retrieval should validate.');
-
-                    await prefService.set('my.pref', 'bar', PreferenceScope.User);
-                    expect(validationCallCounter.calls).to.equal(2, 'Event should trigger validation (1).');
-                    expect(proxy.get('my.pref')).to.equal('bar', 'The base should have been updated.');
-                    expect(proxy.get(override)).to.equal('bar', 'Proxy should update empty overrides on change.');
-                    expect(validationCallCounter.calls).to.equal(2, 'Subsequent retrievals should not trigger validation. (1)');
-
-                    await prefService.set(prefService.overridePreferenceName(override), 'baz', PreferenceScope.User);
-                    expect(validationCallCounter.calls).to.equal(3, 'Event should trigger validation (2).');
-                    expect(proxy.get('my.pref')).to.equal('bar', 'Base should not have been updated.');
-                    expect(proxy.get(override)).to.equal('baz', 'Override should have been updated');
-                    expect(validationCallCounter.calls).to.equal(3, 'Subsequent retrievals should not trigger validation. (2)');
-
-                    await prefService.set('my.pref', 'boom', PreferenceScope.User);
-                    expect(validationCallCounter.calls).to.equal(4, 'Event should trigger validation (3).');
-                    expect(proxy.get('my.pref')).to.equal('boom', 'Base should have been updated.');
-                    expect(proxy.get(override)).to.equal('baz', 'Override should not have been updated');
-                    expect(validationCallCounter.calls).to.equal(4, 'Subsequent retrievals should not trigger validation. (3)');
-                });
-            }
 
             it('toJSON with deep', async () => {
                 const { proxy, promisedSchema } = getProxy({
