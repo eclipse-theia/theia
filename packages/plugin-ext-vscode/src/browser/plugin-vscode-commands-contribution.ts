@@ -102,6 +102,42 @@ export namespace VscodeCommands {
     };
 }
 
+// https://wicg.github.io/webusb/
+
+export interface UsbDeviceData {
+    readonly deviceClass: number;
+    readonly deviceProtocol: number;
+    readonly deviceSubclass: number;
+    readonly deviceVersionMajor: number;
+    readonly deviceVersionMinor: number;
+    readonly deviceVersionSubminor: number;
+    readonly manufacturerName?: string;
+    readonly productId: number;
+    readonly productName?: string;
+    readonly serialNumber?: string;
+    readonly usbVersionMajor: number;
+    readonly usbVersionMinor: number;
+    readonly usbVersionSubminor: number;
+    readonly vendorId: number;
+}
+
+// https://wicg.github.io/serial/
+
+export interface SerialPortData {
+    readonly usbVendorId?: number | undefined;
+    readonly usbProductId?: number | undefined;
+}
+
+// https://wicg.github.io/webhid/
+
+export interface HidDeviceData {
+    readonly opened: boolean;
+    readonly vendorId: number;
+    readonly productId: number;
+    readonly productName: string;
+    readonly collections: [];
+}
+
 @injectable()
 export class PluginVscodeCommandsContribution implements CommandContribution {
     @inject(CommandService)
@@ -727,25 +763,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             }
         });
 
-        // https://wicg.github.io/webusb/
-
-        interface UsbDeviceData {
-            readonly deviceClass: number;
-            readonly deviceProtocol: number;
-            readonly deviceSubclass: number;
-            readonly deviceVersionMajor: number;
-            readonly deviceVersionMinor: number;
-            readonly deviceVersionSubminor: number;
-            readonly manufacturerName?: string;
-            readonly productId: number;
-            readonly productName?: string;
-            readonly serialNumber?: string;
-            readonly usbVersionMajor: number;
-            readonly usbVersionMinor: number;
-            readonly usbVersionSubminor: number;
-            readonly vendorId: number;
-        }
-
         commands.registerCommand({
             id: 'workbench.experimental.requestUsbDevice'
         }, {
@@ -779,13 +796,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             }
         });
 
-        // https://wicg.github.io/serial/
-
-        interface SerialPortData {
-            readonly usbVendorId?: number | undefined;
-            readonly usbProductId?: number | undefined;
-        }
-
         commands.registerCommand({
             id: 'workbench.experimental.requestSerialPort'
         }, {
@@ -807,16 +817,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 };
             }
         });
-
-        // https://wicg.github.io/webhid/
-
-        interface HidDeviceData {
-            readonly opened: boolean;
-            readonly vendorId: number;
-            readonly productId: number;
-            readonly productName: string;
-            readonly collections: [];
-        }
 
         commands.registerCommand({
             id: 'workbench.experimental.requestHidDevice'
