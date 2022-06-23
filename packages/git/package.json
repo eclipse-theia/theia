@@ -17,7 +17,7 @@
     "dugite-extra": "0.1.15",
     "find-git-exec": "^0.0.4",
     "find-git-repositories": "^0.1.1",
-    "moment": "2.29.2",
+    "luxon": "^2.4.0",
     "octicons": "^7.1.0",
     "p-queue": "^2.4.2",
     "ts-md5": "^1.2.2"
@@ -66,6 +66,7 @@
   },
   "devDependencies": {
     "@theia/ext-scripts": "1.26.0",
+    "@types/luxon": "^2.3.2",
     "upath": "^1.0.2"
   },
   "nyc": {

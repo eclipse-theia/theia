@@ -106,7 +106,7 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
     }
 
     protected async download(downloadUrl: string, downloadPath: string): Promise<boolean> {
-        if (fs.existsSync(downloadPath)) { return true; }
+        if (await fs.pathExists(downloadPath)) { return true; }
         const context = await this.requestService.request({ url: downloadUrl });
         if (context.res.statusCode === 404) {
             return false;

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as moment from 'moment';
+import { DateTime } from 'luxon';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { CommandRegistry } from '@theia/core/lib/common/command';
@@ -35,7 +35,6 @@ import { BUILTIN_QUERY, INSTALLED_QUERY, RECOMMENDED_QUERY } from './vsx-extensi
 import { IGNORE_RECOMMENDATIONS_ID } from './recommended-extensions/recommended-extensions-preference-contribution';
 import { VSXExtensionsCommands } from './vsx-extension-commands';
 import { VSXExtensionRaw } from '@theia/ovsx-client';
-import { PluginServer } from '@theia/plugin-ext';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
 
 @injectable()
@@ -216,7 +215,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         }
         const items: QuickPickItem[] = [];
         compatibleExtensions.forEach(ext => {
-            let publishedDate = moment(ext.timestamp).fromNow();
+            let publishedDate = DateTime.fromISO(ext.timestamp).toRelative() ?? '';
             if (currentVersion === ext.version) {
                 publishedDate += ` (${nls.localizeByDefault('Current')})`;
             }
