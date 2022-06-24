@@ -1001,27 +1001,28 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderResultLineNode(node: SearchInWorkspaceResultLineNode): React.ReactNode {
-        let before;
-        let after;
-        let title;
-        if (typeof node.lineText === 'string') {
-            const prefix = node.character > 26 ? '... ' : '';
-            before = prefix + node.lineText.substr(0, node.character - 1).substr(-25);
-            after = node.lineText.substr(node.character - 1 + node.length, 75);
-            title = node.lineText.trim();
-        } else {
-            before = node.lineText.text.substr(0, node.lineText.character);
-            after = node.lineText.text.substr(node.lineText.character + node.length);
-            title = node.lineText.text.trim();
+        const character = typeof node.lineText === 'string' ? node.character : node.lineText.character;
+        const lineText = typeof node.lineText === 'string' ? node.lineText : node.lineText.text;
+        let start = Math.max(0, character - 26);
+        const wordBreak = /\b/g;
+        while (start > 0 && wordBreak.test(lineText) && wordBreak.lastIndex < character) {
+            if (character - wordBreak.lastIndex < 26) {
+                break;
+            }
+            start = wordBreak.lastIndex;
+            wordBreak.lastIndex++;
         }
-        return <div className={`resultLine noWrapInfo noselect ${node.selected ? 'selected' : ''}`} title={title}>
+
+        const before = lineText.slice(start, character - 1).trimLeft();
+
+        return <div className={`resultLine noWrapInfo noselect ${node.selected ? 'selected' : ''}`} title={lineText}>
             {this.searchInWorkspacePreferences['search.lineNumbers'] && <span className='theia-siw-lineNumber'>{node.line}</span>}
             <span>
                 {before}
             </span>
             {this.renderMatchLinePart(node)}
             <span>
-                {after}
+                {lineText.slice(node.character + node.length, 250 - before.length + node.length)}
             </span>
         </div>;
     }
