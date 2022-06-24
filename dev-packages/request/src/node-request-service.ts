@@ -18,6 +18,7 @@ import * as http from 'http';
 import * as https from 'https';
 import { getProxyAgent, ProxyAgent } from './proxy';
 import { Headers, RequestConfiguration, RequestContext, RequestOptions, RequestService, CancellationToken } from './common-request-service';
+import { createGunzip } from 'zlib';
 
 export interface RawRequestFunction {
     (options: http.RequestOptions, callback?: (res: http.IncomingMessage) => void): http.ClientRequest;
@@ -74,6 +75,11 @@ export class NodeRequestService implements RequestService {
             };
         }
 
+        options.headers = {
+            'Accept-Encoding': 'gzip',
+            ...(options.headers || {}),
+        };
+
         return options;
     }
 
@@ -112,11 +118,13 @@ export class NodeRequestService implements RequestService {
                 } else {
                     const chunks: Uint8Array[] = [];
 
-                    res.on('data', chunk => {
+                    const stream = res.headers['content-encoding'] === 'gzip' ? res.pipe(createGunzip()) : res;
+
+                    stream.on('data', chunk => {
                         chunks.push(chunk);
                     });
 
-                    res.on('end', () => {
+                    stream.on('end', () => {
                         const buffer = Buffer.concat(chunks);
                         resolve({
                             url: options.url,
@@ -128,7 +136,7 @@ export class NodeRequestService implements RequestService {
                         });
                     });
 
-                    res.on('error', reject);
+                    stream.on('error', reject);
                 }
             });
 
