@@ -215,7 +215,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         }
         const items: QuickPickItem[] = [];
         compatibleExtensions.forEach(ext => {
-            let publishedDate = DateTime.fromISO(ext.timestamp).toRelative() ?? '';
+            let publishedDate = DateTime.fromISO(ext.timestamp).toRelative({ locale: nls.locale }) ?? '';
             if (currentVersion === ext.version) {
                 publishedDate += ` (${nls.localizeByDefault('Current')})`;
             }

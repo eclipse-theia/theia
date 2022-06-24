@@ -10,7 +10,6 @@
     "@theia/plugin-ext-vscode": "1.26.0",
     "@theia/preferences": "1.26.0",
     "@theia/workspace": "1.26.0",
-    "@types/showdown": "^1.7.1",
     "luxon": "^2.4.0",
     "p-debounce": "^2.1.0",
     "semver": "^5.4.1",

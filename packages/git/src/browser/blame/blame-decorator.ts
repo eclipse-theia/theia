@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager, TextEditor, EditorDecoration, EditorDecorationOptions, Range, Position, EditorDecorationStyle } from '@theia/editor/lib/browser';
 import { GitFileBlame } from '../../common';
-import { Disposable, DisposableCollection } from '@theia/core';
+import { Disposable, DisposableCollection, nls } from '@theia/core';
 import { DateTime } from 'luxon';
 import URI from '@theia/core/lib/common/uri';
 import { DecorationStyle } from '@theia/core/lib/browser';
@@ -140,7 +140,9 @@ export class BlameDecorator implements monaco.languages.HoverProvider {
             }, this.blameDecorationsStyleSheet));
             new EditorDecorationStyle('.git-' + short + '::after', style => {
                 Object.assign(style, BlameDecorator.defaultGutterAfterStyles);
-                style.content = (this.now.diff(commitTime, 'seconds').toObject().seconds ?? 0) < 60 ? "'a few seconds ago'" : `'${commitTime.toRelative()}'`;
+                style.content = (this.now.diff(commitTime, 'seconds').toObject().seconds ?? 0) < 60
+                    ? `'${nls.localize('theia/git/aFewSecondsAgo', 'a few seconds ago')}'`
+                    : `'${commitTime.toRelative({ locale: nls.locale })}'`;
             }, this.blameDecorationsStyleSheet);
         }
         const commitLines = blame.lines;
