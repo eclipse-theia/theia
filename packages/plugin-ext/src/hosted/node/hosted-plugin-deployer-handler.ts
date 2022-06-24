@@ -197,6 +197,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             await Promise.all(Array.from(sourceLocations,
                 location => fs.remove(location).catch(err => console.error(`Failed to remove source for ${pluginId} at ${location}`, err))));
             this.sourceLocations.delete(pluginId);
+            this.localizationService.undeployLocalizations(pluginId);
             this.uninstallationManager.markAsUninstalled(pluginId);
             return true;
         } catch (e) {
