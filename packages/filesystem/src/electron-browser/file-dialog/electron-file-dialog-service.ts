@@ -135,11 +135,8 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     /**
      * Specifies whether an _All Files_ filter should be added to the dialog.
      *
-     * We shouldn't add an _All Files_ filter, if we are on Linux and no other filter is specified.
-     * Otherwise, we run into a [bug](https://github.com/eclipse-theia/theia/issues/11321) in Electron
-     * which causes an extension filter `['*']` to hide files without extensions. Once we are on Electron >18,
-     * we should be able to add the _All Files_ filter again in all cases, as this bug seems to be resolved in
-     * Electron above >18.
+     * On Linux, the _All Files_ filter [hides](https://github.com/eclipse-theia/theia/issues/11321) files without an extension.
+     * The bug is resolved in Electron >=18.
      */
     protected shouldAddAllFilesFilter(electronProps: electron.FileDialogProps): boolean {
         const foundFilters = !!electronProps.filters && electronProps.filters.length > 0;
