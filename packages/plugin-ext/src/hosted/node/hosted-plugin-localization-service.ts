@@ -19,7 +19,7 @@ import * as fs from '@theia/core/shared/fs-extra';
 import { LocalizationProvider } from '@theia/core/lib/node/i18n/localization-provider';
 import { Localization } from '@theia/core/lib/common/i18n/localization';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { DeployedPlugin, Localization as PluginLocalization, PluginContribution } from '../../common';
+import { DeployedPlugin, Localization as PluginLocalization } from '../../common';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
@@ -55,18 +55,16 @@ export class HostedPluginLocalizationService {
         const localization = this.localizationProvider.loadLocalization(currentLanguage);
         const pluginPath = URI.parse(plugin.metadata.model.packageUri).fsPath;
         const pluginId = plugin.metadata.model.id;
-        // create a shallow copy to not override the original plugin's contributes property.
-        const shallowCopy = { ...plugin };
         try {
             const translations = await loadPackageTranslations(pluginPath, currentLanguage);
-            shallowCopy.contributes = localizePackage(shallowCopy.contributes, translations, (key, original) => {
+            plugin = localizePackage(plugin, translations, (key, original) => {
                 const fullKey = `${pluginId}/package/${key}`;
                 return Localization.localize(localization, fullKey, original);
-            }) as PluginContribution;
+            }) as DeployedPlugin;
         } catch (err) {
             console.error(`Failed to localize plugin '${pluginId}'.`, err);
         }
-        return shallowCopy;
+        return plugin;
     }
 
     getNlsConfig(): VSCodeNlsConfig {
