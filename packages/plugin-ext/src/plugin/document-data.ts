@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
+import { UNTITLED_SCHEME } from '@theia/core/lib/common';
 import { ModelChangedEvent, DocumentsMain } from '../common/plugin-api-rpc';
 import { Range as ARange } from '../common/plugin-api-rpc-model';
 import { EndOfLine, Position, Range, URI } from './types-impl';
@@ -58,7 +59,7 @@ export class DocumentDataExt {
         // Update my lines
         const changes = e.changes;
         // tslint:disable-next-line:one-variable-per-declaration
-        for (let i = 0, len = changes.length; i < len; i++) {
+        for (let i = 0, len = changes.length;i < len;i++) {
             const change = changes[i];
             this.acceptDeleteRange(change.range);
             this.acceptInsertText(new Position(change.range.startLineNumber, change.range.startColumn), change.text);
@@ -80,7 +81,7 @@ export class DocumentDataExt {
             this._document = {
                 get uri(): theia.Uri { return that.uri; },
                 get fileName(): string { return that.uri.fsPath; },
-                get isUntitled(): boolean { return that.uri.scheme === 'untitled'; },
+                get isUntitled(): boolean { return that.uri.scheme === UNTITLED_SCHEME; },
                 get languageId(): string { return that.languageId; },
                 get version(): number { return that.versionId; },
                 get isClosed(): boolean { return that.disposed; },
@@ -127,7 +128,7 @@ export class DocumentDataExt {
 
         // Insert new lines & store lengths
         const newLengths = new Uint32Array(insertLines.length - 1);
-        for (let i = 1; i < insertLines.length; i++) {
+        for (let i = 1;i < insertLines.length;i++) {
             this.lines.splice(position.line + i - 1, 0, insertLines[i]);
             newLengths[i - 1] = insertLines[i].length + this.eol.length;
         }
@@ -197,7 +198,7 @@ export class DocumentDataExt {
         const resultLines: string[] = [];
 
         resultLines.push(this.lines[startLineIndex].substring(range.start.character));
-        for (let i = startLineIndex + 1; i < endLineIndex; i++) {
+        for (let i = startLineIndex + 1;i < endLineIndex;i++) {
             resultLines.push(this.lines[i]);
         }
         resultLines.push(this.lines[endLineIndex].substring(0, range.end.character));
@@ -305,7 +306,7 @@ export class DocumentDataExt {
             const eolLength = this.eol.length;
             const linesLength = this.lines.length;
             const lineStartValues = new Uint32Array(linesLength);
-            for (let i = 0; i < linesLength; i++) {
+            for (let i = 0;i < linesLength;i++) {
                 lineStartValues[i] = this.lines[i].length + eolLength;
             }
             this.lineStarts = new PrefixSumComputer(lineStartValues);

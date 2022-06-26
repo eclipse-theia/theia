@@ -327,6 +327,14 @@ export class UntitledResourceResolver implements ResourceResolver {
 
     protected readonly resources = new Map<string, UntitledResource>();
 
+    has(uri: URI): boolean {
+        if (uri.scheme !== UNTITLED_SCHEME) {
+            throw new Error('The given uri is not untitled file uri: ' + uri);
+        } else {
+            return this.resources.has(uri.toString());
+        }
+    }
+
     async resolve(uri: URI): Promise<UntitledResource> {
         if (uri.scheme !== UNTITLED_SCHEME) {
             throw new Error('The given uri is not untitled file uri: ' + uri);
@@ -341,8 +349,14 @@ export class UntitledResourceResolver implements ResourceResolver {
     }
 
     async createUntitledResource(content?: string, extension?: string, uri?: URI): Promise<UntitledResource> {
-        return new UntitledResource(this.resources, uri ? uri : new URI().withScheme(UNTITLED_SCHEME).withPath(`/Untitled-${untitledResourceSequenceIndex++}${extension ?? ''}`),
-            content);
+        if (!uri) {
+            let counter: number = 1; // vscode is started from 1
+            do {
+                uri = new URI().withScheme(UNTITLED_SCHEME).withPath(`/Untitled-${counter}${extension ?? ''}`);
+                counter++;
+            } while (this.has(uri));
+        }
+        return new UntitledResource(this.resources, uri!, content);
     }
 }
 
@@ -389,8 +403,8 @@ export class UntitledResource implements Resource {
     }
 }
 
-export function createUntitledURI(extension?: string, parent?: URI): URI {
-    const name = `Untitled-${untitledResourceSequenceIndex++}${extension ?? ''}`;
+export function createUntitledURI(extension?: string, parent?: URI, sequenceIndex?: number): URI {
+    const name = `Untitled-${sequenceIndex ?? untitledResourceSequenceIndex++}${extension ?? ''}`;
     if (parent) {
         return parent.resolve(name).withScheme(UNTITLED_SCHEME);
     }
