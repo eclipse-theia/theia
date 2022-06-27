@@ -871,6 +871,7 @@ export interface ScmMain {
 
     $setInputBoxValue(sourceControlHandle: number, value: string): void;
     $setInputBoxPlaceholder(sourceControlHandle: number, placeholder: string): void;
+    $setInputBoxVisible(sourceControlHandle: number, visible: boolean): void;
 }
 
 export interface SourceControlProviderFeatures {

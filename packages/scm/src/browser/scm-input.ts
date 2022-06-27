@@ -38,6 +38,7 @@ export interface ScmInputValidator {
 export interface ScmInputOptions {
     placeholder?: string
     validator?: ScmInputValidator
+    visible?: boolean
 }
 
 export interface ScmInputData {
@@ -90,6 +91,19 @@ export class ScmInput implements Disposable {
             return;
         }
         this._value = value;
+        this.fireDidChange();
+        this.validate();
+    }
+
+    protected _visible = this.options.visible;
+    get visible(): boolean {
+        return this._visible ?? true;
+    }
+    set visible(visible: boolean) {
+        if (this.visible === visible) {
+            return;
+        }
+        this._visible = visible;
         this.fireDidChange();
         this.validate();
     }
