@@ -20,7 +20,7 @@ import type * as http from 'http';
 import { injectable } from 'inversify';
 import * as socket_io from 'socket.io';
 import { pushDisposableListener } from '../common/node-event-utils';
-import { AbstractConnection, Connection, ConnectionState, FrontendConnectionParams, Router } from '../common';
+import { AbstractConnection, Connection, FrontendConnectionParams, Router } from '../common';
 
 /**
  * @internal
@@ -116,7 +116,7 @@ export class SocketIoServer {
  */
 export class SocketIoConnection extends AbstractConnection<any> {
 
-    state = ConnectionState.OPENING;
+    state = Connection.State.OPENING;
 
     constructor(
         protected socket: socket_io.Socket
@@ -131,13 +131,13 @@ export class SocketIoConnection extends AbstractConnection<any> {
     }
 
     sendMessage(message: any): void {
-        this.ensureState(ConnectionState.OPENED);
+        this.ensureState(Connection.State.OPENED);
         this.socket.send(message);
     }
 
     close(): void {
-        this.ensureStateNot(ConnectionState.CLOSING, ConnectionState.CLOSED);
-        this.state = ConnectionState.CLOSING;
+        this.ensureStateNot(Connection.State.CLOSING, Connection.State.CLOSED);
+        this.state = Connection.State.CLOSING;
         this.socket.disconnect();
     }
 }

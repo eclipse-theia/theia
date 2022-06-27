@@ -40,27 +40,15 @@ export * from './contribution-filter';
 export * from './nls';
 export * from './numbers';
 export * from './performance';
+export * from './connection';
 
 export { environment } from '@theia/application-package/lib/environment';
 
 export { Deferred, delay, retry, timeout, timeoutReject, wait, waitForEvent } from './promise-util';
 export { ProxyProvider, LazyProxyFactory } from './proxy';
-export {
-    AnyConnection,
-    AbstractConnection,
-    Connection,
-    ConnectionRouter,
-    ConnectionHandler,
-    ConnectionEmitter,
-    ConnectionProvider,
-    ConnectionState,
-    DeferredConnectionFactory
-} from './connection';
 export { bindServiceProvider, servicePath, ServicePath, ServiceProvider, ServiceContribution, ServiceLifecycle } from './service-provider';
 export { Reflection } from './reflection';
 export { RpcConnection, Rpc } from './rpc';
-export { ConnectionTransformer, MessageTransformer } from './connection-transformer';
-export { ConnectionMultiplexer } from './connection-multiplexer';
 export { ContainerScope } from './container-scope';
 export { FrontendConnectionParams } from './frontend-connection-params';
 export { Broker, Handler, Middleware, Router } from './routing';

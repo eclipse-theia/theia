@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { Event as ElectronEvent, IpcRenderer } from '@theia/core/electron-shared/electron';
-import { AbstractConnection, Connection, ConnectionState } from '../../common';
+import { AbstractConnection, Connection } from '../../common';
 import { pushDisposableListener } from '../../common/node-event-utils';
 
 /**
@@ -25,7 +25,7 @@ import { pushDisposableListener } from '../../common/node-event-utils';
  */
 export class IpcRendererConnection extends AbstractConnection<any> {
 
-    state = ConnectionState.OPENING;
+    state = Connection.State.OPENING;
 
     protected channel?: string;
     protected ipcRenderer?: IpcRenderer;
@@ -38,7 +38,7 @@ export class IpcRendererConnection extends AbstractConnection<any> {
         this.channel = channel;
         this.ipcRenderer = ipcRenderer;
         pushDisposableListener(this.disposables, this.ipcRenderer, this.channel, (event: ElectronEvent, message: any) => {
-            this.ensureState(ConnectionState.OPENED);
+            this.ensureState(Connection.State.OPENED);
             this.onMessageEmitter.fire(message);
         });
         this.setOpenedAndEmit();
@@ -46,7 +46,7 @@ export class IpcRendererConnection extends AbstractConnection<any> {
     }
 
     sendMessage(message: any): void {
-        this.ensureState(ConnectionState.OPENED);
+        this.ensureState(Connection.State.OPENED);
         this.ipcRenderer!.send(this.channel!, message);
     }
 

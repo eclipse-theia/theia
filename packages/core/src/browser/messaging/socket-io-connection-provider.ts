@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable } from 'inversify';
-import { AbstractConnection, Connection, ConnectionProvider, ConnectionState } from '../../common';
+import { AbstractConnection, Connection, ConnectionProvider } from '../../common';
 import * as socket_io from 'socket.io-client';
 import { v4 } from 'uuid';
 
@@ -46,7 +46,7 @@ export class SocketIoConnectionProvider implements ConnectionProvider<any, Socke
 
 export class SocketIoConnection extends AbstractConnection<any> {
 
-    state = ConnectionState.OPENING;
+    state = Connection.State.OPENING;
 
     constructor(
         protected socket: socket_io.Socket
@@ -65,8 +65,8 @@ export class SocketIoConnection extends AbstractConnection<any> {
     }
 
     close(): void {
-        this.ensureStateNot(ConnectionState.CLOSING, ConnectionState.CLOSED);
-        this.state = ConnectionState.CLOSING;
+        this.ensureStateNot(Connection.State.CLOSING, Connection.State.CLOSED);
+        this.state = Connection.State.CLOSING;
         this.socket.disconnect();
     }
 }

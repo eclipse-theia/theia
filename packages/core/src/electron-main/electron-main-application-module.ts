@@ -29,7 +29,7 @@ import {
     ServiceContribution,
     ServiceProvider
 } from '../common';
-import { DefaultConnectionMultiplexer } from '../common/connection-multiplexer';
+import { DefaultConnectionMultiplexer } from '../common/connection/multiplexer';
 import { ContainerScope } from '../common/container-scope';
 import { bindContributionProvider } from '../common/contribution-provider';
 import { getAllNamedOptional } from '../common/inversify-utils';
@@ -45,7 +45,7 @@ import { ElectronMainWindowServiceImpl } from './electron-main-window-service-im
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { WebContentsConnection } from './electron-web-contents-connection';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory, WindowApplicationConfig } from './theia-electron-window';
-import { waitForRemote } from '../common/connection';
+import { waitForRemote } from '../common/connection/utils';
 import { pushDisposableListener } from '../common/node-event-utils';
 import { JsonRpc } from '../common/json-rpc';
 

@@ -17,10 +17,8 @@
 import '@theia/core/shared/reflect-metadata';
 import { injectable } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
-import { PluginRpc, DefaultPluginRpc } from '../../common/rpc-protocol';
-import { BufferedConnection, Connection, ConnectionState, DeferredConnection, waitForRemote } from '@theia/core/lib/common/connection';
-import { TransformedConnection } from '@theia/core/lib/common/connection-transformer';
-import { MsgpackMessageTransformer } from '@theia/core/lib/common/msgpack';
+import { PluginRpc, DefaultPluginRpc, pluginRpcConnection } from '../../common/rpc-protocol';
+import { Connection } from '@theia/core/lib/common/connection';
 
 @injectable()
 export class PluginWorker {
@@ -41,23 +39,20 @@ export class PluginWorker {
         this.worker.onmessage = m => emitter.fire(m.data);
         this.worker.onerror = e => console.error(e);
 
-        const connectionToWorker: Connection<unknown[]> = {
-            state: ConnectionState.OPENED,
+        const connectionToWorker: Connection<Uint8Array> = {
+            state: Connection.State.OPENED,
             onClose: () => ({ dispose(): void { } }),
             onError: () => ({ dispose(): void { } }),
             onOpen: () => ({ dispose(): void { } }),
             onMessage: emitter.event,
             sendMessage: message => {
-                this.worker.postMessage(message);
+                this.worker.postMessage(message, [message]);
             },
             close: () => {
                 throw new Error('cannot close this connection');
             }
         };
-        const bufferedConnection = new BufferedConnection(connectionToWorker);
-        const msgpackConnection = new TransformedConnection(bufferedConnection, MsgpackMessageTransformer);
-        const deferredConnection = new DeferredConnection(waitForRemote(msgpackConnection));
-        this.rpc = new DefaultPluginRpc(deferredConnection);
+        this.rpc = new DefaultPluginRpc(pluginRpcConnection(connectionToWorker));
     }
 
 }

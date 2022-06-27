@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { serviceIdentifier } from './types';
-import { Connection, ConnectionState } from './connection';
-import { Emitter, Event } from './event';
-import { DisposableCollection } from './disposable';
+import { serviceIdentifier } from '../types';
+import { Connection } from '../connection';
+import { Emitter, Event } from '../event';
+import { DisposableCollection } from '../disposable';
 
 export const ConnectionTransformer = serviceIdentifier<ConnectionTransformer>('ConnectionTransformerFactory');
 export type ConnectionTransformer = <From, To>(connection: Connection<From>, transformer: MessageTransformer<From, To>) => Connection<To>;
@@ -49,7 +49,7 @@ export class TransformedConnection<From, To> implements Connection<To> {
         }, undefined, this.disposables);
     }
 
-    get state(): ConnectionState {
+    get state(): Connection.State {
         return this.connection.state;
     }
 

@@ -14,14 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import '@theia/core/shared/reflect-metadata';
+import { Connection } from '@theia/core/lib/common/connection';
 import { Emitter } from '@theia/core/lib/common/event';
-import { DefaultPluginRpc, PluginHostProtocol } from '../../common/rpc-protocol';
-import { PluginHostRPC } from './plugin-host-rpc';
+import '@theia/core/shared/reflect-metadata';
+import { DefaultPluginRpc, PluginHostProtocol, pluginRpcConnection } from '../../common/rpc-protocol';
 import { reviver } from '../../plugin/types-impl';
-import { BufferedConnection, Connection, ConnectionState, DeferredConnection, waitForRemote } from '@theia/core/lib/common/connection';
-import { TransformedConnection } from '@theia/core/lib/common/connection-transformer';
-import { MsgpackMessageTransformer } from '@theia/core/lib/common/msgpack';
+import { PluginHostRPC } from './plugin-host-rpc';
 
 let terminating = false;
 
@@ -67,7 +65,7 @@ process.on('unhandledRejection', (reason: unknown, promise: Promise<void>) => {
                     return;
                 }
                 // note that `error.stack` is already formatted with `error.message` on node:
-                console.error(`Promise rejection not handled in one second:\n${error?.stack ?? error}`);
+                console.error(`Promise rejection not handled in one second: ${error?.stack ?? error}`);
             });
         }
     }, 1000);
@@ -81,9 +79,9 @@ process.on('rejectionHandled', (promise: Promise<void>) => {
 
 // #region RPC initialization
 
-const messageEmitter = new Emitter<unknown[]>();
-const connectionToParentProcess: Connection<unknown[]> = {
-    state: ConnectionState.OPENED,
+const messageEmitter = new Emitter<Uint8Array>();
+const connectionToParentProcess: Connection<Uint8Array> = {
+    state: Connection.State.OPENED,
     onClose: () => ({ dispose(): void { } }),
     onError: () => ({ dispose(): void { } }),
     onOpen: () => ({ dispose(): void { } }),
@@ -97,10 +95,7 @@ const connectionToParentProcess: Connection<unknown[]> = {
         throw new Error('cannot close this connection');
     }
 };
-const bufferedConnection = new BufferedConnection(connectionToParentProcess);
-const msgpackConnection = new TransformedConnection(bufferedConnection, MsgpackMessageTransformer);
-const deferredConnection = new DeferredConnection(waitForRemote(msgpackConnection));
-const rpc = new DefaultPluginRpc(deferredConnection, { reviver });
+const rpc = new DefaultPluginRpc(pluginRpcConnection(connectionToParentProcess), { reviver });
 const pluginHostRpc = new PluginHostRPC(rpc);
 
 process.on('message', message => {
@@ -113,10 +108,9 @@ process.on('message', message => {
     // fortunately it is easy enough to segregate between both, see the following branching:
     if (PluginHostProtocol.isMessage(message)) {
         switch (message.$pluginHostMessageType) {
-            case PluginHostProtocol.TerminateRequest: return terminatePluginHost(message.timeout);
+            case PluginHostProtocol.MessageType.TERMINATE_REQUEST: return terminatePluginHost(message.timeout);
         }
-    } else if (Array.isArray(message)) {
-        // message for `connectionToParentProcess` buffered connection:
+    } else if (message instanceof Uint8Array || Buffer.isBuffer(message)) {
         return messageEmitter.fire(message);
     }
     console.debug('unhandled message:', message);
@@ -138,7 +132,7 @@ async function terminatePluginHost(timeout?: number): Promise<void> {
     } catch (error) {
         console.error(error);
     } finally {
-        process.send!(PluginHostProtocol.createMessage(PluginHostProtocol.TerminatedEvent, {}));
+        process.send!(new PluginHostProtocol.TerminatedEvent());
     }
 }
 

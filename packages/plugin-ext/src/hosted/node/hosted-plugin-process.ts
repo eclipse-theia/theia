@@ -104,7 +104,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
         const waitForTerminated = new Promise<void>(resolve => {
             pluginHost.on('message', message => {
-                if (PluginHostProtocol.isMessage(message) && message.$pluginHostMessageType === PluginHostProtocol.TerminatedEvent) {
+                if (PluginHostProtocol.isMessage(message) && message.$pluginHostMessageType === PluginHostProtocol.MessageType.TERMINATED_EVENT) {
                     resolve();
                 }
             });
@@ -113,7 +113,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
             }
         });
 
-        pluginHost.send(PluginHostProtocol.createMessage(PluginHostProtocol.TerminateRequest, { timeout: stopTimeout }));
+        pluginHost.send(new PluginHostProtocol.TerminateRequest(stopTimeout));
 
         await waitForTerminated;
 

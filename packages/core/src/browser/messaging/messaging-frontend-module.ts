@@ -18,7 +18,7 @@ import { ContainerModule } from 'inversify';
 import {
     BackendAndFrontend, bindServiceProvider, ConnectionHandler, ConnectionProvider, ConnectionTransformer, ProxyProvider, RouteHandlerProvider, ServiceProvider
 } from '../../common';
-import { DefaultConnectionMultiplexer } from '../../common/connection-multiplexer';
+import { DefaultConnectionMultiplexer } from '../../common/connection/multiplexer';
 import { getAllNamedOptional } from '../../common/inversify-utils';
 import { JsonRpc } from '../../common/json-rpc';
 import { JSON_RPC_ROUTE } from '../../common/json-rpc-protocol';

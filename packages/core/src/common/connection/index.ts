@@ -14,16 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import * as msgpack from '@msgpack/msgpack';
-import { MessageTransformer } from './connection/transformer';
-
-export const MsgpackMessageTransformer: MessageTransformer<Uint8Array, any> = {
-    decode(message: Uint8Array, emit: (message: any) => void): void {
-        emit(msgpack.decode(message));
-    },
-    encode(message: any, write: (message: Uint8Array) => void): void {
-        write(msgpack.encode(message));
-    }
-};
+export { AbstractConnection, AnyConnection, Connection } from './connection';
+export { DeferredConnectionFactory } from './deferred';
+export { ConnectionTransformer, MessageTransformer } from './transformer';
+export { ConnectionMultiplexer } from './multiplexer';
+export { ConnectionEmitter, ConnectionHandler, ConnectionProvider, ConnectionRouter } from './routing';

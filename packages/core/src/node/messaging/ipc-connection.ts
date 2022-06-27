@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { pushDisposableListener } from '../../common/node-event-utils';
-import { AbstractConnection, Connection, ConnectionState, serviceIdentifier } from '../../common';
+import { AbstractConnection, Connection, serviceIdentifier } from '../../common';
 
 export const NodeIpcConnectionFactory = serviceIdentifier<NodeIpcConnectionFactory>('NodeIpcConnectionFactory');
 export type NodeIpcConnectionFactory = (proc: ProcessLike) => Connection<any>;
@@ -31,7 +31,7 @@ export interface ProcessLike extends NodeJS.EventEmitter {
 
 export class NodeIpcConnection extends AbstractConnection<any> {
 
-    state = ConnectionState.OPENING;
+    state = Connection.State.OPENING;
 
     protected proc?: ProcessLike;
 
@@ -45,7 +45,7 @@ export class NodeIpcConnection extends AbstractConnection<any> {
             this.onMessageEmitter.fire(message);
         });
         pushDisposableListener(this.disposables, this.proc, 'disconnect', () => {
-            if (this.state !== ConnectionState.CLOSED) {
+            if (this.state !== Connection.State.CLOSED) {
                 this.dispose();
             }
         });
@@ -54,7 +54,7 @@ export class NodeIpcConnection extends AbstractConnection<any> {
     }
 
     sendMessage(message: string | object): void {
-        this.ensureState(ConnectionState.OPENED);
+        this.ensureState(Connection.State.OPENED);
         this.proc!.send!(message);
     }
 

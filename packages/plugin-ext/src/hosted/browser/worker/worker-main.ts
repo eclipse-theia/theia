@@ -14,31 +14,29 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import '@theia/core/shared/reflect-metadata';
+import { Connection } from '@theia/core/lib/common/connection';
 import { Emitter } from '@theia/core/lib/common/event';
-import { DefaultPluginRpc } from '../../../common/rpc-protocol';
-import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
-import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin, TerminalServiceExt } from '../../../common/plugin-api-rpc';
-import { createAPIFactory } from '../../../plugin/plugin-context';
-import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
+import '@theia/core/shared/reflect-metadata';
 import * as theia from '@theia/plugin';
-import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
+import { emptyPlugin, MAIN_RPC_CONTEXT, Plugin, TerminalServiceExt } from '../../../common/plugin-api-rpc';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
-import { createDebugExtStub } from './debug-stub';
-import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents';
-import { WorkspaceExtImpl } from '../../../plugin/workspace';
-import { MessageRegistryExt } from '../../../plugin/message-registry';
-import { WorkerEnvExtImpl } from './worker-env-ext';
+import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
+import { DefaultPluginRpc, pluginRpcConnection } from '../../../common/rpc-protocol';
 import { ClipboardExt } from '../../../plugin/clipboard-ext';
+import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents';
+import { MessageRegistryExt } from '../../../plugin/message-registry';
+import { createAPIFactory } from '../../../plugin/plugin-context';
+import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
 import { KeyValueStorageProxy } from '../../../plugin/plugin-storage';
-import { WebviewsExtImpl } from '../../../plugin/webviews';
-import { loadManifest } from './plugin-manifest-loader';
+import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
+import { SecretsExtImpl } from '../../../plugin/secrets-ext';
 import { TerminalServiceExtImpl } from '../../../plugin/terminal-ext';
 import { reviver } from '../../../plugin/types-impl';
-import { SecretsExtImpl } from '../../../plugin/secrets-ext';
-import { BufferedConnection, Connection, ConnectionState, DeferredConnection, waitForRemote } from '@theia/core/lib/common/connection';
-import { TransformedConnection } from '@theia/core/lib/common/connection-transformer';
-import { MsgpackMessageTransformer } from '@theia/core/lib/common/msgpack';
+import { WebviewsExtImpl } from '../../../plugin/webviews';
+import { WorkspaceExtImpl } from '../../../plugin/workspace';
+import { createDebugExtStub } from './debug-stub';
+import { loadManifest } from './plugin-manifest-loader';
+import { WorkerEnvExtImpl } from './worker-env-ext';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -47,24 +45,21 @@ const pluginsApiImpl = new Map<string, typeof theia>();
 const pluginsModulesNames = new Map<string, Plugin>();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const messageEmitter = new Emitter<unknown[]>();
-const connectionToWorkerOwner: Connection<unknown[]> = {
-    state: ConnectionState.OPENED,
+const messageEmitter = new Emitter<Uint8Array>();
+const connectionToWorkerOwner: Connection<Uint8Array> = {
+    state: Connection.State.OPENED,
     onClose: () => ({ dispose(): void { } }),
     onError: () => ({ dispose(): void { } }),
     onOpen: () => ({ dispose(): void { } }),
     onMessage: messageEmitter.event,
     sendMessage: message => {
-        ctx.postMessage(message);
+        postMessage(message, [message]);
     },
     close: () => {
         throw new Error('cannot close this connection');
     }
 };
-const bufferedConnection = new BufferedConnection(connectionToWorkerOwner);
-const msgpackConnection = new TransformedConnection(bufferedConnection, MsgpackMessageTransformer);
-const deferredConnection = new DeferredConnection(waitForRemote(msgpackConnection));
-const rpc = new DefaultPluginRpc(deferredConnection, { reviver });
+const rpc = new DefaultPluginRpc(pluginRpcConnection(connectionToWorkerOwner), { reviver });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 addEventListener('message', (message: any) => {

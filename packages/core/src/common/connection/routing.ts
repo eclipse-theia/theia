@@ -16,14 +16,23 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as msgpack from '@msgpack/msgpack';
-import { MessageTransformer } from './connection/transformer';
+import { Connection } from './connection';
+import { Broker, Handler, Router } from '../routing';
+import { serviceIdentifier } from '../types';
 
-export const MsgpackMessageTransformer: MessageTransformer<Uint8Array, any> = {
-    decode(message: Uint8Array, emit: (message: any) => void): void {
-        emit(msgpack.decode(message));
-    },
-    encode(message: any, write: (message: Uint8Array) => void): void {
-        write(msgpack.encode(message));
-    }
-};
+/**
+ * Get or create outgoing connections.
+ */
+export const ConnectionProvider = serviceIdentifier<ConnectionProvider<any, any>>('ConnectionProvider');
+export interface ConnectionProvider<T extends Connection<any>, P extends object = any> {
+    open(params: P): T
+}
+
+export const ConnectionRouter = serviceIdentifier<ConnectionRouter>('ConnectionRouter');
+export type ConnectionRouter = Router<Connection<any>>;
+
+export const ConnectionHandler = serviceIdentifier<ConnectionHandler>('ConnectionHandler');
+export type ConnectionHandler = Handler<Connection<any>>;
+
+export const ConnectionEmitter = serviceIdentifier<ConnectionEmitter>('ConnectionEmitter');
+export type ConnectionEmitter = Broker<Connection<any>>;

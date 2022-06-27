@@ -26,8 +26,8 @@ import {
     Rpc,
     ServiceProvider
 } from '../common';
-import { waitForRemote } from '../common/connection';
-import { DefaultConnectionMultiplexer } from '../common/connection-multiplexer';
+import { waitForRemote } from '../common/connection/utils';
+import { DefaultConnectionMultiplexer } from '../common/connection/multiplexer';
 import { DefaultRpcProxyProvider } from '../common/rpc';
 import { ElectronMainAndBackend } from '../electron-common';
 import { THEIA_ELECTRON_IPC_CHANNEL_NAME } from '../electron-common/messaging/electron-messages';

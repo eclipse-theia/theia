@@ -33,7 +33,7 @@ import { BackendApplicationContribution } from '../backend-application';
 import { SocketIoServer } from '../socket-io-server';
 import { DefaultRpcProxyProvider } from '../../common/rpc';
 import { JSON_RPC_ROUTE } from '../../common/json-rpc-protocol';
-import { DefaultConnectionMultiplexer } from '../../common/connection-multiplexer';
+import { DefaultConnectionMultiplexer } from '../../common/connection/multiplexer';
 import { DefaultRouter, Router } from '../../common/routing';
 import { JsonRpc } from '../../common/json-rpc';
 import { ConnectionContainerModule } from './connection-container-module';

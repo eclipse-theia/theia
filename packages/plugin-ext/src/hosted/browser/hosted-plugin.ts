@@ -28,11 +28,11 @@ import { PluginWorker } from './plugin-worker';
 import { PluginMetadata, getPluginId, HostedPluginServer, DeployedPlugin, PluginServer } from '../../common/plugin-protocol';
 import { MAIN_RPC_CONTEXT, PluginManagerExt, ConfigStorage, UIKind } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
-import { PluginRpc, DefaultPluginRpc } from '../../common/rpc-protocol';
+import { PluginRpc, DefaultPluginRpc, pluginRpcConnection, JsonRpcProtocol } from '../../common/rpc-protocol';
 import {
     Disposable, DisposableCollection, Emitter, isCancelled,
     ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent,
-    CancellationTokenSource, ProgressService, nls, Event, ConnectionState
+    CancellationTokenSource, ProgressService, nls, Event, Connection
 } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -65,9 +65,6 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
-import { BufferedConnection, Connection, DeferredConnection, waitForRemote } from '@theia/core/lib/common/connection';
-import { TransformedConnection } from '@theia/core/lib/common/connection-transformer';
-import { MsgpackMessageTransformer } from '@theia/core/lib/common/msgpack';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
@@ -520,8 +517,8 @@ export class HostedPluginSupport {
     }
 
     private createServerRpc(pluginHostId: string): PluginRpc {
-        const connectionToPluginHostServer: Connection<unknown[]> = {
-            state: ConnectionState.OPENED,
+        const connectionToPluginHostServer: Connection<Uint8Array> = {
+            state: Connection.State.OPENED,
             onClose: Event.None,
             onError: Event.None,
             onOpen: Event.None,
@@ -537,10 +534,7 @@ export class HostedPluginSupport {
                 throw new Error('cannot close this connection');
             }
         };
-        const bufferedConnection = new BufferedConnection(connectionToPluginHostServer);
-        const msgpackConnection = new TransformedConnection(bufferedConnection, MsgpackMessageTransformer);
-        const deferredConnection = new DeferredConnection(waitForRemote(msgpackConnection));
-        return new DefaultPluginRpc(deferredConnection);
+        return new DefaultPluginRpc(pluginRpcConnection(connectionToPluginHostServer));
     }
 
     private async updateStoragePath(): Promise<void> {

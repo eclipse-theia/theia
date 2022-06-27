@@ -19,7 +19,7 @@
 import * as jsonrpc from 'vscode-jsonrpc';
 import { ApplicationError } from './application-error';
 import { CancellationToken } from './cancellation';
-import { Connection } from './connection';
+import { Connection, MessageTransformer } from './connection';
 import { Disposable } from './disposable';
 import { Event } from './event';
 import { RpcConnection } from './rpc';
@@ -48,7 +48,7 @@ export class DefaultJsonRpc implements JsonRpc {
     protected createReader(connection: Connection<jsonrpc.Message>): jsonrpc.MessageReader {
         return {
             dispose: () => { },
-            listen: callback => connection.onMessage(message => callback(message as jsonrpc.Message)),
+            listen: callback => connection.onMessage(message => callback(message)),
             onClose: listener => connection.onClose(() => listener()),
             onError: () => Disposable.NULL,
             onPartialMessage: () => Disposable.NULL,
@@ -150,3 +150,11 @@ export class JsonRpcConnection implements RpcConnection {
         return error;
     }
 }
+
+/**
+ * Removes/Adds the redundant `jsonrpc` field from the connection messages.
+ */
+export const JsonRpcMessageShortener: MessageTransformer<Omit<jsonrpc.Message, 'jsonrpc'>, jsonrpc.Message> = {
+    decode: (message, emit) => emit({ jsonrpc: '2.0', ...message }),
+    encode: ({ jsonrpc: _, ...rest }, write) => write(rest)
+};

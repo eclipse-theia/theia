@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { IpcMainEvent, WebContents } from '@theia/core/electron-shared/electron';
-import { AbstractConnection, Connection, ConnectionState } from '../common';
+import { AbstractConnection, Connection } from '../common';
 import { pushDisposableListener } from '../common/node-event-utils';
 
 /**
@@ -66,7 +66,7 @@ export type DidFrameNavigateParams = [
  */
 export class WebContentsConnection extends AbstractConnection<any> {
 
-    state = ConnectionState.OPENING;
+    state = Connection.State.OPENING;
 
     protected channel?: string;
     protected webContents?: WebContents;
@@ -97,7 +97,7 @@ export class WebContentsConnection extends AbstractConnection<any> {
     }
 
     sendMessage(message: any): void {
-        this.ensureState(ConnectionState.OPENED);
+        this.ensureState(Connection.State.OPENED);
         if (this.targetFrameId === undefined) {
             this.webContents!.send(this.channel!, message);
         } else {
@@ -127,7 +127,7 @@ export class WebContentsConnection extends AbstractConnection<any> {
      * Note that contrary to what the documentation says, the event type for `ipc-message(-sync)` is `IpcMainEvent`.
      */
     protected handleIpcMessage(event: IpcMainEvent, incomingChannel: string, message: any): void {
-        this.ensureState(ConnectionState.OPENED);
+        this.ensureState(Connection.State.OPENED);
         if (this.isTargetFrame(event.senderFrame.routingId) && incomingChannel === this.channel!) {
             this.onMessageEmitter.fire(message);
         }

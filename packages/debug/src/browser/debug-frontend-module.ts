@@ -31,7 +31,7 @@ import {
     DebugSessionContributionRegistryImpl,
     DebugChannelFactory
 } from './debug-session-contribution';
-import { BackendAndFrontend, bindContributionProvider, ConnectionProvider, ConnectionState, ProxyProvider, ResourceResolver } from '@theia/core';
+import { BackendAndFrontend, bindContributionProvider, ConnectionProvider, Connection, ProxyProvider, ResourceResolver } from '@theia/core';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DebugFrontendApplicationContribution } from './debug-frontend-application-contribution';
 import { DebugConsoleContribution } from './console/debug-console-contribution';
@@ -75,7 +75,7 @@ export default new ContainerModule((bind: interfaces.Bind) => {
             child.bind<DebugChannelFactory>(DebugChannelFactory)
                 .toFunction(async sessionId => {
                     const connection = connectionProvider.open({ path: `${DebugAdapterPath}/${sessionId}` });
-                    await ConnectionState.waitForOpen(connection);
+                    await Connection.waitForOpen(connection);
                     return new ConnectionAsChannel(connection);
                 });
             return child.get(DefaultDebugSessionFactory);

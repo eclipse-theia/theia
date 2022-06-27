@@ -26,6 +26,12 @@ export interface Handler<T, P extends object = any> {
     (params: P, accept: () => T, next: (error?: Error) => void): void
 }
 
+/**
+ * A router dispatches _something_ that can either be accepted or refused or
+ * unhandled.
+ *
+ * Routers usually are brokers.
+ */
 export interface Router<T, P extends object = any> {
     route(params: P, accepted: () => T, unhandled: (error?: Error) => void): void
 }

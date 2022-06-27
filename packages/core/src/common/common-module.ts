@@ -15,16 +15,16 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { DeferredConnection, DeferredConnectionFactory } from './connection';
-import { DefaultConnectionMultiplexer } from './connection-multiplexer';
-import { ConnectionTransformer, TransformedConnection } from './connection-transformer';
+import { DeferredConnection, DeferredConnectionFactory } from './connection/deferred';
+import { DefaultConnectionMultiplexer } from './connection/multiplexer';
+import { ConnectionTransformer, TransformedConnection } from './connection/transformer';
 import { ContainerScope, DefaultContainerScope } from './container-scope';
 import { DefaultJsonRpc, JsonRpc } from './json-rpc';
 import { LazyProxyFactory, LazyProxyHandler } from './proxy';
 import { DefaultRc, DefaultTracker, Rc } from './reference-counter';
 import { DefaultReflection, Reflection } from './reflection';
+import { DefaultRouteHandlerProvider, RouteHandlerProvider } from './route-handler';
 import { DefaultRouter } from './routing';
-import { RouteHandlerProvider, DefaultRouteHandlerProvider } from './route-handler';
 import { DefaultRpc, DefaultRpcProxyProvider, Rpc } from './rpc';
 
 export default new ContainerModule(bind => {

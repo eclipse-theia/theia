@@ -22,17 +22,21 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
-import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
-import URI from '@theia/core/lib/common/uri';
-import { Range } from '../plugin/types-impl';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { AnyConnection } from '@theia/core/lib/common/connection';
-import { ConnectionMultiplexer, DefaultConnectionMultiplexer } from '@theia/core/lib/common/connection-multiplexer';
+import { AnyConnection, Connection, ConnectionMultiplexer } from '@theia/core/lib/common/connection';
+import { BufferedConnection } from '@theia/core/lib/common/connection/buffered';
+import { DeferredConnection } from '@theia/core/lib/common/connection/deferred';
+import { Channel, DefaultConnectionMultiplexer } from '@theia/core/lib/common/connection/multiplexer';
+import { TransformedConnection } from '@theia/core/lib/common/connection/transformer';
+import { waitForRemote } from '@theia/core/lib/common/connection/utils';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { DefaultRouter } from '@theia/core/lib/common/routing';
-import { DefaultJsonRpc, JsonRpc } from '@theia/core/lib/common/json-rpc';
 import { RpcConnection } from '@theia/core/lib/common/rpc';
-import { TransformedConnection } from '@theia/core/lib/common/connection-transformer';
+import URI from '@theia/core/lib/common/uri';
+import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
+import { MsgpackMessageTransformer } from '@theia/core/lib/common/msgpack';
+import { Range } from '../plugin/types-impl';
+import { DefaultJsonRpc, JsonRpc, JsonRpcMessageShortener } from '@theia/core/lib/common/json-rpc';
 
 export const PluginRpc = Symbol('PluginRpc');
 export interface PluginRpc extends Disposable {
@@ -86,38 +90,35 @@ export namespace ConnectionClosedError {
     }
 }
 
+export interface PluginRpcParams {
+    proxyId: string
+}
+
+export interface Transformer {
+    replacer?: (key: string | undefined, value: any) => any
+    reviver?: (key: string | undefined, value: any) => any
+}
+
+export interface PluginRpcProtocol {
+    createRpcConnection(channel: AnyConnection): RpcConnection
+}
+
 export class DefaultPluginRpc implements PluginRpc {
 
     private locals = new Map<string, any>();
     private proxies = new Map<string, any>();
     private disposables = new DisposableCollection({ dispose: () => { /* mark as not disposed */ } });
-    private jsonRpc: JsonRpc = new DefaultJsonRpc();
 
-    private multiplexer: ConnectionMultiplexer<AnyConnection>;
+    private rpcProtocol: PluginRpcProtocol = new JsonRpcProtocol();
+    private multiplexer: ConnectionMultiplexer<AnyConnection, PluginRpcParams>;
     private replacer: (key: string | undefined, value: any) => any;
     private reviver: (key: string | undefined, value: any) => any;
 
-    constructor(connection: AnyConnection, transformations?: {
-        replacer?: (key: string | undefined, value: any) => any,
-        reviver?: (key: string | undefined, value: any) => any
-    }) {
-        this.reviver = transformations?.reviver || ObjectsTransferrer.reviver;
-        this.replacer = transformations?.replacer || ObjectsTransferrer.replacer;
-        this.multiplexer = new DefaultConnectionMultiplexer(new DefaultRouter())
-            .initialize(new TransformedConnection(connection, {
-                decode: (message, emit) => emit(revive(message, this.reviver)),
-                encode: (message, write) => write(replace(message, this.replacer))
-            }));
-        this.multiplexer.listen((params, accept, next) => {
-            const local = this.locals.get(params.proxyId);
-            if (!local) {
-                return next(new Error(`unknown proxyId: ${JSON.stringify(params.proxyId)}`));
-            }
-            const channel = accept();
-            const messageConnection = this.jsonRpc.createMessageConnection(channel);
-            const rpcConnection = this.jsonRpc.createRpcConnection(messageConnection);
-            this.serveRpcConnection(local, rpcConnection);
-        });
+    constructor(connection: AnyConnection, transformer?: Transformer) {
+        this.reviver = transformer?.reviver ?? ObjectsTransferrer.reviver;
+        this.replacer = transformer?.replacer ?? ObjectsTransferrer.replacer;
+        this.multiplexer = this.createMultiplexer(connection);
+        this.multiplexer.listen((params, accept, next) => this.handleChannelRequest(params, accept, next));
     }
 
     private get isDisposed(): boolean {
@@ -151,14 +152,28 @@ export class DefaultPluginRpc implements PluginRpc {
         return instance;
     }
 
+    private createMultiplexer(connection: AnyConnection): ConnectionMultiplexer<any, PluginRpcParams> {
+        return new DefaultConnectionMultiplexer(new DefaultRouter())
+            .initialize(new TransformedConnection<Channel.Message, Channel.Message>(connection, {
+                decode: (message, emit) => emit(revive(message, this.reviver)),
+                encode: (message, write) => write(replace(message, this.replacer))
+            }));
+    }
+
+    private handleChannelRequest(params: PluginRpcParams, accept: () => AnyConnection, next: (error?: Error) => void): void {
+        const local = this.locals.get(params.proxyId);
+        if (!local) {
+            return next(new Error(`unknown proxyId: ${JSON.stringify(params.proxyId)}`));
+        }
+        this.serveRpcConnection(local, this.rpcProtocol.createRpcConnection(accept()));
+    }
+
     private serveRpcConnection(server: any, rpcConnection: RpcConnection): void {
         rpcConnection.handleRequest((method, params, token) => server[method](...params, token));
     }
 
     private createProxy<T>(proxyId: string): T {
-        const channel = this.multiplexer.open({ proxyId });
-        const messageConnection = this.jsonRpc.createMessageConnection(channel);
-        const rpcConnection = this.jsonRpc.createRpcConnection(messageConnection);
+        const rpcConnection = this.rpcProtocol.createRpcConnection(this.multiplexer.open({ proxyId }));
         const handler = {
             get: (target: any, name: string) => {
                 if (!target[name] && name.charCodeAt(0) === 36 /* CharCode.DollarSign */) {
@@ -185,31 +200,47 @@ export namespace PluginHostProtocol {
         return typeof what === 'object' && what !== null && '$pluginHostMessageType' in what;
     }
 
-    export function createMessage<T extends keyof MessageTypeMap>(type: T, properties: Omit<MessageTypeMap[T], '$pluginHostMessageType'>): T {
-        return {
-            ...properties,
-            $pluginHostMessageType: type
-        } as any;
+    export enum MessageType {
+        TERMINATE_REQUEST = 'terminateRequest',
+        TERMINATED_EVENT = 'terminatedEvent'
     }
 
-    export interface MessageType<T extends string> {
-        $pluginHostMessageType: T
+    export interface AbstractMessage {
+        $pluginHostMessageType: MessageType
     }
 
-    export const TerminateRequest = 'terminateRequest';
-    export type TerminateRequest = MessageType<typeof TerminateRequest> & {
-        timeout?: number
-    };
-
-    export const TerminatedEvent = 'terminatedEvent';
-    export type TerminatedEvent = MessageType<typeof TerminatedEvent>;
-
-    export interface MessageTypeMap {
-        [TerminateRequest]: TerminateRequest
-        [TerminatedEvent]: TerminatedEvent
+    export class TerminateRequest implements AbstractMessage {
+        $pluginHostMessageType = MessageType.TERMINATE_REQUEST as const;
+        constructor(
+            public timeout?: number
+        ) { }
     }
 
-    export type Message = MessageTypeMap[keyof MessageTypeMap];
+    export class TerminatedEvent implements AbstractMessage {
+        $pluginHostMessageType = MessageType.TERMINATED_EVENT as const;
+    }
+
+    export type Message =
+        TerminateRequest |
+        TerminatedEvent;
+}
+
+export class JsonRpcProtocol implements PluginRpcProtocol {
+
+    constructor(
+        protected jsonRpc: JsonRpc = new DefaultJsonRpc()
+    ) { }
+
+    createRpcConnection(channel: AnyConnection): RpcConnection {
+        const shortened = new TransformedConnection(channel, JsonRpcMessageShortener);
+        return this.jsonRpc.createRpcConnection(this.jsonRpc.createMessageConnection(shortened));
+    }
+}
+
+export function pluginRpcConnection(transport: Connection<Uint8Array>): AnyConnection {
+    const msgpackConnection = new TransformedConnection(transport, MsgpackMessageTransformer);
+    const bufferedConnection = new BufferedConnection(msgpackConnection);
+    return new DeferredConnection(waitForRemote(bufferedConnection));
 }
 
 /**
@@ -308,19 +339,29 @@ export function transformErrorForSerialization(error: any): SerializedError {
     return error;
 }
 
-export function replace(value: any, replacer: (key: string | undefined, nested: any) => any): any {
+/**
+ * Do to any object Array.map would do. ~Ish.
+ *
+ * If `value` is an array then it will run recursively on each element.
+ * If `value` is an object then it will first run on `value` itself, and iff
+ * the returned reference is the same as the input `value` then it will
+ * recursively apply to each property of `value`.
+ * If `value` is anything else, it will return that directly.
+ */
+export function objectMap(value: any, mapFunc: (value: any) => any): any {
     if (typeof value === 'object') {
         if (value === null) {
             return null;
         }
         if (Array.isArray(value)) {
-            return value.map(element => replacer(undefined, element));
+            return value.map(element => mapFunc(element));
         }
-        let replaced = replacer(undefined, value);
-        if (value === replaced) {
+        let replaced = mapFunc(value);
+        if (value === replaced /* value was not replaced */) {
             replaced = {};
+            // then we'll replace value by a new object with each property mapped
             Object.keys(value).forEach(propertyKey => {
-                replaced[propertyKey] = replace(value[propertyKey], replacer);
+                replaced[propertyKey] = objectMap(value[propertyKey], mapFunc);
             });
         }
         return replaced;
@@ -328,22 +369,10 @@ export function replace(value: any, replacer: (key: string | undefined, nested: 
     return value;
 }
 
+export function replace(value: any, replacer: (key: string | undefined, nested: any) => any): any {
+    return objectMap(value, v => replacer(undefined, v));
+}
+
 export function revive(value: any, reviver: (key: string | undefined, nested: any) => any): any {
-    if (typeof value === 'object') {
-        if (value === null) {
-            return null;
-        }
-        if (Array.isArray(value)) {
-            return value.map(element => reviver(undefined, element));
-        }
-        let replaced = reviver(undefined, value);
-        if (value === replaced) {
-            replaced = {};
-            Object.keys(value).forEach(propertyKey => {
-                replaced[propertyKey] = replace(value[propertyKey], reviver);
-            });
-        }
-        return replaced;
-    }
-    return value;
+    return objectMap(value, v => reviver(undefined, v));
 }
