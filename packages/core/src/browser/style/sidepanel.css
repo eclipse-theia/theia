@@ -70,13 +70,15 @@
 }
 
 .p-TabBar.theia-app-left .p-TabBar-tab.p-mod-current {
-  border-left: var(--theia-panel-border-width) solid var(--theia-activityBar-activeBorder);
   border-top-color: transparent;
+  box-shadow: 2px 0 0 var(--theia-activityBar-activeBorder) inset;
+
 }
 
 .p-TabBar.theia-app-right .p-TabBar-tab.p-mod-current {
-    border-right: var(--theia-panel-border-width) solid var(--theia-activityBar-activeBorder);
     border-top-color: transparent;
+    box-shadow: -2px 0 0 var(--theia-activityBar-activeBorder) inset;
+
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tabLabel,
