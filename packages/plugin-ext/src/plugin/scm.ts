@@ -311,6 +311,17 @@ export class ScmInputBoxImpl implements theia.SourceControlInputBox {
         this._placeholder = placeholder;
     }
 
+    private _visible: boolean = true;
+
+    get visible(): boolean {
+        return this._visible;
+    }
+
+    set visible(visible: boolean) {
+        this.proxy.$setInputBoxVisible(this.sourceControlHandle, visible);
+        this._visible = visible;
+    }
+
     private _validateInput: ValidateInput | undefined;
 
     get validateInput(): ValidateInput | undefined {
