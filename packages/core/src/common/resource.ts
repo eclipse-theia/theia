@@ -320,6 +320,8 @@ export class InMemoryTextResourceResolver implements ResourceResolver {
 
 export const UNTITLED_SCHEME = 'untitled';
 
+let untitledResourceSequenceIndex = 0;
+
 @injectable()
 export class UntitledResourceResolver implements ResourceResolver {
 
@@ -409,4 +411,15 @@ export class UntitledResource implements Resource {
     get encoding(): string | undefined {
         return undefined;
     }
+}
+
+/**
+ * @deprecated Since 1.27.0. Please use `UntitledResourceResolver.createUntitledURI` instead.
+ */
+export function createUntitledURI(extension?: string, parent?: URI): URI {
+    const name = `Untitled-${untitledResourceSequenceIndex++}${extension ?? ''}`;
+    if (parent) {
+        return parent.resolve(name).withScheme(UNTITLED_SCHEME);
+    }
+    return new URI().resolve(name).withScheme(UNTITLED_SCHEME);
 }
