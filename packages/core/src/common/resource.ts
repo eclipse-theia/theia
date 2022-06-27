@@ -320,8 +320,6 @@ export class InMemoryTextResourceResolver implements ResourceResolver {
 
 export const UNTITLED_SCHEME = 'untitled';
 
-let untitledResourceSequenceIndex = 0;
-
 @injectable()
 export class UntitledResourceResolver implements ResourceResolver {
 
@@ -350,13 +348,23 @@ export class UntitledResourceResolver implements ResourceResolver {
 
     async createUntitledResource(content?: string, extension?: string, uri?: URI): Promise<UntitledResource> {
         if (!uri) {
-            let counter: number = 1; // vscode is started from 1
-            do {
-                uri = new URI().withScheme(UNTITLED_SCHEME).withPath(`/Untitled-${counter}${extension ?? ''}`);
-                counter++;
-            } while (this.has(uri));
+            uri = this.createUntitledURI(extension);
         }
-        return new UntitledResource(this.resources, uri!, content);
+        return new UntitledResource(this.resources, uri, content);
+    }
+
+    createUntitledURI(extension?: string, parent?: URI): URI {
+        let counter: number = 1; // vscode is started from 1
+        let untitledUri;
+        do {
+            const name = `Untitled-${counter}${extension ?? ''}`;
+            if (parent) {
+                untitledUri = parent.resolve(name).withScheme(UNTITLED_SCHEME);
+            }
+            untitledUri = new URI().resolve(name).withScheme(UNTITLED_SCHEME);
+            counter++;
+        } while (this.has(untitledUri));
+        return untitledUri;
     }
 }
 
@@ -401,12 +409,4 @@ export class UntitledResource implements Resource {
     get encoding(): string | undefined {
         return undefined;
     }
-}
-
-export function createUntitledURI(extension?: string, parent?: URI, sequenceIndex?: number): URI {
-    const name = `Untitled-${sequenceIndex ?? untitledResourceSequenceIndex++}${extension ?? ''}`;
-    if (parent) {
-        return parent.resolve(name).withScheme(UNTITLED_SCHEME);
-    }
-    return new URI().resolve(name).withScheme(UNTITLED_SCHEME);
 }

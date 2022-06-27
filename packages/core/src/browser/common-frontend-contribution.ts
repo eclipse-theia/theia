@@ -63,7 +63,7 @@ import { DecorationStyle } from './decoration-style';
 import { isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveResourceService } from './save-resource-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
-import { createUntitledURI, UntitledResourceResolver } from '../common';
+import { UntitledResourceResolver } from '../common';
 import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
 
 export namespace CommonMenus {
@@ -965,12 +965,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
         commandRegistry.registerCommand(CommonCommands.NEW_FILE, {
             execute: async () => {
-                let counter: number = 1; // vscode is started from 1
-                let untitledUri;
-                do {
-                    untitledUri = createUntitledURI('', await this.workingDirProvider.getUserWorkingDir(), counter);
-                    counter++;
-                } while (this.untitledResourceResolver.has(untitledUri));
+                const untitledUri = this.untitledResourceResolver.createUntitledURI('', await this.workingDirProvider.getUserWorkingDir());
                 this.untitledResourceResolver.resolve(untitledUri);
                 return open(this.openerService, untitledUri);
             }
