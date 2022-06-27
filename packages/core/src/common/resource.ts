@@ -354,7 +354,7 @@ export class UntitledResourceResolver implements ResourceResolver {
     }
 
     createUntitledURI(extension?: string, parent?: URI): URI {
-        let counter: number = 1; // vscode is started from 1
+        let counter = 1; // vscode starts at 1
         let untitledUri;
         do {
             const name = `Untitled-${counter}${extension ?? ''}`;
