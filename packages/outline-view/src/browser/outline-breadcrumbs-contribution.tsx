@@ -107,7 +107,7 @@ export class OutlineBreadcrumbsContribution implements BreadcrumbsContribution {
                     uri,
                     index.toString(),
                     this.labelProvider.getName(node),
-                    'symbol-icon symbol-icon-center ' + node.iconClass,
+                    'symbol-icon-center codicon codicon-symbol-' + node.iconClass,
                     OUTLINE_BREADCRUMB_CONTAINER_CLASS,
                 )
             );

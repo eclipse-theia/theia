@@ -31,8 +31,6 @@ Object.assign(MonacoNls, {
 });
 
 import '../../src/browser/style/index.css';
-import '../../src/browser/style/symbol-sprite.svg';
-import '../../src/browser/style/symbol-icons.css';
 import { ContainerModule, decorate, injectable, interfaces } from '@theia/core/shared/inversify';
 import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
 import {

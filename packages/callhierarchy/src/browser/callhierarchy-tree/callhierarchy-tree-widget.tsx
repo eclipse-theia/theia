@@ -111,7 +111,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         }
 
         return <div className={classNames.join(' ')}>
-            <div className={'symbol-icon ' + this.toIconClass(definition.kind)}></div>
+            <div className={'symbol-icon-center codicon codicon-symbol-' + this.toIconClass(definition.kind)}></div>
             <div className='definitionNode-content'>
                 <span className='symbol'>
                     {symbol}
@@ -136,7 +136,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         }
 
         return <div className={classNames.join(' ')}>
-            <div className={'symbol-icon ' + this.toIconClass(definition.kind)}></div>
+            <div className={'symbol-icon-center codicon codicon-symbol-' + this.toIconClass(definition.kind)}></div>
             <div className='definitionNode-content'>
                 <span className='symbol'>
                     {symbol}

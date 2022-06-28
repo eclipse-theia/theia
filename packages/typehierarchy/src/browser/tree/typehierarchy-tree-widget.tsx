@@ -69,7 +69,7 @@ export class TypeHierarchyTreeWidget extends TreeWidget {
      */
     protected override renderIcon(node: TreeNode): React.ReactNode {
         if (TypeHierarchyTree.Node.is(node)) {
-            return <div className={'symbol-icon ' + this.icons.get(node.item.kind) || 'unknown'}></div>;
+            return <div className={'symbol-icon-center codicon codicon-symbol-' + this.icons.get(node.item.kind) || 'unknown'}></div>;
         }
         return undefined;
     }
