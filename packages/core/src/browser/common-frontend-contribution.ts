@@ -63,7 +63,7 @@ import { DecorationStyle } from './decoration-style';
 import { isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveResourceService } from './save-resource-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
-import { createUntitledURI } from '../common';
+import { UntitledResourceResolver } from '../common';
 import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
 
 export namespace CommonMenus {
@@ -403,6 +403,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(LanguageQuickPickService)
     protected readonly languageQuickPickService: LanguageQuickPickService;
+
+    @inject(UntitledResourceResolver)
+    protected readonly untitledResourceResolver: UntitledResourceResolver;
 
     protected pinnedKey: ContextKey<boolean>;
 
@@ -961,7 +964,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: () => this.configureDisplayLanguage()
         });
         commandRegistry.registerCommand(CommonCommands.NEW_FILE, {
-            execute: async () => open(this.openerService, createUntitledURI('', await this.workingDirProvider.getUserWorkingDir()))
+            execute: async () => {
+                const untitledUri = this.untitledResourceResolver.createUntitledURI('', await this.workingDirProvider.getUserWorkingDir());
+                this.untitledResourceResolver.resolve(untitledUri);
+                return open(this.openerService, untitledUri);
+            }
         });
     }
 
