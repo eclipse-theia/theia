@@ -16,14 +16,14 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as msgpack from '@msgpack/msgpack';
+import * as msgpackr from 'msgpackr';
 import { MessageTransformer } from './connection/transformer';
 
 export const MsgpackMessageTransformer: MessageTransformer<Uint8Array, any> = {
     decode(message: Uint8Array, emit: (message: any) => void): void {
-        emit(msgpack.decode(message));
+        emit(msgpackr.unpack(message));
     },
     encode(message: any, write: (message: Uint8Array) => void): void {
-        write(msgpack.encode(message));
+        write(msgpackr.pack(message));
     }
 };

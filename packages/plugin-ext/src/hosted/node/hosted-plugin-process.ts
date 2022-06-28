@@ -16,7 +16,8 @@
 
 import * as cp from 'child_process';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { ILogger, ContributionProvider, MessageService } from '@theia/core/lib/common';
+import { ILogger, ContributionProvider, MessageService, AnyConnection } from '@theia/core/lib/common';
+import { ObjectStreamConnection } from '@theia/core/lib/node/connection/object-stream';
 import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
 import { HostedPluginClient, ServerPluginRunner, PluginHostEnvironmentVariable, DeployedPlugin, PLUGIN_HOST_BACKEND } from '../../common/plugin-protocol';
 import { PluginHostProtocol } from '../../common/rpc-protocol';
@@ -24,6 +25,10 @@ import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import * as psTree from 'ps-tree';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
 import { createInterface } from 'readline';
+import { PackrStream, UnpackrStream } from '@theia/core/shared/msgpackr';
+import { Duplex } from 'stream';
+
+export const HOSTED_PLUGIN_ENV_PREFIX = 'HOSTED_PLUGIN';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;
@@ -59,6 +64,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
     protected readonly localizationService: HostedPluginLocalizationService;
 
     private childProcess?: cp.ChildProcess;
+    private childConnection: AnyConnection;
     private client?: HostedPluginClient;
 
     private terminatingPluginServer = false;
@@ -150,18 +156,26 @@ export class HostedPluginProcess implements ServerPluginRunner {
             logger: this.logger,
             args: []
         });
-        this.childProcess.on('message', message => {
+        this.childConnection = this.createChildConnection(this.childProcess);
+        this.childConnection.onMessage(message => {
             this.client?.postMessage(PLUGIN_HOST_BACKEND, message);
         });
     }
 
-    readonly HOSTED_PLUGIN_ENV_REGEXP_EXCLUSION = /^HOSTED_PLUGIN.*/;
+    private createChildConnection(child: cp.ChildProcess): AnyConnection {
+        const pipe = child.stdio[4] as Duplex;
+        return new ObjectStreamConnection(
+            pipe.pipe(new UnpackrStream()),
+            new PackrStream().pipe(pipe)
+        );
+    }
+
     private fork(options: IPCConnectionOptions): cp.ChildProcess {
 
         // create env and add PATH to it so any executable from root process is available
         const env = createIpcEnv(process.env)!;
         for (const key of Object.keys(env)) {
-            if (this.HOSTED_PLUGIN_ENV_REGEXP_EXCLUSION.test(key)) {
+            if (key.startsWith(HOSTED_PLUGIN_ENV_PREFIX)) {
                 delete env[key];
             }
         }
@@ -176,9 +190,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
             silent: true,
             env: env,
             execArgv: [],
-            stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-            // this option is super important to transfer buffers:
-            serialization: 'advanced'
+            stdio: ['pipe', 'pipe', 'pipe', 'ipc', 'pipe' /* fd=4 */]
         };
         const inspectArgPrefix = `--${options.serverName}-inspect`;
         const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));

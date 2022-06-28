@@ -28,7 +28,7 @@ import { PluginWorker } from './plugin-worker';
 import { PluginMetadata, getPluginId, HostedPluginServer, DeployedPlugin, PluginServer } from '../../common/plugin-protocol';
 import { MAIN_RPC_CONTEXT, PluginManagerExt, ConfigStorage, UIKind } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
-import { PluginRpc, DefaultPluginRpc, pluginRpcConnection, JsonRpcProtocol } from '../../common/rpc-protocol';
+import { PluginRpc, DefaultPluginRpc, pluginRpcConnection } from '../../common/rpc-protocol';
 import {
     Disposable, DisposableCollection, Emitter, isCancelled,
     ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent,
@@ -517,7 +517,7 @@ export class HostedPluginSupport {
     }
 
     private createServerRpc(pluginHostId: string): PluginRpc {
-        const connectionToPluginHostServer: Connection<Uint8Array> = {
+        const connectionToPluginHostServer: Connection<any> = {
             state: Connection.State.OPENED,
             onClose: Event.None,
             onError: Event.None,

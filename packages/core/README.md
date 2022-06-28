@@ -76,7 +76,6 @@ export class SomeClass {
     - `electron-store` (from [`electron-store@^8.0.0`](https://www.npmjs.com/package/electron-store))
     - `fix-path` (from [`fix-path@^3.0.0`](https://www.npmjs.com/package/fix-path))
 - `@theia/core/shared/...`
-    - `@msgpack/msgpack` (from [`@msgpack/msgpack@^2.7.2`](https://www.npmjs.com/package/@msgpack/msgpack))
     - `@phosphor/algorithm` (from [`@phosphor/algorithm@1`](https://www.npmjs.com/package/@phosphor/algorithm))
     - `@phosphor/commands` (from [`@phosphor/commands@1`](https://www.npmjs.com/package/@phosphor/commands))
     - `@phosphor/coreutils` (from [`@phosphor/coreutils@1`](https://www.npmjs.com/package/@phosphor/coreutils))
@@ -96,6 +95,7 @@ export class SomeClass {
     - `fs-extra` (from [`fs-extra@^4.0.2`](https://www.npmjs.com/package/fs-extra))
     - `fuzzy` (from [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy))
     - `inversify` (from [`inversify@^5.1.1`](https://www.npmjs.com/package/inversify))
+    - `msgpackr` (from [`msgpackr@^1.6.1`](https://www.npmjs.com/package/msgpackr))
     - `react-dom` (from [`react-dom@^16.8.0`](https://www.npmjs.com/package/react-dom))
     - `react-virtualized` (from [`react-virtualized@^9.20.0`](https://www.npmjs.com/package/react-virtualized))
     - `reflect-metadata` (from [`reflect-metadata@^0.1.10`](https://www.npmjs.com/package/reflect-metadata))

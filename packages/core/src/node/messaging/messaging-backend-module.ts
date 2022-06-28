@@ -79,8 +79,7 @@ export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind =
                 const path = JSON_RPC_ROUTE.reverse({ serviceId });
                 const connection = multiplexer.open({ path });
                 const msgpackConnection = connectionTransformer(connection, MsgpackMessageTransformer);
-                const messageConnection = jsonRpc.createMessageConnection(msgpackConnection);
-                return jsonRpc.createRpcConnection(messageConnection);
+                return jsonRpc.createRpcConnection(jsonRpc.createMessageConnection(msgpackConnection));
             });
         })
         .inSingletonScope()
@@ -99,8 +98,7 @@ export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind =
                         return next();
                     }
                     const msgpackConnection = connectionTransformer(accept(), MsgpackMessageTransformer);
-                    const messageConnection = jsonRpc.createMessageConnection(msgpackConnection);
-                    const rpcConnection = jsonRpc.createRpcConnection(messageConnection);
+                    const rpcConnection = jsonRpc.createRpcConnection(jsonRpc.createMessageConnection(msgpackConnection));
                     rpcProxying.serve(service, rpcConnection);
                     rpcConnection.onClose(dispose);
                 });

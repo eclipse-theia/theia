@@ -23,7 +23,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { AnyConnection, Connection, ConnectionMultiplexer } from '@theia/core/lib/common/connection';
+import { AnyConnection, ConnectionMultiplexer } from '@theia/core/lib/common/connection';
 import { BufferedConnection } from '@theia/core/lib/common/connection/buffered';
 import { DeferredConnection } from '@theia/core/lib/common/connection/deferred';
 import { Channel, DefaultConnectionMultiplexer } from '@theia/core/lib/common/connection/multiplexer';
@@ -34,7 +34,6 @@ import { DefaultRouter } from '@theia/core/lib/common/routing';
 import { RpcConnection } from '@theia/core/lib/common/rpc';
 import URI from '@theia/core/lib/common/uri';
 import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
-import { MsgpackMessageTransformer } from '@theia/core/lib/common/msgpack';
 import { Range } from '../plugin/types-impl';
 import { DefaultJsonRpc, JsonRpc, JsonRpcMessageShortener } from '@theia/core/lib/common/json-rpc';
 
@@ -237,9 +236,8 @@ export class JsonRpcProtocol implements PluginRpcProtocol {
     }
 }
 
-export function pluginRpcConnection(transport: Connection<Uint8Array>): AnyConnection {
-    const msgpackConnection = new TransformedConnection(transport, MsgpackMessageTransformer);
-    const bufferedConnection = new BufferedConnection(msgpackConnection);
+export function pluginRpcConnection(transport: AnyConnection): AnyConnection {
+    const bufferedConnection = new BufferedConnection(transport);
     return new DeferredConnection(waitForRemote(bufferedConnection));
 }
 

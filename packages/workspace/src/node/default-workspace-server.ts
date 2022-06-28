@@ -25,6 +25,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WorkspaceServer, CommonWorkspaceUtils } from '../common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
+import { Rpc } from '@theia/core/lib/common/rpc';
 
 @injectable()
 export class WorkspaceCliContribution implements CliContribution {
@@ -106,6 +107,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
         this.root.resolve(root);
     }
 
+    @Rpc.Ignore()
     async onStart(): Promise<void> {
         await this.removeOldUntitledWorkspaces();
     }

@@ -14,12 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Connection } from '@theia/core/lib/common/connection';
-import { Emitter } from '@theia/core/lib/common/event';
 import '@theia/core/shared/reflect-metadata';
+import { PackrStream, UnpackrStream } from '@theia/core/shared/msgpackr';
+import { ObjectStreamConnection } from '@theia/core/lib/node/connection/object-stream';
 import { DefaultPluginRpc, PluginHostProtocol, pluginRpcConnection } from '../../common/rpc-protocol';
 import { reviver } from '../../plugin/types-impl';
 import { PluginHostRPC } from './plugin-host-rpc';
+import { Socket } from 'net';
 
 let terminating = false;
 
@@ -79,22 +80,11 @@ process.on('rejectionHandled', (promise: Promise<void>) => {
 
 // #region RPC initialization
 
-const messageEmitter = new Emitter<Uint8Array>();
-const connectionToParentProcess: Connection<Uint8Array> = {
-    state: Connection.State.OPENED,
-    onClose: () => ({ dispose(): void { } }),
-    onError: () => ({ dispose(): void { } }),
-    onOpen: () => ({ dispose(): void { } }),
-    onMessage: messageEmitter.event,
-    sendMessage: message => {
-        if (!terminating) {
-            process.send!(message);
-        }
-    },
-    close: () => {
-        throw new Error('cannot close this connection');
-    }
-};
+const pipeToParentProcess = new Socket({ fd: 4 });
+const connectionToParentProcess = new ObjectStreamConnection(
+    pipeToParentProcess.pipe(new UnpackrStream()),
+    new PackrStream().pipe(pipeToParentProcess)
+);
 const rpc = new DefaultPluginRpc(pluginRpcConnection(connectionToParentProcess), { reviver });
 const pluginHostRpc = new PluginHostRPC(rpc);
 
@@ -102,16 +92,10 @@ process.on('message', message => {
     if (terminating) {
         return;
     }
-    // messaging oddity: two protocols are being passed around the plugin host and its parent
-    // 1. is some custom messaging from `PluginHostProtocol`
-    // 2. is whatever `connectionToParentProcess` handles
-    // fortunately it is easy enough to segregate between both, see the following branching:
     if (PluginHostProtocol.isMessage(message)) {
         switch (message.$pluginHostMessageType) {
             case PluginHostProtocol.MessageType.TERMINATE_REQUEST: return terminatePluginHost(message.timeout);
         }
-    } else if (message instanceof Uint8Array || Buffer.isBuffer(message)) {
-        return messageEmitter.fire(message);
     }
     console.debug('unhandled message:', message);
 });
@@ -119,7 +103,6 @@ process.on('message', message => {
 async function terminatePluginHost(timeout?: number): Promise<void> {
     terminating = true;
     try {
-        messageEmitter.dispose();
         if (typeof timeout === 'number' && timeout > 0) {
             await Promise.race([
                 pluginHostRpc.terminate(),
