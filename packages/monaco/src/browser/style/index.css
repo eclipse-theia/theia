@@ -273,3 +273,8 @@
 .quick-input-widget input {
   background-color: var(--theia-input-background) !important;
 }
+
+.symbol-icon-center {
+  align-self: center;
+  margin-right: 4px;
+}

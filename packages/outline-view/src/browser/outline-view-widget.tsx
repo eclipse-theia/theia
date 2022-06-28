@@ -146,7 +146,7 @@ export class OutlineViewWidget extends TreeWidget {
 
     override renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         if (OutlineSymbolInformationNode.is(node)) {
-            return <div className={'symbol-icon symbol-icon-center ' + node.iconClass}></div>;
+            return <div className={'symbol-icon-center codicon codicon-symbol-' + node.iconClass}></div>;
         }
         return undefined;
     }
