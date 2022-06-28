@@ -93,7 +93,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public handleMessage(pluginHostId: string, message: any): void {
-        this.childProcess?.send(message);
+        this.childConnection?.sendMessage(message);
     }
 
     async terminatePluginServer(): Promise<void> {
@@ -157,17 +157,19 @@ export class HostedPluginProcess implements ServerPluginRunner {
             args: []
         });
         this.childConnection = this.createChildConnection(this.childProcess);
-        this.childConnection.onMessage(message => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this.childConnection.onMessage((message: any) => {
             this.client?.postMessage(PLUGIN_HOST_BACKEND, message);
         });
     }
 
     private createChildConnection(child: cp.ChildProcess): AnyConnection {
         const pipe = child.stdio[4] as Duplex;
-        return new ObjectStreamConnection(
-            pipe.pipe(new UnpackrStream()),
-            new PackrStream().pipe(pipe)
-        );
+        const reader = new UnpackrStream();
+        const writer = new PackrStream();
+        pipe.pipe(reader);
+        writer.pipe(pipe);
+        return new ObjectStreamConnection(reader, writer);
     }
 
     private fork(options: IPCConnectionOptions): cp.ChildProcess {

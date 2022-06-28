@@ -81,11 +81,11 @@ process.on('rejectionHandled', (promise: Promise<void>) => {
 // #region RPC initialization
 
 const pipeToParentProcess = new Socket({ fd: 4 });
-const connectionToParentProcess = new ObjectStreamConnection(
-    pipeToParentProcess.pipe(new UnpackrStream()),
-    new PackrStream().pipe(pipeToParentProcess)
-);
-const rpc = new DefaultPluginRpc(pluginRpcConnection(connectionToParentProcess), { reviver });
+const reader = new UnpackrStream();
+const writer = new PackrStream();
+pipeToParentProcess.pipe(reader);
+writer.pipe(pipeToParentProcess);
+const rpc = new DefaultPluginRpc(pluginRpcConnection(new ObjectStreamConnection(reader, writer)), { reviver });
 const pluginHostRpc = new PluginHostRPC(rpc);
 
 process.on('message', message => {
@@ -97,7 +97,7 @@ process.on('message', message => {
             case PluginHostProtocol.MessageType.TERMINATE_REQUEST: return terminatePluginHost(message.timeout);
         }
     }
-    console.debug('unhandled message:', message);
+    console.debug('process.on(\'message\', ...): unhandled message:', message);
 });
 
 async function terminatePluginHost(timeout?: number): Promise<void> {

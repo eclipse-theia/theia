@@ -16,14 +16,29 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as msgpackr from 'msgpackr';
+import { Packr, Unpackr } from 'msgpackr';
 import { MessageTransformer } from './connection/transformer';
 
-export const MsgpackMessageTransformer: MessageTransformer<Uint8Array, any> = {
-    decode(message: Uint8Array, emit: (message: any) => void): void {
-        emit(msgpackr.unpack(message));
-    },
-    encode(message: any, write: (message: Uint8Array) => void): void {
-        write(msgpackr.pack(message));
+export type SomeBuffer = Buffer | ArrayBuffer | Uint8Array;
+
+export class MsgpackrMessageTransformer implements MessageTransformer<SomeBuffer, any> {
+
+    protected packr: Packr;
+    protected unpackr: Unpackr;
+
+    constructor(options?: {
+        packr?: Packr
+        unpackr?: Unpackr
+    }) {
+        this.packr = options?.packr ?? new Packr();
+        this.unpackr = options?.unpackr ?? new Unpackr();
     }
-};
+
+    decode(message: SomeBuffer, emit: (message: any) => void): void {
+        emit(this.unpackr.unpack(message instanceof ArrayBuffer ? new Uint8Array(message) : message));
+    }
+
+    encode(message: any, write: (message: Uint8Array) => void): void {
+        write(this.packr.pack(message));
+    }
+}

@@ -37,7 +37,7 @@ import { DefaultConnectionMultiplexer } from '../../common/connection/multiplexe
 import { DefaultRouter, Router } from '../../common/routing';
 import { JsonRpc } from '../../common/json-rpc';
 import { ConnectionContainerModule } from './connection-container-module';
-import { MsgpackMessageTransformer } from '../../common/msgpack';
+import { MsgpackrMessageTransformer } from '../../common/msgpackr';
 
 export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind => {
     bindServiceProvider(bind, BackendAndFrontend);
@@ -75,10 +75,11 @@ export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind =
             const backendServiceConnection = deferredConnectionFactory(backendServiceConnectionDeferred.promise);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const multiplexer = ctx.container.get(DefaultConnectionMultiplexer).initialize<any>(backendServiceConnection);
+            const msgpackrTransformer = new MsgpackrMessageTransformer();
             return proxyProvider.initialize(serviceId => {
                 const path = JSON_RPC_ROUTE.reverse({ serviceId });
                 const connection = multiplexer.open({ path });
-                const msgpackConnection = connectionTransformer(connection, MsgpackMessageTransformer);
+                const msgpackConnection = connectionTransformer(connection, msgpackrTransformer);
                 return jsonRpc.createRpcConnection(jsonRpc.createMessageConnection(msgpackConnection));
             });
         })
@@ -91,13 +92,14 @@ export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind =
             const jsonRpc = ctx.container.get(JsonRpc);
             const rpcProxying = ctx.container.get(Rpc);
             const connectionTransformer = ctx.container.get(ConnectionTransformer);
+            const msgpackrTransformer = new MsgpackrMessageTransformer();
             return ctx.container.get(RouteHandlerProvider)
                 .createRouteHandler(JSON_RPC_ROUTE, (params, accept, next) => {
                     const [service, dispose] = serviceProvider.getService(params.route.params.serviceId);
                     if (!service) {
                         return next();
                     }
-                    const msgpackConnection = connectionTransformer(accept(), MsgpackMessageTransformer);
+                    const msgpackConnection = connectionTransformer(accept(), msgpackrTransformer);
                     const rpcConnection = jsonRpc.createRpcConnection(jsonRpc.createMessageConnection(msgpackConnection));
                     rpcProxying.serve(service, rpcConnection);
                     rpcConnection.onClose(dispose);

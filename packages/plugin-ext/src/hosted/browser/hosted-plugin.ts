@@ -32,7 +32,7 @@ import { PluginRpc, DefaultPluginRpc, pluginRpcConnection } from '../../common/r
 import {
     Disposable, DisposableCollection, Emitter, isCancelled,
     ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent,
-    CancellationTokenSource, ProgressService, nls, Event, Connection
+    CancellationTokenSource, ProgressService, nls, Event, Connection, AnyConnection
 } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -517,7 +517,7 @@ export class HostedPluginSupport {
     }
 
     private createServerRpc(pluginHostId: string): PluginRpc {
-        const connectionToPluginHostServer: Connection<any> = {
+        const connectionToPluginHostServer: AnyConnection = {
             state: Connection.State.OPENED,
             onClose: Event.None,
             onError: Event.None,

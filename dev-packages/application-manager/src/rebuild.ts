@@ -31,6 +31,7 @@ interface ExitToken {
 type NodeABI = string | number;
 
 export const DEFAULT_MODULES = [
+    'msgpackr-extract',
     'node-pty',
     'nsfw',
     'native-keymap',

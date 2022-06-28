@@ -59,7 +59,7 @@ export class DefaultJsonRpc implements JsonRpc {
         return {
             dispose: () => { },
             onClose: listener => connection.onClose(() => listener()),
-            onError: () => Disposable.NULL,
+            onError: listener => connection.onError(error => listener([error, undefined, undefined])),
             write: async message => connection.sendMessage(message),
             end: () => { }
         };
