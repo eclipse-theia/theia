@@ -156,9 +156,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get builtin(): boolean {
-        const plugin = this.plugin;
-        const type = plugin && plugin.type;
-        return type === PluginType.System;
+        return this.plugin?.type === PluginType.System;
     }
 
     update(data: Partial<VSXExtensionData>): void {
@@ -174,8 +172,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     protected getData<K extends keyof VSXExtensionData>(key: K): VSXExtensionData[K] {
-        const plugin = this.plugin;
-        const model = plugin && plugin.metadata.model;
+        const model = this.plugin?.metadata.model;
         if (model && key in model) {
             return model[key as keyof typeof model] as VSXExtensionData[K];
         }

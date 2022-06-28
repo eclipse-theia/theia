@@ -209,8 +209,8 @@ export class VSXExtensionsModel {
             const currInstalled = new Set<string>();
             const refreshing = [];
             for (const plugin of plugins) {
-                const version = plugin.model.version;
                 if (plugin.model.engine.type === 'vscode') {
+                    const version = plugin.model.version;
                     const id = plugin.model.id;
                     this._installed.delete(id);
                     const extension = this.setExtension(id);
@@ -223,10 +223,10 @@ export class VSXExtensionsModel {
                 if (!extension) { continue; }
                 refreshing.push(this.refresh(id, extension.version));
             }
-            Promise.all(refreshing);
             const installed = new Set([...prevInstalled, ...currInstalled]);
             const installedSorted = Array.from(installed).sort((a, b) => this.compareExtensions(a, b));
             this._installed = new Set(installedSorted.values());
+            await Promise.all(refreshing);
         });
     }
 
@@ -299,7 +299,9 @@ export class VSXExtensionsModel {
                 return extension;
             }
             const client = await this.clientProvider();
-            const data = version !== undefined ? await client.getExtension(id, { extensionVersion: version }) : await client.getLatestCompatibleExtensionVersion(id);
+            const data = version !== undefined
+                ? await client.getExtension(id, { extensionVersion: version, includeAllVersions: true })
+                : await client.getLatestCompatibleExtensionVersion(id);
             if (!data) {
                 return;
             }
