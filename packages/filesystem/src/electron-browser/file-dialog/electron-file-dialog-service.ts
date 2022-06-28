@@ -18,7 +18,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileFilter, OpenDialogOptions, SaveDialogOptions } from '@theia/core/electron-shared/electron';
 import * as electronRemote from '@theia/core/electron-shared/@electron/remote';
 import URI from '@theia/core/lib/common/uri';
-import { isOSX } from '@theia/core/lib/common/os';
+import { isOSX, OS } from '@theia/core/lib/common/os';
 import { MaybeArray } from '@theia/core/lib/common/types';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileStat } from '../../common/files';
@@ -125,9 +125,23 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
         }
         if ((isOSX && canSelectFiles) || !canSelectFolders) {
             electronProps.filters = props.filters ? Object.entries(props.filters).map(([name, extensions]) => ({ name, extensions })) : [];
-            electronProps.filters.push({ name: 'All Files', extensions: ['*'] });
+            if (this.shouldAddAllFilesFilter(electronProps)) {
+                electronProps.filters.push({ name: 'All Files', extensions: ['*'] });
+            }
         }
         return electronProps;
+    }
+
+    /**
+     * Specifies whether an _All Files_ filter should be added to the dialog.
+     *
+     * On Linux, the _All Files_ filter [hides](https://github.com/eclipse-theia/theia/issues/11321) files without an extension.
+     * The bug is resolved in Electron >=18.
+     */
+    protected shouldAddAllFilesFilter(electronProps: electron.FileDialogProps): boolean {
+        const foundFilters = !!electronProps.filters && electronProps.filters.length > 0;
+        const isNotLinux = OS.type() !== OS.Type.Linux;
+        return isNotLinux || foundFilters;
     }
 
     protected toOpenDialogOptions(uri: URI, props: OpenFileDialogProps): OpenDialogOptions {
