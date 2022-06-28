@@ -155,7 +155,7 @@ export class PluginTree extends TreeImpl {
         const decorationData = this.toDecorationData(item);
         const icon = this.toIconClass(item);
         const resourceUri = item.resourceUri && URI.revive(item.resourceUri).toString();
-        const themeIcon = item.themeIcon ? item.themeIcon : item.collapsibleState !== TreeViewItemCollapsibleState.None ? { id: 'folder' } : { id: 'file' };
+        const themeIcon = item.themeIcon ? item.themeIcon : item.collapsibleState !== TreeViewItemCollapsibleState.None ? { id: 'folder' } : undefined;
         const update: Partial<TreeViewNode> = {
             name: item.label,
             decorationData,
@@ -384,10 +384,10 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
             const inlineCommands = menu.children.filter((item): item is ActionMenuNode => item instanceof ActionMenuNode);
             const tailDecorations = super.renderTailDecorations(node, props);
             return <React.Fragment>
-                {inlineCommands.length > 0 && <div className={TREE_NODE_SEGMENT_CLASS}>
+                {inlineCommands.length > 0 && <div className={TREE_NODE_SEGMENT_CLASS + ' flex'}>
                     {inlineCommands.map((item, index) => this.renderInlineCommand(item, index, this.focusService.hasFocus(node), arg))}
                 </div>}
-                {tailDecorations !== undefined && <div className={TREE_NODE_SEGMENT_CLASS}>{super.renderTailDecorations(node, props)}</div>}
+                {tailDecorations !== undefined && <div className={TREE_NODE_SEGMENT_CLASS + ' flex'}>{tailDecorations}</div>}
             </React.Fragment>;
         });
     }

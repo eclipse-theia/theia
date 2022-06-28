@@ -137,11 +137,14 @@
 }
 
 .theia-TreeNodeSegment {
-    display: flex;
     align-items: center;
     flex-grow: 0;
     user-select: none;
     white-space: nowrap;
+}
+
+.theia-TreeNodeSegment.flex {
+    display: flex;
 }
 
 .theia-TreeNodeSegmentGrow {
