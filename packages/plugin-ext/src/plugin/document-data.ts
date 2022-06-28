@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
-import { UNTITLED_SCHEME } from '@theia/core/lib/common';
 import { ModelChangedEvent, DocumentsMain } from '../common/plugin-api-rpc';
 import { Range as ARange } from '../common/plugin-api-rpc-model';
 import { EndOfLine, Position, Range, URI } from './types-impl';
@@ -81,7 +80,7 @@ export class DocumentDataExt {
             this._document = {
                 get uri(): theia.Uri { return that.uri; },
                 get fileName(): string { return that.uri.fsPath; },
-                get isUntitled(): boolean { return that.uri.scheme === UNTITLED_SCHEME; },
+                get isUntitled(): boolean { return that.uri.scheme === 'untitled'; },
                 get languageId(): string { return that.languageId; },
                 get version(): number { return that.versionId; },
                 get isClosed(): boolean { return that.disposed; },

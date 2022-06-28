@@ -18,7 +18,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { UNTITLED_SCHEME } from '@theia/core/lib/common';
 import URI, { UriComponents } from '@theia/core/lib/common/uri';
 
 export { UriComponents };
@@ -62,7 +61,7 @@ export namespace Schemes {
 
     export const mailto = 'mailto';
 
-    export const untitled = UNTITLED_SCHEME;
+    export const untitled = 'untitled';
 
     export const data = 'data';
 

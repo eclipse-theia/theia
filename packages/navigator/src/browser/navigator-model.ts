@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { UNTITLED_SCHEME } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { FileNode, FileTreeModel } from '@theia/filesystem/lib/browser';
 import { OpenerService, open, TreeNode, ExpandableTreeNode, CompositeTreeNode, SelectableTreeNode } from '@theia/core/lib/browser';
@@ -153,7 +152,7 @@ export class FileNavigatorModel extends FileTreeModel {
         const workspace = this.workspaceService.workspace;
         let name = workspace
             ? workspace.resource.path.name
-            : UNTITLED_SCHEME;
+            : 'untitled';
         name += ' (Workspace)';
         return WorkspaceNode.createRoot(name);
     }
