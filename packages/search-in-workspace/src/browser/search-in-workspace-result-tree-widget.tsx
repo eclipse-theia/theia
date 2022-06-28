@@ -747,7 +747,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected renderReplaceButton(node: TreeNode): React.ReactNode {
         const isResultLineNode = SearchInWorkspaceResultLineNode.is(node);
-        return <span className={isResultLineNode ? 'replace-result' : 'replace-all-result'}
+        return <span className={isResultLineNode ? codicon('replace') : codicon('replace-all')}
             onClick={e => this.doReplace(node, e)}
             title={isResultLineNode
                 ? nls.localizeByDefault('Replace')
@@ -1015,14 +1015,14 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
         const before = lineText.slice(start, character - 1).trimLeft();
 
-        return <div className={`resultLine noWrapInfo noselect ${node.selected ? 'selected' : ''}`} title={lineText}>
+        return <div className={`resultLine noWrapInfo noselect ${node.selected ? 'selected' : ''}`} title={lineText.trim()}>
             {this.searchInWorkspacePreferences['search.lineNumbers'] && <span className='theia-siw-lineNumber'>{node.line}</span>}
             <span>
                 {before}
             </span>
             {this.renderMatchLinePart(node)}
             <span>
-                {lineText.slice(node.character + node.length, 250 - before.length + node.length)}
+                {lineText.slice(node.character + node.length - 1, 250 - before.length + node.length)}
             </span>
         </div>;
     }
