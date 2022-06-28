@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { nls } from '@theia/core/lib/common/nls';
 import { ReactWidget } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -46,7 +47,7 @@ class EmptyPropertyViewWidget extends ReactWidget implements PropertyViewContent
         return this.emptyComponent;
     }
 
-    protected emptyComponent: JSX.Element = <div className={'theia-widget-noInfo'}>No properties available.</div>;
+    protected emptyComponent: JSX.Element = <div className={'theia-widget-noInfo'}>{nls.localize('theia/property-view/noProperties', 'No properties available.')}</div>;
 
 }
 

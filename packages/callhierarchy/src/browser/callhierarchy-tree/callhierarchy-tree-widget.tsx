@@ -27,6 +27,7 @@ import { CALL_HIERARCHY_LABEL } from '../callhierarchy-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { Location, Range, SymbolKind, DocumentUri, SymbolTag } from '@theia/core/shared/vscode-languageserver-protocol';
 import { EditorManager } from '@theia/editor/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
 import * as React from '@theia/core/shared/react';
 
 export const HIERARCHY_TREE_CLASS = 'theia-CallHierarchyTree';
@@ -86,7 +87,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
 
     protected override renderTree(model: TreeModel): React.ReactNode {
         return super.renderTree(model)
-            || <div className='theia-widget-noInfo'>No callers have been detected.</div>;
+            || <div className='theia-widget-noInfo'>{nls.localize('theia/callhierarchy/noCallers', 'No callers have been detected.')}</div>;
     }
 
     protected override renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
