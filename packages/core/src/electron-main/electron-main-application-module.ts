@@ -64,13 +64,12 @@ export const ElectronMainAndFrontendContainerModule = new ContainerModule(bind =
             const multiplexer = container.getNamed(ConnectionMultiplexer, ElectronMainAndFrontend);
             const serviceProvider = container.getNamed(ServiceProvider, ElectronMainAndFrontend);
             const jsonRpc = container.get(JsonRpc);
-            const rpcProxying = container.get(Rpc);
+            const rpc = container.get(Rpc);
             multiplexer.listen(({ serviceId, serviceParams }, accept, next) => {
                 const [service, dispose] = serviceProvider.getService(serviceId, serviceParams);
                 if (service) {
-                    const messageConnection = jsonRpc.createMessageConnection(accept());
-                    const rpcConnection = jsonRpc.createRpcConnection(messageConnection);
-                    rpcProxying.serve(service, rpcConnection);
+                    const rpcConnection = jsonRpc.createRpcConnection(jsonRpc.createMessageConnection(accept()));
+                    rpc.serve(service, rpcConnection);
                     rpcConnection.onClose(dispose);
                 } else {
                     next();
@@ -82,13 +81,13 @@ export const ElectronMainAndFrontendContainerModule = new ContainerModule(bind =
         .toDynamicValue(ctx => {
             const theiaWindow = ctx.container.get(TheiaElectronWindow);
             const deferredConnectionFactory = ctx.container.get(DeferredConnectionFactory);
-            const { webContents } = theiaWindow.window;
-            const ipcConnection = ctx.container.get(WebContentsConnection).initialize(ElectronMainAndFrontend, webContents, {
-                closeOnNavigation: true,
-                targetFrameId: webContents.mainFrame.routingId
-            });
-            const deferredConnection = deferredConnectionFactory(waitForRemote(ipcConnection));
-            return ctx.container.get(DefaultConnectionMultiplexer).initialize(deferredConnection);
+            const ipcConnection = ctx.container.get(WebContentsConnection)
+                .initialize(ElectronMainAndFrontend, theiaWindow.window.webContents, {
+                    closeOnNavigation: true,
+                    targetFrameId: theiaWindow.window.webContents.mainFrame.routingId
+                });
+            return ctx.container.get(DefaultConnectionMultiplexer)
+                .initialize(deferredConnectionFactory(waitForRemote(ipcConnection)));
         })
         .inSingletonScope()
         .whenTargetNamed(ElectronMainAndFrontend);
@@ -98,8 +97,7 @@ export const ElectronMainAndFrontendContainerModule = new ContainerModule(bind =
             const jsonRpc = ctx.container.get(JsonRpc);
             return ctx.container.get(DefaultRpcProxyProvider).initialize(serviceId => {
                 const channel = multiplexer.open({ serviceId });
-                const messageConnection = jsonRpc.createMessageConnection(channel);
-                return jsonRpc.createRpcConnection(messageConnection);
+                return jsonRpc.createRpcConnection(jsonRpc.createMessageConnection(channel));
             });
         })
         .inSingletonScope()
@@ -188,12 +186,12 @@ export default new ContainerModule(bind => {
         bind(ConnectionMultiplexer)
             .toDynamicValue(ctx => {
                 const app = ctx.container.get(ElectronMainApplication);
-                const transformer = ctx.container.get(ConnectionTransformer);
+                const connectionTransformer = ctx.container.get(ConnectionTransformer);
                 const nodeIpcConnectionFactory = ctx.container.get(NodeIpcConnectionFactory);
                 const deferredConnectionFactory = ctx.container.get(DeferredConnectionFactory);
                 const deferredConnection = deferredConnectionFactory(app.backendProcess.then(backend => {
                     const backendIpc = nodeIpcConnectionFactory(backend);
-                    const sharedIpc: AnyConnection = transformer(backendIpc, {
+                    const sharedIpc: AnyConnection = connectionTransformer.transformConnection(backendIpc, {
                         decode: (message, emit) => {
                             if (typeof message === 'object' && THEIA_ELECTRON_IPC_CHANNEL_NAME in message) {
                                 emit(message[THEIA_ELECTRON_IPC_CHANNEL_NAME]);
@@ -215,13 +213,12 @@ export default new ContainerModule(bind => {
                     const multiplexer = ctx.container.getNamed(ConnectionMultiplexer, ElectronMainAndBackend);
                     const serviceProvider = ctx.container.getNamed(ServiceProvider, ElectronMainAndBackend);
                     const jsonRpc = ctx.container.get(JsonRpc);
-                    const rpcProxying = ctx.container.get(Rpc);
+                    const rpc = ctx.container.get(Rpc);
                     multiplexer.listen(({ serviceId, serviceParams }, accept, next) => {
                         const [service, dispose] = serviceProvider.getService(serviceId, serviceParams);
                         if (service) {
-                            const messageConnection = jsonRpc.createMessageConnection(accept());
-                            const rpcConnection = jsonRpc.createRpcConnection(messageConnection);
-                            rpcProxying.serve(service, rpcConnection);
+                            const rpcConnection = jsonRpc.createRpcConnection(jsonRpc.createMessageConnection(accept()));
+                            rpc.serve(service, rpcConnection);
                             rpcConnection.onClose(dispose);
                         } else {
                             next();
@@ -236,8 +233,7 @@ export default new ContainerModule(bind => {
                 const jsonRpc = ctx.container.get(JsonRpc);
                 return ctx.container.get(DefaultRpcProxyProvider).initialize((serviceId, serviceParams) => {
                     const channel = multiplexer.open({ serviceId, serviceParams });
-                    const messageConnection = jsonRpc.createMessageConnection(channel);
-                    return jsonRpc.createRpcConnection(messageConnection);
+                    return jsonRpc.createRpcConnection(jsonRpc.createMessageConnection(channel));
                 });
             })
             .inSingletonScope()

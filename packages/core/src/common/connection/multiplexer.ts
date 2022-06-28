@@ -73,7 +73,7 @@ export class DefaultConnectionMultiplexer implements ConnectionMultiplexer<Conne
         const id = this.idSequence++;
         const channel = this.createChannel(id);
         this.registerChannel(channel);
-        channel.sendOpen(params);
+        channel.sendOpenRequest(params);
         return channel;
     }
 
@@ -132,7 +132,7 @@ export class DefaultConnectionMultiplexer implements ConnectionMultiplexer<Conne
             this.registerChannel(channel);
             this.sendChannelMessage(new Channel.ReadyMessage(-id));
             // give time for handlers to attach events to `channel.onOpen(...)`
-            queueMicrotask(() => channel.setOpen());
+            queueMicrotask(() => channel.setOpened());
             return channel;
         };
         const unhandled = () => {
@@ -143,7 +143,7 @@ export class DefaultConnectionMultiplexer implements ConnectionMultiplexer<Conne
     }
 
     protected handleReadyMessage(message: Channel.ReadyMessage): void {
-        this.getChannel(message.id).setOpen();
+        this.getChannel(message.id).setOpened();
     }
 
     protected handleChannelMessage(message: Channel.ChannelMessage): void {
@@ -181,12 +181,12 @@ export class Channel<T> extends AbstractConnection<T> {
         super();
     }
 
-    sendOpen(params: object): void {
+    sendOpenRequest(params: object): void {
         this.ensureState(Connection.State.OPENING);
         this.sendChannelMessage(new Channel.OpenMessage(-this.id, params));
     }
 
-    setOpen(): void {
+    setOpened(): void {
         this.setOpenedAndEmit();
     }
 

@@ -47,7 +47,7 @@ export default new ContainerModule(bind => {
                 const nodeIpcConnectionFactory = ctx.container.get(NodeIpcConnectionFactory);
                 const deferredConnectionFactory = ctx.container.get(DeferredConnectionFactory);
                 const parentIpc = nodeIpcConnectionFactory(process);
-                const sharedIpc: AnyConnection = transformer(parentIpc, {
+                const sharedIpc: AnyConnection = transformer.transformConnection(parentIpc, {
                     decode: (message, emit) => {
                         if (typeof message === 'object' && THEIA_ELECTRON_IPC_CHANNEL_NAME in message) {
                             emit(message[THEIA_ELECTRON_IPC_CHANNEL_NAME]);
@@ -68,13 +68,13 @@ export default new ContainerModule(bind => {
                     const multiplexer = ctx.container.getNamed(ConnectionMultiplexer, ElectronMainAndBackend);
                     const serviceProvider = ctx.container.getNamed(ServiceProvider, ElectronMainAndBackend);
                     const jsonRpc = ctx.container.get(JsonRpc);
-                    const rpcProxying = ctx.container.get(Rpc);
+                    const rpc = ctx.container.get(Rpc);
                     multiplexer.listen(({ serviceId, serviceParams }, accept, next) => {
                         const [service, dispose] = serviceProvider.getService(serviceId, serviceParams);
                         if (service) {
                             const messageConnection = jsonRpc.createMessageConnection(accept());
                             const rpcConnection = jsonRpc.createRpcConnection(messageConnection);
-                            rpcProxying.serve(service, rpcConnection);
+                            rpc.serve(service, rpcConnection);
                             rpcConnection.onClose(dispose);
                         } else {
                             next();

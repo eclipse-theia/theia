@@ -60,14 +60,14 @@ export const messagingFrontendModule = new ContainerModule(bind => {
                 const multiplexer = ctx.container.getNamed(ConnectionMultiplexer, ElectronMainAndFrontend);
                 const serviceProvider = ctx.container.getNamed(ServiceProvider, ElectronMainAndFrontend);
                 const jsonRpc = ctx.container.get(JsonRpc);
-                const rpcProxying = ctx.container.get(Rpc);
+                const rpc = ctx.container.get(Rpc);
                 multiplexer.listen(({ serviceId, serviceParams }, accept, next) => {
                     const [service, dispose] = serviceProvider.getService(serviceId, serviceParams);
                     if (service) {
                         const connection = accept();
                         const messageConnection = jsonRpc.createMessageConnection(connection);
                         const rpcConnection = jsonRpc.createRpcConnection(messageConnection);
-                        rpcProxying.serve(service, rpcConnection);
+                        rpc.serve(service, rpcConnection);
                         rpcConnection.onClose(dispose);
                     } else {
                         next();

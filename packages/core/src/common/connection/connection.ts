@@ -32,7 +32,9 @@ export type AnyConnection = Connection<any>;
  * Most implementations are going to be API adapters.
  */
 export interface Connection<T> {
+
     readonly state: Connection.State
+
     onOpen: Event<void>
     onClose: Event<void>
     /**

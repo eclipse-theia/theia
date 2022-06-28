@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Connection } from './connection';
+import { AnyConnection } from './connection';
 import { DisposableCollection } from '../disposable';
 
 /**
@@ -29,7 +29,7 @@ import { DisposableCollection } from '../disposable';
  * process is forked, but listeners are only eventually attached once the
  * running code initializes itself asynchronously._
  */
-export function waitForRemote<C extends Connection<any>>(connection: C): Promise<C> {
+export function waitForRemote<C extends AnyConnection>(connection: C): Promise<C> {
     return new Promise((resolve, reject) => {
         const disposables = new DisposableCollection();
         connection.onClose(() => {

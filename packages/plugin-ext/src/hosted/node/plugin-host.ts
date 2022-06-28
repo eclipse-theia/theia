@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import '@theia/core/shared/reflect-metadata';
-import { PackrStream, UnpackrStream } from '@theia/core/shared/msgpackr';
 import { ObjectStreamConnection } from '@theia/core/lib/node/connection/object-stream';
+import { PackrStream, UnpackrStream } from '@theia/core/shared/msgpackr';
+import '@theia/core/shared/reflect-metadata';
+import { Socket } from 'net';
 import { DefaultPluginRpc, PluginHostProtocol, pluginRpcConnection } from '../../common/rpc-protocol';
 import { reviver } from '../../plugin/types-impl';
 import { PluginHostRPC } from './plugin-host-rpc';
-import { Socket } from 'net';
 
 let terminating = false;
 
@@ -80,7 +80,7 @@ process.on('rejectionHandled', (promise: Promise<void>) => {
 
 // #region RPC initialization
 
-const pipeToParentProcess = new Socket({ fd: 4 });
+const pipeToParentProcess = new Socket({ fd: 4, allowHalfOpen: false });
 const reader = new UnpackrStream();
 const writer = new PackrStream();
 pipeToParentProcess.pipe(reader);

@@ -14,9 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type { Readable, Writable } from 'stream';
 import { AbstractConnection, Connection } from '../../common/connection/connection';
 
+/**
+ * Wrap a tuple of ({@link Readable}, {@link Writable}) into a {@link Connection}.
+ *
+ * _Note that this object takes ownership of the reader and writer instances,
+ * meaning that it will destroy them upon close._
+ */
 export class ObjectStreamConnection extends AbstractConnection<any> {
 
     state = Connection.State.OPENED;

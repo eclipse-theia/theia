@@ -26,25 +26,23 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { AnyConnection, ConnectionMultiplexer } from '@theia/core/lib/common/connection';
 import { BufferedConnection } from '@theia/core/lib/common/connection/buffered';
 import { DeferredConnection } from '@theia/core/lib/common/connection/deferred';
-import { Channel, DefaultConnectionMultiplexer } from '@theia/core/lib/common/connection/multiplexer';
-import { TransformedConnection } from '@theia/core/lib/common/connection/transformer';
+import { DefaultConnectionMultiplexer } from '@theia/core/lib/common/connection/multiplexer';
+import { DefaultTransformableConnection, MessageTransformer } from '@theia/core/lib/common/connection/transformer';
 import { waitForRemote } from '@theia/core/lib/common/connection/utils';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { DefaultJsonRpc, JsonRpc, JsonRpcMessageShortener } from '@theia/core/lib/common/json-rpc';
 import { DefaultRouter } from '@theia/core/lib/common/routing';
 import { RpcConnection } from '@theia/core/lib/common/rpc';
 import URI from '@theia/core/lib/common/uri';
 import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
 import { Range } from '../plugin/types-impl';
-import { DefaultJsonRpc, JsonRpc, JsonRpcMessageShortener } from '@theia/core/lib/common/json-rpc';
 
 export const PluginRpc = Symbol('PluginRpc');
 export interface PluginRpc extends Disposable {
-
     /**
      * Returns a proxy to an object addressable/named in the plugin process or in the main process.
      */
     getProxy<T>(proxyId: ProxyIdentifier<T>): T;
-
     /**
      * Register manually created instance.
      */
@@ -102,6 +100,9 @@ export interface PluginRpcProtocol {
     createRpcConnection(channel: AnyConnection): RpcConnection
 }
 
+/**
+ * @internal
+ */
 export class DefaultPluginRpc implements PluginRpc {
 
     private locals = new Map<string, any>();
@@ -152,11 +153,16 @@ export class DefaultPluginRpc implements PluginRpc {
     }
 
     private createMultiplexer(connection: AnyConnection): ConnectionMultiplexer<any, PluginRpcParams> {
+        const reviver = this.createReviverMessageTransformer();
         return new DefaultConnectionMultiplexer(new DefaultRouter())
-            .initialize(new TransformedConnection<Channel.Message, Channel.Message>(connection, {
-                decode: (message, emit) => emit(revive(message, this.reviver)),
-                encode: (message, write) => write(replace(message, this.replacer))
-            }));
+            .initialize(new DefaultTransformableConnection(connection, reviver));
+    }
+
+    private createReviverMessageTransformer(): MessageTransformer<any, any> {
+        return {
+            decode: (message, emit) => emit(revive(message, this.reviver)),
+            encode: (message, write) => write(replace(message, this.replacer))
+        };
     }
 
     private handleChannelRequest(params: PluginRpcParams, accept: () => AnyConnection, next: (error?: Error) => void): void {
@@ -224,6 +230,9 @@ export namespace PluginHostProtocol {
         TerminatedEvent;
 }
 
+/**
+ * @internal
+ */
 export class JsonRpcProtocol implements PluginRpcProtocol {
 
     constructor(
@@ -231,17 +240,22 @@ export class JsonRpcProtocol implements PluginRpcProtocol {
     ) { }
 
     createRpcConnection(channel: AnyConnection): RpcConnection {
-        const shortened = new TransformedConnection(channel, JsonRpcMessageShortener);
+        const shortened = new DefaultTransformableConnection(channel, JsonRpcMessageShortener);
         return this.jsonRpc.createRpcConnection(this.jsonRpc.createMessageConnection(shortened));
     }
 }
 
+/**
+ * @internal
+ */
 export function pluginRpcConnection(transport: AnyConnection): AnyConnection {
     const bufferedConnection = new BufferedConnection(transport);
     return new DeferredConnection(waitForRemote(bufferedConnection));
 }
 
 /**
+ * @internal
+ *
  * These functions are responsible for correct transferring objects via rpc channel.
  *
  * To reach that some specific kind of objects is converted to json in some custom way
@@ -316,6 +330,9 @@ function isSerializedObject(obj: any): obj is SerializedObject {
     return obj && obj.$type !== undefined && obj.data !== undefined;
 }
 
+/**
+ * @internal
+ */
 export interface SerializedError {
     $isError: true;
     name: string;
@@ -323,6 +340,9 @@ export interface SerializedError {
     stack: string;
 }
 
+/**
+ * @internal
+ */
 export function transformErrorForSerialization(error: any): SerializedError {
     if (error instanceof Error) {
         const { name, message } = error;
@@ -338,6 +358,8 @@ export function transformErrorForSerialization(error: any): SerializedError {
 }
 
 /**
+ * @internal
+ *
  * Do to any object Array.map would do. ~Ish.
  *
  * If `value` is an array then it will run recursively on each element.
@@ -367,10 +389,16 @@ export function objectMap(value: any, mapFunc: (value: any) => any): any {
     return value;
 }
 
+/**
+ * @internal
+ */
 export function replace(value: any, replacer: (key: string | undefined, nested: any) => any): any {
     return objectMap(value, v => replacer(undefined, v));
 }
 
+/**
+ * @internal
+ */
 export function revive(value: any, reviver: (key: string | undefined, nested: any) => any): any {
     return objectMap(value, v => reviver(undefined, v));
 }

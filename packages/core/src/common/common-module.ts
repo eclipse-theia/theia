@@ -17,7 +17,7 @@
 import { ContainerModule } from 'inversify';
 import { DeferredConnection, DeferredConnectionFactory } from './connection/deferred';
 import { DefaultConnectionMultiplexer } from './connection/multiplexer';
-import { ConnectionTransformer, TransformedConnection } from './connection/transformer';
+import { ConnectionTransformer, DefaultConnectionTransformer } from './connection/transformer';
 import { ContainerScope, DefaultContainerScope } from './container-scope';
 import { DefaultJsonRpc, JsonRpc } from './json-rpc';
 import { LazyProxyFactory, LazyProxyHandler } from './proxy';
@@ -40,6 +40,9 @@ export default new ContainerModule(bind => {
         .inTransientScope();
     // #endregion
     // #region singletons
+    bind(ConnectionTransformer)
+        .toDynamicValue(ctx => new DefaultConnectionTransformer())
+        .inSingletonScope();
     bind(RouteHandlerProvider)
         .toDynamicValue(ctx => new DefaultRouteHandlerProvider())
         .inSingletonScope();
@@ -57,8 +60,6 @@ export default new ContainerModule(bind => {
         .inSingletonScope();
     // #endregion
     // #region factories
-    bind(ConnectionTransformer)
-        .toFunction((connection, transformer) => new TransformedConnection(connection, transformer));
     bind(DeferredConnectionFactory)
         .toFunction(promise => new DeferredConnection(promise));
     bind(ContainerScope.Factory)

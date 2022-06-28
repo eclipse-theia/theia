@@ -16,6 +16,6 @@
 
 export { AbstractConnection, AnyConnection, Connection } from './connection';
 export { DeferredConnectionFactory } from './deferred';
-export { ConnectionTransformer, MessageTransformer } from './transformer';
+export { ConnectionTransformer, MessageTransformer, TransformableConnection } from './transformer';
 export { ConnectionMultiplexer } from './multiplexer';
 export { ConnectionEmitter, ConnectionHandler, ConnectionProvider, ConnectionRouter } from './routing';

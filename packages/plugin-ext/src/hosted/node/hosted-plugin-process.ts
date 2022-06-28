@@ -164,11 +164,11 @@ export class HostedPluginProcess implements ServerPluginRunner {
     }
 
     private createChildConnection(child: cp.ChildProcess): AnyConnection {
-        const pipe = child.stdio[4] as Duplex;
+        const duplex = child.stdio[4] as Duplex;
         const reader = new UnpackrStream();
         const writer = new PackrStream();
-        pipe.pipe(reader);
-        writer.pipe(pipe);
+        duplex.pipe(reader);
+        writer.pipe(duplex);
         return new ObjectStreamConnection(reader, writer);
     }
 
@@ -243,5 +243,4 @@ export class HostedPluginProcess implements ServerPluginRunner {
     public async getExtraDeployedPlugins(): Promise<DeployedPlugin[]> {
         return [];
     }
-
 }

@@ -28,11 +28,11 @@ import { checkParentAlive } from './ipc';
 export function serve(server: object): void {
     checkParentAlive();
     const reflection = new DefaultReflection();
-    const rpcProxying = new DefaultRpc(reflection);
+    const rpc = new DefaultRpc(reflection);
     const jsonRpc = new DefaultJsonRpc();
     const reader = new IPCMessageReader(process);
     const writer = new IPCMessageWriter(process);
     const messageConnection = createMessageConnection(reader, writer, console);
     const rpcConnection = jsonRpc.createRpcConnection(messageConnection);
-    rpcProxying.serve(server, rpcConnection);
+    rpc.serve(server, rpcConnection);
 }

@@ -46,7 +46,10 @@ export namespace RpcApi {
 
     // #region decorators
 
-    export function Ignore(): MethodDecorator {
+    /**
+     * Annotate a method or a property to be ignored by the reflection mechanism.
+     */
+    export function Ignore(): MethodDecorator | PropertyDecorator {
         return Reflection.Ignore();
     }
 

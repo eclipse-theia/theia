@@ -79,7 +79,7 @@ export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind =
             return proxyProvider.initialize(serviceId => {
                 const path = JSON_RPC_ROUTE.reverse({ serviceId });
                 const connection = multiplexer.open({ path });
-                const msgpackConnection = connectionTransformer(connection, msgpackrTransformer);
+                const msgpackConnection = connectionTransformer.transformConnection(connection, msgpackrTransformer);
                 return jsonRpc.createRpcConnection(jsonRpc.createMessageConnection(msgpackConnection));
             });
         })
@@ -90,7 +90,7 @@ export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind =
         .toDynamicValue(ctx => {
             const serviceProvider = ctx.container.getNamed(ServiceProvider, BackendAndFrontend);
             const jsonRpc = ctx.container.get(JsonRpc);
-            const rpcProxying = ctx.container.get(Rpc);
+            const rpc = ctx.container.get(Rpc);
             const connectionTransformer = ctx.container.get(ConnectionTransformer);
             const msgpackrTransformer = new MsgpackrMessageTransformer();
             return ctx.container.get(RouteHandlerProvider)
@@ -99,9 +99,9 @@ export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind =
                     if (!service) {
                         return next();
                     }
-                    const msgpackConnection = connectionTransformer(accept(), msgpackrTransformer);
+                    const msgpackConnection = connectionTransformer.transformConnection(accept(), msgpackrTransformer);
                     const rpcConnection = jsonRpc.createRpcConnection(jsonRpc.createMessageConnection(msgpackConnection));
-                    rpcProxying.serve(service, rpcConnection);
+                    rpc.serve(service, rpcConnection);
                     rpcConnection.onClose(dispose);
                 });
         })
