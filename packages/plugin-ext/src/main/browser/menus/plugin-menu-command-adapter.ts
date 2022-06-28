@@ -104,7 +104,7 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
             if (adapter) {
                 const paths = codeToTheiaMappings.get(contributionPoint);
                 if (paths) {
-                    paths.forEach(path => this.addArgumentAdapter(path, adapter));
+                    paths.forEach(([path]) => this.addArgumentAdapter(path, adapter));
                 }
             }
         });

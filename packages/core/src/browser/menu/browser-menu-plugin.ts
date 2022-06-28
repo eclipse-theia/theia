@@ -291,8 +291,10 @@ export class DynamicMenuWidget extends MenuWidget {
     }
 
     private buildSubMenus(items: MenuWidget.IItemOptions[], menu: MenuNode, commands: MenuCommandRegistry): MenuWidget.IItemOptions[] {
+        console.log('SENTINEL FOR THE VALUE OF RESOURCE PATH', (this.services.contextKeyService as any).contextKeyService.getContextKeyValue('resourcePath'));
         for (const item of (menu.children ?? [])) {
             if (Array.isArray(item.children)) {
+                console.log('SENTINEL FOR CHECKING A WHEN', item);
                 if (item.children.length && this.undefinedOrMatch(item.when, this.options.context)) { // do not render empty nodes
                     if (item.isSubmenu) { // submenu node
                         const submenu = this.services.menuWidgetFactory.createMenuWidget(item as MenuNode & { children: MenuNode[] }, this.options);
@@ -323,12 +325,14 @@ export class DynamicMenuWidget extends MenuWidget {
                 const { context } = this.services;
                 const node = item.altNode && context.altPressed ? item.altNode : item;
                 if (commands.isVisible(node.action.commandId) && this.undefinedOrMatch(node.action.when, this.options.context)) {
+                    console.log('SENTINEL FOR ADDING AN ITEM...', item.label, item, menu);
                     items.push({
                         command: node.action.commandId,
                         type: 'command'
                     });
                 }
             } else {
+                console.log('SENTINEL FOR THE DEFAULT?', item);
                 items.push(...this.handleDefault(item));
             }
         }
@@ -336,6 +340,14 @@ export class DynamicMenuWidget extends MenuWidget {
     }
 
     protected undefinedOrMatch(expression?: string, context?: HTMLElement): boolean {
+        const doTheThing = this.doUndefinedOrMatch(expression, context);
+        if (expression) {
+            console.log('SENTINEL FOR THE RESULT FOR', expression, context, doTheThing);
+        }
+        return doTheThing;
+    }
+
+    protected doUndefinedOrMatch(expression?: string, context?: HTMLElement): boolean {
         if (expression) { return this.services.contextKeyService.match(expression, context); }
         return true;
     }

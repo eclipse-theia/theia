@@ -57,7 +57,7 @@ export class MenusContributionPointHandler {
         this.commandAdapterRegistry.registerAdapter(this.commandAdapter);
         for (const contributionPoint of implementedVSCodeContributionPoints) {
             this.menuRegistry.registerIndependentSubmenu(contributionPoint, '');
-            this.getMatchingMenu(contributionPoint)!.forEach(menu => this.menuRegistry.linkSubmenu(menu, contributionPoint));
+            this.getMatchingMenu(contributionPoint)!.forEach(([menu, when]) => this.menuRegistry.linkSubmenu(menu, contributionPoint, when ? { when } : undefined));
         }
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_EDITOR_TITLE_MENU, widget => this.codeEditorWidgetUtil.is(widget));
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_SCM_TITLE_MENU, widget => widget instanceof ScmWidget);
@@ -70,7 +70,7 @@ export class MenusContributionPointHandler {
         });
     }
 
-    private getMatchingMenu(contributionPoint: ContributionPoint): MenuPath[] | undefined {
+    private getMatchingMenu(contributionPoint: ContributionPoint): Array<[MenuPath] | [MenuPath, string]> | undefined {
         return codeToTheiaMappings.get(contributionPoint);
     }
 
@@ -96,10 +96,10 @@ export class MenusContributionPointHandler {
                         toDispose.push(this.registerCommandPaletteAction(item));
                     } else {
                         this.checkTitleContribution(contributionPoint, item, toDispose);
-                        const targets = this.getMatchingMenu(contributionPoint as ContributionPoint) ?? [contributionPoint];
                         if (item.submenu) {
+                            const targets = this.getMatchingMenu(contributionPoint as ContributionPoint) ?? [contributionPoint];
                             const { group, order } = this.parseGroup(item.group);
-                            targets.forEach(target => toDispose.push(this.menuRegistry.linkSubmenu(target, item.submenu!, { order, when: item.when }, group)));
+                            targets.forEach(([target]) => toDispose.push(this.menuRegistry.linkSubmenu(target, item.submenu!, { order, when: item.when }, group)));
                         } else if (item.command) {
                             toDispose.push(this.commandAdapter.addCommand(item.command));
                             const { group, order } = this.parseGroup(item.group);
@@ -108,11 +108,8 @@ export class MenusContributionPointHandler {
                                 when: item.when,
                                 order,
                             }, this.commands);
-
-                            targets.forEach(target => {
-                                const parent = this.menuRegistry.getMenuNode(target, group);
-                                toDispose.push(parent.addNode(node));
-                            });
+                            const parent = this.menuRegistry.getMenuNode(contributionPoint, group);
+                            toDispose.push(parent.addNode(node));
                         }
                     }
                 } catch (error) {

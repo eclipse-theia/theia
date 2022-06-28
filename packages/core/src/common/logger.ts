@@ -40,16 +40,16 @@ export function unsetRootLogger(): void {
 }
 
 export function setRootLogger(aLogger: ILogger): void {
-    logger = aLogger;
-    const log = (logLevel: number, message?: any, ...optionalParams: any[]) =>
-        logger.log(logLevel, message, ...optionalParams);
+    // logger = aLogger;
+    // const log = (logLevel: number, message?: any, ...optionalParams: any[]) =>
+    //     logger.log(logLevel, message, ...optionalParams);
 
-    console.error = log.bind(undefined, LogLevel.ERROR);
-    console.warn = log.bind(undefined, LogLevel.WARN);
-    console.info = log.bind(undefined, LogLevel.INFO);
-    console.debug = log.bind(undefined, LogLevel.DEBUG);
-    console.trace = log.bind(undefined, LogLevel.TRACE);
-    console.log = log.bind(undefined, LogLevel.INFO);
+    // console.error = log.bind(undefined, LogLevel.ERROR);
+    // console.warn = log.bind(undefined, LogLevel.WARN);
+    // console.info = log.bind(undefined, LogLevel.INFO);
+    // console.debug = log.bind(undefined, LogLevel.DEBUG);
+    // console.trace = log.bind(undefined, LogLevel.TRACE);
+    // console.log = log.bind(undefined, LogLevel.INFO);
 }
 
 export type Log = (message: any, ...params: any[]) => void;

@@ -233,6 +233,7 @@ export class MenuModelRegistry {
     }
 
     linkSubmenu(parentPath: MenuPath | string, childId: string, options?: SubMenuOptions, group?: string): Disposable {
+        console.log('SENTINEL FOR LINKING A SUBMENU', childId, parentPath, options, group);
         const child = this.independentSubmenus.get(childId);
         if (!child) {
             throw new Error(`Attempted to link non-existent menu with id ${childId}`);
@@ -449,7 +450,7 @@ export class CompositeMenuNode implements MenuNode {
     }
 
     get isSubmenu(): boolean {
-        return this.label !== undefined;
+        return Boolean(this.label);
     }
 
     /**
@@ -473,7 +474,7 @@ export class CompositeMenuNodeWrapper implements MenuNode {
 
     get sortString(): string { return this.order || this.id; }
 
-    get isSubmenu(): boolean { return this.label !== undefined; }
+    get isSubmenu(): boolean { return Boolean(this.label); }
 
     get icon(): string | undefined { return this.iconClass; }
 

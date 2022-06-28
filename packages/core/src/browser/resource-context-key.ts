@@ -36,6 +36,7 @@ export class ResourceContextKey {
     protected resourceLangId: ContextKey<string>;
     protected resourceDirName: ContextKey<string>;
     protected resourcePath: ContextKey<string>;
+    protected resourceSet: ContextKey<boolean>;
 
     @postConstruct()
     protected init(): void {
@@ -46,6 +47,7 @@ export class ResourceContextKey {
         this.resourceLangId = this.contextKeyService.createKey<string>('resourceLangId', undefined);
         this.resourceDirName = this.contextKeyService.createKey<string>('resourceDirName', undefined);
         this.resourcePath = this.contextKeyService.createKey<string>('resourcePath', undefined);
+        this.resourceSet = this.contextKeyService.createKey<boolean>('resourceSet', false);
     }
 
     get(): URI | undefined {
@@ -54,13 +56,14 @@ export class ResourceContextKey {
     }
 
     set(resourceUri: URI | undefined): void {
-        this.resource.set(resourceUri && resourceUri['codeUri']);
-        this.resourceSchemeKey.set(resourceUri && resourceUri.scheme);
-        this.resourceFileName.set(resourceUri && resourceUri.path.base);
-        this.resourceExtname.set(resourceUri && resourceUri.path.ext);
+        this.resource.set(resourceUri?.['codeUri']);
+        this.resourceSchemeKey.set(resourceUri?.scheme);
+        this.resourceFileName.set(resourceUri?.path.base);
+        this.resourceExtname.set(resourceUri?.path.ext);
         this.resourceLangId.set(resourceUri && this.getLanguageId(resourceUri));
-        this.resourceDirName.set(resourceUri && resourceUri.path.dir.fsPath());
-        this.resourcePath.set(resourceUri && resourceUri.path.fsPath());
+        this.resourceDirName.set(resourceUri?.path.dir.fsPath());
+        this.resourcePath.set(resourceUri?.path.fsPath());
+        this.resourceSet.set(Boolean(resourceUri));
     }
 
     protected getLanguageId(uri: URI | undefined): string | undefined {
