@@ -13,6 +13,7 @@
 - [core, monaco] refactored theme initialization to occur within application lifecycle rather than at import time. [#11213](https://github.com/eclipse-theia/theia/pull/11213)
 - [plugin] Support optional property `TaskPresentationOptions#clear` [#11298](https://github.com/eclipse-theia/theia/pull/11298) - Contributed on behalf of STMicroelectronics
 - [plugin] added support for debuggers running in the frontend [#10748](https://github.com/eclipse-theia/theia/pull/10748)
+- [plugin] Added `Thenable` type to API and replaced `PromiseLike` with `Thenable` [#11352](https://github.com/eclipse-theia/theia/pull/11352) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.27.0">[Breaking Changes:](#breaking_changes_1.27.0)</a>
 
