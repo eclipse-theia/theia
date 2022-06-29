@@ -112,7 +112,7 @@ export module '@theia/plugin' {
          *
          * @return A promise that will resolve when this plug-in has been activated.
          */
-        activate(): PromiseLike<T>;
+        activate(): Thenable<T>;
     }
 
     /**
@@ -1182,7 +1182,7 @@ export module '@theia/plugin' {
          * @param options The undo/redo behavior around this edit. By default, undo stops will be created before and after this edit.
          * @return A promise that resolves with a value indicating if the edits could be applied.
          */
-        edit(callback: (editBuilder: TextEditorEdit) => void, options?: { undoStopBefore: boolean; undoStopAfter: boolean; }): PromiseLike<boolean>;
+        edit(callback: (editBuilder: TextEditorEdit) => void, options?: { undoStopBefore: boolean; undoStopAfter: boolean; }): Thenable<boolean>;
 
         /**
          * Insert a [snippet](#SnippetString) and put the editor into snippet mode. "Snippet mode"
@@ -1195,7 +1195,7 @@ export module '@theia/plugin' {
          * @return A promise that resolves with a value indicating if the snippet could be inserted. Note that the promise does not signal
          * that the snippet is completely filled-in or accepted.
          */
-        insertSnippet(snippet: SnippetString, location?: Position | Range | Position[] | Range[], options?: { undoStopBefore: boolean; undoStopAfter: boolean; }): PromiseLike<boolean>;
+        insertSnippet(snippet: SnippetString, location?: Position | Range | Position[] | Range[], options?: { undoStopBefore: boolean; undoStopAfter: boolean; }): Thenable<boolean>;
 
         /**
          * Adds a set of decorations to the text editor. If a set of decorations already exists with
@@ -1674,7 +1674,7 @@ export module '@theia/plugin' {
          *
          * @param thenable A thenable that resolves to [pre-save-edits](#TextEdit).
          */
-        waitUntil(thenable: PromiseLike<TextEdit[]>): void;
+        waitUntil(thenable: Thenable<TextEdit[]>): void;
 
         /**
          * Allows to pause the event loop until the provided thenable resolved.
@@ -1683,7 +1683,7 @@ export module '@theia/plugin' {
          *
          * @param thenable A thenable that delays saving.
          */
-        waitUntil(thenable: PromiseLike<any>): void;
+        waitUntil(thenable: Thenable<any>): void;
     }
 
     /**
@@ -2471,7 +2471,7 @@ export module '@theia/plugin' {
          *
          * Reject if a command cannot be executed.
          */
-        export function executeCommand<T>(commandId: string, ...args: any[]): PromiseLike<T | undefined>;
+        export function executeCommand<T>(commandId: string, ...args: any[]): Thenable<T | undefined>;
 
         /**
          * Retrieve the list of all available commands. Commands starting an underscore are
@@ -2480,7 +2480,7 @@ export module '@theia/plugin' {
          * @param filterInternal Set `true` to not see internal commands (starting with an underscore)
          * @return Thenable that resolves to a list of command ids.
          */
-        export function getCommands(filterInternal?: boolean): PromiseLike<string[]>;
+        export function getCommands(filterInternal?: boolean): Thenable<string[]>;
     }
 
     /**
@@ -2862,7 +2862,7 @@ export module '@theia/plugin' {
         /**
          * Terminal id.
          */
-        readonly processId: PromiseLike<number>;
+        readonly processId: Thenable<number>;
 
         /**
          * The exit status of the terminal, this will be undefined while the terminal is active.
@@ -3481,7 +3481,7 @@ export module '@theia/plugin' {
          * @param key A string.
          * @param value A value. MUST not contain cyclic references.
          */
-        update(key: string, value: any): PromiseLike<void>;
+        update(key: string, value: any): Thenable<void>;
     }
 
     /**
@@ -3612,7 +3612,7 @@ export module '@theia/plugin' {
          *
          * @param message Body of the message.
          */
-        postMessage(message: any): PromiseLike<boolean>;
+        postMessage(message: any): Thenable<boolean>;
 
         /**
          * Convert a uri for the local file system to one that can be used inside webviews.
@@ -3847,9 +3847,9 @@ export module '@theia/plugin' {
          * serializer must restore the webview's `.html` and hook up all webview events.
          * @param state Persisted state from the webview content.
          *
-         * @return PromiseLike indicating that the webview has been fully restored.
+         * @return Thenable indicating that the webview has been fully restored.
          */
-        deserializeWebviewPanel(webviewPanel: WebviewPanel, state: T): PromiseLike<void>;
+        deserializeWebviewPanel(webviewPanel: WebviewPanel, state: T): Thenable<void>;
     }
 
     /**
@@ -3861,13 +3861,13 @@ export module '@theia/plugin' {
          * Read the current clipboard contents as text.
          * @returns A thenable that resolves to a string.
          */
-        readText(): PromiseLike<string>;
+        readText(): Thenable<string>;
 
         /**
          * Writes text into the clipboard.
          * @returns A thenable that resolves when writing happened.
          */
-        writeText(value: string): PromiseLike<void>;
+        writeText(value: string): Thenable<void>;
     }
 
     /**
@@ -4415,7 +4415,7 @@ export module '@theia/plugin' {
          * @param preserveFocus When `true` the editor will not take focus.
          * @return A promise that resolves to an [editor](#TextEditor).
          */
-        export function showTextDocument(document: TextDocument, column?: ViewColumn, preserveFocus?: boolean): PromiseLike<TextEditor>;
+        export function showTextDocument(document: TextDocument, column?: ViewColumn, preserveFocus?: boolean): Thenable<TextEditor>;
 
         /**
          * Show the given document in a text editor. [Options](#TextDocumentShowOptions) can be provided
@@ -4425,7 +4425,7 @@ export module '@theia/plugin' {
          * @param options [Editor options](#TextDocumentShowOptions) to configure the behavior of showing the [editor](#TextEditor).
          * @return A promise that resolves to an [editor](#TextEditor).
          */
-        export function showTextDocument(document: TextDocument, options?: TextDocumentShowOptions): PromiseLike<TextEditor>;
+        export function showTextDocument(document: TextDocument, options?: TextDocumentShowOptions): Thenable<TextEditor>;
 
         /**
          * A short-hand for `openTextDocument(uri).then(document => showTextDocument(document, options))`.
@@ -4436,7 +4436,7 @@ export module '@theia/plugin' {
          * @param options [Editor options](#TextDocumentShowOptions) to configure the behavior of showing the [editor](#TextEditor).
          * @return A promise that resolves to an [editor](#TextEditor).
          */
-        export function showTextDocument(uri: Uri, options?: TextDocumentShowOptions): PromiseLike<TextEditor>;
+        export function showTextDocument(uri: Uri, options?: TextDocumentShowOptions): Thenable<TextEditor>;
 
         /**
          * Shows a selection list.
@@ -4446,7 +4446,7 @@ export module '@theia/plugin' {
          * @param token A token that can be used to signal cancellation.
          * @return A promise that resolves to the selection or `undefined`.
          */
-        export function showQuickPick(readonly items: string[] | PromiseLike<readonly string[]>, options: QuickPickOptions, token?: CancellationToken): PromiseLike<string | undefined>;
+        export function showQuickPick(readonly items: string[] | Thenable<readonly string[]>, options: QuickPickOptions, token?: CancellationToken): Thenable<string | undefined>;
 
         /**
          * Shows a selection list allowing multiple selections.
@@ -4456,7 +4456,7 @@ export module '@theia/plugin' {
          * @param token A token that can be used to signal cancellation.
          * @return A promise that resolves to the selected items or `undefined`.
          */
-        export function showQuickPick(readonly items: string[] | PromiseLike<readonly string[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): PromiseLike<string[] | undefined>;
+        export function showQuickPick(readonly items: string[] | Thenable<readonly string[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): Thenable<string[] | undefined>;
 
         /**
          * Shows a selection list.
@@ -4466,7 +4466,7 @@ export module '@theia/plugin' {
          * @param token A token that can be used to signal cancellation.
          * @return A promise that resolves to the selected item or `undefined`.
          */
-        export function showQuickPick<T extends QuickPickItem>(items: readonly T[] | PromiseLike<readonly T[]>, options: QuickPickOptions, token?: CancellationToken): PromiseLike<T | undefined>;
+        export function showQuickPick<T extends QuickPickItem>(items: readonly T[] | Thenable<readonly T[]>, options: QuickPickOptions, token?: CancellationToken): Thenable<T | undefined>;
 
         /**
          * Shows a selection list allowing multiple selections.
@@ -4476,7 +4476,7 @@ export module '@theia/plugin' {
          * @param token A token that can be used to signal cancellation.
          * @return A promise that resolves to the selected items or `undefined`.
          */
-        export function showQuickPick<T extends QuickPickItem>(items: readonly T[] | PromiseLike<readonly T[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): PromiseLike<T[] | undefined>;
+        export function showQuickPick<T extends QuickPickItem>(items: readonly T[] | Thenable<readonly T[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): Thenable<T[] | undefined>;
 
         /**
          * Creates a [QuickPick](#QuickPick) to let the user pick an item from a list
@@ -4497,7 +4497,7 @@ export module '@theia/plugin' {
          * @param options Configures the behavior of the workspace folder list.
          * @return A promise that resolves to the workspace folder or `undefined`.
          */
-        export function showWorkspaceFolderPick(options?: WorkspaceFolderPickOptions): PromiseLike<WorkspaceFolder | undefined>;
+        export function showWorkspaceFolderPick(options?: WorkspaceFolderPickOptions): Thenable<WorkspaceFolder | undefined>;
 
         /**
          * Show an information message.
@@ -4506,26 +4506,7 @@ export module '@theia/plugin' {
          * @param items A set of items that will be rendered as actions in the message.
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
-        export function showInformationMessage(message: string, ...items: string[]): PromiseLike<string | undefined>;
-
-        /**
-         * Show an information message.
-         *
-         * @param message a message to show.
-         * @param options Configures the behaviour of the message.
-         * @param items A set of items that will be rendered as actions in the message.
-         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
-         */
-        export function showInformationMessage(message: string, options: MessageOptions, ...items: string[]): PromiseLike<string | undefined>;
-
-        /**
-         * Show an information message.
-         *
-         * @param message a message to show.
-         * @param items A set of items that will be rendered as actions in the message.
-         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
-         */
-        export function showInformationMessage<T extends MessageItem>(message: string, ...items: T[]): PromiseLike<T | undefined>;
+        export function showInformationMessage(message: string, ...items: string[]): Thenable<string | undefined>;
 
         /**
          * Show an information message.
@@ -4535,7 +4516,26 @@ export module '@theia/plugin' {
          * @param items A set of items that will be rendered as actions in the message.
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
-        export function showInformationMessage<T extends MessageItem>(message: string, options: MessageOptions, ...items: T[]): PromiseLike<T | undefined>;
+        export function showInformationMessage(message: string, options: MessageOptions, ...items: string[]): Thenable<string | undefined>;
+
+        /**
+         * Show an information message.
+         *
+         * @param message a message to show.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showInformationMessage<T extends MessageItem>(message: string, ...items: T[]): Thenable<T | undefined>;
+
+        /**
+         * Show an information message.
+         *
+         * @param message a message to show.
+         * @param options Configures the behaviour of the message.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showInformationMessage<T extends MessageItem>(message: string, options: MessageOptions, ...items: T[]): Thenable<T | undefined>;
 
         /**
          * Show a warning message.
@@ -4544,7 +4544,7 @@ export module '@theia/plugin' {
          * @param items A set of items that will be rendered as actions in the message.
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
-        export function showWarningMessage(message: string, ...items: string[]): PromiseLike<string | undefined>;
+        export function showWarningMessage(message: string, ...items: string[]): Thenable<string | undefined>;
 
         /**
          * Show a warning message.
@@ -4554,7 +4554,7 @@ export module '@theia/plugin' {
          * @param items A set of items that will be rendered as actions in the message.
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
-        export function showWarningMessage(message: string, options: MessageOptions, ...items: string[]): PromiseLike<string | undefined>;
+        export function showWarningMessage(message: string, options: MessageOptions, ...items: string[]): Thenable<string | undefined>;
 
         /**
          * Show a warning message.
@@ -4563,7 +4563,7 @@ export module '@theia/plugin' {
          * @param items A set of items that will be rendered as actions in the message.
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
-        export function showWarningMessage<T extends MessageItem>(message: string, ...items: T[]): PromiseLike<T | undefined>;
+        export function showWarningMessage<T extends MessageItem>(message: string, ...items: T[]): Thenable<T | undefined>;
 
         /**
          * Show a warning message.
@@ -4573,7 +4573,7 @@ export module '@theia/plugin' {
          * @param items A set of items that will be rendered as actions in the message.
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
-        export function showWarningMessage<T extends MessageItem>(message: string, options: MessageOptions, ...items: T[]): PromiseLike<T | undefined>;
+        export function showWarningMessage<T extends MessageItem>(message: string, options: MessageOptions, ...items: T[]): Thenable<T | undefined>;
 
         /**
          * Show an error message.
@@ -4582,26 +4582,7 @@ export module '@theia/plugin' {
          * @param items A set of items that will be rendered as actions in the message.
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
-        export function showErrorMessage(message: string, ...items: string[]): PromiseLike<string | undefined>;
-
-        /**
-         * Show an error message.
-         *
-         * @param message a message to show.
-         * @param options Configures the behaviour of the message.
-         * @param items A set of items that will be rendered as actions in the message.
-         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
-         */
-        export function showErrorMessage(message: string, options: MessageOptions, ...items: string[]): PromiseLike<string | undefined>;
-
-        /**
-         * Show an error message.
-         *
-         * @param message a message to show.
-         * @param items A set of items that will be rendered as actions in the message.
-         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
-         */
-        export function showErrorMessage<T extends MessageItem>(message: string, ...items: T[]): PromiseLike<T | undefined>;
+        export function showErrorMessage(message: string, ...items: string[]): Thenable<string | undefined>;
 
         /**
          * Show an error message.
@@ -4611,7 +4592,26 @@ export module '@theia/plugin' {
          * @param items A set of items that will be rendered as actions in the message.
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
-        export function showErrorMessage<T extends MessageItem>(message: string, options: MessageOptions, ...items: T[]): PromiseLike<T | undefined>;
+        export function showErrorMessage(message: string, options: MessageOptions, ...items: string[]): Thenable<string | undefined>;
+
+        /**
+         * Show an error message.
+         *
+         * @param message a message to show.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showErrorMessage<T extends MessageItem>(message: string, ...items: T[]): Thenable<T | undefined>;
+
+        /**
+         * Show an error message.
+         *
+         * @param message a message to show.
+         * @param options Configures the behaviour of the message.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showErrorMessage<T extends MessageItem>(message: string, options: MessageOptions, ...items: T[]): Thenable<T | undefined>;
 
         /**
          * Opens an input box to ask the user for input.
@@ -4624,7 +4624,7 @@ export module '@theia/plugin' {
          * @param token A token that can be used to signal cancellation.
          * @return A promise that resolves to a string the user provided or to `undefined` in case of dismissal.
          */
-        export function showInputBox(options?: InputBoxOptions, token?: CancellationToken): PromiseLike<string | undefined>;
+        export function showInputBox(options?: InputBoxOptions, token?: CancellationToken): Thenable<string | undefined>;
 
         /**
          * Shows a file open dialog to the user which allows to select a file
@@ -4633,7 +4633,7 @@ export module '@theia/plugin' {
          * @param options Options that control the dialog.
          * @returns A promise that resolves to the selected resources or `undefined`.
          */
-        export function showOpenDialog(options: OpenDialogOptions): PromiseLike<Uri[] | undefined>;
+        export function showOpenDialog(options: OpenDialogOptions): Thenable<Uri[] | undefined>;
 
         /**
          * Shows a file save dialog to the user which allows to select a file
@@ -4642,7 +4642,7 @@ export module '@theia/plugin' {
          * @param options Options that control the dialog.
          * @returns A promise that resolves to the selected resource or `undefined`.
          */
-        export function showSaveDialog(options: SaveDialogOptions): PromiseLike<Uri | undefined>;
+        export function showSaveDialog(options: SaveDialogOptions): Thenable<Uri | undefined>;
 
         /**
          * Shows a file upload dialog to the user which allows to upload files
@@ -4651,7 +4651,7 @@ export module '@theia/plugin' {
          * @param options Options, that control the dialog.
          * @returns A promise that resolves the paths of uploaded files or `undefined`.
          */
-        export function showUploadDialog(options: UploadDialogOptions): PromiseLike<Uri[] | undefined>;
+        export function showUploadDialog(options: UploadDialogOptions): Thenable<Uri[] | undefined>;
 
         /**
          * Create and show a new webview panel.
@@ -4784,10 +4784,10 @@ export module '@theia/plugin' {
          * Set a message to the status bar.
          *
          * @param text The message to show, supports icon substitution as in status bar.
-         * @param hideWhenDone PromiseLike on which completion (resolve or reject) the message will be disposed.
+         * @param hideWhenDone Thenable on which completion (resolve or reject) the message will be disposed.
          * @return A disposable which hides the status bar message.
          */
-        export function setStatusBarMessage(text: string, hideWhenDone: PromiseLike<any>): Disposable;
+        export function setStatusBarMessage(text: string, hideWhenDone: Thenable<any>): Disposable;
 
         /**
          * Creates a status bar {@link StatusBarItem item}.
@@ -4917,7 +4917,7 @@ export module '@theia/plugin' {
          *
          * @return The thenable the task-callback returned.
          */
-        export function withProgress<R>(options: ProgressOptions, task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => PromiseLike<R>): PromiseLike<R>;
+        export function withProgress<R>(options: ProgressOptions, task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => Thenable<R>): Thenable<R>;
 
         /**
          * Creates a [InputBox](#InputBox) to let the user enter some text input.
@@ -5319,7 +5319,7 @@ export module '@theia/plugin' {
          *
          * **NOTE:** [TreeDataProvider](#TreeDataProvider) is required to implement [getParent](#TreeDataProvider.getParent) method to access this API.
          */
-        reveal(element: T, options?: { select?: boolean, focus?: boolean, expand?: boolean | number }): PromiseLike<void>;
+        reveal(element: T, options?: { select?: boolean, focus?: boolean, expand?: boolean | number }): Thenable<void>;
     }
 
     /**
@@ -5339,7 +5339,7 @@ export module '@theia/plugin' {
          * @param element The element for which [TreeItem](#TreeItem) representation is asked for.
          * @return [TreeItem](#TreeItem) representation of the element
          */
-        getTreeItem(element: T): TreeItem | PromiseLike<TreeItem>;
+        getTreeItem(element: T): TreeItem | Thenable<TreeItem>;
 
         /**
          * Get the children of `element` or root if no element is passed.
@@ -5593,7 +5593,7 @@ export module '@theia/plugin' {
          * `ConfigurationTarget.WorkspaceFolder` when configuration is resource specific
          * `ConfigurationTarget.Workspace` otherwise.
          */
-        update(section: string, value: any, configurationTarget?: ConfigurationTarget | boolean): PromiseLike<void>;
+        update(section: string, value: any, configurationTarget?: ConfigurationTarget | boolean): Thenable<void>;
 
         /**
          * Readable dictionary that backs this configuration.
@@ -6260,7 +6260,7 @@ export module '@theia/plugin' {
          * @param uri Identifies the resource to open.
          * @return A promise that resolves to a [document](#TextDocument).
          */
-        export function openTextDocument(uri: Uri): PromiseLike<TextDocument | undefined>;
+        export function openTextDocument(uri: Uri): Thenable<TextDocument | undefined>;
 
         /**
          * A short-hand for `openTextDocument(Uri.file(fileName))`.
@@ -6269,7 +6269,7 @@ export module '@theia/plugin' {
          * @param fileName A name of a file on disk.
          * @return A promise that resolves to a [document](#TextDocument).
          */
-        export function openTextDocument(fileName: string): PromiseLike<TextDocument | undefined>;
+        export function openTextDocument(fileName: string): Thenable<TextDocument | undefined>;
 
         /**
          * Opens an untitled text document. The editor will prompt the user for a file
@@ -6279,7 +6279,7 @@ export module '@theia/plugin' {
          * @param options Options to control how the document will be created.
          * @return A promise that resolves to a [document](#TextDocument).
          */
-        export function openTextDocument(options?: { language?: string; content?: string; }): PromiseLike<TextDocument | undefined>;
+        export function openTextDocument(options?: { language?: string; content?: string; }): Thenable<TextDocument | undefined>;
 
         /**
          * Get a workspace configuration object.
@@ -6338,7 +6338,7 @@ export module '@theia/plugin' {
          * @return A thenable that resolves to an array of resource identifiers. Will return no results if no
          * [workspace folders](#workspace.workspaceFolders) are opened.
          */
-        export function findFiles(include: GlobPattern, exclude?: GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]>;
+        export function findFiles(include: GlobPattern, exclude?: GlobPattern | null, maxResults?: number, token?: CancellationToken): Thenable<Uri[]>;
 
         /**
          * Find text in files across all [workspace folders] in the workspace
@@ -6356,7 +6356,7 @@ export module '@theia/plugin' {
          * @param includeUntitled Also save files that have been created during this session.
          * @return A thenable that resolves when the files have been saved.
          */
-        export function saveAll(includeUntitled?: boolean): PromiseLike<boolean>;
+        export function saveAll(includeUntitled?: boolean): Thenable<boolean>;
 
         /**
          * Make changes to one or many resources or create, delete, and rename resources as defined by the given
@@ -6374,7 +6374,7 @@ export module '@theia/plugin' {
          * @param edit A workspace edit.
          * @return A thenable that resolves when the edit could be applied.
          */
-        export function applyEdit(edit: WorkspaceEdit): PromiseLike<boolean>;
+        export function applyEdit(edit: WorkspaceEdit): Thenable<boolean>;
 
         /**
          * Register a filesystem provider for a given scheme, e.g. `ftp`.
@@ -6496,7 +6496,7 @@ export module '@theia/plugin' {
          * @param envVarName name of environment variable to get
          * @returns value of the given environment variable name or undefined if there is no such variable.
          */
-        export function getEnvVariable(envVarName: string): PromiseLike<string | undefined>;
+        export function getEnvVariable(envVarName: string): Thenable<string | undefined>;
 
         /**
          * Gets query parameter value by name.
@@ -6569,7 +6569,7 @@ export module '@theia/plugin' {
          * @param target The uri that should be opened.
          * @returns A promise indicating if open was successful.
          */
-        export function openExternal(target: Uri): PromiseLike<boolean>;
+        export function openExternal(target: Uri): Thenable<boolean>;
 
         /**
          * Resolves an *external* uri, such as a `http:` or `https:` link, from where the extension is running to a
@@ -6591,7 +6591,7 @@ export module '@theia/plugin' {
          *
          * @return A uri that can be used on the client machine.
          */
-        export function asExternalUri(target: Uri): PromiseLike<Uri>;
+        export function asExternalUri(target: Uri): Thenable<Uri>;
 
     }
 
@@ -9018,7 +9018,7 @@ export module '@theia/plugin' {
          * Return the identifiers of all known languages.
          * @return Promise resolving to an array of identifier strings.
          */
-        export function getLanguages(): PromiseLike<string[]>;
+        export function getLanguages(): Thenable<string[]>;
 
         /**
          * Set (and change) the [language](#TextDocument.languageId) that is associated
@@ -9031,7 +9031,7 @@ export module '@theia/plugin' {
          * @param languageId The new language identifier.
          * @returns A thenable that resolves with the updated document.
          */
-        export function setTextDocumentLanguage(document: TextDocument, languageId: string): PromiseLike<TextDocument>;
+        export function setTextDocumentLanguage(document: TextDocument, languageId: string): Thenable<TextDocument>;
 
         /**
          * Compute the match between a document [selector](#DocumentSelector) and a document. Values
@@ -9902,7 +9902,7 @@ export module '@theia/plugin' {
         /**
          * Send a custom request to the debug adapter.
          */
-        customRequest(command: string, args?: any): PromiseLike<any>;
+        customRequest(command: string, args?: any): Thenable<any>;
     }
 
     /**
@@ -10415,13 +10415,13 @@ export module '@theia/plugin' {
          * @param parentSessionOrOptions Debug session options. When passed a parent debug session, assumes options with just this parent session.
          * @return A thenable that resolves when debugging could be successfully started.
          */
-        export function startDebugging(folder: WorkspaceFolder | undefined, nameOrConfiguration: string | DebugConfiguration, parentSessionOrOptions?: DebugSession | DebugSessionOptions): PromiseLike<boolean>;
+        export function startDebugging(folder: WorkspaceFolder | undefined, nameOrConfiguration: string | DebugConfiguration, parentSessionOrOptions?: DebugSession | DebugSessionOptions): Thenable<boolean>;
 
         /**
          * Stop the given debug session or stop all debug sessions if session is omitted.
          * @param session The [debug session](#DebugSession) to stop; if omitted all sessions are stopped.
          */
-        export function stopDebugging(session?: DebugSession): PromiseLike<void>;
+        export function stopDebugging(session?: DebugSession): Thenable<void>;
 
         /**
          * Add breakpoints.
@@ -10992,7 +10992,7 @@ export module '@theia/plugin' {
          *
          * @param filter a filter to filter the return tasks.
          */
-        export function fetchTasks(filter?: TaskFilter): PromiseLike<Task[]>;
+        export function fetchTasks(filter?: TaskFilter): Thenable<Task[]>;
 
         /**
          * Executes a task that is managed by VS Code. The returned
@@ -11000,7 +11000,7 @@ export module '@theia/plugin' {
          *
          * @param task the task to execute
          */
-        export function executeTask(task: Task): PromiseLike<TaskExecution>;
+        export function executeTask(task: Task): Thenable<TaskExecution>;
 
         /**
          * The currently active task executions or an empty array.
@@ -11058,7 +11058,7 @@ export module '@theia/plugin' {
          * @param key A string.
          * @param value A value. MUST not contain cyclic references.
          */
-        update(key: string, value: any): PromiseLike<void>;
+        update(key: string, value: any): Thenable<void>;
     }
 
     /* The workspace symbol provider interface defines the contract between extensions
@@ -11893,3 +11893,21 @@ export module '@theia/plugin' {
 
     }
 }
+
+/**
+ * Thenable is a common denominator between ES6 promises, Q, jquery.Deferred, WinJS.Promise,
+ * and others. This API makes no assumption about what promise library is being used which
+ * enables reusing existing code without migrating to a specific promise implementation. Still,
+ * we recommend the use of native promises which are available in this editor.
+ */
+interface Thenable<T> {
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult>(onfulfilled?: (value: T) => TResult | Thenable<TResult>, onrejected?: (reason: any) => TResult | Thenable<TResult>): Thenable<TResult>;
+    then<TResult>(onfulfilled?: (value: T) => TResult | Thenable<TResult>, onrejected?: (reason: any) => void): Thenable<TResult>;
+}
+

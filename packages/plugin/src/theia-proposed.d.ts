@@ -161,7 +161,7 @@ export module '@theia/plugin' {
          * Get the keybindings associated to commandId.
          * @param commandId The ID of the command for which we are looking for keybindings.
          */
-        export function getKeyBinding(commandId: string): PromiseLike<CommandKeyBinding[] | undefined>;
+        export function getKeyBinding(commandId: string): Thenable<CommandKeyBinding[] | undefined>;
 
         /**
          * Registers a diff information command that can be invoked via a keyboard shortcut,
@@ -210,7 +210,7 @@ export module '@theia/plugin' {
          * Returns the type of the operating system on the client side (like browser'OS if using browser mode). If it is neither [Windows](isWindows) nor [OS X](isOSX), then
          * it always return with the `Linux` OS type.
          */
-        export function getClientOperatingSystem(): PromiseLike<OperatingSystem>;
+        export function getClientOperatingSystem(): Thenable<OperatingSystem>;
 
     }
 
