@@ -21,6 +21,7 @@ import { MaybePromise } from '../common/types';
 import { Key } from './keyboard/keys';
 import { AbstractDialog } from './dialogs';
 import { waitForClosed } from './widgets';
+import { nls } from '../common/nls';
 
 export interface Saveable {
     readonly dirty: boolean;
@@ -290,20 +291,20 @@ export class ShouldSaveDialog extends AbstractDialog<boolean> {
 
     constructor(widget: Widget) {
         super({
-            title: `Do you want to save the changes you made to ${widget.title.label || widget.title.caption}?`
+            title: nls.localizeByDefault('Do you want to save the changes you made to {0}?', widget.title.label || widget.title.caption)
         });
 
         const messageNode = document.createElement('div');
-        messageNode.textContent = "Your changes will be lost if you don't save them.";
+        messageNode.textContent = nls.localizeByDefault("Your changes will be lost if you don't save them.");
         messageNode.setAttribute('style', 'flex: 1 100%; padding-bottom: calc(var(--theia-ui-padding)*3);');
         this.contentNode.appendChild(messageNode);
         this.dontSaveButton = this.appendDontSaveButton();
         this.appendCloseButton();
-        this.appendAcceptButton('Save');
+        this.appendAcceptButton(nls.localizeByDefault('Save'));
     }
 
     protected appendDontSaveButton(): HTMLButtonElement {
-        const button = this.createButton("Don't save");
+        const button = this.createButton(nls.localizeByDefault("Don't Save"));
         this.controlPanel.appendChild(button);
         button.classList.add('secondary');
         return button;
