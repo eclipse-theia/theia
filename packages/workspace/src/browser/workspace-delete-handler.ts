@@ -85,11 +85,11 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
      * @param uris URIs of selected resources.
      */
     protected confirm(uris: URI[], options: FileDeleteOptions): Promise<boolean | undefined> {
-        let title = `File${uris.length === 1 ? '' : 's'}`;
+        let title = uris.length === 1 ? nls.localizeByDefault('File') : nls.localizeByDefault('Files');
         if (options.useTrash) {
-            title = 'Move ' + title + ' to Trash';
+            title = nls.localize('theia/workspace/trashTitle', 'Move {0} to Trash', title);
         } else {
-            title = 'Delete ' + title;
+            title = nls.localizeByDefault('Delete {0}', title);
         }
         return new ConfirmDialog({
             title,
@@ -106,18 +106,18 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
         const dirty = this.getDirty(uris);
         if (dirty.length) {
             if (dirty.length === 1) {
-                return `Do you really want to delete ${dirty[0].path.base} with unsaved changes?`;
+                return nls.localize('theia/workspace/confirmMessage.dirtySingle', 'Do you really want to delete {0} with unsaved changes?', dirty[0].path.base);
             }
-            return `Do you really want to delete ${dirty.length} files with unsaved changes?`;
+            return nls.localize('theia/workspace/confirmMessage.dirtyMultiple', 'Do you really want to delete {0} files with unsaved changes?', dirty.length);
         }
         if (uris.length === 1) {
-            return `Do you really want to delete ${uris[0].path.base}?`;
+            return nls.localize('theia/workspace/confirmMessage.uriSingle', 'Do you really want to delete {0}?', uris[0].path.base);
         }
         if (uris.length > 10) {
-            return `Do you really want to delete all the ${uris.length} selected files?`;
+            return nls.localize('theia/workspace/confirmMessage.uriMultiple', 'Do you really want to delete all the {0} selected files?', uris.length);
         }
         const messageContainer = document.createElement('div');
-        messageContainer.textContent = 'Do you really want to delete the following files?';
+        messageContainer.textContent = nls.localize('theia/workspace/confirmMessage.delete', 'Do you really want to delete the following files?');
         const list = document.createElement('ul');
         list.style.listStyleType = 'none';
         for (const uri of uris) {
