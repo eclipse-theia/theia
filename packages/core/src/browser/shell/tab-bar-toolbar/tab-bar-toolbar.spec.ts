@@ -18,7 +18,7 @@ import { enableJSDOM } from '../../test/jsdom';
 
 let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
-import { TabBarToolbarItem } from './tab-bar-toolbar';
+import { TabBarToolbarItem } from './tab-bar-toolbar-types';
 
 disableJSDOM();
 
