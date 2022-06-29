@@ -146,6 +146,9 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
     protected updateItemsAndRerender = debounce(() => {
         this.items = this.getItems();
         this.update();
+        if (this.hasSearch()) {
+            this.doSearchKeybindings();
+        }
     }, 100, { leading: false, trailing: true });
 
     /**
