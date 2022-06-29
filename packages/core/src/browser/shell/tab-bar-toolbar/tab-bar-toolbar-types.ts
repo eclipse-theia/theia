@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from 'react';
-import { Event, MenuPath } from '../../../common';
+import { ArrayUtils, Event, MenuPath } from '../../../common';
 import { Widget } from '../../widgets';
 
 export interface TabBarDelegator extends Widget {
@@ -149,26 +149,20 @@ export interface ReactTabBarToolbarItem {
     readonly group?: string;
 }
 
+/** Items whose group is exactly 'navigation' will be rendered inline. */
+export const NAVIGATION = 'navigation';
+
 export namespace TabBarToolbarItem {
 
     /**
      * Compares the items by `priority` in ascending. Undefined priorities will be treated as `0`.
      */
     export const PRIORITY_COMPARATOR = (left: TabBarToolbarItem, right: TabBarToolbarItem) => {
-        // The navigation group is special as it will always be sorted to the top/beginning of a menu.
-        const compareGroup = (leftGroup: string | undefined = 'navigation', rightGroup: string | undefined = 'navigation') => {
-            if (leftGroup === 'navigation') {
-                return rightGroup === 'navigation' ? 0 : -1;
-            }
-            if (rightGroup === 'navigation') {
-                return leftGroup === 'navigation' ? 0 : 1;
-            }
-            return leftGroup.localeCompare(rightGroup);
-        };
-        const result = compareGroup(left.group, right.group);
-        if (result !== 0) {
-            return result;
-        }
+        const leftGroup = left.group ?? NAVIGATION;
+        const rightGroup = right.group ?? NAVIGATION;
+        if (leftGroup === NAVIGATION && rightGroup !== NAVIGATION) { return ArrayUtils.Sort.LeftBeforeRight; }
+        if (rightGroup === NAVIGATION && leftGroup !== NAVIGATION) { return ArrayUtils.Sort.RightBeforeLeft; }
+        if (leftGroup !== rightGroup) { return leftGroup.localeCompare(rightGroup); }
         return (left.priority || 0) - (right.priority || 0);
     };
 
