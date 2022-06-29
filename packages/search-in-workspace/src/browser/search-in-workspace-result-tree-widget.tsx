@@ -786,18 +786,19 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     async replace(node: TreeNode | undefined): Promise<void> {
         const replaceForNode = node || this.model.root!;
         const needConfirm = !SearchInWorkspaceFileNode.is(node) && !SearchInWorkspaceResultLineNode.is(node);
-        if (!needConfirm || await this.confirmReplaceAll(this.getResultCount(replaceForNode), this.getFileCount(replaceForNode))) {
+        const replacementText = this._replaceTerm;
+        if (!needConfirm || await this.confirmReplaceAll(this.getResultCount(replaceForNode), this.getFileCount(replaceForNode), replacementText)) {
             (node ? [node] : Array.from(this.resultTree.values())).forEach(n => {
-                this.replaceResult(n, !!node);
+                this.replaceResult(n, !!node, replacementText);
                 this.removeNode(n);
             });
         }
     }
 
-    protected confirmReplaceAll(resultNumber: number, fileNumber: number): Promise<boolean | undefined> {
+    protected confirmReplaceAll(resultNumber: number, fileNumber: number, replacementText: string): Promise<boolean | undefined> {
         return new ConfirmDialog({
             title: nls.localizeByDefault('Replace All'),
-            msg: this.buildReplaceAllConfirmationMessage(resultNumber, fileNumber, this._replaceTerm)
+            msg: this.buildReplaceAllConfirmationMessage(resultNumber, fileNumber, replacementText)
         }).open();
     }
 
@@ -852,11 +853,12 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
      * Replace text either in all search matches under a node or in all search matches, and save the changes.
      * @param node - node in the tree widget in which the "replace all" is performed.
      * @param {boolean} replaceOne - whether the function is to replace all matches under a node. If it is false, replace all.
+     * @param replacementText - text to be used for all replacements in the current replacement cycle.
      */
-    protected async replaceResult(node: TreeNode, replaceOne: boolean): Promise<void> {
+    protected async replaceResult(node: TreeNode, replaceOne: boolean, replacementText: string): Promise<void> {
         const toReplace: SearchInWorkspaceResultLineNode[] = [];
         if (SearchInWorkspaceRootFolderNode.is(node)) {
-            node.children.forEach(fileNode => this.replaceResult(fileNode, replaceOne));
+            node.children.forEach(fileNode => this.replaceResult(fileNode, replaceOne, replacementText));
         } else if (SearchInWorkspaceFileNode.is(node)) {
             toReplace.push(...node.children);
         } else if (SearchInWorkspaceResultLineNode.is(node)) {
@@ -871,7 +873,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             const widget: EditorWidget = replaceOne ? await this.doOpen(toReplace[0]) : await this.doGetWidget(toReplace[0]);
             const source: string = widget.editor.document.getText();
             const replaceOperations = toReplace.map(resultLineNode => ({
-                text: this._replaceTerm,
+                text: replacementText,
                 range: {
                     start: {
                         line: resultLineNode.line - 1,
