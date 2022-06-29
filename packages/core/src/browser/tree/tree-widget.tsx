@@ -832,7 +832,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             {decorationsToRender.map((decoration, index) => {
                 const { tooltip, data, fontData, color, icon, iconClass } = decoration;
                 const iconToRender = icon ?? iconClass;
-                const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS].join(' ');
+                const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, 'flex'].join(' ');
                 const style = fontData ? this.applyFontStyles({}, fontData) : color ? { color } : undefined;
                 const content = data ? data : iconToRender
                     ? <span
