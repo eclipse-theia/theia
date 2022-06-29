@@ -18,12 +18,12 @@ import debounce = require('lodash.debounce');
 import { inject, injectable, named } from 'inversify';
 import * as React from 'react';
 // eslint-disable-next-line max-len
-import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuCommandExecutor, MenuModelRegistry, MenuNode, MenuPath, nls } from '../../common';
-import { ContextKeyService } from '../context-key-service';
-import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../context-menu-renderer';
-import { FrontendApplicationContribution } from '../frontend-application';
-import { LabelIcon, LabelParser } from '../label-parser';
-import { ACTION_ITEM, codicon, ReactWidget, Widget } from '../widgets';
+import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuCommandExecutor, MenuModelRegistry, MenuNode, MenuPath, nls } from '../../../common';
+import { ContextKeyService } from '../../context-key-service';
+import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../../context-menu-renderer';
+import { FrontendApplicationContribution } from '../../frontend-application';
+import { LabelIcon, LabelParser } from '../../label-parser';
+import { ACTION_ITEM, codicon, ReactWidget, Widget } from '../../widgets';
 
 /**
  * Clients should implement this interface if they want to contribute to the tab-bar toolbar.
