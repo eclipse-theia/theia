@@ -65,7 +65,8 @@
 - [plugin-ext] method `registerDebuggersContributions` has an additional parameter in the signature `pluginType` to specify `frontend` or `backend` [#10748](https://github.com/eclipse-theia/theia/pull/10748)
 - [plugin-ext] file `debug` renamed to `debug-ext` [#10748](https://github.com/eclipse-theia/theia/pull/10748)
 - [debug] debug files not unique to the backend have been moved from `node` to `common` [#10748](https://github.com/eclipse-theia/theia/pull/10748)
-- [core] `TreeImpl.refresh` accepts a cancellation token as a secord parameter. Extensions that added their own second parameter may be marked as no longer class conforming. [#11340](https://github.com/eclipse-theia/theia/pull/11340) 
+- [core] `TreeImpl.refresh` accepts a cancellation token as a secord parameter. Extensions that added their own second parameter may be marked as no longer class conforming. [#11340](https://github.com/eclipse-theia/theia/pull/11340)
+- [search-in-workspace] `replaceResult` and `confirmReplaceAll` now require a parameter `replacementText` [#11374](https://github.com/eclipse-theia/theia/pull/11374)
 
 ## v1.26.0 - 5/26/2022
 
