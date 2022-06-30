@@ -1,9 +1,11 @@
 {
   "theia": {
     "callhierarchy": {
+      "noCallers": "発信者は検出されていません。",
       "open": "オープンコールヒエラルキー"
     },
     "core": {
+      "availableLanguages": "使用可能な言語",
       "common": {
         "closeAll": "すべてのタブを閉じる",
         "closeAllTabMain": "メインエリアのすべてのタブを閉じる",
@@ -25,6 +27,8 @@
         "browse": "ブラウズ"
       },
       "highlightModifiedTabs": "モディファイド(ダーティ)エディタのタブにトップボーダーを描画するかどうかを制御します。",
+      "installedLanguages": "インストールされている言語",
+      "keybindingStatus": "{0}が押されたので、さらにキーを待つ",
       "keyboard": {
         "choose": "キーボードレイアウトの選択",
         "chooseLayout": "キーボードレイアウトの選択",
@@ -34,21 +38,27 @@
         "pc": "PCキーボード",
         "tryDetect": "ブラウザの情報や押されたキーからキーボードの配列を検出してみてください。"
       },
+      "mouseBackForwardToNavigate": "戻る」「進む」コマンドでマウスボタン4と5を使用できるようにする。",
+      "offline": "オフライン",
+      "proxySupportFallback": "拡張機能のプロキシサポートを有効にし、プロキシが見つからない場合、リクエストオプションにフォールバックする。",
       "quitMessage": "保存されていない変更は、保存されません。",
       "quitTitle": "本当に辞めたいのか?",
       "resetWorkbenchLayout": "ワークベンチレイアウトのリセット",
       "sashDelay": "ビュー/エディター間でのドラッグ領域のホバーフィードバックの遅延をミリ秒単位で制御します。",
       "sashSize": "ビュー/エディタ間でのドラッグ領域のフィードバック領域のサイズをピクセル単位で制御します。必要に応じて、より大きな値に設定してください。",
-      "silentNotifications": "通知のポップアップを抑制するかどうかを制御します。"
+      "searchbox": {
+        "close": "閉じる(エスケープ)",
+        "next": "次へ(下)",
+        "previous": "前へ (上)"
+      },
+      "silentNotifications": "通知のポップアップを抑制するかどうかを制御します。",
+      "tabMaximize": "ダブルクリック時にタブを最大化するかどうかを制御します。"
     },
     "debug": {
       "addConfigurationPlaceholder": "設定を追加するワークスペース・ルートを選択します。",
       "continueAll": "すべてを続ける",
       "copyExpressionValue": "コピー式の値",
-      "debugViewLocation": "デバッグビューの位置を制御します。",
-      "openBottom": "オープンボトム",
-      "openLeft": "左開き",
-      "openRight": "オープンライト",
+      "missingConfiguration": "ダイナミックコンフィギュレーション「{0}:{1}」が存在しないか、適用できない",
       "pauseAll": "ポーズ・オール",
       "reveal": "暴露",
       "threads": "スレッド",
@@ -119,7 +129,9 @@
       "persistClosedEditors": "ウィンドウの再読み込み時に、ワークスペースの閉じたエディタの履歴を保持するかどうかを制御します。",
       "showAllEditors": "開いているエディタをすべて表示",
       "splitHorizontal": "スプリットエディタ横",
-      "splitVertical": "スプリットエディタ縦"
+      "splitVertical": "スプリットエディタ縦",
+      "status-bar-pin": "ステータスバーへの追加",
+      "status-bar-unpin": "ステータスバーから削除する"
     },
     "file-search": {
       "toggleIgnoredFiles": "({0}を押すと、無視されたファイルの表示/非表示を切り替えることができます。"
@@ -131,6 +143,14 @@
     },
     "filesystem": {
       "copyDownloadLink": "コピー・ダウンロード・リンク",
+      "dialog": {
+        "initialLocation": "初期位置へ移動",
+        "multipleItemMessage": "選択できる項目は1つだけです",
+        "name": "名前:",
+        "navigateBack": "戻る",
+        "navigateForward": "ナビゲートフォワード",
+        "navigateUp": "ディレクトリを1つ上に移動する"
+      },
       "fileResource": {
         "binaryFileQuery": "開くと時間がかかり、IDEが反応しなくなる可能性があります。とにかく'{0}'を開きたいのですか?",
         "binaryTitle": "ファイルがバイナリであるか、サポートされていないテキストエンコーディングが使用されています。",
@@ -138,6 +158,7 @@
         "overwriteTitle": "ファイル '{0}' はファイルシステム上で変更されました。"
       },
       "filesExclude": "ファイルやフォルダーを除外するためのグロブパターンを設定します。例えば、ファイルエクスプローラーでは、この設定をもとにファイルやフォルダーの表示・非表示を決定します。",
+      "format": "フォーマット:",
       "maxConcurrentUploads": "複数のファイルをアップロードする際に、同時にアップロードするファイルの最大数です。0の場合は、すべてのファイルが同時にアップロードされます。",
       "maxFileSizeMB": "開くことのできる最大ファイルサイズ(MB)を制御します。",
       "processedOutOf": "{1}のうち{0}を処理",
@@ -159,6 +180,7 @@
       "cloneRepository": "Gitリポジトリをクローンします。{0}.確定するには「Enter」を、キャンセルするには「Escape」を押します。",
       "compareWith": "比べてみると...",
       "compareWithBranchOrTag": "現在アクティブな{0}のブランチと比較するブランチやタグを選びます。",
+      "diff": "差分",
       "dirtyDiffLinesLimit": "エディタの行数がこの制限を超えている場合、ダーティな diff デコレーションを表示しません。",
       "dropStashMessage": "スタッシュの削除に成功しました。",
       "editorDecorationsEnabled": "エディタにgitデコレーションを表示します。",
@@ -176,8 +198,19 @@
     "keybinding-schema-updater": {
       "deprecation": "代わりに `when` 句を使用してください。"
     },
+    "keymaps": {
+      "editKeybindingTitle": "{0}のキーバインドを編集する",
+      "keybindingCollidesValidation": "キーバインドがコリジョン中",
+      "requiredKeybindingValidation": "キーバインド値が必要です",
+      "resetKeybindingConfirmation": "このキーバインドを本当に初期値に戻すのですか?",
+      "resetKeybindingTitle": "{0}のキーバインドをリセットする"
+    },
+    "localize": {
+      "offlineTooltip": "バックエンドに接続できません。"
+    },
     "markers": {
       "clearAll": "クリアオール",
+      "noProblems": "これまでのところ、ワークスペースに問題は検出されていません。",
       "tabbarDecorationsEnabled": "タブバーに問題のデコレーター(診断マーカー)を表示する。"
     },
     "messages": {
@@ -210,6 +243,7 @@
       "alreadyRunning": "ホストされているインスタンスはすでに実行されています。",
       "debugInstance": "デバッグインスタンス",
       "debugMode": "Node.js のデバッグに inspect または inspect-brk を使用する",
+      "devHost": "開発ホスト",
       "failed": "ホストされたプラグインインスタンスの実行に失敗しました。{0}",
       "hostedPlugin": "ホスト型プラグイン",
       "hostedPluginRunning": "ホスト型プラグイン: 実行中",
@@ -246,6 +280,7 @@
       "directory": "ディレクトリ",
       "lastModified": "最終更新日",
       "location": "所在地",
+      "noProperties": "物件はありません。",
       "path": "パス",
       "properties": "プロパティ",
       "size": "サイズ",
@@ -256,6 +291,10 @@
       "amendHeadCommit": "HEADコミット",
       "amendLastCommit": "前回のコミットを修正",
       "changeRepository": "リポジトリの変更...",
+      "config.untrackedChanges": "未追跡の変更の動作を制御します。",
+      "config.untrackedChanges.hidden": "隠れ",
+      "config.untrackedChanges.mixed": "合成",
+      "config.untrackedChanges.separate": "別",
       "history": "歴史",
       "noRepositoryFound": "リポジトリが見つからない",
       "unamend": "くり返す",
@@ -317,6 +356,7 @@
     "vsx-registry": {
       "openVSX": "VSXレジストリを開く",
       "recommendedExtensions": "このワークスペースでの使用が推奨される拡張機能の名前のリストです。",
+      "searchPlaceholder": "{0}で拡張子を検索",
       "showRecommendedExtensions": "拡張機能の推奨事項について、通知を表示するかどうかを制御します。"
     },
     "webview": {
@@ -329,6 +369,11 @@
       "confirmDeletePermanently.description": "ゴミ箱を使った「{0}」の削除に失敗しました。代わりに永久に削除しますか?",
       "confirmDeletePermanently.solution": "環境設定でゴミ箱の使用を無効にすることができます。",
       "confirmDeletePermanently.title": "ファイル削除時のエラー",
+      "confirmMessage.delete": "本当に以下のファイルを削除しますか?",
+      "confirmMessage.dirtyMultiple": "保存されていない変更のある{0}個のファイルを本当に削除したいのですか?",
+      "confirmMessage.dirtySingle": "本当に未保存のまま{0}を削除したいのでしょうか?",
+      "confirmMessage.uriMultiple": "本当に{0}個の選択されたファイルをすべて削除しますか?",
+      "confirmMessage.uriSingle": "本当に{0}を削除するのですか?",
       "duplicate": "デュプリケート",
       "failApply": "新しいファイルに変更を適用できなかった",
       "failSaveAs": "現在のウィジェットでは\"{0}\"を実行できません。",
@@ -339,6 +384,7 @@
       "removeFolder": "ワークスペースから以下のフォルダを削除してよろしいですか?",
       "removeFolders": "ワークスペースから以下のフォルダを削除してよろしいですか?",
       "supportMultiRootWorkspace": "マルチルート・ワークスペースのサポートを有効にするかどうかを制御します。",
+      "trashTitle": "{0}をゴミ箱に移動",
       "trustEmptyWindow": "空のワークスペースをデフォルトで信頼するかどうかを制御します。",
       "trustEnabled": "ワークスペースの信頼を有効にするかどうかを制御します。無効の場合、すべてのワークスペースが信頼されます。",
       "trustPrompt": "ワークスペースを信頼するための起動時のプロンプトを表示するタイミングを制御します。",

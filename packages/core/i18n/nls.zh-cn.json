@@ -1,9 +1,11 @@
 {
   "theia": {
     "callhierarchy": {
+      "noCallers": "没有发现来电者。",
       "open": "打开调用层次结构"
     },
     "core": {
+      "availableLanguages": "可用的语言",
       "common": {
         "closeAll": "全部关闭",
         "closeAllTabMain": "关闭主区域的所有标签页",
@@ -25,6 +27,8 @@
         "browse": "浏览"
       },
       "highlightModifiedTabs": "控制是否在修改过的(dirty)编辑器标签上绘制顶部边框。",
+      "installedLanguages": "已安装的语言",
+      "keybindingStatus": "{0}被按下,等待更多的按键",
       "keyboard": {
         "choose": "选择键盘布局",
         "chooseLayout": "选择一个键盘布局",
@@ -34,21 +38,27 @@
         "pc": "电脑键盘",
         "tryDetect": "尝试从浏览器信息和按下的按键中检测键盘布局。"
       },
+      "mouseBackForwardToNavigate": "启用鼠标按键四和五来执行 \"往回走 \"和 \"往前走 \"命令。",
+      "offline": "离线",
+      "proxySupportFallback": "启用对扩展的代理支持,当没有找到代理时,退回到请求选项。",
       "quitMessage": "任何未保存的修改都不会被保存。",
       "quitTitle": "你确定你要退出吗?",
       "resetWorkbenchLayout": "重置工作台面布局",
       "sashDelay": "控制视图/编辑器之间拖动区域的悬停反馈延迟,单位为毫秒。",
       "sashSize": "控制在视图/编辑器之间的拖动区域的反馈区域大小,以像素为单位。如果需要的话,把它设置成一个较大的值。",
-      "silentNotifications": "控制是否抑制弹出通知。"
+      "searchbox": {
+        "close": "关闭 (逃离)",
+        "next": "下一页 (向下)",
+        "previous": "上一页 (向上)"
+      },
+      "silentNotifications": "控制是否抑制弹出通知。",
+      "tabMaximize": "控制是否在双击时最大化标签。"
     },
     "debug": {
       "addConfigurationPlaceholder": "选择要添加配置的工作区根",
       "continueAll": "继续所有",
       "copyExpressionValue": "复制表达式的值",
-      "debugViewLocation": "控制调试视图的位置。",
-      "openBottom": "打开底部",
-      "openLeft": "打开左侧",
-      "openRight": "打开右侧",
+      "missingConfiguration": "动态配置'{0}:{1}'缺少或不适用",
       "pauseAll": "暂停所有",
       "reveal": "显示",
       "threads": "线程",
@@ -119,7 +129,9 @@
       "persistClosedEditors": "控制是否为工作区持续保存关闭的编辑器历史,跨越窗口重新加载。",
       "showAllEditors": "显示所有打开的编辑器",
       "splitHorizontal": "水平拆分编辑器",
-      "splitVertical": "垂直拆分编辑器"
+      "splitVertical": "垂直拆分编辑器",
+      "status-bar-pin": "添加到状态栏",
+      "status-bar-unpin": "从状态栏中删除"
     },
     "file-search": {
       "toggleIgnoredFiles": "(按{0}显示/隐藏被忽略的文件)"
@@ -131,6 +143,14 @@
     },
     "filesystem": {
       "copyDownloadLink": "复制下载链接",
+      "dialog": {
+        "initialLocation": "转到初始位置",
+        "multipleItemMessage": "你只能选择一个项目",
+        "name": "名称:",
+        "navigateBack": "返回导航",
+        "navigateForward": "向前导航",
+        "navigateUp": "向上导航一个目录"
+      },
       "fileResource": {
         "binaryFileQuery": "打开它可能需要一些时间,并可能使IDE没有反应。你到底要不要打开'{0}'?",
         "binaryTitle": "该文件要么是二进制文件,要么使用不支持的文本编码。",
@@ -138,6 +158,7 @@
         "overwriteTitle": "文件'{0}'在文件系统中被更改。"
       },
       "filesExclude": "配置用于排除文件和文件夹的glob模式。例如,文件资源管理器会根据这一设置来决定显示或隐藏哪些文件和文件夹。",
+      "format": "格式:",
       "maxConcurrentUploads": "上传多个文件时的最大并发文件数。0意味着所有文件都将被并发上传。",
       "maxFileSizeMB": "控制可能打开的最大文件大小(MB)。",
       "processedOutOf": "在{1}中处理了{0}。",
@@ -159,6 +180,7 @@
       "cloneRepository": "克隆 Git 仓库。{0}.按'Enter'键确认或按'Escape'键取消。",
       "compareWith": "对比...",
       "compareWithBranchOrTag": "挑选一个分支或标签,与当前活动的{0}分支进行比较。",
+      "diff": "差异",
       "dirtyDiffLinesLimit": "如果编辑器的行数超过这个限制,则不显示肮脏的差异装饰。",
       "dropStashMessage": "存储删除成功。",
       "editorDecorationsEnabled": "在编辑器中显示 git 的装饰。",
@@ -176,8 +198,19 @@
     "keybinding-schema-updater": {
       "deprecation": "使用`when`子句来代替。"
     },
+    "keymaps": {
+      "editKeybindingTitle": "编辑{0}的按键绑定",
+      "keybindingCollidesValidation": "键盘绑定目前碰撞",
+      "requiredKeybindingValidation": "键盘绑定值是必需的",
+      "resetKeybindingConfirmation": "你真的想把这个按键绑定重置为默认值吗?",
+      "resetKeybindingTitle": "重置{0}的键盘绑定"
+    },
+    "localize": {
+      "offlineTooltip": "无法连接到后端。"
+    },
     "markers": {
       "clearAll": "清除所有",
+      "noProblems": "到目前为止,在工作区还没有发现任何问题。",
       "tabbarDecorationsEnabled": "在标签栏中显示问题装饰器(诊断标记)。"
     },
     "messages": {
@@ -210,6 +243,7 @@
       "alreadyRunning": "托管的实例已经在运行。",
       "debugInstance": "调试实例",
       "debugMode": "使用 inspect 或 inspect-brk 进行 Node.js 调试",
+      "devHost": "发展的主人",
       "failed": "运行托管插件实例失败。{0}",
       "hostedPlugin": "托管的插件",
       "hostedPluginRunning": "托管的插件: 运行",
@@ -246,6 +280,7 @@
       "directory": "目录",
       "lastModified": "最后修改",
       "location": "位置",
+      "noProperties": "没有可用的房产。",
       "path": "路径",
       "properties": "属性",
       "size": "尺寸",
@@ -256,6 +291,10 @@
       "amendHeadCommit": "HEAD 提交",
       "amendLastCommit": "修改最后的提交",
       "changeRepository": "修改存储库...",
+      "config.untrackedChanges": "控制未被追踪的变化的行为方式。",
+      "config.untrackedChanges.hidden": "隐藏的",
+      "config.untrackedChanges.mixed": "混合的",
+      "config.untrackedChanges.separate": "分开",
       "history": "历史",
       "noRepositoryFound": "没有找到存储库",
       "unamend": "撤销",
@@ -317,6 +356,7 @@
     "vsx-registry": {
       "openVSX": "打开VSX注册表",
       "recommendedExtensions": "建议在该工作区使用的扩展名称的列表。",
+      "searchPlaceholder": "在{0}中搜索扩展",
       "showRecommendedExtensions": "控制是否显示扩展建议的通知。"
     },
     "webview": {
@@ -329,6 +369,11 @@
       "confirmDeletePermanently.description": "使用垃圾箱删除\"{0}\"失败。你想永久删除吗?",
       "confirmDeletePermanently.solution": "你可以在偏好设置中禁用垃圾桶的使用。",
       "confirmDeletePermanently.title": "删除文件时出错",
+      "confirmMessage.delete": "你真的想删除以下文件吗?",
+      "confirmMessage.dirtyMultiple": "你真的想删除{0}个有未保存的修改的文件吗?",
+      "confirmMessage.dirtySingle": "你真的想删除{0}与未保存的变化吗?",
+      "confirmMessage.uriMultiple": "你真的想删除所有{0}选中的文件吗?",
+      "confirmMessage.uriSingle": "你真的想删除{0}吗?",
       "duplicate": "复制",
       "failApply": "无法将更改应用于新文件",
       "failSaveAs": "无法为当前的小组件运行\"{0}\"。",
@@ -339,6 +384,7 @@
       "removeFolder": "你确定要从工作区删除以下文件夹吗?",
       "removeFolders": "你确定要从工作区删除以下文件夹吗?",
       "supportMultiRootWorkspace": "控制是否启用多根工作区支持。",
+      "trashTitle": "将{0}移至垃圾箱",
       "trustEmptyWindow": "控制空工作区是否被默认信任。",
       "trustEnabled": "控制是否启用工作区信任。如果禁用,所有工作空间都被信任。",
       "trustPrompt": "控制何时显示信任工作区的启动提示。",

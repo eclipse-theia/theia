@@ -1,9 +1,11 @@
 {
   "theia": {
     "callhierarchy": {
+      "noCallers": "No callers have been detected.",
       "open": "Open Call Hierarchy"
     },
     "core": {
+      "availableLanguages": "Available languages",
       "common": {
         "closeAll": "Close All Tabs",
         "closeAllTabMain": "Close All Tabs in Main Area",
@@ -25,6 +27,8 @@
         "browse": "Browse"
       },
       "highlightModifiedTabs": "Controls whether a top border is drawn on modified (dirty) editor tabs or not.",
+      "installedLanguages": "Installed languages",
+      "keybindingStatus": "{0} was pressed, waiting for more keys",
       "keyboard": {
         "choose": "Choose Keyboard Layout",
         "chooseLayout": "Choose a keyboard layout",
@@ -34,21 +38,27 @@
         "pc": "PC Keyboards",
         "tryDetect": "Try to detect the keyboard layout from browser information and pressed keys."
       },
+      "mouseBackForwardToNavigate": "Enables the use of mouse buttons four and five for commands 'Go Back' and 'Go Forward'.",
+      "offline": "Offline",
+      "proxySupportFallback": "Enable proxy support for extensions, fall back to request options, when no proxy found.",
       "quitMessage": "Any unsaved changes will not be saved.",
       "quitTitle": "Are you sure you want to quit?",
       "resetWorkbenchLayout": "Reset Workbench Layout",
       "sashDelay": "Controls the hover feedback delay in milliseconds of the dragging area in between views/editors.",
       "sashSize": "Controls the feedback area size in pixels of the dragging area in between views/editors. Set it to a larger value if needed.",
-      "silentNotifications": "Controls whether to suppress notification popups."
+      "searchbox": {
+        "close": "Close (Escape)",
+        "next": "Next (Down)",
+        "previous": "Previous (Up)"
+      },
+      "silentNotifications": "Controls whether to suppress notification popups.",
+      "tabMaximize": "Controls whether to maximize tabs on double click."
     },
     "debug": {
       "addConfigurationPlaceholder": "Select workspace root to add configuration to",
       "continueAll": "Continue All",
       "copyExpressionValue": "Copy Expression Value",
-      "debugViewLocation": "Controls the location of the debug view.",
-      "openBottom": "Open Bottom",
-      "openLeft": "Open Left",
-      "openRight": "Open Right",
+      "missingConfiguration": "Dynamic configuration '{0}:{1}' is missing or not applicable",
       "pauseAll": "Pause All",
       "reveal": "Reveal",
       "threads": "Threads",
@@ -119,7 +129,9 @@
       "persistClosedEditors": "Controls whether to persist closed editor history for the workspace across window reloads.",
       "showAllEditors": "Show All Opened Editors",
       "splitHorizontal": "Split Editor Horizontal",
-      "splitVertical": "Split Editor Vertical"
+      "splitVertical": "Split Editor Vertical",
+      "status-bar-pin": "Add to Status Bar",
+      "status-bar-unpin": "Remove from Status Bar"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Press {0} to show/hide ignored files)"
@@ -131,6 +143,14 @@
     },
     "filesystem": {
       "copyDownloadLink": "Copy Download Link",
+      "dialog": {
+        "initialLocation": "Go To Initial Location",
+        "multipleItemMessage": "You can select only one item",
+        "name": "Name:",
+        "navigateBack": "Navigate Back",
+        "navigateForward": "Navigate Forward",
+        "navigateUp": "Navigate Up One Directory"
+      },
       "fileResource": {
         "binaryFileQuery": "Opening it might take some time and might make the IDE unresponsive. Do you want to open '{0}' anyway?",
         "binaryTitle": "The file is either binary or uses an unsupported text encoding.",
@@ -138,6 +158,7 @@
         "overwriteTitle": "The file '{0}' has been changed on the file system."
       },
       "filesExclude": "Configure glob patterns for excluding files and folders. For example, the file Explorer decides which files and folders to show or hide based on this setting.",
+      "format": "Format:",
       "maxConcurrentUploads": "Maximum number of concurrent files to upload when uploading multiple files. 0 means all files will be uploaded concurrently.",
       "maxFileSizeMB": "Controls the max file size in MB which is possible to open.",
       "processedOutOf": "Processed {0} out of {1}",
@@ -159,6 +180,7 @@
       "cloneRepository": "Clone the Git repository: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
       "compareWith": "Compare With...",
       "compareWithBranchOrTag": "Pick a branch or tag to compare with the currently active {0} branch:",
+      "diff": "Diff",
       "dirtyDiffLinesLimit": "Do not show dirty diff decorations, if editor's line count exceeds this limit.",
       "dropStashMessage": "Stash successfully removed.",
       "editorDecorationsEnabled": "Show git decorations in the editor.",
@@ -176,8 +198,19 @@
     "keybinding-schema-updater": {
       "deprecation": "Use `when` clause instead."
     },
+    "keymaps": {
+      "editKeybindingTitle": "Edit Keybinding for {0}",
+      "keybindingCollidesValidation": "keybinding currently collides",
+      "requiredKeybindingValidation": "keybinding value is required",
+      "resetKeybindingConfirmation": "Do you really want to reset this keybinding to its default value?",
+      "resetKeybindingTitle": "Reset keybinding for {0}"
+    },
+    "localize": {
+      "offlineTooltip": "Cannot connect to backend."
+    },
     "markers": {
       "clearAll": "Clear All",
+      "noProblems": "No problems have been detected in the workspace so far.",
       "tabbarDecorationsEnabled": "Show problem decorators (diagnostic markers) in the tab bars."
     },
     "messages": {
@@ -210,6 +243,7 @@
       "alreadyRunning": "Hosted instance is already running.",
       "debugInstance": "Debug Instance",
       "debugMode": "Using inspect or inspect-brk for Node.js debug",
+      "devHost": "Development Host",
       "failed": "Failed to run hosted plugin instance: {0}",
       "hostedPlugin": "Hosted Plugin",
       "hostedPluginRunning": "Hosted Plugin: Running",
@@ -246,6 +280,7 @@
       "directory": "Directory",
       "lastModified": "Last modified",
       "location": "Location",
+      "noProperties": "No properties available.",
       "path": "Path",
       "properties": "Properties",
       "size": "Size",
@@ -256,6 +291,10 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Amend last commit",
       "changeRepository": "Change Repository...",
+      "config.untrackedChanges": "Controls how untracked changes behave.",
+      "config.untrackedChanges.hidden": "hidden",
+      "config.untrackedChanges.mixed": "mixed",
+      "config.untrackedChanges.separate": "separate",
       "history": "History",
       "noRepositoryFound": "No repository found",
       "unamend": "Unamend",
@@ -317,6 +356,7 @@
     "vsx-registry": {
       "openVSX": "Open VSX Registry",
       "recommendedExtensions": "A list of the names of extensions recommended for use in this workspace.",
+      "searchPlaceholder": "Search Extensions in {0}",
       "showRecommendedExtensions": "Controls whether notifications are shown for extension recommendations."
     },
     "webview": {
@@ -329,6 +369,11 @@
       "confirmDeletePermanently.description": "Failed to delete \"{0}\" using the Trash. Do you want to permanently delete instead?",
       "confirmDeletePermanently.solution": "You can disable the use of Trash in the preferences.",
       "confirmDeletePermanently.title": "Error deleting file",
+      "confirmMessage.delete": "Do you really want to delete the following files?",
+      "confirmMessage.dirtyMultiple": "Do you really want to delete {0} files with unsaved changes?",
+      "confirmMessage.dirtySingle": "Do you really want to delete {0} with unsaved changes?",
+      "confirmMessage.uriMultiple": "Do you really want to delete all the {0} selected files?",
+      "confirmMessage.uriSingle": "Do you really want to delete {0}?",
       "duplicate": "Duplicate",
       "failApply": "Could not apply changes to new file",
       "failSaveAs": "Cannot run \"{0}\" for the current widget.",
@@ -339,6 +384,7 @@
       "removeFolder": "Are you sure you want to remove the following folder from the workspace?",
       "removeFolders": "Are you sure you want to remove the following folders from the workspace?",
       "supportMultiRootWorkspace": "Controls whether multi-root workspace support is enabled.",
+      "trashTitle": "Move {0} to Trash",
       "trustEmptyWindow": "Controls whether or not the empty workspace is trusted by default.",
       "trustEnabled": "Controls whether or not workspace trust is enabled. If disabled, all workspaces are trusted.",
       "trustPrompt": "Controls when the startup prompt to trust a workspace is shown.",
