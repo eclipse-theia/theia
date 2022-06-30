@@ -240,10 +240,10 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
     protected registerPlugin(plugin: Plugin): void {
         if (plugin.model.id === 'vscode.json-language-features' && this.jsonValidation.length) {
-            // VS Code contribute all built-in validations via vscode.json-language-features
-            // we enrich them with Theia validations registered on the startup
-            // dynamic validations can be provided only via VS Code extensions
-            // content is fetched by the extension later via vscode.workspace.openTextDocument
+            // VS Code contributes all built-in validations via vscode.json-language-features;
+            // we enrich them with Theia validations registered on startup.
+            // Dynamic validations can be provided only via VS Code extensions.
+            // Content is fetched by the extension later via vscode.workspace.openTextDocument.
             const contributes = plugin.rawModel.contributes = (plugin.rawModel.contributes || {});
             contributes.jsonValidation = (contributes.jsonValidation || []).concat(this.jsonValidation);
         }
@@ -337,11 +337,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     protected async activateByBaseEvent(baseEvent: string): Promise<void> {
-        await Promise.all(Array.from(this.activations.keys(), activation => {
-            if (activation.startsWith(baseEvent)) {
-                return this.activateBySingleEvent(activation);
-            }
-        }));
+        await Promise.all(Array.from(this.activations.keys(), activation => activation.startsWith(baseEvent) && this.activateBySingleEvent(activation)));
     }
 
     protected async activateBySingleEvent(activationEvent: string): Promise<void> {

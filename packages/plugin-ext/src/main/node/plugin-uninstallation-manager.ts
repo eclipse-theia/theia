@@ -28,24 +28,38 @@ export class PluginUninstallationManager {
 
     protected uninstalledPlugins: PluginIdentifiers.VersionedId[] = [];
 
-    markAsUninstalled(pluginId: PluginIdentifiers.VersionedId): boolean {
+    protected fireDidChange(): void {
+        this.onDidChangeUninstalledPluginsEmitter.fire(Object.freeze(this.uninstalledPlugins.slice()));
+    }
+
+    markAsUninstalled(...pluginIds: PluginIdentifiers.VersionedId[]): boolean {
+        let didChange = false;
+        for (const id of pluginIds) { didChange = this.markOneAsUninstalled(id) || didChange; }
+        if (didChange) { this.fireDidChange(); }
+        return didChange;
+    }
+
+    protected markOneAsUninstalled(pluginId: PluginIdentifiers.VersionedId): boolean {
         if (!this.uninstalledPlugins.includes(pluginId)) {
             this.uninstalledPlugins.push(pluginId);
-            this.onDidChangeUninstalledPluginsEmitter.fire(Object.freeze(this.uninstalledPlugins.slice()));
             return true;
         }
         return false;
     }
 
-    markAsInstalled(pluginId: PluginIdentifiers.VersionedId): boolean {
+    markAsInstalled(...pluginIds: PluginIdentifiers.VersionedId[]): boolean {
+        let didChange = false;
+        for (const id of pluginIds) { didChange = this.markOneAsInstalled(id) || didChange; }
+        if (didChange) { this.fireDidChange(); }
+        return didChange;
+    }
+
+    protected markOneAsInstalled(pluginId: PluginIdentifiers.VersionedId): boolean {
         let index: number;
         let didChange = false;
         while ((index = this.uninstalledPlugins.indexOf(pluginId)) !== -1) {
             this.uninstalledPlugins.splice(index, 1);
             didChange = true;
-        }
-        if (didChange) {
-            this.onDidChangeUninstalledPluginsEmitter.fire(Object.freeze(this.uninstalledPlugins.slice()));
         }
         return didChange;
     }

@@ -22,13 +22,13 @@ import URI from '@theia/core/lib/common/uri';
 import { TreeElement, TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { OpenerService, open, OpenerOptions } from '@theia/core/lib/browser/opener-service';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin';
-import { PluginServer, DeployedPlugin, PluginType, PluginIdentifiers } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { PluginServer, DeployedPlugin, PluginType, PluginIdentifiers, PluginDeployOptions } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
-import { MenuPath, nls } from '@theia/core/lib/common';
+import { CommandRegistry, MenuPath, nls } from '@theia/core/lib/common';
 import { codicon, ContextMenuRenderer, TooltipService, TreeWidget } from '@theia/core/lib/browser';
 import { VSXExtensionNamespaceAccess, VSXUser } from '@theia/ovsx-client/lib/ovsx-types';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
@@ -36,7 +36,8 @@ import { WindowService } from '@theia/core/lib/browser/window/window-service';
 export const EXTENSIONS_CONTEXT_MENU: MenuPath = ['extensions_context_menu'];
 
 export namespace VSXExtensionsContextMenu {
-    export const COPY = [...EXTENSIONS_CONTEXT_MENU, '1_copy'];
+    export const INSTALL = [...EXTENSIONS_CONTEXT_MENU, '1_install'];
+    export const COPY = [...EXTENSIONS_CONTEXT_MENU, '2_copy'];
 }
 
 @injectable()
@@ -89,6 +90,15 @@ export type VSXExtensionFactory = (options: VSXExtensionOptions) => VSXExtension
 
 @injectable()
 export class VSXExtension implements VSXExtensionData, TreeElement {
+    /**
+     * Ensure the version string begins with `'v'`.
+     */
+    static formatVersion(version: string | undefined): string | undefined {
+        if (version && !version.startsWith('v')) {
+            return `v${version}`;
+        }
+        return version;
+    }
 
     @inject(VSXExtensionOptions)
     protected readonly options: VSXExtensionOptions;
@@ -120,6 +130,9 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     @inject(WindowService)
     readonly windowService: WindowService;
 
+    @inject(CommandRegistry)
+    readonly commandRegistry: CommandRegistry;
+
     protected readonly data: Partial<VSXExtensionData> = {};
 
     get uri(): URI {
@@ -143,9 +156,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get builtin(): boolean {
-        const plugin = this.plugin;
-        const type = plugin && plugin.type;
-        return type === PluginType.System;
+        return this.plugin?.type === PluginType.System;
     }
 
     update(data: Partial<VSXExtensionData>): void {
@@ -161,8 +172,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     protected getData<K extends keyof VSXExtensionData>(key: K): VSXExtensionData[K] {
-        const plugin = this.plugin;
-        const model = plugin && plugin.metadata.model;
+        const model = this.plugin?.metadata.model;
         if (model && key in model) {
             return model[key as keyof typeof model] as VSXExtensionData[K];
         }
@@ -195,14 +205,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get version(): string | undefined {
-        let version = this.getData('version');
-
-        // Ensure version begins with a 'v'
-        if (version && !version.startsWith('v')) {
-            version = `v${version}`;
-        }
-
-        return version;
+        return this.getData('version');
     }
 
     get averageRating(): number | undefined {
@@ -268,7 +271,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get tooltip(): string {
-        let md = `__${this.displayName}__ ${this.version}\n\n${this.description}\n_____\n\nPublisher: ${this.publisher}`;
+        let md = `__${this.displayName}__ ${VSXExtension.formatVersion(this.version)}\n\n${this.description}\n_____\n\nPublisher: ${this.publisher}`;
 
         if (this.license) {
             md += `  \rLicense: ${this.license}`;
@@ -290,11 +293,11 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
         return !!this._busy;
     }
 
-    async install(): Promise<void> {
+    async install(options?: PluginDeployOptions): Promise<void> {
         this._busy++;
         try {
             await this.progressService.withProgress(nls.localizeByDefault("Installing extension '{0}' v{1}...", this.id, this.version ?? 0), 'extensions', () =>
-                this.pluginServer.deploy(this.uri.toString())
+                this.pluginServer.deploy(this.uri.toString(), undefined, options)
             );
         } finally {
             this._busy--;
@@ -459,7 +462,7 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
             <div className='theia-vsx-extension-content'>
                 <div className='title'>
                     <div className='noWrapInfo'>
-                        <span className='name'>{displayName}</span> <span className='version'>{version}</span>
+                        <span className='name'>{displayName}</span> <span className='version'>{VSXExtension.formatVersion(version)}</span>
                     </div>
                     <div className='stat'>
                         {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}
@@ -516,7 +519,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                         {averageRating !== undefined && <span className='average-rating' onClick={this.openAverageRating}>{this.renderStars()}</span>}
                         {repository && <span className='repository' onClick={this.openRepository}>Repository</span>}
                         {license && <span className='license' onClick={this.openLicense}>{license}</span>}
-                        {version && <span className='version'>{version}</span>}
+                        {version && <span className='version'>{VSXExtension.formatVersion(version)}</span>}
                     </div>
                     <div className='description noWrapInfo'>{description}</div>
                     {this.renderAction()}

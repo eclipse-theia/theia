@@ -75,8 +75,9 @@ export class OVSXClient {
         return new URL(`${url}${searchUri}`, this.options!.apiUrl).toString();
     }
 
-    async getExtension(id: string): Promise<VSXExtensionRaw> {
+    async getExtension(id: string, queryParam?: VSXQueryParam): Promise<VSXExtensionRaw> {
         const param: VSXQueryParam = {
+            ...queryParam,
             extensionId: id
         };
         const apiUri = this.buildQueryUri(param);

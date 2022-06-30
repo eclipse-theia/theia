@@ -10,6 +10,7 @@
     "@theia/plugin-ext-vscode": "1.26.0",
     "@theia/preferences": "1.26.0",
     "@theia/workspace": "1.26.0",
+    "luxon": "^2.4.0",
     "p-debounce": "^2.1.0",
     "semver": "^5.4.1",
     "uuid": "^8.0.0"
@@ -48,7 +49,8 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.26.0"
+    "@theia/ext-scripts": "1.26.0",
+    "@types/luxon": "^2.3.2"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

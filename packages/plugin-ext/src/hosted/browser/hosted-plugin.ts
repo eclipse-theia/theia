@@ -331,8 +331,13 @@ export class HostedPluginSupport {
             for (const versionedId of uninstalledPluginIds) {
                 const plugin = this.getPlugin(PluginIdentifiers.unversionedFromVersioned(versionedId));
                 if (plugin && PluginIdentifiers.componentsToVersionedId(plugin.metadata.model) === versionedId && !plugin.metadata.outOfSync) {
-                    didChangeInstallationStatus = true;
                     plugin.metadata.outOfSync = didChangeInstallationStatus = true;
+                }
+            }
+            for (const contribution of this.contributions.values()) {
+                if (contribution.plugin.metadata.outOfSync && !uninstalledPluginIds.includes(PluginIdentifiers.componentsToVersionedId(contribution.plugin.metadata.model))) {
+                    contribution.plugin.metadata.outOfSync = false;
+                    didChangeInstallationStatus = true;
                 }
             }
             if (newPluginIds.length) {
@@ -573,11 +578,7 @@ export class HostedPluginSupport {
             return;
         }
         this.activationEvents.add(activationEvent);
-        const activation: Promise<void>[] = [];
-        for (const manager of this.managers.values()) {
-            activation.push(manager.$activateByEvent(activationEvent));
-        }
-        await Promise.all(activation);
+        await Promise.all(Array.from(this.managers.values(), manager => manager.$activateByEvent(activationEvent)));
     }
 
     async activateByViewContainer(viewContainerId: string): Promise<void> {

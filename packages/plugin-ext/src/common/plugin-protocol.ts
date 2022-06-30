@@ -343,7 +343,7 @@ export interface PluginDeployerResolver {
 
     accept(pluginSourceId: string): boolean;
 
-    resolve(pluginResolverContext: PluginDeployerResolverContext): Promise<void>;
+    resolve(pluginResolverContext: PluginDeployerResolverContext, options?: PluginDeployOptions): Promise<void>;
 
 }
 
@@ -853,8 +853,8 @@ export interface PluginDependencies {
 
 export const PluginDeployerHandler = Symbol('PluginDeployerHandler');
 export interface PluginDeployerHandler {
-    deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void>;
-    deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void>;
+    deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<number | undefined>;
+    deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<number | undefined>;
 
     getDeployedPluginsById(pluginId: string): DeployedPlugin[];
 
@@ -910,6 +910,12 @@ export interface WorkspaceStorageKind {
 export type GlobalStorageKind = undefined;
 export type PluginStorageKind = GlobalStorageKind | WorkspaceStorageKind;
 
+export interface PluginDeployOptions {
+    version: string;
+    /** Instructs the deployer to ignore any existing plugins with different versions */
+    ignoreOtherVersions?: boolean;
+}
+
 /**
  * The JSON-RPC workspace interface.
  */
@@ -922,7 +928,7 @@ export interface PluginServer {
      *
      * @param type whether a plugin is installed by a system or a user, defaults to a user
      */
-    deploy(pluginEntry: string, type?: PluginType): Promise<void>;
+    deploy(pluginEntry: string, type?: PluginType, options?: PluginDeployOptions): Promise<void>;
     uninstall(pluginId: PluginIdentifiers.VersionedId): Promise<void>;
     undeploy(pluginId: PluginIdentifiers.VersionedId): Promise<void>;
 

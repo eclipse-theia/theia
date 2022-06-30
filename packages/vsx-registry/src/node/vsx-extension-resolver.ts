@@ -21,7 +21,7 @@ import * as fs from '@theia/core/shared/fs-extra';
 import { v4 as uuidv4 } from 'uuid';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { PluginDeployerHandler, PluginDeployerResolver, PluginDeployerResolverContext } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { PluginDeployerHandler, PluginDeployerResolver, PluginDeployerResolverContext, PluginDeployOptions } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { VSXExtensionRaw } from '@theia/ovsx-client';
@@ -51,14 +51,20 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         return !!VSCodeExtensionUri.toId(new URI(pluginId));
     }
 
-    async resolve(context: PluginDeployerResolverContext): Promise<void> {
+    async resolve(context: PluginDeployerResolverContext, options?: PluginDeployOptions): Promise<void> {
         const id = VSCodeExtensionUri.toId(new URI(context.getOriginId()));
         if (!id) {
             return;
         }
-        console.log(`[${id}]: trying to resolve latest version...`);
+        let extension: VSXExtensionRaw | undefined;
         const client = await this.clientProvider();
-        const extension = await client.getLatestCompatibleExtensionVersion(id);
+        if (options) {
+            console.log(`[${id}]: trying to resolve version ${options.version}...`);
+            extension = await client.getExtension(id, { extensionVersion: options.version, includeAllVersions: true });
+        } else {
+            console.log(`[${id}]: trying to resolve latest version...`);
+            extension = await client.getLatestCompatibleExtensionVersion(id);
+        }
         if (!extension) {
             return;
         }
@@ -69,14 +75,16 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         const downloadUrl = extension.files.download;
         console.log(`[${id}]: resolved to '${resolvedId}'`);
 
-        const existingVersion = this.hasSameOrNewerVersion(id, extension);
-        if (existingVersion) {
-            console.log(`[${id}]: is already installed with the same or newer version '${existingVersion}'`);
-            return;
+        if (!options?.ignoreOtherVersions) {
+            const existingVersion = this.hasSameOrNewerVersion(id, extension);
+            if (existingVersion) {
+                console.log(`[${id}]: is already installed with the same or newer version '${existingVersion}'`);
+                return;
+            }
         }
 
         const extensionPath = path.resolve(this.downloadPath, path.basename(downloadUrl));
-        console.log(`[${resolvedId}]: trying to download from "${downloadUrl}"...`);
+        console.log(`[${resolvedId}]: trying to download from "${downloadUrl}"...`, 'to path', this.downloadPath);
         if (!await this.download(downloadUrl, extensionPath)) {
             console.log(`[${resolvedId}]: not found`);
             return;
@@ -98,6 +106,7 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
     }
 
     protected async download(downloadUrl: string, downloadPath: string): Promise<boolean> {
+        if (await fs.pathExists(downloadPath)) { return true; }
         const context = await this.requestService.request({ url: downloadUrl });
         if (context.res.statusCode === 404) {
             return false;
