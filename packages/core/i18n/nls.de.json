@@ -1,9 +1,11 @@
 {
   "theia": {
     "callhierarchy": {
+      "noCallers": "Es wurden keine Anrufer entdeckt.",
       "open": "Öffne Aufruf-Hierarchie"
     },
     "core": {
+      "availableLanguages": "Verfügbare Sprachen",
       "common": {
         "closeAll": "Alle Registerkarten schließen",
         "closeAllTabMain": "Alle Registerkarten im Hauptbereich schließen",
@@ -25,6 +27,8 @@
         "browse": "Durchsuchen"
       },
       "highlightModifiedTabs": "Steuert, ob ein oberer Rand auf modifizierten (schmutzigen) Editor-Tabs gezeichnet wird oder nicht.",
+      "installedLanguages": "Installierte Sprachen",
+      "keybindingStatus": "{0} wurde gedrückt und wartet auf weitere Tasten",
       "keyboard": {
         "choose": "Tastaturlayout wählen",
         "chooseLayout": "Wählen Sie ein Tastaturlayout",
@@ -34,21 +38,27 @@
         "pc": "PC-Tastaturen",
         "tryDetect": "Versuchen Sie, das Tastaturlayout anhand der Browserinformationen und der gedrückten Tasten zu ermitteln."
       },
+      "mouseBackForwardToNavigate": "Ermöglicht die Verwendung der Maustasten vier und fünf für die Befehle \"Zurückgehen\" und \"Vorwärtsgehen\".",
+      "offline": "Offline",
+      "proxySupportFallback": "Aktivieren Sie die Proxy-Unterstützung für Erweiterungen und greifen Sie auf die Anfrageoptionen zurück, wenn kein Proxy gefunden wird.",
       "quitMessage": "Alle nicht gespeicherten Änderungen werden nicht gespeichert.",
       "quitTitle": "Sind Sie sicher, dass Sie aufhören wollen?",
       "resetWorkbenchLayout": "Workbench-Layout zurücksetzen",
       "sashDelay": "Steuert die Verzögerung des Schwebezustands in Millisekunden des Ziehbereichs zwischen den Ansichten/Editoren.",
       "sashSize": "Steuert die Größe des Feedback-Bereichs in Pixeln des Ziehbereichs zwischen den Ansichten/Editoren. Setzen Sie ihn bei Bedarf auf einen größeren Wert.",
-      "silentNotifications": "Legt fest, ob Benachrichtigungs-Popups unterdrückt werden sollen."
+      "searchbox": {
+        "close": "Schließen (Escape)",
+        "next": "Nächste (Unten)",
+        "previous": "Zurück (Oben)"
+      },
+      "silentNotifications": "Legt fest, ob Benachrichtigungs-Popups unterdrückt werden sollen.",
+      "tabMaximize": "Steuert, ob die Registerkarten bei einem Doppelklick maximiert werden sollen."
     },
     "debug": {
       "addConfigurationPlaceholder": "Wählen Sie das Stammverzeichnis des Arbeitsbereichs, dem Sie die Konfiguration hinzufügen möchten",
       "continueAll": "Alle fortsetzen",
       "copyExpressionValue": "Ausdruckswert kopieren",
-      "debugViewLocation": "Steuert die Position der Debug-Ansicht.",
-      "openBottom": "Unten offen",
-      "openLeft": "Links öffnen",
-      "openRight": "Rechts öffnen",
+      "missingConfiguration": "Die dynamische Konfiguration '{0}:{1}' fehlt oder ist nicht anwendbar",
       "pauseAll": "Pause Alle",
       "reveal": "Enthüllen",
       "threads": "Threads",
@@ -119,7 +129,9 @@
       "persistClosedEditors": "Legt fest, ob der Verlauf des geschlossenen Editors für den Arbeitsbereich beim Neuladen des Fensters erhalten bleiben soll.",
       "showAllEditors": "Alle geöffneten Editoren anzeigen",
       "splitHorizontal": "Editor horizontal teilen",
-      "splitVertical": "Editor vertikal teilen"
+      "splitVertical": "Editor vertikal teilen",
+      "status-bar-pin": "Zur Statusleiste hinzufügen",
+      "status-bar-unpin": "Aus der Statusleiste entfernen"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Drücken Sie {0}, um ignorierte Dateien anzuzeigen/auszublenden)"
@@ -131,6 +143,14 @@
     },
     "filesystem": {
       "copyDownloadLink": "Download-Link kopieren",
+      "dialog": {
+        "initialLocation": "Zum Ausgangsort gehen",
+        "multipleItemMessage": "Sie können nur ein Element auswählen",
+        "name": "Name:",
+        "navigateBack": "Zurück navigieren",
+        "navigateForward": "Vorwärts navigieren",
+        "navigateUp": "Ein Verzeichnis nach oben navigieren"
+      },
       "fileResource": {
         "binaryFileQuery": "Das Öffnen kann einige Zeit in Anspruch nehmen und dazu führen, dass die IDE nicht mehr reagiert. Wollen Sie '{0}' trotzdem öffnen?",
         "binaryTitle": "Die Datei ist entweder binär oder verwendet eine nicht unterstützte Textkodierung.",
@@ -138,6 +158,7 @@
         "overwriteTitle": "Die Datei '{0}' wurde im Dateisystem geändert."
       },
       "filesExclude": "Konfigurieren Sie globale Muster für den Ausschluss von Dateien und Ordnern. Beispielsweise entscheidet der Datei-Explorer auf der Grundlage dieser Einstellung, welche Dateien und Ordner angezeigt oder ausgeblendet werden sollen.",
+      "format": "Format:",
       "maxConcurrentUploads": "Maximale Anzahl der gleichzeitig hochzuladenden Dateien, wenn mehrere Dateien hochgeladen werden. 0 bedeutet, dass alle Dateien gleichzeitig hochgeladen werden.",
       "maxFileSizeMB": "Steuert die maximale Dateigröße in MB, die geöffnet werden kann.",
       "processedOutOf": "Verarbeitet {0} von {1}",
@@ -159,6 +180,7 @@
       "cloneRepository": "Klonen Sie das Git-Repository: {0}. Bestätigen Sie mit \"Enter\" oder brechen Sie mit \"Escape\" ab.",
       "compareWith": "Vergleichen mit...",
       "compareWithBranchOrTag": "Wählen Sie einen Zweig oder eine Markierung, den/die Sie mit dem derzeit aktiven {0} Zweig vergleichen möchten:",
+      "diff": "Diff",
       "dirtyDiffLinesLimit": "Schmutzige Diff-Dekorationen nicht anzeigen, wenn die Zeilenzahl des Editors diese Grenze überschreitet.",
       "dropStashMessage": "Versteck erfolgreich entfernt.",
       "editorDecorationsEnabled": "Git-Dekorationen im Editor anzeigen.",
@@ -176,8 +198,19 @@
     "keybinding-schema-updater": {
       "deprecation": "Verwenden Sie stattdessen die `when`-Klausel."
     },
+    "keymaps": {
+      "editKeybindingTitle": "Tastaturbelegung für {0} bearbeiten",
+      "keybindingCollidesValidation": "Tastenkombinationen kollidieren",
+      "requiredKeybindingValidation": "Schlüsselbindung Wert ist erforderlich",
+      "resetKeybindingConfirmation": "Möchten Sie diese Tastaturbelegung wirklich auf den Standardwert zurücksetzen?",
+      "resetKeybindingTitle": "Tastaturbelegung für {0} zurücksetzen"
+    },
+    "localize": {
+      "offlineTooltip": "Kann keine Verbindung zum Backend herstellen."
+    },
     "markers": {
       "clearAll": "Alle löschen",
+      "noProblems": "Bisher wurden im Arbeitsbereich keine Probleme festgestellt.",
       "tabbarDecorationsEnabled": "Problemdekorationen (Diagnosemarkierungen) in den Registerkartenleisten anzeigen."
     },
     "messages": {
@@ -210,6 +243,7 @@
       "alreadyRunning": "Die gehostete Instanz läuft bereits.",
       "debugInstance": "Debug-Instanz",
       "debugMode": "Verwendung von inspect oder inspect-brk zur Fehlersuche in Node.js",
+      "devHost": "Entwicklung Host",
       "failed": "Die gehostete Plugin-Instanz konnte nicht ausgeführt werden: {0}",
       "hostedPlugin": "Gehostetes Plugin",
       "hostedPluginRunning": "Gehostetes Plugin: Läuft",
@@ -246,6 +280,7 @@
       "directory": "Verzeichnis",
       "lastModified": "Zuletzt geändert",
       "location": "Standort",
+      "noProperties": "Keine Eigenschaften verfügbar.",
       "path": "Pfad",
       "properties": "Eigenschaften",
       "size": "Größe",
@@ -256,6 +291,10 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Letzte Übertragung ändern",
       "changeRepository": "Repository ändern...",
+      "config.untrackedChanges": "Steuert, wie sich nicht verfolgte Änderungen verhalten.",
+      "config.untrackedChanges.hidden": "versteckt",
+      "config.untrackedChanges.mixed": "gemischt",
+      "config.untrackedChanges.separate": "getrennt",
       "history": "Geschichte",
       "noRepositoryFound": "Kein Repository gefunden",
       "unamend": "Ändern",
@@ -317,6 +356,7 @@
     "vsx-registry": {
       "openVSX": "Open VSX Registry",
       "recommendedExtensions": "Eine Liste mit den Namen der Erweiterungen, die für die Verwendung in diesem Arbeitsbereich empfohlen werden.",
+      "searchPlaceholder": "Erweiterungen suchen in {0}",
       "showRecommendedExtensions": "Steuert, ob Benachrichtigungen für Erweiterungsempfehlungen angezeigt werden."
     },
     "webview": {
@@ -329,6 +369,11 @@
       "confirmDeletePermanently.description": "Das Löschen von \"{0}\" über den Papierkorb ist fehlgeschlagen. Möchten Sie stattdessen dauerhaft löschen?",
       "confirmDeletePermanently.solution": "Sie können die Verwendung des Papierkorbs in den Einstellungen deaktivieren.",
       "confirmDeletePermanently.title": "Fehler beim Löschen einer Datei",
+      "confirmMessage.delete": "Wollen Sie die folgenden Dateien wirklich löschen?",
+      "confirmMessage.dirtyMultiple": "Wollen Sie wirklich {0} Dateien mit ungespeicherten Änderungen löschen?",
+      "confirmMessage.dirtySingle": "Wollen Sie wirklich {0} mit ungespeicherten Änderungen löschen?",
+      "confirmMessage.uriMultiple": "Wollen Sie wirklich alle {0} ausgewählten Dateien löschen?",
+      "confirmMessage.uriSingle": "Wollen Sie wirklich {0} löschen?",
       "duplicate": "Duplizieren",
       "failApply": "Änderungen konnten nicht auf neue Datei angewendet werden",
       "failSaveAs": "Kann \"{0}\" für das aktuelle Widget nicht ausführen.",
@@ -339,6 +384,7 @@
       "removeFolder": "Sind Sie sicher, dass Sie den folgenden Ordner aus dem Arbeitsbereich entfernen möchten?",
       "removeFolders": "Sind Sie sicher, dass Sie die folgenden Ordner aus dem Arbeitsbereich entfernen möchten?",
       "supportMultiRootWorkspace": "Steuert, ob die Unterstützung von Multi-Root-Arbeitsbereichen aktiviert ist.",
+      "trashTitle": "Verschiebe {0} in den Papierkorb",
       "trustEmptyWindow": "Steuert, ob dem leeren Arbeitsbereich standardmäßig vertraut wird oder nicht.",
       "trustEnabled": "Steuert, ob das Vertrauen in Arbeitsbereiche aktiviert ist oder nicht. Wenn deaktiviert, wird allen Arbeitsbereichen vertraut.",
       "trustPrompt": "Steuert, wann die Startaufforderung zum Vertrauen in einen Arbeitsbereich angezeigt wird.",

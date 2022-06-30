@@ -1,9 +1,11 @@
 {
   "theia": {
     "callhierarchy": {
+      "noCallers": "Nebyl zjištěn žádný volající.",
       "open": "Hierarchie otevřených výzev"
     },
     "core": {
+      "availableLanguages": "Dostupné jazyky",
       "common": {
         "closeAll": "Zavřít všechny karty",
         "closeAllTabMain": "Zavření všech karet v hlavní oblasti",
@@ -25,6 +27,8 @@
         "browse": "Procházet"
       },
       "highlightModifiedTabs": "Řídí, zda se na upravených (špinavých) kartách editoru vykreslí horní rámeček, nebo ne.",
+      "installedLanguages": "Nainstalované jazyky",
+      "keybindingStatus": "{0} byl stisknut, čeká se na další klávesy",
       "keyboard": {
         "choose": "Výběr rozložení klávesnice",
         "chooseLayout": "Výběr rozložení klávesnice",
@@ -34,21 +38,27 @@
         "pc": "Klávesnice PC",
         "tryDetect": "Pokuste se zjistit rozložení klávesnice z informací o prohlížeči a stisknutých klávesách."
       },
+      "mouseBackForwardToNavigate": "Umožňuje používat tlačítka myši čtyři a pět pro příkazy \"Zpět\" a \"Vpřed\".",
+      "offline": "Offline",
+      "proxySupportFallback": "Povolit podporu proxy pro rozšíření, vrátit se k možnostem vyžádání, pokud není nalezen žádný proxy.",
       "quitMessage": "Neuložené změny se neuloží.",
       "quitTitle": "Jste si jistý, že chcete skončit?",
       "resetWorkbenchLayout": "Obnovení rozložení pracovního stolu",
       "sashDelay": "Řídí zpoždění zpětné vazby při najetí na plochu v milisekundách mezi jednotlivými zobrazeními/editory.",
       "sashSize": "Ovládá velikost oblasti zpětné vazby v pixelech v oblasti přetahování mezi zobrazeními/editory. V případě potřeby ji nastavte na větší hodnotu.",
-      "silentNotifications": "Řídí, zda se mají potlačit vyskakovací okna s oznámeními."
+      "searchbox": {
+        "close": "Zavřít (únik)",
+        "next": "Další (dolů)",
+        "previous": "Předchozí (Nahoru)"
+      },
+      "silentNotifications": "Řídí, zda se mají potlačit vyskakovací okna s oznámeními.",
+      "tabMaximize": "Ovládá, zda se mají karty maximalizovat při dvojím kliknutí."
     },
     "debug": {
       "addConfigurationPlaceholder": "Vyberte kořenový pracovní prostor, do kterého chcete přidat konfiguraci",
       "continueAll": "Pokračovat ve všem",
       "copyExpressionValue": "Kopírování hodnoty výrazu",
-      "debugViewLocation": "Ovládá umístění zobrazení ladění.",
-      "openBottom": "Otevřené dno",
-      "openLeft": "Otevřená levice",
-      "openRight": "Otevřená pravice",
+      "missingConfiguration": "Dynamická konfigurace '{0}:{1}' chybí nebo není použitelná",
       "pauseAll": "Pozastavit vše",
       "reveal": "Odhalení",
       "threads": "Vlákna",
@@ -119,7 +129,9 @@
       "persistClosedEditors": "Řídí, zda má historie zavřených editorů přetrvávat v pracovním prostoru i po opětovném načtení okna.",
       "showAllEditors": "Zobrazit všechny otevřené editory",
       "splitHorizontal": "Rozdělený editor Horizontální",
-      "splitVertical": "Rozdělený editor Vertikální"
+      "splitVertical": "Rozdělený editor Vertikální",
+      "status-bar-pin": "Přidat na stavový řádek",
+      "status-bar-unpin": "Odstranění ze stavového řádku"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Stisknutím {0} zobrazíte/skryjete ignorované soubory)"
@@ -131,6 +143,14 @@
     },
     "filesystem": {
       "copyDownloadLink": "Kopírovat odkaz ke stažení",
+      "dialog": {
+        "initialLocation": "Přejít na počáteční umístění",
+        "multipleItemMessage": "Můžete vybrat pouze jednu položku",
+        "name": "Jméno:",
+        "navigateBack": "Přejít zpět",
+        "navigateForward": "Navigace vpřed",
+        "navigateUp": "Navigace nahoru v jednom adresáři"
+      },
       "fileResource": {
         "binaryFileQuery": "Jeho otevření může trvat nějakou dobu a může způsobit, že IDE nebude reagovat. Chcete přesto otevřít '{0}'?",
         "binaryTitle": "Soubor je buď binární, nebo používá nepodporované kódování textu.",
@@ -138,6 +158,7 @@
         "overwriteTitle": "Soubor '{0}' byl v souborovém systému změněn."
       },
       "filesExclude": "Konfigurace globálních vzorů pro vyloučení souborů a složek. Například Průzkumník souborů na základě tohoto nastavení rozhodne, které soubory a složky zobrazí nebo skryje.",
+      "format": "Formát:",
       "maxConcurrentUploads": "Maximální počet současně nahrávaných souborů při nahrávání více souborů. 0 znamená, že všechny soubory budou nahrávány současně.",
       "maxFileSizeMB": "Ovládá maximální velikost souboru v MB, který je možné otevřít.",
       "processedOutOf": "Zpracováno {0} z {1}",
@@ -159,6 +180,7 @@
       "cloneRepository": "Klonování úložiště Git: {0}. Stiskněte klávesu 'Enter' pro potvrzení nebo 'Escape' pro zrušení.",
       "compareWith": "Porovnat s...",
       "compareWithBranchOrTag": "Vyberte větev nebo značku, kterou chcete porovnat s aktuálně aktivní větví {0}:",
+      "diff": "Diff",
       "dirtyDiffLinesLimit": "Pokud počet řádků editoru překročí tento limit, nezobrazují se špinavé rozdílové dekorace.",
       "dropStashMessage": "Úschovna byla úspěšně odstraněna.",
       "editorDecorationsEnabled": "Zobrazení dekorací git v editoru.",
@@ -176,8 +198,19 @@
     "keybinding-schema-updater": {
       "deprecation": "Místo toho použijte klauzuli `when`."
     },
+    "keymaps": {
+      "editKeybindingTitle": "Upravit vazbu kláves pro {0}",
+      "keybindingCollidesValidation": "vazba kláves v současné době koliduje",
+      "requiredKeybindingValidation": "je vyžadována hodnota keybindingu",
+      "resetKeybindingConfirmation": "Opravdu chcete obnovit výchozí hodnotu této vazby kláves?",
+      "resetKeybindingTitle": "Obnovení vazby kláves pro {0}"
+    },
+    "localize": {
+      "offlineTooltip": "Nelze se připojit k backendu."
+    },
     "markers": {
       "clearAll": "Vymazat vše",
+      "noProblems": "V pracovním prostoru zatím nebyly zjištěny žádné problémy.",
       "tabbarDecorationsEnabled": "Zobrazení dekorátorů problémů (diagnostických značek) na pásech karet."
     },
     "messages": {
@@ -210,6 +243,7 @@
       "alreadyRunning": "Hostovaná instance je již spuštěna.",
       "debugInstance": "Instance ladění",
       "debugMode": "Použití inspect nebo inspect-brk pro ladění Node.js",
+      "devHost": "Vývojový hostitel",
       "failed": "Nepodařilo se spustit hostovanou instanci zásuvného modulu: {0}",
       "hostedPlugin": "Hostovaný plugin",
       "hostedPluginRunning": "Hostovaný plugin: Spuštěn",
@@ -246,6 +280,7 @@
       "directory": "Adresář",
       "lastModified": "Naposledy upraveno",
       "location": "Umístění",
+      "noProperties": "Žádné vlastnosti nejsou k dispozici.",
       "path": "Cesta",
       "properties": "Vlastnosti",
       "size": "Velikost",
@@ -256,6 +291,10 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Změnit poslední revizi",
       "changeRepository": "Úložiště změn...",
+      "config.untrackedChanges": "Řídí chování nesledovaných změn.",
+      "config.untrackedChanges.hidden": "skryté",
+      "config.untrackedChanges.mixed": "smíšené",
+      "config.untrackedChanges.separate": "samostatné stránky",
       "history": "Historie",
       "noRepositoryFound": "Nebylo nalezeno žádné úložiště",
       "unamend": "Odstranit změny",
@@ -317,6 +356,7 @@
     "vsx-registry": {
       "openVSX": "Otevření registru VSX",
       "recommendedExtensions": "Seznam názvů rozšíření doporučených pro použití v tomto pracovním prostoru.",
+      "searchPlaceholder": "Hledat rozšíření v {0}",
       "showRecommendedExtensions": "Řídí, zda se mají zobrazovat oznámení pro doporučení rozšíření."
     },
     "webview": {
@@ -329,6 +369,11 @@
       "confirmDeletePermanently.description": "Nepodařilo se odstranit položku \"{0}\" pomocí Koše. Chcete jej místo toho trvale odstranit?",
       "confirmDeletePermanently.solution": "Používání Koše můžete zakázat v předvolbách.",
       "confirmDeletePermanently.title": "Chyba při mazání souboru",
+      "confirmMessage.delete": "Opravdu chcete odstranit následující soubory?",
+      "confirmMessage.dirtyMultiple": "Opravdu chcete odstranit {0} souborů s neuloženými změnami?",
+      "confirmMessage.dirtySingle": "Opravdu chcete smazat {0} s neuloženými změnami?",
+      "confirmMessage.uriMultiple": "Opravdu chcete odstranit všechny {0} vybrané soubory?",
+      "confirmMessage.uriSingle": "Opravdu chcete odstranit {0}?",
       "duplicate": "Duplikát",
       "failApply": "Nelze použít změny v novém souboru",
       "failSaveAs": "Nelze spustit \"{0}\" pro aktuální widget.",
@@ -339,6 +384,7 @@
       "removeFolder": "Jste si jisti, že chcete z pracovního prostoru odebrat následující složku?",
       "removeFolders": "Jste si jisti, že chcete z pracovního prostoru odebrat následující složky?",
       "supportMultiRootWorkspace": "Řídí, zda je povolena podpora více kořenových pracovních prostorů.",
+      "trashTitle": "Přesun {0} do koše",
       "trustEmptyWindow": "Řídí, zda má být prázdný pracovní prostor ve výchozím nastavení důvěryhodný.",
       "trustEnabled": "Řídí, zda je povolena důvěryhodnost pracovního prostoru. Pokud je zakázáno, jsou důvěryhodné všechny pracovní prostory.",
       "trustPrompt": "Řídí, kdy se zobrazí výzva ke svěření pracovního prostoru při spuštění.",
