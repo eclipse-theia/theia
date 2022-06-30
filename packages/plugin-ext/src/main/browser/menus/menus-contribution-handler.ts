@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { MenuPath, CommandRegistry, Disposable, DisposableCollection, ActionMenuNode, MenuCommandAdapterRegistry, Emitter } from '@theia/core';
+import { MenuPath, CommandRegistry, Disposable, DisposableCollection, ActionMenuNode, MenuCommandAdapterRegistry, Emitter, CompoundMenuNodeRole } from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DeployedPlugin, IconUrl, Menu } from '../../../common';
@@ -57,7 +57,7 @@ export class MenusContributionPointHandler {
         this.commandAdapterRegistry.registerAdapter(this.commandAdapter);
         for (const contributionPoint of implementedVSCodeContributionPoints) {
             this.menuRegistry.registerIndependentSubmenu(contributionPoint, '');
-            this.getMatchingMenu(contributionPoint)!.forEach(([menu, when]) => this.menuRegistry.linkSubmenu(menu, contributionPoint, when ? { when } : undefined));
+            this.getMatchingMenu(contributionPoint)!.forEach(([menu, when]) => this.menuRegistry.linkSubmenu(menu, contributionPoint, { role: CompoundMenuNodeRole.Flat, when }));
         }
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_EDITOR_TITLE_MENU, widget => this.codeEditorWidgetUtil.is(widget));
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_SCM_TITLE_MENU, widget => widget instanceof ScmWidget);

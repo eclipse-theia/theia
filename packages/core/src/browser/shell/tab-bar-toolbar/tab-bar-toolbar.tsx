@@ -211,7 +211,6 @@ export class TabBarToolbar extends ReactWidget {
                     paths.push(split[i], split[i + 1]);
                     // TODO order is missing, items sorting will be alphabetic
                     if (split[i + 1]) {
-                        console.log('SENTINEL FOR REGISTERING A SUBMENU...', { group: item.group, paths, split, label: split[i + 1] });
                         toDisposeOnHide.push(this.menus.registerSubmenu([...TAB_BAR_TOOLBAR_CONTEXT_MENU, ...paths], split[i + 1]));
                     }
                 }

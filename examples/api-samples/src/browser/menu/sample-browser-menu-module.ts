@@ -17,7 +17,7 @@
 import { injectable, ContainerModule } from '@theia/core/shared/inversify';
 import { Menu as MenuWidget } from '@theia/core/shared/@phosphor/widgets';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { MenuNode, CompositeMenuNode, MenuPath } from '@theia/core/lib/common/menu';
+import { MenuNode, CompositeMenuNode, MenuPath, CompoundMenuNode } from '@theia/core/lib/common/menu';
 import { BrowserMainMenuFactory, MenuCommandRegistry, DynamicMenuWidget, BrowserMenuOptions } from '@theia/core/lib/browser/menu/browser-menu-plugin';
 import { PlaceholderMenuNode } from './sample-menu-contribution';
 
@@ -28,14 +28,15 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 @injectable()
 class SampleBrowserMainMenuFactory extends BrowserMainMenuFactory {
 
-    protected override handleDefault(menuCommandRegistry: MenuCommandRegistry, menuNode: MenuNode): void {
-        if (menuNode instanceof PlaceholderMenuNode && menuCommandRegistry instanceof SampleMenuCommandRegistry) {
-            menuCommandRegistry.registerPlaceholderMenu(menuNode);
+    protected override registerMenu(menuCommandRegistry: MenuCommandRegistry, menu: MenuNode & CompoundMenuNode, args: unknown[]): void {
+        if (menu instanceof PlaceholderMenuNode && menuCommandRegistry instanceof SampleMenuCommandRegistry) {
+            menuCommandRegistry.registerPlaceholderMenu(menu);
+        } else {
+            super.registerMenu(menuCommandRegistry, menu, args);
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected override createMenuCommandRegistry(menu: CompositeMenuNode, args: any[] = []): MenuCommandRegistry {
+    protected override createMenuCommandRegistry(menu: CompositeMenuNode, args: unknown[] = []): MenuCommandRegistry {
         const menuCommandRegistry = new SampleMenuCommandRegistry(this.services);
         this.registerMenu(menuCommandRegistry, menu, args);
         return menuCommandRegistry;
@@ -84,14 +85,15 @@ class SampleMenuCommandRegistry extends MenuCommandRegistry {
 
 class SampleDynamicMenuWidget extends DynamicMenuWidget {
 
-    protected override handleDefault(menuNode: MenuNode): MenuWidget.IItemOptions[] {
-        if (menuNode instanceof PlaceholderMenuNode) {
-            return [{
-                command: menuNode.id,
-                type: 'command'
-            }];
+    protected override buildSubMenus(parentItems: MenuWidget.IItemOptions[], menu: MenuNode, commands: MenuCommandRegistry): MenuWidget.IItemOptions[] {
+        if (menu instanceof PlaceholderMenuNode) {
+            parentItems.push({
+                command: menu.id,
+                type: 'command',
+            });
+        } else {
+            super.buildSubMenus(parentItems, menu, commands);
         }
-        return [];
+        return parentItems;
     }
-
 }

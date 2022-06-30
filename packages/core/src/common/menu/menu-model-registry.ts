@@ -167,7 +167,6 @@ export class MenuModelRegistry {
     }
 
     linkSubmenu(parentPath: MenuPath | string, childId: string, options?: SubMenuOptions, group?: string): Disposable {
-        console.log('SENTINEL FOR LINKING A SUBMENU', childId, parentPath, options, group);
         const child = this.independentSubmenus.get(childId);
         if (!child) {
             throw new Error(`Attempted to link non-existent menu with id ${childId}`);

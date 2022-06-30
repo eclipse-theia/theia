@@ -15,16 +15,17 @@
 // *****************************************************************************
 
 import { Disposable } from '../disposable';
-import { MenuNode, SubMenuOptions } from './menu-types';
+import { CompoundMenuNode, CompoundMenuNodeMetadata, CompoundMenuNodeRole, MenuNode, SubMenuOptions } from './menu-types';
 
 /**
  * Node representing a (sub)menu in the menu tree structure.
  */
-export class CompositeMenuNode implements MenuNode {
+export class CompositeMenuNode implements MenuNode, CompoundMenuNode, CompoundMenuNodeMetadata {
     protected readonly _children: MenuNode[] = [];
     public iconClass?: string;
     public order?: string;
     readonly when?: string;
+    readonly role: CompoundMenuNodeRole;
 
     constructor(
         public readonly id: string,
@@ -36,6 +37,7 @@ export class CompositeMenuNode implements MenuNode {
             this.order = options.order;
             this.when = options.when;
         }
+        this.role = options?.role ?? CompoundMenuNode.getRole(this)!;
     }
 
     get icon(): string | undefined {
@@ -53,16 +55,7 @@ export class CompositeMenuNode implements MenuNode {
      */
     public addNode(node: MenuNode): Disposable {
         this._children.push(node);
-        this._children.sort((m1, m2) => {
-            // The navigation group is special as it will always be sorted to the top/beginning of a menu.
-            if (CompositeMenuNode.isNavigationGroup(m1)) {
-                return -1;
-            }
-            if (CompositeMenuNode.isNavigationGroup(m2)) {
-                return 1;
-            }
-            return m1.sortString.localeCompare(m2.sortString);
-        });
+        this._children.sort(CompoundMenuNode.sortChildren);
         return {
             dispose: () => {
                 const idx = this._children.indexOf(node);
@@ -96,19 +89,11 @@ export class CompositeMenuNode implements MenuNode {
         return Boolean(this.label);
     }
 
-    /**
-     * Indicates whether the given node is the special `navigation` menu.
-     *
-     * @param node the menu node to check.
-     * @returns `true` when the given node is a {@link CompositeMenuNode} with id `navigation`,
-     * `false` otherwise.
-     */
-    static isNavigationGroup(node: MenuNode): node is CompositeMenuNode {
-        return node instanceof CompositeMenuNode && node.id === 'navigation';
-    }
+    /** @deprecated @since 1.28 use CompoundMenuNode.isNavigationGroup instead */
+    static isNavigationGroup = CompoundMenuNode.isNavigationGroup;
 }
 
-export class CompositeMenuNodeWrapper implements MenuNode {
+export class CompositeMenuNodeWrapper implements MenuNode, CompoundMenuNodeMetadata {
     constructor(protected readonly wrapped: Readonly<CompositeMenuNode>, protected readonly options?: SubMenuOptions) { }
 
     get id(): string { return this.wrapped.id; }
@@ -118,6 +103,8 @@ export class CompositeMenuNodeWrapper implements MenuNode {
     get sortString(): string { return this.order || this.id; }
 
     get isSubmenu(): boolean { return Boolean(this.label); }
+
+    get role(): CompoundMenuNodeRole { return this.options?.role ?? this.wrapped.role; }
 
     get icon(): string | undefined { return this.iconClass; }
 

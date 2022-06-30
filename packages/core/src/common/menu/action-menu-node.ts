@@ -15,19 +15,19 @@
 // *****************************************************************************
 
 import { CommandRegistry } from '../command';
-import { MenuAction, MenuNode } from './menu-types';
+import { AlternativeHandlerMenuNode, CommandMenuNode, MenuAction, MenuNode } from './menu-types';
 
 /**
  * Node representing an action in the menu tree structure.
  * It's based on {@link MenuAction} for which it tries to determine the
  * best label, icon and sortString with the given data.
  */
-export class ActionMenuNode implements MenuNode {
+export class ActionMenuNode implements MenuNode, CommandMenuNode, Partial<AlternativeHandlerMenuNode> {
 
     readonly altNode: ActionMenuNode | undefined;
 
     constructor(
-        public readonly action: MenuAction,
+        protected readonly action: MenuAction,
         protected readonly commands: CommandRegistry
     ) {
         if (action.alt) {
@@ -35,13 +35,11 @@ export class ActionMenuNode implements MenuNode {
         }
     }
 
-    get when(): string | undefined {
-        return this.action.when;
-    }
+    get command(): string { return this.action.commandId; };
 
-    get id(): string {
-        return this.action.commandId;
-    }
+    get when(): string | undefined { return this.action.when; }
+
+    get id(): string { return this.action.commandId; }
 
     get label(): string {
         if (this.action.label) {
@@ -63,7 +61,5 @@ export class ActionMenuNode implements MenuNode {
         return command && command.iconClass;
     }
 
-    get sortString(): string {
-        return this.action.order || this.label;
-    }
+    get sortString(): string { return this.action.order || this.label; }
 }

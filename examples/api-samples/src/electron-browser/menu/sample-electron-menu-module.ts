@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, ContainerModule } from '@theia/core/shared/inversify';
-import { CompositeMenuNode } from '@theia/core/lib/common/menu';
+import { CompoundMenuNode, MenuNode } from '@theia/core/lib/common/menu';
 import { ElectronMainMenuFactory, ElectronMenuOptions } from '@theia/core/lib/electron-browser/menu/electron-main-menu-factory';
 import { PlaceholderMenuNode } from '../../browser/menu/sample-menu-contribution';
 
@@ -25,17 +25,14 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
 @injectable()
 class SampleElectronMainMenuFactory extends ElectronMainMenuFactory {
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected override handleElectronDefault(menuNode: CompositeMenuNode, args: any[] = [], options?: ElectronMenuOptions): Electron.MenuItemConstructorOptions[] {
-        if (menuNode instanceof PlaceholderMenuNode) {
-            return [{
-                label: menuNode.label,
-                enabled: false,
-                visible: true
-            }];
+    protected override fillMenuTemplate(
+        parentItems: Electron.MenuItemConstructorOptions[], menuModel: MenuNode & CompoundMenuNode, args: unknown[] = [], options: ElectronMenuOptions
+    ): Electron.MenuItemConstructorOptions[] {
+        if (menuModel instanceof PlaceholderMenuNode) {
+            parentItems.push({ label: menuModel.label, enabled: false, visible: true });
+        } else {
+            super.fillMenuTemplate(parentItems, menuModel, args, options);
         }
-        return [];
+        return parentItems;
     }
-
 }

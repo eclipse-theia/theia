@@ -18,7 +18,7 @@
 
 import * as electronRemote from '../../../electron-shared/@electron/remote';
 import { inject, injectable, postConstruct } from 'inversify';
-import { isOSX, ActionMenuNode, MAIN_MENU_BAR, MenuPath, MenuNode } from '../../common';
+import { isOSX, MAIN_MENU_BAR, MenuPath, MenuNode, CommandMenuNode, CompoundMenuNode, CompoundMenuNodeRole } from '../../common';
 import { Keybinding } from '../../common/keybinding';
 import { PreferenceService, CommonCommands } from '../../browser';
 import debounce = require('lodash.debounce');
@@ -129,108 +129,95 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         return electronRemote.Menu.buildFromTemplate(template);
     }
 
-    protected fillMenuTemplate(items: Electron.MenuItemConstructorOptions[],
-        menuModel: MenuNode,
-        args: any[] = [],
+    protected fillMenuTemplate(parentItems: Electron.MenuItemConstructorOptions[],
+        menu: MenuNode,
+        args: unknown[] = [],
         options: ElectronMenuOptions
     ): Electron.MenuItemConstructorOptions[] {
-        const showDisabled = (options?.showDisabled === undefined) ? true : options?.showDisabled;
-        for (const menu of (menuModel.children ?? [])) {
-            if (menu.children) {
-                if (menu.children.length > 0 && (!menu.when || this.contextKeyService.match(menu.when, options?.context))) {
-                    // do not render empty nodes
+        const showDisabled = options?.showDisabled !== false;
 
-                    if (menu.isSubmenu) { // submenu node
+        if (CompoundMenuNode.is(menu) && menu.children.length && this.undefinedOrMatch(menu.when, options.context)) {
+            const role = CompoundMenuNode.getRole(menu);
+            if (role === CompoundMenuNodeRole.Group && menu.id === 'inline') { return parentItems; }
 
-                        const submenu = this.fillMenuTemplate([], menu, args, options);
-                        if (submenu.length === 0) {
-                            continue;
-                        }
-
-                        items.push({
-                            label: menu.label,
-                            submenu
-                        });
-
-                    } else { // group node
-                        if (menu.id === 'inline') {
-                            continue;
-                        }
-
-                        // process children
-                        const submenu = this.fillMenuTemplate([], menu, args, options);
-                        if (submenu.length === 0) {
-                            continue;
-                        }
-
-                        if (items.length > 0) {
-                            // do not put a separator above the first group
-
-                            items.push({
-                                type: 'separator'
-                            });
-                        }
-
-                        // render children
-                        items.push(...submenu);
+            const childrenToMerge: ReadonlyArray<MenuNode>[] = [];
+            const children = menu.children.filter(child => {
+                if (CompoundMenuNode.getRole(child) === CompoundMenuNodeRole.Flat) {
+                    if (this.undefinedOrMatch(child.when, options.context)) {
+                        childrenToMerge.push((child as CompoundMenuNode).children);
                     }
+                    return false;
                 }
-            } else if (menu instanceof ActionMenuNode) {
-                const node = menu.altNode && this.context.altPressed ? menu.altNode : menu;
-                const commandId = node.action.commandId;
+                return true;
+            }).concat(...childrenToMerge).sort(CompoundMenuNode.sortChildren);
 
-                // That is only a sanity check at application startup.
-                if (!this.commandRegistry.getCommand(commandId)) {
-                    console.debug(`Skipping menu item with missing command: "${commandId}".`);
-                    continue;
+            const myItems: Electron.MenuItemConstructorOptions[] = [];
+            children.forEach(child => this.fillMenuTemplate(myItems, child, args, options));
+            if (myItems.length === 0) { return parentItems; }
+            if (role === CompoundMenuNodeRole.Submenu) {
+                parentItems.push({ label: menu.label, submenu: myItems });
+            } else if (role === CompoundMenuNodeRole.Group) {
+                if (parentItems.length && parentItems[parentItems.length - 1].type !== 'separator') {
+                    parentItems.push({ type: 'separator' });
                 }
+                parentItems.push(...myItems);
+                parentItems.push({ type: 'separator' });
+            }
+        } else if (menu.command) {
+            const node = menu.altNode && this.context.altPressed ? menu.altNode : (menu as MenuNode & CommandMenuNode);
+            const commandId = node.command;
 
-                if (!this.menuCommandExecutor.isVisible(options.rootMenuPath, commandId, ...args)
-                    || (node.action.when && !this.contextKeyService.match(node.action.when, options?.context))) {
-                    continue;
+            // That is only a sanity check at application startup.
+            if (!this.commandRegistry.getCommand(commandId)) {
+                console.debug(`Skipping menu item with missing command: "${commandId}".`);
+                return parentItems;
+            }
+
+            if (!this.menuCommandExecutor.isVisible(options.rootMenuPath, commandId, ...args) || !this.undefinedOrMatch(node.when, options.context)) {
+                return parentItems;
+            }
+
+            // We should omit rendering context-menu items which are disabled.
+            if (!showDisabled && !this.menuCommandExecutor.isEnabled(options.rootMenuPath, commandId, ...args)) {
+                return parentItems;
+            }
+
+            const bindings = this.keybindingRegistry.getKeybindingsForCommand(commandId);
+
+            const accelerator = bindings[0] && this.acceleratorFor(bindings[0]);
+
+            const menuItem: Electron.MenuItemConstructorOptions = {
+                id: node.id,
+                label: node.label,
+                type: this.commandRegistry.getToggledHandler(commandId, ...args) ? 'checkbox' : 'normal',
+                checked: this.commandRegistry.isToggled(commandId, ...args),
+                enabled: true, // https://github.com/eclipse-theia/theia/issues/446
+                visible: true,
+                accelerator,
+                click: () => this.execute(commandId, args, options.rootMenuPath)
+            };
+
+            if (isOSX) {
+                const role = this.roleFor(node.id);
+                if (role) {
+                    menuItem.role = role;
+                    delete menuItem.click;
                 }
+            }
+            parentItems.push(menuItem);
 
-                // We should omit rendering context-menu items which are disabled.
-                if (!showDisabled && !this.menuCommandExecutor.isEnabled(options.rootMenuPath, commandId, ...args)) {
-                    continue;
-                }
-
-                const bindings = this.keybindingRegistry.getKeybindingsForCommand(commandId);
-
-                const accelerator = bindings[0] && this.acceleratorFor(bindings[0]);
-
-                const menuItem: Electron.MenuItemConstructorOptions = {
-                    id: node.id,
-                    label: node.label,
-                    type: this.commandRegistry.getToggledHandler(commandId, ...args) ? 'checkbox' : 'normal',
-                    checked: this.commandRegistry.isToggled(commandId, ...args),
-                    enabled: true, // https://github.com/eclipse-theia/theia/issues/446
-                    visible: true,
-                    accelerator,
-                    click: () => this.execute(commandId, args, options.rootMenuPath)
-                };
-
-                if (isOSX) {
-                    const role = this.roleFor(node.id);
-                    if (role) {
-                        menuItem.role = role;
-                        delete menuItem.click;
-                    }
-                }
-                items.push(menuItem);
-
-                if (this.commandRegistry.getToggledHandler(commandId, ...args)) {
-                    this._toggledCommands.add(commandId);
-                }
-            } else {
-                items.push(...this.handleElectronDefault(menu, args, options));
+            if (this.commandRegistry.getToggledHandler(commandId, ...args)) {
+                this._toggledCommands.add(commandId);
             }
         }
-        return items;
+        return parentItems;
     }
 
-    protected handleElectronDefault(menuNode: MenuNode, args: any[] = [], options?: ElectronMenuOptions): Electron.MenuItemConstructorOptions[] {
-        return [];
+    protected undefinedOrMatch(expression?: string, context?: HTMLElement): boolean {
+        if (expression) {
+            return this.contextKeyService.match(expression, context);
+        }
+        return true;
     }
 
     /**

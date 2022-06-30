@@ -18,8 +18,8 @@ import { injectable, inject } from 'inversify';
 import { MenuBar, Menu as MenuWidget, Widget } from '@phosphor/widgets';
 import { CommandRegistry as PhosphorCommandRegistry } from '@phosphor/commands';
 import {
-    CommandRegistry, ActionMenuNode, CompositeMenuNode, environment,
-    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, DisposableCollection, Disposable, MenuNode, MenuCommandExecutor
+    CommandRegistry, CompositeMenuNode, environment,
+    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, DisposableCollection, Disposable, MenuNode, MenuCommandExecutor, CompoundMenuNode, CompoundMenuNodeRole, CommandMenuNode
 } from '../../common';
 import { KeybindingRegistry } from '../keybinding';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
@@ -124,24 +124,17 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
         return menuCommandRegistry;
     }
 
-    protected registerMenu(menuCommandRegistry: MenuCommandRegistry, menu: MenuNode & { children: ReadonlyArray<MenuNode> }, args: unknown[]): void {
+    protected registerMenu(menuCommandRegistry: MenuCommandRegistry, menu: MenuNode & CompoundMenuNode, args: unknown[]): void {
         for (const child of menu.children) {
-            if (child instanceof ActionMenuNode) {
-                menuCommandRegistry.registerActionMenu(child, args);
+            if (child.command) {
+                menuCommandRegistry.registerActionMenu(child as MenuNode & CommandMenuNode, args);
                 if (child.altNode) {
                     menuCommandRegistry.registerActionMenu(child.altNode, args);
                 }
-            } else if (Array.isArray(child.children)) {
-                this.registerMenu(menuCommandRegistry, child as MenuNode & { children: MenuNode[] }, args);
-            } else {
-                this.handleDefault(menuCommandRegistry, child, args);
+            } else if (CompoundMenuNode.is(child)) {
+                this.registerMenu(menuCommandRegistry, child, args);
             }
         }
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected handleDefault(menuCommandRegistry: MenuCommandRegistry, menuNode: MenuNode, args: any[]): void {
-        // NOOP
     }
 
     protected get services(): MenuServices {
@@ -283,75 +276,60 @@ export class DynamicMenuWidget extends MenuWidget {
         super.open(x, y, options);
     }
 
-    private updateSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: MenuCommandRegistry): void {
+    protected updateSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: MenuCommandRegistry): void {
         const items = this.buildSubMenus([], menu, commands);
+        if (items[items.length - 1]?.type === 'separator') {
+            items.pop();
+        }
         for (const item of items) {
             parent.addItem(item);
         }
     }
 
-    private buildSubMenus(items: MenuWidget.IItemOptions[], menu: MenuNode, commands: MenuCommandRegistry): MenuWidget.IItemOptions[] {
-        for (const item of (menu.children ?? [])) {
-            if (Array.isArray(item.children)) {
-                if (item.children.length && this.undefinedOrMatch(item.when, this.options.context)) { // do not render empty nodes
-                    if (item.isSubmenu) { // submenu node
-                        const submenu = this.services.menuWidgetFactory.createMenuWidget(item as MenuNode & { children: MenuNode[] }, this.options);
-                        if (!submenu.items.length) {
-                            continue;
+    protected buildSubmenusCalled = 0;
+
+    protected buildSubMenus(parentItems: MenuWidget.IItemOptions[], menu: MenuNode, commands: MenuCommandRegistry): MenuWidget.IItemOptions[] {
+        if (CompoundMenuNode.is(menu) && menu.children.length && this.undefinedOrMatch(menu.when, this.options.context)) {
+            const role = menu === this.menu ? CompoundMenuNodeRole.Group : CompoundMenuNode.getRole(menu);
+            if (role === CompoundMenuNodeRole.Submenu) {
+                const submenu = this.services.menuWidgetFactory.createMenuWidget(menu, this.options);
+                parentItems.push({ type: 'submenu', submenu });
+            } else if (role === CompoundMenuNodeRole.Group) {
+                const childrenToMerge: ReadonlyArray<MenuNode>[] = [];
+                const children = menu.children.filter(child => {
+                    if (CompoundMenuNode.getRole(child) === CompoundMenuNodeRole.Flat) {
+                        if (this.undefinedOrMatch(child.when, this.options.context)) {
+                            childrenToMerge.push((child as CompoundMenuNode).children);
                         }
-                        items.push({
-                            type: 'submenu',
-                            submenu,
-                        });
-                    } else { // group node
-                        if (item.id === 'inline') {
-                            continue;
-                        }
-                        const submenu = this.buildSubMenus([], item, commands);
-                        if (!submenu.length) {
-                            continue;
-                        }
-                        if (items.length) { // do not put a separator above the first group
-                            items.push({
-                                type: 'separator'
-                            });
-                        }
-                        items.push(...submenu); // render children
+                        return false;
                     }
+                    return true;
+                }).concat(...childrenToMerge).sort(CompoundMenuNode.sortChildren);
+                const myItems: MenuWidget.IItemOptions[] = [];
+                children.forEach(child => this.buildSubMenus(myItems, child, commands));
+                if (parentItems.length && myItems.length && parentItems[parentItems.length - 1].type !== 'separator') {
+                    parentItems.push({ type: 'separator' });
                 }
-            } else if (item instanceof ActionMenuNode) {
-                const { context } = this.services;
-                const node = item.altNode && context.altPressed ? item.altNode : item;
-                if (commands.isVisible(node.action.commandId) && this.undefinedOrMatch(node.action.when, this.options.context)) {
-                    console.log('SENTINEL FOR ADDING AN ITEM...', item.label, item, menu);
-                    items.push({
-                        command: node.action.commandId,
-                        type: 'command'
-                    });
+                parentItems.push(...myItems);
+                if (myItems.length) {
+                    parentItems.push({ type: 'separator' });
                 }
-            } else {
-                console.log('SENTINEL FOR THE DEFAULT?', item);
-                items.push(...this.handleDefault(item));
+            }
+        } else if (menu.command) {
+            const node = menu.altNode && this.services.context.altPressed ? menu.altNode : (menu as MenuNode & CommandMenuNode);
+            if (commands.isVisible(node.command) && this.undefinedOrMatch(node.when, this.options.context)) {
+                parentItems.push({
+                    command: node.command,
+                    type: 'command'
+                });
             }
         }
-        return items;
+        return parentItems;
     }
 
     protected undefinedOrMatch(expression?: string, context?: HTMLElement): boolean {
-        const doTheThing = this.doUndefinedOrMatch(expression, context);
-        if (expression) {
-            console.log('SENTINEL FOR THE RESULT FOR', expression, context, doTheThing);
-        }
-        return doTheThing;
-    }
-
-    protected doUndefinedOrMatch(expression?: string, context?: HTMLElement): boolean {
         if (expression) { return this.services.contextKeyService.match(expression, context); }
         return true;
-    }
-
-    protected handleDefault(menuNode: MenuNode): MenuWidget.IItemOptions[] {
-        return [];
     }
 
     protected preserveFocusedElement(previousFocusedElement: Element | null = document.activeElement): boolean {
@@ -442,17 +420,16 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
  */
 export class MenuCommandRegistry extends PhosphorCommandRegistry {
 
-    protected actions = new Map<string, [ActionMenuNode, unknown[]]>();
+    protected actions = new Map<string, [MenuNode & CommandMenuNode, unknown[]]>();
     protected toDispose = new DisposableCollection();
 
     constructor(protected services: MenuServices) {
         super();
     }
 
-    registerActionMenu(menu: ActionMenuNode, args: unknown[]): void {
-        const { commandId } = menu.action;
+    registerActionMenu(menu: MenuNode & CommandMenuNode, args: unknown[]): void {
         const { commandRegistry } = this.services;
-        const command = commandRegistry.getCommand(commandId);
+        const command = commandRegistry.getCommand(menu.command);
         if (!command) {
             return;
         }
@@ -471,9 +448,9 @@ export class MenuCommandRegistry extends PhosphorCommandRegistry {
         return this;
     }
 
-    protected registerCommand(menu: ActionMenuNode, args: unknown[], menuPath: MenuPath): Disposable {
+    protected registerCommand(menu: MenuNode & CommandMenuNode, args: unknown[], menuPath: MenuPath): Disposable {
         const { commandRegistry, keybindingRegistry, commandExecutor } = this.services;
-        const command = commandRegistry.getCommand(menu.action.commandId);
+        const command = commandRegistry.getCommand(menu.command);
         if (!command) {
             return Disposable.NULL;
         }

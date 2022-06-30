@@ -96,7 +96,7 @@ export class CommentThreadWidget extends BaseWidget {
             }
         }));
         this.contextMenu = this.menus.getMenu(COMMENT_THREAD_CONTEXT);
-        this.contextMenu.children.map(node => node instanceof ActionMenuNode && node.action.when).forEach(exp => {
+        this.contextMenu.children.map(node => node instanceof ActionMenuNode && node.when).forEach(exp => {
             if (typeof exp === 'string') {
                 this.contextKeyService.setExpression(exp);
             }
@@ -377,7 +377,7 @@ export class CommentForm<P extends CommentForm.Props = CommentForm.Props> extend
         };
 
         this.menu = this.props.menus.getMenu(COMMENT_THREAD_CONTEXT);
-        this.menu.children.map(node => node instanceof ActionMenuNode && node.action.when).forEach(exp => {
+        this.menu.children.map(node => node instanceof ActionMenuNode && node.when).forEach(exp => {
             if (typeof exp === 'string') {
                 this.props.contextKeyService.setExpression(exp);
             }
@@ -597,7 +597,7 @@ namespace CommentsInlineAction {
 export class CommentsInlineAction extends React.Component<CommentsInlineAction.Props> {
     override render(): React.ReactNode {
         const { node, commands, contextKeyService, commentThread, commentUniqueId } = this.props;
-        if (node.action.when && !contextKeyService.match(node.action.when)) {
+        if (node.when && !contextKeyService.match(node.when)) {
             return false;
         }
         return <div className='theia-comments-inline-action'>
@@ -657,10 +657,10 @@ export class CommentAction extends React.Component<CommentAction.Props> {
     override render(): React.ReactNode {
         const classNames = ['comments-button', 'comments-text-button', 'theia-button'];
         const { node, commands, contextKeyService, onClick } = this.props;
-        if (node.action.when && !contextKeyService.match(node.action.when)) {
+        if (node.when && !contextKeyService.match(node.when)) {
             return false;
         }
-        const isEnabled = commands.isEnabled(node.action.commandId);
+        const isEnabled = commands.isEnabled(node.command);
         if (!isEnabled) {
             classNames.push(DISABLED_CLASS);
         }

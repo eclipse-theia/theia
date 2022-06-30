@@ -399,14 +399,14 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected renderInlineCommand(node: ActionMenuNode, index: number, tabbable: boolean, arg: any): React.ReactNode {
         const { icon } = node;
-        if (!icon || !this.commands.isVisible(node.action.commandId, arg) || !node.action.when || !this.contextKeys.match(node.action.when)) {
+        if (!icon || !this.commands.isVisible(node.command, arg) || !node.when || !this.contextKeys.match(node.when)) {
             return false;
         }
         const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, icon, ACTION_ITEM, 'theia-tree-view-inline-action'].join(' ');
         const tabIndex = tabbable ? 0 : undefined;
         return <div key={index} className={className} title={node.label} tabIndex={tabIndex} onClick={e => {
             e.stopPropagation();
-            this.commands.executeCommand(node.action.commandId, arg);
+            this.commands.executeCommand(node.command, arg);
         }} />;
     }
 
