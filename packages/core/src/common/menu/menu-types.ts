@@ -17,7 +17,7 @@
 /**
  * A menu entry representing an action, e.g. "New File".
  */
-export interface MenuAction {
+export interface MenuAction extends MenuNodeRenderingData, Pick<MenuNodeMetadata, 'when'> {
     /**
      * The command to execute.
      */
@@ -28,24 +28,10 @@ export interface MenuAction {
      */
     alt?: string;
     /**
-     * A specific label for this action. If not specified the command label or command id will be used.
-     */
-    label?: string;
-    /**
-     * Icon class(es). If not specified the icon class associated with the specified command
-     * (i.e. `command.iconClass`) will be used if it exists.
-     */
-    icon?: string;
-    /**
      * Menu entries are sorted in ascending order based on their `order` strings. If omitted the determined
      * label will be used instead.
      */
     order?: string;
-    /**
-     * Optional expression which will be evaluated by the {@link ContextKeyService} to determine visibility
-     * of the action, e.g. `resourceLangId == markdown`.
-     */
-    when?: string;
 }
 
 export namespace MenuAction {
@@ -59,20 +45,11 @@ export namespace MenuAction {
 /**
  * Additional options when creating a new submenu.
  */
-export interface SubMenuOptions {
+export interface SubMenuOptions extends Pick<MenuAction, 'order'>, Pick<MenuNodeMetadata, 'when'>, Partial<Pick<CompoundMenuNode, 'role'>> {
     /**
      * The class to use for the submenu icon.
      */
     iconClass?: string;
-    /**
-     * Menu entries are sorted in ascending order based on their `order` strings. If omitted the determined
-     * label will be used instead.
-     */
-    order?: string;
-    /**
-     * The conditions under which to include the specified submenu under the specified parent.
-     */
-    when?: string;
 }
 
 export type MenuPath = string[];
@@ -83,30 +60,67 @@ export const SETTINGS_MENU: MenuPath = ['settings_menu'];
 export const ACCOUNTS_MENU: MenuPath = ['accounts_menu'];
 export const ACCOUNTS_SUBMENU = [...ACCOUNTS_MENU, '1_accounts_submenu'];
 
-/**
- * Base interface of the nodes used in the menu tree structure.
- */
-export interface MenuNode {
-    /**
-     * the optional label for this specific node.
-     */
-    readonly label?: string
+interface MenuNodeMetadata {
     /**
      * technical identifier.
      */
-    readonly id: string
+    readonly id: string;
     /**
      * Menu nodes are sorted in ascending order based on their `sortString`.
      */
-    readonly sortString: string
+    readonly sortString: string;
     /**
-     * Additional conditions determining the visibility of a menu node
+     * Condition under which the menu node should be rendered.
+     * See https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts
      */
     readonly when?: string;
+}
 
-    readonly children?: ReadonlyArray<MenuNode>;
-
-    readonly isSubmenu?: boolean;
-
+interface MenuNodeRenderingData {
+    /**
+     * Optional label. Will be rendered as text of the menu item.
+     */
+    readonly label?: string;
+    /**
+     * Icon classes for the menu node. If present, these will produce an icon to the left of the label in browser-style menus.
+     */
     readonly icon?: string;
 }
+
+export const enum CompoundMenuNodeRole {
+    /** Indicates that the node should be rendered as submenu that opens a new menu on hover */
+    Submenu,
+    /** Indicates that the node's children should be rendered as group separated from other items by a separator */
+    Group,
+    /** Indicates that the node's children should be treated as though they were direct children of the node's parent */
+    Flat,
+}
+
+interface CompoundMenuNode {
+    /**
+     * Items that are grouped under this menu.
+     */
+    readonly children?: ReadonlyArray<MenuNode>
+    /**
+     * @deprecated @since 1.28 use `role` instead.
+     * Whether the item should be rendered as a submenu.
+     */
+    readonly isSubmenu: boolean;
+    /**
+     * How the node and its children should be rendered. See {@link CompoundMenuNodeRole}.
+     */
+    readonly role: CompoundMenuNodeRole;
+}
+
+interface CommandMenuNode {
+    command: string;
+}
+
+interface AlternativeHandlerMenuNode {
+    altNode: MenuNodeMetadata & MenuNodeRenderingData & Partial<CommandMenuNode>;
+}
+
+/**
+ * Base interface of the nodes used in the menu tree structure.
+ */
+export interface MenuNode extends MenuNodeMetadata, MenuNodeRenderingData, Partial<CompoundMenuNode>, Partial<CommandMenuNode>, Partial<AlternativeHandlerMenuNode> { }

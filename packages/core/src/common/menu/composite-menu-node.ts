@@ -61,13 +61,7 @@ export class CompositeMenuNode implements MenuNode {
             if (CompositeMenuNode.isNavigationGroup(m2)) {
                 return 1;
             }
-            if (m1.sortString < m2.sortString) {
-                return -1;
-            } else if (m1.sortString > m2.sortString) {
-                return 1;
-            } else {
-                return 0;
-            }
+            return m1.sortString.localeCompare(m2.sortString);
         });
         return {
             dispose: () => {

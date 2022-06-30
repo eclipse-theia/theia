@@ -291,10 +291,8 @@ export class DynamicMenuWidget extends MenuWidget {
     }
 
     private buildSubMenus(items: MenuWidget.IItemOptions[], menu: MenuNode, commands: MenuCommandRegistry): MenuWidget.IItemOptions[] {
-        console.log('SENTINEL FOR THE VALUE OF RESOURCE PATH', (this.services.contextKeyService as any).contextKeyService.getContextKeyValue('resourcePath'));
         for (const item of (menu.children ?? [])) {
             if (Array.isArray(item.children)) {
-                console.log('SENTINEL FOR CHECKING A WHEN', item);
                 if (item.children.length && this.undefinedOrMatch(item.when, this.options.context)) { // do not render empty nodes
                     if (item.isSubmenu) { // submenu node
                         const submenu = this.services.menuWidgetFactory.createMenuWidget(item as MenuNode & { children: MenuNode[] }, this.options);
