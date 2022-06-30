@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { CommandRegistry } from './command';
-import { Disposable } from './disposable';
-import { MenuPath } from './menu';
+import { CommandRegistry } from '../command';
+import { Disposable } from '../disposable';
+import { MenuPath } from './menu-types';
 
 export type MenuCommandArguments = [menuPath: MenuPath, command: string, ...commandArgs: unknown[]];
 

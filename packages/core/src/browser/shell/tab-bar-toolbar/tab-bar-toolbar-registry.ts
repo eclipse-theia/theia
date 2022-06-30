@@ -20,7 +20,7 @@ import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection
 import { ContextKeyService } from '../../context-key-service';
 import { FrontendApplicationContribution } from '../../frontend-application';
 import { Widget } from '../../widgets';
-import { MenuDelegate, menuDelegateSeparator, MenuToolbarItem, ReactTabBarToolbarItem, SubmenuToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
+import { MenuDelegate, menuDelegateSeparator, MenuToolbarItem, ReactTabBarToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
 
 /**
  * Clients should implement this interface if they want to contribute to the tab-bar toolbar.
@@ -116,10 +116,10 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                             ? group
                             : this.formatGroupForSubmenus(group, item.id, item.label);
                         if (group === 'navigation') {
-                            const asSubmenuItem: SubmenuToolbarItem = {
+                            const asSubmenuItem: TabBarToolbarItem & MenuToolbarItem = {
                                 id: `submenu_as_toolbar_item_${item.id}`,
                                 command: '_never_',
-                                prefix: item.id,
+                                menuPath: delegate.menuPath,
                                 when: item.when,
                                 icon: item.icon,
                                 group,
@@ -130,7 +130,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                         }
                         item.children.forEach(child => menuToTabbarItems(child, nextGroup));
                     } else if (!Array.isArray(item.children)) {
-                        const asToolbarItem: MenuToolbarItem = {
+                        const asToolbarItem: TabBarToolbarItem & MenuToolbarItem = {
                             id: `menu_as_toolbar_item_${item.id}`,
                             command: item.id,
                             when: item.when,

@@ -80,7 +80,7 @@ interface ExecutableToolbarItem {
     command: string;
 }
 
-interface MenuToolbarItem {
+export interface MenuToolbarItem {
     /**
      * A menu path with which this item is associated.
      * If accompanied by a command, this data will be passed to the {@link MenuCommandExecutor}.
@@ -148,7 +148,7 @@ export interface ReactTabBarToolbarItem extends RegisteredToolbarItem,
     Pick<InlineToolbarItemMetadata, 'priority'>,
     Pick<Partial<MenuToolbarItemMetadata>, 'group'> { }
 
-export interface AnyToolbarItem extends Partial<RegisteredToolbarItem>,
+export interface AnyToolbarItem extends RegisteredToolbarItem,
     Partial<ExecutableToolbarItem>,
     Partial<RenderedToolbarItem>,
     Partial<SelfRenderingToolbarItem>,

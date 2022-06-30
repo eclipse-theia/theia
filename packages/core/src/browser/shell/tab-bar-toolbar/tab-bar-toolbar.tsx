@@ -22,7 +22,7 @@ import { LabelIcon, LabelParser } from '../../label-parser';
 import { ACTION_ITEM, codicon, ReactWidget, Widget } from '../../widgets';
 import { TabBarToolbarRegistry } from './tab-bar-toolbar-registry';
 // eslint-disable-next-line max-len
-import { menuDelegateSeparator, MenuDelegateToolbarItem, ReactTabBarToolbarItem, submenuItemPrefix, SubmenuToolbarItem, TabBarDelegator, TabBarToolbarItem, TAB_BAR_TOOLBAR_CONTEXT_MENU } from './tab-bar-toolbar-types';
+import { AnyToolbarItem, menuDelegateSeparator, ReactTabBarToolbarItem, submenuItemPrefix, TabBarDelegator, TabBarToolbarItem, TAB_BAR_TOOLBAR_CONTEXT_MENU } from './tab-bar-toolbar-types';
 
 /**
  * Factory for instantiating tab-bar toolbars.
@@ -129,9 +129,6 @@ export class TabBarToolbar extends ReactWidget {
     }
 
     protected renderItem(item: TabBarToolbarItem): React.ReactNode {
-        if (SubmenuToolbarItem.is(item) && !this.submenuItems.get(item.prefix)?.size) {
-            return undefined;
-        }
         let innerText = '';
         const classNames = [];
         if (item.text) {
@@ -251,18 +248,14 @@ export class TabBarToolbar extends ReactWidget {
         e.preventDefault();
         e.stopPropagation();
 
-        const item = this.inline.get(e.currentTarget.id);
-        if (TabBarToolbarItem.is(item)) {
-            if (SubmenuToolbarItem.is(item)) {
-                const anchor = this.toAnchor(e);
-                return this.renderMoreContextMenu(anchor, item.prefix);
-            }
-            const menuPath = MenuDelegateToolbarItem.getMenuPath(item);
-            if (menuPath) {
-                this.menuCommandExecutor.executeCommand(menuPath, item.command, this.current);
-            } else {
-                this.commands.executeCommand(item.command, this.current);
-            }
+        const item: AnyToolbarItem | undefined = this.inline.get(e.currentTarget.id);
+        if (item?.command && item.menuPath) {
+            this.menuCommandExecutor.executeCommand(item.menuPath, item.command, this.current);
+        } else if (item?.command) {
+            this.commands.executeCommand(item.command, this.current);
+        } else if (item?.menuPath) {
+            // TODO @CJG - this isn't the final plan!
+            this.renderMoreContextMenu(this.toAnchor(e), item.menuPath.join(''))
         }
         this.update();
     };
