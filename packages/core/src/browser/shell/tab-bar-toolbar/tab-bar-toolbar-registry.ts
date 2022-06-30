@@ -20,7 +20,7 @@ import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection
 import { ContextKeyService } from '../../context-key-service';
 import { FrontendApplicationContribution } from '../../frontend-application';
 import { Widget } from '../../widgets';
-import { MenuDelegate, menuDelegateSeparator, MenuDelegateToolbarItem, ReactTabBarToolbarItem, SubmenuToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
+import { MenuDelegate, menuDelegateSeparator, MenuToolbarItem, ReactTabBarToolbarItem, SubmenuToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
 
 /**
  * Clients should implement this interface if they want to contribute to the tab-bar toolbar.
@@ -108,7 +108,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
             }
         }
         for (const delegate of this.menuDelegates.values()) {
-            if (delegate.isEnabled(widget)) {
+            if (delegate.isVisible(widget)) {
                 const menu = this.menuRegistry.getMenu(delegate.menuPath);
                 const menuToTabbarItems = (item: MenuNode, group = '') => {
                     if (Array.isArray(item.children) && (!item.when || this.contextKeyService.match(item.when, widget.node))) {
@@ -130,7 +130,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                         }
                         item.children.forEach(child => menuToTabbarItems(child, nextGroup));
                     } else if (!Array.isArray(item.children)) {
-                        const asToolbarItem: MenuDelegateToolbarItem = {
+                        const asToolbarItem: MenuToolbarItem = {
                             id: `menu_as_toolbar_item_${item.id}`,
                             command: item.id,
                             when: item.when,
@@ -176,12 +176,12 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
     registerMenuDelegate(menuPath: MenuPath, when?: string | ((widget: Widget) => boolean)): Disposable {
         const id = menuPath.join(menuDelegateSeparator);
         if (!this.menuDelegates.has(id)) {
-            const isEnabled: MenuDelegate['isEnabled'] = !when
+            const isVisible: MenuDelegate['isVisible'] = !when
                 ? yes
                 : typeof when === 'function'
                     ? when
-                    : widget => this.contextKeyService.match(when, widget.node);
-            this.menuDelegates.set(id, { menuPath, isEnabled });
+                    : widget => this.contextKeyService.match(when, widget?.node);
+            this.menuDelegates.set(id, { menuPath, isVisible });
             this.fireOnDidChange();
             return { dispose: () => this.unregisterMenuDelegate(menuPath) };
         }
