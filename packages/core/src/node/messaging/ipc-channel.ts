@@ -24,7 +24,7 @@ import { BinaryMessagePipe } from './binary-message-pipe';
 
 /**
  * A {@link Channel} to send messages between two processes using a dedicated pipe/fd for binary messages.
- * This fd is opened as 5th channel in addition to the default stdios (stdin,stdout,stderr, ipc). This means the default channels
+ * This fd is opened as 5th channel in addition to the default stdios (stdin, stdout, stderr, ipc). This means the default channels
  * are not blocked and can be used by the respective process for additional custom message handling.
  */
 export class IPCChannel implements Channel {

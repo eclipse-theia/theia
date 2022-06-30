@@ -108,9 +108,9 @@ export class MessagingContribution implements BackendApplicationContribution, Me
 
     protected handleChannels(socket: Socket): void {
         const socketChannel = new WebSocketChannel(this.toIWebSocket(socket));
-        const mulitplexer = new ChannelMultiplexer(socketChannel);
+        const multiplexer = new ChannelMultiplexer(socketChannel);
         const channelHandlers = this.getConnectionChannelHandlers(socket);
-        mulitplexer.onDidOpenChannel(event => {
+        multiplexer.onDidOpenChannel(event => {
             if (channelHandlers.route(event.id, event.channel)) {
                 console.debug(`Opening channel for service path '${event.id}'.`);
                 event.channel.onClose(() => console.debug(`Closing channel on service path '${event.id}'.`));
