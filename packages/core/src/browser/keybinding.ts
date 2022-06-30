@@ -27,6 +27,7 @@ import { StatusBarAlignment, StatusBar } from './status-bar/status-bar';
 import { ContextKeyService } from './context-key-service';
 import { CorePreferences } from './core-preferences';
 import * as common from '../common/keybinding';
+import { nls } from '../common/nls';
 
 export enum KeybindingScope {
     DEFAULT,
@@ -559,7 +560,7 @@ export class KeybindingRegistry {
             event.stopPropagation();
 
             this.statusBar.setElement('keybinding-status', {
-                text: `(${this.acceleratorForSequence(this.keySequence, '+')}) was pressed, waiting for more keys`,
+                text: nls.localize('theia/core/keybindingStatus', '{0} was pressed, waiting for more keys', `(${this.acceleratorForSequence(this.keySequence, '+')})`),
                 alignment: StatusBarAlignment.LEFT,
                 priority: 2
             });

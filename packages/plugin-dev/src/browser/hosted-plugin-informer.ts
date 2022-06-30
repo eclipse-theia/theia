@@ -31,7 +31,7 @@ import { nls } from '@theia/core/lib/common/nls';
 @injectable()
 export class HostedPluginInformer implements FrontendApplicationContribution {
 
-    public static readonly DEVELOPMENT_HOST_TITLE = 'Development Host';
+    public static readonly DEVELOPMENT_HOST_TITLE = nls.localize('theia/plugin-dev/devHost', 'Development Host');
 
     public static readonly DEVELOPMENT_HOST = 'development-host';
 

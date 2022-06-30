@@ -20,6 +20,7 @@ import { ReactWidget, Message, Widget, codicon } from '@theia/core/lib/browser';
 import { VSXExtension, VSXExtensionEditorComponent } from './vsx-extension';
 import { VSXExtensionsModel } from './vsx-extensions-model';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class VSXExtensionEditor extends ReactWidget {
@@ -66,7 +67,7 @@ export class VSXExtensionEditor extends ReactWidget {
     }
 
     protected updateTitle(): void {
-        const label = 'Extension: ' + (this.extension.displayName || this.extension.name);
+        const label = nls.localizeByDefault('Extension: {0}', (this.extension.displayName || this.extension.name));
         this.title.label = label;
         this.title.caption = label;
     }

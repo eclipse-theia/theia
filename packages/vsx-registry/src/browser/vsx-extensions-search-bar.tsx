@@ -18,6 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import { ReactWidget, Message } from '@theia/core/lib/browser/widgets';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class VSXExtensionsSearchBar extends ReactWidget {
@@ -40,7 +41,7 @@ export class VSXExtensionsSearchBar extends ReactWidget {
             defaultValue={this.model.query}
             spellCheck={false}
             className='theia-input'
-            placeholder='Search Extensions in Open VSX Registry'
+            placeholder={nls.localize('theia/vsx-registry/searchPlaceholder', 'Search Extensions in {0}', 'Open VSX Registry')}
             onChange={this.updateQuery}>
         </input>;
     }

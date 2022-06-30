@@ -20,7 +20,7 @@ import { Event, Emitter } from '../common/event';
 import { DefaultFrontendApplicationContribution } from './frontend-application';
 import { StatusBar, StatusBarAlignment } from './status-bar/status-bar';
 import { WebSocketConnectionProvider } from './messaging/ws-connection-provider';
-import { Disposable, DisposableCollection } from '../common';
+import { Disposable, DisposableCollection, nls } from '../common';
 
 /**
  * Service for listening on backend connection changes.
@@ -205,8 +205,8 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
     protected handleOffline(): void {
         this.statusBar.setElement(this.statusbarId, {
             alignment: StatusBarAlignment.LEFT,
-            text: 'Offline',
-            tooltip: 'Cannot connect to backend.',
+            text: nls.localize('theia/core/offline', 'Offline'),
+            tooltip: nls.localize('theia/localize/offlineTooltip', 'Cannot connect to backend.'),
             priority: 5000
         });
         this.toDisposeOnOnline.push(Disposable.create(() => this.statusBar.removeElement(this.statusbarId)));

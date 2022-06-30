@@ -39,6 +39,7 @@ import { CorePreferences } from '../core-preferences';
 import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { Deferred } from '../../common/promise-util';
 import { SaveResourceService } from '../save-resource-service';
+import { nls } from '../../common/nls';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -1428,14 +1429,15 @@ export class ApplicationShell extends Widget {
         if (this.bottomPanel.isEmpty) {
             this.statusBar.removeElement(BOTTOM_PANEL_TOGGLE_ID);
         } else {
+            const label = nls.localize('theia/core/common/collapseBottomPanel', 'Toggle Bottom Panel');
             const element: StatusBarEntry = {
-                name: 'Toggle Bottom Panel',
+                name: label,
                 text: '$(codicon-window)',
                 alignment: StatusBarAlignment.RIGHT,
-                tooltip: 'Toggle Bottom Panel',
+                tooltip: label,
                 command: 'core.toggle.bottom.panel',
                 accessibilityInformation: {
-                    label: 'Toggle Bottom Panel',
+                    label: label,
                     role: 'button'
                 },
                 priority: -1000
