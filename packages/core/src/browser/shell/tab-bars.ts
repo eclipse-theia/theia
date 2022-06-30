@@ -1024,7 +1024,7 @@ export class SideTabBar extends ScrollableTabBar {
 
     /**
      * Handle `viewContainerPart` drag over,
-     * Defines the appropriate `drpAction` and opens the tab on which the mouse stands on for more than 800 ms.
+     * Defines the appropriate `dropAction` and opens the tab on which the mouse stands on for more than 800 ms.
      */
     protected onDragOver = (event: IDragEvent) => {
         const factory = event.mimeData.getData('application/vnd.phosphor.view-container-factory');

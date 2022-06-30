@@ -32,11 +32,11 @@ export class PluginServerHandler implements PluginServer {
 
     async deploy(pluginEntry: string, arg2?: PluginType | CancellationToken, options?: PluginDeployOptions): Promise<void> {
         const type = typeof arg2 === 'number' ? arg2 as PluginType : undefined;
-        const succesfulDeployments = await this.doDeploy({
+        const successfulDeployments = await this.doDeploy({
             id: pluginEntry,
             type: type ?? PluginType.User
         }, options);
-        if (succesfulDeployments === 0) {
+        if (successfulDeployments === 0) {
             const optionText = options ? ` and options ${JSON.stringify(options)} ` : ' ';
             throw new Error(`Deployment of extension with ID ${pluginEntry}${optionText}failed.`);
         }
