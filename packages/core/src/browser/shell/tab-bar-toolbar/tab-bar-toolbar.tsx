@@ -16,13 +16,12 @@
 
 import { inject, injectable } from 'inversify';
 import * as React from 'react';
-import { CommandRegistry, Disposable, DisposableCollection, MenuCommandExecutor, MenuModelRegistry, nls } from '../../../common';
+import { CommandRegistry, CompoundMenuNodeRole, Disposable, DisposableCollection, MenuCommandExecutor, MenuModelRegistry, MenuPath, nls } from '../../../common';
 import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../../context-menu-renderer';
 import { LabelIcon, LabelParser } from '../../label-parser';
 import { ACTION_ITEM, codicon, ReactWidget, Widget } from '../../widgets';
 import { TabBarToolbarRegistry } from './tab-bar-toolbar-registry';
-// eslint-disable-next-line max-len
-import { AnyToolbarItem, menuDelegateSeparator, ReactTabBarToolbarItem, submenuItemPrefix, TabBarDelegator, TabBarToolbarItem, TAB_BAR_TOOLBAR_CONTEXT_MENU } from './tab-bar-toolbar-types';
+import { AnyToolbarItem, ReactTabBarToolbarItem, TabBarDelegator, TabBarToolbarItem, TAB_BAR_TOOLBAR_CONTEXT_MENU } from './tab-bar-toolbar-types';
 
 /**
  * Factory for instantiating tab-bar toolbars.
@@ -41,7 +40,6 @@ export class TabBarToolbar extends ReactWidget {
     protected current: Widget | undefined;
     protected inline = new Map<string, TabBarToolbarItem | ReactTabBarToolbarItem>();
     protected more = new Map<string, TabBarToolbarItem>();
-    protected submenuItems = new Map<string, Map<string, TabBarToolbarItem>>();
 
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
     @inject(LabelParser) protected readonly labelParser: LabelParser;
@@ -59,16 +57,11 @@ export class TabBarToolbar extends ReactWidget {
     updateItems(items: Array<TabBarToolbarItem | ReactTabBarToolbarItem>, current: Widget | undefined): void {
         this.inline.clear();
         this.more.clear();
-        this.submenuItems.clear();
         for (const item of items.sort(TabBarToolbarItem.PRIORITY_COMPARATOR).reverse()) {
             if ('render' in item || item.group === undefined || item.group === 'navigation') {
                 this.inline.set(item.id, item);
             } else {
-                if (item.group?.startsWith(submenuItemPrefix)) {
-                    this.addSubmenuItem(item);
-                } else {
-                    this.more.set(item.id, item);
-                }
+                this.more.set(item.id, item);
             }
         }
         this.setCurrent(current);
@@ -81,21 +74,6 @@ export class TabBarToolbar extends ReactWidget {
             }
         }));
         this.update();
-    }
-
-    protected addSubmenuItem(item: TabBarToolbarItem): void {
-        if (item.group) {
-            let doSet = false;
-            const secondElementEndIndex = item.group.indexOf(menuDelegateSeparator, submenuItemPrefix.length);
-            const prefix = secondElementEndIndex === -1
-                ? item.group.substring(submenuItemPrefix.length)
-                : item.group.substring(submenuItemPrefix.length, secondElementEndIndex);
-            const prefixItems = this.submenuItems.get(prefix) ?? (doSet = true, new Map());
-            prefixItems.set(item.id, item);
-            if (doSet) {
-                this.submenuItems.set(prefix, prefixItems);
-            }
-        }
     }
 
     updateTarget(current?: Widget): void {
@@ -193,34 +171,34 @@ export class TabBarToolbar extends ReactWidget {
         return itemBox ? { y: itemBox.bottom, x: itemBox.left } : event.nativeEvent;
     }
 
-    renderMoreContextMenu(anchor: Anchor, prefix?: string): ContextMenuAccess {
+    renderMoreContextMenu(anchor: Anchor, subpath?: MenuPath): ContextMenuAccess {
         const toDisposeOnHide = new DisposableCollection();
         this.addClass('menu-open');
         toDisposeOnHide.push(Disposable.create(() => this.removeClass('menu-open')));
-        const items = (prefix ? this.submenuItems.get(prefix) ?? new Map() : this.more);
-        for (const item of items.values()) {
-            const separator = item.group && [menuDelegateSeparator, '/'].find(candidate => item.group?.includes(candidate));
-            if (prefix && !item.group?.startsWith(`navigation${separator}${prefix}`) || !prefix && item.group?.startsWith(`navigation${separator}`)) {
-                continue;
-            }
-            // Register a submenu for the item, if the group is in format `<submenu group>/<submenu name>/.../<item group>`
-            if (separator) {
-                const split = item.group.split(separator);
-                const paths: string[] = [];
-                for (let i = 0; i < split.length - 1; i += 2) {
-                    paths.push(split[i], split[i + 1]);
-                    // TODO order is missing, items sorting will be alphabetic
-                    if (split[i + 1]) {
-                        toDisposeOnHide.push(this.menus.registerSubmenu([...TAB_BAR_TOOLBAR_CONTEXT_MENU, ...paths], split[i + 1]));
+        if (subpath) {
+            toDisposeOnHide.push(this.menus.linkSubmenu(TAB_BAR_TOOLBAR_CONTEXT_MENU, subpath[0], { role: CompoundMenuNodeRole.Flat, when: '' }));
+        } else {
+            for (const item of this.more.values() as IterableIterator<AnyToolbarItem>) {
+                if (item.menuPath && !item.command) {
+                    toDisposeOnHide.push(this.menus.linkSubmenu(TAB_BAR_TOOLBAR_CONTEXT_MENU, item.menuPath[0], { role: CompoundMenuNodeRole.Flat, when: '' }, item.group));
+                } else if (item.command) {
+                    // Register a submenu for the item, if the group is in format `<submenu group>/<submenu name>/.../<item group>`
+                    if (item.group?.includes('/')) {
+                        const split = item.group.split('/');
+                        const paths: string[] = [];
+                        for (let i = 0; i < split.length - 1; i += 2) {
+                            paths.push(split[i], split[i + 1]);
+                            toDisposeOnHide.push(this.menus.registerSubmenu([...TAB_BAR_TOOLBAR_CONTEXT_MENU, ...paths], split[i + 1], { order: item.order }));
+                        }
                     }
+                    toDisposeOnHide.push(this.menus.registerMenuAction([...TAB_BAR_TOOLBAR_CONTEXT_MENU, ...item.group!.split('/')], {
+                        label: item.tooltip,
+                        commandId: item.command,
+                        when: item.when,
+                        order: item.order,
+                    }));
                 }
             }
-            // TODO order is missing, items sorting will be alphabetic
-            toDisposeOnHide.push(this.menus.registerMenuAction([...TAB_BAR_TOOLBAR_CONTEXT_MENU, ...item.group!.split(separator)], {
-                label: item.tooltip,
-                commandId: item.command,
-                when: item.when
-            }));
         }
         return this.contextMenuRenderer.render({
             menuPath: TAB_BAR_TOOLBAR_CONTEXT_MENU,
@@ -253,8 +231,7 @@ export class TabBarToolbar extends ReactWidget {
         } else if (item?.command) {
             this.commands.executeCommand(item.command, this.current);
         } else if (item?.menuPath) {
-            // TODO @CJG - this isn't the final plan!
-            this.renderMoreContextMenu(this.toAnchor(e), item.menuPath.join(''))
+            this.renderMoreContextMenu(this.toAnchor(e), item.menuPath);
         }
         this.update();
     };

@@ -172,9 +172,6 @@ export class MenuModelRegistry {
             throw new Error(`Attempted to link non-existent menu with id ${childId}`);
         }
         const parent = this.getMenuNode(parentPath, group);
-        if (!parent) {
-            throw new Error(`Attempted to link into a non-existent parent with path ${parentPath}`);
-        }
         const wrapper = new CompositeMenuNodeWrapper(child, options);
         return parent.addNode(wrapper);
     }

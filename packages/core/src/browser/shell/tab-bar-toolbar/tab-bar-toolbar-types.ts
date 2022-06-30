@@ -21,8 +21,6 @@ import { Widget } from '../../widgets';
 /** Items whose group is exactly 'navigation' will be rendered inline. */
 export const NAVIGATION = 'navigation';
 export const TAB_BAR_TOOLBAR_CONTEXT_MENU = ['TAB_BAR_TOOLBAR_CONTEXT_MENU'];
-export const menuDelegateSeparator = '@=@';
-export const submenuItemPrefix = `navigation${menuDelegateSeparator}`;
 
 export interface TabBarDelegator extends Widget {
     getTabBarDelegate(): Widget | undefined;

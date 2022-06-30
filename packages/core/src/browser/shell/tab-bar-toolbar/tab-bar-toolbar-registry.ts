@@ -20,7 +20,7 @@ import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection
 import { ContextKeyService } from '../../context-key-service';
 import { FrontendApplicationContribution } from '../../frontend-application';
 import { Widget } from '../../widgets';
-import { MenuDelegate, menuDelegateSeparator, MenuToolbarItem, ReactTabBarToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
+import { MenuDelegate, MenuToolbarItem, ReactTabBarToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
 
 /**
  * Clients should implement this interface if they want to contribute to the tab-bar toolbar.
@@ -38,6 +38,7 @@ export interface TabBarToolbarContribution {
 }
 
 function yes(): true { return true; }
+const menuDelegateSeparator = '=@=';
 
 /**
  * Main, shared registry for tab-bar toolbar items.
@@ -148,22 +149,6 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
             }
         }
         return result;
-    }
-
-    protected formatGroupForSubmenus(lastGroup: string, currentId?: string, currentLabel?: string): string {
-        const split = lastGroup.length ? lastGroup.split(menuDelegateSeparator) : [];
-        // If the submenu is in the 'navigation' group, then it's an item that opens its own context menu, so it should be navigation/id/label...
-        const expectedParity = split[0] === 'navigation' ? 1 : 0;
-        if (split.length % 2 !== expectedParity && (currentId || currentLabel)) {
-            split.push('');
-        }
-        if (currentId || currentLabel) {
-            split.push(currentId || (currentLabel + '_id'));
-        }
-        if (currentLabel) {
-            split.push(currentLabel);
-        }
-        return split.join(menuDelegateSeparator);
     }
 
     unregisterItem(itemOrId: TabBarToolbarItem | ReactTabBarToolbarItem | string): void {
