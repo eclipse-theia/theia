@@ -145,7 +145,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
             if (myItems.length === 0) { return parentItems; }
             if (role === CompoundMenuNodeRole.Submenu) {
                 parentItems.push({ label: menu.label, submenu: myItems });
-            } else if (role === CompoundMenuNodeRole.Group) {
+            } else if (role === CompoundMenuNodeRole.Group && menu.id !== 'inline') {
                 if (parentItems.length && parentItems[parentItems.length - 1].type !== 'separator') {
                     parentItems.push({ type: 'separator' });
                 }

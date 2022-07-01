@@ -294,15 +294,15 @@ export class DynamicMenuWidget extends MenuWidget {
             if (role === CompoundMenuNodeRole.Submenu) {
                 const submenu = this.services.menuWidgetFactory.createMenuWidget(menu, this.options);
                 parentItems.push({ type: 'submenu', submenu });
-            } else if (role === CompoundMenuNodeRole.Group) {
+            } else if (role === CompoundMenuNodeRole.Group && menu.id !== 'inline') {
                 const children = CompoundMenuNode.getFlatChildren(menu.children);
                 const myItems: MenuWidget.IItemOptions[] = [];
                 children.forEach(child => this.buildSubMenus(myItems, child, commands));
-                if (parentItems.length && myItems.length && parentItems[parentItems.length - 1].type !== 'separator') {
-                    parentItems.push({ type: 'separator' });
-                }
-                parentItems.push(...myItems);
                 if (myItems.length) {
+                    if (parentItems.length && parentItems[parentItems.length - 1].type !== 'separator') {
+                        parentItems.push({ type: 'separator' });
+                    }
+                    parentItems.push(...myItems);
                     parentItems.push({ type: 'separator' });
                 }
             }

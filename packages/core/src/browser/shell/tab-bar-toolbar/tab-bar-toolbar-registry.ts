@@ -21,7 +21,7 @@ import { CommandMenuNode, CommandRegistry, CompoundMenuNode, ContributionProvide
 import { ContextKeyService } from '../../context-key-service';
 import { FrontendApplicationContribution } from '../../frontend-application';
 import { Widget } from '../../widgets';
-import { MenuDelegate, NAVIGATION, ReactTabBarToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
+import { MenuDelegate, ReactTabBarToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
 import { ToolbarMenuNodeWrapper } from './tab-bar-toolbar-menu-adapters';
 
 /**
@@ -101,8 +101,6 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
         if (widget.isDisposed) {
             return [];
         }
-        const doLog = widget.id === 'plugin-view:npm';
-        const log = (...stuff: unknown[]) => { if (doLog) { console.log(...stuff); } };
         const result: Array<TabBarToolbarItem | ReactTabBarToolbarItem> = [];
         for (const item of this.items.values()) {
             const visible = TabBarToolbarItem.is(item)
@@ -112,21 +110,15 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                 result.push(item);
             }
         }
-        log('SENTINEL FOR THE RESULT AFTER PURE TOOLBAR ITEMS:', widget.id, result.slice());
         for (const delegate of this.menuDelegates.values()) {
-            log('SENTINEL FOR CHECKING A DELEGATE', delegate.menuPath);
             if (delegate.isVisible(widget)) {
-                log('SENTINEL FOR A DELEGATE PASSING', delegate.menuPath);
                 const menu = this.menuRegistry.getMenu(delegate.menuPath);
                 const children = CompoundMenuNode.getFlatChildren(menu.children);
-                log('SENTINEL FOR THE MENU AND THE CHILDREN', menu, children);
                 for (const child of children) {
                     if (!child.when || this.contextKeyService.match(child.when, widget.node)) {
-                        log('SENTINEL FOR THIS CHILD PASSING', child);
                         if (child.children) {
                             for (const grandchild of child.children) {
                                 if (!grandchild.when || this.contextKeyService.match(grandchild.when, widget.node)) {
-                                    log('SENTINEL FOR THIS GRANDCHILD PASSING', grandchild);
                                     if (CommandMenuNode.is(grandchild)) {
                                         result.push(new ToolbarMenuNodeWrapper(grandchild, child.id, delegate.menuPath));
                                     } else if (CompoundMenuNode.is(grandchild)) {
@@ -135,16 +127,15 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                                             result.push(new ToolbarMenuNodeWrapper(grandchild, child.id, menuPath));
                                         }
                                     }
-                                } else { log('SENTINEL FOR THIS GRANDCHILD FAILING', grandchild); }
+                                }
                             }
                         } else if (child.command) {
-                            result.push(new ToolbarMenuNodeWrapper(child, NAVIGATION, delegate.menuPath));
+                            result.push(new ToolbarMenuNodeWrapper(child, '', delegate.menuPath));
                         }
-                    } else { log('SENTINEL FOR THIS CHILD FAILING:', child); }
+                    }
                 }
             }
         }
-        log('SENTINEL FOR THE RESULT AFTER MENU ITEMS:', widget.id, result.slice());
         return result;
     }
 
