@@ -2933,6 +2933,13 @@ export module '@theia/plugin' {
         env?: { [key: string]: string | null };
 
         /**
+         * A message to write to the terminal on first launch. Note that this is not sent to the
+         * process, but rather written directly to the terminal. This supports escape sequences such
+         * as setting text style.
+         */
+        message?: string;
+
+        /**
          * Terminal attributes. Can be useful to apply some implementation specific information.
          */
         attributes?: { [key: string]: string | null };

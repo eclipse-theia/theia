@@ -127,8 +127,11 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
                 destroyTermOnClose: true,
                 useServerTitle: false,
                 attributes: options.attributes,
-                isPseudoTerminal,
+                isPseudoTerminal
             });
+            if (options.message) {
+                terminal.writeLine(options.message);
+            }
             terminal.start();
             return terminal.id;
         } catch (error) {
