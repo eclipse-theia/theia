@@ -25,7 +25,7 @@ export class CompositeMenuNode implements MenuNode, CompoundMenuNode, CompoundMe
     public iconClass?: string;
     public order?: string;
     readonly when?: string;
-    readonly role: CompoundMenuNodeRole;
+    readonly _role?: CompoundMenuNodeRole;
 
     constructor(
         public readonly id: string,
@@ -37,8 +37,8 @@ export class CompositeMenuNode implements MenuNode, CompoundMenuNode, CompoundMe
             this.iconClass = options.iconClass;
             this.order = options.order;
             this.when = options.when;
+            this._role = options?.role;
         }
-        this.role = options?.role ?? CompoundMenuNode.getRole(this)!;
     }
 
     get icon(): string | undefined {
@@ -48,6 +48,8 @@ export class CompositeMenuNode implements MenuNode, CompoundMenuNode, CompoundMe
     get children(): ReadonlyArray<MenuNode> {
         return this._children;
     }
+
+    get role(): CompoundMenuNodeRole { return this._role ?? (this.label ? CompoundMenuNodeRole.Submenu : CompoundMenuNodeRole.Group); }
 
     /**
      * Inserts the given node at the position indicated by `sortString`.
