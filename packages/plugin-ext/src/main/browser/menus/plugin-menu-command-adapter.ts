@@ -223,7 +223,7 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
         const arg = args[0];
         timelineArgs.push(this.toTimelineArg(arg));
         timelineArgs.push(CodeUri.parse(arg.uri));
-        timelineArgs.push('source' in arg ? arg.source : '');
+        timelineArgs.push(arg.source ?? '');
         return timelineArgs;
     }
 
