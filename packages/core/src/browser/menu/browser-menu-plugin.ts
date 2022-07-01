@@ -295,16 +295,7 @@ export class DynamicMenuWidget extends MenuWidget {
                 const submenu = this.services.menuWidgetFactory.createMenuWidget(menu, this.options);
                 parentItems.push({ type: 'submenu', submenu });
             } else if (role === CompoundMenuNodeRole.Group) {
-                const childrenToMerge: ReadonlyArray<MenuNode>[] = [];
-                const children = menu.children.filter(child => {
-                    if (CompoundMenuNode.getRole(child) === CompoundMenuNodeRole.Flat) {
-                        if (this.undefinedOrMatch(child.when, this.options.context)) {
-                            childrenToMerge.push((child as CompoundMenuNode).children);
-                        }
-                        return false;
-                    }
-                    return true;
-                }).concat(...childrenToMerge).sort(CompoundMenuNode.sortChildren);
+                const children = CompoundMenuNode.getFlatChildren(menu.children);
                 const myItems: MenuWidget.IItemOptions[] = [];
                 children.forEach(child => this.buildSubMenus(myItems, child, commands));
                 if (parentItems.length && myItems.length && parentItems[parentItems.length - 1].type !== 'separator') {

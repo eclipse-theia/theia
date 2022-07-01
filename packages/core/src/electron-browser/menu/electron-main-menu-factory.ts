@@ -139,18 +139,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         if (CompoundMenuNode.is(menu) && menu.children.length && this.undefinedOrMatch(menu.when, options.context)) {
             const role = CompoundMenuNode.getRole(menu);
             if (role === CompoundMenuNodeRole.Group && menu.id === 'inline') { return parentItems; }
-
-            const childrenToMerge: ReadonlyArray<MenuNode>[] = [];
-            const children = menu.children.filter(child => {
-                if (CompoundMenuNode.getRole(child) === CompoundMenuNodeRole.Flat) {
-                    if (this.undefinedOrMatch(child.when, options.context)) {
-                        childrenToMerge.push((child as CompoundMenuNode).children);
-                    }
-                    return false;
-                }
-                return true;
-            }).concat(...childrenToMerge).sort(CompoundMenuNode.sortChildren);
-
+            const children = CompoundMenuNode.getFlatChildren(menu.children);
             const myItems: Electron.MenuItemConstructorOptions[] = [];
             children.forEach(child => this.fillMenuTemplate(myItems, child, args, options));
             if (myItems.length === 0) { return parentItems; }

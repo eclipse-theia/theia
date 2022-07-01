@@ -106,7 +106,7 @@ export class TabBarToolbar extends ReactWidget {
         </React.Fragment>;
     }
 
-    protected renderItem(item: TabBarToolbarItem): React.ReactNode {
+    protected renderItem(item: AnyToolbarItem): React.ReactNode {
         let innerText = '';
         const classNames = [];
         if (item.text) {
@@ -119,7 +119,7 @@ export class TabBarToolbar extends ReactWidget {
                 }
             }
         }
-        const command = this.commands.getCommand(item.command);
+        const command = item.command ? this.commands.getCommand(item.command) : undefined;
         let iconClass = (typeof item.icon === 'function' && item.icon()) || item.icon as string || (command && command.iconClass);
         if (iconClass) {
             iconClass += ` ${ACTION_ITEM}`;
@@ -127,8 +127,9 @@ export class TabBarToolbar extends ReactWidget {
         }
         const tooltip = item.tooltip || (command && command.label);
         const toolbarItemClassNames = this.getToolbarItemClassNames(command?.id ?? item.command);
+        if (item.menuPath && !item.command) { toolbarItemClassNames.push('enabled'); }
         return <div key={item.id}
-            className={toolbarItemClassNames}
+            className={toolbarItemClassNames.join(' ')}
             onMouseDown={this.onMouseDownEvent}
             onMouseUp={this.onMouseUpEvent}
             onMouseOut={this.onMouseUpEvent} >
@@ -139,17 +140,17 @@ export class TabBarToolbar extends ReactWidget {
         </div>;
     }
 
-    protected getToolbarItemClassNames(commandId: string | undefined): string {
+    protected getToolbarItemClassNames(commandId: string | undefined): string[] {
         const classNames = [TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM];
         if (commandId) {
-            if (commandId === '_never_' || this.commandIsEnabled(commandId)) {
+            if (this.commandIsEnabled(commandId)) {
                 classNames.push('enabled');
             }
             if (this.commandIsToggled(commandId)) {
                 classNames.push('toggled');
             }
         }
-        return classNames.join(' ');
+        return classNames;
     }
 
     protected renderMore(): React.ReactNode {
@@ -176,11 +177,11 @@ export class TabBarToolbar extends ReactWidget {
         this.addClass('menu-open');
         toDisposeOnHide.push(Disposable.create(() => this.removeClass('menu-open')));
         if (subpath) {
-            toDisposeOnHide.push(this.menus.linkSubmenu(TAB_BAR_TOOLBAR_CONTEXT_MENU, subpath[0], { role: CompoundMenuNodeRole.Flat, when: '' }));
+            toDisposeOnHide.push(this.menus.linkSubmenu(TAB_BAR_TOOLBAR_CONTEXT_MENU, subpath, { role: CompoundMenuNodeRole.Flat, when: '' }));
         } else {
             for (const item of this.more.values() as IterableIterator<AnyToolbarItem>) {
                 if (item.menuPath && !item.command) {
-                    toDisposeOnHide.push(this.menus.linkSubmenu(TAB_BAR_TOOLBAR_CONTEXT_MENU, item.menuPath[0], { role: CompoundMenuNodeRole.Flat, when: '' }, item.group));
+                    toDisposeOnHide.push(this.menus.linkSubmenu(TAB_BAR_TOOLBAR_CONTEXT_MENU, item.menuPath, { role: CompoundMenuNodeRole.Flat, when: '' }, item.group));
                 } else if (item.command) {
                     // Register a submenu for the item, if the group is in format `<submenu group>/<submenu name>/.../<item group>`
                     if (item.group?.includes('/')) {

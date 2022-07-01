@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { inject, postConstruct, injectable } from '@theia/core/shared/inversify';
-import { Disposable } from '@theia/core';
+import { Disposable, MenuPath } from '@theia/core';
 import { ReactWidget } from '@theia/core/lib/browser/widgets';
 import { DebugViewModel } from './debug-view-model';
 import { DebugState } from '../debug-session';
@@ -25,6 +25,8 @@ import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class DebugToolBar extends ReactWidget {
+
+    static readonly MENU: MenuPath = ['debug-toolbar-menu'];
 
     @inject(DebugViewModel)
     protected readonly model: DebugViewModel;

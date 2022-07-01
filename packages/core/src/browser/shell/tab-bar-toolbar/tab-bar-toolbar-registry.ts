@@ -16,11 +16,13 @@
 
 import debounce = require('lodash.debounce');
 import { inject, injectable, named } from 'inversify';
-import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuNode, MenuPath } from '../../../common';
+// eslint-disable-next-line max-len
+import { CommandMenuNode, CommandRegistry, CompoundMenuNode, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuPath } from '../../../common';
 import { ContextKeyService } from '../../context-key-service';
 import { FrontendApplicationContribution } from '../../frontend-application';
 import { Widget } from '../../widgets';
-import { MenuDelegate, MenuToolbarItem, ReactTabBarToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
+import { MenuDelegate, NAVIGATION, ReactTabBarToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
+import { ToolbarMenuNodeWrapper } from './tab-bar-toolbar-menu-adapters';
 
 /**
  * Clients should implement this interface if they want to contribute to the tab-bar toolbar.
@@ -99,6 +101,8 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
         if (widget.isDisposed) {
             return [];
         }
+        const doLog = widget.id === 'plugin-view:npm';
+        const log = (...stuff: unknown[]) => { if (doLog) { console.log(...stuff); } };
         const result: Array<TabBarToolbarItem | ReactTabBarToolbarItem> = [];
         for (const item of this.items.values()) {
             const visible = TabBarToolbarItem.is(item)
@@ -108,46 +112,39 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                 result.push(item);
             }
         }
+        log('SENTINEL FOR THE RESULT AFTER PURE TOOLBAR ITEMS:', widget.id, result.slice());
         for (const delegate of this.menuDelegates.values()) {
+            log('SENTINEL FOR CHECKING A DELEGATE', delegate.menuPath);
             if (delegate.isVisible(widget)) {
+                log('SENTINEL FOR A DELEGATE PASSING', delegate.menuPath);
                 const menu = this.menuRegistry.getMenu(delegate.menuPath);
-                const menuToTabbarItems = (item: MenuNode, group = '') => {
-                    if (Array.isArray(item.children) && (!item.when || this.contextKeyService.match(item.when, widget.node))) {
-                        const nextGroup = item === menu
-                            ? group
-                            : this.formatGroupForSubmenus(group, item.id, item.label);
-                        if (group === 'navigation') {
-                            const asSubmenuItem: TabBarToolbarItem & MenuToolbarItem = {
-                                id: `submenu_as_toolbar_item_${item.id}`,
-                                command: '_never_',
-                                menuPath: delegate.menuPath,
-                                when: item.when,
-                                icon: item.icon,
-                                group,
-                            };
-                            if (!asSubmenuItem.when || this.contextKeyService.match(asSubmenuItem.when, widget.node)) {
-                                result.push(asSubmenuItem);
+                const children = CompoundMenuNode.getFlatChildren(menu.children);
+                log('SENTINEL FOR THE MENU AND THE CHILDREN', menu, children);
+                for (const child of children) {
+                    if (!child.when || this.contextKeyService.match(child.when, widget.node)) {
+                        log('SENTINEL FOR THIS CHILD PASSING', child);
+                        if (child.children) {
+                            for (const grandchild of child.children) {
+                                if (!grandchild.when || this.contextKeyService.match(grandchild.when, widget.node)) {
+                                    log('SENTINEL FOR THIS GRANDCHILD PASSING', grandchild);
+                                    if (CommandMenuNode.is(grandchild)) {
+                                        result.push(new ToolbarMenuNodeWrapper(grandchild, child.id, delegate.menuPath));
+                                    } else if (CompoundMenuNode.is(grandchild)) {
+                                        let menuPath;
+                                        if (menuPath = this.menuRegistry.getPath(grandchild)) {
+                                            result.push(new ToolbarMenuNodeWrapper(grandchild, child.id, menuPath));
+                                        }
+                                    }
+                                } else { log('SENTINEL FOR THIS GRANDCHILD FAILING', grandchild); }
                             }
+                        } else if (child.command) {
+                            result.push(new ToolbarMenuNodeWrapper(child, NAVIGATION, delegate.menuPath));
                         }
-                        item.children.forEach(child => menuToTabbarItems(child, nextGroup));
-                    } else if (!Array.isArray(item.children)) {
-                        const asToolbarItem: TabBarToolbarItem & MenuToolbarItem = {
-                            id: `menu_as_toolbar_item_${item.id}`,
-                            command: item.id,
-                            when: item.when,
-                            icon: item.icon,
-                            tooltip: item.label ?? item.id,
-                            menuPath: delegate.menuPath,
-                            group,
-                        };
-                        if (!asToolbarItem.when || this.contextKeyService.match(asToolbarItem.when, widget.node)) {
-                            result.push(asToolbarItem);
-                        }
-                    }
-                };
-                menuToTabbarItems(menu);
+                    } else { log('SENTINEL FOR THIS CHILD FAILING:', child); }
+                }
             }
         }
+        log('SENTINEL FOR THE RESULT AFTER MENU ITEMS:', widget.id, result.slice());
         return result;
     }
 

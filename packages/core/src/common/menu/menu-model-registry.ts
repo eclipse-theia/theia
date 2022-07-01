@@ -138,7 +138,7 @@ export class MenuModelRegistry {
         const parent = this.findGroup(groupPath, options);
         let groupNode = this.findSubMenu(parent, menuId, options);
         if (!groupNode) {
-            groupNode = new CompositeMenuNode(menuId, label, options);
+            groupNode = new CompositeMenuNode(menuId, label, options, parent);
             return parent.addNode(groupNode);
         } else {
             if (!groupNode.label) {
@@ -166,13 +166,10 @@ export class MenuModelRegistry {
         return { dispose: () => this.independentSubmenus.delete(id) };
     }
 
-    linkSubmenu(parentPath: MenuPath | string, childId: string, options?: SubMenuOptions, group?: string): Disposable {
-        const child = this.independentSubmenus.get(childId);
-        if (!child) {
-            throw new Error(`Attempted to link non-existent menu with id ${childId}`);
-        }
+    linkSubmenu(parentPath: MenuPath | string, childId: string | MenuPath, options?: SubMenuOptions, group?: string): Disposable {
+        const child = this.getMenuNode(childId);
         const parent = this.getMenuNode(parentPath, group);
-        const wrapper = new CompositeMenuNodeWrapper(child, options);
+        const wrapper = new CompositeMenuNodeWrapper(child, parent, options);
         return parent.addNode(wrapper);
     }
 
@@ -252,7 +249,7 @@ export class MenuModelRegistry {
         if (sub) {
             throw new Error(`'${menuId}' is not a menu group.`);
         }
-        const newSub = new CompositeMenuNode(menuId, undefined, options);
+        const newSub = new CompositeMenuNode(menuId, undefined, options, current);
         current.addNode(newSub);
         return newSub;
     }
@@ -267,5 +264,23 @@ export class MenuModelRegistry {
      */
     getMenu(menuPath: MenuPath = []): CompositeMenuNode {
         return this.findGroup(menuPath);
+    }
+
+    /**
+     * Returns the {@link MenuPath path} at which a given menu node can be accessed from this registry, if it can be determined.
+     * Returns `undefined` if the `parent` of any node in the chain is unknown.
+     */
+    getPath(node: MenuNode): MenuPath | undefined {
+        const identifiers = [];
+        let next: MenuNode | undefined = node;
+
+        while (next) {
+            if (next === this.root) {
+                return identifiers.reverse();
+            }
+            identifiers.push(next.id);
+            next = next.parent;
+        }
+        return undefined;
     }
 }

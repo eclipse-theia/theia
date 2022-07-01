@@ -30,7 +30,8 @@ export class CompositeMenuNode implements MenuNode, CompoundMenuNode, CompoundMe
     constructor(
         public readonly id: string,
         public label?: string,
-        options?: SubMenuOptions
+        options?: SubMenuOptions,
+        readonly parent?: MenuNode & CompoundMenuNode,
     ) {
         if (options) {
             this.iconClass = options.iconClass;
@@ -94,7 +95,7 @@ export class CompositeMenuNode implements MenuNode, CompoundMenuNode, CompoundMe
 }
 
 export class CompositeMenuNodeWrapper implements MenuNode, CompoundMenuNodeMetadata {
-    constructor(protected readonly wrapped: Readonly<CompositeMenuNode>, protected readonly options?: SubMenuOptions) { }
+    constructor(protected readonly wrapped: Readonly<CompositeMenuNode>, readonly parent: MenuNode & CompoundMenuNode, protected readonly options?: SubMenuOptions) { }
 
     get id(): string { return this.wrapped.id; }
 

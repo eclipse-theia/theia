@@ -28,7 +28,7 @@ export class ActionMenuNode implements MenuNode, CommandMenuNode, Partial<Altern
 
     constructor(
         protected readonly action: MenuAction,
-        protected readonly commands: CommandRegistry
+        protected readonly commands: CommandRegistry,
     ) {
         if (action.alt) {
             this.altNode = new ActionMenuNode({ commandId: action.alt }, commands);

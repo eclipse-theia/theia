@@ -74,6 +74,10 @@ export interface MenuNodeMetadata {
      * See https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts
      */
     readonly when?: string;
+    /**
+     * A reference to the parent node - useful for determining the menu path by which the node can be accessed.
+     */
+    readonly parent?: MenuNode;
 }
 
 export interface MenuNodeRenderingData {
@@ -120,6 +124,18 @@ export namespace CompoundMenuNode {
         return m1.sortString.localeCompare(m2.sortString);
     }
 
+    /** Collapses the children of any subemenus with role {@link CompoundMenuNodeRole Flat} and sorts */
+    export function getFlatChildren(children: ReadonlyArray<MenuNode>): MenuNode[] {
+        const childrenToMerge: ReadonlyArray<MenuNode>[] = [];
+        return children.filter(child => {
+            if (getRole(child) === CompoundMenuNodeRole.Flat) {
+                childrenToMerge.push((child as CompoundMenuNode).children);
+                return false;
+            }
+            return true;
+        }).concat(...childrenToMerge).sort(sortChildren);
+    }
+
     /**
      * Indicates whether the given node is the special `navigation` menu.
      *
@@ -146,6 +162,10 @@ export interface CompoundMenuNodeMetadata {
 
 export interface CommandMenuNode {
     command: string;
+}
+
+export namespace CommandMenuNode {
+    export function is(candidate: MenuNode): candidate is MenuNode & CommandMenuNode { return Boolean(candidate.command); }
 }
 
 export interface AlternativeHandlerMenuNode {
