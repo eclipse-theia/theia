@@ -17,7 +17,7 @@
 import { injectable, ContainerModule } from '@theia/core/shared/inversify';
 import { Menu as MenuWidget } from '@theia/core/shared/@phosphor/widgets';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { MenuNode, CompositeMenuNode, MenuPath, CompoundMenuNode } from '@theia/core/lib/common/menu';
+import { MenuNode, CompositeMenuNode, MenuPath } from '@theia/core/lib/common/menu';
 import { BrowserMainMenuFactory, MenuCommandRegistry, DynamicMenuWidget, BrowserMenuOptions } from '@theia/core/lib/browser/menu/browser-menu-plugin';
 import { PlaceholderMenuNode } from './sample-menu-contribution';
 
@@ -28,7 +28,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 @injectable()
 class SampleBrowserMainMenuFactory extends BrowserMainMenuFactory {
 
-    protected override registerMenu(menuCommandRegistry: MenuCommandRegistry, menu: MenuNode & CompoundMenuNode, args: unknown[]): void {
+    protected override registerMenu(menuCommandRegistry: MenuCommandRegistry, menu: MenuNode, args: unknown[]): void {
         if (menu instanceof PlaceholderMenuNode && menuCommandRegistry instanceof SampleMenuCommandRegistry) {
             menuCommandRegistry.registerPlaceholderMenu(menu);
         } else {
@@ -71,14 +71,13 @@ class SampleMenuCommandRegistry extends MenuCommandRegistry {
 
     protected registerPlaceholder(menu: PlaceholderMenuNode): Disposable {
         const { id } = menu;
-        const unregisterCommand = this.addCommand(id, {
+        return this.addCommand(id, {
             execute: () => { /* NOOP */ },
             label: menu.label,
             icon: menu.icon,
             isEnabled: () => false,
             isVisible: () => true
         });
-        return Disposable.create(() => unregisterCommand.dispose());
     }
 
 }

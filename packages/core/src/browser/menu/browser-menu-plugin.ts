@@ -124,16 +124,15 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
         return menuCommandRegistry;
     }
 
-    protected registerMenu(menuCommandRegistry: MenuCommandRegistry, menu: MenuNode & CompoundMenuNode, args: unknown[]): void {
-        for (const child of menu.children) {
-            if (child.command) {
-                menuCommandRegistry.registerActionMenu(child as MenuNode & CommandMenuNode, args);
-                if (child.altNode) {
-                    menuCommandRegistry.registerActionMenu(child.altNode, args);
-                }
-            } else if (CompoundMenuNode.is(child)) {
-                this.registerMenu(menuCommandRegistry, child, args);
+    protected registerMenu(menuCommandRegistry: MenuCommandRegistry, menu: MenuNode, args: unknown[]): void {
+        if (CompoundMenuNode.is(menu)) {
+            menu.children.forEach(child => this.registerMenu(menuCommandRegistry, child, args));
+        } else if (CommandMenuNode.is(menu)) {
+            menuCommandRegistry.registerActionMenu(menu, args);
+            if (menu.altNode) {
+                menuCommandRegistry.registerActionMenu(menu.altNode, args);
             }
+
         }
     }
 
