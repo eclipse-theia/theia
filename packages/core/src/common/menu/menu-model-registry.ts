@@ -272,12 +272,14 @@ export class MenuModelRegistry {
      */
     getPath(node: MenuNode): MenuPath | undefined {
         const identifiers = [];
+        const visited: MenuNode[] = [];
         let next: MenuNode | undefined = node;
 
-        while (next) {
+        while (next && !visited.includes(next)) {
             if (next === this.root) {
                 return identifiers.reverse();
             }
+            visited.push(next);
             identifiers.push(next.id);
             next = next.parent;
         }
