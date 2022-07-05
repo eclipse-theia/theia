@@ -28,6 +28,7 @@
     "@theia/git": "1.28.0",
     "@theia/keymaps": "1.28.0",
     "@theia/markers": "1.28.0",
+    "@theia/memory-inspector": "1.28.0",
     "@theia/messages": "1.28.0",
     "@theia/metrics": "1.28.0",
     "@theia/mini-browser": "1.28.0",

@@ -243,8 +243,12 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         // `file` and `untitled` schemas are reserved by `workspace.openTextDocument` API:
         // `file`-scheme for opening a file
         // `untitled`-scheme for opening a new file that should be saved
-        if (scheme === Schemes.file || scheme === Schemes.untitled || this.documentContentProviders.has(scheme)) {
+        if (scheme === Schemes.file || scheme === Schemes.untitled) {
             throw new Error(`Text Content Document Provider for scheme '${scheme}' is already registered`);
+        } else if (this.documentContentProviders.has(scheme)) {
+            // TODO: we should be able to handle multiple registrations, but for now we should ensure that it doesn't crash plugin activation.
+            console.warn(`Repeat registration of TextContentDocumentProvider for scheme '${scheme}'. This registration will be ignored.`);
+            return { dispose: () => { } };
         }
 
         this.documentContentProviders.set(scheme, provider);

@@ -1,0 +1,62 @@
+/********************************************************************************
+ * Copyright (C) 2021 Ericsson and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.multi-select-bar {
+    display: flex;
+    flex-flow: row nowrap;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.multi-select-checkbox-wrapper {
+    display: flex;
+    position: relative;
+    flex: auto;
+    text-align: center;
+}
+
+.multi-select-label {
+    height: 100%;
+    flex: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid;
+    padding: 0 var(--theia-ui-padding);
+    background-color: var(--theia-editor-background);
+    border-color: var(--theia-dropdown-border);
+    box-sizing: border-box;
+}
+
+.multi-select-checkbox-wrapper input:checked ~ .multi-select-label {
+    background-color: var(--theia-input-background);
+    border-color: var(--theia-sideBar-foreground);
+    text-decoration: underline;
+    font-weight: bolder;
+}
+
+
+.multi-select-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0;
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+}
