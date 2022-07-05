@@ -54,6 +54,7 @@ export class DebugBreakpointWidget implements Disposable {
     @inject(MonacoEditorProvider)
     protected readonly editorProvider: MonacoEditorProvider;
 
+    protected selectComponent = React.createRef<SelectComponent>();
     protected selectNode: HTMLDivElement;
     protected selectNodeRoot: Root;
 
@@ -61,7 +62,12 @@ export class DebugBreakpointWidget implements Disposable {
 
     protected readonly toDispose = new DisposableCollection();
 
-    protected context: DebugBreakpointWidget.Context = 'condition';
+    protected _context: DebugBreakpointWidget.Context = 'condition';
+    protected get context(): DebugBreakpointWidget.Context { return this._context; }
+    protected set context(value: DebugBreakpointWidget.Context) {
+        this._context = value;
+        if (this.selectComponent.current) { this.selectComponent.current.value = value; }
+    }
     protected _values: {
         [context in DebugBreakpointWidget.Context]?: string
     } = {};
@@ -242,7 +248,7 @@ export class DebugBreakpointWidget implements Disposable {
             this._input.getControl().setValue(this._values[this.context] || '');
         }
         this.selectNodeRoot.render(<SelectComponent
-            defaultValue={this.context} onChange={this.updateInput}
+            defaultValue={this.context} onChange={this.updateInput} ref={this.selectComponent}
             options={[
                 { value: 'condition', label: nls.localizeByDefault('Expression') },
                 { value: 'hitCondition', label: nls.localizeByDefault('Hit Count') },
