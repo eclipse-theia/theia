@@ -834,7 +834,7 @@ export class DebugSession implements CompositeTreeElement {
         }
         let debugSession: DebugSession | undefined = this;
         do {
-            debugSession = this.parentSession;
+            debugSession = debugSession.parentSession;
         } while (debugSession?.parentSession && debugSession.configuration.consoleMode === DebugConsoleMode.MergeWithParent);
         return debugSession;
     }
