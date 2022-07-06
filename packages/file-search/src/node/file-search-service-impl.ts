@@ -17,7 +17,7 @@
 import * as cp from 'child_process';
 import * as fuzzy from '@theia/core/shared/fuzzy';
 import * as readline from 'readline';
-import { rgPath } from 'vscode-ripgrep';
+import { rgPath } from '@vscode/ripgrep';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';

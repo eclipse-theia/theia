@@ -8,7 +8,7 @@
     "@theia/filesystem": "1.27.0",
     "@theia/process": "1.27.0",
     "@theia/workspace": "1.27.0",
-    "vscode-ripgrep": "^1.2.4"
+    "@vscode/ripgrep": "^1.14.2"
   },
   "publishConfig": {
     "access": "public"
