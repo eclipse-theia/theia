@@ -25,7 +25,7 @@ import * as path from 'path';
 import * as temp from 'temp';
 import * as fs from 'fs';
 import { expect } from 'chai';
-import { rgPath as realRgPath } from 'vscode-ripgrep';
+import { rgPath as realRgPath } from '@vscode/ripgrep';
 
 // Allow creating temporary files, but remove them when we are done.
 const track = temp.track();
