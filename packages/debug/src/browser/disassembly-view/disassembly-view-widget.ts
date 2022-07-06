@@ -325,7 +325,6 @@ export class DisassemblyViewWidget extends BaseWidget {
             return false;
         }
 
-        // console.log(`DisassemblyView: loadDisassembledInstructions ${memoryReference}, ${instructionOffset}, ${instructionCount}`);
         const session = this.debugSession;
         const resultEntries = (await session?.sendRequest('disassemble', {
             instructionCount,
