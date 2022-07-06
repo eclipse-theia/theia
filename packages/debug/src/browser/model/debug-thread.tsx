@@ -41,6 +41,10 @@ export class DebugThread extends DebugThreadData implements TreeElement {
 
     protected readonly onDidChangedEmitter = new Emitter<void>();
     readonly onDidChanged: Event<void> = this.onDidChangedEmitter.event;
+    protected readonly onDidFocusStackFrameEmitter = new Emitter<DebugStackFrame | undefined>();
+    get onDidFocusStackFrame(): Event<DebugStackFrame | undefined> {
+        return this.onDidFocusStackFrameEmitter.event;
+    }
 
     constructor(
         readonly session: DebugSession
@@ -59,6 +63,7 @@ export class DebugThread extends DebugThreadData implements TreeElement {
     set currentFrame(frame: DebugStackFrame | undefined) {
         this._currentFrame = frame;
         this.onDidChangedEmitter.fire(undefined);
+        this.onDidFocusStackFrameEmitter.fire(frame);
     }
 
     get stopped(): boolean {

@@ -51,6 +51,7 @@ import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import { DebugBreakpoint } from './model/debug-breakpoint';
 import { nls } from '@theia/core/lib/common/nls';
+import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -763,13 +764,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
         registry.registerCommand(DebugCommands.REMOVE_BREAKPOINT, {
             execute: () => {
-                const selectedBreakpoint = this.selectedBreakpoint || this.selectedFunctionBreakpoint;
+                const selectedBreakpoint = this.selectedSettableBreakpoint;
                 if (selectedBreakpoint) {
                     selectedBreakpoint.remove();
                 }
             },
-            isEnabled: () => !!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint,
-            isVisible: () => !!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint,
+            isEnabled: () => Boolean(this.selectedSettableBreakpoint),
+            isVisible: () => Boolean(this.selectedSettableBreakpoint),
         });
         registry.registerCommand(DebugCommands.REMOVE_LOGPOINT, {
             execute: () => {
@@ -1178,6 +1179,18 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         const breakpoint = this.selectedAnyBreakpoint;
         return breakpoint && breakpoint instanceof DebugFunctionBreakpoint ? breakpoint : undefined;
     }
+    get selectedInstructionBreakpoint(): DebugInstructionBreakpoint | undefined {
+        if (this.selectedAnyBreakpoint instanceof DebugInstructionBreakpoint) {
+            return this.selectedAnyBreakpoint;
+        }
+    }
+
+    get selectedSettableBreakpoint(): DebugFunctionBreakpoint | DebugInstructionBreakpoint | DebugSourceBreakpoint | undefined {
+        const selected = this.selectedAnyBreakpoint;
+        if (selected instanceof DebugFunctionBreakpoint || selected instanceof DebugInstructionBreakpoint || selected instanceof DebugSourceBreakpoint) {
+            return selected;
+        }
+    }
 
     get variables(): DebugVariablesWidget | undefined {
         const { currentWidget } = this.shell;
@@ -1431,5 +1444,4 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         return true;
     }
-
 }

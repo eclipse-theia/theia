@@ -60,6 +60,11 @@ export const debugPreferencesSchema: PreferenceSchema = {
                 'Always confirm if there are debug sessions.',
             ],
             default: 'never'
+        },
+        'debug.disassemblyView.showSourceCode': {
+            description: nls.localize('theia/debug/disassembly-view/show-source-code', 'Show Source Code in Disassembly View.'),
+            type: 'boolean',
+            default: true,
         }
     }
 };
@@ -71,6 +76,7 @@ export class DebugConfiguration {
     'debug.inlineValues': boolean;
     'debug.showInStatusBar': 'never' | 'always' | 'onFirstSessionStart';
     'debug.confirmOnExit': 'never' | 'always';
+    'debug.disassemblyView.showSourceCode': boolean;
 }
 
 export const DebugPreferenceContribution = Symbol('DebugPreferenceContribution');

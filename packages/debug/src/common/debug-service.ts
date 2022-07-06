@@ -14,8 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Channel, Disposable, Emitter, Event } from '@theia/core';
 import { ApplicationError } from '@theia/core/lib/common/application-error';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
@@ -47,6 +45,8 @@ export const DebugService = Symbol('DebugService');
  * #resolveDebugConfiguration method is invoked. After that the debug adapter session will be started.
  */
 export interface DebugService extends Disposable {
+    onDidChangeDebuggers?: Event<void>;
+
     /**
      * Finds and returns an array of registered debug types.
      * @returns An array of registered debug types
@@ -147,8 +147,7 @@ export namespace DebugError {
 export interface DebugChannel {
     send(content: string): void;
     onMessage(cb: (message: string) => void): void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError(cb: (reason: any) => void): void;
+    onError(cb: (reason: unknown) => void): void;
     onClose(cb: (code: number, reason: string) => void): void;
     close(): void;
 }
@@ -170,8 +169,7 @@ export class ForwardingDebugChannel implements DebugChannel {
     onMessage(cb: (message: string) => void): void {
         this.onMessageEmitter.event(cb);
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError(cb: (reason: any) => void): void {
+    onError(cb: (reason: unknown) => void): void {
         this.underlyingChannel.onError(cb);
     }
     onClose(cb: (code: number, reason: string) => void): void {

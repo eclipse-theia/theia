@@ -14,8 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { DisposableCollection, Emitter, Event, MessageService, ProgressService, WaitUntilEvent } from '@theia/core';
 import { LabelProvider, ApplicationShell } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -38,6 +36,7 @@ import { TaskIdentifier } from '@theia/task/lib/common';
 import { DebugSourceBreakpoint } from './model/debug-source-breakpoint';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import * as monaco from '@theia/monaco-editor-core';
+import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
 }
@@ -56,8 +55,13 @@ export interface DidChangeBreakpointsEvent {
     uri: URI
 }
 
+export interface DidFocusStackFrameEvent {
+    session: DebugSession;
+    frame: DebugStackFrame | undefined;
+}
+
 export interface DebugSessionCustomEvent {
-    readonly body?: any
+    readonly body?: any // eslint-disable-line @typescript-eslint/no-explicit-any
     readonly event: string
     readonly session: DebugSession
 }
@@ -90,8 +94,11 @@ export class DebugSessionManager {
     protected readonly onDidReceiveDebugSessionCustomEventEmitter = new Emitter<DebugSessionCustomEvent>();
     readonly onDidReceiveDebugSessionCustomEvent: Event<DebugSessionCustomEvent> = this.onDidReceiveDebugSessionCustomEventEmitter.event;
 
+    protected readonly onDidFocusStackFrameEmitter = new Emitter<DidFocusStackFrameEvent>();
+    readonly onDidFocusStackFrame = this.onDidFocusStackFrameEmitter.event;
+
     protected readonly onDidChangeBreakpointsEmitter = new Emitter<DidChangeBreakpointsEvent>();
-    readonly onDidChangeBreakpoints: Event<DidChangeBreakpointsEvent> = this.onDidChangeBreakpointsEmitter.event;
+    readonly onDidChangeBreakpoints = this.onDidChangeBreakpointsEmitter.event;
     protected fireDidChangeBreakpoints(event: DidChangeBreakpointsEvent): void {
         this.onDidChangeBreakpointsEmitter.fire(event);
     }
@@ -417,6 +424,7 @@ export class DebugSessionManager {
                 }
                 this.fireDidChange(current);
             }));
+            this.disposeOnCurrentSessionChanged.push(current.onDidFocusStackFrame(frame => this.onDidFocusStackFrameEmitter.fire({ session: current, frame })));
         }
         this.updateBreakpoints(previous, current);
         this.open();
@@ -473,6 +481,14 @@ export class DebugSessionManager {
         }
         const { labelProvider, breakpoints, editorManager } = this;
         return this.breakpoints.getFunctionBreakpoints().map(origin => new DebugFunctionBreakpoint(origin, { labelProvider, breakpoints, editorManager }));
+    }
+
+    getInstructionBreakpoints(session = this.currentSession): DebugInstructionBreakpoint[] {
+        if (session && session.state > DebugState.Initializing) {
+            return session.getInstructionBreakpoints();
+        }
+        const { labelProvider, breakpoints, editorManager } = this;
+        return this.breakpoints.getInstructionBreakpoints().map(origin => new DebugInstructionBreakpoint(origin, { labelProvider, breakpoints, editorManager }));
     }
 
     getBreakpoints(session?: DebugSession): DebugSourceBreakpoint[];

@@ -84,3 +84,20 @@ export namespace FunctionBreakpoint {
         };
     }
 }
+
+export interface InstructionBreakpoint extends BaseBreakpoint, DebugProtocol.InstructionBreakpoint { }
+
+export namespace InstructionBreakpoint {
+    export function create(raw: DebugProtocol.InstructionBreakpoint, existing?: InstructionBreakpoint): InstructionBreakpoint {
+        return {
+            ...raw,
+            id: existing?.id ?? UUID.uuid4(),
+            enabled: existing?.enabled ?? true,
+        };
+    }
+
+    export function is(thing: BaseBreakpoint): thing is InstructionBreakpoint {
+        const candidate = thing as InstructionBreakpoint;
+        return 'instructionReference' in candidate && typeof candidate.instructionReference === 'string';
+    }
+}

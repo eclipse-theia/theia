@@ -61,6 +61,7 @@ import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/qui
 import { DebugViewModel } from './view/debug-view-model';
 import { DebugToolBar } from './view/debug-toolbar-widget';
 import { DebugSessionWidget } from './view/debug-session-widget';
+import { bindDisassemblyView } from './disassembly-view/disassembly-view-contribution';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bindContributionProvider(bind, DebugContribution);
@@ -131,4 +132,5 @@ export default new ContainerModule((bind: interfaces.Bind) => {
             createWidget: () => subwidget.createWidget(container),
         }));
     }
+    bindDisassemblyView(bind);
 });

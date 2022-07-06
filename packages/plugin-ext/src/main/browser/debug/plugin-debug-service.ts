@@ -37,10 +37,15 @@ import * as theia from '@theia/plugin';
 @injectable()
 export class PluginDebugService implements DebugService {
 
+    protected readonly onDidChangeDebuggersEmitter = new Emitter<void>();
+    get onDidChangeDebuggers(): Event<void> {
+        return this.onDidChangeDebuggersEmitter.event;
+    }
+
     protected readonly debuggers: DebuggerContribution[] = [];
     protected readonly contributors = new Map<string, PluginDebugAdapterContribution>();
     protected readonly configurationProviders = new Map<number, PluginDebugConfigurationProvider>();
-    protected readonly toDispose = new DisposableCollection();
+    protected readonly toDispose = new DisposableCollection(this.onDidChangeDebuggersEmitter);
 
     protected readonly onDidChangeDebugConfigurationProvidersEmitter = new Emitter<void>();
     get onDidChangeDebugConfigurationProviders(): Event<void> {
