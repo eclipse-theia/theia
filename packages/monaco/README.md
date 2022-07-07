@@ -51,7 +51,7 @@ For initial testing, it's easier to point dependencies to your local VSCode.
 
 1. Having built `monaco-editor-core` using the steps [above](#setting-up-the-vscode-side).
 2. Find all references to `@theia/monaco-editor-core` in `package.json`s and replace their version with `"link:<path to your local build of monaco-editor-core>"`.
-> Using `link:` means that if you subsequently make changes on hte VSCode side, you only need to rebuild VSCode and then rebuild Theia to see the effects. 
+> Using `link:` means that if you subsequently make changes on the VSCode side, you only need to rebuild VSCode and then rebuild Theia to see the effects. 
 3. Delete your `node_modules` and `yarn` and build Theia.
 4. Fix any build errors.
 5. Uncomment the `bindMonacoPreferenceExtractor` function in `examples/api-samples/src/browser/monaco-editor-preferences/monaco-editor-preference-extractor.ts` and run the commands there. Fix the `EditorGeneratedPreferenceSchema` as necessary, and add or remove validations from the `MonacoFrontendApplicationContribution` as appropriate.
