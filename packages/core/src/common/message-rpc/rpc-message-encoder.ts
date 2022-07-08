@@ -92,17 +92,18 @@ export enum ObjectType {
     JSON = 0,
     ByteArray = 1,
     ObjectArray = 2,
-    Undefined = 3,
-    Object = 4,
-    String = 5,
-    Boolean = 6,
-    Number = 7,
+    Null = 3,
+    Undefined = 4,
+    Object = 5,
+    String = 6,
+    Boolean = 7,
+    Number = 8,
     // eslint-disable-next-line @typescript-eslint/no-shadow
-    ResponseError = 8,
-    Error = 9,
-    Map = 10,
-    Set = 11,
-    Function = 12
+    ResponseError = 9,
+    Error = 10,
+    Map = 11,
+    Set = 12,
+    Function = 13
 
 }
 
@@ -110,7 +111,7 @@ export enum ObjectType {
  * A value encoder writes javascript values to a write buffer. Encoders will be asked
  * in turn (ordered by their tag value, descending) whether they can encode a given value
  * This means encoders with higher tag values have priority. Since the default encoders
- * have tag values from 1-12, they can be easily overridden.
+ * have tag values from 1-13, they can be easily overridden.
  */
 export interface ValueEncoder {
     /**
@@ -198,6 +199,11 @@ export class RpcMessageDecoder {
 
         this.registerDecoder(ObjectType.Undefined, {
             read: () => undefined
+        });
+
+        this.registerDecoder(ObjectType.Null, {
+            // eslint-disable-next-line no-null/no-null
+            read: () => null
         });
 
         this.registerDecoder(ObjectType.Object, {
@@ -429,9 +435,14 @@ export class RpcMessageEncoder {
             write: (buf, value: Set<any>, visitedObjects) => this.writeArray(buf, [...value], visitedObjects)
         });
 
-        this.registerEncoder(ObjectType.Undefined, {
+        this.registerEncoder(ObjectType.Null, {
             // eslint-disable-next-line no-null/no-null
-            is: value => value == null,
+            is: value => value === null,
+            write: () => { }
+        });
+
+        this.registerEncoder(ObjectType.Undefined, {
+            is: value => value === undefined,
             write: () => { }
         });
 
