@@ -324,6 +324,9 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.addRootFolder' }, {
             execute: () => commands.executeCommand(WorkspaceCommands.ADD_FOLDER.id)
         });
+        commands.registerCommand({ id: 'workbench.action.saveWorkspaceAs' }, {
+            execute: () => commands.executeCommand(WorkspaceCommands.SAVE_WORKSPACE_AS.id)
+        });
         commands.registerCommand({ id: 'workbench.action.gotoLine' }, {
             execute: () => commands.executeCommand(EditorCommands.GOTO_LINE_COLUMN.id)
         });
