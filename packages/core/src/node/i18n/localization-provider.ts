@@ -20,22 +20,19 @@ import { LanguageInfo, Localization } from '../../common/i18n/localization';
 @injectable()
 export class LocalizationProvider {
 
-    protected localizations = new Map<string, Localization>();
+    protected localizations: Localization[] = [];
     protected currentLanguage = 'en';
 
     addLocalizations(...localizations: Localization[]): void {
+        this.localizations.push(...localizations);
+    }
+
+    removeLocalizations(...localizations: Localization[]): void {
         for (const localization of localizations) {
-            let merged = this.localizations.get(localization.languageId);
-            if (!merged) {
-                this.localizations.set(localization.languageId, merged = {
-                    languageId: localization.languageId,
-                    translations: {}
-                });
+            const index = this.localizations.indexOf(localization);
+            if (index >= 0) {
+                this.localizations.splice(index, 1);
             }
-            merged.languageName = merged.languageName || localization.languageName;
-            merged.localizedLanguageName = merged.localizedLanguageName || localization.localizedLanguageName;
-            merged.languagePack = merged.languagePack || localization.languagePack;
-            Object.assign(merged.translations, localization.translations);
         }
     }
 
@@ -48,26 +45,33 @@ export class LocalizationProvider {
     }
 
     getAvailableLanguages(all?: boolean): LanguageInfo[] {
-        const languageIds: LanguageInfo[] = [];
+        const languageInfos = new Map<string, LanguageInfo>();
         for (const localization of this.localizations.values()) {
             if (all || localization.languagePack) {
-                languageIds.push({
-                    languageId: localization.languageId,
-                    languageName: localization.languageName,
-                    languagePack: localization.languagePack,
-                    localizedLanguageName: localization.localizedLanguageName
-                });
+                const languageInfo = languageInfos.get(localization.languageId) ?? {
+                    languageId: localization.languageId
+                };
+                languageInfo.languageName ||= localization.languageName;
+                languageInfo.localizedLanguageName ||= localization.localizedLanguageName;
+                languageInfo.languagePack ||= localization.languagePack;
+                languageInfos.set(localization.languageId, languageInfo);
             }
         }
-        return languageIds.sort((a, b) => a.languageId.localeCompare(b.languageId));
+        return Array.from(languageInfos.values()).sort((a, b) => a.languageId.localeCompare(b.languageId));
     }
 
     loadLocalization(languageId: string): Localization {
-        return this.localizations.get(languageId) ||
-        {
+        const merged: Localization = {
             languageId,
             translations: {}
         };
+        for (const localization of this.localizations.filter(e => e.languageId === languageId)) {
+            merged.languageName ||= localization.languageName;
+            merged.localizedLanguageName ||= localization.localizedLanguageName;
+            merged.languagePack ||= localization.languagePack;
+            Object.assign(merged.translations, localization.translations);
+        }
+        return merged;
     }
 
 }
