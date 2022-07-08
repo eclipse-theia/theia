@@ -191,6 +191,7 @@ export class KeymapsService {
             const keybindings = op();
             if (keybindings && this.model) {
                 await this.jsoncEditor.setValue(this.model, [], keybindings.map(binding => Keybinding.apiObjectify(binding)));
+                await this.model.save();
             }
         } catch (e) {
             const message = `Failed to update a keymap in '${model.uri}'.`;
