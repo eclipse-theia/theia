@@ -164,8 +164,9 @@ describe('search-service', function (): void {
         const rootUri = FileUri.create(path.resolve(__dirname, '../../../..'));
 
         it('not fuzzy', async () => {
-            const searchPattern = rootUri.path.dir.base;
+            const searchPattern = 'package'; // package.json should produce a result.
             const matches = await service.find(searchPattern, { rootUris: [rootUri.toString()], fuzzyMatch: false, useGitIgnore: true, limit: 200 });
+            expect(matches).not.empty;
             for (const match of matches) {
                 const relativeUri = rootUri.relative(new URI(match));
                 assert.notStrictEqual(relativeUri, undefined);
@@ -176,6 +177,7 @@ describe('search-service', function (): void {
 
         it('fuzzy', async () => {
             const matches = await service.find('shell', { rootUris: [rootUri.toString()], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+            expect(matches).not.empty;
             for (const match of matches) {
                 const relativeUri = rootUri.relative(new URI(match));
                 assert.notStrictEqual(relativeUri, undefined);
