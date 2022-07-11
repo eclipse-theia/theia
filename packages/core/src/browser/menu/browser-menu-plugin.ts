@@ -277,7 +277,7 @@ export class DynamicMenuWidget extends MenuWidget {
 
     protected updateSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: MenuCommandRegistry): void {
         const items = this.buildSubMenus([], menu, commands);
-        if (items[items.length - 1]?.type === 'separator') {
+        while (items[items.length - 1]?.type === 'separator') {
             items.pop();
         }
         for (const item of items) {
