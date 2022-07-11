@@ -70,7 +70,7 @@ describe('variable-resolver-service', () => {
         expect(resolved).is.equal('workspace: ${workspaceRoot}; file: package.json; line: 6');
     });
 
-    it('should check if all variables are resolved', async () => {
+    it('should return undefined when a variable throws with `cancelled()` while resolving', async () => {
         variableRegistry.registerVariable({
             name: 'command',
             resolve: (contextUri, commandId) => {

@@ -83,6 +83,7 @@ export class CommonVariableContribution implements VariableContribution {
                         commandId = commandIdVariables[commandId];
                     }
                     const result = await this.commands.executeCommand(commandId, configuration);
+                    // eslint-disable-next-line no-null/no-null
                     if (result === null) {
                         throw cancelled();
                     }
