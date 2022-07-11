@@ -177,6 +177,7 @@ export class ProblemWidget extends TreeWidget {
             if (problemMarker.data.severity) {
                 severityClass = this.getSeverityClass(problemMarker.data.severity);
             }
+            const location = nls.localizeByDefault('Ln {0}, Col {1}', problemMarker.data.range.start.line + 1, problemMarker.data.range.start.character + 1);
             return <div
                 className='markerNode'
                 title={`${problemMarker.data.message} (${problemMarker.data.range.start.line + 1}, ${problemMarker.data.range.start.character + 1})`}>
@@ -184,12 +185,14 @@ export class ProblemWidget extends TreeWidget {
                     <i className={`${severityClass} ${TREE_NODE_INFO_CLASS}`}></i>
                 </div>
                 <div className='message'>{problemMarker.data.message}
-                    <span className={'owner ' + TREE_NODE_INFO_CLASS}>
-                        {(problemMarker.data.source || problemMarker.owner)}
-                        {problemMarker.data.code ? `(${problemMarker.data.code})` : ''}
-                    </span>
+                    {(!!problemMarker.data.source || !!problemMarker.data.code) &&
+                        <span className={'owner ' + TREE_NODE_INFO_CLASS}>
+                            {problemMarker.data.source || ''}
+                            {problemMarker.data.code ? `(${problemMarker.data.code})` : ''}
+                        </span>
+                    }
                     <span className={'position ' + TREE_NODE_INFO_CLASS}>
-                        {'[' + (problemMarker.data.range.start.line + 1) + ', ' + (problemMarker.data.range.start.character + 1) + ']'}
+                        {`[${location}]`}
                     </span>
                 </div>
             </div>;
