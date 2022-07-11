@@ -16,7 +16,7 @@
 
 import { ElementHandle } from '@playwright/test';
 
-import { textContent } from './util';
+import { elementContainsClass, textContent } from './util';
 
 export class TheiaMenuItem {
 
@@ -30,15 +30,28 @@ export class TheiaMenuItem {
         return this.element.waitForSelector('.p-Menu-itemShortcut');
     }
 
+    protected isHidden(): Promise<boolean> {
+        return elementContainsClass(this.element, 'p-mod-collapsed');
+    }
+
     async label(): Promise<string | undefined> {
+        if (await this.isHidden()) {
+            return undefined;
+        }
         return textContent(this.labelElementHandle());
     }
 
     async shortCut(): Promise<string | undefined> {
+        if (await this.isHidden()) {
+            return undefined;
+        }
         return textContent(this.shortCutElementHandle());
     }
 
     async hasSubmenu(): Promise<boolean> {
+        if (await this.isHidden()) {
+            return false;
+        }
         return (await this.element.getAttribute('data-type')) === 'submenu';
     }
 
@@ -47,7 +60,7 @@ export class TheiaMenuItem {
         if (classAttribute === undefined || classAttribute === null) {
             return false;
         }
-        return !classAttribute.includes('p-mod-disabled');
+        return !classAttribute.includes('p-mod-disabled') && !classAttribute.includes('p-mod-collapsed');
     }
 
     async click(): Promise<void> {
