@@ -16,8 +16,7 @@
 
 import * as chai from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { cancelled, ILogger } from '@theia/core/lib/common';
-import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { cancelled } from '@theia/core/lib/common';
 import { VariableRegistry } from './variable';
 import { VariableResolverService } from './variable-resolver-service';
 
@@ -36,9 +35,8 @@ describe('variable-resolver-service', () => {
 
     beforeEach(() => {
         testContainer = new Container();
-        testContainer.bind(ILogger).to(MockLogger);
         testContainer.bind(VariableRegistry).toSelf().inSingletonScope();
-        testContainer.bind(VariableResolverService).toSelf();
+        testContainer.bind(VariableResolverService).toSelf().inSingletonScope();
         variableRegistry = testContainer.get(VariableRegistry);
         variableRegistry.registerVariable({
             name: 'file',
