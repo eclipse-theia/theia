@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2020 TypeFox and others.
+// Copyright (C) 2022 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -95,10 +95,10 @@ export class FileChangesEvent {
 
             // For deleted also return true when deleted folder is parent of target path
             if (change.type === FileChangeType.DELETED) {
-                return resource.isEqualOrParent(change.resource);
+                return change.resource.isEqualOrParent(resource);
             }
 
-            return resource.toString() === change.resource.toString();
+            return change.resource.toString() === resource.toString();
         });
     }
 
