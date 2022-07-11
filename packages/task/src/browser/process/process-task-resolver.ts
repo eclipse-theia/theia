@@ -62,20 +62,20 @@ export class ProcessTaskResolver implements TaskResolver {
         const result: ProcessTaskConfiguration = {
             ...processTaskConfig,
             command: await this.variableResolverService.resolve(processTaskConfig.command, variableResolverOptions),
-            args: processTaskConfig.args ? await this.variableResolverService.resolveArray(processTaskConfig.args, variableResolverOptions) : undefined,
+            args: processTaskConfig.args ? await this.variableResolverService.resolve(processTaskConfig.args, variableResolverOptions) : undefined,
             windows: processTaskConfig.windows ? {
                 command: await this.variableResolverService.resolve(processTaskConfig.windows.command, variableResolverOptions),
-                args: processTaskConfig.windows.args ? await this.variableResolverService.resolveArray(processTaskConfig.windows.args, variableResolverOptions) : undefined,
+                args: processTaskConfig.windows.args ? await this.variableResolverService.resolve(processTaskConfig.windows.args, variableResolverOptions) : undefined,
                 options: processTaskConfig.windows.options
             } : undefined,
             osx: processTaskConfig.osx ? {
                 command: await this.variableResolverService.resolve(processTaskConfig.osx.command, variableResolverOptions),
-                args: processTaskConfig.osx.args ? await this.variableResolverService.resolveArray(processTaskConfig.osx.args, variableResolverOptions) : undefined,
+                args: processTaskConfig.osx.args ? await this.variableResolverService.resolve(processTaskConfig.osx.args, variableResolverOptions) : undefined,
                 options: processTaskConfig.osx.options
             } : undefined,
             linux: processTaskConfig.linux ? {
                 command: await this.variableResolverService.resolve(processTaskConfig.linux.command, variableResolverOptions),
-                args: processTaskConfig.linux.args ? await this.variableResolverService.resolveArray(processTaskConfig.linux.args, variableResolverOptions) : undefined,
+                args: processTaskConfig.linux.args ? await this.variableResolverService.resolve(processTaskConfig.linux.args, variableResolverOptions) : undefined,
                 options: processTaskConfig.linux.options
             } : undefined,
             options: {

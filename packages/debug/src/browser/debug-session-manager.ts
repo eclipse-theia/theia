@@ -257,8 +257,7 @@ export class DebugSessionManager {
                 context: options.workspaceFolderUri ? new URI(options.workspaceFolderUri) : undefined,
                 configurationSection: 'launch',
                 commandIdVariables,
-                configuration,
-                checkAllResolved: true
+                configuration
             });
 
             if (configuration) {
