@@ -163,8 +163,15 @@ export namespace VariableResolverService {
                     this.options.commandIdVariables,
                     this.options.configuration
                 );
-                if (typeof resolved !== 'object') {
-                    this.resolved.set(name, resolved?.toString?.());
+                if (
+                    typeof resolved === 'bigint' ||
+                    typeof resolved === 'boolean' ||
+                    typeof resolved === 'number' ||
+                    typeof resolved === 'string'
+                ) {
+                    this.resolved.set(name, `${resolved}`);
+                } else {
+                    this.resolved.set(name, undefined);
                 }
             } catch (e) {
                 if (isCancelled(e)) {
