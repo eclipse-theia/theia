@@ -2118,10 +2118,10 @@
   dependencies:
     defer-to-connect "^2.0.0"
 
-"@theia/monaco-editor-core@1.65.2":
-  version "1.65.2"
-  resolved "https://registry.yarnpkg.com/@theia/monaco-editor-core/-/monaco-editor-core-1.65.2.tgz#91bc9ce2afe1b6011789ce83a5bee898f0153430"
-  integrity sha512-2UmGjcEW/YpZ2DsFuVevKR3CBMe44Rd6DgwP/5s4pyOe6K/s6TKY7Sh24lO0BXetQKofAEx3zh+ldEvjwhNwDw==
+"@theia/monaco-editor-core@1.67.2":
+  version "1.67.2"
+  resolved "https://registry.yarnpkg.com/@theia/monaco-editor-core/-/monaco-editor-core-1.67.2.tgz#d89163fa4f15560e72413791dc6a406a7c732807"
+  integrity sha512-KjDqHiTSOvnQOkV5qOJaUYwOaMjzpbqJZNRi0RKlBkCjcd/wjGlu5kjsgSDu6BbMnk51oQ9GgoDq/ppjJVaa7A==
 
 "@tootallnate/once@1", "@tootallnate/once@^1.1.2":
   version "1.1.2"
@@ -7539,13 +7539,6 @@ lru-cache@^4.0.0, lru-cache@^4.0.1:
     pseudomap "^1.0.2"
     yallist "^2.1.2"
 
-lru-cache@^5.1.1:
-  version "5.1.1"
-  resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-5.1.1.tgz#1da27e6710271947695daf6848e847f01d84b920"
-  integrity sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==
-  dependencies:
-    yallist "^3.0.2"
-
 lru-cache@^6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-6.0.0.tgz#6d6fe6570ebd96aaf90fcad1dafa3b2566db3a94"
@@ -8649,20 +8642,6 @@ onetime@^5.1.0, onetime@^5.1.2:
   integrity sha512-kbpaSSGJTWdAY5KPVeMOKXSrPtr8C8C7wodJbcsd51jRnmD+GZu8Y0VoU6Dm5Z4vWr0Ig/1NKuWRKf7j5aaYSg==
   dependencies:
     mimic-fn "^2.1.0"
-
-onigasm@^2.2.0:
-  version "2.2.5"
-  resolved "https://registry.yarnpkg.com/onigasm/-/onigasm-2.2.5.tgz#cc4d2a79a0fa0b64caec1f4c7ea367585a676892"
-  integrity sha512-F+th54mPc0l1lp1ZcFMyL/jTs2Tlq4SqIHKIXGZOR/VkHkF9A7Fr5rRr5+ZG/lWeRsyrClLYRq7s/yFQ/XhWCA==
-  dependencies:
-    lru-cache "^5.1.1"
-
-oniguruma@^7.2.0:
-  version "7.2.3"
-  resolved "https://registry.yarnpkg.com/oniguruma/-/oniguruma-7.2.3.tgz#e0b0b415302de8cdd6564e57a1a822ac0ab57012"
-  integrity sha512-PZZcE0yfg8Q1IvaJImh21RUTHl8ep0zwwyoE912KqlWVrsGByjjj29sdACcD1BFyX2bLkfuOJeP+POzAGVWtbA==
-  dependencies:
-    nan "^2.14.0"
 
 optimist@~0.3.5:
   version "0.3.7"
@@ -11482,6 +11461,11 @@ vscode-languageserver-types@3.15.1:
   resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-3.15.1.tgz#17be71d78d2f6236d414f0001ce1ef4d23e6b6de"
   integrity sha512-+a9MPUQrNGRrGU630OGbYVQ+11iOIovjCkqxajPa9w57Sd5ruK8WQNsslzpa0x/QJqC8kRc2DUxWjIFwoNm4ZQ==
 
+vscode-oniguruma@1.6.1:
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/vscode-oniguruma/-/vscode-oniguruma-1.6.1.tgz#2bf4dfcfe3dd2e56eb549a3068c8ee39e6c30ce5"
+  integrity sha512-vc4WhSIaVpgJ0jJIejjYxPvURJavX6QG41vu0mGhqywMkQqulezEqEQ3cO3gc8GvcOpX6ycmKGqRoROEMBNXTQ==
+
 vscode-oniguruma@^1.6.1:
   version "1.6.2"
   resolved "https://registry.yarnpkg.com/vscode-oniguruma/-/vscode-oniguruma-1.6.2.tgz#aeb9771a2f1dbfc9083c8a7fdd9cccaa3f386607"
@@ -11507,12 +11491,10 @@ vscode-textmate@5.2.0:
   resolved "https://registry.yarnpkg.com/vscode-textmate/-/vscode-textmate-5.2.0.tgz#01f01760a391e8222fe4f33fbccbd1ad71aed74e"
   integrity sha512-Uw5ooOQxRASHgu6C7GVvUxisKXfSgW4oFlO+aa+PAkgmH89O3CXxEEzNRNtHSqtXFTl0nAC1uYj0GMSH27uwtQ==
 
-vscode-textmate@^4.0.1, vscode-textmate@^4.4.0:
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/vscode-textmate/-/vscode-textmate-4.4.0.tgz#14032afeb50152e8f53258c95643e555f2948305"
-  integrity sha512-dFpm2eK0HwEjeFSD1DDh3j0q47bDSVuZt20RiJWxGqjtm73Wu2jip3C2KaZI3dQx/fSeeXCr/uEN4LNaNj7Ytw==
-  dependencies:
-    oniguruma "^7.2.0"
+vscode-textmate@^7.0.1:
+  version "7.0.1"
+  resolved "https://registry.yarnpkg.com/vscode-textmate/-/vscode-textmate-7.0.1.tgz#8118a32b02735dccd14f893b495fa5389ad7de79"
+  integrity sha512-zQ5U/nuXAAMsh691FtV0wPz89nSkHbs+IQV8FDk+wew9BlSDhf4UmWGlWJfTR2Ti6xZv87Tj5fENzKf6Qk7aLw==
 
 vscode-uri@^2.1.1:
   version "2.1.2"
@@ -11937,7 +11919,7 @@ yallist@^2.1.2:
   resolved "https://registry.yarnpkg.com/yallist/-/yallist-2.1.2.tgz#1c11f9218f076089a47dd512f93c6699a6a81d52"
   integrity sha1-HBH5IY8HYImkfdUS+TxmmaaoHVI=
 
-yallist@^3.0.0, yallist@^3.0.2, yallist@^3.1.1:
+yallist@^3.0.0, yallist@^3.1.1:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/yallist/-/yallist-3.1.1.tgz#dbb7daf9bfd8bac9ab45ebf602b8cbad0d5d08fd"
   integrity sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==

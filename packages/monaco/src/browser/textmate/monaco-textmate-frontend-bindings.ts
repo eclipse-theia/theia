@@ -19,17 +19,18 @@ import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/co
 import { bindContributionProvider } from '@theia/core';
 import { TextmateRegistry } from './textmate-registry';
 import { LanguageGrammarDefinitionContribution } from './textmate-contribution';
-import { MonacoTextmateService, OnigasmPromise } from './monaco-textmate-service';
+import { MonacoTextmateService } from './monaco-textmate-service';
 import { MonacoThemeRegistry } from './monaco-theme-registry';
-import { loadWASM, OnigScanner, OnigString } from 'onigasm';
-import { IOnigLib } from 'vscode-textmate';
+import { loadWASM, createOnigScanner, OnigScanner, createOnigString, OnigString } from 'vscode-oniguruma';
+import { IOnigLib, IRawGrammar, parseRawGrammar, Registry } from 'vscode-textmate';
+import { OnigasmPromise, TextmateRegistryFactory, ThemeMix } from './monaco-theme-types';
 
 export class OnigasmLib implements IOnigLib {
     createOnigScanner(sources: string[]): OnigScanner {
-        return new OnigScanner(sources);
+        return createOnigScanner(sources);
     }
     createOnigString(sources: string): OnigString {
-        return new OnigString(sources);
+        return createOnigString(sources);
     }
 }
 
@@ -40,6 +41,35 @@ export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: inter
     bindContributionProvider(bind, LanguageGrammarDefinitionContribution);
     bind(TextmateRegistry).toSelf().inSingletonScope();
     bind(MonacoThemeRegistry).toSelf().inSingletonScope();
+    bind(TextmateRegistryFactory).toFactory(({ container }) => (theme?: ThemeMix) => {
+        const onigLib = container.get<OnigasmPromise>(OnigasmPromise);
+        const textmateRegistry = container.get(TextmateRegistry);
+        return new Registry({
+            onigLib,
+            theme,
+            loadGrammar: async (scopeName: string) => {
+                const provider = textmateRegistry.getProvider(scopeName);
+                if (provider) {
+                    const definition = await provider.getGrammarDefinition();
+                    let rawGrammar: IRawGrammar;
+                    if (typeof definition.content === 'string') {
+                        rawGrammar = parseRawGrammar(definition.content, definition.format === 'json' ? 'grammar.json' : 'grammar.plist');
+                    } else {
+                        rawGrammar = definition.content as IRawGrammar;
+                    }
+                    return rawGrammar;
+                }
+                return undefined;
+            },
+            getInjections: (scopeName: string) => {
+                const provider = textmateRegistry.getProvider(scopeName);
+                if (provider && provider.getInjections) {
+                    return provider.getInjections(scopeName);
+                }
+                return [];
+            }
+        });
+    });
 };
 
 export async function dynamicOnigasmLib(ctx: interfaces.Context): Promise<IOnigLib> {
@@ -57,7 +87,7 @@ export async function createOnigasmLib(): Promise<IOnigLib> {
 
 export async function fetchOnigasm(): Promise<ArrayBuffer> {
     // Using Webpack's wasm loader should give us a URL to fetch the resource from:
-    const onigasmPath: string = require('onigasm/lib/onigasm.wasm');
+    const onigasmPath: string = require('vscode-oniguruma/release/onig.wasm');
     const response = await fetch(onigasmPath, { method: 'GET' });
     return response.arrayBuffer();
 }

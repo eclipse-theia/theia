@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { Registry, IOnigLib, IRawGrammar, parseRawGrammar } from 'vscode-textmate';
+import { Registry } from 'vscode-textmate';
 import { ILogger, ContributionProvider, DisposableCollection, Disposable } from '@theia/core';
 import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/core/lib/browser';
 import { ThemeService } from '@theia/core/lib/browser/theming';
@@ -31,9 +31,7 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import { TokenizationSupportAdapter } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneLanguages';
 import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
-
-export const OnigasmPromise = Symbol('OnigasmPromise');
-export type OnigasmPromise = Promise<IOnigLib>;
+import { OnigasmPromise, TextmateRegistryFactory } from './monaco-theme-types';
 
 @injectable()
 export class MonacoTextmateService implements FrontendApplicationContribution {
@@ -67,6 +65,9 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
     @inject(EditorPreferences)
     protected readonly preferences: EditorPreferences;
 
+    @inject(TextmateRegistryFactory)
+    protected readonly registryFactory: TextmateRegistryFactory;
+
     initialize(): void {
         if (!isBasicWasmSupported) {
             console.log('Textmate support deactivated because WebAssembly is not detected.');
@@ -81,31 +82,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             }
         }
 
-        this.grammarRegistry = new Registry({
-            getOnigLib: () => this.onigasmPromise,
-            theme: this.monacoThemeRegistry.getThemeData(this.currentEditorTheme),
-            loadGrammar: async (scopeName: string) => {
-                const provider = this.textmateRegistry.getProvider(scopeName);
-                if (provider) {
-                    const definition = await provider.getGrammarDefinition();
-                    let rawGrammar: IRawGrammar;
-                    if (typeof definition.content === 'string') {
-                        rawGrammar = parseRawGrammar(definition.content, definition.format === 'json' ? 'grammar.json' : 'grammar.plist');
-                    } else {
-                        rawGrammar = definition.content as IRawGrammar;
-                    }
-                    return rawGrammar;
-                }
-                return undefined;
-            },
-            getInjections: (scopeName: string) => {
-                const provider = this.textmateRegistry.getProvider(scopeName);
-                if (provider && provider.getInjections) {
-                    return provider.getInjections(scopeName);
-                }
-                return [];
-            }
-        });
+        this.grammarRegistry = this.registryFactory(this.monacoThemeRegistry.getThemeData(this.currentEditorTheme));
 
         this.tokenizerOption.lineLimit = this.preferences['editor.maxTokenizationLineLength'];
         this.preferences.onPreferenceChanged(e => {

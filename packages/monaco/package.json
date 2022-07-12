@@ -7,13 +7,13 @@
     "@theia/editor": "1.27.0",
     "@theia/filesystem": "1.27.0",
     "@theia/markers": "1.27.0",
-    "@theia/monaco-editor-core": "1.65.2",
+    "@theia/monaco-editor-core": "1.67.2",
     "@theia/outline-view": "1.27.0",
     "fast-plist": "^0.1.2",
     "idb": "^4.0.5",
     "jsonc-parser": "^2.2.0",
-    "onigasm": "^2.2.0",
-    "vscode-textmate": "^4.4.0"
+    "vscode-oniguruma": "1.6.1",
+    "vscode-textmate": "^7.0.1"
   },
   "publishConfig": {
     "access": "public"

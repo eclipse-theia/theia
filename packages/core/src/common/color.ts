@@ -85,7 +85,10 @@ export interface HSLA {
 export interface ColorDefaults {
     light?: Color
     dark?: Color
+    /** @deprecated @since 1.28.0 Please use hcDark and hcLight. This field will be ignored unless `hcDark` is absent. */
     hc?: Color
+    hcDark?: Color;
+    hcLight?: Color;
 }
 
 export interface ColorDefinition {

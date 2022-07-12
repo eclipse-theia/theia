@@ -6,7 +6,7 @@
     "@theia/core": "1.27.0",
     "@theia/editor": "1.27.0",
     "@theia/filesystem": "1.27.0",
-    "@theia/monaco-editor-core": "1.65.2",
+    "@theia/monaco-editor-core": "1.67.2",
     "@theia/navigator": "1.27.0",
     "@theia/scm": "1.27.0",
     "@theia/scm-extra": "1.27.0",
