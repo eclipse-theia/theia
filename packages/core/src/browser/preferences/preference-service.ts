@@ -182,7 +182,7 @@ export interface PreferenceService extends Disposable {
      *
      * @returns the value in the scope specified.
      */
-    inspectInScope<T>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, forceLanguageOverride?: boolean): T | undefined
+    inspectInScope<T extends JSONValue>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, forceLanguageOverride?: boolean): T | undefined
     /**
      * Returns a new preference identifier based on the given OverridePreferenceName.
      *
@@ -467,7 +467,7 @@ export class PreferenceServiceImpl implements PreferenceService {
         return Number(value);
     }
 
-    inspect<T>(preferenceName: string, resourceUri?: string, forceLanguageOverride?: boolean): PreferenceInspection<T> | undefined {
+    inspect<T extends JSONValue>(preferenceName: string, resourceUri?: string, forceLanguageOverride?: boolean): PreferenceInspection<T> | undefined {
         const defaultValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Default, resourceUri, forceLanguageOverride);
         const globalValue = this.inspectInScope<T>(preferenceName, PreferenceScope.User, resourceUri, forceLanguageOverride);
         const workspaceValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Workspace, resourceUri, forceLanguageOverride);
@@ -478,7 +478,7 @@ export class PreferenceServiceImpl implements PreferenceService {
         return { preferenceName, defaultValue, globalValue, workspaceValue, workspaceFolderValue, value: valueApplied };
     }
 
-    inspectInScope<T>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, forceLanguageOverride?: boolean): T | undefined {
+    inspectInScope<T extends JSONValue>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, forceLanguageOverride?: boolean): T | undefined {
         const value = this.doInspectInScope<T>(preferenceName, scope, resourceUri);
         if (value === undefined && !forceLanguageOverride) {
             const overridden = this.overriddenPreferenceName(preferenceName);
