@@ -205,7 +205,7 @@ export abstract class Process {
     public getCwdURI(): Promise<string> {
         if (isOSX) {
             return new Promise<string>(resolve => {
-                exec('lsof -p ' + this.pid + ' | grep cwd', (error, stdout, stderr) => {
+                exec('lsof -OPln -p ' + this.pid + ' | grep cwd', (error, stdout, stderr) => {
                     if (stdout !== '') {
                         resolve(FileUri.create(stdout.substring(stdout.indexOf('/'), stdout.length - 1)).toString());
                     } else {
