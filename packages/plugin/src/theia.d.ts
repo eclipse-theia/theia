@@ -6297,13 +6297,13 @@ export module '@theia/plugin' {
          * is returned. Dots in the section-identifier are interpreted as child-access,
          * like `{ myExt: { setting: { doIt: true }}}` and `getConfiguration('myExt.setting').get('doIt') === true`.
          *
-         * When a resource is provided, configuration scoped to that resource is returned.
+         * When a scope is provided configuration confined to that scope is returned. Scope can be a resource or a language identifier or both.
          *
          * @param section A dot-separated identifier.
-         * @param resource A resource for which the configuration is asked for
+         * @param scope A scope for which the configuration is asked for.
          * @return The full configuration or a subset.
          */
-        export function getConfiguration(section?: string, resource?: ConfigurationScope | null): WorkspaceConfiguration;
+        export function getConfiguration(section?: string, scope?: ConfigurationScope | null): WorkspaceConfiguration;
 
         /**
          * An event that is emitted when the [configuration](#WorkspaceConfiguration) changed.
