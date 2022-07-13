@@ -430,4 +430,14 @@ export class ScmMainImpl implements ScmMain {
 
         repository.input.placeholder = placeholder;
     }
+
+    $setInputBoxVisible(sourceControlHandle: number, visible: boolean): void {
+        const repository = this.repositories.get(sourceControlHandle);
+
+        if (!repository) {
+            return;
+        }
+
+        repository.input.visible = visible;
+    }
 }

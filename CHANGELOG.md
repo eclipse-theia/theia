@@ -4,6 +4,9 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.28.0 - Unreleased
+- [plugin] added support for property `SourceControlInputBox#visible` [#11412](https://github.com/eclipse-theia/theia/pull/11412) - Contributed on behalf of STMicroelectronics
+
 ## v1.27.0 - 6/30/2022
 
 - [core] added better styling for active sidepanel borders [#11330](https://github.com/eclipse-theia/theia/pull/11330)
