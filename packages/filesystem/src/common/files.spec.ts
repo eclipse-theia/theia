@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2022 EclipseSource and others.
+// Copyright (C) 2022 Texas Instruments and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -25,7 +25,7 @@ describe('FileChangesEvent', () => {
         const event = new FileChangesEvent([{ resource: parent, type: FileChangeType.DELETED }]);
         expect(event.contains(child, FileChangeType.DELETED)).to.eq(true);
     });
-    it('deleting grantparent folder - event contains grandchild', () => {
+    it('deleting grandparent folder - event contains grandchild', () => {
         const grandparent = new URI('file:///grandparent');
         const grandchild = new URI('file:///grandparent/parent/child');
         const event = new FileChangesEvent([{ resource: grandparent, type: FileChangeType.DELETED }]);
