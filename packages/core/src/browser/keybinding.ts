@@ -434,20 +434,19 @@ export class KeybindingRegistry {
      */
     getKeybindingsForCommand(commandId: string): ScopedKeybinding[] {
         const result: ScopedKeybinding[] = [];
-
+        const disabledBindings: ScopedKeybinding[] = [];
         for (let scope = KeybindingScope.END - 1; scope >= KeybindingScope.DEFAULT; scope--) {
             this.keymaps[scope].forEach(binding => {
+                if (binding.command?.startsWith('-')) {
+                    disabledBindings.push(binding);
+                }
                 const command = this.commandRegistry.getCommand(binding.command);
-                if (command) {
-                    if (command.id === commandId) {
-                        result.push({ ...binding, scope });
-                    }
+                if (command
+                    && command.id === commandId
+                    && !disabledBindings.some(disabled => common.Keybinding.equals(disabled, { ...binding, command: '-' + binding.command }, false, true))) {
+                    result.push({ ...binding, scope });
                 }
             });
-
-            if (result.length > 0) {
-                return result;
-            }
         }
         return result;
     }

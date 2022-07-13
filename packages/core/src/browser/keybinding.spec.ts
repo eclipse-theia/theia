@@ -165,20 +165,30 @@ describe('keybindings', () => {
         }
     });
 
-    it('should remove all keybindings from a command that has multiple keybindings', () => {
+    it('should remove all disabled keybindings from a command that has multiple keybindings', () => {
         const keybindings: Keybinding[] = [{
             command: TEST_COMMAND2.id,
             keybinding: 'F3'
-        }];
+        },
+        {
+            command: '-' + TEST_COMMAND2.id,
+            context: 'testContext',
+            keybinding: 'ctrl+f1'
+        },
+        ];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
 
         const bindings = keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND2.id);
         if (bindings) {
-            expect(bindings.length).to.be.equal(1);
+            // a USER one and a DEFAULT one
+            expect(bindings.length).to.be.equal(2);
             const keyCode = KeyCode.parse(bindings[0].keybinding);
             expect(keyCode.key).to.be.equal(Key.F3);
             expect(keyCode.ctrl).to.be.false;
+            const keyCode2 = KeyCode.parse(bindings[1].keybinding);
+            expect(keyCode2.key).to.be.equal(Key.F2);
+            expect(keyCode2.ctrl).to.be.true;
         }
     });
 

@@ -338,6 +338,14 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
                 keybinding: 'ctrlcmd+='
             },
             {
+                command: ElectronCommands.ZOOM_IN.id,
+                keybinding: 'ctrlcmd+add'
+            },
+            {
+                command: ElectronCommands.ZOOM_OUT.id,
+                keybinding: 'ctrlcmd+subtract'
+            },
+            {
                 command: ElectronCommands.ZOOM_OUT.id,
                 keybinding: 'ctrlcmd+-'
             },
