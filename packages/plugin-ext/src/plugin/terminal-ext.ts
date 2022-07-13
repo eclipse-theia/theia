@@ -138,9 +138,10 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         }
     }
 
-    $terminalClosed(id: string): void {
+    $terminalClosed(id: string, exitStatus: theia.TerminalExitStatus | undefined): void {
         const terminal = this._terminals.get(id);
         if (terminal) {
+            terminal.exitStatus = exitStatus ?? { code: undefined };
             this.onDidCloseTerminalEmitter.fire(terminal);
             this._terminals.delete(id);
         }
@@ -270,7 +271,10 @@ export class TerminalExtImpl implements Terminal {
 
     readonly id = new Deferred<string>();
 
+    exitStatus: theia.TerminalExitStatus | undefined;
+
     deferredProcessId = new Deferred<number>();
+
     get processId(): Thenable<number> {
         return this.deferredProcessId.promise;
     }
@@ -292,7 +296,6 @@ export class TerminalExtImpl implements Terminal {
     dispose(): void {
         this.id.promise.then(id => this.proxy.$dispose(id));
     }
-
 }
 
 export class PseudoTerminal {

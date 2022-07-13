@@ -21,6 +21,7 @@ import { ThemeService } from './theming';
 import { FrontendApplicationContribution } from './frontend-application';
 import { ContributionProvider } from '../common/contribution-provider';
 import { Disposable, DisposableCollection } from '../common/disposable';
+import { DEFAULT_BACKGROUND_COLOR_STORAGE_KEY } from './frontend-application-config-provider';
 
 export const ColorContribution = Symbol('ColorContribution');
 export interface ColorContribution {
@@ -39,18 +40,17 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
     @inject(ContributionProvider) @named(ColorContribution)
     protected readonly colorContributions: ContributionProvider<ColorContribution>;
 
-    private static themeBackgroundId = 'theme.background';
+    @inject(ThemeService) protected readonly themeService: ThemeService;
 
     onStart(): void {
         for (const contribution of this.colorContributions.getContributions()) {
             contribution.registerColors(this.colors);
         }
-
-        this.updateThemeBackground();
-        ThemeService.get().onDidColorThemeChange(() => this.updateThemeBackground());
-
-        this.update();
-        ThemeService.get().onDidColorThemeChange(() => this.update());
+        this.themeService.initialized.then(() => this.update());
+        this.themeService.onDidColorThemeChange(() => {
+            this.update();
+            this.updateThemeBackground();
+        });
         this.colors.onDidChange(() => this.update());
     }
 
@@ -60,7 +60,7 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
             return;
         }
         this.toUpdate.dispose();
-        const theme = 'theia-' + ThemeService.get().getCurrentTheme().type;
+        const theme = 'theia-' + this.themeService.getCurrentTheme().type;
         document.body.classList.add(theme);
         this.toUpdate.push(Disposable.create(() => document.body.classList.remove(theme)));
 
@@ -81,16 +81,9 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
     protected updateThemeBackground(): void {
         const color = this.colors.getCurrentColor('editor.background');
         if (color) {
-            window.localStorage.setItem(ColorApplicationContribution.themeBackgroundId, color);
+            window.localStorage.setItem(DEFAULT_BACKGROUND_COLOR_STORAGE_KEY, color);
         } else {
-            window.localStorage.removeItem(ColorApplicationContribution.themeBackgroundId);
+            window.localStorage.removeItem(DEFAULT_BACKGROUND_COLOR_STORAGE_KEY);
         }
     }
-
-    static initBackground(): void {
-        const value = window.localStorage.getItem(this.themeBackgroundId) || '#1d1d1d';
-        const documentElement = document.documentElement;
-        documentElement.style.setProperty('--theia-editor-background', value);
-    }
-
 }

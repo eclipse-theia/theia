@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { OpenerService, open, WidgetOpenerOptions, Widget } from '@theia/core/lib/browser';
-import { KeybindingRegistry, KeybindingScope } from '@theia/core/lib/browser/keybinding';
+import { KeybindingRegistry, KeybindingScope, ScopedKeybinding } from '@theia/core/lib/browser/keybinding';
 import { Keybinding, RawKeybinding } from '@theia/core/lib/common/keybinding';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import * as jsoncparser from 'jsonc-parser';
@@ -119,23 +119,29 @@ export class KeymapsService {
 
     /**
      * Set the keybinding in the JSON.
-     * @param newKeybinding the JSON keybindings.
+     * @param newKeybinding the new JSON keybinding
+     * @param oldKeybinding the old JSON keybinding
      */
-    async setKeybinding(newKeybinding: Keybinding, oldKeybinding: string | undefined): Promise<void> {
+    async setKeybinding(newKeybinding: Keybinding, oldKeybinding: ScopedKeybinding | undefined): Promise<void> {
         return this.updateKeymap(() => {
             let newAdded = false;
-            let oldRemoved = false;
+            let isOldKeybindingDisabled = false;
+            let addedDisabledEntry = false;
             const keybindings = [];
             for (let keybinding of this.keybindingRegistry.getKeybindingsByScope(KeybindingScope.USER)) {
-                if (Keybinding.equals(keybinding, newKeybinding, true, true)) {
+                // search for the old keybinding and modify it
+                if (oldKeybinding && Keybinding.equals(keybinding, oldKeybinding, false, true)) {
                     newAdded = true;
                     keybinding = {
                         ...keybinding,
                         keybinding: newKeybinding.keybinding
                     };
                 }
-                if (oldKeybinding && Keybinding.equals(keybinding, { ...newKeybinding, keybinding: oldKeybinding, command: '-' + newKeybinding.command }, false, true)) {
-                    oldRemoved = true;
+
+                // we have an disabled entry for the same command and the oldKeybinding
+                if (oldKeybinding?.keybinding &&
+                    Keybinding.equals(keybinding, { ...newKeybinding, keybinding: oldKeybinding.keybinding, command: '-' + newKeybinding.command }, false, true)) {
+                    isOldKeybindingDisabled = true;
                 }
                 keybindings.push(keybinding);
             }
@@ -149,22 +155,24 @@ export class KeymapsService {
                 });
                 newAdded = true;
             }
-            if (!oldRemoved && oldKeybinding) {
+            // we want to add a disabled entry for the old keybinding only when we are modifying the default value
+            if (!isOldKeybindingDisabled && oldKeybinding?.scope === KeybindingScope.DEFAULT) {
                 const disabledBinding = {
                     command: '-' + newKeybinding.command,
                     // TODO key: oldKeybinding, see https://github.com/eclipse-theia/theia/issues/6879
-                    keybinding: oldKeybinding,
+                    keybinding: oldKeybinding.keybinding,
                     context: newKeybinding.context,
                     when: newKeybinding.when,
                     args: newKeybinding.args
                 };
                 // Add disablement of the old keybinding if it isn't already disabled in the list to avoid duplicate disabled entries
-                if (!keybindings.some(binding => Keybinding.equals(binding, disabledBinding, true, true))) {
+                if (!keybindings.some(binding => Keybinding.equals(binding, disabledBinding, false, true))) {
                     keybindings.push(disabledBinding);
                 }
-                oldRemoved = true;
+                isOldKeybindingDisabled = true;
+                addedDisabledEntry = true;
             }
-            if (newAdded || oldRemoved) {
+            if (newAdded || addedDisabledEntry) {
                 return keybindings;
             }
         });

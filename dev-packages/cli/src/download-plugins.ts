@@ -26,17 +26,12 @@ declare global {
 import { OVSXClient } from '@theia/ovsx-client/lib/ovsx-client';
 import * as chalk from 'chalk';
 import * as decompress from 'decompress';
-import { createWriteStream, promises as fs } from 'fs';
-import { HttpsProxyAgent } from 'https-proxy-agent';
-import fetch, { RequestInit, Response } from 'node-fetch';
+import { promises as fs } from 'fs';
 import * as path from 'path';
-import { getProxyForUrl } from 'proxy-from-env';
-import * as stream from 'stream';
 import * as temp from 'temp';
-import { promisify } from 'util';
+import { NodeRequestService } from '@theia/request/lib/node-request-service';
 import { DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package/lib/api';
-
-const pipelineAsPromised = promisify(stream.pipeline);
+import { RequestContext } from '@theia/request';
 
 temp.track();
 
@@ -66,15 +61,42 @@ export interface DownloadPluginsOptions {
      * The open-vsx registry API url.
      */
     apiUrl?: string;
+
+    /**
+     * Fetch plugins in parallel
+     */
+    parallel?: boolean;
+
+    proxyUrl?: string;
+    proxyAuthorization?: string;
+    strictSsl?: boolean;
 }
+
+interface PluginDownload {
+    id: string,
+    downloadUrl: string,
+    version?: string | undefined
+}
+
+const requestService = new NodeRequestService();
 
 export default async function downloadPlugins(options: DownloadPluginsOptions = {}): Promise<void> {
     const {
         packed = false,
         ignoreErrors = false,
         apiVersion = DEFAULT_SUPPORTED_API_VERSION,
-        apiUrl = 'https://open-vsx.org/api'
+        apiUrl = 'https://open-vsx.org/api',
+        parallel = true,
+        proxyUrl,
+        proxyAuthorization,
+        strictSsl
     } = options;
+
+    requestService.configure({
+        proxyUrl,
+        proxyAuthorization,
+        strictSSL: strictSsl
+    });
 
     // Collect the list of failures to be appended at the end of the script.
     const failures: string[] = [];
@@ -88,6 +110,23 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
     // Excluded extension ids.
     const excludedIds = new Set<string>(pck.theiaPluginsExcludeIds || []);
 
+    const parallelOrSequence = async (...tasks: Array<() => unknown>) => {
+        if (parallel) {
+            await Promise.all(tasks.map(task => task()));
+        } else {
+            for (const task of tasks) {
+                await task();
+            }
+        }
+    };
+
+    // Downloader wrapper
+    const downloadPlugin = (plugin: PluginDownload): Promise<void> => downloadPluginAsync(failures, plugin.id, plugin.downloadUrl, pluginsDir, packed, plugin.version);
+
+    const downloader = async (plugins: PluginDownload[]) => {
+        await parallelOrSequence(...plugins.map(plugin => () => downloadPlugin(plugin)));
+    };
+
     await fs.mkdir(pluginsDir, { recursive: true });
 
     if (!pck.theiaPlugins) {
@@ -98,45 +137,39 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         console.warn('--- downloading plugins ---');
         // Download the raw plugins defined by the `theiaPlugins` property.
         // This will include both "normal" plugins as well as "extension packs".
-        const downloads = [];
-        for (const [plugin, pluginUrl] of Object.entries(pck.theiaPlugins)) {
-            if (typeof pluginUrl !== 'string') {
-                continue;
-            }
-            downloads.push(downloadPluginAsync(failures, plugin, pluginUrl, pluginsDir, packed));
-        }
-        await Promise.all(downloads);
+        const pluginsToDownload = Object.entries(pck.theiaPlugins)
+            .filter((entry: [string, unknown]): entry is [string, string] => typeof entry[1] === 'string')
+            .map(([pluginId, url]) => ({ id: pluginId, downloadUrl: url }));
+        await downloader(pluginsToDownload);
+
+        const handleDependencyList = async (dependencies: Array<string | string[]>) => {
+            const client = new OVSXClient({ apiVersion, apiUrl }, requestService);
+            // De-duplicate extension ids to only download each once:
+            const ids = new Set<string>(dependencies.flat());
+            await parallelOrSequence(...Array.from(ids, id => async () => {
+                const extension = await client.getLatestCompatibleExtensionVersion(id);
+                const version = extension?.version;
+                const downloadUrl = extension?.files.download;
+                if (downloadUrl) {
+                    await downloadPlugin({ id, downloadUrl, version });
+                } else {
+                    failures.push(`No download url for extension pack ${id} (${version})`);
+                }
+            }));
+        };
 
         console.warn('--- collecting extension-packs ---');
         const extensionPacks = await collectExtensionPacks(pluginsDir, excludedIds);
         if (extensionPacks.size > 0) {
             console.warn(`--- resolving ${extensionPacks.size} extension-packs ---`);
-            const client = new OVSXClient({ apiVersion, apiUrl });
-            // De-duplicate extension ids to only download each once:
-            const ids = new Set<string>(Array.from(extensionPacks.values()).flat());
-            await Promise.all(Array.from(ids, async id => {
-                const extension = await client.getLatestCompatibleExtensionVersion(id);
-                const downloadUrl = extension?.files.download;
-                if (downloadUrl) {
-                    await downloadPluginAsync(failures, id, downloadUrl, pluginsDir, packed, extension?.version);
-                }
-            }));
+            await handleDependencyList(Array.from(extensionPacks.values()));
         }
 
         console.warn('--- collecting extension dependencies ---');
         const pluginDependencies = await collectPluginDependencies(pluginsDir, excludedIds);
         if (pluginDependencies.length > 0) {
             console.warn(`--- resolving ${pluginDependencies.length} extension dependencies ---`);
-            const client = new OVSXClient({ apiVersion, apiUrl });
-            // De-duplicate extension ids to only download each once:
-            const ids = new Set<string>(pluginDependencies);
-            await Promise.all(Array.from(ids, async id => {
-                const extension = await client.getLatestCompatibleExtensionVersion(id);
-                const downloadUrl = extension?.files.download;
-                if (downloadUrl) {
-                    await downloadPluginAsync(failures, id, downloadUrl, pluginsDir, packed, extension?.version);
-                }
-            }));
+            await handleDependencyList(pluginDependencies);
         }
 
     } finally {
@@ -187,7 +220,7 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
 
     let attempts: number;
     let lastError: Error | undefined;
-    let response: Response | undefined;
+    let response: RequestContext | undefined;
 
     for (attempts = 0; attempts < maxAttempts; attempts++) {
         if (attempts > 0) {
@@ -195,12 +228,15 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
         }
         lastError = undefined;
         try {
-            response = await xfetch(pluginUrl);
+            response = await requestService.request({
+                url: pluginUrl
+            });
         } catch (error) {
             lastError = error;
             continue;
         }
-        const retry = response.status === 439 || response.status >= 500;
+        const status = response.res.statusCode;
+        const retry = status && (status === 439 || status >= 500);
         if (!retry) {
             break;
         }
@@ -213,20 +249,19 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
         failures.push(chalk.red(`x ${plugin}: failed to download (unknown reason)`));
         return;
     }
-    if (response.status !== 200) {
-        failures.push(chalk.red(`x ${plugin}: failed to download with: ${response.status} ${response.statusText}`));
+    if (response.res.statusCode !== 200) {
+        failures.push(chalk.red(`x ${plugin}: failed to download with: ${response.res.statusCode}`));
         return;
     }
 
     if ((fileExt === '.vsix' || fileExt === '.theia') && packed === true) {
         // Download .vsix without decompressing.
-        const file = createWriteStream(targetPath);
-        await pipelineAsPromised(response.body, file);
+        await fs.writeFile(targetPath, response.buffer);
     } else {
         await fs.mkdir(targetPath, { recursive: true });
-        const tempFile = temp.createWriteStream('theia-plugin-download');
-        await pipelineAsPromised(response.body, tempFile);
-        await decompress(tempFile.path, targetPath);
+        const tempFile = temp.path('theia-plugin-download');
+        await fs.writeFile(tempFile, response.buffer);
+        await decompress(tempFile, targetPath);
     }
 
     console.warn(chalk.green(`+ ${plugin}${version ? `@${version}` : ''}: downloaded successfully ${attempts > 1 ? `(after ${attempts} attempts)` : ''}`));
@@ -240,18 +275,6 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
  */
 async function isDownloaded(filePath: string): Promise<boolean> {
     return fs.stat(filePath).then(() => true, () => false);
-}
-
-/**
- * Follow HTTP(S)_PROXY, ALL_PROXY and NO_PROXY environment variables.
- */
-export function xfetch(url: string, options?: RequestInit): Promise<Response> {
-    const proxiedOptions: RequestInit = { ...options };
-    const proxy = getProxyForUrl(url);
-    if (!proxiedOptions.agent && proxy !== '') {
-        proxiedOptions.agent = new HttpsProxyAgent(proxy);
-    }
-    return fetch(url, proxiedOptions);
 }
 
 /**
@@ -290,7 +313,7 @@ async function collectExtensionPacks(pluginDir: string, excludedIds: Set<string>
         if (Array.isArray(extensionPack)) {
             extensionPackPaths.set(packageJsonPath, extensionPack.filter(id => {
                 if (excludedIds.has(id)) {
-                    console.log(chalk.yellow(`'${id}' referenced by '${json.name}' (ext pack) is excluded because of 'theiaPluginsExcludeIds'`));
+                    console.log(chalk.yellow(`'${id}' referred to by '${json.name}' (ext pack) is excluded because of 'theiaPluginsExcludeIds'`));
                     return false; // remove
                 }
                 return true; // keep
@@ -316,7 +339,7 @@ async function collectPluginDependencies(pluginDir: string, excludedIds: Set<str
         if (Array.isArray(extensionDependencies)) {
             for (const dependency of extensionDependencies) {
                 if (excludedIds.has(dependency)) {
-                    console.log(chalk.yellow(`'${dependency}' referenced by '${json.name}' is excluded because of 'theiaPluginsExcludeIds'`));
+                    console.log(chalk.yellow(`'${dependency}' referred to by '${json.name}' is excluded because of 'theiaPluginsExcludeIds'`));
                 } else {
                     dependencyIds.push(dependency);
                 }

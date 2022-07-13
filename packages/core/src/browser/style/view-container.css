@@ -111,6 +111,10 @@
     opacity: 0.6;
 }
 
+.theia-view-container-part-header .notification-count-container {
+    margin-right: 12px;
+}
+
 .theia-view-container .part > .body {
     height: var(--theia-view-container-content-height);
     min-width: 50px;

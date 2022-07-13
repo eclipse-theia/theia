@@ -16,6 +16,7 @@
 
 .theia-select-component {
     background-color: var(--theia-dropdown-background);
+    cursor: pointer;
     outline: var(--theia-dropdown-border) solid 1px;
     outline-offset: -1px;
     min-height: 23px;
@@ -83,6 +84,7 @@
 
 .theia-select-component-dropdown .theia-select-component-option.selected {
     color: var(--theia-list-activeSelectionForeground);
+    cursor: pointer;
     background: var(--theia-list-activeSelectionBackground);
     outline: var(--theia-focusBorder) solid 1px;
     outline-offset: -1px;

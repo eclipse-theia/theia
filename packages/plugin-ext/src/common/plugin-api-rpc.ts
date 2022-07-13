@@ -26,9 +26,9 @@ import {
     TextEditorLineNumbersStyle,
     EndOfLine,
     OverviewRulerLane,
-    IndentAction,
     FileOperationOptions,
     TextDocumentChangeReason,
+    IndentAction,
 } from '../plugin/types-impl';
 import { UriComponents } from './uri-components';
 import {
@@ -99,8 +99,7 @@ import type {
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ThemeType } from '@theia/core/lib/common/theme';
 import { Disposable } from '@theia/core/lib/common/disposable';
-// eslint-disable-next-line @theia/runtime-import-check
-import { PickOptions, QuickInputButtonHandle, QuickPickItem, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { PickOptions, QuickInputButtonHandle, QuickPickItem } from '@theia/core/lib/common';
 import { Severity } from '@theia/core/lib/common/severity';
 
 export interface PreferenceData {
@@ -114,6 +113,7 @@ export interface Plugin {
     model: PluginModel;
     rawModel: PluginPackage;
     lifecycle: PluginLifecycle;
+    isUnderDevelopment: boolean;
 }
 
 export interface ConfigStorage {
@@ -197,7 +197,8 @@ export const emptyPlugin: Plugin = {
             version: 'empty'
         },
         packagePath: 'empty'
-    }
+    },
+    isUnderDevelopment: false
 };
 
 export interface PluginManagerInitializeParams {
@@ -258,7 +259,7 @@ export interface TerminalServiceExt {
     $terminalCreated(id: string, name: string): void;
     $terminalNameChanged(id: string, name: string): void;
     $terminalOpened(id: string, processId: number, terminalId: number, cols: number, rows: number): void;
-    $terminalClosed(id: string): void;
+    $terminalClosed(id: string, exitStatus: theia.TerminalExitStatus | undefined): void;
     $terminalOnInput(id: string, data: string): void;
     $terminalSizeChanged(id: string, cols: number, rows: number): void;
     $currentTerminalChanged(id: string | undefined): void;
@@ -701,6 +702,8 @@ export interface TreeViewItem {
     id: string;
 
     label: string;
+    /** Label highlights given as tuples of inclusive start index and exclusive end index. */
+    highlights?: [number, number][];
 
     description?: string | boolean;
 
@@ -708,7 +711,7 @@ export interface TreeViewItem {
     icon?: string;
     iconUrl?: IconUrl;
 
-    themeIconId?: string;
+    themeIcon?: ThemeIcon;
 
     resourceUri?: UriComponents;
 
@@ -868,6 +871,7 @@ export interface ScmMain {
 
     $setInputBoxValue(sourceControlHandle: number, value: string): void;
     $setInputBoxPlaceholder(sourceControlHandle: number, placeholder: string): void;
+    $setInputBoxVisible(sourceControlHandle: number, visible: boolean): void;
 }
 
 export interface SourceControlProviderFeatures {
@@ -1076,6 +1080,11 @@ export interface ThemeColor {
     id: string;
 }
 
+export interface ThemeIcon {
+    id: string;
+    color?: ThemeColor;
+}
+
 /**
  * Describes the behavior of decorations when typing/editing near their edges.
  */
@@ -1160,11 +1169,10 @@ export interface DecorationOptions {
 }
 
 export interface TextEditorsMain {
-    // $tryShowTextDocument(resource: UriComponents, options: TextDocumentShowOptions): Promise<string>;
+    $tryShowTextDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void>;
     $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions): void;
     $removeTextEditorDecorationType(key: string): void;
-    // $tryShowEditor(id: string, position: EditorPosition): Promise<void>;
-    // $tryHideEditor(id: string): Promise<void>;
+    $tryHideEditor(id: string): Promise<void>;
     $trySetOptions(id: string, options: TextEditorConfigurationUpdate): Promise<void>;
     $trySetDecorations(id: string, key: string, ranges: DecorationOptions[]): Promise<void>;
     $trySetDecorationsFast(id: string, key: string, ranges: number[]): Promise<void>;
@@ -1305,17 +1313,18 @@ export interface SerializedIndentationRule {
     unIndentedLinePattern?: SerializedRegExp;
 }
 
-export interface EnterAction {
+export interface SerializedOnEnterRule {
+    beforeText: SerializedRegExp;
+    afterText?: SerializedRegExp;
+    previousLineText?: SerializedRegExp;
+    action: SerializedEnterAction;
+}
+
+export interface SerializedEnterAction {
     indentAction: IndentAction;
     outdentCurrentLine?: boolean;
     appendText?: string;
     removeText?: number;
-}
-
-export interface SerializedOnEnterRule {
-    beforeText: SerializedRegExp;
-    afterText?: SerializedRegExp;
-    action: EnterAction;
 }
 
 export interface SerializedLanguageConfiguration {
@@ -1408,6 +1417,7 @@ export interface TaskPresentationOptionsDTO {
     echo?: boolean;
     panel?: number;
     showReuseMessage?: boolean;
+    clear?: boolean;
 }
 
 export interface TaskExecutionDto {
@@ -1618,12 +1628,12 @@ export interface WebviewViewsMain extends Disposable {
 }
 
 export interface CustomEditorsExt {
-    $resolveWebviewEditor(
+    $resolveWebviewEditor<T>(
         resource: UriComponents,
         newWebviewHandle: string,
         viewType: string,
         title: string,
-        widgetOpenerOptions: WidgetOpenerOptions | undefined,
+        widgetOpenerOptions: T | undefined,
         options: theia.WebviewPanelOptions,
         cancellation: CancellationToken): Promise<void>;
     $createCustomDocument(resource: UriComponents, viewType: string, openContext: theia.CustomDocumentOpenContext, cancellation: CancellationToken): Promise<{ editable: boolean }>;
@@ -1646,7 +1656,7 @@ export interface CustomEditorsMain {
     $registerTextEditorProvider(viewType: string, options: theia.WebviewPanelOptions, capabilities: CustomTextEditorCapabilities): void;
     $registerCustomEditorProvider(viewType: string, options: theia.WebviewPanelOptions, supportsMultipleEditorsPerDocument: boolean): void;
     $unregisterEditorProvider(viewType: string): void;
-    $createCustomEditorPanel(handle: string, title: string, widgetOpenerOptions: WidgetOpenerOptions | undefined, options: theia.WebviewPanelOptions & theia.WebviewOptions): Promise<void>;
+    $createCustomEditorPanel<T>(handle: string, title: string, widgetOpenerOptions: T | undefined, options: theia.WebviewPanelOptions & theia.WebviewOptions): Promise<void>;
     $onDidEdit(resource: UriComponents, viewType: string, editId: number, label: string | undefined): void;
     $onContentChange(resource: UriComponents, viewType: string): void;
 }

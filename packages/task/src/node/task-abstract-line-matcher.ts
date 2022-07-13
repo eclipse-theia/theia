@@ -295,9 +295,7 @@ export abstract class AbstractLineMatcher {
             const regexp = new RegExp(this.activePattern.regexp);
             const regexMatches = regexp.exec(line);
             if (regexMatches) {
-                if (this.activePattern.kind !== undefined && this.cachedProblemData.kind !== undefined) {
-                    this.cachedProblemData.kind = this.activePattern.kind;
-                }
+                this.cachedProblemData.kind ??= this.activePattern.kind;
                 return this.fillProblemData(this.cachedProblemData, this.activePattern, regexMatches);
             }
         }

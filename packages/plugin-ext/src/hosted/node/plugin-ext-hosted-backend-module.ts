@@ -60,6 +60,7 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(BackendApplicationContribution).toService(HostedPluginReader);
 
     bind(HostedPluginLocalizationService).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(HostedPluginLocalizationService);
     bind(HostedPluginDeployerHandler).toSelf().inSingletonScope();
     bind(PluginDeployerHandler).toService(HostedPluginDeployerHandler);
 

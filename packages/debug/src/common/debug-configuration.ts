@@ -16,8 +16,6 @@
 import { TaskIdentifier } from '@theia/task/lib/common';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export type DebugViewLocation = 'default' | 'left' | 'right' | 'bottom';
-
 /**
  * Configuration for a debug adapter session.
  */
@@ -60,9 +58,6 @@ export interface DebugConfiguration {
      */
     __restart?: any;
 
-    /** default: default */
-    debugViewLocation?: DebugViewLocation
-
     /** default: neverOpen */
     openDebug?: 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart' | 'openOnDebugBreak';
 
@@ -74,9 +69,6 @@ export interface DebugConfiguration {
 
     /** Task to run after debug session ends */
     postDebugTask?: string | TaskIdentifier;
-
-    /** Indicates if it's a dynamic debug configuration */
-    dynamic?: boolean;
 }
 export namespace DebugConfiguration {
     export function is(arg: DebugConfiguration | any): arg is DebugConfiguration {

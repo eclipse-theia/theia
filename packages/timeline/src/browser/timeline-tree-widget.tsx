@@ -53,16 +53,15 @@ export class TimelineTreeWidget extends TreeWidget {
             timelineItem={node.timelineItem}
             commandRegistry={this.commandRegistry}
             contextKeys={this.contextKeys}
-            contextMenuRenderer={this.contextMenuRenderer}/>;
+            contextMenuRenderer={this.contextMenuRenderer} />;
         return React.createElement('div', attributes, content);
     }
 
     protected override handleEnter(event: KeyboardEvent): void {
-        const node = this.model.selectedNodes[0] as TimelineNode;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const command: any = node.timelineItem.command;
+        const node = this.model.getFocusedNode() as TimelineNode;
+        const command = node?.timelineItem?.command;
         if (command) {
-            this.commandRegistry.executeCommand(command.id, ...command.arguments ? command.arguments : []);
+            this.commandRegistry.executeCommand(command.id, ...(command.arguments ? command.arguments : []));
         }
     }
 
@@ -84,9 +83,9 @@ export class TimelineItemNode extends React.Component<TimelineItemNode.Props> {
     override render(): JSX.Element | undefined {
         const { label, description, detail } = this.props.timelineItem;
         return <div className='timeline-item'
-                    title={detail}
-                    onContextMenu={this.renderContextMenu}
-                    onClick={this.open}>
+            title={detail}
+            onContextMenu={this.renderContextMenu}
+            onClick={this.open}>
             <div className={`noWrapInfo ${TREE_NODE_SEGMENT_GROW_CLASS}`} >
                 <span className='name'>{label}</span>
                 <span className='label'>{description}</span>

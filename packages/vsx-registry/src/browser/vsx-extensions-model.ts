@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import debounce from 'p-debounce';
-import * as showdown from 'showdown';
+import * as markdownit from '@theia/core/shared/markdown-it';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
@@ -118,6 +118,11 @@ export class VSXExtensionsModel {
         return this._installed.has(id);
     }
 
+    protected _searchError?: string;
+    get searchError(): string | undefined {
+        return this._searchError;
+    }
+
     protected _searchResult = new Set<string>();
     get searchResult(): IterableIterator<string> {
         return this._searchResult.values();
@@ -173,6 +178,7 @@ export class VSXExtensionsModel {
             }
             const client = await this.clientProvider();
             const result = await client.search(param);
+            this._searchError = result.error;
             if (token.isCancellationRequested) {
                 return;
             }
@@ -204,20 +210,23 @@ export class VSXExtensionsModel {
             const refreshing = [];
             for (const plugin of plugins) {
                 if (plugin.model.engine.type === 'vscode') {
+                    const version = plugin.model.version;
                     const id = plugin.model.id;
                     this._installed.delete(id);
                     const extension = this.setExtension(id);
                     currInstalled.add(extension.id);
-                    refreshing.push(this.refresh(id));
+                    refreshing.push(this.refresh(id, version));
                 }
             }
             for (const id of this._installed) {
-                refreshing.push(this.refresh(id));
+                const extension = this.getExtension(id);
+                if (!extension) { continue; }
+                refreshing.push(this.refresh(id, extension.version));
             }
-            Promise.all(refreshing);
             const installed = new Set([...prevInstalled, ...currInstalled]);
             const installedSorted = Array.from(installed).sort((a, b) => this.compareExtensions(a, b));
             this._installed = new Set(installedSorted.values());
+            await Promise.all(refreshing);
         });
     }
 
@@ -279,26 +288,20 @@ export class VSXExtensionsModel {
     }
 
     protected compileReadme(readmeMarkdown: string): string {
-        const markdownConverter = new showdown.Converter({
-            headerLevelStart: 2,
-            noHeaderId: true,
-            strikethrough: true,
-            tables: true,
-            underline: true
-        });
-
-        const readmeHtml = markdownConverter.makeHtml(readmeMarkdown);
+        const readmeHtml = markdownit({ html: true }).render(readmeMarkdown);
         return DOMPurify.sanitize(readmeHtml);
     }
 
-    protected async refresh(id: string): Promise<VSXExtension | undefined> {
+    protected async refresh(id: string, version?: string): Promise<VSXExtension | undefined> {
         try {
             let extension = this.getExtension(id);
             if (!this.shouldRefresh(extension)) {
                 return extension;
             }
             const client = await this.clientProvider();
-            const data = await client.getLatestCompatibleExtensionVersion(id);
+            const data = version !== undefined
+                ? await client.getExtension(id, { extensionVersion: version, includeAllVersions: true })
+                : await client.getLatestCompatibleExtensionVersion(id);
             if (!data) {
                 return;
             }
@@ -331,8 +334,7 @@ export class VSXExtensionsModel {
         return !extension.builtin;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected onDidFailRefresh(id: string, error: any): VSXExtension | undefined {
+    protected onDidFailRefresh(id: string, error: unknown): VSXExtension | undefined {
         const cached = this.getExtension(id);
         if (cached && cached.installed) {
             return cached;

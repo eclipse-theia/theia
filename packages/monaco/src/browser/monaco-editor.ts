@@ -142,7 +142,10 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
             }
         } as IStandaloneEditorConstructionOptions;
         const instantiator = this.getInstantiatorWithOverrides(override);
-        // Incomparability of internal and external interfaces.
+        /**
+         * @monaco-uplift. Should be guaranteed to work.
+         * Incomparable enums prevent TypeScript from believing that public IStandaloneCodeEditor is satisfied by private StandaloneCodeEditor
+         */
         return this.editor = instantiator.createInstance(StandaloneEditor, this.node, combinedOptions) as unknown as monaco.editor.IStandaloneCodeEditor;
     }
 

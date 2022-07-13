@@ -32,19 +32,9 @@ export interface ApplicationConfig {
 export type ElectronFrontendApplicationConfig = RequiredRecursive<ElectronFrontendApplicationConfig.Partial>;
 export namespace ElectronFrontendApplicationConfig {
     export const DEFAULT: ElectronFrontendApplicationConfig = {
-        disallowReloadKeybinding: false,
         windowOptions: {}
     };
     export interface Partial {
-
-        /**
-         * If set to `true`, reloading the current browser window won't be possible with the `Ctrl/Cmd + R` keybinding.
-         *
-         * Has no effect if not in an electron environment.
-         *
-         * Defaults to `false`.
-         */
-        readonly disallowReloadKeybinding?: boolean;
 
         /**
          * Override or add properties to the electron `windowOptions`.
@@ -65,7 +55,8 @@ export namespace FrontendApplicationConfig {
         defaultTheme: 'dark',
         defaultIconTheme: 'none',
         electron: ElectronFrontendApplicationConfig.DEFAULT,
-        defaultLocale: ''
+        defaultLocale: '',
+        validatePreferencesSchema: true
     };
     export interface Partial extends ApplicationConfig {
 
@@ -103,6 +94,14 @@ export namespace FrontendApplicationConfig {
          * Defaults to "".
          */
         readonly defaultLocale?: string;
+
+        /**
+         * When `true`, the application will validate the JSON schema of the preferences on start
+         * and log warnings to the console if the schema is not valid.
+         *
+         * Defaults to `true`.
+         */
+        readonly validatePreferencesSchema?: boolean;
     }
 }
 

@@ -18,7 +18,7 @@
 
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
-import { DebugAdapterExecutable, DebugAdapterContribution } from '../debug-model';
+import { DebugAdapterExecutable, DebugAdapterContribution } from '../../common/debug-model';
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { deepClone } from '@theia/core/lib/common/objects';

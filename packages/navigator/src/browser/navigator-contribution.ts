@@ -316,7 +316,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                     return false;
                 }
                 const navigator = this.tryGetWidget();
-                const selection = navigator?.model.selectedNodes[0];
+                const selection = navigator?.model.getFocusedNode();
                 // The node that is selected when the user clicks in empty space.
                 const root = navigator?.getContainerTreeNode();
                 return selection === root;

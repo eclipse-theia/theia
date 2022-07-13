@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-18.04]
-        node: ['12.x']
+        node: ['16.x']
         java: ['11']
 
     runs-on: ${{ matrix.os }}

@@ -17,21 +17,33 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { injectable } from '@theia/core/shared/inversify';
-import { IRawTheme, Registry, IRawThemeSetting } from 'vscode-textmate';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { IRawThemeSetting } from 'vscode-textmate';
 import * as monaco from '@theia/monaco-editor-core';
-import { IStandaloneTheme, IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
+import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService';
 import { Color } from '@theia/monaco-editor-core/esm/vs/base/common/color';
-
-export interface ThemeMix extends IRawTheme, monaco.editor.IStandaloneThemeData { }
-export interface MixStandaloneTheme extends IStandaloneTheme {
-    themeData: ThemeMix
-}
+import { MixStandaloneTheme, TextmateRegistryFactory, ThemeMix } from './monaco-theme-types';
 
 @injectable()
 export class MonacoThemeRegistry {
+
+    @inject(TextmateRegistryFactory) protected readonly registryFactory: TextmateRegistryFactory;
+
+    initializeDefaultThemes(): void {
+        this.register(require('../../../data/monaco-themes/vscode/dark_theia.json'), {
+            './dark_vs.json': require('../../../data/monaco-themes/vscode/dark_vs.json'),
+            './dark_plus.json': require('../../../data/monaco-themes/vscode/dark_plus.json')
+        }, 'dark-theia', 'vs-dark');
+        this.register(require('../../../data/monaco-themes/vscode/light_theia.json'), {
+            './light_vs.json': require('../../../data/monaco-themes/vscode/light_vs.json'),
+            './light_plus.json': require('../../../data/monaco-themes/vscode/light_plus.json'),
+        }, 'light-theia', 'vs');
+        this.register(require('../../../data/monaco-themes/vscode/hc_theia.json'), {
+            './hc_black.json': require('../../../data/monaco-themes/vscode/hc_black.json')
+        }, 'hc-theia', 'hc-black');
+    }
 
     getThemeData(): ThemeMix;
     getThemeData(name: string): ThemeMix | undefined;
@@ -115,8 +127,7 @@ export class MonacoThemeRegistry {
                 }
             });
 
-            const reg = new Registry();
-            reg.setTheme(result);
+            const reg = this.registryFactory(result);
             result.encodedTokensColors = reg.getColorMap();
             // index 0 has to be set to null as it is 'undefined' by default, but monaco code expects it to be null
             // eslint-disable-next-line no-null/no-null
@@ -155,17 +166,7 @@ export class MonacoThemeRegistry {
 }
 
 export namespace MonacoThemeRegistry {
-    export const SINGLETON = new MonacoThemeRegistry();
-
-    export const DARK_DEFAULT_THEME: string = SINGLETON.register(require('../../../data/monaco-themes/vscode/dark_theia.json'), {
-        './dark_vs.json': require('../../../data/monaco-themes/vscode/dark_vs.json'),
-        './dark_plus.json': require('../../../data/monaco-themes/vscode/dark_plus.json')
-    }, 'dark-theia', 'vs-dark').name!;
-    export const LIGHT_DEFAULT_THEME: string = SINGLETON.register(require('../../../data/monaco-themes/vscode/light_theia.json'), {
-        './light_vs.json': require('../../../data/monaco-themes/vscode/light_vs.json'),
-        './light_plus.json': require('../../../data/monaco-themes/vscode/light_plus.json'),
-    }, 'light-theia', 'vs').name!;
-    export const HC_DEFAULT_THEME: string = SINGLETON.register(require('../../../data/monaco-themes/vscode/hc_theia.json'), {
-        './hc_black.json': require('../../../data/monaco-themes/vscode/hc_black.json')
-    }, 'hc-theia', 'hc-black').name!;
+    export const DARK_DEFAULT_THEME = 'dark-theia';
+    export const LIGHT_DEFAULT_THEME = 'light-theia';
+    export const HC_DEFAULT_THEME = 'hc-theia';
 }

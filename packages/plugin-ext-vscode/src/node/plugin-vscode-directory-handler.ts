@@ -14,26 +14,68 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
-import { injectable } from '@theia/core/shared/inversify';
+import * as filenamify from 'filenamify';
+import * as fs from '@theia/core/shared/fs-extra';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { RecursivePartial } from '@theia/core';
 import {
-    PluginDeployerDirectoryHandler,
-    PluginDeployerEntry, PluginDeployerDirectoryHandlerContext,
-    PluginDeployerEntryType, PluginPackage
+    PluginDeployerDirectoryHandler, PluginDeployerEntry, PluginDeployerDirectoryHandlerContext,
+    PluginDeployerEntryType, PluginPackage, PluginType, PluginIdentifiers
 } from '@theia/plugin-ext';
+import { FileUri } from '@theia/core/lib/node';
+import { getTempDir } from '@theia/plugin-ext/lib/main/node/temp-dir-util';
+import { PluginCliContribution } from '@theia/plugin-ext/lib/main/node/plugin-cli-contribution';
 
 @injectable()
 export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHandler {
 
+    protected readonly deploymentDirectory = FileUri.create(getTempDir('vscode-copied'));
+
+    @inject(PluginCliContribution) protected readonly pluginCli: PluginCliContribution;
+
     accept(plugin: PluginDeployerEntry): boolean {
         console.debug(`Resolving "${plugin.id()}" as a VS Code extension...`);
-        return this.resolvePackage(plugin) || this.resolveFromSources(plugin) || this.resolveFromVSIX(plugin) || this.resolveFromNpmTarball(plugin);
+        return this.attemptResolution(plugin);
+    }
+
+    protected attemptResolution(plugin: PluginDeployerEntry): boolean {
+        return this.resolvePackage(plugin) || this.deriveMetadata(plugin);
+    }
+
+    protected deriveMetadata(plugin: PluginDeployerEntry): boolean {
+        return this.resolveFromSources(plugin) || this.resolveFromVSIX(plugin) || this.resolveFromNpmTarball(plugin);
     }
 
     async handle(context: PluginDeployerDirectoryHandlerContext): Promise<void> {
+        await this.copyDirectory(context);
         context.pluginEntry().accept(PluginDeployerEntryType.BACKEND);
+    }
+
+    protected async copyDirectory(context: PluginDeployerDirectoryHandlerContext): Promise<void> {
+        if (this.pluginCli.copyUncompressedPlugins() && context.pluginEntry().type === PluginType.User) {
+            const entry = context.pluginEntry();
+            const id = entry.id();
+            const pathToRestore = entry.path();
+            const origin = entry.originalPath();
+            const targetDir = await this.getExtensionDir(context);
+            try {
+                if (fs.existsSync(targetDir) || !entry.path().startsWith(origin)) {
+                    console.log(`[${id}]: already copied.`);
+                } else {
+                    console.log(`[${id}]: copying to "${targetDir}"`);
+                    await fs.mkdirp(FileUri.fsPath(this.deploymentDirectory));
+                    await context.copy(origin, targetDir);
+                    entry.updatePath(targetDir);
+                    if (!this.deriveMetadata(entry)) {
+                        throw new Error('Unable to resolve plugin metadata after copying');
+                    }
+                }
+            } catch (e) {
+                console.warn(`[${id}]: Error when copying.`, e);
+                entry.updatePath(pathToRestore);
+            }
+        }
     }
 
     protected resolveFromSources(plugin: PluginDeployerEntry): boolean {
@@ -65,6 +107,7 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
         if (!pck || !pck.name || !pck.version || !pck.engines || !pck.engines.vscode) {
             return false;
         }
+        pck.publisher ??= PluginIdentifiers.UNPUBLISHED;
         if (options) {
             plugin.storeValue('package.json', pck);
             plugin.rootPath = plugin.path();
@@ -76,10 +119,15 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
 
     protected requirePackage(pluginPath: string): PluginPackage | undefined {
         try {
-            return fs.readJSONSync(path.join(pluginPath, 'package.json'));
+            const plugin = fs.readJSONSync(path.join(pluginPath, 'package.json')) as PluginPackage;
+            plugin.publisher ??= PluginIdentifiers.UNPUBLISHED;
+            return plugin;
         } catch {
             return undefined;
         }
     }
 
+    protected async getExtensionDir(context: PluginDeployerDirectoryHandlerContext): Promise<string> {
+        return FileUri.fsPath(this.deploymentDirectory.resolve(filenamify(context.pluginEntry().id(), { replacement: '_' })));
+    }
 }

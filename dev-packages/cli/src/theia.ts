@@ -198,6 +198,13 @@ async function theiaCli(): Promise<void> {
         })
         .command<{
             packed: boolean
+            ignoreErrors: boolean
+            apiVersion: string
+            apiUrl: string
+            parallel: boolean
+            proxyUrl?: string
+            proxyAuthentification?: string
+            strictSsl: boolean
         }>({
             command: 'download:plugins',
             describe: 'Download defined external plugins',
@@ -223,10 +230,26 @@ async function theiaCli(): Promise<void> {
                     alias: 'u',
                     describe: 'Open-VSX Registry API URL',
                     default: 'https://open-vsx.org/api'
+                },
+                'parallel': {
+                    describe: 'Download in parallel',
+                    boolean: true,
+                    default: true
+                },
+                'proxy-url': {
+                    describe: 'Proxy URL'
+                },
+                'proxy-authentification': {
+                    describe: 'Proxy authentification information'
+                },
+                'strict-ssl': {
+                    describe: 'Whether to enable strict SSL mode',
+                    boolean: true,
+                    default: false
                 }
             },
-            handler: async ({ packed }) => {
-                await downloadPlugins({ packed });
+            handler: async args => {
+                await downloadPlugins(args);
             },
         })
         .command<{

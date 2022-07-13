@@ -41,7 +41,8 @@ import { QuickViewService } from './quick-input/quick-view-service';
 import { environment } from '@theia/application-package/lib/environment';
 import { IconThemeService } from './icon-theme-service';
 import { ColorContribution } from './color-application-contribution';
-import { ColorRegistry, Color } from './color-registry';
+import { ColorRegistry } from './color-registry';
+import { Color } from '../common/color';
 import { CoreConfiguration, CorePreferences } from './core-preferences';
 import { ThemeService } from './theming';
 import { PreferenceService, PreferenceScope, PreferenceChangeEvent } from './preferences';
@@ -62,7 +63,8 @@ import { DecorationStyle } from './decoration-style';
 import { isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveResourceService } from './save-resource-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
-import { createUntitledURI } from '../common';
+import { UntitledResourceResolver } from '../common';
+import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
 
 export namespace CommonMenus {
 
@@ -398,6 +400,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(UserWorkingDirectoryProvider)
     protected readonly workingDirProvider: UserWorkingDirectoryProvider;
+
+    @inject(LanguageQuickPickService)
+    protected readonly languageQuickPickService: LanguageQuickPickService;
+
+    @inject(UntitledResourceResolver)
+    protected readonly untitledResourceResolver: UntitledResourceResolver;
 
     protected pinnedKey: ContextKey<boolean>;
 
@@ -956,7 +964,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: () => this.configureDisplayLanguage()
         });
         commandRegistry.registerCommand(CommonCommands.NEW_FILE, {
-            execute: async () => open(this.openerService, createUntitledURI('', await this.workingDirProvider.getUserWorkingDir()))
+            execute: async () => {
+                const untitledUri = this.untitledResourceResolver.createUntitledURI('', await this.workingDirProvider.getUserWorkingDir());
+                this.untitledResourceResolver.resolve(untitledUri);
+                return open(this.openerService, untitledUri);
+            }
         });
     }
 
@@ -1141,27 +1153,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected async configureDisplayLanguage(): Promise<void> {
-        const availableLanguages = await this.localizationProvider.getAvailableLanguages();
-        const items: QuickPickItem[] = [];
-        for (const languageId of ['en', ...availableLanguages.map(e => e.languageId)]) {
-            if (typeof languageId === 'string') {
-                items.push({
-                    label: languageId,
-                    execute: async () => {
-                        if (languageId !== nls.locale && await this.confirmRestart()) {
-                            this.windowService.setSafeToShutDown();
-                            window.localStorage.setItem(nls.localeId, languageId);
-                            this.windowService.reload();
-                        }
-                    }
-                });
-            }
+        const languageId = await this.languageQuickPickService.pickDisplayLanguage();
+        if (languageId && !nls.isSelectedLocale(languageId) && await this.confirmRestart()) {
+            nls.setLocale(languageId);
+            this.windowService.setSafeToShutDown();
+            this.windowService.reload();
         }
-        this.quickInputService?.showQuickPick(items,
-            {
-                placeholder: CommonCommands.CONFIGURE_DISPLAY_LANGUAGE.label,
-                activeItem: items.find(item => item.label === (nls.locale || 'en'))
-            });
     }
 
     protected async confirmRestart(): Promise<boolean> {
@@ -1486,10 +1483,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 id: 'tab.hoverBackground',
-                defaults: {
-                    dark: 'tab.inactiveBackground',
-                    light: 'tab.inactiveBackground'
-                },
                 description: 'Tab background color when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             },
             {
@@ -1624,16 +1617,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // if not yet contributed by Monaco, check runtime css variables to learn.
             {
                 id: 'quickInput.background', defaults: {
-                    dark: 'sideBar.background',
-                    light: 'sideBar.background',
-                    hc: 'sideBar.background'
+                    dark: 'editorWidget.background',
+                    light: 'editorWidget.background',
+                    hc: 'editorWidget.background'
                 }, description: 'Quick Input background color. The Quick Input widget is the container for views like the color theme picker.'
             },
             {
                 id: 'quickInput.foreground', defaults: {
-                    dark: 'sideBar.foreground',
-                    light: 'sideBar.foreground',
-                    hc: 'sideBar.foreground'
+                    dark: 'editorWidget.foreground',
+                    light: 'editorWidget.foreground',
+                    hc: 'editorWidget.foreground'
                 }, description: 'Quick Input foreground color. The Quick Input widget is the container for views like the color theme picker.'
             },
             {

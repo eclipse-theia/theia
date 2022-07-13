@@ -327,6 +327,14 @@ export class UntitledResourceResolver implements ResourceResolver {
 
     protected readonly resources = new Map<string, UntitledResource>();
 
+    has(uri: URI): boolean {
+        if (uri.scheme !== UNTITLED_SCHEME) {
+            throw new Error('The given uri is not untitled file uri: ' + uri);
+        } else {
+            return this.resources.has(uri.toString());
+        }
+    }
+
     async resolve(uri: URI): Promise<UntitledResource> {
         if (uri.scheme !== UNTITLED_SCHEME) {
             throw new Error('The given uri is not untitled file uri: ' + uri);
@@ -341,8 +349,24 @@ export class UntitledResourceResolver implements ResourceResolver {
     }
 
     async createUntitledResource(content?: string, extension?: string, uri?: URI): Promise<UntitledResource> {
-        return new UntitledResource(this.resources, uri ? uri : new URI().withScheme(UNTITLED_SCHEME).withPath(`/Untitled-${untitledResourceSequenceIndex++}${extension ?? ''}`),
-            content);
+        if (!uri) {
+            uri = this.createUntitledURI(extension);
+        }
+        return new UntitledResource(this.resources, uri, content);
+    }
+
+    createUntitledURI(extension?: string, parent?: URI): URI {
+        let counter = 1; // vscode starts at 1
+        let untitledUri;
+        do {
+            const name = `Untitled-${counter}${extension ?? ''}`;
+            if (parent) {
+                untitledUri = parent.resolve(name).withScheme(UNTITLED_SCHEME);
+            }
+            untitledUri = new URI().resolve(name).withScheme(UNTITLED_SCHEME);
+            counter++;
+        } while (this.has(untitledUri));
+        return untitledUri;
     }
 }
 
@@ -389,6 +413,9 @@ export class UntitledResource implements Resource {
     }
 }
 
+/**
+ * @deprecated Since 1.27.0. Please use `UntitledResourceResolver.createUntitledURI` instead.
+ */
 export function createUntitledURI(extension?: string, parent?: URI): URI {
     const name = `Untitled-${untitledResourceSequenceIndex++}${extension ?? ''}`;
     if (parent) {

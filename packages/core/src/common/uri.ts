@@ -45,7 +45,7 @@ export class URI {
             return base;
         }
         if (this.path.isRoot) {
-            return this.path.toString();
+            return this.path.fsPath();
         }
         return '';
     }

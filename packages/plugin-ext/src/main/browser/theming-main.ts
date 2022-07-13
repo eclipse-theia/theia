@@ -30,14 +30,10 @@ export class ThemingMainImpl implements ThemingMain {
     private readonly proxy: ThemingExt;
     private readonly themeChangeListener: Disposable;
 
-    constructor(
-        rpc: RPCProtocol
-    ) {
+    constructor(rpc: RPCProtocol, themeService: ThemeService) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.THEMING_EXT);
-        this.themeChangeListener = ThemeService.get().onDidColorThemeChange(e => {
-            this.proxy.$onColorThemeChange(e.newTheme.type);
-        });
-        this.proxy.$onColorThemeChange(ThemeService.get().getCurrentTheme().type);
+        this.themeChangeListener = themeService.onDidColorThemeChange(e => this.proxy.$onColorThemeChange(e.newTheme.type));
+        this.proxy.$onColorThemeChange(themeService.getCurrentTheme().type);
     }
 
     dispose(): void {

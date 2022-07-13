@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as bent from 'bent';
 import * as semver from 'semver';
 import {
     VSXAllVersions,
@@ -26,9 +25,7 @@ import {
     VSXSearchParam,
     VSXSearchResult
 } from './ovsx-types';
-
-const fetchText = bent('GET', 'string', 200);
-const fetchJson = bent('GET', { 'Accept': 'application/json' }, 'json', 200);
+import { RequestContext, RequestService } from '@theia/request';
 
 export interface OVSXClientOptions {
     apiVersion: string
@@ -37,11 +34,19 @@ export interface OVSXClientOptions {
 
 export class OVSXClient {
 
-    constructor(readonly options: OVSXClientOptions) { }
+    constructor(readonly options: OVSXClientOptions, protected readonly request: RequestService) { }
 
     async search(param?: VSXSearchParam): Promise<VSXSearchResult> {
         const searchUri = await this.buildSearchUri(param);
-        return this.fetchJson<VSXSearchResult>(searchUri);
+        try {
+            return await this.fetchJson<VSXSearchResult>(searchUri);
+        } catch (err) {
+            return {
+                error: err?.message || String(err),
+                offset: 0,
+                extensions: []
+            };
+        }
     }
 
     protected async buildSearchUri(param?: VSXSearchParam): Promise<string> {
@@ -70,8 +75,9 @@ export class OVSXClient {
         return new URL(`${url}${searchUri}`, this.options!.apiUrl).toString();
     }
 
-    async getExtension(id: string): Promise<VSXExtensionRaw> {
+    async getExtension(id: string, queryParam?: VSXQueryParam): Promise<VSXExtensionRaw> {
         const param: VSXQueryParam = {
+            ...queryParam,
             extensionId: id
         };
         const apiUri = this.buildQueryUri(param);
@@ -99,12 +105,17 @@ export class OVSXClient {
         throw new Error(`Extension with id ${id} not found at ${apiUri}`);
     }
 
-    protected fetchJson<R>(url: string): Promise<R> {
-        return fetchJson(url) as Promise<R>;
+    protected async fetchJson<R>(url: string): Promise<R> {
+        const requestContext = await this.request.request({
+            url,
+            headers: { 'Accept': 'application/json' }
+        });
+        return RequestContext.asJson<R>(requestContext);
     }
 
-    fetchText(url: string): Promise<string> {
-        return fetchText(url);
+    async fetchText(url: string): Promise<string> {
+        const requestContext = await this.request.request({ url });
+        return RequestContext.asText(requestContext);
     }
 
     /**

@@ -42,6 +42,9 @@ export class DebugBreakpointsSource extends TreeSource {
         for (const functionBreakpoint of this.model.functionBreakpoints) {
             yield functionBreakpoint;
         }
+        for (const instructionBreakpoint of this.model.instructionBreakpoints) {
+            yield instructionBreakpoint;
+        }
         for (const breakpoint of this.model.breakpoints) {
             yield breakpoint;
         }

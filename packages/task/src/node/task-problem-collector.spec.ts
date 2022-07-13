@@ -60,6 +60,28 @@ const startStopMatcher2: ProblemMatcher = {
     severity: Severity.Error
 };
 
+const startStopMatcher3: ProblemMatcher = {
+    owner: 'test2',
+    source: 'test2',
+    applyTo: ApplyToKind.allDocuments,
+    fileLocation: FileLocationKind.Absolute,
+    pattern: [
+        {
+            regexp: /^([^\s].*)$/.source,
+            kind: ProblemLocationKind.File,
+            file: 1
+        },
+        {
+            regexp: /^\s+(\d+):(\d+)\s+(error|warning|info)\s+(.+?)(?:\s\s+(.*))?$/.source,
+            severity: 3,
+            message: 4,
+            code: 5,
+            loop: true
+        }
+    ],
+    severity: Severity.Error
+};
+
 const watchMatcher: ProblemMatcher = {
     owner: 'test3',
     applyTo: ApplyToKind.closedDocuments,
@@ -183,6 +205,62 @@ describe('ProblemCollector', () => {
         expect((allMatches[3] as ProblemMatchData).resource!.path).eq('/home/test/more-test.js');
         expect((allMatches[3] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 12, character: 8 }, end: { line: 12, character: 8 } },
+            severity: DiagnosticSeverity.Error,
+            source: 'test2',
+            message: 'Parsing error: Unexpected token 1000'
+        });
+    });
+
+    it('should find problems from start-stop task when problem matcher is associated with more than one problem pattern and kind is file', () => {
+        collector = new ProblemCollector([startStopMatcher3]);
+        collectMatches([
+            '> test@0.1.0 lint /home/test',
+            '> eslint .',
+            '',
+            '',
+            '/home/test/test-dir.js',
+            '  14:21  warning  Missing semicolon  semi',
+            '  15:23  warning  Missing semicolon  semi',
+            '  103:9  error  Parsing error: Unexpected token inte',
+            '',
+            '/home/test/more-test.js',
+            '  13:9  error  Parsing error: Unexpected token 1000',
+            '',
+            '✖ 3 problems (1 error, 2 warnings)',
+            '  0 errors and 2 warnings potentially fixable with the `--fix` option.'
+        ]);
+
+        expect(allMatches.length).to.eq(4);
+
+        expect((allMatches[0] as ProblemMatchData).resource?.path).eq('/home/test/test-dir.js');
+        expect((allMatches[0] as ProblemMatchData).marker).deep.equal({
+            range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+            severity: DiagnosticSeverity.Warning,
+            source: 'test2',
+            message: 'Missing semicolon',
+            code: 'semi'
+        });
+
+        expect((allMatches[1] as ProblemMatchData).resource?.path).eq('/home/test/test-dir.js');
+        expect((allMatches[1] as ProblemMatchData).marker).deep.equal({
+            range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+            severity: DiagnosticSeverity.Warning,
+            source: 'test2',
+            message: 'Missing semicolon',
+            code: 'semi'
+        });
+
+        expect((allMatches[2] as ProblemMatchData).resource?.path).eq('/home/test/test-dir.js');
+        expect((allMatches[2] as ProblemMatchData).marker).deep.equal({
+            range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+            severity: DiagnosticSeverity.Error,
+            source: 'test2',
+            message: 'Parsing error: Unexpected token inte'
+        });
+
+        expect((allMatches[3] as ProblemMatchData).resource?.path).eq('/home/test/more-test.js');
+        expect((allMatches[3] as ProblemMatchData).marker).deep.equal({
+            range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
             severity: DiagnosticSeverity.Error,
             source: 'test2',
             message: 'Parsing error: Unexpected token 1000'

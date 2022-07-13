@@ -23,7 +23,10 @@ import {
     StatusBarEntry,
     KeybindingRegistry,
     ViewContainerTitleOptions,
-    codicon
+    codicon,
+    StylingParticipant,
+    ColorTheme,
+    CssStyleCollector
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { CommandRegistry, Command, Disposable, DisposableCollection, CommandService } from '@theia/core/lib/common';
@@ -33,10 +36,12 @@ import { ScmWidget } from '../browser/scm-widget';
 import URI from '@theia/core/lib/common/uri';
 import { ScmQuickOpenService } from './scm-quick-open-service';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
-import { ColorRegistry, Color } from '@theia/core/lib/browser/color-registry';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { Color } from '@theia/core/lib/common/color';
 import { ScmCommand } from './scm-provider';
 import { ScmDecorationsService } from '../browser/decorations/scm-decorations-service';
 import { nls } from '@theia/core/lib/common/nls';
+import { isHighContrast } from '@theia/core/lib/common/theme';
 
 export const SCM_WIDGET_FACTORY_ID = ScmWidget.ID;
 export const SCM_VIEW_CONTAINER_ID = 'scm-view-container';
@@ -89,7 +94,11 @@ export namespace ScmColors {
 }
 
 @injectable()
-export class ScmContribution extends AbstractViewContribution<ScmWidget> implements FrontendApplicationContribution, TabBarToolbarContribution, ColorContribution {
+export class ScmContribution extends AbstractViewContribution<ScmWidget> implements
+    FrontendApplicationContribution,
+    TabBarToolbarContribution,
+    ColorContribution,
+    StylingParticipant {
 
     @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(ScmService) protected readonly scmService: ScmService;
@@ -330,4 +339,15 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         );
     }
 
+    registerThemeStyle(theme: ColorTheme, collector: CssStyleCollector): void {
+        const contrastBorder = theme.getColor('contrastBorder');
+        if (contrastBorder && isHighContrast(theme.type)) {
+            collector.addRule(`
+                .theia-scm-input-message-container textarea {
+                    outline: var(--theia-border-width) solid ${contrastBorder};
+                    outline-offset: -1px;
+                }
+            `);
+        }
+    }
 }

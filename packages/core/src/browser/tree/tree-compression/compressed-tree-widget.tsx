@@ -123,8 +123,8 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
     protected getCaptionChildEventHandlers(node: TreeNode, props: CompressedNodeProps): React.Attributes & React.HtmlHTMLAttributes<HTMLElement> {
         return {
             onClick: event => (event.stopPropagation(), this.handleClickEvent(node, event)),
-            onDoubleClick: event => (event.stopPropagation(), this.handleClickEvent(node, event)),
-            onContextMenu: event => (event.stopPropagation(), this.handleClickEvent(node, event)),
+            onDoubleClick: event => (event.stopPropagation(), this.handleDblClickEvent(node, event)),
+            onContextMenu: event => (event.stopPropagation(), this.handleContextMenuEvent(node, event)),
         };
     }
 
@@ -132,12 +132,14 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
         if (!this.compressionToggle.compress) { return super.handleUp(event); }
         const type = this.props.multiSelect && this.hasShiftMask(event) ? TreeSelection.SelectionType.RANGE : undefined;
         this.model.selectPrevRow(type);
+        this.node.focus();
     }
 
     protected override handleDown(event: KeyboardEvent): void {
         if (!this.compressionToggle.compress) { return super.handleDown(event); }
         const type = this.props.multiSelect && this.hasShiftMask(event) ? TreeSelection.SelectionType.RANGE : undefined;
         this.model.selectNextRow(type);
+        this.node.focus();
     }
 
     protected override async handleLeft(event: KeyboardEvent): Promise<void> {
@@ -145,7 +147,7 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
         if (Boolean(this.props.multiSelect) && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
             return;
         }
-        const active = this.model.selectedNodes[0];
+        const active = this.focusService.focusedNode;
         if (ExpandableTreeNode.isExpanded(active)
             && (
                 this.compressionService.isCompressionHead(active)
@@ -162,7 +164,7 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
         if (Boolean(this.props.multiSelect) && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
             return;
         }
-        const active = this.model.selectedNodes[0];
+        const active = this.focusService.focusedNode;
 
         if (ExpandableTreeNode.isCollapsed(active)
             && (

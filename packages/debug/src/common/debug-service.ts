@@ -14,11 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { Disposable } from '@theia/core';
+import { Channel, Disposable, Emitter, Event } from '@theia/core';
 import { ApplicationError } from '@theia/core/lib/common/application-error';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
+import { CommandIdVariables } from '@theia/variable-resolver/lib/common/variable-types';
 import { DebugConfiguration } from './debug-configuration';
 
 export interface DebuggerDescription {
@@ -46,6 +45,8 @@ export const DebugService = Symbol('DebugService');
  * #resolveDebugConfiguration method is invoked. After that the debug adapter session will be started.
  */
 export interface DebugService extends Disposable {
+    onDidChangeDebuggers?: Event<void>;
+
     /**
      * Finds and returns an array of registered debug types.
      * @returns An array of registered debug types
@@ -53,6 +54,12 @@ export interface DebugService extends Disposable {
     debugTypes(): Promise<string[]>;
 
     getDebuggersForLanguage(language: string): Promise<DebuggerDescription[]>;
+
+    /**
+     * Provide debugger contributed variables
+     * see "variables" at https://code.visualstudio.com/api/references/contribution-points#contributes.debuggers
+     */
+    provideDebuggerVariables(debugType: string): Promise<CommandIdVariables>;
 
     /**
      * Provides the schema attributes.
@@ -74,6 +81,11 @@ export interface DebugService extends Disposable {
      * @returns A Record of debug configuration provider types and a corresponding dynamic debug configurations array
      */
     provideDynamicDebugConfigurations?(): Promise<Record<string, DebugConfiguration[]>>;
+
+    /**
+     * Provides a dynamic debug configuration matching the name and the provider debug type
+     */
+    fetchDynamicDebugConfiguration(name: string, type: string): Promise<DebugConfiguration | undefined>;
 
     /**
      * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
@@ -100,7 +112,7 @@ export interface DebugService extends Disposable {
     /**
      * Creates a new [debug adapter session](#DebugAdapterSession).
      * @param config The resolved [debug configuration](#DebugConfiguration).
-     * @param workspaceFolderUri The worspace folder for this sessions or undefined when folderless
+     * @param workspaceFolderUri The workspace folder for this sessions or undefined when folderless
      * @returns The identifier of the created [debug adapter session](#DebugAdapterSession).
      */
     createDebugSession(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<string>;
@@ -109,6 +121,12 @@ export interface DebugService extends Disposable {
      * Stop a running session for the given session id.
      */
     terminateDebugSession(sessionId: string): Promise<void>;
+
+    /**
+     * Event handle to indicate when one or more dynamic debug configuration providers
+     * have been registered or unregistered.
+     */
+    onDidChangeDebugConfigurationProviders: Event<void>;
 }
 
 /**
@@ -124,14 +142,43 @@ export namespace DebugError {
 }
 
 /**
- * A closeable channel to send messages over with error/close handling
+ * A closeable channel to send debug protocol messages over with error/close handling
  */
-export interface Channel {
+export interface DebugChannel {
     send(content: string): void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onMessage(cb: (data: any) => void): void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError(cb: (reason: any) => void): void;
+    onMessage(cb: (message: string) => void): void;
+    onError(cb: (reason: unknown) => void): void;
     onClose(cb: (code: number, reason: string) => void): void;
     close(): void;
+}
+
+/**
+ * A {@link DebugChannel} wrapper implementation that sends and receives messages to/from an underlying {@link Channel}.
+ */
+export class ForwardingDebugChannel implements DebugChannel {
+    private onMessageEmitter = new Emitter<string>();
+
+    constructor(private readonly underlyingChannel: Channel) {
+        this.underlyingChannel.onMessage(msg => this.onMessageEmitter.fire(msg().readString()));
+    }
+
+    send(content: string): void {
+        this.underlyingChannel.getWriteBuffer().writeString(content).commit();
+    }
+
+    onMessage(cb: (message: string) => void): void {
+        this.onMessageEmitter.event(cb);
+    }
+    onError(cb: (reason: unknown) => void): void {
+        this.underlyingChannel.onError(cb);
+    }
+    onClose(cb: (code: number, reason: string) => void): void {
+        this.underlyingChannel.onClose(event => cb(event.code ?? -1, event.reason));
+    }
+
+    close(): void {
+        this.underlyingChannel.close();
+        this.onMessageEmitter.dispose();
+    }
+
 }

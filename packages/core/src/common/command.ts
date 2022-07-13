@@ -191,7 +191,7 @@ export class CommandRegistry implements CommandService {
     protected readonly toUnregisterCommands = new Map<string, Disposable>();
 
     // List of recently used commands.
-    protected _recent: Command[] = [];
+    protected _recent: string[] = [];
 
     protected readonly onWillExecuteCommandEmitter = new Emitter<WillExecuteCommandEvent>();
     readonly onWillExecuteCommand = this.onWillExecuteCommandEmitter.event;
@@ -418,14 +418,7 @@ export class CommandRegistry implements CommandService {
      * Get all registered commands.
      */
     get commands(): Command[] {
-        const commands: Command[] = [];
-        for (const id of this.commandIds) {
-            const cmd = this.getCommand(id);
-            if (cmd) {
-                commands.push(cmd);
-            }
-        }
-        return commands;
+        return Object.values(this._commands);
     }
 
     /**
@@ -446,7 +439,14 @@ export class CommandRegistry implements CommandService {
      * Get the list of recently used commands.
      */
     get recent(): Command[] {
-        return this._recent;
+        const commands: Command[] = [];
+        for (const recentId of this._recent) {
+            const command = this.getCommand(recentId);
+            if (command) {
+                commands.push(command);
+            }
+        }
+        return commands;
     }
 
     /**
@@ -454,7 +454,7 @@ export class CommandRegistry implements CommandService {
      * @param commands the list of recently used commands.
      */
     set recent(commands: Command[]) {
-        this._recent = commands;
+        this._recent = Array.from(new Set(commands.map(e => e.id)));
     }
 
     /**
@@ -464,15 +464,13 @@ export class CommandRegistry implements CommandService {
      * @param recent a recent command, or array of recent commands.
      */
     addRecentCommand(recent: Command | Command[]): void {
-        if (Array.isArray(recent)) {
-            recent.forEach((command: Command) => this.addRecentCommand(command));
-        } else {
+        for (const recentCommand of Array.isArray(recent) ? recent : [recent]) {
             // Determine if the command currently exists in the recently used list.
-            const index = this._recent.findIndex((command: Command) => Command.equals(recent, command));
+            const index = this._recent.findIndex(commandId => commandId === recentCommand.id);
             // If the command exists, remove it from the array so it can later be placed at the top.
             if (index >= 0) { this._recent.splice(index, 1); }
             // Add the recent command to the beginning of the array (most recent).
-            this._recent.unshift(recent);
+            this._recent.unshift(recentCommand.id);
         }
     }
 

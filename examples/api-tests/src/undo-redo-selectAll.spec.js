@@ -64,10 +64,9 @@ describe('Undo, Redo and Select All', function () {
             resolve(undefined);
         });
     }
-    let originalValue = undefined;
+    const originalValue = preferenceService.get('files.autoSave', undefined, rootUri.toString());
     before(async () => {
-        originalValue = preferenceService.inspect('files.autoSave').globalValue;
-        await preferenceService.set('files.autoSave', 'off', PreferenceScope.User);
+        await preferenceService.set('files.autoSave', 'off', undefined, rootUri.toString());
         shell.leftPanelHandler.collapse();
     });
 
@@ -85,7 +84,7 @@ describe('Undo, Redo and Select All', function () {
     });
 
     after(async () => {
-        await preferenceService.set('files.autoSave', originalValue, PreferenceScope.User);
+        await preferenceService.set('files.autoSave', originalValue, undefined, rootUri.toString());
         shell.leftPanelHandler.collapse();
     });
 
@@ -94,7 +93,7 @@ describe('Undo, Redo and Select All', function () {
      */
     async function assertInEditor(widget) {
         const originalContent = widget.editor.document.getText();
-        const editor = /** @type {MonacoEditor} */ (MonacoEditor.get(widget));
+        const editor = /** @type {MonacoEditor} */ (MonacoEditor.get(widget));
         editor.getControl().pushUndoStop();
         editor.getControl().executeEdits('test', [{
             range: new Range(1, 1, 1, 1),

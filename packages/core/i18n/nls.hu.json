@@ -1,9 +1,11 @@
 {
   "theia": {
     "callhierarchy": {
+      "noCallers": "Nem észleltek hívókat.",
       "open": "Nyílt felhívás hierarchia"
     },
     "core": {
+      "availableLanguages": "Elérhető nyelvek",
       "common": {
         "closeAll": "Minden lap bezárása",
         "closeAllTabMain": "Minden lap bezárása a fő területen",
@@ -25,6 +27,8 @@
         "browse": "Böngésszen a oldalon."
       },
       "highlightModifiedTabs": "Szabályozza, hogy a módosított (piszkos) szerkesztő lapok felső szegélye kirajzolódjon-e vagy sem.",
+      "installedLanguages": "Telepített nyelvek",
+      "keybindingStatus": "{0} megnyomva, további billentyűkre várva",
       "keyboard": {
         "choose": "Válassza ki a billentyűzetkiosztást",
         "chooseLayout": "Válasszon billentyűzetkiosztást",
@@ -34,23 +38,29 @@
         "pc": "PC billentyűzetek",
         "tryDetect": "Próbálja meg felismerni a billentyűzetkiosztást a böngésző információi és a lenyomott billentyűk alapján."
       },
+      "mouseBackForwardToNavigate": "Lehetővé teszi a négyes és ötös egérgombok használatát a \"Vissza\" és \"Előre\" parancsokhoz.",
+      "offline": "Offline",
+      "proxySupportFallback": "Proxy-támogatás engedélyezése a kiterjesztésekhez, visszalépés a kérési opciókhoz, ha nem találunk proxy-t.",
       "quitMessage": "A mentetlen módosítások nem kerülnek mentésre.",
       "quitTitle": "Biztos, hogy ki akarsz szállni?",
       "resetWorkbenchLayout": "A munkapad elrendezésének visszaállítása",
       "sashDelay": "A nézetek/szerkesztők közötti húzási terület lebegés-visszacsatolási késleltetését vezérli milliszekundumban.",
       "sashSize": "A nézetek/szerkesztők közötti húzási terület visszajelzési területének méretét szabályozza pixelben. Szükség esetén nagyobb értékre állítsa be.",
-      "silentNotifications": "Beállítja, hogy az értesítések felugró ablakai el legyenek-e nyomva."
+      "searchbox": {
+        "close": "Bezár (menekülés)",
+        "next": "Következő (lefelé)",
+        "previous": "Előző (fel)"
+      },
+      "silentNotifications": "Beállítja, hogy az értesítések felugró ablakai el legyenek-e nyomva.",
+      "tabMaximize": "Szabályozza, hogy a lapok dupla kattintásra maximalizálódjanak-e."
     },
     "debug": {
       "addConfigurationPlaceholder": "Válassza ki a munkaterület gyökerét a konfiguráció hozzáadásához",
       "continueAll": "Folytassa az összes",
       "copyExpressionValue": "Kifejezés értékének másolása",
-      "debugViewLocation": "A hibakeresési nézet helyét vezérli.",
-      "openBottom": "Nyitott fenék",
-      "openLeft": "Nyitva balra",
-      "openRight": "Nyitott jobbra",
+      "missingConfiguration": "A '{0}:{1}' dinamikus konfiguráció hiányzik vagy nem alkalmazható.",
       "pauseAll": "Minden szünet",
-      "reveal": "Reveal",
+      "reveal": "Kiderül",
       "threads": "Szálak",
       "toggleTracing": "A hibakeresési adapterekkel folytatott kommunikáció nyomon követésének engedélyezése/letiltása"
     },
@@ -119,7 +129,9 @@
       "persistClosedEditors": "Azt szabályozza, hogy a munkaterület lezárt szerkesztési előzményei az ablak újratöltése során megmaradjanak-e.",
       "showAllEditors": "Minden megnyitott szerkesztő megjelenítése",
       "splitHorizontal": "Osztott szerkesztő vízszintes",
-      "splitVertical": "Függőleges osztott szerkesztő"
+      "splitVertical": "Függőleges osztott szerkesztő",
+      "status-bar-pin": "Hozzáadás az állapotsorhoz",
+      "status-bar-unpin": "Eltávolítás az állapotsorból"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Nyomja meg a {0} gombot a figyelmen kívül hagyott fájlok megjelenítéséhez/elrejtéséhez)"
@@ -131,6 +143,14 @@
     },
     "filesystem": {
       "copyDownloadLink": "Letöltési link másolása",
+      "dialog": {
+        "initialLocation": "Menj a kezdeti helyszínre",
+        "multipleItemMessage": "Csak egy elemet választhat ki",
+        "name": "Név:",
+        "navigateBack": "Vissza navigálni",
+        "navigateForward": "Navigálj előre",
+        "navigateUp": "Navigáljon felfelé egy könyvtárban"
+      },
       "fileResource": {
         "binaryFileQuery": "Megnyitása eltarthat egy ideig, és az IDE esetleg nem reagál. Mindenképpen meg akarja nyitni a '{0}'-t?",
         "binaryTitle": "A fájl vagy bináris, vagy nem támogatott szöveges kódolást használ.",
@@ -138,6 +158,7 @@
         "overwriteTitle": "A '{0}' fájl megváltozott a fájlrendszerben."
       },
       "filesExclude": "Glob-minták beállítása a fájlok és mappák kizárásához. Például a Fájlkereső e beállítás alapján dönti el, hogy mely fájlokat és mappákat jelenítse meg vagy rejtse el.",
+      "format": "Formátum:",
       "maxConcurrentUploads": "Az egyidejűleg feltölthető fájlok maximális száma több fájl feltöltése esetén. A 0 azt jelenti, hogy az összes fájl egyidejűleg kerül feltöltésre.",
       "maxFileSizeMB": "A megnyitható fájl maximális méretét szabályozza MB-ban.",
       "processedOutOf": "{0} feldolgozva {1}-ből {0}",
@@ -149,7 +170,7 @@
       "newPlugin": "Egy új plugin építése"
     },
     "git": {
-      "addSignedOff": "Add Signed-off-by",
+      "addSignedOff": "Signed-off-by hozzáadása",
       "amendReuseMessag": "Az utolsó átadási üzenet újbóli használatához nyomja meg az 'Enter' billentyűt, vagy az 'Escape' billentyűt a törléshez.",
       "amendRewrite": "Írja át az előző commit üzenetet. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
       "checkoutCreateLocalBranchWithName": "Hozzon létre egy új helyi ágat {0} névvel. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
@@ -159,6 +180,7 @@
       "cloneRepository": "Klónozza a Git tárolót: {0}. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
       "compareWith": "Összehasonlítás...",
       "compareWithBranchOrTag": "Válasszon ki egy ágat vagy címkét, amelyet a jelenleg aktív {0} ággal akar összehasonlítani:",
+      "diff": "Diff",
       "dirtyDiffLinesLimit": "Ne jelenítsen meg piszkos diff dekorációkat, ha a szerkesztő sorszáma meghaladja ezt a határt.",
       "dropStashMessage": "Sikeresen eltávolítottuk a rejtekhelyet.",
       "editorDecorationsEnabled": "A szerkesztőben a git dekorációk megjelenítése.",
@@ -171,13 +193,24 @@
       "repositoryNotInitialized": "A {0} tároló még nincs inicializálva.",
       "stashChanges": "Készletváltozások. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
       "stashChangesWithMessage": "Stash változik az üzenettel: {0}. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
-      "toggleBlameAnnotations": "Toggle Blame Annotations"
+      "toggleBlameAnnotations": "Hibáztatás megjegyzések"
     },
     "keybinding-schema-updater": {
       "deprecation": "Használja helyette a `when` záradékot."
     },
+    "keymaps": {
+      "editKeybindingTitle": "Billentyűkötés szerkesztése {0}",
+      "keybindingCollidesValidation": "billentyűkötözés jelenleg ütközik",
+      "requiredKeybindingValidation": "billentyűkötés értéke szükséges",
+      "resetKeybindingConfirmation": "Tényleg vissza akarja állítani ezt a billentyűkötést az alapértelmezett értékre?",
+      "resetKeybindingTitle": "A {0} billentyűkhöz való kötés visszaállítása"
+    },
+    "localize": {
+      "offlineTooltip": "Nem tud csatlakozni a háttértárhoz."
+    },
     "markers": {
       "clearAll": "Mindent törölni",
+      "noProblems": "A munkaterületen eddig nem észleltek problémákat.",
       "tabbarDecorationsEnabled": "Problémadíszítők (diagnosztikai jelölők) megjelenítése a laprudakon."
     },
     "messages": {
@@ -210,6 +243,7 @@
       "alreadyRunning": "A hosztolt példány már fut.",
       "debugInstance": "Hibakeresési példány",
       "debugMode": "Az inspect vagy inspect-brk használata a Node.js hibakereséshez",
+      "devHost": "Fejlesztés Host",
       "failed": "Nem sikerült futtatni a hosztolt plugin példányt: {0}",
       "hostedPlugin": "Hostolt bővítmény",
       "hostedPluginRunning": "Hostolt bővítmény: Futó",
@@ -246,6 +280,7 @@
       "directory": "Címtár",
       "lastModified": "Utoljára módosítva",
       "location": "Helyszín",
+      "noProperties": "Nincsenek elérhető tulajdonságok.",
       "path": "Útvonal",
       "properties": "Tulajdonságok",
       "size": "Méret",
@@ -256,6 +291,10 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Az utolsó kötelezettségvállalás módosítása",
       "changeRepository": "Repozitórium módosítása...",
+      "config.untrackedChanges": "Szabályozza a nem követett változások viselkedését.",
+      "config.untrackedChanges.hidden": "rejtett",
+      "config.untrackedChanges.mixed": "vegyes",
+      "config.untrackedChanges.separate": "külön",
       "history": "Történelem",
       "noRepositoryFound": "Nem talált tárolóhely",
       "unamend": "Visszavonja a",
@@ -317,6 +356,7 @@
     "vsx-registry": {
       "openVSX": "VSX Registry megnyitása",
       "recommendedExtensions": "A munkaterületre ajánlott kiterjesztések neveinek listája.",
+      "searchPlaceholder": "Keresés kiterjesztések {0}",
       "showRecommendedExtensions": "Szabályozza, hogy a kiterjesztési ajánlásokhoz megjelenjenek-e értesítések."
     },
     "webview": {
@@ -329,6 +369,11 @@
       "confirmDeletePermanently.description": "Nem sikerült törölni a \"{0}\" fájlt a Kukában. Szeretné véglegesen törölni?",
       "confirmDeletePermanently.solution": "A beállítások között letilthatja a Trash használatát.",
       "confirmDeletePermanently.title": "Hiba a fájl törlésében",
+      "confirmMessage.delete": "Tényleg törölni szeretné a következő fájlokat?",
+      "confirmMessage.dirtyMultiple": "Tényleg törölni akarja a {0} fájlokat a mentetlen módosításokkal?",
+      "confirmMessage.dirtySingle": "Tényleg törölni akarja a {0} fájlt a mentetlen módosításokkal együtt?",
+      "confirmMessage.uriMultiple": "Tényleg törölni szeretné az összes {0} kiválasztott fájlt?",
+      "confirmMessage.uriSingle": "Tényleg törölni akarja a {0}-t?",
       "duplicate": "Duplikátum",
       "failApply": "Nem tudta alkalmazni a változtatásokat az új fájlra",
       "failSaveAs": "Nem lehet futtatni a \"{0}\"-t az aktuális widgethez.",
@@ -339,6 +384,7 @@
       "removeFolder": "Biztos, hogy a következő mappát szeretné eltávolítani a munkaterületről?",
       "removeFolders": "Biztos, hogy a következő mappákat szeretné eltávolítani a munkaterületről?",
       "supportMultiRootWorkspace": "Szabályozza, hogy a több gyökérrel rendelkező munkaterület támogatása engedélyezve legyen-e.",
+      "trashTitle": "Mozgassa {0} a szemetesbe",
       "trustEmptyWindow": "Szabályozza, hogy az üres munkaterület alapértelmezés szerint megbízható legyen-e vagy sem.",
       "trustEnabled": "Szabályozza, hogy a munkaterület megbízhatósága engedélyezve legyen-e vagy sem. Ha le van tiltva, akkor minden munkaterület megbízható.",
       "trustPrompt": "Szabályozza, hogy mikor jelenjen meg a munkaterület megbízhatóságának megadására vonatkozó indítási felszólítás.",

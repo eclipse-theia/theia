@@ -51,7 +51,7 @@ export class WorkspaceInputDialog extends SingleTextInputDialog {
         icon.style.marginRight = '0.5em';
         icon.style.verticalAlign = 'middle';
         element.style.verticalAlign = 'middle';
-        element.title = this.props.parentUri.path.toString();
+        element.title = this.props.parentUri.path.fsPath();
         element.appendChild(icon);
         element.appendChild(document.createTextNode(label));
         // Add the path and icon div before the `inputField`.

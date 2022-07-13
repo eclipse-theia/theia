@@ -21,7 +21,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Event, Emitter, DisposableCollection, Disposable, MaybePromise } from '@theia/core';
 import { OutputChannel } from '@theia/output/lib/browser/output-channel';
 
-import { Channel } from '../common/debug-service';
+import { DebugChannel } from '../common/debug-service';
 
 export type DebugRequestHandler = (request: DebugProtocol.Request) => MaybePromise<any>;
 
@@ -92,8 +92,8 @@ export interface DebugEventTypes {
 export type DebugEventNames = keyof DebugEventTypes;
 
 export namespace DebugEventTypes {
-    export function isStandardEvent(evt: string): evt is DebugEventNames {
-        return standardDebugEvents.has(evt);
+    export function isStandardEvent(event: string): event is DebugEventNames {
+        return standardDebugEvents.has(event);
     };
 }
 
@@ -121,7 +121,7 @@ export class DebugSessionConnection implements Disposable {
     private sequence = 1;
 
     protected readonly pendingRequests = new Map<number, Deferred<DebugProtocol.Response>>();
-    protected readonly connectionPromise: Promise<Channel>;
+    protected readonly connectionPromise: Promise<DebugChannel>;
 
     protected readonly requestHandlers = new Map<string, DebugRequestHandler>();
 
@@ -141,7 +141,7 @@ export class DebugSessionConnection implements Disposable {
 
     constructor(
         readonly sessionId: string,
-        connectionFactory: (sessionId: string) => Promise<Channel>,
+        connectionFactory: (sessionId: string) => Promise<DebugChannel>,
         protected readonly traceOutputChannel: OutputChannel | undefined
     ) {
         this.connectionPromise = this.createConnection(connectionFactory);
@@ -161,7 +161,7 @@ export class DebugSessionConnection implements Disposable {
         this.toDispose.dispose();
     }
 
-    protected async createConnection(connectionFactory: (sessionId: string) => Promise<Channel>): Promise<Channel> {
+    protected async createConnection(connectionFactory: (sessionId: string) => Promise<DebugChannel>): Promise<DebugChannel> {
         const connection = await connectionFactory(this.sessionId);
         connection.onClose(() => {
             this.isClosed = true;

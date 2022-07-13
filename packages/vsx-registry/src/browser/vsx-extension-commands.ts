@@ -36,6 +36,9 @@ export namespace VSXExtensionsCommands {
         label: nls.localizeByDefault('Install from VSIX') + '...',
         dialogLabel: nls.localizeByDefault('Install from VSIX')
     };
+    export const INSTALL_ANOTHER_VERSION: Command = {
+        id: 'vsxExtensions.installAnotherVersion'
+    };
     export const COPY: Command = {
         id: 'vsxExtensions.copy'
     };

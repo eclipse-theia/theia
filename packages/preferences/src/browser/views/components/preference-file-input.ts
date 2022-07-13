@@ -93,7 +93,7 @@ export class PreferenceSingleFilePathInputRenderer extends PreferenceStringInput
         const title = selectionProps?.title ?? selectionProps?.canSelectFolders ? WorkspaceCommands.OPEN_FOLDER.dialogLabel : WorkspaceCommands.OPEN_FILE.dialogLabel;
         const selection = await this.fileDialogService.showOpenDialog({ title, ...selectionProps });
         if (selection) {
-            this.setPreferenceImmediately(selection.path.toString());
+            this.setPreferenceImmediately(selection.path.fsPath());
         }
     }
 

@@ -256,17 +256,6 @@ export class OutputChannel implements Disposable {
     }
 
     /**
-     * @deprecated use `show` and `hide` instead.
-     */
-    setVisibility(visible: boolean, options: { preserveFocus: boolean } = { preserveFocus: false }): void {
-        if (visible) {
-            this.show(options);
-        } else {
-            this.hide();
-        }
-    }
-
-    /**
      * Note: if `false` it does not meant it is disposed or not available, it is only hidden from the UI.
      */
     get isVisible(): boolean {

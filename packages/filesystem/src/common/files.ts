@@ -95,10 +95,10 @@ export class FileChangesEvent {
 
             // For deleted also return true when deleted folder is parent of target path
             if (change.type === FileChangeType.DELETED) {
-                return resource.isEqualOrParent(change.resource);
+                return change.resource.isEqualOrParent(resource);
             }
 
-            return resource.toString() === change.resource.toString();
+            return change.resource.toString() === resource.toString();
         });
     }
 
@@ -846,7 +846,7 @@ export function hasOpenReadWriteCloseCapability(provider: FileSystemProvider): p
  */
 export interface FileSystemProviderWithFileReadStreamCapability extends FileSystemProvider {
     /**
-     * Read the  contents of the given file as stream.
+     * Read the contents of the given file as stream.
      * @param resource The `URI` of the file.
      *
      * @return The `ReadableStreamEvents` for the readable stream of the given file.

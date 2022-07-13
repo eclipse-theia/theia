@@ -35,7 +35,7 @@ beforeEach(() => {
 describe('CliManager', () => {
     it('Parses simple option', async () => {
         const value = new Deferred<string>();
-        const mnr = new TestCliManager({
+        const manager = new TestCliManager({
             configure(conf: yargs.Argv): void {
                 conf.option('foo', { alias: 'f', description: 'Some foo.' });
                 conf.option('bar', { alias: 'b', description: 'Some bla.', default: 'my-default', type: 'string' });
@@ -44,13 +44,13 @@ describe('CliManager', () => {
                 value.resolve(args['foo'] as string);
             }
         });
-        await mnr.initializeCli(['-f', 'bla']);
+        await manager.initializeCli(['-f', 'bla']);
         chai.assert.equal(await value.promise, 'bla');
     });
 
     it('resolves with default', async () => {
         const value = new Deferred<string>();
-        const mnr = new TestCliManager({
+        const manager = new TestCliManager({
             configure(conf: yargs.Argv): void {
                 conf.option('foo', { alias: 'f', description: 'Some foo.' });
                 conf.option('bar', { alias: 'b', description: 'Some bla.', default: 'my-default', type: 'string' });
@@ -59,14 +59,14 @@ describe('CliManager', () => {
                 value.resolve(args['bar'] as string);
             }
         });
-        await mnr.initializeCli(['--foo']);
+        await manager.initializeCli(['--foo']);
         chai.assert.equal(await value.promise, 'my-default');
     });
 
     it('prints help and exits', async () =>
         assertExits(async () => {
-            const mnr = new TestCliManager();
-            await mnr.initializeCli(['--help']);
+            const manager = new TestCliManager();
+            await manager.initializeCli(['--help']);
         })
     );
 });

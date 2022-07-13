@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import {
-    AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus, FrontendApplication, FrontendApplicationContribution, CommonCommands
+    AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus, FrontendApplication,
+    FrontendApplicationContribution, CommonCommands, StylingParticipant, ColorTheme, CssStyleCollector
 } from '@theia/core/lib/browser';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
@@ -34,6 +35,7 @@ import { SEARCH_VIEW_CONTAINER_ID } from './search-in-workspace-factory';
 import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
 import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
+import { isHighContrast } from '@theia/core/lib/common/theme';
 
 export namespace SearchInWorkspaceCommands {
     const SEARCH_CATEGORY = 'Search';
@@ -103,7 +105,10 @@ export namespace SearchInWorkspaceCommands {
 }
 
 @injectable()
-export class SearchInWorkspaceFrontendContribution extends AbstractViewContribution<SearchInWorkspaceWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
+export class SearchInWorkspaceFrontendContribution extends AbstractViewContribution<SearchInWorkspaceWidget> implements
+    FrontendApplicationContribution,
+    TabBarToolbarContribution,
+    StylingParticipant {
 
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
@@ -376,5 +381,16 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
 
     protected newMultiUriAwareCommandHandler(handler: UriCommandHandler<URI[]>): UriAwareCommandHandler<URI[]> {
         return UriAwareCommandHandler.MultiSelect(this.selectionService, handler);
+    }
+
+    registerThemeStyle(theme: ColorTheme, collector: CssStyleCollector): void {
+        const contrastBorder = theme.getColor('contrastBorder');
+        if (contrastBorder && isHighContrast(theme.type)) {
+            collector.addRule(`
+                .t-siw-search-container .searchHeader .search-field-container {
+                    border-color: ${contrastBorder};
+                }
+            `);
+        }
     }
 }

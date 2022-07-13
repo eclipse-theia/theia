@@ -1,9 +1,11 @@
 {
   "theia": {
     "callhierarchy": {
+      "noCallers": "Nenhum chamador foi detectado.",
       "open": "Hierarquia de Chamadas Abertas"
     },
     "core": {
+      "availableLanguages": "Idiomas disponíveis",
       "common": {
         "closeAll": "Fechar todas as abas",
         "closeAllTabMain": "Fechar todas as abas na área principal",
@@ -25,6 +27,8 @@
         "browse": "Navegue"
       },
       "highlightModifiedTabs": "Controla se uma borda superior é desenhada ou não nas abas do editor modificadas (sujas).",
+      "installedLanguages": "Idiomas instalados",
+      "keybindingStatus": "{0} foi pressionado, esperando por mais teclas",
       "keyboard": {
         "choose": "Escolha o Layout do Teclado",
         "chooseLayout": "Escolha um layout de teclado",
@@ -34,21 +38,27 @@
         "pc": "Teclados de PC",
         "tryDetect": "Tente detectar o layout do teclado a partir das informações do navegador e pressione as teclas."
       },
+      "mouseBackForwardToNavigate": "Permite o uso de botões do mouse quatro e cinco para os comandos \"Voltar\" e \"Ir para frente\".",
+      "offline": "Offline",
+      "proxySupportFallback": "Habilitar suporte de proxy para extensões, voltar a solicitar opções, quando nenhum proxy for encontrado.",
       "quitMessage": "Quaisquer mudanças não salvas não serão salvas.",
       "quitTitle": "Você tem certeza de que quer desistir?",
       "resetWorkbenchLayout": "Restabelecer o layout do Workbench",
       "sashDelay": "Controla o atraso de retroalimentação em milissegundos da área de arrasto entre as vistas/editores.",
       "sashSize": "Controla o tamanho da área de feedback em pixels da área de arrasto entre as vistas/editores. Ajuste-o para um valor maior, se necessário.",
-      "silentNotifications": "Controla se devem ser suprimidas as popups de notificação."
+      "searchbox": {
+        "close": "Fechado (Escape)",
+        "next": "Próximo (Abaixo)",
+        "previous": "Anterior (Para cima)"
+      },
+      "silentNotifications": "Controla se devem ser suprimidas as popups de notificação.",
+      "tabMaximize": "Controla se é necessário maximizar as abas com duplo clique."
     },
     "debug": {
       "addConfigurationPlaceholder": "Selecione a raiz do espaço de trabalho para adicionar configuração a",
       "continueAll": "Continuar Todos",
       "copyExpressionValue": "Valor de Expressão de Cópia",
-      "debugViewLocation": "Controla a localização da visão de debug.",
-      "openBottom": "Fundo Aberto",
-      "openLeft": "Esquerda aberta",
-      "openRight": "Aberto à direita",
+      "missingConfiguration": "A configuração dinâmica '{0}:{1}' está ausente ou não é aplicável",
       "pauseAll": "Pausa Todos",
       "reveal": "Revelar",
       "threads": "Tópicos",
@@ -119,7 +129,9 @@
       "persistClosedEditors": "Controla se deve persistir o histórico do editor fechado para o espaço de trabalho através de recargas de janela.",
       "showAllEditors": "Mostrar todos os editores abertos",
       "splitHorizontal": "Editor dividido Horizontal",
-      "splitVertical": "Split Editor Vertical"
+      "splitVertical": "Split Editor Vertical",
+      "status-bar-pin": "Adicionar à barra de status",
+      "status-bar-unpin": "Remover da barra de status"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Pressione {0} para mostrar/ocultar arquivos ignorados)"
@@ -131,6 +143,14 @@
     },
     "filesystem": {
       "copyDownloadLink": "Link para download de cópias",
+      "dialog": {
+        "initialLocation": "Ir para o local inicial",
+        "multipleItemMessage": "Você pode selecionar apenas um item",
+        "name": "Nome:",
+        "navigateBack": "Navegar para trás",
+        "navigateForward": "Navegar em frente",
+        "navigateUp": "Navegar para cima de um diretório"
+      },
       "fileResource": {
         "binaryFileQuery": "A sua abertura pode levar algum tempo e pode tornar a IDE insensível. Você quer abrir '{0}' de qualquer maneira?",
         "binaryTitle": "O arquivo ou é binário ou usa uma codificação de texto não suportada.",
@@ -138,6 +158,7 @@
         "overwriteTitle": "O arquivo '{0}' foi alterado no sistema de arquivo."
       },
       "filesExclude": "Configurar padrões globais para excluir arquivos e pastas. Por exemplo, o explorador de arquivos decide quais arquivos e pastas mostrar ou ocultar com base nesta configuração.",
+      "format": "Formato:",
       "maxConcurrentUploads": "Número máximo de arquivos simultâneos a serem carregados ao fazer upload de vários arquivos. 0 significa que todos os arquivos serão carregados ao mesmo tempo.",
       "maxFileSizeMB": "Controla o tamanho máximo de arquivo em MB que é possível abrir.",
       "processedOutOf": "Processado {0} de {1}",
@@ -159,6 +180,7 @@
       "cloneRepository": "Clonar o repositório Git: {0}. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
       "compareWith": "Comparar com...",
       "compareWithBranchOrTag": "Escolha uma filial ou etiqueta para comparar com a filial atualmente ativa {0}:",
+      "diff": "Diff",
       "dirtyDiffLinesLimit": "Não mostrar decorações difusas sujas, se a contagem de linhas do editor exceder este limite.",
       "dropStashMessage": "Armazenamento removido com sucesso.",
       "editorDecorationsEnabled": "Mostrar decorações de git no editor.",
@@ -176,8 +198,19 @@
     "keybinding-schema-updater": {
       "deprecation": "Utilize a cláusula `when` em seu lugar."
     },
+    "keymaps": {
+      "editKeybindingTitle": "Editar Keybinding para {0}",
+      "keybindingCollidesValidation": "a chave de encadernação colide atualmente",
+      "requiredKeybindingValidation": "valor vinculante é necessário",
+      "resetKeybindingConfirmation": "Você realmente quer redefinir esta ligação de chave para seu valor padrão?",
+      "resetKeybindingTitle": "Redefinir a encadernação para {0}"
+    },
+    "localize": {
+      "offlineTooltip": "Não pode ser conectado ao backend."
+    },
     "markers": {
       "clearAll": "Limpar tudo",
+      "noProblems": "Até agora não foram detectados problemas no espaço de trabalho.",
       "tabbarDecorationsEnabled": "Mostrar os decoradores de problemas (marcadores de diagnóstico) nas barras de tabulação."
     },
     "messages": {
@@ -210,6 +243,7 @@
       "alreadyRunning": "A instância anfitriã já está funcionando.",
       "debugInstance": "Instância de depuração",
       "debugMode": "Usando a inspeção ou a inspeção-brk para o Node.js debug",
+      "devHost": "Anfitrião do desenvolvimento",
       "failed": "Falha na execução da instância de plugin hospedado: {0}",
       "hostedPlugin": "Plugin hospedado",
       "hostedPluginRunning": "Plugin hospedado: Funcionamento",
@@ -246,6 +280,7 @@
       "directory": "Diretório",
       "lastModified": "Última modificação",
       "location": "Localização",
+      "noProperties": "Não há propriedades disponíveis.",
       "path": "Caminho",
       "properties": "Imóveis",
       "size": "Tamanho",
@@ -256,6 +291,10 @@
       "amendHeadCommit": "Compromisso HEAD",
       "amendLastCommit": "Emendar o último compromisso",
       "changeRepository": "Repositório de Mudanças...",
+      "config.untrackedChanges": "Controla como se comportam as mudanças não controladas.",
+      "config.untrackedChanges.hidden": "oculto",
+      "config.untrackedChanges.mixed": "misto",
+      "config.untrackedChanges.separate": "separado",
       "history": "História",
       "noRepositoryFound": "Não foi encontrado nenhum repositório",
       "unamend": "Unamend",
@@ -317,6 +356,7 @@
     "vsx-registry": {
       "openVSX": "Registro VSX aberto",
       "recommendedExtensions": "Uma lista dos nomes das extensões recomendadas para uso neste espaço de trabalho.",
+      "searchPlaceholder": "Pesquisar extensões em {0}",
       "showRecommendedExtensions": "Controla se as notificações são mostradas para recomendações de extensão."
     },
     "webview": {
@@ -329,6 +369,11 @@
       "confirmDeletePermanently.description": "Falha em excluir \"{0}\" usando o Lixo. Você quer excluir permanentemente em seu lugar?",
       "confirmDeletePermanently.solution": "Você pode desativar o uso de Lixo nas preferências.",
       "confirmDeletePermanently.title": "Erro ao apagar o arquivo",
+      "confirmMessage.delete": "Você realmente quer apagar os seguintes arquivos?",
+      "confirmMessage.dirtyMultiple": "Você realmente quer excluir {0} arquivos com alterações não salvas?",
+      "confirmMessage.dirtySingle": "Você realmente quer apagar {0} com as mudanças não salvas?",
+      "confirmMessage.uriMultiple": "Você realmente quer apagar todos os {0} arquivos selecionados?",
+      "confirmMessage.uriSingle": "Você realmente quer apagar {0}?",
       "duplicate": "Duplicata",
       "failApply": "Não foi possível aplicar alterações ao novo arquivo",
       "failSaveAs": "Não é possível executar \"{0}\" para o widget atual.",
@@ -339,6 +384,7 @@
       "removeFolder": "Você tem certeza de que deseja remover a seguinte pasta do espaço de trabalho?",
       "removeFolders": "Você tem certeza de que quer remover as seguintes pastas do espaço de trabalho?",
       "supportMultiRootWorkspace": "Controla se o suporte de espaço de trabalho multi-raiz está habilitado.",
+      "trashTitle": "Mudar {0} para Lixo",
       "trustEmptyWindow": "Controla se o espaço de trabalho vazio é ou não confiável por padrão.",
       "trustEnabled": "Controla se a confiança no espaço de trabalho está ou não habilitada. Se desativado, todos os espaços de trabalho são confiáveis.",
       "trustPrompt": "Controla quando a inicialização solicita confiança em um espaço de trabalho.",

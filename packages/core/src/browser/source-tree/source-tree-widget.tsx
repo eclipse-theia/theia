@@ -81,7 +81,7 @@ export class SourceTreeWidget extends TreeWidget {
     protected override renderCaption(node: TreeNode): React.ReactNode {
         if (TreeElementNode.is(node)) {
             const classNames = this.createTreeElementNodeClassNames(node);
-            return <div className={classNames.join(' ')}>{node.element.render()}</div>;
+            return <div className={classNames.join(' ')}>{node.element.render(this)}</div>;
         }
         return undefined;
     }

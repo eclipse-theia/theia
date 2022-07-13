@@ -32,6 +32,7 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-env-variables-server';
 import { FileUri } from '@theia/core/lib/node';
+import { OS } from '@theia/core/lib/common/os';
 import * as temp from 'temp';
 
 after(() => disableJSDOM());
@@ -155,20 +156,35 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
         it('should return the absolute path of a file from the file\'s URI if the file is not in the workspace', () => {
             const file = new URI('file:///tmp/prout.txt');
             const longName = labelProvider.getLongName(file);
-            expect(longName).eq('/tmp/prout.txt');
+
+            if (OS.backend.isWindows) {
+                expect(longName).eq('\\tmp\\prout.txt');
+            } else {
+                expect(longName).eq('/tmp/prout.txt');
+            }
         });
 
         it('should return the absolute path of a file from the file\'s FileStat if the file is not in the workspace', () => {
             const file: FileStat = FileStat.file('file:///tmp/prout.txt');
             const longName = labelProvider.getLongName(file);
-            expect(longName).eq('/tmp/prout.txt');
+
+            if (OS.backend.isWindows) {
+                expect(longName).eq('\\tmp\\prout.txt');
+            } else {
+                expect(longName).eq('/tmp/prout.txt');
+            }
         });
 
         it('should return the path of a file if WorkspaceService returns no roots', () => {
             roots = [];
             const file = new URI('file:///tmp/prout.txt');
             const longName = labelProvider.getLongName(file);
-            expect(longName).eq('/tmp/prout.txt');
+
+            if (OS.backend.isWindows) {
+                expect(longName).eq('\\tmp\\prout.txt');
+            } else {
+                expect(longName).eq('/tmp/prout.txt');
+            }
         });
     });
 

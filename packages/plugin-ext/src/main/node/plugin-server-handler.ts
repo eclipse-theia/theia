@@ -18,7 +18,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { PluginDeployerImpl } from './plugin-deployer-impl';
 import { PluginsKeyValueStorage } from './plugins-key-value-storage';
-import { PluginServer, PluginDeployer, PluginStorageKind, PluginType, UnresolvedPluginEntry } from '../../common/plugin-protocol';
+import { PluginServer, PluginDeployer, PluginStorageKind, PluginType, UnresolvedPluginEntry, PluginIdentifiers, PluginDeployOptions } from '../../common/plugin-protocol';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 
 @injectable()
@@ -30,19 +30,27 @@ export class PluginServerHandler implements PluginServer {
     @inject(PluginsKeyValueStorage)
     protected readonly pluginsKeyValueStorage: PluginsKeyValueStorage;
 
-    deploy(pluginEntry: string, arg2?: PluginType | CancellationToken): Promise<void> {
+    async deploy(pluginEntry: string, arg2?: PluginType | CancellationToken, options?: PluginDeployOptions): Promise<void> {
         const type = typeof arg2 === 'number' ? arg2 as PluginType : undefined;
-        return this.doDeploy({
+        const successfulDeployments = await this.doDeploy({
             id: pluginEntry,
             type: type ?? PluginType.User
-        });
+        }, options);
+        if (successfulDeployments === 0) {
+            const optionText = options ? ` and options ${JSON.stringify(options)} ` : ' ';
+            throw new Error(`Deployment of extension with ID ${pluginEntry}${optionText}failed.`);
+        }
     }
 
-    protected doDeploy(pluginEntry: UnresolvedPluginEntry): Promise<void> {
-        return this.pluginDeployer.deploy(pluginEntry);
+    protected doDeploy(pluginEntry: UnresolvedPluginEntry, options?: PluginDeployOptions): Promise<number> {
+        return this.pluginDeployer.deploy(pluginEntry, options);
     }
 
-    undeploy(pluginId: string): Promise<void> {
+    uninstall(pluginId: PluginIdentifiers.VersionedId): Promise<void> {
+        return this.pluginDeployer.uninstall(pluginId);
+    }
+
+    undeploy(pluginId: PluginIdentifiers.VersionedId): Promise<void> {
         return this.pluginDeployer.undeploy(pluginId);
     }
 

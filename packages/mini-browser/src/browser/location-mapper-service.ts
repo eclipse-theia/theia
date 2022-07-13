@@ -148,12 +148,3 @@ export class FileLocationMapper implements LocationMapper {
     }
 
 }
-
-/**
- * @deprecated since 1.8.0
- */
-export class MiniBrowserEndpoint extends Endpoint {
-    constructor() {
-        super({ path: 'mini-browser' });
-    }
-}

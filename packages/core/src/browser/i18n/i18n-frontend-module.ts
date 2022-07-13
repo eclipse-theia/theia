@@ -17,9 +17,11 @@
 import { ContainerModule } from 'inversify';
 import { AsyncLocalizationProvider, localizationPath } from '../../common/i18n/localization';
 import { WebSocketConnectionProvider } from '../messaging/ws-connection-provider';
+import { LanguageQuickPickService } from './language-quick-pick-service';
 
 export default new ContainerModule(bind => {
     bind(AsyncLocalizationProvider).toDynamicValue(
         ctx => ctx.container.get(WebSocketConnectionProvider).createProxy(localizationPath)
     ).inSingletonScope();
+    bind(LanguageQuickPickService).toSelf().inSingletonScope();
 });

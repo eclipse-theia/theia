@@ -30,6 +30,7 @@ import {
 } from '../common/plugin-api-rpc';
 import { PluginMetadata, PluginJsonValidationContribution } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
+import * as types from './types-impl';
 import { join } from './path';
 import { EnvExtImpl } from './env';
 import { PreferenceRegistryExtImpl } from './preference-registry';
@@ -239,10 +240,10 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
     protected registerPlugin(plugin: Plugin): void {
         if (plugin.model.id === 'vscode.json-language-features' && this.jsonValidation.length) {
-            // VS Code contribute all built-in validations via vscode.json-language-features
-            // we enrich them with Theia validations registered on the startup
-            // dynamic validations can be provided only via VS Code extensions
-            // content is fetched by the extension later via vscode.workspace.openTextDocument
+            // VS Code contributes all built-in validations via vscode.json-language-features;
+            // we enrich them with Theia validations registered on startup.
+            // Dynamic validations can be provided only via VS Code extensions.
+            // Content is fetched by the extension later via vscode.workspace.openTextDocument.
             const contributes = plugin.rawModel.contributes = (plugin.rawModel.contributes || {});
             contributes.jsonValidation = (contributes.jsonValidation || []).concat(this.jsonValidation);
         }
@@ -336,11 +337,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     protected async activateByBaseEvent(baseEvent: string): Promise<void> {
-        await Promise.all(Array.from(this.activations.keys(), activation => {
-            if (activation.startsWith(baseEvent)) {
-                return this.activateBySingleEvent(activation);
-            }
-        }));
+        await Promise.all(Array.from(this.activations.keys(), activation => activation.startsWith(baseEvent) && this.activateBySingleEvent(activation)));
     }
 
     protected async activateBySingleEvent(activationEvent: string): Promise<void> {
@@ -372,6 +369,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         const secrets = new SecretStorageExt(plugin, this.secrets);
         const globalStoragePath = join(configStorage.hostGlobalStoragePath, plugin.model.id);
         const extension = new PluginExt(this, plugin);
+        const extensionModeValue = plugin.isUnderDevelopment ? types.ExtensionMode.Development : types.ExtensionMode.Production;
         const pluginContext: theia.PluginContext = {
             extensionPath: extension.extensionPath,
             extensionUri: extension.extensionUri,
@@ -386,7 +384,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             globalStoragePath: globalStoragePath,
             globalStorageUri: Uri.file(globalStoragePath),
             environmentVariableCollection: this.terminalService.getEnvironmentVariableCollection(plugin.model.id),
-            extensionMode: 1, // @todo: implement proper `extensionMode`.
+            extensionMode: extensionModeValue,
             extension,
             logUri: Uri.file(logPath)
         };

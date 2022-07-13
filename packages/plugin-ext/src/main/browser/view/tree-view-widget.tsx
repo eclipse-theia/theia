@@ -16,7 +16,7 @@
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { TreeViewsExt, TreeViewItemCollapsibleState, TreeViewItem, TreeViewSelection } from '../../../common/plugin-api-rpc';
+import { TreeViewsExt, TreeViewItemCollapsibleState, TreeViewItem, TreeViewSelection, ThemeIcon } from '../../../common/plugin-api-rpc';
 import { Command } from '../../../common/plugin-api-rpc-model';
 import {
     TreeNode,
@@ -46,6 +46,9 @@ import * as markdownit from '@theia/core/shared/markdown-it';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
 import { AccessibilityInformation } from '@theia/plugin';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { DecoratedTreeNode } from '@theia/core/lib/browser/tree/tree-decorator';
+import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
@@ -56,11 +59,11 @@ export interface SelectionEventHandler {
     readonly contextSelection: boolean;
 }
 
-export interface TreeViewNode extends SelectableTreeNode {
+export interface TreeViewNode extends SelectableTreeNode, DecoratedTreeNode {
     contextValue?: string;
     command?: Command;
     resourceUri?: string;
-    themeIconId?: string | 'folder' | 'file';
+    themeIcon?: ThemeIcon;
     tooltip?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     description?: string | boolean | any;
@@ -68,7 +71,7 @@ export interface TreeViewNode extends SelectableTreeNode {
 }
 export namespace TreeViewNode {
     export function is(arg: TreeNode | undefined): arg is TreeViewNode {
-        return !!arg && SelectableTreeNode.is(arg) && !ExpandableTreeNode.is(arg) && !CompositeTreeNode.is(arg);
+        return !!arg && SelectableTreeNode.is(arg) && DecoratedTreeNode.is(arg);
     }
 }
 
@@ -78,7 +81,7 @@ export interface CompositeTreeViewNode extends TreeViewNode, ExpandableTreeNode,
 }
 export namespace CompositeTreeViewNode {
     export function is(arg: TreeNode | undefined): arg is CompositeTreeViewNode {
-        return !!arg && SelectableTreeNode.is(arg) && ExpandableTreeNode.is(arg) && CompositeTreeNode.is(arg);
+        return TreeViewNode.is(arg) && ExpandableTreeNode.is(arg) && CompositeTreeNode.is(arg);
     }
 }
 
@@ -149,14 +152,16 @@ export class PluginTree extends TreeImpl {
     }
 
     protected createTreeNode(item: TreeViewItem, parent: CompositeTreeNode): TreeNode {
+        const decorationData = this.toDecorationData(item);
         const icon = this.toIconClass(item);
         const resourceUri = item.resourceUri && URI.revive(item.resourceUri).toString();
-        const themeIconId = item.themeIconId ? item.themeIconId : item.collapsibleState !== TreeViewItemCollapsibleState.None ? 'folder' : 'file';
+        const themeIcon = item.themeIcon ? item.themeIcon : item.collapsibleState !== TreeViewItemCollapsibleState.None ? { id: 'folder' } : undefined;
         const update: Partial<TreeViewNode> = {
             name: item.label,
+            decorationData,
             icon,
             description: item.description,
-            themeIconId,
+            themeIcon,
             resourceUri,
             tooltip: item.tooltip,
             contextValue: item.contextValue,
@@ -178,7 +183,7 @@ export class PluginTree extends TreeImpl {
                 command: item.command
             }, update);
         }
-        if (TreeViewNode.is(node)) {
+        if (TreeViewNode.is(node) && !ExpandableTreeNode.is(node)) {
             return Object.assign(node, update, { command: item.command });
         }
         return Object.assign({
@@ -188,6 +193,17 @@ export class PluginTree extends TreeImpl {
             selected: false,
             command: item.command,
         }, update);
+    }
+
+    protected toDecorationData(item: TreeViewItem): WidgetDecoration.Data {
+        let decoration: WidgetDecoration.Data = {};
+        if (item.highlights) {
+            const highlight = {
+                ranges: item.highlights.map(h => ({ offset: h[0], length: h[1] - h[0] }))
+            };
+            decoration = { highlight };
+        }
+        return decoration;
     }
 
     protected toIconClass(item: TreeViewItem): string | undefined {
@@ -257,6 +273,9 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     @inject(LabelParser)
     protected readonly labelParser: LabelParser;
 
+    @inject(ColorRegistry)
+    protected readonly colorRegistry: ColorRegistry;
+
     protected readonly markdownIt = markdownit();
 
     @postConstruct()
@@ -286,7 +305,14 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     protected override renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         const icon = this.toNodeIcon(node);
         if (icon) {
-            return <div className={icon + ' theia-tree-view-icon'}></div>;
+            let style: React.CSSProperties | undefined;
+            if (TreeViewNode.is(node) && node.themeIcon?.color) {
+                const color = this.colorRegistry.getCurrentColor(node.themeIcon.color.id);
+                if (color) {
+                    style = { color };
+                }
+            }
+            return <div className={icon + ' theia-tree-view-icon'} style={style}></div>;
         }
         return undefined;
     }
@@ -358,8 +384,10 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
             const inlineCommands = menu.children.filter((item): item is ActionMenuNode => item instanceof ActionMenuNode);
             const tailDecorations = super.renderTailDecorations(node, props);
             return <React.Fragment>
-                {inlineCommands.length > 0 && <div className={TREE_NODE_SEGMENT_CLASS}>{inlineCommands.map((item, index) => this.renderInlineCommand(item, index, arg))}</div>}
-                {tailDecorations !== undefined && <div className={TREE_NODE_SEGMENT_CLASS}>{super.renderTailDecorations(node, props)}</div>}
+                {inlineCommands.length > 0 && <div className={TREE_NODE_SEGMENT_CLASS + ' flex'}>
+                    {inlineCommands.map((item, index) => this.renderInlineCommand(item, index, this.focusService.hasFocus(node), arg))}
+                </div>}
+                {tailDecorations !== undefined && <div className={TREE_NODE_SEGMENT_CLASS + ' flex'}>{tailDecorations}</div>}
             </React.Fragment>;
         });
     }
@@ -369,13 +397,14 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected renderInlineCommand(node: ActionMenuNode, index: number, arg: any): React.ReactNode {
+    protected renderInlineCommand(node: ActionMenuNode, index: number, tabbable: boolean, arg: any): React.ReactNode {
         const { icon } = node;
         if (!icon || !this.commands.isVisible(node.action.commandId, arg) || !node.action.when || !this.contextKeys.match(node.action.when)) {
             return false;
         }
         const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, icon, ACTION_ITEM, 'theia-tree-view-inline-action'].join(' ');
-        return <div key={index} className={className} title={node.label} onClick={e => {
+        const tabIndex = tabbable ? 0 : undefined;
+        return <div key={index} className={className} title={node.label} tabIndex={tabIndex} onClick={e => {
             e.stopPropagation();
             this.commands.executeCommand(node.action.commandId, arg);
         }} />;
@@ -404,13 +433,12 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         this.tryExecuteCommand();
     }
 
-    override handleClickEvent(node: TreeNode, event: React.MouseEvent<HTMLElement>): void {
-        super.handleClickEvent(node, event);
-        // If clicked on item (not collapsable icon) - execute command or toggle expansion if item has no command
+    protected override tapNode(node?: TreeNode): void {
+        super.tapNode(node);
         const commandMap = this.findCommands(node);
         if (commandMap.size > 0) {
             this.tryExecuteCommandMap(commandMap);
-        } else if (this.isExpandable(node) && !this.hasShiftMask(event) && !this.hasCtrlCmdMask(event)) {
+        } else if (node && this.isExpandable(node)) {
             this.model.toggleNodeExpansion(node);
         }
     }

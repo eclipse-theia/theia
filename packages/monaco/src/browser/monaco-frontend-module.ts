@@ -31,14 +31,12 @@ Object.assign(MonacoNls, {
 });
 
 import '../../src/browser/style/index.css';
-import '../../src/browser/style/symbol-sprite.svg';
-import '../../src/browser/style/symbol-icons.css';
 import { ContainerModule, decorate, injectable, interfaces } from '@theia/core/shared/inversify';
 import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
 import {
     FrontendApplicationContribution, KeybindingContribution,
     PreferenceService, PreferenceSchemaProvider, createPreferenceProxy,
-    PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService
+    PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService, StylingParticipant
 } from '@theia/core/lib/browser';
 import { TextEditorProvider, DiffNavigatorProvider } from '@theia/editor/lib/browser';
 import { StrictEditorTextFocusContext } from '@theia/editor/lib/browser/editor-keybinding-contexts';
@@ -88,10 +86,10 @@ import { StandaloneConfigurationService, StandaloneServices } from '@theia/monac
 import { Configuration } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationModels';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MonacoMarkdownRenderer } from './markdown-renderer/monaco-markdown-renderer';
+import { ThemeService } from '@theia/core/lib/browser/theming';
+import { ThemeServiceWithDB } from './monaco-indexed-db';
 
 decorate(injectable(), VSCodeContextKeyService);
-
-MonacoThemingService.init();
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoThemingService).toSelf().inSingletonScope();
@@ -100,7 +98,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(ContextKeyService).toService(MonacoContextKeyService);
 
     bind(MonacoSnippetSuggestProvider).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).to(MonacoFrontendApplicationContribution).inSingletonScope();
+    bind(MonacoFrontendApplicationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(MonacoFrontendApplicationContribution);
+    bind(StylingParticipant).toService(MonacoFrontendApplicationContribution);
 
     bind(MonacoToProtocolConverter).toSelf().inSingletonScope();
     bind(ProtocolToMonacoConverter).toSelf().inSingletonScope();
@@ -183,6 +183,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoColorRegistry).toSelf().inSingletonScope();
     rebind(ColorRegistry).toService(MonacoColorRegistry);
+
+    bind(ThemeServiceWithDB).toSelf().inSingletonScope();
+    rebind(ThemeService).toService(ThemeServiceWithDB);
 });
 
 export const MonacoConfigurationService = Symbol('MonacoConfigurationService');

@@ -58,21 +58,6 @@ export interface RawProcessFactory {
 export class RawProcess extends Process {
 
     /**
-     * @deprecated use `inputStream` instead.
-     */
-    get input(): stream.Writable { return this.inputStream; }
-
-    /**
-     * @deprecated use `outputStream` instead.
-     */
-    get output(): stream.Readable { return this.outputStream; }
-
-    /**
-     * @deprecated use `errorStream` instead.
-     */
-    get errorOutput(): stream.Readable { return this.errorStream; }
-
-    /**
      * If the process fails to launch, it will be undefined.
      */
     readonly process: ChildProcess | undefined;

@@ -19,11 +19,6 @@ import { DisposableCollection, Disposable } from '../common/disposable';
 import { Emitter } from '../common/event';
 import { ColorDefinition, ColorCssVariable } from '../common/color';
 
-/**
- * @deprecated since 1.20.0. Import from `@theia/core/lib/common/color` instead.
- */
-export * from '../common/color';
-
 @injectable()
 export class ColorRegistry {
 

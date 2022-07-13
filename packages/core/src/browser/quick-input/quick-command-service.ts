@@ -16,7 +16,7 @@
 
 import { inject, injectable } from 'inversify';
 import { KeybindingRegistry } from '../keybinding';
-import { Disposable, Command, CommandRegistry, CancellationToken } from '../../common';
+import { Disposable, Command, CommandRegistry, CancellationToken, nls } from '../../common';
 import { ContextKeyService } from '../context-key-service';
 import { CorePreferences } from '../core-preferences';
 import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access';
@@ -86,12 +86,12 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
         const otherItems = filterItems(this.otherItems.slice(), filter);
 
         if (recentItems.length > 0) {
-            items.push({ type: 'separator', label: 'recently used' }, ...recentItems);
+            items.push({ type: 'separator', label: nls.localizeByDefault('recently used') }, ...recentItems);
         }
 
         if (otherItems.length > 0) {
             if (recentItems.length > 0) {
-                items.push({ type: 'separator', label: 'other commands' });
+                items.push({ type: 'separator', label: nls.localizeByDefault('other commands') });
             }
             items.push(...otherItems);
         }

@@ -18,6 +18,7 @@ import { SearchBoxDebounce, SearchBoxDebounceOptions } from '../tree/search-box-
 import { BaseWidget, Message } from '../widgets/widget';
 import { Emitter, Event } from '../../common/event';
 import { KeyCode, Key } from '../keyboard/keys';
+import { nls } from '../../common/nls';
 
 /**
  * Initializer properties for the search box widget.
@@ -253,7 +254,7 @@ export class SearchBox extends BaseWidget {
                 SearchBox.Styles.BUTTON,
                 ...SearchBox.Styles.FILTER,
             );
-            filter.title = 'Enable Filter on Type';
+            filter.title = nls.localizeByDefault('Enable Filter on Type');
             buttons.appendChild(filter);
             filter.onclick = this.fireFilterToggle.bind(this);
         }
@@ -268,7 +269,7 @@ export class SearchBox extends BaseWidget {
                 SearchBox.Styles.BUTTON,
                 SearchBox.Styles.BUTTON_PREVIOUS
             );
-            previous.title = 'Previous (Up)';
+            previous.title = nls.localize('theia/core/searchbox/previous', 'Previous (Up)');
             buttons.appendChild(previous);
             previous.onclick = () => this.firePrevious.bind(this)();
 
@@ -277,7 +278,7 @@ export class SearchBox extends BaseWidget {
                 SearchBox.Styles.BUTTON,
                 SearchBox.Styles.BUTTON_NEXT
             );
-            next.title = 'Next (Down)';
+            next.title = nls.localize('theia/core/searchbox/next', 'Next (Down)');
             buttons.appendChild(next);
             next.onclick = () => this.fireNext.bind(this)();
         }
@@ -288,7 +289,7 @@ export class SearchBox extends BaseWidget {
                 SearchBox.Styles.BUTTON,
                 SearchBox.Styles.BUTTON_CLOSE
             );
-            close.title = 'Close (Escape)';
+            close.title = nls.localize('theia/core/searchbox/close', 'Close (Escape)');
             buttons.appendChild(close);
             close.onclick = () => this.hide.bind(this)();
         }

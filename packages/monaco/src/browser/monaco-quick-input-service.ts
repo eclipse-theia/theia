@@ -214,7 +214,7 @@ export class MonacoQuickInputService implements QuickInputService {
     }
 
     createInputBox(): InputBox {
-        return this.monacoService.createInputBox() as unknown as InputBox;
+        return this.monacoService.createInputBox();
     }
 
     input(options?: InputOptions, token?: monaco.CancellationToken): Promise<string | undefined> {
@@ -302,15 +302,15 @@ export class MonacoQuickInputService implements QuickInputService {
                         options.onDidTriggerButton(button);
                     }
                 });
-                wrapped.onDidTriggerItemButton((evt: QuickPickItemButtonEvent<T>) => {
+                wrapped.onDidTriggerItemButton((event: QuickPickItemButtonEvent<T>) => {
                     if (options.onDidTriggerItemButton) {
                         // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/base/parts/quickinput/browser/quickInput.ts#L1387
                         options.onDidTriggerItemButton(
                             {
-                                ...evt,
+                                ...event,
                                 removeItem: () => {
-                                    wrapped.items = wrapped.items.filter(item => item !== evt.item);
-                                    wrapped.activeItems = wrapped.activeItems.filter(item => item !== evt.item);
+                                    wrapped.items = wrapped.items.filter(item => item !== event.item);
+                                    wrapped.activeItems = wrapped.activeItems.filter(item => item !== event.item);
                                 }
                             });
                     }
@@ -488,11 +488,17 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
     }
 
     set items(itms: readonly (T | QuickPickSeparator)[]) {
+        // We need to store and apply the currently selected active items.
+        // Since monaco compares these items by reference equality, creating new wrapped items will unmark any active items.
+        // Assigning the `activeItems` again will restore all active items even after the items array has changed.
+        // See also the `findMonacoItemReferences` method.
+        const active = this.activeItems;
         this.wrapped.items = itms.map(item => QuickPickSeparator.is(item) ? item : new MonacoQuickPickItem<T>(item, this.keybindingRegistry));
+        this.activeItems = active;
     }
 
     set activeItems(itms: readonly T[]) {
-        this.wrapped.activeItems = itms.map(item => new MonacoQuickPickItem<T>(item, this.keybindingRegistry));
+        this.wrapped.activeItems = this.findMonacoItemReferences(this.wrapped.items, itms);
     }
 
     get activeItems(): readonly (T)[] {
@@ -500,7 +506,7 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
     }
 
     set selectedItems(itms: readonly T[]) {
-        this.wrapped.selectedItems = itms.map(item => new MonacoQuickPickItem<T>(item, this.keybindingRegistry));
+        this.wrapped.selectedItems = this.findMonacoItemReferences(this.wrapped.items, itms);
     }
 
     get selectedItems(): readonly (T)[] {
@@ -520,6 +526,22 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
         (items: MonacoQuickPickItem<T>[]) => items.map(item => item.item));
     readonly onDidChangeSelection: Event<T[]> = Event.map(
         this.wrapped.onDidChangeSelection, (items: MonacoQuickPickItem<T>[]) => items.map(item => item.item));
+
+    /**
+     * Monaco doesn't check for deep equality when setting the `activeItems` or `selectedItems`.
+     * Instead we have to find the references of the monaco wrappers that contain the selected/active items
+     */
+    protected findMonacoItemReferences(source: readonly (MonacoQuickPickItem<T> | IQuickPickSeparator)[], items: readonly QuickPickItem[]): MonacoQuickPickItem<T>[] {
+        const monacoReferences: MonacoQuickPickItem<T>[] = [];
+        for (const item of items) {
+            for (const wrappedItem of source) {
+                if (!QuickPickSeparator.is(wrappedItem) && wrappedItem.item === item) {
+                    monacoReferences.push(wrappedItem);
+                }
+            }
+        }
+        return monacoReferences;
+    }
 }
 
 export class MonacoQuickPickItem<T extends QuickPickItem> implements IQuickPickItem {

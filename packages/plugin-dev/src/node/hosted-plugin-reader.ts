@@ -40,6 +40,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
         const pluginPath = process.env.HOSTED_PLUGIN;
         if (pluginPath) {
             const hostedPlugin = new PluginDeployerEntryImpl('Hosted Plugin', pluginPath!, pluginPath);
+            hostedPlugin.storeValue('isUnderDevelopment', true);
             const hostedMetadata = await this.hostedPlugin.promise;
             if (hostedMetadata!.model.entryPoint && hostedMetadata!.model.entryPoint.backend) {
                 this.deployerHandler.deployBackendPlugins([hostedPlugin]);

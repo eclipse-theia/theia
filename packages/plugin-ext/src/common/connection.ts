@@ -13,14 +13,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
-import { Channel } from '@theia/debug/lib/common/debug-service';
+import { DebugChannel } from '@theia/debug/lib/common/debug-service';
 import { ConnectionExt, ConnectionMain } from './plugin-api-rpc';
 import { Emitter } from '@theia/core/lib/common/event';
 
 /**
  * A channel communicating with a counterpart in a plugin host.
  */
-export class PluginChannel implements Channel {
+export class PluginChannel implements DebugChannel {
     private messageEmitter: Emitter<string> = new Emitter();
     private errorEmitter: Emitter<unknown> = new Emitter();
     private closedEmitter: Emitter<void> = new Emitter();
@@ -45,8 +45,7 @@ export class PluginChannel implements Channel {
         this.closedEmitter.fire();
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onMessage(cb: (data: any) => void): void {
+    onMessage(cb: (message: string) => void): void {
         this.messageEmitter.event(cb);
     }
 

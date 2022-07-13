@@ -253,16 +253,19 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
     }
 
     protected async tearDown(): Promise<boolean> {
-        const model = this.reference?.object;
-        if (model) {
-            if (this.status.state === 'resolved' && await this.status.promise) {
-                await model.save();
-                return true;
+        try {
+            const model = this.reference?.object;
+            if (model) {
+                if (this.status.state === 'resolved' && await this.status.promise) {
+                    await model.save();
+                    return true;
+                }
             }
+            return false;
+        } finally {
             this.reference?.dispose();
             this.reference = undefined;
         }
-        return false;
     }
 }
 

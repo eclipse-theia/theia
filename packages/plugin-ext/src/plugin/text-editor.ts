@@ -236,11 +236,11 @@ export class TextEditorExt implements theia.TextEditor {
 
         // prepare data for serialization
         const edits: SingleEditOperation[] = editData.edits.map(e =>
-            ({
-                range: Converter.fromRange(e.range)!,
-                text: e.text,
-                forceMoveMarkers: e.forceMoveMarkers
-            }));
+        ({
+            range: Converter.fromRange(e.range)!,
+            text: e.text,
+            forceMoveMarkers: e.forceMoveMarkers
+        }));
 
         return this.proxy.$tryApplyEdits(this.id, editData.documentVersionId, edits, {
             setEndOfLine: editData.setEndOfLine,
@@ -262,6 +262,17 @@ export class TextEditorExt implements theia.TextEditor {
             }
             return undefined;
         });
+    }
+
+    show(column?: theia.ViewColumn): void {
+        this.proxy.$tryShowTextDocument(this.document.uri, {
+            viewColumn: column,
+            preview: true,
+        });
+    }
+
+    hide(): void {
+        this.proxy.$tryHideEditor(this.id);
     }
 }
 

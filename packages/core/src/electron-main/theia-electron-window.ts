@@ -20,8 +20,10 @@ import { APPLICATION_STATE_CHANGE_SIGNAL, CLOSE_REQUESTED_SIGNAL, RELOAD_REQUEST
 import { BrowserWindow, BrowserWindowConstructorOptions, ipcMain, IpcMainEvent } from '../../electron-shared/electron';
 import { inject, injectable, postConstruct } from '../../shared/inversify';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
-import { DisposableCollection, Emitter, Event, isWindows } from '../common';
+import { DisposableCollection, Emitter, Event } from '../common';
 import { createDisposableListener } from './event-utils';
+import { URI } from '../common/uri';
+import { FileUri } from '../node/file-uri';
 
 /**
  * Theia tracks the maximized state of Electron Browser Windows.
@@ -114,14 +116,15 @@ export class TheiaElectronWindow {
     }
 
     protected async handleStopRequest(onSafeCallback: () => unknown, reason: StopReason): Promise<boolean> {
-        // Only confirm close to windows that have loaded our front end.
-        let currentUrl = this.window.webContents.getURL();
-        let frontendUri = this.globals.THEIA_FRONTEND_HTML_PATH;
-        // Since our resolved frontend HTML path might contain backward slashes on Windows, we normalize everything first.
-        if (isWindows) {
-            currentUrl = currentUrl.replace(/\\/g, '/');
-            frontendUri = frontendUri.replace(/\\/g, '/');
-        }
+        // Only confirm close to windows that have loaded our frontend.
+        // Both the windows's URL and the FS path of the `index.html` should be converted to the "same" format to be able to compare them. (#11226)
+        // Notes:
+        //  - Windows: file:///C:/path/to/somewhere vs file:///c%3A/path/to/somewhere
+        //  - macOS: file:///Applications/App%20Name.app/Contents vs /Applications/App Name.app/Contents
+        // This URL string comes from electron, we can expect that this is properly encoded URL. For example, a space is `%20`
+        const currentUrl = new URI(this.window.webContents.getURL()).toString();
+        // THEIA_FRONTEND_HTML_PATH is an FS path, we have to covert to an encoded URI string.
+        const frontendUri = FileUri.create(this.globals.THEIA_FRONTEND_HTML_PATH).toString();
         const safeToClose = !currentUrl.includes(frontendUri) || await this.checkSafeToStop(reason);
         if (safeToClose) {
             try {

@@ -4,15 +4,17 @@
   "version": "0.0.0",
   "engines": {
     "yarn": ">=1.7.0 <2",
-    "node": ">=12.14.1"
+    "node": ">=14"
   },
   "resolutions": {
-    "**/@types/node": "12"
+    "**/@types/node": "14"
   },
   "devDependencies": {
+    "@types/chai": "4.3.0",
+    "@types/chai-spies": "1.0.3",
     "@types/chai-string": "^1.4.0",
     "@types/jsdom": "^11.0.4",
-    "@types/node": "12",
+    "@types/node": "14",
     "@types/puppeteer": "^2.0.0",
     "@types/sinon": "^10.0.6",
     "@types/temp": "^0.8.29",
@@ -20,6 +22,8 @@
     "@typescript-eslint/eslint-plugin": "^4.8.1",
     "@typescript-eslint/eslint-plugin-tslint": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
+    "chai": "4.3.4",
+    "chai-spies": "1.0.0",
     "chai-string": "^1.4.0",
     "chalk": "4.0.0",
     "concurrently": "^3.5.0",
@@ -36,6 +40,7 @@
     "ignore-styles": "^5.0.1",
     "jsdom": "^11.5.1",
     "lerna": "^4.0.0",
+    "node-gyp": "^9.0.0",
     "nsfw": "^2.1.2",
     "nyc": "^15.0.0",
     "puppeteer": "^2.0.0",
@@ -100,6 +105,8 @@
     "vscode.theme-red": "https://open-vsx.org/api/vscode/theme-red/1.62.3/file/vscode.theme-red-1.62.3.vsix",
     "vscode.theme-solarized-dark": "https://open-vsx.org/api/vscode/theme-solarized-dark/1.62.3/file/vscode.theme-solarized-dark-1.62.3.vsix",
     "vscode.theme-tomorrow-night-blue": "https://open-vsx.org/api/vscode/theme-tomorrow-night-blue/1.62.3/file/vscode.theme-tomorrow-night-blue-1.62.3.vsix",
+    "vscode.typescript": "https://open-vsx.org/api/vscode/typescript/1.62.3/file/vscode.typescript-1.62.3.vsix",
+    "vscode.typescript-language-features": "https://open-vsx.org/api/vscode/typescript-language-features/1.62.3/file/vscode.typescript-language-features-1.62.3.vsix",
     "vscode-builtin-extensions-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.50.1/file/eclipse-theia.builtin-extension-pack-1.50.1.vsix",
     "vscode-editorconfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/0.14.4/file/EditorConfig.EditorConfig-0.14.4.vsix",
     "vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.1.1/file/dbaeumer.vscode-eslint-2.1.1.vsix",
@@ -111,6 +118,7 @@
     "vscode.git-ui",
     "vscode.github",
     "vscode.github-authentication",
-    "vscode.microsoft-authentication"
+    "vscode.microsoft-authentication",
+    "ms-vscode.js-debug-companion"
   ]
 }

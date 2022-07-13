@@ -470,7 +470,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const collapseValue: string = this.searchInWorkspacePreferences['search.collapseResults'];
         let path: string;
         if (result.root === this.defaultRootName) {
-            path = new URI(result.fileUri).path.dir.toString();
+            path = new URI(result.fileUri).path.dir.fsPath();
         } else {
             path = this.filenameAndPath(result.root, result.fileUri).path;
         }
@@ -618,7 +618,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected override handleUp(event: KeyboardEvent): void {
-        if (!this.model.getPrevSelectableNode(this.model.selectedNodes[0])) {
+        if (!this.model.getPrevSelectableNode(this.model.getFocusedNode())) {
             this.focusInputEmitter.fire(true);
         } else {
             super.handleUp(event);
@@ -662,7 +662,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const uri = new URI(rootUri);
         return {
             selected: false,
-            path: uri.path.toString(),
+            path: uri.path.fsPath(),
             folderUri: rootUri,
             uri: new URI(rootUri),
             children: [],
@@ -718,7 +718,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const relativePath = new URI(rootUriStr).relative(uri.parent);
         return {
             name: this.labelProvider.getName(uri),
-            path: relativePath ? relativePath.toString() : ''
+            path: relativePath ? relativePath.fsPath() : ''
         };
     }
 
@@ -747,7 +747,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected renderReplaceButton(node: TreeNode): React.ReactNode {
         const isResultLineNode = SearchInWorkspaceResultLineNode.is(node);
-        return <span className={isResultLineNode ? 'replace-result' : 'replace-all-result'}
+        return <span className={isResultLineNode ? codicon('replace') : codicon('replace-all')}
             onClick={e => this.doReplace(node, e)}
             title={isResultLineNode
                 ? nls.localizeByDefault('Replace')
@@ -786,18 +786,19 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     async replace(node: TreeNode | undefined): Promise<void> {
         const replaceForNode = node || this.model.root!;
         const needConfirm = !SearchInWorkspaceFileNode.is(node) && !SearchInWorkspaceResultLineNode.is(node);
-        if (!needConfirm || await this.confirmReplaceAll(this.getResultCount(replaceForNode), this.getFileCount(replaceForNode))) {
+        const replacementText = this._replaceTerm;
+        if (!needConfirm || await this.confirmReplaceAll(this.getResultCount(replaceForNode), this.getFileCount(replaceForNode), replacementText)) {
             (node ? [node] : Array.from(this.resultTree.values())).forEach(n => {
-                this.replaceResult(n, !!node);
+                this.replaceResult(n, !!node, replacementText);
                 this.removeNode(n);
             });
         }
     }
 
-    protected confirmReplaceAll(resultNumber: number, fileNumber: number): Promise<boolean | undefined> {
+    protected confirmReplaceAll(resultNumber: number, fileNumber: number, replacementText: string): Promise<boolean | undefined> {
         return new ConfirmDialog({
             title: nls.localizeByDefault('Replace All'),
-            msg: this.buildReplaceAllConfirmationMessage(resultNumber, fileNumber, this._replaceTerm)
+            msg: this.buildReplaceAllConfirmationMessage(resultNumber, fileNumber, replacementText)
         }).open();
     }
 
@@ -852,11 +853,12 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
      * Replace text either in all search matches under a node or in all search matches, and save the changes.
      * @param node - node in the tree widget in which the "replace all" is performed.
      * @param {boolean} replaceOne - whether the function is to replace all matches under a node. If it is false, replace all.
+     * @param replacementText - text to be used for all replacements in the current replacement cycle.
      */
-    protected async replaceResult(node: TreeNode, replaceOne: boolean): Promise<void> {
+    protected async replaceResult(node: TreeNode, replaceOne: boolean, replacementText: string): Promise<void> {
         const toReplace: SearchInWorkspaceResultLineNode[] = [];
         if (SearchInWorkspaceRootFolderNode.is(node)) {
-            node.children.forEach(fileNode => this.replaceResult(fileNode, replaceOne));
+            node.children.forEach(fileNode => this.replaceResult(fileNode, replaceOne, replacementText));
         } else if (SearchInWorkspaceFileNode.is(node)) {
             toReplace.push(...node.children);
         } else if (SearchInWorkspaceResultLineNode.is(node)) {
@@ -871,7 +873,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             const widget: EditorWidget = replaceOne ? await this.doOpen(toReplace[0]) : await this.doGetWidget(toReplace[0]);
             const source: string = widget.editor.document.getText();
             const replaceOperations = toReplace.map(resultLineNode => ({
-                text: this._replaceTerm,
+                text: replacementText,
                 range: {
                     start: {
                         line: resultLineNode.line - 1,
@@ -980,7 +982,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return <div className='result'>
             <div className='result-head'>
                 <div className={`result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}`}
-                    title={new URI(node.fileUri).path.toString()}>
+                    title={new URI(node.fileUri).path.fsPath()}>
                     <span className={`file-icon ${this.toNodeIcon(node)}`}></span>
                     <div className='noWrapInfo'>
                         <span className={'file-name'}>
@@ -1001,27 +1003,28 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderResultLineNode(node: SearchInWorkspaceResultLineNode): React.ReactNode {
-        let before;
-        let after;
-        let title;
-        if (typeof node.lineText === 'string') {
-            const prefix = node.character > 26 ? '... ' : '';
-            before = prefix + node.lineText.substr(0, node.character - 1).substr(-25);
-            after = node.lineText.substr(node.character - 1 + node.length, 75);
-            title = node.lineText.trim();
-        } else {
-            before = node.lineText.text.substr(0, node.lineText.character);
-            after = node.lineText.text.substr(node.lineText.character + node.length);
-            title = node.lineText.text.trim();
+        const character = typeof node.lineText === 'string' ? node.character : node.lineText.character;
+        const lineText = typeof node.lineText === 'string' ? node.lineText : node.lineText.text;
+        let start = Math.max(0, character - 26);
+        const wordBreak = /\b/g;
+        while (start > 0 && wordBreak.test(lineText) && wordBreak.lastIndex < character) {
+            if (character - wordBreak.lastIndex < 26) {
+                break;
+            }
+            start = wordBreak.lastIndex;
+            wordBreak.lastIndex++;
         }
-        return <div className={`resultLine noWrapInfo noselect ${node.selected ? 'selected' : ''}`} title={title}>
+
+        const before = lineText.slice(start, character - 1).trimLeft();
+
+        return <div className={`resultLine noWrapInfo noselect ${node.selected ? 'selected' : ''}`} title={lineText.trim()}>
             {this.searchInWorkspacePreferences['search.lineNumbers'] && <span className='theia-siw-lineNumber'>{node.line}</span>}
             <span>
                 {before}
             </span>
             {this.renderMatchLinePart(node)}
             <span>
-                {after}
+                {lineText.slice(node.character + node.length - 1, 250 - before.length + node.length)}
             </span>
         </div>;
     }

@@ -26,11 +26,6 @@ export const debugPreferencesSchema: PreferenceSchema = {
             default: false,
             description: nls.localize('theia/debug/toggleTracing', 'Enable/disable tracing communications with debug adapters')
         },
-        'debug.debugViewLocation': {
-            enum: ['default', 'left', 'right', 'bottom'],
-            default: 'default',
-            description: nls.localize('theia/debug/debugViewLocation', 'Controls the location of the debug view.')
-        },
         'debug.openDebug': {
             enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart', 'openOnDebugBreak'],
             default: 'openOnSessionStart',
@@ -65,18 +60,23 @@ export const debugPreferencesSchema: PreferenceSchema = {
                 'Always confirm if there are debug sessions.',
             ],
             default: 'never'
+        },
+        'debug.disassemblyView.showSourceCode': {
+            description: nls.localize('theia/debug/disassembly-view/show-source-code', 'Show Source Code in Disassembly View.'),
+            type: 'boolean',
+            default: true,
         }
     }
 };
 
 export class DebugConfiguration {
     'debug.trace': boolean;
-    'debug.debugViewLocation': 'default' | 'left' | 'right' | 'bottom';
     'debug.openDebug': 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart' | 'openOnDebugBreak';
     'debug.internalConsoleOptions': 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart';
     'debug.inlineValues': boolean;
     'debug.showInStatusBar': 'never' | 'always' | 'onFirstSessionStart';
     'debug.confirmOnExit': 'never' | 'always';
+    'debug.disassemblyView.showSourceCode': boolean;
 }
 
 export const DebugPreferenceContribution = Symbol('DebugPreferenceContribution');

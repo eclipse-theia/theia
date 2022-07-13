@@ -133,7 +133,7 @@ export class ToolbarImpl extends TabBarToolbar {
         const nodes: React.ReactNodeArray = [];
         groups.forEach((group, groupIndex) => {
             if (nodes.length && group.length) {
-                nodes.push(<div className='separator' />);
+                nodes.push(<div key={`toolbar-separator-${groupIndex}`} className='separator' />);
             }
             group.forEach((item, itemIndex) => {
                 const position = { alignment, groupIndex, itemIndex };
@@ -216,6 +216,7 @@ export class ToolbarImpl extends TabBarToolbar {
                 onDrop={this.handleOnDrop}
                 onDragEnter={this.handleOnDragEnter}
                 onDragLeave={this.handleOnDragLeave}
+                key={`column-space-${alignment}-${position}`}
             />
         );
     }

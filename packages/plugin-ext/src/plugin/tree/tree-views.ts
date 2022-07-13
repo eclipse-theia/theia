@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
-    TreeDataProvider, TreeView, TreeViewExpansionEvent, TreeItem2, TreeItemLabel,
+    TreeDataProvider, TreeView, TreeViewExpansionEvent, TreeItem, TreeItemLabel,
     TreeViewSelectionChangeEvent, TreeViewVisibilityChangeEvent
 } from '@theia/plugin';
 // TODO: extract `@theia/util` for event, disposable, cancellation and common types
@@ -295,16 +295,17 @@ class TreeViewExtImpl<T> implements Disposable {
         return undefined;
     }
 
-    private getTreeItemLabel(treeItem: TreeItem2): string | undefined {
+    private getTreeItemLabel(treeItem: TreeItem): string | undefined {
         const treeItemLabel: string | TreeItemLabel | undefined = treeItem.label;
-        if (typeof treeItemLabel === 'object' && typeof treeItemLabel.label === 'string') {
-            return treeItemLabel.label;
-        } else {
-            return treeItem.label;
-        }
+        return typeof treeItemLabel === 'object' ? treeItemLabel.label : treeItemLabel;
     }
 
-    private getTreeItemIdLabel(treeItem: TreeItem2): string | undefined {
+    private getTreeItemLabelHighlights(treeItem: TreeItem): [number, number][] | undefined {
+        const treeItemLabel: string | TreeItemLabel | undefined = treeItem.label;
+        return typeof treeItemLabel === 'object' ? treeItemLabel.highlights : undefined;
+    }
+
+    private getTreeItemIdLabel(treeItem: TreeItem): string | undefined {
         let idLabel = this.getTreeItemLabel(treeItem);
         // Use resource URI if label is not set
         if (idLabel === undefined && treeItem.resourceUri) {
@@ -341,10 +342,11 @@ class TreeViewExtImpl<T> implements Disposable {
 
                 // Ask data provider for a tree item for the value
                 // Data provider must return theia.TreeItem
-                const treeItem: TreeItem2 = await this.treeDataProvider.getTreeItem(value);
+                const treeItem = await this.treeDataProvider.getTreeItem(value);
                 // Convert theia.TreeItem to the TreeViewItem
 
                 const label = this.getTreeItemLabel(treeItem);
+                const highlights = this.getTreeItemLabelHighlights(treeItem);
                 const idLabel = this.getTreeItemIdLabel(treeItem);
 
                 // Generate the ID
@@ -366,12 +368,12 @@ class TreeViewExtImpl<T> implements Disposable {
 
                 let icon;
                 let iconUrl;
-                let themeIconId;
+                let themeIcon;
                 const { iconPath } = treeItem;
                 if (typeof iconPath === 'string' && iconPath.indexOf('fa-') !== -1) {
                     icon = iconPath;
                 } else if (ThemeIcon.is(iconPath)) {
-                    themeIconId = iconPath.id;
+                    themeIcon = iconPath;
                 } else {
                     iconUrl = PluginIconPath.toUrl(<PluginIconPath | undefined>iconPath, this.plugin);
                 }
@@ -379,9 +381,10 @@ class TreeViewExtImpl<T> implements Disposable {
                 const treeViewItem = {
                     id,
                     label,
+                    highlights,
                     icon,
                     iconUrl,
-                    themeIconId,
+                    themeIcon,
                     description: treeItem.description,
                     resourceUri: treeItem.resourceUri,
                     tooltip: treeItem.tooltip,

@@ -151,10 +151,6 @@ export interface PreferenceProxyOptions {
      * Indicates whether the proxy should be disposable. Proxies that are shared between multiple callers should not be disposable.
      */
     isDisposable?: boolean;
-    /**
-     * Indicates whether the proxy will validate values before returning them to clients.
-     */
-    validated?: boolean;
 }
 
 /**

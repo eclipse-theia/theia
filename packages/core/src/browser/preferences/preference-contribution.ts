@@ -20,20 +20,15 @@ import { ContributionProvider, bindContributionProvider, Emitter, Event, Disposa
 import { PreferenceScope } from './preference-scope';
 import { PreferenceProvider, PreferenceProviderDataChange } from './preference-provider';
 import {
-    PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty, JsonType
+    PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty
 } from '../../common/preferences/preference-schema';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
 import { FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import { bindPreferenceConfigurations, PreferenceConfigurations } from './preference-configurations';
-export { PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty, JsonType };
+export { PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty };
 import { Mutable } from '../../common/types';
-import { OverridePreferenceName, PreferenceLanguageOverrideService } from './preference-language-override-service';
+import { PreferenceLanguageOverrideService } from './preference-language-override-service';
 import { JSONValue } from '@phosphor/coreutils';
-
-/**
- * @deprecated since 1.13.0 import from @theia/core/lib/browser/preferences/preference-language-override-service.
- */
-export { OVERRIDE_PROPERTY_PATTERN } from './preference-language-override-service';
 
 /* eslint-disable guard-for-in, @typescript-eslint/no-explicit-any */
 
@@ -188,12 +183,18 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         return inverseChanges;
     }
 
-    protected doSetSchema(schema: PreferenceSchema): PreferenceProviderDataChange[] {
+    protected validateSchema(schema: PreferenceSchema): void {
         const ajv = new Ajv();
         const valid = ajv.validateSchema(schema);
         if (!valid) {
             const errors = !!ajv.errors ? ajv.errorsText(ajv.errors) : 'unknown validation error';
             console.warn('A contributed preference schema has validation issues : ' + errors);
+        }
+    }
+
+    protected doSetSchema(schema: PreferenceSchema): PreferenceProviderDataChange[] {
+        if (FrontendApplicationConfigProvider.get().validatePreferencesSchema) {
+            this.validateSchema(schema);
         }
         const scope = PreferenceScope.Default;
         const domain = this.getDomain();
@@ -394,24 +395,4 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         }
     }
 
-    /**
-     * @deprecated since 1.13.0 use `PreferenceLanguageOverrideService.overridePreferenceName`
-     */
-    overridePreferenceName(override: OverridePreferenceName): string {
-        return this.preferenceOverrideService.overridePreferenceName(override);
-    }
-
-    /**
-     * @deprecated since 1.13.0 use `PreferenceLanguageOverrideService.testOverrideValue`
-     */
-    testOverrideValue(name: string, value: any): value is PreferenceSchemaProperties {
-        return this.preferenceOverrideService.testOverrideValue(name, value);
-    }
-
-    /**
-     * @deprecated since 1.13.0 use `PreferenceLanguageOverrideService.overriddenPreferenceName`
-     */
-    overriddenPreferenceName(name: string): OverridePreferenceName | undefined {
-        return this.preferenceOverrideService.overriddenPreferenceName(name);
-    }
 }

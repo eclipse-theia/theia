@@ -26,6 +26,7 @@ import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { GitRepositoryProvider } from '../git-repository-provider';
 import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
 import { ScmPreferences } from '@theia/scm/lib/browser/scm-preferences';
+import { nls } from '@theia/core';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -33,7 +34,7 @@ export const GIT_DIFF = 'git-diff';
 @injectable()
 export class GitDiffWidget extends BaseWidget implements StatefulWidget {
 
-    protected readonly GIT_DIFF_TITLE = 'Diff';
+    protected readonly GIT_DIFF_TITLE = nls.localize('theia/git/diff', 'Diff');
 
     @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider;
     @inject(DiffNavigatorProvider) protected readonly diffNavigatorProvider: DiffNavigatorProvider;

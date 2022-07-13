@@ -75,6 +75,8 @@ html, body {
     font-size: var(--theia-ui-font-size2);
     font-weight: 600;
     margin-bottom: 5px;
+    display: flex;
+    align-items: center;
 }
 
 .gs-section-header i {

@@ -161,7 +161,7 @@ export module '@theia/plugin' {
          * Get the keybindings associated to commandId.
          * @param commandId The ID of the command for which we are looking for keybindings.
          */
-        export function getKeyBinding(commandId: string): PromiseLike<CommandKeyBinding[] | undefined>;
+        export function getKeyBinding(commandId: string): Thenable<CommandKeyBinding[] | undefined>;
 
         /**
          * Registers a diff information command that can be invoked via a keyboard shortcut,
@@ -210,7 +210,7 @@ export module '@theia/plugin' {
          * Returns the type of the operating system on the client side (like browser'OS if using browser mode). If it is neither [Windows](isWindows) nor [OS X](isOSX), then
          * it always return with the `Linux` OS type.
          */
-        export function getClientOperatingSystem(): PromiseLike<OperatingSystem>;
+        export function getClientOperatingSystem(): Thenable<OperatingSystem>;
 
     }
 
@@ -319,41 +319,6 @@ export module '@theia/plugin' {
         export const onDidChangeLogLevel: Event<LogLevel>;
     }
 
-    // #endregion
-
-    // #region Tree View
-    // copied from https://github.com/microsoft/vscode/blob/3ea5c9ddbebd8ec68e3b821f9c39c3ec785fde97/src/vs/vscode.proposed.d.ts#L1447-L1476
-    /**
-     * Label describing the [Tree item](#TreeItem)
-     */
-    export interface TreeItemLabel {
-
-        /**
-         * A human-readable string describing the [Tree item](#TreeItem).
-         */
-        label: string;
-
-        /**
-         * Ranges in the label to highlight. A range is defined as a tuple of two number where the
-         * first is the inclusive start index and the second the exclusive end index
-         */
-        // TODO highlights?: [number, number][];
-
-    }
-
-    export class TreeItem2 extends TreeItem {
-        /**
-         * Label describing this item. When `falsy`, it is derived from [resourceUri](#TreeItem.resourceUri).
-         */
-        label?: string | TreeItemLabel | /* for compilation */ any;
-
-        /**
-         * @param label Label describing this item
-         * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item.
-         * Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
-         */
-        constructor(label: TreeItemLabel, collapsibleState?: TreeItemCollapsibleState);
-    }
     // #endregion
 
     // #region search in workspace

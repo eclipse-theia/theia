@@ -21,13 +21,14 @@ import { injectable, unmanaged } from 'inversify';
 import { Emitter, Event } from '../../common/event';
 import { MaybePromise } from '../../common/types';
 import { Disposable, DisposableCollection } from '../../common/disposable';
+import { TreeWidget } from '../tree';
 
 export interface TreeElement {
     /** default: parent id + position among siblings */
     readonly id?: number | string | undefined
     /** default: true */
     readonly visible?: boolean
-    render(): ReactNode
+    render(host: TreeWidget): ReactNode
     open?(): MaybePromise<any>
 }
 

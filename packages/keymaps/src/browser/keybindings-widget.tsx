@@ -27,6 +27,7 @@ import {
 import { KeymapsService } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import { isOSX } from '@theia/core';
+import { nls } from '@theia/core/lib/common/nls';
 
 /**
  * Representation of a keybinding item for the view.
@@ -83,7 +84,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
     protected readonly keymapsService: KeymapsService;
 
     static readonly ID = 'keybindings.view.widget';
-    static readonly LABEL = 'Keyboard Shortcuts';
+    static readonly LABEL = nls.localizeByDefault('Keyboard Shortcuts');
 
     /**
      * The list of all available keybindings.
@@ -146,6 +147,9 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
     protected updateItemsAndRerender = debounce(() => {
         this.items = this.getItems();
         this.update();
+        if (this.hasSearch()) {
+            this.doSearchKeybindings();
+        }
     }, 100, { leading: false, trailing: true });
 
     /**
@@ -296,7 +300,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
                     className={`theia-input${(this.items.length > 0) ? '' : ' no-kb'}`}
                     type='text'
                     spellCheck={false}
-                    placeholder='Search keybindings'
+                    placeholder={nls.localizeByDefault('Type to search in keybindings')}
                     autoComplete='off'
                     onKeyUp={this.searchKeybindings}
                 />
@@ -324,10 +328,10 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
                     <thead>
                         <tr>
                             <th className='th-action'></th>
-                            <th className='th-label'>Command</th>
-                            <th className='th-keybinding'>Keybinding</th>
-                            <th className='th-context'>Context / When</th>
-                            <th className='th-source'>Source</th>
+                            <th className='th-label'>{nls.localizeByDefault('Command')}</th>
+                            <th className='th-keybinding'>{nls.localizeByDefault('Keybinding')}</th>
+                            <th className='th-context'>{nls.localizeByDefault('When')}</th>
+                            <th className='th-source'>{nls.localizeByDefault('Source')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -444,26 +448,38 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             if (command.id.startsWith('_')) {
                 continue;
             }
-            const keybinding = this.keybindingRegistry.getKeybindingsForCommand(command.id)[0];
-            const item = {
-                command,
-                keybinding,
-                labels: {
-                    id: { value: command.id },
-                    command: { value: this.getCommandLabel(command) },
-                    keybinding: { value: this.getKeybindingLabel(keybinding) || '' },
-                    context: { value: this.getContextLabel(keybinding) || '' },
-                    source: { value: this.getScopeLabel(keybinding) || '' }
-                }
-            };
-            this.formatAndMatchCommand(item);
-            this.formatAndMatchKeybinding(item, []);
-            this.formatAndMatchContext(item);
-            this.formatAndMatchSource(item);
-            items.push(item);
+            const keybindings = this.keybindingRegistry.getKeybindingsForCommand(command.id);
+            keybindings.forEach(keybinding => {
+                const item = this.createKeybindingItem(command, keybinding);
+                items.push(item);
+            });
+            // we might not have any keybindings for the command
+            if (keybindings.length < 1) {
+                const item = this.createKeybindingItem(command);
+                items.push(item);
+            }
         }
 
         return this.sortKeybindings(items);
+    }
+
+    protected createKeybindingItem(command: Command, keybinding?: ScopedKeybinding): KeybindingItem {
+        const item = {
+            command,
+            keybinding,
+            labels: {
+                id: { value: command.id },
+                command: { value: this.getCommandLabel(command) },
+                keybinding: { value: this.getKeybindingLabel(keybinding) || '' },
+                context: { value: this.getContextLabel(keybinding) || '' },
+                source: { value: this.getScopeLabel(keybinding) || '' }
+            }
+        };
+        this.formatAndMatchCommand(item);
+        this.formatAndMatchKeybinding(item, []);
+        this.formatAndMatchContext(item);
+        this.formatAndMatchSource(item);
+        return item;
     }
 
     /**
@@ -548,11 +564,11 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
      */
     protected editKeybinding(item: KeybindingItem): void {
         const command = item.command.id;
-        const oldKeybinding = item.keybinding && item.keybinding.keybinding;
+        const oldKeybinding = item.keybinding;
         const dialog = new EditKeybindingDialog({
-            title: `Edit Keybinding for ${command}`,
-            initialValue: oldKeybinding,
-            validate: newKeybinding => this.validateKeybinding(command, oldKeybinding, newKeybinding),
+            title: nls.localize('theia/keymaps/editKeybindingTitle', 'Edit Keybinding for {0}', command),
+            initialValue: oldKeybinding?.keybinding,
+            validate: newKeybinding => this.validateKeybinding(command, oldKeybinding?.keybinding, newKeybinding),
         }, this.keymapsService, item);
         dialog.open().then(async keybinding => {
             if (keybinding) {
@@ -572,9 +588,17 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
      * @returns a Promise which resolves to `true` if a user accepts resetting.
      */
     protected async confirmResetKeybinding(item: KeybindingItem): Promise<boolean> {
+        const message = document.createElement('div');
+        const question = document.createElement('p');
+        question.textContent = nls.localize('theia/keymaps/resetKeybindingConfirmation', 'Do you really want to reset this keybinding to its default value?');
+        message.append(question);
+        const info = document.createElement('p');
+        info.textContent = nls.localize('theia/keymaps/resetMultipleKeybindingsWarning', 'If multiple keybindings exist for this command, all of them will be reset.');
+        message.append(info);
+
         const dialog = new ConfirmDialog({
-            title: `Reset keybinding for '${this.getCommandLabel(item.command)}'`,
-            msg: 'Do you really want to reset this keybinding to its default value?'
+            title: nls.localize('theia/keymaps/resetKeybindingTitle', 'Reset keybinding for {0}', this.getCommandLabel(item.command)),
+            msg: message
         });
         return !!await dialog.open();
     }
@@ -600,7 +624,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
      */
     protected validateKeybinding(command: string, oldKeybinding: string | undefined, keybinding: string): string {
         if (!keybinding) {
-            return 'keybinding value is required';
+            return nls.localize('theia/keymaps/requiredKeybindingValidation', 'keybinding value is required');
         }
         try {
             const binding = { command, keybinding };
@@ -609,7 +633,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
                 return ' '; // if old and new keybindings match, quietly reject update
             }
             if (this.keybindingRegistry.containsKeybindingInScope(binding)) {
-                return 'keybinding currently collides';
+                return nls.localize('theia/keymaps/keybindingCollidesValidation', 'keybinding currently collides');
             }
             return '';
         } catch (error) {
@@ -746,10 +770,11 @@ class EditKeybindingDialog extends SingleTextInputDialog {
      */
     protected appendResetButton(): HTMLButtonElement {
         // Create the `Reset` button.
-        this.resetButton = this.createButton('Reset');
+        const resetButtonTitle = nls.localizeByDefault('Reset');
+        this.resetButton = this.createButton(resetButtonTitle);
         // Add the `Reset` button to the dialog control panel, before the `Accept` button.
         this.controlPanel.insertBefore(this.resetButton, this.acceptButton!);
-        this.resetButton.title = 'Reset Keybinding';
+        this.resetButton.title = nls.localizeByDefault('Reset Keybinding');
         this.resetButton.classList.add('secondary');
         return this.resetButton;
     }

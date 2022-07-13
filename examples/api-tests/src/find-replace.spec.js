@@ -46,7 +46,7 @@ describe('Find and Replace', function () {
 
     /**
      * @template T
-     * @param {() => Promise<T> | T} condition
+     * @param {() => Promise<T> | T} condition
      * @returns {Promise<T>}
      */
     function waitForAnimation(condition) {

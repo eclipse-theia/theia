@@ -33,7 +33,7 @@ export class PluginTreeViewNodeLabelProvider implements LabelProviderContributio
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     canHandle(element: TreeViewNode | any): number {
-        if (TreeNode.is(element) && ('resourceUri' in element || 'themeIconId' in element)) {
+        if (TreeNode.is(element) && ('resourceUri' in element || 'themeIcon' in element)) {
             return this.treeLabelProvider.canHandle(element) + 1;
         }
         return 0;
@@ -43,12 +43,14 @@ export class PluginTreeViewNodeLabelProvider implements LabelProviderContributio
         if (node.icon) {
             return node.icon;
         }
-        if (node.themeIconId) {
-            if (node.themeIconId === 'file' || node.themeIconId === 'folder') {
+        if (node.themeIcon) {
+            if (node.themeIcon.id === 'file' || node.themeIcon.id === 'folder') {
                 const uri = node.resourceUri && new URI(node.resourceUri) || undefined;
-                return this.labelProvider.getIcon(URIIconReference.create(node.themeIconId, uri));
+                if (uri) {
+                    return this.labelProvider.getIcon(URIIconReference.create(node.themeIcon.id, uri));
+                }
             }
-            return ThemeIcon.asClassName({ id: node.themeIconId });
+            return ThemeIcon.asClassName(node.themeIcon);
         }
         if (node.resourceUri) {
             return this.labelProvider.getIcon(new URI(node.resourceUri));

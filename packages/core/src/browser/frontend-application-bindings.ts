@@ -25,7 +25,6 @@ import {
     PreferenceService, PreferenceServiceImpl, PreferenceValidationService
 } from './preferences';
 import { InjectablePreferenceProxy, PreferenceProxyFactory, PreferenceProxySchema } from './preferences/injectable-preference-proxy';
-import { ValidatedPreferenceProxy } from './preferences/validated-preference-proxy';
 
 export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {
     bind(MessageClient).toSelf().inSingletonScope();
@@ -47,12 +46,11 @@ export function bindPreferenceService(bind: interfaces.Bind): void {
     bindPreferenceSchemaProvider(bind);
     bind(PreferenceValidationService).toSelf().inSingletonScope();
     bind(InjectablePreferenceProxy).toSelf();
-    bind(ValidatedPreferenceProxy).toSelf();
     bind(PreferenceProxyFactory).toFactory(({ container }) => (schema: MaybePromise<PreferenceSchema>, options: PreferenceProxyOptions = {}) => {
         const child = container.createChild();
         child.bind(PreferenceProxyOptions).toConstantValue(options ?? {});
         child.bind(PreferenceProxySchema).toConstantValue(schema);
-        const handler = options.validated ? child.get(ValidatedPreferenceProxy) : child.get(InjectablePreferenceProxy);
+        const handler = child.get(InjectablePreferenceProxy);
         return new Proxy(Object.create(null), handler); // eslint-disable-line no-null/no-null
     });
 }

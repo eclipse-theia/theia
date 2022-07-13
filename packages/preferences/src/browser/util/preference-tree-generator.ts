@@ -57,13 +57,17 @@ export class PreferenceTreeGenerator {
         ['extensions', 'features'],
         ['files', 'editor'],
         ['hosted-plugin', 'features'],
+        ['http', 'application'],
         ['keyboard', 'application'],
+        ['notification', 'workbench'],
         ['output', 'features'],
-        ['problems', 'features'],
         ['preview', 'features'],
+        ['problems', 'features'],
+        ['scm', 'features'],
         ['search', 'features'],
         ['task', 'features'],
         ['terminal', 'features'],
+        ['toolbar', 'features'],
         ['webview', 'features'],
         ['workspace', 'application'],
     ]);
@@ -97,7 +101,7 @@ export class PreferenceTreeGenerator {
         }
         for (const propertyName of propertyNames) {
             const property = preferencesSchema.properties[propertyName];
-            if (!this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName)) {
+            if (!this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName) && !property.deprecationMessage) {
                 const labels = propertyName.split('.');
                 const groupID = this.getGroupName(labels);
                 const subgroupName = this.getSubgroupName(labels, groupID);

@@ -352,7 +352,7 @@ export class ExtHostCommentThread implements theia.CommentThread, theia.Disposab
         }
         if (modified('comments')) {
             formattedModifications.comments =
-                this._comments.map(cmt => convertToModeComment(this, this.commentController, cmt, this.commentsMap));
+                this._comments.map(comment => convertToModeComment(this, this.commentController, comment, this.commentsMap));
         }
         if (modified('collapsibleState')) {
             formattedModifications.collapseState = convertToCollapsibleState(this.collapseState);

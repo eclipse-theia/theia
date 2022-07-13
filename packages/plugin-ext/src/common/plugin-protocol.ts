@@ -25,7 +25,9 @@ import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/co
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common';
 import { ColorDefinition } from '@theia/core/lib/common/color';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
+import { PluginIdentifiers } from './plugin-identifiers';
 
+export { PluginIdentifiers };
 export const hostedServicePath = '/services/hostedPlugin';
 
 /**
@@ -38,7 +40,8 @@ export type PluginEngine = string;
  */
 export interface PluginPackage {
     name: string;
-    publisher: string;
+    // The publisher is not guaranteed to be defined for unpublished plugins. https://github.com/microsoft/vscode-vsce/commit/a38657ece04c20e4fbde15d5ac1ed39ca51cb856
+    publisher: string | undefined;
     version: string;
     engines: {
         [type in PluginEngine]: string;
@@ -271,6 +274,7 @@ export interface PluginPackageLanguageContributionConfiguration {
     wordPattern?: string;
     indentationRules?: IndentationRules;
     folding?: FoldingRules;
+    onEnterRules?: OnEnterRule[];
 }
 
 export interface PluginTaskDefinitionContribution {
@@ -339,7 +343,7 @@ export interface PluginDeployerResolver {
 
     accept(pluginSourceId: string): boolean;
 
-    resolve(pluginResolverContext: PluginDeployerResolverContext): Promise<void>;
+    resolve(pluginResolverContext: PluginDeployerResolverContext, options?: PluginDeployOptions): Promise<void>;
 
 }
 
@@ -486,6 +490,8 @@ export interface PluginDeployerFileHandlerContext {
 
 export interface PluginDeployerDirectoryHandlerContext {
 
+    copy(origin: string, target: string): Promise<void>;
+
     pluginEntry(): PluginDeployerEntry;
 
 }
@@ -598,6 +604,8 @@ export interface GrammarsContribution {
     embeddedLanguages?: ScopeMap;
     tokenTypes?: ScopeMap;
     injectTo?: string[];
+    balancedBracketScopes?: string[];
+    unbalancedBracketScopes?: string[];
 }
 
 /**
@@ -622,6 +630,7 @@ export interface LanguageConfiguration {
     comments?: CommentRule;
     folding?: FoldingRules;
     wordPattern?: string;
+    onEnterRules?: OnEnterRule[];
 }
 
 /**
@@ -668,6 +677,19 @@ export interface FoldingMarkers {
 export interface FoldingRules {
     offSide?: boolean;
     markers?: FoldingMarkers;
+}
+
+export interface OnEnterRule {
+    beforeText: string;
+    afterText?: string;
+    previousLineText?: string;
+    action: EnterAction;
+}
+
+export interface EnterAction {
+    indent: 'none' | 'indent' | 'outdent' | 'indentOutdent';
+    appendText?: string;
+    removeText?: number;
 }
 
 /**
@@ -795,6 +817,8 @@ export interface PluginMetadata {
     host: string;
     model: PluginModel;
     lifecycle: PluginLifecycle;
+    isUnderDevelopment?: boolean;
+    outOfSync: boolean;
 }
 
 export const MetadataProcessor = Symbol('MetadataProcessor');
@@ -821,22 +845,38 @@ export interface HostedPluginClient {
 
 export interface PluginDependencies {
     metadata: PluginMetadata
+    /**
+     * Actual listing of plugin dependencies.
+     * Mapping from {@link PluginIdentifiers.UnversionedId external representation} of plugin identity to a string
+     * that can be used to identify the resolver for the specific plugin case, e.g. with scheme `vscode://<id>`.
+     */
     mapping?: Map<string, string>
 }
 
 export const PluginDeployerHandler = Symbol('PluginDeployerHandler');
 export interface PluginDeployerHandler {
-    deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void>;
-    deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void>;
+    deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<number | undefined>;
+    deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<number | undefined>;
 
-    getDeployedPlugin(pluginId: string): DeployedPlugin | undefined;
-    undeployPlugin(pluginId: string): Promise<boolean>;
+    getDeployedPluginsById(pluginId: string): DeployedPlugin[];
+
+    getDeployedPlugin(pluginId: PluginIdentifiers.VersionedId): DeployedPlugin | undefined;
+    /**
+     * Removes the plugin from the location it originally resided on disk.
+     * Unless `--uncompressed-plugins-in-place` is passed to the CLI, this operation is safe.
+     */
+    uninstallPlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean>;
+    /**
+     * Removes the plugin from the locations to which it had been deployed.
+     * This operation is not safe - references to deleted assets may remain.
+     */
+    undeployPlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean>;
 
     getPluginDependencies(pluginToBeInstalled: PluginDeployerEntry): Promise<PluginDependencies | undefined>;
 }
 
 export interface GetDeployedPluginsParams {
-    pluginIds: string[]
+    pluginIds: PluginIdentifiers.VersionedId[]
 }
 
 export interface DeployedPlugin {
@@ -851,7 +891,9 @@ export interface DeployedPlugin {
 export const HostedPluginServer = Symbol('HostedPluginServer');
 export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
 
-    getDeployedPluginIds(): Promise<string[]>;
+    getDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]>;
+
+    getUninstalledPluginIds(): Promise<readonly PluginIdentifiers.VersionedId[]>;
 
     getDeployedPlugins(params: GetDeployedPluginsParams): Promise<DeployedPlugin[]>;
 
@@ -870,6 +912,12 @@ export interface WorkspaceStorageKind {
 export type GlobalStorageKind = undefined;
 export type PluginStorageKind = GlobalStorageKind | WorkspaceStorageKind;
 
+export interface PluginDeployOptions {
+    version: string;
+    /** Instructs the deployer to ignore any existing plugins with different versions */
+    ignoreOtherVersions?: boolean;
+}
+
 /**
  * The JSON-RPC workspace interface.
  */
@@ -882,9 +930,9 @@ export interface PluginServer {
      *
      * @param type whether a plugin is installed by a system or a user, defaults to a user
      */
-    deploy(pluginEntry: string, type?: PluginType): Promise<void>;
-
-    undeploy(pluginId: string): Promise<void>;
+    deploy(pluginEntry: string, type?: PluginType, options?: PluginDeployOptions): Promise<void>;
+    uninstall(pluginId: PluginIdentifiers.VersionedId): Promise<void>;
+    undeploy(pluginId: PluginIdentifiers.VersionedId): Promise<void>;
 
     setStorageValue(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean>;
     getStorageValue(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues>;
@@ -909,7 +957,7 @@ export interface ServerPluginRunner {
     /**
      * Provides additional plugin ids.
      */
-    getExtraDeployedPluginIds(): Promise<string[]>;
+    getExtraDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]>;
 
 }
 

@@ -18,6 +18,8 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 
+/* eslint-disable max-len */
+
 export const GitConfigSchema: PreferenceSchema = {
     'type': 'object',
     'properties': {
@@ -45,6 +47,22 @@ export const GitConfigSchema: PreferenceSchema = {
             'type': 'boolean',
             'description': nls.localize('vscode.git/package/config.alwaysSignOff', 'Always sign off commits.'),
             'default': false
+        },
+        'git.untrackedChanges': {
+            type: 'string',
+            enum: [
+                nls.localize('theia/scm/config.untrackedChanges.mixed', 'mixed'),
+                nls.localize('theia/scm/config.untrackedChanges.separate', 'separate'),
+                nls.localize('theia/scm/config.untrackedChanges.hidden', 'hidden')
+            ],
+            enumDescriptions: [
+                nls.localize('theia/scm/config.untrackedChanges.mixed/description', 'All changes, tracked and untracked, appear together and behave equally.'),
+                nls.localize('theia/scm/config.untrackedChanges.separate/description', 'Untracked changes appear separately in the Source Control view. They are also excluded from several actions.'),
+                nls.localize('theia/scm/config.untrackedChanges.hidden/description', 'Untracked changes are hidden and excluded from several actions.'),
+            ],
+            description: nls.localize('theia/scm/config.untrackedChanges', 'Controls how untracked changes behave.'),
+            default: 'mixed',
+            scope: 'resource',
         }
     }
 };
@@ -54,7 +72,8 @@ export interface GitConfiguration {
     'git.decorations.colors': boolean,
     'git.editor.decorations.enabled': boolean,
     'git.editor.dirtyDiff.linesLimit': number,
-    'git.alwaysSignOff': boolean
+    'git.alwaysSignOff': boolean,
+    'git.untrackedChanges': 'mixed' | 'separate' | 'hidden';
 }
 
 export const GitPreferenceContribution = Symbol('GitPreferenceContribution');

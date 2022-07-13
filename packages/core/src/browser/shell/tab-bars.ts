@@ -17,7 +17,7 @@
 import PerfectScrollbar from 'perfect-scrollbar';
 import { TabBar, Title, Widget } from '@phosphor/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@phosphor/virtualdom';
-import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService } from '../../common';
+import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { Signal, Slot } from '@phosphor/signaling';
 import { Message, MessageLoop } from '@phosphor/messaging';
@@ -32,6 +32,7 @@ import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/
 import { NavigatableWidget } from '../navigatable-types';
 import { IDragEvent } from '@phosphor/dragdrop';
 import { PINNED_CLASS } from '../widgets/widget';
+import { CorePreferences } from '../core-preferences';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -88,7 +89,8 @@ export class TabBarRenderer extends TabBar.Renderer {
         protected readonly decoratorService?: TabBarDecoratorService,
         protected readonly iconThemeService?: IconThemeService,
         protected readonly selectionService?: SelectionService,
-        protected readonly commandService?: CommandService
+        protected readonly commandService?: CommandService,
+        protected readonly corePreferences?: CorePreferences
     ) {
         super();
         if (this.decoratorService) {
@@ -148,6 +150,9 @@ export class TabBarRenderer extends TabBar.Renderer {
         const style = this.createTabStyle(data);
         const className = this.createTabClass(data);
         const dataset = this.createTabDataset(data);
+        const closeIconTitle = data.title.className.includes(PINNED_CLASS)
+            ? nls.localizeByDefault('Unpin')
+            : nls.localizeByDefault('Close');
         return h.li(
             {
                 key, className, id, title: title.caption, style, dataset,
@@ -166,6 +171,7 @@ export class TabBarRenderer extends TabBar.Renderer {
             ),
             h.div({
                 className: 'p-TabBar-tabCloseIcon action-label',
+                title: closeIconTitle,
                 onclick: this.handleCloseClickEvent
             })
         );
@@ -483,6 +489,9 @@ export class TabBarRenderer extends TabBar.Renderer {
     };
 
     protected handleDblClickEvent = (event: MouseEvent) => {
+        if (!this.corePreferences?.get('workbench.tab.maximize')) {
+            return;
+        }
         if (this.tabBar && event.currentTarget instanceof HTMLElement) {
             const id = event.currentTarget.id;
             // eslint-disable-next-line no-null/no-null
@@ -493,6 +502,7 @@ export class TabBarRenderer extends TabBar.Renderer {
             }
         }
     };
+
 }
 
 /**
@@ -686,7 +696,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
             if (this.breadcrumbsContainer) {
                 this.node.appendChild(this.breadcrumbsContainer);
             }
-            this.breadcrumbsRenderer?.refresh();
+            this.updateBreadcrumbs();
         }
         super.onAfterAttach(msg);
     }
@@ -1014,7 +1024,7 @@ export class SideTabBar extends ScrollableTabBar {
 
     /**
      * Handle `viewContainerPart` drag over,
-     * Defines the appropriate `drpAction` and opens the tab on which the mouse stands on for more than 800 ms.
+     * Defines the appropriate `dropAction` and opens the tab on which the mouse stands on for more than 800 ms.
      */
     protected onDragOver = (event: IDragEvent) => {
         const factory = event.mimeData.getData('application/vnd.phosphor.view-container-factory');

@@ -29,7 +29,6 @@ import { WebviewImpl, WebviewsExtImpl } from './webviews';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { WorkspaceExtImpl } from './workspace';
-import { WidgetOpenerOptions } from '@theia/core/lib/browser';
 
 export class CustomEditorsExtImpl implements CustomEditorsExt {
     private readonly proxy: CustomEditorsMain;
@@ -116,12 +115,12 @@ export class CustomEditorsExtImpl implements CustomEditorsExt {
         document.dispose();
     }
 
-    async $resolveWebviewEditor(
+    async $resolveWebviewEditor<T>(
         resource: UriComponents,
         handler: string,
         viewType: string,
         title: string,
-        widgetOpenerOptions: WidgetOpenerOptions | undefined,
+        widgetOpenerOptions: T | undefined,
         options: theia.WebviewPanelOptions & theia.WebviewOptions,
         cancellation: CancellationToken
     ): Promise<void> {

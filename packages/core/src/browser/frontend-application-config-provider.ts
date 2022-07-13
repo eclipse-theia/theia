@@ -16,6 +16,8 @@
 
 import { FrontendApplicationConfig, deepmerge } from '@theia/application-package/lib/application-props';
 
+export const DEFAULT_BACKGROUND_COLOR_STORAGE_KEY = 'theme.background';
+
 export class FrontendApplicationConfigProvider {
 
     private static KEY = Symbol('FrontendApplicationConfigProvider');

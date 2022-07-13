@@ -25,6 +25,7 @@ import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key
 import { VariableInput } from './variable-input';
 import { QuickInputService, QuickPickValue } from '@theia/core/lib/browser';
 import { MaybeArray, RecursivePartial } from '@theia/core/lib/common/types';
+import { cancelled } from '@theia/core/lib/common/cancellation';
 
 @injectable()
 export class CommonVariableContribution implements VariableContribution {
@@ -76,9 +77,18 @@ export class CommonVariableContribution implements VariableContribution {
         });
         variables.registerVariable({
             name: 'command',
-            resolve: async (_, command) =>
-                // eslint-disable-next-line no-return-await
-                command && await this.commands.executeCommand(command)
+            resolve: async (contextUri, commandId, configurationSection, commandIdVariables, configuration) => {
+                if (commandId) {
+                    if (commandIdVariables?.[commandId]) {
+                        commandId = commandIdVariables[commandId];
+                    }
+                    const result = await this.commands.executeCommand(commandId, configuration);
+                    // eslint-disable-next-line no-null/no-null
+                    if (result === null) {
+                        throw cancelled();
+                    }
+                }
+            }
         });
         variables.registerVariable({
             name: 'input',

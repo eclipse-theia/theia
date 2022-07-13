@@ -44,8 +44,6 @@
 
 .p-MenuBar-item {
   padding: 0px 8px;
-  border-left: var(--theia-border-width) solid var(--theia-menu-border);
-  border-right: var(--theia-border-width) solid var(--theia-menu-border);
   line-height: var(--theia-private-menubar-height);
 }
 
@@ -115,6 +113,10 @@
   border: 1px solid var(--theia-menu-border);
 }
 
+.p-Menu:focus {
+  outline: none;
+}
+
 .p-Menu-item {
   min-height: var(--theia-private-menu-item-height);
   max-height: var(--theia-private-menu-item-height);
@@ -128,6 +130,7 @@
   color: var(--theia-menu-selectionForeground);
   border: thin solid var(--theia-menu-selectionBorder);
   opacity: 1;
+  cursor: pointer;
 }
 
 

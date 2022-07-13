@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { PluginModel, PluginPackage } from '../../../common/plugin-protocol';
+import { PluginIdentifiers, PluginModel, PluginPackage } from '../../../common/plugin-protocol';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import URI from '@theia/core/lib/common/uri';
 
@@ -54,7 +54,9 @@ function readContents(uri: string): Promise<string> {
 
 async function readPluginJson(pluginModel: PluginModel, relativePath: string): Promise<any> {
     const content = await readPluginFile(pluginModel, relativePath);
-    return JSON.parse(content);
+    const json = JSON.parse(content) as PluginPackage;
+    json.publisher ??= PluginIdentifiers.UNPUBLISHED;
+    return json;
 }
 
 export async function loadManifest(pluginModel: PluginModel): Promise<any> {

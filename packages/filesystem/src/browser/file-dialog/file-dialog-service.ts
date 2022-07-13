@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { MaybeArray } from '@theia/core/lib/common';
+import { MaybeArray, nls } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { FileStat } from '../../common/files';
 import { DirNode } from '../file-tree';
@@ -53,7 +53,7 @@ export class DefaultFileDialogService implements FileDialogService {
     async showOpenDialog(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<URI> | undefined>;
     async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<URI | undefined>;
     async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<URI> | undefined> {
-        const title = props.title || 'Open';
+        const title = props.title || nls.localizeByDefault('Open');
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
             const dialog = this.openFileDialogFactory(Object.assign(props, { title }));
@@ -70,7 +70,7 @@ export class DefaultFileDialogService implements FileDialogService {
     }
 
     async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
-        const title = props.title || 'Save';
+        const title = props.title || nls.localizeByDefault('Save');
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
             const dialog = this.saveFileDialogFactory(Object.assign(props, { title }));

@@ -46,7 +46,6 @@ export class ScmAmendWidget extends ReactWidget {
             suppressScrollX: true,
             minScrollbarLength: 35
         };
-        this.addClass('theia-scm-commit-container');
         this.id = ScmAmendWidget.ID;
     }
 

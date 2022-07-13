@@ -32,7 +32,7 @@ export interface TimelineItem {
     id?: string;
     description?: string;
     detail?: string;
-    command?: Command;
+    command?: Command & { arguments?: unknown[] };
     contextValue?: string;
 }
 

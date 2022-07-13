@@ -29,8 +29,7 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 import { LogType } from '@theia/plugin-ext/lib/common/types';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
 import { MetadataScanner } from '@theia/plugin-ext/lib/hosted/node/metadata-scanner';
-// eslint-disable-next-line @theia/runtime-import-check
-import { DebugPluginConfiguration } from '@theia/debug/lib/browser/debug-contribution';
+import { PluginDebugConfiguration } from '../common/plugin-dev-protocol';
 import { HostedPluginProcess } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin-process';
 
 const DEFAULT_HOSTED_PLUGIN_PORT = 3030;
@@ -61,7 +60,7 @@ export interface HostedInstanceManager {
      * @param debugConfig debug configuration
      * @returns uri where new Theia instance is run
      */
-    debug(pluginUri: URI, debugConfig: DebugPluginConfiguration): Promise<URI>;
+    debug(pluginUri: URI, debugConfig: PluginDebugConfiguration): Promise<URI>;
 
     /**
      * Terminates hosted plugin instance.
@@ -121,11 +120,11 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         return this.doRun(pluginUri, port);
     }
 
-    async debug(pluginUri: URI, debugConfig: DebugPluginConfiguration): Promise<URI> {
+    async debug(pluginUri: URI, debugConfig: PluginDebugConfiguration): Promise<URI> {
         return this.doRun(pluginUri, undefined, debugConfig);
     }
 
-    private async doRun(pluginUri: URI, port?: number, debugConfig?: DebugPluginConfiguration): Promise<URI> {
+    private async doRun(pluginUri: URI, port?: number, debugConfig?: PluginDebugConfiguration): Promise<URI> {
         if (this.isPluginRunning) {
             this.hostedPluginSupport.sendLog({ data: 'Hosted plugin instance is already running.', type: LogType.Info });
             throw new Error('Hosted instance is already running.');
@@ -239,7 +238,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         return false;
     }
 
-    protected async getStartCommand(port?: number, debugConfig?: DebugPluginConfiguration): Promise<string[]> {
+    protected async getStartCommand(port?: number, debugConfig?: PluginDebugConfiguration): Promise<string[]> {
 
         const processArguments = process.argv;
         let command: string[];
@@ -366,7 +365,7 @@ export class NodeHostedPluginRunner extends AbstractHostedInstanceManager {
         return options;
     }
 
-    protected override async getStartCommand(port?: number, debugConfig?: DebugPluginConfiguration): Promise<string[]> {
+    protected override async getStartCommand(port?: number, debugConfig?: PluginDebugConfiguration): Promise<string[]> {
         if (!port) {
             port = process.env.HOSTED_PLUGIN_PORT ?
                 Number(process.env.HOSTED_PLUGIN_PORT) :

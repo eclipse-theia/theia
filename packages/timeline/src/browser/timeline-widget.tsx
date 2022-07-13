@@ -31,6 +31,7 @@ import { TimelineEmptyWidget } from './timeline-empty-widget';
 import { toArray } from '@theia/core/shared/@phosphor/algorithm';
 import URI from '@theia/core/lib/common/uri';
 import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class TimelineWidget extends BaseWidget {
@@ -50,7 +51,7 @@ export class TimelineWidget extends BaseWidget {
     constructor() {
         super();
         this.id = TimelineWidget.ID;
-        this.title.label = 'Timeline';
+        this.title.label = nls.localizeByDefault('Timeline');
         this.title.caption = this.title.label;
         this.addClass('theia-timeline');
     }

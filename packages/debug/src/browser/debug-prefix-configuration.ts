@@ -123,10 +123,10 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
 
         // Resolve dynamic configurations from providers
         const record = await this.debugConfigurationManager.provideDynamicDebugConfigurations();
-        for (const [type, dynamicConfigurations] of Object.entries(record)) {
+        for (const [providerType, dynamicConfigurations] of Object.entries(record)) {
             if (dynamicConfigurations.length > 0) {
                 items.push({
-                    label: type,
+                    label: providerType,
                     type: 'separator'
                 });
             }
@@ -134,7 +134,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
             for (const configuration of dynamicConfigurations) {
                 items.push({
                     label: configuration.name,
-                    execute: () => this.runDynamicConfiguration({ configuration })
+                    execute: () => this.runConfiguration({ configuration, providerType })
                 });
             }
         }
@@ -145,19 +145,11 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     /**
      * Set the current debug configuration, and execute debug start command.
      *
-     * @param configuration the `DebugSessionOptions`.
+     * @param configurationOptions the `DebugSessionOptions`.
      */
-    protected runConfiguration(configuration: DebugSessionOptions): void {
-        this.debugConfigurationManager.current = { ...configuration };
+    protected runConfiguration(configurationOptions: DebugSessionOptions): void {
+        this.debugConfigurationManager.current = configurationOptions;
         this.commandRegistry.executeCommand(DebugCommands.START.id);
-    }
-
-    /**
-     * Execute the debug start command without affecting the current debug configuration
-     * @param configuration the `DebugSessionOptions`.
-     */
-    protected runDynamicConfiguration(configuration: DebugSessionOptions): void {
-        this.commandRegistry.executeCommand(DebugCommands.START.id, configuration);
     }
 
     /**

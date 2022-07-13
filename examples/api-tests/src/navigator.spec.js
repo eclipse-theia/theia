@@ -44,12 +44,12 @@ describe('Navigator', function () {
         await fileService.delete(targetUri.parent, { fromUserGesture: false, useTrash: false, recursive: true });
     });
 
-    /** @type {Array<['copy' | 'move', boolean]>} */
+    /** @type {Array<['copy' | 'move', boolean]>} */
     const operations = [
         ['copy', false],
         ['move', false]
     ];
-    /** @type {Array<['file' | 'dir', boolean]>} */
+    /** @type {Array<['file' | 'dir', boolean]>} */
     const fileTypes = [
         ['file', false],
         ['dir', false],

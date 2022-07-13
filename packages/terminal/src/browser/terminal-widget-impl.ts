@@ -17,7 +17,7 @@
 import { Terminal, RendererType } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
+import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, RpcProtocol, RequestHandler } from '@theia/core';
 import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -25,8 +25,7 @@ import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/s
 import { terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalServer, TerminalProcessInfo } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions } from './base/terminal-widget';
-import { MessageConnection } from '@theia/core/shared/vscode-ws-jsonrpc';
+import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE, CursorStyle } from './terminal-preferences';
 import { TerminalContribution } from './terminal-contribution';
@@ -50,6 +49,9 @@ export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOpti
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
     static LABEL = nls.localizeByDefault('Terminal');
+
+    exitStatus: TerminalExitStatus | undefined;
+
     protected terminalKind = 'user';
     protected _terminalId = -1;
     protected readonly onTermDidClose = new Emitter<TerminalWidget>();
@@ -58,7 +60,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected searchBox: TerminalSearchWidget;
     protected restored = false;
     protected closeOnDispose = true;
-    protected waitForConnection: Deferred<MessageConnection> | undefined;
+    protected waitForConnection: Deferred<RpcProtocol> | undefined;
     protected hoverMessage: HTMLDivElement;
     protected lastTouchEnd: TouchEvent | undefined;
     protected isAttachedCloseListener: boolean = false;
@@ -189,17 +191,15 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
             if (terminalId === this.terminalId) {
+                this.exitStatus = { code: undefined };
                 this.dispose();
-                this.onTermDidClose.fire(this);
-                this.onTermDidClose.dispose();
                 this.logger.error(`The terminal process terminated. Cause: ${error}`);
             }
         }));
-        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId }) => {
+        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId, code }) => {
             if (terminalId === this.terminalId) {
+                this.exitStatus = { code };
                 this.dispose();
-                this.onTermDidClose.fire(this);
-                this.onTermDidClose.dispose();
             }
         }));
         this.toDispose.push(this.toDisposeOnConnect);
@@ -506,16 +506,23 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.toDisposeOnConnect.dispose();
         this.toDispose.push(this.toDisposeOnConnect);
-        const waitForConnection = this.waitForConnection = new Deferred<MessageConnection>();
+        const waitForConnection = this.waitForConnection = new Deferred<RpcProtocol>();
         this.webSocketConnectionProvider.listen({
             path: `${terminalsPath}/${this.terminalId}`,
             onConnection: connection => {
-                connection.onNotification('onData', (data: string) => this.write(data));
+                const requestHandler: RequestHandler = _method => this.logger.warn('Received an unhandled RPC request from the terminal process');
+
+                const rpc = new RpcProtocol(connection, requestHandler);
+                rpc.onNotification(event => {
+                    if (event.method === 'onData') {
+                        this.write(event.args[0]);
+                    }
+                });
 
                 // Excludes the device status code emitted by Xterm.js
                 const sendData = (data?: string) => {
                     if (data && !this.deviceStatusCodes.has(data) && !this.disableEnterWhenAttachCloseListener()) {
-                        return connection.sendRequest('write', data);
+                        return rpc.sendRequest('write', [data]);
                     }
                 };
 
@@ -523,12 +530,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 disposable.push(this.term.onData(sendData));
                 disposable.push(this.term.onBinary(sendData));
 
-                connection.onDispose(() => disposable.dispose());
+                connection.onClose(() => disposable.dispose());
 
-                this.toDisposeOnConnect.push(connection);
-                connection.listen();
                 if (waitForConnection) {
-                    waitForConnection.resolve(connection);
+                    waitForConnection.resolve(rpc);
                 }
             }
         }, { reconnecting: false });
@@ -578,7 +583,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     sendText(text: string): void {
         if (this.waitForConnection) {
             this.waitForConnection.promise.then(connection =>
-                connection.sendRequest('write', text)
+                connection.sendRequest('write', [text])
             );
         }
     }
@@ -624,10 +629,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     override dispose(): void {
-        /* Close the backend terminal only when explicitly closing the terminal
-         * a refresh for example won't close it.  */
-        if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
+        if (this.closeOnDispose === true && typeof this.terminalId === 'number' && !this.exitStatus) {
+            // Close the backend terminal only when explicitly closing the terminal
+            // a refresh for example won't close it.
             this.shellTerminalServer.close(this.terminalId);
+            this.exitStatus = { code: undefined };
+        }
+        if (this.exitStatus) {
             this.onTermDidClose.fire(this);
         }
         super.dispose();
@@ -708,10 +716,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 // Bold the message and add an extra new line to make it stand out from the rest of the output
                 message = `\r\n\x1b[1m${message}\x1b[0m`;
                 this.write(message);
-            }
-            if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
-                this.shellTerminalServer.close(this.terminalId);
-                this.onTermDidClose.fire(this);
             }
             this.attachPressEnterKeyToCloseListener(this.term);
             return;

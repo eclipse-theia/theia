@@ -15,6 +15,18 @@
 // *****************************************************************************
 
 import * as monaco from '@theia/monaco-editor-core';
+import { IStandaloneTheme } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
+import { IOnigLib, IRawTheme, Registry } from 'vscode-textmate';
+
+export interface ThemeMix extends IRawTheme, monaco.editor.IStandaloneThemeData { }
+export interface MixStandaloneTheme extends IStandaloneTheme {
+    themeData: ThemeMix
+}
+
+export const OnigasmPromise = Symbol('OnigasmPromise');
+export type OnigasmPromise = Promise<IOnigLib>;
+export const TextmateRegistryFactory = Symbol('TextmateRegistryFactory');
+export type TextmateRegistryFactory = (currentTheme?: ThemeMix) => Registry;
 
 export type MonacoThemeColor = monaco.editor.IColors;
 export interface MonacoTokenRule extends monaco.editor.ITokenThemeRule { };

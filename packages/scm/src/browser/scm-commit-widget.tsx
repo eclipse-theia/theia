@@ -130,7 +130,7 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
 
         const keybinding = this.keybindings.acceleratorFor(this.keybindings.getKeybindingsForCommand('scm.acceptInput')[0]).join('+');
         const message = format(input.placeholder || '', keybinding);
-        return <div className={ScmCommitWidget.Styles.INPUT_MESSAGE_CONTAINER}>
+        const textArea = input.visible &&
             <TextareaAutosize
                 className={`${ScmCommitWidget.Styles.INPUT_MESSAGE} theia-input theia-scm-input-message-${validationStatus}`}
                 id={ScmCommitWidget.Styles.INPUT_MESSAGE}
@@ -142,7 +142,9 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
                 ref={this.inputRef}
                 rows={1}
                 maxRows={6} /* from VS Code */>
-            </TextareaAutosize>
+            </TextareaAutosize>;
+        return <div className={ScmCommitWidget.Styles.INPUT_MESSAGE_CONTAINER}>
+            {textArea}
             <div
                 className={
                     `${ScmCommitWidget.Styles.VALIDATION_MESSAGE} ${ScmCommitWidget.Styles.NO_SELECT}

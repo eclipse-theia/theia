@@ -19,7 +19,6 @@ import URI from '@theia/core/lib/common/uri';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from '@theia/core/lib/browser';
 import { Mutable } from '@theia/core/lib/common/types';
 import { FileStat, Stat, FileType, FileOperationError, FileOperationResult } from '../../common/files';
-import { FileStat as DeprecatedFileStat } from '../../common/filesystem';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileSelection } from '../file-selection';
@@ -117,7 +116,7 @@ export namespace FileStatNode {
 export type FileStatNodeData = Omit<FileStatNode, 'uri' | 'fileStat'> & {
     uri: string
     stat?: Stat | { type: FileType } & Partial<Stat>
-    fileStat?: DeprecatedFileStat
+    fileStat?: FileStat
 };
 export namespace FileStatNodeData {
     export function is(node: object | undefined): node is FileStatNodeData {

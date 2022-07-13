@@ -440,7 +440,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                 await this.workspaceService.save(selected);
                 return true;
             } catch {
-                this.messageService.error(nls.localizeByDefault("Unable to save workspace '{0}'", selected.path.toString()));
+                this.messageService.error(nls.localizeByDefault("Unable to save workspace '{0}'", selected.path.fsPath()));
             }
         }
         return false;

@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { ColorRegistry, ColorDefinition, Color } from '@theia/core/lib/browser/color-registry';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { Color, ColorDefinition } from '@theia/core/lib/common/color';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { ColorDefaults, ColorValue, getColorRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/colorRegistry';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
@@ -44,7 +45,8 @@ export class MonacoColorRegistry extends ColorRegistry {
         const defaults: ColorDefaults = {
             dark: this.toColor(definition.defaults?.dark),
             light: this.toColor(definition.defaults?.light),
-            hc: this.toColor(definition.defaults?.hc),
+            hcDark: this.toColor(definition.defaults?.hcDark ?? definition.defaults?.hc),
+            hcLight: this.toColor(definition.defaults?.hcLight),
         };
         const identifier = this.monacoColorRegistry.registerColor(definition.id, defaults, definition.description);
         return Disposable.create(() => this.monacoColorRegistry.deregisterColor(identifier));

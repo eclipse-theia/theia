@@ -123,11 +123,9 @@ export class ShellLayoutRestorer implements CommandContribution {
     protected storageKey = 'layout';
     protected shouldStoreLayout: boolean = true;
 
-    @inject(ContributionProvider) @named(ApplicationShellLayoutMigration)
-    protected readonly migrations: ContributionProvider<ApplicationShellLayoutMigration>;
-
-    @inject(WindowService)
-    protected readonly windowService: WindowService;
+    @inject(ContributionProvider) @named(ApplicationShellLayoutMigration) protected readonly migrations: ContributionProvider<ApplicationShellLayoutMigration>;
+    @inject(WindowService) protected readonly windowService: WindowService;
+    @inject(ThemeService) protected readonly themeService: ThemeService;
 
     constructor(
         @inject(WidgetManager) protected widgetManager: WidgetManager,
@@ -145,7 +143,7 @@ export class ShellLayoutRestorer implements CommandContribution {
             this.logger.info('>>> Resetting layout...');
             this.shouldStoreLayout = false;
             this.storageService.setData(this.storageKey, undefined);
-            ThemeService.get().reset(); // Theme service cannot use DI, so the current theme ID is stored elsewhere. Hence the explicit reset.
+            this.themeService.reset();
             this.logger.info('<<< The layout has been successfully reset.');
             this.windowService.reload();
         }

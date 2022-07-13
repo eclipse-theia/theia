@@ -22,7 +22,7 @@ import { createAPIFactory } from '../../plugin/plugin-context';
 import { EnvExtImpl } from '../../plugin/env';
 import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry';
 import { ExtPluginApi, ExtPluginApiBackendInitializationFn } from '../../common/plugin-ext-api-contribution';
-import { DebugExtImpl } from '../../plugin/node/debug/debug';
+import { DebugExtImpl } from '../../plugin/debug/debug-ext';
 import { EditorsAndDocumentsExtImpl } from '../../plugin/editors-and-documents';
 import { WorkspaceExtImpl } from '../../plugin/workspace';
 import { MessageRegistryExt } from '../../plugin/message-registry';
@@ -34,6 +34,7 @@ import { WebviewsExtImpl } from '../../plugin/webviews';
 import { TerminalServiceExtImpl } from '../../plugin/terminal-ext';
 import { SecretsExtImpl } from '../../plugin/secrets-ext';
 import { BackendInitializationFn } from '../../common';
+import { connectProxyResolver } from './plugin-host-proxy';
 
 /**
  * Handle the RPC calls.
@@ -81,6 +82,7 @@ export class PluginHostRPC {
             clipboardExt,
             webviewExt
         );
+        connectProxyResolver(preferenceRegistryExt);
     }
 
     async terminate(): Promise<void> {
@@ -112,7 +114,7 @@ export class PluginHostRPC {
                 console.log('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/loadPlugin(' + plugin.pluginPath + ')');
                 // cleaning the cache for all files of that plug-in.
                 Object.keys(require.cache).forEach(function (key): void {
-                    const mod: NodeJS.Module = require.cache[key];
+                    const mod: NodeJS.Module = require.cache[key]!;
 
                     // attempting to reload a native module will throw an error, so skip them
                     if (mod.id.endsWith('.node')) {
@@ -167,7 +169,8 @@ export class PluginHostRPC {
                                 pluginUri: pluginModel.packageUri,
                                 model: pluginModel,
                                 lifecycle: pluginLifecycle,
-                                rawModel
+                                rawModel,
+                                isUnderDevelopment: !!plg.isUnderDevelopment
                             });
                         } else {
                             let backendInitPath = pluginLifecycle.backendInitPath;
@@ -182,7 +185,8 @@ export class PluginHostRPC {
                                 pluginUri: pluginModel.packageUri,
                                 model: pluginModel,
                                 lifecycle: pluginLifecycle,
-                                rawModel
+                                rawModel,
+                                isUnderDevelopment: !!plg.isUnderDevelopment
                             };
 
                             self.initContext(backendInitPath, plugin);

@@ -19,13 +19,13 @@ import * as path from 'path';
 import * as semver from 'semver';
 import * as fs from '@theia/core/shared/fs-extra';
 import { v4 as uuidv4 } from 'uuid';
-import * as requestretry from 'requestretry';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { PluginDeployerHandler, PluginDeployerResolver, PluginDeployerResolverContext } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { VSXExtensionUri } from '../common/vsx-extension-uri';
+import { PluginDeployerHandler, PluginDeployerResolver, PluginDeployerResolverContext, PluginDeployOptions } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { VSXExtensionRaw } from '@theia/ovsx-client';
+import { RequestService } from '@theia/core/shared/@theia/request';
 
 @injectable()
 export class VSXExtensionResolver implements PluginDeployerResolver {
@@ -36,6 +36,9 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
     @inject(PluginDeployerHandler)
     protected pluginDeployerHandler: PluginDeployerHandler;
 
+    @inject(RequestService)
+    protected requestService: RequestService;
+
     protected readonly downloadPath: string;
 
     constructor() {
@@ -45,17 +48,23 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
     }
 
     accept(pluginId: string): boolean {
-        return !!VSXExtensionUri.toId(new URI(pluginId));
+        return !!VSCodeExtensionUri.toId(new URI(pluginId));
     }
 
-    async resolve(context: PluginDeployerResolverContext): Promise<void> {
-        const id = VSXExtensionUri.toId(new URI(context.getOriginId()));
+    async resolve(context: PluginDeployerResolverContext, options?: PluginDeployOptions): Promise<void> {
+        const id = VSCodeExtensionUri.toId(new URI(context.getOriginId()));
         if (!id) {
             return;
         }
-        console.log(`[${id}]: trying to resolve latest version...`);
+        let extension: VSXExtensionRaw | undefined;
         const client = await this.clientProvider();
-        const extension = await client.getLatestCompatibleExtensionVersion(id);
+        if (options) {
+            console.log(`[${id}]: trying to resolve version ${options.version}...`);
+            extension = await client.getExtension(id, { extensionVersion: options.version, includeAllVersions: true });
+        } else {
+            console.log(`[${id}]: trying to resolve latest version...`);
+            extension = await client.getLatestCompatibleExtensionVersion(id);
+        }
         if (!extension) {
             return;
         }
@@ -66,14 +75,16 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         const downloadUrl = extension.files.download;
         console.log(`[${id}]: resolved to '${resolvedId}'`);
 
-        const existingVersion = this.hasSameOrNewerVersion(id, extension);
-        if (existingVersion) {
-            console.log(`[${id}]: is already installed with the same or newer version '${existingVersion}'`);
-            return;
+        if (!options?.ignoreOtherVersions) {
+            const existingVersion = this.hasSameOrNewerVersion(id, extension);
+            if (existingVersion) {
+                console.log(`[${id}]: is already installed with the same or newer version '${existingVersion}'`);
+                return;
+            }
         }
 
         const extensionPath = path.resolve(this.downloadPath, path.basename(downloadUrl));
-        console.log(`[${resolvedId}]: trying to download from "${downloadUrl}"...`);
+        console.log(`[${resolvedId}]: trying to download from "${downloadUrl}"...`, 'to path', this.downloadPath);
         if (!await this.download(downloadUrl, extensionPath)) {
             console.log(`[${resolvedId}]: not found`);
             return;
@@ -83,35 +94,27 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
     }
 
     protected hasSameOrNewerVersion(id: string, extension: VSXExtensionRaw): string | undefined {
-        const existingPlugin = this.pluginDeployerHandler.getDeployedPlugin(id);
-        if (existingPlugin) {
+        const existingPlugins = this.pluginDeployerHandler.getDeployedPluginsById(id);
+        const sufficientVersion = existingPlugins.find(existingPlugin => {
             const existingVersion = semver.clean(existingPlugin.metadata.model.version);
             const desiredVersion = semver.clean(extension.version);
             if (desiredVersion && existingVersion && semver.gte(existingVersion, desiredVersion)) {
                 return existingVersion;
             }
-        }
-        return undefined;
+        });
+        return sufficientVersion?.metadata.model.version;
     }
 
     protected async download(downloadUrl: string, downloadPath: string): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            requestretry(downloadUrl, {
-                method: 'GET',
-                maxAttempts: 5,
-                retryDelay: 2000,
-                retryStrategy: requestretry.RetryStrategies.HTTPOrNetworkError
-            }, (err, response) => {
-                if (err) {
-                    reject(err);
-                } else if (response && response.statusCode === 404) {
-                    resolve(false);
-                } else if (response && response.statusCode !== 200) {
-                    reject(new Error(response.statusMessage));
-                }
-            }).pipe(fs.createWriteStream(downloadPath))
-                .on('error', reject)
-                .on('close', () => resolve(true));
-        });
+        if (await fs.pathExists(downloadPath)) { return true; }
+        const context = await this.requestService.request({ url: downloadUrl });
+        if (context.res.statusCode === 404) {
+            return false;
+        } else if (context.res.statusCode !== 200) {
+            throw new Error('Request returned status code: ' + context.res.statusCode);
+        } else {
+            await fs.writeFile(downloadPath, context.buffer);
+            return true;
+        }
     }
 }

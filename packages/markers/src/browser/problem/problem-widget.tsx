@@ -113,8 +113,8 @@ export class ProblemWidget extends TreeWidget {
         return;
     }
 
-    protected override handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
-        super.handleClickEvent(node, event);
+    protected override tapNode(node?: TreeNode): void {
+        super.tapNode(node);
         if (MarkerNode.is(node)) {
             this.model.revealNode(node);
         }
@@ -148,7 +148,7 @@ export class ProblemWidget extends TreeWidget {
         if (MarkerRootNode.is(model.root) && model.root.children.length > 0) {
             return super.renderTree(model);
         }
-        return <div className='theia-widget-noInfo noMarkers'>No problems have been detected in the workspace so far.</div>;
+        return <div className='theia-widget-noInfo noMarkers'>{nls.localize('theia/markers/noProblems', 'No problems have been detected in the workspace so far.')}</div>;
     }
 
     protected override renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {

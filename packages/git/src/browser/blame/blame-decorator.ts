@@ -17,8 +17,8 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager, TextEditor, EditorDecoration, EditorDecorationOptions, Range, Position, EditorDecorationStyle } from '@theia/editor/lib/browser';
 import { GitFileBlame } from '../../common';
-import { Disposable, DisposableCollection } from '@theia/core';
-import * as moment from 'moment';
+import { Disposable, DisposableCollection, nls } from '@theia/core';
+import { DateTime } from 'luxon';
 import URI from '@theia/core/lib/common/uri';
 import { DecorationStyle } from '@theia/core/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
@@ -126,10 +126,10 @@ export class BlameDecorator implements monaco.languages.HoverProvider {
         const commits = blame.commits;
         for (const commit of commits) {
             const sha = commit.sha;
-            const commitTime = moment(commit.author.timestamp);
+            const commitTime = DateTime.fromISO(commit.author.timestamp);
             const heat = this.getHeatColor(commitTime);
             const content = commit.summary.replace('\n', '↩︎').replace(/'/g, "\\'");
-            const short = sha.substr(0, 7);
+            const short = sha.substring(0, 7);
             new EditorDecorationStyle('.git-' + short, style => {
                 Object.assign(style, BlameDecorator.defaultGutterStyles);
                 style.borderColor = heat;
@@ -140,7 +140,9 @@ export class BlameDecorator implements monaco.languages.HoverProvider {
             }, this.blameDecorationsStyleSheet));
             new EditorDecorationStyle('.git-' + short + '::after', style => {
                 Object.assign(style, BlameDecorator.defaultGutterAfterStyles);
-                style.content = `'${commitTime.fromNow()}'`;
+                style.content = (this.now.diff(commitTime, 'seconds').toObject().seconds ?? 0) < 60
+                    ? `'${nls.localize('theia/git/aFewSecondsAgo', 'a few seconds ago')}'`
+                    : `'${commitTime.toRelative({ locale: nls.locale })}'`;
             }, this.blameDecorationsStyleSheet);
         }
         const commitLines = blame.lines;
@@ -168,9 +170,9 @@ export class BlameDecorator implements monaco.languages.HoverProvider {
         return { editorDecorations, styles };
     }
 
-    protected now = moment();
-    protected getHeatColor(commitTime: moment.Moment): string {
-        const daysFromNow = this.now.diff(commitTime, 'days');
+    protected now = DateTime.now();
+    protected getHeatColor(commitTime: DateTime): string {
+        const daysFromNow = this.now.diff(commitTime, 'days').toObject().days ?? 0;
         if (daysFromNow <= 2) {
             return 'var(--md-orange-50)';
         }

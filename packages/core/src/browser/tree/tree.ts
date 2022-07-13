@@ -258,11 +258,15 @@ export class TreeImpl implements Tree {
         return this._root;
     }
 
+    protected toDisposeOnSetRoot = new DisposableCollection();
     set root(root: TreeNode | undefined) {
+        this.toDisposeOnSetRoot.dispose();
+        const cancelRefresh = new CancellationTokenSource();
+        this.toDisposeOnSetRoot.push(cancelRefresh);
         this.nodes = {};
         this._root = root;
         this.addNode(root);
-        this.refresh();
+        this.refresh(undefined, cancelRefresh.token);
     }
 
     get onChanged(): Event<void> {
@@ -291,7 +295,7 @@ export class TreeImpl implements Tree {
         return this.getNode(id);
     }
 
-    async refresh(raw?: CompositeTreeNode): Promise<CompositeTreeNode | undefined> {
+    async refresh(raw?: CompositeTreeNode, cancellationToken?: CancellationToken): Promise<CompositeTreeNode | undefined> {
         const parent = !raw ? this._root : this.validateNode(raw);
         let result: CompositeTreeNode | undefined;
         if (CompositeTreeNode.is(parent)) {
@@ -300,7 +304,9 @@ export class TreeImpl implements Tree {
             try {
                 result = parent;
                 const children = await this.resolveChildren(parent);
+                if (cancellationToken?.isCancellationRequested) { return; }
                 result = await this.setChildren(parent, children);
+                if (cancellationToken?.isCancellationRequested) { return; }
             } finally {
                 busySource.cancel();
             }
