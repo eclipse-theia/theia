@@ -16,25 +16,16 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
-import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
 import { OpenUriCommandHandler } from './commands';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class PluginApiFrontendContribution implements CommandContribution {
 
-    @inject(PluginExtDeployCommandService)
-    protected readonly pluginExtDeployCommandService: PluginExtDeployCommandService;
-
     @inject(OpenUriCommandHandler)
     protected readonly openUriCommandHandler: OpenUriCommandHandler;
 
     registerCommands(commands: CommandRegistry): void {
-
-        commands.registerCommand(PluginExtDeployCommandService.COMMAND, {
-            execute: () => this.pluginExtDeployCommandService.deploy()
-        });
-
         commands.registerCommand(OpenUriCommandHandler.COMMAND_METADATA, {
             execute: (arg: URI) => this.openUriCommandHandler.execute(arg),
             isVisible: () => false

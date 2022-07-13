@@ -12,6 +12,7 @@
 
 - [core] `handleDefault`, `handleElectronDefault` method no longer called in `BrowserMainMenuFactory.registerMenu()`, `DynamicMenuWidget.buildSubMenus()` or `ElectronMainMenuFactory.fillSubmenus()`. Override the respective calling function rather than `handleDefault`. The argument to each of the three methods listed above is now `MenuNode` and not `CompositeMenuNode`, and the methods are truly recursive and called on entire menu tree. `ActionMenuNode.action` removed; access relevant field on `ActionMenuNode.command`, `.when` etc. [#11290](https://github.com/eclipse-theia/theia/pull/11290)
 - [core] renamed `CommonCommands.NEW_FILE` to `CommonCommands.NEW_UNTITLED_FILE` [#11429](https://github.com/eclipse-theia/theia/pull/11429)
+- [plugin] removed `Plugin: Deploy Plugin by Id` command [#11417](https://github.com/eclipse-theia/theia/pull/11417)
 - [plugin-ext] `CodeEditorWidgetUtil` moved to `packages/plugin-ext/src/main/browser/menus/vscode-theia-menu-mappings.ts`. `MenusContributionPointHandler` extensively refactored. See PR description for details. [#11290](https://github.com/eclipse-theia/theia/pull/11290)
 - [plugin] added support for `DebugProtocolBreakpoint` and `DebugProtocolSource` [#10011](https://github.com/eclipse-theia/theia/issues/10011) - Contributed on behalf of STMicroelectronics
 
