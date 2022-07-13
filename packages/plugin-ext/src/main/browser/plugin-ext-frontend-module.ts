@@ -33,7 +33,6 @@ import { HostedPluginServer, hostedServicePath, PluginServer, pluginServerJsonRp
 import { ModalNotification } from './dialogs/modal-notification';
 import { PluginWidget } from './plugin-ext-widget';
 import { PluginFrontendViewContribution } from './plugin-frontend-view-contribution';
-import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
 import { EditorModelService } from './text-editor-model-service';
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginContributionHandler } from './plugin-contribution-handler';
@@ -133,7 +132,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         createWidget: () => ctx.container.get(PluginWidget)
     }));
 
-    bind(PluginExtDeployCommandService).toSelf().inSingletonScope();
     bind(PluginServer).toDynamicValue(ctx => {
         const provider = ctx.container.get(WebSocketConnectionProvider);
         return provider.createProxy<PluginServer>(pluginServerJsonRpcPath);
