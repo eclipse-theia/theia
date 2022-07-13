@@ -45,7 +45,8 @@ export interface Variable {
         configurationSection?: string,
         commandIdVariables?: CommandIdVariables,
         configuration?: unknown
-    ): MaybePromise<Object | undefined>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ): MaybePromise<any>;
 }
 
 export const VariableContribution = Symbol('VariableContribution');

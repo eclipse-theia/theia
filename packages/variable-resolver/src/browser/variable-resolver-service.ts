@@ -19,8 +19,8 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { VariableRegistry } from './variable';
 import URI from '@theia/core/lib/common/uri';
-import { JSONExt, ReadonlyJSONValue } from '@theia/core/shared/@phosphor/coreutils';
 import { CommandIdVariables } from '../common/variable-types';
+import { isCancelled } from '@theia/core';
 
 export interface VariableResolveOptions {
     context?: URI;
@@ -30,8 +30,6 @@ export interface VariableResolveOptions {
     configurationSection?: string;
     commandIdVariables?: CommandIdVariables;
     configuration?: unknown;
-    // Return 'undefined' if not all variables were successfully resolved.
-    checkAllResolved?: boolean;
 }
 
 /**
@@ -46,32 +44,35 @@ export class VariableResolverService {
 
     /**
      * Resolve the variables in the given string array.
-     * @param value The array of data to resolve
-     * @param options options of the variable resolution
-     * @returns promise resolved to the provided string array with already resolved variables.
-     * Never reject.
+     * @param value The array of data to resolve variables in.
+     * @param options Options of the variable resolution.
+     * @returns Promise to array with variables resolved. Never rejects.
+     *
+     * @deprecated since 1.28.0 use {@link resolve} instead.
      */
     resolveArray(value: string[], options: VariableResolveOptions = {}): Promise<string[] | undefined> {
         return this.resolve(value, options);
     }
 
     /**
-     * Resolve the variables in the given string.
-     * @param value Data to resolve
-     * @param options options of the variable resolution
-     * @returns promise resolved to the provided string with already resolved variables.
-     * Never reject.
+     * Resolve the variables for all strings found in the object and nested objects.
+     * @param value Data to resolve variables in.
+     * @param options Options of the variable resolution
+     * @returns Promise to object with variables resolved. Returns `undefined` if a variable resolution was cancelled.
      */
     async resolve<T>(value: T, options: VariableResolveOptions = {}): Promise<T | undefined> {
         const context = new VariableResolverService.Context(this.variableRegistry, options);
-        const resolved = await this.doResolve(value, context);
-        if (options.checkAllResolved && !context.allDefined()) {
-            return undefined;
+        try {
+            return await this.doResolve(value, context);
+        } catch (error) {
+            if (isCancelled(error)) {
+                return undefined;
+            }
+            throw error;
         }
-        return resolved as any;
     }
 
-    protected async doResolve(value: Object | undefined, context: VariableResolverService.Context): Promise<Object | undefined> {
+    protected async doResolve(value: any, context: VariableResolverService.Context): Promise<any> {
         // eslint-disable-next-line no-null/no-null
         if (value === undefined || value === null) {
             return value;
@@ -128,6 +129,7 @@ export class VariableResolverService {
     }
 }
 export namespace VariableResolverService {
+
     export class Context {
 
         protected readonly resolved = new Map<string, string | undefined>();
@@ -141,15 +143,6 @@ export namespace VariableResolverService {
             return this.resolved.get(name);
         }
 
-        allDefined(): boolean {
-            for (const value of this.resolved.values()) {
-                if (value === undefined) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
         async resolve(name: string): Promise<void> {
             if (this.resolved.has(name)) {
                 return;
@@ -157,29 +150,36 @@ export namespace VariableResolverService {
             try {
                 let variableName = name;
                 let argument: string | undefined;
-                const parts = name.split(':');
+                const parts = name.split(':', 2);
                 if (parts.length > 1) {
                     variableName = parts[0];
                     argument = parts[1];
                 }
                 const variable = this.variableRegistry.getVariable(variableName);
-                const value =
-                    variable &&
-                    (await variable.resolve(
-                        this.options.context,
-                        argument,
-                        this.options.configurationSection,
-                        this.options.commandIdVariables,
-                        this.options.configuration
-                    ));
-                // eslint-disable-next-line no-null/no-null
-                const stringValue = value !== undefined && value !== null && JSONExt.isPrimitive(value as ReadonlyJSONValue) ? String(value) : undefined;
-                this.resolved.set(name, stringValue);
+                const resolved = await variable?.resolve(
+                    this.options.context,
+                    argument,
+                    this.options.configurationSection,
+                    this.options.commandIdVariables,
+                    this.options.configuration
+                );
+                if (
+                    typeof resolved === 'bigint' ||
+                    typeof resolved === 'boolean' ||
+                    typeof resolved === 'number' ||
+                    typeof resolved === 'string'
+                ) {
+                    this.resolved.set(name, `${resolved}`);
+                } else {
+                    this.resolved.set(name, undefined);
+                }
             } catch (e) {
-                console.error(`Failed to resolved '${name}' variable`, e);
+                if (isCancelled(e)) {
+                    throw e;
+                }
                 this.resolved.set(name, undefined);
+                console.error(`Failed to resolve '${name}' variable:`, e);
             }
         }
-
     }
 }
