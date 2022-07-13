@@ -49,17 +49,6 @@ export interface TokenizerOption {
 
 }
 
-export namespace TokenizerOption {
-    /**
-     * The default TextMate tokenizer option.
-     *
-     * @deprecated Use the current value of `editor.maxTokenizationLineLength` preference instead.
-     */
-    export const DEFAULT: TokenizerOption = {
-        lineLimit: 400
-    };
-}
-
 export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOption): monaco.languages.EncodedTokensProvider & monaco.languages.TokensProvider {
     if (options.lineLimit !== undefined && (options.lineLimit <= 0 || !Number.isInteger(options.lineLimit))) {
         throw new Error(`The 'lineLimit' must be a positive integer. It was ${options.lineLimit}.`);
@@ -67,24 +56,22 @@ export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOpt
     return {
         getInitialState: () => new TokenizerState(INITIAL),
         tokenizeEncoded(line: string, state: TokenizerState): monaco.languages.IEncodedLineTokens {
-            let processedLine = line;
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
-                // Line is too long to be tokenized
-                processedLine = line.substring(0, options.lineLimit);
+                // Skip tokenizing the line if it exceeds the line limit.
+                return { endState: state.ruleStack, tokens: new Uint32Array() };
             }
-            const result = grammar.tokenizeLine2(processedLine, state.ruleStack);
+            const result = grammar.tokenizeLine2(line, state.ruleStack, 500);
             return {
                 endState: new TokenizerState(result.ruleStack),
                 tokens: result.tokens
             };
         },
         tokenize(line: string, state: TokenizerState): monaco.languages.ILineTokens {
-            let processedLine = line;
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
-                // Line is too long to be tokenized
-                processedLine = line.substring(0, options.lineLimit);
+                // Skip tokenizing the line if it exceeds the line limit.
+                return { endState: state.ruleStack, tokens: [] };
             }
-            const result = grammar.tokenizeLine(processedLine, state.ruleStack);
+            const result = grammar.tokenizeLine(line, state.ruleStack, 500);
             return {
                 endState: new TokenizerState(result.ruleStack),
                 tokens: result.tokens.map(t => ({
