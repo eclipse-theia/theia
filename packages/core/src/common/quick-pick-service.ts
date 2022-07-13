@@ -195,6 +195,7 @@ export interface QuickPick<T extends QuickPickItemOrSeparator> extends QuickInpu
 }
 
 export interface PickOptions<T extends QuickPickItem> {
+    title?: string;
     placeHolder?: string;
     matchOnDescription?: boolean;
     matchOnDetail?: boolean;
