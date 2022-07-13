@@ -2301,6 +2301,11 @@ export module '@theia/plugin' {
      */
     export interface QuickPickOptions {
         /**
+         * An optional string that represents the title of the quick pick.
+         */
+        title?: string;
+
+        /**
          * A flag to include the description when filtering
          */
         matchOnDescription?: boolean;

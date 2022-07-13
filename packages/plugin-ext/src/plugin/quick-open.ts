@@ -85,6 +85,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
         const instance = ++this._instances;
 
         const widgetPromise = this.proxy.$show(instance, {
+            title: options && options.title,
             canPickMany: options && options.canPickMany,
             placeHolder: options && options.placeHolder,
             matchOnDescription: options && options.matchOnDescription,
