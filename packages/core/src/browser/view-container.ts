@@ -282,16 +282,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             }
         }
         this.updateToolbarItems(allParts);
-        const caption = title?.caption || title?.label;
-        if (caption) {
-            this.title.caption = caption;
-            if (visibleParts.length === 1) {
-                const partCaption = visibleParts[0].wrapped.title.caption || visibleParts[0].wrapped.title.label;
-                if (partCaption) {
-                    this.title.caption += ': ' + partCaption;
-                }
-            }
-        }
+        this.title.caption = title?.caption || title?.label;
         if (title.iconClass) {
             this.title.iconClass = title.iconClass;
         }
