@@ -102,6 +102,17 @@ export namespace FileNavigatorCommands {
         label: 'Collapse Folders in Explorer',
         iconClass: codicon('collapse-all')
     });
+    // for these new commands in front of navigator toolbar with icons
+    export const NEW_FILE = Command.toDefaultLocalizedCommand({
+        ...CommonCommands.NEW_FILE,
+        id: `${CommonCommands.NEW_FILE.id}.withIconClass`,
+        iconClass: codicon('new-file')
+    });
+    export const NEW_FOLDER = Command.toDefaultLocalizedCommand({
+        ...WorkspaceCommands.NEW_FOLDER,
+        id: `${WorkspaceCommands.NEW_FOLDER.id}.withIconClass`,
+        iconClass: codicon('new-folder')
+    });
     export const ADD_ROOT_FOLDER: Command = {
         id: 'navigator.addRootFolder'
     };
@@ -305,6 +316,16 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerCommand(FileNavigatorCommands.REFRESH_NAVIGATOR, {
             execute: widget => this.withWidget(widget, () => this.refreshWorkspace()),
+            isEnabled: widget => this.withWidget(widget, () => this.workspaceService.opened),
+            isVisible: widget => this.withWidget(widget, () => this.workspaceService.opened)
+        });
+        registry.registerCommand(FileNavigatorCommands.NEW_FILE, {
+            execute: (...args) => registry.executeCommand(CommonCommands.NEW_FILE.id, ...args),
+            isEnabled: widget => this.withWidget(widget, () => this.workspaceService.opened),
+            isVisible: widget => this.withWidget(widget, () => this.workspaceService.opened)
+        });
+        registry.registerCommand(FileNavigatorCommands.NEW_FOLDER, {
+            execute: (...args) => registry.executeCommand(WorkspaceCommands.NEW_FOLDER.id, ...args),
             isEnabled: widget => this.withWidget(widget, () => this.workspaceService.opened),
             isVisible: widget => this.withWidget(widget, () => this.workspaceService.opened)
         });
@@ -561,28 +582,28 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     async registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): Promise<void> {
         toolbarRegistry.registerItem({
+            id: FileNavigatorCommands.NEW_FILE.id,
+            command: FileNavigatorCommands.NEW_FILE.id,
+            tooltip: FileNavigatorCommands.NEW_FILE.label,
+            priority: 0,
+        });
+        toolbarRegistry.registerItem({
+            id: FileNavigatorCommands.NEW_FOLDER.id,
+            command: FileNavigatorCommands.NEW_FOLDER.id,
+            tooltip: FileNavigatorCommands.NEW_FOLDER.label,
+            priority: 1,
+        });
+        toolbarRegistry.registerItem({
             id: FileNavigatorCommands.REFRESH_NAVIGATOR.id,
             command: FileNavigatorCommands.REFRESH_NAVIGATOR.id,
             tooltip: nls.localizeByDefault('Refresh Explorer'),
-            priority: 0,
+            priority: 2,
         });
         toolbarRegistry.registerItem({
             id: FileNavigatorCommands.COLLAPSE_ALL.id,
             command: FileNavigatorCommands.COLLAPSE_ALL.id,
             tooltip: nls.localizeByDefault('Collapse All'),
-            priority: 1,
-        });
-        this.registerMoreToolbarItem({
-            id: CommonCommands.NEW_FILE.id,
-            command: CommonCommands.NEW_FILE.id,
-            tooltip: CommonCommands.NEW_FILE.label,
-            group: NavigatorMoreToolbarGroups.NEW_OPEN,
-        });
-        this.registerMoreToolbarItem({
-            id: WorkspaceCommands.NEW_FOLDER.id,
-            command: WorkspaceCommands.NEW_FOLDER.id,
-            tooltip: WorkspaceCommands.NEW_FOLDER.label,
-            group: NavigatorMoreToolbarGroups.NEW_OPEN,
+            priority: 3,
         });
         this.registerMoreToolbarItem({
             id: FileNavigatorCommands.TOGGLE_AUTO_REVEAL.id,
