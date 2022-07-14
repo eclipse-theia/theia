@@ -27,6 +27,7 @@ import { MaybePromise } from '../../common/types';
 import { ApplicationShell, applicationShellLayoutVersion, ApplicationShellLayoutVersion } from './application-shell';
 import { CommonCommands } from '../common-frontend-contribution';
 import { WindowService } from '../window/window-service';
+import { StopReason } from '../../common/frontend-application-state';
 
 /**
  * A contract for widgets that want to store and restore their inner state, between sessions.
@@ -139,7 +140,7 @@ export class ShellLayoutRestorer implements CommandContribution {
     }
 
     protected async resetLayout(): Promise<void> {
-        if (await this.windowService.isSafeToShutDown()) {
+        if (await this.windowService.isSafeToShutDown(StopReason.Reload)) {
             this.logger.info('>>> Resetting layout...');
             this.shouldStoreLayout = false;
             this.storageService.setData(this.storageKey, undefined);

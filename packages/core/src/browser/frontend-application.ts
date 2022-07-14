@@ -26,6 +26,7 @@ import { preventNavigation, parseCssTime, animationFrame } from './browser';
 import { CorePreferences } from './core-preferences';
 import { WindowService } from './window/window-service';
 import { TooltipService } from './tooltip-service';
+import { StopReason } from '../common/frontend-application-state';
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
@@ -81,11 +82,11 @@ export interface OnWillStopAction<T = unknown> {
     /**
      * @resolves to a prepared value to be passed into the `action` function.
      */
-    prepare?: () => MaybePromise<T>;
+    prepare?: (stopReason?: StopReason) => MaybePromise<T>;
     /**
      * @resolves to `true` if it is safe to close the application; `false` otherwise.
      */
-    action: (prepared: T) => MaybePromise<boolean>;
+    action: (prepared: T, stopReason?: StopReason) => MaybePromise<boolean>;
     /**
      * A descriptive string for the reason preventing close.
      */

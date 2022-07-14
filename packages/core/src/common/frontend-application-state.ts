@@ -21,3 +21,18 @@ export type FrontendApplicationState =
     | 'initialized_layout'
     | 'ready'
     | 'closing_window';
+
+export enum StopReason {
+    /**
+     * Closing the window with no prospect of restart.
+     */
+    Close,
+    /**
+     * Reload without closing the window.
+     */
+    Reload,
+    /**
+     * Reload that includes closing the window.
+     */
+    Restart,
+}

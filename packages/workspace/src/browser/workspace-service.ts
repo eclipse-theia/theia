@@ -681,6 +681,10 @@ export class WorkspaceService implements FrontendApplicationContribution {
         return this.utils.isUntitledWorkspace(candidate);
     }
 
+    async isSafeToReload(withURI?: URI): Promise<boolean> {
+        return !withURI || !this.utils.isUntitledWorkspace(withURI) || new URI(await this.getDefaultWorkspaceUri()).isEqual(withURI);
+    }
+
     /**
      *
      * @param key the property key under which to store the schema (e.g. tasks, launch)
