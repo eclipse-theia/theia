@@ -115,6 +115,15 @@ export namespace FileNavigatorCommands {
         category: CommonCommands.FILE_CATEGORY,
         label: 'Open'
     });
+    export const NEW_FILE_TOOLBAR: Command = {
+        id: `${WorkspaceCommands.NEW_FILE.id}.toolbar`,
+        iconClass: codicon('new-file')
+    };
+    export const NEW_FOLDER_TOOLBAR: Command = {
+        id: `${WorkspaceCommands.NEW_FOLDER.id}.toolbar`,
+        iconClass: codicon('new-folder')
+    };
+
     /**
      * @deprecated since 1.21.0. Use WorkspaceCommands.COPY_RELATIVE_FILE_COMMAND instead.
      */
@@ -374,6 +383,17 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             },
             isVisible: () => false
         });
+
+        registry.registerCommand(FileNavigatorCommands.NEW_FILE_TOOLBAR, {
+            execute: (...args) => registry.executeCommand(WorkspaceCommands.NEW_FILE.id, ...args),
+            isEnabled: widget => this.withWidget(widget, () => this.workspaceService.opened),
+            isVisible: widget => this.withWidget(widget, () => this.workspaceService.opened)
+        });
+        registry.registerCommand(FileNavigatorCommands.NEW_FOLDER_TOOLBAR, {
+            execute: (...args) => registry.executeCommand(WorkspaceCommands.NEW_FOLDER.id, ...args),
+            isEnabled: widget => this.withWidget(widget, () => this.workspaceService.opened),
+            isVisible: widget => this.withWidget(widget, () => this.workspaceService.opened)
+        });
     }
 
     protected get editorWidgets(): NavigatableWidget[] {
@@ -422,10 +442,6 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                 });
             }
         });
-
-        // registry.registerMenuAction([CONTEXT_MENU_PATH, CUT_MENU_GROUP], {
-        //     commandId: Commands.FILE_CUT
-        // });
 
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
             commandId: CommonCommands.COPY.id,
@@ -561,29 +577,31 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     async registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): Promise<void> {
         toolbarRegistry.registerItem({
+            id: FileNavigatorCommands.NEW_FILE_TOOLBAR.id,
+            command: FileNavigatorCommands.NEW_FILE_TOOLBAR.id,
+            tooltip: nls.localizeByDefault('New File'),
+            priority: 0,
+        });
+        toolbarRegistry.registerItem({
+            id: FileNavigatorCommands.NEW_FOLDER_TOOLBAR.id,
+            command: FileNavigatorCommands.NEW_FOLDER_TOOLBAR.id,
+            tooltip: nls.localizeByDefault('New Folder'),
+            priority: 1,
+        });
+        toolbarRegistry.registerItem({
             id: FileNavigatorCommands.REFRESH_NAVIGATOR.id,
             command: FileNavigatorCommands.REFRESH_NAVIGATOR.id,
             tooltip: nls.localizeByDefault('Refresh Explorer'),
-            priority: 0,
+            priority: 2,
         });
         toolbarRegistry.registerItem({
             id: FileNavigatorCommands.COLLAPSE_ALL.id,
             command: FileNavigatorCommands.COLLAPSE_ALL.id,
             tooltip: nls.localizeByDefault('Collapse All'),
-            priority: 1,
+            priority: 3,
         });
-        this.registerMoreToolbarItem({
-            id: CommonCommands.NEW_FILE.id,
-            command: CommonCommands.NEW_FILE.id,
-            tooltip: CommonCommands.NEW_FILE.label,
-            group: NavigatorMoreToolbarGroups.NEW_OPEN,
-        });
-        this.registerMoreToolbarItem({
-            id: WorkspaceCommands.NEW_FOLDER.id,
-            command: WorkspaceCommands.NEW_FOLDER.id,
-            tooltip: WorkspaceCommands.NEW_FOLDER.label,
-            group: NavigatorMoreToolbarGroups.NEW_OPEN,
-        });
+
+        // More (...) toolbar items.
         this.registerMoreToolbarItem({
             id: FileNavigatorCommands.TOGGLE_AUTO_REVEAL.id,
             command: FileNavigatorCommands.TOGGLE_AUTO_REVEAL.id,
@@ -597,6 +615,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             group: NavigatorMoreToolbarGroups.WORKSPACE,
         });
 
+        // Open Editors toolbar items.
         toolbarRegistry.registerItem({
             id: OpenEditorsCommands.SAVE_ALL_TABS_FROM_TOOLBAR.id,
             command: OpenEditorsCommands.SAVE_ALL_TABS_FROM_TOOLBAR.id,
