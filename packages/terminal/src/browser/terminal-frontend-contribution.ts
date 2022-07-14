@@ -418,7 +418,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
         commands.registerCommand(TerminalCommands.TOGGLE_TERMINAL, {
             execute: () => this.toggleTerminal()
-        });;
+        });
     }
 
     protected toggleTerminal(): void {
