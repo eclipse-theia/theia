@@ -52,6 +52,7 @@ export class SignatureHelpAdapter {
         if (!value) {
             return undefined;
         }
+        value.activeParameter = value.signatures[value.activeSignature].activeParameter ?? value.activeParameter;
         const id = this.idSequence++;
         this.cache.set(id, value);
         return Converter.SignatureHelp.from(id, value);
@@ -65,7 +66,8 @@ export class SignatureHelpAdapter {
             if (saved) {
                 activeSignatureHelp = saved;
                 activeSignatureHelp.activeSignature = revivedSignatureHelp.activeSignature;
-                activeSignatureHelp.activeParameter = revivedSignatureHelp.activeParameter;
+                const { activeSignature } = revivedSignatureHelp;
+                activeSignatureHelp.activeParameter = revivedSignatureHelp.signatures[activeSignature].activeParameter ?? revivedSignatureHelp.activeParameter;
             } else {
                 activeSignatureHelp = revivedSignatureHelp;
             }
