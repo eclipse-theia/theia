@@ -56,7 +56,7 @@ export namespace PluginIdentifiers {
      * @returns a string in the format `<publisher>.<name>`.
      */
     export function unversionedFromVersioned(id: VersionedId): UnversionedId {
-        const endOfId = id.indexOf('@');
+        const endOfId = id.lastIndexOf('@');
         return id.slice(0, endOfId) as UnversionedId;
     }
     /**
@@ -64,7 +64,7 @@ export namespace PluginIdentifiers {
      */
     export function identifiersFromVersionedId(probablyId: string): Components | undefined {
         const endOfPublisher = probablyId.indexOf('.');
-        const endOfName = probablyId.indexOf('@', endOfPublisher);
+        const endOfName = probablyId.lastIndexOf('@');
         if (endOfPublisher === -1 || endOfName === -1) {
             return undefined;
         }
@@ -75,7 +75,7 @@ export namespace PluginIdentifiers {
      */
     export function idAndVersionFromVersionedId(probablyId: string): IdAndVersion | undefined {
         const endOfPublisher = probablyId.indexOf('.');
-        const endOfName = probablyId.indexOf('@', endOfPublisher);
+        const endOfName = probablyId.lastIndexOf('@');
         if (endOfPublisher === -1 || endOfName === -1) {
             return undefined;
         }
