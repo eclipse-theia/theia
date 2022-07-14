@@ -272,10 +272,10 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Show Menu Bar'
     });
-    export const NEW_FILE = Command.toDefaultLocalizedCommand({
+    export const NEW_UNTITLED_FILE = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.files.newUntitledFile',
         category: FILE_CATEGORY,
-        label: 'New File'
+        label: 'New Untitled File'
     });
     export const SAVE = Command.toDefaultLocalizedCommand({
         id: 'core.save',
@@ -721,7 +721,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         registry.registerSubmenu(CommonMenus.VIEW_APPEARANCE_SUBMENU, nls.localizeByDefault('Appearance'));
 
         registry.registerMenuAction(CommonMenus.FILE_NEW, {
-            commandId: CommonCommands.NEW_FILE.id,
+            commandId: CommonCommands.NEW_UNTITLED_FILE.id,
+            label: nls.localizeByDefault('New File'),
             order: 'a'
         });
     }
@@ -963,7 +964,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.CONFIGURE_DISPLAY_LANGUAGE, {
             execute: () => this.configureDisplayLanguage()
         });
-        commandRegistry.registerCommand(CommonCommands.NEW_FILE, {
+        commandRegistry.registerCommand(CommonCommands.NEW_UNTITLED_FILE, {
             execute: async () => {
                 const untitledUri = this.untitledResourceResolver.createUntitledURI('', await this.workingDirProvider.getUserWorkingDir());
                 this.untitledResourceResolver.resolve(untitledUri);
@@ -1104,7 +1105,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 when: 'activeEditorIsPinned'
             },
             {
-                command: CommonCommands.NEW_FILE.id,
+                command: CommonCommands.NEW_UNTITLED_FILE.id,
                 keybinding: this.isElectron() ? 'ctrlcmd+n' : 'alt+n',
             }
         );

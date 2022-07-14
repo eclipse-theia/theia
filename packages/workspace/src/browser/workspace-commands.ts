@@ -88,7 +88,6 @@ export namespace WorkspaceCommands {
         category: WORKSPACE_CATEGORY,
         label: 'Close Workspace'
     });
-    /** @deprecated @since 1.24 Use CommonCommands.NEW_FILE instead. */
     export const NEW_FILE = Command.toDefaultLocalizedCommand({
         id: 'file.newFile',
         category: FILE_CATEGORY,
