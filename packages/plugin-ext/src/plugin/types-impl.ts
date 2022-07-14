@@ -1071,6 +1071,7 @@ export class SignatureInformation {
     label: string;
     documentation?: string | theia.MarkdownString;
     parameters: ParameterInformation[];
+    activeParameter?: number;
 
     constructor(label: string, documentation?: string | theia.MarkdownString) {
         this.label = label;

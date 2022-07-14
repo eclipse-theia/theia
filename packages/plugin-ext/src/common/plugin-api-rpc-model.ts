@@ -230,6 +230,7 @@ export interface SignatureInformation {
     label: string;
     documentation?: string | MarkdownStringDTO;
     parameters: ParameterInformation[];
+    activeParameter?: number;
 }
 
 export interface SignatureHelp extends IdObject {

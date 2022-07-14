@@ -6890,6 +6890,13 @@ export module '@theia/plugin' {
         parameters: ParameterInformation[];
 
         /**
+         * The index of the active parameter.
+         *
+         * If provided, this is used in place of SignatureHelp.activeParameter.
+         */
+        activeParameter?: number;
+
+        /**
          * Creates a new signature information object.
          *
          * @param label A label string.

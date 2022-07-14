@@ -482,7 +482,8 @@ export namespace SignatureInformation {
         return {
             label: info.label,
             documentation: info.documentation ? fromMarkdown(info.documentation) : undefined,
-            parameters: info.parameters && info.parameters.map(ParameterInformation.from)
+            parameters: info.parameters && info.parameters.map(ParameterInformation.from),
+            activeParameter: info.activeParameter
         };
     }
 
@@ -490,7 +491,8 @@ export namespace SignatureInformation {
         return {
             label: info.label,
             documentation: MarkdownStringDTO.is(info.documentation) ? toMarkdown(info.documentation) : info.documentation,
-            parameters: info.parameters && info.parameters.map(ParameterInformation.to)
+            parameters: info.parameters && info.parameters.map(ParameterInformation.to),
+            activeParameter: info.activeParameter
         };
     }
 }
