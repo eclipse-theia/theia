@@ -14,16 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { Process } from './process';
 import { Emitter, Event } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { ManagedProcessManager, ManagedProcess } from '../common/process-manager-types';
 
 @injectable()
-export class ProcessManager implements BackendApplicationContribution {
+export class ProcessManager implements ManagedProcessManager, BackendApplicationContribution {
 
     protected id: number = 0;
-    protected readonly processes: Map<number, Process>;
+    protected readonly processes: Map<number, ManagedProcess>;
     protected readonly deleteEmitter: Emitter<number>;
 
     constructor(
@@ -39,7 +39,7 @@ export class ProcessManager implements BackendApplicationContribution {
      *
      * @param process the process to register.
      */
-    register(process: Process): number {
+    register(process: ManagedProcess): number {
         const id = this.id;
         this.processes.set(id, process);
         process.onError(() => this.unregister(process));
@@ -53,7 +53,7 @@ export class ProcessManager implements BackendApplicationContribution {
      *
      * @param process the process to unregister from this process manager.
      */
-    unregister(process: Process): void {
+    unregister(process: ManagedProcess): void {
         const processLabel = this.getProcessLabel(process);
         this.logger.debug(`Unregistering process. ${processLabel}`);
         if (!process.killed) {
@@ -68,7 +68,7 @@ export class ProcessManager implements BackendApplicationContribution {
         }
     }
 
-    get(id: number): Process | undefined {
+    get(id: number): ManagedProcess | undefined {
         return this.processes.get(id);
     }
 
@@ -86,7 +86,7 @@ export class ProcessManager implements BackendApplicationContribution {
         }
     }
 
-    private getProcessLabel(process: Process): string {
+    private getProcessLabel(process: ManagedProcess): string {
         return `[ID: ${process.id}]`;
     }
 
