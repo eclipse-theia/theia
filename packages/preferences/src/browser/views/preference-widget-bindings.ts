@@ -23,9 +23,9 @@ import { PreferenceArrayInputRenderer, PreferenceArrayInputRendererContribution 
 import { PreferenceBooleanInputRenderer, PreferenceBooleanInputRendererContribution } from './components/preference-boolean-input';
 import { PreferenceSingleFilePathInputRenderer, PreferenceSingleFilePathInputRendererContribution } from './components/preference-file-input';
 import { PreferenceJSONLinkRenderer, PreferenceJSONLinkRendererContribution } from './components/preference-json-input';
-import { PreferenceHeaderRenderer, PreferenceHeaderRendererContribution, PreferenceNodeRendererFactory } from './components/preference-node-renderer';
+import { PreferenceHeaderRenderer, PreferenceNodeRendererFactory } from './components/preference-node-renderer';
 import {
-    DefaultPreferenceNodeRendererCreatorRegistry, PreferenceNodeRendererContribution, PreferenceNodeRendererCreatorRegistry
+    DefaultPreferenceNodeRendererCreatorRegistry, PreferenceHeaderRendererContribution, PreferenceNodeRendererContribution, PreferenceNodeRendererCreatorRegistry
 } from './components/preference-node-renderer-creator';
 import { PreferenceNumberInputRenderer, PreferenceNumberInputRendererContribution } from './components/preference-number-input';
 import { PreferenceSelectInputRenderer, PreferenceSelectInputRendererContribution } from './components/preference-select-input';

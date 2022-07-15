@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.31.0 - 10/27/2022
+
+<a name="breaking_changes_1.31.0">[Breaking Changes:](#breaking_changes_1.31.0)</a>
+
+- [preferences] `PreferenceHeaderRendererContribution` moved to `preference-node-renderer-creator.ts`.
+
 ## v1.30.0 - 9/29/2022
 
 - [core] added functionality ot listen to keyboard layout changes [#11689](https://github.com/eclipse-theia/theia/pull/11689)
