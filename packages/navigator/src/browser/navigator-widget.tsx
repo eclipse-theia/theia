@@ -27,7 +27,7 @@ import { FileNavigatorModel } from './navigator-model';
 import { isOSX, environment } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
-import { FileNavigatorCommands } from './navigator-contribution';
+import { FileNavigatorCommands } from './file-navigator-commands';
 import { nls } from '@theia/core/lib/common/nls';
 
 export const FILE_NAVIGATOR_ID = 'files';

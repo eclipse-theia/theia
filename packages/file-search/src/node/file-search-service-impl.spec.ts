@@ -49,8 +49,7 @@ describe('search-service', function (): void {
     it('should fuzzy search this spec file', async () => {
         const rootUri = FileUri.create(path.resolve(__dirname, '..')).toString();
         const matches = await service.find('spc', { rootUris: [rootUri] });
-        // eslint-disable-next-line deprecation/deprecation
-        const expectedFile = FileUri.create(__filename).displayName;
+        const expectedFile = FileUri.create(__filename).path.base;
         const testFile = matches.find(e => e.endsWith(expectedFile));
         expect(testFile).to.not.be.undefined;
     });
