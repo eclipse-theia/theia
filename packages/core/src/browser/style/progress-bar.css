@@ -1,0 +1,42 @@
+/********************************************************************************
+ * Copyright (C) 2019 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-progress-bar-container {
+    width: 100%;
+    height: 2px;
+}
+
+.theia-progress-bar {
+    background-color: var(--theia-progressBar-background);
+    height: 2px;
+    width: 3%;
+    animation: progress-animation 1.3s 0s infinite cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+@keyframes progress-animation {
+    0% {
+        margin-left: 0%;
+        width: 3%;
+    }
+    60% {
+        margin-left: 45%;
+        width: 20%;
+    }
+    100% {
+        margin-left: 99%;
+        width: 1%;
+    }
+}

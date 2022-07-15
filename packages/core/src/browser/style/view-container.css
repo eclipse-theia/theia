@@ -1,0 +1,174 @@
+/********************************************************************************
+ * Copyright (C) 2018 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+:root {
+    --theia-view-container-title-height: var(--theia-content-line-height);
+    --theia-view-container-content-height: calc(100% - var(--theia-view-container-title-height));
+}
+
+
+.theia-view-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.theia-view-container > .p-SplitPanel {
+    height: 100%;
+    width: 100%;
+}
+
+.theia-view-container > .p-SplitPanel > .p-SplitPanel-child {
+    min-width: 50px;
+    min-height: var(--theia-content-line-height);
+}
+
+.theia-view-container > .p-SplitPanel > .p-SplitPanel-handle::after {
+    min-height: 2px;
+    min-width: 2px;
+}
+
+.p-SplitPanel > .p-SplitPanel-handle:hover::after {
+    background-color: var(--theia-sash-hoverBorder);
+    transition-delay: var(--theia-sash-hoverDelay);
+}
+
+.p-SplitPanel > .p-SplitPanel-handle:active::after {
+    background-color: var(--theia-sash-activeBorder);
+    transition-delay: 0s !important;
+}
+
+.p-SplitPanel[data-orientation='horizontal'] > .p-SplitPanel-handle::after {
+    min-width: var(--theia-sash-width);
+}
+
+.p-SplitPanel[data-orientation='vertical'] > .p-SplitPanel-handle::after {
+    min-height: var(--theia-sash-width);
+}
+
+.theia-view-container .part {
+    height: 100%;
+}
+
+.theia-view-container-part-header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    background: var(--theia-sideBarSectionHeader-background);
+    line-height: var(--theia-view-container-title-height);
+    z-index: 10;
+    color: var(--theia-sideBarSectionHeader-foreground);
+    font-weight: 700;
+}
+
+.p-Widget > .theia-view-container-part-header {
+    box-shadow: 0 1px 0 var(--theia-sideBarSectionHeader-border) inset;
+}
+
+.p-Widget.p-first-visible > .theia-view-container-part-header {
+    box-shadow: none;
+}
+
+.theia-view-container-part-header .theia-ExpansionToggle {
+    padding-left: 4px;
+}
+
+.theia-view-container > .p-SplitPanel[data-orientation='horizontal'] .part > .theia-header .theia-ExpansionToggle::before {
+    display: none;
+    padding-left: 0px;
+}
+
+.theia-view-container > .p-SplitPanel[data-orientation='horizontal'] .part > .theia-header .theia-ExpansionToggle {
+    padding-left: 0px;
+}
+
+.theia-view-container-part-header .label {
+    flex: 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.theia-view-container-part-header .description {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding-left: var(--theia-ui-padding);
+    text-transform: none;
+    opacity: 0.6;
+}
+
+.theia-view-container-part-header .notification-count-container {
+    margin-right: 12px;
+}
+
+.theia-view-container .part > .body {
+    height: var(--theia-view-container-content-height);
+    min-width: 50px;
+    min-height: 50px;
+    position: relative;
+}
+
+.theia-view-container .part > .body .theia-tree-source-node-placeholder {
+    padding-top: 4px;
+    height: 100%;
+}
+
+.theia-view-container .part:hover > .body {
+    display: block;
+}
+
+.theia-view-container .part.drop-target {
+    background: var(--theia-list-dropBackground);
+    border: var(--theia-border-width) dashed var(--theia-contrastActiveBorder);
+    transition-property: top, left, right, bottom;
+    transition-duration: 150ms;
+    transition-timing-function: ease;
+}
+
+.theia-view-container-drag-image {
+    background: var(--theia-sideBarSectionHeader-background);
+    color: var(--theia-sideBarSectionHeader-foreground);
+    line-height: var(--theia-content-line-height);
+    position: absolute;
+    z-index: 999;
+    text-transform: uppercase;
+    font-size: var(--theia-ui-font-size0);
+    font-weight: 500;
+    padding: 0 var(--theia-ui-padding) 0 var(--theia-ui-padding);
+}
+
+.p-TabBar-toolbar.theia-view-container-part-title {
+    padding: 0px;
+    padding-right: calc(var(--theia-ui-padding)*2/3);
+}
+
+.theia-view-container-part-title .item > div {
+    height: var(--theia-icon-size);
+    width: var(--theia-icon-size);
+    background-size: var(--theia-icon-size);
+    line-height: var(--theia-icon-size);
+}
+
+.theia-view-container-part-title {
+    display: none;
+}
+
+.theia-view-container-part-title.menu-open,
+.p-Widget.part:not(.collapsed):hover .theia-view-container-part-header .theia-view-container-part-title,
+.p-Widget.part:not(.collapsed):focus-within .theia-view-container-part-header .theia-view-container-part-title {
+    display: flex;
+}

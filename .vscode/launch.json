@@ -1,0 +1,216 @@
+{
+  // Use IntelliSense to learn about possible Node.js debug attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach by Process ID",
+      "processId": "${command:PickProcess}"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch with Node.js",
+      "program": "${file}"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Electron Backend",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
+      },
+      "cwd": "${workspaceFolder}/examples/electron",
+      "protocol": "inspector",
+      "args": [
+        ".",
+        "--log-level=debug",
+        "--hostname=localhost",
+        "--no-cluster",
+        "--app-project-path=${workspaceFolder}/examples/electron",
+        "--remote-debugging-port=9222",
+        "--no-app-auto-install",
+        "--plugins=local-dir:../../plugins"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/examples/electron/src-gen/frontend/electron-main.js",
+        "${workspaceFolder}/examples/electron/src-gen/backend/main.js",
+        "${workspaceFolder}/examples/electron/lib/**/*.js",
+        "${workspaceFolder}/packages/*/lib/**/*.js",
+        "${workspaceFolder}/dev-packages/*/lib/**/*.js"
+      ],
+      "smartStep": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Browser Backend",
+      "program": "${workspaceFolder}/examples/browser/src-gen/backend/main.js",
+      "args": [
+        "--hostname=0.0.0.0",
+        "--port=3000",
+        "--no-cluster",
+        "--app-project-path=${workspaceFolder}/examples/browser",
+        "--plugins=local-dir:plugins",
+        "--hosted-plugin-inspect=9339"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/examples/browser/src-gen/backend/*.js",
+        "${workspaceFolder}/examples/browser/lib/**/*.js",
+        "${workspaceFolder}/packages/*/lib/**/*.js",
+        "${workspaceFolder}/dev-packages/*/lib/**/*.js"
+      ],
+      "smartStep": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach to Plugin Host",
+      "port": 9339,
+      "timeout": 60000,
+      "stopOnEntry": false,
+      "smartStep": true,
+      "sourceMaps": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "outFiles": [
+        "${workspaceFolder}/packages/plugin-ext/lib/**/*.js",
+        "${workspaceFolder}/plugins/**/*.js"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Browser Backend (eclipse.jdt.ls)",
+      "program": "${workspaceFolder}/examples/browser/src-gen/backend/main.js",
+      "args": [
+        "--log-level=debug",
+        "--root-dir=${workspaceFolder}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core",
+        "--port=3000",
+        "--no-cluster",
+        "--no-app-auto-install"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/examples/browser/src-gen/backend/*.js",
+        "${workspaceFolder}/examples/browser/lib/**/*.js",
+        "${workspaceFolder}/packages/*/lib/**/*.js",
+        "${workspaceFolder}/dev-packages/*/lib/**/*.js"
+      ],
+      "smartStep": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "outputCapture": "std"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "protocol": "inspector",
+      "name": "Run Mocha Tests",
+      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+      "args": [
+        "--no-timeouts",
+        "--colors",
+        "--opts",
+        "${workspaceFolder}/configs/mocha.opts",
+        "**/${fileBasenameNoExtension}.js"
+      ],
+      "env": {
+        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+      },
+      "sourceMaps": true,
+      "smartStep": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "outputCapture": "std"
+    },
+    {
+      "name": "Launch Browser Frontend",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000/",
+      "webRoot": "${workspaceFolder}/examples/browser"
+    },
+    {
+      "type": "chrome",
+      "request": "attach",
+      "name": "Attach to Electron Frontend",
+      "port": 9222,
+      "webRoot": "${workspaceFolder}/examples/electron"
+    },
+    {
+      "name": "Launch VS Code Tests",
+      "type": "node",
+      "request": "launch",
+      "args": [
+        "${workspaceFolder}/examples/browser/src-gen/backend/main.js",
+        "${workspaceFolder}/plugins/vscode-api-tests/testWorkspace",
+        "--port",
+        "3030",
+        "--hostname",
+        "0.0.0.0",
+        "--extensionTestsPath=${workspaceFolder}/plugins/vscode-api-tests/out/singlefolder-tests",
+        "--hosted-plugin-inspect=9339"
+      ],
+      "env": {
+        "THEIA_DEFAULT_PLUGINS": "local-dir:${workspaceFolder}/plugins"
+      },
+      "stopOnEntry": false,
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/../.js"
+      ]
+    },
+    {
+      "name": "Run Playwright Test",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/examples/playwright/node_modules/.bin/playwright",
+      "args": [
+        "test",
+        "--debug",
+        "--config=./configs/playwright.debug.config.ts",
+        "${fileBasenameNoExtension}"
+      ],
+      "cwd": "${workspaceFolder}/examples/playwright",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch Electron Backend & Frontend",
+      "configurations": [
+        "Launch Electron Backend",
+        "Attach to Plugin Host",
+        "Attach to Electron Frontend"
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "Launch Browser Backend & Frontend",
+      "configurations": [
+        "Launch Browser Backend",
+        "Attach to Plugin Host",
+        "Launch Browser Frontend"
+      ],
+      "stopAll": true
+    }
+  ]
+}

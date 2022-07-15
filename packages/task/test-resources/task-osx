@@ -1,0 +1,7 @@
+#!/bin/sh
+
+for i in $@
+do
+   sleep 1
+   echo "tasking osx... $i"
+done
