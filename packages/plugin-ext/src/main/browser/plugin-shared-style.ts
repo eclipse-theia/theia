@@ -111,7 +111,6 @@ export class PluginSharedStyle {
         const iconClass = 'plugin-icon-' + this.iconSequence++;
         const toDispose = new DisposableCollection();
         toDispose.push(this.insertRule('.' + iconClass, theme => `
-                display: inline-block;
                 background-position: 2px;
                 width: ${size}px;
                 height: ${size}px;

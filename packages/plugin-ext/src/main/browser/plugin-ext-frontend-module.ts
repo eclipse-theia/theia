@@ -35,7 +35,7 @@ import { PluginWidget } from './plugin-ext-widget';
 import { PluginFrontendViewContribution } from './plugin-frontend-view-contribution';
 import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
 import { EditorModelService } from './text-editor-model-service';
-import { CodeEditorWidgetUtil, MenusContributionPointHandler } from './menus/menus-contribution-handler';
+import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginContributionHandler } from './plugin-contribution-handler';
 import { PluginViewRegistry, PLUGIN_VIEW_CONTAINER_FACTORY_ID, PLUGIN_VIEW_FACTORY_ID, PLUGIN_VIEW_DATA_FACTORY_ID } from './view/plugin-view-registry';
 import { TextContentResourceResolver } from './workspace-main';
@@ -78,6 +78,8 @@ import { WebviewFrontendSecurityWarnings } from './webview/webview-frontend-secu
 import { PluginAuthenticationServiceImpl } from './plugin-authentication-service';
 import { AuthenticationService } from '@theia/core/lib/browser/authentication-service';
 import { bindTreeViewDecoratorUtilities, TreeViewDecoratorService } from './view/tree-view-decorator-service';
+import { CodeEditorWidgetUtil } from './menus/vscode-theia-menu-mappings';
+import { PluginMenuCommandAdapter } from './menus/plugin-menu-command-adapter';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -213,6 +215,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(LabelProviderContribution).toService(PluginIconThemeService);
 
     bind(MenusContributionPointHandler).toSelf().inSingletonScope();
+    bind(PluginMenuCommandAdapter).toSelf().inSingletonScope();
     bind(CodeEditorWidgetUtil).toSelf().inSingletonScope();
     bind(KeybindingsContributionPointHandler).toSelf().inSingletonScope();
     bind(PluginContributionHandler).toSelf().inSingletonScope();

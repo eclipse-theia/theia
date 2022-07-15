@@ -15,74 +15,12 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { Disposable } from './disposable';
-import { CommandRegistry, Command } from './command';
-import { ContributionProvider } from './contribution-provider';
-
-/**
- * A menu entry representing an action, e.g. "New File".
- */
-export interface MenuAction {
-    /**
-     * The command to execute.
-     */
-    commandId: string
-    /**
-     * In addition to the mandatory command property, an alternative command can be defined.
-     * It will be shown and invoked when pressing Alt while opening a menu.
-     */
-    alt?: string;
-    /**
-     * A specific label for this action. If not specified the command label or command id will be used.
-     */
-    label?: string
-    /**
-     * Icon class(es). If not specified the icon class associated with the specified command
-     * (i.e. `command.iconClass`) will be used if it exists.
-     */
-    icon?: string
-    /**
-     * Menu entries are sorted in ascending order based on their `order` strings. If omitted the determined
-     * label will be used instead.
-     */
-    order?: string
-    /**
-     * Optional expression which will be evaluated by the {@link ContextKeyService} to determine visibility
-     * of the action, e.g. `resourceLangId == markdown`.
-     */
-    when?: string
-}
-
-export namespace MenuAction {
-    /* Determine whether object is a MenuAction */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(arg: MenuAction | any): arg is MenuAction {
-        return !!arg && arg === Object(arg) && 'commandId' in arg;
-    }
-}
-
-/**
- * Additional options when creating a new submenu.
- */
-export interface SubMenuOptions {
-    /**
-     * The class to use for the submenu icon.
-     */
-    iconClass?: string
-    /**
-     * Menu entries are sorted in ascending order based on their `order` strings. If omitted the determined
-     * label will be used instead.
-     */
-    order?: string
-}
-
-export type MenuPath = string[];
-
-export const MAIN_MENU_BAR: MenuPath = ['menubar'];
-
-export const SETTINGS_MENU: MenuPath = ['settings_menu'];
-export const ACCOUNTS_MENU: MenuPath = ['accounts_menu'];
-export const ACCOUNTS_SUBMENU = [...ACCOUNTS_MENU, '1_accounts_submenu'];
+import { Disposable } from '../disposable';
+import { CommandRegistry, Command } from '../command';
+import { ContributionProvider } from '../contribution-provider';
+import { CompositeMenuNode, CompositeMenuNodeWrapper } from './composite-menu-node';
+import { MenuAction, MenuNode, MenuPath, SubMenuOptions } from './menu-types';
+import { ActionMenuNode } from './action-menu-node';
 
 export const MenuContribution = Symbol('MenuContribution');
 
@@ -128,6 +66,7 @@ export interface MenuContribution {
 @injectable()
 export class MenuModelRegistry {
     protected readonly root = new CompositeMenuNode('');
+    protected readonly independentSubmenus = new Map<string, CompositeMenuNode>();
 
     constructor(
         @inject(ContributionProvider) @named(MenuContribution)
@@ -156,9 +95,22 @@ export class MenuModelRegistry {
      *
      * @returns a disposable which, when called, will remove the menu node again.
      */
-    registerMenuNode(menuPath: MenuPath, menuNode: MenuNode): Disposable {
-        const parent = this.findGroup(menuPath);
+    registerMenuNode(menuPath: MenuPath | string, menuNode: MenuNode, group?: string): Disposable {
+        const parent = this.getMenuNode(menuPath, group);
         return parent.addNode(menuNode);
+    }
+
+    getMenuNode(menuPath: MenuPath | string, group?: string): CompositeMenuNode {
+        if (typeof menuPath === 'string') {
+            const target = this.independentSubmenus.get(menuPath);
+            if (!target) { throw new Error(`Could not find submenu with id ${menuPath}`); }
+            if (group) {
+                return this.findSubMenu(target, group);
+            }
+            return target;
+        } else {
+            return this.findGroup(group ? menuPath.concat(group) : menuPath);
+        }
     }
 
     /**
@@ -186,7 +138,7 @@ export class MenuModelRegistry {
         const parent = this.findGroup(groupPath, options);
         let groupNode = this.findSubMenu(parent, menuId, options);
         if (!groupNode) {
-            groupNode = new CompositeMenuNode(menuId, label, options);
+            groupNode = new CompositeMenuNode(menuId, label, options, parent);
             return parent.addNode(groupNode);
         } else {
             if (!groupNode.label) {
@@ -204,6 +156,21 @@ export class MenuModelRegistry {
             }
             return { dispose: () => { } };
         }
+    }
+
+    registerIndependentSubmenu(id: string, label: string, options?: SubMenuOptions): Disposable {
+        if (this.independentSubmenus.has(id)) {
+            console.debug(`Independent submenu with path ${id} registered, but given ID already exists.`);
+        }
+        this.independentSubmenus.set(id, new CompositeMenuNode(id, label, options));
+        return { dispose: () => this.independentSubmenus.delete(id) };
+    }
+
+    linkSubmenu(parentPath: MenuPath | string, childId: string | MenuPath, options?: SubMenuOptions, group?: string): Disposable {
+        const child = this.getMenuNode(childId);
+        const parent = this.getMenuNode(parentPath, group);
+        const wrapper = new CompositeMenuNodeWrapper(child, parent, options);
+        return parent.addNode(wrapper);
     }
 
     /**
@@ -258,6 +225,10 @@ export class MenuModelRegistry {
         recurse(this.root);
     }
 
+    /**
+     * Finds a submenu as a descendant of the `root` node.
+     * See {@link MenuModelRegistry.findSubMenu findSubMenu}.
+     */
     protected findGroup(menuPath: MenuPath, options?: SubMenuOptions): CompositeMenuNode {
         let currentMenu = this.root;
         for (const segment of menuPath) {
@@ -266,6 +237,10 @@ export class MenuModelRegistry {
         return currentMenu;
     }
 
+    /**
+     * Finds or creates a submenu as an immediate child of `current`.
+     * @throws if a node with the given `menuId` exists but is not a {@link CompositeMenuNode}.
+     */
     protected findSubMenu(current: CompositeMenuNode, menuId: string, options?: SubMenuOptions): CompositeMenuNode {
         const sub = current.children.find(e => e.id === menuId);
         if (sub instanceof CompositeMenuNode) {
@@ -274,7 +249,7 @@ export class MenuModelRegistry {
         if (sub) {
             throw new Error(`'${menuId}' is not a menu group.`);
         }
-        const newSub = new CompositeMenuNode(menuId, undefined, options);
+        const newSub = new CompositeMenuNode(menuId, undefined, options, current);
         current.addNode(newSub);
         return newSub;
     }
@@ -290,160 +265,24 @@ export class MenuModelRegistry {
     getMenu(menuPath: MenuPath = []): CompositeMenuNode {
         return this.findGroup(menuPath);
     }
-}
-
-/**
- * Base interface of the nodes used in the menu tree structure.
- */
-export interface MenuNode {
-    /**
-     * the optional label for this specific node.
-     */
-    readonly label?: string
-    /**
-     * technical identifier.
-     */
-    readonly id: string
-    /**
-     * Menu nodes are sorted in ascending order based on their `sortString`.
-     */
-    readonly sortString: string
-}
-
-/**
- * Node representing a (sub)menu in the menu tree structure.
- */
-export class CompositeMenuNode implements MenuNode {
-    protected readonly _children: MenuNode[] = [];
-    public iconClass?: string;
-    public order?: string;
-
-    constructor(
-        public readonly id: string,
-        public label?: string,
-        options?: SubMenuOptions
-    ) {
-        if (options) {
-            this.iconClass = options.iconClass;
-            this.order = options.order;
-        }
-    }
-
-    get children(): ReadonlyArray<MenuNode> {
-        return this._children;
-    }
 
     /**
-     * Inserts the given node at the position indicated by `sortString`.
-     *
-     * @returns a disposable which, when called, will remove the given node again.
+     * Returns the {@link MenuPath path} at which a given menu node can be accessed from this registry, if it can be determined.
+     * Returns `undefined` if the `parent` of any node in the chain is unknown.
      */
-    public addNode(node: MenuNode): Disposable {
-        this._children.push(node);
-        this._children.sort((m1, m2) => {
-            // The navigation group is special as it will always be sorted to the top/beginning of a menu.
-            if (CompositeMenuNode.isNavigationGroup(m1)) {
-                return -1;
+    getPath(node: MenuNode): MenuPath | undefined {
+        const identifiers = [];
+        const visited: MenuNode[] = [];
+        let next: MenuNode | undefined = node;
+
+        while (next && !visited.includes(next)) {
+            if (next === this.root) {
+                return identifiers.reverse();
             }
-            if (CompositeMenuNode.isNavigationGroup(m2)) {
-                return 1;
-            }
-            if (m1.sortString < m2.sortString) {
-                return -1;
-            } else if (m1.sortString > m2.sortString) {
-                return 1;
-            } else {
-                return 0;
-            }
-        });
-        return {
-            dispose: () => {
-                const idx = this._children.indexOf(node);
-                if (idx >= 0) {
-                    this._children.splice(idx, 1);
-                }
-            }
-        };
-    }
-
-    /**
-     * Removes the first node with the given id.
-     *
-     * @param id node id.
-     */
-    public removeNode(id: string): void {
-        const node = this._children.find(n => n.id === id);
-        if (node) {
-            const idx = this._children.indexOf(node);
-            if (idx >= 0) {
-                this._children.splice(idx, 1);
-            }
+            visited.push(next);
+            identifiers.push(next.id);
+            next = next.parent;
         }
-    }
-
-    get sortString(): string {
-        return this.order || this.id;
-    }
-
-    get isSubmenu(): boolean {
-        return this.label !== undefined;
-    }
-
-    /**
-     * Indicates whether the given node is the special `navigation` menu.
-     *
-     * @param node the menu node to check.
-     * @returns `true` when the given node is a {@link CompositeMenuNode} with id `navigation`,
-     * `false` otherwise.
-     */
-    static isNavigationGroup(node: MenuNode): node is CompositeMenuNode {
-        return node instanceof CompositeMenuNode && node.id === 'navigation';
-    }
-}
-
-/**
- * Node representing an action in the menu tree structure.
- * It's based on {@link MenuAction} for which it tries to determine the
- * best label, icon and sortString with the given data.
- */
-export class ActionMenuNode implements MenuNode {
-
-    readonly altNode: ActionMenuNode | undefined;
-
-    constructor(
-        public readonly action: MenuAction,
-        protected readonly commands: CommandRegistry
-    ) {
-        if (action.alt) {
-            this.altNode = new ActionMenuNode({ commandId: action.alt }, commands);
-        }
-    }
-
-    get id(): string {
-        return this.action.commandId;
-    }
-
-    get label(): string {
-        if (this.action.label) {
-            return this.action.label;
-        }
-        const cmd = this.commands.getCommand(this.action.commandId);
-        if (!cmd) {
-            console.debug(`No label for action menu node: No command "${this.action.commandId}" exists.`);
-            return '';
-        }
-        return cmd.label || cmd.id;
-    }
-
-    get icon(): string | undefined {
-        if (this.action.icon) {
-            return this.action.icon;
-        }
-        const command = this.commands.getCommand(this.action.commandId);
-        return command && command.iconClass;
-    }
-
-    get sortString(): string {
-        return this.action.order || this.label;
+        return undefined;
     }
 }

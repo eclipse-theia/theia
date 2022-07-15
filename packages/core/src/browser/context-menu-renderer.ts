@@ -112,5 +112,10 @@ export interface RenderContextMenuOptions {
      * Default is `true`.
      */
     includeAnchorArg?: boolean;
+    /**
+     * A DOM context to use when evaluating any `when` clauses
+     * of menu items registered for this item.
+     */
+    context?: HTMLElement;
     onHide?: () => void;
 }

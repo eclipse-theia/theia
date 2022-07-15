@@ -17,8 +17,8 @@
 import { injectable, ContainerModule } from '@theia/core/shared/inversify';
 import { Menu as MenuWidget } from '@theia/core/shared/@phosphor/widgets';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { MenuNode, CompositeMenuNode } from '@theia/core/lib/common/menu';
-import { BrowserMainMenuFactory, MenuCommandRegistry, DynamicMenuWidget } from '@theia/core/lib/browser/menu/browser-menu-plugin';
+import { MenuNode, CompositeMenuNode, MenuPath } from '@theia/core/lib/common/menu';
+import { BrowserMainMenuFactory, MenuCommandRegistry, DynamicMenuWidget, BrowserMenuOptions } from '@theia/core/lib/browser/menu/browser-menu-plugin';
 import { PlaceholderMenuNode } from './sample-menu-contribution';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
@@ -28,20 +28,21 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 @injectable()
 class SampleBrowserMainMenuFactory extends BrowserMainMenuFactory {
 
-    protected override handleDefault(menuCommandRegistry: MenuCommandRegistry, menuNode: MenuNode): void {
-        if (menuNode instanceof PlaceholderMenuNode && menuCommandRegistry instanceof SampleMenuCommandRegistry) {
-            menuCommandRegistry.registerPlaceholderMenu(menuNode);
+    protected override registerMenu(menuCommandRegistry: MenuCommandRegistry, menu: MenuNode, args: unknown[]): void {
+        if (menu instanceof PlaceholderMenuNode && menuCommandRegistry instanceof SampleMenuCommandRegistry) {
+            menuCommandRegistry.registerPlaceholderMenu(menu);
+        } else {
+            super.registerMenu(menuCommandRegistry, menu, args);
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected override createMenuCommandRegistry(menu: CompositeMenuNode, args: any[] = []): MenuCommandRegistry {
+    protected override createMenuCommandRegistry(menu: CompositeMenuNode, args: unknown[] = []): MenuCommandRegistry {
         const menuCommandRegistry = new SampleMenuCommandRegistry(this.services);
         this.registerMenu(menuCommandRegistry, menu, args);
         return menuCommandRegistry;
     }
 
-    override createMenuWidget(menu: CompositeMenuNode, options: MenuWidget.IOptions & { commands: MenuCommandRegistry }): DynamicMenuWidget {
+    override createMenuWidget(menu: CompositeMenuNode, options: BrowserMenuOptions): DynamicMenuWidget {
         return new SampleDynamicMenuWidget(menu, options, this.services);
     }
 
@@ -60,8 +61,8 @@ class SampleMenuCommandRegistry extends MenuCommandRegistry {
         this.placeholders.set(id, menu);
     }
 
-    override snapshot(): this {
-        super.snapshot();
+    override snapshot(menuPath: MenuPath): this {
+        super.snapshot(menuPath);
         for (const menu of this.placeholders.values()) {
             this.toDispose.push(this.registerPlaceholder(menu));
         }
@@ -70,28 +71,28 @@ class SampleMenuCommandRegistry extends MenuCommandRegistry {
 
     protected registerPlaceholder(menu: PlaceholderMenuNode): Disposable {
         const { id } = menu;
-        const unregisterCommand = this.addCommand(id, {
+        return this.addCommand(id, {
             execute: () => { /* NOOP */ },
             label: menu.label,
             icon: menu.icon,
             isEnabled: () => false,
             isVisible: () => true
         });
-        return Disposable.create(() => unregisterCommand.dispose());
     }
 
 }
 
 class SampleDynamicMenuWidget extends DynamicMenuWidget {
 
-    protected override handleDefault(menuNode: MenuNode): MenuWidget.IItemOptions[] {
-        if (menuNode instanceof PlaceholderMenuNode) {
-            return [{
-                command: menuNode.id,
-                type: 'command'
-            }];
+    protected override buildSubMenus(parentItems: MenuWidget.IItemOptions[], menu: MenuNode, commands: MenuCommandRegistry): MenuWidget.IItemOptions[] {
+        if (menu instanceof PlaceholderMenuNode) {
+            parentItems.push({
+                command: menu.id,
+                type: 'command',
+            });
+        } else {
+            super.buildSubMenus(parentItems, menu, commands);
         }
-        return [];
+        return parentItems;
     }
-
 }

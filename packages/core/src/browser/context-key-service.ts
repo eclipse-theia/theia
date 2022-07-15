@@ -34,7 +34,7 @@ export namespace ContextKey {
 }
 
 export interface ContextKeyChangeEvent {
-    affects(keys: Set<string>): boolean;
+    affects(keys: { has(key: string): boolean }): boolean;
 }
 
 export const ContextKeyService = Symbol('ContextKeyService');

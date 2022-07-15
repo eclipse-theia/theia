@@ -40,13 +40,13 @@ export class ScmTreeWidget extends TreeWidget {
     static ID = 'scm-resource-widget';
 
     static RESOURCE_GROUP_CONTEXT_MENU = ['RESOURCE_GROUP_CONTEXT_MENU'];
-    static RESOURCE_GROUP_INLINE_MENU = ['RESOURCE_GROUP_INLINE_MENU'];
+    static RESOURCE_GROUP_INLINE_MENU = ['RESOURCE_GROUP_CONTEXT_MENU', 'inline'];
 
     static RESOURCE_FOLDER_CONTEXT_MENU = ['RESOURCE_FOLDER_CONTEXT_MENU'];
-    static RESOURCE_FOLDER_INLINE_MENU = ['RESOURCE_FOLDER_INLINE_MENU'];
+    static RESOURCE_FOLDER_INLINE_MENU = ['RESOURCE_FOLDER_CONTEXT_MENU', 'inline'];
 
-    static RESOURCE_INLINE_MENU = ['RESOURCE_INLINE_MENU'];
     static RESOURCE_CONTEXT_MENU = ['RESOURCE_CONTEXT_MENU'];
+    static RESOURCE_INLINE_MENU = ['RESOURCE_CONTEXT_MENU', 'inline'];
 
     @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
@@ -766,10 +766,10 @@ export class ScmInlineAction extends React.Component<ScmInlineAction.Props> {
 
         let isActive: boolean = false;
         model.execInNodeContext(treeNode, () => {
-            isActive = contextKeys.match(node.action.when);
+            isActive = contextKeys.match(node.when);
         });
 
-        if (!commands.isVisible(node.action.commandId, ...args) || !isActive) {
+        if (!commands.isVisible(node.command, ...args) || !isActive) {
             return false;
         }
         return <div className='theia-scm-inline-action'>
@@ -781,7 +781,7 @@ export class ScmInlineAction extends React.Component<ScmInlineAction.Props> {
         event.stopPropagation();
 
         const { commands, node, args } = this.props;
-        commands.executeCommand(node.action.commandId, ...args);
+        commands.executeCommand(node.command, ...args);
     };
 }
 export namespace ScmInlineAction {

@@ -31,7 +31,11 @@ import {
     InMemoryResources,
     messageServicePath,
     InMemoryTextResourceResolver,
-    UntitledResourceResolver
+    UntitledResourceResolver,
+    MenuCommandAdapterRegistry,
+    MenuCommandExecutor,
+    MenuCommandAdapterRegistryImpl,
+    MenuCommandExecutorImpl
 } from '../common';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
 import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
@@ -241,6 +245,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(MenuModelRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, MenuContribution);
+    bind(MenuCommandAdapterRegistry).to(MenuCommandAdapterRegistryImpl).inSingletonScope();
+    bind(MenuCommandExecutor).to(MenuCommandExecutorImpl).inSingletonScope();
 
     bind(KeyboardLayoutService).toSelf().inSingletonScope();
     bind(KeybindingRegistry).toSelf().inSingletonScope();

@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommandContribution, CommandRegistry } from './command';
-import { CompositeMenuNode, MenuContribution, MenuModelRegistry } from './menu';
+import { CommandContribution, CommandRegistry } from '../command';
+import { MenuContribution, MenuModelRegistry } from './menu-model-registry';
 import * as chai from 'chai';
+import { CompositeMenuNode } from './composite-menu-node';
 
 const expect = chai.expect;
 
