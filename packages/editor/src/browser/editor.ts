@@ -19,11 +19,9 @@ import * as lsp from '@theia/core/shared/vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
 import { Event, Disposable, TextDocumentContentChangeDelta, Reference } from '@theia/core/lib/common';
 import { Saveable, Navigatable, Widget } from '@theia/core/lib/browser';
-import { EditorDecoration } from './decorations';
+import { EditorDecoration } from './decorations/editor-decoration';
 
-export {
-    Position, Range, Location
-};
+export { Position, Range, Location };
 
 export const TextEditorProvider = Symbol('TextEditorProvider');
 export type TextEditorProvider = (uri: URI) => Promise<TextEditor>;
