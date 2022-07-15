@@ -15,14 +15,13 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { Event as TheiaEvent, DisposableCollection } from '@theia/core';
+import { DisposableCollection } from '@theia/core';
 import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell, codicon } from '@theia/core/lib/browser';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { Virtuoso, VirtuosoHandle } from '@theia/core/shared/react-virtuoso';
 import URI from '@theia/core/lib/common/uri';
-import { SCM_HISTORY_ID, SCM_HISTORY_MAX_COUNT, SCM_HISTORY_LABEL } from './scm-history-contribution';
-import { ScmHistoryCommit, ScmFileChange, ScmFileChangeNode } from '../scm-file-change-node';
+import { ScmFileChange, ScmFileChangeNode } from '../scm-file-change-node';
 import { ScmAvatarService } from '@theia/scm/lib/browser/scm-avatar-service';
 import { ScmItemComponent, ScmNavigableListWidget } from '../scm-navigable-list-widget';
 import * as React from '@theia/core/shared/react';
@@ -31,37 +30,8 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { ScmHistoryProvider } from './scm-history-provider';
 import throttle = require('@theia/core/shared/lodash.throttle');
-
-export const ScmHistorySupport = Symbol('scm-history-support');
-export interface ScmHistorySupport {
-    getCommitHistory(options?: HistoryWidgetOptions): Promise<ScmHistoryCommit[]>;
-    readonly onDidChangeHistory: TheiaEvent<void>;
-}
-
-export interface ScmCommitNode {
-    commitDetails: ScmHistoryCommit;
-    authorAvatar: string;
-    fileChangeNodes: ScmFileChangeNode[];
-    expanded: boolean;
-    selected: boolean;
-}
-
-export namespace ScmCommitNode {
-    export function is(node: unknown): node is ScmCommitNode {
-        return !!node && typeof node === 'object' && 'commitDetails' in node && 'expanded' in node && 'selected' in node;
-    }
-}
-
-export interface HistoryWidgetOptions {
-    range?: {
-        toRevision?: string;
-        fromRevision?: string;
-    };
-    uri?: string;
-    maxCount?: number;
-}
-
-export type ScmHistoryListNode = (ScmCommitNode | ScmFileChangeNode);
+import { HistoryWidgetOptions, ScmCommitNode, ScmHistoryListNode, ScmHistorySupport, SCM_HISTORY_ID, SCM_HISTORY_LABEL, SCM_HISTORY_MAX_COUNT } from './scm-history-constants';
+export { HistoryWidgetOptions, ScmCommitNode, ScmHistoryListNode, ScmHistorySupport };
 
 @injectable()
 export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode> implements StatefulWidget {

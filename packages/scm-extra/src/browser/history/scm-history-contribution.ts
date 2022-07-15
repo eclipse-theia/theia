@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MenuModelRegistry, CommandRegistry, Command, SelectionService } from '@theia/core';
-import { AbstractViewContribution, OpenViewArguments } from '@theia/core/lib/browser';
+import { MenuModelRegistry, CommandRegistry, SelectionService } from '@theia/core';
+import { AbstractViewContribution } from '@theia/core/lib/browser';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
@@ -23,26 +23,8 @@ import URI from '@theia/core/lib/common/uri';
 import { ScmHistoryWidget } from './scm-history-widget';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { EDITOR_CONTEXT_MENU_SCM } from '../scm-extra-contribution';
-import { nls } from '@theia/core/lib/common/nls';
-
-export const SCM_HISTORY_ID = 'scm-history';
-export const SCM_HISTORY_LABEL = nls.localize('theia/scm/history', 'History');
-export const SCM_HISTORY_TOGGLE_KEYBINDING = 'alt+h';
-export const SCM_HISTORY_MAX_COUNT = 100;
-
-export namespace ScmHistoryCommands {
-    export const OPEN_FILE_HISTORY: Command = {
-        id: 'scm-history:open-file-history',
-    };
-    export const OPEN_BRANCH_HISTORY: Command = {
-        id: 'scm-history:open-branch-history',
-        label: SCM_HISTORY_LABEL
-    };
-}
-
-export interface ScmHistoryOpenViewArguments extends OpenViewArguments {
-    uri: string | undefined;
-}
+import { SCM_HISTORY_ID, SCM_HISTORY_LABEL, ScmHistoryCommands, SCM_HISTORY_TOGGLE_KEYBINDING, ScmHistoryOpenViewArguments } from './scm-history-constants';
+export { SCM_HISTORY_ID, SCM_HISTORY_LABEL, ScmHistoryCommands, SCM_HISTORY_TOGGLE_KEYBINDING, ScmHistoryOpenViewArguments };
 
 @injectable()
 export class ScmHistoryContribution extends AbstractViewContribution<ScmHistoryWidget> {
