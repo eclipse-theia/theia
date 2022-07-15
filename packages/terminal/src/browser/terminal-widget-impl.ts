@@ -28,7 +28,6 @@ import { TerminalWatcher } from '../common/terminal-watcher';
 import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE, CursorStyle } from './terminal-preferences';
-import { TerminalContribution } from './terminal-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { TerminalService } from './base/terminal-service';
 import { TerminalSearchWidgetFactory, TerminalSearchWidget } from './search/terminal-search-widget';
@@ -43,6 +42,11 @@ export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
     /* a unique string per terminal */
     created: string
+}
+
+export const TerminalContribution = Symbol('TerminalContribution');
+export interface TerminalContribution {
+    onCreate(term: TerminalWidgetImpl): void;
 }
 
 @injectable()
