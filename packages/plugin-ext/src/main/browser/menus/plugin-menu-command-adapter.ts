@@ -82,7 +82,7 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
         const firstArgOnly: ArgumentAdapter = (...args) => [args[0]];
         const noArgs: ArgumentAdapter = () => [];
         const toScmArgs: ArgumentAdapter = (...args) => this.toScmArgs(...args);
-        const selectedResource = () => this.getSelectedResource();
+        const selectedResource = () => this.getSelectedResources();
         const widgetURI: ArgumentAdapter = widget => this.codeEditorUtil.is(widget) ? [this.codeEditorUtil.getResourceUri(widget)] : [];
         (<Array<[ContributionPoint, ArgumentAdapter | undefined]>>[
             ['comments/comment/context', toCommentArgs],
@@ -245,13 +245,15 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
         return treeArgs;
     }
 
-    protected getSelectedResource(): [CodeUri | TreeViewSelection | undefined] {
+    protected getSelectedResources(): [CodeUri | TreeViewSelection | undefined, CodeUri[] | undefined] {
         const selection = this.selectionService.selection;
-        if (TreeWidgetSelection.is(selection) && selection.source instanceof TreeViewWidget && selection[0]) {
-            return [selection.source.toTreeViewSelection(selection[0])];
-        }
-        const uri = UriSelection.getUri(selection) ?? this.resourceContextKey.get();
-        return [uri ? uri['codeUri'] : undefined];
+        const firstMember = TreeWidgetSelection.is(selection) && selection.source instanceof TreeViewWidget && selection[0]
+            ? selection.source.toTreeViewSelection(selection[0])
+            : (UriSelection.getUri(selection) ?? this.resourceContextKey.get())?.['codeUri'];
+        const secondMember = TreeWidgetSelection.is(selection)
+            ? UriSelection.getUris(selection).map(uri => uri['codeUri'])
+            : undefined;
+        return [firstMember, secondMember];
     }
     /* eslint-enable @typescript-eslint/no-explicit-any */
 }
