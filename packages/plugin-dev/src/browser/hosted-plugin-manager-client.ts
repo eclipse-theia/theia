@@ -415,7 +415,7 @@ class OpenHostedInstanceLinkDialog extends AbstractDialog<string> {
     showOpenNewTabAskDialog(uri: string): void {
         this.value = uri;
 
-        this.linkNode.innerHTML = uri;
+        this.linkNode.textContent = uri;
         this.linkNode.href = uri;
         this.openButton.onclick = () => {
             this.windowService.openNewWindow(uri);
