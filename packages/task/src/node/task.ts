@@ -16,8 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '@theia/core/lib/common/';
-import { TaskManager } from './task-manager';
-import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskOutputEvent } from '../common/task-protocol';
+import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskOutputEvent, ManagedTask, ManagedTaskManager } from '../common/task-protocol';
 /**
  * Represents the options used for running a task.
  */
@@ -36,7 +35,7 @@ export interface TaskOptions {
  * whenever a new output occurs during the execution.
  */
 @injectable()
-export abstract class Task implements Disposable {
+export abstract class Task implements Disposable, ManagedTask {
 
     protected taskId: number;
     protected readonly toDispose: DisposableCollection = new DisposableCollection();
@@ -44,7 +43,7 @@ export abstract class Task implements Disposable {
     readonly outputEmitter: Emitter<TaskOutputEvent>;
 
     constructor(
-        protected readonly taskManager: TaskManager,
+        protected readonly taskManager: ManagedTaskManager<Task>,
         protected readonly logger: ILogger,
         protected readonly options: TaskOptions
     ) {
