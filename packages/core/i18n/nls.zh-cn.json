@@ -1,4 +1,5 @@
 {
+  "disassemblyView": "拆卸视图",
   "theia": {
     "callhierarchy": {
       "noCallers": "没有发现来电者。",
@@ -58,11 +59,23 @@
       "addConfigurationPlaceholder": "选择要添加配置的工作区根",
       "continueAll": "继续所有",
       "copyExpressionValue": "复制表达式的值",
+      "disassembly-view": {
+        "show-source-code": "在反汇编视图中显示源代码。"
+      },
+      "instruction-breakpoint": "指令断点",
+      "instructionAddress": "地址",
+      "instructionBytes": "字节数",
+      "instructionNotAvailable": "不提供拆卸服务。",
+      "instructionText": "指示",
       "missingConfiguration": "动态配置'{0}:{1}'缺少或不适用",
+      "open-disassembly-view": "开放式拆卸视图",
       "pauseAll": "暂停所有",
       "reveal": "显示",
       "threads": "线程",
       "toggleTracing": "启用/禁用与调试适配器的跟踪通信"
+    },
+    "disassembly-view": {
+      "disassemblyTableColumnLabel": "说明"
     },
     "editor": {
       "diffEditor.maxFileSize": "要为其计算差异的最大文件大小(MB)。使用 0 表示无限制。",
@@ -70,6 +83,7 @@
       "editor.autoClosingDelete": "控制在删除时编辑器是否应删除相邻的右引号或右方括号。",
       "editor.autoClosingDelete1": "只有在相邻的闭合引号或方括号被自动插入的情况下,才能删除它们。",
       "editor.bracketPairColorization.enabled": "控制是否已启用括号对着色。使用 `#workbench.colorCustomizations#` 替代括号高亮颜色。",
+      "editor.bracketPairColorization.independentColorPoolPerBracketType": "控制每个托架类型是否有自己独立的颜色池。",
       "editor.codeLensFontSize": "控制 CodeLens 的字号(以像素为单位)。设置为 `0` 时，将使用 90% 的 `#editor.fontSize#`。",
       "editor.find.autoFindInSelection0": "从不自动打开“在选定内容中查找”(默认)。",
       "editor.find.autoFindInSelection1": "始终自动打开“在选定内容中查找”。",
@@ -88,13 +102,23 @@
       "editor.guides.bracketPairsHorizontal1": "只对活动支架对启用水平导向。",
       "editor.guides.bracketPairsHorizontal2": "禁用水平托架对导板。",
       "editor.guides.highlightActiveBracketPair": "控制编辑器是否应突出显示活动的括号对。",
+      "editor.guides.highlightActiveIndentation0": "突出活动缩进指南。",
+      "editor.guides.highlightActiveIndentation1": "突出显示活动的缩进指南,即使括号内的指南被突出显示。",
+      "editor.guides.highlightActiveIndentation2": "不要突出显示活动缩进指南。",
       "editor.hover.above": "如果有空间的话,更倾向于显示悬停在该线之上。",
       "editor.inlayHints.enabled": "启用编辑器中的内联提示。",
+      "editor.inlayHints.enabled0": "镶嵌提示已启用",
+      "editor.inlayHints.enabled1": "镶嵌提示默认显示,按住 \"Ctrl+Alt \"时隐藏。",
+      "editor.inlayHints.enabled2": "镶嵌提示默认是隐藏的,当按住`Ctrl+Alt`时显示。",
+      "editor.inlayHints.enabled3": "镶嵌提示被禁用",
       "editor.inlayHints.fontFamily": "控制编辑器中内联提示的字体家族。当设置为空时,使用`#editor.fontFamily#`。",
       "editor.inlayHints.fontSize": "控制编辑器中内联提示的字体大小。当配置值小于`5'或大于编辑器的字体大小时,默认使用`#editor.fontSize#`的90%。",
       "editor.inlineSuggest.enabled": "控制是否在编辑器中自动显示内联建议。",
       "editor.language.colorizedBracketPairs": "如果启用了括号对着色,则定义括号对按其嵌套级别进行着色。",
       "editor.lineHeight": "控制行高。\n - 使用0可以根据字体大小自动计算行高。\n - 0到8之间的值将被用作字体大小的乘数。\n - 大于或等于8的值将作为有效值使用。",
+      "editor.quickSuggestions0": "快速建议显示在建议小部件内",
+      "editor.quickSuggestions1": "快速建议显示为幽灵文本",
+      "editor.quickSuggestions2": "快速建议被禁用",
       "editor.renderLineHighlightOnlyWhenFocus": "控制编辑器是否应该只在编辑器被聚焦时呈现当前行的高亮。",
       "editor.renderWhitespace3": "只渲染尾部的空白字符。",
       "editor.scrollbar.horizontal": "控制水平滚动条的可见性。",
@@ -170,6 +194,7 @@
       "newPlugin": "构建一个新的插件"
     },
     "git": {
+      "aFewSecondsAgo": "几秒钟前",
       "addSignedOff": "添加 \"已签署\"。",
       "amendReuseMessag": "要重新使用最后一条提交信息,请按'Enter'或'Escape'来取消。",
       "amendRewrite": "重写之前的提交信息。按'Enter'键确认或按'Escape'键取消。",
@@ -203,7 +228,8 @@
       "keybindingCollidesValidation": "键盘绑定目前碰撞",
       "requiredKeybindingValidation": "键盘绑定值是必需的",
       "resetKeybindingConfirmation": "你真的想把这个按键绑定重置为默认值吗?",
-      "resetKeybindingTitle": "重置{0}的键盘绑定"
+      "resetKeybindingTitle": "重置{0}的键盘绑定",
+      "resetMultipleKeybindingsWarning": "如果这个命令存在多个按键绑定,所有的按键都将被重置。"
     },
     "localize": {
       "offlineTooltip": "无法连接到后端。"
@@ -357,7 +383,11 @@
       "openVSX": "打开VSX注册表",
       "recommendedExtensions": "建议在该工作区使用的扩展名称的列表。",
       "searchPlaceholder": "在{0}中搜索扩展",
-      "showRecommendedExtensions": "控制是否显示扩展建议的通知。"
+      "showRecommendedExtensions": "控制是否显示扩展建议的通知。",
+      "vsx-extensions-contribution": {
+        "update-version-uninstall-error": "删除扩展名时出错:{0}.",
+        "update-version-version-error": "{0} 在安装{1} 的版本时失败。"
+      }
     },
     "webview": {
       "goToReadme": "转到README",

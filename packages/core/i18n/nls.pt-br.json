@@ -1,4 +1,5 @@
 {
+  "disassemblyView": "Vista de Desmontagem",
   "theia": {
     "callhierarchy": {
       "noCallers": "Nenhum chamador foi detectado.",
@@ -58,11 +59,23 @@
       "addConfigurationPlaceholder": "Selecione a raiz do espaço de trabalho para adicionar configuração a",
       "continueAll": "Continuar Todos",
       "copyExpressionValue": "Valor de Expressão de Cópia",
+      "disassembly-view": {
+        "show-source-code": "Mostrar Código Fonte em Vista de Desmontagem."
+      },
+      "instruction-breakpoint": "Ponto de Interrupção da Instrução",
+      "instructionAddress": "Endereço",
+      "instructionBytes": "Bytes",
+      "instructionNotAvailable": "Desmontagem não disponível.",
+      "instructionText": "Instrução",
       "missingConfiguration": "A configuração dinâmica '{0}:{1}' está ausente ou não é aplicável",
+      "open-disassembly-view": "Vista de Desmontagem Aberta",
       "pauseAll": "Pausa Todos",
       "reveal": "Revelar",
       "threads": "Tópicos",
       "toggleTracing": "Habilitar/desabilitar as comunicações de rastreamento com adaptadores de depuração"
+    },
+    "disassembly-view": {
+      "disassemblyTableColumnLabel": "instruções"
     },
     "editor": {
       "diffEditor.maxFileSize": "Tamanho máximo de arquivo em MB para o qual calcular diffs. Usar 0 para sem limite.",
@@ -70,6 +83,7 @@
       "editor.autoClosingDelete": "Controla se o editor deve remover as cotações de fechamento adjacentes ou parênteses ao apagar.",
       "editor.autoClosingDelete1": "Remover as cotações de fechamento ou colchetes adjacentes somente se elas forem inseridas automaticamente.",
       "editor.bracketPairColorization.enabled": "Controla se a colorização do par de suportes está ou não habilitada. Use 'workbench.colorCustomizations' para sobrepor as cores de realce do par de braquetes.",
+      "editor.bracketPairColorization.independentColorPoolPerBracketType": "Controla se cada tipo de suporte tem seu próprio pool de cores independente.",
       "editor.codeLensFontSize": "Controla o tamanho da fonte em pixels para a CodeLens. Quando ajustado para `0', 90% do `#editor.fontSize#' é utilizado.",
       "editor.find.autoFindInSelection0": "Nunca ative o Find in Selection automaticamente (padrão).",
       "editor.find.autoFindInSelection1": "Ative sempre a opção Find in Selection automaticamente.",
@@ -88,13 +102,23 @@
       "editor.guides.bracketPairsHorizontal1": "Possibilita guias horizontais somente para o par de suportes ativos.",
       "editor.guides.bracketPairsHorizontal2": "Desativa as guias de par de suportes horizontais.",
       "editor.guides.highlightActiveBracketPair": "Controla se o editor deve destacar o par de suportes ativos.",
+      "editor.guides.highlightActiveIndentation0": "Destaca o guia de travessão ativo.",
+      "editor.guides.highlightActiveIndentation1": "Destaca o guia de travessão ativo, mesmo que as guias de parênteses sejam destacadas.",
+      "editor.guides.highlightActiveIndentation2": "Não destacar o guia de travessão ativo.",
       "editor.hover.above": "Prefira mostrar acima da linha, se houver espaço.",
       "editor.inlayHints.enabled": "Possibilita as dicas de embutir no editor.",
+      "editor.inlayHints.enabled0": "As dicas de Inlay estão habilitadas",
+      "editor.inlayHints.enabled1": "Dicas de Inlay estão mostrando por padrão e se escondem ao segurar `Ctrl+Alt`.",
+      "editor.inlayHints.enabled2": "Dicas de Inlay são ocultadas por padrão e mostram quando se segura `Ctrl+Alt`.",
+      "editor.inlayHints.enabled3": "As dicas da Inlay estão desativadas",
       "editor.inlayHints.fontFamily": "Controla a família de fontes de dicas de incrustação no editor. Quando ajustado para vazio, é utilizado o `#editor.fontFamily#'.",
       "editor.inlayHints.fontSize": "Controla o tamanho da fonte das dicas de inlay no editor. Um padrão de 90% de `#editor.fontSize#` é utilizado quando o valor configurado é menor que `5` ou maior que o tamanho da fonte do editor.",
       "editor.inlineSuggest.enabled": "Controla se as sugestões em linha devem ser mostradas automaticamente no editor.",
       "editor.language.colorizedBracketPairs": "Define os pares de parênteses que são coloridos por seu nível de agrupamento, se a colorização dos pares de parênteses estiver habilitada.",
       "editor.lineHeight": "Controla a altura da linha.\n - Use 0 para calcular automaticamente a altura da linha a partir do tamanho da fonte.\n - Valores entre 0 e 8 serão usados como um multiplicador com o tamanho da fonte.\n - Valores maiores ou iguais a 8 serão usados como valores efetivos.",
+      "editor.quickSuggestions0": "Sugestões rápidas mostram dentro do widget sugerir",
+      "editor.quickSuggestions1": "Sugestões rápidas mostram como texto fantasma",
+      "editor.quickSuggestions2": "Sugestões rápidas são desativadas",
       "editor.renderLineHighlightOnlyWhenFocus": "Controla se o editor deve destacar a linha atual apenas quando o editor está focado.",
       "editor.renderWhitespace3": "Renderizar apenas caracteres de espaços em branco.",
       "editor.scrollbar.horizontal": "Controla a visibilidade da barra de rolagem horizontal.",
@@ -170,6 +194,7 @@
       "newPlugin": "Construindo um Novo Plugin"
     },
     "git": {
+      "aFewSecondsAgo": "alguns segundos atrás",
       "addSignedOff": "Adicionar Signed-off-by",
       "amendReuseMessag": "Para reutilizar a última mensagem de compromisso, pressione 'Enter' ou 'Escape' para cancelar.",
       "amendRewrite": "Reescrever mensagem de compromisso anterior. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
@@ -203,7 +228,8 @@
       "keybindingCollidesValidation": "a chave de encadernação colide atualmente",
       "requiredKeybindingValidation": "valor vinculante é necessário",
       "resetKeybindingConfirmation": "Você realmente quer redefinir esta ligação de chave para seu valor padrão?",
-      "resetKeybindingTitle": "Redefinir a encadernação para {0}"
+      "resetKeybindingTitle": "Redefinir a encadernação para {0}",
+      "resetMultipleKeybindingsWarning": "Se existirem múltiplas ligações de teclas para este comando, todas elas serão reiniciadas."
     },
     "localize": {
       "offlineTooltip": "Não pode ser conectado ao backend."
@@ -357,7 +383,11 @@
       "openVSX": "Registro VSX aberto",
       "recommendedExtensions": "Uma lista dos nomes das extensões recomendadas para uso neste espaço de trabalho.",
       "searchPlaceholder": "Pesquisar extensões em {0}",
-      "showRecommendedExtensions": "Controla se as notificações são mostradas para recomendações de extensão."
+      "showRecommendedExtensions": "Controla se as notificações são mostradas para recomendações de extensão.",
+      "vsx-extensions-contribution": {
+        "update-version-uninstall-error": "Erro ao remover a extensão: {0}.",
+        "update-version-version-error": "Falha na instalação da versão {0} de {1}."
+      }
     },
     "webview": {
       "goToReadme": "Ir para o LEIAME",

@@ -1,4 +1,5 @@
 {
+  "disassemblyView": "分解図",
   "theia": {
     "callhierarchy": {
       "noCallers": "発信者は検出されていません。",
@@ -58,11 +59,23 @@
       "addConfigurationPlaceholder": "設定を追加するワークスペース・ルートを選択します。",
       "continueAll": "すべてを続ける",
       "copyExpressionValue": "コピー式の値",
+      "disassembly-view": {
+        "show-source-code": "逆アセンブルビューでソースコードを表示する"
+      },
+      "instruction-breakpoint": "命令ブレークポイント",
+      "instructionAddress": "住所",
+      "instructionBytes": "バイト",
+      "instructionNotAvailable": "分解はできません。",
+      "instructionText": "インストラクション",
       "missingConfiguration": "ダイナミックコンフィギュレーション「{0}:{1}」が存在しないか、適用できない",
+      "open-disassembly-view": "オープン分解図",
       "pauseAll": "ポーズ・オール",
       "reveal": "暴露",
       "threads": "スレッド",
       "toggleTracing": "デバッグアダプタとの通信のトレースの有効化/無効化"
+    },
+    "disassembly-view": {
+      "disassemblyTableColumnLabel": "指令"
     },
     "editor": {
       "diffEditor.maxFileSize": "差分を計算するファイルの最大サイズをMBで指定します。制限しない場合は 0 を使用します。",
@@ -70,6 +83,7 @@
       "editor.autoClosingDelete": "削除の際に、隣接する閉じ引用符や括弧を削除するかどうかを制御します。",
       "editor.autoClosingDelete1": "自動的に挿入された場合のみ、隣接する閉じ引用符または括弧を削除します。",
       "editor.bracketPairColorization.enabled": "ブラケットペアの色付けを有効にするかどうかを制御します。ブラケットのハイライト色をオーバーライドするには 'workbench.colorCustomizations' を使用します。",
+      "editor.bracketPairColorization.independentColorPoolPerBracketType": "各ブラケットタイプに独立したカラープールを持たせるかどうかを制御します。",
       "editor.codeLensFontSize": "CodeLensのフォントサイズをピクセル単位で制御します。0`に設定すると、`#editor.fontSize#`の90%が使用されます。",
       "editor.find.autoFindInSelection0": "選択部分の検索を自動的にオンにしない(デフォルト)。",
       "editor.find.autoFindInSelection1": "常に「選択中の検索」を自動的にオンにします。",
@@ -88,13 +102,23 @@
       "editor.guides.bracketPairsHorizontal1": "アクティブなブラケットペアにのみ水平方向のガイドを有効にします。",
       "editor.guides.bracketPairsHorizontal2": "水平ブラケットペアガイドを無効にします。",
       "editor.guides.highlightActiveBracketPair": "エディターがアクティブなブラケットペアをハイライト表示するかどうかを制御します。",
+      "editor.guides.highlightActiveIndentation0": "アクティブなインデントガイドをハイライト表示します。",
+      "editor.guides.highlightActiveIndentation1": "ブラケットガイドがハイライトされている場合でも、アクティブなインデントガイドをハイライトします。",
+      "editor.guides.highlightActiveIndentation2": "アクティブなインデントガイドをハイライト表示しない。",
       "editor.hover.above": "スペースがある場合は、行の上にホバー表示することを優先します。",
       "editor.inlayHints.enabled": "エディタでインレイのヒントを有効にします。",
+      "editor.inlayHints.enabled0": "インレイヒントが有効",
+      "editor.inlayHints.enabled1": "インレイのヒントはデフォルトで表示され、`Ctrl+Alt`を押すと隠れます。",
+      "editor.inlayHints.enabled2": "インレイのヒントはデフォルトでは非表示で、`Ctrl+Alt`を押したときに表示されます。",
+      "editor.inlayHints.enabled3": "インレイヒントが無効",
       "editor.inlayHints.fontFamily": "エディタ内のインレイヒントのフォントファミリーを制御します。空白に設定すると、`#editor.fontFamily#`が使用されます。",
       "editor.inlayHints.fontSize": "エディターでのインレイヒントのフォントサイズを制御します。設定値が `5` 未満またはエディタのフォントサイズより大きい場合、デフォルトの `#editor.fontSize#` の 90% が使用されます。",
       "editor.inlineSuggest.enabled": "エディタにインラインのサジェストを自動的に表示するかどうかを制御します。",
       "editor.language.colorizedBracketPairs": "ブラケットペアの色付けが有効な場合に、その入れ子レベルによって色付けされるブラケットペアを定義する。",
       "editor.lineHeight": "行の高さを制御します。\n - 0を指定すると、フォントサイズから自動的に行の高さが計算されます。\n - 0から8までの値は、フォントサイズとの乗数として使用されます。\n - 8以上の値は、有効な値として使用されます。",
+      "editor.quickSuggestions0": "サジェストウィジェットの中にクイックサジェストを表示",
+      "editor.quickSuggestions1": "クイックサジェスト機能をゴーストテキストで表示",
+      "editor.quickSuggestions2": "クイックサジェスト機能を無効化",
       "editor.renderLineHighlightOnlyWhenFocus": "エディタがフォーカスされているときのみ、現在の行のハイライトをレンダリングするかどうかを制御します。",
       "editor.renderWhitespace3": "末尾の空白文字のみをレンダリングする。",
       "editor.scrollbar.horizontal": "水平スクロールバーの表示/非表示を制御します。",
@@ -170,6 +194,7 @@
       "newPlugin": "新しいプラグインの構築"
     },
     "git": {
+      "aFewSecondsAgo": "さきほど",
       "addSignedOff": "サイン・オフ・バイの追加",
       "amendReuseMessag": "最後のコミットメッセージを再利用するには、「Enter」または「Escape」を押してキャンセルしてください。",
       "amendRewrite": "前回のコミットメッセージを書き換えます。確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
@@ -203,7 +228,8 @@
       "keybindingCollidesValidation": "キーバインドがコリジョン中",
       "requiredKeybindingValidation": "キーバインド値が必要です",
       "resetKeybindingConfirmation": "このキーバインドを本当に初期値に戻すのですか?",
-      "resetKeybindingTitle": "{0}のキーバインドをリセットする"
+      "resetKeybindingTitle": "{0}のキーバインドをリセットする",
+      "resetMultipleKeybindingsWarning": "このコマンドに複数のキーバインドが存在する場合は、すべてのキーバインドがリセットされます。"
     },
     "localize": {
       "offlineTooltip": "バックエンドに接続できません。"
@@ -357,7 +383,11 @@
       "openVSX": "VSXレジストリを開く",
       "recommendedExtensions": "このワークスペースでの使用が推奨される拡張機能の名前のリストです。",
       "searchPlaceholder": "{0}で拡張子を検索",
-      "showRecommendedExtensions": "拡張機能の推奨事項について、通知を表示するかどうかを制御します。"
+      "showRecommendedExtensions": "拡張機能の推奨事項について、通知を表示するかどうかを制御します。",
+      "vsx-extensions-contribution": {
+        "update-version-uninstall-error": "拡張子の削除中にエラーが発生しました。{0}.",
+        "update-version-version-error": "バージョン{0} のインストールに失敗しました。{1} 。"
+      }
     },
     "webview": {
       "goToReadme": "READMEに戻る",
