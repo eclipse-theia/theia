@@ -179,8 +179,8 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                     return true;
                 }
             };
-            const action = editorActions.get(id);
-            this.commandRegistry.registerCommand({ id, label: action?.label, originalLabel: action?.alias }, handler);
+            const commandAction = editorActions.get(id);
+            this.commandRegistry.registerCommand({ id, label: commandAction?.label, originalLabel: commandAction?.alias }, handler);
             const coreCommand = MonacoCommands.COMMON_ACTIONS.get(id);
             if (coreCommand) {
                 this.commandRegistry.registerHandler(coreCommand, handler);
