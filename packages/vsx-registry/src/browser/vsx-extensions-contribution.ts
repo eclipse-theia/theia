@@ -210,22 +210,25 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         const extensions = await client.getAllVersions(extensionId);
         const latestCompatible = await client.getLatestCompatibleExtensionVersion(extensionId);
         let compatibleExtensions: VSXExtensionRaw[] = [];
+        let activeItem = undefined;
         if (latestCompatible) {
             compatibleExtensions = extensions.slice(extensions.findIndex(ext => ext.version === latestCompatible.version));
         }
-        const items: QuickPickItem[] = [];
-        compatibleExtensions.forEach(ext => {
-            let publishedDate = DateTime.fromISO(ext.timestamp).toRelative({ locale: nls.locale }) ?? '';
-            if (currentVersion === ext.version) {
-                publishedDate += ` (${nls.localizeByDefault('Current')})`;
-            }
-            items.push({
+        const items: QuickPickItem[] = compatibleExtensions.map(ext => {
+            const item = {
                 label: ext.version,
-                description: publishedDate
-            });
+                description: DateTime.fromISO(ext.timestamp).toRelative({ locale: nls.locale }) ?? ''
+            };
+            if (currentVersion === ext.version) {
+                item.description += ` (${nls.localizeByDefault('Current')})`;
+                activeItem = item;
+            }
+            return item;
         });
         const selectedItem = await this.quickInput.showQuickPick(items, {
-            placeholder: nls.localizeByDefault('Select Version to Install'), runIfSingle: false
+            placeholder: nls.localizeByDefault('Select Version to Install'),
+            runIfSingle: false,
+            activeItem
         });
         if (selectedItem) {
             const selectedExtension = this.model.getExtension(extensionId);
