@@ -253,6 +253,7 @@ export class MonacoQuickInputService implements QuickInputService {
         return new Promise<T | undefined>((resolve, reject) => {
             const quickPick = this.monacoService.createQuickPick<MonacoQuickPickItem<T>>();
             const wrapped = this.wrapQuickPick(quickPick);
+            wrapped.items = items;
 
             if (options) {
                 wrapped.canSelectMany = !!options.canSelectMany;
@@ -321,8 +322,6 @@ export class MonacoQuickInputService implements QuickInputService {
                     }
                 });
             }
-
-            wrapped.items = items;
             wrapped.show();
         }).then(item => {
             if (item?.execute) {
