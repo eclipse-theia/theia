@@ -211,7 +211,7 @@
 }
 
 .codicon-debug-hint {
-	cursor: pointer;
+    cursor: pointer;
 }
 
 .codicon-debug-breakpoint,
@@ -227,7 +227,7 @@
 }
 
 .codicon[class*='-disabled'] {
-	color: var(--theia-debugIcon-breakpointDisabledForeground) !important;
+    color: var(--theia-debugIcon-breakpointDisabledForeground) !important;
 }
 
 .codicon[class*='-unverified'] {
@@ -245,41 +245,41 @@
 
 .codicon-debug-breakpoint.codicon-debug-stackframe-focused::after,
 .codicon-debug-breakpoint.codicon-debug-stackframe::after {
-	content: '\eb8a';
-	position: absolute;
+    content: '\eb8a';
+    position: absolute;
 }
 
 .monaco-editor .theia-debug-breakpoint-column::before {
-	height: .9em;
-	display: inline-flex;
-	vertical-align: middle;
+    height: .9em;
+    display: inline-flex;
+    vertical-align: middle;
 }
 
 .monaco-editor .theia-debug-top-stack-frame-column::before {
-	content: ' ';
-	width: 0.9em;
-	display: inline-flex;
-	vertical-align: middle;
-	margin-top: -1px; /* TODO @misolori: figure out a way to not use negative margin for alignment */
+    content: ' ';
+    width: 0.9em;
+    display: inline-flex;
+    vertical-align: middle;
+    margin-top: -1px; /* TODO @misolori: figure out a way to not use negative margin for alignment */
 }
 
 .monaco-editor .theia-debug-top-stack-frame-column {
-	display: inline-flex;
-	vertical-align: middle;
+    display: inline-flex;
+    vertical-align: middle;
 }
 
 .monaco-editor .theia-debug-top-stack-frame-column::before {
-	content: '\eb8b';
-	font: normal normal normal 16px/1 codicon;
-	text-rendering: auto;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	margin-left: 0;
-	margin-right: 4px;
+    content: '\eb8b';
+    font: normal normal normal 16px/1 codicon;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin-left: 0;
+    margin-right: 4px;
 }
 
 .codicon-debug-hint:not([class*='codicon-debug-breakpoint']):not([class*='codicon-debug-stackframe']) {
-	opacity: 0.4 !important;
+    opacity: 0.4 !important;
 }
 
 .monaco-editor .view-overlays .theia-debug-top-stack-frame-line {
@@ -368,17 +368,17 @@
 }
 
 .theia-debug-breakpoint-select {
-	display: flex;
-	justify-content: center;
-	flex-direction: column;
-	padding: 0 10px;
-	flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    padding: 0 10px;
+    flex-shrink: 0;
 }
 
 .theia-debug-breakpoint-input {
-	flex: 1;
-	margin-top: var(--theia-ui-padding);
-	margin-bottom: var(--theia-ui-padding);
+    flex: 1;
+    margin-top: var(--theia-ui-padding);
+    margin-bottom: var(--theia-ui-padding);
 }
 
 /* Status Bar */
@@ -401,15 +401,22 @@
     border-bottom-color: var(--theia-debugExceptionWidget-border);
     background-color: var(--theia-debugExceptionWidget-background);
     padding: var(--theia-ui-padding) calc(var(--theia-ui-padding)*1.5);
-	white-space: pre-wrap;
-	user-select: text;
+    white-space: pre-wrap;
+    user-select: text;
     overflow: hidden;
 }
 
 .theia-debug-exception-widget .title {
-	font-weight: bold;
+    font-family: var(--theia-ui-font-family);
+    font-weight: bold;
 }
 
 .theia-debug-exception-widget .stack-trace {
-	margin-top: 0.5em;
+    margin-top: 0.5em;
+}
+
+.theia-debug-exception-widget #exception-close {
+    cursor: pointer;
+    margin-left: 5px;
+    vertical-align: middle;
 }
