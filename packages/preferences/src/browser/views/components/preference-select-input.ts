@@ -22,7 +22,7 @@ import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/s
 import { Preference } from '../../util/preference-types';
 import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator';
 import * as React from '@theia/core/shared/react';
-import * as ReactDOM from '@theia/core/shared/react-dom';
+import { createRoot } from '@theia/core/shared/react-dom/client';
 import { escapeInvisibleChars } from '@theia/core/lib/common/strings';
 
 @injectable()
@@ -70,7 +70,8 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
             ref: this.selectComponent
         });
         this.interactable = interactable;
-        ReactDOM.render(selectComponent, interactable);
+        const root = createRoot(interactable);
+        root.render(selectComponent);
         parent.appendChild(interactable);
     }
 

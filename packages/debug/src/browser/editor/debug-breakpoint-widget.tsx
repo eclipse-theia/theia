@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import * as ReactDOM from '@theia/core/shared/react-dom';
+import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection, nls } from '@theia/core';
@@ -55,6 +55,7 @@ export class DebugBreakpointWidget implements Disposable {
     protected readonly editorProvider: MonacoEditorProvider;
 
     protected selectNode: HTMLDivElement;
+    protected selectNodeRoot: Root;
 
     protected zone: MonacoEditorZoneWidget;
 
@@ -99,6 +100,8 @@ export class DebugBreakpointWidget implements Disposable {
         const selectNode = this.selectNode = document.createElement('div');
         selectNode.classList.add('theia-debug-breakpoint-select');
         this.zone.containerNode.appendChild(selectNode);
+        this.selectNodeRoot = createRoot(this.selectNode);
+        this.toDispose.push(Disposable.create(() => this.selectNodeRoot.unmount()));
 
         const inputNode = document.createElement('div');
         inputNode.classList.add('theia-debug-breakpoint-input');
@@ -148,7 +151,6 @@ export class DebugBreakpointWidget implements Disposable {
             this.zone.layout(heightInLines);
             this.updatePlaceholder();
         }));
-        this.toDispose.push(Disposable.create(() => ReactDOM.unmountComponentAtNode(selectNode)));
     }
 
     dispose(): void {
@@ -213,14 +215,14 @@ export class DebugBreakpointWidget implements Disposable {
         if (this._input) {
             this._input.getControl().setValue(this._values[this.context] || '');
         }
-        ReactDOM.render(<SelectComponent
+        this.selectNodeRoot.render(<SelectComponent
             defaultValue={this.context} onChange={this.updateInput}
             options={[
                 { value: 'condition', label: nls.localizeByDefault('Expression') },
                 { value: 'hitCondition', label: nls.localizeByDefault('Hit Count') },
                 { value: 'logMessage', label: nls.localizeByDefault('Log Message') },
             ]}
-        />, this.selectNode);
+        />);
     }
 
     protected readonly updateInput = (option: SelectOption) => {

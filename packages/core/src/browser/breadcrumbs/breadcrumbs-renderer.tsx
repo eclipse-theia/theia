@@ -23,7 +23,6 @@ import PerfectScrollbar from 'perfect-scrollbar';
 import URI from '../../common/uri';
 import { Emitter, Event } from '../../common';
 import { BreadcrumbPopupContainer } from './breadcrumb-popup-container';
-import { DisposableCollection } from '../../common/disposable';
 import { CorePreferences } from '../core-preferences';
 import { Breadcrumb, Styles } from './breadcrumbs-constants';
 import { LabelProvider } from '../label-provider';
@@ -56,7 +55,6 @@ export class BreadcrumbsRenderer extends ReactRenderer {
     protected breadcrumbs: Breadcrumb[] = [];
     protected popup: BreadcrumbPopupContainer | undefined;
     protected scrollbar: PerfectScrollbar | undefined;
-    protected toDispose: DisposableCollection = new DisposableCollection();
 
     get active(): boolean {
         return !!this.breadcrumbs.length;

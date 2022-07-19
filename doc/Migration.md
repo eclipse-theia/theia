@@ -19,6 +19,16 @@ For example:
 }
 ```
 
+### v1.28.0
+
+#### React 18 update
+
+The `react` and `react-dom` dependencies were upgraded to version 18. Some relevant changes include:
+
+ - `ReactDOM.render` is now deprecated and is replaced by `createRoot` from `react-dom/client`
+ - the new API no longer supports render callbacks
+ - updates in promises, setTimeout, event handlers are automatically batched
+
 ### v1.24.0
 
 #### node-gyp 8.4.1

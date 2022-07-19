@@ -36,6 +36,7 @@ const AlertMessageIcon = {
 export interface AlertMessageProps {
     type: MessageType;
     header: string;
+    children?: React.ReactNode
 }
 
 export class AlertMessage extends React.Component<AlertMessageProps> {

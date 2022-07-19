@@ -19,7 +19,6 @@ import * as React from 'react';
 import ReactTooltip from 'react-tooltip';
 import { ReactRenderer, RendererHost } from './widgets/react-renderer';
 import { CorePreferences } from './core-preferences';
-import { DisposableCollection } from '../common/disposable';
 import { v4 } from 'uuid';
 
 export const TooltipService = Symbol('TooltipService');
@@ -55,7 +54,6 @@ export class TooltipServiceImpl extends ReactRenderer implements TooltipService 
 
     public readonly tooltipId: string;
     protected rendered = false;
-    protected toDispose: DisposableCollection = new DisposableCollection();
 
     constructor(
         @inject(RendererHost) @optional() host?: RendererHost

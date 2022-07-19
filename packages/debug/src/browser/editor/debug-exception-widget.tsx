@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import * as ReactDOM from '@theia/core/shared/react-dom';
+import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import * as monaco from '@theia/monaco-editor-core';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -54,6 +54,7 @@ export class DebugExceptionWidget implements Disposable {
     readonly editor: DebugEditor;
 
     protected zone: MonacoEditorZoneWidget;
+    protected containerNodeRoot: Root;
 
     protected readonly toDispose = new DisposableCollection();
 
@@ -61,7 +62,8 @@ export class DebugExceptionWidget implements Disposable {
     protected async init(): Promise<void> {
         this.toDispose.push(this.zone = new DebugExceptionMonacoEditorZoneWidget(this.editor.getControl()));
         this.zone.containerNode.classList.add('theia-debug-exception-widget');
-        this.toDispose.push(Disposable.create(() => ReactDOM.unmountComponentAtNode(this.zone.containerNode)));
+        this.containerNodeRoot = createRoot(this.zone.containerNode);
+        this.toDispose.push(Disposable.create(() => this.containerNodeRoot.unmount()));
         this.toDispose.push(this.editor.getControl().onDidLayoutChange(() => this.layout()));
     }
 
@@ -94,14 +96,14 @@ export class DebugExceptionWidget implements Disposable {
         const exceptionTitle = info.id ?
             nls.localizeByDefault('Exception has occurred: {0}', info.id) :
             nls.localizeByDefault('Exception has occurred.');
-        ReactDOM.render(<React.Fragment>
-            <div className='title'>
+        this.containerNodeRoot.render(<React.Fragment>
+            <div className='title' ref={cb}>
                 {exceptionTitle}
                 <span id="exception-close" className={codicon('close', true)} onClick={() => this.hide()} title={nls.localizeByDefault('Close')}></span>
             </div>
             {info.description && <div className='description'>{info.description}</div>}
             {stackTrace && <div className='stack-trace'>{stackTrace}</div>}
-        </React.Fragment>, this.zone.containerNode, cb);
+        </React.Fragment>);
     }
 
     protected layout(): void {

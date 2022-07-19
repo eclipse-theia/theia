@@ -17,7 +17,6 @@
 import URI from '@theia/core/lib/common/uri';
 import { LocationService } from './location-service';
 import * as React from '@theia/core/shared/react';
-import * as ReactDOM from '@theia/core/shared/react-dom';
 import { FileService } from '../file-service';
 import { DisposableCollection, Emitter, Path } from '@theia/core/lib/common';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
@@ -109,6 +108,7 @@ export class LocationListRenderer extends ReactRenderer {
         super(options.host);
         this.service = options.model;
         this.doLoadDrives();
+        this.doAfterRender = this.doAfterRender.bind(this);
     }
 
     @postConstruct()
@@ -118,7 +118,7 @@ export class LocationListRenderer extends ReactRenderer {
     }
 
     override render(): void {
-        ReactDOM.render(this.doRender(), this.host, this.doAfterRender);
+        this.hostRoot.render(this.doRender());
     }
 
     protected initResolveDirectoryCache(): void {
@@ -178,6 +178,7 @@ export class LocationListRenderer extends ReactRenderer {
                 title={this.doShowTextInput
                     ? LocationListRenderer.Tooltips.TOGGLE_SELECT_INPUT
                     : LocationListRenderer.Tooltips.TOGGLE_TEXT_INPUT}
+                ref={this.doAfterRender}
             >
                 <i className={codicon(this.doShowTextInput ? 'folder-opened' : 'edit')} />
             </span>

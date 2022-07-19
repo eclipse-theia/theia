@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { codicon, ReactWidget, StatefulWidget } from '@theia/core/lib/browser';
-import { injectable, postConstruct } from '@theia/core/shared/inversify';
+import { codicon, ReactWidget, StatefulWidget, Widget } from '@theia/core/lib/browser';
+import { injectable, postConstruct, unmanaged } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import debounce = require('p-debounce');
-import { Disposable, Emitter } from '@theia/core';
+import { Emitter } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 
 export interface PreferencesSearchbarState {
@@ -37,9 +37,13 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
     protected searchbarRef: React.RefObject<HTMLInputElement> = React.createRef<HTMLInputElement>();
     protected resultsCount: number = 0;
 
+    constructor(@unmanaged() options?: Widget.IOptions) {
+        super(options);
+        this.focus = this.focus.bind(this);
+    }
+
     @postConstruct()
     protected init(): void {
-        this.onRender.push(Disposable.create(() => this.focus()));
         this.id = PreferencesSearchbarWidget.ID;
         this.title.label = PreferencesSearchbarWidget.LABEL;
         this.update();
@@ -139,7 +143,7 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
         const optionContainer = this.renderOptionContainer();
         return (
             <div className='settings-header'>
-                <div className="settings-search-container">
+                <div className="settings-search-container" ref={this.focus}>
                     <input
                         type="text"
                         id={PreferencesSearchbarWidget.SEARCHBAR_ID}

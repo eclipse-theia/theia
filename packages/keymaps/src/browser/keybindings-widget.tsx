@@ -17,16 +17,17 @@
 import React = require('@theia/core/shared/react');
 import debounce = require('@theia/core/shared/lodash.debounce');
 import * as fuzzy from '@theia/core/shared/fuzzy';
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, unmanaged } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CommandRegistry, Command } from '@theia/core/lib/common/command';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import {
-    KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope, SingleTextInputDialogProps, Key, ScopedKeybinding, codicon, StatefulWidget
+    KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope,
+    SingleTextInputDialogProps, Key, ScopedKeybinding, codicon, StatefulWidget, Widget
 } from '@theia/core/lib/browser';
 import { KeymapsService } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
-import { isOSX } from '@theia/core';
+import { DisposableCollection, isOSX } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 
 /**
@@ -116,11 +117,18 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
 
     protected readonly onDidUpdateEmitter = new Emitter<void>();
     readonly onDidUpdate: Event<void> = this.onDidUpdateEmitter.event;
+    protected readonly onRenderCallbacks = new DisposableCollection();
+    protected onRender = () => this.onRenderCallbacks.dispose();
 
     /**
      * Search keybindings.
      */
     protected readonly searchKeybindings: () => void = debounce(() => this.doSearchKeybindings(), 50);
+
+    constructor(@unmanaged() options?: Widget.IOptions) {
+        super(options);
+        this.onRender = this.onRender.bind(this);
+    }
 
     /**
      * Initialize the widget.
@@ -297,6 +305,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             <div className='search-kb-container'>
                 <input
                     id='search-kb'
+                    ref={this.onRender}
                     className={`theia-input${(this.items.length > 0) ? '' : ' no-kb'}`}
                     type='text'
                     spellCheck={false}
@@ -703,7 +712,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
 
     restoreState(oldState: { query: string }): void {
         if (typeof oldState?.query === 'string') {
-            this.onRender.push({
+            this.onRenderCallbacks.push({
                 dispose: () => {
                     const searchField = this.findSearchField();
                     if (searchField) {

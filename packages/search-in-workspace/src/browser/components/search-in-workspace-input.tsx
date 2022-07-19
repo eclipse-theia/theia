@@ -37,20 +37,18 @@ export class SearchInWorkspaceInput extends React.Component<InputAttributes, His
         };
     }
 
-    setHistory(history: string[]): void {
-        this.setState(prevState => ({
-            ...prevState,
-            history,
-        }));
-    }
-
-    setIndex(index: number): void {
-        const { history } = this.state;
-        this.value = history[index];
-        this.setState(prevState => ({
-            ...prevState,
-            index,
-        }));
+    updateState(index: number, history?: string[]): void {
+        this.value = history ? history[index] : this.state.history[index];
+        this.setState(prevState => {
+            const newState = {
+                ...prevState,
+                index,
+            };
+            if (history) {
+                newState.history = history;
+            }
+            return newState;
+        });
     }
 
     get value(): string {
@@ -85,7 +83,7 @@ export class SearchInWorkspaceInput extends React.Component<InputAttributes, His
         if (!this.value) {
             this.value = history[index];
         } else if (index > 0 && index < history.length) {
-            this.setIndex(index - 1);
+            this.updateState(index - 1);
         }
     }
 
@@ -99,7 +97,7 @@ export class SearchInWorkspaceInput extends React.Component<InputAttributes, His
         } else if (!this.value) {
             this.value = history[index];
         } else if (index >= 0 && index < history.length - 1) {
-            this.setIndex(index + 1);
+            this.updateState(index + 1);
         }
     }
 
@@ -124,8 +122,7 @@ export class SearchInWorkspaceInput extends React.Component<InputAttributes, His
             .filter(term => term !== this.value)
             .concat(this.value)
             .slice(-SearchInWorkspaceInput.LIMIT);
-        this.setHistory(history);
-        this.setIndex(history.length - 1);
+        this.updateState(history.length - 1, history);
     }
 
     override render(): React.ReactNode {
