@@ -30,7 +30,7 @@ import { LabelProvider, PreferenceScope, PreferenceService, QuickPickValue, Stor
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { DebugConfigurationModel } from './debug-configuration-model';
-import { DebugSessionOptions } from './debug-session-options';
+import { DebugSessionOptions, DebugConfigurationSessionOptions, DebugCompoundSessionOptions } from './debug-session-options';
 import { DebugService } from '../common/debug-service';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DebugConfiguration } from '../common/debug-common';
@@ -41,6 +41,7 @@ import * as monaco from '@theia/monaco-editor-core';
 import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { nls } from '@theia/core';
+import { DebugCompound } from '../common/debug-compound';
 
 export interface WillProvideDebugConfiguration extends WaitUntilEvent {
 }
@@ -141,10 +142,10 @@ export class DebugConfigurationManager {
     protected *getAll(): IterableIterator<DebugSessionOptions> {
         for (const model of this.models.values()) {
             for (const configuration of model.configurations) {
-                yield {
-                    configuration,
-                    workspaceFolderUri: model.workspaceFolderUri
-                };
+                yield this.configurationToOptions(configuration, model.workspaceFolderUri);
+            }
+            for (const compound of model.compounds) {
+                yield this.compoundToOptions(compound, model.workspaceFolderUri);
             }
         }
     }
@@ -159,7 +160,7 @@ export class DebugConfigurationManager {
     }
     protected *doGetSupported(debugTypes: Set<string>): IterableIterator<DebugSessionOptions> {
         for (const options of this.getAll()) {
-            if (debugTypes.has(options.configuration.type)) {
+            if (options.configuration && debugTypes.has(options.configuration.type)) {
                 yield options;
             }
         }
@@ -172,7 +173,7 @@ export class DebugConfigurationManager {
 
     async getSelectedConfiguration(): Promise<DebugSessionOptions | undefined> {
         // providerType applies to dynamic configurations only
-        if (!this._currentOptions?.providerType) {
+        if (!this._currentOptions?.providerType || !this._currentOptions.configuration) {
             return this._currentOptions;
         }
 
@@ -188,7 +189,7 @@ export class DebugConfigurationManager {
             throw new Error(message);
         }
 
-        return { configuration, providerType };
+        return { name, configuration, providerType };
     }
 
     set current(option: DebugSessionOptions | undefined) {
@@ -214,8 +215,8 @@ export class DebugConfigurationManager {
 
     protected dynamicOptionsMatch(one: DebugSessionOptions, other: DebugSessionOptions): boolean {
         return one.providerType !== undefined
-        && one.configuration.name === other.configuration.name
-        && one.providerType === other.providerType;
+            && one.name === other.name
+            && one.providerType === other.providerType;
     }
 
     get recentDynamicOptions(): readonly DebugSessionOptions[] {
@@ -223,21 +224,18 @@ export class DebugConfigurationManager {
     }
 
     protected updateCurrent(options: DebugSessionOptions | undefined = this._currentOptions): void {
-        this._currentOptions = options && this.find(options.configuration, options.workspaceFolderUri, options.providerType);
+        this._currentOptions = options;
 
         if (!this._currentOptions) {
             const model = this.getModel();
             if (model) {
                 const configuration = model.configurations[0];
                 if (configuration) {
-                    this._currentOptions = {
-                        configuration,
-                        workspaceFolderUri: model.workspaceFolderUri
-                    };
+                    this._currentOptions = this.configurationToOptions(configuration, model.workspaceFolderUri);
                 }
             }
         }
-        this.debugConfigurationTypeKey.set(this.current && this.current.configuration.type);
+        this.debugConfigurationTypeKey.set(this.current && this.current.configuration?.type);
         this.onDidChangeEmitter.fire(undefined);
     }
 
@@ -248,24 +246,61 @@ export class DebugConfigurationManager {
     /**
      * Find / Resolve DebugSessionOptions from a given target debug configuration
      */
-    find(targetConfiguration: DebugConfiguration, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined;
-    find(nameOrTargetConfiguration: string | DebugConfiguration, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined {
+    find(compound: DebugCompound, workspaceFolderUri?: string): DebugSessionOptions | undefined;
+    find(configuration: DebugConfiguration, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined;
+    find(name: string, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined;
+    find(nameOrConfigurationOrCompound: string | DebugConfiguration | DebugCompound, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined;
+    find(nameOrConfigurationOrCompound: string | DebugConfiguration | DebugCompound, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined {
         // providerType is only applicable to dynamic debug configurations
-        if (typeof nameOrTargetConfiguration === 'object' && providerType) {
-            return {
-                configuration: nameOrTargetConfiguration,
-                providerType
-            };
+        if (typeof nameOrConfigurationOrCompound === 'object' && providerType) {
+            if (DebugConfiguration.is(nameOrConfigurationOrCompound)) {
+                return this.configurationToOptions(nameOrConfigurationOrCompound, workspaceFolderUri, providerType);
+            }
+            return this.compoundToOptions(nameOrConfigurationOrCompound, workspaceFolderUri);
         }
-        const name = typeof nameOrTargetConfiguration === 'string' ? nameOrTargetConfiguration : nameOrTargetConfiguration.name;
+        const name = typeof nameOrConfigurationOrCompound === 'string' ? nameOrConfigurationOrCompound : nameOrConfigurationOrCompound.name;
+        const configuration = this.findConfiguration(name, workspaceFolderUri);
+        if (configuration) {
+            return this.configurationToOptions(configuration, workspaceFolderUri);
+        }
+        const compound = this.findCompound(name, workspaceFolderUri);
+        if (compound) {
+            return this.compoundToOptions(compound, workspaceFolderUri);
+        }
+    }
+
+    findConfigurations(name: string, workspaceFolderUri?: string): DebugConfiguration[] {
+        const matches = [];
         for (const model of this.models.values()) {
             if (model.workspaceFolderUri === workspaceFolderUri) {
                 for (const configuration of model.configurations) {
                     if (configuration.name === name) {
-                        return {
-                            configuration,
-                            workspaceFolderUri
-                        };
+                        matches.push(configuration);
+                    }
+                }
+            }
+        }
+        return matches;
+    }
+
+    findConfiguration(name: string, workspaceFolderUri?: string): DebugConfiguration | undefined {
+        for (const model of this.models.values()) {
+            if (model.workspaceFolderUri === workspaceFolderUri) {
+                for (const configuration of model.configurations) {
+                    if (configuration.name === name) {
+                        return configuration;
+                    }
+                }
+            }
+        }
+    }
+
+    findCompound(name: string, workspaceFolderUri?: string): DebugCompound | undefined {
+        for (const model of this.models.values()) {
+            if (model.workspaceFolderUri === workspaceFolderUri) {
+                for (const compound of model.compounds) {
+                    if (compound.name === name) {
+                        return compound;
                     }
                 }
             }
@@ -277,6 +312,14 @@ export class DebugConfigurationManager {
         if (model) {
             await this.doOpen(model);
         }
+    }
+
+    protected configurationToOptions(configuration: DebugConfiguration, workspaceFolderUri?: string, providerType?: string): DebugConfigurationSessionOptions {
+        return { name: configuration.name, configuration, providerType, workspaceFolderUri };
+    }
+
+    protected compoundToOptions(compound: DebugCompound, workspaceFolderUri?: string): DebugCompoundSessionOptions {
+        return { name: compound.name, compound, workspaceFolderUri };
     }
 
     async addConfiguration(): Promise<void> {
@@ -470,7 +513,7 @@ export class DebugConfigurationManager {
         // Between versions v1.26 and v1.27, the expected format of the data changed so that old stored data
         // may not contain the configuration key.
         if (data.current && 'configuration' in data.current) {
-            this.current = this.find(data.current.configuration, data.current.workspaceFolderUri, data.current.providerType);
+            this.current = this.find(data.current.configuration!, data.current.workspaceFolderUri, data.current.providerType);
         }
     }
 

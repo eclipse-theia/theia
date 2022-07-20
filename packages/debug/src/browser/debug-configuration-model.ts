@@ -19,6 +19,7 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { DebugConfiguration } from '../common/debug-common';
 import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
+import { DebugCompound } from '../common/debug-compound';
 
 export class DebugConfigurationModel implements Disposable {
 
@@ -58,6 +59,10 @@ export class DebugConfigurationModel implements Disposable {
         return this.json.configurations;
     }
 
+    get compounds(): DebugCompound[] {
+        return this.json.compounds;
+    }
+
     async reconcile(): Promise<void> {
         this.json = this.parseConfigurations();
         this.onDidChangeEmitter.fire(undefined);
@@ -75,9 +80,20 @@ export class DebugConfigurationModel implements Disposable {
                 }
             }
         }
+        const compounds: DebugCompound[] = [];
+        if (value && typeof value === 'object' && 'compounds' in value) {
+            if (Array.isArray(value.compounds)) {
+                for (const compound of value.compounds) {
+                    if (DebugCompound.is(compound)) {
+                        compounds.push(compound);
+                    }
+                }
+            }
+        }
         return {
             uri: configUri,
-            configurations
+            configurations,
+            compounds
         };
     }
 
@@ -86,5 +102,6 @@ export namespace DebugConfigurationModel {
     export interface JsonContent {
         uri?: URI
         configurations: DebugConfiguration[]
+        compounds: DebugCompound[]
     }
 }

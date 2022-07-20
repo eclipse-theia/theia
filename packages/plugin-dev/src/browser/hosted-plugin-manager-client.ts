@@ -198,12 +198,14 @@ export class HostedPluginManagerClient {
                 );
             }
         }
+        const name = nls.localize('theia/plugin-dev/hostedPlugin', 'Hosted Plugin');
         await this.debugSessionManager.start({
+            name,
             configuration: {
                 type: 'node',
                 request: 'attach',
                 timeout: 30000,
-                name: nls.localize('theia/plugin-dev/hostedPlugin', 'Hosted Plugin'),
+                name,
                 smartStep: true,
                 sourceMaps: !!outFiles,
                 outFiles

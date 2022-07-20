@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { JsonSchemaRegisterContext, JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
-import { InMemoryResources, deepClone } from '@theia/core/lib/common';
+import { InMemoryResources, deepClone, nls } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import URI from '@theia/core/lib/common/uri';
 import { DebugService } from '../common/debug-service';
@@ -75,7 +75,7 @@ const launchSchema: IJSONSchema = {
     type: 'object',
     title: 'Launch',
     required: [],
-    default: { version: '0.2.0', configurations: [] },
+    default: { version: '0.2.0', configurations: [], compounds: [] },
     properties: {
         version: {
             type: 'string',
@@ -90,6 +90,58 @@ const launchSchema: IJSONSchema = {
                 'type': 'object',
                 oneOf: []
             }
+        },
+        compounds: {
+            type: 'array',
+            description: nls.localizeByDefault('List of compounds. Each compound references multiple configurations which will get launched together.'),
+            items: {
+                type: 'object',
+                required: ['name', 'configurations'],
+                properties: {
+                    name: {
+                        type: 'string',
+                        description: nls.localizeByDefault('Name of compound. Appears in the launch configuration drop down menu.')
+                    },
+                    configurations: {
+                        type: 'array',
+                        default: [],
+                        items: {
+                            oneOf: [{
+                                type: 'string',
+                                description: nls.localizeByDefault('Please use unique configuration names.')
+                            }, {
+                                type: 'object',
+                                required: ['name'],
+                                properties: {
+                                    name: {
+                                        enum: [],
+                                        description: nls.localizeByDefault('Name of compound. Appears in the launch configuration drop down menu.')
+                                    },
+                                    folder: {
+                                        enum: [],
+                                        description: nls.localizeByDefault('Name of folder in which the compound is located.')
+                                    }
+                                }
+                            }]
+                        },
+                        description: nls.localizeByDefault('Names of configurations that will be started as part of this compound.')
+                    },
+                    stopAll: {
+                        type: 'boolean',
+                        default: false,
+                        description: nls.localizeByDefault('Controls whether manually terminating one session will stop all of the compound sessions.')
+                    },
+                    preLaunchTask: {
+                        type: 'string',
+                        default: '',
+                        description: nls.localizeByDefault('Task to run before any of the compound configurations start.')
+                    }
+                },
+                default: { name: 'Compound', configurations: [] }
+            },
+            default: [
+                { name: 'Compound', configurations: [] }
+            ]
         },
         inputs: inputsSchema.definitions!.inputs
     },

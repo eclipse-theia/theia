@@ -22,7 +22,7 @@ import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-servi
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { DebugSession } from './debug-session';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
-import { DebugSessionOptions } from './debug-session-options';
+import { DebugConfigurationSessionOptions, DebugSessionOptions } from './debug-session-options';
 import { OutputChannelManager, OutputChannel } from '@theia/output/lib/browser/output-channel';
 import { DebugPreferences } from './debug-preferences';
 import { DebugSessionConnection } from './debug-session-connection';
@@ -118,7 +118,7 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    get(sessionId: string, options: DebugSessionOptions, parentSession?: DebugSession): DebugSession {
+    get(sessionId: string, options: DebugConfigurationSessionOptions, parentSession?: DebugSession): DebugSession {
         const connection = new DebugSessionConnection(
             sessionId,
             () => new Promise<DebugChannel>(resolve =>

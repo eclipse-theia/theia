@@ -17,7 +17,7 @@
 import URI from '@theia/core/lib/common/uri';
 import * as React from '@theia/core/shared/react';
 import { DebugConfigurationManager } from '../debug-configuration-manager';
-import { DebugSessionOptions, InternalDebugSessionOptions } from '../debug-session-options';
+import { DebugSessionOptions } from '../debug-session-options';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
@@ -75,7 +75,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
 
     protected get currentValue(): string {
         const { current } = this.manager;
-        return current ? InternalDebugSessionOptions.toValue(current) : DebugConfigurationSelect.NO_CONFIGURATION;
+        return current ? JSON.stringify(current) : DebugConfigurationSelect.NO_CONFIGURATION;
     }
 
     protected readonly setCurrentConfiguration = (option: SelectOption) => {
@@ -88,12 +88,8 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
             const providerType = this.parsePickValue(value);
             this.selectDynamicConfigFromQuickPick(providerType);
         } else {
-            const { name, type, request, workspaceFolderUri, providerType } = InternalDebugSessionOptions.parseValue(value);
-            this.manager.current = this.manager.find(
-                { name, type, request },
-                workspaceFolderUri,
-                providerType === 'undefined' ? undefined : providerType
-            );
+            const data = JSON.parse(value) as DebugSessionOptions;
+            this.manager.current = data;
         }
     };
 
@@ -151,7 +147,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
     protected refreshDebugConfigurations = async () => {
         const configsPerType = await this.manager.provideDynamicDebugConfigurations();
         const providerTypes = [];
-        for (const [ type, configurations ] of Object.entries(configsPerType)) {
+        for (const [type, configurations] of Object.entries(configsPerType)) {
             if (configurations.length > 0) {
                 providerTypes.push(type);
             }
@@ -165,7 +161,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
 
         // Add non dynamic debug configurations
         for (const config of this.manager.all) {
-            const value = InternalDebugSessionOptions.toValue(config);
+            const value = JSON.stringify(config);
             options.push({
                 value,
                 label: this.toName(config, this.props.isMultiRoot)
@@ -181,7 +177,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
                 });
             }
             for (const dynamicOption of recentDynamicOptions) {
-                const value = InternalDebugSessionOptions.toValue(dynamicOption);
+                const value = JSON.stringify(dynamicOption);
                 options.push({
                     value,
                     label: this.toName(dynamicOption, this.props.isMultiRoot) + ' (' + dynamicOption.providerType + ')'
@@ -225,10 +221,10 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         return options;
     }
 
-    protected toName({ configuration, workspaceFolderUri }: DebugSessionOptions, multiRoot: boolean): string {
+    protected toName({ name, workspaceFolderUri }: DebugSessionOptions, multiRoot: boolean): string {
         if (!workspaceFolderUri || !multiRoot) {
-            return configuration.name;
+            return name;
         }
-        return `${configuration.name} (${new URI(workspaceFolderUri).path.base})`;
+        return `${name} (${new URI(workspaceFolderUri).path.base})`;
     }
 }
