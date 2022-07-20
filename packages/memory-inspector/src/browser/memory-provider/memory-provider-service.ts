@@ -23,6 +23,7 @@ import { DebugProtocol } from 'vscode-debugprotocol';
 import { Interfaces } from '../utils/memory-widget-utils';
 import { VariableRange } from '../utils/memory-widget-variable-utils';
 import { DefaultMemoryProvider, MemoryProvider } from './memory-provider';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class MemoryProviderService {
@@ -32,7 +33,8 @@ export class MemoryProviderService {
     protected readonly contributions: ContributionProvider<MemoryProvider>;
 
     readMemory(readMemoryArguments: DebugProtocol.ReadMemoryArguments): Promise<Interfaces.MemoryReadResult> {
-        const session = this.getSession('Cannot read memory. No active debug session.');
+        const readError = nls.localize('theia/memory-inspector/provider/readError', 'Cannot read memory. No active debug session.');
+        const session = this.getSession(readError);
         if (!session.capabilities.supportsReadMemoryRequest) {
             throw new Error('Cannot read memory. The current session does not support the request.');
         }
@@ -41,7 +43,8 @@ export class MemoryProviderService {
     }
 
     writeMemory(writeMemoryArguments: DebugProtocol.WriteMemoryArguments): Promise<DebugProtocol.WriteMemoryResponse> {
-        const session = this.getSession('Cannot write memory. No active debug session.');
+        const writeError = nls.localize('theia/memory-inspector/provider/writeError', 'Cannot write memory. No active debug session.');
+        const session = this.getSession(writeError);
         if (!session.capabilities.supportsWriteMemoryRequest) {
             throw new Error('Cannot write memory. The current session does not support the request.');
         }
@@ -51,7 +54,8 @@ export class MemoryProviderService {
     }
 
     getLocals(): Promise<VariableRange[]> {
-        const session = this.getSession('Cannot read local variables. No active debug session.');
+        const localsError = nls.localize('theia/memory-inspector/provider/localsError', 'Cannot read local variables. No active debug session.');
+        const session = this.getSession(localsError);
         const provider = this.getProvider(session, 'getLocals');
         return provider.getLocals(session);
     }

@@ -129,5 +129,5 @@ export interface MemoryDiffWidgetData extends MemoryWidgetOptions {
     titles: [string, string];
 }
 
-export const RegisterWidgetOptions = Symbol('ReigsterWidgetData');
+export const RegisterWidgetOptions = Symbol('RegisterWidgetData');
 export type RegisterWidgetOptions = MemoryWidgetOptions;

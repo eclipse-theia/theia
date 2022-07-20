@@ -20,6 +20,7 @@ import { MemoryDiffTableWidget, MemoryDiffWidget } from '../diff-widget/memory-d
 import { MemoryWidget } from '../memory-widget/memory-widget';
 import { RegisterWidget } from '../register-widget/register-widget-types';
 import { MemoryDiffWidgetData, MemoryWidgetOptions } from './memory-widget-utils';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class MemoryWidgetManager implements Disposable {
@@ -118,14 +119,14 @@ export class MemoryWidgetManager implements Disposable {
 
     async doDiff(options: Omit<MemoryDiffWidgetData, 'dynamic' | 'identifier'>): Promise<MemoryDiffWidget | undefined> {
         if (options.beforeBytes.length === 0) {
-            this.messageService.warn(
-                `You must load memory in both widgets you would like to compare. ${options.titles[0]} has no memory loaded.`,
-            );
+            // eslint-disable-next-line max-len
+            const beforeBytesMessage = nls.localize('theia/memory-inspector/utils/bytesMessage', 'You must load memory in both widgets you would like to compare. {0} has no memory loaded.', options.titles[0]);
+            this.messageService.warn(beforeBytesMessage);
             return undefined;
         } else if (options.afterBytes.length === 0) {
-            this.messageService.warn(
-                `You must load memory in both widgets you would like to compare. ${options.titles[1]} has no memory loaded.`,
-            );
+            // eslint-disable-next-line max-len
+            const afterBytesMessage = nls.localize('theia/memory-inspector/utils/afterByes', 'You must load memory in both widgets you would like to compare. {0} has no memory loaded.', options.titles[1]);
+            this.messageService.warn(afterBytesMessage);
             return undefined;
         }
 

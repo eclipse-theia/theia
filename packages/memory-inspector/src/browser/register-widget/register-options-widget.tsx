@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Disposable, DisposableCollection, Emitter } from '@theia/core';
+import { Disposable, DisposableCollection, Emitter, nls } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { DebugSession, DebugState } from '@theia/debug/lib/browser/debug-session';
@@ -45,7 +45,7 @@ export class RegisterOptionsWidget extends MemoryOptionsWidget {
     override iconClass = 'register-view-icon';
     override lockIconClass = 'register-lock-icon';
 
-    protected readonly LABEL_PREFIX = 'Register';
+    protected readonly LABEL_PREFIX = nls.localize('theia/memory-inspector/register', 'Register');
 
     protected readonly onRegisterChangedEmitter = new Emitter<[RegisterReadResult, boolean]>();
     readonly onRegisterChanged = this.onRegisterChangedEmitter.event;
@@ -57,15 +57,30 @@ export class RegisterOptionsWidget extends MemoryOptionsWidget {
     protected registerDisplaySet = new Set();
     protected registerDisplayAll = true;
     protected registerFilterUpdate = false;
-    protected registerReadError = 'No Registers currently available.';
+    protected registerReadError = nls.localize('theia/memory-inspector/register/readError', 'No Registers currently available.');
     protected showRegisterError = false;
     protected noRadixColumnDisplayed = this.noRadixDisplayed();
     protected override columnsDisplayed: Interfaces.ColumnsDisplayed = {
-        register: { label: 'Register', doRender: true },
-        hexadecimal: { label: 'Hexadecimal', doRender: true },
-        decimal: { label: 'Decimal', doRender: false },
-        octal: { label: 'Octal', doRender: false },
-        binary: { label: 'Binary', doRender: false },
+        register: {
+            label: nls.localize('theia/memory-inspector/register', 'Register'),
+            doRender: true
+        },
+        hexadecimal: {
+            label: nls.localize('theia/memory-inspector/hexadecimal', 'Hexadecimal'),
+            doRender: true
+        },
+        decimal: {
+            label: nls.localize('theia/memory-inspector/decimal', 'Decimal'),
+            doRender: false
+        },
+        octal: {
+            label: nls.localize('theia/memory-inspector/octal', 'Octal'),
+            doRender: false
+        },
+        binary: {
+            label: nls.localize('theia/memory-inspector/binary', 'Binary'),
+            doRender: false
+        },
     };
 
     @inject(RegisterWidgetOptions) protected override readonly memoryWidgetOptions: RegisterWidgetOptions;
@@ -204,7 +219,7 @@ export class RegisterOptionsWidget extends MemoryOptionsWidget {
                     />
                     <MWMultiSelect
                         id={ASCII_TOGGLE_ID}
-                        label='Columns'
+                        label={nls.localize('theia/memory-inspector/columns', 'Columns')}
                         items={this.getOptionalColumns().map(column => ({ ...column, label: column.label.slice(0, 3) }))}
                         onSelectionChanged={this.handleColumnSelectionChange}
                     />
@@ -214,7 +229,7 @@ export class RegisterOptionsWidget extends MemoryOptionsWidget {
                         onClick={this.doRefresh}
                         disabled={!this.doUpdateAutomatically}
                     >
-                        Go
+                        {nls.localizeByDefault('Go')}
                     </button>
                 </div>
                 <div className={`t-mv-memory-fetch-error${this.showRegisterError ? ' show' : ' hide'}`}>
@@ -262,7 +277,10 @@ export class RegisterOptionsWidget extends MemoryOptionsWidget {
                         <div
                             className={`fa fa-${this.doUpdateAutomatically ? 'unlock' : 'lock'}`}
                             id={AUTO_UPDATE_TOGGLE_ID}
-                            title={this.doUpdateAutomatically ? 'Freeze memory view' : 'Unfreeze memory view'}
+                            title={this.doUpdateAutomatically ?
+                                nls.localize('theia/memory-inspector/register/freeze', 'Freeze memory view') :
+                                nls.localize('theia/memory-inspector/register/unfreeze', 'Unfreeze memory view')
+                            }
                             onClick={this.toggleAutoUpdate}
                             onKeyDown={this.toggleAutoUpdate}
                             role='button'
@@ -306,7 +324,7 @@ export class RegisterOptionsWidget extends MemoryOptionsWidget {
             this.fireDidChangeRegister();
             this.doShowRegisterErrors(true);
         } catch (err) {
-            this.registerReadError = 'There was an error fetching registers.';
+            this.registerReadError = nls.localize('theia/memory-inspector/registerReadError', 'There was an error fetching registers.');
             console.error('Failed to read registers', err);
             this.doShowRegisterErrors();
         } finally {

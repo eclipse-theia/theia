@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { nls } from '@theia/core';
 import { BaseWidget, PanelLayout } from '@theia/core/lib/browser';
 import { Container, inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { MemoryWidgetOptions } from '../utils/memory-widget-utils';
@@ -27,7 +28,7 @@ export class MemoryWidget<
     >
     extends BaseWidget {
     static ID = 'memory-view-wrapper';
-    static LABEL = 'Memory';
+    static LABEL = nls.localize('theia/memory-inspector/memoryTitle', 'Memory');
 
     @inject(MemoryWidgetOptions) protected readonly memoryWidgetOptions: MemoryWidgetOptions;
     @inject(MemoryOptionsWidget) readonly optionsWidget: O;

@@ -15,53 +15,62 @@
  ********************************************************************************/
 
 import { Command } from '@theia/core';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const MemoryCommand: Command = { id: 'memory-inspector-command' };
+export const MemoryCategory = nls.localize('theia/memory-inspector/memoryCategory', 'Memory Inspector');
 
 export const ViewVariableInMemoryCommand: Command = {
     id: 'view-variable-in-memory',
-    label: 'Show variable in memory inspector',
+    category: MemoryCategory,
+    label: nls.localize('theia/memory-inspector/command/viewVariable', 'Show Variable in Memory Inspector'),
 };
 
 export const ViewVariableInRegisterViewCommand: Command = {
     id: 'view-variable-in-register-view',
-    label: 'Show register in memory inspector',
+    category: MemoryCategory,
+    label: nls.localize('theia/memory-inspector/command/showRegister', 'Show Register in Memory Inspector'),
 };
 
 export const ResetModifiedCellCommand: Command = {
     id: 'reset-modified-cell',
-    label: 'Reset value',
+    category: MemoryCategory,
+    label: nls.localize('theia/memory-inspector/command/resetValue', 'Reset Value'),
 };
 
 export const CreateNewMemoryViewCommand: Command = {
     id: 'create-new-memory-view',
-    label: 'Create new memory inspector',
+    category: MemoryCategory,
+    label: nls.localize('theia/memory-inspector/command/createNewMemory', 'Create New Memory Inspector'),
     iconClass: 'memory-view-icon toolbar',
 };
 
 export const FollowPointerTableCommand: Command = {
     id: 'follow-pointer-table',
-    label: 'Follow pointer',
+    category: MemoryCategory,
+    label: nls.localize('theia/memory-inspector/command/followPointer', 'Follow Pointer'),
 };
 
 export const FollowPointerDebugCommand: Command = {
     id: 'follow-pointer-debug',
-    label: 'Follow pointer in memory inspector',
+    category: MemoryCategory,
+    label: nls.localize('theia/memory-inspector/command/followPointerMemory', 'Follow Pointer in Memory Inspector'),
 };
 
 export const CreateNewRegisterViewCommand: Command = {
     id: 'create-new-register-view',
-    label: 'Create new register view',
+    category: MemoryCategory,
+    label: nls.localize('theia/memory-inspector/command/createNewRegisterView', 'Create New Register View'),
     iconClass: 'register-view-icon toolbar',
 };
 
 export const RegisterSetVariableCommand: Command = {
     id: 'register-set-variable-value',
-    label: 'Set Value',
+    category: MemoryCategory,
+    label: nls.localizeByDefault('Set Value')
 };
 
 export const ToggleDiffSelectWidgetVisibilityCommand: Command = {
     id: 'toggle-diff-select-visibility',
     iconClass: 'codicon codicon-git-compare',
 };
-

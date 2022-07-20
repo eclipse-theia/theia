@@ -22,6 +22,7 @@ import { LENGTH_FIELD_ID, LOCATION_OFFSET_FIELD_ID, MemoryOptionsWidget } from '
 import { MWInput } from '../utils/memory-widget-components';
 import { Interfaces, MemoryDiffWidgetData, Utils } from '../utils/memory-widget-utils';
 import { DiffLabels } from './memory-diff-widget-types';
+import { nls } from '@theia/core/lib/common/nls';
 
 export interface DiffMemoryOptions extends Interfaces.MemoryOptions {
     beforeOffset: number;
@@ -48,8 +49,9 @@ export class MemoryDiffOptionsWidget extends MemoryOptionsWidget {
         this.addClass(MemoryOptionsWidget.ID);
         this.addClass('diff-options-widget');
         const { identifier, beforeBytes, afterBytes } = this.memoryWidgetOptions;
+
         this.id = `${MemoryDiffOptionsWidget.ID}-${identifier}`;
-        this.title.label = `Diff: ${identifier}`;
+        this.title.label = nls.localize('theia/memory-inspector/diff/label', 'Diff: {0}', identifier);
         this.title.caption = this.title.label;
         this.title.iconClass = this.iconClass;
         this.title.closable = true;
@@ -60,12 +62,30 @@ export class MemoryDiffOptionsWidget extends MemoryOptionsWidget {
         afterBytes.label = DiffLabels.After;
 
         this.columnsDisplayed = {
-            beforeAddress: { label: 'Address', doRender: true },
-            beforeData: { label: this.memoryWidgetOptions.titles[0], doRender: true },
-            afterAddress: { label: 'Address', doRender: true },
-            afterData: { label: this.memoryWidgetOptions.titles[1], doRender: true },
-            variables: { label: 'Variables', doRender: false },
-            ascii: { label: 'ASCII', doRender: false },
+            beforeAddress: {
+                label: nls.localize('theia/memory-inspector/address', 'Address'),
+                doRender: true
+            },
+            beforeData: {
+                label: this.memoryWidgetOptions.titles[0],
+                doRender: true
+            },
+            afterAddress: {
+                label: nls.localize('theia/memory-inspector/address', 'Address'),
+                doRender: true
+            },
+            afterData: {
+                label: this.memoryWidgetOptions.titles[1],
+                doRender: true
+            },
+            variables: {
+                label: nls.localizeByDefault('Variables'),
+                doRender: false
+            },
+            ascii: {
+                label: nls.localize('theia/memory-inspector/ascii', 'ASCII'),
+                doRender: false
+            },
         };
 
         this.update();
@@ -101,9 +121,10 @@ export class MemoryDiffOptionsWidget extends MemoryOptionsWidget {
                 <button
                     type='button'
                     className='theia-button main view-group-go-button'
+                    title={nls.localizeByDefault('Go')}
                     onClick={this.doRefresh}
                 >
-                    Go
+                    {nls.localizeByDefault('Go')}
                 </button>
             </div>
         );

@@ -40,6 +40,7 @@ import { MemoryWidgetManager } from './utils/memory-widget-manager';
 import { VariableRange } from './utils/memory-widget-variable-utils';
 import { MemoryDockPanel } from './wrapper-widgets/memory-dock-panel';
 import { MemoryLayoutWidget } from './wrapper-widgets/memory-layout-widget';
+import { nls } from '@theia/core/lib/common/nls';
 
 const ONE_HALF_OPACITY = 0.5;
 
@@ -255,7 +256,7 @@ export class DebugFrontendContribution extends AbstractViewContribution<MemoryLa
         toolbarRegistry.registerItem({
             id: ToggleDiffSelectWidgetVisibilityCommand.id,
             command: ToggleDiffSelectWidgetVisibilityCommand.id,
-            tooltip: 'Toggle Comparison Widget Visibility',
+            tooltip: nls.localize('theia/memory-inspector/toggleComparisonWidgetVisibility', 'Toggle Comparison Widget Visibility'),
             priority: -3,
             onDidChange: this.memoryWidgetManager.onChanged,
         });

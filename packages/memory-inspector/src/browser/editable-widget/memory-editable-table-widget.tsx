@@ -26,6 +26,7 @@ import { MemoryTable, MemoryTableWidget } from '../memory-widget/memory-table-wi
 import { MemoryWidget } from '../memory-widget/memory-widget';
 import { EasilyMappedObject } from '../utils/memory-hover-renderer';
 import { Interfaces } from '../utils/memory-widget-utils';
+import { nls } from '@theia/core/lib/common/nls';
 
 export type EditableMemoryWidget = MemoryWidget<MemoryOptionsWidget, MemoryEditableTableWidget>;
 export namespace EditableMemoryWidget {
@@ -81,15 +82,17 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
                         className='theia-button secondary'
                         onClick={this.handleClearEditClick}
                         type='reset'
+                        title={nls.localize('theia/memory-inspector/editable/clear', 'Clear Changes')}
                     >
-                        Clear Changes
+                        {nls.localize('theia/memory-inspector/editable/clear', 'Clear Changes')}
                     </button>
                     <button
                         className='theia-button main'
                         onClick={this.submitMemoryEdits}
                         type='submit'
+                        title={nls.localize('theia/memory-inspector/editable/apply', 'Apply Changes')}
                     >
-                        Apply Changes
+                        {nls.localize('theia/memory-inspector/editable/apply', 'Apply Changes')}
                     </button>
                 </div>)
         );

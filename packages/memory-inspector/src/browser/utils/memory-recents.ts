@@ -28,11 +28,11 @@ export class Recents {
         return this._values;
     }
 
-    constructor(initialVals?: string[], opts?: RecentsOptions) {
+    constructor(initialValues?: string[], opts?: RecentsOptions) {
         this.maxValues = opts?.maxValues ?? 10;
-        if (initialVals) {
-            if (initialVals.length <= this.maxValues) {
-                this._values = initialVals;
+        if (initialValues) {
+            if (initialValues.length <= this.maxValues) {
+                this._values = initialValues;
                 return;
             }
             console.error('Initial values length is greater than allowed length, resetting to empty array');

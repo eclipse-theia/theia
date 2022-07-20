@@ -1,15 +1,28 @@
-# memory-inspector
+<div align='center'>
+
+<br />
+
+<img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
+
+<h2>ECLIPSE THEIA - MEMORY-INSPECTOR EXTENSION</h2>
+
+<hr />
+
+</div>
+
+## Description
 
 This extension contributes a set of widgets for viewing memory in different ways.
 
 ## Requirements
 
-This extension must be used in conjunction with a Debug Adapter that implements a ReadMemoryRequest handler or alternative custom request that returns memory data. It has been tested against the [CDT-GDB Adapter](https://github.com/eclipse-cdt/cdt-gdb-adapter) used as the backend for the
+This extension must be used in conjunction with a Debug Adapter that implements a `ReadMemoryRequest` handler or alternative custom request that returns memory data.
+It has been tested against the [CDT-GDB Adapter](https://github.com/eclipse-cdt/cdt-gdb-adapter) used as the backend for the
 [CDT-GDB VSCode](https://github.com/eclipse-cdt/cdt-gdb-vscode) plugin. This repository is configured to download that plugin as part of its build routine.
 If you intend to use this extension with a different debug adapter, you may need to implement a custom
 [`MemoryProvider`](./src/browser/memory-provider/memory-provider-service.ts) to handle any peculiarities of the requests and responses used by your adapter.
 
-## The Widgets
+## Widgets
 
 ### Memory Widget
 
@@ -40,3 +53,19 @@ The widgets are created by the [`MemoryWidgetManager`](./src/browser/utils/memor
 method of that service allows you to change what kind of widget is instantiated and under what circumstances. The widgets get memory through the
 [`MemoryProviderService`](./src/browser/memory-provider/memory-provider-service.ts), which delegates to implementations `MemoryProvider` interface
 that are bound as `MemoryProvider` contributions.
+
+
+## Additional Information
+
+- [API documentation for `@theia/getting-started`](https://eclipse-theia.github.io/theia/docs/next/modules/getting_started.html)
+- [Theia - GitHub](https://github.com/eclipse-theia/theia)
+- [Theia - Website](https://theia-ide.org/)
+
+## License
+
+- [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
+- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
+
+## Trademark
+"Theia" is a trademark of the Eclipse Foundation
+https://www.eclipse.org/theia

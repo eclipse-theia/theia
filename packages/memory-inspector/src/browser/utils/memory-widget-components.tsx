@@ -22,14 +22,7 @@ export interface MWLabelProps { id: string; label: string; disabled?: boolean; c
 
 export const MWLabel: React.FC<MWLabelProps> = ({ id, label, disabled, classNames }) => {
     const additionalClassNames = classNames ? classNames.join(' ') : '';
-    return (
-        <label
-            htmlFor={id}
-            className={`t-mv-label theia-header ${additionalClassNames}${disabled ? ' disabled' : ''}`}
-        >
-            {label}
-        </label>
-    );
+    return <label htmlFor={id} className={`t-mv-label theia-header ${additionalClassNames}${disabled ? ' disabled' : ''}`}>{label}</label>;
 };
 
 export interface InputProps<T extends HTMLElement = HTMLElement> {

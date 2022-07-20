@@ -25,6 +25,7 @@ import { MemoryWidgetManager } from '../utils/memory-widget-manager';
 import { Interfaces } from '../utils/memory-widget-utils';
 import { VariableRange } from '../utils/memory-widget-variable-utils';
 import { MemoryDiffWidget } from './memory-diff-table-widget';
+import { nls } from '@theia/core/lib/common/nls';
 
 interface DiffMemory {
     beforeAddress: Long;
@@ -102,9 +103,10 @@ export class MemoryDiffSelectWidget extends ReactWidget {
                 <button
                     type='button'
                     className='theia-button main memory-diff-select-go'
+                    title={nls.localizeByDefault('Go')}
                     onClick={this.diff}
                 >
-                    Go
+                    {nls.localizeByDefault('Go')}
                 </button>
             </div>
         );
