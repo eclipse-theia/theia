@@ -20,7 +20,7 @@ import { DisposableCollection } from '../disposable';
 import { Emitter, Event } from '../event';
 import { Deferred } from '../promise-util';
 import { Channel } from './channel';
-import { RpcMessage, RpcMessageDecoder, RpcMessageEncoder, RpcMessageType } from './rpc-message-encoder';
+import { MsgPackMessageDecoder, MsgPackMessageEncoder, RpcMessage, RpcMessageDecoder, RpcMessageEncoder, RpcMessageType } from './rpc-message-encoder';
 import { Uint8ArrayWriteBuffer } from './uint8-array-message-buffer';
 
 /**
@@ -69,8 +69,8 @@ export class RpcProtocol {
     protected toDispose = new DisposableCollection();
 
     constructor(public readonly channel: Channel, public readonly requestHandler: RequestHandler, options: RpcProtocolOptions = {}) {
-        this.encoder = options.encoder ?? new RpcMessageEncoder();
-        this.decoder = options.decoder ?? new RpcMessageDecoder();
+        this.encoder = options.encoder ?? new MsgPackMessageEncoder();
+        this.decoder = options.decoder ?? new MsgPackMessageDecoder();
         this.toDispose.push(this.onNotificationEmitter);
         this.toDispose.push(channel.onMessage(readBuffer => this.handleMessage(this.decoder.parse(readBuffer()))));
         channel.onClose(() => this.toDispose.dispose());

@@ -14,5 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 export { RequestHandler, RpcProtocol, RpcProtocolOptions } from './rpc-protocol';
-export { Channel, ChannelCloseEvent, MessageProvider } from './channel';
+export { Channel, AbstractChannel, ChannelCloseEvent, MessageProvider } from './channel';
 export { ReadBuffer, WriteBuffer } from './message-buffer';

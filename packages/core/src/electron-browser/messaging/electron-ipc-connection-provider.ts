@@ -19,9 +19,8 @@ import { injectable, interfaces } from 'inversify';
 import { JsonRpcProxy } from '../../common/messaging';
 import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
 import { THEIA_ELECTRON_IPC_CHANNEL_NAME } from '../../electron-common/messaging/electron-connection-handler';
-import { Emitter, Event } from '../../common';
+import { AbstractChannel, Channel, Disposable, WriteBuffer } from '../../common';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
-import { Channel, MessageProvider } from '../../common/message-rpc/channel';
 
 export interface ElectronIpcOptions {
 }
@@ -42,23 +41,26 @@ export class ElectronIpcConnectionProvider extends AbstractConnectionProvider<El
     }
 
     protected createMainChannel(): Channel {
-        const onMessageEmitter = new Emitter<MessageProvider>();
-        ipcRenderer.on(THEIA_ELECTRON_IPC_CHANNEL_NAME, (_event: ElectronEvent, data: Uint8Array) => {
-            onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(data));
-        });
-        return {
-            close: () => Event.None,
-            getWriteBuffer: () => {
-                const writer = new Uint8ArrayWriteBuffer();
-                writer.onCommit(buffer =>
-                    ipcRenderer.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, buffer)
-                );
-                return writer;
-            },
-            onClose: Event.None,
-            onError: Event.None,
-            onMessage: onMessageEmitter.event
-        };
+        return new ElectronIpcRendererChannel();
+    }
+
+}
+
+export class ElectronIpcRendererChannel extends AbstractChannel {
+
+    constructor() {
+        super();
+        const ipcMessageHandler = (_event: ElectronEvent, data: Uint8Array) => this.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(data));
+        ipcRenderer.on(THEIA_ELECTRON_IPC_CHANNEL_NAME, ipcMessageHandler);
+        this.toDispose.push(Disposable.create(() => ipcRenderer.removeListener(THEIA_ELECTRON_IPC_CHANNEL_NAME, ipcMessageHandler)));
+    }
+
+    getWriteBuffer(): WriteBuffer {
+        const writer = new Uint8ArrayWriteBuffer();
+        writer.onCommit(buffer =>
+            ipcRenderer.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, buffer)
+        );
+        return writer;
     }
 
 }

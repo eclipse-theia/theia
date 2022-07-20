@@ -16,43 +16,25 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Emitter, Event } from '../event';
 import { WriteBuffer } from '../message-rpc';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../message-rpc/uint8-array-message-buffer';
-import { Channel, MessageProvider, ChannelCloseEvent } from '../message-rpc/channel';
-import { DisposableCollection } from '../disposable';
+import { AbstractChannel } from '../message-rpc/channel';
+import { Disposable } from '../disposable';
 
 /**
  * A channel that manages the main websocket connection between frontend and backend. All service channels
  * are reusing this main channel. (multiplexing). An {@link IWebSocket} abstraction is used to keep the implementation
  * independent of the actual websocket implementation and its execution context (backend vs. frontend).
  */
-export class WebSocketChannel implements Channel {
+export class WebSocketChannel extends AbstractChannel {
     static wsPath = '/services';
 
-    protected readonly onCloseEmitter: Emitter<ChannelCloseEvent> = new Emitter();
-    get onClose(): Event<ChannelCloseEvent> {
-        return this.onCloseEmitter.event;
-    }
-
-    protected readonly onMessageEmitter: Emitter<MessageProvider> = new Emitter();
-    get onMessage(): Event<MessageProvider> {
-        return this.onMessageEmitter.event;
-    }
-
-    protected readonly onErrorEmitter: Emitter<unknown> = new Emitter();
-    get onError(): Event<unknown> {
-        return this.onErrorEmitter.event;
-    }
-
-    protected toDispose = new DisposableCollection();
-
     constructor(protected readonly socket: IWebSocket) {
-        this.toDispose.pushAll([this.onCloseEmitter, this.onMessageEmitter, this.onErrorEmitter]);
+        super();
+        this.toDispose.push(Disposable.create(() => socket.close()));
         socket.onClose((reason, code) => this.onCloseEmitter.fire({ reason, code }));
         socket.onClose(() => this.close());
         socket.onError(error => this.onErrorEmitter.fire(error));
-        // eslint-disable-next-line arrow-body-style
         socket.onMessage(data => this.onMessageEmitter.fire(() => {
             // In the browser context socketIO receives binary messages as ArrayBuffers.
             // So we have to convert them to a Uint8Array before delegating the message to the read buffer.
@@ -71,11 +53,6 @@ export class WebSocketChannel implements Channel {
         });
 
         return result;
-    }
-
-    close(): void {
-        this.toDispose.dispose();
-        this.socket.close();
     }
 }
 

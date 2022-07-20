@@ -15,6 +15,7 @@
 // *****************************************************************************
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { addExtension, Packr as MsgPack } from 'msgpackr';
 import { ReadBuffer, WriteBuffer } from './message-buffer';
 
 /**
@@ -85,73 +86,11 @@ export class ResponseError extends Error {
 }
 
 /**
- * The tag values for the default {@link ValueEncoder}s & {@link ValueDecoder}s
- */
-
-export enum ObjectType {
-    JSON = 0,
-    ByteArray = 1,
-    ObjectArray = 2,
-    Null = 3,
-    Undefined = 4,
-    Object = 5,
-    String = 6,
-    Boolean = 7,
-    Number = 8,
-    // eslint-disable-next-line @typescript-eslint/no-shadow
-    ResponseError = 9,
-    Error = 10,
-    Map = 11,
-    Set = 12,
-    Function = 13
-
-}
-
-/**
- * A value encoder writes javascript values to a write buffer. Encoders will be asked
- * in turn (ordered by their tag value, descending) whether they can encode a given value
- * This means encoders with higher tag values have priority. Since the default encoders
- * have tag values from 1-13, they can be easily overridden.
- */
-export interface ValueEncoder {
-    /**
-     * Returns true if this encoder wants to encode this value.
-     * @param value the value to be encoded
-     */
-    is(value: any): boolean;
-    /**
-     * Write the given value to the buffer. Will only be called if {@link is(value)} returns true.
-     * @param buf The buffer to write to
-     * @param value The value to be written
-     * @param visitedObjects The collection of already visited (i.e. encoded) objects. Used to detect circular references
-     * @param recursiveEncode A function that will use the encoders registered on the {@link MessageEncoder}
-     * to write a value to the underlying buffer. This is used mostly to write structures like an array
-     * without having to know how to encode the values in the array
-     */
-    write(buf: WriteBuffer, value: any, visitedObjects: WeakSet<object>, recursiveEncode?: (buf: WriteBuffer, value: any, visitedObjects: WeakSet<object>) => void): void;
-}
-
-/**
- * Reads javascript values from a read buffer
- */
-export interface ValueDecoder {
-    /**
-     * Reads a value from a read buffer. This method will be called for the decoder that is
-     * registered for the tag associated with the value encoder that encoded this value.
-     * @param buf The read buffer to read from
-     * @param recursiveDecode A function that will use the decoders registered on the {@link RpcMessageDecoder}
-     * to read values from the underlying read buffer. This is used mostly to decode structures like an array
-     * without having to know how to decode the values in the array.
-     */
-    read(buf: ReadBuffer, recursiveDecode: (buf: ReadBuffer) => unknown): unknown;
-}
-
-/**
  * Custom error thrown by the {@link RpcMessageEncoder} if an error occurred during the encoding and the
  * object could not be written to the given {@link WriteBuffer}
  */
 export class EncodingError extends Error {
-    constructor(msg: string) {
+    constructor(msg: string, public cause?: Error) {
         super(msg);
     }
 }
@@ -159,202 +98,8 @@ export class EncodingError extends Error {
 /**
  * A `RpcMessageDecoder` parses a a binary message received via {@link ReadBuffer} into a {@link RpcMessage}
  */
-export class RpcMessageDecoder {
-
-    protected decoders: Map<number, ValueDecoder> = new Map();
-
-    constructor() {
-        this.registerDecoders();
-    }
-
-    registerDecoders(): void {
-        this.registerDecoder(ObjectType.JSON, {
-            read: buf => {
-                const json = buf.readString();
-                return JSON.parse(json);
-            }
-        });
-        this.registerDecoder(ObjectType.Error, {
-            read: buf => {
-                const serializedError: SerializedError = JSON.parse(buf.readString());
-                const error = new Error(serializedError.message);
-                Object.assign(error, serializedError);
-                return error;
-            }
-        });
-
-        this.registerDecoder(ObjectType.ResponseError, {
-            read: buf => {
-                const error = JSON.parse(buf.readString());
-                return new ResponseError(error.code, error.message, error.data);
-            }
-        });
-        this.registerDecoder(ObjectType.ByteArray, {
-            read: buf => buf.readBytes()
-        });
-
-        this.registerDecoder(ObjectType.ObjectArray, {
-            read: buf => this.readArray(buf)
-        });
-
-        this.registerDecoder(ObjectType.Undefined, {
-            read: () => undefined
-        });
-
-        this.registerDecoder(ObjectType.Null, {
-            // eslint-disable-next-line no-null/no-null
-            read: () => null
-        });
-
-        this.registerDecoder(ObjectType.Object, {
-            read: (buf, recursiveRead) => {
-                const propertyCount = buf.readLength();
-                const result = Object.create({});
-                for (let i = 0; i < propertyCount; i++) {
-                    const key = buf.readString();
-                    const value = recursiveRead(buf);
-                    result[key] = value;
-                }
-                return result;
-            }
-        });
-
-        this.registerDecoder(ObjectType.String, {
-            read: (buf, recursiveRead) => buf.readString()
-        });
-
-        this.registerDecoder(ObjectType.Boolean, {
-            read: buf => buf.readUint8() === 1
-        });
-
-        this.registerDecoder(ObjectType.Number, {
-            read: buf => buf.readNumber()
-        });
-
-        this.registerDecoder(ObjectType.Map, {
-            read: buf => new Map(this.readArray(buf))
-        });
-
-        this.registerDecoder(ObjectType.Set, {
-            read: buf => new Set(this.readArray(buf))
-        });
-
-        this.registerDecoder(ObjectType.Function, {
-            read: () => ({})
-        });
-
-    }
-
-    /**
-     * Registers a new {@link ValueDecoder} for the given tag.
-     * After the successful registration the {@link tagIntType} is recomputed
-     * by retrieving the highest tag value and calculating the required Uint size to store it.
-     * @param tag the tag for which the decoder should be registered.
-     * @param decoder the decoder that should be registered.
-     */
-    registerDecoder(tag: number, decoder: ValueDecoder): void {
-        if (this.decoders.has(tag)) {
-            throw new Error(`Decoder already registered: ${tag}`);
-        }
-        this.decoders.set(tag, decoder);
-    }
-    parse(buf: ReadBuffer): RpcMessage {
-        try {
-            const msgType = buf.readUint8();
-
-            switch (msgType) {
-                case RpcMessageType.Request:
-                    return this.parseRequest(buf);
-                case RpcMessageType.Notification:
-                    return this.parseNotification(buf);
-                case RpcMessageType.Reply:
-                    return this.parseReply(buf);
-                case RpcMessageType.ReplyErr:
-                    return this.parseReplyErr(buf);
-                case RpcMessageType.Cancel:
-                    return this.parseCancel(buf);
-            }
-            throw new Error(`Unknown message type: ${msgType}`);
-        } catch (e) {
-            // exception does not show problematic content: log it!
-            console.log('failed to parse message: ' + buf);
-            throw e;
-        }
-    }
-
-    protected parseCancel(msg: ReadBuffer): CancelMessage {
-        const callId = msg.readUint32();
-        return {
-            type: RpcMessageType.Cancel,
-            id: callId
-        };
-    }
-
-    protected parseRequest(msg: ReadBuffer): RequestMessage {
-        const callId = msg.readUint32();
-        const method = msg.readString();
-        const args = this.readArray(msg);
-
-        return {
-            type: RpcMessageType.Request,
-            id: callId,
-            method: method,
-            args: args
-        };
-    }
-
-    protected parseNotification(msg: ReadBuffer): NotificationMessage {
-        const callId = msg.readUint32();
-        const method = msg.readString();
-        const args = this.readArray(msg);
-
-        return {
-            type: RpcMessageType.Notification,
-            id: callId,
-            method: method,
-            args: args
-        };
-    }
-
-    parseReply(msg: ReadBuffer): ReplyMessage {
-        const callId = msg.readUint32();
-        const value = this.readTypedValue(msg);
-        return {
-            type: RpcMessageType.Reply,
-            id: callId,
-            res: value
-        };
-    }
-
-    parseReplyErr(msg: ReadBuffer): ReplyErrMessage {
-        const callId = msg.readUint32();
-
-        const err = this.readTypedValue(msg);
-
-        return {
-            type: RpcMessageType.ReplyErr,
-            id: callId,
-            err
-        };
-    }
-
-    readArray(buf: ReadBuffer): any[] {
-        const length = buf.readLength();
-        const result = new Array(length);
-        for (let i = 0; i < length; i++) {
-            result[i] = this.readTypedValue(buf);
-        }
-        return result;
-    }
-
-    readTypedValue(buf: ReadBuffer): any {
-        const type = buf.readUint8();
-        const decoder = this.decoders.get(type);
-        if (!decoder) {
-            throw new Error(`No decoder for tag ${type}`);
-        }
-        return decoder.read(buf, innerBuffer => this.readTypedValue(innerBuffer));
-    }
+export interface RpcMessageDecoder {
+    parse(buffer: ReadBuffer): RpcMessage;
 }
 
 /**
@@ -362,202 +107,82 @@ export class RpcMessageDecoder {
  * up to clients to commit the message. This allows for multiple messages being
  * encoded before sending.
  */
-export class RpcMessageEncoder {
+export interface RpcMessageEncoder {
+    cancel(buf: WriteBuffer, requestId: number): void;
 
-    protected readonly encoders: [number, ValueEncoder][] = [];
-    protected readonly registeredTags: Set<number> = new Set();
+    notification(buf: WriteBuffer, requestId: number, method: string, args: any[]): void
 
-    constructor() {
-        this.registerEncoders();
+    request(buf: WriteBuffer, requestId: number, method: string, args: any[]): void
+
+    replyOK(buf: WriteBuffer, requestId: number, res: any): void
+
+    replyErr(buf: WriteBuffer, requestId: number, err: any): void
+
+}
+
+export const defaultMsgPack = new MsgPack({ moreTypes: true, encodeUndefinedAsNil: false, bundleStrings: true });
+// Add custom msgpackR extension for ResponseErrors.
+addExtension({
+    Class: ResponseError,
+    type: 1,
+    write: (instance: ResponseError) => {
+        const { code, data, message, name, stack } = instance;
+        return { code, data, message, name, stack };
+    },
+    read: data => {
+        const error = new ResponseError(data.code, data.message, data.data);
+        error.name = data.name;
+        error.stack = data.stack;
+        return error;
     }
+});
 
-    protected registerEncoders(): void {
-        // encoders will be consulted in reverse order of registration, so the JSON fallback needs to be last
-        this.registerEncoder(ObjectType.JSON, {
-            is: () => true,
-            write: (buf, value) => {
-                buf.writeString(JSON.stringify(value));
-            }
-        });
+export class MsgPackMessageEncoder implements RpcMessageEncoder {
 
-        this.registerEncoder(ObjectType.Function, {
-            is: value => typeof value === 'function',
-            write: () => { }
-        });
+    constructor(protected readonly msgPack: MsgPack = defaultMsgPack) {
 
-        this.registerEncoder(ObjectType.Object, {
-            is: value => typeof value === 'object',
-            write: (buf, object, visitedObjects, recursiveEncode) => {
-                const properties = Object.keys(object);
-                const relevant = [];
-                for (const property of properties) {
-                    const value = object[property];
-                    if (typeof value !== 'function') {
-                        relevant.push([property, value]);
-                    }
-                }
-
-                buf.writeLength(relevant.length);
-                for (const [property, value] of relevant) {
-                    buf.writeString(property);
-                    recursiveEncode?.(buf, value, visitedObjects);
-                }
-            }
-        });
-
-        this.registerEncoder(ObjectType.Error, {
-            is: value => value instanceof Error,
-            write: (buf, error: Error) => {
-                const { name, message } = error;
-                const stack: string = (<any>error).stacktrace || error.stack;
-                const serializedError = {
-                    $isError: true,
-                    name,
-                    message,
-                    stack
-                };
-                buf.writeString(JSON.stringify(serializedError));
-            }
-        });
-
-        this.registerEncoder(ObjectType.ResponseError, {
-            is: value => value instanceof ResponseError,
-            write: (buf, value) => buf.writeString(JSON.stringify(value))
-        });
-
-        this.registerEncoder(ObjectType.Map, {
-            is: value => value instanceof Map,
-            write: (buf, value: Map<any, any>, visitedObjects) => this.writeArray(buf, Array.from(value.entries()), visitedObjects)
-        });
-
-        this.registerEncoder(ObjectType.Set, {
-            is: value => value instanceof Set,
-            write: (buf, value: Set<any>, visitedObjects) => this.writeArray(buf, [...value], visitedObjects)
-        });
-
-        this.registerEncoder(ObjectType.Null, {
-            // eslint-disable-next-line no-null/no-null
-            is: value => value === null,
-            write: () => { }
-        });
-
-        this.registerEncoder(ObjectType.Undefined, {
-            is: value => value === undefined,
-            write: () => { }
-        });
-
-        this.registerEncoder(ObjectType.ObjectArray, {
-            is: value => Array.isArray(value),
-            write: (buf, value, visitedObjects) => {
-                this.writeArray(buf, value, visitedObjects);
-            }
-        });
-
-        this.registerEncoder(ObjectType.ByteArray, {
-            is: value => value instanceof Uint8Array,
-            write: (buf, value) => {
-                buf.writeBytes(value);
-            }
-        });
-
-        this.registerEncoder(ObjectType.String, {
-            is: value => typeof value === 'string',
-            write: (buf, value) => {
-                buf.writeString(value);
-            }
-        });
-
-        this.registerEncoder(ObjectType.Boolean, {
-            is: value => typeof value === 'boolean',
-            write: (buf, value) => {
-                buf.writeUint8(value === true ? 1 : 0);
-            }
-        });
-
-        this.registerEncoder(ObjectType.Number, {
-            is: value => typeof value === 'number',
-            write: (buf, value) => {
-                buf.writeNumber(value);
-            }
-        });
-    }
-
-    /**
-     * Registers a new {@link ValueEncoder} for the given tag.
-     * After the successful registration the {@link tagIntType} is recomputed
-     * by retrieving the highest tag value and calculating the required Uint size to store it.
-     * @param tag the tag for which the encoder should be registered.
-     * @param decoder the encoder that should be registered.
-     */
-    registerEncoder<T>(tag: number, encoder: ValueEncoder): void {
-        if (this.registeredTags.has(tag)) {
-            throw new Error(`Tag already registered: ${tag}`);
-        }
-        this.registeredTags.add(tag);
-        this.encoders.push([tag, encoder]);
     }
 
     cancel(buf: WriteBuffer, requestId: number): void {
-        buf.writeUint8(RpcMessageType.Cancel);
-        buf.writeUint32(requestId);
+        this.encode<CancelMessage>(buf, { type: RpcMessageType.Cancel, id: requestId });
     }
-
     notification(buf: WriteBuffer, requestId: number, method: string, args: any[]): void {
-        buf.writeUint8(RpcMessageType.Notification);
-        buf.writeUint32(requestId);
-        buf.writeString(method);
-        this.writeArray(buf, args, new WeakSet());
+        this.encode<NotificationMessage>(buf, { type: RpcMessageType.Notification, id: requestId, method, args });
     }
-
     request(buf: WriteBuffer, requestId: number, method: string, args: any[]): void {
-        buf.writeUint8(RpcMessageType.Request);
-        buf.writeUint32(requestId);
-        buf.writeString(method);
-        this.writeArray(buf, args, new WeakSet());
+        this.encode<RequestMessage>(buf, { type: RpcMessageType.Request, id: requestId, method, args });
     }
-
     replyOK(buf: WriteBuffer, requestId: number, res: any): void {
-        buf.writeUint8(RpcMessageType.Reply);
-        buf.writeUint32(requestId);
-        this.writeTypedValue(buf, res, new WeakSet());
+        this.encode<ReplyMessage>(buf, { type: RpcMessageType.Reply, id: requestId, res });
     }
-
     replyErr(buf: WriteBuffer, requestId: number, err: any): void {
-        buf.writeUint8(RpcMessageType.ReplyErr);
-        buf.writeUint32(requestId);
-        this.writeTypedValue(buf, err, new WeakSet());
+        this.encode<ReplyErrMessage>(buf, { type: RpcMessageType.ReplyErr, id: requestId, err });
     }
 
-    writeTypedValue(buf: WriteBuffer, value: any, visitedObjects: WeakSet<object>): void {
-        if (value && typeof value === 'object') {
-            if (visitedObjects.has(value)) {
-                throw new EncodingError('Object to encode contains circular references!');
-            }
-            visitedObjects.add(value);
-        }
-
+    encode<T = unknown>(buf: WriteBuffer, value: T): void {
         try {
-            for (let i: number = this.encoders.length - 1; i >= 0; i--) {
-                if (this.encoders[i][1].is(value)) {
-                    buf.writeUint8(this.encoders[i][0]);
-                    this.encoders[i][1].write(buf, value, visitedObjects, (innerBuffer, innerValue, _visitedObjects) => {
-                        this.writeTypedValue(innerBuffer, innerValue, _visitedObjects);
-                    });
-                    return;
-                }
+            buf.writeBytes(this.msgPack.encode(value));
+        } catch (err) {
+            if (err instanceof Error) {
+                throw new EncodingError(`Error during encoding: '${err.message}'`, err);
             }
-            throw new EncodingError(`No suitable value encoder found for ${value}`);
-        } finally {
-            if (value && typeof value === 'object') {
-                visitedObjects.delete(value);
-            }
+            throw err;
         }
     }
 
-    writeArray(buf: WriteBuffer, value: any[], visitedObjects: WeakSet<object>): void {
-        buf.writeLength(value.length);
-        for (let i = 0; i < value.length; i++) {
-            this.writeTypedValue(buf, value[i], visitedObjects);
-        }
+}
+
+export class MsgPackMessageDecoder implements RpcMessageDecoder {
+    constructor(protected readonly msgPack: MsgPack = defaultMsgPack) {
+
     }
+    decode<T = any>(buf: ReadBuffer): T {
+        const bytes = buf.readBytes();
+        return this.msgPack.decode(bytes);
+    }
+
+    parse(buffer: ReadBuffer): RpcMessage {
+        return this.decode(buffer);
+    }
+
 }
