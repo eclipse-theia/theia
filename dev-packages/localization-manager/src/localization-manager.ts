@@ -109,11 +109,11 @@ export class LocalizationManager {
     }
 
     protected addIgnoreTags(text: string): string {
-        return text.replace(/\{\d*\}/g, match => '<x>' + match + '</x>');
+        return text.replace(/(\{\d*\})/g, '<x>$1</x>');
     }
 
     protected removeIgnoreTags(text: string): string {
-        return text.replace(/<x>(\{\d+\})<\/x>/g, (_, group) => group);
+        return text.replace(/<x>(\{\d+\})<\/x>/g, '$1');
     }
 
     protected buildLocalizationMap(source: Localization, target: Localization): LocalizationMap {

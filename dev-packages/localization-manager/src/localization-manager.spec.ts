@@ -77,4 +77,15 @@ describe('localization-manager#translateLanguage', () => {
             a: 'b'
         });
     });
+
+    it('should keep placeholders intact', async () => {
+        const input = {
+            key: '{1} {0}'
+        };
+        const target = {};
+        await manager.translateLanguage(input, target, 'EN', defaultOptions);
+        assert.deepStrictEqual(target, {
+            key: '[{1} {0}]'
+        });
+    });
 });
