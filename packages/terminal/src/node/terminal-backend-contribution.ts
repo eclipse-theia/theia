@@ -20,6 +20,7 @@ import { TerminalProcess, ProcessManager } from '@theia/process/lib/node';
 import { terminalsPath } from '../common/terminal-protocol';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 import { RpcProtocol } from '@theia/core/';
+import { BufferingStream } from './buffering-stream';
 
 @injectable()
 export class TerminalBackendContribution implements MessagingService.Contribution {
@@ -47,10 +48,13 @@ export class TerminalBackendContribution implements MessagingService.Contributio
                 };
 
                 const rpc = new RpcProtocol(channel, requestHandler);
-                output.on('data', data => {
-                    rpc.sendNotification('onData', [data]);
+                const buffer = new BufferingStream();
+                buffer.onData(chunk => rpc.sendNotification('onData', [chunk.toString('utf8')]));
+                output.on('data', chunk => buffer.push(Buffer.from(chunk, 'utf8')));
+                channel.onClose(() => {
+                    buffer.dispose();
+                    output.dispose();
                 });
-                channel.onClose(() => output.dispose());
             }
         });
     }
