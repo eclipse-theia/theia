@@ -32,7 +32,6 @@ import { DebugAdapter } from '@theia/debug/lib/common/debug-model';
 import { PluginDebugAdapterCreator } from './plugin-debug-adapter-creator';
 import { NodeDebugAdapterCreator } from '../node/debug/plugin-node-debug-adapter-creator';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import TheiaURI from '@theia/core/lib/common/uri';
 
 interface ConfigurationProviderRecord {
     handle: number;
@@ -180,26 +179,24 @@ export class DebugExtImpl implements DebugExt {
     }
 
     asDebugSourceUri(source: theia.DebugProtocolSource, session?: theia.DebugSession): theia.Uri {
-        const raw = source as DebugProtocol.Source;
-        const uri = this.getDebugSourceUri(raw, session?.id);
-        return URIImpl.parse(uri.toString());
+        return this.getDebugSourceUri(source, session?.id);
     }
 
-    private getDebugSourceUri(raw: DebugProtocol.Source, sessionId?: string): TheiaURI {
+    private getDebugSourceUri(raw: DebugProtocol.Source, sessionId?: string): theia.Uri {
         if (raw.sourceReference && raw.sourceReference > 0) {
             let query = 'ref=' + String(raw.sourceReference);
             if (sessionId) {
                 query += `&session=${sessionId}`;
             }
-            return new TheiaURI().withScheme(DEBUG_SCHEME).withPath(raw.path || '').withQuery(query);
+            return URIImpl.from({ scheme: DEBUG_SCHEME, path: raw.path ?? '', query });
         }
         if (!raw.path) {
             throw new Error('Unrecognized source type: ' + JSON.stringify(raw));
         }
         if (raw.path.match(SCHEME_PATTERN)) {
-            return new TheiaURI(raw.path);
+            return URIImpl.parse(raw.path);
         }
-        return new TheiaURI(URI.file(raw.path));
+        return URIImpl.file(raw.path);
     }
 
     registerDebugAdapterDescriptorFactory(debugType: string, factory: theia.DebugAdapterDescriptorFactory): Disposable {
