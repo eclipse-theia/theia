@@ -4888,10 +4888,10 @@ drivelist@^9.0.2:
     nan "^2.14.0"
     prebuild-install "^5.2.4"
 
-dugite-extra@0.1.15:
-  version "0.1.15"
-  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.1.15.tgz#322406b628ea5515c5c6fcd65e4d040543d6268a"
-  integrity sha512-beLmQcIXLA8aXqWQZF/ooECoZvYKpBywIFwgqAoYnV04NdWUXDtZ6mMcjQf5eAz5PjXGXAYSuQ31zkPL8J85+A==
+dugite-extra@0.1.16:
+  version "0.1.16"
+  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.1.16.tgz#cc1f48e1090c8e8507ff7fe342e9af8b7bb4e9ed"
+  integrity sha512-Fcl+o0hZy7dwuI4vIxNLYpEsYeYRSEAQDshyiikX3WMJMOj0JZQ6Qt0H3PtlOdJYGUZocGGZ8VFRtbJeCT24lw==
   dependencies:
     byline "^5.0.0"
     dugite-no-gpl "1.69.0"
