@@ -198,15 +198,9 @@ export class DebugSessionManager {
     async start(optionsOrName: DebugSessionOptions | string): Promise<DebugSession | boolean | undefined> {
         if (typeof optionsOrName === 'string') {
             const options = this.debugConfigurationManager.find(optionsOrName);
-            if (!options) {
-                return;
-            }
-            return this.start(options);
+            return !!options && this.start(options);
         }
-        if (optionsOrName.configuration) {
-            return this.startConfiguration(optionsOrName);
-        }
-        return this.startCompound(optionsOrName);
+        return optionsOrName.configuration ? this.startConfiguration(optionsOrName) : this.startCompound(optionsOrName);
     }
 
     protected async startConfiguration(options: DebugConfigurationSessionOptions): Promise<DebugSession | undefined> {

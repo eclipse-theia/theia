@@ -249,7 +249,6 @@ export class DebugConfigurationManager {
     find(compound: DebugCompound, workspaceFolderUri?: string): DebugSessionOptions | undefined;
     find(configuration: DebugConfiguration, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined;
     find(name: string, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined;
-    find(nameOrConfigurationOrCompound: string | DebugConfiguration | DebugCompound, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined;
     find(nameOrConfigurationOrCompound: string | DebugConfiguration | DebugCompound, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined {
         // providerType is only applicable to dynamic debug configurations
         if (typeof nameOrConfigurationOrCompound === 'object' && providerType) {
@@ -512,8 +511,8 @@ export class DebugConfigurationManager {
 
         // Between versions v1.26 and v1.27, the expected format of the data changed so that old stored data
         // may not contain the configuration key.
-        if (data.current && 'configuration' in data.current) {
-            this.current = this.find(data.current.configuration!, data.current.workspaceFolderUri, data.current.providerType);
+        if (data.current && data.current.configuration) {
+            this.current = this.find(data.current.configuration, data.current.workspaceFolderUri, data.current.providerType);
         }
     }
 

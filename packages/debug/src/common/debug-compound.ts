@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { TaskIdentifier } from '@theia/task/lib/common';
 
 export const defaultCompound: DebugCompound = { name: 'Compound', configurations: [] };
@@ -27,7 +26,7 @@ export interface DebugCompound {
 }
 
 export namespace DebugCompound {
-    export function is(arg: DebugCompound | any): arg is DebugCompound {
+    export function is(arg: unknown): arg is DebugCompound {
         return !!arg && typeof arg === 'object' && 'name' in arg && 'configurations' in arg;
     }
 }

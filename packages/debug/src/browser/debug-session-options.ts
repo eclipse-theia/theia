@@ -24,7 +24,7 @@ export class DebugCompoundRoot {
     onDidSessionStop = this.stopEmitter.event;
 
     sessionStopped(): void {
-        if (!this.stopped) { // avoid sending extranous terminate events
+        if (!this.stopped) { // avoid sending extraneous terminate events
             this.stopped = true;
             this.stopEmitter.fire();
         }
@@ -62,6 +62,10 @@ export namespace DebugSessionOptions {
     }
 }
 
+/**
+ * Flat and partial version of a debug session options usable to find the options later in the manager.
+ * @deprecated Not needed anymore, the recommended way is to serialize/deserialize the options directly using `JSON.stringify` and `JSON.parse`.
+ */
 export type DebugSessionOptionsData = DebugSessionOptionsBase & (DebugConfiguration | DebugCompound);
 
 export type InternalDebugSessionOptions = DebugSessionOptions & { id: number };
@@ -75,6 +79,7 @@ export namespace InternalDebugSessionOptions {
         return 'id' in options;
     }
 
+    /** @deprecated Please use `JSON.stringify` to serialize the options. */
     export function toValue(options: DebugSessionOptions): string {
         if (DebugSessionOptions.isCompound(options)) {
             return options.compound.name + SEPARATOR +
@@ -88,6 +93,8 @@ export namespace InternalDebugSessionOptions {
             options.providerType;
     }
 
+    /** @deprecated Please use `JSON.parse` to restore previously serialized debug session options. */
+    // eslint-disable-next-line deprecation/deprecation
     export function parseValue(value: string): DebugSessionOptionsData {
         const split = value.split(SEPARATOR);
         if (split.length === 5) {

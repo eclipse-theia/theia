@@ -71,30 +71,22 @@ export class DebugConfigurationModel implements Disposable {
         const configurations: DebugConfiguration[] = [];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { configUri, value } = this.preferences.resolve<any>('launch', undefined, this.workspaceFolderUri);
-        if (value && typeof value === 'object' && 'configurations' in value) {
-            if (Array.isArray(value.configurations)) {
-                for (const configuration of value.configurations) {
-                    if (DebugConfiguration.is(configuration)) {
-                        configurations.push(configuration);
-                    }
+        if (value && typeof value === 'object' && Array.isArray(value.configurations)) {
+            for (const configuration of value.configurations) {
+                if (DebugConfiguration.is(configuration)) {
+                    configurations.push(configuration);
                 }
             }
         }
         const compounds: DebugCompound[] = [];
-        if (value && typeof value === 'object' && 'compounds' in value) {
-            if (Array.isArray(value.compounds)) {
-                for (const compound of value.compounds) {
-                    if (DebugCompound.is(compound)) {
-                        compounds.push(compound);
-                    }
+        if (value && typeof value === 'object' && Array.isArray(value.compounds)) {
+            for (const compound of value.compounds) {
+                if (DebugCompound.is(compound)) {
+                    compounds.push(compound);
                 }
             }
         }
-        return {
-            uri: configUri,
-            configurations,
-            compounds
-        };
+        return { uri: configUri, configurations, compounds };
     }
 
 }
