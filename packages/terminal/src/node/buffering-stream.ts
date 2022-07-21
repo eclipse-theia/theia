@@ -63,6 +63,7 @@ export class BufferingStream {
     dispose(): void {
         clearTimeout(this.timeout);
         this.buffer = undefined;
+        this.onDataEmitter.dispose();
     }
 
     protected emitBufferedChunk(): void {
