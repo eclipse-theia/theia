@@ -9869,6 +9869,20 @@ export module '@theia/plugin' {
     }
 
     /**
+     * A DebugProtocolBreakpoint is an opaque stand-in type for the [Breakpoint](https://microsoft.github.io/debug-adapter-protocol/specification#Types_Breakpoint) type defined in the Debug Adapter Protocol.
+     */
+    export interface DebugProtocolBreakpoint {
+        // Properties: see details [here](https://microsoft.github.io/debug-adapter-protocol/specification#Types_Breakpoint)
+    }
+
+    /**
+     * A DebugProtocolSource is an opaque stand-in type for the [Source](https://microsoft.github.io/debug-adapter-protocol/specification#Types_Source) type defined in the Debug Adapter Protocol.
+     */
+    export interface DebugProtocolSource {
+        // Properties: see details [here](https://microsoft.github.io/debug-adapter-protocol/specification#Types_Source)
+    }
+
+    /**
      * Configuration for a debug session.
      */
     export interface DebugConfiguration {
@@ -9927,6 +9941,15 @@ export module '@theia/plugin' {
          * Send a custom request to the debug adapter.
          */
         customRequest(command: string, args?: any): Thenable<any>;
+
+        /**
+         * Maps a breakpoint in the editor to the corresponding Debug Adapter Protocol (DAP) breakpoint that
+         * is managed by the debug adapter of the debug session. If no DAP breakpoint exists (either because
+         * the editor breakpoint was not yet registered or because the debug adapter is not interested in the
+         * breakpoint), the value undefined is returned.
+         * @param breakpoint a Breakpoint in the editor.
+         */
+        getDebugProtocolBreakpoint(breakpoint: Breakpoint): PromiseLike<DebugProtocolBreakpoint | undefined>
     }
 
     /**
@@ -10401,6 +10424,16 @@ export module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this factory when being disposed.
          */
         export function registerDebugAdapterDescriptorFactory(debugType: string, factory: DebugAdapterDescriptorFactory): Disposable;
+
+        /**
+         * Converts a "Source" descriptor object received via the Debug Adapter Protocol into a Uri that can be used to load its contents.
+         * If the source descriptor is based on a path, a file Uri is returned. If the source descriptor uses a reference number, a
+         * specific debug Uri (scheme 'debug') is constructed that requires a corresponding ContentProvider and a running debug session
+         * If the "Source" descriptor has insufficient information for creating the Uri, an error is thrown.
+         * @param source An object conforming to the Source type defined in the Debug Adapter Protocol.
+         * @param session An optional debug session that will be used when the source descriptor uses a reference number to load the contents from an active debug session.
+         */
+        export function asDebugSourceUri(source: DebugProtocolSource, session?: DebugSession): Uri;
 
         /**
          * Register a {@link DebugConfigurationProvider debug configuration provider} for a specific debug type.

@@ -23,13 +23,15 @@ import { PluginPackageDebuggersContribution } from '../../common/plugin-protocol
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { CommandRegistryImpl } from '../command-registry';
 import { ConnectionImpl } from '../../common/connection';
-import { Disposable, Breakpoint as BreakpointExt, SourceBreakpoint, FunctionBreakpoint, Location, Range } from '../types-impl';
+import { DEBUG_SCHEME, SCHEME_PATTERN } from '@theia/debug/lib/common/debug-uri-utils';
+import { Disposable, Breakpoint as BreakpointExt, SourceBreakpoint, FunctionBreakpoint, Location, Range, URI as URIImpl } from '../types-impl';
 import { PluginDebugAdapterSession } from './plugin-debug-adapter-session';
 import { PluginDebugAdapterTracker } from './plugin-debug-adapter-tracker';
 import uuid = require('uuid');
 import { DebugAdapter } from '@theia/debug/lib/common/debug-model';
 import { PluginDebugAdapterCreator } from './plugin-debug-adapter-creator';
 import { NodeDebugAdapterCreator } from '../node/debug/plugin-node-debug-adapter-creator';
+import { DebugProtocol } from 'vscode-debugprotocol';
 
 interface ConfigurationProviderRecord {
     handle: number;
@@ -176,6 +178,27 @@ export class DebugExtImpl implements DebugExt {
         return this.proxy.$stopDebugging(session?.id);
     }
 
+    asDebugSourceUri(source: theia.DebugProtocolSource, session?: theia.DebugSession): theia.Uri {
+        return this.getDebugSourceUri(source, session?.id);
+    }
+
+    private getDebugSourceUri(raw: DebugProtocol.Source, sessionId?: string): theia.Uri {
+        if (raw.sourceReference && raw.sourceReference > 0) {
+            let query = 'ref=' + String(raw.sourceReference);
+            if (sessionId) {
+                query += `&session=${sessionId}`;
+            }
+            return URIImpl.from({ scheme: DEBUG_SCHEME, path: raw.path ?? '', query });
+        }
+        if (!raw.path) {
+            throw new Error('Unrecognized source type: ' + JSON.stringify(raw));
+        }
+        if (raw.path.match(SCHEME_PATTERN)) {
+            return URIImpl.parse(raw.path);
+        }
+        return URIImpl.file(raw.path);
+    }
+
     registerDebugAdapterDescriptorFactory(debugType: string, factory: theia.DebugAdapterDescriptorFactory): Disposable {
         if (this.descriptorFactories.has(debugType)) {
             throw new Error(`Descriptor factory for ${debugType} has been already registered`);
@@ -279,13 +302,13 @@ export class DebugExtImpl implements DebugExt {
         this.onDidChangeBreakpointsEmitter.fire({ added: a, removed: r, changed: c });
     }
 
-    protected toBreakpointExt({ functionName, location, enabled, condition, hitCondition, logMessage }: Breakpoint): BreakpointExt | undefined {
+    protected toBreakpointExt({ functionName, location, enabled, condition, hitCondition, logMessage, id }: Breakpoint): BreakpointExt | undefined {
         if (location) {
             const range = new Range(location.range.startLineNumber, location.range.startColumn, location.range.endLineNumber, location.range.endColumn);
-            return new SourceBreakpoint(new Location(URI.revive(location.uri), range), enabled, condition, hitCondition, logMessage);
+            return new SourceBreakpoint(new Location(URI.revive(location.uri), range), enabled, condition, hitCondition, logMessage, id);
         }
         if (functionName) {
-            return new FunctionBreakpoint(functionName!, enabled, condition, hitCondition, logMessage);
+            return new FunctionBreakpoint(functionName!, enabled, condition, hitCondition, logMessage, id);
         }
         return undefined;
     }
@@ -305,7 +328,9 @@ export class DebugExtImpl implements DebugExt {
                     return response.body;
                 }
                 return Promise.reject(new Error(response.message ?? 'custom request failed'));
-            }
+            },
+            getDebugProtocolBreakpoint: async (breakpoint: Breakpoint) =>
+                this.proxy.$getDebugProtocolBreakpoint(sessionId, breakpoint.id)
         };
 
         const tracker = await this.createDebugAdapterTracker(theiaSession);
