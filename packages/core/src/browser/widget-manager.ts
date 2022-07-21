@@ -17,6 +17,7 @@
 import { inject, named, injectable } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import { ILogger, Emitter, Event, ContributionProvider, MaybePromise, WaitUntilEvent } from '../common';
+import stableJsonStringify = require('fast-json-stable-stringify');
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const WidgetFactory = Symbol('WidgetFactory');
@@ -256,7 +257,7 @@ export class WidgetManager {
      * @returns the widget construction options represented as a string.
      */
     protected toKey(options: WidgetConstructionOptions): string {
-        return JSON.stringify(options);
+        return stableJsonStringify(options);
     }
 
     /**

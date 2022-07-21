@@ -63,4 +63,18 @@ describe('widget-manager', () => {
         expect(wA).equals(await widgetManager.getOrCreateWidget('test', 'widgetA'));
     });
 
+    it('produces the same widget key regardless of object key order', () => {
+        const options1 = {
+            factoryId: 'a',
+            key1: 1,
+            key2: 2,
+        };
+        const options2 = {
+            key2: 2,
+            key1: 1,
+            factoryId: 'a',
+        };
+        expect(widgetManager['toKey'](options1)).equals(widgetManager['toKey'](options2));
+    });
+
 });
