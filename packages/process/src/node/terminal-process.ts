@@ -17,7 +17,7 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { isWindows } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common';
-import { Process, ProcessType, ProcessOptions, /* ProcessErrorEvent */ } from './process';
+import { Process, ProcessType, ProcessOptions } from './process';
 import { ProcessManager } from './process-manager';
 import { IPty, spawn } from 'node-pty';
 import { MultiRingBuffer, MultiRingBufferReadableStream } from './multi-ring-buffer';
@@ -25,6 +25,7 @@ import { DevNullStream } from './dev-null-stream';
 import { signame } from './utils';
 import { PseudoPty } from './pseudo-pty';
 import { Writable } from 'stream';
+import { TerminalThrottler } from './terminal-throttler';
 
 export const TerminalProcessOptions = Symbol('TerminalProcessOptions');
 export interface TerminalProcessOptions extends ProcessOptions {
@@ -45,6 +46,12 @@ export enum NodePtyErrors {
     ENOENT = 'No such file or directory'
 }
 
+// Max size of a data batch. Note that this value can be exceeded by ~4k (chunk sizes seem to be 4k at the most)
+export const BATCH_MAX_SIZE = 200 * 1024;
+
+// Max duration to batch data before sending it to the renderer process.
+export const BATCH_DURATION_MS = 64;
+
 /**
  * Run arbitrary processes inside pseudo-terminals (PTY).
  *
@@ -53,7 +60,8 @@ export enum NodePtyErrors {
 @injectable()
 export class TerminalProcess extends Process {
 
-    protected readonly terminal: IPty | undefined;
+    protected readonly terminal?: IPty;
+    protected readonly throttler: TerminalThrottler;
 
     readonly outputStream = this.createOutputStream();
     readonly errorStream = new DevNullStream({ autoDestroy: true });
@@ -66,6 +74,8 @@ export class TerminalProcess extends Process {
         @inject(ILogger) @named('process') logger: ILogger
     ) {
         super(processManager, logger, ProcessType.Terminal, options);
+
+        this.throttler = new TerminalThrottler(BATCH_DURATION_MS, BATCH_MAX_SIZE, data => ringBuffer.enq(data));
 
         if (options.isPseudo) {
             // do not need to spawn a process, new a pseudo pty instead
@@ -90,7 +100,7 @@ export class TerminalProcess extends Process {
 
             // node-pty actually wait for the underlying streams to be closed before emitting exit.
             // We should emulate the `exit` and `close` sequence.
-            this.terminal.on('exit', (code, signal) => {
+            this.terminal.onExit(({ exitCode, signal }) => {
                 // Make sure to only pass either code or signal as !undefined, not
                 // both.
                 //
@@ -100,21 +110,21 @@ export class TerminalProcess extends Process {
                 // signal parameter will hold the signal number and code should
                 // be ignored.
                 if (signal === undefined || signal === 0) {
-                    this.onTerminalExit(code, undefined);
+                    this.onTerminalExit(exitCode, undefined);
                 } else {
                     this.onTerminalExit(undefined, signame(signal));
                 }
                 process.nextTick(() => {
                     if (signal === undefined || signal === 0) {
-                        this.emitOnClose(code, undefined);
+                        this.emitOnClose(exitCode, undefined);
                     } else {
                         this.emitOnClose(undefined, signame(signal));
                     }
                 });
             });
 
-            this.terminal.on('data', (data: string) => {
-                ringBuffer.enq(data);
+            this.terminal.onData(data => {
+                this.throttler.throttle(data);
             });
 
             this.inputStream = new Writable({
