@@ -298,12 +298,18 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             command: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id,
             keybinding: 'ctrlcmd+shift+f'
         });
+        keybindings.registerKeybinding({
+            command: SearchInWorkspaceCommands.FIND_IN_FOLDER.id,
+            keybinding: 'shift+alt+f',
+            when: 'explorerResourceIsFolder'
+        });
     }
 
     override registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
         menus.registerMenuAction(NavigatorContextMenu.SEARCH, {
-            commandId: SearchInWorkspaceCommands.FIND_IN_FOLDER.id
+            commandId: SearchInWorkspaceCommands.FIND_IN_FOLDER.id,
+            when: 'explorerResourceIsFolder'
         });
         menus.registerMenuAction(CommonMenus.EDIT_FIND, {
             commandId: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id,
