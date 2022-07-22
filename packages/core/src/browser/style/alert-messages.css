@@ -25,6 +25,12 @@
     padding-right: 3px;
 }
 
+.theia-alert-message-container .theia-message-header,
+.theia-alert-message-container .theia-message-content {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
 /* information message */
 .theia-info-alert {
     background-color: var(--theia-inputValidation-infoBackground);
