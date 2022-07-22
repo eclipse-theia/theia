@@ -488,9 +488,8 @@ export namespace SpecialCases {
 
 export namespace Key {
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function isKey(arg: any): arg is Key {
-        return typeof arg === 'object' && ('code' in arg) && ('keyCode' in arg);
+    export function isKey(arg: unknown): arg is Key {
+        return !!arg && typeof arg === 'object' && 'code' in arg && 'keyCode' in arg;
     }
 
     export function getKey(arg: string | number): Key | undefined {

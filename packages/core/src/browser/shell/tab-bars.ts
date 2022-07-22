@@ -276,7 +276,6 @@ export class TabBarRenderer extends TabBar.Renderer {
      */
     protected getDecorations(title: Title<Widget>): WidgetDecoration.Data[] {
         if (this.tabBar && this.decoratorService) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const owner: { resetTabBarDecorations?: () => void; } & Widget = title.owner;
             if (!owner.resetTabBarDecorations) {
                 owner.resetTabBarDecorations = () => this.decorations.delete(title);

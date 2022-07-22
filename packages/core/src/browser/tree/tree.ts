@@ -123,7 +123,7 @@ export interface TreeNode {
 }
 
 export namespace TreeNode {
-    export function is(node: Object | undefined): node is TreeNode {
+    export function is(node: unknown): node is TreeNode {
         return !!node && typeof node === 'object' && 'id' in node && 'parent' in node;
     }
 

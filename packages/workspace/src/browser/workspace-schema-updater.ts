@@ -114,13 +114,12 @@ export class WorkspaceSchemaUpdater implements JsonSchemaContribution {
 export type WorkspaceSchema = Required<Pick<IJSONSchema, 'properties' | 'required'>>;
 
 export namespace WorkspaceSchema {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export const is = (candidate: any): candidate is WorkspaceSchema => !!candidate
+    export const is = (candidate: unknown): candidate is WorkspaceSchema => !!candidate
         && typeof candidate === 'object'
         && 'properties' in candidate
-        && typeof candidate.properties === 'object'
+        && typeof (candidate as WorkspaceSchema).properties === 'object'
         && 'required' in candidate
-        && Array.isArray(candidate.required);
+        && Array.isArray((candidate as WorkspaceSchema).required);
 }
 
 export const workspaceSchemaId = 'vscode://schemas/workspace';

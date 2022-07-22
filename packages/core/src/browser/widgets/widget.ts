@@ -246,9 +246,8 @@ export interface EventListenerObject<K extends keyof HTMLElementEventMap> {
     handleEvent(evt: HTMLElementEventMap[K]): void;
 }
 export namespace EventListenerObject {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is<K extends keyof HTMLElementEventMap>(listener: any | undefined): listener is EventListenerObject<K> {
-        return !!listener && 'handleEvent' in listener;
+    export function is<K extends keyof HTMLElementEventMap>(listener: unknown): listener is EventListenerObject<K> {
+        return !!listener && typeof listener === 'object' && 'handleEvent' in listener;
     }
 }
 export type EventListenerOrEventListenerObject<K extends keyof HTMLElementEventMap> = EventListener<K> | EventListenerObject<K>;

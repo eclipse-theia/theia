@@ -59,16 +59,13 @@ export namespace Saveable {
     }
 
     export type Snapshot = { value: string } | { read(): string | null };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function isSource(arg: any): arg is SaveableSource {
-        return !!arg && ('saveable' in arg) && is(arg.saveable);
+    export function isSource(arg: unknown): arg is SaveableSource {
+        return typeof arg === 'object' && !!arg && is((arg as SaveableSource).saveable);
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(arg: any): arg is Saveable {
-        return !!arg && ('dirty' in arg) && ('onDirtyChanged' in arg);
+    export function is(arg: unknown): arg is Saveable {
+        return typeof arg === 'object' && !!arg && 'dirty' in arg && 'onDirtyChanged' in arg;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function get(arg: any): Saveable | undefined {
+    export function get(arg: unknown): Saveable | undefined {
         if (is(arg)) {
             return arg;
         }
@@ -77,20 +74,17 @@ export namespace Saveable {
         }
         return undefined;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function getDirty(arg: any): Saveable | undefined {
+    export function getDirty(arg: unknown): Saveable | undefined {
         const saveable = get(arg);
         if (saveable && saveable.dirty) {
             return saveable;
         }
         return undefined;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function isDirty(arg: any): boolean {
+    export function isDirty(arg: unknown): boolean {
         return !!getDirty(arg);
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export async function save(arg: any, options?: SaveOptions): Promise<void> {
+    export async function save(arg: unknown, options?: SaveOptions): Promise<void> {
         const saveable = get(arg);
         if (saveable) {
             await saveable.save(options);
@@ -229,7 +223,7 @@ export namespace SaveableWidget {
         return !!widget && 'closeWithoutSaving' in widget;
     }
     export function getDirty<T extends Widget>(widgets: Iterable<T>): IterableIterator<SaveableWidget & T> {
-        return get(widgets, Saveable.isDirty);
+        return get<T>(widgets, Saveable.isDirty);
     }
     export function* get<T extends Widget>(
         widgets: Iterable<T>,

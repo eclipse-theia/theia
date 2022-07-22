@@ -20,7 +20,6 @@
 *--------------------------------------------------------------------------------------------*/
 
 /* eslint-disable no-null/no-null */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { illegalArgument } from '../common/errors';
@@ -38,6 +37,7 @@ import { es5ClassCompat } from '../common/types';
  * A reviver that takes URI's transferred via JSON.stringify() and makes
  * instances of our local plugin API URI class (below)
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function reviver(key: string | undefined, value: any): any {
     const revived = ObjectsTransferrer.reviver(key, value);
     if (CodeURI.isUri(revived)) {
@@ -423,7 +423,7 @@ export class Position {
         return false;
     }
 
-    toJSON(): any {
+    toJSON(): unknown {
         return { line: this.line, character: this.character };
     }
 }
@@ -546,19 +546,17 @@ export class Range {
         return new Range(start, end);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    static isRange(thing: any): thing is theia.Range {
+    static isRange(thing: unknown): thing is theia.Range {
         if (thing instanceof Range) {
             return true;
         }
-        if (!thing) {
-            return false;
-        }
-        return Position.isPosition((<Range>thing).start)
-            && Position.isPosition((<Range>thing).end);
+        const range = thing as theia.Range;
+        return !!thing && typeof thing === 'object'
+            && Position.isPosition(range.start)
+            && Position.isPosition(range.end);
     }
 
-    toJSON(): any {
+    toJSON(): unknown {
         return [this.start, this.end];
     }
 }
@@ -1636,8 +1634,8 @@ export class FileSystemError extends Error {
 
         // workaround when extending builtin objects and when compiling to ES5, see:
         // https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
-        if (typeof (<any>Object).setPrototypeOf === 'function') {
-            (<any>Object).setPrototypeOf(this, FileSystemError.prototype);
+        if (typeof Object.setPrototypeOf === 'function') {
+            Object.setPrototypeOf(this, FileSystemError.prototype);
         }
 
         if (typeof Error.captureStackTrace === 'function' && typeof terminator === 'function') {
@@ -2555,7 +2553,7 @@ export class SemanticTokensLegend {
     }
 }
 
-function isStrArrayOrUndefined(arg: any): arg is string[] | undefined {
+function isStrArrayOrUndefined(arg: unknown): arg is string[] | undefined {
     return ((typeof arg === 'undefined') || (Array.isArray(arg) && arg.every(e => typeof e === 'string')));
 }
 
@@ -2593,7 +2591,7 @@ export class SemanticTokensBuilder {
 
     public push(line: number, char: number, length: number, tokenType: number, tokenModifiers?: number): void;
     public push(range: Range, tokenType: string, tokenModifiers?: string[]): void;
-    public push(arg0: any, arg1: any, arg2: any, arg3?: any, arg4?: any): void {
+    public push(arg0: number | Range, arg1: number | string, arg2?: number | string[], arg3?: number, arg4?: number): void {
         if (typeof arg0 === 'number' && typeof arg1 === 'number' && typeof arg2 === 'number' && typeof arg3 === 'number' &&
             (typeof arg4 === 'number' || typeof arg4 === 'undefined')) {
             if (typeof arg4 === 'undefined') {

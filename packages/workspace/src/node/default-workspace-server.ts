@@ -231,14 +231,12 @@ namespace RecentWorkspacePathsData {
      *
      * Returns undefined if the given `data` does not contain a `recentRoots` array property.
      */
-    export function create(data: Object | undefined): RecentWorkspacePathsData | undefined {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, no-null/no-null
-        if (typeof data !== 'object' || data === null || !Array.isArray((data as any)['recentRoots'])) {
+    export function create(data: unknown): RecentWorkspacePathsData | undefined {
+        if (typeof data !== 'object' || !data || !Array.isArray((data as RecentWorkspacePathsData).recentRoots)) {
             return;
         }
         return {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            recentRoots: (data as any)['recentRoots'].filter((root: unknown) => typeof root === 'string')
+            recentRoots: (data as RecentWorkspacePathsData).recentRoots.filter(root => typeof root === 'string')
         };
     }
 }

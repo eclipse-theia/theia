@@ -22,12 +22,11 @@ export interface UriSelection {
 
 export namespace UriSelection {
 
-    export function is(arg: Object | undefined): arg is UriSelection {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return typeof arg === 'object' && ('uri' in arg) && (<any>arg)['uri'] instanceof URI;
+    export function is(arg: unknown): arg is UriSelection {
+        return !!arg && typeof arg === 'object' && ('uri' in arg) && (arg as UriSelection).uri instanceof URI;
     }
 
-    export function getUri(selection: Object | undefined): URI | undefined {
+    export function getUri(selection: unknown): URI | undefined {
         if (is(selection)) {
             return selection.uri;
         }
@@ -37,7 +36,7 @@ export namespace UriSelection {
         return undefined;
     }
 
-    export function getUris(selection: Object | undefined): URI[] {
+    export function getUris(selection: unknown): URI[] {
         if (is(selection)) {
             return [selection.uri];
         }

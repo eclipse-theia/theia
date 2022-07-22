@@ -49,9 +49,8 @@ export interface Command {
 
 export namespace Command {
     /* Determine whether object is a Command */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(arg: Command | any): arg is Command {
-        return !!arg && arg === Object(arg) && 'id' in arg;
+    export function is(arg: unknown): arg is Command {
+        return !!arg && typeof arg === 'object' && 'id' in arg;
     }
 
     /** Utility function to easily translate commands */

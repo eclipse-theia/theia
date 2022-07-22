@@ -171,9 +171,8 @@ export namespace TabBarToolbarItem {
         return (left.priority || 0) - (right.priority || 0);
     };
 
-    export function is(arg: Object | undefined): arg is TabBarToolbarItem {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return !!arg && 'command' in arg && typeof (arg as any).command === 'string';
+    export function is(arg: unknown): arg is TabBarToolbarItem {
+        return !!arg && typeof arg === 'object' && 'command' in arg && typeof (arg as TabBarToolbarItem).command === 'string';
     }
 
 }

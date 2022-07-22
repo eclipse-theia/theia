@@ -192,9 +192,8 @@ export abstract class Process {
         this.logger.error(error);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected isForkOptions(options: any): options is ForkOptions {
-        return !!options && !!options.modulePath;
+    protected isForkOptions(options: unknown): options is ForkOptions {
+        return !!options && typeof options === 'object' && !!(options as ForkOptions).modulePath;
     }
 
     protected readonly initialCwd: string;

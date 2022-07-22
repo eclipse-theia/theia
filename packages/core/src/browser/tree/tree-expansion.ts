@@ -69,11 +69,11 @@ export namespace ExpandableTreeNode {
         return !!node && CompositeTreeNode.is(node) && 'expanded' in node;
     }
 
-    export function isExpanded(node: Object | undefined): node is ExpandableTreeNode {
+    export function isExpanded(node: unknown): node is ExpandableTreeNode {
         return ExpandableTreeNode.is(node) && node.expanded;
     }
 
-    export function isCollapsed(node: Object | undefined): node is ExpandableTreeNode {
+    export function isCollapsed(node: unknown): node is ExpandableTreeNode {
         return ExpandableTreeNode.is(node) && !node.expanded;
     }
 }

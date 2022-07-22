@@ -38,7 +38,7 @@ export interface OpenEditorNode extends FileStatNode {
 };
 
 export namespace OpenEditorNode {
-    export function is(node: object | undefined): node is OpenEditorNode {
+    export function is(node: unknown): node is OpenEditorNode {
         return FileStatNode.is(node) && 'widget' in node;
     }
 }

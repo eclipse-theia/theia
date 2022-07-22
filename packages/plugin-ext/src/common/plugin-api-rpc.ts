@@ -734,7 +734,7 @@ export interface TreeViewSelection {
     treeItemId: string
 }
 export namespace TreeViewSelection {
-    export function is(arg: Object | any): arg is TreeViewSelection {
+    export function is(arg: unknown): arg is TreeViewSelection {
         return !!arg && typeof arg === 'object' && 'treeViewId' in arg && 'treeItemId' in arg;
     }
 }
@@ -780,7 +780,7 @@ export interface ScmCommandArg {
     resourceStateHandle?: number
 }
 export namespace ScmCommandArg {
-    export function is(arg: Object | undefined): arg is ScmCommandArg {
+    export function is(arg: unknown): arg is ScmCommandArg {
         return !!arg && typeof arg === 'object' && 'sourceControlHandle' in arg;
     }
 }
@@ -796,7 +796,7 @@ export interface ScmExt {
 }
 
 export namespace TimelineCommandArg {
-    export function is(arg: Object | undefined): arg is TimelineCommandArg {
+    export function is(arg: unknown): arg is TimelineCommandArg {
         return !!arg && typeof arg === 'object' && 'timelineHandle' in arg;
     }
 }
@@ -815,7 +815,7 @@ export type DecorationData = [boolean, string, string, ThemeColor];
 export interface DecorationReply { [id: number]: DecorationData; }
 
 export namespace CommentsCommandArg {
-    export function is(arg: Object | undefined): arg is CommentsCommandArg {
+    export function is(arg: unknown): arg is CommentsCommandArg {
         return !!arg && typeof arg === 'object' && 'commentControlHandle' in arg && 'commentThreadHandle' in arg && 'text' in arg && !('commentUniqueId' in arg);
     }
 }
@@ -826,7 +826,7 @@ export interface CommentsCommandArg {
 }
 
 export namespace CommentsContextCommandArg {
-    export function is(arg: Object | undefined): arg is CommentsContextCommandArg {
+    export function is(arg: unknown): arg is CommentsContextCommandArg {
         return !!arg && typeof arg === 'object' && 'commentControlHandle' in arg && 'commentThreadHandle' in arg && 'commentUniqueId' in arg && !('text' in arg);
     }
 }
@@ -837,7 +837,7 @@ export interface CommentsContextCommandArg {
 }
 
 export namespace CommentsEditCommandArg {
-    export function is(arg: Object | undefined): arg is CommentsEditCommandArg {
+    export function is(arg: unknown): arg is CommentsEditCommandArg {
         return !!arg && typeof arg === 'object' && 'commentControlHandle' in arg && 'commentThreadHandle' in arg && 'commentUniqueId' in arg && 'text' in arg;
     }
 }

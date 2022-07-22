@@ -331,9 +331,8 @@ export interface ReplaceOperation {
 }
 
 export namespace TextEditorSelection {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(e: any): e is TextEditorSelection {
-        return e && e['uri'] instanceof URI;
+    export function is(e: unknown): e is TextEditorSelection {
+        return !!e && typeof e === 'object' && (e as TextEditorSelection).uri instanceof URI;
     }
 }
 

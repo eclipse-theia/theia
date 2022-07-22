@@ -19,7 +19,7 @@ export interface FileDownloadData {
 }
 
 export namespace FileDownloadData {
-    export function is(arg: Object | undefined): arg is FileDownloadData {
-        return !!arg && 'uris' in arg;
+    export function is(arg: unknown): arg is FileDownloadData {
+        return !!arg && typeof arg === 'object' && 'uris' in arg;
     }
 }

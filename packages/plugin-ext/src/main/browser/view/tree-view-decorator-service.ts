@@ -32,9 +32,9 @@ export class TreeViewDecoratorAdapter extends FileTreeDecoratorAdapter {
         }
     }
 
-    protected isTreeItem(node: object | undefined): node is TreeItem & { resourceUri: Uri } {
+    protected isTreeItem(node: unknown): node is TreeItem & { resourceUri: Uri } {
         const candidate = node as TreeItem;
-        return !!candidate && 'resourceUri' in candidate && !!candidate.resourceUri;
+        return !!candidate && typeof node === 'object' && 'resourceUri' in candidate && !!candidate.resourceUri;
     }
 }
 

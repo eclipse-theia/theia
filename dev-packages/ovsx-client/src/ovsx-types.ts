@@ -164,10 +164,8 @@ export interface VSXResponseError extends Error {
 }
 
 export namespace VSXResponseError {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(error: any): error is VSXResponseError {
-        return !!error && typeof error === 'object'
-            && 'statusCode' in error && typeof error['statusCode'] === 'number';
+    export function is(error: unknown): error is VSXResponseError {
+        return !!error && typeof error === 'object' && typeof (error as VSXResponseError).statusCode === 'number';
     }
 }
 

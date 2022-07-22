@@ -549,11 +549,10 @@ function listToMap(list: string[]): Record<string, true> {
     return map;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isRelativePattern(obj: any): obj is IRelativePattern {
+export function isRelativePattern(obj: unknown): obj is IRelativePattern {
     const rp = obj as IRelativePattern;
 
-    return rp && typeof rp.base === 'string' && typeof rp.pattern === 'string' && typeof rp.pathToRelative === 'function';
+    return !!rp && typeof rp === 'object' && typeof rp.base === 'string' && typeof rp.pattern === 'string' && typeof rp.pathToRelative === 'function';
 }
 
 /**

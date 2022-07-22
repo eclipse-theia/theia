@@ -22,8 +22,8 @@ export interface BulkEditNodeSelection {
     bulkEdit: ResourceFileEdit | ResourceTextEdit;
 }
 export namespace BulkEditNodeSelection {
-    export function is(arg: Object | undefined): arg is BulkEditNodeSelection {
-        return typeof arg === 'object' && ('bulkEdit' in arg);
+    export function is(arg: unknown): arg is BulkEditNodeSelection {
+        return !!arg && typeof arg === 'object' && ('bulkEdit' in arg);
     }
 
     export class CommandHandler extends SelectionCommandHandler<BulkEditNodeSelection> {

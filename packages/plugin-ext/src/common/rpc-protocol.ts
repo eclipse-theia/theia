@@ -70,9 +70,8 @@ export namespace ConnectionClosedError {
     export function create(message: string = 'connection is closed'): ConnectionClosedError {
         return Object.assign(new Error(message), { code });
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(error: any): error is ConnectionClosedError {
-        return !!error && typeof error === 'object' && 'code' in error && error['code'] === code;
+    export function is(error: unknown): error is ConnectionClosedError {
+        return !!error && typeof error === 'object' && 'code' in error && (error as ConnectionClosedError).code === code;
     }
 }
 
@@ -469,8 +468,9 @@ enum SerializedObjectType {
     TEXT_BUFFER
 }
 
-function isSerializedObject(obj: any): obj is SerializedObject {
-    return obj && obj.$type !== undefined && obj.data !== undefined;
+function isSerializedObject(obj: unknown): obj is SerializedObject {
+    const serializedObject = obj as SerializedObject;
+    return !!obj && typeof obj === 'object' && serializedObject.$type !== undefined && serializedObject.data !== undefined;
 }
 
 export const enum MessageType {

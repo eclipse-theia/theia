@@ -145,20 +145,17 @@ export class CodeActionAdapter {
         return this.cacheId++;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private static _isCommand(smth: any): smth is theia.Command {
-        return typeof (<theia.Command>smth).command === 'string';
+    private static _isCommand(arg: unknown): arg is theia.Command {
+        return !!arg && typeof arg === 'object' && typeof (arg as theia.Command).command === 'string';
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private static _isSelection(obj: any): obj is Selection {
-        return (
-            obj
-            && (typeof obj.selectionStartLineNumber === 'number')
-            && (typeof obj.selectionStartColumn === 'number')
-            && (typeof obj.positionLineNumber === 'number')
-            && (typeof obj.positionColumn === 'number')
-        );
+    private static _isSelection(obj: unknown): obj is Selection {
+        const selection = obj as Selection;
+        return !!obj && typeof obj === 'object'
+            && typeof selection.selectionStartLineNumber === 'number'
+            && typeof selection.selectionStartColumn === 'number'
+            && typeof selection.positionLineNumber === 'number'
+            && typeof selection.positionColumn === 'number';
     }
 
 }

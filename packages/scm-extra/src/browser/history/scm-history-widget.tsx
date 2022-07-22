@@ -46,9 +46,8 @@ export interface ScmCommitNode {
 }
 
 export namespace ScmCommitNode {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(node: any): node is ScmCommitNode {
-        return !!node && 'commitDetails' in node && 'expanded' in node && 'selected' in node;
+    export function is(node: unknown): node is ScmCommitNode {
+        return !!node && typeof node === 'object' && 'commitDetails' in node && 'expanded' in node && 'selected' in node;
     }
 }
 

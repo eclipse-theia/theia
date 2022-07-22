@@ -22,7 +22,7 @@ export interface ResourcePropertiesRoot extends CompositeTreeNode {
     children: ResourcePropertiesCategoryNode[];
 }
 export namespace ResourcePropertiesRoot {
-    export function is(node: Object | undefined): node is ResourcePropertiesRoot {
+    export function is(node: unknown): node is ResourcePropertiesRoot {
         return CompositeTreeNode.is(node) && node.id === ROOT_ID;
     }
 }

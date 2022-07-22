@@ -113,7 +113,7 @@ export interface WorkspaceRootNode extends DirNode {
 }
 export namespace WorkspaceRootNode {
 
-    export function is(node: Object | undefined): node is WorkspaceRootNode {
+    export function is(node: unknown): node is WorkspaceRootNode {
         return DirNode.is(node) && WorkspaceNode.is(node.parent);
     }
 

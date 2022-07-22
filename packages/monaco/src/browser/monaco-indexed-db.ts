@@ -44,7 +44,7 @@ export interface MonacoThemeState {
     data: ThemeMix
 }
 export namespace MonacoThemeState {
-    export function is(state: Object | undefined): state is MonacoThemeState {
+    export function is(state: unknown): state is MonacoThemeState {
         return !!state && typeof state === 'object' && 'id' in state && 'label' in state && 'uiTheme' in state && 'data' in state;
     }
 }

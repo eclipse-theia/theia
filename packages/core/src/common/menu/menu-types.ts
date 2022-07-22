@@ -36,9 +36,8 @@ export interface MenuAction extends MenuNodeRenderingData, Pick<MenuNodeMetadata
 
 export namespace MenuAction {
     /* Determine whether object is a MenuAction */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(arg: MenuAction | any): arg is MenuAction {
-        return !!arg && arg === Object(arg) && 'commandId' in arg;
+    export function is(arg: unknown): arg is MenuAction {
+        return !!arg && typeof arg === 'object' && 'commandId' in arg;
     }
 }
 

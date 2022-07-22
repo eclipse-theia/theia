@@ -23,8 +23,8 @@ export interface ScmFileChangeNode {
     selected?: boolean;
 }
 export namespace ScmFileChangeNode {
-    export function is(node: Object | undefined): node is ScmFileChangeNode {
-        return !!node && 'fileChange' in node && 'commitId' in node;
+    export function is(node: unknown): node is ScmFileChangeNode {
+        return !!node && typeof node === 'object' && 'fileChange' in node && 'commitId' in node;
     }
 }
 
