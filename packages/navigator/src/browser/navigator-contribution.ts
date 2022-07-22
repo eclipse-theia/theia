@@ -486,10 +486,12 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
 
         registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {
-            commandId: WorkspaceCommands.NEW_FILE.id
+            commandId: WorkspaceCommands.NEW_FILE.id,
+            when: 'explorerResourceIsFolder'
         });
         registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {
-            commandId: WorkspaceCommands.NEW_FOLDER.id
+            commandId: WorkspaceCommands.NEW_FOLDER.id,
+            when: 'explorerResourceIsFolder'
         });
         registry.registerMenuAction(NavigatorContextMenu.COMPARE, {
             commandId: WorkspaceCommands.FILE_COMPARE.id
