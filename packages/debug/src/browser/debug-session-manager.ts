@@ -281,7 +281,7 @@ export class DebugSessionManager {
         for (const configData of compound.configurations) {
             const name = typeof configData === 'string' ? configData : configData.name;
             if (name === compound.name) {
-                throw new Error(nls.localize("Launch configuration '{0}' contains a circle with itself", name));
+                throw new Error(nls.localize('theia/debug/compound-cycle', "Launch configuration '{0}' contains a cycle with itself", name));
             }
 
             const workspaceFolderUri = typeof configData === 'string' ? options.workspaceFolderUri : configData.folder;

@@ -23,6 +23,7 @@ import { DebugService } from '../common/debug-service';
 import { debugPreferencesSchema } from './debug-preferences';
 import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { defaultCompound } from '../common/debug-compound';
 
 @injectable()
 export class DebugSchemaUpdater implements JsonSchemaContribution {
@@ -137,11 +138,9 @@ const launchSchema: IJSONSchema = {
                         description: nls.localizeByDefault('Task to run before any of the compound configurations start.')
                     }
                 },
-                default: { name: 'Compound', configurations: [] }
+                default: defaultCompound
             },
-            default: [
-                { name: 'Compound', configurations: [] }
-            ]
+            default: [defaultCompound]
         },
         inputs: inputsSchema.definitions!.inputs
     },

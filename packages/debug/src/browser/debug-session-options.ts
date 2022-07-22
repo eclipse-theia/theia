@@ -23,7 +23,7 @@ export class DebugCompoundRoot {
     private stopEmitter = new Emitter<void>();
     onDidSessionStop = this.stopEmitter.event;
 
-    sessionStopped(): void {
+    stopSession(): void {
         if (!this.stopped) { // avoid sending extraneous terminate events
             this.stopped = true;
             this.stopEmitter.fire();

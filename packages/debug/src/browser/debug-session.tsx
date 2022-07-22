@@ -356,7 +356,7 @@ export class DebugSession implements CompositeTreeElement {
                 }
             }
             if (!isRestart) {
-                this.options.compoundRoot?.sessionStopped();
+                this.options.compoundRoot?.stopSession();
             }
             callback();
         }
