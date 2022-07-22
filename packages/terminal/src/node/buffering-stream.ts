@@ -18,12 +18,12 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 
 export interface BufferingStreamOptions {
     /**
-     * Max size of the chunks being emitted.
+     * Max size in bytes of the chunks being emitted.
      */
     maxChunkSize?: number
     /**
-     * Amount of time to wait between the moment we start buffering data
-     * and when we emit the buffered chunk.
+     * Amount of time in milliseconds to wait between the moment we start
+     * buffering data and when we emit the buffered chunk.
      */
     emitInterval?: number
 }
@@ -44,7 +44,7 @@ export class BufferingStream {
 
     constructor(options?: BufferingStreamOptions) {
         this.emitInterval = options?.emitInterval ?? 16; // ms
-        this.maxChunkSize = options?.maxChunkSize ?? 16384; // bytes
+        this.maxChunkSize = options?.maxChunkSize ?? (256 * 1024); // bytes
     }
 
     get onData(): Event<Buffer> {
