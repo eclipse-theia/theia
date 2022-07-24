@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Event, RecursivePartial, serviceIdentifier, servicePath } from '@theia/core';
-import { RPCProtocol } from './rpc-protocol';
+import { PluginRpc } from './rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { LogPart, KeysToAnyValues, KeysToKeysToAnyValue } from './types';
 import { CharacterPair, CommentRule, PluginAPIFactory, Plugin } from './plugin-api-rpc';
@@ -780,7 +780,7 @@ export interface BackendInitializationFn {
 }
 
 export interface BackendLoadingFn {
-    (rpc: RPCProtocol, plugin: Plugin): void;
+    (rpc: PluginRpc, plugin: Plugin): void;
 }
 
 export interface PluginContext {

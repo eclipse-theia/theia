@@ -25,7 +25,7 @@ import { AbstractConnection, Connection } from '../../common/connection/connecti
  * _Note that this object takes ownership of the reader and writer instances,
  * meaning that it will destroy them upon close._
  */
-export class ObjectStreamConnection extends AbstractConnection<any> {
+export class ObjectStreamConnection<T> extends AbstractConnection<T> {
 
     state = Connection.State.OPENED;
 
@@ -44,7 +44,7 @@ export class ObjectStreamConnection extends AbstractConnection<any> {
         this.reader.on('data', message => this.onMessageEmitter.fire(message));
     }
 
-    sendMessage(message: any): void {
+    sendMessage(message: T): void {
         this.writer.write(message);
     }
 

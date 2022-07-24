@@ -56,13 +56,13 @@ export interface ConnectionTransformer {
 export class DefaultConnectionTransformer implements ConnectionTransformer {
 
     transformConnection<From, To>(connection: Connection<From>, transformer: MessageTransformer<From, To>): TransformableConnection<To> {
-        return new DefaultTransformableConnection(connection, transformer);
+        return new DefaultTransformableConnection(connection).addTransform(transformer);
     }
 }
 
-export class DefaultTransformableConnection implements Connection<any> {
+export class DefaultTransformableConnection<T> implements Connection<T> {
 
-    protected transformers?: MessageTransformer<any, any>[];
+    protected transformers?: MessageTransformer<T, any>[] = [];
     protected disposables = new DisposableCollection();
     protected onMessageEmitter = this.disposables.pushThru(new Emitter<any>());
 
@@ -77,10 +77,8 @@ export class DefaultTransformableConnection implements Connection<any> {
     protected encodeQueue = Promise.resolve();
 
     constructor(
-        protected underlyingConnection: Connection<any>,
-        initialTransformer: MessageTransformer<any, any>
+        protected underlyingConnection: Connection<T>
     ) {
-        this.transformers = [initialTransformer];
         this.underlyingConnection.onMessage(message => this.decodeRecursive(message, decoded => {
             this.decodeQueue = this.decodeQueue.then(() => {
                 this.onMessageEmitter.fire(decoded);
@@ -104,16 +102,16 @@ export class DefaultTransformableConnection implements Connection<any> {
         return this.underlyingConnection.onError;
     }
 
-    get onMessage(): Event<any> {
+    get onMessage(): Event<T> {
         return this.onMessageEmitter.event;
     }
 
-    addTransform(transformer: MessageTransformer<any, any>): this {
+    addTransform<To>(transformer: MessageTransformer<T, To>): TransformableConnection<To> {
         this.transformers!.push(transformer);
         if (Disposable.is(transformer)) {
             this.disposables.push(transformer);
         }
-        return this;
+        return this as TransformableConnection<any>;
     }
 
     sendMessage(message: any): void {
@@ -133,20 +131,20 @@ export class DefaultTransformableConnection implements Connection<any> {
     /**
      * Run the transformers in standard order for encoding.
      */
-    protected encodeRecursive(value: any, end: (encoded: any) => void, transformerIndex = 0): void {
-        if (transformerIndex === this.transformers!.length) {
+    protected encodeRecursive(value: any, end: (encoded: any) => void, transformerIndex = this.transformers!.length - 1): void {
+        if (transformerIndex === -1) {
             return end(value);
         }
-        this.transformers![transformerIndex].encode(value, encoded => this.encodeRecursive(encoded, end, transformerIndex + 1));
+        this.transformers![transformerIndex].encode(value, encoded => this.encodeRecursive(encoded, end, transformerIndex - 1));
     }
 
     /**
      * Run the transformers in reverse order for decoding.
      */
-    protected decodeRecursive(value: any, end: (decoded: any) => void, transformerIndex = this.transformers!.length - 1): void {
-        if (transformerIndex === -1) {
+    protected decodeRecursive(value: any, end: (decoded: any) => void, transformerIndex = 0): void {
+        if (transformerIndex === this.transformers!.length) {
             return end(value);
         }
-        this.transformers![transformerIndex].decode(value, decoded => this.decodeRecursive(decoded, end, transformerIndex - 1));
+        this.transformers![transformerIndex].decode(value, decoded => this.decodeRecursive(decoded, end, transformerIndex + 1));
     }
 }

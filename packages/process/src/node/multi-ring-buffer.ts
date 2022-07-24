@@ -33,7 +33,7 @@ export class MultiRingBufferReadableStream extends stream.Readable implements Di
 
     constructor(protected readonly ringBuffer: MultiRingBuffer,
         protected readonly reader: number,
-        protected readonly encoding = 'utf8'
+        protected readonly encoding: BufferEncoding = 'utf8'
     ) {
         super();
         this.setEncoding(encoding);
@@ -160,7 +160,7 @@ export class MultiRingBuffer implements Disposable {
         this.readers.delete(id);
     }
 
-    getStream(encoding?: string): MultiRingBufferReadableStream {
+    getStream(encoding?: BufferEncoding): MultiRingBufferReadableStream {
         const reader = this.getReader();
         const readableStream = new MultiRingBufferReadableStream(this, reader, encoding);
         this.streams.set(readableStream, reader);
@@ -185,7 +185,7 @@ export class MultiRingBuffer implements Disposable {
         }
     }
 
-    deq(id: number, size = -1, encoding = 'utf8'): string | undefined {
+    deq(id: number, size = -1, encoding: BufferEncoding = 'utf8'): string | undefined {
         const pos = this.readers.get(id);
         if (pos === undefined || pos === -1) {
             return undefined;

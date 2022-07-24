@@ -24,7 +24,6 @@
 
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { AnyConnection, ConnectionMultiplexer } from '@theia/core/lib/common/connection';
-import { BufferedConnection } from '@theia/core/lib/common/connection/buffered';
 import { DeferredConnection } from '@theia/core/lib/common/connection/deferred';
 import { DefaultConnectionMultiplexer } from '@theia/core/lib/common/connection/multiplexer';
 import { DefaultTransformableConnection, MessageTransformer } from '@theia/core/lib/common/connection/transformer';
@@ -35,7 +34,9 @@ import { DefaultRouter } from '@theia/core/lib/common/routing';
 import { RpcConnection } from '@theia/core/lib/common/rpc';
 import URI from '@theia/core/lib/common/uri';
 import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
+import { MaybePromise } from '@theia/core/src/common/types';
 import { Range } from '../plugin/types-impl';
+// import { trace } from '@theia/core/lib/common/tracing';
 
 export const PluginRpc = Symbol('PluginRpc');
 export interface PluginRpc extends Disposable {
@@ -155,7 +156,7 @@ export class DefaultPluginRpc implements PluginRpc {
     private createMultiplexer(connection: AnyConnection): ConnectionMultiplexer<any, PluginRpcParams> {
         const reviver = this.createReviverMessageTransformer();
         return new DefaultConnectionMultiplexer(new DefaultRouter())
-            .initialize(new DefaultTransformableConnection(connection, reviver));
+            .initialize(new DefaultTransformableConnection(connection).addTransform(reviver));
     }
 
     private createReviverMessageTransformer(): MessageTransformer<any, any> {
@@ -240,7 +241,7 @@ export class JsonRpcProtocol implements PluginRpcProtocol {
     ) { }
 
     createRpcConnection(channel: AnyConnection): RpcConnection {
-        const shortened = new DefaultTransformableConnection(channel, JsonRpcMessageShortener);
+        const shortened = new DefaultTransformableConnection(channel).addTransform(JsonRpcMessageShortener);
         return this.jsonRpc.createRpcConnection(this.jsonRpc.createMessageConnection(shortened));
     }
 }
@@ -248,9 +249,8 @@ export class JsonRpcProtocol implements PluginRpcProtocol {
 /**
  * @internal
  */
-export function pluginRpcConnection(transport: AnyConnection): AnyConnection {
-    const bufferedConnection = new BufferedConnection(transport);
-    return new DeferredConnection(waitForRemote(bufferedConnection));
+export function pluginRpcConnection(transport: MaybePromise<AnyConnection>): AnyConnection {
+    return new DeferredConnection(Promise.resolve(transport).then(waitForRemote));
 }
 
 /**
@@ -360,7 +360,7 @@ export function transformErrorForSerialization(error: any): SerializedError {
 /**
  * @internal
  *
- * Do to any object Array.map would do. ~Ish.
+ * Do to any object what Array.map would do, somewhat.
  *
  * If `value` is an array then it will run recursively on each element.
  * If `value` is an object then it will first run on `value` itself, and iff

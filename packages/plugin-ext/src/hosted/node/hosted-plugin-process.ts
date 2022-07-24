@@ -16,7 +16,7 @@
 
 import * as cp from 'child_process';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { ILogger, ContributionProvider, MessageService, AnyConnection } from '@theia/core/lib/common';
+import { ILogger, ContributionProvider, MessageService, AnyConnection, DeferredConnectionFactory } from '@theia/core/lib/common';
 import { ObjectStreamConnection } from '@theia/core/lib/node/connection/object-stream';
 import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
 import { HostedPluginClient, ServerPluginRunner, PluginHostEnvironmentVariable, DeployedPlugin, PLUGIN_HOST_BACKEND } from '../../common/plugin-protocol';
@@ -26,7 +26,8 @@ import * as psTree from 'ps-tree';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
 import { createInterface } from 'readline';
 import { PackrStream, UnpackrStream } from '@theia/core/shared/msgpackr';
-import { Duplex } from 'stream';
+import { v4 } from 'uuid';
+import { createServer, Socket } from 'net';
 
 export const HOSTED_PLUGIN_ENV_PREFIX = 'HOSTED_PLUGIN';
 
@@ -34,6 +35,11 @@ export interface IPCConnectionOptions {
     readonly serverName: string;
     readonly logger: ILogger;
     readonly args: string[];
+}
+
+export interface IpcServer {
+    name: string
+    socket: Promise<Socket>
 }
 
 export const HostedPluginProcessConfiguration = Symbol('HostedPluginProcessConfiguration');
@@ -62,6 +68,9 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
     @inject(HostedPluginLocalizationService)
     protected readonly localizationService: HostedPluginLocalizationService;
+
+    @inject(DeferredConnectionFactory)
+    protected deferredConnectionFactory: DeferredConnectionFactory;
 
     private childProcess?: cp.ChildProcess;
     private childConnection: AnyConnection;
@@ -102,13 +111,15 @@ export class HostedPluginProcess implements ServerPluginRunner {
         }
 
         this.terminatingPluginServer = true;
+
         const pluginHost = this.childProcess;
         this.childProcess = undefined;
 
         const stopTimeout = this.cli.pluginHostStopTimeout;
         const terminateTimeout = this.cli.pluginHostTerminateTimeout;
 
-        const waitForTerminated = new Promise<void>(resolve => {
+        await new Promise<void>(resolve => {
+            pluginHost.send(new PluginHostProtocol.TerminateRequest(stopTimeout));
             pluginHost.on('message', message => {
                 if (PluginHostProtocol.isMessage(message) && message.$pluginHostMessageType === PluginHostProtocol.MessageType.TERMINATED_EVENT) {
                     resolve();
@@ -118,12 +129,9 @@ export class HostedPluginProcess implements ServerPluginRunner {
                 setTimeout(resolve, terminateTimeout);
             }
         });
-
-        pluginHost.send(new PluginHostProtocol.TerminateRequest(stopTimeout));
-
-        await waitForTerminated;
-
-        this.killProcessTree(pluginHost.pid);
+        if (!pluginHost.killed) {
+            this.killProcessTree(pluginHost.pid);
+        }
     }
 
     killProcessTree(parentPid: number): void {
@@ -151,25 +159,36 @@ export class HostedPluginProcess implements ServerPluginRunner {
             this.terminatePluginServer();
         }
         this.terminatingPluginServer = false;
+        const ipcServer = this.createIpcServer();
         this.childProcess = this.fork({
             serverName: 'hosted-plugin',
             logger: this.logger,
-            args: []
+            args: [ipcServer.name]
         });
-        this.childConnection = this.createChildConnection(this.childProcess);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.childConnection.onMessage((message: any) => {
+        this.childConnection = this.createChildConnection(ipcServer);
+        this.childConnection.onMessage(message => {
             this.client?.postMessage(PLUGIN_HOST_BACKEND, message);
         });
     }
 
-    private createChildConnection(child: cp.ChildProcess): AnyConnection {
-        const duplex = child.stdio[4] as Duplex;
-        const reader = new UnpackrStream();
-        const writer = new PackrStream();
-        duplex.pipe(reader);
-        writer.pipe(duplex);
-        return new ObjectStreamConnection(reader, writer);
+    protected createIpcServer(): IpcServer {
+        const name = `\\\\.\\pipe\\${v4()}`;
+        const socket = new Promise<Socket>(resolve => {
+            const server = createServer(resolve);
+            server.maxConnections = 1;
+            server.listen(name, 0);
+        });
+        return { name, socket };
+    }
+
+    private createChildConnection(ipcServer: IpcServer): AnyConnection {
+        return this.deferredConnectionFactory(ipcServer.socket.then(socket => {
+            const packr = new PackrStream();
+            const unpackr = new UnpackrStream();
+            packr.pipe(socket);
+            socket.pipe(unpackr);
+            return new ObjectStreamConnection(unpackr, packr);
+        }));
     }
 
     private fork(options: IPCConnectionOptions): cp.ChildProcess {
@@ -189,10 +208,9 @@ export class HostedPluginProcess implements ServerPluginRunner {
         }
 
         const forkOptions: cp.ForkOptions = {
-            silent: true,
-            env: env,
+            env,
             execArgv: [],
-            stdio: ['pipe', 'pipe', 'pipe', 'ipc', 'pipe' /* fd=4 */]
+            stdio: ['pipe', 'pipe', 'pipe', 'ipc']
         };
         const inspectArgPrefix = `--${options.serverName}-inspect`;
         const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));
@@ -205,12 +223,12 @@ export class HostedPluginProcess implements ServerPluginRunner {
         createInterface(childProcess.stderr!).on('line', line => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${line}`));
 
         this.logger.debug(`[${options.serverName}: ${childProcess.pid}] IPC started`);
-        childProcess.once('exit', (code: number, signal: string) => this.handleChildProcessExit(options.serverName, childProcess.pid, code, signal));
+        childProcess.once('exit', (code, signal) => this.handleChildProcessExit(options.serverName, childProcess.pid, code, signal));
         childProcess.on('error', err => this.handleChildProcessError(err));
         return childProcess;
     }
 
-    private handleChildProcessExit(serverName: string, pid: number, code: number, signal: string): void {
+    private handleChildProcessExit(serverName: string, pid: number, code: number | null, signal: string | null): void {
         if (this.terminatingPluginServer) {
             return;
         }

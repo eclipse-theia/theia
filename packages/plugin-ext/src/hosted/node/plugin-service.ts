@@ -22,6 +22,7 @@ import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
 import { PluginDeployerImpl } from '../../main/node/plugin-deployer-impl';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
 import { LogPart } from '../../common/types';
+// import { inspect } from 'util';
 
 @injectable()
 export class HostedPluginServerImpl implements HostedPluginServer {
@@ -77,6 +78,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         this.deployedListener = this.pluginDeployer.onDidDeploy(() => {
             this.onDidDeployEmitter.fire();
         });
+        // this.onMessage(message => console.log('BACKEND SENDING:', inspect(message.message)));
     }
 
     dispose(): void {
@@ -126,7 +128,8 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         return Promise.all(plugins.map(plugin => this.localizationService.localizePlugin(plugin)));
     }
 
-    async handleMessage(pluginHostId: string, message: string): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async handleMessage(pluginHostId: string, message: any): Promise<void> {
         this.hostedPlugin.handleMessage(pluginHostId, message);
     }
 

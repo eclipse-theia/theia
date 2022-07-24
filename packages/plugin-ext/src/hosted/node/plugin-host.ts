@@ -17,12 +17,18 @@
 import { ObjectStreamConnection } from '@theia/core/lib/node/connection/object-stream';
 import { PackrStream, UnpackrStream } from '@theia/core/shared/msgpackr';
 import '@theia/core/shared/reflect-metadata';
-import { Socket } from 'net';
+import assert = require('assert');
+import { connect } from 'net';
 import { DefaultPluginRpc, PluginHostProtocol, pluginRpcConnection } from '../../common/rpc-protocol';
 import { reviver } from '../../plugin/types-impl';
 import { PluginHostRPC } from './plugin-host-rpc';
 
 let terminating = false;
+
+// Fetch and remove the IPC server pipe name from `process.argv`
+const [ipcServerName] = process.argv.splice(2, 1);
+assert(typeof ipcServerName === 'string', 'the first cli argument should be a string');
+console.log('IPC:', JSON.stringify(ipcServerName));
 
 console.log(`PLUGIN_HOST(${process.pid}) starting instance`);
 
@@ -80,12 +86,18 @@ process.on('rejectionHandled', (promise: Promise<void>) => {
 
 // #region RPC initialization
 
-const pipeToParentProcess = new Socket({ fd: 4, allowHalfOpen: false });
-const reader = new UnpackrStream();
-const writer = new PackrStream();
-pipeToParentProcess.pipe(reader);
-writer.pipe(pipeToParentProcess);
-const rpc = new DefaultPluginRpc(pluginRpcConnection(new ObjectStreamConnection(reader, writer)), { reviver });
+const rpc = new DefaultPluginRpc(
+    pluginRpcConnection(new Promise(resolve => {
+        const pipeToParent = connect(ipcServerName, () => {
+            const packr = new PackrStream();
+            const unpackr = new UnpackrStream();
+            packr.pipe(pipeToParent);
+            pipeToParent.pipe(unpackr);
+            resolve(new ObjectStreamConnection(unpackr, packr));
+        });
+    })),
+    { reviver }
+);
 const pluginHostRpc = new PluginHostRPC(rpc);
 
 process.on('message', message => {
@@ -100,21 +112,28 @@ process.on('message', message => {
     console.debug('process.on(\'message\', ...): unhandled message:', message);
 });
 
+process.on('beforeExit', code => {
+    console.log('exiting with code:', code);
+});
+
 async function terminatePluginHost(timeout?: number): Promise<void> {
+    console.log('terminating...');
     terminating = true;
     try {
-        if (typeof timeout === 'number' && timeout > 0) {
-            await Promise.race([
-                pluginHostRpc.terminate(),
-                new Promise(resolve => setTimeout(resolve, timeout))
-            ]);
-        } else {
-            await pluginHostRpc.terminate();
-        }
+        await new Promise<void>((resolve, reject) => {
+            pluginHostRpc.terminate().then(resolve, reject);
+            if (typeof timeout === 'number' && timeout > 0) {
+                setTimeout(() => {
+                    console.log('host.terminate() timed out');
+                    resolve();
+                }, timeout);
+            }
+        });
         rpc.dispose();
     } catch (error) {
         console.error(error);
     } finally {
+        console.log('terminated');
         process.send!(new PluginHostProtocol.TerminatedEvent());
     }
 }
