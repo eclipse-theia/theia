@@ -35,7 +35,7 @@ export class WorkerEnvExtImpl extends EnvExtImpl {
     }
 
     get isNewAppInstall(): boolean {
-        throw new Error('Cannot determine the installation date in worker context');
+        return false;
     }
 
 }
