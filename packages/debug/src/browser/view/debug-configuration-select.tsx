@@ -53,6 +53,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
             providerTypes: [],
             currentValue: undefined
         };
+        this.manager.onDidChange(() => this.refreshDebugConfigurations());
         this.manager.onDidChangeConfigurationProviders(() => {
             this.refreshDebugConfigurations();
         });
