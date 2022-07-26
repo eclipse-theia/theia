@@ -87,6 +87,7 @@ export class CommonVariableContribution implements VariableContribution {
                     if (result === null) {
                         throw cancelled();
                     }
+                    return result;
                 }
             }
         });
