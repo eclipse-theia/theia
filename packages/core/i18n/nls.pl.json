@@ -380,6 +380,7 @@
       "typeHierarchy": "Hierarchia typów"
     },
     "vsx-registry": {
+      "errorFetching": "Błąd pobierania rozszerzeń.",
       "openVSX": "Otwórz Rejestr VSX",
       "recommendedExtensions": "Lista nazw rozszerzeń zalecanych do użycia w tym obszarze roboczym.",
       "searchPlaceholder": "Wyszukaj rozszerzenia w {0}.",

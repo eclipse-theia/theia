@@ -380,6 +380,7 @@
       "typeHierarchy": "Tipo Hierarquia"
     },
     "vsx-registry": {
+      "errorFetching": "Extensões de erro de busca.",
       "openVSX": "Abrir Registo VSX",
       "recommendedExtensions": "Uma lista dos nomes das extensões recomendadas para utilização neste espaço de trabalho.",
       "searchPlaceholder": "Pesquisar extensões em {0}",

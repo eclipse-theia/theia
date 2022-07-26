@@ -380,6 +380,7 @@
       "typeHierarchy": "Hierarchie typů"
     },
     "vsx-registry": {
+      "errorFetching": "Chyba při načítání rozšíření.",
       "openVSX": "Otevření registru VSX",
       "recommendedExtensions": "Seznam názvů rozšíření doporučených pro použití v tomto pracovním prostoru.",
       "searchPlaceholder": "Hledat rozšíření v {0}",

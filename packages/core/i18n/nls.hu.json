@@ -380,6 +380,7 @@
       "typeHierarchy": "Típushierarchia"
     },
     "vsx-registry": {
+      "errorFetching": "Hiba a kiterjesztések lekérdezésében.",
       "openVSX": "VSX Registry megnyitása",
       "recommendedExtensions": "A munkaterületre ajánlott kiterjesztések neveinek listája.",
       "searchPlaceholder": "Keresés kiterjesztések {0}",
