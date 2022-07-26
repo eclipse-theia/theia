@@ -1,4 +1,5 @@
 {
+  "disassemblyView": "Szétszerelési nézet",
   "theia": {
     "callhierarchy": {
       "noCallers": "Nem észleltek hívókat.",
@@ -58,11 +59,23 @@
       "addConfigurationPlaceholder": "Válassza ki a munkaterület gyökerét a konfiguráció hozzáadásához",
       "continueAll": "Folytassa az összes",
       "copyExpressionValue": "Kifejezés értékének másolása",
+      "disassembly-view": {
+        "show-source-code": "Forráskód megjelenítése szétszerelési nézetben."
+      },
+      "instruction-breakpoint": "Megszakítási pont",
+      "instructionAddress": "Cím:",
+      "instructionBytes": "Bájtok",
+      "instructionNotAvailable": "Szétszerelés nem lehetséges.",
+      "instructionText": "Utasítás",
       "missingConfiguration": "A '{0}:{1}' dinamikus konfiguráció hiányzik vagy nem alkalmazható.",
+      "open-disassembly-view": "Nyitott szétszerelési nézet",
       "pauseAll": "Minden szünet",
       "reveal": "Kiderül",
       "threads": "Szálak",
       "toggleTracing": "A hibakeresési adapterekkel folytatott kommunikáció nyomon követésének engedélyezése/letiltása"
+    },
+    "disassembly-view": {
+      "disassemblyTableColumnLabel": "utasítások"
     },
     "editor": {
       "diffEditor.maxFileSize": "Maximális fájlméret MB-ban, amelyre diffs-t kell számítani. Használja a 0 értéket, ha nincs korlát.",
@@ -70,6 +83,7 @@
       "editor.autoClosingDelete": "Szabályozza, hogy a szerkesztő törléskor eltávolítsa-e a szomszédos záró idézőjeleket vagy zárójeleket.",
       "editor.autoClosingDelete1": "Csak akkor távolítsa el a szomszédos záró idézőjeleket vagy zárójeleket, ha azok automatikusan be lettek illesztve.",
       "editor.bracketPairColorization.enabled": "Szabályozza, hogy a zárójelpár színezése engedélyezve legyen-e vagy sem. A 'workbench.colorCustomizations' használatával felülbírálhatja a zárójelek kiemelési színeit.",
+      "editor.bracketPairColorization.independentColorPoolPerBracketType": "Szabályozza, hogy minden zárójel-típusnak legyen-e saját, független színkészlete.",
       "editor.codeLensFontSize": "A CodeLens betűméretét vezérli pixelben. Ha `0`-ra van állítva, akkor a `#editor.fontSize#` 90%-át használja.",
       "editor.find.autoFindInSelection0": "Soha ne kapcsolja be automatikusan a Keresés a kiválasztásban funkciót (alapértelmezett).",
       "editor.find.autoFindInSelection1": "Mindig automatikusan kapcsolja be a Keresés a kiválasztásban funkciót.",
@@ -88,13 +102,23 @@
       "editor.guides.bracketPairsHorizontal1": "Csak az aktív konzolpár vízszintes vezetőit engedélyezi.",
       "editor.guides.bracketPairsHorizontal2": "Letiltja a vízszintes konzolpár vezetőket.",
       "editor.guides.highlightActiveBracketPair": "Szabályozza, hogy a szerkesztő kiemelje-e az aktív zárójelpárt.",
+      "editor.guides.highlightActiveIndentation0": "Kiemeli az aktív behúzási útmutatót.",
+      "editor.guides.highlightActiveIndentation1": "Kiemeli az aktív behúzási útmutatót, még akkor is, ha a zárójel-vezetők ki vannak jelölve.",
+      "editor.guides.highlightActiveIndentation2": "Ne emelje ki az aktív behúzási útmutatót.",
       "editor.hover.above": "Előnyben részesíti a vonal fölött lebegő megjelenítést, ha van hely.",
       "editor.inlayHints.enabled": "Engedélyezi az inlay tippeket a szerkesztőben.",
+      "editor.inlayHints.enabled0": "Az inlay tippek engedélyezve vannak",
+      "editor.inlayHints.enabled1": "Az inlay tippek alapértelmezés szerint megjelennek, és elrejtődnek, ha a \"Ctrl+Alt\" billentyűkombinációt nyomva tartjuk.",
+      "editor.inlayHints.enabled2": "Az inlay tippek alapértelmezés szerint el vannak rejtve, és a \"Ctrl+Alt\" billentyűkombináció lenyomásakor jelennek meg.",
+      "editor.inlayHints.enabled3": "Az inlay tippek le vannak tiltva",
       "editor.inlayHints.fontFamily": "A szerkesztőben lévő betűtípus-családot szabályozza. Ha üres, akkor a `#editor.fontFamily#`-t használja.",
       "editor.inlayHints.fontSize": "A betűméretet szabályozza a szerkesztőben megjelenő betűjelzések betűméretét. Az alapértelmezett érték a `#editor.fontSize#` 90%-a, ha a beállított érték kisebb, mint `5` vagy nagyobb, mint a szerkesztő betűmérete.",
       "editor.inlineSuggest.enabled": "Szabályozza, hogy a szerkesztőben automatikusan megjelenjenek-e a soron belüli javaslatok.",
       "editor.language.colorizedBracketPairs": "Meghatározza azokat a zárójelpárokat, amelyek színezése a beágyazási szintjük szerint történik, ha a zárójelpárok színezése engedélyezve van.",
       "editor.lineHeight": "A vonal magasságát szabályozza.\n - A 0 értéket használva automatikusan kiszámítja a sortávolságot a betűméretből.\n - A 0 és 8 közötti értékek a betűmérettel való szorzóként kerülnek felhasználásra.\n - A 8-nál nagyobb vagy azzal egyenlő értékek tényleges értékként lesznek használva.",
+      "editor.quickSuggestions0": "Gyors javaslatok megjelenítése a suggest widgeten belül",
+      "editor.quickSuggestions1": "A gyors javaslatok szellemszövegként jelennek meg",
+      "editor.quickSuggestions2": "A gyors javaslatok letiltva",
       "editor.renderLineHighlightOnlyWhenFocus": "Azt vezérli, hogy a szerkesztő csak akkor jelenítse meg az aktuális sor kiemelését, amikor a szerkesztő fókuszban van.",
       "editor.renderWhitespace3": "Csak az utolsó szóköz karaktereket adja vissza.",
       "editor.scrollbar.horizontal": "A vízszintes görgetősáv láthatóságát szabályozza.",
@@ -170,6 +194,7 @@
       "newPlugin": "Egy új plugin építése"
     },
     "git": {
+      "aFewSecondsAgo": "néhány másodperccel ezelőtt",
       "addSignedOff": "Signed-off-by hozzáadása",
       "amendReuseMessag": "Az utolsó átadási üzenet újbóli használatához nyomja meg az 'Enter' billentyűt, vagy az 'Escape' billentyűt a törléshez.",
       "amendRewrite": "Írja át az előző commit üzenetet. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
@@ -203,7 +228,8 @@
       "keybindingCollidesValidation": "billentyűkötözés jelenleg ütközik",
       "requiredKeybindingValidation": "billentyűkötés értéke szükséges",
       "resetKeybindingConfirmation": "Tényleg vissza akarja állítani ezt a billentyűkötést az alapértelmezett értékre?",
-      "resetKeybindingTitle": "A {0} billentyűkhöz való kötés visszaállítása"
+      "resetKeybindingTitle": "A {0} billentyűkhöz való kötés visszaállítása",
+      "resetMultipleKeybindingsWarning": "Ha a parancshoz több billentyűzetmegkötés is létezik, akkor mindet visszaállítja a rendszer."
     },
     "localize": {
       "offlineTooltip": "Nem tud csatlakozni a háttértárhoz."
@@ -357,7 +383,11 @@
       "openVSX": "VSX Registry megnyitása",
       "recommendedExtensions": "A munkaterületre ajánlott kiterjesztések neveinek listája.",
       "searchPlaceholder": "Keresés kiterjesztések {0}",
-      "showRecommendedExtensions": "Szabályozza, hogy a kiterjesztési ajánlásokhoz megjelenjenek-e értesítések."
+      "showRecommendedExtensions": "Szabályozza, hogy a kiterjesztési ajánlásokhoz megjelenjenek-e értesítések.",
+      "vsx-extensions-contribution": {
+        "update-version-uninstall-error": "Hiba a kiterjesztés eltávolításakor: {0}.",
+        "update-version-version-error": "Nem sikerült telepíteni a {1} {0} verzióját."
+      }
     },
     "webview": {
       "goToReadme": "Tovább a README-hez",

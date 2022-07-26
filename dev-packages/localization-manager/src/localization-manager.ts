@@ -92,10 +92,12 @@ export class LocalizationManager {
                     free_api: options.freeApi,
                     target_lang: targetLanguage.toUpperCase() as DeeplLanguage,
                     source_lang: options.sourceLanguage?.toUpperCase() as DeeplLanguage,
-                    text: map.text
+                    text: map.text.map(e => this.addIgnoreTags(e)),
+                    tag_handling: ['xml'],
+                    ignore_tags: ['x']
                 });
                 translationResponse.translations.forEach(({ text }, i) => {
-                    map.localize(i, text);
+                    map.localize(i, this.removeIgnoreTags(text));
                 });
                 console.log(chalk.green(`Successfully translated ${map.text.length} value${map.text.length > 1 ? 's' : ''} for language "${targetLanguage}"`));
             } catch (e) {
@@ -104,6 +106,14 @@ export class LocalizationManager {
         } else {
             console.log(`No translation necessary for language "${targetLanguage}"`);
         }
+    }
+
+    protected addIgnoreTags(text: string): string {
+        return text.replace(/(\{\d*\})/g, '<x>$1</x>');
+    }
+
+    protected removeIgnoreTags(text: string): string {
+        return text.replace(/<x>(\{\d+\})<\/x>/g, '$1');
     }
 
     protected buildLocalizationMap(source: Localization, target: Localization): LocalizationMap {

@@ -1,4 +1,5 @@
 {
+  "disassemblyView": "Pohled na demontáž",
   "theia": {
     "callhierarchy": {
       "noCallers": "Nebyl zjištěn žádný volající.",
@@ -58,11 +59,23 @@
       "addConfigurationPlaceholder": "Vyberte kořenový pracovní prostor, do kterého chcete přidat konfiguraci",
       "continueAll": "Pokračovat ve všem",
       "copyExpressionValue": "Kopírování hodnoty výrazu",
+      "disassembly-view": {
+        "show-source-code": "Zobrazení zdrojového kódu v zobrazení disassembleru."
+      },
+      "instruction-breakpoint": "Bod přerušení instrukcí",
+      "instructionAddress": "Adresa",
+      "instructionBytes": "Byty",
+      "instructionNotAvailable": "Demontáž není k dispozici.",
+      "instructionText": "Pokyny",
       "missingConfiguration": "Dynamická konfigurace '{0}:{1}' chybí nebo není použitelná",
+      "open-disassembly-view": "Otevřený pohled na demontáž",
       "pauseAll": "Pozastavit vše",
       "reveal": "Odhalení",
       "threads": "Vlákna",
       "toggleTracing": "Povolení/zakázání sledování komunikace s ladicími adaptéry"
+    },
+    "disassembly-view": {
+      "disassemblyTableColumnLabel": "pokyny"
     },
     "editor": {
       "diffEditor.maxFileSize": "Maximální velikost souboru v MB, pro kterou se vypočítávají rozdíly. Použijte hodnotu 0 pro žádný limit.",
@@ -70,6 +83,7 @@
       "editor.autoClosingDelete": "Řídí, zda má editor při mazání odstranit sousední uzavírací uvozovky nebo závorky.",
       "editor.autoClosingDelete1": "Odstraňte sousední uzavírací uvozovky nebo závorky pouze v případě, že byly vloženy automaticky.",
       "editor.bracketPairColorization.enabled": "Ovládá, zda je obarvení dvojice závorek povoleno, nebo ne. Pro přepsání barev zvýraznění závorek použijte 'workbench.colorCustomizations'.",
+      "editor.bracketPairColorization.independentColorPoolPerBracketType": "Řídí, zda má každý typ závorky svůj vlastní nezávislý fond barev.",
       "editor.codeLensFontSize": "Ovládá velikost písma v pixelech pro CodeLens. Při nastavení na `0` se použije 90 % hodnoty `#editor.fontSize#`.",
       "editor.find.autoFindInSelection0": "Nikdy automaticky nezapínat funkci Najít ve výběru (výchozí nastavení).",
       "editor.find.autoFindInSelection1": "Vždy automaticky zapněte funkci Najít ve výběru.",
@@ -88,13 +102,23 @@
       "editor.guides.bracketPairsHorizontal1": "Povolí vodorovná vodítka pouze pro aktivní pár držáků.",
       "editor.guides.bracketPairsHorizontal2": "Zakáže vodítka vodorovných dvojic konzol.",
       "editor.guides.highlightActiveBracketPair": "Řídí, zda má editor zvýraznit aktivní dvojici závorek.",
+      "editor.guides.highlightActiveIndentation0": "Zvýrazní aktivního průvodce odsazením.",
+      "editor.guides.highlightActiveIndentation1": "Zvýrazní aktivní vodítko odsazení, i když jsou zvýrazněna vodítka závorek.",
+      "editor.guides.highlightActiveIndentation2": "Nezvýrazňujte aktivního průvodce odsazením.",
       "editor.hover.above": "Pokud je místo, raději se zobrazí nad řádkem.",
       "editor.inlayHints.enabled": "Povolí v editoru nápovědy pro vložení.",
+      "editor.inlayHints.enabled0": "Nápovědy pro vložení jsou povoleny",
+      "editor.inlayHints.enabled1": "Vložené nápovědy se zobrazují ve výchozím nastavení a skrývají se při podržení `Ctrl+Alt`",
+      "editor.inlayHints.enabled2": "Vložené nápovědy jsou ve výchozím nastavení skryté a zobrazí se při podržení `Ctrl+Alt`.",
+      "editor.inlayHints.enabled3": "Nápovědy pro vložení jsou zakázány",
       "editor.inlayHints.fontFamily": "Řídí rodinu písma vložených nápověd v editoru. Je-li nastaveno na prázdnou hodnotu, použije se `#editor.fontFamily#`.",
       "editor.inlayHints.fontSize": "Ovládá velikost písma vložených nápověd v editoru. Pokud je nakonfigurovaná hodnota menší než `5` nebo větší než velikost písma editoru, použije se výchozí hodnota 90 % z `#editor.fontSize#`.",
       "editor.inlineSuggest.enabled": "Ovládá, zda se mají v editoru automaticky zobrazovat návrhy na řádkování.",
       "editor.language.colorizedBracketPairs": "Definuje dvojice závorek, které jsou obarveny podle úrovně vnoření, pokud je obarvení dvojic závorek povoleno.",
       "editor.lineHeight": "Ovládá výšku čáry.\n - Chcete-li automaticky vypočítat výšku řádku z velikosti písma, použijte hodnotu 0.\n - Hodnoty mezi 0 a 8 se použijí jako násobitel s velikostí písma.\n - Hodnoty větší nebo rovné 8 budou použity jako efektivní hodnoty.",
+      "editor.quickSuggestions0": "Rychlé návrhy se zobrazují uvnitř widgetu pro navrhování",
+      "editor.quickSuggestions1": "Rychlé návrhy se zobrazují jako text duchů",
+      "editor.quickSuggestions2": "Rychlé návrhy jsou zakázány",
       "editor.renderLineHighlightOnlyWhenFocus": "Řídí, zda má editor vykreslovat zvýraznění aktuálního řádku pouze tehdy, když je editor zaměřen.",
       "editor.renderWhitespace3": "Vykresluje pouze koncové bílé znaky.",
       "editor.scrollbar.horizontal": "Ovládá viditelnost vodorovného posuvníku.",
@@ -170,6 +194,7 @@
       "newPlugin": "Vytvoření nového pluginu"
     },
     "git": {
+      "aFewSecondsAgo": "před několika sekundami",
       "addSignedOff": "Přidat Signed-off-by",
       "amendReuseMessag": "Chcete-li znovu použít poslední zprávu o revizi, stiskněte klávesu \"Enter\" nebo klávesu \"Escape\" pro zrušení.",
       "amendRewrite": "Přepsání předchozí zprávy o revizi. Stisknutím klávesy 'Enter' potvrdíte nebo klávesou 'Escape' zrušíte.",
@@ -203,7 +228,8 @@
       "keybindingCollidesValidation": "vazba kláves v současné době koliduje",
       "requiredKeybindingValidation": "je vyžadována hodnota keybindingu",
       "resetKeybindingConfirmation": "Opravdu chcete obnovit výchozí hodnotu této vazby kláves?",
-      "resetKeybindingTitle": "Obnovení vazby kláves pro {0}"
+      "resetKeybindingTitle": "Obnovení vazby kláves pro {0}",
+      "resetMultipleKeybindingsWarning": "Pokud pro tento příkaz existuje více klávesových vazeb, budou resetovány všechny."
     },
     "localize": {
       "offlineTooltip": "Nelze se připojit k backendu."
@@ -357,7 +383,11 @@
       "openVSX": "Otevření registru VSX",
       "recommendedExtensions": "Seznam názvů rozšíření doporučených pro použití v tomto pracovním prostoru.",
       "searchPlaceholder": "Hledat rozšíření v {0}",
-      "showRecommendedExtensions": "Řídí, zda se mají zobrazovat oznámení pro doporučení rozšíření."
+      "showRecommendedExtensions": "Řídí, zda se mají zobrazovat oznámení pro doporučení rozšíření.",
+      "vsx-extensions-contribution": {
+        "update-version-uninstall-error": "Chyba při odstraňování rozšíření: {0}.",
+        "update-version-version-error": "Nepodařilo se nainstalovat verzi {0} {1} ."
+      }
     },
     "webview": {
       "goToReadme": "Přejít na README",

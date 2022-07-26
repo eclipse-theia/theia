@@ -1,4 +1,5 @@
 {
+  "disassemblyView": "Disassembly View",
   "theia": {
     "callhierarchy": {
       "noCallers": "No callers have been detected.",
@@ -58,18 +59,31 @@
       "addConfigurationPlaceholder": "Select workspace root to add configuration to",
       "continueAll": "Continue All",
       "copyExpressionValue": "Copy Expression Value",
+      "disassembly-view": {
+        "show-source-code": "Show Source Code in Disassembly View."
+      },
+      "instruction-breakpoint": "Instruction Breakpoint",
+      "instructionAddress": "Address",
+      "instructionBytes": "Bytes",
+      "instructionNotAvailable": "Disassembly not available.",
+      "instructionText": "Instruction",
       "missingConfiguration": "Dynamic configuration '{0}:{1}' is missing or not applicable",
+      "open-disassembly-view": "Open Disassembly View",
       "pauseAll": "Pause All",
       "reveal": "Reveal",
       "threads": "Threads",
       "toggleTracing": "Enable/disable tracing communications with debug adapters"
+    },
+    "disassembly-view": {
+      "disassemblyTableColumnLabel": "instructions"
     },
     "editor": {
       "diffEditor.maxFileSize": "Maximum file size in MB for which to compute diffs. Use 0 for no limit.",
       "editor.accessibilityPageSize": "Controls the number of lines in the editor that can be read out by a screen reader at once. When we detect a screen reader we automatically set the default to be 500. Warning: this has a performance implication for numbers larger than the default.",
       "editor.autoClosingDelete": "Controls whether the editor should remove adjacent closing quotes or brackets when deleting.",
       "editor.autoClosingDelete1": "Remove adjacent closing quotes or brackets only if they were automatically inserted.",
-      "editor.bracketPairColorization.enabled": "Controls whether bracket pair colorization is enabled or not. Use 'workbench.colorCustomizations' to override the bracket highlight colors.",
+      "editor.bracketPairColorization.enabled": "Controls whether bracket pair colorization is enabled or not. Use `#workbench.colorCustomizations#` to override the bracket highlight colors.",
+      "editor.bracketPairColorization.independentColorPoolPerBracketType": "Controls whether each bracket type has its own independent color pool.",
       "editor.codeLensFontSize": "Controls the font size in pixels for CodeLens. When set to `0`, 90% of `#editor.fontSize#` is used.",
       "editor.find.autoFindInSelection0": "Never turn on Find in Selection automatically (default).",
       "editor.find.autoFindInSelection1": "Always turn on Find in Selection automatically.",
@@ -88,13 +102,23 @@
       "editor.guides.bracketPairsHorizontal1": "Enables horizontal guides only for the active bracket pair.",
       "editor.guides.bracketPairsHorizontal2": "Disables horizontal bracket pair guides.",
       "editor.guides.highlightActiveBracketPair": "Controls whether the editor should highlight the active bracket pair.",
+      "editor.guides.highlightActiveIndentation0": "Highlights the active indent guide.",
+      "editor.guides.highlightActiveIndentation1": "Highlights the active indent guide even if bracket guides are highlighted.",
+      "editor.guides.highlightActiveIndentation2": "Do not highlight the active indent guide.",
       "editor.hover.above": "Prefer showing hovers above the line, if there's space.",
       "editor.inlayHints.enabled": "Enables the inlay hints in the editor.",
+      "editor.inlayHints.enabled0": "Inlay hints are enabled",
+      "editor.inlayHints.enabled1": "Inlay hints are showing by default and hide when holding `Ctrl+Alt`",
+      "editor.inlayHints.enabled2": "Inlay hints are hidden by default and show when holding `Ctrl+Alt`",
+      "editor.inlayHints.enabled3": "Inlay hints are disabled",
       "editor.inlayHints.fontFamily": "Controls font family of inlay hints in the editor. When set to empty, the `#editor.fontFamily#` is used.",
-      "editor.inlayHints.fontSize": "Controls font size of inlay hints in the editor. A default of 90% of `#editor.fontSize#` is used when the configured value is less than `5` or greater than the editor font size.",
+      "editor.inlayHints.fontSize": "Controls font size of inlay hints in the editor. As default the `#editor.fontSize#` is used when the configured value is less than `5` or greater than the editor font size.",
       "editor.inlineSuggest.enabled": "Controls whether to automatically show inline suggestions in the editor.",
       "editor.language.colorizedBracketPairs": "Defines the bracket pairs that are colorized by their nesting level if bracket pair colorization is enabled.",
       "editor.lineHeight": "Controls the line height. \n - Use 0 to automatically compute the line height from the font size.\n - Values between 0 and 8 will be used as a multiplier with the font size.\n - Values greater than or equal to 8 will be used as effective values.",
+      "editor.quickSuggestions0": "Quick suggestions show inside the suggest widget",
+      "editor.quickSuggestions1": "Quick suggestions show as ghost text",
+      "editor.quickSuggestions2": "Quick suggestions are disabled",
       "editor.renderLineHighlightOnlyWhenFocus": "Controls if the editor should render the current line highlight only when the editor is focused.",
       "editor.renderWhitespace3": "Render only trailing whitespace characters.",
       "editor.scrollbar.horizontal": "Controls the visibility of the horizontal scrollbar.",
@@ -170,6 +194,7 @@
       "newPlugin": "Building a New Plugin"
     },
     "git": {
+      "aFewSecondsAgo": "a few seconds ago",
       "addSignedOff": "Add Signed-off-by",
       "amendReuseMessag": "To reuse the last commit message, press 'Enter' or 'Escape' to cancel.",
       "amendRewrite": "Rewrite previous commit message. Press 'Enter' to confirm or 'Escape' to cancel.",
@@ -203,7 +228,8 @@
       "keybindingCollidesValidation": "keybinding currently collides",
       "requiredKeybindingValidation": "keybinding value is required",
       "resetKeybindingConfirmation": "Do you really want to reset this keybinding to its default value?",
-      "resetKeybindingTitle": "Reset keybinding for {0}"
+      "resetKeybindingTitle": "Reset keybinding for {0}",
+      "resetMultipleKeybindingsWarning": "If multiple keybindings exist for this command, all of them will be reset."
     },
     "localize": {
       "offlineTooltip": "Cannot connect to backend."
@@ -357,7 +383,11 @@
       "openVSX": "Open VSX Registry",
       "recommendedExtensions": "A list of the names of extensions recommended for use in this workspace.",
       "searchPlaceholder": "Search Extensions in {0}",
-      "showRecommendedExtensions": "Controls whether notifications are shown for extension recommendations."
+      "showRecommendedExtensions": "Controls whether notifications are shown for extension recommendations.",
+      "vsx-extensions-contribution": {
+        "update-version-uninstall-error": "Error while removing the extension: {0}.",
+        "update-version-version-error": "Failed to install version {0} of {1}."
+      }
     },
     "webview": {
       "goToReadme": "Go To README",

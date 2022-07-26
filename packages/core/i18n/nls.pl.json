@@ -1,4 +1,5 @@
 {
+  "disassemblyView": "Widok z demontażu",
   "theia": {
     "callhierarchy": {
       "noCallers": "Nie wykryto żadnych rozmówców.",
@@ -58,11 +59,23 @@
       "addConfigurationPlaceholder": "Wybierz główny obszar roboczy, do którego chcesz dodać konfigurację",
       "continueAll": "Kontynuuj Wszystko",
       "copyExpressionValue": "Kopiuj wartość wyrażenia",
+      "disassembly-view": {
+        "show-source-code": "Pokaż kod źródłowy w widoku demontażu."
+      },
+      "instruction-breakpoint": "Punkt przerwania instrukcji",
+      "instructionAddress": "Adres",
+      "instructionBytes": "Bajty",
+      "instructionNotAvailable": "Demontaż nie jest dostępny.",
+      "instructionText": "Instrukcja",
       "missingConfiguration": "Brak konfiguracji dynamicznej \"{0}:{1}\" lub nie ma ona zastosowania.",
+      "open-disassembly-view": "Otwarty widok demontażu",
       "pauseAll": "Pauza Wszystkie",
       "reveal": "Ujawnij",
       "threads": "Nici",
       "toggleTracing": "Włączanie/wyłączanie śledzenia komunikacji z adapterami debugowania"
+    },
+    "disassembly-view": {
+      "disassemblyTableColumnLabel": "instrukcje"
     },
     "editor": {
       "diffEditor.maxFileSize": "Maksymalny rozmiar pliku w MB, dla którego mają być obliczane różnice. Wartość 0 oznacza brak limitu.",
@@ -70,6 +83,7 @@
       "editor.autoClosingDelete": "Określa, czy edytor ma usuwać przylegające cudzysłowy lub nawiasy zamykające podczas usuwania.",
       "editor.autoClosingDelete1": "Usuń sąsiednie cudzysłowy lub nawiasy zamykające tylko wtedy, gdy zostały wstawione automatycznie.",
       "editor.bracketPairColorization.enabled": "Określa, czy kolorowanie par nawiasów jest włączone, czy nie. Użyj 'workbench.colorCustomizations', aby zmienić kolory podświetlenia nawiasów.",
+      "editor.bracketPairColorization.independentColorPoolPerBracketType": "Kontroluje, czy każdy typ wspornika ma swoją własną, niezależną pulę kolorów.",
       "editor.codeLensFontSize": "Kontroluje rozmiar czcionki w pikselach dla CodeLens. Gdy ustawione na `0`, używane jest 90% z `#editor.fontSize#`.",
       "editor.find.autoFindInSelection0": "Nigdy nie włączaj funkcji Znajdź w zaznaczeniu automatycznie (ustawienie domyślne).",
       "editor.find.autoFindInSelection1": "Zawsze automatycznie włączaj funkcję Znajdź w zaznaczeniu.",
@@ -88,13 +102,23 @@
       "editor.guides.bracketPairsHorizontal1": "Włącza prowadnice poziome tylko dla aktywnej pary wsporników.",
       "editor.guides.bracketPairsHorizontal2": "Wyłącza prowadnice par wsporników poziomych.",
       "editor.guides.highlightActiveBracketPair": "Określa, czy edytor ma podświetlać aktywną parę nawiasów.",
+      "editor.guides.highlightActiveIndentation0": "Podświetla aktywną prowadnicę wcięcia.",
+      "editor.guides.highlightActiveIndentation1": "Podświetla aktywną prowadnicę wcięcia, nawet jeśli prowadnice wsporników są podświetlone.",
+      "editor.guides.highlightActiveIndentation2": "Nie podświetlaj aktywnego przewodnika po wcięciach.",
       "editor.hover.above": "Preferuj wyświetlanie nad linią, jeśli jest na to miejsce.",
       "editor.inlayHints.enabled": "Włącza podpowiedzi wkładek w edytorze.",
+      "editor.inlayHints.enabled0": "Podpowiedzi dotyczące nakładek są włączone",
+      "editor.inlayHints.enabled1": "Podpowiedzi są domyślnie wyświetlane i ukrywają się po przytrzymaniu `Ctrl+Alt`.",
+      "editor.inlayHints.enabled2": "Podpowiedzi są domyślnie ukryte i pokazują się po przytrzymaniu `Ctrl+Alt`.",
+      "editor.inlayHints.enabled3": "Podpowiedzi układania są wyłączone",
       "editor.inlayHints.fontFamily": "Kontroluje rodzinę czcionek podpowiedzi wkładek w edytorze. Jeśli jest ustawione na puste, używana jest `#editor.fontFamily#`.",
       "editor.inlayHints.fontSize": "Kontroluje rozmiar czcionki podpowiedzi wkładek w edytorze. Domyślnie 90% `#editor.fontSize#` jest używane, gdy skonfigurowana wartość jest mniejsza niż `5` lub większa niż rozmiar czcionki edytora.",
       "editor.inlineSuggest.enabled": "Określa, czy w edytorze mają być automatycznie wyświetlane sugestie inline.",
       "editor.language.colorizedBracketPairs": "Określa pary nawiasów, które są kolorowane według poziomu ich zagnieżdżenia, jeśli kolorowanie par nawiasów jest włączone.",
       "editor.lineHeight": "Steruje wysokością wiersza.\n - Wartość 0 powoduje automatyczne obliczenie wysokości wiersza na podstawie rozmiaru czcionki.\n - Wartości z przedziału od 0 do 8 zostaną użyte jako mnożnik rozmiaru czcionki.\n - Wartości większe lub równe 8 będą używane jako wartości efektywne.",
+      "editor.quickSuggestions0": "Szybkie sugestie wyświetlane wewnątrz widżetu sugestii",
+      "editor.quickSuggestions1": "Szybkie sugestie są wyświetlane jako tekst widmo",
+      "editor.quickSuggestions2": "Szybkie sugestie są wyłączone",
       "editor.renderLineHighlightOnlyWhenFocus": "Określa, czy edytor ma wyświetlać podświetlenie bieżącej linii tylko wtedy, gdy edytor jest skoncentrowany.",
       "editor.renderWhitespace3": "Renderuj tylko końcowe znaki białych spacji.",
       "editor.scrollbar.horizontal": "Umożliwia sterowanie widocznością poziomego paska przewijania.",
@@ -170,6 +194,7 @@
       "newPlugin": "Tworzenie nowego pluginu"
     },
     "git": {
+      "aFewSecondsAgo": "kilka sekund temu",
       "addSignedOff": "Dodaj podpisane przez",
       "amendReuseMessag": "Aby ponownie użyć ostatniego komunikatu commit, należy nacisnąć 'Enter' lub 'Escape', aby anulować.",
       "amendRewrite": "Ponownie napisać poprzednią wiadomość. Wcisnąć 'Enter', aby potwierdzić lub 'Escape', aby anulować.",
@@ -203,7 +228,8 @@
       "keybindingCollidesValidation": "przypisanie klawiszy aktualnie koliduje",
       "requiredKeybindingValidation": "wymagana jest wartość wiązania klawiszy",
       "resetKeybindingConfirmation": "Czy naprawdę chcesz przywrócić domyślną wartość tego powiązania klawiszy?",
-      "resetKeybindingTitle": "Zresetuj przypisanie klawiszy dla {0}."
+      "resetKeybindingTitle": "Zresetuj przypisanie klawiszy dla {0}.",
+      "resetMultipleKeybindingsWarning": "Jeśli dla tego polecenia istnieje wiele przypisań klawiszy, wszystkie zostaną zresetowane."
     },
     "localize": {
       "offlineTooltip": "Nie można połączyć się z backendem."
@@ -357,7 +383,11 @@
       "openVSX": "Otwórz Rejestr VSX",
       "recommendedExtensions": "Lista nazw rozszerzeń zalecanych do użycia w tym obszarze roboczym.",
       "searchPlaceholder": "Wyszukaj rozszerzenia w {0}.",
-      "showRecommendedExtensions": "Określa, czy dla zaleceń dotyczących rozszerzeń mają być wyświetlane powiadomienia."
+      "showRecommendedExtensions": "Określa, czy dla zaleceń dotyczących rozszerzeń mają być wyświetlane powiadomienia.",
+      "vsx-extensions-contribution": {
+        "update-version-uninstall-error": "Błąd podczas usuwania rozszerzenia: {0}.",
+        "update-version-version-error": "Nie udało się zainstalować wersji {0} z {1}."
+      }
     },
     "webview": {
       "goToReadme": "Przejdź do pliku README",

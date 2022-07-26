@@ -1,4 +1,5 @@
 {
+  "disassemblyView": "Demontage Ansicht",
   "theia": {
     "callhierarchy": {
       "noCallers": "Es wurden keine Anrufer entdeckt.",
@@ -58,11 +59,23 @@
       "addConfigurationPlaceholder": "Wählen Sie das Stammverzeichnis des Arbeitsbereichs, dem Sie die Konfiguration hinzufügen möchten",
       "continueAll": "Alle fortsetzen",
       "copyExpressionValue": "Ausdruckswert kopieren",
+      "disassembly-view": {
+        "show-source-code": "Quellcode in der Disassemblierungsansicht anzeigen."
+      },
+      "instruction-breakpoint": "Anweisung Haltepunkt",
+      "instructionAddress": "Adresse",
+      "instructionBytes": "Bytes",
+      "instructionNotAvailable": "Demontage nicht möglich.",
+      "instructionText": "Anleitung",
       "missingConfiguration": "Die dynamische Konfiguration '{0}:{1}' fehlt oder ist nicht anwendbar",
+      "open-disassembly-view": "Demontageansicht öffnen",
       "pauseAll": "Pause Alle",
       "reveal": "Enthüllen",
       "threads": "Threads",
       "toggleTracing": "Aktivieren/Deaktivieren der Verfolgung der Kommunikation mit Debug-Adaptern"
+    },
+    "disassembly-view": {
+      "disassemblyTableColumnLabel": "Anweisungen"
     },
     "editor": {
       "diffEditor.maxFileSize": "Maximale Dateigröße in MB, für die Diffs berechnet werden sollen. Verwenden Sie 0 für keine Begrenzung.",
@@ -70,6 +83,7 @@
       "editor.autoClosingDelete": "Steuert, ob der Editor beim Löschen angrenzende schließende Anführungszeichen oder Klammern entfernen soll.",
       "editor.autoClosingDelete1": "Entfernen Sie angrenzende schließende Anführungszeichen oder Klammern nur, wenn sie automatisch eingefügt wurden.",
       "editor.bracketPairColorization.enabled": "Steuert, ob die Einfärbung von Klammerpaaren aktiviert ist oder nicht. Verwenden Sie 'workbench.colorCustomizations', um die Farben der Klammerhervorhebung zu überschreiben.",
+      "editor.bracketPairColorization.independentColorPoolPerBracketType": "Steuert, ob jeder Klammertyp seinen eigenen unabhängigen Farbpool hat.",
       "editor.codeLensFontSize": "Steuert die Schriftgröße in Pixeln für CodeLens. Bei Einstellung `0` werden 90% von `#editor.fontSize#` verwendet.",
       "editor.find.autoFindInSelection0": "Niemals die automatische Suche in der Auswahl aktivieren (Standard).",
       "editor.find.autoFindInSelection1": "Schalten Sie \"In Auswahl suchen\" immer automatisch ein.",
@@ -88,13 +102,23 @@
       "editor.guides.bracketPairsHorizontal1": "Aktiviert horizontale Hilfslinien nur für das aktive Halterungspaar.",
       "editor.guides.bracketPairsHorizontal2": "Deaktiviert die horizontalen Klammerpaarführungen.",
       "editor.guides.highlightActiveBracketPair": "Steuert, ob der Editor das aktive Klammerpaar hervorheben soll.",
+      "editor.guides.highlightActiveIndentation0": "Hebt die aktive Einzugshilfe hervor.",
+      "editor.guides.highlightActiveIndentation1": "Hebt die aktive Einzugshilfe hervor, auch wenn Klammerhilfen hervorgehoben sind.",
+      "editor.guides.highlightActiveIndentation2": "Markieren Sie nicht die aktive Einzugsschablone.",
       "editor.hover.above": "Bevorzugen Sie es, über der Linie zu schweben, wenn Platz vorhanden ist.",
       "editor.inlayHints.enabled": "Aktiviert die Inlay-Hinweise im Editor.",
+      "editor.inlayHints.enabled0": "Inlay-Hinweise sind aktiviert",
+      "editor.inlayHints.enabled1": "Inlay-Hinweise werden standardmäßig angezeigt und bei gedrückter Tastenkombination \"Strg+Alt\" ausgeblendet",
+      "editor.inlayHints.enabled2": "Inlay-Hinweise sind standardmäßig ausgeblendet und werden angezeigt, wenn die Tastenkombination \"Strg+Alt\" gedrückt wird.",
+      "editor.inlayHints.enabled3": "Inlay-Hinweise sind deaktiviert",
       "editor.inlayHints.fontFamily": "Steuert die Schriftfamilie der Inlay-Hinweise im Editor. Wenn leer, wird die `#editor.fontFamily#` verwendet.",
       "editor.inlayHints.fontSize": "Steuert die Schriftgröße von Inlay-Hinweisen im Editor. Eine Vorgabe von 90% von `#editor.fontSize#` wird verwendet, wenn der konfigurierte Wert kleiner als `5` oder größer als die Schriftgröße des Editors ist.",
       "editor.inlineSuggest.enabled": "Legt fest, ob automatisch Inline-Vorschläge im Editor angezeigt werden sollen.",
       "editor.language.colorizedBracketPairs": "Definiert die Klammerpaare, die nach ihrer Verschachtelungsebene eingefärbt werden, wenn die Einfärbung von Klammerpaaren aktiviert ist.",
       "editor.lineHeight": "Steuert die Zeilenhöhe.\n - Verwenden Sie 0, um die Zeilenhöhe automatisch anhand der Schriftgröße zu berechnen.\n - Werte zwischen 0 und 8 werden als Multiplikator mit der Schriftgröße verwendet.\n - Werte, die größer oder gleich 8 sind, werden als effektive Werte verwendet.",
+      "editor.quickSuggestions0": "Schnellvorschläge werden innerhalb des Vorschlags-Widgets angezeigt",
+      "editor.quickSuggestions1": "Schnellvorschläge werden als Geistertext angezeigt",
+      "editor.quickSuggestions2": "Schnellvorschläge sind deaktiviert",
       "editor.renderLineHighlightOnlyWhenFocus": "Steuert, ob der Editor die aktuelle Zeile nur dann hervorheben soll, wenn der Editor fokussiert ist.",
       "editor.renderWhitespace3": "Nur nachgestellte Leerzeichen werden wiedergegeben.",
       "editor.scrollbar.horizontal": "Steuert die Sichtbarkeit der horizontalen Bildlaufleiste.",
@@ -170,6 +194,7 @@
       "newPlugin": "Ein neues Plugin erstellen"
     },
     "git": {
+      "aFewSecondsAgo": "vor ein paar Sekunden",
       "addSignedOff": "Abgezeichnet von hinzufügen",
       "amendReuseMessag": "Um die letzte Meldung wieder zu verwenden, drücken Sie \"Enter\" oder \"Escape\", um den Vorgang abzubrechen.",
       "amendRewrite": "Vorherige Übermittlungsnachricht neu schreiben. Bestätigen Sie mit \"Enter\" oder brechen Sie mit \"Escape\" ab.",
@@ -203,7 +228,8 @@
       "keybindingCollidesValidation": "Tastenkombinationen kollidieren",
       "requiredKeybindingValidation": "Schlüsselbindung Wert ist erforderlich",
       "resetKeybindingConfirmation": "Möchten Sie diese Tastaturbelegung wirklich auf den Standardwert zurücksetzen?",
-      "resetKeybindingTitle": "Tastaturbelegung für {0} zurücksetzen"
+      "resetKeybindingTitle": "Tastaturbelegung für {0} zurücksetzen",
+      "resetMultipleKeybindingsWarning": "Wenn mehrere Tastenkombinationen für diesen Befehl existieren, werden alle zurückgesetzt."
     },
     "localize": {
       "offlineTooltip": "Kann keine Verbindung zum Backend herstellen."
@@ -357,7 +383,11 @@
       "openVSX": "Open VSX Registry",
       "recommendedExtensions": "Eine Liste mit den Namen der Erweiterungen, die für die Verwendung in diesem Arbeitsbereich empfohlen werden.",
       "searchPlaceholder": "Erweiterungen suchen in {0}",
-      "showRecommendedExtensions": "Steuert, ob Benachrichtigungen für Erweiterungsempfehlungen angezeigt werden."
+      "showRecommendedExtensions": "Steuert, ob Benachrichtigungen für Erweiterungsempfehlungen angezeigt werden.",
+      "vsx-extensions-contribution": {
+        "update-version-uninstall-error": "Fehler beim Entfernen der Erweiterung: {0}.",
+        "update-version-version-error": "Die Installation der Version {0} von {1} ist fehlgeschlagen."
+      }
     },
     "webview": {
       "goToReadme": "Zum README gehen",
