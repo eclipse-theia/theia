@@ -27,7 +27,7 @@ import { DefaultRpcProxyProvider, Rpc } from '../../common/rpc';
 import { FrontendApplicationContribution } from '../frontend-application';
 import { SocketIoConnectionProvider } from './socket-io-connection-provider';
 
-export const messagingFrontendModule = new ContainerModule(bind => {
+export default new ContainerModule(bind => {
     bindServiceProvider(bind, BackendAndFrontend);
     bind(FrontendApplicationContribution)
         .toDynamicValue(ctx => ({

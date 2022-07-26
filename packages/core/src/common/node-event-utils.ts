@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, DisposableCollection } from '../common';
+import { Disposable, DisposableCollection } from '../common/disposable';
 
 export type EventNames<T extends NodeJS.EventEmitter> = Parameters<T['on']>[0];
 export type Listener<T extends NodeJS.EventEmitter, K extends EventNames<T> = EventNames<T>> = Parameters<T['on']>[0] extends K ? Parameters<T['on']>[1] : never;

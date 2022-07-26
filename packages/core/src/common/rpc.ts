@@ -44,6 +44,29 @@ export interface Rpc {
 }
 export namespace RpcApi {
 
+    export interface Server {
+        /**
+         *
+         * @param clientId
+         */
+        [kHandleNewConnection]?(clientId: string, rpcConnection: RpcConnection): void
+        /**
+         *
+         * @param clientId
+         */
+        [kHandleConnectionLost]?(clientId: string, rpcConnection: RpcConnection): void
+    }
+
+    /**
+     *
+     */
+    export const kHandleConnectionLost = Symbol.for('kHandleConnectionLost');
+
+    /**
+     *
+     */
+    export const kHandleNewConnection = Symbol.for('kHandleNewConnection');
+
     // #region decorators
 
     /**

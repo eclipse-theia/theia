@@ -27,7 +27,7 @@ import { HostedPluginLocalizationService } from './hosted-plugin-localization-se
 import { createInterface } from 'readline';
 import { PackrStream, UnpackrStream } from '@theia/core/shared/msgpackr';
 import { v4 } from 'uuid';
-import { createServer, Socket } from 'net';
+import { createServer, Server, Socket } from 'net';
 
 export const HOSTED_PLUGIN_ENV_PREFIX = 'HOSTED_PLUGIN';
 
@@ -39,7 +39,8 @@ export interface IPCConnectionOptions {
 
 export interface IpcServer {
     name: string
-    socket: Promise<Socket>
+    server: Server
+    client: Promise<Socket>
 }
 
 export const HostedPluginProcessConfiguration = Symbol('HostedPluginProcessConfiguration');
@@ -172,17 +173,27 @@ export class HostedPluginProcess implements ServerPluginRunner {
     }
 
     protected createIpcServer(): IpcServer {
-        const name = `\\\\.\\pipe\\${v4()}`;
-        const socket = new Promise<Socket>(resolve => {
-            const server = createServer(resolve);
-            server.maxConnections = 1;
-            server.listen(name, 0);
+        const name = this.createIpcServerName();
+        const server = createServer();
+        server.maxConnections = 1;
+        const client = new Promise<Socket>(resolve => {
+            server.once('connection', socket => {
+                socket.once('close', () => server.close());
+                resolve(socket);
+            });
         });
-        return { name, socket };
+        server.listen(name, 0);
+        return { name, server, client };
+    }
+
+    protected createIpcServerName(): string {
+        return process.platform === 'win32'
+            ? `\\\\.\\pipe\\${v4()}`
+            : `/tmp/pipe-${v4()}`;
     }
 
     private createChildConnection(ipcServer: IpcServer): AnyConnection {
-        return this.deferredConnectionFactory(ipcServer.socket.then(socket => {
+        return this.deferredConnectionFactory(ipcServer.client.then(socket => {
             const packr = new PackrStream();
             const unpackr = new UnpackrStream();
             packr.pipe(socket);

@@ -16,14 +16,12 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { pushDisposableListener } from '../../common/node-event-utils';
 import type { Readable, Writable } from 'stream';
 import { AbstractConnection, Connection } from '../../common/connection/connection';
 
 /**
  * Wrap a tuple of ({@link Readable}, {@link Writable}) into a {@link Connection}.
- *
- * _Note that this object takes ownership of the reader and writer instances,
- * meaning that it will destroy them upon close._
  */
 export class ObjectStreamConnection<T> extends AbstractConnection<T> {
 
@@ -40,8 +38,9 @@ export class ObjectStreamConnection<T> extends AbstractConnection<T> {
         if (!this.writer.writableObjectMode) {
             throw new Error('writable stream must support objects');
         }
-        this.reader.once('close', () => this.setClosedAndEmit());
-        this.reader.on('data', message => this.onMessageEmitter.fire(message));
+        pushDisposableListener(this.disposables, this.reader, 'close', () => this.setClosedAndEmit());
+        pushDisposableListener(this.disposables, this.reader, 'data', (message: any) => this.onMessageEmitter.fire(message));
+        this.onClose(() => this.dispose());
     }
 
     sendMessage(message: T): void {
@@ -49,7 +48,6 @@ export class ObjectStreamConnection<T> extends AbstractConnection<T> {
     }
 
     close(): void {
-        this.reader.destroy();
-        this.writer.destroy();
+        this.setClosedAndEmit();
     }
 }

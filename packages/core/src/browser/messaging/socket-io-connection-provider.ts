@@ -18,8 +18,9 @@
 
 import { injectable } from 'inversify';
 import { AbstractConnection, Connection, ConnectionProvider } from '../../common';
-import * as socket_io from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 import { v4 } from 'uuid';
+import { Endpoint } from '../endpoint';
 
 export interface SocketIoParams {
     path: string
@@ -32,7 +33,7 @@ export class SocketIoConnectionProvider implements ConnectionProvider<any, Socke
     protected frontendId = this.getFrontendId();
 
     open(params: SocketIoParams): Connection<any> {
-        return new SocketIoConnection(socket_io.io(params.path, {
+        return new SocketIoConnection(io(this.createWebSocketUrl(params.path), {
             query: {
                 THEIA_FRONTEND_ID: this.frontendId
             }
@@ -42,6 +43,15 @@ export class SocketIoConnectionProvider implements ConnectionProvider<any, Socke
     protected getFrontendId(): string {
         return v4();
     }
+
+    /**
+     * @param serviceId The handler to reach in the backend.
+     */
+    protected createWebSocketUrl(serviceId: string): string {
+        // Since we are using Socket.io, the path should look like the following:
+        // proto://domain.com/{path}
+        return new Endpoint().getWebSocketUrl().withPath(serviceId).toString();
+    }
 }
 
 export class SocketIoConnection extends AbstractConnection<any> {
@@ -49,12 +59,13 @@ export class SocketIoConnection extends AbstractConnection<any> {
     state = Connection.State.OPENING;
 
     constructor(
-        protected socket: socket_io.Socket
+        protected socket: Socket
     ) {
         super();
         this.socket.once('connect', () => this.setOpenedAndEmit());
         this.socket.on('message', message => this.onMessageEmitter.fire(message));
-        this.socket.once('disconnect', () => {
+        this.socket.once('disconnect', reason => {
+            console.debug('SocketIoConnection disconnect:', reason);
             this.setClosedAndEmit();
             this.dispose();
         });

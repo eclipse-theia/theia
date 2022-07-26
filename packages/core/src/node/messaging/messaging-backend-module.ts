@@ -43,9 +43,9 @@ export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind =
     bindServiceProvider(bind, BackendAndFrontend);
     bind(ConnectionRouter)
         .toDynamicValue(ctx => {
-            const handlers = getAllNamedOptional(ctx.container, ConnectionHandler, BackendAndFrontend);
             const router = ctx.container.get<DefaultRouter<AnyConnection>>(DefaultRouter);
-            handlers.forEach(handler => router.listen(handler));
+            getAllNamedOptional(ctx.container, ConnectionHandler, BackendAndFrontend)
+                .forEach(handler => router.listen(handler));
             return router;
         })
         .inSingletonScope()
@@ -135,15 +135,16 @@ export const messagingBackendModule = new ContainerModule(bind => {
     // Router handling the frontend to backend connections
     bind(ConnectionRouter)
         .toDynamicValue(ctx => {
+            const router = ctx.container.get<DefaultRouter<AnyConnection>>(DefaultRouter);
             const rcTracker = ctx.container.get(Rc.Tracker);
             const containerScopeFactory = ctx.container.get(ContainerScope.Factory);
-            const router = ctx.container.get<DefaultRouter<AnyConnection>>(DefaultRouter);
             const scopes = new Rc.SharedRefMap((frontendId: string) => {
-                const scopedModules = getAllNamedOptional(ctx.container, ContainerModule, BackendAndFrontend);
-                // TODO: Remove this API?
-                const scopedModules2 = getAllOptional(ctx.container, ConnectionContainerModule);
                 const child = ctx.container.createChild();
-                child.load(...scopedModules2, ...scopedModules);
+                getAllNamedOptional(ctx.container, ContainerModule, BackendAndFrontend)
+                    .forEach(scope => child.load(scope));
+                // TODO: Remove this API?
+                getAllOptional(ctx.container, ConnectionContainerModule)
+                    .forEach(scope => child.load(scope));
                 const readyCallbacks = getAllNamedOptional(child, ContainerScope.Init, BackendAndFrontend);
                 const containerScope = containerScopeFactory(child, readyCallbacks);
                 return rcTracker.track(containerScope);

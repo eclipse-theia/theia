@@ -25,7 +25,7 @@ import { DefaultRpcProxyProvider } from '../../common/rpc';
 import { ElectronMainAndFrontend } from '../../electron-common';
 import { IpcRendererConnection } from './electron-ipc-renderer-connection';
 
-export const messagingFrontendModule = new ContainerModule(bind => {
+export default new ContainerModule(bind => {
     // #region transients
     bind(IpcRendererConnection)
         .toDynamicValue(ctx => new IpcRendererConnection())

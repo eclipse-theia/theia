@@ -61,6 +61,7 @@ export class SocketIoServer {
     protected createSocketIoServer(httpServer: http.Server): socket_io.Server {
         return new socket_io.Server(httpServer, {
             serveClient: false,
+            maxHttpBufferSize: 10 * 1024 * 1024, // bytes = 10 MB
             pingInterval: 30_000, // ms = 30 seconds
             pingTimeout: 3_600_000 // ms = 1 hour, virtually no timeout
         });
@@ -124,6 +125,7 @@ export class SocketIoConnection extends AbstractConnection<any> {
         super();
         pushDisposableListener(this.disposables, socket, 'message', message => this.onMessageEmitter.fire(message));
         pushDisposableListener(this.disposables, socket, 'disconnect', reason => {
+            console.debug('SocketIoConnection disconnect', reason);
             this.setClosedAndEmit();
             this.dispose();
         });
