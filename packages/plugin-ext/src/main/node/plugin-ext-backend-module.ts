@@ -25,7 +25,6 @@ import {
     PluginDeployerDirectoryHandler, PluginServer, pluginServerJsonRpcPath, PluginDeployerParticipant
 } from '../../common/plugin-protocol';
 import { PluginDeployerImpl } from './plugin-deployer-impl';
-import { LocalFilePluginDeployerResolver } from './resolvers/local-file-plugin-deployer-resolver';
 import { LocalDirectoryPluginDeployerResolver } from './resolvers/local-directory-plugin-deployer-resolver';
 import { PluginTheiaFileHandler } from './handlers/plugin-theia-file-handler';
 import { PluginTheiaDirectoryHandler } from './handlers/plugin-theia-directory-handler';
@@ -54,7 +53,6 @@ export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginUninstallationManager).toSelf().inSingletonScope();
 
     bind(PluginDeployerResolver).to(LocalDirectoryPluginDeployerResolver).inSingletonScope();
-    bind(PluginDeployerResolver).to(LocalFilePluginDeployerResolver).inSingletonScope();
     bind(PluginDeployerResolver).to(GithubPluginDeployerResolver).inSingletonScope();
     bind(PluginDeployerResolver).to(HttpPluginDeployerResolver).inSingletonScope();
 
