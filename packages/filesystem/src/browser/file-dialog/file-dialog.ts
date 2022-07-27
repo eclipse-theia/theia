@@ -17,7 +17,8 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { Disposable, MaybeArray, nls } from '@theia/core/lib/common';
-import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget, codiconArray, Key, LabelProvider } from '@theia/core/lib/browser';
+import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget, codiconArray, LabelProvider } from '@theia/core/lib/browser';
+import { Key } from '@theia/core/lib/common/keys';
 import { FileStatNode } from '../file-tree';
 import { LocationListRenderer, LocationListRendererFactory } from '../location';
 import { FileDialogModel } from './file-dialog-model';

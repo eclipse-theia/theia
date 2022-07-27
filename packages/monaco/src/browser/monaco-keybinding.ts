@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { KeybindingContribution, KeybindingRegistry, KeybindingScope, KeyCode } from '@theia/core/lib/browser';
+import { KeybindingContribution, KeybindingRegistry, KeybindingScope } from '@theia/core/lib/browser';
+import { KeyCode } from '@theia/core/lib/common/keys';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { CommandRegistry, DisposableCollection, environment, isOSX } from '@theia/core';

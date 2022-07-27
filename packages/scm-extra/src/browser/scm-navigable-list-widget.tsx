@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { SELECTED_CLASS, Key, Widget } from '@theia/core/lib/browser';
+import { SELECTED_CLASS, Widget } from '@theia/core/lib/browser';
+import { Key } from '@theia/core/lib/common/keys';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import URI from '@theia/core/lib/common/uri';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';

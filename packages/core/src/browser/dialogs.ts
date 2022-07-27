@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { Disposable, MaybePromise, CancellationTokenSource, nls } from '../common';
-import { Key } from './keyboard/keys';
+import { Key } from '../common/keys';
 import { Widget, BaseWidget, Message, addKeyListener, codiconArray } from './widgets';
 import { FrontendApplicationContribution } from './frontend-application';
 

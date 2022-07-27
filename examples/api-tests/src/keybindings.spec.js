@@ -28,7 +28,7 @@ describe('Keybindings', function () {
     const { KeybindingRegistry } = require('@theia/core/lib/browser/keybinding');
     const { CommandRegistry } = require('@theia/core/lib/common/command');
     const { Deferred } = require('@theia/core/lib/common/promise-util');
-    const { Key } = require('@theia/core/lib/browser/keys');
+    const { Key } = require('@theia/core/lib/common/keys');
     const { EditorManager } = require('@theia/editor/lib/browser/editor-manager');
     const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
 

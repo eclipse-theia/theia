@@ -18,7 +18,7 @@ import { Widget } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { Event } from '../common/event';
 import { MaybePromise } from '../common/types';
-import { Key } from './keyboard/keys';
+import { Key } from '../common/keys';
 import { AbstractDialog } from './dialogs';
 import { waitForClosed } from './widgets';
 import { nls } from '../common/nls';

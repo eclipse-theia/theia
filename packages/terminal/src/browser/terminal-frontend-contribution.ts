@@ -28,10 +28,11 @@ import {
     Event
 } from '@theia/core/lib/common';
 import {
-    ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager,
+    ApplicationShell, KeybindingContribution, WidgetManager,
     KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService,
     QuickInputService, codicon, CommonCommands, FrontendApplicationContribution, OnWillStopAction, Dialog, ConfirmDialog
 } from '@theia/core/lib/browser';
+import { Key, KeyCode } from '@theia/core/lib/common/keys';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl } from './terminal-widget-impl';
 import { TerminalKeybindingContexts } from './terminal-keybinding-contexts';

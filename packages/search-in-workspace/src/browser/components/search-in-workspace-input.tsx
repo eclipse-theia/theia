@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { Key, KeyCode } from '@theia/core/lib/browser';
+import { Key, KeyCode } from '@theia/core/lib/common/keys';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 interface HistoryState {

@@ -18,7 +18,8 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService } from '@theia/core/lib/common';
-import { Key, TreeModel, SelectableTreeNode, OpenerService, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode } from '@theia/core/lib/browser';
+import { TreeModel, SelectableTreeNode, OpenerService, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode } from '@theia/core/lib/browser';
+import { Key } from '@theia/core/lib/common/keys';
 import { FileTreeWidget, FileNode, DirNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';

@@ -22,7 +22,7 @@ import { ElectronAcceleratorLabelProvider, UILabelProvider, UserSettingsLabelPro
 import { USLayoutResolvedKeybinding } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/usLayoutResolvedKeybinding';
 import * as MonacoPlatform from '@theia/monaco-editor-core/esm/vs/base/common/platform';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
-import { KeyCode, KeySequence, Keystroke, Key, KeyModifier } from '@theia/core/lib/browser/keys';
+import { KeyCode, KeySequence, Keystroke, Key, KeyModifier } from '@theia/core/lib/common/keys';
 import { isOSX } from '@theia/core/lib/common/os';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
 

@@ -16,7 +16,7 @@
 
 import { Container, injectable } from 'inversify';
 import { Emitter, Event } from '../../common/event';
-import { KeyCode } from './keys';
+import { KeyCode } from '../../common/keys';
 import { KeyboardLayoutService } from './keyboard-layout-service';
 import { KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
 import * as os from '../../common/os';
