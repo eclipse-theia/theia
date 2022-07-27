@@ -617,7 +617,7 @@ export module '@theia/plugin' {
      * Provides additional metadata over normal [location](#Location) definitions, including the range of
      * the defining symbol
      */
-    export interface DefinitionLink {
+    export interface LocationLink {
         /**
          * Span of the symbol being defined in the source file.
          *
@@ -7852,10 +7852,12 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Represents the connection of two locations. Provides additional metadata over normal {@link Location locations},
-     * including an origin range.
+     * Information about where a symbol is defined.
+     *
+     * Provides additional metadata over normal {@link Location} definitions, including the range of
+     * the defining symbol
      */
-    export type LocationLink = DefinitionLink;
+    export type DefinitionLink = LocationLink;
 
     /**
      * The declaration of a symbol representation as one or many {@link Location locations}
