@@ -147,13 +147,17 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
             // De-duplicate extension ids to only download each once:
             const ids = new Set<string>(dependencies.flat());
             await parallelOrSequence(...Array.from(ids, id => async () => {
-                const extension = await client.getLatestCompatibleExtensionVersion(id);
-                const version = extension?.version;
-                const downloadUrl = extension?.files.download;
-                if (downloadUrl) {
-                    await downloadPlugin({ id, downloadUrl, version });
-                } else {
-                    failures.push(`No download url for extension pack ${id} (${version})`);
+                try {
+                    const extension = await client.getLatestCompatibleExtensionVersion(id);
+                    const version = extension?.version;
+                    const downloadUrl = extension?.files.download;
+                    if (downloadUrl) {
+                        await downloadPlugin({ id, downloadUrl, version });
+                    } else {
+                        failures.push(`No download url for extension pack ${id} (${version})`);
+                    }
+                } catch (err) {
+                    failures.push(err.message);
                 }
             }));
         };
