@@ -35,6 +35,16 @@ import { editorOptionsRegistry, IEditorOption } from '@theia/monaco-editor-core/
 import { MAX_SAFE_INTEGER } from '@theia/core';
 import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
 
+let theiaDidInitialize = false;
+const originalInitialize = StandaloneServices.initialize;
+StandaloneServices.initialize = overrides => {
+    if (!theiaDidInitialize) {
+        console.warn('Monaco was initialized before overrides were installed by Theia\'s initialization.'
+            + ' Please check the lifecycle of services that use Monaco and ensure that Monaco entities are not instantiated before Theia is initialized.', new Error());
+    }
+    return originalInitialize(overrides);
+};
+
 @injectable()
 export class MonacoFrontendApplicationContribution implements FrontendApplicationContribution, StylingParticipant {
 
@@ -65,6 +75,7 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     protected init(): void {
         this.addAdditionalPreferenceValidations();
         const { codeEditorService, textModelService, contextKeyService, contextMenuService } = this;
+        theiaDidInitialize = true;
         StandaloneServices.initialize({
             [ICodeEditorService.toString()]: codeEditorService,
             [ITextModelService.toString()]: textModelService,

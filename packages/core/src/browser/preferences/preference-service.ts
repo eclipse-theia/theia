@@ -92,6 +92,10 @@ export interface PreferenceService extends Disposable {
      */
     readonly ready: Promise<void>;
     /**
+     * Indicates whether the service has successfully initialized. Will be `true` when {@link PreferenceService.ready the `ready` Promise} resolves.
+     */
+    readonly isReady: boolean;
+    /**
      * Retrieve the stored value for the given preference.
      *
      * @param preferenceName the preference identifier.
@@ -298,6 +302,7 @@ export class PreferenceServiceImpl implements PreferenceService {
                 await provider.ready;
             }
             this._ready.resolve();
+            this._isReady = true;
         } catch (e) {
             this._ready.reject(e);
         }
@@ -316,6 +321,11 @@ export class PreferenceServiceImpl implements PreferenceService {
     protected readonly _ready = new Deferred<void>();
     get ready(): Promise<void> {
         return this._ready.promise;
+    }
+
+    protected _isReady = false;
+    get isReady(): boolean {
+        return this._isReady;
     }
 
     protected reconcilePreferences(changes: PreferenceProviderDataChanges): void {

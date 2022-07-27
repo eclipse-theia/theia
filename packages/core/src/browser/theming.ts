@@ -19,14 +19,21 @@ import { Disposable } from '../common/disposable';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { ApplicationProps } from '@theia/application-package/lib/application-props';
 import { Theme, ThemeChangeEvent } from '../common/theme';
-import { injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { Deferred } from '../common/promise-util';
+import { PreferenceService } from './preferences';
+
+const COLOR_THEME_PREFERENCE_KEY = 'workbench.colorTheme';
+const NO_THEME = { id: 'no-theme', label: 'Not a real theme.', type: 'dark' } as const;
 
 @injectable()
 export class ThemeService {
+    static readonly STORAGE_KEY = 'theme';
+
+    @inject(PreferenceService) protected readonly preferences: PreferenceService;
 
     protected themes: { [id: string]: Theme } = {};
-    protected activeTheme: Theme | undefined;
+    protected activeTheme: Theme = NO_THEME;
     protected readonly themeChange = new Emitter<ThemeChangeEvent>();
     protected readonly deferredInitializer = new Deferred();
     get initialized(): Promise<void> {
@@ -39,6 +46,14 @@ export class ThemeService {
     protected init(): void {
         this.register(...BuiltinThemeProvider.themes);
         this.loadUserTheme();
+        this.preferences.ready.then(() => {
+            this.validateActiveTheme();
+            this.preferences.onPreferencesChanged(changes => {
+                if (COLOR_THEME_PREFERENCE_KEY in changes) {
+                    this.validateActiveTheme();
+                }
+            });
+        });
     }
 
     register(...themes: Theme[]): Disposable {
@@ -49,21 +64,19 @@ export class ThemeService {
         return Disposable.create(() => {
             for (const theme of themes) {
                 delete this.themes[theme.id];
+                if (this.activeTheme === theme) {
+                    this.setCurrentTheme(this.defaultTheme.id, false);
+                }
             }
-            this.validateActiveTheme();
         });
     }
 
     protected validateActiveTheme(): void {
-        if (!this.activeTheme) {
-            return;
-        }
-        const theme = this.themes[this.activeTheme.id];
-        if (!theme) {
-            this.loadUserTheme();
-        } else if (theme !== this.activeTheme) {
-            this.activeTheme = undefined;
-            this.setCurrentTheme(theme.id);
+        if (this.preferences.isReady) {
+            const configuredTheme = this.getConfiguredTheme();
+            if (configuredTheme && configuredTheme !== this.activeTheme) {
+                this.setCurrentTheme(configuredTheme.id, false);
+            }
         }
     }
 
@@ -81,44 +94,49 @@ export class ThemeService {
         return this.themes[themeId] || this.defaultTheme;
     }
 
-    startupTheme(): void {
-        const theme = this.getCurrentTheme();
-        theme.activate?.();
+    protected tryGetTheme(themeId: string): Theme | undefined {
+        return this.themes[themeId];
     }
 
+    /** Should only be called at startup. */
     loadUserTheme(): void {
-        const theme = this.getCurrentTheme();
-        this.setCurrentTheme(theme.id);
+        const storedThemeId = window.localStorage.getItem(ThemeService.STORAGE_KEY) ?? this.defaultTheme.id;
+        const theme = this.getTheme(storedThemeId);
+        this.setCurrentTheme(theme.id, false);
         this.deferredInitializer.resolve();
     }
 
-    setCurrentTheme(themeId: string): void {
-        const newTheme = this.getTheme(themeId);
+    /**
+     * @param persist If `true`, the value of the `workbench.colorTheme` preference will be set to the provided ID.
+     */
+    setCurrentTheme(themeId: string, persist = true): void {
+        const newTheme = this.tryGetTheme(themeId);
         const oldTheme = this.activeTheme;
-        if (oldTheme) {
-            if (oldTheme.id === newTheme.id) {
-                return;
-            }
-            oldTheme.deactivate?.();
+        if (newTheme && newTheme !== oldTheme) {
+            oldTheme?.deactivate?.();
+            newTheme.activate?.();
+            this.activeTheme = newTheme;
+            this.themeChange.fire({ newTheme, oldTheme });
         }
-        newTheme.activate?.();
-        this.activeTheme = newTheme;
-        window.localStorage.setItem('theme', themeId);
-        this.themeChange.fire({
-            newTheme, oldTheme
-        });
+        if (persist) {
+            this.preferences.updateValue(COLOR_THEME_PREFERENCE_KEY, themeId);
+        }
     }
 
     getCurrentTheme(): Theme {
-        const themeId = window.localStorage.getItem('theme') || this.defaultTheme.id;
-        return this.getTheme(themeId);
+        return this.activeTheme;
+    }
+
+    protected getConfiguredTheme(): Theme | undefined {
+        const configuredId = this.preferences.get<string>(COLOR_THEME_PREFERENCE_KEY);
+        return configuredId ? this.themes[configuredId.toString()] : undefined;
     }
 
     /**
      * The default theme. If that is not applicable, returns with the fallback theme.
      */
     get defaultTheme(): Theme {
-        return this.themes[FrontendApplicationConfigProvider.get().defaultTheme] || this.themes[ApplicationProps.DEFAULT.frontend.config.defaultTheme];
+        return this.tryGetTheme(FrontendApplicationConfigProvider.get().defaultTheme) ?? this.getTheme(ApplicationProps.DEFAULT.frontend.config.defaultTheme);
     }
 
     /**

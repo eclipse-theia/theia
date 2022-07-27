@@ -19,6 +19,9 @@ import { Emitter } from '../common/event';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { LabelProviderContribution, DidChangeLabelEvent } from './label-provider';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { PreferenceService } from './preferences';
+
+const ICON_THEME_PREFERENCE_KEY = 'workbench.iconTheme';
 
 export interface IconThemeDefinition {
     readonly id: string
@@ -74,7 +77,7 @@ export class NoneIconTheme implements IconTheme, LabelProviderContribution {
 
 @injectable()
 export class IconThemeService {
-    protected static STORAGE_KEY = 'iconTheme';
+    static readonly STORAGE_KEY = 'iconTheme';
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
@@ -90,27 +93,28 @@ export class IconThemeService {
         return this._iconThemes.get(id);
     }
 
-    @inject(NoneIconTheme)
-    protected readonly noneIconTheme: NoneIconTheme;
+    @inject(NoneIconTheme) protected readonly noneIconTheme: NoneIconTheme;
+    @inject(PreferenceService) protected readonly preferences: PreferenceService;
 
     protected readonly onDidChangeCurrentEmitter = new Emitter<string>();
     readonly onDidChangeCurrent = this.onDidChangeCurrentEmitter.event;
 
     protected readonly toDeactivate = new DisposableCollection();
 
+    protected activeTheme: IconTheme;
+
     @postConstruct()
     protected init(): void {
-        this.initDefaultTheme();
-        this.register(this.noneIconTheme);
-    }
-
-    protected initDefaultTheme(): void {
-        // If no theme is set yet, we store the desired default theme so it will be applied as soon as it is registered.
-        // The registration may happen after preference initialization when contributed by a plugin.
-        // If another theme is set by the user in the meantime, the local storage will be overridden anyway.
-        if (!window.localStorage.getItem(IconThemeService.STORAGE_KEY) && FrontendApplicationConfigProvider.get().defaultIconTheme) {
-            window.localStorage.setItem(IconThemeService.STORAGE_KEY, FrontendApplicationConfigProvider.get().defaultIconTheme);
-        }
+        this.register(this.fallback);
+        this.setCurrent(this.fallback, false);
+        this.preferences.ready.then(() => {
+            this.validateActiveTheme();
+            this.preferences.onPreferencesChanged(changes => {
+                if (ICON_THEME_PREFERENCE_KEY in changes) {
+                    this.validateActiveTheme();
+                }
+            });
+        });
     }
 
     register(iconTheme: IconTheme): Disposable {
@@ -120,10 +124,7 @@ export class IconThemeService {
         }
         this._iconThemes.set(iconTheme.id, iconTheme);
         this.onDidChangeEmitter.fire(undefined);
-        if (this.toDeactivate.disposed
-            && window.localStorage.getItem(IconThemeService.STORAGE_KEY) === iconTheme.id) {
-            this.setCurrent(iconTheme);
-        }
+        this.validateActiveTheme();
         return Disposable.create(() => this.unregister(iconTheme.id));
     }
 
@@ -133,11 +134,10 @@ export class IconThemeService {
             return undefined;
         }
         this._iconThemes.delete(id);
-        if (window.localStorage.getItem(IconThemeService.STORAGE_KEY) === id) {
-            window.localStorage.removeItem(IconThemeService.STORAGE_KEY);
-            this.onDidChangeCurrentEmitter.fire(this.default.id);
-        }
         this.onDidChangeEmitter.fire(undefined);
+        if (id === this.getCurrent().id) {
+            this.setCurrent(this.default, false);
+        }
         return iconTheme;
     }
 
@@ -146,22 +146,43 @@ export class IconThemeService {
     }
 
     set current(id: string) {
-        const newCurrent = this._iconThemes.get(id) || this.default;
-        if (this.getCurrent().id !== newCurrent.id) {
+        const newCurrent = this._iconThemes.get(id);
+        if (newCurrent && this.getCurrent().id !== newCurrent.id) {
             this.setCurrent(newCurrent);
         }
     }
 
-    protected getCurrent(): IconTheme {
-        const id = window.localStorage.getItem(IconThemeService.STORAGE_KEY);
-        return id && this._iconThemes.get(id) || this.default;
+    getCurrent(): IconTheme {
+        return this.activeTheme;
     }
 
-    protected setCurrent(current: IconTheme): void {
-        window.localStorage.setItem(IconThemeService.STORAGE_KEY, current.id);
-        this.toDeactivate.dispose();
-        this.toDeactivate.push(current.activate());
-        this.onDidChangeCurrentEmitter.fire(current.id);
+    /**
+     * @param persistSetting If `true`, the theme's id will be set as the value of the `workbench.iconTheme` preference. (default: `true`)
+     */
+    setCurrent(newCurrent: IconTheme, persistSetting = true): void {
+        if (newCurrent !== this.getCurrent()) {
+            this.toDeactivate.dispose();
+            this.toDeactivate.push(newCurrent.activate());
+            this.activeTheme = newCurrent;
+            this.onDidChangeCurrentEmitter.fire(newCurrent.id);
+        }
+        if (persistSetting) {
+            this.preferences.updateValue(ICON_THEME_PREFERENCE_KEY, newCurrent.id);
+        }
+    }
+
+    protected getConfiguredTheme(): IconTheme | undefined {
+        const configuredId = this.preferences.get<string>(ICON_THEME_PREFERENCE_KEY);
+        return configuredId ? this._iconThemes.get(configuredId) : undefined;
+    }
+
+    protected validateActiveTheme(): void {
+        if (this.preferences.isReady) {
+            const configured = this.getConfiguredTheme();
+            if (configured && configured !== this.getCurrent()) {
+                this.setCurrent(configured, false);
+            }
+        }
     }
 
     get default(): IconTheme {
@@ -171,9 +192,4 @@ export class IconThemeService {
     get fallback(): IconTheme {
         return this.noneIconTheme;
     }
-
-    protected load(): string | undefined {
-        return window.localStorage.getItem(IconThemeService.STORAGE_KEY) || undefined;
-    }
-
 }

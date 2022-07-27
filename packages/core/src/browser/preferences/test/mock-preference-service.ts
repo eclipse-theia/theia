@@ -43,7 +43,8 @@ export class MockPreferenceService implements PreferenceService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     set(preferenceName: string, value: any): Promise<void> { return Promise.resolve(); }
     updateValue(): Promise<void> { return Promise.resolve(); }
-    ready: Promise<void> = Promise.resolve();
+    readonly ready: Promise<void> = Promise.resolve();
+    readonly isReady = true;
     readonly onPreferenceChanged: Event<PreferenceChange> = new Emitter<PreferenceChange>().event;
     readonly onPreferencesChanged: Event<PreferenceChanges> = new Emitter<PreferenceChanges>().event;
     overridePreferenceName(options: OverridePreferenceName): string {
