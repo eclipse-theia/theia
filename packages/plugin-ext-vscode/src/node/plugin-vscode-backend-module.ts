@@ -16,7 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
-    PluginDeployerFileHandler, PluginDeployerDirectoryHandler, PluginScanner, PluginDeployerParticipant
+    PluginDeployerFileHandler, PluginDeployerDirectoryHandler, PluginScanner, PluginDeployerParticipant, PluginDeployerResolver
 } from '@theia/plugin-ext';
 import { PluginVsCodeFileHandler } from './plugin-vscode-file-handler';
 import { PluginVsCodeDirectoryHandler } from './plugin-vscode-directory-handler';
@@ -27,6 +27,7 @@ import { PluginHostEnvironmentVariable } from '@theia/plugin-ext/lib/common';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
 import { PluginVSCodeDeployerParticipant } from './plugin-vscode-deployer-participant';
 import { HostedPluginReader } from './plugin-reader';
+import { LocalVSIXFilePluginDeployerResolver } from './local-vsix-file-plugin-deployer-resolver';
 
 export default new ContainerModule(bind => {
     bind(PluginVSCodeEnvironment).toSelf().inSingletonScope();
@@ -44,4 +45,6 @@ export default new ContainerModule(bind => {
 
     bind(HostedPluginReader).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(HostedPluginReader);
+
+    bind(PluginDeployerResolver).to(LocalVSIXFilePluginDeployerResolver).inSingletonScope();
 });

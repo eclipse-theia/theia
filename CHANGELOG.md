@@ -15,7 +15,8 @@
 - [plugin] removed `Plugin: Deploy Plugin by Id` command [#11417](https://github.com/eclipse-theia/theia/pull/11417)
 - [plugin-ext] `CodeEditorWidgetUtil` moved to `packages/plugin-ext/src/main/browser/menus/vscode-theia-menu-mappings.ts`. `MenusContributionPointHandler` extensively refactored. See PR description for details. [#11290](https://github.com/eclipse-theia/theia/pull/11290)
 - [plugin] added support for `DebugProtocolBreakpoint` and `DebugProtocolSource` [#10011](https://github.com/eclipse-theia/theia/issues/10011) - Contributed on behalf of STMicroelectronics
-
+- [plugin-ext] `LocalFilePluginDeployerResolver` moved to `plugin-ext` `local-vsix-file-plugin-deployer-resolver.ts`. [#11466](https://github.com/eclipse-theia/theia/issues/11466)
+- [vsx-registry] removed `downloadPath` field from `VSXExtensionResolver`. Plugins are now placed directly in user plugin directory. [#11466](https://github.com/eclipse-theia/theia/issues/11466)
 ## v1.27.0 - 6/30/2022
 
 - [core] added better styling for active sidepanel borders [#11330](https://github.com/eclipse-theia/theia/pull/11330)
