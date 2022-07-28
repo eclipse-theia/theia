@@ -44,7 +44,7 @@ import { URI } from '@theia/core/lib/common/uri';
 
 // This file is adapted from https://github.com/microsoft/vscode/blob/c061ce5c24fc480342fbc5f23244289d633c56eb/src/vs/workbench/contrib/debug/browser/disassemblyView.ts
 
-// Special entry as a placeholer when disassembly is not available
+// Special entry as a placeholder when disassembly is not available
 const disassemblyNotAvailable: DisassembledInstructionEntry = {
     allowBreakpoint: false,
     isBreakpointSet: false,
