@@ -14,6 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { StopReason } from '../../common/frontend-application-state';
+/** @deprecated @since 1.28 import from common/frontend-application-state instead */
+export { StopReason };
+
 export const RequestTitleBarStyle = 'requestTitleBarStyle';
 export const TitleBarStyleChanged = 'titleBarStyleChanged';
 export const TitleBarStyleAtStartup = 'titleBarStyleAtStartup';
@@ -30,21 +34,6 @@ export const RELOAD_REQUESTED_SIGNAL = 'reload-requested';
  * Emitted by the window when the application changes state
  */
 export const APPLICATION_STATE_CHANGE_SIGNAL = 'application-state-changed';
-
-export enum StopReason {
-    /**
-     * Closing the window with no prospect of restart.
-     */
-    Close,
-    /**
-     * Reload without closing the window.
-     */
-    Reload,
-    /**
-     * Reload that includes closing the window.
-     */
-    Restart, // eslint-disable-line @typescript-eslint/no-shadow
-}
 
 export interface CloseRequestArguments {
     confirmChannel: string;

@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { StopReason } from '../../common/frontend-application-state';
 import { Event } from '../../common/event';
 import { NewWindowOptions } from '../../common/window';
 
@@ -49,7 +50,7 @@ export interface WindowService {
      * will not be called again in the current session. I.e. if this return `true`, the shutdown should proceed without
      * further condition.
      */
-    isSafeToShutDown(): Promise<boolean>;
+    isSafeToShutDown(reason: StopReason): Promise<boolean>;
 
     /**
      * Will prevent subsequent checks of `FrontendApplicationContribution#willStop`. Should only be used after requesting

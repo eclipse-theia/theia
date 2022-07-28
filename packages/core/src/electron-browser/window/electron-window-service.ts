@@ -72,7 +72,7 @@ export class ElectronWindowService extends DefaultWindowService {
      * after running FrontendApplication `onWillStop` handlers or on the `cancelChannel` if it is not safe to exit.
      */
     protected async handleCloseRequestedEvent(event: CloseRequestArguments): Promise<void> {
-        const safeToClose = await this.isSafeToShutDown();
+        const safeToClose = await this.isSafeToShutDown(event.reason);
         if (safeToClose) {
             console.debug(`Shutting down because of ${StopReason[event.reason]} request.`);
             electron.ipcRenderer.send(event.confirmChannel);

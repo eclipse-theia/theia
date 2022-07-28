@@ -22,6 +22,7 @@ import { FrontendApplicationContribution, FrontendApplication, OnWillStopAction 
 import { WindowService } from './window-service';
 import { DEFAULT_WINDOW_HASH } from '../../common/window';
 import { confirmExit } from '../dialogs';
+import { StopReason } from '../../common/frontend-application-state';
 
 @injectable()
 export class DefaultWindowService implements WindowService, FrontendApplicationContribution {
@@ -97,16 +98,16 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
         window.addEventListener('unload', () => this.onUnloadEmitter.fire());
     }
 
-    async isSafeToShutDown(): Promise<boolean> {
+    async isSafeToShutDown(stopReason: StopReason): Promise<boolean> {
         const vetoes = this.collectContributionUnloadVetoes();
         if (vetoes.length === 0) {
             return true;
         }
-        const preparedValues = await Promise.all(vetoes.map(e => e.prepare?.()));
+        const preparedValues = await Promise.all(vetoes.map(e => e.prepare?.(stopReason)));
         console.debug('Shutdown prevented by', vetoes.map(({ reason }) => reason).join(', '));
         for (let i = 0; i < vetoes.length; i++) {
             try {
-                const result = await vetoes[i].action(preparedValues[i]);
+                const result = await vetoes[i].action(preparedValues[i], stopReason);
                 if (!result) {
                     return false;
                 }
@@ -156,6 +157,10 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
     }
 
     reload(): void {
-        window.location.reload();
+        this.isSafeToShutDown(StopReason.Reload).then(isSafe => {
+            if (isSafe) {
+                window.location.reload();
+            }
+        });
     }
 }

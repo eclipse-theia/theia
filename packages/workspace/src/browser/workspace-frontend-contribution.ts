@@ -39,6 +39,7 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { UntitledWorkspaceExitDialog } from './untitled-workspace-exit-dialog';
 import { FilesystemSaveResourceService } from '@theia/filesystem/lib/browser/filesystem-save-resource-service';
+import { StopReason } from '@theia/core/lib/common/frontend-application-state';
 
 export enum WorkspaceStates {
     /**
@@ -482,11 +483,15 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         return this.workspaceService.workspace?.resource;
     }
 
-    onWillStop(): OnWillStopAction | undefined {
+    onWillStop(): OnWillStopAction<boolean> | undefined {
         const { workspace } = this.workspaceService;
         if (workspace && this.workspaceService.isUntitledWorkspace(workspace.resource)) {
             return {
-                action: async () => {
+                prepare: async reason => reason === StopReason.Reload && this.workspaceService.isSafeToReload(workspace.resource),
+                action: async alreadyConfirmedSafe => {
+                    if (alreadyConfirmedSafe) {
+                        return true;
+                    }
                     const shouldSaveFile = await new UntitledWorkspaceExitDialog({
                         title: nls.localizeByDefault('Do you want to save your workspace configuration as a file?')
                     }).open();
