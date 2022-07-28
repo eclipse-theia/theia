@@ -56,15 +56,15 @@ export type DebugSessionOptions = DebugConfigurationSessionOptions | DebugCompou
 
 export namespace DebugSessionOptions {
     export function isConfiguration(options?: DebugSessionOptions): options is DebugConfigurationSessionOptions {
-        return !!options && 'configuration' in options;
+        return !!options && 'configuration' in options && !!options.configuration;
     }
 
     export function isDynamic(options?: DebugSessionOptions): options is DynamicDebugConfigurationSessionOptions {
-        return isConfiguration(options) && 'providerType' in options;
+        return isConfiguration(options) && 'providerType' in options && !!options.providerType;
     }
 
     export function isCompound(options?: DebugSessionOptions): options is DebugCompoundSessionOptions {
-        return !!options && 'compound' in options;
+        return !!options && 'compound' in options && !!options.compound;
     }
 }
 
