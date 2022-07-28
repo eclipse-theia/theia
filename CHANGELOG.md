@@ -4,19 +4,55 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## v1.28.0 - Unreleased
+## v1.28.0 - 7/28/2022
 
-- [plugin] added support for property `SourceControlInputBox#visible` [#11412](https://github.com/eclipse-theia/theia/pull/11412) - Contributed on behalf of STMicroelectronics
+- [cli] improved error handling when interacting with the API [#11454](https://github.com/eclipse-theia/theia/issues/11454)
+- [core] added better support when unloading language packs [#11338](https://github.com/eclipse-theia/theia/pull/11338)
+- [core] added proper support for null-value RPC encoding [#11396](https://github.com/eclipse-theia/theia/pull/11396)
+- [core] updated `WidgetManager` to compare keys using deep equal [#11450](https://github.com/eclipse-theia/theia/issues/11450)
+- [core] updated handling to pass `StopReason` to `OnWillStopAction` [#11428](https://github.com/eclipse-theia/theia/issues/11428)
+- [core] updated the `caption` rendering for `ViewContainer` [#11422](https://github.com/eclipse-theia/theia/pull/11422)
+- [debug] added support for `InstructionBreakpoints` [#111866](https://github.com/eclipse-theia/theia/pull/11186)
+- [debug] added support for the `Disassembly` view [#11186](https://github.com/eclipse-theia/theia/pull/11186)
+- [debug] added the ability to dismiss exception widgets [#11441](https://github.com/eclipse-theia/theia/issues/11441)
+- [debug] fixed an issue causing an infinite loop with child debug sessions [#11388](https://github.com/eclipse-theia/theia/pull/11388)
+- [file-search] updated `vscode-ripgrep` to `@vscode-ripgrep@1.14.2` [#11389](https://github.com/eclipse-theia/theia/pull/11389)
+- [filesystem] fixed implementation of `FileChangeEvent#contains` [#11409](https://github.com/eclipse-theia/theia/pull/11409)
+- [git] upgraded `dugite-extra` to `v0.1.16` [#11445](https://github.com/eclipse-theia/theia/issues/11445)
+- [keymaps] added handling for multiple keybindings for a given command [#11363](https://github.com/eclipse-theia/theia/pull/11363)
+- [markers] updated rendering of markers [#11408](https://github.com/eclipse-theia/theia/pull/11408)
+- [monaco] added localization support for commands contributed by monaco [#11434](https://github.com/eclipse-theia/theia/pull/11434)
+- [monaco] fixed `activeItem` handling in the `QuickPick` menu [#11438](https://github.com/eclipse-theia/theia/pull/11438)
+- [monaco] improved `tokenization` performance [#11416](https://github.com/eclipse-theia/theia/pull/11416)
+- [monaco] upgraded monaco to VS Code `v1.67.2` [#11331](https://github.com/eclipse-theia/theia/pull/11331)
+- [navigator] updated `New File` and `New Folder` to only appear for folders [#11453](https://github.com/eclipse-theia/theia/issues/11453)
+- [navigator] updated explorer toolbar items [#11429](https://github.com/eclipse-theia/theia/pull/11429)
+- [plugin] added support for `activeParameter` in the `SignatureInformation` VS Code API [#11426](https://github.com/eclipse-theia/theia/pull/11426)
+- [plugin] added support for `title` in the `QuickPickOptions` VS Code API [#11418](https://github.com/eclipse-theia/theia/pull/11418)
+- [plugin] added support for `vscode.env` VS Code API namespace [#11446](https://github.com/eclipse-theia/theia/issues/11446)
+- [plugin] added support for all selected URIs in command execution [#11433](https://github.com/eclipse-theia/theia/pull/11433)
+- [plugin] added support for the `DebugProtocolBreakpoint` and `DebugProtocolSource` VS Code API [#10011](https://github.com/eclipse-theia/theia/issues/10011) - Contributed on behalf of STMicroelectronics
+- [plugin] added support for the `TerminalOptions#message` VS Code API [#11385](https://github.com/eclipse-theia/theia/pull/11835)
+- [plugin] added support for the `workbench.action.saveWorkspaceAs` command [#11395](https://github.com/eclipse-theia/theia/pull/11395)
+- [plugin] added support for the property `SourceControlInputBox#visible` [#11412](https://github.com/eclipse-theia/theia/pull/11412) - Contributed on behalf of STMicroelectronics
+- [plugin] updated `LocationLink` definition [#11465](https://github.com/eclipse-theia/theia/issues/11456)
+- [preferences] added handling to properly dispose the model after saving [#11410](https://github.com/eclipse-theia/theia/pull/11410)
+- [process] improved performance of `lsof` on `macOS` [#11411](https://github.com/eclipse-theia/theia/pull/11411)
+- [search-in-workspace] updated `Find in Folder` to only apply for folders [#11456](https://github.com/eclipse-theia/theia/issues/11456)
+- [search-in-workspace] updated `vscode-ripgrep` to `@vscode-ripgrep@1.14.2` [#11389](https://github.com/eclipse-theia/theia/pull/11389)
+- [terminal] added output buffering support [#11449](https://github.com/eclipse-theia/theia/issues/11449)
+- [variable-resolver] added handling for user cancellation of variables [#11406](https://github.com/eclipse-theia/theia/pull/11406)
+- [vsx-registry] updated the extensions view to display a message when failing to fetch extensions [#11457](https://github.com/eclipse-theia/theia/issues/11457)
 
 <a name="breaking_changes_1.28.0">[Breaking Changes:](#breaking_changes_1.28.0)</a>
 
 - [core] `handleDefault`, `handleElectronDefault` method no longer called in `BrowserMainMenuFactory.registerMenu()`, `DynamicMenuWidget.buildSubMenus()` or `ElectronMainMenuFactory.fillSubmenus()`. Override the respective calling function rather than `handleDefault`. The argument to each of the three methods listed above is now `MenuNode` and not `CompositeMenuNode`, and the methods are truly recursive and called on entire menu tree. `ActionMenuNode.action` removed; access relevant field on `ActionMenuNode.command`, `.when` etc. [#11290](https://github.com/eclipse-theia/theia/pull/11290)
 - [core] renamed `CommonCommands.NEW_FILE` to `CommonCommands.NEW_UNTITLED_FILE` [#11429](https://github.com/eclipse-theia/theia/pull/11429)
+- [plugin] `CodeEditorWidgetUtil` moved to `packages/plugin-ext/src/main/browser/menus/vscode-theia-menu-mappings.ts`. `MenusContributionPointHandler` extensively refactored. See PR description for details. [#11290](https://github.com/eclipse-theia/theia/pull/11290)
+- [plugin] `LocalFilePluginDeployerResolver` moved to `plugin-ext` `local-vsix-file-plugin-deployer-resolver.ts`. [#11466](https://github.com/eclipse-theia/theia/issues/11466)
 - [plugin] removed `Plugin: Deploy Plugin by Id` command [#11417](https://github.com/eclipse-theia/theia/pull/11417)
-- [plugin-ext] `CodeEditorWidgetUtil` moved to `packages/plugin-ext/src/main/browser/menus/vscode-theia-menu-mappings.ts`. `MenusContributionPointHandler` extensively refactored. See PR description for details. [#11290](https://github.com/eclipse-theia/theia/pull/11290)
-- [plugin] added support for `DebugProtocolBreakpoint` and `DebugProtocolSource` [#10011](https://github.com/eclipse-theia/theia/issues/10011) - Contributed on behalf of STMicroelectronics
-- [plugin-ext] `LocalFilePluginDeployerResolver` moved to `plugin-ext` `local-vsix-file-plugin-deployer-resolver.ts`. [#11466](https://github.com/eclipse-theia/theia/issues/11466)
 - [vsx-registry] removed `downloadPath` field from `VSXExtensionResolver`. Plugins are now placed directly in user plugin directory. [#11466](https://github.com/eclipse-theia/theia/issues/11466)
+
 ## v1.27.0 - 6/30/2022
 
 - [core] added better styling for active sidepanel borders [#11330](https://github.com/eclipse-theia/theia/pull/11330)
