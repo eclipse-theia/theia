@@ -367,7 +367,7 @@ export class TextContentResource implements Resource {
             return content;
         } else {
             const content = await this.proxy.$provideTextDocumentContent(this.uri.toString());
-            if (content !== undefined && content !== null) {
+            if (typeof content === 'string') {
                 return content;
             }
         }
