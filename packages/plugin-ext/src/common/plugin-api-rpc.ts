@@ -141,6 +141,7 @@ export interface EnvInit {
     shell: string;
     uiKind: UIKind,
     appName: string;
+    appHost: string;
 }
 
 export interface PluginAPI {

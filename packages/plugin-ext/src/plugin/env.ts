@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { EnvMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { QueryParameters } from '../common/env';
 import { v4 } from 'uuid';
-import { Emitter, Event } from '@theia/core/lib/common/event';
 
 export abstract class EnvExtImpl {
     private proxy: EnvMain;
@@ -33,17 +33,15 @@ export abstract class EnvExtImpl {
     private host: string;
     private _isTelemetryEnabled: boolean;
     private _remoteName: string | undefined;
-    private onDidChangeTelemetryEnabledEmitter: Emitter<boolean>;
+    private onDidChangeTelemetryEnabledEmitter = new Emitter<boolean>();
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.ENV_MAIN);
         this.envSessionId = v4();
         this.envMachineId = v4();
-        this.host = 'desktop';
         // we don't support telemetry at the moment
         this._isTelemetryEnabled = false;
         this._remoteName = undefined;
-        this.onDidChangeTelemetryEnabledEmitter = new Emitter();
     }
 
     getEnvVariable(envVarName: string): Promise<string | undefined> {
@@ -81,6 +79,10 @@ export abstract class EnvExtImpl {
 
     setUIKind(uiKind: theia.UIKind): void {
         this.ui = uiKind;
+    }
+
+    setAppHost(appHost: string): void {
+        this.host = appHost;
     }
 
     getClientOperatingSystem(): Promise<theia.OperatingSystem> {

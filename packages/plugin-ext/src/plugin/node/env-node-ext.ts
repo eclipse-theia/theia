@@ -42,13 +42,6 @@ export class EnvNodeExtImpl extends EnvExtImpl {
         this._isNewAppInstall = this.computeIsNewAppInstall();
     }
 
-    private computeIsNewAppInstall(): boolean {
-        const creation = fs.statSync(__filename).birthtimeMs;
-        const current = Date.now();
-        const dayMs = 24 * 3600 * 1000;
-        return (current - creation) < dayMs;
-    }
-
     /**
      * override machineID
      */
@@ -67,4 +60,10 @@ export class EnvNodeExtImpl extends EnvExtImpl {
         return this._isNewAppInstall;
     }
 
+    private computeIsNewAppInstall(): boolean {
+        const creation = fs.statSync(__filename).birthtimeMs;
+        const current = Date.now();
+        const dayMs = 24 * 3600 * 1000;
+        return (current - creation) < dayMs;
+    }
 }
