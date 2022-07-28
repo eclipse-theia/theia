@@ -30,7 +30,7 @@ import { LabelProvider, PreferenceScope, PreferenceService, QuickPickValue, Stor
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { DebugConfigurationModel } from './debug-configuration-model';
-import { DebugSessionOptions, DebugConfigurationSessionOptions, DebugCompoundSessionOptions } from './debug-session-options';
+import { DebugSessionOptions, DynamicDebugConfigurationSessionOptions } from './debug-session-options';
 import { DebugService } from '../common/debug-service';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DebugConfiguration } from '../common/debug-common';
@@ -95,7 +95,7 @@ export class DebugConfigurationManager {
 
     protected initialized: Promise<void>;
 
-    protected recentDynamicOptionsTracker: DebugSessionOptions[] = [];
+    protected recentDynamicOptionsTracker: DynamicDebugConfigurationSessionOptions[] = [];
 
     @postConstruct()
     protected async init(): Promise<void> {
@@ -172,8 +172,7 @@ export class DebugConfigurationManager {
     }
 
     async getSelectedConfiguration(): Promise<DebugSessionOptions | undefined> {
-        // providerType applies to dynamic configurations only
-        if (!this._currentOptions?.providerType || !this._currentOptions.configuration) {
+        if (!DebugSessionOptions.isDynamic(this._currentOptions)) {
             return this._currentOptions;
         }
 
@@ -198,7 +197,7 @@ export class DebugConfigurationManager {
     }
 
     protected updateRecentlyUsedDynamicConfigurationOptions(option: DebugSessionOptions | undefined): void {
-        if (option?.providerType) { // if it's a dynamic configuration option
+        if (DebugSessionOptions.isDynamic(option)) {
             // Removing an item already present in the list
             const index = this.recentDynamicOptionsTracker.findIndex(item => this.dynamicOptionsMatch(item, option));
             if (index > -1) {
@@ -213,13 +212,13 @@ export class DebugConfigurationManager {
         }
     }
 
-    protected dynamicOptionsMatch(one: DebugSessionOptions, other: DebugSessionOptions): boolean {
+    protected dynamicOptionsMatch(one: DynamicDebugConfigurationSessionOptions, other: DynamicDebugConfigurationSessionOptions): boolean {
         return one.providerType !== undefined
             && one.name === other.name
             && one.providerType === other.providerType;
     }
 
-    get recentDynamicOptions(): readonly DebugSessionOptions[] {
+    get recentDynamicOptions(): readonly DynamicDebugConfigurationSessionOptions[] {
         return this.recentDynamicOptionsTracker;
     }
 
@@ -313,11 +312,11 @@ export class DebugConfigurationManager {
         }
     }
 
-    protected configurationToOptions(configuration: DebugConfiguration, workspaceFolderUri?: string, providerType?: string): DebugConfigurationSessionOptions {
+    protected configurationToOptions(configuration: DebugConfiguration, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions {
         return { name: configuration.name, configuration, providerType, workspaceFolderUri };
     }
 
-    protected compoundToOptions(compound: DebugCompound, workspaceFolderUri?: string): DebugCompoundSessionOptions {
+    protected compoundToOptions(compound: DebugCompound, workspaceFolderUri?: string): DebugSessionOptions {
         return { name: compound.name, compound, workspaceFolderUri };
     }
 
@@ -511,12 +510,14 @@ export class DebugConfigurationManager {
 
         // Between versions v1.26 and v1.27, the expected format of the data changed so that old stored data
         // may not contain the configuration key.
-        if (data.current && data.current.configuration) {
-            this.current = this.find(data.current.configuration, data.current.workspaceFolderUri, data.current.providerType);
+        if (data.current) {
+            this.current = DebugSessionOptions.isConfiguration(data.current)
+                ? this.find(data.current.name, data.current.workspaceFolderUri, data.current.providerType)
+                : this.find(data.current.name, data.current.workspaceFolderUri);
         }
     }
 
-    protected resolveRecentDynamicOptionsFromData(options?: DebugSessionOptions[]): void {
+    protected resolveRecentDynamicOptionsFromData(options?: DynamicDebugConfigurationSessionOptions[]): void {
         if (!options || this.recentDynamicOptionsTracker.length !== 0) {
             return;
         }
@@ -544,6 +545,6 @@ export class DebugConfigurationManager {
 export namespace DebugConfigurationManager {
     export interface Data {
         current?: DebugSessionOptions,
-        recentDynamicOptions?: DebugSessionOptions[]
+        recentDynamicOptions?: DynamicDebugConfigurationSessionOptions[]
     }
 }

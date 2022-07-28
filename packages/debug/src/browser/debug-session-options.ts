@@ -33,7 +33,6 @@ export class DebugCompoundRoot {
 
 export interface DebugSessionOptionsBase {
     workspaceFolderUri?: string,
-    providerType?: string // Applicable to dynamic configurations
 }
 
 export interface DebugConfigurationSessionOptions extends DebugSessionOptionsBase {
@@ -41,7 +40,10 @@ export interface DebugConfigurationSessionOptions extends DebugSessionOptionsBas
     configuration: DebugConfiguration;
     compound?: never;
     compoundRoot?: DebugCompoundRoot;
+    providerType?: string // Applicable to dynamic configurations
 }
+
+export type DynamicDebugConfigurationSessionOptions = DebugConfigurationSessionOptions & { providerType: string };
 
 export interface DebugCompoundSessionOptions extends DebugSessionOptionsBase {
     name: string; // derived from the compound
@@ -53,12 +55,16 @@ export interface DebugCompoundSessionOptions extends DebugSessionOptionsBase {
 export type DebugSessionOptions = DebugConfigurationSessionOptions | DebugCompoundSessionOptions;
 
 export namespace DebugSessionOptions {
-    export function isConfiguration(options: DebugSessionOptions): options is DebugConfigurationSessionOptions {
-        return 'configuration' in options;
+    export function isConfiguration(options?: DebugSessionOptions): options is DebugConfigurationSessionOptions {
+        return !!options && 'configuration' in options;
     }
 
-    export function isCompound(options: DebugSessionOptions): options is DebugCompoundSessionOptions {
-        return 'compound' in options;
+    export function isDynamic(options?: DebugSessionOptions): options is DynamicDebugConfigurationSessionOptions {
+        return isConfiguration(options) && 'providerType' in options;
+    }
+
+    export function isCompound(options?: DebugSessionOptions): options is DebugCompoundSessionOptions {
+        return !!options && 'compound' in options;
     }
 }
 

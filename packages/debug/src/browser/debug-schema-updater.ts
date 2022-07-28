@@ -74,18 +74,18 @@ export const launchSchemaId = 'vscode://schemas/launch';
 const launchSchema: IJSONSchema = {
     $id: launchSchemaId,
     type: 'object',
-    title: 'Launch',
+    title: nls.localizeByDefault('Launch'),
     required: [],
     default: { version: '0.2.0', configurations: [], compounds: [] },
     properties: {
         version: {
             type: 'string',
-            description: 'Version of this file format.',
+            description: nls.localizeByDefault('Version of this file format.'),
             default: '0.2.0'
         },
         configurations: {
             type: 'array',
-            description: 'List of configurations. Add new configurations or edit existing ones by using IntelliSense.',
+            description: nls.localizeByDefault('List of configurations. Add new configurations or edit existing ones by using IntelliSense.'),
             items: {
                 defaultSnippets: [],
                 'type': 'object',
