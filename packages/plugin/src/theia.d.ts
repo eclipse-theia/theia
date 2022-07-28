@@ -6534,6 +6534,14 @@ export module '@theia/plugin' {
         export const appRoot: string;
 
         /**
+         * The hosted location of the application
+         * On desktop this is 'desktop'
+         * In the web this is the specified embedder i.e. 'github.dev', 'codespaces', or 'web' if the embedder
+         * does not provide that information
+         */
+        export const appHost: string;
+
+        /**
          * The custom uri scheme the editor registers to in the operating system.
          */
         export const uriScheme: string;
@@ -6542,6 +6550,35 @@ export module '@theia/plugin' {
          * Represents the preferred user-language, like `de-CH`, `fr`, or `en-US`.
          */
         export const language: string;
+
+        /**
+         * Indicates that this is a fresh install of the application.
+         * `true` if within the first day of installation otherwise `false`.
+         */
+        export const isNewAppInstall: boolean;
+
+        /**
+         * Indicates whether the users has telemetry enabled.
+         * Can be observed to determine if the extension should send telemetry.
+         */
+        export const isTelemetryEnabled: boolean;
+
+        /**
+         * An {@link Event} which fires when the user enabled or disables telemetry.
+         * `true` if the user has enabled telemetry or `false` if the user has disabled telemetry.
+         */
+        export const onDidChangeTelemetryEnabled: Event<boolean>;
+
+        /**
+         * The name of a remote. Defined by extensions, popular samples are `wsl` for the Windows
+         * Subsystem for Linux or `ssh-remote` for remotes using a secure shell.
+         *
+         * *Note* that the value is `undefined` when there is no remote extension host but that the
+         * value is defined in all extension hosts (local and remote) in case a remote extension host
+         * exists. Use {@link Extension.extensionKind} to know if
+         * a specific extension runs remote or not.
+         */
+        export const remoteName: string | undefined;
 
         /**
          * The detected default shell for the extension host.

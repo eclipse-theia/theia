@@ -19,6 +19,7 @@ import { EnvExtImpl } from '../env';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { createHash } from 'crypto';
 import { v4 } from 'uuid';
+import fs = require('fs');
 
 /**
  * Provides machineId using mac address. It's only possible on node side
@@ -27,6 +28,7 @@ import { v4 } from 'uuid';
 export class EnvNodeExtImpl extends EnvExtImpl {
 
     private macMachineId: string;
+    private _isNewAppInstall: boolean;
 
     constructor(rpc: RPCProtocol) {
         super(rpc);
@@ -37,7 +39,7 @@ export class EnvNodeExtImpl extends EnvExtImpl {
                 this.macMachineId = createHash('sha256').update(macAddress, 'utf8').digest('hex');
             }
         });
-
+        this._isNewAppInstall = this.computeIsNewAppInstall();
     }
 
     /**
@@ -54,4 +56,14 @@ export class EnvNodeExtImpl extends EnvExtImpl {
         return __dirname;
     }
 
+    get isNewAppInstall(): boolean {
+        return this._isNewAppInstall;
+    }
+
+    private computeIsNewAppInstall(): boolean {
+        const creation = fs.statSync(__filename).birthtimeMs;
+        const current = Date.now();
+        const dayMs = 24 * 3600 * 1000;
+        return (current - creation) < dayMs;
+    }
 }

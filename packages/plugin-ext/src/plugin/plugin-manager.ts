@@ -201,6 +201,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.envExt.setShell(params.env.shell);
         this.envExt.setUIKind(params.env.uiKind);
         this.envExt.setApplicationName(params.env.appName);
+        this.envExt.setAppHost(params.env.appHost);
 
         this.preferencesManager.init(params.preferences);
 

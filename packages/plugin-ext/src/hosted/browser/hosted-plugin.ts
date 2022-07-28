@@ -499,6 +499,7 @@ export class HostedPluginSupport {
                 return undefined;
             }
 
+            const isElectron = environment.electron.is();
             await manager.$init({
                 preferences: getPreferences(this.preferenceProviderProvider, this.workspaceService.tryGetRoots()),
                 globalState,
@@ -507,8 +508,9 @@ export class HostedPluginSupport {
                     queryParams: getQueryParameters(),
                     language: nls.locale || 'en',
                     shell: defaultShell,
-                    uiKind: environment.electron.is() ? UIKind.Desktop : UIKind.Web,
-                    appName: FrontendApplicationConfigProvider.get().applicationName
+                    uiKind: isElectron ? UIKind.Desktop : UIKind.Web,
+                    appName: FrontendApplicationConfigProvider.get().applicationName,
+                    appHost: isElectron ? 'desktop' : 'web' // TODO: 'web' could be the embedder's name, e.g. 'github.dev'
                 },
                 extApi,
                 webview: {
