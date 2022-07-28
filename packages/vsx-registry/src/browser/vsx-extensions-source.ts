@@ -45,6 +45,10 @@ export class VSXExtensionsSource extends TreeSource {
 
     protected scheduleFireDidChange = debounce(() => this.fireDidChange(), 100, { leading: false, trailing: true });
 
+    getModel(): VSXExtensionsModel {
+        return this.model;
+    }
+
     *getElements(): IterableIterator<TreeElement> {
         for (const id of this.doGetElements()) {
             const extension = this.model.getExtension(id);

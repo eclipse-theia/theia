@@ -15,12 +15,14 @@
 // *****************************************************************************
 
 import { injectable, interfaces, postConstruct, inject } from '@theia/core/shared/inversify';
-import { TreeNode } from '@theia/core/lib/browser';
+import { TreeModel, TreeNode } from '@theia/core/lib/browser';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extensions-source';
 import { nls } from '@theia/core/lib/common/nls';
 import { BadgeWidget } from '@theia/core/lib/browser/view-container';
 import { Emitter } from '@theia/core/lib/common';
+import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
+import * as React from '@theia/core/shared/react';
 
 @injectable()
 export class VSXExtensionsWidgetOptions extends VSXExtensionsSourceOptions {
@@ -114,5 +116,19 @@ export class VSXExtensionsWidget extends SourceTreeWidget implements BadgeWidget
 
     protected override handleDblClickEvent(): void {
         // Don't open the editor view on a double click.
+    }
+
+    protected override renderTree(model: TreeModel): React.ReactNode {
+        if (this.options.id === VSXExtensionsSourceOptions.SEARCH_RESULT) {
+            const searchError = this.extensionsSource.getModel().searchError;
+            if (!!searchError) {
+                const message = nls.localize('theia/vsx-registry/errorFetching', 'Error fetching extensions.');
+                return <AlertMessage
+                    type='ERROR'
+                    header={`${message} ${searchError}`}
+                />;
+            }
+        }
+        return super.renderTree(model);
     }
 }

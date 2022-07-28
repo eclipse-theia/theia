@@ -380,6 +380,7 @@
       "typeHierarchy": "タイプ階層"
     },
     "vsx-registry": {
+      "errorFetching": "拡張機能の取得にエラーが発生しました。",
       "openVSX": "VSXレジストリを開く",
       "recommendedExtensions": "このワークスペースでの使用が推奨される拡張機能の名前のリストです。",
       "searchPlaceholder": "{0}で拡張子を検索",

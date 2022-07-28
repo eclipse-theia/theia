@@ -380,6 +380,7 @@
       "typeHierarchy": "类型层次结构"
     },
     "vsx-registry": {
+      "errorFetching": "取出扩展程序时出错。",
       "openVSX": "打开VSX注册表",
       "recommendedExtensions": "建议在该工作区使用的扩展名称的列表。",
       "searchPlaceholder": "在{0}中搜索扩展",

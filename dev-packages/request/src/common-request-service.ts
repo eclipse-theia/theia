@@ -57,7 +57,7 @@ export namespace RequestContext {
 
     export function asText(context: RequestContext): string {
         if (!isSuccess(context)) {
-            throw new Error(`Server returned code ${context.res.statusCode} for request to '${context.url}'`);
+            throw new Error(`Server returned code ${context.res.statusCode}.`);
         }
         if (hasNoContent(context)) {
             return '';
