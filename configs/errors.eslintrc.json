@@ -62,6 +62,7 @@
     "no-throw-literal": "error",
     "no-trailing-spaces": "error",
     "no-underscore-dangle": "off",
+    "no-unreachable": "error",
     "no-unused-expressions": "error",
     "no-var": "error",
     "no-void": "error",
