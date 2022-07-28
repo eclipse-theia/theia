@@ -223,8 +223,11 @@ export class DebugConfigurationManager {
     }
 
     protected updateCurrent(options: DebugSessionOptions | undefined = this._currentOptions): void {
-        const providerType = DebugSessionOptions.isDynamic(options) ? options.providerType : undefined;
-        this._currentOptions = options && this.find(options.name, options.workspaceFolderUri, providerType);
+        if (DebugSessionOptions.isCompound(options)) {
+            this._currentOptions = options && this.find(options.compound, options.workspaceFolderUri);
+        } else {
+            this._currentOptions = options && this.find(options.configuration, options.workspaceFolderUri, options.providerType);
+        }
 
         if (!this._currentOptions) {
             const model = this.getModel();
