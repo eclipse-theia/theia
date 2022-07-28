@@ -20,12 +20,19 @@ import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as cp from 'child_process';
 import * as psTree from 'ps-tree';
-import { Duplex } from 'stream';
 import { DeployedPlugin, HostedPluginClient, PluginHostEnvironmentVariable, PLUGIN_HOST_BACKEND, ServerPluginRunner } from '../../common/plugin-protocol';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
 import { ProcessTerminatedMessage, ProcessTerminateMessage } from './hosted-plugin-protocol';
 import { BinaryMessagePipe } from '@theia/core/lib/node/messaging/binary-message-pipe';
+import { createServer, Server, Socket } from 'net';
+import { v4 } from 'uuid';
+
+export interface IpcServer {
+    name: string
+    server: Server
+    client: Promise<Socket>
+}
 
 export interface IPCConnectionOptions {
     readonly serverName: string;
@@ -154,17 +161,19 @@ export class HostedPluginProcess implements ServerPluginRunner {
             this.terminatePluginServer();
         }
         this.terminatingPluginServer = false;
+        const ipcServer = this.createIpcServer();
         this.childProcess = this.fork({
             serverName: 'hosted-plugin',
             logger: this.logger,
-            args: []
+            args: [ipcServer.name]
         });
-
-        this.messagePipe = new BinaryMessagePipe(this.childProcess.stdio[4] as Duplex);
-        this.messagePipe.onMessage(buffer => {
-            if (this.client) {
-                this.client.postMessage(PLUGIN_HOST_BACKEND, buffer);
-            }
+        ipcServer.client.then(socket => {
+            this.messagePipe = new BinaryMessagePipe(socket);
+            this.messagePipe.onMessage(buffer => {
+                if (this.client) {
+                    this.client.postMessage(PLUGIN_HOST_BACKEND, buffer);
+                }
+            });
         });
     }
 
@@ -186,10 +195,9 @@ export class HostedPluginProcess implements ServerPluginRunner {
         }
 
         const forkOptions: cp.ForkOptions = {
-            silent: true,
-            env: env,
+            env,
             execArgv: [],
-            stdio: ['pipe', 'pipe', 'pipe', 'ipc', 'pipe']
+            stdio: ['pipe', 'pipe', 'pipe', 'ipc']
         };
         const inspectArgPrefix = `--${options.serverName}-inspect`;
         const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));
@@ -205,6 +213,26 @@ export class HostedPluginProcess implements ServerPluginRunner {
         childProcess.once('exit', (code: number, signal: string) => this.onChildProcessExit(options.serverName, childProcess.pid, code, signal));
         childProcess.on('error', err => this.onChildProcessError(err));
         return childProcess;
+    }
+
+    private createIpcServer(): IpcServer {
+        const name = this.createIpcServerName();
+        const server = createServer();
+        server.maxConnections = 1;
+        const client = new Promise<Socket>(resolve => {
+            server.once('connection', socket => {
+                socket.once('close', () => server.close());
+                resolve(socket);
+            });
+        });
+        server.listen(name, 0);
+        return { name, server, client };
+    }
+
+    private createIpcServerName(): string {
+        return process.platform === 'win32'
+            ? `\\\\.\\pipe\\${v4}`
+            : `/tmp/pipe-${v4()}`;
     }
 
     private onChildProcessExit(serverName: string, pid: number, code: number, signal: string): void {

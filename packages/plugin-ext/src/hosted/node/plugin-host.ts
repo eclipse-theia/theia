@@ -15,12 +15,20 @@
 // *****************************************************************************
 // eslint-disable-next-line import/no-extraneous-dependencies
 import 'reflect-metadata';
+import { Emitter } from '@theia/core/lib/common/event';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
+import { ChannelCloseEvent, MessageProvider } from '@theia/core/lib/common/message-rpc/channel';
 import { ConnectionClosedError, RPCProtocolImpl } from '../../common/rpc-protocol';
 import { ProcessTerminatedMessage, ProcessTerminateMessage } from './hosted-plugin-protocol';
 import { PluginHostRPC } from './plugin-host-rpc';
-import { IPCChannel } from '@theia/core/lib/node';
+import assert = require('assert');
+import { BinaryMessagePipe } from '@theia/core/lib/node/messaging/binary-message-pipe';
+import { connect } from 'net';
 
 console.log('PLUGIN_HOST(' + process.pid + ') starting instance');
+
+const [ipcServer] = process.argv.splice(2, 1);
+assert(typeof ipcServer === 'string', 'first argument must be the IPC server name');
 
 // override exit() function, to do not allow plugin kill this node
 process.exit = function (code?: number): void {
@@ -75,8 +83,29 @@ process.on('rejectionHandled', (promise: Promise<any>) => {
 });
 
 let terminating = false;
-const channel = new IPCChannel();
-const rpc = new RPCProtocolImpl(channel);
+
+const socket = connect(ipcServer);
+const channel = new BinaryMessagePipe(socket);
+const onCloseEmitter = new Emitter<ChannelCloseEvent>();
+const onErrorEmitter = new Emitter<Error>();
+const onMessageEmitter = new Emitter<MessageProvider>();
+socket.once('close', () => onCloseEmitter.fire({ reason: 'socket closed' }));
+socket.on('error', error => onErrorEmitter.fire(error));
+channel.onMessage(buffer => onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(buffer)));
+const rpc = new RPCProtocolImpl({
+    getWriteBuffer: () => {
+        const writer = new Uint8ArrayWriteBuffer();
+        writer.onCommit(buffer => channel.send(buffer));
+        return writer;
+    },
+    close: () => {
+        channel.dispose();
+        socket.destroy();
+    },
+    onClose: onCloseEmitter.event,
+    onError: onErrorEmitter.event,
+    onMessage: onMessageEmitter.event,
+});
 
 process.on('message', async (message: string) => {
     if (terminating) {
