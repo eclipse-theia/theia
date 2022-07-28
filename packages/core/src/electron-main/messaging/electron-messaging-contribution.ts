@@ -44,9 +44,9 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
 
     protected readonly channelHandlers = new MessagingContribution.ConnectionHandlers<Channel>();
     /**
-     * Each electron window has a main chanel and its own multiplexer to route multiple client messages the same IPC connection.
+     * Each electron window has a main channel and its own multiplexer to route multiple client messages the same IPC connection.
      */
-    protected readonly windowChannelMultiplexer = new Map<number, { channel: ElectronWebContentChannel, multiPlexer: ChannelMultiplexer }>();
+    protected readonly windowChannelMultiplexer = new Map<number, { channel: ElectronWebContentChannel, multiplexer: ChannelMultiplexer }>();
 
     @postConstruct()
     protected init(): void {
@@ -67,10 +67,10 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
     }
 
     // Creates a new multiplexer for a given sender/window
-    protected createWindowChannelData(sender: Electron.WebContents): { channel: ElectronWebContentChannel, multiPlexer: ChannelMultiplexer } {
+    protected createWindowChannelData(sender: Electron.WebContents): { channel: ElectronWebContentChannel, multiplexer: ChannelMultiplexer } {
         const mainChannel = this.createWindowMainChannel(sender);
-        const multiPlexer = new ChannelMultiplexer(mainChannel);
-        multiPlexer.onDidOpenChannel(openEvent => {
+        const multiplexer = new ChannelMultiplexer(mainChannel);
+        multiplexer.onDidOpenChannel(openEvent => {
             const { channel, id } = openEvent;
             if (this.channelHandlers.route(id, channel)) {
                 console.debug(`Opening channel for service path '${id}'.`);
@@ -78,9 +78,9 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
             }
         });
 
-        sender.once('did-navigate', () => multiPlexer.onUnderlyingChannelClose({ reason: 'Window was refreshed' })); // When refreshing the browser window.
-        sender.once('destroyed', () => multiPlexer.onUnderlyingChannelClose({ reason: 'Window was closed' })); // When closing the browser window.
-        const data = { channel: mainChannel, multiPlexer };
+        sender.once('did-navigate', () => multiplexer.onUnderlyingChannelClose({ reason: 'Window was refreshed' })); // When refreshing the browser window.
+        sender.once('destroyed', () => multiplexer.onUnderlyingChannelClose({ reason: 'Window was closed' })); // When closing the browser window.
+        const data = { channel: mainChannel, multiplexer };
         this.windowChannelMultiplexer.set(sender.id, data);
         return data;
     }

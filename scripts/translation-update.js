@@ -7,7 +7,7 @@ if (hasNlsFileChanged()) {
     if (token) {
         console.log('Performing DeepL translation...');
         performDeepLTranslation(token);
-        console.log('Commiting and pushing changes...');
+        console.log('Committing and pushing changes...');
         commitChanges();
         console.log('Translation finished successfully!');
     } else {

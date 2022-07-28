@@ -37,7 +37,7 @@ export class ElectronWebSocketConnectionProvider extends WebSocketConnectionProv
         // Manually close the websocket connections `onStop`. Otherwise, the channels will be closed with 30 sec (`MessagingContribution#checkAliveTimeout`) delay.
         // https://github.com/eclipse-theia/theia/issues/6499
         // `1001` indicates that an endpoint is "going away", such as a server going down or a browser having navigated away from a page.
-        this.channelMultiPlexer?.onUnderlyingChannelClose({ reason: 'The frontend is "going away"', code: 1001 });
+        this.channelMultiplexer?.onUnderlyingChannelClose({ reason: 'The frontend is "going away"', code: 1001 });
     }
 
     override async openChannel(path: string, handler: (channel: Channel) => void, options?: WebSocketOptions): Promise<void> {

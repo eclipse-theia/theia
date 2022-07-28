@@ -71,7 +71,7 @@ export abstract class AbstractConnectionProvider<AbstractOptions extends object>
         return factory.createProxy();
     }
 
-    protected channelMultiPlexer?: ChannelMultiplexer;
+    protected channelMultiplexer?: ChannelMultiplexer;
 
     // A set of channel opening functions that are executed if the backend reconnects to restore the
     // the channels that were open before the disconnect occurred.
@@ -80,7 +80,7 @@ export abstract class AbstractConnectionProvider<AbstractOptions extends object>
     protected initializeMultiplexer(): void {
         const mainChannel = this.createMainChannel();
         mainChannel.onMessage(() => this.onIncomingMessageActivityEmitter.fire());
-        this.channelMultiPlexer = new ChannelMultiplexer(mainChannel);
+        this.channelMultiplexer = new ChannelMultiplexer(mainChannel);
     }
 
     /**
@@ -93,10 +93,10 @@ export abstract class AbstractConnectionProvider<AbstractOptions extends object>
     }
 
     async openChannel(path: string, handler: (channel: Channel) => void, options?: AbstractOptions): Promise<void> {
-        if (!this.channelMultiPlexer) {
+        if (!this.channelMultiplexer) {
             throw new Error('The channel multiplexer has not been initialized yet!');
         }
-        const newChannel = await this.channelMultiPlexer.open(path);
+        const newChannel = await this.channelMultiplexer.open(path);
         newChannel.onClose(() => {
             const { reconnecting } = { reconnecting: true, ...options };
             if (reconnecting) {

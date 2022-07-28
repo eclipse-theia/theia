@@ -275,7 +275,7 @@
 - [core] fixed tail decoration rendering for the `TreeWidget` [#10898](https://github.com/eclipse-theia/theia/pull/10898)
 - [core] improved tabbar styling [#10822](https://github.com/eclipse-theia/theia/pull/10822)
 - [core] updated sash visibility handling [#10941](https://github.com/eclipse-theia/theia/pull/10941)
-- [core] updated type check for `TreeContainerPRops` [#10881](https://github.com/eclipse-theia/theia/pull/10881)
+- [core] updated type check for `TreeContainerProps` [#10881](https://github.com/eclipse-theia/theia/pull/10881)
 - [core] updated validation warning for `undefined` preference values [#10887](https://github.com/eclipse-theia/theia/pull/10887)
 - [core] updated view container styling [#10854](https://github.com/eclipse-theia/theia/pull/10854)
 - [debug] fixed issue where the current debug configuration was not updated [#10917](https://github.com/eclipse-theia/theia/pull/10917)
@@ -391,7 +391,7 @@
 
 <a name="breaking_changes_1.23.0">[Breaking Changes:](#breaking_changes_1.23.0)</a>
 
-- [core] moved methods `attachReadyToShow`, `restoreMaximizedState`, `attachCloseListeners`, `handleStopRequest`, `checkSafeToStop`, `handleReload`, `reload` from `ElectronMainAPplication` into new class `TheiaElectronWindow` [#10600](https://github.com/eclipse-theia/theia/pull/10600)
+- [core] moved methods `attachReadyToShow`, `restoreMaximizedState`, `attachCloseListeners`, `handleStopRequest`, `checkSafeToStop`, `handleReload`, `reload` from `ElectronMainApplication` into new class `TheiaElectronWindow` [#10600](https://github.com/eclipse-theia/theia/pull/10600)
 - [core] removed all of our own custom HTTP Polling implementation [#10514](https://github.com/eclipse-theia/theia/pull/10514)
 - [core] removed method `attachGlobalShortcuts` from `ElectronMainApplication`. Attaching shortcuts in that way interfered with internal shortcuts. Use internal keybindings instead of global shortcuts. [#10704](https://github.com/eclipse-theia/theia/pull/10704)
 - [core] removed the `Event.maxListeners` field; The feature still exists but please use `Event.getMaxListeners(event)` and `Event.setMaxListeners(event, maxListeners)` instead.
