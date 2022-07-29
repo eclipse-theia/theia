@@ -72,6 +72,7 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
             }
         }
         const downloadPath = (await this.environment.getExtensionsDirUri()).path.fsPath();
+        await fs.ensureDir(downloadPath);
         const extensionPath = path.resolve(downloadPath, path.basename(downloadUrl));
         console.log(`[${resolvedId}]: trying to download from "${downloadUrl}"...`, 'to path', downloadPath);
         if (!await this.download(downloadUrl, extensionPath)) {
