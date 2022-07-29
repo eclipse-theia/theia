@@ -43,9 +43,11 @@
     "chai": "^4.2.0",
     "chalk": "4.0.0",
     "decompress": "^4.2.1",
+    "glob": "^8.0.3",
+    "log-update": "^4.0.0",
     "mocha": "^7.0.0",
-    "puppeteer": "^2.0.0",
     "puppeteer-to-istanbul": "^1.2.2",
+    "puppeteer": "^2.0.0",
     "temp": "^0.9.1",
     "yargs": "^15.3.1"
   },

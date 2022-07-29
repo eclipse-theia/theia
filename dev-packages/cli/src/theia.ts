@@ -22,7 +22,7 @@ import yargsFactory = require('yargs/yargs');
 import { ApplicationPackageManager, rebuild } from '@theia/application-manager';
 import { ApplicationProps, DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package';
 import * as ffmpeg from '@theia/ffmpeg';
-import checkHoisted from './check-hoisting';
+import checkDependencies from './check-dependencies';
 import downloadPlugins from './download-plugins';
 import runTest from './run-test';
 import { LocalizationManager, extract } from '@theia/localization-manager';
@@ -193,7 +193,117 @@ async function theiaCli(): Promise<void> {
                 }
             },
             handler: ({ suppress }) => {
-                checkHoisted({ suppress });
+                checkDependencies({
+                    workspaces: ['packages/*'],
+                    include: ['**'],
+                    exclude: ['.bin/**', '.cache/**'],
+                    skipHoisted: false,
+                    skipUniqueness: true,
+                    skipSingleTheiaVersion: true,
+                    suppress
+                });
+            }
+        })
+        .command<{
+            suppress: boolean
+        }>({
+            command: 'check:theia-version',
+            describe: 'Check that all dependencies have been resolved to the same Theia version',
+            builder: {
+                'suppress': {
+                    alias: 's',
+                    describe: 'Suppress exiting with failure code',
+                    boolean: true,
+                    default: false
+                }
+            },
+            handler: ({ suppress }) => {
+                checkDependencies({
+                    workspaces: undefined,
+                    include: ['@theia/**'],
+                    exclude: [],
+                    skipHoisted: true,
+                    skipUniqueness: false,
+                    skipSingleTheiaVersion: false,
+                    suppress
+                });
+            }
+        })
+        .command<{
+            workspaces: string[] | undefined,
+            include: string[],
+            exclude: string[],
+            skipHoisted: boolean,
+            skipUniqueness: boolean,
+            skipSingleTheiaVersion: boolean,
+            suppress: boolean
+        }>({
+            command: 'check:dependencies',
+            describe: 'Check uniqueness of dependency versions or whether they are hoisted',
+            builder: {
+                'workspaces': {
+                    alias: 'w',
+                    describe: 'Glob patterns of workspaces to analyze, relative to `cwd`',
+                    array: true,
+                    defaultDescription: 'All glob patterns listed in the package.json\'s workspaces',
+                    demandOption: false
+                },
+                'include': {
+                    alias: 'i',
+                    describe: 'Glob pattern of dependencies\' package names to be included, e.g. -i "@theia/**"',
+                    array: true,
+                    default: ['**']
+                },
+                'exclude': {
+                    alias: 'e',
+                    describe: 'Glob pattern of dependencies\' package names to be excluded',
+                    array: true,
+                    defaultDescription: 'None',
+                    default: []
+                },
+                'skip-hoisted': {
+                    alias: 'h',
+                    describe: 'Skip checking whether dependencies are hoisted',
+                    boolean: true,
+                    default: false
+                },
+                'skip-uniqueness': {
+                    alias: 'u',
+                    describe: 'Skip checking whether all dependencies are resolved to a unique version',
+                    boolean: true,
+                    default: false
+                },
+                'skip-single-theia-version': {
+                    alias: 't',
+                    describe: 'Skip checking whether all @theia/* dependencies are resolved to a single version',
+                    boolean: true,
+                    default: false
+                },
+                'suppress': {
+                    alias: 's',
+                    describe: 'Suppress exiting with failure code',
+                    boolean: true,
+                    default: false
+                }
+            },
+            handler: ({
+                workspaces,
+                include,
+                exclude,
+                skipHoisted,
+                skipUniqueness,
+                skipSingleTheiaVersion,
+                suppress
+            }) => {
+                checkDependencies({
+                    workspaces,
+                    include,
+                    exclude,
+                    skipHoisted,
+                    skipUniqueness,
+                    skipSingleTheiaVersion,
+                    suppress
+                });
             }
         })
         .command<{
