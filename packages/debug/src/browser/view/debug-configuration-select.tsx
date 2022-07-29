@@ -222,10 +222,11 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         return options;
     }
 
-    protected toName({ name, workspaceFolderUri }: DebugSessionOptions, multiRoot: boolean): string {
-        if (!workspaceFolderUri || !multiRoot) {
+    protected toName(options: DebugSessionOptions, multiRoot: boolean): string {
+        const name = options.configuration?.name ?? options.name;
+        if (!options.workspaceFolderUri || !multiRoot) {
             return name;
         }
-        return `${name} (${new URI(workspaceFolderUri).path.base})`;
+        return `${name} (${new URI(options.workspaceFolderUri).path.base})`;
     }
 }
