@@ -3470,6 +3470,13 @@ export module '@theia/plugin' {
     export interface Memento {
 
         /**
+         * Returns the stored keys.
+         *
+         * @return The stored keys.
+         */
+        keys(): readonly string[];
+
+        /**
          * Return a value.
          *
          * @param key A string.
