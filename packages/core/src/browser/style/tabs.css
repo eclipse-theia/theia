@@ -384,6 +384,10 @@
   background: var(--theia-icon-close) no-repeat;
 }
 
+#theia-main-content-panel .p-TabBar:not(.theia-tabBar-active) .p-TabBar-toolbar {
+  display: none;
+}
+
 .theia-tabBar-breadcrumb-row {
   min-width: 100%;
 }
