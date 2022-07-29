@@ -1119,6 +1119,24 @@ export class Hover {
     }
 }
 
+@es5ClassCompat
+export class EvaluatableExpression {
+
+    public range: Range;
+    public expression?: string;
+
+    constructor(
+        range: Range,
+        expression?: string
+    ) {
+        if (!range) {
+            illegalArgument('range must be defined');
+        }
+        this.range = range;
+        this.expression = expression;
+    }
+}
+
 export enum DocumentHighlightKind {
     Text = 0,
     Read = 1,

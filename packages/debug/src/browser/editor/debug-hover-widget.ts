@@ -28,6 +28,11 @@ import { DebugExpressionProvider } from './debug-expression-provider';
 import { DebugHoverSource } from './debug-hover-source';
 import { DebugVariable } from '../console/debug-console-items';
 import * as monaco from '@theia/monaco-editor-core';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
+import { CancellationTokenSource } from '@theia/monaco-editor-core/esm/vs/base/common/cancellation';
+import { Position } from '@theia/monaco-editor-core/esm/vs/editor/common/core/position';
+import { ArrayUtils } from '@theia/core';
 
 export interface ShowDebugHoverOptions {
     selection: monaco.Range
@@ -146,6 +151,8 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
     }
 
     protected async doShow(options: ShowDebugHoverOptions | undefined = this.options): Promise<void> {
+        const cancellationSource = new CancellationTokenSource();
+
         if (!this.isEditorFrame()) {
             this.hide();
             return;
@@ -162,7 +169,33 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
         }
 
         this.options = options;
-        const matchingExpression = this.expressionProvider.get(this.editor.getControl().getModel()!, options.selection);
+        let matchingExpression: string | undefined;
+
+        const pluginExpressionProvider = StandaloneServices.get(ILanguageFeaturesService).evaluatableExpressionProvider;
+        const textEditorModel = this.editor.document.textEditorModel;
+
+        if (pluginExpressionProvider && pluginExpressionProvider.has(textEditorModel)) {
+            const registeredProviders = pluginExpressionProvider.ordered(textEditorModel);
+            const position = new Position(this.options!.selection.startLineNumber, this.options!.selection.startColumn);
+
+            const promises = registeredProviders.map(support =>
+                Promise.resolve(support.provideEvaluatableExpression(textEditorModel, position, cancellationSource.token))
+            );
+
+            const results = await Promise.all(promises).then(ArrayUtils.coalesce);
+            if (results.length > 0) {
+                matchingExpression = results[0].expression;
+                const range = results[0].range;
+
+                if (!matchingExpression) {
+                    const lineContent = textEditorModel.getLineContent(position.lineNumber);
+                    matchingExpression = lineContent.substring(range.startColumn - 1, range.endColumn - 1);
+                }
+            }
+        } else { // use fallback if no provider was registered
+            matchingExpression = this.expressionProvider.get(this.editor.getControl().getModel()!, options.selection);
+        }
+
         if (!matchingExpression) {
             this.hide();
             return;
