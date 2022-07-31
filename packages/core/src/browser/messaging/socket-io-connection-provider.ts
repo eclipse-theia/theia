@@ -16,32 +16,47 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { AbstractConnection, Connection, ConnectionProvider } from '../../common';
-import { io, Socket } from 'socket.io-client';
-import { v4 } from 'uuid';
+import { io, ManagerOptions, Socket, SocketOptions } from 'socket.io-client';
 import { Endpoint } from '../endpoint';
+import { FrontendInstance } from '../frontend-instance';
+
+export type SocketIoAuth = object | ((cb: (auth: object) => void) => void);
 
 export interface SocketIoParams {
     path: string
-    query?: Record<string, string>
+    options?: ManagerOptions & SocketOptions
 }
 
 @injectable()
 export class SocketIoConnectionProvider implements ConnectionProvider<any, SocketIoParams> {
 
-    protected frontendId = this.getFrontendId();
+    @inject(FrontendInstance)
+    protected frontendInstance: FrontendInstance;
 
     open(params: SocketIoParams): Connection<any> {
         return new SocketIoConnection(io(this.createWebSocketUrl(params.path), {
-            query: {
-                THEIA_FRONTEND_ID: this.frontendId
-            }
+            multiplex: false,
+            ...params.options,
+            auth: this.createAuth(params.options?.auth, {
+                THEIA_FRONTEND_ID: this.frontendInstance.id
+            })
         }));
     }
 
-    protected getFrontendId(): string {
-        return v4();
+    protected createAuth(auth?: SocketIoAuth, extra?: object): SocketIoAuth | undefined {
+        if (!extra) {
+            return auth;
+        }
+        if (auth) {
+            if (typeof auth === 'object') {
+                return { ...auth, ...extra };
+            } else {
+                return cb => auth(data => cb({ ...data, ...extra }));
+            }
+        }
+        return extra;
     }
 
     /**
@@ -56,13 +71,18 @@ export class SocketIoConnectionProvider implements ConnectionProvider<any, Socke
 
 export class SocketIoConnection extends AbstractConnection<any> {
 
-    state = Connection.State.OPENING;
+    state: Connection.State;
 
     constructor(
         protected socket: Socket
     ) {
         super();
-        this.socket.once('connect', () => this.setOpenedAndEmit());
+        if (this.socket.connected) {
+            this.state = Connection.State.OPENED;
+        } else {
+            this.state = Connection.State.OPENING;
+            this.socket.once('connect', () => this.setOpenedAndEmit());
+        }
         this.socket.on('message', message => this.onMessageEmitter.fire(message));
         this.socket.once('disconnect', reason => {
             console.debug('SocketIoConnection disconnect:', reason);

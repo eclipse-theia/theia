@@ -25,6 +25,52 @@ import { ConnectionProvider } from './routing';
 export const ConnectionMultiplexer = serviceIdentifier<ConnectionMultiplexer<any>>('ConnectionMultiplexer');
 export type ConnectionMultiplexer<T extends Connection<any>, P extends object = any> = ConnectionProvider<T, P> & Broker<T, P>;
 
+export namespace Multiplexing {
+
+    export enum MessageType {
+        OPEN,
+        READY,
+        MESSAGE,
+        CLOSE
+    }
+
+    export class OpenMessage {
+        type = MessageType.OPEN as const;
+        constructor(
+            public id: number,
+            public params: object
+        ) { }
+    }
+
+    export class ReadyMessage {
+        type = MessageType.READY as const;
+        constructor(
+            public id: number
+        ) { }
+    }
+
+    export class ChannelMessage {
+        type = MessageType.MESSAGE as const;
+        constructor(
+            public id: number,
+            public message: any
+        ) { }
+    }
+
+    export class CloseMessage {
+        type = MessageType.CLOSE as const;
+        constructor(
+            public id: number
+        ) { }
+    }
+
+    export type Message =
+        OpenMessage |
+        ReadyMessage |
+        ChannelMessage |
+        CloseMessage;
+}
+
 /**
  * @internal
  *
@@ -56,13 +102,13 @@ export class DefaultConnectionMultiplexer implements ConnectionMultiplexer<Conne
     protected channels = new Map<number, Channel<unknown>>();
     protected opening = new Set<number>();
     protected disposables = new DisposableCollection();
-    protected transport?: Connection<Channel.Message>;
+    protected transport?: Connection<Multiplexing.Message>;
 
     constructor(
         protected routerBroker: Router<unknown> & Broker<unknown>
     ) { }
 
-    initialize<T, P extends object = any>(transport: Connection<Channel.Message>): ConnectionMultiplexer<Connection<T>, P> {
+    initialize<T, P extends object = any>(transport: Connection<Multiplexing.Message>): ConnectionMultiplexer<Connection<T>, P> {
         this.transport = transport;
         this.transport.onMessage(message => this.handleTransportMessage(message), undefined, this.disposables);
         this.transport.onClose(() => this.handleTransportClosed(), undefined, this.disposables);
@@ -104,17 +150,17 @@ export class DefaultConnectionMultiplexer implements ConnectionMultiplexer<Conne
         return channel;
     }
 
-    protected handleTransportMessage(message: Channel.Message): void {
+    protected handleTransportMessage(message: Multiplexing.Message): void {
         switch (message.type) {
-            case Channel.MessageType.OPEN: return this.handleOpenMessage(message);
-            case Channel.MessageType.READY: return this.handleReadyMessage(message);
-            case Channel.MessageType.MESSAGE: return this.handleChannelMessage(message);
-            case Channel.MessageType.CLOSE: return this.handleCloseMessage(message);
+            case Multiplexing.MessageType.OPEN: return this.handleOpenMessage(message);
+            case Multiplexing.MessageType.READY: return this.handleReadyMessage(message);
+            case Multiplexing.MessageType.MESSAGE: return this.handleChannelMessage(message);
+            case Multiplexing.MessageType.CLOSE: return this.handleCloseMessage(message);
             default: throw new Error(`unhandled message: ${JSON.stringify(message)}`);
         }
     }
 
-    protected handleOpenMessage(message: Channel.OpenMessage): void {
+    protected handleOpenMessage(message: Multiplexing.OpenMessage): void {
         const { id } = message;
         if (id >= 0) {
             throw new Error(`expected id=${id} to be negative`);
@@ -130,31 +176,31 @@ export class DefaultConnectionMultiplexer implements ConnectionMultiplexer<Conne
             this.opening.delete(id);
             const channel = this.createChannel(id);
             this.registerChannel(channel);
-            this.sendChannelMessage(new Channel.ReadyMessage(-id));
+            this.sendChannelMessage(new Multiplexing.ReadyMessage(-id));
             // give time for handlers to attach events to `channel.onOpen(...)`
             queueMicrotask(() => channel.setOpened());
             return channel;
         };
         const unhandled = () => {
             this.opening.delete(id);
-            this.sendChannelMessage(new Channel.CloseMessage(-id));
+            this.sendChannelMessage(new Multiplexing.CloseMessage(-id));
         };
         this.routerBroker.route(message.params, accepted, unhandled);
     }
 
-    protected handleReadyMessage(message: Channel.ReadyMessage): void {
+    protected handleReadyMessage(message: Multiplexing.ReadyMessage): void {
         this.getChannel(message.id).setOpened();
     }
 
-    protected handleChannelMessage(message: Channel.ChannelMessage): void {
+    protected handleChannelMessage(message: Multiplexing.ChannelMessage): void {
         this.getChannel(message.id).emitMessage(message.message);
     }
 
-    protected handleCloseMessage(message: Channel.CloseMessage): void {
+    protected handleCloseMessage(message: Multiplexing.CloseMessage): void {
         this.getChannel(message.id).dispose();
     }
 
-    protected sendChannelMessage(message: Channel.Message): void {
+    protected sendChannelMessage(message: Multiplexing.Message): void {
         this.transport!.sendMessage(message);
     }
 
@@ -176,14 +222,14 @@ export class Channel<T> extends AbstractConnection<T> {
 
     constructor(
         public id: number,
-        protected sendChannelMessage: (message: Channel.Message) => void
+        protected sendChannelMessage: (message: Multiplexing.Message) => void
     ) {
         super();
     }
 
     sendOpenRequest(params: object): void {
         this.ensureState(Connection.State.OPENING);
-        this.sendChannelMessage(new Channel.OpenMessage(-this.id, params));
+        this.sendChannelMessage(new Multiplexing.OpenMessage(-this.id, params));
     }
 
     setOpened(): void {
@@ -195,11 +241,11 @@ export class Channel<T> extends AbstractConnection<T> {
     }
 
     sendMessage(message: any): void {
-        this.sendChannelMessage(new Channel.ChannelMessage(-this.id, message));
+        this.sendChannelMessage(new Multiplexing.ChannelMessage(-this.id, message));
     }
 
     close(): void {
-        this.sendChannelMessage(new Channel.CloseMessage(-this.id));
+        this.sendChannelMessage(new Multiplexing.CloseMessage(-this.id));
         this.dispose();
     }
 
@@ -207,54 +253,4 @@ export class Channel<T> extends AbstractConnection<T> {
         this.setClosedAndEmit();
         super.dispose();
     }
-}
-export namespace Channel {
-
-    export enum MessageType {
-        OPEN,
-        READY,
-        MESSAGE,
-        CLOSE
-    }
-
-    export interface AbstractMessage {
-        type: MessageType;
-        id: number;
-    }
-
-    export class OpenMessage implements AbstractMessage {
-        type = MessageType.OPEN as const;
-        constructor(
-            public id: number,
-            public params: object
-        ) { }
-    }
-
-    export class ReadyMessage implements AbstractMessage {
-        type = MessageType.READY as const;
-        constructor(
-            public id: number
-        ) { }
-    }
-
-    export class ChannelMessage implements AbstractMessage {
-        type = MessageType.MESSAGE as const;
-        constructor(
-            public id: number,
-            public message: any
-        ) { }
-    }
-
-    export class CloseMessage implements AbstractMessage {
-        type = MessageType.CLOSE as const;
-        constructor(
-            public id: number
-        ) { }
-    }
-
-    export type Message =
-        OpenMessage |
-        ReadyMessage |
-        ChannelMessage |
-        CloseMessage;
 }

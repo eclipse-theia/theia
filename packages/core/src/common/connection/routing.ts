@@ -32,7 +32,7 @@ export const ConnectionRouter = serviceIdentifier<ConnectionRouter>('ConnectionR
 export type ConnectionRouter = Router<Connection<any>>;
 
 export const ConnectionHandler = serviceIdentifier<ConnectionHandler>('ConnectionHandler');
-export type ConnectionHandler = Handler<Connection<any>>;
+export type ConnectionHandler<T = any, P extends object = any> = Handler<Connection<T>, P>;
 
 export const ConnectionEmitter = serviceIdentifier<ConnectionEmitter>('ConnectionEmitter');
 export type ConnectionEmitter = Broker<Connection<any>>;

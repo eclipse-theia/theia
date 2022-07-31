@@ -16,32 +16,44 @@
 
 import { ContainerModule } from 'inversify';
 import {
-    BackendAndFrontend, bindServiceProvider, ConnectionHandler, ConnectionProvider, ConnectionTransformer, ProxyProvider, RouteHandlerProvider, ServiceProvider
+    BackendAndFrontend, bindServiceProvider, Connection, ConnectionHandler, ConnectionProvider, ConnectionTransformer, DeferredConnectionFactory, ProxyProvider, RouteHandlerProvider, ServiceProvider
 } from '../../common';
-import { DefaultConnectionMultiplexer } from '../../common/connection/multiplexer';
+import { ConnectionMultiplexer, DefaultConnectionMultiplexer } from '../../common/connection/multiplexer';
 import { getAllNamedOptional } from '../../common/inversify-utils';
 import { JsonRpc } from '../../common/json-rpc';
 import { JSON_RPC_ROUTE } from '../../common/json-rpc-protocol';
 import { MsgpackrMessageTransformer } from '../../common/msgpackr';
 import { DefaultRpcProxyProvider, Rpc } from '../../common/rpc';
 import { FrontendApplicationContribution } from '../frontend-application';
+import { DefaultFrontendInstance, FrontendInstance } from '../frontend-instance';
 import { SocketIoConnectionProvider } from './socket-io-connection-provider';
 
 export default new ContainerModule(bind => {
+    bind(FrontendInstance).to(DefaultFrontendInstance).inSingletonScope();
+    bind(SocketIoConnectionProvider).toSelf().inSingletonScope();
+    bind(ConnectionMultiplexer)
+        .toDynamicValue(ctx => {
+            const socketIoConnectionProvider = ctx.container.get(SocketIoConnectionProvider);
+            const multiplexer = ctx.container.get(DefaultConnectionMultiplexer);
+            const mainConnection = socketIoConnectionProvider.open({ path: '/' });
+            console.log('CONNECTING TO MAIN');
+            mainConnection.onOpen(() => console.log('CONNECTED TO MAIN'));
+            getAllNamedOptional(ctx.container, ConnectionHandler, BackendAndFrontend)
+                .forEach(handler => multiplexer.listen(handler));
+            return multiplexer.initialize(mainConnection);
+        })
+        .inSingletonScope()
+        .whenTargetNamed(BackendAndFrontend);
     bindServiceProvider(bind, BackendAndFrontend);
+    // Force activation of the main connection + multiplexing
     bind(FrontendApplicationContribution)
         .toDynamicValue(ctx => ({
             initialize: () => {
-                const connectionProvider = ctx.container.getNamed(ConnectionProvider, BackendAndFrontend);
-                const multiplexer = ctx.container.get(DefaultConnectionMultiplexer);
-                const backendServiceConnection = connectionProvider.open({ path: '/backend-services/' });
-                multiplexer.initialize(backendServiceConnection);
-                getAllNamedOptional(ctx.container, ConnectionHandler, BackendAndFrontend)
-                    .forEach(handler => multiplexer.listen(handler));
+                ctx.container.getNamed(ConnectionMultiplexer, BackendAndFrontend);
             }
         }))
         .inSingletonScope();
-    // JSON-RPC proxy from frontend to backend connection handler
+    // Handler for JSON-RPC connections coming from the backend
     bind(ConnectionHandler)
         .toDynamicValue(ctx => {
             const serviceProvider = ctx.container.getNamed(ServiceProvider, BackendAndFrontend);
@@ -69,18 +81,20 @@ export default new ContainerModule(bind => {
             const proxyProvider = ctx.container.get(DefaultRpcProxyProvider);
             const connectionTransformer = ctx.container.get(ConnectionTransformer);
             const connectionProvider = ctx.container.getNamed(ConnectionProvider, BackendAndFrontend);
+            const deferredConnectionFactory = ctx.container.get(DeferredConnectionFactory);
             const msgpackrTransformer = new MsgpackrMessageTransformer();
             return proxyProvider.initialize(serviceId => {
                 const jsonRpcServicePath = JSON_RPC_ROUTE.reverse({ serviceId });
-                const connection = connectionProvider.open({ path: jsonRpcServicePath });
+                const connection = deferredConnectionFactory(Connection.waitForOpen(connectionProvider.open({ path: jsonRpcServicePath })));
                 const msgpackConnection = connectionTransformer.transformConnection(connection, msgpackrTransformer);
                 return jsonRpc.createRpcConnection(jsonRpc.createMessageConnection(msgpackConnection));
             });
         })
         .inSingletonScope()
         .whenTargetNamed(BackendAndFrontend);
+    // Get multiplexed connections over the "main connection"
     bind(ConnectionProvider)
-        .to(SocketIoConnectionProvider)
+        .toDynamicValue(ctx => ctx.container.getNamed(ConnectionMultiplexer, BackendAndFrontend))
         .inSingletonScope()
         .whenTargetNamed(BackendAndFrontend);
 });

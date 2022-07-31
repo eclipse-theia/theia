@@ -17,45 +17,42 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, no-null/no-null */
 
 import type * as http from 'http';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import * as socket_io from 'socket.io';
 import { pushDisposableListener } from '../common/node-event-utils';
-import { AbstractConnection, Connection, FrontendConnectionParams, Router } from '../common';
+import { AbstractConnection, Broker, Connection, Disposable } from '../common';
+import { DefaultRouter, Handler, Middleware } from '../common/routing';
+import { BackendApplicationConfigProvider } from './backend-application-config-provider';
 
-/**
- * @internal
- */
-export type SocketIoMiddleware = (socket: socket_io.Socket, next: (error?: Error) => void) => void;
+const config = BackendApplicationConfigProvider.get();
 
-/**
- * @internal
- */
-export interface SocketIoServerOptions {
-    middlewares?: SocketIoMiddleware[]
+export type SocketIoMiddleware = (socket: socket_io.Socket, next: (error?: any) => void) => void;
+
+export interface SocketIoParams {
+    socket: socket_io.Socket
 }
 
-/**
- * @internal
- */
-export interface SocketIoServerError extends Error {
-    data?: {
-        THEIA_BACKEND_ID?: string
-    }
-}
-
-/**
- * @internal
- */
 @injectable()
-export class SocketIoServer {
+export class SocketIoServer implements Broker<Connection<any>, SocketIoParams> {
 
-    initialize(httpServer: http.Server, router: Router<Connection<any>>, options?: SocketIoServerOptions): void {
+    @inject(DefaultRouter)
+    protected router: DefaultRouter<Connection<any>, SocketIoParams>;
+
+    initialize(httpServer: http.Server): this {
         const server = this.createSocketIoServer(httpServer);
         const namespace = this.createSocketIoNamespace(server);
-        this.applyMiddlewares(namespace, options);
-        // Route the connection, this must be the last middleware in the chain
-        // to ensure the connection won't be refused after being accepted here:
-        namespace.use(this.createRouterMiddleware(router));
+        const middleware = this.createSocketIoMiddleware();
+        server.use(middleware);
+        namespace.use(middleware);
+        return this;
+    }
+
+    use(middleware: Middleware<SocketIoParams>): Disposable {
+        return this.router.use(middleware);
+    }
+
+    listen(handler: Handler<Connection<any>, SocketIoParams>): Disposable {
+        return this.router.listen(handler);
     }
 
     protected createSocketIoServer(httpServer: http.Server): socket_io.Server {
@@ -63,7 +60,8 @@ export class SocketIoServer {
             serveClient: false,
             maxHttpBufferSize: 10 * 1024 * 1024, // bytes = 10 MB
             pingInterval: 30_000, // ms = 30 seconds
-            pingTimeout: 3_600_000 // ms = 1 hour, virtually no timeout
+            pingTimeout: 3_600_000, // ms = 1 hour, virtually no timeout
+            ...config?.socketIo?.serverOptions ?? {},
         });
     }
 
@@ -75,36 +73,19 @@ export class SocketIoServer {
         return socketServer.of((namespaceName, auth, next) => next(null, true));
     }
 
-    protected applyMiddlewares(namespace: socket_io.Namespace, options?: SocketIoServerOptions): void {
-        options?.middlewares?.forEach(middleware => namespace.use(middleware));
-    }
-
-    protected createRouterMiddleware(router: Router<Connection<any>, FrontendConnectionParams>): SocketIoMiddleware {
+    protected createSocketIoMiddleware(): SocketIoMiddleware {
         return (socket, next) => {
-            const frontendId = this.getFrontendId(socket);
-            if (!frontendId) {
-                console.debug('missing frontendId field in socket auth');
-                return next(new Error('invalid connection'));
-            }
-            const path = socket.nsp.name;
-            router.route({ frontendId, path }, () => {
+            this.router.route({ socket }, () => {
                 queueMicrotask(next);
                 return this.createSocketIoConnection(socket);
             }, error => {
                 if (error) {
-                    next(new Error('internal error'));
+                    next(new Error('internal server error'));
                 } else {
                     next(new Error('unhandled connection'));
                 }
             });
         };
-    }
-
-    protected getFrontendId(socket: socket_io.Socket): string | undefined {
-        const { THEIA_FRONTEND_ID } = socket.handshake.query;
-        if (typeof THEIA_FRONTEND_ID === 'string') {
-            return THEIA_FRONTEND_ID;
-        }
     }
 
     protected createSocketIoConnection(socket: socket_io.Socket): SocketIoConnection {
