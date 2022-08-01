@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.29.0 - unreleased
+
+<a name="breaking_changes_1.29.0">[Breaking Changes:](#breaking_changes_1.29.0)</a>
+
+- [core] `updateThemePreference` and `updateThemeFromPreference` removed from `CommonFrontendContribution`. Corresponding functionality as been moved to the respective theme service. `load` removed from `IconThemeService` [#11473](https://github.com/eclipse-theia/theia/issues/11473)
+
 ## v1.28.0 - 7/28/2022
 
 - [cli] improved error handling when interacting with the API [#11454](https://github.com/eclipse-theia/theia/issues/11454)
