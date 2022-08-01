@@ -25,7 +25,7 @@ import './theia-proposed';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable max-len */
 
-export module '@theia/plugin' {
+declare module '@theia/plugin' {
 
     /**
      * The version of the Theia API.
@@ -1359,7 +1359,7 @@ export module '@theia/plugin' {
          * @param pathSegments One more more path fragments
          * @returns A new uri which path is joined with the given fragments
          */
-        static joinPath(uri: URI, ...pathSegments: string[]): URI;
+        static joinPath(uri: Uri, ...pathSegments: string[]): Uri;
 
         /**
          * Create an URI from a string. Will throw if the given value is not
@@ -2714,7 +2714,7 @@ export module '@theia/plugin' {
          * @param id id of the icon. The available icons are listed in https://code.visualstudio.com/api/references/icons-in-labels#icon-listing.
          * @param color optional `ThemeColor` for the icon. The color is currently only used in {@link TreeItem}.
          */
-        private constructor(public id: string, public color?: ThemeColor);
+        private constructor(id: string, color?: ThemeColor);
     }
 
     /**
@@ -2956,7 +2956,7 @@ export module '@theia/plugin' {
         /**
          * Current working directory.
          */
-        cwd?: string | URI;
+        cwd?: string | Uri;
 
         /**
          * Environment variables for terminal in format key - value.
@@ -5195,7 +5195,7 @@ export module '@theia/plugin' {
         /**
          * Icon for the button.
          */
-        readonly iconPath: Uri | { light: string | Uri; dark: string | Uri } | monaco.theme.ThemeIcon;
+        readonly iconPath: Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon;
 
         /**
          * An optional tooltip.
@@ -6388,16 +6388,6 @@ export module '@theia/plugin' {
          * [workspace folders](#workspace.workspaceFolders) are opened.
          */
         export function findFiles(include: GlobPattern, exclude?: GlobPattern | null, maxResults?: number, token?: CancellationToken): Thenable<Uri[]>;
-
-        /**
-         * Find text in files across all [workspace folders] in the workspace
-         * @param query What to search
-         * @param optionsOrCallback
-         * @param callbackOrToken
-         * @param token
-         */
-        export function findTextInFiles(query: TextSearchQuery, optionsOrCallback: FindTextInFilesOptions | ((result: TextSearchResult) => void),
-            callbackOrToken?: CancellationToken | ((result: TextSearchResult) => void), token?: CancellationToken): Promise<TextSearchComplete>;
 
         /**
          * Save all dirty files.
@@ -10875,8 +10865,6 @@ export module '@theia/plugin' {
          * were in the task definition will be resolved and passed into the callback as `resolvedDefinition`.
          */
         constructor(callback: (resolvedDefinition: TaskDefinition) => Thenable<Pseudoterminal>);
-
-        readonly callback;
     }
 
     export enum TaskScope {
