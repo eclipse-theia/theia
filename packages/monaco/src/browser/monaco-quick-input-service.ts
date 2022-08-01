@@ -38,6 +38,9 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { IMatch } from '@theia/monaco-editor-core/esm/vs/base/common/filters';
 import { IListRenderer, IListVirtualDelegate } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/list/list';
 import { Event } from '@theia/core';
+import { MonacoColorRegistry } from './monaco-color-registry';
+import { ThemeService } from '@theia/core/lib/browser/theming';
+import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 
 // Copied from @vscode/src/vs/base/parts/quickInput/browser/quickInputList.ts
 export interface IListElement {
@@ -65,6 +68,12 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
+    @inject(MonacoColorRegistry)
+    protected readonly colorRegistry: MonacoColorRegistry;
+
+    @inject(ThemeService)
+    protected readonly themeService: ThemeService;
+
     @inject(VSCodeContextKeyService)
     protected readonly contextKeyService: VSCodeContextKeyService;
 
@@ -83,6 +92,9 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         this.controller.onShow(() => {
             this.container.style.top = this.shell.mainPanel.node.getBoundingClientRect().top + 'px';
         });
+        this.themeService.initialized.then(() => this.controller.applyStyles(this.getStyles()));
+        // Hook into the theming service of Monaco to ensure that the updates are ready.
+        StandaloneServices.get(IStandaloneThemeService).onDidColorThemeChange(() => this.controller.applyStyles(this.getStyles()));
     }
 
     setContextKey(key: string | undefined): void {
@@ -168,18 +180,10 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     }
 
     private getOptions(): IQuickInputOptions {
-        const styles: IQuickInputStyles = {
-            widget: {},
-            list: {},
-            inputBox: {},
-            countBadge: {},
-            button: {},
-            progressBar: {},
-            keybindingLabel: {},
-        };
         const options: IQuickInputOptions = {
             idPrefix: 'quickInput_',
             container: this.container,
+            styles: { widget: {}, list: {}, inputBox: {}, countBadge: {}, button: {}, progressBar: {}, keybindingLabel: {}, },
             ignoreFocusOut: () => false,
             isScreenReaderOptimized: () => true,
             backKeybindingLabel: () => undefined,
@@ -188,9 +192,61 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
             createList: <T>(
                 user: string, container: HTMLElement, delegate: IListVirtualDelegate<T>, renderers: IListRenderer<T, unknown>[], listOptions: IListOptions<T>
             ): List<T> => this.quickInputList = new List(user, container, delegate, renderers, listOptions),
-            styles,
         };
         return options;
+    }
+
+    // @monaco-uplift
+    // Keep the styles up to date with https://github.com/microsoft/vscode/blob/7888ff3a6b104e9e2e3d0f7890ca92dd0828215f/src/vs/platform/quickinput/browser/quickInput.ts#L171.
+    private getStyles(): IQuickInputStyles {
+        return {
+            widget: {},
+            list: {
+                listBackground: this.colorRegistry.getColor('quickInput.background'),
+                listInactiveFocusForeground: this.colorRegistry.getColor('quickInputList.focusForeground'),
+                listInactiveSelectionIconForeground: this.colorRegistry.getColor('quickInputList.focusIconForeground'),
+                listInactiveFocusBackground: this.colorRegistry.getColor('quickInputList.focusBackground'),
+                listFocusOutline: this.colorRegistry.getColor('activeContrastBorder'),
+                listInactiveFocusOutline: this.colorRegistry.getColor('activeContrastBorder'),
+                pickerGroupBorder: this.colorRegistry.getColor('pickerGroup.border'),
+                pickerGroupForeground: this.colorRegistry.getColor('pickerGroup.foreground')
+            },
+            inputBox: {
+                inputForeground: this.colorRegistry.getColor('inputForeground'),
+                inputBackground: this.colorRegistry.getColor('inputBackground'),
+                inputBorder: this.colorRegistry.getColor('inputBorder'),
+                inputValidationInfoBackground: this.colorRegistry.getColor('inputValidation.infoBackground'),
+                inputValidationInfoForeground: this.colorRegistry.getColor('inputValidation.infoForeground'),
+                inputValidationInfoBorder: this.colorRegistry.getColor('inputValidation.infoBorder'),
+                inputValidationWarningBackground: this.colorRegistry.getColor('inputValidation.warningBackground'),
+                inputValidationWarningForeground: this.colorRegistry.getColor('inputValidation.warningForeground'),
+                inputValidationWarningBorder: this.colorRegistry.getColor('inputValidation.warningBorder'),
+                inputValidationErrorBackground: this.colorRegistry.getColor('inputValidation.errorBackground'),
+                inputValidationErrorForeground: this.colorRegistry.getColor('inputValidation.errorForeground'),
+                inputValidationErrorBorder: this.colorRegistry.getColor('inputValidation.errorBorder'),
+            },
+            countBadge: {
+                badgeBackground: this.colorRegistry.getColor('badge.background'),
+                badgeForeground: this.colorRegistry.getColor('badge.foreground'),
+                badgeBorder: this.colorRegistry.getColor('contrastBorder')
+            },
+            button: {
+                buttonForeground: this.colorRegistry.getColor('button.foreground'),
+                buttonBackground: this.colorRegistry.getColor('button.background'),
+                buttonHoverBackground: this.colorRegistry.getColor('button.hoverBackground'),
+                buttonBorder: this.colorRegistry.getColor('contrastBorder')
+            },
+            progressBar: {
+                progressBarBackground: this.colorRegistry.getColor('progressBar.background')
+            },
+            keybindingLabel: {
+                keybindingLabelBackground: this.colorRegistry.getColor('keybindingLabe.background'),
+                keybindingLabelForeground: this.colorRegistry.getColor('keybindingLabel.foreground'),
+                keybindingLabelBorder: this.colorRegistry.getColor('keybindingLabel.border'),
+                keybindingLabelBottomBorder: this.colorRegistry.getColor('keybindingLabel.bottomBorder'),
+                keybindingLabelShadow: this.colorRegistry.getColor('widget.shadow')
+            },
+        };
     }
 }
 

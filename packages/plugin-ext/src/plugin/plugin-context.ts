@@ -144,7 +144,8 @@ import {
     ExtensionMode,
     LinkedEditingRanges,
     LanguageStatusSeverity,
-    TextDocumentChangeReason
+    TextDocumentChangeReason,
+    InputBoxValidationSeverity
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -1025,7 +1026,8 @@ export function createAPIFactory(
             FileDecoration,
             CancellationError,
             ExtensionMode,
-            LinkedEditingRanges
+            LinkedEditingRanges,
+            InputBoxValidationSeverity
         };
     };
 }

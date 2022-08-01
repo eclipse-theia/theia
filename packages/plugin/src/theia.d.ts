@@ -2354,6 +2354,32 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Impacts the behavior and appearance of the validation message.
+     */
+    export enum InputBoxValidationSeverity {
+        Info = 1,
+        Warning = 2,
+        Error = 3
+    }
+
+    /**
+     * Object to configure the behavior of the validation message.
+     */
+    export interface InputBoxValidationMessage {
+        /**
+         * The validation message to display.
+         */
+        readonly message: string;
+
+        /**
+         * The severity of the validation message.
+         * NOTE: When using `InputBoxValidationSeverity.Error`, the user will not be allowed to accept (hit ENTER) the input.
+         * `Info` and `Warning` will still allow the InputBox to accept the input.
+         */
+        readonly severity: InputBoxValidationSeverity;
+    }
+
+    /**
      * Options to configure the behavior of the input box UI.
      */
     export interface InputBoxOptions {
@@ -2401,10 +2427,10 @@ export module '@theia/plugin' {
          * to the user.
          *
          * @param value The current value of the input box.
-         * @return A human readable string which is presented as diagnostic message.
-         * Return `undefined`, or the empty string when 'value' is valid.
+         * @return Either a human-readable string which is presented as an error message or an {@link InputBoxValidationMessage}
+         *  which can provide a specific message severity. Return `undefined`, `null`, or the empty string when 'value' is valid.
          */
-        validateInput?: (input: string) => Promise<string | null | undefined> | undefined;
+        validateInput?: (input: string) => Promise<string | InputBoxValidationMessage | null | undefined> | undefined;
 
         /**
          * An optional function that will be called on Enter key.
@@ -5065,8 +5091,10 @@ export module '@theia/plugin' {
 
         /**
          * An optional validation message indicating a problem with the current input value.
+         * By returning a string, the InputBox will use a default {@link InputBoxValidationSeverity} of Error.
+         * Returning undefined clears the validation message.
          */
-        validationMessage: string | undefined;
+        validationMessage: string | InputBoxValidationMessage | undefined;
     }
 
     /**

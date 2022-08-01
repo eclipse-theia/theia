@@ -216,7 +216,7 @@ export interface InputOptions {
     placeHolder?: string;
     password?: boolean;
     ignoreFocusLost?: boolean;
-    validateInput?(input: string): Promise<string | null | undefined> | undefined;
+    validateInput?(input: string): Promise<string | { content: string; severity: number; }  | null | undefined> | undefined;
 }
 
 export interface QuickPickItemButtonEvent<T extends QuickPickItemOrSeparator> {

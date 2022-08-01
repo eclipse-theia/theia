@@ -37,8 +37,11 @@ export class MonacoColorRegistry extends ColorRegistry {
     }
 
     override getCurrentColor(id: string): string | undefined {
-        const color = this.monacoThemeService.getColorTheme().getColor(id);
-        return color?.toString();
+        return this.monacoThemeService.getColorTheme().getColor(id)?.toString();
+    }
+
+    getColor(id: string): MonacoColor | undefined {
+        return this.monacoThemeService.getColorTheme().getColor(id);
     }
 
     protected override doRegister(definition: ColorDefinition): Disposable {
