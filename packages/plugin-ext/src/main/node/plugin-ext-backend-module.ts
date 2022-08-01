@@ -40,8 +40,10 @@ import { PluginTheiaEnvironment } from '../common/plugin-theia-environment';
 import { PluginTheiaDeployerParticipant } from './plugin-theia-deployer-participant';
 import { WebviewBackendSecurityWarnings } from './webview-backend-security-warnings';
 import { PluginUninstallationManager } from './plugin-uninstallation-manager';
+import { LocalizationBackendContribution } from '@theia/core/src/node/i18n/localization-backend-contribution';
+import { PluginLocalizationBackendContribution } from './plugin-localization-backend-contribution';
 
-export function bindMainBackend(bind: interfaces.Bind): void {
+export function bindMainBackend(bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(PluginApiContribution);
     bind(WsRequestValidatorContribution).toService(PluginApiContribution);
@@ -87,4 +89,7 @@ export function bindMainBackend(bind: interfaces.Bind): void {
 
     bind(WebviewBackendSecurityWarnings).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(WebviewBackendSecurityWarnings);
+
+    rebind(LocalizationBackendContribution).to(PluginLocalizationBackendContribution).inSingletonScope();
+
 }

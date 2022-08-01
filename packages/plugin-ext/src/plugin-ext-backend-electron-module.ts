@@ -18,7 +18,7 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { bindElectronBackend } from './hosted/node-electron/plugin-ext-hosted-electron-backend-module';
 import { bindMainBackend } from './main/node/plugin-ext-backend-module';
 
-export default new ContainerModule(bind => {
-    bindMainBackend(bind);
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    bindMainBackend(bind, unbind, isBound, rebind);
     bindElectronBackend(bind);
 });
