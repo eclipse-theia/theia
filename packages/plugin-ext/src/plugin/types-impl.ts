@@ -2756,4 +2756,10 @@ export class SemanticTokensEdits {
     }
 }
 
+export enum InputBoxValidationSeverity {
+    Info = 1,
+    Warning = 2,
+    Error = 3
+}
+
 // #endregion

@@ -24,13 +24,14 @@ import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { QuickInputButtons, QuickPickItemKind, ThemeIcon } from './types-impl';
+import { InputBoxValidationSeverity, QuickInputButtons, QuickPickItemKind, ThemeIcon } from './types-impl';
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as path from 'path';
 import { convertToTransferQuickPickItems } from './type-converters';
 import { PluginPackage } from '../common/plugin-protocol';
 import { QuickInputButtonHandle } from '@theia/core/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
+import Severity from '@theia/monaco-editor-core/esm/vs/base/common/severity';
 
 const canceledName = 'Canceled';
 /**
@@ -65,7 +66,7 @@ export function getDarkIconUri(iconPath: URI | { light: URI; dark: URI; }): URI 
 export class QuickOpenExtImpl implements QuickOpenExt {
     private proxy: QuickOpenMain;
     private onDidSelectItem: undefined | ((handle: number) => void);
-    private validateInputHandler?: (input: string) => MaybePromise<string | null | undefined>;
+    private validateInputHandler?: (input: string) => MaybePromise<string | theia.InputBoxValidationMessage | null | undefined>;
     private _sessions = new Map<number, QuickInputExt>(); // Each quickinput will have a number so that we know where to fire events
     private _instances = 0;
 
@@ -155,11 +156,36 @@ export class QuickOpenExtImpl implements QuickOpenExt {
         return this.proxy.$showInputBox(options, typeof this.validateInputHandler === 'function');
     }
 
-    $validateInput(input: string): Promise<string | null | undefined> | undefined {
-        if (this.validateInputHandler) {
-            return Promise.resolve(this.validateInputHandler(input));
+    async $validateInput(input: string): Promise<string | { content: string; severity: Severity; } | null | undefined> {
+        if (!this.validateInputHandler) {
+            return;
         }
-        return undefined;
+
+        const result = await this.validateInputHandler(input);
+        if (!result || typeof result === 'string') {
+            return result;
+        }
+
+        let severity: Severity;
+        switch (result.severity) {
+            case InputBoxValidationSeverity.Info:
+                severity = Severity.Info;
+                break;
+            case InputBoxValidationSeverity.Warning:
+                severity = Severity.Warning;
+                break;
+            case InputBoxValidationSeverity.Error:
+                severity = Severity.Error;
+                break;
+            default:
+                severity = result.message ? Severity.Error : Severity.Ignore;
+                break;
+        }
+
+        return {
+            content: result.message,
+            severity
+        };
     }
 
     // ---- QuickInput
