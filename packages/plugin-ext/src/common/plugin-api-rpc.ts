@@ -1263,18 +1263,24 @@ export interface PreferenceRegistryMain {
         target: boolean | ConfigurationTarget | undefined,
         key: string,
         value: any,
-        resource?: string
+        resource?: string,
+        withLanguageOverride?: boolean
     ): PromiseLike<void>;
     $removeConfigurationOption(
         target: boolean | ConfigurationTarget | undefined,
         key: string,
-        resource?: string
+        resource?: string,
+        withLanguageOverride?: boolean,
     ): PromiseLike<void>;
 }
 
 export interface PreferenceChangeExt {
     preferenceName: string,
-    newValue: any
+    newValue: any,
+    /**
+     * The URI the folder affected, or undefined if User scope.
+     */
+    scope?: string;
 }
 
 export interface TerminalOptionsExt {
