@@ -21,6 +21,7 @@ import * as monaco from '@theia/monaco-editor-core';
 import { injectable } from '@theia/core/shared/inversify';
 import type { ThemeMix } from './textmate/monaco-theme-types';
 import { Theme } from '@theia/core/lib/common/theme';
+import { Emitter, Event } from '@theia/core';
 
 let _monacoDB: Promise<idb.IDBPDatabase> | undefined;
 if ('indexedDB' in window) {
@@ -99,25 +100,31 @@ export function stateToTheme(state: MonacoThemeState): Theme {
     };
 }
 
-async function getThemeFromDB(id: string): Promise<Theme | undefined> {
-    const matchingState = (await getThemes()).find(theme => theme.id === id);
-    return matchingState && stateToTheme(matchingState);
-}
-
 @injectable()
 export class ThemeServiceWithDB extends ThemeService {
+    protected onDidRetrieveThemeEmitter = new Emitter<MonacoThemeState>();
+    get onDidRetrieveTheme(): Event<MonacoThemeState> {
+        return this.onDidRetrieveThemeEmitter.event;
+    }
+
     override loadUserTheme(): void {
         this.loadUserThemeWithDB();
     }
 
     protected async loadUserThemeWithDB(): Promise<void> {
-        const themeId = window.localStorage.getItem('theme') || this.defaultTheme.id;
-        const theme = this.themes[themeId] ?? await getThemeFromDB(themeId) ?? this.defaultTheme;
+        const themeId = window.localStorage.getItem(ThemeService.STORAGE_KEY) ?? this.defaultTheme.id;
+        const theme = this.themes[themeId] ?? await getThemes().then(themes => {
+            const matchingTheme = themes.find(candidate => candidate.id === themeId);
+            if (matchingTheme) {
+                this.onDidRetrieveThemeEmitter.fire(matchingTheme);
+                return stateToTheme(matchingTheme);
+            }
+        }) ?? this.getTheme(themeId);
         // In case the theme comes from the DB.
         if (!this.themes[theme.id]) {
             this.themes[theme.id] = theme;
         }
-        this.setCurrentTheme(theme.id);
+        this.setCurrentTheme(theme.id, false);
         this.deferredInitializer.resolve();
     }
 }
