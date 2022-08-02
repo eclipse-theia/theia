@@ -282,7 +282,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
         }
 
         if (this.averageRating) {
-            md += `  \rAverage Rating: ${this.averageRating.toFixed(1)}`;
+            md += `  \r${getAverageRatingTitle(this.averageRating)}`;
         }
 
         return markdownit().render(md);
@@ -444,6 +444,13 @@ export namespace AbstractVSXExtensionComponent {
 const downloadFormatter = new Intl.NumberFormat();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const downloadCompactFormatter = new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' } as any);
+const averageRatingFormatter = (averageRating: number): number => Math.round(averageRating * 2) / 2;
+const getAverageRatingTitle = (averageRating: number | undefined): string => {
+    if (!averageRating) {
+        return '';
+    }
+    return `Average rating: ${averageRatingFormatter(averageRating)} out of 5`;
+};
 
 export namespace VSXExtensionComponent {
     export interface Props extends AbstractVSXExtensionComponent.Props {
@@ -466,7 +473,7 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
                     </div>
                     <div className='stat'>
                         {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}
-                        {!!averageRating && <span className='average-rating'><i className={codicon('star-full')} />{averageRating.toFixed(0)}</span>}
+                        {!!averageRating && <span className='average-rating'><i className={codicon('star-full')} />{averageRatingFormatter(averageRating)}</span>}
                     </div>
                 </div>
                 <div className='noWrapInfo theia-vsx-extension-description'>{description}</div>
@@ -516,7 +523,10 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                         </span>
                         {!!downloadCount && <span className='download-count' onClick={this.openExtension}>
                             <i className={codicon('cloud-download')} />{downloadFormatter.format(downloadCount)}</span>}
-                        {averageRating !== undefined && <span className='average-rating' onClick={this.openAverageRating}>{this.renderStars()}</span>}
+                        {
+                            averageRating !== undefined &&
+                            <span className='average-rating' title={getAverageRatingTitle(averageRating)} onClick={this.openAverageRating}>{this.renderStars()}</span>
+                        }
                         {repository && <span className='repository' onClick={this.openRepository}>Repository</span>}
                         {license && <span className='license' onClick={this.openLicense}>{license}</span>}
                         {version && <span className='version'>{VSXExtension.formatVersion(version)}</span>}
@@ -527,7 +537,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
             </div>
             {
                 sanitizedReadme &&
-                < div className='scroll-container'
+                <div className='scroll-container'
                     style={scrollStyle}
                     ref={ref => this._scrollContainer = (ref || undefined)}>
                     <div className='body'
