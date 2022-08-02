@@ -443,7 +443,7 @@ export namespace AbstractVSXExtensionComponent {
 
 const downloadFormatter = new Intl.NumberFormat();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const downloadCompactFormatter = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as any);
+const downloadCompactFormatter = new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' } as any);
 
 export namespace VSXExtensionComponent {
     export interface Props extends AbstractVSXExtensionComponent.Props {
@@ -466,7 +466,7 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
                     </div>
                     <div className='stat'>
                         {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}
-                        {!!averageRating && <span className='average-rating'><i className={codicon('star-full')} />{averageRating.toFixed(1)}</span>}
+                        {!!averageRating && <span className='average-rating'><i className={codicon('star-full')} />{averageRating.toFixed(0)}</span>}
                     </div>
                 </div>
                 <div className='noWrapInfo theia-vsx-extension-description'>{description}</div>

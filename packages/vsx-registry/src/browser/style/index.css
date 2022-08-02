@@ -91,6 +91,12 @@
     font-size: 110%;
 }
 
+.theia-vsx-extension-content .title .stat .download-count,
+.theia-vsx-extension-content .title .stat .average-rating {
+    display: inline-flex;
+    align-items: center;
+}
+
 .theia-vsx-extension-content .title .stat .average-rating > i {
     color: #ff8e00;
 }
