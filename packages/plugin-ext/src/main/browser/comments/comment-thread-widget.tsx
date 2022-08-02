@@ -50,7 +50,7 @@ export const COMMENT_TITLE: MenuPath = ['comment-title-menu'];
 export class CommentThreadWidget extends BaseWidget {
 
     protected readonly zoneWidget: MonacoEditorZoneWidget;
-    protected containerNodeRoot: Root;
+    protected readonly containerNodeRoot: Root;
     protected readonly commentGlyphWidget: CommentGlyphWidget;
     protected readonly contextMenu: CompositeMenuNode;
     protected readonly commentFormRef: RefObject<CommentForm> = React.createRef<CommentForm>();
