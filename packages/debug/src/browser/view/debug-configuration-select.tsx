@@ -40,6 +40,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
     protected static readonly PICK = '__PICK__';
     protected static readonly NO_CONFIGURATION = '__NO_CONF__';
     protected static readonly ADD_CONFIGURATION = '__ADD_CONF__';
+    protected static readonly CONFIG_MARKER = '__CONFIG__';
 
     private readonly selectRef = React.createRef<SelectComponent>();
     private manager: DebugConfigurationManager;
@@ -53,7 +54,6 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
             providerTypes: [],
             currentValue: undefined
         };
-        this.manager.onDidChange(() => this.refreshDebugConfigurations());
         this.manager.onDidChangeConfigurationProviders(() => {
             this.refreshDebugConfigurations();
         });
@@ -66,7 +66,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
     override render(): React.ReactNode {
         return <SelectComponent
             options={this.renderOptions()}
-            defaultValue={this.currentValue}
+            defaultValue={this.state.currentValue}
             onChange={option => this.setCurrentConfiguration(option)}
             onFocus={() => this.refreshDebugConfigurations()}
             onBlur={() => this.refreshDebugConfigurations()}
@@ -76,7 +76,26 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
 
     protected get currentValue(): string {
         const { current } = this.manager;
-        return current ? JSON.stringify(current) : DebugConfigurationSelect.NO_CONFIGURATION;
+        const matchingOption = this.getCurrentOption(current);
+        return matchingOption ? matchingOption.value! : current ? JSON.stringify(current) : DebugConfigurationSelect.NO_CONFIGURATION;
+    }
+
+    protected getCurrentOption(current: DebugSessionOptions | undefined): SelectOption | undefined {
+        if (!current || !this.selectRef.current) {
+            return;
+        }
+        const matchingOption = this.selectRef.current!.options.find(option =>
+            option.userData === DebugConfigurationSelect.CONFIG_MARKER
+            && this.matchesOption(JSON.parse(option.value!), current)
+        );
+        return matchingOption;
+    }
+
+    protected matchesOption(sessionOption: DebugSessionOptions, current: DebugSessionOptions): boolean {
+        const matchesNameAndWorkspace = sessionOption.name === current.name && sessionOption.workspaceFolderUri === current.workspaceFolderUri;
+        return DebugSessionOptions.isConfiguration(sessionOption) && DebugSessionOptions.isConfiguration(current)
+            ? matchesNameAndWorkspace && sessionOption.providerType === current.providerType
+            : matchesNameAndWorkspace;
     }
 
     protected readonly setCurrentConfiguration = (option: SelectOption) => {
@@ -91,6 +110,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         } else {
             const data = JSON.parse(value) as DebugSessionOptions;
             this.manager.current = data;
+            this.refreshDebugConfigurations();
         }
     };
 
@@ -153,8 +173,10 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
                 providerTypes.push(type);
             }
         }
-        this.selectRef.current!.value = this.currentValue;
-        this.setState({ providerTypes, currentValue: this.currentValue });
+
+        const value = this.currentValue;
+        this.selectRef.current!.value = value;
+        this.setState({ providerTypes, currentValue: value });
     };
 
     protected renderOptions(): SelectOption[] {
@@ -165,7 +187,8 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
             const value = JSON.stringify(config);
             options.push({
                 value,
-                label: this.toName(config, this.props.isMultiRoot)
+                label: this.toName(config, this.props.isMultiRoot),
+                userData: DebugConfigurationSelect.CONFIG_MARKER
             });
         }
 
@@ -181,7 +204,8 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
                 const value = JSON.stringify(dynamicOption);
                 options.push({
                     value,
-                    label: this.toName(dynamicOption, this.props.isMultiRoot) + ' (' + dynamicOption.providerType + ')'
+                    label: this.toName(dynamicOption, this.props.isMultiRoot) + ' (' + dynamicOption.providerType + ')',
+                    userData: DebugConfigurationSelect.CONFIG_MARKER
                 });
             }
         }

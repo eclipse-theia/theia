@@ -214,7 +214,7 @@ export class DebugConfigurationManager {
 
     protected dynamicOptionsMatch(one: DynamicDebugConfigurationSessionOptions, other: DynamicDebugConfigurationSessionOptions): boolean {
         return one.providerType !== undefined
-            && one.name === other.name
+            && one.configuration.name === other.configuration.name
             && one.providerType === other.providerType;
     }
 
@@ -515,10 +515,12 @@ export class DebugConfigurationManager {
 
         // Between versions v1.26 and v1.27, the expected format of the data changed so that old stored data
         // may not contain the configuration key.
-        if (data.current) {
-            this.current = DebugSessionOptions.isConfiguration(data.current)
-                ? this.find(data.current.name, data.current.workspaceFolderUri, data.current.providerType)
-                : this.find(data.current.name, data.current.workspaceFolderUri);
+        if (DebugSessionOptions.isConfiguration(data.current)) {
+            // ensure options name is reflected from old configurations data
+            data.current.name = data.current.name ?? data.current.configuration?.name;
+            this.current = this.find(data.current.name, data.current.workspaceFolderUri, data.current.providerType);
+        } else if (DebugSessionOptions.isCompound(data.current)) {
+            this.current = this.find(data.current.name, data.current.workspaceFolderUri);
         }
     }
 
@@ -527,7 +529,12 @@ export class DebugConfigurationManager {
             return;
         }
 
-        this.recentDynamicOptionsTracker = options;
+        // ensure options name is reflected from old configurations data
+        const dynamicOptions = options.map(option => {
+            option.name = option.name ?? option.configuration.name;
+            return option;
+        }).filter(DebugSessionOptions.isDynamic);
+        this.recentDynamicOptionsTracker = dynamicOptions;
     }
 
     save(): void {

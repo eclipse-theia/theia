@@ -30,6 +30,7 @@ export interface SelectOption {
     detail?: string
     description?: string
     markdown?: boolean
+    userData?: string
 }
 
 export interface SelectComponentProps {
@@ -77,6 +78,10 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             document.body.appendChild(list);
         }
         this.dropdownElement = list;
+    }
+
+    get options(): SelectOption[] {
+        return this.props.options;
     }
 
     get value(): string | number | undefined {
