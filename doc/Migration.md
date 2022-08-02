@@ -19,7 +19,7 @@ For example:
 }
 ```
 
-### v1.28.0
+### v1.29.0
 
 #### React 18 update
 
