@@ -559,7 +559,7 @@ export function createAPIFactory(
                 extHostFileSystemEvent.getOnWillDeleteFileEvent(plugin)(listener, thisArg, disposables),
             onWillRenameFiles: (listener: (e: theia.FileWillRenameEvent) => any, thisArg?: any, disposables?: theia.Disposable[]) =>
                 extHostFileSystemEvent.getOnWillRenameFileEvent(plugin)(listener, thisArg, disposables),
-            getConfiguration(section?, resource?): theia.WorkspaceConfiguration {
+            getConfiguration(section, resource): theia.WorkspaceConfiguration {
                 return preferenceRegistryExt.getConfiguration(section, resource);
             },
             onDidChangeConfiguration(listener, thisArgs?, disposables?): theia.Disposable {

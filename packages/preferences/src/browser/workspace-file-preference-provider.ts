@@ -79,7 +79,7 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
             }
             return path;
         }
-        return ['settings', preferenceName];
+        return ['settings'].concat(super.getPath(preferenceName) ?? []);
     }
 
     /**

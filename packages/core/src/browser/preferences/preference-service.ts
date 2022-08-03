@@ -92,6 +92,10 @@ export interface PreferenceService extends Disposable {
      */
     readonly ready: Promise<void>;
     /**
+     * Indicates whether the service has successfully initialized. Will be `true` when {@link PreferenceService.ready the `ready` Promise} resolves.
+     */
+    readonly isReady: boolean;
+    /**
      * Retrieve the stored value for the given preference.
      *
      * @param preferenceName the preference identifier.
@@ -171,10 +175,18 @@ export interface PreferenceService extends Disposable {
      *
      * @param preferenceName the preference identifier.
      * @param resourceUri the uri of the resource for which the preference is stored.
+     * @param forceLanguageOverride if `true` and `preferenceName` is a language override, only values for the specified override will be returned.
+     * Otherwise, values for the override will be returned where defined, and values from the base preference will be returned otherwise.
      *
      * @return an object containing the value of the given preference for all scopes.
      */
-    inspect<T extends JSONValue>(preferenceName: string, resourceUri?: string): PreferenceInspection<T> | undefined;
+    inspect<T extends JSONValue>(preferenceName: string, resourceUri?: string, forceLanguageOverride?: boolean): PreferenceInspection<T> | undefined;
+    /**
+     * For behavior, see {@link PreferenceService.inspect}.
+     *
+     * @returns the value in the scope specified.
+     */
+    inspectInScope<T extends JSONValue>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, forceLanguageOverride?: boolean): T | undefined
     /**
      * Returns a new preference identifier based on the given OverridePreferenceName.
      *
@@ -298,6 +310,7 @@ export class PreferenceServiceImpl implements PreferenceService {
                 await provider.ready;
             }
             this._ready.resolve();
+            this._isReady = true;
         } catch (e) {
             this._ready.reject(e);
         }
@@ -316,6 +329,11 @@ export class PreferenceServiceImpl implements PreferenceService {
     protected readonly _ready = new Deferred<void>();
     get ready(): Promise<void> {
         return this._ready.promise;
+    }
+
+    protected _isReady = false;
+    get isReady(): boolean {
+        return this._isReady;
     }
 
     protected reconcilePreferences(changes: PreferenceProviderDataChanges): void {
@@ -459,20 +477,20 @@ export class PreferenceServiceImpl implements PreferenceService {
         return Number(value);
     }
 
-    inspect<T>(preferenceName: string, resourceUri?: string): PreferenceInspection<T> | undefined {
-        const defaultValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Default, resourceUri);
-        const globalValue = this.inspectInScope<T>(preferenceName, PreferenceScope.User, resourceUri);
-        const workspaceValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Workspace, resourceUri);
-        const workspaceFolderValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Folder, resourceUri);
+    inspect<T extends JSONValue>(preferenceName: string, resourceUri?: string, forceLanguageOverride?: boolean): PreferenceInspection<T> | undefined {
+        const defaultValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Default, resourceUri, forceLanguageOverride);
+        const globalValue = this.inspectInScope<T>(preferenceName, PreferenceScope.User, resourceUri, forceLanguageOverride);
+        const workspaceValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Workspace, resourceUri, forceLanguageOverride);
+        const workspaceFolderValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Folder, resourceUri, forceLanguageOverride);
 
         const valueApplied = workspaceFolderValue ?? workspaceValue ?? globalValue ?? defaultValue;
 
         return { preferenceName, defaultValue, globalValue, workspaceValue, workspaceFolderValue, value: valueApplied };
     }
 
-    protected inspectInScope<T>(preferenceName: string, scope: PreferenceScope, resourceUri?: string): T | undefined {
+    inspectInScope<T extends JSONValue>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, forceLanguageOverride?: boolean): T | undefined {
         const value = this.doInspectInScope<T>(preferenceName, scope, resourceUri);
-        if (value === undefined) {
+        if (value === undefined && !forceLanguageOverride) {
             const overridden = this.overriddenPreferenceName(preferenceName);
             if (overridden) {
                 return this.doInspectInScope(overridden.preferenceName, scope, resourceUri);

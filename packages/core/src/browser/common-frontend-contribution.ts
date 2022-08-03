@@ -39,20 +39,20 @@ import { StorageService } from './storage-service';
 import { Navigatable } from './navigatable';
 import { QuickViewService } from './quick-input/quick-view-service';
 import { environment } from '@theia/application-package/lib/environment';
-import { IconThemeService } from './icon-theme-service';
+import { IconTheme, IconThemeService } from './icon-theme-service';
 import { ColorContribution } from './color-application-contribution';
 import { ColorRegistry } from './color-registry';
 import { Color } from '../common/color';
 import { CoreConfiguration, CorePreferences } from './core-preferences';
 import { ThemeService } from './theming';
-import { PreferenceService, PreferenceScope, PreferenceChangeEvent } from './preferences';
+import { PreferenceService, PreferenceChangeEvent } from './preferences';
 import { ClipboardService } from './clipboard-service';
 import { EncodingRegistry } from './encoding-registry';
 import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
 import { FormatType, Saveable, SaveOptions } from './saveable';
-import { QuickInputService, QuickPick, QuickPickItem, QuickPickItemOrSeparator } from './quick-input';
+import { QuickInputService, QuickPickItem, QuickPickItemOrSeparator } from './quick-input';
 import { AsyncLocalizationProvider } from '../common/i18n/localization';
 import { nls } from '../common/nls';
 import { CurrentWidgetCommandAdapter } from './shell/current-widget-command-adapter';
@@ -430,12 +430,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.registerCtrlWHandling();
 
         this.updateStyles();
-        this.updateThemeFromPreference('workbench.colorTheme');
-        this.updateThemeFromPreference('workbench.iconTheme');
         this.preferences.ready.then(() => this.setSashProperties());
         this.preferences.onPreferenceChanged(e => this.handlePreferenceChange(e, app));
-        this.themeService.onDidColorThemeChange(() => this.updateThemePreference('workbench.colorTheme'));
-        this.iconThemes.onDidChangeCurrent(() => this.updateThemePreference('workbench.iconTheme'));
 
         app.shell.leftPanelHandler.addBottomMenu({
             id: 'settings-menu',
@@ -475,41 +471,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.pinnedKey.set(value);
     }
 
-    protected updateThemePreference(preferenceName: 'workbench.colorTheme' | 'workbench.iconTheme'): void {
-        const inspect = this.preferenceService.inspect<string | null>(preferenceName);
-        const workspaceValue = inspect && inspect.workspaceValue;
-        const userValue = inspect && inspect.globalValue;
-        const value = workspaceValue || userValue;
-        const newValue = preferenceName === 'workbench.colorTheme' ? this.themeService.getCurrentTheme().id : this.iconThemes.current;
-        if (newValue !== value) {
-            const scope = workspaceValue !== undefined ? PreferenceScope.Workspace : PreferenceScope.User;
-            this.preferenceService.set(preferenceName, newValue, scope);
-        }
-    }
-
-    protected updateThemeFromPreference(preferenceName: 'workbench.colorTheme' | 'workbench.iconTheme'): void {
-        const inspect = this.preferenceService.inspect<string | null>(preferenceName);
-        const workspaceValue = inspect && inspect.workspaceValue;
-        const userValue = inspect && inspect.globalValue;
-        const value = workspaceValue || userValue;
-        if (value !== undefined) {
-            if (preferenceName === 'workbench.colorTheme') {
-                this.themeService.setCurrentTheme(value || this.themeService.defaultTheme.id);
-            } else {
-                this.iconThemes.current = value || this.iconThemes.default.id;
-            }
-        }
-    }
-
     protected handlePreferenceChange(e: PreferenceChangeEvent<CoreConfiguration>, app: FrontendApplication): void {
         switch (e.preferenceName) {
             case 'workbench.editor.highlightModifiedTabs': {
                 this.updateStyles();
-                break;
-            }
-            case 'workbench.colorTheme':
-            case 'workbench.iconTheme': {
-                this.updateThemeFromPreference(e.preferenceName);
                 break;
             }
             case 'window.menuBarVisibility': {
@@ -554,6 +519,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     onStop(): void {
         const recent = this.commandRegistry.recent;
         this.storageService.setData<{ recent: Command[] }>(RECENT_COMMANDS_STORAGE_KEY, { recent });
+        window.localStorage.setItem(IconThemeService.STORAGE_KEY, this.iconThemes.current);
+        window.localStorage.setItem(ThemeService.STORAGE_KEY, this.themeService.getCurrentTheme().id);
     }
 
     protected initResourceContextKeys(): void {
@@ -1173,10 +1140,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected selectIconTheme(): void {
-        let resetTo: string | undefined = this.iconThemes.current;
-        const previewTheme = debounce((id: string) => this.iconThemes.current = id, 200);
+        let resetTo: IconTheme | undefined = this.iconThemes.getCurrent();
+        const setTheme = (id: string, persist: boolean) => {
+            const theme = this.iconThemes.getDefinition(id);
+            if (theme) {
+                this.iconThemes.setCurrent(theme as IconTheme, persist);
+            }
+        };
+        const previewTheme = debounce(setTheme, 200);
 
-        let items: Array<QuickPickItem> = [];
+        let items: Array<QuickPickItem & { id: string }> = [];
         for (const iconTheme of this.iconThemes.definitions) {
             items.push({
                 id: iconTheme.id,
@@ -1194,17 +1167,17 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickInputService?.showQuickPick(items,
             {
                 placeholder: nls.localizeByDefault('Select File Icon Theme'),
-                activeItem: items.find(item => item.id === resetTo),
-                onDidChangeSelection: (quickPick: QuickPick<QuickPickItem>, selectedItems: Array<QuickPickItem>) => {
+                activeItem: items.find(item => item.id === resetTo?.id),
+                onDidChangeSelection: (_, selectedItems) => {
                     resetTo = undefined;
-                    previewTheme(selectedItems[0].id!);
+                    setTheme(selectedItems[0].id, true);
                 },
-                onDidChangeActive: (quickPick: QuickPick<QuickPickItem>, activeItems: Array<QuickPickItem>) => {
-                    previewTheme(activeItems[0].id!);
+                onDidChangeActive: (_, activeItems) => {
+                    previewTheme(activeItems[0].id, false);
                 },
                 onDidHide: () => {
                     if (resetTo) {
-                        this.iconThemes.current = resetTo;
+                        this.iconThemes.setCurrent(resetTo, false);
                     }
                 }
             });
@@ -1212,9 +1185,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     protected selectColorTheme(): void {
         let resetTo: string | undefined = this.themeService.getCurrentTheme().id;
-        const previewTheme = debounce((id: string) => this.themeService.setCurrentTheme(id), 200);
-
-        const itemsByTheme: { light: Array<QuickPickItem>, dark: Array<QuickPickItem>, hc: Array<QuickPickItem> } = { light: [], dark: [], hc: [] };
+        const setTheme = (id: string, persist: boolean) => this.themeService.setCurrentTheme(id, persist);
+        const previewTheme = debounce(setTheme, 200);
+        type QuickPickWithId = QuickPickItem & { id: string };
+        const itemsByTheme: { light: Array<QuickPickWithId>, dark: Array<QuickPickWithId>, hc: Array<QuickPickWithId> } = { light: [], dark: [], hc: [] };
         for (const theme of this.themeService.getThemes().sort((a, b) => a.label.localeCompare(b.label))) {
             const themeItems: QuickPickItemOrSeparator[] = itemsByTheme[theme.type];
             if (themeItems.length === 0) {
@@ -1233,19 +1207,17 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickInputService?.showQuickPick(items,
             {
                 placeholder: nls.localizeByDefault('Select Color Theme (Up/Down Keys to Preview)'),
-                activeItem: items.find((item: QuickPickItem) => item.id === resetTo),
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onDidChangeSelection: (quickPick: any, selectedItems: Array<QuickPickItem>) => {
+                activeItem: items.find(item => item.id === resetTo),
+                onDidChangeSelection: (_, selectedItems) => {
                     resetTo = undefined;
-                    previewTheme(selectedItems[0].id!);
+                    setTheme(selectedItems[0].id, true);
                 },
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onDidChangeActive: (quickPick: any, activeItems: Array<QuickPickItem>) => {
-                    previewTheme(activeItems[0].id!);
+                onDidChangeActive: (_, activeItems) => {
+                    previewTheme(activeItems[0].id, false);
                 },
                 onDidHide: () => {
                     if (resetTo) {
-                        this.themeService.setCurrentTheme(resetTo);
+                        setTheme(resetTo, false);
                     }
                 }
             });

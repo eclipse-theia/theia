@@ -38,6 +38,10 @@ export class Memento implements theia.Memento {
         }
     }
 
+    keys(): string[] {
+        return Object.entries(this.cache).filter(([, value]) => value !== undefined).map(([key]) => key);
+    }
+
     get<T>(key: string): T | undefined;
     get<T>(key: string, defaultValue: T): T;
     get<T>(key: string, defaultValue?: T): T | undefined {

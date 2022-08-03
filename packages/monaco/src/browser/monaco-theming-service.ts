@@ -19,11 +19,10 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import * as jsoncparser from 'jsonc-parser';
 import * as plistparser from 'fast-plist';
-import { ThemeService } from '@theia/core/lib/browser/theming';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MonacoThemeRegistry } from './textmate/monaco-theme-registry';
-import { getThemes, putTheme, MonacoThemeState, stateToTheme } from './monaco-indexed-db';
+import { getThemes, putTheme, MonacoThemeState, stateToTheme, ThemeServiceWithDB } from './monaco-indexed-db';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import * as monaco from '@theia/monaco-editor-core';
 
@@ -61,7 +60,7 @@ export class MonacoThemingService {
 
     @inject(FileService) protected readonly fileService: FileService;
     @inject(MonacoThemeRegistry) protected readonly monacoThemeRegistry: MonacoThemeRegistry;
-    @inject(ThemeService) protected readonly themeService: ThemeService;
+    @inject(ThemeServiceWithDB) protected readonly themeService: ThemeServiceWithDB;
 
     /** Register themes whose configuration needs to be loaded */
     register(theme: MonacoTheme, pending: { [uri: string]: Promise<any> } = {}): Disposable {
@@ -143,6 +142,7 @@ export class MonacoThemingService {
         this.monacoThemeRegistry.initializeDefaultThemes();
         this.updateBodyUiTheme();
         this.themeService.onDidColorThemeChange(() => this.updateBodyUiTheme());
+        this.themeService.onDidRetrieveTheme(theme => this.monacoThemeRegistry.setTheme(MonacoThemingService.toCssSelector(theme.id), theme.data));
         this.restore();
     }
 
