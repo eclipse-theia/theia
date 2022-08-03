@@ -381,7 +381,6 @@
     },
     "vsx-registry": {
       "errorFetching": "Chyba při načítání rozšíření.",
-      "openVSX": "Otevření registru VSX",
       "recommendedExtensions": "Seznam názvů rozšíření doporučených pro použití v tomto pracovním prostoru.",
       "searchPlaceholder": "Hledat rozšíření v {0}",
       "showRecommendedExtensions": "Řídí, zda se mají zobrazovat oznámení pro doporučení rozšíření.",

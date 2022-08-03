@@ -381,7 +381,6 @@
     },
     "vsx-registry": {
       "errorFetching": "Hiba a kiterjesztések lekérdezésében.",
-      "openVSX": "VSX Registry megnyitása",
       "recommendedExtensions": "A munkaterületre ajánlott kiterjesztések neveinek listája.",
       "searchPlaceholder": "Keresés kiterjesztések {0}",
       "showRecommendedExtensions": "Szabályozza, hogy a kiterjesztési ajánlásokhoz megjelenjenek-e értesítések.",

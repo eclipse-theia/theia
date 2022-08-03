@@ -381,7 +381,6 @@
     },
     "vsx-registry": {
       "errorFetching": "Error fetching extensions.",
-      "openVSX": "Open VSX Registry",
       "recommendedExtensions": "A list of the names of extensions recommended for use in this workspace.",
       "searchPlaceholder": "Search Extensions in {0}",
       "showRecommendedExtensions": "Controls whether notifications are shown for extension recommendations.",

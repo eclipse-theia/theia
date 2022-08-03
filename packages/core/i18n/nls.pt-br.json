@@ -381,7 +381,6 @@
     },
     "vsx-registry": {
       "errorFetching": "Extensões de erro de busca.",
-      "openVSX": "Registro VSX aberto",
       "recommendedExtensions": "Uma lista dos nomes das extensões recomendadas para uso neste espaço de trabalho.",
       "searchPlaceholder": "Pesquisar extensões em {0}",
       "showRecommendedExtensions": "Controla se as notificações são mostradas para recomendações de extensão.",
