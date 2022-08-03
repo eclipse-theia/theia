@@ -449,7 +449,7 @@ const getAverageRatingTitle = (averageRating: number | undefined): string => {
     if (!averageRating) {
         return '';
     }
-    return `Average rating: ${averageRatingFormatter(averageRating)} out of 5`;
+    return nls.localize('theia/vsx-extension/averageRating', 'Average rating: {0} out of 5', averageRatingFormatter(averageRating);
 };
 
 export namespace VSXExtensionComponent {
