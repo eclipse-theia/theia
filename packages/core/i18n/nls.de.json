@@ -381,7 +381,6 @@
     },
     "vsx-registry": {
       "errorFetching": "Fehler beim Abrufen von Erweiterungen.",
-      "openVSX": "Open VSX Registry",
       "recommendedExtensions": "Eine Liste mit den Namen der Erweiterungen, die für die Verwendung in diesem Arbeitsbereich empfohlen werden.",
       "searchPlaceholder": "Erweiterungen suchen in {0}",
       "showRecommendedExtensions": "Steuert, ob Benachrichtigungen für Erweiterungsempfehlungen angezeigt werden.",

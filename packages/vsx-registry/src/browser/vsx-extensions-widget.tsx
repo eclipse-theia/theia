@@ -95,7 +95,7 @@ export class VSXExtensionsWidget extends SourceTreeWidget implements BadgeWidget
             case VSXExtensionsSourceOptions.RECOMMENDED:
                 return nls.localizeByDefault('Recommended');
             case VSXExtensionsSourceOptions.SEARCH_RESULT:
-                return nls.localize('theia/vsx-registry/openVSX', 'Open VSX Registry');
+                return 'Open VSX Registry';
             default:
                 return '';
         }
