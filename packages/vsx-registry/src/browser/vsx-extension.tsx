@@ -445,12 +445,8 @@ const downloadFormatter = new Intl.NumberFormat();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const downloadCompactFormatter = new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' } as any);
 const averageRatingFormatter = (averageRating: number): number => Math.round(averageRating * 2) / 2;
-const getAverageRatingTitle = (averageRating: number | undefined): string => {
-    if (!averageRating) {
-        return '';
-    }
-    return nls.localize('theia/vsx-extension/averageRating', 'Average rating: {0} out of 5', averageRatingFormatter(averageRating);
-};
+const getAverageRatingTitle = (averageRating: number): string =>
+    nls.localize('theia/vsx-extension/averageRating', 'Average rating: {0} out of 5', averageRatingFormatter(averageRating));
 
 export namespace VSXExtensionComponent {
     export interface Props extends AbstractVSXExtensionComponent.Props {
