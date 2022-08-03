@@ -129,6 +129,11 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                         }
                         return new Proxy(target, {
                             get: (targ: any, prop: string) => {
+                                const config = Object.getOwnPropertyDescriptor(targ, prop);
+                                // This check ensures that https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/get#invariants are satisfied
+                                if (config?.configurable === false && config?.writable === false) {
+                                    return targ[prop];
+                                }
                                 if (typeof prop === 'string' && prop.toLowerCase() === 'tojson') {
                                     cloneTarget();
                                     return () => clonedTarget;
