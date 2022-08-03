@@ -14,11 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { pushDisposableListener } from '../../common/node-event-utils';
 import type { Readable, Writable } from 'stream';
 import { AbstractConnection, Connection } from '../../common/connection/connection';
+import { pushDisposableListener } from '../../common/node-event-utils';
 
 /**
  * Wrap a tuple of ({@link Readable}, {@link Writable}) into a {@link Connection}.
@@ -39,7 +37,7 @@ export class ObjectStreamConnection<T> extends AbstractConnection<T> {
             throw new Error('writable stream must support objects');
         }
         pushDisposableListener(this.disposables, this.reader, 'close', () => this.setClosedAndEmit());
-        pushDisposableListener(this.disposables, this.reader, 'data', (message: any) => this.onMessageEmitter.fire(message));
+        pushDisposableListener<[T]>(this.disposables, this.reader, 'data', data => this.handleReaderData(data));
         this.onClose(() => this.dispose());
     }
 
@@ -49,5 +47,9 @@ export class ObjectStreamConnection<T> extends AbstractConnection<T> {
 
     close(): void {
         this.setClosedAndEmit();
+    }
+
+    protected handleReaderData(data: T): void {
+        this.onMessageEmitter.fire(data);
     }
 }

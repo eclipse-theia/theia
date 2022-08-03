@@ -100,7 +100,6 @@ export class DefaultConnectionMultiplexer implements ConnectionMultiplexer<Conne
 
     protected idSequence = 1;
     protected channels = new Map<number, Channel<unknown>>();
-    protected opening = new Set<number>();
     protected disposables = new DisposableCollection();
     protected transport?: Connection<Multiplexing.Message>;
 
@@ -116,10 +115,10 @@ export class DefaultConnectionMultiplexer implements ConnectionMultiplexer<Conne
     }
 
     open(params: object): Connection<unknown> {
-        const id = this.idSequence++;
-        const channel = this.createChannel(id);
+        const localId = this.idSequence++;
+        const channel = this.createChannel(localId);
         this.registerChannel(channel);
-        channel.sendOpenRequest(params);
+        channel.open(params);
         return channel;
     }
 
@@ -131,14 +130,15 @@ export class DefaultConnectionMultiplexer implements ConnectionMultiplexer<Conne
         return this.routerBroker.listen(handler);
     }
 
-    protected createChannel(id: number): Channel<unknown> {
-        return new Channel(id, message => this.sendChannelMessage(message));
+    protected createChannel(localId: number): Channel<unknown> {
+        return new Channel(-localId, message => this.sendChannelMessage(message));
     }
 
     protected registerChannel(channel: Channel<unknown>): void {
-        this.channels.set(channel.id, channel);
+        const localId = -channel.remoteId;
+        this.channels.set(localId, channel);
         channel.onClose(() => {
-            this.channels.delete(channel.id);
+            this.channels.delete(localId);
         });
     }
 
@@ -148,6 +148,13 @@ export class DefaultConnectionMultiplexer implements ConnectionMultiplexer<Conne
             throw new Error(`channel not found: id=${id}`);
         }
         return channel;
+    }
+
+    protected getRemoteChannel(id: number): Channel<unknown> {
+        if (id >= 0) {
+            throw new Error(`unexpected positive id=${id}`);
+        }
+        return this.getChannel(id);
     }
 
     protected handleTransportMessage(message: Multiplexing.Message): void {
@@ -161,43 +168,34 @@ export class DefaultConnectionMultiplexer implements ConnectionMultiplexer<Conne
     }
 
     protected handleOpenMessage(message: Multiplexing.OpenMessage): void {
-        const { id } = message;
-        if (id >= 0) {
-            throw new Error(`expected id=${id} to be negative`);
+        const localId = message.id;
+        if (localId > 0) {
+            throw new Error(`unexpected positive id=${localId}`);
         }
-        if (this.channels.has(id)) {
-            throw new Error(`a channel with id=${id} already exists`);
+        if (this.channels.has(localId)) {
+            throw new Error(`a channel with id=${localId} already exists`);
         }
-        if (this.opening.has(id)) {
-            throw new Error(`a channel with id=${id} is already being handled`);
-        }
-        this.opening.add(id);
-        const accepted = () => {
-            this.opening.delete(id);
-            const channel = this.createChannel(id);
-            this.registerChannel(channel);
-            this.sendChannelMessage(new Multiplexing.ReadyMessage(-id));
-            // give time for handlers to attach events to `channel.onOpen(...)`
-            queueMicrotask(() => channel.setOpened());
-            return channel;
-        };
-        const unhandled = () => {
-            this.opening.delete(id);
-            this.sendChannelMessage(new Multiplexing.CloseMessage(-id));
-        };
+        const channel = this.createChannel(localId);
+        this.registerChannel(channel);
+        const accepted = () => channel.setReady();
+        const unhandled = () => channel.close();
         this.routerBroker.route(message.params, accepted, unhandled);
     }
 
     protected handleReadyMessage(message: Multiplexing.ReadyMessage): void {
-        this.getChannel(message.id).setOpened();
+        // Prevent the remote from sending OPEN + READY to force open a channel:
+        if (message.id < 0) {
+            throw new Error(`invalid ready message: id=${message.id}`);
+        }
+        this.getChannel(message.id).remoteSetReady();
     }
 
     protected handleChannelMessage(message: Multiplexing.ChannelMessage): void {
-        this.getChannel(message.id).emitMessage(message.message);
+        this.getChannel(message.id).remoteSendMessage(message.message);
     }
 
     protected handleCloseMessage(message: Multiplexing.CloseMessage): void {
-        this.getChannel(message.id).dispose();
+        this.getChannel(message.id).remoteClose();
     }
 
     protected sendChannelMessage(message: Multiplexing.Message): void {
@@ -206,51 +204,68 @@ export class DefaultConnectionMultiplexer implements ConnectionMultiplexer<Conne
 
     protected handleTransportClosed(): void {
         this.disposables.dispose();
-        this.channels.forEach(channel => channel.dispose());
+        this.channels.forEach(channel => channel.close());
         if (this.channels.size > 0) {
-            console.warn('some channels might be leaked!');
+            console.warn('some channels might be leaked!', this.channels.size);
         }
     }
 }
 
 /**
  * @internal
+ *
+ * Instances of this class act as "puppet-handles" being controlled by their
+ * owning multiplexer.
  */
 export class Channel<T> extends AbstractConnection<T> {
 
     state = Connection.State.OPENING;
 
     constructor(
-        public id: number,
+        public remoteId: number,
         protected sendChannelMessage: (message: Multiplexing.Message) => void
     ) {
         super();
     }
 
-    sendOpenRequest(params: object): void {
+    open(params: object): void {
         this.ensureState(Connection.State.OPENING);
-        this.sendChannelMessage(new Multiplexing.OpenMessage(-this.id, params));
+        this.sendChannelMessage(new Multiplexing.OpenMessage(this.remoteId, params));
     }
 
-    setOpened(): void {
+    setReady(): this {
+        this.sendChannelMessage(new Multiplexing.ReadyMessage(this.remoteId));
+        this.setOpenedAndEmit();
+        return this;
+    }
+
+    remoteSetReady(): void {
         this.setOpenedAndEmit();
     }
 
-    emitMessage(message: any): void {
+    remoteSendMessage(message: any): void {
+        this.ensureState(Connection.State.OPENED);
         this.onMessageEmitter.fire(message);
     }
 
     sendMessage(message: any): void {
-        this.sendChannelMessage(new Multiplexing.ChannelMessage(-this.id, message));
+        this.ensureState(Connection.State.OPENED);
+        this.sendChannelMessage(new Multiplexing.ChannelMessage(this.remoteId, message));
     }
 
     close(): void {
-        this.sendChannelMessage(new Multiplexing.CloseMessage(-this.id));
+        this.setClosedAndEmit();
+        this.sendChannelMessage(new Multiplexing.CloseMessage(this.remoteId));
         this.dispose();
     }
 
-    override dispose(): void {
-        this.setClosedAndEmit();
-        super.dispose();
+    remoteClose(): void {
+        if (this.state !== Connection.State.CLOSED) {
+            console.debug(`remote closing an already closed connection: remoteId=${this.remoteId}`);
+        } else {
+            this.state = Connection.State.CLOSED;
+            this.onCloseEmitter.fire();
+            this.dispose();
+        }
     }
 }

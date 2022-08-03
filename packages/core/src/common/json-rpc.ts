@@ -48,18 +48,18 @@ export class DefaultJsonRpc implements JsonRpc {
     protected createReader(connection: Connection<jsonrpc.Message>): jsonrpc.MessageReader {
         return {
             dispose: () => { },
-            listen: emitData => connection.onMessage(message => emitData(message)),
-            onClose: emitClose => connection.onClose(() => emitClose()),
-            onError: () => Disposable.NULL,
-            onPartialMessage: () => Disposable.NULL,
+            listen: callback => connection.onMessage(message => callback(message)),
+            onClose: callback => connection.onClose(() => callback()),
+            onError: callback => Disposable.NULL,
+            onPartialMessage: callback => Disposable.NULL,
         };
     }
 
     protected createWriter(connection: Connection<jsonrpc.Message>): jsonrpc.MessageWriter {
         return {
             dispose: () => { },
-            onClose: emitClose => connection.onClose(() => emitClose()),
-            onError: emitError => connection.onError(error => emitError([error, undefined, undefined])),
+            onClose: callback => connection.onClose(() => callback()),
+            onError: callback => connection.onError(error => callback([error, undefined, undefined])),
             write: async message => connection.sendMessage(message),
             end: () => { }
         };

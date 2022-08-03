@@ -32,7 +32,7 @@ import { PluginRpc, DefaultPluginRpc, pluginRpcConnection } from '../../common/r
 import {
     Disposable, DisposableCollection, Emitter, isCancelled,
     ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent,
-    CancellationTokenSource, ProgressService, nls, Event, Connection, AnyConnection
+    CancellationTokenSource, ProgressService, nls, Event, Connection
 } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -517,7 +517,7 @@ export class HostedPluginSupport {
     }
 
     private createServerRpc(pluginHostId: string): PluginRpc {
-        const connectionToPluginHostServer: AnyConnection = {
+        return new DefaultPluginRpc(pluginRpcConnection({
             state: Connection.State.OPENED,
             onClose: Event.None,
             onError: Event.None,
@@ -533,8 +533,7 @@ export class HostedPluginSupport {
             close: () => {
                 throw new Error('cannot close this connection');
             }
-        };
-        return new DefaultPluginRpc(pluginRpcConnection(connectionToPluginHostServer));
+        }));
     }
 
     private async updateStoragePath(): Promise<void> {

@@ -184,8 +184,8 @@ export class RpcProxyHandler<T extends object> implements ProxyHandler<T>, Dispo
         protected disposeCallback?: () => void
     ) {
         this.properties.set('dispose', () => this.dispose());
-        rpcConnection.handleNotification((eventName, params) => {
-            this.emitters.get(eventName)?.fire(params[0]);
+        rpcConnection.handleNotification((eventName, [event]) => {
+            this.emitters.get(eventName)?.fire(event);
         });
         rpcConnection.onClose(() => this.dispose());
     }

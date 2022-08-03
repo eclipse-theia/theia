@@ -34,9 +34,8 @@ import { DefaultRouter } from '@theia/core/lib/common/routing';
 import { RpcConnection } from '@theia/core/lib/common/rpc';
 import URI from '@theia/core/lib/common/uri';
 import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
-import { MaybePromise } from '@theia/core/src/common/types';
+import { MaybePromise } from '@theia/core/lib/common/types';
 import { Range } from '../plugin/types-impl';
-// import { trace } from '@theia/core/lib/common/tracing';
 
 export const PluginRpc = Symbol('PluginRpc');
 export interface PluginRpc extends Disposable {

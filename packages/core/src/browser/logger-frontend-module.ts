@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { BackendAndFrontend, ProxyProvider } from '../common';
+import { /* BackendAndFrontend, */ Event, /* ProxyProvider */ } from '../common';
 import { ILogger, Logger, LoggerFactory, LoggerName, rootLoggerName, setRootLogger } from '../common/logger';
-import { ConsoleLogger, ILoggerServer, loggerPath } from '../common/logger-protocol';
+import { ConsoleLogger, ILoggerServer, /* loggerPath, */ LogLevel } from '../common/logger-protocol';
 import { FrontendApplicationContribution } from './frontend-application';
 
 export const loggerFrontendModule = new ContainerModule(bind => {
@@ -31,22 +31,30 @@ export const loggerFrontendModule = new ContainerModule(bind => {
     bind(LoggerName).toConstantValue(rootLoggerName);
     bind(ILogger).to(Logger).inSingletonScope().whenTargetIsDefault();
     bind(ILoggerServer)
-        .toDynamicValue(ctx => {
-            const loggerServer = ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(loggerPath);
-            // Do some switcharoo to only override the `log` method from the `ILoggerServer` remote proxy:
-            return new Proxy(loggerServer, {
-                get: (target, property: keyof ILoggerServer, receiver): ILoggerServer[keyof ILoggerServer] => {
-                    if (property === 'log') {
-                        return (name, logLevel, message, params) => {
-                            ConsoleLogger.log(name, logLevel, message, params);
-                            return target.log(name, logLevel, message, params);
-                        };
-                    }
-                    return target[property];
-                }
-            });
-        })
-        .inSingletonScope();
+        .toConstantValue({
+            onDidChangeLogLevel: Event.None,
+            child: async () => { },
+            getLogLevel: async () => LogLevel.INFO,
+            log: async (...args) => ConsoleLogger.log(...args),
+            setLogLevel: async () => { }
+        });
+    // bind(ILoggerServer)
+    //     .toDynamicValue(ctx => {
+    //         const loggerServer = ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(loggerPath);
+    //         // Do some switcharoo to only override the `log` method from the `ILoggerServer` remote proxy:
+    //         return new Proxy(loggerServer, {
+    //             get: (target, property: keyof ILoggerServer, receiver): ILoggerServer[keyof ILoggerServer] => {
+    //                 if (property === 'log') {
+    //                     return (name, logLevel, message, params) => {
+    //                         ConsoleLogger.log(name, logLevel, message, params);
+    //                         return target.log(name, logLevel, message, params);
+    //                     };
+    //                 }
+    //                 return target[property];
+    //             }
+    //         });
+    //     })
+    //     .inSingletonScope();
     bind(LoggerFactory).toFactory(ctx => (name: string) => {
         const child = ctx.container.createChild();
         child.bind(ILogger).to(Logger).inTransientScope();

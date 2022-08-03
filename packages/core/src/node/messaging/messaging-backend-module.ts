@@ -38,6 +38,8 @@ import { DefaultRouter, Handler, Router } from '../../common/routing';
 import { JsonRpc } from '../../common/json-rpc';
 import { ConnectionContainerModule } from './connection-container-module';
 import { MsgpackrMessageTransformer } from '../../common/msgpackr';
+// import { Wip } from '../../common/connection/wip';
+// import msgpackr = require('msgpackr');
 
 /**
  * Base bindings that will live in Inversify containers scoped to each frontend.
@@ -59,6 +61,7 @@ export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind =
         .toDynamicValue(ctx => {
             const router = ctx.container.getNamed(ConnectionRouter, BackendAndFrontend);
             const { mainConnection } = ctx.container.get(MainConnectionHandler);
+            // const wip = new Wip(mainConnection, msgpackr, msgpackr);
             const mainMultiplexer = ctx.container.get(DefaultConnectionMultiplexer).initialize(mainConnection);
             mainMultiplexer.listen((params, accept, next) => router.route(params, accept, next));
             return mainMultiplexer;
@@ -216,7 +219,7 @@ export class MainConnectionHandler {
             if (this.mainConnectionDeferred.state === 'unresolved') {
                 this.mainConnectionDeferred.resolve(accept());
             } else {
-                next(new Error('cannot open two backend service connections'));
+                next(new Error('cannot open two "main" connections'));
             }
         });
     }

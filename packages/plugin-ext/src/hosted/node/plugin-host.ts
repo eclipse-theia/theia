@@ -26,9 +26,8 @@ import { PluginHostRPC } from './plugin-host-rpc';
 let terminating = false;
 
 // Fetch and remove the IPC server pipe name from `process.argv`
-const [ipcServerName] = process.argv.splice(2, 1);
-assert(typeof ipcServerName === 'string', 'the first cli argument should be a string');
-console.log('IPC:', JSON.stringify(ipcServerName));
+const [ipcServer] = process.argv.splice(2, 1);
+assert(typeof ipcServer === 'string', 'the first cli argument should be a string');
 
 console.log(`PLUGIN_HOST(${process.pid}) starting instance`);
 
@@ -88,7 +87,7 @@ process.on('rejectionHandled', (promise: Promise<void>) => {
 
 const rpc = new DefaultPluginRpc(
     pluginRpcConnection(new Promise(resolve => {
-        const pipeToParent = connect(ipcServerName, () => {
+        const pipeToParent = connect(ipcServer, () => {
             const packr = new PackrStream();
             const unpackr = new UnpackrStream();
             packr.pipe(pipeToParent);

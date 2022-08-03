@@ -15,8 +15,10 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
+// import { Wip } from '../../common/connection/wip';
 import {
-    BackendAndFrontend, bindServiceProvider, Connection, ConnectionHandler, ConnectionProvider, ConnectionTransformer, DeferredConnectionFactory, ProxyProvider, RouteHandlerProvider, ServiceProvider
+    BackendAndFrontend, bindServiceProvider, Connection, ConnectionHandler, ConnectionProvider, ConnectionTransformer, DeferredConnectionFactory, ProxyProvider,
+    RouteHandlerProvider, ServiceProvider
 } from '../../common';
 import { ConnectionMultiplexer, DefaultConnectionMultiplexer } from '../../common/connection/multiplexer';
 import { getAllNamedOptional } from '../../common/inversify-utils';
@@ -27,6 +29,7 @@ import { DefaultRpcProxyProvider, Rpc } from '../../common/rpc';
 import { FrontendApplicationContribution } from '../frontend-application';
 import { DefaultFrontendInstance, FrontendInstance } from '../frontend-instance';
 import { SocketIoConnectionProvider } from './socket-io-connection-provider';
+// import msgpackr = require('msgpackr');
 
 export default new ContainerModule(bind => {
     bind(FrontendInstance).to(DefaultFrontendInstance).inSingletonScope();
@@ -34,13 +37,12 @@ export default new ContainerModule(bind => {
     bind(ConnectionMultiplexer)
         .toDynamicValue(ctx => {
             const socketIoConnectionProvider = ctx.container.get(SocketIoConnectionProvider);
-            const multiplexer = ctx.container.get(DefaultConnectionMultiplexer);
             const mainConnection = socketIoConnectionProvider.open({ path: '/' });
-            console.log('CONNECTING TO MAIN');
-            mainConnection.onOpen(() => console.log('CONNECTED TO MAIN'));
+            // const wip = new Wip(mainConnection, msgpackr, msgpackr);
+            const multiplexer = ctx.container.get(DefaultConnectionMultiplexer).initialize(mainConnection);
             getAllNamedOptional(ctx.container, ConnectionHandler, BackendAndFrontend)
                 .forEach(handler => multiplexer.listen(handler));
-            return multiplexer.initialize(mainConnection);
+            return multiplexer;
         })
         .inSingletonScope()
         .whenTargetNamed(BackendAndFrontend);

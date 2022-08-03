@@ -60,30 +60,27 @@ export class DefaultConnectionTransformer implements ConnectionTransformer {
     }
 }
 
+/**
+ * @internal
+ */
+export function invalidFunction(): never {
+    throw new Error('this function cannot be called anymore');
+}
+
 export class DefaultTransformableConnection<T> implements Connection<T> {
 
     protected transformers?: MessageTransformer<T, any>[] = [];
     protected disposables = new DisposableCollection();
     protected onMessageEmitter = this.disposables.pushThru(new Emitter<any>());
 
-    /**
-     * Queue to preserve ordering of decoded messages to be received.
-     */
-    protected decodeQueue = Promise.resolve();
-
-    /**
-     * Queue to preserve ordering of encoded messages to be sent.
-     */
-    protected encodeQueue = Promise.resolve();
-
     constructor(
         protected underlyingConnection: Connection<T>
     ) {
-        this.underlyingConnection.onMessage(message => this.decodeRecursive(message, decoded => {
-            this.decodeQueue = this.decodeQueue.then(() => {
+        this.underlyingConnection.onMessage(message => {
+            this.decodeRecursive(message, decoded => {
                 this.onMessageEmitter.fire(decoded);
             });
-        }), undefined, this.disposables);
+        }, undefined, this.disposables);
     }
 
     get state(): Connection.State {
@@ -116,9 +113,7 @@ export class DefaultTransformableConnection<T> implements Connection<T> {
 
     sendMessage(message: any): void {
         this.encodeRecursive(message, encoded => {
-            this.encodeQueue = this.encodeQueue.then(() => {
-                this.underlyingConnection.sendMessage(encoded);
-            });
+            this.underlyingConnection.sendMessage(encoded);
         });
     }
 

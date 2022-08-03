@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AnyConnection } from './connection';
+import { AnyConnection, Connection } from './connection';
 import { DisposableCollection } from '../disposable';
 
 /**
@@ -36,11 +36,11 @@ export function waitForRemote<C extends AnyConnection>(connection: C): Promise<C
             disposables.dispose();
             reject(new Error('connection closed'));
         }, undefined, disposables);
-        let received_ping_once = false;
+        let receivedPingOnce = false;
         connection.onMessage((message: PingMessage) => {
             if (message === PingMessage.PING) {
-                if (!received_ping_once) {
-                    received_ping_once = true;
+                if (!receivedPingOnce) {
+                    receivedPingOnce = true;
                     // Resend ping in case our initial ping wasn't received.
                     // (e.g. the remote peer wasn't listening yet.)
                     // If it was received, this second ping will be ignored.
@@ -54,7 +54,14 @@ export function waitForRemote<C extends AnyConnection>(connection: C): Promise<C
                 console.warn('ping/pong: unexpected message:', message);
             }
         }, undefined, disposables);
-        connection.sendMessage(PingMessage.PING);
+        if (Connection.isClosed(connection)) {
+            disposables.dispose();
+            throw new Error('connection is closed');
+        } else if (connection.state === Connection.State.OPENED) {
+            connection.sendMessage(PingMessage.PING);
+        } else {
+            connection.onOpen(() => connection.sendMessage(PingMessage.PING));
+        }
     });
 }
 
