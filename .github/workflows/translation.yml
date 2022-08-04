@@ -42,11 +42,20 @@ jobs:
         env:
           DEEPL_API_TOKEN: ${{ secrets.DEEPL_API_TOKEN }}
 
+      - name: Get Actor User Data
+        uses: octokit/request-action@v2.x
+        id: actor_user_data
+        with:
+          route: GET /users/{user}
+          user: ${{ github.actor }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
-          commiter: Mark Sujew <mark.sujew@typefox.io>
-          author: Mark Sujew <mark.sujew@typefox.io>
+          commiter: ${{ github.actor }} <${{ fromJson(steps.actor_user_data.outputs.data).email }}>
+          author: ${{ github.actor }} <${{ fromJson(steps.actor_user_data.outputs.data).email }}>
           branch: bot/translation-update
           title: Translation update for version ${{ env.NEXT_VERSION_NUMBER }}
           commit-message: Translation update for version ${{ env.NEXT_VERSION_NUMBER }}
