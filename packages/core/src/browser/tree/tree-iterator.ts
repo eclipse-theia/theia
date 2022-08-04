@@ -127,7 +127,7 @@ export class TopDownTreeIterator extends AbstractTreeIterator {
 
     protected iterator(root: TreeNode): IterableIterator<TreeNode> {
         const doNext = this.doNext.bind(this);
-        return (function* (): IterableIterator<TreeNode> {
+        return (function* (): Generator<TreeNode> {
             let next = root;
             while (next) {
                 yield next;
@@ -167,7 +167,7 @@ export class BottomUpTreeIterator extends AbstractTreeIterator {
 
     protected iterator(root: TreeNode): IterableIterator<TreeNode> {
         const doNext = this.doNext.bind(this);
-        return (function* (): IterableIterator<TreeNode> {
+        return (function* (): Generator<TreeNode> {
             let next = root;
             while (next) {
                 yield next;
@@ -201,7 +201,7 @@ export namespace Iterators {
     /**
      * Generator for depth first, pre-order tree traversal iteration.
      */
-    export function* depthFirst<T>(root: T, children: (node: T) => T[] | undefined, include: (node: T) => boolean = () => true): IterableIterator<T> {
+    export function* depthFirst<T>(root: T, children: (node: T) => T[] | undefined, include: (node: T) => boolean = () => true): Generator<T> {
         const stack: T[] = [];
         stack.push(root);
         while (stack.length > 0) {
@@ -214,7 +214,7 @@ export namespace Iterators {
     /**
      * Generator for breadth first tree traversal iteration.
      */
-    export function* breadthFirst<T>(root: T, children: (node: T) => T[] | undefined, include: (node: T) => boolean = () => true): IterableIterator<T> {
+    export function* breadthFirst<T>(root: T, children: (node: T) => T[] | undefined, include: (node: T) => boolean = () => true): Generator<T> {
         const queue: T[] = [];
         queue.push(root);
         while (queue.length > 0) {
@@ -238,7 +238,7 @@ export namespace Iterators {
      *
      * **Warning**: Typical uses of the resulting iterator may produce an infinite loop. You should use an explicit break.
      */
-    export function* cycle<T>(elements: ReadonlyArray<T>, start?: T): IterableIterator<T> {
+    export function* cycle<T>(elements: ReadonlyArray<T>, start?: T): Generator<T> {
         const copy = elements.slice();
         let index = !!start ? copy.indexOf(start) : 0;
         if (index === -1) {

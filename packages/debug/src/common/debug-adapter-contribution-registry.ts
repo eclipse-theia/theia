@@ -30,7 +30,7 @@ export class DebugAdapterContributionRegistry {
 
     @inject(ContributionProvider) @named(DebugAdapterContribution)
     protected readonly contributions: ContributionProvider<DebugAdapterContribution>;
-    protected *getContributions(debugType: string): IterableIterator<DebugAdapterContribution> {
+    protected *getContributions(debugType: string): Generator<DebugAdapterContribution> {
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.type === debugType || contribution.type === '*' || debugType === '*') {
                 yield contribution;

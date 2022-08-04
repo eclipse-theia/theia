@@ -86,7 +86,7 @@ export namespace ContentLines {
                             return [0, target.length - 1];
                         };
                     case Symbol.iterator:
-                        return function* (): IterableIterator<string> {
+                        return function* (): Generator<string> {
                             for (let i = 0; i < target.length; i++) {
                                 yield target.getLineContent(i);
                             }

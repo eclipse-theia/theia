@@ -35,7 +35,7 @@ export class DebugBreakpointsSource extends TreeSource {
         this.toDispose.push(this.model.onDidChangeBreakpoints(() => this.fireDidChange()));
     }
 
-    *getElements(): IterableIterator<TreeElement> {
+    *getElements(): Generator<TreeElement> {
         for (const exceptionBreakpoint of this.breakpoints.getExceptionBreakpoints()) {
             yield new DebugExceptionBreakpoint(exceptionBreakpoint, this.breakpoints);
         }

@@ -179,7 +179,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         return leavesAreVisible;
     }
 
-    protected *allRenderers(): IterableIterator<[string, GeneralPreferenceNodeRenderer, Map<string, GeneralPreferenceNodeRenderer>]> {
+    protected *allRenderers(): Generator<[string, GeneralPreferenceNodeRenderer, Map<string, GeneralPreferenceNodeRenderer>]> {
         for (const [id, renderer] of this.commonlyUsedRenderers.entries()) {
             yield [id, renderer, this.commonlyUsedRenderers];
         }

@@ -339,7 +339,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         return property && property.scope! >= scope;
     }
 
-    *getPreferenceNames(): IterableIterator<string> {
+    *getPreferenceNames(): Generator<string> {
         for (const preferenceName in this.combinedSchema.properties) {
             yield preferenceName;
             for (const overridePreferenceName of this.getOverridePreferenceNames(preferenceName)) {

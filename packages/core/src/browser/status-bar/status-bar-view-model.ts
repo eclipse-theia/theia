@@ -34,15 +34,15 @@ export class StatusBarViewModel {
         return this.onDidChangeEmitter.event;
     }
 
-    *getLeft(): IterableIterator<StatusBarViewEntry> {
+    *getLeft(): Generator<StatusBarViewEntry> {
         yield* this.getEntries(this.leftTree);
     }
 
-    *getRight(): IterableIterator<StatusBarViewEntry> {
+    *getRight(): Generator<StatusBarViewEntry> {
         yield* this.getEntries(this.rightTree);
     }
 
-    *getEntries(list: StatusBarViewModelEntry[]): IterableIterator<StatusBarViewEntry> {
+    *getEntries(list: StatusBarViewModelEntry[]): Generator<StatusBarViewEntry> {
         for (const item of list) {
             yield* this.getChildren(item.leftChildren, StatusBarAlignment.LEFT);
             yield { entry: item.head, id: item.id };
@@ -50,7 +50,7 @@ export class StatusBarViewModel {
         }
     }
 
-    *getChildren(list: StatusBarViewModelEntry[], alignment: StatusBarAlignment, compact?: boolean): IterableIterator<StatusBarViewEntry> {
+    *getChildren(list: StatusBarViewModelEntry[], alignment: StatusBarAlignment, compact?: boolean): Generator<StatusBarViewEntry> {
         for (const item of list) {
             if (item.leftChildren.length || item.rightChildren.length) {
                 console.warn(`Found embedded entries with affinity to ${item.id}. They will inherit alignment and compactness of parent.`);

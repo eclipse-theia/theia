@@ -35,7 +35,7 @@ export class DebugStackFramesSource extends TreeSource {
 
     protected readonly refresh = debounce(() => this.fireDidChange(), 100);
 
-    *getElements(): IterableIterator<TreeElement> {
+    *getElements(): Generator<TreeElement, void, undefined> {
         const thread = this.model.currentThread;
         if (!thread) {
             return;

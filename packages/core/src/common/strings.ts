@@ -123,7 +123,7 @@ export function startsWithIgnoreCase(str: string, candidate: string): boolean {
     return doEqualsIgnoreCase(str, candidate, candidateLength);
 }
 
-export function* split(s: string, splitter: string): IterableIterator<string> {
+export function* split(s: string, splitter: string): Generator<string> {
     let start = 0;
     while (start < s.length) {
         let end = s.indexOf(splitter, start);

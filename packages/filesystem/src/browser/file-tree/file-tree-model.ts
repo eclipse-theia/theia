@@ -84,7 +84,7 @@ export class FileTreeModel extends CompressedTreeModel implements LocationServic
         return this.selectedNodes.filter(FileStatNode.is);
     }
 
-    *getNodesByUri(uri: URI): IterableIterator<TreeNode> {
+    *getNodesByUri(uri: URI): Generator<TreeNode> {
         const node = this.getNode(uri.toString());
         if (node) {
             yield node;

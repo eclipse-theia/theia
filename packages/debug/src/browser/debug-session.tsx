@@ -181,7 +181,7 @@ export class DebugSession implements CompositeTreeElement {
         return this._threads.size;
     }
 
-    *getThreads(filter: (thread: DebugThread) => boolean): IterableIterator<DebugThread> {
+    *getThreads(filter: (thread: DebugThread) => boolean): Generator<DebugThread> {
         for (const thread of this.threads) {
             if (filter(thread)) {
                 yield thread;
@@ -769,7 +769,7 @@ export class DebugSession implements CompositeTreeElement {
         return [...positions.values()];
     }
 
-    protected *getAffectedUris(uri?: URI): IterableIterator<URI> {
+    protected *getAffectedUris(uri?: URI): Generator<URI> {
         if (uri) {
             yield uri;
         } else {
@@ -814,7 +814,7 @@ export class DebugSession implements CompositeTreeElement {
         </div>;
     }
 
-    *getElements(): IterableIterator<DebugThread | DebugSession> {
+    *getElements(): Generator<DebugThread | DebugSession, void, undefined> {
         const child = this.getSingleChildSession();
         if (child && child.configuration.compact) {
             // Inlines the elements of the child debug session

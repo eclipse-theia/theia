@@ -108,7 +108,7 @@ export class FileNavigatorModel extends FileTreeModel {
         }
     }
 
-    override *getNodesByUri(uri: URI): IterableIterator<TreeNode> {
+    override *getNodesByUri(uri: URI): Generator<TreeNode> {
         const workspace = this.root;
         if (WorkspaceNode.is(workspace)) {
             for (const root of workspace.children) {

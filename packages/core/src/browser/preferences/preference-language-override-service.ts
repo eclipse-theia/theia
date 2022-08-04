@@ -85,7 +85,7 @@ export class PreferenceLanguageOverrideService {
         return param.length ? getOverridePattern(param) : undefined;
     }
 
-    *getOverridePreferenceNames(preferenceName: string): IterableIterator<string> {
+    *getOverridePreferenceNames(preferenceName: string): Generator<string> {
         for (const overrideIdentifier of this.overrideIdentifiers) {
             yield this.overridePreferenceName({ preferenceName, overrideIdentifier });
         }

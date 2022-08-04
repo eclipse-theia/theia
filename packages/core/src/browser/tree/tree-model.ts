@@ -260,7 +260,7 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         return undefined;
     }
 
-    protected *getExpansionCandidates(raw?: Readonly<TreeNode>): IterableIterator<TreeNode | undefined> {
+    protected *getExpansionCandidates(raw?: Readonly<TreeNode>): Generator<TreeNode | undefined, void, undefined> {
         yield raw;
         yield this.getFocusedNode();
         yield* this.selectedNodes;

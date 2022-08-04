@@ -49,7 +49,7 @@ export class VSXExtensionsSource extends TreeSource {
         return this.model;
     }
 
-    *getElements(): IterableIterator<TreeElement> {
+    *getElements(): Generator<TreeElement> {
         for (const id of this.doGetElements()) {
             const extension = this.model.getExtension(id);
             if (!extension) {

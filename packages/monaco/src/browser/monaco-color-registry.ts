@@ -30,7 +30,7 @@ export class MonacoColorRegistry extends ColorRegistry {
     protected readonly monacoThemeService = StandaloneServices.get(IStandaloneThemeService);
     protected readonly monacoColorRegistry = getColorRegistry();
 
-    override *getColors(): IterableIterator<string> {
+    override *getColors(): Generator<string> {
         for (const { id } of this.monacoColorRegistry.getColors()) {
             yield id;
         }

@@ -34,7 +34,7 @@ export class DebugThreadsSource extends TreeSource {
         return this.model.sessionCount > 1;
     }
 
-    *getElements(): IterableIterator<TreeElement> {
+    *getElements(): Generator<TreeElement, void, undefined> {
         if (this.model.sessionCount === 1 && this.model.session && this.model.session.threadCount) {
             return yield* this.model.session.threads;
         }

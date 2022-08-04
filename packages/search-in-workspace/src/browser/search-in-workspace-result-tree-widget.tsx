@@ -1198,7 +1198,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return this.nodeIteratorToString(this.getVisibleNodes());
     }
 
-    protected *getVisibleNodes(): IterableIterator<TreeNode> {
+    protected *getVisibleNodes(): Generator<TreeNode> {
         for (const { node } of this.rows.values()) {
             yield node;
         }

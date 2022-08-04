@@ -28,7 +28,7 @@ export class ColorRegistry {
         this.onDidChangeEmitter.fire(undefined);
     }
 
-    *getColors(): IterableIterator<string> { }
+    *getColors(): Generator<string> { }
 
     getCurrentCssVariable(id: string): ColorCssVariable | undefined {
         const value = this.getCurrentColor(id);

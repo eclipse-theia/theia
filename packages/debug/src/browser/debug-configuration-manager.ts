@@ -138,7 +138,7 @@ export class DebugConfigurationManager {
     get all(): IterableIterator<DebugSessionOptions> {
         return this.getAll();
     }
-    protected *getAll(): IterableIterator<DebugSessionOptions> {
+    protected *getAll(): Generator<DebugSessionOptions> {
         for (const model of this.models.values()) {
             for (const configuration of model.configurations) {
                 yield {
@@ -157,7 +157,7 @@ export class DebugConfigurationManager {
         const debugTypes = await this.debug.debugTypes();
         return this.doGetSupported(new Set(debugTypes));
     }
-    protected *doGetSupported(debugTypes: Set<string>): IterableIterator<DebugSessionOptions> {
+    protected *doGetSupported(debugTypes: Set<string>): Generator<DebugSessionOptions> {
         for (const options of this.getAll()) {
             if (debugTypes.has(options.configuration.type)) {
                 yield options;
@@ -214,8 +214,8 @@ export class DebugConfigurationManager {
 
     protected dynamicOptionsMatch(one: DebugSessionOptions, other: DebugSessionOptions): boolean {
         return one.providerType !== undefined
-        && one.configuration.name === other.configuration.name
-        && one.providerType === other.providerType;
+            && one.configuration.name === other.configuration.name
+            && one.providerType === other.providerType;
     }
 
     get recentDynamicOptions(): readonly DebugSessionOptions[] {

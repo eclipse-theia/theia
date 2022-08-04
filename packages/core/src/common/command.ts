@@ -214,7 +214,7 @@ export class CommandRegistry implements CommandService {
         }
     }
 
-    *getAllCommands(): IterableIterator<Readonly<Command & { handlers: CommandHandler[] }>> {
+    *getAllCommands(): Generator<Readonly<Command & { handlers: CommandHandler[] }>> {
         for (const command of Object.values(this._commands)) {
             yield { ...command, handlers: this._handlers[command.id] ?? [] };
         }
