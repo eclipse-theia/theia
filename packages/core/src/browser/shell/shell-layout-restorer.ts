@@ -46,9 +46,8 @@ export interface StatefulWidget {
 }
 
 export namespace StatefulWidget {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(arg: any): arg is StatefulWidget {
-        return arg !== undefined && typeof arg['storeState'] === 'function' && typeof arg['restoreState'] === 'function';
+    export function is(arg: unknown): arg is StatefulWidget {
+        return !!arg && typeof arg === 'object' && typeof (arg as StatefulWidget).storeState === 'function' && typeof (arg as StatefulWidget).restoreState === 'function';
     }
 }
 

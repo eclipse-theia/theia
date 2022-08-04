@@ -23,8 +23,7 @@ export interface OverridePreferenceName {
     overrideIdentifier: string
 }
 export namespace OverridePreferenceName {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(arg: any): arg is OverridePreferenceName {
+    export function is(arg: unknown): arg is OverridePreferenceName {
         return !!arg && typeof arg === 'object' && 'preferenceName' in arg && 'overrideIdentifier' in arg;
     }
 }
@@ -37,8 +36,7 @@ export const getOverridePattern = (identifier: string) => `\\[(${identifier})\\]
 export class PreferenceLanguageOverrideService {
     protected readonly overrideIdentifiers = new Set<string>();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    testOverrideValue(name: string, value: any): value is PreferenceSchemaProperties {
+    testOverrideValue(name: string, value: unknown): value is PreferenceSchemaProperties {
         return PreferenceSchemaProperties.is(value) && OVERRIDE_PROPERTY_PATTERN.test(name);
     }
 

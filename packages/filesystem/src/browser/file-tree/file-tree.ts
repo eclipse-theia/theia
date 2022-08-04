@@ -101,8 +101,8 @@ export class FileTree extends TreeImpl {
 export interface FileStatNode extends SelectableTreeNode, Mutable<UriSelection>, FileSelection {
 }
 export namespace FileStatNode {
-    export function is(node: object | undefined): node is FileStatNode {
-        return !!node && 'fileStat' in node;
+    export function is(node: unknown): node is FileStatNode {
+        return !!node && typeof node === 'object' && 'fileStat' in node;
     }
 
     export function getUri(node: TreeNode | undefined): string | undefined {
@@ -119,21 +119,21 @@ export type FileStatNodeData = Omit<FileStatNode, 'uri' | 'fileStat'> & {
     fileStat?: FileStat
 };
 export namespace FileStatNodeData {
-    export function is(node: object | undefined): node is FileStatNodeData {
-        return !!node && 'uri' in node && ('fileStat' in node || 'stat' in node);
+    export function is(node: unknown): node is FileStatNodeData {
+        return !!node && typeof node === 'object' && 'uri' in node && ('fileStat' in node || 'stat' in node);
     }
 }
 
 export type FileNode = FileStatNode;
 export namespace FileNode {
-    export function is(node: Object | undefined): node is FileNode {
+    export function is(node: unknown): node is FileNode {
         return FileStatNode.is(node) && !node.fileStat.isDirectory;
     }
 }
 
 export type DirNode = FileStatNode & ExpandableTreeNode;
 export namespace DirNode {
-    export function is(node: Object | undefined): node is DirNode {
+    export function is(node: unknown): node is DirNode {
         return FileStatNode.is(node) && node.fileStat.isDirectory;
     }
 

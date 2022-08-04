@@ -59,8 +59,7 @@ export interface SearchInWorkspaceRoot extends CompositeTreeNode {
     children: SearchInWorkspaceRootFolderNode[];
 }
 export namespace SearchInWorkspaceRoot {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(node: any): node is SearchInWorkspaceRoot {
+    export function is(node: unknown): node is SearchInWorkspaceRoot {
         return CompositeTreeNode.is(node) && node.id === ROOT_ID;
     }
 }
@@ -74,8 +73,7 @@ export interface SearchInWorkspaceRootFolderNode extends ExpandableTreeNode, Sel
     uri: URI;
 }
 export namespace SearchInWorkspaceRootFolderNode {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(node: any): node is SearchInWorkspaceRootFolderNode {
+    export function is(node: unknown): node is SearchInWorkspaceRootFolderNode {
         return ExpandableTreeNode.is(node) && SelectableTreeNode.is(node) && 'path' in node && 'folderUri' in node && !('fileUri' in node);
     }
 }
@@ -90,8 +88,7 @@ export interface SearchInWorkspaceFileNode extends ExpandableTreeNode, Selectabl
     uri: URI;
 }
 export namespace SearchInWorkspaceFileNode {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(node: any): node is SearchInWorkspaceFileNode {
+    export function is(node: unknown): node is SearchInWorkspaceFileNode {
         return ExpandableTreeNode.is(node) && SelectableTreeNode.is(node) && 'path' in node && 'fileUri' in node && !('folderUri' in node);
     }
 }
@@ -100,8 +97,7 @@ export interface SearchInWorkspaceResultLineNode extends SelectableTreeNode, Sea
     parent: SearchInWorkspaceFileNode
 }
 export namespace SearchInWorkspaceResultLineNode {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(node: any): node is SearchInWorkspaceResultLineNode {
+    export function is(node: unknown): node is SearchInWorkspaceResultLineNode {
         return SelectableTreeNode.is(node) && 'line' in node && 'character' in node && 'lineText' in node;
     }
 }

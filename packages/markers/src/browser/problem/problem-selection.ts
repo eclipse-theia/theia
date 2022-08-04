@@ -23,8 +23,8 @@ export interface ProblemSelection {
     marker: Marker<object>;
 }
 export namespace ProblemSelection {
-    export function is(arg: Object | undefined): arg is ProblemSelection {
-        return typeof arg === 'object' && ('marker' in arg) && ProblemMarker.is(arg['marker']);
+    export function is(arg: unknown): arg is ProblemSelection {
+        return !!arg && typeof arg === 'object' && ('marker' in arg) && ProblemMarker.is((arg as ProblemSelection).marker);
     }
 
     export class CommandHandler extends SelectionCommandHandler<ProblemSelection> {

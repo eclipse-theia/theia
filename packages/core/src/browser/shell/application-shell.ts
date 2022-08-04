@@ -1934,10 +1934,9 @@ export namespace ApplicationShell {
         return area === 'left' || area === 'right' || area === 'bottom';
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function isValidArea(area?: any): area is ApplicationShell.Area {
+    export function isValidArea(area?: unknown): area is ApplicationShell.Area {
         const areas = ['main', 'top', 'left', 'right', 'bottom'];
-        return (area !== undefined && typeof area === 'string' && areas.includes(area));
+        return typeof area === 'string' && areas.includes(area);
     }
 
     /**
@@ -1981,8 +1980,8 @@ export namespace ApplicationShell {
      * Whether a widget should be opened to the side tab bar relatively to the reference widget.
      */
     export type OpenToSideMode = 'open-to-left' | 'open-to-right';
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function isOpenToSideMode(mode: OpenToSideMode | any): mode is OpenToSideMode {
+
+    export function isOpenToSideMode(mode: unknown): mode is OpenToSideMode {
         return mode === 'open-to-left' || mode === 'open-to-right';
     }
 
@@ -2060,8 +2059,8 @@ export namespace ApplicationShell {
     }
 
     export namespace TrackableWidgetProvider {
-        export function is(widget: object | undefined): widget is TrackableWidgetProvider {
-            return !!widget && 'getTrackableWidgets' in widget;
+        export function is(widget: unknown): widget is TrackableWidgetProvider {
+            return !!widget && typeof widget === 'object' && 'getTrackableWidgets' in widget;
         }
     }
 

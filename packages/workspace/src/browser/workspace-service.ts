@@ -713,12 +713,10 @@ export interface WorkspaceData {
 export namespace WorkspaceData {
     const validateSchema = new Ajv().compile(workspaceSchema);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(data: any): data is WorkspaceData {
+    export function is(data: unknown): data is WorkspaceData {
         return !!validateSchema(data);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function buildWorkspaceData(folders: string[] | FileStat[], additionalFields?: Partial<WorkspaceData>): WorkspaceData {
         let roots: string[] = [];
         if (folders.length > 0) {

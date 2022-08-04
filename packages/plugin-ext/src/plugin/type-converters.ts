@@ -137,9 +137,8 @@ export function toPosition(position: Position): types.Position {
     return new types.Position(position.lineNumber - 1, position.column - 1);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function isDecorationOptions(something: any): something is theia.DecorationOptions {
-    return (typeof something.range !== 'undefined');
+function isDecorationOptions(arg: unknown): arg is theia.DecorationOptions {
+    return !!arg && typeof arg === 'object' && typeof (arg as theia.DecorationOptions).range !== 'undefined';
 }
 
 export function isDecorationOptionsArr(something: theia.Range[] | theia.DecorationOptions[]): something is theia.DecorationOptions[] {
@@ -182,11 +181,10 @@ interface Codeblock {
     value: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function isCodeblock(thing: any): thing is Codeblock {
-    return thing && typeof thing === 'object'
-        && typeof (<Codeblock>thing).language === 'string'
-        && typeof (<Codeblock>thing).value === 'string';
+function isCodeblock(arg: unknown): arg is Codeblock {
+    return !!arg && typeof arg === 'object'
+        && typeof (arg as Codeblock).language === 'string'
+        && typeof (arg as Codeblock).value === 'string';
 }
 
 export function fromMarkdown(markup: theia.MarkdownString | theia.MarkedString): MarkdownStringDTO {
@@ -625,64 +623,58 @@ export function toSymbolTag(kind: model.SymbolTag): types.SymbolTag {
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isModelLocation(thing: any): thing is model.Location {
-    if (!thing) {
+export function isModelLocation(arg: unknown): arg is model.Location {
+    if (!arg) {
         return false;
     }
-    return isModelRange((<model.Location>thing).range) &&
-        isUriComponents((<model.Location>thing).uri);
+    return !!arg &&
+        typeof arg === 'object' &&
+        isModelRange((arg as model.Location).range) &&
+        isUriComponents((arg as model.Location).uri);
+}
+
+export function isModelRange(arg: unknown): arg is model.Range {
+    const range = arg as model.Range;
+    return !!arg && typeof arg === 'object' &&
+        typeof range.startLineNumber === 'number' &&
+        typeof range.startColumn === 'number' &&
+        typeof range.endLineNumber === 'number' &&
+        typeof range.endColumn === 'number';
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isModelRange(thing: any): thing is model.Range {
-    if (!thing) {
-        return false;
-    }
-    return (('startLineNumber' in thing) && typeof thing.startLineNumber === 'number') &&
-        (('startColumn' in thing) && typeof thing.startColumn === 'number') &&
-        (('endLineNumber' in thing) && typeof thing.endLineNumber === 'number') &&
-        (('endColumn' in thing) && typeof thing.endColumn === 'number');
+export function isUriComponents(arg: unknown): arg is UriComponents {
+    const uriComponents = arg as UriComponents;
+    return !!arg && typeof arg === 'object' &&
+        typeof uriComponents.scheme === 'string' &&
+        typeof uriComponents.path === 'string' &&
+        typeof uriComponents.query === 'string' &&
+        typeof uriComponents.fragment === 'string';
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isUriComponents(thing: any): thing is UriComponents {
-    if (!thing) {
-        return false;
-    }
-    return (('scheme' in thing) && typeof thing.scheme === 'string') &&
-        (('path' in thing) && typeof thing.path === 'string') &&
-        (('query' in thing) && typeof thing.query === 'string') &&
-        (('fragment' in thing) && typeof thing.fragment === 'string');
+export function isModelCallHierarchyItem(arg: unknown): arg is model.CallHierarchyItem {
+    const item = arg as model.CallHierarchyItem;
+    return !!item && typeof item === 'object'
+        && isModelRange(item.range)
+        && isModelRange(item.selectionRange)
+        && isUriComponents(item.uri)
+        && !!item.name;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isModelCallHierarchyItem(thing: any): thing is model.CallHierarchyItem {
-    if (!thing) {
-        return false;
-    }
-    return isModelRange(thing.range)
-        && isModelRange(thing.selectionRange)
-        && isUriComponents(thing.uri)
-        && !!thing.name;
+export function isModelCallHierarchyIncomingCall(arg: unknown): arg is model.CallHierarchyIncomingCall {
+    const maybeIncomingCall = arg as model.CallHierarchyIncomingCall;
+    return !!arg && typeof arg === 'object' &&
+        'from' in maybeIncomingCall &&
+        'fromRanges' in maybeIncomingCall &&
+        isModelCallHierarchyItem(maybeIncomingCall.from);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isModelCallHierarchyIncomingCall(thing: any): thing is model.CallHierarchyIncomingCall {
-    if (!thing) {
-        return false;
-    }
-    const maybeIncomingCall = thing as model.CallHierarchyIncomingCall;
-    return 'from' in maybeIncomingCall && 'fromRanges' in maybeIncomingCall && isModelCallHierarchyItem(maybeIncomingCall.from);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isModelCallHierarchyOutgoingCall(thing: any): thing is model.CallHierarchyOutgoingCall {
-    if (!thing) {
-        return false;
-    }
-    const maybeOutgoingCall = thing as model.CallHierarchyOutgoingCall;
-    return 'to' in maybeOutgoingCall && 'fromRanges' in maybeOutgoingCall && isModelCallHierarchyItem(maybeOutgoingCall.to);
+export function isModelCallHierarchyOutgoingCall(arg: unknown): arg is model.CallHierarchyOutgoingCall {
+    const maybeOutgoingCall = arg as model.CallHierarchyOutgoingCall;
+    return !!arg && typeof arg === 'object' &&
+        'to' in maybeOutgoingCall &&
+        'fromRanges' in maybeOutgoingCall &&
+        isModelCallHierarchyItem(maybeOutgoingCall.to);
 }
 
 export function toLocation(value: model.Location): types.Location {

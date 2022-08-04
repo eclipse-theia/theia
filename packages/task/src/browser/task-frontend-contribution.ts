@@ -244,8 +244,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             TaskCommands.TASK_RUN_BUILD,
             {
                 isEnabled: () => this.workspaceService.opened,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                execute: (...args: any[]) =>
+                execute: () =>
                     this.quickOpenTask.runBuildOrTestTask('build')
             }
         );
@@ -253,8 +252,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             TaskCommands.TASK_RUN_TEST,
             {
                 isEnabled: () => this.workspaceService.opened,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                execute: (...args: any[]) =>
+                execute: () =>
                     this.quickOpenTask.runBuildOrTestTask('test')
             }
         );

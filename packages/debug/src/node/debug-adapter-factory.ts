@@ -66,9 +66,8 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
     }
 
     private childProcess(executable: DebugAdapterExecutable): RawProcess {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const isForkOptions = (forkOptions: RawForkOptions | any): forkOptions is RawForkOptions =>
-            !!forkOptions && !!forkOptions.modulePath;
+        const isForkOptions = (forkOptions: unknown): forkOptions is RawForkOptions =>
+            !!forkOptions && typeof forkOptions === 'object' && 'modulePath' in forkOptions;
 
         const processOptions: RawProcessOptions | RawForkOptions = { ...executable };
         const options: { stdio: (string | number)[], env?: object, execArgv?: string[] } = { stdio: ['pipe', 'pipe', 2] };

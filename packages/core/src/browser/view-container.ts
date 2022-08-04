@@ -63,13 +63,13 @@ export interface BadgeWidget {
 }
 
 export namespace DescriptionWidget {
-    export function is(arg: Object | undefined): arg is DescriptionWidget {
+    export function is(arg: unknown): arg is DescriptionWidget {
         return !!arg && typeof arg === 'object' && 'onDidChangeDescription' in arg;
     }
 }
 
 export namespace BadgeWidget {
-    export function is(arg: Object | undefined): arg is BadgeWidget {
+    export function is(arg: unknown): arg is BadgeWidget {
         return !!arg && typeof arg === 'object' && 'onDidChangeBadge' in arg;
     }
 }

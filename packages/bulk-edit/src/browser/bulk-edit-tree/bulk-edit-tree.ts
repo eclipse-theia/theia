@@ -108,7 +108,7 @@ export interface BulkEditInfoNode extends UriSelection, SelectableTreeNode, Expa
     fileContents?: string;
 }
 export namespace BulkEditInfoNode {
-    export function is(node: Object | undefined): node is BulkEditInfoNode {
+    export function is(node: unknown): node is BulkEditInfoNode {
         return ExpandableTreeNode.is(node) && UriSelection.is(node) && 'fileContents' in node;
     }
 }

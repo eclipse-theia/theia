@@ -50,8 +50,7 @@ export namespace CancellationToken {
         onCancellationRequested: shortcutEvent
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(value: any): value is CancellationToken {
+    export function is(value: unknown): value is CancellationToken {
         const candidate = value as CancellationToken;
         return candidate && (candidate === CancellationToken.None
             || candidate === CancellationToken.Cancelled

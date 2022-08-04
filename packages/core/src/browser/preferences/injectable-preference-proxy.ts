@@ -108,7 +108,7 @@ export class InjectablePreferenceProxy<T extends Record<string, JSONValue>> impl
         if (this.schema && (this.isFlat || !property.includes('.')) && this.schema.properties[preferenceName]) {
             const { overrideIdentifier } = this;
             const toGet = overrideIdentifier ? this.preferences.overridePreferenceName({ overrideIdentifier, preferenceName }) : preferenceName;
-            return this.getValue(toGet as keyof T & string, undefined as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+            return this.getValue(toGet as keyof T & string, undefined!);
         }
         switch (property) {
             case 'onPreferenceChanged':

@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
+import { isThenable } from '../common/promise-util';
 import { CancellationToken, CancellationTokenSource, Disposable, Emitter, Event } from '../common';
 import { TernarySearchTree } from '../common/ternary-search-tree';
 import URI from '../common/uri';
@@ -156,12 +157,6 @@ class DecorationProviderWrapper {
 
             this.data.set(uri, request);
             return undefined;
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        function isThenable<T>(obj: any): obj is Promise<T> {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return obj && typeof (<Promise<any>>obj).then === 'function';
         }
     }
 

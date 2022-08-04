@@ -124,3 +124,7 @@ export function waitForEvent<T>(event: Event<T>, ms: number, thisArg?: any, disp
 
     });
 }
+
+export function isThenable<T>(obj: unknown): obj is Promise<T> {
+    return typeof obj === 'object' && !!obj && typeof (obj as Promise<unknown>).then === 'function';
+}

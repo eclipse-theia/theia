@@ -101,9 +101,8 @@ export namespace Keybinding {
     }
 
     /* Determine whether object is a KeyBinding */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(arg: Keybinding | any): arg is Keybinding {
-        return !!arg && arg === Object(arg) && 'command' in arg && 'keybinding' in arg;
+    export function is(arg: unknown): arg is Keybinding {
+        return !!arg && typeof arg === 'object' && 'command' in arg && 'keybinding' in arg;
     }
 }
 

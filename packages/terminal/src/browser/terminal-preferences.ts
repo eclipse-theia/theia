@@ -191,8 +191,7 @@ export type CursorStyleVSCode = CursorStyle | 'line';
 export type TerminalRendererType = 'canvas' | 'dom';
 export type ConfirmOnExitType = 'never' | 'always' | 'hasChildProcesses';
 export const DEFAULT_TERMINAL_RENDERER_TYPE = 'canvas';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isTerminalRendererType(arg: any): arg is TerminalRendererType {
+export function isTerminalRendererType(arg: unknown): arg is TerminalRendererType {
     return typeof arg === 'string' && (arg === 'canvas' || arg === 'dom');
 }
 

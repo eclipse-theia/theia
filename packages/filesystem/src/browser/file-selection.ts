@@ -22,8 +22,8 @@ export interface FileSelection {
     fileStat: FileStat
 }
 export namespace FileSelection {
-    export function is(arg: Object | undefined): arg is FileSelection {
-        return typeof arg === 'object' && ('fileStat' in arg) && FileStat.is(arg['fileStat']);
+    export function is(arg: unknown): arg is FileSelection {
+        return !!arg && typeof arg === 'object' && ('fileStat' in arg) && FileStat.is((arg as FileSelection).fileStat);
     }
     export class CommandHandler extends SelectionCommandHandler<FileSelection> {
 

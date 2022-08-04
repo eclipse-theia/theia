@@ -23,9 +23,13 @@ export interface TextDocumentContentChangeDelta {
 }
 export namespace TextDocumentContentChangeDelta {
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(arg: any): arg is TextDocumentContentChangeDelta {
-        return !!arg && typeof arg['text'] === 'string' && (typeof arg['rangeLength'] === 'number' || typeof arg['rangeLength'] === 'undefined') && Range.is(arg['range']);
+    export function is(arg: unknown): arg is TextDocumentContentChangeDelta {
+        const changeDelta = arg as TextDocumentContentChangeDelta;
+        return !!changeDelta
+            && typeof changeDelta === 'object'
+            && typeof changeDelta.text === 'string'
+            && (typeof changeDelta.rangeLength === 'number' || typeof changeDelta.rangeLength === 'undefined')
+            && Range.is(changeDelta.range);
     }
 
 }

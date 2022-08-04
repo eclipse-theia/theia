@@ -28,8 +28,6 @@ import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
 import { ScmPreferences } from '@theia/scm/lib/browser/scm-preferences';
 import { nls } from '@theia/core';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 export const GIT_DIFF = 'git-diff';
 @injectable()
 export class GitDiffWidget extends BaseWidget implements StatefulWidget {
@@ -135,14 +133,15 @@ export class GitDiffWidget extends BaseWidget implements StatefulWidget {
         this.resourceWidget.goToNextChange();
     }
 
-    storeState(): any {
-        const state: object = {
+    storeState(): object {
+        const state = {
             commitState: this.diffHeaderWidget.storeState(),
             changesTreeState: this.resourceWidget.storeState(),
         };
         return state;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     restoreState(oldState: any): void {
         const { commitState, changesTreeState } = oldState;
         this.diffHeaderWidget.restoreState(commitState);

@@ -17,12 +17,10 @@
 import * as theia from '@theia/plugin';
 import * as types from '../types-impl';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isLocationArray(array: any): array is types.Location[] {
+export function isLocationArray(array: unknown): array is types.Location[] {
     return Array.isArray(array) && array.length > 0 && array[0] instanceof types.Location;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isDefinitionLinkArray(array: any): array is theia.DefinitionLink[] {
+export function isDefinitionLinkArray(array: unknown): array is theia.DefinitionLink[] {
     return Array.isArray(array) && array.length > 0 && array[0].hasOwnProperty('targetUri') && array[0].hasOwnProperty('targetRange');
 }

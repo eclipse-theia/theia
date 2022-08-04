@@ -21,15 +21,14 @@ export type TreeWidgetSelection = ReadonlyArray<Readonly<SelectableTreeNode>> & 
     source: TreeWidget
 };
 export namespace TreeWidgetSelection {
-    export function isSource(selection: Object | undefined, source: TreeWidget): selection is TreeWidgetSelection {
+    export function isSource(selection: unknown, source: TreeWidget): selection is TreeWidgetSelection {
         return getSource(selection) === source;
     }
-    export function getSource(selection: Object | undefined): TreeWidget | undefined {
+    export function getSource(selection: unknown): TreeWidget | undefined {
         return is(selection) ? selection.source : undefined;
     }
-    export function is(selection: Object | undefined): selection is TreeWidgetSelection {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return Array.isArray(selection) && ('source' in selection) && <any>selection['source'] instanceof TreeWidget;
+    export function is(selection: unknown): selection is TreeWidgetSelection {
+        return Array.isArray(selection) && ('source' in selection) && (selection as TreeWidgetSelection).source instanceof TreeWidget;
     }
 
     export function create(source: TreeWidget): TreeWidgetSelection {

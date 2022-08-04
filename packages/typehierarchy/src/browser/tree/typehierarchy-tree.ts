@@ -97,8 +97,7 @@ export namespace TypeHierarchyTree {
 
         export function is(node: TreeNode | undefined): node is RootNode {
             if (Node.is(node) && 'direction' in node) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const { direction } = (node as any);
+                const { direction } = (node as RootNode);
                 return direction === TypeHierarchyDirection.Children || direction === TypeHierarchyDirection.Parents;
             }
             return false;
@@ -122,8 +121,7 @@ export namespace TypeHierarchyTree {
 
         export function is(node: TreeNode | undefined): node is Node {
             if (!!node && 'resolved' in node && 'item' in node) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const { resolved, item } = (node as any);
+                const { resolved, item } = (node as Node);
                 return typeof resolved === 'boolean' && !!item;
             }
             return false;

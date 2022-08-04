@@ -30,9 +30,8 @@ export interface FileNodeTypeDetails {
 }
 
 export namespace FileNodeTypeDetails {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(typeDetails?: any): typeDetails is FileNodeTypeDetails {
-        return !!typeDetails && !!typeDetails.isFilepath;
+    export function is(typeDetails?: unknown): typeDetails is FileNodeTypeDetails {
+        return !!typeDetails && typeof typeDetails === 'object' && !!(typeDetails as FileNodeTypeDetails).isFilepath;
     }
 }
 

@@ -35,8 +35,8 @@ export interface RenderContentParams {
 }
 
 export namespace RenderContentParams {
-    export function is(params: object | undefined): params is RenderContentParams {
-        return !!params && 'content' in params && 'originUri' in params;
+    export function is(params: unknown): params is RenderContentParams {
+        return !!params && typeof params === 'object' && 'content' in params && 'originUri' in params;
     }
 }
 

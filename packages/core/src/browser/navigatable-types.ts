@@ -33,14 +33,14 @@ export interface Navigatable {
 }
 
 export namespace Navigatable {
-    export function is(arg: Object | undefined): arg is Navigatable {
-        return !!arg && 'getResourceUri' in arg && 'createMoveToUri' in arg;
+    export function is(arg: unknown): arg is Navigatable {
+        return !!arg && typeof arg === 'object' && 'getResourceUri' in arg && 'createMoveToUri' in arg;
     }
 }
 
 export type NavigatableWidget = BaseWidget & Navigatable;
 export namespace NavigatableWidget {
-    export function is(arg: Object | undefined): arg is NavigatableWidget {
+    export function is(arg: unknown): arg is NavigatableWidget {
         return arg instanceof BaseWidget && Navigatable.is(arg);
     }
     export function* getAffected<T extends Widget>(
@@ -76,8 +76,7 @@ export interface NavigatableWidgetOptions {
     counter?: number,
 }
 export namespace NavigatableWidgetOptions {
-    export function is(arg: Object | undefined): arg is NavigatableWidgetOptions {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return !!arg && 'kind' in arg && (arg as any).kind === 'navigatable';
+    export function is(arg: unknown): arg is NavigatableWidgetOptions {
+        return !!arg && typeof arg === 'object' && 'kind' in arg && (arg as NavigatableWidgetOptions).kind === 'navigatable';
     }
 }

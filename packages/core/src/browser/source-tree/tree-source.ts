@@ -38,11 +38,10 @@ export interface CompositeTreeElement extends TreeElement {
     getElements(): MaybePromise<IterableIterator<TreeElement>>
 }
 export namespace CompositeTreeElement {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    export function is(element: CompositeTreeElement | any): element is CompositeTreeElement {
-        return !!element && 'getElements' in element;
+    export function is(element: unknown): element is CompositeTreeElement {
+        return !!element && typeof element === 'object' && 'getElements' in element;
     }
-    export function hasElements(element: CompositeTreeElement | any): element is CompositeTreeElement {
+    export function hasElements(element: unknown): element is CompositeTreeElement {
         return is(element) && element.hasElements !== false;
     }
 }

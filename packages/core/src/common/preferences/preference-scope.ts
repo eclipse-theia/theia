@@ -14,8 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 export enum PreferenceScope {
     Default,
     User,
@@ -24,17 +22,15 @@ export enum PreferenceScope {
 }
 
 export namespace PreferenceScope {
-    export function is(scope: any): scope is PreferenceScope {
-        return typeof scope === 'number' && getScopes().findIndex(s => s === scope) >= 0;
+    export function is(scope: unknown): scope is PreferenceScope {
+        return typeof scope === 'number' && getScopes().includes(scope);
     }
 
     /**
      * @returns preference scopes from broadest to narrowest: Default -> Folder.
      */
     export function getScopes(): PreferenceScope[] {
-        return Object.keys(PreferenceScope)
-            .filter(k => typeof PreferenceScope[k as any] === 'string')
-            .map(v => <PreferenceScope>Number(v));
+        return Object.values(PreferenceScope).filter(nameOrIndex => !isNaN(Number(nameOrIndex))) as PreferenceScope[];
     }
 
     /**
@@ -46,12 +42,11 @@ export namespace PreferenceScope {
 
     export function getScopeNames(scope?: PreferenceScope): string[] {
         const names: string[] = [];
-        const allNames = Object.keys(PreferenceScope)
-            .filter(k => typeof PreferenceScope[k as any] === 'number');
+        const scopes = getScopes();
         if (scope) {
-            for (const name of allNames) {
-                if ((<any>PreferenceScope)[name] <= scope) {
-                    names.push(name);
+            for (const scopeIndex of scopes) {
+                if (scopeIndex <= scope) {
+                    names.push(PreferenceScope[scopeIndex]);
                 }
             }
         }

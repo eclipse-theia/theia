@@ -200,11 +200,10 @@ export interface BaseStat {
     etag?: string;
 }
 export namespace BaseStat {
-    export function is(arg: Object | undefined): arg is BaseStat {
+    export function is(arg: unknown): arg is BaseStat {
         return !!arg && typeof arg === 'object'
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            && ('resource' in arg && <any>arg['resource'] instanceof URI)
-            && ('name' in arg && typeof arg['name'] === 'string');
+            && ('resource' in arg && (arg as BaseStat).resource instanceof URI)
+            && ('name' in arg && typeof (arg as BaseStat).name === 'string');
     }
 }
 
@@ -241,11 +240,12 @@ export interface FileStat extends BaseStat {
     children?: FileStat[];
 }
 export namespace FileStat {
-    export function is(arg: Object | undefined): arg is FileStat {
-        return BaseStat.is(arg) &&
-            ('isFile' in arg && typeof arg['isFile'] === 'boolean') &&
-            ('isDirectory' in arg && typeof arg['isDirectory'] === 'boolean') &&
-            ('isSymbolicLink' in arg && typeof arg['isSymbolicLink'] === 'boolean');
+    export function is(arg: unknown): arg is FileStat {
+        const fileStat = arg as FileStat;
+        return BaseStat.is(fileStat) &&
+            ('isFile' in fileStat && typeof fileStat.isFile === 'boolean') &&
+            ('isDirectory' in fileStat && typeof fileStat.isDirectory === 'boolean') &&
+            ('isSymbolicLink' in fileStat && typeof fileStat.isSymbolicLink === 'boolean');
     }
     export function asFileType(stat: FileStat): FileType {
         let res = 0;

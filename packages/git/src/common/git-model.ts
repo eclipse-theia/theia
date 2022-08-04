@@ -212,8 +212,8 @@ export namespace Repository {
         }
         return repository === repository2;
     }
-    export function is(repository: Object | undefined): repository is Repository {
-        return !!repository && 'localUri' in repository;
+    export function is(repository: unknown): repository is Repository {
+        return !!repository && typeof repository === 'object' && 'localUri' in repository;
     }
     export function relativePath(repository: Repository | URI, uri: URI | string): Path | undefined {
         const repositoryUri = new URI(Repository.is(repository) ? repository.localUri : String(repository));

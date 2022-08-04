@@ -86,8 +86,8 @@ export namespace TreeSelection {
         RANGE
     }
 
-    export function is(arg: Object | undefined): arg is TreeSelection {
-        return !!arg && 'node' in arg;
+    export function is(arg: unknown): arg is TreeSelection {
+        return !!arg && typeof arg === 'object' && 'node' in arg;
     }
 
     export function isRange(arg: TreeSelection | SelectionType | undefined): boolean {
@@ -129,11 +129,11 @@ export interface SelectableTreeNode extends TreeNode {
 
 export namespace SelectableTreeNode {
 
-    export function is(node: TreeNode | undefined): node is SelectableTreeNode {
-        return !!node && 'selected' in node;
+    export function is(node: unknown): node is SelectableTreeNode {
+        return TreeNode.is(node) && 'selected' in node;
     }
 
-    export function isSelected(node: TreeNode | undefined): node is SelectableTreeNode {
+    export function isSelected(node: unknown): node is SelectableTreeNode {
         return is(node) && node.selected;
     }
 

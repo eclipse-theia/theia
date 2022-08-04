@@ -139,7 +139,7 @@ export interface MarkerInfoNode extends UriSelection, SelectableTreeNode, Expand
     severity?: DiagnosticSeverity;
 }
 export namespace MarkerInfoNode {
-    export function is(node: Object | undefined): node is MarkerInfoNode {
+    export function is(node: unknown): node is MarkerInfoNode {
         return ExpandableTreeNode.is(node) && UriSelection.is(node) && 'numberOfMarkers' in node;
     }
 }

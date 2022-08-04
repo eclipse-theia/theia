@@ -36,7 +36,7 @@ export namespace FocusableTreeSelection {
     /**
      * `true` if the argument is a focusable tree selection. Otherwise, `false`.
      */
-    export function is(arg: object | undefined): arg is FocusableTreeSelection {
+    export function is(arg: unknown): arg is FocusableTreeSelection {
         return TreeSelection.is(arg) && 'focus' in arg;
     }
 

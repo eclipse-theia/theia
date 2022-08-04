@@ -56,7 +56,7 @@ export interface DebugConfiguration {
      * The data is sent as the 'restart' attribute of the 'terminated' event.
      * The client should leave the data intact.
      */
-    __restart?: any;
+    __restart?: boolean;
 
     /** default: neverOpen */
     openDebug?: 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart' | 'openOnDebugBreak';
@@ -71,7 +71,7 @@ export interface DebugConfiguration {
     postDebugTask?: string | TaskIdentifier;
 }
 export namespace DebugConfiguration {
-    export function is(arg: DebugConfiguration | any): arg is DebugConfiguration {
+    export function is(arg: unknown): arg is DebugConfiguration {
         return !!arg && typeof arg === 'object' && 'type' in arg && 'name' in arg && 'request' in arg;
     }
 }

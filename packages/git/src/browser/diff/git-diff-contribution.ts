@@ -178,14 +178,12 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         });
 
         const viewModeEmitter = new Emitter<void>();
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-        const extractDiffWidget = (widget: any) => {
+        const extractDiffWidget = (widget: unknown) => {
             if (widget instanceof GitDiffWidget) {
                 return widget;
             }
         };
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-        const extractCommitDetailWidget = (widget: any) => {
+        const extractCommitDetailWidget = (widget: unknown) => {
             const ref = widget ? widget : this.editorManager.currentEditor;
             if (ref instanceof GitCommitDetailWidget) {
                 return ref;
