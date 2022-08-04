@@ -398,7 +398,7 @@ export class GitScmProvider implements ScmProvider {
                             this.gitErrorHandler.handleError(error);
                         }
                     } else {
-                        await this.commands.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(pair.uri));
+                        await this.commands.executeCommand(WorkspaceCommands.FILE_DELETE.id, [new URI(pair.uri)]);
                     }
                 };
                 return discardSingle();
