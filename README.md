@@ -65,7 +65,7 @@ Here you can find guides and examples for common scenarios:
 
 Read below to learn how to take part in improving Theia:
 - Fork the repository and [run the examples from source](doc/Developing.md#quick-start)
-- Get familiar with [the development workflow](doc/Developing.md), [Coding Guidelines](https://github.com/eclipse-theia/theia/wiki/Coding-Guidelines), [Code of Conduct](CODE_OF_CONDUCT.md) and [learn how to sign your work](CONTRIBUTING.md#sign-your-work)
+- Get familiar with [the development workflow](doc/Developing.md), [Coding Guidelines](doc/coding-guidelines.md), [Code of Conduct](CODE_OF_CONDUCT.md) and [learn how to sign your work](CONTRIBUTING.md#sign-your-work)
 - Find an issue to work on and submit a pull request
   - First time contributing to open source? Pick a [good first issue](https://github.com/eclipse-theia/theia/labels/good%20first%20issue) to get you familiar with GitHub contributing process.
   - First time contributing to Theia? Pick a [beginner friendly issue](https://github.com/eclipse-theia/theia/labels/beginners) to get you familiar with codebase and our contributing process.
@@ -88,8 +88,8 @@ Read below how to engage with Theia community:
   - [Testing](doc/Testing.md)
   - [Migration Guide](doc/Migration.md)
   - [API Integration Testing](doc/api-testing.md)
-  - [Coding Guidelines](https://github.com/eclipse-theia/theia/wiki/Coding-Guidelines)
-  - [Code Organization](https://github.com/eclipse-theia/theia/wiki/Code-Organization)
+  - [Coding Guidelines](doc/coding-guidelines.md)
+  - [Code Organization](doc/code-organization.md)
   - [Plugin and VSCode API](doc/Plugin-API.md)
 
 ## License

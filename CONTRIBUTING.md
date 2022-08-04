@@ -48,7 +48,7 @@ We follow the contributing and reviewing pull request guidelines described
 ## Coding Guidelines
 
 We follow the coding guidelines described
-[here](https://github.com/eclipse-theia/theia/wiki/Coding-Guidelines).
+[here](doc/coding-guidelines.md).
 
 ## Eclipse Contributor Agreement
 
