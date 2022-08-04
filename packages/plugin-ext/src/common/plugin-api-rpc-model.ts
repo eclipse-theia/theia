@@ -255,6 +255,16 @@ export interface HoverProvider {
     provideHover(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Hover | undefined | Thenable<Hover | undefined>;
 }
 
+export interface EvaluatableExpression {
+    range: Range;
+    expression?: string;
+}
+
+export interface EvaluatableExpressionProvider {
+    provideEvaluatableExpression(model: monaco.editor.ITextModel, position: monaco.Position,
+        token: monaco.CancellationToken): EvaluatableExpression | undefined | Thenable<EvaluatableExpression | undefined>;
+}
+
 export enum DocumentHighlightKind {
     Text = 0,
     Read = 1,

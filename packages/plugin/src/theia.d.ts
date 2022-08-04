@@ -9277,6 +9277,18 @@ export module '@theia/plugin' {
         export function registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Disposable;
 
         /**
+         * Register a provider that locates evaluatable expressions in text documents.
+         * The editor will evaluate the expression in the active debug session and will show the result in the debug hover.
+         *
+         * If multiple providers are registered for a language an arbitrary provider will be used.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider An evaluatable expression provider.
+         * @return A {@link Disposable} that unregisters this provider when being disposed.
+         */
+        export function registerEvaluatableExpressionProvider(selector: DocumentSelector, provider: EvaluatableExpressionProvider): Disposable;
+
+        /**
          * Register a workspace symbol provider.
          *
          * Multiple providers can be registered for a language. In that case providers are asked in
@@ -9587,6 +9599,54 @@ export module '@theia/plugin' {
          * signaled by returning `undefined` or `null`.
          */
         provideHover(document: TextDocument, position: Position, token: CancellationToken | undefined): ProviderResult<Hover>;
+    }
+
+    /**
+     * An EvaluatableExpression represents an expression in a document that can be evaluated by an active debugger or runtime.
+     * The result of this evaluation is shown in a tooltip-like widget.
+     * If only a range is specified, the expression will be extracted from the underlying document.
+     * An optional expression can be used to override the extracted expression.
+     * In this case the range is still used to highlight the range in the document.
+     */
+    export class EvaluatableExpression {
+
+        /*
+         * The range is used to extract the evaluatable expression from the underlying document and to highlight it.
+         */
+        readonly range: Range;
+
+        /*
+         * If specified the expression overrides the extracted expression.
+         */
+        readonly expression?: string | undefined;
+
+        /**
+         * Creates a new evaluatable expression object.
+         *
+         * @param range The range in the underlying document from which the evaluatable expression is extracted.
+         * @param expression If specified overrides the extracted expression.
+         */
+        constructor(range: Range, expression?: string);
+    }
+
+    /**
+     * The evaluatable expression provider interface defines the contract between extensions and
+     * the debug hover. In this contract the provider returns an evaluatable expression for a given position
+     * in a document and the editor evaluates this expression in the active debug session and shows the result in a debug hover.
+     */
+    export interface EvaluatableExpressionProvider {
+        /**
+         * Provide an evaluatable expression for the given document and position.
+         * The editor will evaluate this expression in the active debug session and will show the result in the debug hover.
+         * The expression can be implicitly specified by the range in the underlying document or by explicitly returning an expression.
+         *
+         * @param document The document for which the debug hover is about to appear.
+         * @param position The line and character position in the document where the debug hover is about to appear.
+         * @param token A cancellation token.
+         * @return An EvaluatableExpression or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
+        provideEvaluatableExpression(document: TextDocument, position: Position, token: CancellationToken | undefined): ProviderResult<EvaluatableExpression>;
     }
 
     /**

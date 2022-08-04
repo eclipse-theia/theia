@@ -78,6 +78,7 @@ import {
     SignatureHelp,
     SignatureHelpTriggerKind,
     Hover,
+    EvaluatableExpression,
     DocumentHighlightKind,
     DocumentHighlight,
     DocumentLink,
@@ -731,6 +732,9 @@ export function createAPIFactory(
             registerHoverProvider(selector: theia.DocumentSelector, provider: theia.HoverProvider): theia.Disposable {
                 return languagesExt.registerHoverProvider(selector, provider, pluginToPluginInfo(plugin));
             },
+            registerEvaluatableExpressionProvider(selector: theia.DocumentSelector, provider: theia.EvaluatableExpressionProvider): theia.Disposable {
+                return languagesExt.registerEvaluatableExpressionProvider(selector, provider, pluginToPluginInfo(plugin));
+            },
             registerDocumentHighlightProvider(selector: theia.DocumentSelector, provider: theia.DocumentHighlightProvider): theia.Disposable {
                 return languagesExt.registerDocumentHighlightProvider(selector, provider, pluginToPluginInfo(plugin));
             },
@@ -991,6 +995,7 @@ export function createAPIFactory(
             SignatureHelp,
             SignatureHelpTriggerKind,
             Hover,
+            EvaluatableExpression,
             DocumentHighlightKind,
             DocumentHighlight,
             DocumentLink,

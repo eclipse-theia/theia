@@ -6,6 +6,8 @@
 
 ## v1.29.0 - unreleased
 
+- [plugin] added support for `EvaluatableExpressions` [#11484](https://github.com/eclipse-theia/theia/pull/11484) - Contributed on behalf of STMicroelectronics
+
 <a name="breaking_changes_1.29.0">[Breaking Changes:](#breaking_changes_1.29.0)</a>
 
 - [core] `updateThemePreference` and `updateThemeFromPreference` removed from `CommonFrontendContribution`. Corresponding functionality as been moved to the respective theme service. `load` removed from `IconThemeService` [#11473](https://github.com/eclipse-theia/theia/issues/11473)
