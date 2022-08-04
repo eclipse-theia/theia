@@ -79,6 +79,7 @@ import { AuthenticationService } from '@theia/core/lib/browser/authentication-se
 import { bindTreeViewDecoratorUtilities, TreeViewDecoratorService } from './view/tree-view-decorator-service';
 import { CodeEditorWidgetUtil } from './menus/vscode-theia-menu-mappings';
 import { PluginMenuCommandAdapter } from './menus/plugin-menu-command-adapter';
+import './theme-icon-override';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
