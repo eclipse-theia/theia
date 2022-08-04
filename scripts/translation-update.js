@@ -7,8 +7,6 @@ if (hasNlsFileChanged()) {
     if (token) {
         console.log('Performing DeepL translation...');
         performDeepLTranslation(token);
-        console.log('Committing and pushing changes...');
-        commitChanges();
         console.log('Translation finished successfully!');
     } else {
         console.log('No DeepL API token found in env');
@@ -47,31 +45,4 @@ function performDeepLTranslation(token) {
     ], {
         shell: true
     });
-}
-
-function commitChanges() {
-    // Set user and email
-    const { author, email } = getLastUserInfo();
-    cp.spawnSync('git', ['config', 'user.name', author]);
-    cp.spawnSync('git', ['config', 'user.email', `<${email}>`]);
-    // Stage everything
-    cp.spawnSync('git', ['add', '-A']);
-    // Commit and push the changes
-    cp.spawnSync('git', ['commit', '-m', 'Automatic translation update']);
-    cp.spawnSync('git', ['push']);
-}
-
-function getLastUserInfo() {
-    const result = cp.spawnSync('git', ['log', '-1']);
-    const lines = result.stdout.toString().split('\n');
-    const authorText = 'Author:';
-    const authorLine = lines.find(line => line.startsWith(authorText)).substring(authorText.length);
-    const emailStart = authorLine.indexOf('<');
-    const emailEnd = authorLine.indexOf('>');
-    const author = authorLine.substring(0, emailStart).trim();
-    const email = authorLine.substring(emailStart + 1, emailEnd).trim();
-    return {
-        author,
-        email
-    }
 }

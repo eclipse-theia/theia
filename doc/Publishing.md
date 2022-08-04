@@ -46,6 +46,7 @@ Here is an [example](https://community.theia-ide.org/t/0-11-0-release/373).
     - Entries should be in the past tense (ex: 'Added support...').
 - Ensure that merged pull-requests for the given release are added to the corresponding release [milestone](https://github.com/eclipse-theia/theia/milestones):
   - Generally, milestones are automatically added on merge however not for forks. It is therefore important to manually add such contributions to the milestone for the time being.
+- Run the [automatic translation workflow](https://github.com/eclipse-theia/theia/actions/workflows/translation.yml) and merge the created pull request if necessary.
 
 
 ## Pre-Publishing Steps
