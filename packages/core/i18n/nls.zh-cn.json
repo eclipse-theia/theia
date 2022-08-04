@@ -390,9 +390,6 @@
         "update-version-version-error": "{0} 在安装{1} 的版本时失败。"
       }
     },
-    "vsx-extension": {
-      "averageRating": "平均评分：{0} 分(共 5 分)"
-    },
     "webview": {
       "goToReadme": "转到README",
       "messageWarning": "            {0}端点的主机模式已改为`{1}`;改变模式可能导致安全漏洞。             参见`{2}`以了解更多信息。"

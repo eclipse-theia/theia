@@ -271,14 +271,14 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get tooltip(): string {
-        let md = `__${this.displayName}__ ${VSXExtension.formatVersion(this.version)}\n\n${this.description}\n_____\n\nPublisher: ${this.publisher}`;
+        let md = `__${this.displayName}__ ${VSXExtension.formatVersion(this.version)}\n\n${this.description}\n_____\n\n${nls.localizeByDefault('Publisher: {0}', this.publisher)}`;
 
         if (this.license) {
-            md += `  \rLicense: ${this.license}`;
+            md += `  \r${nls.localize('theia/vsx-registry/license', 'License: {0}', this.license)}`;
         }
 
         if (this.downloadCount) {
-            md += `  \rDownload count: ${downloadCompactFormatter.format(this.downloadCount)}`;
+            md += `  \r${nls.localize('theia/vsx-registry/downloadCount', 'Download count: {0}', downloadCompactFormatter.format(this.downloadCount))}`;
         }
 
         if (this.averageRating) {
