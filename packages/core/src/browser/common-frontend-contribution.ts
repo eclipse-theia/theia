@@ -940,8 +940,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
         for (const [index, ordinal] of this.getOrdinalNumbers().entries()) {
             commandRegistry.registerCommand({ id: `workbench.action.focus${ordinal}EditorGroup`, label: index === 0 ? nls.localizeByDefault('Focus First Editor Group') : '', category: nls.localize(CommonCommands.VIEW_CATEGORY_KEY, CommonCommands.VIEW_CATEGORY) }, {
-                isEnabled: () => this.shell.mainAreaTabBars.length > Math.max(index, 1),
-                isVisible: () => this.shell.mainAreaTabBars.length > Math.max(index, 1),
+                isEnabled: () => this.shell.mainAreaTabBars.length > index,
                 execute: () => {
                     const widget = this.shell.mainAreaTabBars[index]?.currentTitle?.owner;
                     if (widget) {
@@ -953,7 +952,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected getOrdinalNumbers(): readonly string[] {
-        return ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
+        return ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth'];
     }
 
     protected isElectron(): boolean {

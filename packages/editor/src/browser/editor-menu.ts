@@ -47,6 +47,16 @@ export namespace EditorMainMenu {
     export const NAVIGATION_GROUP = [...GO, '1_navigation_group'];
 
     /**
+     * Context management group in the `Go` main menu: Pane and editor switching commands.
+     */
+    export const CONTEXT_GROUP = [...GO, '1.1_context_group'];
+
+    /**
+     * Submenu for switching panes in the main area.
+     */
+    export const PANE_GROUP = [...CONTEXT_GROUP, '2_pane_group'];
+
+    /**
      * Workspace menu group in the `Go` main-menu.
      */
     export const WORKSPACE_GROUP = [...GO, '2_workspace_group'];
@@ -102,6 +112,29 @@ export class EditorMenuContribution implements MenuContribution {
             commandId: EditorCommands.GO_LAST_EDIT.id,
             label: nls.localizeByDefault('Last Edit Location'),
             order: '3'
+        });
+
+        registry.registerSubmenu(EditorMainMenu.PANE_GROUP, nls.localizeByDefault('Switch Group'));
+        const BY_NUMBER = [...EditorMainMenu.PANE_GROUP, '1_by_number'];
+        registry.registerMenuAction(BY_NUMBER, {
+            commandId: 'workbench.action.focusFirstEditorGroup',
+            label: nls.localizeByDefault('Group 1'),
+        });
+        registry.registerMenuAction(BY_NUMBER, {
+            commandId: 'workbench.action.focusSecondEditorGroup',
+            label: nls.localizeByDefault('Group 2'),
+        });
+        registry.registerMenuAction(BY_NUMBER, {
+            commandId: 'workbench.action.focusThirdEditorGroup',
+            label: nls.localizeByDefault('Group 3'),
+        });
+        registry.registerMenuAction(BY_NUMBER, {
+            commandId: 'workbench.action.focusFourthEditorGroup',
+            label: nls.localizeByDefault('Group 4'),
+        });
+        registry.registerMenuAction(BY_NUMBER, {
+            commandId: 'workbench.action.focusFifthEditorGroup',
+            label: nls.localizeByDefault('Group 5'),
         });
 
         registry.registerMenuAction(EditorMainMenu.LOCATION_GROUP, {
