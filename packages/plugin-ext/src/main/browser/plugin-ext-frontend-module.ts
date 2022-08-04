@@ -78,6 +78,7 @@ import { WebviewFrontendSecurityWarnings } from './webview/webview-frontend-secu
 import { PluginAuthenticationServiceImpl } from './plugin-authentication-service';
 import { AuthenticationService } from '@theia/core/lib/browser/authentication-service';
 import { bindTreeViewDecoratorUtilities, TreeViewDecoratorService } from './view/tree-view-decorator-service';
+import './theme-icon-override';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
