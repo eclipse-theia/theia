@@ -217,7 +217,7 @@ export class MemoryTableWidget extends ReactWidget {
         const rows = this.getTableRows();
         const { onClick, onContextMenu, onFocus, onBlur, onKeyDown, onMouseMove } = this.getWrapperHandlers();
         const headers: Interfaces.ColumnIDs[] = Object.entries(this.options.columnsDisplayed)
-            .filter(([_id, { doRender }]) => doRender)
+            .filter(([, { doRender }]) => doRender)
             .map(([id, { label }]) => ({ label, id }));
 
         return (

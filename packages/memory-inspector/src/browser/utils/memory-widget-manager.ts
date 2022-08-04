@@ -125,7 +125,7 @@ export class MemoryWidgetManager implements Disposable {
             return undefined;
         } else if (options.afterBytes.length === 0) {
             // eslint-disable-next-line max-len
-            const afterBytesMessage = nls.localize('theia/memory-inspector/utils/afterByes', 'You must load memory in both widgets you would like to compare. {0} has no memory loaded.', options.titles[1]);
+            const afterBytesMessage = nls.localize('theia/memory-inspector/utils/afterBytes', 'You must load memory in both widgets you would like to compare. {0} has no memory loaded.', options.titles[1]);
             this.messageService.warn(afterBytesMessage);
             return undefined;
         }

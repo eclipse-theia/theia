@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { nls } from '@theia/core';
 import { interfaces } from '@theia/core/shared/inversify';
 import { MemoryOptionsWidget } from '../memory-widget/memory-options-widget';
 import { MemoryTableWidget } from '../memory-widget/memory-table-widget';
@@ -26,7 +27,7 @@ import { RegisterTableWidget } from './register-table-widget';
 export type RegisterWidget = MemoryWidget<RegisterOptionsWidget, RegisterTableWidget>;
 export namespace RegisterWidget {
     export const ID = 'register-view-options-widget';
-    export const LABEL = 'Register';
+    export const LABEL = nls.localize('theia/memory-inspector/register', 'Register');
     export const is = (widget: MemoryWidget): boolean => widget.optionsWidget instanceof RegisterOptionsWidget;
 
     export const createContainer = (

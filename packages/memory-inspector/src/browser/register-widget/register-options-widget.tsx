@@ -209,8 +209,8 @@ export class RegisterOptionsWidget extends MemoryOptionsWidget {
                 <div className='t-mv-group view-group'>
                     <MWInputWithSelect
                         id={REGISTER_FIELD_ID}
-                        label='Registers'
-                        placeholder='Filter (starts with)'
+                        label={nls.localize('theia/memory-inspector/registers', 'Registers')}
+                        placeholder={nls.localize('theia/memory-inspector/register-widget/filter-placeholder', 'Filter (starts with)')}
                         onSelectChange={this.setRegFilterFromSelect}
                         passRef={this.assignRegisterRef}
                         onKeyDown={this.doRefresh}

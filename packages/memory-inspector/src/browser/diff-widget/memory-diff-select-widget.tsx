@@ -27,7 +27,7 @@ import { VariableRange } from '../utils/memory-widget-variable-utils';
 import { MemoryDiffWidget } from './memory-diff-table-widget';
 import { nls } from '@theia/core/lib/common/nls';
 
-interface DiffMemory {
+export interface DiffMemory {
     beforeAddress: Long;
     beforeBytes: Interfaces.LabeledUint8Array;
     beforeVariables: VariableRange[];

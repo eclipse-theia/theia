@@ -102,8 +102,8 @@ export class MemoryDiffOptionsWidget extends MemoryOptionsWidget {
             <div className='t-mv-group view-group'>
                 <MWInput
                     id={LOCATION_OFFSET_FIELD_ID}
-                    label={`${beforeTitle} Offset`}
-                    title={`Bytes to offset the memory from ${beforeTitle}`}
+                    label={nls.localize('theia/memory-inspector/diff-widget/offset-label', '{0} Offset', beforeTitle)}
+                    title={nls.localize('theia/memory-inspector/diff-widget/offset-title', 'Bytes to offset the memory from {0}', beforeTitle)}
                     defaultValue='0'
                     passRef={this.assignOffsetRef}
                     onChange={Utils.validateNumericalInputs}
@@ -111,8 +111,8 @@ export class MemoryDiffOptionsWidget extends MemoryOptionsWidget {
                 />
                 <MWInput
                     id={LENGTH_FIELD_ID}
-                    label={`${afterTitle} Offset`}
-                    title={`Bytes to offset the memory from ${afterTitle}`}
+                    label={nls.localize('theia/memory-inspector/diff-widget/offset-label', '{0} Offset', afterTitle)}
+                    title={nls.localize('theia/memory-inspector/diff-widget/offset-title', 'Bytes to offset the memory from {0}', afterTitle)}
                     defaultValue='0'
                     passRef={this.assignReadLengthRef}
                     onChange={Utils.validateNumericalInputs}
