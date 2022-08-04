@@ -252,4 +252,49 @@ describe('PreferenceRegistryExtImpl:', () => {
             expect(valuesRetrieved.tabSize).equal(4);
         });
     });
+
+    describe('Proxy Behavior', () => {
+        const deepConfig = {
+            'python.linting.enabled': true,
+            'python.linting.flake8Args': [],
+            'python.linting.flake8CategorySeverity.E': 'Error',
+            'python.linting.flake8CategorySeverity.F': 'Error',
+            'python.linting.flake8CategorySeverity.W': 'Warning',
+            'python.linting.flake8Enabled': false,
+            'python.linting.flake8Path': 'flake8',
+            'python.linting.ignorePatterns': ['.vscode/*.py', '**/site-packages/**/*.py'],
+            'python.linting.lintOnSave': true,
+            'python.linting.maxNumberOfProblems': 100,
+            'python.linting.banditArgs': [],
+            'python.linting.banditEnabled': false,
+            'python.linting.banditPath': 'bandit',
+            'python.linting.mypyArgs': [
+                '--ignore-missing-imports',
+                '--follow-imports=silent',
+                '--show-column-numbers'
+            ],
+            'python.linting.mypyCategorySeverity.error': 'Error',
+            'python.linting.mypyCategorySeverity.note': 'Information',
+            'python.linting.mypyEnabled': false,
+            'python.linting.mypyPath': 'mypy',
+        };
+        // https://github.com/eclipse-theia/theia/issues/11501
+        it("Doesn't violate proxy rules and return a proxy when the underlying object is expected.", () => {
+            preferenceRegistryExtImpl.init({
+                [PreferenceScope.Default]: deepConfig,
+                [PreferenceScope.User]: {},
+                [PreferenceScope.Workspace]: {},
+                [PreferenceScope.Folder]: {
+                    [workspaceRoot.toString()]: {},
+                }
+            });
+            const pythonConfig = preferenceRegistryExtImpl.getConfiguration('python', workspaceRoot);
+            const lintConfig = pythonConfig.get<Record<string, unknown>>('linting')!;
+            const stringDictionary = Object.create(null);
+            Object.keys(lintConfig).forEach(key => {
+                stringDictionary[key] = lintConfig[key];
+            });
+            expect(Boolean('Made it this far without throwing an error')).to.be.true;
+        });
+    });
 });
