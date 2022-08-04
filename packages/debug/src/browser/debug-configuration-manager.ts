@@ -253,12 +253,9 @@ export class DebugConfigurationManager {
     find(configuration: DebugConfiguration, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined;
     find(name: string, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined;
     find(nameOrConfigurationOrCompound: string | DebugConfiguration | DebugCompound, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined {
-        // providerType is only applicable to dynamic debug configurations
-        if (typeof nameOrConfigurationOrCompound === 'object' && providerType) {
-            if (DebugConfiguration.is(nameOrConfigurationOrCompound)) {
-                return this.configurationToOptions(nameOrConfigurationOrCompound, workspaceFolderUri, providerType);
-            }
-            return this.compoundToOptions(nameOrConfigurationOrCompound, workspaceFolderUri);
+        if (DebugConfiguration.is(nameOrConfigurationOrCompound) && providerType) {
+            // providerType is only applicable to dynamic debug configurations and may only be created if we have a configuration given
+            return this.configurationToOptions(nameOrConfigurationOrCompound, workspaceFolderUri, providerType);
         }
         const name = typeof nameOrConfigurationOrCompound === 'string' ? nameOrConfigurationOrCompound : nameOrConfigurationOrCompound.name;
         const configuration = this.findConfiguration(name, workspaceFolderUri);
@@ -518,7 +515,7 @@ export class DebugConfigurationManager {
         if (DebugSessionOptions.isConfiguration(data.current)) {
             // ensure options name is reflected from old configurations data
             data.current.name = data.current.name ?? data.current.configuration?.name;
-            this.current = this.find(data.current.name, data.current.workspaceFolderUri, data.current.providerType);
+            this.current = this.find(data.current.configuration, data.current.workspaceFolderUri, data.current.providerType);
         } else if (DebugSessionOptions.isCompound(data.current)) {
             this.current = this.find(data.current.name, data.current.workspaceFolderUri);
         }
