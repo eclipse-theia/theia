@@ -62,11 +62,13 @@ import {
     CallHierarchyIncomingCall,
     CallHierarchyOutgoingCall,
     LinkedEditingRanges,
+    EvaluatableExpression
 } from '../common/plugin-api-rpc-model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
 import { SignatureHelpAdapter } from './languages/signature';
 import { HoverAdapter } from './languages/hover';
+import { EvaluatableExpressionAdapter } from './languages/evaluatable-expression';
 import { DocumentHighlightAdapter } from './languages/document-highlight';
 import { DocumentFormattingAdapter } from './languages/document-formatting';
 import { RangeFormattingAdapter } from './languages/range-formatting';
@@ -100,6 +102,7 @@ import { serializeEnterRules, serializeIndentation, serializeRegExp } from './la
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
     HoverAdapter |
+    EvaluatableExpressionAdapter |
     DocumentHighlightAdapter |
     DocumentFormattingAdapter |
     RangeFormattingAdapter |
@@ -349,6 +352,18 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, HoverAdapter, adapter => adapter.provideHover(URI.revive(resource), position, token), undefined);
     }
     // ### Hover Provider end
+
+    // ### EvaluatableExpression Provider begin
+    registerEvaluatableExpressionProvider(selector: theia.DocumentSelector, provider: theia.EvaluatableExpressionProvider, pluginInfo: PluginInfo): theia.Disposable {
+        const callId = this.addNewAdapter(new EvaluatableExpressionAdapter(provider, this.documents));
+        this.proxy.$registerEvaluatableExpressionProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+
+    $provideEvaluatableExpression(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<EvaluatableExpression | undefined> {
+        return this.withAdapter(handle, EvaluatableExpressionAdapter, adapter => adapter.provideEvaluatableExpression(URI.revive(resource), position, token), undefined);
+    }
+    // ### EvaluatableExpression Provider end
 
     // ### Document Highlight Provider begin
     registerDocumentHighlightProvider(selector: theia.DocumentSelector, provider: theia.DocumentHighlightProvider, pluginInfo: PluginInfo): theia.Disposable {

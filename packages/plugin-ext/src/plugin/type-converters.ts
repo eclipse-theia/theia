@@ -396,6 +396,13 @@ export function fromHover(hover: theia.Hover): model.Hover {
     };
 }
 
+export function fromEvaluatableExpression(evaluatableExpression: theia.EvaluatableExpression): model.EvaluatableExpression {
+    return <model.EvaluatableExpression>{
+        range: fromRange(evaluatableExpression.range),
+        expression: evaluatableExpression.expression
+    };
+}
+
 export function fromLocation(location: theia.Location): model.Location {
     return <model.Location>{
         uri: location.uri,

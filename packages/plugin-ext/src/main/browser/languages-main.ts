@@ -66,6 +66,9 @@ import * as MonacoPath from '@theia/monaco-editor-core/esm/vs/base/common/path';
 import { IRelativePattern } from '@theia/monaco-editor-core/esm/vs/base/common/glob';
 import { EditorLanguageStatusService, LanguageStatus as EditorLanguageStatus } from '@theia/editor/lib/browser/language-status/editor-language-status-service';
 import { LanguageSelector, RelativePattern } from '@theia/editor/lib/common/language-selector';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
+import { EvaluatableExpression, EvaluatableExpressionProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 
 /**
  * @monaco-uplift The public API declares these functions as (languageId: string, service).
@@ -338,7 +341,26 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return this.proxy.$provideHover(handle, model.uri, position, token);
     }
 
-    $registerDocumentHighlightProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    $registerEvaluatableExpressionProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = this.toLanguageSelector(selector);
+        const evaluatableExpressionProvider = this.createEvaluatableExpressionProvider(handle);
+        this.register(handle,
+            (StandaloneServices.get(ILanguageFeaturesService).evaluatableExpressionProvider.register as RegistrationFunction<EvaluatableExpressionProvider>)
+                (languageSelector, evaluatableExpressionProvider));
+    }
+
+    protected createEvaluatableExpressionProvider(handle: number): EvaluatableExpressionProvider {
+        return {
+            provideEvaluatableExpression: (model, position, token) => this.provideEvaluatableExpression(handle, model, position, token)
+        };
+    }
+
+    protected provideEvaluatableExpression(handle: number, model: ITextModel, position: monaco.Position,
+        token: monaco.CancellationToken): monaco.languages.ProviderResult<EvaluatableExpression | undefined> {
+        return this.proxy.$provideEvaluatableExpression(handle, model.uri, position, token);
+    }
+
+    $registerDocumentHighlightProvider(handle: number, _pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         const languageSelector = this.toLanguageSelector(selector);
         const documentHighlightProvider = this.createDocumentHighlightProvider(handle);
         this.register(handle, (monaco.languages.registerDocumentHighlightProvider as RegistrationFunction<monaco.languages.DocumentHighlightProvider>)
