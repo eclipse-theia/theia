@@ -66,7 +66,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 <a name="checklist-build-and-test"></a>
 - [1.](#checklist-build-and-test) The new code is built and tested according to the `How to test` section of a PR description.
 <a name="checklist-project-org"></a>
-- [2.](#checklist-project-org) The new code is aligned with the [project organization](code-orginization.md) and [coding conventions](coding-guidelines.md).
+- [2.](#checklist-project-org) The new code is aligned with the [project organization](code-organization.md) and [coding conventions](coding-guidelines.md).
 <a name="checklist-changelog"></a>
 - [3.](#checklist-changelog) [Changelog](https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md) is updated.
 <a name="checklist-breaking-changes"></a>
