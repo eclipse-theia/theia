@@ -129,6 +129,11 @@ export namespace TerminalCommands {
         category: TERMINAL_CATEGORY,
         label: 'Scroll Down (Page)'
     });
+    export const TOGGLE_TERMINAL = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.terminal.toggleTerminal',
+        category: TERMINAL_CATEGORY,
+        label: 'Toggle Terminal'
+    });
 
     /**
      * Command that displays all terminals that are currently opened
@@ -411,6 +416,37 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 (this.shell.activeWidget as TerminalWidget).scrollPageDown();
             }
         });
+        commands.registerCommand(TerminalCommands.TOGGLE_TERMINAL, {
+            execute: () => this.toggleTerminal()
+        });
+    }
+
+    protected toggleTerminal(): void {
+
+        const terminals = this.shell.getWidgets('bottom').filter(w => w instanceof TerminalWidget);
+
+        if (terminals.length === 0) {
+            this.openTerminal();
+            return;
+        }
+
+        if (this.shell.bottomPanel.isHidden) {
+            this.shell.bottomPanel.setHidden(false);
+            terminals[0].activate();
+            return;
+        }
+
+        if (this.shell.bottomPanel.isVisible) {
+            const visibleTerminal = terminals.find(t => t.isVisible);
+            if (!visibleTerminal) {
+                this.shell.bottomPanel.activateWidget(terminals[0]);
+            } else if (this.shell.activeWidget !== visibleTerminal) {
+                this.shell.bottomPanel.activateWidget(visibleTerminal);
+            } else {
+                this.shell.bottomPanel.setHidden(true);
+            }
+        }
+
     }
 
     async openInTerminal(uri: URI): Promise<void> {
@@ -592,6 +628,10 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             command: TerminalCommands.SCROLL_PAGE_DOWN.id,
             keybinding: 'shift-pageDown',
             context: TerminalKeybindingContexts.terminalActive
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.TOGGLE_TERMINAL.id,
+            keybinding: 'ctrl+`',
         });
     }
 
