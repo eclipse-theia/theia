@@ -335,8 +335,8 @@ export namespace DirtyDiffModel {
 'button.secondary.disabled.foreground'
 
 // good
-'secondaryButton.foregrond'
-'secondaryButton.disabledForegrond'
+'secondaryButton.foreground'
+'secondaryButton.disabledForeground'
 ```
 
 ## React
