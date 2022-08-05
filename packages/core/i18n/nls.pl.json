@@ -513,7 +513,6 @@
       "preserveWindow": "Umożliwia otwieranie obszarów roboczych w bieżącym oknie.",
       "removeFolder": "Czy na pewno chcesz usunąć poniższy folder z obszaru roboczego?",
       "removeFolders": "Czy na pewno chcesz usunąć następujące foldery z obszaru roboczego?",
-      "supportMultiRootWorkspace": "Określa, czy włączona jest obsługa przestrzeni roboczej z wieloma rootami.",
       "trashTitle": "Przenieś {0} do kosza",
       "trustEmptyWindow": "Określa, czy pusty obszar roboczy jest domyślnie zaufany, czy nie.",
       "trustEnabled": "Określa, czy zaufanie do obszaru roboczego jest włączone, czy nie. Jeśli wyłączone, wszystkie obszary robocze są zaufane.",

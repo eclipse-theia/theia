@@ -513,7 +513,6 @@
       "preserveWindow": "Povolit otevírání pracovních ploch v aktuálním okně.",
       "removeFolder": "Jste si jisti, že chcete z pracovního prostoru odebrat následující složku?",
       "removeFolders": "Jste si jisti, že chcete z pracovního prostoru odebrat následující složky?",
-      "supportMultiRootWorkspace": "Řídí, zda je povolena podpora více kořenových pracovních prostorů.",
       "trashTitle": "Přesun {0} do koše",
       "trustEmptyWindow": "Řídí, zda má být prázdný pracovní prostor ve výchozím nastavení důvěryhodný.",
       "trustEnabled": "Řídí, zda je povolena důvěryhodnost pracovního prostoru. Pokud je zakázáno, jsou důvěryhodné všechny pracovní prostory.",

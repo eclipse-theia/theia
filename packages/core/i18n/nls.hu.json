@@ -513,7 +513,6 @@
       "preserveWindow": "Munkaterületek megnyitásának engedélyezése az aktuális ablakban.",
       "removeFolder": "Biztos, hogy a következő mappát szeretné eltávolítani a munkaterületről?",
       "removeFolders": "Biztos, hogy a következő mappákat szeretné eltávolítani a munkaterületről?",
-      "supportMultiRootWorkspace": "Szabályozza, hogy a több gyökérrel rendelkező munkaterület támogatása engedélyezve legyen-e.",
       "trashTitle": "Mozgassa {0} a szemetesbe",
       "trustEmptyWindow": "Szabályozza, hogy az üres munkaterület alapértelmezés szerint megbízható legyen-e vagy sem.",
       "trustEnabled": "Szabályozza, hogy a munkaterület megbízhatósága engedélyezve legyen-e vagy sem. Ha le van tiltva, akkor minden munkaterület megbízható.",

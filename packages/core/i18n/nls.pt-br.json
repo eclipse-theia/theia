@@ -513,7 +513,6 @@
       "preserveWindow": "Permitir a abertura de espaços de trabalho na janela atual.",
       "removeFolder": "Você tem certeza de que deseja remover a seguinte pasta do espaço de trabalho?",
       "removeFolders": "Você tem certeza de que quer remover as seguintes pastas do espaço de trabalho?",
-      "supportMultiRootWorkspace": "Controla se o suporte de espaço de trabalho multi-raiz está habilitado.",
       "trashTitle": "Mudar {0} para Lixo",
       "trustEmptyWindow": "Controla se o espaço de trabalho vazio é ou não confiável por padrão.",
       "trustEnabled": "Controla se a confiança no espaço de trabalho está ou não habilitada. Se desativado, todos os espaços de trabalho são confiáveis.",

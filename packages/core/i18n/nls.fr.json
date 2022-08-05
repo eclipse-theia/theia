@@ -513,7 +513,6 @@
       "preserveWindow": "Permet d'ouvrir les espaces de travail dans la fenêtre actuelle.",
       "removeFolder": "Êtes-vous sûr de vouloir supprimer le dossier suivant de l'espace de travail?",
       "removeFolders": "Êtes-vous sûr de vouloir supprimer les dossiers suivants de l'espace de travail?",
-      "supportMultiRootWorkspace": "Contrôle si le support de l'espace de travail multi-root est activé.",
       "trashTitle": "Déplacer {0} vers la corbeille",
       "trustEmptyWindow": "Contrôle si l'espace de travail vide est fiable ou non par défaut.",
       "trustEnabled": "Contrôle si la confiance de l'espace de travail est activée ou non. S'il est désactivé, tous les espaces de travail sont fiables.",

@@ -36,7 +36,6 @@ import {
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import {
     CommandRegistry,
-    DisposableCollection,
     isOSX,
     MenuModelRegistry,
     MenuPath,
@@ -203,17 +202,6 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                 this.openView({ activate: true });
             }
         }
-    }
-
-    async onStart(app: FrontendApplication): Promise<void> {
-        this.workspacePreferences.ready.then(() => {
-            this.updateAddRemoveFolderActions(this.menuRegistry);
-            this.workspacePreferences.onPreferenceChanged(change => {
-                if (change.preferenceName === 'workspace.supportMultiRootWorkspace') {
-                    this.updateAddRemoveFolderActions(this.menuRegistry);
-                }
-            });
-        });
     }
 
     async initializeLayout(app: FrontendApplication): Promise<void> {
@@ -495,6 +483,14 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             label: nls.localizeByDefault('Close All'),
             order: 'c'
         });
+
+        registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
+            commandId: FileNavigatorCommands.ADD_ROOT_FOLDER.id,
+            label: WorkspaceCommands.ADD_FOLDER.label
+        });
+        registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
+            commandId: WorkspaceCommands.REMOVE_FOLDER.id
+        });
     }
 
     override registerKeybindings(registry: KeybindingRegistry): void {
@@ -656,20 +652,6 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     async refreshWorkspace(): Promise<void> {
         const { model } = await this.widget;
         await model.refresh();
-    }
-
-    private readonly toDisposeAddRemoveFolderActions = new DisposableCollection();
-    private updateAddRemoveFolderActions(registry: MenuModelRegistry): void {
-        this.toDisposeAddRemoveFolderActions.dispose();
-        if (this.workspacePreferences['workspace.supportMultiRootWorkspace']) {
-            this.toDisposeAddRemoveFolderActions.push(registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
-                commandId: FileNavigatorCommands.ADD_ROOT_FOLDER.id,
-                label: WorkspaceCommands.ADD_FOLDER.label!
-            }));
-            this.toDisposeAddRemoveFolderActions.push(registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
-                commandId: WorkspaceCommands.REMOVE_FOLDER.id
-            }));
-        }
     }
 
 }
