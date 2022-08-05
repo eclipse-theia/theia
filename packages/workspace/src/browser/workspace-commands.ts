@@ -326,8 +326,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
         }));
         this.preferences.ready.then(() => {
             registry.registerCommand(WorkspaceCommands.ADD_FOLDER, {
-                isEnabled: () => this.workspaceService.isMultiRootWorkspaceEnabled,
-                isVisible: () => this.workspaceService.isMultiRootWorkspaceEnabled,
+                isEnabled: () => this.workspaceService.opened,
+                isVisible: () => this.workspaceService.opened,
                 execute: async () => {
                     const selection = await this.fileDialogService.showOpenDialog({
                         title: WorkspaceCommands.ADD_FOLDER.label!,
@@ -348,7 +348,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
             });
             registry.registerCommand(WorkspaceCommands.REMOVE_FOLDER, this.newMultiUriAwareCommandHandler({
                 execute: uris => this.removeFolderFromWorkspace(uris),
-                isEnabled: () => this.workspaceService.isMultiRootWorkspaceEnabled,
+                isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
                 isVisible: uris => this.areWorkspaceRoots(uris) && this.workspaceService.saved
             }));
         });

@@ -105,11 +105,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
                 this.updateWorkspace();
             }
         });
-        this.preferences.onPreferenceChanged(event => {
-            if (event.preferenceName === 'workspace.supportMultiRootWorkspace') {
-                this.updateWorkspace();
-            }
-        });
         this.fsPreferences.onPreferenceChanged(event => {
             if (event.preferenceName === 'files.watcherExclude') {
                 this.refreshRootWatchers();
@@ -339,14 +334,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
      */
     get isMultiRootWorkspaceOpened(): boolean {
         return !!this.workspace && !this.workspace.isDirectory;
-    }
-
-    /**
-     * Returns `true` if there is an opened workspace, and multi root workspace support is enabled.
-     * @returns {boolean}
-     */
-    get isMultiRootWorkspaceEnabled(): boolean {
-        return this.opened && this.preferences['workspace.supportMultiRootWorkspace'];
     }
 
     /**

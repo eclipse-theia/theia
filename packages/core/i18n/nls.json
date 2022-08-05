@@ -513,7 +513,6 @@
       "preserveWindow": "Enable opening workspaces in current window.",
       "removeFolder": "Are you sure you want to remove the following folder from the workspace?",
       "removeFolders": "Are you sure you want to remove the following folders from the workspace?",
-      "supportMultiRootWorkspace": "Controls whether multi-root workspace support is enabled.",
       "trashTitle": "Move {0} to Trash",
       "trustEmptyWindow": "Controls whether or not the empty workspace is trusted by default.",
       "trustEnabled": "Controls whether or not workspace trust is enabled. If disabled, all workspaces are trusted.",

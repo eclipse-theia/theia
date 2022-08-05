@@ -23,6 +23,7 @@ import URI from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { nls, Path } from '@theia/core/lib/common';
+import { CommonWorkspaceUtils } from '../common/utils';
 
 interface RecentlyOpenedPick extends QuickPickItem {
     resource?: URI
@@ -39,6 +40,7 @@ export class QuickOpenWorkspace {
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
     @inject(EnvVariablesServer) protected readonly envServer: EnvVariablesServer;
+    @inject(CommonWorkspaceUtils) protected workspaceUtils: CommonWorkspaceUtils;
 
     protected readonly removeRecentWorkspaceButton: QuickInputButton = {
         iconClass: 'codicon-remove-close',
@@ -47,7 +49,7 @@ export class QuickOpenWorkspace {
 
     async open(workspaces: string[]): Promise<void> {
         this.items = [];
-        const [homeDirUri, tempWorkspaceFile] = await Promise.all([
+        const [homeDirUri] = await Promise.all([
             this.envServer.getHomeDirUri(),
             this.workspaceService.getUntitledWorkspace()
         ]);
@@ -63,12 +65,8 @@ export class QuickOpenWorkspace {
             try {
                 stat = await this.fileService.resolve(uri);
             } catch { }
-            if (!stat ||
-                !this.preferences['workspace.supportMultiRootWorkspace'] && !stat.isDirectory) {
-                continue; // skip the workspace files if multi root is not supported
-            }
-            if (uri.toString() === tempWorkspaceFile.toString()) {
-                continue; // skip the temporary workspace files
+            if (this.workspaceUtils.isUntitledWorkspace(uri) || !stat) {
+                continue; // skip the temporary workspace files or an undefined stat.
             }
             const icon = this.labelProvider.getIcon(stat);
             const iconClasses = icon === '' ? undefined : [icon + ' file-icon'];

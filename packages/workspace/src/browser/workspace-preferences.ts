@@ -32,17 +32,11 @@ export const workspacePreferenceSchema: PreferenceSchema = {
             type: 'boolean',
             default: false
         },
-        'workspace.supportMultiRootWorkspace': {
-            description: nls.localize('theia/workspace/supportMultiRootWorkspace', 'Controls whether multi-root workspace support is enabled.'),
-            type: 'boolean',
-            default: true
-        }
     }
 };
 
 export interface WorkspaceConfiguration {
     'workspace.preserveWindow': boolean,
-    'workspace.supportMultiRootWorkspace': boolean
 }
 
 export const WorkspacePreferenceContribution = Symbol('WorkspacePreferenceContribution');

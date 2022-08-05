@@ -513,7 +513,6 @@
       "preserveWindow": "Habilitar la apertura de espacios de trabajo en la ventana actual.",
       "removeFolder": "¿Está seguro de que quiere eliminar la siguiente carpeta del espacio de trabajo?",
       "removeFolders": "¿Está seguro de que quiere eliminar las siguientes carpetas del espacio de trabajo?",
-      "supportMultiRootWorkspace": "Controla si el soporte de espacios de trabajo multi-root está habilitado.",
       "trashTitle": "Mover {0} a la Papelera",
       "trustEmptyWindow": "Controla si el espacio de trabajo vacío es de confianza o no por defecto.",
       "trustEnabled": "Controla si la confianza del espacio de trabajo está activada o no. Si se desactiva, todos los espacios de trabajo son de confianza.",

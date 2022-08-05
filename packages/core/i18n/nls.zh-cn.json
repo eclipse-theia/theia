@@ -513,7 +513,6 @@
       "preserveWindow": "启用在当前窗口中打开工作空间。",
       "removeFolder": "你确定要从工作区删除以下文件夹吗?",
       "removeFolders": "你确定要从工作区删除以下文件夹吗?",
-      "supportMultiRootWorkspace": "控制是否启用多根工作区支持。",
       "trashTitle": "将{0}移至垃圾箱",
       "trustEmptyWindow": "控制空工作区是否被默认信任。",
       "trustEnabled": "控制是否启用工作区信任。如果禁用,所有工作空间都被信任。",

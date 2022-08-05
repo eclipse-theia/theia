@@ -513,7 +513,6 @@
       "preserveWindow": "Aktivieren Sie das Öffnen von Arbeitsbereichen im aktuellen Fenster.",
       "removeFolder": "Sind Sie sicher, dass Sie den folgenden Ordner aus dem Arbeitsbereich entfernen möchten?",
       "removeFolders": "Sind Sie sicher, dass Sie die folgenden Ordner aus dem Arbeitsbereich entfernen möchten?",
-      "supportMultiRootWorkspace": "Steuert, ob die Unterstützung von Multi-Root-Arbeitsbereichen aktiviert ist.",
       "trashTitle": "Verschiebe {0} in den Papierkorb",
       "trustEmptyWindow": "Steuert, ob dem leeren Arbeitsbereich standardmäßig vertraut wird oder nicht.",
       "trustEnabled": "Steuert, ob das Vertrauen in Arbeitsbereiche aktiviert ist oder nicht. Wenn deaktiviert, wird allen Arbeitsbereichen vertraut.",

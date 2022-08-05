@@ -513,7 +513,6 @@
       "preserveWindow": "Abilita l'apertura degli spazi di lavoro nella finestra corrente.",
       "removeFolder": "Sei sicuro di voler rimuovere la seguente cartella dall'area di lavoro?",
       "removeFolders": "Sei sicuro di voler rimuovere le seguenti cartelle dallo spazio di lavoro?",
-      "supportMultiRootWorkspace": "Controlla se il supporto allo spazio di lavoro multi-root è abilitato.",
       "trashTitle": "Sposta {0} nel Cestino",
       "trustEmptyWindow": "Controlla se lo spazio di lavoro vuoto è fidato o meno per impostazione predefinita.",
       "trustEnabled": "Controlla se la fiducia dello spazio di lavoro è abilitata o meno. Se disabilitato, tutti gli spazi di lavoro sono affidabili.",

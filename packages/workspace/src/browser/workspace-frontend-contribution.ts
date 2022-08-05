@@ -58,6 +58,9 @@ export enum WorkspaceStates {
 export type WorkspaceState = keyof typeof WorkspaceStates;
 export type WorkbenchState = keyof typeof WorkspaceStates;
 
+/** Create the workspace section after open {@link CommonMenus.FILE_OPEN}. */
+export const FILE_WORKSPACE = [...CommonMenus.FILE, '2_workspace'];
+
 @injectable()
 export class WorkspaceFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution, FrontendApplicationContribution {
 
@@ -149,7 +152,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             execute: () => this.quickOpenWorkspace.select()
         });
         commands.registerCommand(WorkspaceCommands.SAVE_WORKSPACE_AS, {
-            isEnabled: () => this.workspaceService.isMultiRootWorkspaceEnabled,
+            isVisible: () => this.workspaceService.opened,
+            isEnabled: () => this.workspaceService.opened,
             execute: () => this.saveWorkspaceAs()
         });
         commands.registerCommand(WorkspaceCommands.OPEN_WORKSPACE_FILE, {
@@ -190,9 +194,14 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             commandId: WorkspaceCommands.OPEN_RECENT_WORKSPACE.id,
             order: 'a20'
         });
-        menus.registerMenuAction(CommonMenus.FILE_OPEN, {
+
+        menus.registerMenuAction(FILE_WORKSPACE, {
+            commandId: WorkspaceCommands.ADD_FOLDER.id,
+            order: 'a10'
+        });
+        menus.registerMenuAction(FILE_WORKSPACE, {
             commandId: WorkspaceCommands.SAVE_WORKSPACE_AS.id,
-            order: 'a30'
+            order: 'a20'
         });
 
         menus.registerMenuAction(CommonMenus.FILE_CLOSE, {
@@ -305,7 +314,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             title: WorkspaceCommands.OPEN_FOLDER.dialogLabel,
             canSelectFolders: true,
             canSelectFiles: false,
-            canSelectMany: this.preferences['workspace.supportMultiRootWorkspace'],
+            canSelectMany: true,
         };
         const [rootStat] = await this.workspaceService.roots;
         const targetFolders = await this.fileDialogService.showOpenDialog(props, rootStat);
@@ -354,12 +363,10 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
      * Opens a workspace after raising the `Open Workspace` dialog. Resolves to the URI of the recently opened workspace,
      * if it was successful. Otherwise, resolves to `undefined`.
      *
-     * **Caveat**: this behaves differently on different platforms, the `workspace.supportMultiRootWorkspace` preference value **does** matter,
+     * **Caveat**: this behaves differently on different platforms
      * and `electron`/`browser` version has impact too. See [here](https://github.com/eclipse-theia/theia/pull/3202#issuecomment-430884195) for more details.
      *
      * Legend:
-     *  - `workspace.supportMultiRootWorkspace` is `false`: => `N`
-     *  - `workspace.supportMultiRootWorkspace` is `true`: => `Y`
      *  - Folders only: => `F`
      *  - Workspace files only: => `W`
      *  - Folders and workspace files: => `FW`
@@ -392,13 +399,11 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
 
     protected async openWorkspaceOpenFileDialogProps(): Promise<OpenFileDialogProps> {
         await this.preferences.ready;
-        const supportMultiRootWorkspace = this.preferences['workspace.supportMultiRootWorkspace'];
         const type = OS.type();
         const electron = this.isElectron();
         return WorkspaceFrontendContribution.createOpenWorkspaceOpenFileDialogProps({
             type,
             electron,
-            supportMultiRootWorkspace
         });
     }
 
@@ -518,27 +523,17 @@ export namespace WorkspaceFrontendContribution {
     /**
      * Returns with an `OpenFileDialogProps` for opening the `Open Workspace` dialog.
      */
-    export function createOpenWorkspaceOpenFileDialogProps(options: Readonly<{ type: OS.Type, electron: boolean, supportMultiRootWorkspace: boolean }>): OpenFileDialogProps {
-        const { electron, type, supportMultiRootWorkspace } = options;
+    export function createOpenWorkspaceOpenFileDialogProps(options: Readonly<{ type: OS.Type, electron: boolean }>): OpenFileDialogProps {
+        const { electron, type } = options;
         const title = WorkspaceCommands.OPEN_WORKSPACE.dialogLabel;
         // If browser
         if (!electron) {
-            // and multi-root workspace is supported, it is always folder + workspace files.
-            if (supportMultiRootWorkspace) {
-                return {
-                    title,
-                    canSelectFiles: true,
-                    canSelectFolders: true,
-                    filters: DEFAULT_FILE_FILTER
-                };
-            } else {
-                // otherwise, it is always folders. No files at all.
-                return {
-                    title,
-                    canSelectFiles: false,
-                    canSelectFolders: true
-                };
-            }
+            return {
+                title,
+                canSelectFiles: true,
+                canSelectFolders: true,
+                filters: DEFAULT_FILE_FILTER
+            };
         }
 
         // If electron
@@ -552,21 +547,11 @@ export namespace WorkspaceFrontendContribution {
             };
         }
 
-        // In electron, only workspace files can be selected when the multi-root workspace feature is enabled.
-        if (supportMultiRootWorkspace) {
-            return {
-                title,
-                canSelectFiles: true,
-                canSelectFolders: false,
-                filters: DEFAULT_FILE_FILTER
-            };
-        }
-
-        // Otherwise, it is always a folder.
         return {
             title,
-            canSelectFiles: false,
-            canSelectFolders: true
+            canSelectFiles: true,
+            canSelectFolders: false,
+            filters: DEFAULT_FILE_FILTER
         };
     }
 
