@@ -18,6 +18,8 @@
     padding-right: var(--theia-ui-padding);
     -webkit-font-smoothing: antialiased;
     flex-shrink: 0;
+    padding-left: 6px;
+    margin-left: -6px;
 }
 
 .theia-tree-view-inline-action {
