@@ -1,22 +1,22 @@
 # Coding Guidelines
 
 ## Indentation
-Use 4 spaces per indentation
+Use 4 spaces per indentation level.
 
 ## Imports
-Use `organize imports` to sort imports, but make sure the imports work properly (i.e. imports from `/src/` for *.ts files are bad but sometimes inserted).
+Use `organize imports` to sort imports, and make sure the imports work properly (e.g. imports from `/src/` rather than `/lib/` for *.ts files may break builds).
 
 ## Names
 <a name="pascalcase-type"></a>
-* [1.](#pascalcase-type) Use PascalCase for `type` names
+* [1.](#pascalcase-type) Use PascalCase for `type` names.
 <a name="pascalcase-enum"></a>
-* [2.](#pascalcase-enum) Use PascalCase for `enum` values
+* [2.](#pascalcase-enum) Use PascalCase for `enum` values.
 <a name="camelcase-fn"></a>
-* [3.](#camelcase-fn)  Use camelCase for `function` and `method` names
+* [3.](#camelcase-fn)  Use camelCase for `function` and `method` names.
 <a name="camelcase-var"></a>
-* [4.](#camelcase-var)  Use camelCase for `property` names and `local variables`
+* [4.](#camelcase-var)  Use camelCase for `property` names and `local variables`.
 <a name="whole-words-names"></a>
-* [5.](#whole-words-names) Use whole words in names when possible
+* [5.](#whole-words-names) Use whole words in names when possible.
 <a name="lower-case-names"></a>
 ```ts
 // bad
@@ -25,12 +25,12 @@ const termWdgId = 1;
 // good
 const terminalWidgetId = 1;
 ```
-* [6.](#lower-case-names) Use lower case, dash-separated file names (e.g. `document-provider.ts`)
+* [6.](#lower-case-names) Use lower-case, dash-separated file names (e.g. `document-provider.ts`).
 <a name="file-name"></a>
-* [7.](#file-name) Name files after the main Type it exports.
+* [7.](#file-name) Name files after the main type it exports.
 > Why? It should be easy to find a type by a file name.
 <a name="one-large-class-per-file"></a>
-* [7.1](#one-large-class-per-file) Avoid one file with many large classes, put each class in own file. 
+* [7.1](#one-large-class-per-file) Avoid one file with many large classes; put each class in its own file. 
 > Why? It should be easy to find a class by a file name.
 <a name="unique-names"></a>
 * [8.](#unique-names) Give unique names to types and files. Use specific names to achieve it.
@@ -43,11 +43,11 @@ export interface TitleButton {}
 export interface QuickInputTitleButton {}
 ```
 <a name="no_underscore_private"></a>
-* [9.](#no_underscore_private) Do not use "_" as a prefix for private properties, exceptions:
+* [9.](#no_underscore_private) Do not use "_" as a prefix for private properties. Exceptions:
 <a name="underscore_accessors"></a>
-  * [9.1](#underscore_accessors) you want to expose a property through get/set and use underscore for the internal field
+  * [9.1](#underscore_accessors) Exposing a property through get/set and using underscore for the internal field.
 <a name="underscore_json"></a>
-  * [9.2](#underscore_json) you need to attach internal data to user visible JSON objects
+  * [9.2](#underscore_json) Attaching internal data to user-visible JSON objects.
 <a name="event_names"></a>
 * [10.](#event_names) Names of events follow the `on[Will|Did]VerbNoun?` pattern. The name signals if the event is going to happen (onWill) or already happened (onDid), what happened (verb), and the context (noun) unless obvious from the context.
 <a name="unique-context-keys"></a>
@@ -72,9 +72,9 @@ const terminalFocusKey = this.contextKeyService.createKey<boolean>('terminalFocu
 
 ## Types
 <a name="no-expose-types"></a>
-* [1.](#no-expose-types) Do not export `types` or `functions` unless you need to share it across multiple components, [see as well](#di-function-export)
+* [1.](#no-expose-types) Do not export `types` or `functions` unless you need to share it across multiple components, [see as well](#di-function-export).
 <a name="no-global-types"></a>
-* [2.](#no-global-types) Do not introduce new `types` or `values` to the global namespace
+* [2.](#no-global-types) Do not introduce new `types` or `values` to the global namespace.
 <a name="explicit-return-type"></a>
 * [3.](#explicit-return-type) Always declare a return type in order to avoid accidental breaking changes because of changes to a method body.
 
@@ -114,17 +114,17 @@ bind(TaskDefinitionRegistry).toSelf().inSingletonScope();
 * Use JSDoc style comments for `functions`, `interfaces`, `enums`, and `classes`
 
 ## Strings
-* Use 'single quotes' for all strings which aren't [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals)
+* Use 'single quotes' for all strings that aren't [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals)
 
 ## null and undefined
-Use `undefined`, do not use `null`.
+Use `undefined`; do not use `null`.
 
 ## Internationalization/Localization
 
 <a name="nls-localize"></a>
-* [1.](#nls-localize) Always localize user facing text with the `nls.localize(key, defaultValue, ...args)` function.
+* [1.](#nls-localize) Always localize user-facing text with the `nls.localize(key, defaultValue, ...args)` function.
 
-> What is user facing text? Any strings that are hardcoded (not calculated) that could be in any way visible to the user, be it labels for commands and menus, messages/notifications/dialogs, quick input placeholders or preferences. 
+> What is user-facing text? Any strings that are hardcoded (not calculated) that could be in any way visible to the user, be it labels for commands and menus, messages/notifications/dialogs, quick-input placeholders or preferences. 
 
 <a name="nls-localize-args"></a>
 * [1.1.](#nls-localize-args) Parameters for messages should be passed as the `args` of the `localize` function. They are inserted at the location of the placeholders - in the form of `{\d+}` - in the localized text. E.g. `{0}` will be replaced with the first `arg`, `{1}` with the second, etc.
@@ -138,7 +138,7 @@ nls.localize('hello', 'Hello there {0}.', name);
 ```
 
 <a name="nls-localize-by-default"></a>
-* [1.2.](#nls-localize-by-default) The `nls.localizeByDefault` function automatically finds the translation key for vscode's language packs just by using the default value as its argument and translates it into the currently used locale. If the `nls.localizeByDefault` function is not able to find a key for the supplied default value, a warning will be shown in the browser console. When there's no appropriate translation in vscode, just use the `nls.localize` function with a new key using the syntax `theia/<package>/<id>`.
+* [1.2.](#nls-localize-by-default) The `nls.localizeByDefault` function automatically finds the translation key for vscode's language packs just by using the default value as its argument and translates it into the currently used locale. If the `nls.localizeByDefault` function is not able to find a key for the supplied default value, a warning will be shown in the browser console. If there is no appropriate translation in VSCode, just use the `nls.localize` function with a new key using the syntax `theia/<package>/<id>`.
 
 ```ts
 // bad
@@ -159,7 +159,7 @@ command = Command.toLocalizedCommand({ id: key, label: defaultValue });
 ```
 
 ## Style
-* Use arrow functions `=>` over anonymous function expressions
+* Use arrow functions `=>` over anonymous function expressions.
 * Only surround arrow function parameters when necessary. For example, `(x) => x + x` is wrong but the following are correct:
 
 ```javascript
@@ -168,8 +168,8 @@ x => x + x
 <T>(x: T, y: T) => x === y
 ```
 
-* Always surround loop and conditional bodies with curly braces
-* Open curly braces always go on the same line as whatever necessitates them
+* Always surround loop and conditional bodies with curly braces.
+* Open curly braces always go on the same line as whatever necessitates them.
 * Parenthesized constructs should have no surrounding whitespace. A single space follows commas, colons, and semicolons in those constructs. For example:
 
 ```javascript
@@ -182,9 +182,9 @@ function f(x: number, y: string): void { }
 
 ## Dependency Injection
 <a name="property-injection"></a>
-* [1.](#property-injection) Use the property injection over the construction injection. Adding new dependencies via the construction injection is a breaking change.
+* [1.](#property-injection) Use property injection over construction injection. Adding new dependencies via the construction injection is a breaking change.
 <a name="post-construct"></a>
-* [2.](#post-construct) Use `postConstruct` to initialize an object, for example to register event listeners.
+* [2.](#post-construct) Use a method decorated with `postConstruct` rather than the constructor to initialize an object, for example to register event listeners.
 
 ```ts
 @injectable()
@@ -211,7 +211,7 @@ bind(CommandContribution).to(LoggerFrontendContribution);
 bind(CommandContribution).to(LoggerFrontendContribution).inSingletonScope();
 ```
 <a name="di-function-export"></a>
-* [4.](#di-function-export) Don't export functions, convert them into class methods. Functions cannot be overridden to change the behaviour or workaround a bug.
+* [4.](#di-function-export) Don't export functions, convert them into class methods. Functions cannot be overridden to change their behavior or work around a bug.
 
 ```ts
 // bad
@@ -287,7 +287,7 @@ export interface MyCompositeTreeNode extends CompositeTreeNode {
 ```ts
 @injectable()
 export class DirtyDiffModel {
-    // this method can be overridden, subclasses have an access to `DirtyDiffModel.documentContentLines`
+    // This method can be overridden. Subclasses have access to `DirtyDiffModel.documentContentLines`.
     protected handleDocumentChanged(document: TextEditorDocument): void {
         this.currentContent = DirtyDiffModel.documentContentLines(document);
         this.update();
@@ -301,11 +301,11 @@ export namespace DirtyDiffModel {
 }
 ```
 <a name="no-multi-inject"></a>
-* [5.](#no-multi-inject) Don't use multi inject, use `ContributionProvider` to inject multiple instances. 
+* [5.](#no-multi-inject) Don't use multi-inject, use `ContributionProvider` to inject multiple instances. 
 > Why?
 > - `ContributionProvider` is a documented way to introduce contribution points. See `Contribution-Points`: https://www.theia-ide.org/docs/services_and_contributions
-> - If there is no a single binding, multi inject resolves to `undefined`, not an empty array. `ContributionProvider` provides an empty array.
-> - Multi inject does not guarantee the same instances are injected if an extender does not use `inSingletonScope`. `ContributionProvider` caches instances to ensure uniqueness. 
+> - If nothing is bound to an identifier, multi-inject resolves to `undefined`, not an empty array. `ContributionProvider` provides an empty array.
+> - Multi-inject does not guarantee the same instances are injected if an extender does not use `inSingletonScope`. `ContributionProvider` caches instances to ensure uniqueness. 
 
 
 ## CSS
@@ -319,12 +319,12 @@ export namespace DirtyDiffModel {
 
 ## Theming
 <a name="theming-no-css-color-variables"></a>
-* [1.](#theming-no-css-color-variables) Do not introduce css color variables. Implement `ColorContribution` and use `ColorRegistry.register` to register new colors.
+* [1.](#theming-no-css-color-variables) Do not introduce CSS color variables. Implement `ColorContribution` and use `ColorRegistry.register` to register new colors.
 <a name="theming-no-css-color-values"></a>
-* [2.](#theming-no-css-color-values) Do not introduce hardcode color values in css. Instead reference [VS Code colors](https://code.visualstudio.com/api/references/theme-color) in css by prefixing them with `--theia` and replacing all dots with dashes. For example `widget.shadow` color can be referenced in css with `var(--theia-widget-shadow)`.
+* [2.](#theming-no-css-color-values) Do not introduce hardcoded color values in CSS. Instead refer to [VS Code colors](https://code.visualstudio.com/api/references/theme-color) in CSS by prefixing them with `--theia` and replacing all dots with dashes. For example `widget.shadow` color can be referred to in CSS with `var(--theia-widget-shadow)`.
 <a name="theming-derive-colors-from-vscode"></a>
-* [3.](#theming-derive-colors-from-vscode) Always derive new colors from existing [VS Code colors](https://code.visualstudio.com/api/references/theme-color). One can derive from an existing color, just by plainly referencing it, e.g. `dark: 'widget.shadow'`, or applying transformations, e.g. `dark: Color.lighten('widget.shadow', 0.4)`. 
-> Why? Otherwise, there is no guarantee that new colors don't look alien for a random VS Code color theme.
+* [3.](#theming-derive-colors-from-vscode) Always derive new colors from existing [VS Code colors](https://code.visualstudio.com/api/references/theme-color). New colors can be derived from an existing color by plain reference, e.g. `dark: 'widget.shadow'`, or transformation, e.g. `dark: Color.lighten('widget.shadow', 0.4)`. 
+> Why? Otherwise, there is no guarantee that new colors will fit well into new VSCode color themes.
 <a name="theming-theia-colors"></a>
 * [4.](#theming-theia-colors) Apply different color values only in concrete Theia themes, see [Light (Theia)](https://github.com/eclipse-theia/theia/blob/master/packages/monaco/data/monaco-themes/vscode/light_theia.json), [Dark (Theia)](https://github.com/eclipse-theia/theia/blob/master/packages/monaco/data/monaco-themes/vscode/dark_theia.json) and [High Contrast (Theia)](https://github.com/eclipse-theia/theia/blob/master/packages/monaco/data/monaco-themes/vscode/hc_theia.json) themes.
 <a name="theming-variable-naming"></a>
@@ -342,9 +342,9 @@ export namespace DirtyDiffModel {
 ## React
 <a name="no-bind-fn-in-event-handlers"></a>
 * [1.](#no-bind-fn-in-event-handlers) Do not bind functions in event handlers.
-  - Extract a react component if you want to pass state to an event handler function.
+  - Extract a React component if you want to pass state to an event handler function.
 
-> Why? Because it creates a new instance of event handler function on each render and breaks React element caching leading to rerendering and bad performance.
+> Why? Because doing so creates a new instance of the event handler function on each render and breaks React element caching leading to rerendering and bad performance.
 
 ```ts
 // bad
@@ -395,25 +395,25 @@ class MyWidget extends ReactWidget {
 ## URI/Path
 <a name="uri-over-path"></a>
 * [1.](#uri-over-path) Pass URIs between frontend and backend, never paths. URIs should be sent as strings in JSON-RPC services, e.g. `RemoteFileSystemServer` accepts strings, not URIs.
-> Why? Frontend and backend can have different operating systems leading to incompatibilities between paths. URIs are normalized in order to be os-agnostic.
+> Why? Frontend and backend can have different operating systems leading to incompatibilities between paths. URIs are normalized in order to be OS-agnostic.
 <a name="frontend-fs-path"></a>
 * [2.](#frontend-fs-path) Use `FileService.fsPath` to get a path on the frontend from a URI.
 <a name="backend-fs-path"></a>
 * [3.](#backend-fs-path) Use `FileUri.fsPath` to get a path on the backend from a URI. Never use it on the frontend.
 <a name="uri-scheme"></a>
 * [4.](#explicit-uri-scheme) Always define an explicit scheme for a URI. 
-> Why? A URI without scheme will fall back to `file` scheme for now, in the future it will lead to a runtime error.
+> Why? A URI without scheme will fall back to `file` scheme for now; in the future it will lead to a runtime error.
 <a name="frontend-path"></a>
 * [5.](#frontend-path) Use `Path` Theia API to manipulate paths on the frontend. Don't use Node.js APIs like `path` module. Also see [the code organization guideline](code-organization.md).
 <a name="backend-fs"></a>
 * [6.](#backend-fs) On the backend, use Node.js APIS to manipulate the file system, like `fs` and `fs-extra` modules.
 > Why? `FileService` is to expose file system capabilities to the frontend only. It's aligned with expectations and requirements on the frontend. Using it on the backend is not possible.
 <a name="use-long-name"></a>
-* [7.](#use-long-name) Use `LabelProvider.getLongName(uri)` to get a systemwide human readable representation of a full path. Don't use `uri.toString()` or `uri.path.toString()`.
+* [7.](#use-long-name) Use `LabelProvider.getLongName(uri)` to get a system-wide human-readable representation of a full path. Don't use `uri.toString()` or `uri.path.toString()`.
 <a name="use-short-name"></a>
-* [8.](#use-short-name) Use `LabelProvider.getName(uri)` to get a systemwide human readable representation of a simple file name.
+* [8.](#use-short-name) Use `LabelProvider.getName(uri)` to get a system-wide human-readable representation of a simple file name.
 <a name="use-icon"></a>
-* [9.](#use-icon) Use `LabelProvider.getIcon(uri)` to get a systemwide file icon.
+* [9.](#use-icon) Use `LabelProvider.getIcon(uri)` to get a system-wide file icon.
 <a name="uri-no-string-manipulation"></a>
 * [10.](#uri-no-string-manipulations) Don't use `string` to manipulate URIs and paths. Use `URI` and `Path` capabilities instead, like `join`, `resolve` and `relative`.
 > Why? Because object representation can handle corner cases properly, like trailing separators.
@@ -433,7 +433,7 @@ new Path(absolutePathString).relative(pathString)
 
 ## Logging
 <a name="logging-use-console-log"></a>
-* [1.](#logging-use-console-log) Use `console` instead of `Ilogger` for the root (top-level) logging.
+* [1.](#logging-use-console-log) Use `console` instead of `ILogger` for the root (top-level) logging.
 ```ts
 // bad
 @inject(ILogger)
@@ -444,4 +444,4 @@ this.logger.info(``);
 // good
 console.info(``)
 ```
-> Why? All calls to console are intercepted on the frontend and backend, and then forwarded to `ILogger` already. Log level can be configured by `theia start --log-level=debug`.
+> Why? All calls to console are intercepted on the frontend and backend and then forwarded to an `ILogger` instance already. The log level can be configured from the CLI: `theia start --log-level=debug`.
