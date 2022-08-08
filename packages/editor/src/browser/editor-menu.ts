@@ -55,6 +55,8 @@ export namespace EditorMainMenu {
      * Submenu for switching panes in the main area.
      */
     export const PANE_GROUP = [...CONTEXT_GROUP, '2_pane_group'];
+    export const BY_NUMBER = [...EditorMainMenu.PANE_GROUP, '1_by_number'];
+    export const NEXT_PREVIOUS = [...EditorMainMenu.PANE_GROUP, '2_by_location'];
 
     /**
      * Workspace menu group in the `Go` main-menu.
@@ -70,6 +72,7 @@ export namespace EditorMainMenu {
      * Location menu group in the `Go` main-menu.
      */
     export const LOCATION_GROUP = [...GO, '4_locations'];
+
 }
 
 @injectable()
@@ -115,26 +118,37 @@ export class EditorMenuContribution implements MenuContribution {
         });
 
         registry.registerSubmenu(EditorMainMenu.PANE_GROUP, nls.localizeByDefault('Switch Group'));
-        const BY_NUMBER = [...EditorMainMenu.PANE_GROUP, '1_by_number'];
-        registry.registerMenuAction(BY_NUMBER, {
+
+        registry.registerMenuAction(EditorMainMenu.BY_NUMBER, {
             commandId: 'workbench.action.focusFirstEditorGroup',
             label: nls.localizeByDefault('Group 1'),
         });
-        registry.registerMenuAction(BY_NUMBER, {
+        registry.registerMenuAction(EditorMainMenu.BY_NUMBER, {
             commandId: 'workbench.action.focusSecondEditorGroup',
             label: nls.localizeByDefault('Group 2'),
         });
-        registry.registerMenuAction(BY_NUMBER, {
+        registry.registerMenuAction(EditorMainMenu.BY_NUMBER, {
             commandId: 'workbench.action.focusThirdEditorGroup',
             label: nls.localizeByDefault('Group 3'),
         });
-        registry.registerMenuAction(BY_NUMBER, {
+        registry.registerMenuAction(EditorMainMenu.BY_NUMBER, {
             commandId: 'workbench.action.focusFourthEditorGroup',
             label: nls.localizeByDefault('Group 4'),
         });
-        registry.registerMenuAction(BY_NUMBER, {
+        registry.registerMenuAction(EditorMainMenu.BY_NUMBER, {
             commandId: 'workbench.action.focusFifthEditorGroup',
             label: nls.localizeByDefault('Group 5'),
+        });
+
+        registry.registerMenuAction(EditorMainMenu.NEXT_PREVIOUS, {
+            commandId: CommonCommands.NEXT_TAB_GROUP.id,
+            label: nls.localizeByDefault('Next Group'),
+            order: '1'
+        });
+        registry.registerMenuAction(EditorMainMenu.NEXT_PREVIOUS, {
+            commandId: CommonCommands.PREVIOUS_TAB_GROUP.id,
+            label: nls.localizeByDefault('Previous Group'),
+            order: '2'
         });
 
         registry.registerMenuAction(EditorMainMenu.LOCATION_GROUP, {
