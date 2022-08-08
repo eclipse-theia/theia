@@ -271,18 +271,18 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get tooltip(): string {
-        let md = `__${this.displayName}__ ${VSXExtension.formatVersion(this.version)}\n\n${this.description}\n_____\n\nPublisher: ${this.publisher}`;
+        let md = `__${this.displayName}__ ${VSXExtension.formatVersion(this.version)}\n\n${this.description}\n_____\n\n${nls.localizeByDefault('Publisher: {0}', this.publisher)}`;
 
         if (this.license) {
-            md += `  \rLicense: ${this.license}`;
+            md += `  \r${nls.localize('theia/vsx-registry/license', 'License: {0}', this.license)}`;
         }
 
         if (this.downloadCount) {
-            md += `  \rDownload count: ${downloadCompactFormatter.format(this.downloadCount)}`;
+            md += `  \r${nls.localize('theia/vsx-registry/downloadCount', 'Download count: {0}', downloadCompactFormatter.format(this.downloadCount))}`;
         }
 
         if (this.averageRating) {
-            md += `  \rAverage Rating: ${this.averageRating.toFixed(1)}`;
+            md += `  \r${getAverageRatingTitle(this.averageRating)}`;
         }
 
         return markdownit().render(md);
@@ -443,7 +443,10 @@ export namespace AbstractVSXExtensionComponent {
 
 const downloadFormatter = new Intl.NumberFormat();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const downloadCompactFormatter = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as any);
+const downloadCompactFormatter = new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' } as any);
+const averageRatingFormatter = (averageRating: number): number => Math.round(averageRating * 2) / 2;
+const getAverageRatingTitle = (averageRating: number): string =>
+    nls.localize('theia/vsx-registry/averageRating', 'Average rating: {0} out of 5', averageRatingFormatter(averageRating));
 
 export namespace VSXExtensionComponent {
     export interface Props extends AbstractVSXExtensionComponent.Props {
@@ -466,7 +469,7 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
                     </div>
                     <div className='stat'>
                         {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}
-                        {!!averageRating && <span className='average-rating'><i className={codicon('star-full')} />{averageRating.toFixed(1)}</span>}
+                        {!!averageRating && <span className='average-rating'><i className={codicon('star-full')} />{averageRatingFormatter(averageRating)}</span>}
                     </div>
                 </div>
                 <div className='noWrapInfo theia-vsx-extension-description'>{description}</div>
@@ -516,7 +519,10 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                         </span>
                         {!!downloadCount && <span className='download-count' onClick={this.openExtension}>
                             <i className={codicon('cloud-download')} />{downloadFormatter.format(downloadCount)}</span>}
-                        {averageRating !== undefined && <span className='average-rating' onClick={this.openAverageRating}>{this.renderStars()}</span>}
+                        {
+                            averageRating !== undefined &&
+                            <span className='average-rating' title={getAverageRatingTitle(averageRating)} onClick={this.openAverageRating}>{this.renderStars()}</span>
+                        }
                         {repository && <span className='repository' onClick={this.openRepository}>Repository</span>}
                         {license && <span className='license' onClick={this.openLicense}>{license}</span>}
                         {version && <span className='version'>{VSXExtension.formatVersion(version)}</span>}
@@ -527,7 +533,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
             </div>
             {
                 sanitizedReadme &&
-                < div className='scroll-container'
+                <div className='scroll-container'
                     style={scrollStyle}
                     ref={ref => this._scrollContainer = (ref || undefined)}>
                     <div className='body'
