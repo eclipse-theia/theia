@@ -16,7 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
-import { CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, Disposable, DisposableCollection } from '@theia/core/lib/common';
+import { CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, DisposableCollection } from '@theia/core/lib/common';
 import { BlameDecorator } from './blame-decorator';
 import { EditorManager, EditorKeybindingContexts, EditorWidget, EditorTextFocusContext, StrictEditorTextFocusContext } from '@theia/editor/lib/browser';
 import { BlameManager } from './blame-manager';
@@ -60,8 +60,7 @@ export class BlameContribution implements CommandContribution, KeybindingContrib
                     }
                 }
             },
-            isVisible: () =>
-                !!this.currentFileEditorWidget,
+            isVisible: () => !!this.currentFileEditorWidget,
             isEnabled: () => {
                 const editorWidget = this.currentFileEditorWidget;
                 return !!editorWidget && this.isBlameable(editorWidget.editor.uri);
@@ -74,8 +73,7 @@ export class BlameContribution implements CommandContribution, KeybindingContrib
                     this.clearBlame(editorWidget.editor.uri);
                 }
             },
-            isVisible: () =>
-                !!this.currentFileEditorWidget,
+            isVisible: () => !!this.currentFileEditorWidget,
             isEnabled: () => {
                 const editorWidget = this.currentFileEditorWidget;
                 const enabled = !!editorWidget && this.showsBlameAnnotations(editorWidget.editor.uri);
@@ -85,7 +83,7 @@ export class BlameContribution implements CommandContribution, KeybindingContrib
     }
 
     showsBlameAnnotations(uri: string | URI): boolean {
-        return this.appliedDecorations.has(uri.toString());
+        return this.appliedDecorations.get(uri.toString())?.disposed === false;
     }
 
     protected get currentFileEditorWidget(): EditorWidget | undefined {
@@ -102,28 +100,34 @@ export class BlameContribution implements CommandContribution, KeybindingContrib
         return this.blameManager.isBlameable(uri.toString());
     }
 
-    protected appliedDecorations = new Map<string, Disposable>();
+    protected appliedDecorations = new Map<string, DisposableCollection>();
 
     protected async showBlame(editorWidget: EditorWidget): Promise<void> {
         const uri = editorWidget.editor.uri.toString();
         if (this.appliedDecorations.get(uri)) {
             return;
         }
-        const editor = editorWidget.editor;
-        const document = editor.document;
-        const content = document.dirty ? document.getText() : undefined;
-        const blame = await this.blameManager.getBlame(uri, content);
-        if (blame) {
-            const toDispose = new DisposableCollection();
-            this.appliedDecorations.set(uri, toDispose);
-            toDispose.push(this.decorator.decorate(blame, editor, editor.cursor.line));
-            toDispose.push(editor.onDocumentContentChanged(() => this.clearBlame(uri)));
-            toDispose.push(editor.onCursorPositionChanged(debounce(_position => {
-                if (!toDispose.disposed) {
-                    this.decorator.decorate(blame, editor, editor.cursor.line);
-                }
-            }, 50)));
-            editorWidget.disposed.connect(() => this.clearBlame(uri));
+        const toDispose = new DisposableCollection();
+        this.appliedDecorations.set(uri, toDispose);
+        try {
+            const editor = editorWidget.editor;
+            const document = editor.document;
+            const content = document.dirty ? document.getText() : undefined;
+            const blame = await this.blameManager.getBlame(uri, content);
+            if (blame) {
+                toDispose.push(this.decorator.decorate(blame, editor, editor.cursor.line));
+                toDispose.push(editor.onDocumentContentChanged(() => this.clearBlame(uri)));
+                toDispose.push(editor.onCursorPositionChanged(debounce(_position => {
+                    if (!toDispose.disposed) {
+                        this.decorator.decorate(blame, editor, editor.cursor.line);
+                    }
+                }, 50)));
+                editorWidget.disposed.connect(() => this.clearBlame(uri));
+            }
+        } finally {
+            if (toDispose.disposed) {
+                this.appliedDecorations.delete(uri);
+            };
         }
     }
 
