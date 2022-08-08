@@ -285,8 +285,6 @@ export class DynamicMenuWidget extends MenuWidget {
         }
     }
 
-    protected buildSubmenusCalled = 0;
-
     protected buildSubMenus(parentItems: MenuWidget.IItemOptions[], menu: MenuNode, commands: MenuCommandRegistry): MenuWidget.IItemOptions[] {
         if (CompoundMenuNode.is(menu) && menu.children.length && this.undefinedOrMatch(menu.when, this.options.context)) {
             const role = menu === this.menu ? CompoundMenuNodeRole.Group : CompoundMenuNode.getRole(menu);

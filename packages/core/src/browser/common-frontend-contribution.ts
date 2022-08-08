@@ -938,6 +938,21 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 return open(this.openerService, untitledUri);
             }
         });
+        for (const [index, ordinal] of this.getOrdinalNumbers().entries()) {
+            commandRegistry.registerCommand({ id: `workbench.action.focus${ordinal}EditorGroup`, label: index === 0 ? nls.localizeByDefault('Focus First Editor Group') : '', category: nls.localize(CommonCommands.VIEW_CATEGORY_KEY, CommonCommands.VIEW_CATEGORY) }, {
+                isEnabled: () => this.shell.mainAreaTabBars.length > index,
+                execute: () => {
+                    const widget = this.shell.mainAreaTabBars[index]?.currentTitle?.owner;
+                    if (widget) {
+                        this.shell.activateWidget(widget.id);
+                    }
+                }
+            });
+        }
+    }
+
+    protected getOrdinalNumbers(): readonly string[] {
+        return ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth'];
     }
 
     protected isElectron(): boolean {
@@ -1076,6 +1091,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 keybinding: this.isElectron() ? 'ctrlcmd+n' : 'alt+n',
             }
         );
+        for (const [index, ordinal] of this.getOrdinalNumbers().entries()) {
+            registry.registerKeybinding({
+                command: `workbench.action.focus${ordinal}EditorGroup`,
+                keybinding: `ctrlcmd+${(index + 1) % 10}`,
+            });
+        }
     }
 
     protected async save(options?: SaveOptions): Promise<void> {
