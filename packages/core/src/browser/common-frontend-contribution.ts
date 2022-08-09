@@ -148,13 +148,13 @@ export namespace CommonCommands {
         label: 'Select All'
     });
 
-    // ???
-    export const FIND = Command.toDefaultLocalizedCommand<[], void>({
+    // TODO: type command
+    export const FIND = Command.toDefaultLocalizedCommand({
         id: 'core.find',
         label: 'Find'
     });
-    // ???
-    export const REPLACE = Command.toDefaultLocalizedCommand<[], void>({
+    // TODO: type command
+    export const REPLACE = Command.toDefaultLocalizedCommand({
         id: 'core.replace',
         label: 'Replace'
     });

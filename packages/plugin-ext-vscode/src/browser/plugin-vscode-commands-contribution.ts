@@ -735,7 +735,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({
             id: 'copyFilePath'
         }, {
-            execute: () => commands.executeCommand(CommonCommands.COPY_PATH.id)
+            execute: () => commands.executeCommand(CommonCommands.COPY_PATH.id, [])
         });
         commands.registerCommand({
             id: 'copyRelativeFilePath'

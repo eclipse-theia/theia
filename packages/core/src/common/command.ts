@@ -31,7 +31,7 @@ export type CommandId<Arguments extends any[], ReturnType> = string & {
     /**
      * @internal For typing only. This field will never be defined.
      */
-    __typedCommand: [Arguments, ReturnType];
+    __typedCommandId: [Arguments, ReturnType];
 };
 
 /**
@@ -39,11 +39,11 @@ export type CommandId<Arguments extends any[], ReturnType> = string & {
  * which can be executed by a user via a keyboard shortcut,
  * a menu action or directly.
  */
-export interface Command<Arguments extends any[] = any[], ReturnType = any> {
+export interface Command<Id extends string = string> {
     /**
      * A unique identifier of this command.
      */
-    id: string | CommandId<Arguments, ReturnType>;
+    id: Id;
     /**
      * A label of this command.
      */
@@ -65,40 +65,33 @@ export namespace Command {
     /**
      * @internal
      *
-     * Return {@link TypedCommand} from {@link CommandId}, otherwise return {@link Command}.
+     * Return the argument tuple from {@link CommandId} or typed {@link Command}, otherwise return `any[]`.
      */
-    export type From<Id extends string> = Id extends CommandId<infer A, infer R> ? Command<A, R> : Command;
+    export type Arguments<T> = T extends CommandId<infer A1, any> ? A1 : T extends Command<infer Id> ? Arguments<Id> : any[];
 
     /**
      * @internal
      *
-     * Return the argument tuple from {@link CommandId} or {@link TypedCommand}, otherwise return `any[]`.
+     * Return the return type from {@link CommandId} or typed {@link Command}, otherwise return `any`.
      */
-    export type Arguments<T> = T extends CommandId<infer A1, any> ? A1 : T extends Command<infer A2, any> ? A2 : any[];
+    export type ReturnType<T> = T extends CommandId<any, infer R1> ? R1 : T extends Command<infer Id> ? ReturnType<Id> : any;
 
     /**
      * @internal
      *
-     * Return the return type from {@link CommandId} or {@link TypedCommand}, otherwise return `any`.
-     */
-    export type ReturnType<T> = T extends CommandId<any[], infer R1> ? R1 : T extends Command<any[], infer R2> ? R2 : any;
-
-    /**
-     * @internal
-     *
-     * Return a {@link TypedCommandHandler} with the same arguments and return type as {@link CommandId} or {@link TypedCommand},
+     * Return a typed {@link CommandHandler} with the same arguments and return type as {@link CommandId} or typed {@link Command},
      * otherwise return {@link CommandHandler}.
      */
     export type Handler<T> = T extends CommandId<infer A1, infer R1>
         ? CommandHandler<A1, R1>
-        : T extends Command<infer A2, infer R2>
-        ? CommandHandler<A2, R2>
+        : T extends Command<infer Id>
+        ? Handler<Id>
         : CommandHandler;
 
     /**
      * Type cast a `string` into {@link CommandId}.
      */
-    export function asTypedCommandId<A extends any[], R>(id: string): CommandId<A, R> {
+    export function asCommandId<A extends any[], R>(id: string): CommandId<A, R> {
         return id as CommandId<A, R>;
     }
 
@@ -107,8 +100,12 @@ export namespace Command {
         return !!arg && typeof arg === 'object' && 'id' in arg;
     }
 
-    /** Utility function to easily translate commands */
-    export function toLocalizedCommand<A extends any[] = any[], R = any>(command: Command<A, R>, nlsLabelKey: string = command.id, nlsCategoryKey?: string): Command<A, R> {
+    /**
+     * Utility function to easily translate commands.
+     */
+    export function toLocalizedCommand(command: Command, nlsLabelKey?: string, nlsCategoryKey?: string): Command;
+    export function toLocalizedCommand<A extends any[] = any, R = any>(command: Command, nlsLabelKey?: string, nlsCategoryKey?: string): Command<CommandId<A, R>>;
+    export function toLocalizedCommand(command: Command, nlsLabelKey: string = command.id, nlsCategoryKey?: string): Command {
         return {
             ...command,
             label: command.label && nls.localize(nlsLabelKey, command.label),
@@ -118,7 +115,12 @@ export namespace Command {
         };
     }
 
-    export function toDefaultLocalizedCommand<A extends any[] = any[], R = any>(command: Command<A, R>): Command<A, R> {
+    /**
+     * Utility function to easily translate commands.
+     */
+    export function toDefaultLocalizedCommand(command: Command): Command;
+    export function toDefaultLocalizedCommand<A extends any[] = any, R = any>(command: Command): Command<CommandId<A, R>>;
+    export function toDefaultLocalizedCommand(command: Command): Command {
         return {
             ...command,
             label: command.label && nls.localizeByDefault(command.label),
@@ -162,7 +164,7 @@ export namespace Command {
  * but they should be active in different contexts,
  * otherwise first active will be executed.
  */
-export interface CommandHandler<Arguments extends any[] = any[], ReturnType = any> {
+export interface CommandHandler<Arguments extends any[] = any, ReturnType = any> {
     /**
      * Execute this handler.
      *
@@ -213,8 +215,7 @@ export interface CommandService {
      *
      * Reject if a command cannot be executed.
      */
-    executeCommand<Id extends string>(command: Id, ...args: Command.Arguments<Id>): Promise<Command.ReturnType<Id> | undefined>;
-    executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined>;
+    executeCommand<T extends Command.ReturnType<Id>, Id extends string>(command: Id, ...args: Command.Arguments<Id>): Promise<T | undefined>;
     /**
      * An event is emitted when a command is about to be executed.
      *
@@ -373,9 +374,7 @@ export class CommandRegistry implements CommandService {
      *
      * Reject if a command cannot be executed.
      */
-    executeCommand<Id extends string>(command: Id, ...args: Command.Arguments<Id>): Promise<Command.ReturnType<Id> | undefined>;
-    executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined>;
-    async executeCommand(command: string, ...args: any[]): Promise<any> {
+    async executeCommand<T extends Command.ReturnType<Id>, Id extends string = string>(command: Id, ...args: Command.Arguments<Id>): Promise<T | undefined> {
         const handler = this.getActiveHandler(command as string, ...args);
         if (handler) {
             await this.fireWillExecuteCommand(command, args);
@@ -469,8 +468,8 @@ export class CommandRegistry implements CommandService {
     /**
      * Get a command for the given command identifier.
      */
-    getCommand<Id extends string>(id: Id): Command.From<Id> | undefined {
-        return this._commands[id] as Command.From<Id>;
+    getCommand<Id extends string>(id: Id): Command<Id> | undefined {
+        return this._commands[id] as Command<Id>;
     }
 
     /**
