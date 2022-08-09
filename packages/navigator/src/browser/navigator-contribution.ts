@@ -362,7 +362,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             isVisible: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length)
         });
         registry.registerCommand(OpenEditorsCommands.SAVE_ALL_TABS_FROM_TOOLBAR, {
-            execute: widget => this.withOpenEditorsWidget(widget, () => registry.executeCommand(CommonCommands.SAVE_ALL.id)),
+            execute: widget => {
+                this.withOpenEditorsWidget(widget, () => registry.executeCommand(CommonCommands.SAVE_ALL.id));
+            },
             isEnabled: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length),
             isVisible: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length)
         });

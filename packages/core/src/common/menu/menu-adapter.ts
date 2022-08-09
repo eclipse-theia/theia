@@ -66,7 +66,8 @@ export class MenuCommandExecutorImpl implements MenuCommandExecutor {
         const adapter = this.adapterRegistry.getAdapterFor(menuPath, command, commandArgs);
         return (adapter
             ? adapter[method](menuPath, command, ...commandArgs)
-            : this.commandRegistry[method](command, ...commandArgs)) as ReturnType<MenuCommandExecutor[T]>;
+            : (this.commandRegistry[method] as (command: string, ...args: unknown[]) => unknown)(command, ...commandArgs)
+        ) as ReturnType<MenuCommandExecutor[T]>;
     }
 }
 

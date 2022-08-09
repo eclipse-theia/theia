@@ -14,23 +14,36 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { injectable, inject, named } from 'inversify';
 import { Event, Emitter, WaitUntilEvent } from './event';
 import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
 import { nls } from './nls';
 import debounce = require('p-debounce');
+import { MaybePromise } from './types';
+
+/**
+ * This type represents a command id's string but has its arguments and return type information attached to it.
+ */
+export type CommandId<Arguments extends any[], ReturnType> = string & {
+    /**
+     * @internal For typing only. This field will never be defined.
+     */
+    __typedCommand: [Arguments, ReturnType];
+};
 
 /**
  * A command is a unique identifier of a function
  * which can be executed by a user via a keyboard shortcut,
  * a menu action or directly.
  */
-export interface Command {
+export interface Command<Arguments extends any[] = any[], ReturnType = any> {
     /**
      * A unique identifier of this command.
      */
-    id: string;
+    id: string | CommandId<Arguments, ReturnType>;
     /**
      * A label of this command.
      */
@@ -48,13 +61,54 @@ export interface Command {
 }
 
 export namespace Command {
+
+    /**
+     * @internal
+     *
+     * Return {@link TypedCommand} from {@link CommandId}, otherwise return {@link Command}.
+     */
+    export type From<Id extends string> = Id extends CommandId<infer A, infer R> ? Command<A, R> : Command;
+
+    /**
+     * @internal
+     *
+     * Return the argument tuple from {@link CommandId} or {@link TypedCommand}, otherwise return `any[]`.
+     */
+    export type Arguments<T> = T extends CommandId<infer A1, any> ? A1 : T extends Command<infer A2, any> ? A2 : any[];
+
+    /**
+     * @internal
+     *
+     * Return the return type from {@link CommandId} or {@link TypedCommand}, otherwise return `any`.
+     */
+    export type ReturnType<T> = T extends CommandId<any[], infer R1> ? R1 : T extends Command<any[], infer R2> ? R2 : any;
+
+    /**
+     * @internal
+     *
+     * Return a {@link TypedCommandHandler} with the same arguments and return type as {@link CommandId} or {@link TypedCommand},
+     * otherwise return {@link CommandHandler}.
+     */
+    export type Handler<T> = T extends CommandId<infer A1, infer R1>
+        ? CommandHandler<A1, R1>
+        : T extends Command<infer A2, infer R2>
+        ? CommandHandler<A2, R2>
+        : CommandHandler;
+
+    /**
+     * Type cast a `string` into {@link CommandId}.
+     */
+    export function asTypedCommandId<A extends any[], R>(id: string): CommandId<A, R> {
+        return id as CommandId<A, R>;
+    }
+
     /* Determine whether object is a Command */
     export function is(arg: unknown): arg is Command {
         return !!arg && typeof arg === 'object' && 'id' in arg;
     }
 
     /** Utility function to easily translate commands */
-    export function toLocalizedCommand(command: Command, nlsLabelKey: string = command.id, nlsCategoryKey?: string): Command {
+    export function toLocalizedCommand<A extends any[] = any[], R = any>(command: Command<A, R>, nlsLabelKey: string = command.id, nlsCategoryKey?: string): Command<A, R> {
         return {
             ...command,
             label: command.label && nls.localize(nlsLabelKey, command.label),
@@ -64,7 +118,7 @@ export namespace Command {
         };
     }
 
-    export function toDefaultLocalizedCommand(command: Command): Command {
+    export function toDefaultLocalizedCommand<A extends any[] = any[], R = any>(command: Command<A, R>): Command<A, R> {
         return {
             ...command,
             label: command.label && nls.localizeByDefault(command.label),
@@ -108,29 +162,25 @@ export namespace Command {
  * but they should be active in different contexts,
  * otherwise first active will be executed.
  */
-export interface CommandHandler {
+export interface CommandHandler<Arguments extends any[] = any[], ReturnType = any> {
     /**
      * Execute this handler.
      *
      * Don't call it directly, use `CommandService.executeCommand` instead.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    execute(...args: any[]): any;
+    execute(...args: Arguments): MaybePromise<ReturnType>;
     /**
      * Test whether this handler is enabled (active).
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    isEnabled?(...args: any[]): boolean;
+    isEnabled?(...args: Arguments): boolean;
     /**
      * Test whether menu items for this handler should be visible.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    isVisible?(...args: any[]): boolean;
+    isVisible?(...args: Arguments): boolean;
     /**
      * Test whether menu items for this handler should be toggled.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    isToggled?(...args: any[]): boolean;
+    isToggled?(...args: Arguments): boolean;
 }
 
 export const CommandContribution = Symbol('CommandContribution');
@@ -146,7 +196,6 @@ export interface CommandContribution {
 
 export interface CommandEvent {
     commandId: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     args: any[]
 }
 
@@ -164,7 +213,7 @@ export interface CommandService {
      *
      * Reject if a command cannot be executed.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    executeCommand<Id extends string>(command: Id, ...args: Command.Arguments<Id>): Promise<Command.ReturnType<Id> | undefined>;
     executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined>;
     /**
      * An event is emitted when a command is about to be executed.
@@ -224,7 +273,7 @@ export class CommandRegistry implements CommandService {
      *
      * Throw if a command is already registered for the given command identifier.
      */
-    registerCommand(command: Command, handler?: CommandHandler): Disposable {
+    registerCommand<Cmd extends Command>(command: Cmd, handler?: Command.Handler<Cmd>): Disposable {
         if (this._commands[command.id]) {
             console.warn(`A command ${command.id} is already registered.`);
             return Disposable.NULL;
@@ -248,13 +297,13 @@ export class CommandRegistry implements CommandService {
     }
 
     /**
-     * Unregister command from the registry
+     * Unregister command from the registry by command object.
      *
      * @param command
      */
     unregisterCommand(command: Command): void;
     /**
-     * Unregister command from the registry
+     * Unregister command from the registry by id.
      *
      * @param id
      */
@@ -274,10 +323,10 @@ export class CommandRegistry implements CommandService {
      * then the given handler is registered as more specific, and
      * has higher priority during enablement, visibility and toggle state evaluations.
      */
-    registerHandler(commandId: string, handler: CommandHandler): Disposable {
-        let handlers = this._handlers[commandId];
+    registerHandler<Id extends string>(command: Id, handler: Command.Handler<Id>): Disposable {
+        let handlers = this._handlers[command];
         if (!handlers) {
-            this._handlers[commandId] = handlers = [];
+            this._handlers[command] = handlers = [];
         }
         handlers.unshift(handler);
         this.fireDidChange();
@@ -301,24 +350,21 @@ export class CommandRegistry implements CommandService {
     /**
      * Test whether there is an active handler for the given command.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    isEnabled(command: string, ...args: any[]): boolean {
+    isEnabled<Id extends string>(command: Id, ...args: Command.Arguments<Id>): boolean {
         return typeof this.getActiveHandler(command, ...args) !== 'undefined';
     }
 
     /**
      * Test whether there is a visible handler for the given command.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    isVisible(command: string, ...args: any[]): boolean {
+    isVisible<Id extends string>(command: Id, ...args: Command.Arguments<Id>): boolean {
         return typeof this.getVisibleHandler(command, ...args) !== 'undefined';
     }
 
     /**
      * Test whether there is a toggled handler for the given command.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    isToggled(command: string, ...args: any[]): boolean {
+    isToggled<Id extends string>(command: Id, ...args: Command.Arguments<Id>): boolean {
         return typeof this.getToggledHandler(command, ...args) !== 'undefined';
     }
 
@@ -327,19 +373,22 @@ export class CommandRegistry implements CommandService {
      *
      * Reject if a command cannot be executed.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async executeCommand<T>(commandId: string, ...args: any[]): Promise<T | undefined> {
-        const handler = this.getActiveHandler(commandId, ...args);
+    executeCommand<Id extends string>(command: Id, ...args: Command.Arguments<Id>): Promise<Command.ReturnType<Id> | undefined>;
+    executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined>;
+    async executeCommand(command: string, ...args: any[]): Promise<any> {
+        const handler = this.getActiveHandler(command as string, ...args);
         if (handler) {
-            await this.fireWillExecuteCommand(commandId, args);
+            await this.fireWillExecuteCommand(command, args);
             const result = await handler.execute(...args);
-            this.onDidExecuteCommandEmitter.fire({ commandId, args });
+            this.onDidExecuteCommandEmitter.fire({ commandId: command, args });
             return result;
         }
-        throw Object.assign(new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.`), { code: 'NO_ACTIVE_HANDLER' });
+        throw Object.assign(
+            new Error(`The command '${command}' cannot be executed. There are no active handlers available for the command.`),
+            { code: 'NO_ACTIVE_HANDLER' }
+        );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected async fireWillExecuteCommand(commandId: string, args: any[] = []): Promise<void> {
         await WaitUntilEvent.fire(this.onWillExecuteCommandEmitter, { commandId, args }, 30000);
     }
@@ -347,14 +396,13 @@ export class CommandRegistry implements CommandService {
     /**
      * Get a visible handler for the given command or `undefined`.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getVisibleHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
-        const handlers = this._handlers[commandId];
+    getVisibleHandler<Id extends string>(command: Id, ...args: Command.Arguments<Id>): Command.Handler<Id> | undefined {
+        const handlers = this._handlers[command];
         if (handlers) {
             for (const handler of handlers) {
                 try {
                     if (!handler.isVisible || handler.isVisible(...args)) {
-                        return handler;
+                        return handler as Command.Handler<Id>;
                     }
                 } catch (error) {
                     console.error(error);
@@ -367,14 +415,13 @@ export class CommandRegistry implements CommandService {
     /**
      * Get an active handler for the given command or `undefined`.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getActiveHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
-        const handlers = this._handlers[commandId];
+    getActiveHandler<Id extends string>(command: Id, ...args: Command.Arguments<Id>): Command.Handler<Id> | undefined {
+        const handlers = this._handlers[command];
         if (handlers) {
             for (const handler of handlers) {
                 try {
                     if (!handler.isEnabled || handler.isEnabled(...args)) {
-                        return handler;
+                        return handler as Command.Handler<Id>;
                     }
                 } catch (error) {
                     console.error(error);
@@ -387,14 +434,13 @@ export class CommandRegistry implements CommandService {
     /**
      * Get a toggled handler for the given command or `undefined`.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getToggledHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
-        const handlers = this._handlers[commandId];
+    getToggledHandler<Id extends string>(command: Id, ...args: Command.Arguments<Id>): Command.Handler<Id> | undefined {
+        const handlers = this._handlers[command];
         if (handlers) {
             for (const handler of handlers) {
                 try {
                     if (handler.isToggled && handler.isToggled(...args)) {
-                        return handler;
+                        return handler as Command.Handler<Id>;
                     }
                 } catch (error) {
                     console.error(error);
@@ -408,8 +454,8 @@ export class CommandRegistry implements CommandService {
      * Returns with all handlers for the given command. If the command does not have any handlers,
      * or the command is not registered, returns an empty array.
      */
-    getAllHandlers(commandId: string): CommandHandler[] {
-        const handlers = this._handlers[commandId];
+    getAllHandlers<Id extends string>(command: Id): Command.Handler<Id>[] {
+        const handlers = this._handlers[command] as Command.Handler<Id>[] | undefined;
         return handlers ? handlers.slice() : [];
     }
 
@@ -423,8 +469,8 @@ export class CommandRegistry implements CommandService {
     /**
      * Get a command for the given command identifier.
      */
-    getCommand(id: string): Command | undefined {
-        return this._commands[id];
+    getCommand<Id extends string>(id: Id): Command.From<Id> | undefined {
+        return this._commands[id] as Command.From<Id>;
     }
 
     /**
@@ -479,5 +525,4 @@ export class CommandRegistry implements CommandService {
     clearCommandHistory(): void {
         this.recent = [];
     }
-
 }

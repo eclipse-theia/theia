@@ -129,9 +129,10 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         return electronRemote.Menu.buildFromTemplate(template);
     }
 
-    protected fillMenuTemplate(parentItems: Electron.MenuItemConstructorOptions[],
+    protected fillMenuTemplate(
+        parentItems: Electron.MenuItemConstructorOptions[],
         menu: MenuNode,
-        args: unknown[] = [],
+        args: any[] = [],
         options: ElectronMenuOptions
     ): Electron.MenuItemConstructorOptions[] {
         const showDisabled = options?.showDisabled !== false;

@@ -22,7 +22,8 @@ import { UriAwareCommandHandler, UriCommandHandler } from './uri-command-handler
 
 const expect = chai.expect;
 
-interface CommandHandlerMock extends UriCommandHandler<MaybeArray<URI>> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface CommandHandlerMock extends UriCommandHandler<MaybeArray<URI>, any> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     lastCall: any[];
 }

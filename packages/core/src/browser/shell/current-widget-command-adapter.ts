@@ -14,29 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommandHandler } from '../../common';
+import { MaybePromise, CommandHandler } from '../../common';
 import { TabBar, Title, Widget } from '../widgets';
 import { ApplicationShell } from './application-shell';
 
-type CurrentWidgetCommandAdapterBooleanCheck = (event: Event) => boolean;
-type CurrentWidgetCommandHandlerBooleanCheck = (title: Title<Widget> | undefined, tabbar: TabBar<Widget> | undefined, event: Event) => boolean;
-
-export interface TabBarContextMenuCommandHandler extends CommandHandler {
-    execute(title: Title<Widget> | undefined, tabbar: TabBar<Widget> | undefined, event: Event): unknown;
-    isEnabled?: CurrentWidgetCommandHandlerBooleanCheck;
-    isVisible?: CurrentWidgetCommandHandlerBooleanCheck;
-    isToggled?: CurrentWidgetCommandHandlerBooleanCheck;
-}
+export type TabBarContextMenuCommandHandler<T = unknown> = CommandHandler<[title: Title<Widget> | undefined, tabbar: TabBar<Widget> | undefined, event: Event], T>;
 
 /**
  * Creates a command handler that acts on either the widget targeted by a DOM event or the current widget.
  */
-export class CurrentWidgetCommandAdapter implements CommandHandler {
-    execute: (event: Event) => unknown;
-    isEnabled?: CurrentWidgetCommandAdapterBooleanCheck;
-    isVisible?: CurrentWidgetCommandAdapterBooleanCheck;
-    isToggled?: CurrentWidgetCommandAdapterBooleanCheck;
-    constructor(shell: ApplicationShell, handler: TabBarContextMenuCommandHandler) {
+export class CurrentWidgetCommandAdapter<T = unknown> implements CommandHandler<[event: Event], T> {
+
+    execute: (event: Event) => MaybePromise<T>;
+    isEnabled?: (event: Event) => boolean;
+    isVisible?: (event: Event) => boolean;
+    isToggled?: (event: Event) => boolean;
+
+    constructor(shell: ApplicationShell, handler: TabBarContextMenuCommandHandler<T>) {
         this.execute = (event: Event) => handler.execute(...this.transformArguments(shell, event));
         if (handler.isEnabled) {
             this.isEnabled = (event: Event) => !!handler.isEnabled?.(...this.transformArguments(shell, event));

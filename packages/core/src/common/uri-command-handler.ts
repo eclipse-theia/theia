@@ -22,9 +22,9 @@ import { CommandHandler } from './command';
 import URI from './uri';
 import { MaybeArray } from './types';
 
-export interface UriCommandHandler<T extends MaybeArray<URI>> extends CommandHandler {
+export interface UriCommandHandler<T extends MaybeArray<URI>, R = any> extends CommandHandler<[uri: T, ...args: any[]], R> {
 
-    execute(uri: T, ...args: any[]): any;
+    execute(uri: T, ...args: any[]): R;
 
     isEnabled?(uri: T, ...args: any[]): boolean;
 
@@ -35,24 +35,24 @@ export interface UriCommandHandler<T extends MaybeArray<URI>> extends CommandHan
 /**
  * Handler for a single URI-based selection.
  */
-export interface SingleUriCommandHandler extends UriCommandHandler<URI> {
+export interface SingleUriCommandHandler extends UriCommandHandler<URI, any> {
 
 }
 
 /**
  * Handler for multiple URIs.
  */
-export interface MultiUriCommandHandler extends UriCommandHandler<URI[]> {
+export interface MultiUriCommandHandler extends UriCommandHandler<URI[], any> {
 
 }
 
-export class UriAwareCommandHandler<T extends MaybeArray<URI>> implements UriCommandHandler<T> {
+export class UriAwareCommandHandler<T extends MaybeArray<URI>, R = any> implements UriCommandHandler<T, R | undefined> {
     /**
      * @deprecated since 1.6.0. Please use `UriAwareCommandHandler.MonoSelect` or `UriAwareCommandHandler.MultiSelect`.
      */
     constructor(
         protected readonly selectionService: SelectionService,
-        protected readonly handler: UriCommandHandler<T>,
+        protected readonly handler: UriCommandHandler<T, R | undefined>,
         protected readonly options?: UriAwareCommandHandler.Options
     ) { }
 
@@ -84,9 +84,11 @@ export class UriAwareCommandHandler<T extends MaybeArray<URI>> implements UriCom
         return [uri, ...args];
     }
 
-    execute(...args: any[]): object | undefined {
+    execute(...args: any[]): R | undefined {
         const [uri, ...others] = this.getArgsWithUri(...args);
-        return uri ? this.handler.execute(uri, ...others) : undefined;
+        if (uri) {
+            return this.handler.execute(uri, ...others);
+        }
     }
 
     isVisible(...args: any[]): boolean {
@@ -132,17 +134,16 @@ export namespace UriAwareCommandHandler {
     /**
      * @returns a command handler for mono-select contexts that expects a `URI` as the first parameter of its methods.
      */
-    export function MonoSelect(selectionService: SelectionService, handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {
+    export function MonoSelect<R = any>(selectionService: SelectionService, handler: UriCommandHandler<URI, R>): UriAwareCommandHandler<URI, R> {
         /* eslint-disable-next-line deprecation/deprecation*/ // Safe to use when the generic and the options agree.
-        return new UriAwareCommandHandler<URI>(selectionService, handler, { multi: false });
+        return new UriAwareCommandHandler<URI, R>(selectionService, handler, { multi: false });
     }
 
     /**
      * @returns a command handler for multi-select contexts that expects a `URI[]` as the first parameter of its methods.
      */
-    export function MultiSelect(selectionService: SelectionService, handler: UriCommandHandler<URI[]>): UriAwareCommandHandler<URI[]> {
+    export function MultiSelect<R = any>(selectionService: SelectionService, handler: UriCommandHandler<URI[], R>): UriAwareCommandHandler<URI[], R> {
         /* eslint-disable-next-line deprecation/deprecation*/ // Safe to use when the generic and the options agree.
-        return new UriAwareCommandHandler<URI[]>(selectionService, handler, { multi: true });
+        return new UriAwareCommandHandler<URI[], R>(selectionService, handler, { multi: true });
     }
 }
-
