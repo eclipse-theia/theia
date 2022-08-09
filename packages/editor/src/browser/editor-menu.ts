@@ -159,18 +159,19 @@ export class EditorMenuContribution implements MenuContribution {
         // Toggle Commands.
         registry.registerMenuAction(CommonMenus.VIEW_TOGGLE, {
             commandId: EditorCommands.TOGGLE_WORD_WRAP.id,
-            label: EditorCommands.TOGGLE_WORD_WRAP.label,
             order: '0'
         });
         registry.registerMenuAction(CommonMenus.VIEW_TOGGLE, {
             commandId: EditorCommands.TOGGLE_MINIMAP.id,
-            label: EditorCommands.TOGGLE_MINIMAP.label,
             order: '1',
         });
         registry.registerMenuAction(CommonMenus.VIEW_TOGGLE, {
+            commandId: CommonCommands.TOGGLE_BREADCRUMBS.id,
+            order: '2',
+        });
+        registry.registerMenuAction(CommonMenus.VIEW_TOGGLE, {
             commandId: EditorCommands.TOGGLE_RENDER_WHITESPACE.id,
-            label: EditorCommands.TOGGLE_RENDER_WHITESPACE.label,
-            order: '2'
+            order: '3'
         });
         registry.registerMenuAction(CommonMenus.FILE_CLOSE, {
             commandId: CommonCommands.CLOSE_MAIN_TAB.id,
