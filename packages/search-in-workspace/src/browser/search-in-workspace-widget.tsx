@@ -19,7 +19,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
 import { SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
 import * as React from '@theia/core/shared/react';
-import * as ReactDOM from '@theia/core/shared/react-dom';
+import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { Event, Emitter, Disposable } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
@@ -100,6 +100,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     @inject(SearchInWorkspacePreferences)
     protected readonly searchInWorkspacePreferences: SearchInWorkspacePreferences;
 
+    protected searchFormContainerRoot: Root;
+
     @postConstruct()
     protected init(): void {
         this.id = SearchInWorkspaceWidget.ID;
@@ -112,6 +114,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.searchFormContainer = document.createElement('div');
         this.searchFormContainer.classList.add('searchHeader');
         this.contentNode.appendChild(this.searchFormContainer);
+        this.searchFormContainerRoot = createRoot(this.searchFormContainer);
         this.node.tabIndex = 0;
         this.node.appendChild(this.contentNode);
 
@@ -302,7 +305,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        ReactDOM.render(<React.Fragment>{this.renderSearchHeader()}{this.renderSearchInfo()}</React.Fragment>, this.searchFormContainer);
+        this.searchFormContainerRoot.render(<React.Fragment>{this.renderSearchHeader()}{this.renderSearchInfo()}</React.Fragment>);
         Widget.attach(this.resultTreeWidget, this.contentNode);
         this.toDisposeOnDetach.push(Disposable.create(() => {
             Widget.detach(this.resultTreeWidget);
@@ -313,7 +316,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         super.onUpdateRequest(msg);
         const searchInfo = this.renderSearchInfo();
         if (searchInfo) {
-            ReactDOM.render(<React.Fragment>{this.renderSearchHeader()}{searchInfo}</React.Fragment>, this.searchFormContainer);
+            this.searchFormContainerRoot.render(<React.Fragment>{this.renderSearchHeader()}{searchInfo}</React.Fragment>);
             this.onDidUpdateEmitter.fire(undefined);
         }
     }

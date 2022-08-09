@@ -52,7 +52,10 @@ export class TabBarToolbar extends ReactWidget {
         super();
         this.addClass(TabBarToolbar.Styles.TAB_BAR_TOOLBAR);
         this.hide();
+        this.onRender = this.onRender.bind(this);
     }
+
+    protected onRender = () => this.show();
 
     updateItems(items: Array<TabBarToolbarItem | ReactTabBarToolbarItem>, current: Widget | undefined): void {
         this.inline.clear();
@@ -68,11 +71,6 @@ export class TabBarToolbar extends ReactWidget {
         if (!items.length) {
             this.hide();
         }
-        this.onRender.push(Disposable.create(() => {
-            if (items.length) {
-                this.show();
-            }
-        }));
         this.update();
     }
 
@@ -129,6 +127,7 @@ export class TabBarToolbar extends ReactWidget {
         const toolbarItemClassNames = this.getToolbarItemClassNames(command?.id ?? item.command);
         if (item.menuPath && !item.command) { toolbarItemClassNames.push('enabled'); }
         return <div key={item.id}
+            ref={this.onRender}
             className={toolbarItemClassNames.join(' ')}
             onMouseDown={this.onMouseDownEvent}
             onMouseUp={this.onMouseUpEvent}

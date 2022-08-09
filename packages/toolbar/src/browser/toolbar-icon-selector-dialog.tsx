@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import * as ReactDOM from '@theia/core/shared/react-dom';
+import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { injectable, interfaces, inject, postConstruct } from '@theia/core/shared/inversify';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
@@ -59,19 +59,19 @@ export class ToolbarIconSelectorDialog extends ReactDialog<string | undefined> {
     protected filteredIcons: string[] = [];
     protected doShowFilterPlaceholder = false;
     protected debounceHandleSearch = debounce(this.doHandleSearch.bind(this), FIFTY_MS, { trailing: true });
+    protected controlPanelRoot: Root;
 
     constructor(
         @inject(DialogProps) protected override readonly props: DialogProps,
     ) {
         super(props);
-        this.toDispose.push(Disposable.create(() => {
-            ReactDOM.unmountComponentAtNode(this.controlPanel);
-        }));
+        this.controlPanelRoot = createRoot(this.controlPanel);
+        this.toDispose.push(Disposable.create(() => this.controlPanelRoot.unmount()));
     }
 
     protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-        ReactDOM.render(this.renderControls(), this.controlPanel);
+        this.controlPanelRoot.render(this.renderControls());
     }
 
     @postConstruct()

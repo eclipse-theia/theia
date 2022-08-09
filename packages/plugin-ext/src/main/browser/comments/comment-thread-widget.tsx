@@ -22,7 +22,6 @@ import {
 } from '../../../common/plugin-api-rpc-model';
 import { CommentGlyphWidget } from './comment-glyph-widget';
 import { BaseWidget, DISABLED_CLASS } from '@theia/core/lib/browser';
-import * as ReactDOM from '@theia/core/shared/react-dom';
 import * as React from '@theia/core/shared/react';
 import { MouseTargetType } from '@theia/editor/lib/browser';
 import { CommentsService } from './comments-service';
@@ -36,6 +35,7 @@ import {
 import { CommentsContextKeyService } from './comments-context-key-service';
 import { RefObject } from '@theia/core/shared/react';
 import * as monaco from '@theia/monaco-editor-core';
+import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -50,6 +50,7 @@ export const COMMENT_TITLE: MenuPath = ['comment-title-menu'];
 export class CommentThreadWidget extends BaseWidget {
 
     protected readonly zoneWidget: MonacoEditorZoneWidget;
+    protected readonly containerNodeRoot: Root;
     protected readonly commentGlyphWidget: CommentGlyphWidget;
     protected readonly contextMenu: CompositeMenuNode;
     protected readonly commentFormRef: RefObject<CommentForm> = React.createRef<CommentForm>();
@@ -67,6 +68,7 @@ export class CommentThreadWidget extends BaseWidget {
     ) {
         super();
         this.toDispose.push(this.zoneWidget = new MonacoEditorZoneWidget(editor));
+        this.containerNodeRoot = createRoot(this.zoneWidget.containerNode);
         this.toDispose.push(this.commentGlyphWidget = new CommentGlyphWidget(editor));
         this.toDispose.push(this._commentThread.onDidChangeCollapsibleState(state => {
             if (state === CommentThreadCollapsibleState.Expanded && !this.isExpanded) {
@@ -255,7 +257,7 @@ export class CommentThreadWidget extends BaseWidget {
 
     protected render(): void {
         const headHeight = Math.ceil(this.zoneWidget.editor.getOption(monaco.editor.EditorOption.lineHeight) * 1.2);
-        ReactDOM.render(<div className={'review-widget'}>
+        this.containerNodeRoot.render(<div className={'review-widget'}>
             <div className={'head'} style={{ height: headHeight, lineHeight: `${headHeight}px` }}>
                 <div className={'review-title'}>
                     <span className={'filename'}>{this.getThreadLabel()}</span>
@@ -295,7 +297,7 @@ export class CommentThreadWidget extends BaseWidget {
                     ref={this.commentFormRef}
                 />
             </div>
-        </div>, this.zoneWidget.containerNode);
+        </div>);
     }
 }
 

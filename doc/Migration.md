@@ -19,6 +19,26 @@ For example:
 }
 ```
 
+### v1.29.0
+
+#### React 18 update
+
+The `react` and `react-dom` dependencies were upgraded to version 18. Some relevant changes include:
+
+ - `ReactDOM.render` is now deprecated and is replaced by `createRoot` from `react-dom/client`
+ - the new API no longer supports render callbacks
+ - updates in promises, setTimeout, event handlers are automatically batched
+
+ Because the currently used version of `react-virtualized` still depends on React 16, a `resolutions` block is needed in the `package.json` for the React 18 dependencies:
+
+ ```json
+"resolutions": {
+    "@types/react": "18.0.15",
+    "@types/react-dom": "18.0.6"
+    ...
+  }
+ ```
+
 ### v1.24.0
 
 #### node-gyp 8.4.1

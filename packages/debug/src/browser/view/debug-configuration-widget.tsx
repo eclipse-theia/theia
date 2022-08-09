@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ReactWidget, QuickInputService } from '@theia/core/lib/browser';
-import { CommandRegistry, Disposable, MessageService } from '@theia/core/lib/common';
+import { CommandRegistry, Disposable, DisposableCollection, MessageService } from '@theia/core/lib/common';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -55,6 +55,8 @@ export class DebugConfigurationWidget extends ReactWidget {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
+    protected readonly onRender = new DisposableCollection();
+
     @postConstruct()
     protected init(): void {
         this.addClass('debug-toolbar');
@@ -80,7 +82,10 @@ export class DebugConfigurationWidget extends ReactWidget {
     }
 
     protected stepRef: DebugAction | undefined;
-    protected setStepRef = (stepRef: DebugAction | null) => this.stepRef = stepRef || undefined;
+    protected setStepRef = (stepRef: DebugAction | null) => {
+        this.stepRef = stepRef || undefined;
+        this.onRender.dispose();
+    };
 
     render(): React.ReactNode {
         return <React.Fragment>

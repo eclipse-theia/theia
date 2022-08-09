@@ -42,6 +42,7 @@ import { MaybePromise } from '../../common/types';
 import { LabelProvider } from '../label-provider';
 import { CorePreferences } from '../core-preferences';
 import { TreeFocusService } from './tree-focus-service';
+import { useEffect } from 'react';
 
 const debounce = require('lodash.debounce');
 
@@ -467,6 +468,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return this.model.root;
     }
 
+    protected ScrollingRowRenderer: React.FC<{ rows: TreeWidget.NodeRow[] }> = ({ rows }) => {
+        useEffect(() => this.scrollToSelected());
+        return <>{rows.map(row => <div key={row.index}>{this.renderNodeRow(row)}</div>)}</>;
+    };
+
     protected view: TreeWidget.View | undefined;
     /**
      * Render the tree widget.
@@ -476,8 +482,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (model.root) {
             const rows = Array.from(this.rows.values());
             if (this.props.virtualized === false) {
-                this.onRender.push(Disposable.create(() => this.scrollToSelected()));
-                return rows.map(row => <div key={row.index}>{this.renderNodeRow(row)}</div>);
+                return <this.ScrollingRowRenderer rows={rows} />;
             }
             return <TreeWidget.View
                 ref={view => this.view = (view || undefined)}

@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { inject, postConstruct, injectable } from '@theia/core/shared/inversify';
-import { Disposable, MenuPath } from '@theia/core';
+import { Disposable, DisposableCollection, MenuPath } from '@theia/core';
 import { ReactWidget } from '@theia/core/lib/browser/widgets';
 import { DebugViewModel } from './debug-view-model';
 import { DebugState } from '../debug-session';
@@ -30,6 +30,8 @@ export class DebugToolBar extends ReactWidget {
 
     @inject(DebugViewModel)
     protected readonly model: DebugViewModel;
+
+    protected readonly onRender = new DisposableCollection();
 
     @postConstruct()
     protected init(): void {
@@ -55,7 +57,10 @@ export class DebugToolBar extends ReactWidget {
         return true;
     }
     protected stepRef: DebugAction | undefined;
-    protected setStepRef = (stepRef: DebugAction | null) => this.stepRef = stepRef || undefined;
+    protected setStepRef = (stepRef: DebugAction | null) => {
+        this.stepRef = stepRef || undefined;
+        this.onRender.dispose();
+    };
 
     protected render(): React.ReactNode {
         const { state } = this.model;

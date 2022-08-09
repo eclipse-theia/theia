@@ -14,17 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 import { injectable, unmanaged } from 'inversify';
-import { DisposableCollection, Disposable } from '../../common';
+import { Disposable } from '../../common';
 import { BaseWidget, Message } from './widget';
 import { Widget } from '@phosphor/widgets';
+import { createRoot, Root } from 'react-dom/client';
 
 @injectable()
 export abstract class ReactWidget extends BaseWidget {
 
-    protected readonly onRender = new DisposableCollection();
+    protected nodeRoot: Root;
 
     constructor(@unmanaged() options?: Widget.IOptions) {
         super(options);
@@ -32,14 +32,13 @@ export abstract class ReactWidget extends BaseWidget {
             suppressScrollX: true,
             minScrollbarLength: 35,
         };
-        this.toDispose.push(Disposable.create(() => {
-            ReactDOM.unmountComponentAtNode(this.node);
-        }));
+        this.nodeRoot = createRoot(this.node);
+        this.toDispose.push(Disposable.create(() => this.nodeRoot.unmount()));
     }
 
     protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-        ReactDOM.render(<React.Fragment>{this.render()}</React.Fragment>, this.node, () => this.onRender.dispose());
+        this.nodeRoot.render(<React.Fragment>{this.render()}</React.Fragment>);
     }
 
     /**

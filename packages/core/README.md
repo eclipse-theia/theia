@@ -95,7 +95,8 @@ export class SomeClass {
     - `fs-extra` (from [`fs-extra@^4.0.2`](https://www.npmjs.com/package/fs-extra))
     - `fuzzy` (from [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy))
     - `inversify` (from [`inversify@^5.1.1`](https://www.npmjs.com/package/inversify))
-    - `react-dom` (from [`react-dom@^16.8.0`](https://www.npmjs.com/package/react-dom))
+    - `react-dom` (from [`react-dom@^18.2.0`](https://www.npmjs.com/package/react-dom))
+    - `react-dom/client` (from [`react-dom@^18.2.0`](https://www.npmjs.com/package/react-dom))
     - `react-virtualized` (from [`react-virtualized@^9.20.0`](https://www.npmjs.com/package/react-virtualized))
     - `vscode-languageserver-protocol` (from [`vscode-languageserver-protocol@~3.15.3`](https://www.npmjs.com/package/vscode-languageserver-protocol))
     - `vscode-uri` (from [`vscode-uri@^2.1.1`](https://www.npmjs.com/package/vscode-uri))
@@ -105,7 +106,7 @@ export class SomeClass {
     - `lodash.throttle` (from [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle))
     - `nsfw` (from [`nsfw@^2.1.2`](https://www.npmjs.com/package/nsfw))
     - `markdown-it` (from [`markdown-it@^12.3.2`](https://www.npmjs.com/package/markdown-it))
-    - `react` (from [`react@^16.8.0`](https://www.npmjs.com/package/react))
+    - `react` (from [`react@^18.2.0`](https://www.npmjs.com/package/react))
     - `ws` (from [`ws@^7.1.2`](https://www.npmjs.com/package/ws))
     - `yargs` (from [`yargs@^15.3.1`](https://www.npmjs.com/package/yargs))
 
