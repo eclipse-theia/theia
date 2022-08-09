@@ -45,7 +45,7 @@ import { ColorRegistry } from './color-registry';
 import { Color } from '../common/color';
 import { CoreConfiguration, CorePreferences } from './core-preferences';
 import { ThemeService } from './theming';
-import { PreferenceService, PreferenceChangeEvent } from './preferences';
+import { PreferenceService, PreferenceChangeEvent, PreferenceScope } from './preferences';
 import { ClipboardService } from './clipboard-service';
 import { EncodingRegistry } from './encoding-registry';
 import { UTF8 } from '../common/encodings';
@@ -329,6 +329,12 @@ export namespace CommonCommands {
     export const CONFIGURE_DISPLAY_LANGUAGE = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.configureLanguage',
         label: 'Configure Display Language'
+    });
+
+    export const TOGGLE_BREADCRUMBS = Command.toDefaultLocalizedCommand({
+        id: 'breadcrumbs.toggle',
+        label: 'Toggle Breadcrumbs',
+        category: VIEW_CATEGORY
     });
 }
 
@@ -931,6 +937,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.CONFIGURE_DISPLAY_LANGUAGE, {
             execute: () => this.configureDisplayLanguage()
         });
+        commandRegistry.registerCommand(CommonCommands.TOGGLE_BREADCRUMBS, {
+            execute: () => this.toggleBreadcrumbs(),
+            isToggled: () => this.isBreadcrumbsEnabled(),
+        });
         commandRegistry.registerCommand(CommonCommands.NEW_UNTITLED_FILE, {
             execute: async () => {
                 const untitledUri = this.untitledResourceResolver.createUntitledURI('', await this.workingDirProvider.getUserWorkingDir());
@@ -1148,6 +1158,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             this.windowService.setSafeToShutDown();
             this.windowService.reload();
         }
+    }
+
+    protected toggleBreadcrumbs(): void {
+        const value: boolean | undefined = this.preferenceService.get('breadcrumbs.enabled');
+        this.preferenceService.set('breadcrumbs.enabled', !value, PreferenceScope.User);
+    }
+
+    protected isBreadcrumbsEnabled(): boolean {
+        return !!this.preferenceService.get('breadcrumbs.enabled');
     }
 
     protected async confirmRestart(): Promise<boolean> {
