@@ -17,6 +17,7 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalOptions } from '@theia/plugin';
+import { CancellationToken } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
@@ -24,17 +25,19 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
+import { TerminalLink, TerminalLinkProvider } from '@theia/terminal/lib/browser/terminal-link-provider';
 import { URI } from '@theia/core/lib/common/uri';
 
 /**
  * Plugin api service allows working with terminal emulator.
  */
-export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable {
+export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLinkProvider, Disposable {
 
     private readonly terminals: TerminalService;
     private readonly shell: ApplicationShell;
     private readonly extProxy: TerminalServiceExt;
     private readonly shellTerminalServer: ShellTerminalServerProxy;
+    private readonly terminalLinkProviders: string[] = [];
 
     private readonly toDispose = new DisposableCollection();
 
@@ -54,6 +57,8 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
             const serializedCollections: [string, SerializableEnvironmentVariableCollection][] = collectionAsArray.map(e => [e[0], [...e[1].map.entries()]]);
             this.extProxy.$initEnvironmentVariableCollections(serializedCollections);
         }
+
+        container.bind(TerminalLinkProvider).toDynamicValue(() => this);
     }
 
     $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined): void {
@@ -242,4 +247,24 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
     $setNameByTerminalId(id: number, name: string): void {
         this.terminals.getByTerminalId(id)?.setTitle(name);
     }
+
+    async $registerTerminalLinkProvider(providerId: string): Promise<void> {
+        this.terminalLinkProviders.push(providerId);
+    }
+
+    async $unregisterTerminalLinkProvider(providerId: string): Promise<void> {
+        const index = this.terminalLinkProviders.indexOf(providerId);
+        if (index > -1) {
+            this.terminalLinkProviders.splice(index, 1);
+        }
+    }
+
+    async provideLinks(line: string, terminal: TerminalWidget, cancelationToken?: CancellationToken | undefined): Promise<TerminalLink[]> {
+        if (this.terminalLinkProviders.length < 1) {
+            return [];
+        }
+        const links = await this.extProxy.$provideTerminalLinks(line, terminal.id, cancelationToken ?? CancellationToken.None);
+        return links.map(link => ({ ...link, handle: () => this.extProxy.$handleTerminalLink(link) }));
+    }
+
 }
