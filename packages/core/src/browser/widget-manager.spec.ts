@@ -13,6 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+
+import { enableJSDOM } from './test/jsdom';
+let disableJSDOM = enableJSDOM();
+
 import { Container, ContainerModule } from 'inversify';
 import { expect } from 'chai';
 import { WidgetManager, WidgetFactory } from './widget-manager';
@@ -21,6 +25,8 @@ import { Signal } from '@phosphor/signaling';
 import { ILogger } from '../common/logger';
 import { MockLogger } from '../common/test/mock-logger';
 import { bindContributionProvider } from '../common';
+
+disableJSDOM();
 
 class TestWidgetFactory implements WidgetFactory {
 
@@ -41,6 +47,7 @@ class TestWidgetFactory implements WidgetFactory {
 let widgetManager: WidgetManager;
 
 before(() => {
+    disableJSDOM = enableJSDOM();
     const testContainer = new Container();
 
     const module = new ContainerModule((bind, unbind, isBound, rebind) => {
@@ -52,6 +59,10 @@ before(() => {
     testContainer.load(module);
 
     widgetManager = testContainer.get(WidgetManager);
+});
+
+after(() => {
+    disableJSDOM();
 });
 
 describe('widget-manager', () => {
