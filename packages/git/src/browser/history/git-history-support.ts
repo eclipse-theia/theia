@@ -34,6 +34,7 @@ export class GitHistorySupport implements ScmHistorySupport {
         const gitOptions: Git.Options.Log = {
             uri: options ? options.uri : undefined,
             maxCount: options ? options.maxCount : undefined,
+            range: options?.range,
             shortSha: true
         };
 
