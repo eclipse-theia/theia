@@ -256,7 +256,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.labelProvider.onDidChange(e => {
                 for (const row of this.rows.values()) {
                     if (e.affects(row)) {
-                        this.forceUpdate();
+                        this.update();
                         return;
                     }
                 }
@@ -347,9 +347,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * Update the `scrollToRow`.
      * @param updateOptions the tree widget force update options.
      */
-    protected updateScrollToRow(updateOptions?: TreeWidget.ForceUpdateOptions): void {
+    protected updateScrollToRow(): void {
         this.scrollToRow = this.getScrollToRow();
-        this.forceUpdate(updateOptions);
+        this.update();
     }
 
     protected scheduleUpdateScrollToRow = debounce(this.updateScrollToRow);
@@ -374,22 +374,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected readonly updateDecorations = debounce(() => this.doUpdateDecorations(), 150);
     protected async doUpdateDecorations(): Promise<void> {
         this.decorations = await this.decoratorService.getDecorations(this.model);
-        this.forceUpdate();
-    }
-
-    /**
-     * Force deep resizing and rendering of rows.
-     * https://github.com/bvaughn/react-virtualized/blob/master/docs/List.md#recomputerowheights-index-number
-     */
-    protected forceUpdate({ resize }: TreeWidget.ForceUpdateOptions = { resize: false }): void {
-        // if (this.view && this.view.list) {
-        //     if (resize && this.isVisible) {
-        //         this.view.cache.clearAll();
-        //     } else {
-        //     }
-        //     this.view.forceUpdate();
-        //     this.view.list.forceUpdate();
-        // }
         this.update();
     }
 
@@ -436,7 +420,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
-        this.forceUpdate({ resize: true });
+        this.update();
     }
 
     protected render(): React.ReactNode {
@@ -1438,15 +1422,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
 }
 export namespace TreeWidget {
-    /**
-     * Representation of the tree force update options.
-     */
-    export interface ForceUpdateOptions {
-        /**
-         * Controls whether to force a resize of the widget.
-         */
-        resize: boolean
-    }
     /**
      * Representation of a tree node row.
      */
