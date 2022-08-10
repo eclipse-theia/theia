@@ -22,26 +22,26 @@ export namespace NotificationsCommands {
     const NOTIFICATIONS_CATEGORY = 'Notifications';
     const NOTIFICATIONS_CATEGORY_KEY = nls.getDefaultKey(NOTIFICATIONS_CATEGORY);
 
-    export const TOGGLE = Command.toLocalizedCommand({
+    export const TOGGLE = Command.toLocalizedCommand<[], void>({
         id: 'notifications.commands.toggle',
         category: NOTIFICATIONS_CATEGORY,
         iconClass: codicon('list-unordered'),
         label: 'Toggle Notifications'
     }, 'theia/messages/toggleNotifications', NOTIFICATIONS_CATEGORY_KEY);
 
-    export const SHOW = Command.toDefaultLocalizedCommand({
+    export const SHOW = Command.toDefaultLocalizedCommand<[], void>({
         id: 'notifications.commands.show',
         category: NOTIFICATIONS_CATEGORY,
         label: 'Show Notifications'
     });
 
-    export const HIDE = Command.toDefaultLocalizedCommand({
+    export const HIDE = Command.toDefaultLocalizedCommand<[], void>({
         id: 'notifications.commands.hide',
         category: NOTIFICATIONS_CATEGORY,
         label: 'Hide Notifications'
     });
 
-    export const CLEAR_ALL = Command.toDefaultLocalizedCommand({
+    export const CLEAR_ALL = Command.toDefaultLocalizedCommand<[], void>({
         id: 'notifications.commands.clearAll',
         category: NOTIFICATIONS_CATEGORY,
         iconClass: codicon('clear-all'),

@@ -32,19 +32,15 @@ import { nls } from '@theia/core/lib/common/nls';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 export namespace PreviewCommands {
-    /**
-     * No `label`. Otherwise, it would show up in the `Command Palette` and we already have the `Preview` open handler.
-     * See in (`WorkspaceCommandContribution`)[https://bit.ly/2DncrSD].
-     */
-    export const OPEN = Command.toLocalizedCommand({
+    export const OPEN = Command.toLocalizedCommand<[widget: Widget], void>({
         id: 'preview:open',
         label: 'Open Preview',
         iconClass: codicon('open-preview')
     }, 'vscode.markdown-language-features/package/markdown.preview.title');
-    export const OPEN_SOURCE: Command = {
+    export const OPEN_SOURCE = Command.as<[widget: Widget], void>({
         id: 'preview.open.source',
         iconClass: codicon('go-to-file')
-    };
+    });
 }
 
 export interface PreviewOpenerOptions extends WidgetOpenerOptions {
@@ -213,7 +209,11 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
             isVisible: widget => this.canHandleEditorUri(widget)
         });
         registry.registerCommand(PreviewCommands.OPEN_SOURCE, {
-            execute: widget => this.openSource(widget),
+            execute: widget => {
+                if (widget instanceof PreviewWidget) {
+                    this.openSource(widget);
+                }
+            },
             isEnabled: widget => widget instanceof PreviewWidget,
             isVisible: widget => widget instanceof PreviewWidget
         });

@@ -31,24 +31,24 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { nls } from '@theia/core/lib/common/nls';
 
 export namespace KeymapsCommands {
-    export const OPEN_KEYMAPS = Command.toDefaultLocalizedCommand({
+    export const OPEN_KEYMAPS = Command.toDefaultLocalizedCommand<[], KeybindingWidget>({
         id: 'keymaps:open',
         category: CommonCommands.PREFERENCES_CATEGORY,
         label: 'Open Keyboard Shortcuts',
     });
-    export const OPEN_KEYMAPS_JSON = Command.toDefaultLocalizedCommand({
+    export const OPEN_KEYMAPS_JSON = Command.toDefaultLocalizedCommand<[], void>({
         id: 'keymaps:openJson',
         category: CommonCommands.PREFERENCES_CATEGORY,
         label: 'Open Keyboard Shortcuts (JSON)',
     });
-    export const OPEN_KEYMAPS_JSON_TOOLBAR: Command = {
+    export const OPEN_KEYMAPS_JSON_TOOLBAR = Command.as<[widget: Widget], void>({
         id: 'keymaps:openJson.toolbar',
         iconClass: codicon('json')
-    };
-    export const CLEAR_KEYBINDINGS_SEARCH: Command = {
+    });
+    export const CLEAR_KEYBINDINGS_SEARCH = Command.as<[widget: Widget], void>({
         id: 'keymaps.clearSearch',
         iconClass: codicon('clear-all')
-    };
+    });
 }
 
 @injectable()
@@ -79,12 +79,16 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
         commands.registerCommand(KeymapsCommands.OPEN_KEYMAPS_JSON_TOOLBAR, {
             isEnabled: w => this.withWidget(w, () => true),
             isVisible: w => this.withWidget(w, () => true),
-            execute: w => this.withWidget(w, widget => this.keymaps.open(widget)),
+            execute: w => {
+                this.withWidget(w, widget => this.keymaps.open(widget));
+            }
         });
         commands.registerCommand(KeymapsCommands.CLEAR_KEYBINDINGS_SEARCH, {
             isEnabled: w => this.withWidget(w, widget => widget.hasSearch()),
             isVisible: w => this.withWidget(w, () => true),
-            execute: w => this.withWidget(w, widget => widget.clearSearch()),
+            execute: w => {
+                this.withWidget(w, widget => widget.clearSearch());
+            }
         });
     }
 

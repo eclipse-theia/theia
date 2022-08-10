@@ -95,18 +95,22 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
         registry.registerCommand(OutputCommands.LOCK__WIDGET, {
             isEnabled: widget => this.withWidget(widget, output => !output.isLocked),
             isVisible: widget => this.withWidget(widget, output => !output.isLocked),
-            execute: widget => this.withWidget(widget, output => {
-                output.lock();
-                return true;
-            })
+            execute: widget => {
+                this.withWidget(widget, output => {
+                    output.lock();
+                    return true;
+                });
+            }
         });
         registry.registerCommand(OutputCommands.UNLOCK__WIDGET, {
             isEnabled: widget => this.withWidget(widget, output => output.isLocked),
             isVisible: widget => this.withWidget(widget, output => output.isLocked),
-            execute: widget => this.withWidget(widget, output => {
-                output.unlock();
-                return true;
-            })
+            execute: widget => {
+                this.withWidget(widget, output => {
+                    output.unlock();
+                    return true;
+                });
+            }
         });
         registry.registerCommand(OutputCommands.COPY_ALL, {
             execute: () => {

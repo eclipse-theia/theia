@@ -51,12 +51,16 @@ export class BulkEditContribution extends AbstractViewContribution<BulkEditTreeW
         registry.registerCommand(BulkEditCommands.APPLY, {
             isEnabled: widget => this.withWidget(widget, () => true),
             isVisible: widget => this.withWidget(widget, () => true),
-            execute: widget => this.withWidget(widget, () => this.apply())
+            execute: widget => {
+                this.withWidget(widget, () => this.apply());
+            }
         });
         registry.registerCommand(BulkEditCommands.DISCARD, {
             isEnabled: widget => this.withWidget(widget, () => true),
             isVisible: widget => this.withWidget(widget, () => true),
-            execute: widget => this.withWidget(widget, () => this.discard())
+            execute: widget => {
+                this.withWidget(widget, () => this.discard());
+            }
         });
     }
 

@@ -44,18 +44,21 @@ export class TimelineContribution implements CommandContribution, TabBarToolbarC
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
-    public static readonly LOAD_MORE_COMMAND: Command = {
+    public static readonly LOAD_MORE_COMMAND = Command.as<[], void>({
         id: 'timeline-load-more'
-    };
+    });
+
     private readonly toolbarItem = {
         id: 'timeline-refresh-toolbar-item',
         command: 'timeline-refresh',
         tooltip: 'Refresh',
         icon: codicon('refresh')
     };
+
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
         registry.registerItem(this.toolbarItem);
     }
+
     registerCommands(commands: CommandRegistry): void {
         const attachTimeline = async (explorer: Widget) => {
             const timeline = await this.widgetManager.getOrCreateWidget(TimelineWidget.ID);

@@ -14,21 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { codicon } from '@theia/core/lib/browser';
+import { codicon, Widget } from '@theia/core/lib/browser';
 import { Command } from '@theia/core/lib/common';
 
 export namespace BulkEditCommands {
-    export const TOGGLE_VIEW: Command = {
-        id: 'bulk-edit:toggleView'
-    };
 
-    export const APPLY: Command = {
+    export const APPLY = Command.as<[widget: Widget], void>({
         id: 'bulk-edit:apply',
         iconClass: codicon('check')
-    };
+    });
 
-    export const DISCARD: Command = {
+    export const DISCARD = Command.as<[widget: Widget], void>({
         id: 'bulk-edit:discard',
         iconClass: codicon('clear-all')
-    };
+    });
 }

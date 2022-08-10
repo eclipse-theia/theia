@@ -26,7 +26,7 @@ export namespace KeyboardCommands {
     const KEYBOARD_CATEGORY = 'Keyboard';
     const KEYBOARD_CATEGORY_KEY = nls.getDefaultKey(KEYBOARD_CATEGORY);
 
-    export const CHOOSE_KEYBOARD_LAYOUT = Command.toLocalizedCommand({
+    export const CHOOSE_KEYBOARD_LAYOUT = Command.toLocalizedCommand<[], KeyboardLayoutData | undefined>({
         id: 'core.keyboard.choose',
         category: KEYBOARD_CATEGORY,
         label: 'Choose Keyboard Layout',

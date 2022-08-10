@@ -111,7 +111,7 @@ export interface ApplicationShellLayoutMigration {
     onWillInflateWidget?(desc: WidgetDescription, context: ApplicationShellLayoutMigrationContext): MaybePromise<WidgetDescription | undefined>;
 }
 
-export const RESET_LAYOUT = Command.toLocalizedCommand({
+export const RESET_LAYOUT = Command.toLocalizedCommand<[], void>({
     id: 'reset.layout',
     category: CommonCommands.VIEW_CATEGORY,
     label: 'Reset Workbench Layout'

@@ -113,15 +113,14 @@ export class SampleToolbarContribution extends AbstractToolbarContribution
         registry.registerCommand(FIND_IN_WORKSPACE_ROOT, {
             execute: async () => {
                 const wsRoots = await this.workspaceService.roots;
-                if (!wsRoots.length) {
-                    await this.commandService.executeCommand(SearchInWorkspaceCommands.FIND_IN_FOLDER.id);
-                } else if (wsRoots.length === 1) {
+                if (wsRoots.length === 1) {
                     const { resource } = wsRoots[0];
                     await this.commandService.executeCommand(SearchInWorkspaceCommands.FIND_IN_FOLDER.id, [resource]);
                 } else {
                     this.searchPickService.open();
                 }
             },
+            isEnabled: () => !!this.workspaceService.tryGetRoots().length
         });
     }
 

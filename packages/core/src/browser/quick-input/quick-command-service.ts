@@ -24,11 +24,11 @@ import { filterItems, QuickPickItem, QuickPicks } from './quick-input-service';
 import { KeySequence } from '../keys';
 import { codiconArray } from '../widgets';
 
-export const quickCommand: Command = {
+export const quickCommand = Command.as<[], void>({
     id: 'workbench.action.showCommands'
-};
+});
 
-export const CLEAR_COMMAND_HISTORY = Command.toDefaultLocalizedCommand({
+export const CLEAR_COMMAND_HISTORY = Command.toDefaultLocalizedCommand<[], void>({
     id: 'clear.command.history',
     label: 'Clear Command History'
 });

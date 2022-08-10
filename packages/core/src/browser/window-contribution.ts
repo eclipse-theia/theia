@@ -23,7 +23,7 @@ import { CommonMenus } from '../browser/common-frontend-contribution';
 
 export namespace WindowCommands {
 
-    export const NEW_WINDOW = Command.toDefaultLocalizedCommand({
+    export const NEW_WINDOW = Command.toDefaultLocalizedCommand<[], void>({
         id: 'workbench.action.newWindow',
         label: 'New Window'
     });
@@ -37,9 +37,7 @@ export class WindowContribution implements CommandContribution, KeybindingContri
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(WindowCommands.NEW_WINDOW, {
-            execute: () => {
-                this.windowService.openNewDefaultWindow();
-            }
+            execute: () => this.windowService.openNewDefaultWindow()
         });
     }
 

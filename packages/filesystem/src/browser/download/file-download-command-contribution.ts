@@ -68,7 +68,7 @@ export class FileDownloadCommandContribution implements CommandContribution {
 
 export namespace FileDownloadCommands {
 
-    export const DOWNLOAD = Command.toDefaultLocalizedCommand({
+    export const DOWNLOAD = Command.toDefaultLocalizedCommand<[], void>({
         id: 'file.download',
         category: CommonCommands.FILE_CATEGORY,
         label: 'Download'

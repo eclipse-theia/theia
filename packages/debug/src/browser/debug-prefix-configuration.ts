@@ -61,7 +61,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
 
     readonly statusBarId = 'select-run-debug-statusbar-item';
 
-    private readonly command = Command.toDefaultLocalizedCommand({
+    private readonly command = Command.toDefaultLocalizedCommand<[], void>({
         id: 'select.debug.configuration',
         category: DebugCommands.DEBUG_CATEGORY,
         label: 'Select and Start Debugging'

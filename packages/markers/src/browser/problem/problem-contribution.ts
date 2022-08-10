@@ -37,20 +37,20 @@ export namespace ProblemsMenu {
 }
 
 export namespace ProblemsCommands {
-    export const COLLAPSE_ALL: Command = {
+    export const COLLAPSE_ALL = Command.as<[], void>({
         id: 'problems.collapse.all'
-    };
-    export const COLLAPSE_ALL_TOOLBAR: Command = {
+    });
+    export const COLLAPSE_ALL_TOOLBAR = Command.as<[widget: Widget], void>({
         id: 'problems.collapse.all.toolbar',
         iconClass: codicon('collapse-all')
-    };
-    export const COPY: Command = {
+    });
+    export const COPY = Command.as({
         id: 'problems.copy'
-    };
-    export const COPY_MESSAGE: Command = {
+    });
+    export const COPY_MESSAGE = Command.as({
         id: 'problems.copy.message',
-    };
-    export const CLEAR_ALL = Command.toLocalizedCommand({
+    });
+    export const CLEAR_ALL = Command.toLocalizedCommand<[widget: Widget], void>({
         id: 'problems.clear.all',
         category: 'Problems',
         label: 'Clear All',
@@ -134,7 +134,9 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         commands.registerCommand(ProblemsCommands.COLLAPSE_ALL_TOOLBAR, {
             isEnabled: widget => this.withWidget(widget, () => true),
             isVisible: widget => this.withWidget(widget, () => true),
-            execute: widget => this.withWidget(widget, () => this.collapseAllProblems())
+            execute: widget => {
+                this.withWidget(widget, () => this.collapseAllProblems());
+            }
         });
         commands.registerCommand(ProblemsCommands.COPY,
             new ProblemSelection.CommandHandler(this.selectionService, {
@@ -155,7 +157,9 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         commands.registerCommand(ProblemsCommands.CLEAR_ALL, {
             isEnabled: widget => this.withWidget(widget, () => true),
             isVisible: widget => this.withWidget(widget, () => true),
-            execute: widget => this.withWidget(widget, () => this.problemManager.cleanAllMarkers())
+            execute: widget => {
+                this.withWidget(widget, () => this.problemManager.cleanAllMarkers());
+            }
         });
     }
 

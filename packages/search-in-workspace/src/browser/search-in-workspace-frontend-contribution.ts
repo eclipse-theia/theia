@@ -39,65 +39,65 @@ import { isHighContrast } from '@theia/core/lib/common/theme';
 
 export namespace SearchInWorkspaceCommands {
     const SEARCH_CATEGORY = 'Search';
-    export const TOGGLE_SIW_WIDGET = {
+    export const TOGGLE_SIW_WIDGET = Command.as({
         id: 'search-in-workspace.toggle'
-    };
-    export const OPEN_SIW_WIDGET = Command.toDefaultLocalizedCommand({
+    });
+    export const OPEN_SIW_WIDGET = Command.toDefaultLocalizedCommand<[], void>({
         id: 'search-in-workspace.open',
         category: SEARCH_CATEGORY,
         label: 'Find in Files'
     });
-    export const REPLACE_IN_FILES = Command.toDefaultLocalizedCommand({
+    export const REPLACE_IN_FILES = Command.toDefaultLocalizedCommand<[], void>({
         id: 'search-in-workspace.replace',
         category: SEARCH_CATEGORY,
         label: 'Replace in Files'
     });
-    export const FIND_IN_FOLDER = Command.toDefaultLocalizedCommand({
+    export const FIND_IN_FOLDER = Command.toDefaultLocalizedCommand<[uris: URI[]], void>({
         id: 'search-in-workspace.in-folder',
         category: SEARCH_CATEGORY,
         label: 'Find in Folder...'
     });
-    export const REFRESH_RESULTS = Command.toDefaultLocalizedCommand({
+    export const REFRESH_RESULTS = Command.toDefaultLocalizedCommand<[widget: Widget], void>({
         id: 'search-in-workspace.refresh',
         category: SEARCH_CATEGORY,
         label: 'Refresh',
         iconClass: codicon('refresh')
     });
-    export const CANCEL_SEARCH = Command.toDefaultLocalizedCommand({
+    export const CANCEL_SEARCH = Command.toDefaultLocalizedCommand<[widget: Widget], void>({
         id: 'search-in-workspace.cancel',
         category: SEARCH_CATEGORY,
         label: 'Cancel Search',
         iconClass: codicon('search-stop')
     });
-    export const COLLAPSE_ALL = Command.toDefaultLocalizedCommand({
+    export const COLLAPSE_ALL = Command.toDefaultLocalizedCommand<[widget: Widget], void>({
         id: 'search-in-workspace.collapse-all',
         category: SEARCH_CATEGORY,
         label: 'Collapse All',
         iconClass: codicon('collapse-all')
     });
-    export const EXPAND_ALL = Command.toDefaultLocalizedCommand({
+    export const EXPAND_ALL = Command.toDefaultLocalizedCommand<[widget: Widget], void>({
         id: 'search-in-workspace.expand-all',
         category: SEARCH_CATEGORY,
         label: 'Expand All',
         iconClass: codicon('expand-all')
     });
-    export const CLEAR_ALL = Command.toDefaultLocalizedCommand({
+    export const CLEAR_ALL = Command.toDefaultLocalizedCommand<[widget: Widget], void>({
         id: 'search-in-workspace.clear-all',
         category: SEARCH_CATEGORY,
         label: 'Clear Search Results',
         iconClass: codicon('clear-all')
     });
-    export const COPY_ALL = Command.toDefaultLocalizedCommand({
+    export const COPY_ALL = Command.toDefaultLocalizedCommand<[], void>({
         id: 'search.action.copyAll',
         category: SEARCH_CATEGORY,
         label: 'Copy All',
     });
-    export const COPY_ONE = Command.toDefaultLocalizedCommand({
+    export const COPY_ONE = Command.toDefaultLocalizedCommand<[], void>({
         id: 'search.action.copyMatch',
         category: SEARCH_CATEGORY,
         label: 'Copy',
     });
-    export const DISMISS_RESULT = Command.toDefaultLocalizedCommand({
+    export const DISMISS_RESULT = Command.toDefaultLocalizedCommand<[], void>({
         id: 'search.action.remove',
         category: SEARCH_CATEGORY,
         label: 'Dismiss',
@@ -182,27 +182,37 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         }));
 
         commands.registerCommand(SearchInWorkspaceCommands.CANCEL_SEARCH, {
-            execute: w => this.withWidget(w, widget => widget.getCancelIndicator() && widget.getCancelIndicator()!.cancel()),
+            execute: w => {
+                this.withWidget(w, widget => widget.getCancelIndicator() && widget.getCancelIndicator()!.cancel());
+            },
             isEnabled: w => this.withWidget(w, widget => widget.getCancelIndicator() !== undefined),
             isVisible: w => this.withWidget(w, widget => widget.getCancelIndicator() !== undefined)
         });
         commands.registerCommand(SearchInWorkspaceCommands.REFRESH_RESULTS, {
-            execute: w => this.withWidget(w, widget => widget.refresh()),
+            execute: w => {
+                this.withWidget(w, widget => widget.refresh());
+            },
             isEnabled: w => this.withWidget(w, widget => (widget.hasResultList() || widget.hasSearchTerm()) && this.workspaceService.tryGetRoots().length > 0),
             isVisible: w => this.withWidget(w, () => true)
         });
         commands.registerCommand(SearchInWorkspaceCommands.COLLAPSE_ALL, {
-            execute: w => this.withWidget(w, widget => widget.collapseAll()),
+            execute: w => {
+                this.withWidget(w, widget => widget.collapseAll());
+            },
             isEnabled: w => this.withWidget(w, widget => widget.hasResultList()),
             isVisible: w => this.withWidget(w, widget => !widget.areResultsCollapsed())
         });
         commands.registerCommand(SearchInWorkspaceCommands.EXPAND_ALL, {
-            execute: w => this.withWidget(w, widget => widget.expandAll()),
+            execute: w => {
+                this.withWidget(w, widget => widget.expandAll());
+            },
             isEnabled: w => this.withWidget(w, widget => widget.hasResultList()),
             isVisible: w => this.withWidget(w, widget => widget.areResultsCollapsed())
         });
         commands.registerCommand(SearchInWorkspaceCommands.CLEAR_ALL, {
-            execute: w => this.withWidget(w, widget => widget.clear()),
+            execute: w => {
+                this.withWidget(w, widget => widget.clear());
+            },
             isEnabled: w => this.withWidget(w, widget => widget.hasResultList()),
             isVisible: w => this.withWidget(w, () => true)
         });
@@ -215,12 +225,14 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
                 const { selection } = this.selectionService;
                 return TreeWidgetSelection.isSource(selection, widget.resultTreeWidget) && selection.length > 0;
             }),
-            execute: () => this.withWidget(undefined, widget => {
-                const { selection } = this.selectionService;
-                if (TreeWidgetSelection.is(selection)) {
-                    widget.resultTreeWidget.removeNode(selection[0]);
-                }
-            })
+            execute: () => {
+                this.withWidget(undefined, widget => {
+                    const { selection } = this.selectionService;
+                    if (TreeWidgetSelection.is(selection)) {
+                        widget.resultTreeWidget.removeNode(selection[0]);
+                    }
+                });
+            }
         });
         commands.registerCommand(SearchInWorkspaceCommands.COPY_ONE, {
             isEnabled: () => this.withWidget(undefined, widget => {
@@ -231,15 +243,17 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
                 const { selection } = this.selectionService;
                 return TreeWidgetSelection.isSource(selection, widget.resultTreeWidget) && selection.length > 0;
             }),
-            execute: () => this.withWidget(undefined, widget => {
-                const { selection } = this.selectionService;
-                if (TreeWidgetSelection.is(selection)) {
-                    const string = widget.resultTreeWidget.nodeToString(selection[0], true);
-                    if (string.length !== 0) {
-                        this.clipboardService.writeText(string);
+            execute: () => {
+                this.withWidget(undefined, widget => {
+                    const { selection } = this.selectionService;
+                    if (TreeWidgetSelection.is(selection)) {
+                        const string = widget.resultTreeWidget.nodeToString(selection[0], true);
+                        if (string.length !== 0) {
+                            this.clipboardService.writeText(string);
+                        }
                     }
-                }
-            })
+                });
+            }
         });
         commands.registerCommand(SearchInWorkspaceCommands.COPY_ALL, {
             isEnabled: () => this.withWidget(undefined, widget => {
@@ -250,15 +264,17 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
                 const { selection } = this.selectionService;
                 return TreeWidgetSelection.isSource(selection, widget.resultTreeWidget) && selection.length > 0;
             }),
-            execute: () => this.withWidget(undefined, widget => {
-                const { selection } = this.selectionService;
-                if (TreeWidgetSelection.is(selection)) {
-                    const string = widget.resultTreeWidget.treeToString();
-                    if (string.length !== 0) {
-                        this.clipboardService.writeText(string);
+            execute: () => {
+                this.withWidget(undefined, widget => {
+                    const { selection } = this.selectionService;
+                    if (TreeWidgetSelection.is(selection)) {
+                        const string = widget.resultTreeWidget.treeToString();
+                        if (string.length !== 0) {
+                            this.clipboardService.writeText(string);
+                        }
                     }
-                }
-            })
+                });
+            }
         });
     }
 

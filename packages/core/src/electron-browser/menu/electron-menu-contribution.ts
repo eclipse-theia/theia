@@ -36,31 +36,31 @@ import { WindowService } from '../../browser/window/window-service';
 import '../../../src/electron-browser/menu/electron-menu-style.css';
 
 export namespace ElectronCommands {
-    export const TOGGLE_DEVELOPER_TOOLS = Command.toDefaultLocalizedCommand({
+    export const TOGGLE_DEVELOPER_TOOLS = Command.toDefaultLocalizedCommand<[], void>({
         id: 'theia.toggleDevTools',
         label: 'Toggle Developer Tools'
     });
-    export const RELOAD = Command.toDefaultLocalizedCommand({
+    export const RELOAD = Command.toDefaultLocalizedCommand<[], void>({
         id: 'view.reload',
         label: 'Reload Window'
     });
-    export const ZOOM_IN = Command.toDefaultLocalizedCommand({
+    export const ZOOM_IN = Command.toDefaultLocalizedCommand<[], void>({
         id: 'view.zoomIn',
         label: 'Zoom In'
     });
-    export const ZOOM_OUT = Command.toDefaultLocalizedCommand({
+    export const ZOOM_OUT = Command.toDefaultLocalizedCommand<[], void>({
         id: 'view.zoomOut',
         label: 'Zoom Out'
     });
-    export const RESET_ZOOM = Command.toDefaultLocalizedCommand({
+    export const RESET_ZOOM = Command.toDefaultLocalizedCommand<[], void>({
         id: 'view.resetZoom',
         label: 'Reset Zoom'
     });
-    export const CLOSE_WINDOW = Command.toDefaultLocalizedCommand({
+    export const CLOSE_WINDOW = Command.toDefaultLocalizedCommand<[], void>({
         id: 'close.window',
         label: 'Close Window'
     });
-    export const TOGGLE_FULL_SCREEN = Command.toDefaultLocalizedCommand({
+    export const TOGGLE_FULL_SCREEN = Command.toDefaultLocalizedCommand<[], void>({
         id: 'workbench.action.toggleFullScreen',
         category: CommonCommands.VIEW_CATEGORY,
         label: 'Toggle Full Screen'

@@ -38,16 +38,16 @@ export namespace MiniBrowserCommands {
     export const PREVIEW_CATEGORY = 'Preview';
     export const PREVIEW_CATEGORY_KEY = nls.getDefaultKey(PREVIEW_CATEGORY);
 
-    export const PREVIEW = Command.toLocalizedCommand({
+    export const PREVIEW = Command.toLocalizedCommand<[widget: Widget], void>({
         id: 'mini-browser.preview',
         label: 'Open Preview',
         iconClass: codicon('open-preview')
     }, 'vscode.markdown-language-features/package/markdown.preview.title');
-    export const OPEN_SOURCE: Command = {
+    export const OPEN_SOURCE = Command.as<[widget: Widget], void>({
         id: 'mini-browser.open.source',
         iconClass: codicon('go-to-file')
-    };
-    export const OPEN_URL = Command.toDefaultLocalizedCommand({
+    });
+    export const OPEN_URL = Command.toDefaultLocalizedCommand<[arg?: string], void>({
         id: 'mini-browser.openUrl',
         category: PREVIEW_CATEGORY,
         label: 'Open URL'
