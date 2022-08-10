@@ -100,6 +100,10 @@ export namespace Command {
         return !!arg && typeof arg === 'object' && 'id' in arg;
     }
 
+    export function as<A extends any[], R = any>(command: Command<string>): Command<CommandId<A, R>> {
+        return command as Command<CommandId<A, R>>;
+    }
+
     /**
      * Utility function to easily translate commands.
      */
