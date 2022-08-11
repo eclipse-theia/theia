@@ -29,7 +29,7 @@ import { ScmFileChangeNode } from './scm-file-change-node';
 @injectable()
 export abstract class ScmNavigableListWidget<T extends { selected?: boolean }> extends ReactWidget {
 
-    protected scmNodes: T[];
+    protected scmNodes: T[] = [];
     private _scrollContainer: string;
 
     @inject(ScmService) protected readonly scmService: ScmService;
