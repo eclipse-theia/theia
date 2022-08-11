@@ -20,7 +20,7 @@ import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
-    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop, CompositeTreeNode, SelectableTreeNode,
+    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop, CompositeTreeNode, SelectableTreeNode, ApplicationShell, NavigatableWidget,
 } from '@theia/core/lib/browser';
 import { ScmCommitWidget } from './scm-commit-widget';
 import { ScmAmendWidget } from './scm-amend-widget';
@@ -37,6 +37,7 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
 
     static ID = 'scm-view';
 
+    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
     @inject(ScmService) protected readonly scmService: ScmService;
     @inject(ScmCommitWidget) protected readonly commitWidget: ScmCommitWidget;
     @inject(ScmTreeWidget) readonly resourceWidget: ScmTreeWidget;
@@ -82,6 +83,12 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.toDispose.push(this.scmPreferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'scm.defaultViewMode') {
                 this.updateViewMode(e.newValue);
+            }
+        }));
+        this.toDispose.push(this.shell.onDidChangeCurrentWidget(({ newValue }) => {
+            const uri = NavigatableWidget.getUri(newValue || undefined);
+            if (uri) {
+                this.resourceWidget.selectNodeByUri(uri);
             }
         }));
 
