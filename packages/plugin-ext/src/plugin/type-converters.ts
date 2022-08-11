@@ -903,7 +903,7 @@ export function fromShellExecution(execution: theia.ShellExecution, taskDto: Tas
     }
 }
 
-export function fromCustomExecution(execution: theia.CustomExecution, taskDto: TaskDto): TaskDto {
+export function fromCustomExecution(execution: types.CustomExecution, taskDto: TaskDto): TaskDto {
     taskDto.taskType = 'customExecution';
     const callback = execution.callback;
     if (callback) {

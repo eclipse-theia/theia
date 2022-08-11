@@ -719,8 +719,7 @@ export class SnippetString {
 
 @es5ClassCompat
 export class ThemeColor {
-    constructor(public id: string) {
-    }
+    constructor(public id: string) { }
 }
 
 @es5ClassCompat
