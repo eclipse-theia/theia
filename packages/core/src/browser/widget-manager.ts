@@ -114,7 +114,6 @@ export class WidgetManager {
 
     protected _cachedFactories: Map<string, WidgetFactory>;
     protected readonly widgets = new Map<string, Widget>();
-    // protected readonly widgetPromises = new Map<string, MaybePromise<Widget>>();
     protected readonly pendingWidgetPromises = new Map<string, MaybePromise<Widget>>();
 
     @inject(ContributionProvider) @named(WidgetFactory)
