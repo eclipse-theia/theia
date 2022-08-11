@@ -81,7 +81,11 @@ export class IPCConnectionProvider {
         const forkOptions: cp.ForkOptions = {
             env: createIpcEnv(options),
             execArgv: [],
-            stdio: ['pipe', 'pipe', 'pipe', 'ipc', 'pipe']
+            // 5th element MUST be 'overlapped' for it to work properly on Windows.
+            // 'overlapped' works just like 'pipe' on non-Windows platforms.
+            // See: https://nodejs.org/docs/latest-v14.x/api/child_process.html#child_process_options_stdio
+            // Note: For some reason `@types/node` does not know about 'overlapped'.
+            stdio: ['pipe', 'pipe', 'pipe', 'ipc', 'overlapped' as 'pipe']
         };
         const inspectArgPrefix = `--${options.serverName}-inspect`;
         const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));
