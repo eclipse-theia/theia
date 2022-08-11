@@ -347,8 +347,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
         commands.registerCommand(TerminalCommands.TERMINAL_CLEAR);
         commands.registerHandler(TerminalCommands.TERMINAL_CLEAR.id, {
-            isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
-            execute: () => (this.shell.activeWidget as TerminalWidget).clearOutput()
+            execute: () => this.currentTerminal?.clearOutput()
         });
         commands.registerCommand(TerminalCommands.TERMINAL_CONTEXT, UriAwareCommandHandler.MonoSelect(this.selectionService, {
             execute: uri => this.openInTerminal(uri)
