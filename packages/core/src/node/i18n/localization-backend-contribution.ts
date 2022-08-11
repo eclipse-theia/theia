@@ -16,7 +16,7 @@
 
 import * as express from 'express';
 import { inject, injectable } from 'inversify';
-import { Deferred } from 'src/common/promise-util';
+import { Deferred } from '../../common/promise-util';
 import { BackendApplicationContribution } from '../backend-application';
 import { LocalizationRegistry } from './localization-contribution';
 import { LocalizationProvider } from './localization-provider';
