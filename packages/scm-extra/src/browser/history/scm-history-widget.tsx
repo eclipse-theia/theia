@@ -183,16 +183,9 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         });
     }
 
-    override update(): void {
-        if (this.listView && this.listView.list) {
-            this.listView.forceUpdate();
-        }
-        super.update();
-    }
+    setContent = throttle((options?: HistoryWidgetOptions) => this.doSetContent(options), 100);
 
-    setContent = throttle((options?: HistoryWidgetOptions) => this.setContentDirect(options), 100);
-
-    protected async setContentDirect(options?: HistoryWidgetOptions): Promise<void> {
+    protected async doSetContent(options?: HistoryWidgetOptions): Promise<void> {
         this.resetState(options);
         if (options && options.uri) {
             try {
