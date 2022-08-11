@@ -21,7 +21,7 @@
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.47.3/src/vs/workbench/api/browser/mainThreadAuthentication.ts
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { AuthenticationExt, AuthenticationMain, PluginManagerExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
+import { AuthenticationExt, AuthenticationMain, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Dialog, StorageService } from '@theia/core/lib/browser';
@@ -43,27 +43,16 @@ export class AuthenticationMainImpl implements AuthenticationMain {
     private readonly storageService: StorageService;
     private readonly authenticationService: AuthenticationService;
     private readonly quickPickService: QuickPickService;
-    private readonly extensionService: PluginManagerExt;
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.AUTHENTICATION_EXT);
         this.messageService = container.get(MessageService);
         this.storageService = container.get(StorageService);
         this.authenticationService = container.get(AuthenticationService);
         this.quickPickService = container.get(QuickPickService);
-        this.extensionService = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
 
         this.authenticationService.onDidChangeSessions(e => {
-            this.proxy.$onDidChangeAuthenticationSessions(e.providerId, e.label);
+            this.proxy.$onDidChangeAuthenticationSessions({ id: e.providerId, label: e.label });
         });
-        this.authenticationService.onDidRegisterAuthenticationProvider(info => {
-            this.proxy.$onDidChangeAuthenticationProviders([info], []);
-        });
-        this.authenticationService.onDidUnregisterAuthenticationProvider(providerId => {
-            this.proxy.$onDidChangeAuthenticationProviders([], [providerId]);
-        });
-    }
-    $getProviderIds(): Promise<string[]> {
-        return Promise.resolve(this.authenticationService.getProviderIds());
     }
 
     async $registerAuthenticationProvider(id: string, label: string, supportsMultipleAccounts: boolean): Promise<void> {
@@ -230,15 +219,7 @@ export class AuthenticationMainImpl implements AuthenticationMain {
         this.storageService.setData(`authentication-session-${extensionName}-${providerId}`, sessionId);
     }
 
-    $ensureProvider(id: string): Promise<void> {
-        return this.extensionService.$activateByEvent(getAuthenticationProviderActivationEvent(id));
-    }
-
-    $removeSession(providerId: string, sessionId: string): Promise<void> {
-        return this.authenticationService.logout(providerId, sessionId);
-    }
-
-    $sendDidChangeSessions(providerId: string, event: theia.AuthenticationProviderAuthenticationSessionsChangeEvent): void {
+    $onDidChangeSessions(providerId: string, event: theia.AuthenticationProviderAuthenticationSessionsChangeEvent): void {
         this.authenticationService.updateSessions(providerId, event);
     }
 }
@@ -272,8 +253,10 @@ interface AccountUsage {
 }
 
 export class AuthenticationProviderImpl implements AuthenticationProvider {
-    private accounts = new Map<string, string[]>(); // Map account name to session ids
-    private sessions = new Map<string, string>(); // Map account id to name
+    /** map from account name to session ids */
+    private accounts = new Map<string, string[]>();
+    /** map from session id to account name */
+    private sessions = new Map<string, string>();
 
     readonly onDidChangeSessions: theia.Event<theia.AuthenticationProviderAuthenticationSessionsChangeEvent>;
 
@@ -313,7 +296,7 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
             Dialog.CANCEL);
 
         if (result && result === nls.localizeByDefault('Sign Out') && sessionsForAccount) {
-            sessionsForAccount.forEach(sessionId => this.logout(sessionId));
+            sessionsForAccount.forEach(sessionId => this.removeSession(sessionId));
             removeAccountUsage(this.storageService, this.id, accountName);
         }
     }
@@ -325,10 +308,10 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
     async updateSessionItems(event: theia.AuthenticationProviderAuthenticationSessionsChangeEvent): Promise<void> {
         const { added, removed } = event;
         const session = await this.proxy.$getSessions(this.id);
-        const addedSessions = session.filter(s => added.some(addedSession => this.getSessionId(addedSession) === s.id));
+        const addedSessions = added ? session.filter(s => added.some(addedSession => addedSession.id === s.id)) : [];
 
-        removed.forEach(removedSession => {
-            const sessionId = this.getSessionId(removedSession);
+        removed?.forEach(removedSession => {
+            const sessionId = removedSession.id;
             if (sessionId) {
                 const accountName = this.sessions.get(sessionId);
                 if (accountName) {
@@ -347,29 +330,21 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
         addedSessions.forEach(s => this.registerSession(s));
     }
 
-    login(scopes: string[]): Promise<theia.AuthenticationSession> {
-        return this.proxy.$createSession(this.id, scopes);
+    async login(scopes: string[]): Promise<theia.AuthenticationSession> {
+        return this.createSession(scopes);
     }
 
     async logout(sessionId: string): Promise<void> {
-        await this.proxy.$removeSession(this.id, sessionId);
-        this.messageService.info('Successfully signed out.');
+        return this.removeSession(sessionId);
     }
 
     createSession(scopes: string[]): Thenable<theia.AuthenticationSession> {
-        return this.login(scopes);
+        return this.proxy.$createSession(this.id, scopes);
     }
 
     removeSession(sessionId: string): Thenable<void> {
-        return this.logout(sessionId);
-    }
-
-    // utility method to be backwards compatible with the old AuthenticationProviderAuthenticationSessionsChangeEvent containing only the session id string
-    private getSessionId(obj: string | theia.AuthenticationSession | undefined): string | undefined {
-        if (!obj || typeof obj === 'string') {
-            return obj;
-        }
-        return obj.id;
+        return this.proxy.$removeSession(this.id, sessionId)
+            .then(() => { this.messageService.info('Successfully signed out.'); });
     }
 }
 
