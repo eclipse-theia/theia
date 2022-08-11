@@ -114,7 +114,6 @@ export class WidgetManager {
 
     protected _cachedFactories: Map<string, WidgetFactory>;
     protected readonly widgets = new Map<string, Widget>();
-    protected readonly widgetPromises = new Map<string, MaybePromise<Widget>>();
     protected readonly pendingWidgetPromises = new Map<string, MaybePromise<Widget>>();
 
     @inject(ContributionProvider) @named(WidgetFactory)
@@ -156,10 +155,13 @@ export class WidgetManager {
      * @param options The widget factory specific information.
      *
      * @returns the widget if available, else `undefined`.
+     *
+     * The widget is 'available' if it has been created with the same {@link factoryId} and {@link options} by the {@link WidgetManager}.
+     * If the widget's creation is asynchronous, it is only available when the associated `Promise` is resolved.
      */
     tryGetWidget<T extends Widget>(factoryId: string, options?: any): T | undefined {
         const key = this.toKey({ factoryId, options });
-        const existing = this.widgetPromises.get(key);
+        const existing = this.widgets.get(key);
         if (existing instanceof Widget) {
             return existing as T;
         }
@@ -193,7 +195,7 @@ export class WidgetManager {
     }
 
     protected doGetWidget<T extends Widget>(key: string): MaybePromise<T> | undefined {
-        const pendingWidget = this.widgetPromises.get(key) ?? this.pendingWidgetPromises.get(key);
+        const pendingWidget = this.widgets.get(key) ?? this.pendingWidgetPromises.get(key);
         if (pendingWidget) {
             return pendingWidget as MaybePromise<T>;
         }
@@ -222,12 +224,8 @@ export class WidgetManager {
             this.pendingWidgetPromises.set(key, widgetPromise);
             const widget = await widgetPromise;
             await WaitUntilEvent.fire(this.onWillCreateWidgetEmitter, { factoryId, widget });
-            this.widgetPromises.set(key, widgetPromise);
             this.widgets.set(key, widget);
-            widget.disposed.connect(() => {
-                this.widgets.delete(key);
-                this.widgetPromises.delete(key);
-            });
+            widget.disposed.connect(() => this.widgets.delete(key));
             this.onDidCreateWidgetEmitter.fire({ factoryId, widget });
             return widget as T;
         } finally {

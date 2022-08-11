@@ -13,14 +13,19 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+
+import { enableJSDOM } from './test/jsdom';
+
+let disableJsDom = enableJSDOM();
 import { Container, ContainerModule } from 'inversify';
 import { expect } from 'chai';
 import { WidgetManager, WidgetFactory } from './widget-manager';
 import { Widget } from '@phosphor/widgets';
-import { Signal } from '@phosphor/signaling';
 import { ILogger } from '../common/logger';
 import { MockLogger } from '../common/test/mock-logger';
 import { bindContributionProvider } from '../common';
+
+disableJsDom();
 
 class TestWidgetFactory implements WidgetFactory {
 
@@ -29,38 +34,56 @@ class TestWidgetFactory implements WidgetFactory {
 
     async createWidget(name: string): Promise<Widget> {
         this.invocations++;
-        // create a mock Widget, since a real widget has deps to dom api
-        const result = {} as Widget;
+        const result = new Widget;
         result.id = name;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (<any>result).disposed = new Signal<Widget, void>(result);
         return result;
     }
 }
 
-let widgetManager: WidgetManager;
-
-before(() => {
-    const testContainer = new Container();
-
-    const module = new ContainerModule((bind, unbind, isBound, rebind) => {
-        bind(ILogger).to(MockLogger);
-        bindContributionProvider(bind, WidgetFactory);
-        bind(WidgetFactory).toConstantValue(new TestWidgetFactory());
-        bind(WidgetManager).toSelf().inSingletonScope();
-    });
-    testContainer.load(module);
-
-    widgetManager = testContainer.get(WidgetManager);
-});
-
+/* eslint-disable no-unused-expressions */
 describe('widget-manager', () => {
+    let widgetManager: WidgetManager;
+    before(() => {
+        disableJsDom = enableJSDOM();
+    });
+
+    beforeEach(() => {
+        const testContainer = new Container();
+
+        const module = new ContainerModule(bind => {
+            bind(ILogger).to(MockLogger);
+            bindContributionProvider(bind, WidgetFactory);
+            bind(WidgetFactory).toConstantValue(new TestWidgetFactory());
+            bind(WidgetManager).toSelf().inSingletonScope();
+        });
+        testContainer.load(module);
+
+        widgetManager = testContainer.get(WidgetManager);
+    });
+
+    after(() => {
+        disableJsDom();
+    });
 
     it('creates and caches widgets', async () => {
         const wA = await widgetManager.getOrCreateWidget('test', 'widgetA');
         const wB = await widgetManager.getOrCreateWidget('test', 'widgetB');
         expect(wA).not.equals(wB);
         expect(wA).equals(await widgetManager.getOrCreateWidget('test', 'widgetA'));
+    });
+
+    describe('tryGetWidget', () => {
+        it('Returns undefined if the widget has not been created', () => {
+            expect(widgetManager.tryGetWidget('test', 'widgetA')).to.be.undefined;
+        });
+        it('Returns undefined if the widget is created asynchronously and has not finished being created', () => {
+            widgetManager.getOrCreateWidget('test', 'widgetA');
+            expect(widgetManager.tryGetWidget('test', 'widgetA')).to.be.undefined;
+        });
+        it('Returns the widget if the widget is created asynchronously and has finished being created', async () => {
+            await widgetManager.getOrCreateWidget('test', 'widgetA');
+            expect(widgetManager.tryGetWidget('test', 'widgetA')).not.to.be.undefined;
+        });
     });
 
     it('produces the same widget key regardless of object key order', () => {
