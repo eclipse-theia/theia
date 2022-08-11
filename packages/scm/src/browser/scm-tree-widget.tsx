@@ -21,10 +21,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { isOSX } from '@theia/core/lib/common/os';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
-import {
-    TreeWidget, TreeNode, SelectableTreeNode, TreeModel, TreeProps,
-    NodeProps, TREE_NODE_SEGMENT_CLASS, TREE_NODE_SEGMENT_GROW_CLASS, DepthFirstTreeIterator
-} from '@theia/core/lib/browser/tree';
+import { TreeWidget, TreeNode, SelectableTreeNode, TreeModel, TreeProps, NodeProps, TREE_NODE_SEGMENT_CLASS, TREE_NODE_SEGMENT_GROW_CLASS } from '@theia/core/lib/browser/tree';
 import { ScmTreeModel, ScmFileChangeRootNode, ScmFileChangeGroupNode, ScmFileChangeFolderNode, ScmFileChangeNode } from './scm-tree-model';
 import { MenuModelRegistry, ActionMenuNode, CompositeMenuNode, MenuPath } from '@theia/core/lib/common/menu';
 import { ScmResource } from './scm-provider';
@@ -359,10 +356,11 @@ export class ScmTreeWidget extends TreeWidget {
     }
 
     selectNodeByUri(uri: URI): void {
-        const root = this.model.root;
-        if (!root) { return; }
-        for (const node of new DepthFirstTreeIterator(root)) {
-            if (ScmFileChangeNode.is(node) && node.sourceUri.includes(uri.path.toString())) {
+        for (const group of this.model.groups) {
+            const sourceUri = new URI(uri.path.toString());
+            const id = `${group.id}:${sourceUri.toString()}`;
+            const node = this.model.getNode(id);
+            if (SelectableTreeNode.is(node)) {
                 this.model.selectNode(node);
                 return;
             }
