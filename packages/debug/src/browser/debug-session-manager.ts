@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection, Emitter, Event, MessageService, ProgressService, WaitUntilEvent } from '@theia/core';
+import { DisposableCollection, Emitter, Event, MessageService, nls, ProgressService, WaitUntilEvent } from '@theia/core';
 import { LabelProvider, ApplicationShell } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import URI from '@theia/core/lib/common/uri';
@@ -29,7 +29,7 @@ import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugConfigurationManager } from './debug-configuration-manager';
 import { DebugSession, DebugState } from './debug-session';
 import { DebugSessionContributionRegistry, DebugSessionFactory } from './debug-session-contribution';
-import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
+import { DebugCompoundRoot, DebugCompoundSessionOptions, DebugConfigurationSessionOptions, DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
 import { DebugStackFrame } from './model/debug-stack-frame';
 import { DebugThread } from './model/debug-thread';
 import { TaskIdentifier } from '@theia/task/lib/common';
@@ -191,7 +191,19 @@ export class DebugSessionManager {
         }
     }
 
-    async start(options: DebugSessionOptions): Promise<DebugSession | undefined> {
+    async start(options: DebugCompoundSessionOptions): Promise<boolean | undefined>;
+    async start(options: DebugConfigurationSessionOptions): Promise<DebugSession | undefined>;
+    async start(options: DebugSessionOptions): Promise<DebugSession | boolean | undefined>;
+    async start(name: string): Promise<DebugSession | boolean | undefined>;
+    async start(optionsOrName: DebugSessionOptions | string): Promise<DebugSession | boolean | undefined> {
+        if (typeof optionsOrName === 'string') {
+            const options = this.debugConfigurationManager.find(optionsOrName);
+            return !!options && this.start(options);
+        }
+        return optionsOrName.configuration ? this.startConfiguration(optionsOrName) : this.startCompound(optionsOrName);
+    }
+
+    protected async startConfiguration(options: DebugConfigurationSessionOptions): Promise<DebugSession | undefined> {
         return this.progressService.withProgress('Start...', 'debug', async () => {
             try {
                 if (!await this.saveAll()) {
@@ -200,7 +212,7 @@ export class DebugSessionManager {
                 await this.fireWillStartDebugSession();
                 const resolved = await this.resolveConfiguration(options);
 
-                if (!resolved) {
+                if (!resolved || !resolved.configuration) {
                     // As per vscode API: https://code.visualstudio.com/api/references/vscode-api#DebugConfigurationProvider
                     // "Returning the value 'undefined' prevents the debug session from starting.
                     // Returning the value 'null' prevents the debug session from starting and opens the
@@ -236,13 +248,70 @@ export class DebugSessionManager {
         });
     }
 
+    protected async startCompound(options: DebugCompoundSessionOptions): Promise<boolean | undefined> {
+        let configurations: DebugConfigurationSessionOptions[] = [];
+        try {
+            configurations = this.getCompoundConfigurations(options);
+        } catch (error) {
+            this.messageService.error(error.message);
+            return;
+        }
+
+        if (options.compound.preLaunchTask) {
+            const taskRun = await this.runTask(options.workspaceFolderUri, options.compound.preLaunchTask, true);
+            if (!taskRun) {
+                return undefined;
+            }
+        }
+
+        // Compound launch is a success only if each configuration launched successfully
+        const values = await Promise.all(configurations.map(configuration => this.startConfiguration(configuration)));
+        const result = values.every(success => !!success);
+        return result;
+    }
+
+    protected getCompoundConfigurations(options: DebugCompoundSessionOptions): DebugConfigurationSessionOptions[] {
+        const compound = options.compound;
+        if (!compound.configurations) {
+            throw new Error(nls.localizeByDefault('Compound must have "configurations" attribute set in order to start multiple configurations.'));
+        }
+
+        const compoundRoot = compound.stopAll ? new DebugCompoundRoot() : undefined;
+        const configurations: DebugConfigurationSessionOptions[] = [];
+        for (const configData of compound.configurations) {
+            const name = typeof configData === 'string' ? configData : configData.name;
+            if (name === compound.name) {
+                throw new Error(nls.localize('theia/debug/compound-cycle', "Launch configuration '{0}' contains a cycle with itself", name));
+            }
+
+            const workspaceFolderUri = typeof configData === 'string' ? options.workspaceFolderUri : configData.folder;
+            const matchingOptions = [...this.debugConfigurationManager.all]
+                .filter(option => option.name === name && !!option.configuration && option.workspaceFolderUri === workspaceFolderUri);
+            if (matchingOptions.length === 1) {
+                const match = matchingOptions[0];
+                if (DebugSessionOptions.isConfiguration(match)) {
+                    configurations.push({ ...match, compoundRoot, configuration: { ...match.configuration, noDebug: options.noDebug } });
+                } else {
+                    throw new Error(nls.localizeByDefault("Could not find launch configuration '{0}' in the workspace.", name));
+                }
+            } else {
+                throw new Error(matchingOptions.length === 0
+                    ? workspaceFolderUri
+                        ? nls.localizeByDefault("Can not find folder with name '{0}' for configuration '{1}' in compound '{2}'.", workspaceFolderUri, name, compound.name)
+                        : nls.localizeByDefault("Could not find launch configuration '{0}' in the workspace.", name)
+                    : nls.localizeByDefault("There are multiple launch configurations '{0}' in the workspace. Use folder name to qualify the configuration.", name));
+            }
+        }
+        return configurations;
+    }
+
     protected async fireWillStartDebugSession(): Promise<void> {
         await WaitUntilEvent.fire(this.onWillStartDebugSessionEmitter, {});
     }
 
     protected configurationIds = new Map<string, number>();
     protected async resolveConfiguration(
-        options: Readonly<DebugSessionOptions>
+        options: Readonly<DebugConfigurationSessionOptions>
     ): Promise<InternalDebugSessionOptions | undefined | null> {
         if (InternalDebugSessionOptions.is(options)) {
             return options;
@@ -275,10 +344,12 @@ export class DebugSessionManager {
         const key = configuration.name + workspaceFolderUri;
         const id = this.configurationIds.has(key) ? this.configurationIds.get(key)! + 1 : 0;
         this.configurationIds.set(key, id);
+
         return {
             id,
-            configuration,
-            workspaceFolderUri
+            ...options,
+            name: configuration.name,
+            configuration
         };
     }
 
@@ -301,7 +372,7 @@ export class DebugSessionManager {
         return this.debug.resolveDebugConfigurationWithSubstitutedVariables(configuration, workspaceFolderUri);
     }
 
-    protected async doStart(sessionId: string, options: DebugSessionOptions): Promise<DebugSession> {
+    protected async doStart(sessionId: string, options: DebugConfigurationSessionOptions): Promise<DebugSession> {
         const parentSession = options.configuration.parentSession && this._sessions.get(options.configuration.parentSession.id);
         const contrib = this.sessionContributionRegistry.get(options.configuration.type);
         const sessionFactory = contrib ? contrib.debugSessionFactory() : this.debugSessionFactory;

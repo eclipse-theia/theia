@@ -55,6 +55,7 @@ import { ContributionProvider } from '@theia/core/lib/common';
 import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
 import { ConnectionImpl } from '../../../common/connection';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { DebugSessionOptions as TheiaDebugSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
 
 export class DebugMainImpl implements DebugMain, Disposable {
     private readonly debugExt: DebugExt;
@@ -294,29 +295,36 @@ export class DebugMainImpl implements DebugMain, Disposable {
     }
 
     async $startDebugging(folder: WorkspaceFolder | undefined, nameOrConfiguration: string | DebugConfiguration, options: DebugSessionOptions): Promise<boolean> {
-        let configuration: DebugConfiguration | undefined;
-
+        // search for matching options
+        let sessionOptions: TheiaDebugSessionOptions | undefined;
         if (typeof nameOrConfiguration === 'string') {
             for (const configOptions of this.configurationManager.all) {
-                if (configOptions.configuration.name === nameOrConfiguration) {
-                    configuration = configOptions.configuration;
+                if (configOptions.name === nameOrConfiguration) {
+                    sessionOptions = configOptions;
                 }
             }
         } else {
-            configuration = nameOrConfiguration;
+            sessionOptions = {
+                name: nameOrConfiguration.name,
+                configuration: nameOrConfiguration
+            };
         }
 
-        if (!configuration) {
+        if (!sessionOptions) {
             console.error(`There is no debug configuration for ${nameOrConfiguration}`);
             return false;
         }
 
-        const debugConfiguration = { ...configuration, ...options };
-        const session = await this.sessionManager.start({
-            configuration: debugConfiguration,
-            workspaceFolderUri: folder && Uri.revive(folder.uri).toString()
-        });
+        // translate given extra data
+        const workspaceFolderUri = folder && Uri.revive(folder.uri).toString();
+        if (TheiaDebugSessionOptions.isConfiguration(sessionOptions)) {
+            sessionOptions = { ...sessionOptions, configuration: { ...sessionOptions.configuration, ...options }, workspaceFolderUri };
+        } else {
+            sessionOptions = { ...sessionOptions, ...options, workspaceFolderUri };
+        }
 
+        // start options
+        const session = await this.sessionManager.start(sessionOptions);
         return !!session;
     }
 

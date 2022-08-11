@@ -30,6 +30,7 @@ export interface SelectOption {
     detail?: string
     description?: string
     markdown?: boolean
+    userData?: string
 }
 
 export interface SelectComponentProps {
@@ -40,15 +41,8 @@ export interface SelectComponentProps {
     onFocus?: () => void
 }
 
-export interface SelectComponentDropdownDimensions {
-    top: number
-    left: number
-    width: number
-    parentHeight: number
-};
-
 export interface SelectComponentState {
-    dimensions?: SelectComponentDropdownDimensions
+    dimensions?: DOMRect
     selected: number
     original: number
     hover: number
@@ -84,6 +78,10 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             document.body.appendChild(list);
         }
         this.dropdownElement = list;
+    }
+
+    get options(): SelectOption[] {
+        return this.props.options;
     }
 
     get value(): string | number | undefined {
@@ -258,14 +256,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         }
         if (!this.state.dimensions) {
             const rect = this.fieldRef.current.getBoundingClientRect();
-            this.setState({
-                dimensions: {
-                    top: rect.top + rect.height,
-                    left: rect.left,
-                    width: rect.width,
-                    parentHeight: rect.height
-                },
-            });
+            this.setState({ dimensions: rect });
         } else {
             this.hide();
         }
@@ -293,7 +284,10 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             this.optimalHeight = this.getOptimalHeight(Math.max(this.state.dimensions.width, this.optimalWidth));
         }
         const clientRect = document.getElementById('theia-app-shell')!.getBoundingClientRect();
-        const invert = this.optimalHeight > clientRect.height - this.state.dimensions.top;
+        const availableTop = this.state.dimensions.top - clientRect.top;
+        const availableBottom = clientRect.top + clientRect.height - this.state.dimensions.bottom;
+        // prefer rendering to the bottom unless there is not enough space and more content can be shown to the top
+        const invert = availableBottom < this.optimalHeight && (availableBottom - this.optimalHeight) < (availableTop - this.optimalHeight);
         const { options } = this.props;
         const { hover } = this.state;
         const description = options[hover].description;
@@ -319,8 +313,8 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         const calculatedWidth = Math.max(this.state.dimensions.width, this.optimalWidth);
         const maxWidth = clientRect.width - this.state.dimensions.left;
         return <div key="dropdown" className="theia-select-component-dropdown" style={{
-            top: invert ? 'none' : this.state.dimensions.top,
-            bottom: invert ? clientRect.height - this.state.dimensions.top + this.state.dimensions.parentHeight : 'none',
+            top: invert ? 'none' : this.state.dimensions.bottom,
+            bottom: invert ? clientRect.top + clientRect.height - this.state.dimensions.top : 'none',
             left: this.state.dimensions.left,
             width: Math.min(calculatedWidth, maxWidth),
             position: 'absolute'

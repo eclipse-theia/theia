@@ -113,7 +113,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
 
         for (const config of configurations) {
             items.push({
-                label: config.configuration.name,
+                label: config.name,
                 description: this.workspaceService.isMultiRootWorkspaceOpened
                     ? this.labelProvider.getName(new URI(config.workspaceFolderUri))
                     : '',
@@ -134,7 +134,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
             for (const configuration of dynamicConfigurations) {
                 items.push({
                     label: configuration.name,
-                    execute: () => this.runConfiguration({ configuration, providerType })
+                    execute: () => this.runConfiguration({ name: configuration.name, configuration, providerType })
                 });
             }
         }
@@ -170,7 +170,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
      */
     protected updateStatusBar(): void {
         const text: string = this.debugConfigurationManager.current
-            ? this.debugConfigurationManager.current.configuration.name
+            ? this.debugConfigurationManager.current.name
             : '';
         const icon = '$(codicon-debug-alt-small)';
         this.statusBar.setElement(this.statusBarId, {

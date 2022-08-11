@@ -1122,8 +1122,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             await this.configurations.addConfiguration();
             return;
         }
-        if (current) {
-            if (noDebug !== undefined) {
+
+        if (noDebug !== undefined) {
+            if (current.configuration) {
                 current = {
                     ...current,
                     configuration: {
@@ -1131,9 +1132,15 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                         noDebug
                     }
                 };
+            } else {
+                current = {
+                    ...current,
+                    noDebug
+                };
             }
-            await this.manager.start(current);
         }
+
+        await this.manager.start(current);
     }
 
     get threads(): DebugThreadsWidget | undefined {

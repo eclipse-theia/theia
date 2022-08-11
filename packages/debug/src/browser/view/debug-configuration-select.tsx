@@ -17,7 +17,7 @@
 import URI from '@theia/core/lib/common/uri';
 import * as React from '@theia/core/shared/react';
 import { DebugConfigurationManager } from '../debug-configuration-manager';
-import { DebugSessionOptions, InternalDebugSessionOptions } from '../debug-session-options';
+import { DebugSessionOptions } from '../debug-session-options';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
@@ -40,6 +40,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
     protected static readonly PICK = '__PICK__';
     protected static readonly NO_CONFIGURATION = '__NO_CONF__';
     protected static readonly ADD_CONFIGURATION = '__ADD_CONF__';
+    protected static readonly CONFIG_MARKER = '__CONFIG__';
 
     private readonly selectRef = React.createRef<SelectComponent>();
     private manager: DebugConfigurationManager;
@@ -65,7 +66,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
     override render(): React.ReactNode {
         return <SelectComponent
             options={this.renderOptions()}
-            defaultValue={this.currentValue}
+            defaultValue={this.state.currentValue}
             onChange={option => this.setCurrentConfiguration(option)}
             onFocus={() => this.refreshDebugConfigurations()}
             onBlur={() => this.refreshDebugConfigurations()}
@@ -75,7 +76,26 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
 
     protected get currentValue(): string {
         const { current } = this.manager;
-        return current ? InternalDebugSessionOptions.toValue(current) : DebugConfigurationSelect.NO_CONFIGURATION;
+        const matchingOption = this.getCurrentOption(current);
+        return matchingOption ? matchingOption.value! : current ? JSON.stringify(current) : DebugConfigurationSelect.NO_CONFIGURATION;
+    }
+
+    protected getCurrentOption(current: DebugSessionOptions | undefined): SelectOption | undefined {
+        if (!current || !this.selectRef.current) {
+            return;
+        }
+        const matchingOption = this.selectRef.current!.options.find(option =>
+            option.userData === DebugConfigurationSelect.CONFIG_MARKER
+            && this.matchesOption(JSON.parse(option.value!), current)
+        );
+        return matchingOption;
+    }
+
+    protected matchesOption(sessionOption: DebugSessionOptions, current: DebugSessionOptions): boolean {
+        const matchesNameAndWorkspace = sessionOption.name === current.name && sessionOption.workspaceFolderUri === current.workspaceFolderUri;
+        return DebugSessionOptions.isConfiguration(sessionOption) && DebugSessionOptions.isConfiguration(current)
+            ? matchesNameAndWorkspace && sessionOption.providerType === current.providerType
+            : matchesNameAndWorkspace;
     }
 
     protected readonly setCurrentConfiguration = (option: SelectOption) => {
@@ -88,12 +108,9 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
             const providerType = this.parsePickValue(value);
             this.selectDynamicConfigFromQuickPick(providerType);
         } else {
-            const { name, type, request, workspaceFolderUri, providerType } = InternalDebugSessionOptions.parseValue(value);
-            this.manager.current = this.manager.find(
-                { name, type, request },
-                workspaceFolderUri,
-                providerType === 'undefined' ? undefined : providerType
-            );
+            const data = JSON.parse(value) as DebugSessionOptions;
+            this.manager.current = data;
+            this.refreshDebugConfigurations();
         }
     };
 
@@ -151,13 +168,15 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
     protected refreshDebugConfigurations = async () => {
         const configsPerType = await this.manager.provideDynamicDebugConfigurations();
         const providerTypes = [];
-        for (const [ type, configurations ] of Object.entries(configsPerType)) {
+        for (const [type, configurations] of Object.entries(configsPerType)) {
             if (configurations.length > 0) {
                 providerTypes.push(type);
             }
         }
-        this.selectRef.current!.value = this.currentValue;
-        this.setState({ providerTypes, currentValue: this.currentValue });
+
+        const value = this.currentValue;
+        this.selectRef.current!.value = value;
+        this.setState({ providerTypes, currentValue: value });
     };
 
     protected renderOptions(): SelectOption[] {
@@ -165,10 +184,11 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
 
         // Add non dynamic debug configurations
         for (const config of this.manager.all) {
-            const value = InternalDebugSessionOptions.toValue(config);
+            const value = JSON.stringify(config);
             options.push({
                 value,
-                label: this.toName(config, this.props.isMultiRoot)
+                label: this.toName(config, this.props.isMultiRoot),
+                userData: DebugConfigurationSelect.CONFIG_MARKER
             });
         }
 
@@ -181,10 +201,11 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
                 });
             }
             for (const dynamicOption of recentDynamicOptions) {
-                const value = InternalDebugSessionOptions.toValue(dynamicOption);
+                const value = JSON.stringify(dynamicOption);
                 options.push({
                     value,
-                    label: this.toName(dynamicOption, this.props.isMultiRoot) + ' (' + dynamicOption.providerType + ')'
+                    label: this.toName(dynamicOption, this.props.isMultiRoot) + ' (' + dynamicOption.providerType + ')',
+                    userData: DebugConfigurationSelect.CONFIG_MARKER
                 });
             }
         }
@@ -225,10 +246,11 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         return options;
     }
 
-    protected toName({ configuration, workspaceFolderUri }: DebugSessionOptions, multiRoot: boolean): string {
-        if (!workspaceFolderUri || !multiRoot) {
-            return configuration.name;
+    protected toName(options: DebugSessionOptions, multiRoot: boolean): string {
+        const name = options.configuration?.name ?? options.name;
+        if (!options.workspaceFolderUri || !multiRoot) {
+            return name;
         }
-        return `${configuration.name} (${new URI(workspaceFolderUri).path.base})`;
+        return `${name} (${new URI(options.workspaceFolderUri).path.base})`;
     }
 }

@@ -22,7 +22,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { MessageClient } from '@theia/core/lib/common/message-service-protocol';
 import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
 import { DebugPreferences } from '@theia/debug/lib/browser/debug-preferences';
-import { DebugSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
+import { DebugConfigurationSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionConnection } from '@theia/debug/lib/browser/debug-session-connection';
 import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
@@ -36,7 +36,7 @@ import { PluginChannel } from '../../../common/connection';
 export class PluginDebugSession extends DebugSession {
     constructor(
         override readonly id: string,
-        override readonly options: DebugSessionOptions,
+        override readonly options: DebugConfigurationSessionOptions,
         override readonly parentSession: DebugSession | undefined,
         protected override readonly connection: DebugSessionConnection,
         protected override readonly terminalServer: TerminalService,
@@ -80,7 +80,7 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
         super();
     }
 
-    override get(sessionId: string, options: DebugSessionOptions, parentSession?: DebugSession): DebugSession {
+    override get(sessionId: string, options: DebugConfigurationSessionOptions, parentSession?: DebugSession): DebugSession {
         const connection = new DebugSessionConnection(
             sessionId,
             this.connectionFactory,

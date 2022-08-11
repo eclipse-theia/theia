@@ -33,7 +33,7 @@ import { DebugSourceBreakpoint } from './model/debug-source-breakpoint';
 import debounce = require('p-debounce');
 import URI from '@theia/core/lib/common/uri';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
-import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
+import { DebugConfigurationSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
 import { DebugConfiguration, DebugConsoleMode } from '../common/debug-common';
 import { SourceBreakpoint, ExceptionBreakpoint } from './breakpoint/breakpoint-marker';
 import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
@@ -76,7 +76,7 @@ export class DebugSession implements CompositeTreeElement {
 
     constructor(
         readonly id: string,
-        readonly options: DebugSessionOptions,
+        readonly options: DebugConfigurationSessionOptions,
         readonly parentSession: DebugSession | undefined,
         protected readonly connection: DebugSessionConnection,
         protected readonly terminalServer: TerminalService,
@@ -117,6 +117,9 @@ export class DebugSession implements CompositeTreeElement {
             this.connection.on('capabilities', event => this.updateCapabilities(event.body.capabilities)),
             this.breakpoints.onDidChangeMarkers(uri => this.updateBreakpoints({ uri, sourceModified: true }))
         ]);
+        if (this.options.compoundRoot) {
+            this.toDispose.push(this.options.compoundRoot.onDidSessionStop(() => this.stop(false, () => { })));
+        }
     }
 
     get onDispose(): Event<void> {
@@ -351,6 +354,9 @@ export class DebugSession implements CompositeTreeElement {
                 } catch (e) {
                     console.error('Error on disconnect', e);
                 }
+            }
+            if (!isRestart) {
+                this.options.compoundRoot?.stopSession();
             }
             callback();
         }
