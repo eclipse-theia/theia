@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { CommandRegistry, MenuModelRegistry } from '@theia/core/lib/common';
+import { Command, CommandRegistry, MenuModelRegistry, MessageService } from '@theia/core/lib/common';
 import { CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
 import { GettingStartedWidget } from './getting-started-widget';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
@@ -29,8 +29,17 @@ export const GettingStartedCommand = {
     label: GettingStartedWidget.LABEL
 };
 
+export const HELLO_WORLD_SUBMENU = [...CommonMenus.EDIT_FIND, 'hello-world-submenu'];
+export const HelloWorldCommand: Command = {
+    id: 'hello-world-command',
+    label: 'Echo Hello World'
+};
+
 @injectable()
 export class GettingStartedContribution extends AbstractViewContribution<GettingStartedWidget> implements FrontendApplicationContribution {
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     @inject(FrontendApplicationStateService)
     protected readonly stateService: FrontendApplicationStateService;
@@ -60,6 +69,10 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
         registry.registerCommand(GettingStartedCommand, {
             execute: () => this.openView({ reveal: true }),
         });
+        registry.registerCommand(HelloWorldCommand, {
+            execute: () => this.messageService.info('Hello World!'),
+            isVisible: () => false,
+        });
     }
 
     override registerMenus(menus: MenuModelRegistry): void {
@@ -67,6 +80,10 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
             commandId: GettingStartedCommand.id,
             label: GettingStartedCommand.label,
             order: 'a10'
+        });
+        menus.registerSubmenu(HELLO_WORLD_SUBMENU, 'Test');
+        menus.registerMenuAction(HELLO_WORLD_SUBMENU, {
+            commandId: HelloWorldCommand.id,
         });
     }
 }
