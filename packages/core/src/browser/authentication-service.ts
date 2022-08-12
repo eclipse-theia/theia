@@ -47,9 +47,9 @@ export interface AuthenticationProviderInformation {
 
 /** Should match the definition from the theia/vscode types */
 export interface AuthenticationProviderAuthenticationSessionsChangeEvent {
-    readonly added: ReadonlyArray<AuthenticationSession | string | undefined>;
-    readonly removed: ReadonlyArray<AuthenticationSession | string | undefined>;
-    readonly changed: ReadonlyArray<AuthenticationSession | string | undefined>;
+    readonly added: readonly AuthenticationSession[] | undefined;
+    readonly removed: readonly AuthenticationSession[] | undefined;
+    readonly changed: readonly AuthenticationSession[] | undefined;
 }
 
 export interface SessionRequest {
@@ -61,24 +61,35 @@ export interface SessionRequestInfo {
     [scopes: string]: SessionRequest;
 }
 
-/** Should match the definition from the theia/vscode types */
+/**
+ * Our authentication provider should at least contain the following information:
+ * - The signuature of authentication providers from vscode
+ * - Registration information about the provider (id, label)
+ * - Provider options (supportsMultipleAccounts)
+ *
+ * Additionally, we provide the possibility to sign out of a specific account name.
+ */
 export interface AuthenticationProvider {
     id: string;
 
-    supportsMultipleAccounts: boolean;
-
     label: string;
+
+    supportsMultipleAccounts: boolean;
 
     hasSessions(): boolean;
 
     signOut(accountName: string): Promise<void>;
 
-    getSessions(scopes?: string[]): Promise<ReadonlyArray<AuthenticationSession>>;
-
     updateSessionItems(event: AuthenticationProviderAuthenticationSessionsChangeEvent): Promise<void>;
 
+    /**
+     * @deprecated use `createSession` instead.
+     */
     login(scopes: string[]): Promise<AuthenticationSession>;
 
+    /**
+     * @deprecated use `removeSession` instead.
+     */
     logout(sessionId: string): Promise<void>;
 
     /**
@@ -169,7 +180,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     protected async handleSessionChange(changeEvent: SessionChangeEvent): Promise<void> {
-        if (changeEvent.event.added.length > 0) {
+        if (changeEvent.event.added && changeEvent.event.added.length > 0) {
             const sessions = await this.getSessions(changeEvent.providerId);
             sessions.forEach(session => {
                 if (!this.sessionMap.get(session.id)) {
@@ -177,7 +188,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
                 }
             });
         }
-        for (const removed of changeEvent.event.removed) {
+        for (const removed of changeEvent.event.removed || []) {
             const sessionId = typeof removed === 'string' ? removed : removed?.id;
             if (sessionId) {
                 this.sessionMap.get(sessionId)?.dispose();
@@ -400,7 +411,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
     async login(id: string, scopes: string[]): Promise<AuthenticationSession> {
         const authProvider = this.authenticationProviders.get(id);
         if (authProvider) {
-            return authProvider.login(scopes);
+            return authProvider.createSession(scopes);
         } else {
             throw new Error(`No authentication provider '${id}' is currently registered.`);
         }
@@ -409,7 +420,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
     async logout(id: string, sessionId: string): Promise<void> {
         const authProvider = this.authenticationProviders.get(id);
         if (authProvider) {
-            return authProvider.logout(sessionId);
+            return authProvider.removeSession(sessionId);
         } else {
             throw new Error(`No authentication provider '${id}' is currently registered.`);
         }

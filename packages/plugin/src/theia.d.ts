@@ -11815,7 +11815,7 @@ export module '@theia/plugin' {
          * The permissions granted by the session's access token. Available scopes
          * are defined by the [AuthenticationProvider](#AuthenticationProvider).
          */
-        readonly scopes: ReadonlyArray<string>;
+        readonly scopes: readonly string[];
     }
 
     /**
@@ -12050,12 +12050,6 @@ export module '@theia/plugin' {
          * @return A {@link Disposable} that unregisters this provider when being disposed.
          */
         export function registerAuthenticationProvider(id: string, label: string, provider: AuthenticationProvider, options?: AuthenticationProviderOptions): Disposable;
-
-        /**
-         * @deprecated Use {@link getSession()} {@link AuthenticationGetSessionOptions.silent} instead.
-         */
-        export function hasSession(providerId: string, scopes: readonly string[]): Thenable<boolean>;
-
     }
 }
 

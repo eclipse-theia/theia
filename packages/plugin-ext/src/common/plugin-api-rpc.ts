@@ -1943,20 +1943,15 @@ export interface AuthenticationExt {
     $getSessions(id: string, scopes?: string[]): Promise<ReadonlyArray<theia.AuthenticationSession>>;
     $createSession(id: string, scopes: string[]): Promise<theia.AuthenticationSession>;
     $removeSession(id: string, sessionId: string): Promise<void>;
-    $onDidChangeAuthenticationSessions(id: string, label: string): Promise<void>;
-    $onDidChangeAuthenticationProviders(added: theia.AuthenticationProviderInformation[], removed: theia.AuthenticationProviderInformation[]): Promise<void>;
-    $setProviders(providers: theia.AuthenticationProviderInformation[]): Promise<void>;
+    $onDidChangeAuthenticationSessions(provider: theia.AuthenticationProviderInformation): Promise<void>;
 }
 
 export interface AuthenticationMain {
     $registerAuthenticationProvider(id: string, label: string, supportsMultipleAccounts: boolean): void;
     $unregisterAuthenticationProvider(id: string): void;
-    $getProviderIds(): Promise<string[]>;
-    $ensureProvider(id: string): Promise<void>;
-    $sendDidChangeSessions(providerId: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent): void;
+    $onDidChangeSessions(providerId: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent): void;
     $getSession(providerId: string, scopes: readonly string[], extensionId: string, extensionName: string,
         options: theia.AuthenticationGetSessionOptions): Promise<theia.AuthenticationSession | undefined>;
-    $removeSession(providerId: string, sessionId: string): Promise<void>;
 }
 
 export interface RawColorInfo {

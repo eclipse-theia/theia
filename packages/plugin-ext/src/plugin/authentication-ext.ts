@@ -34,30 +34,11 @@ export class AuthenticationExtImpl implements AuthenticationExt {
     private proxy: AuthenticationMain;
     private authenticationProviders: Map<string, theia.AuthenticationProvider> = new Map<string, theia.AuthenticationProvider>();
 
-    private _providerIds: string[] = [];
-
-    private _providers: theia.AuthenticationProviderInformation[] = [];
-
-    private onDidChangeAuthenticationProvidersEmitter = new Emitter<theia.AuthenticationProvidersChangeEvent>();
-    readonly onDidChangeAuthenticationProviders: Event<theia.AuthenticationProvidersChangeEvent> = this.onDidChangeAuthenticationProvidersEmitter.event;
-
     private onDidChangeSessionsEmitter = new Emitter<theia.AuthenticationSessionsChangeEvent>();
     readonly onDidChangeSessions: Event<theia.AuthenticationSessionsChangeEvent> = this.onDidChangeSessionsEmitter.event;
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.AUTHENTICATION_MAIN);
-    }
-
-    getProviderIds(): Promise<ReadonlyArray<string>> {
-        return this.proxy.$getProviderIds();
-    }
-
-    get providerIds(): string[] {
-        return this._providerIds;
-    }
-
-    get providers(): ReadonlyArray<theia.AuthenticationProviderInformation> {
-        return Object.freeze(this._providers.slice());
     }
 
     async getSession(requestingExtension: InternalPlugin, providerId: string, scopes: readonly string[],
@@ -76,29 +57,14 @@ export class AuthenticationExtImpl implements AuthenticationExt {
         return this.proxy.$getSession(providerId, scopes, extensionId, extensionName, options);
     }
 
-    async logout(providerId: string, sessionId: string): Promise<void> {
-        return this.proxy.$removeSession(providerId, sessionId);
-    }
-
     registerAuthenticationProvider(id: string, label: string, provider: theia.AuthenticationProvider, options?: theia.AuthenticationProviderOptions): theia.Disposable {
         if (this.authenticationProviders.get(id)) {
             throw new Error(`An authentication provider with id '${id}' is already registered.`);
         }
 
         this.authenticationProviders.set(id, provider);
-        if (this._providerIds.indexOf(id) === -1) {
-            this._providerIds.push(id);
-        }
-
-        if (!this._providers.find(p => p.id === id)) {
-            this._providers.push({
-                id,
-                label
-            });
-        }
-
         const listener = provider.onDidChangeSessions(e => {
-            this.proxy.$sendDidChangeSessions(id, e);
+            this.proxy.$onDidChangeSessions(id, e);
         });
 
         this.proxy.$registerAuthenticationProvider(id, label, !!options?.supportsMultipleAccounts);
@@ -106,16 +72,6 @@ export class AuthenticationExtImpl implements AuthenticationExt {
         return new Disposable(() => {
             listener.dispose();
             this.authenticationProviders.delete(id);
-            const index = this._providerIds.findIndex(pid => id === pid);
-            if (index > -1) {
-                this._providerIds.splice(index);
-            }
-
-            const i = this._providers.findIndex(p => p.id === id);
-            if (i > -1) {
-                this._providers.splice(i);
-            }
-
             this.proxy.$unregisterAuthenticationProvider(id);
         });
     }
@@ -163,30 +119,7 @@ export class AuthenticationExtImpl implements AuthenticationExt {
         throw new Error(`Unable to find authentication provider with handle: ${providerId}`);
     }
 
-    $onDidChangeAuthenticationSessions(id: string, label: string): Promise<void> {
-        this.onDidChangeSessionsEmitter.fire({ provider: { id, label } });
-        return Promise.resolve();
-    }
-
-    async $onDidChangeAuthenticationProviders(added: theia.AuthenticationProviderInformation[], removed: theia.AuthenticationProviderInformation[]): Promise<void> {
-        added.forEach(id => {
-            if (this._providers.indexOf(id) === -1) {
-                this._providers.push(id);
-            }
-        });
-
-        removed.forEach(p => {
-            const index = this._providers.findIndex(provider => provider.id === p.id);
-            if (index > -1) {
-                this._providers.splice(index);
-            }
-        });
-
-        this.onDidChangeAuthenticationProvidersEmitter.fire({ added, removed });
-    }
-
-    $setProviders(providers: theia.AuthenticationProviderInformation[]): Promise<void> {
-        this._providers.push(...providers);
-        return Promise.resolve(undefined);
+    async $onDidChangeAuthenticationSessions(provider: theia.AuthenticationProviderInformation): Promise<void> {
+        this.onDidChangeSessionsEmitter.fire({ provider });
     }
 }
