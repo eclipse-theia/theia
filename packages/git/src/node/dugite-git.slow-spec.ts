@@ -20,8 +20,6 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 import { GitFileStatus } from '../common';
 import { createGit } from './test/binding-helper';
 
-/* eslint-disable no-unused-expressions */
-
 const track = temp.track();
 
 describe('git-slow', async function (): Promise<void> {

@@ -27,8 +27,6 @@ before(() => {
     diffComputer = new DiffComputer();
 });
 
-/* eslint-disable no-unused-expressions */
-
 describe('dirty-diff-computer', () => {
 
     it('remove single line', () => {

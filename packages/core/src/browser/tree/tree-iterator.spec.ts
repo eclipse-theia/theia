@@ -22,9 +22,6 @@ import { DepthFirstTreeIterator, BreadthFirstTreeIterator, BottomUpTreeIterator,
 import { createTreeTestContainer } from './test/tree-test-container';
 import { ExpandableTreeNode } from './tree-expansion';
 
-/* eslint-disable no-unused-expressions */
-/* eslint-disable max-len */
-
 describe('tree-iterator', () => {
 
     const model = createTreeModel();

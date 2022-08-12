@@ -44,8 +44,6 @@ import { StatusBar } from './status-bar';
 
 disableJSDOM();
 
-/* eslint-disable no-unused-expressions */
-
 const expect = chai.expect;
 
 let keybindingRegistry: KeybindingRegistry;

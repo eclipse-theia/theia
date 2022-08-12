@@ -25,8 +25,6 @@ import { expect } from 'chai';
 import * as temp from 'temp';
 import * as fs from 'fs';
 
-/* eslint-disable no-unused-expressions */
-
 describe('DefaultWorkspaceServer', function (): void {
 
     describe('getRecentWorkspaces()', async () => {

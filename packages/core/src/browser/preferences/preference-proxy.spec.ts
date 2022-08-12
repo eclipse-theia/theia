@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-unused-expressions */
 
 import { enableJSDOM } from '../test/jsdom';
 

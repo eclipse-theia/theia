@@ -23,8 +23,6 @@ import URI from '@theia/core/lib/common/uri';
 import { MockDirectoryArchiver } from './test/mock-directory-archiver';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 
-/* eslint-disable no-unused-expressions */
-
 const track = temp.track();
 
 describe('directory-archiver', () => {

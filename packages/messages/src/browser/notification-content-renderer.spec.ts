@@ -17,8 +17,6 @@
 import { expect } from 'chai';
 import { NotificationContentRenderer } from './notification-content-renderer';
 
-/* eslint-disable no-unused-expressions */
-
 describe('notification-content-renderer', () => {
 
     const contentRenderer = new NotificationContentRenderer();

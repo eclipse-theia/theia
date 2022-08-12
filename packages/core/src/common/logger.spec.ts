@@ -18,8 +18,6 @@ import { expect } from 'chai';
 import { MockLogger } from './test/mock-logger';
 import { setRootLogger, unsetRootLogger } from './logger';
 
-/* eslint-disable no-unused-expressions */
-
 describe('logger', () => {
 
     it('window is not defined', () => {

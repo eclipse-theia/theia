@@ -23,7 +23,6 @@ import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
 import { NsfwFileSystemWatcherService } from './nsfw-filesystem-service';
 import { DidFilesChangedParams, FileChange, FileChangeType } from '../../common/filesystem-watcher-protocol';
-/* eslint-disable no-unused-expressions */
 
 const expect = chai.expect;
 const track = temp.track();

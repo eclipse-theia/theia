@@ -21,7 +21,6 @@ import { MockTreeModel } from './test/mock-tree-model';
 import { expect } from 'chai';
 import { createTreeTestContainer } from './test/tree-test-container';
 
-/* eslint-disable no-unused-expressions */
 describe('Tree', () => {
 
     it('addChildren', () => {

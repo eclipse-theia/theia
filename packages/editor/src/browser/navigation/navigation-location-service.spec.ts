@@ -32,8 +32,6 @@ import { NavigationLocationService } from './navigation-location-service';
 
 disableJSDOM();
 
-/* eslint-disable no-unused-expressions */
-
 describe('navigation-location-service', () => {
 
     let stack: NavigationLocationService;

@@ -25,7 +25,6 @@ describe('MultiRingBuffer', function (): void {
         const size = 2;
         const compareTo = Buffer.from('0000', 'hex');
         const ringBuffer = new MultiRingBuffer({ size });
-        // eslint-disable-next-line no-unused-expressions
         expect(ringBuffer['buffer'].equals(compareTo)).to.be.true;
     });
 

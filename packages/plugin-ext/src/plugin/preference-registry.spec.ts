@@ -112,7 +112,6 @@ describe('PreferenceRegistryExtImpl:', () => {
         });
     });
 
-    /* eslint-disable no-unused-expressions */
     describe('toConfigurationChangeEvent', () => {
         // E.g. deletion of a `tasks.json`.
         it('Handles deletion of a section', () => {

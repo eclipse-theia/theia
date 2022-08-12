@@ -18,8 +18,6 @@ import { expect } from 'chai';
 import { NavigationLocation } from './navigation-location';
 import { NavigationLocationSimilarity } from './navigation-location-similarity';
 
-/* eslint-disable no-unused-expressions */
-
 describe('navigation-location-similarity', () => {
 
     const similarity = new NavigationLocationSimilarity();

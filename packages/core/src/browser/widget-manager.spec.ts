@@ -40,7 +40,6 @@ class TestWidgetFactory implements WidgetFactory {
     }
 }
 
-/* eslint-disable no-unused-expressions */
 describe('widget-manager', () => {
     let widgetManager: WidgetManager;
     before(() => {

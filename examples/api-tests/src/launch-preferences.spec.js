@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 // @ts-check
-/* eslint-disable no-unused-expressions, @typescript-eslint/no-explicit-any */
+/* @typescript-eslint/no-explicit-any */
 
 /**
  * @typedef {'.vscode' | '.theia' | ['.theia', '.vscode']} ConfigMode
