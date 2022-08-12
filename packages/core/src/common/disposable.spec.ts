@@ -18,7 +18,6 @@ import { expect } from 'chai';
 import { DisposableCollection, Disposable } from './disposable';
 
 describe('Disposables', () => {
-    /* eslint-disable no-unused-expressions */
     it('Is safe to use Disposable.NULL', () => {
         const collectionA = new DisposableCollection(Disposable.NULL);
         const collectionB = new DisposableCollection(Disposable.NULL);

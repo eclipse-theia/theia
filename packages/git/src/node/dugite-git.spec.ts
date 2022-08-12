@@ -28,7 +28,7 @@ import { initRepository, createTestRepository } from 'dugite-extra/lib/command/t
 import { createGit } from './test/binding-helper';
 import { isWindows } from '@theia/core/lib/common/os';
 
-/* eslint-disable max-len, no-unused-expressions */
+/* eslint-disable max-len */
 
 const track = temp.track();
 

@@ -21,8 +21,6 @@ import * as chai from 'chai';
 const expect = chai.expect;
 let commandRegistry: CommandRegistry;
 
-/* eslint-disable no-unused-expressions */
-
 describe('Commands', () => {
 
     beforeEach(() => {

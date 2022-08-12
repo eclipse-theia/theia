@@ -22,7 +22,6 @@ import { ExpandableTreeNode } from './tree-expansion';
 import { createTreeTestContainer } from './test/tree-test-container';
 import { timeout } from '../../common/promise-util';
 
-/* eslint-disable no-unused-expressions */
 describe('TreeExpansionService', () => {
     let model: TreeModel;
     beforeEach(() => {

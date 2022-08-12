@@ -32,7 +32,6 @@ describe('PreferenceScope', () => {
     });
 
     it('is() returns whether a value is a preference scope', () => {
-        /* eslint-disable no-unused-expressions */
         expect(PreferenceScope.is(PreferenceScope.Default)).to.be.true;
         expect(PreferenceScope.is(PreferenceScope.User)).to.be.true;
         expect(PreferenceScope.is(PreferenceScope.Workspace)).to.be.true;
@@ -45,6 +44,5 @@ describe('PreferenceScope', () => {
         expect(PreferenceScope.is(-1)).to.be.false;
         expect(PreferenceScope.is({})).to.be.false;
         expect(PreferenceScope.is('Default')).to.be.false;
-        /* eslint-enable no-unused-expressions */
     });
 });

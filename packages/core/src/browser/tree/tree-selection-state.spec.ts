@@ -21,8 +21,6 @@ import { createTreeTestContainer } from './test/tree-test-container';
 import { SelectableTreeNode, TreeSelection } from './tree-selection';
 import { TreeModel } from './tree-model';
 
-/* eslint-disable no-unused-expressions */
-
 namespace TreeSelectionState {
 
     export interface Expectation {

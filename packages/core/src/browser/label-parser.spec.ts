@@ -18,8 +18,6 @@ import { CommandService } from './../common';
 import { Container } from 'inversify';
 import { expect } from 'chai';
 
-/* eslint-disable no-unused-expressions */
-
 let statusBarEntryUtility: LabelParser;
 
 before(() => {

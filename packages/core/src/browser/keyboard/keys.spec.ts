@@ -24,8 +24,6 @@ import * as sinon from 'sinon';
 
 disableJSDOM();
 
-/* eslint-disable no-unused-expressions */
-
 const expect = chai.expect;
 
 describe('keys api', () => {

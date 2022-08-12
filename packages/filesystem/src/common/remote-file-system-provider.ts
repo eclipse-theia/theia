@@ -500,7 +500,6 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
             stream.on('error', error => {
                 const code = error instanceof FileSystemProviderError ? error.code : undefined;
                 const { name, message, stack } = error;
-                // eslint-disable-next-line no-unused-expressions
                 this.client?.onFileStreamEnd(handle, { code, name, message, stack });
             });
             stream.on('end', () => this.client?.onFileStreamEnd(handle, undefined));

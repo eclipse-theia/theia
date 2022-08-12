@@ -22,7 +22,7 @@ import * as assert from 'assert';
 import { JSONValue } from '@phosphor/coreutils';
 import { IJSONSchema, JsonType } from '../../common/json-schema';
 
-/* eslint-disable no-unused-expressions,no-null/no-null */
+/* eslint-disable no-null/no-null */
 
 describe('Preference Validation Service', () => {
     const container = new Container();

@@ -157,7 +157,8 @@
       "rules": {
         "@theia/runtime-import-check": "off",
         "@theia/shared-dependencies": "off",
-        "import/no-extraneous-dependencies": "off"
+        "import/no-extraneous-dependencies": "off",
+        "no-unused-expressions": "off"
       }
     },
     {

@@ -490,7 +490,6 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const currentDataWidget = widget.widgets[0];
         const viewDataWidget = await this.createViewDataWidget(view.id, webviewId);
         if (widget.isDisposed) {
-            // eslint-disable-next-line no-unused-expressions
             viewDataWidget?.dispose();
             return;
         }

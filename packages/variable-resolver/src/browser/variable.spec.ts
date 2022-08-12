@@ -20,8 +20,6 @@ import { ILogger, Disposable } from '@theia/core/lib/common';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Variable, VariableRegistry } from './variable';
 
-/* eslint-disable no-unused-expressions */
-
 const expect = chai.expect;
 let variableRegistry: VariableRegistry;
 

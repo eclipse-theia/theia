@@ -18,7 +18,6 @@ import { expect } from 'chai';
 import { PanelKind, RevealKind, TaskScope, TaskDefinition } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 
-/* eslint-disable no-unused-expressions */
 describe('TaskDefinitionRegistry', () => {
     let registry: TaskDefinitionRegistry;
     const definitionContributionA: TaskDefinition = {

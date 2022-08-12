@@ -19,8 +19,6 @@ import { NavigationLocation, Range } from './navigation-location';
 import { TextDocumentContentChangeDelta } from '../editor';
 import { MockNavigationLocationUpdater } from './test/mock-navigation-location-updater';
 
-/* eslint-disable no-unused-expressions */
-
 describe('navigation-location-updater', () => {
 
     const updater = new MockNavigationLocationUpdater();

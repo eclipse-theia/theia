@@ -59,7 +59,6 @@ describe('menu-model-registry', () => {
             expect(file.label, 'File');
             const openGroup = file.children[0] as CompositeMenuNode;
             expect(openGroup.children.length).equals(2);
-            // eslint-disable-next-line no-unused-expressions
             expect(openGroup.label).undefined;
         });
     });
