@@ -25,6 +25,12 @@ import { serviceIdentifier } from './types';
  */
 export interface ContainerScope extends Disposable {
     /**
+     * Run the provided initialization callbacks.
+     *
+     * @throws if disposed.
+     */
+    initialize(initCallbacks?: ContainerScope.Init[]): this
+    /**
      * @throws if disposed.
      */
     container(): interfaces.Container;
@@ -36,7 +42,7 @@ export interface ContainerScope extends Disposable {
 export namespace ContainerScope {
 
     export const Factory = serviceIdentifier<Factory>('ContainerScope.Factory');
-    export type Factory = (container: interfaces.Container, initCallbacks?: Init[]) => ContainerScope;
+    export type Factory = (container: interfaces.Container) => ContainerScope;
 
     /**
      * Callback to run once a {@link ContainerScope} is ready.
@@ -47,9 +53,9 @@ export namespace ContainerScope {
     export type Init = (container: interfaces.Container) => Disposable | null | undefined | void;
 
     /**
-     * Callback to run once a {@link ContainerScope} is disposed.
+     * Instances to dispose of once a {@link ContainerScope} is disposed.
      *
-     * Binding callbacks to this symbol will only work if part of a {@link ContainerScope}.
+     * Binding disposables to this symbol will only work if part of a {@link ContainerScope}.
      */
     export const Destroy = serviceIdentifier<Disposable>('ContainerScope.Destroy');
     export type Destroy = Disposable | Disposable[];
@@ -63,18 +69,24 @@ export class DefaultContainerScope implements ContainerScope {
     protected _container?: interfaces.Container;
     protected disposables = new DisposableCollection();
 
-    constructor(container: interfaces.Container, initCallbacks?: ContainerScope.Init[]) {
+    constructor(container: interfaces.Container) {
         this._container = container;
-        if (initCallbacks) {
-            this.runInitCallback(initCallbacks);
-        }
+    }
+
+    initialize(initCallbacks?: ContainerScope.Init[]): this {
+        this.checkDisposed();
+        initCallbacks?.forEach(callback => {
+            const disposable = callback(this._container!);
+            if (Disposable.is(disposable)) {
+                this.disposables.push(disposable);
+            }
+        });
+        return this;
     }
 
     container(): interfaces.Container {
-        if (!this._container) {
-            throw new Error('container is disposed!');
-        }
-        return this._container;
+        this.checkDisposed();
+        return this._container!;
     }
 
     dispose(): void {
@@ -84,12 +96,9 @@ export class DefaultContainerScope implements ContainerScope {
         container.unbindAll();
     }
 
-    protected runInitCallback(initCallbacks: ContainerScope.Init[]): void {
-        initCallbacks.forEach(callback => {
-            const disposable = callback(this._container!);
-            if (Disposable.is(disposable)) {
-                this.disposables.push(disposable);
-            }
-        });
+    protected checkDisposed(): void {
+        if (!this._container) {
+            throw new Error('container is disposed!');
+        }
     }
 }

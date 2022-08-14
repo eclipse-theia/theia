@@ -19,7 +19,7 @@ import { AbstractConnection, Connection } from '../../common/connection/connecti
 import { pushDisposableListener } from '../../common/node-event-utils';
 
 /**
- * Wrap a tuple of ({@link Readable}, {@link Writable}) into a {@link Connection}.
+ * Wrap a pair of ({@link Readable}, {@link Writable}) into a {@link Connection}.
  */
 export class ObjectStreamConnection<T> extends AbstractConnection<T> {
 

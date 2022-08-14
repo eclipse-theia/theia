@@ -150,13 +150,6 @@ export class DefaultConnectionMultiplexer implements ConnectionMultiplexer<Conne
         return channel;
     }
 
-    protected getRemoteChannel(id: number): Channel<unknown> {
-        if (id >= 0) {
-            throw new Error(`unexpected positive id=${id}`);
-        }
-        return this.getChannel(id);
-    }
-
     protected handleTransportMessage(message: Multiplexing.Message): void {
         switch (message.type) {
             case Multiplexing.MessageType.OPEN: return this.handleOpenMessage(message);

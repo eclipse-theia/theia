@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-// import { Wip } from '../../common/connection/wip';
 import {
     BackendAndFrontend, bindServiceProvider, Connection, ConnectionHandler, ConnectionProvider, ConnectionTransformer, DeferredConnectionFactory, ProxyProvider,
     RouteHandlerProvider, ServiceProvider
@@ -29,7 +28,8 @@ import { DefaultRpcProxyProvider, Rpc } from '../../common/rpc';
 import { FrontendApplicationContribution } from '../frontend-application';
 import { DefaultFrontendInstance, FrontendInstance } from '../frontend-instance';
 import { SocketIoConnectionProvider } from './socket-io-connection-provider';
-// import msgpackr = require('msgpackr');
+import { MultiplexerConnection } from '../../common/connection/multiplexer-connection';
+import { Packr, Unpackr } from 'msgpackr';
 
 export default new ContainerModule(bind => {
     bind(FrontendInstance).to(DefaultFrontendInstance).inSingletonScope();
@@ -37,9 +37,9 @@ export default new ContainerModule(bind => {
     bind(ConnectionMultiplexer)
         .toDynamicValue(ctx => {
             const socketIoConnectionProvider = ctx.container.get(SocketIoConnectionProvider);
-            const mainConnection = socketIoConnectionProvider.open({ path: '/' });
-            // const wip = new Wip(mainConnection, msgpackr, msgpackr);
-            const multiplexer = ctx.container.get(DefaultConnectionMultiplexer).initialize(mainConnection);
+            const mainConnection = socketIoConnectionProvider.open({ path: '/', reconnection: true });
+            const multiplexerConnection = new MultiplexerConnection(mainConnection, new Packr(), new Unpackr());
+            const multiplexer = ctx.container.get(DefaultConnectionMultiplexer).initialize(multiplexerConnection);
             getAllNamedOptional(ctx.container, ConnectionHandler, BackendAndFrontend)
                 .forEach(handler => multiplexer.listen(handler));
             return multiplexer;

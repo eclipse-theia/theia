@@ -166,10 +166,10 @@ export default new ContainerModule(bind => {
                 function createFrontendContainerScope(theiaWindow: TheiaElectronWindow): ContainerScope {
                     const child = ctx.container.createChild();
                     child.bind(TheiaElectronWindow).toConstantValue(theiaWindow);
-                    const modules = ctx.container.getAllNamed(ContainerModule, ElectronMainAndFrontend);
-                    child.load(...modules);
-                    const callbacks = getAllNamedOptional(child, ContainerScope.Init, ElectronMainAndFrontend);
-                    return containerScopeFactory(child, callbacks);
+                    ctx.container.getAllNamed(ContainerModule, ElectronMainAndFrontend)
+                        .forEach(containerModule => child.load(containerModule));
+                    const initCallbacks = getAllNamedOptional(child, ContainerScope.Init, ElectronMainAndFrontend);
+                    return containerScopeFactory(child).initialize(initCallbacks);
                 }
             }
         }))

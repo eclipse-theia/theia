@@ -21,11 +21,13 @@ import { AbstractConnection, Connection, ConnectionProvider } from '../../common
 import { io, ManagerOptions, Socket, SocketOptions } from 'socket.io-client';
 import { Endpoint } from '../endpoint';
 import { FrontendInstance } from '../frontend-instance';
+import { v4 } from 'uuid';
 
 export type SocketIoAuth = object | ((cb: (auth: object) => void) => void);
 
 export interface SocketIoParams {
     path: string
+    reconnection?: boolean
     options?: ManagerOptions & SocketOptions
 }
 
@@ -36,13 +38,22 @@ export class SocketIoConnectionProvider implements ConnectionProvider<any, Socke
     protected frontendInstance: FrontendInstance;
 
     open(params: SocketIoParams): Connection<any> {
-        return new SocketIoConnection(io(this.createWebSocketUrl(params.path), {
+        const reconnection = params.reconnection ?? false;
+        const auth: Record<string, string> = {
+            THEIA_FRONTEND_ID: this.frontendInstance.id
+        };
+        if (reconnection) {
+            auth.THEIA_CONNECTION_ID = v4();
+        }
+        const socket = io(this.createWebSocketUrl(params.path), {
             multiplex: false,
             ...params.options,
-            auth: this.createAuth(params.options?.auth, {
-                THEIA_FRONTEND_ID: this.frontendInstance.id
-            })
-        }));
+            reconnection,
+            auth: this.createAuth(params.options?.auth, auth)
+        });
+        return new SocketIoConnection(socket, {
+            reconnection
+        });
     }
 
     protected createAuth(auth?: SocketIoAuth, extra?: object): SocketIoAuth | undefined {
@@ -69,14 +80,21 @@ export class SocketIoConnectionProvider implements ConnectionProvider<any, Socke
     }
 }
 
+export interface SocketIoConnectionOptions {
+    reconnection?: boolean
+}
+
 export class SocketIoConnection extends AbstractConnection<any> {
 
     state: Connection.State;
+    reconnection: boolean;
 
     constructor(
-        protected socket: Socket
+        protected socket: Socket,
+        options?: SocketIoConnectionOptions
     ) {
         super();
+        this.reconnection = options?.reconnection ?? false;
         if (this.socket.connected) {
             this.state = Connection.State.OPENED;
         } else {
@@ -86,8 +104,12 @@ export class SocketIoConnection extends AbstractConnection<any> {
         this.socket.on('message', message => this.onMessageEmitter.fire(message));
         this.socket.once('disconnect', reason => {
             console.debug('SocketIoConnection disconnect:', reason);
-            this.setClosedAndEmit();
-            this.dispose();
+            // Only mark this connection as closed if reconnection won't happen.
+            // See https://socket.io/docs/v4/client-api/#event-disconnect
+            if (!this.reconnection || reason.endsWith('disconnect')) {
+                this.setClosedAndEmit();
+                this.dispose();
+            }
         });
     }
 

@@ -50,7 +50,7 @@ export class DefaultJsonRpc implements JsonRpc {
             dispose: () => { },
             listen: callback => connection.onMessage(message => callback(message)),
             onClose: callback => connection.onClose(() => callback()),
-            onError: callback => Disposable.NULL,
+            onError: callback => connection.onError(error => callback(error)),
             onPartialMessage: callback => Disposable.NULL,
         };
     }

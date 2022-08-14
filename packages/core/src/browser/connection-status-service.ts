@@ -124,19 +124,7 @@ export class FrontendConnectionStatusService extends AbstractConnectionStatusSer
         window.addEventListener('online', () => {
             this.schedulePing();
         });
-        // this.wsConnectionProvider.onSocketDidOpen(() => {
-        //     this.updateStatus(true);
-        //     this.schedulePing();
-        // });
-        // this.wsConnectionProvider.onSocketDidClose(() => {
-        //     this.clearTimeout(this.scheduledPing);
-        //     this.updateStatus(false);
-        // });
-        // this.wsConnectionProvider.onIncomingMessageActivity(() => {
-        //     // natural activity
-        //     this.updateStatus(true);
-        //     this.schedulePing();
-        // });
+        this.schedulePing();
     }
 
     protected schedulePing(): void {

@@ -58,7 +58,7 @@ export type RPCProtocol = PluginRpc;
 export class ProxyIdentifier<T> {
 
     /** static only */
-    protected T?: T;
+    private T?: T;
 
     constructor(
         readonly isMain: boolean,

@@ -23,7 +23,7 @@ import { DefaultTransformableConnection } from './transformer';
 
 describe('DefaultTransformableConnection', () => {
 
-    it('Should encode and decode with one MessageTransformer', async () => {
+    it('should encode and decode with one MessageTransformer', async () => {
         const connection = createEchoConnection<string>();
         const transformed = new DefaultTransformableConnection(connection)
             .addTransform<{ message: string }>({
@@ -37,7 +37,7 @@ describe('DefaultTransformableConnection', () => {
         expect(await transformedMessage).deep.equal({ message: 'test' });
     });
 
-    it('Should encode and decode with more than one MessageTransformer', async () => {
+    it('should encode and decode with more than one MessageTransformer', async () => {
         const connection = createEchoConnection<string>();
         const transformed = new DefaultTransformableConnection(connection)
             .addTransform<{ a: string }>({
@@ -70,5 +70,5 @@ function createEchoConnection<T>(): Connection<T> {
         onOpen: Event.None,
         sendMessage: message => messageEmitter.fire(message),
         close: () => { }
-    }
+    };
 }

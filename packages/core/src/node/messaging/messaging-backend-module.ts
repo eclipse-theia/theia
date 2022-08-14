@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule, inject, injectable } from 'inversify';
+import { ContainerModule, inject, injectable, optional } from 'inversify';
 import {
     BackendAndFrontend,
     bindServiceProvider, ConnectionHandler, ConnectionRouter,
@@ -38,8 +38,12 @@ import { DefaultRouter, Handler, Router } from '../../common/routing';
 import { JsonRpc } from '../../common/json-rpc';
 import { ConnectionContainerModule } from './connection-container-module';
 import { MsgpackrMessageTransformer } from '../../common/msgpackr';
-// import { Wip } from '../../common/connection/wip';
-// import msgpackr = require('msgpackr');
+import { MultiplexerConnection } from '../../common/connection/multiplexer-connection';
+import { DefaultProxyConnection, ProxyConnection } from '../../common/connection/proxy-connection';
+import { DefaultConnectionRegistry } from '../../common/connection/connection-registry';
+import { RunOnceTimeout } from '../../common/run-once-timeout';
+import { ConnectionId, ConnectionPath, FrontendId } from '../../common/common-parameters';
+import { Packr, Unpackr } from 'msgpackr';
 
 /**
  * Base bindings that will live in Inversify containers scoped to each frontend.
@@ -61,8 +65,8 @@ export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind =
         .toDynamicValue(ctx => {
             const router = ctx.container.getNamed(ConnectionRouter, BackendAndFrontend);
             const { mainConnection } = ctx.container.get(MainConnectionHandler);
-            // const wip = new Wip(mainConnection, msgpackr, msgpackr);
-            const mainMultiplexer = ctx.container.get(DefaultConnectionMultiplexer).initialize(mainConnection);
+            const multiplexerConnection = new MultiplexerConnection(mainConnection, new Packr(), new Unpackr());
+            const mainMultiplexer = ctx.container.get(DefaultConnectionMultiplexer).initialize(multiplexerConnection);
             mainMultiplexer.listen((params, accept, next) => router.route(params, accept, next));
             return mainMultiplexer;
         })
@@ -80,7 +84,7 @@ export const BackendAndFrontendContainerScopeModule = new ContainerModule(bind =
             const proxyProvider = ctx.container.get(DefaultRpcProxyProvider);
             const connectionTransformer = ctx.container.get(ConnectionTransformer);
             const msgpackrTransformer = new MsgpackrMessageTransformer();
-            return proxyProvider.initialize(serviceId => {
+            return proxyProvider.initialize((serviceId, serviceParams) => {
                 const path = JSON_RPC_ROUTE.reverse({ serviceId });
                 const connection = mainMultiplexer.open({ path });
                 const msgpackConnection = connectionTransformer.transformConnection(connection, msgpackrTransformer);
@@ -131,17 +135,22 @@ export const messagingBackendModule = new ContainerModule(bind => {
                     .initialize(httpServer)
                     .listen(({ socket }, accept, next) => {
                         const path = socket.nsp.name;
-                        const frontendId = socket.handshake.auth.THEIA_FRONTEND_ID;
+                        const frontendId = FrontendId.get(socket.handshake.auth);
+                        const connectionId = ConnectionId.get(socket.handshake.auth);
                         if (typeof frontendId !== 'string') {
                             return next();
                         }
-                        router.route({ frontendId, path }, accept, next);
+                        router.route({
+                            ...ConnectionPath.create(path),
+                            ...FrontendId.create(frontendId),
+                            ...ConnectionId.create(connectionId)
+                        }, accept, next);
                     });
             }
         }))
         .inSingletonScope();
     // Router handling connections coming from the frontend.
-    // It will find the adeguate scoped Inversify container and route the connection there too.
+    // It will find the adequate scoped Inversify container and route the connection there.
     bind(ConnectionRouter)
         .toDynamicValue(ctx => {
             const router = ctx.container.get<DefaultRouter<AnyConnection>>(DefaultRouter);
@@ -154,29 +163,42 @@ export const messagingBackendModule = new ContainerModule(bind => {
                 // TODO: Remove this API?
                 getAllOptional(ctx.container, ConnectionContainerModule)
                     .forEach(containerModule => child.load(containerModule));
-                const readyCallbacks = getAllNamedOptional(child, ContainerScope.Init, BackendAndFrontend);
-                const containerScope = containerScopeFactory(child, readyCallbacks);
-                console.log('CREATE NEW SCOPE FOR', frontendId);
+                const initCallbacks = getAllNamedOptional(child, ContainerScope.Init, BackendAndFrontend);
+                const containerScope = containerScopeFactory(child).initialize(initCallbacks);
                 return rcTracker.track(containerScope);
             });
+            const connections = new DefaultConnectionRegistry<string, ProxyConnection<unknown>>();
             // first routing to find the Inversify container scope for `frontendId`
             router.listen((params, accept, next) => {
+                // connections must define a frontendId
                 if (!params.frontendId) {
                     return next();
                 }
-                const scopeRc = scopes.cloneOrCreate(params.frontendId);
-                console.log('GOT SCOPE FOR', params.frontendId);
+                // support for reconnecting connections
+                if (params.connectionId) {
+                    let proxy = connections.getConnection(params.connectionId);
+                    if (proxy) {
+                        return ProxyConnection.ensureFree(proxy).connect(accept());
+                    }
+                    const accept_ = accept;
+                    accept = () => {
+                        connections.registerConnection(params.connectionId, proxy = new DefaultProxyConnection(), { allowReplace: false });
+                        const timeout = new RunOnceTimeout(() => proxy!.close());
+                        proxy.onDisconnect(() => timeout.arm(10_000));
+                        proxy.onReconnect(() => timeout.disarm());
+                        return proxy.connect(accept_());
+                    };
+                }
                 // second routing to dispatch the incoming connection to scoped services
+                const scopeRc = scopes.cloneOrCreate(params.frontendId);
                 scopeRc.ref()
                     .container()
                     .getNamed<Router<AnyConnection>>(ConnectionRouter, BackendAndFrontend)
                     .route(params, () => {
-                        console.log('HANDLED!', JSON.stringify(params));
                         const connection = accept();
                         connection.onClose(() => scopeRc.dispose());
                         return connection;
                     }, error => {
-                        console.log('UNHANDLED:', error);
                         scopeRc.dispose();
                         next(error);
                     });
@@ -215,7 +237,6 @@ export class MainConnectionHandler {
 
     createMainRouteHandler(): Handler<AnyConnection> {
         return this.routeHandlerProvider.createRouteHandler('/', (params, accept, next) => {
-            console.log('MAIN HANDLED!', JSON.stringify(params));
             if (this.mainConnectionDeferred.state === 'unresolved') {
                 this.mainConnectionDeferred.resolve(accept());
             } else {

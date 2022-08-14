@@ -17,17 +17,17 @@
 import { AbstractConnection, Connection } from './connection';
 import { Multiplexing } from './multiplexer';
 
-export type WipBuffer = ArrayBuffer | Uint8Array;
+export type SomeBuffer = ArrayBuffer | Uint8Array;
 
-export interface WipEncoder<T> {
+export interface Encoder<T> {
     encode(value: T): Uint8Array
 }
 
-export interface WipDecoder<T> {
-    decode(buffer: WipBuffer): T
+export interface Decoder<T> {
+    decode(buffer: SomeBuffer): T
 }
 
-export interface WipOptions {
+export interface MultiplexerConnectionOptions {
     /**
      * In bytes/second.
      */
@@ -55,7 +55,7 @@ export interface WipOptions {
  * }
  * ```
  */
-export interface WipChunkFrame {
+export interface ChunkFrame {
     /**
      * >0 means this is the last chunk from the original message.
      */
@@ -70,7 +70,10 @@ export interface WipChunkFrame {
     chunk: Uint8Array
 }
 
-export class WipQueueSelector<T> {
+/**
+ * Handle identified queues and cycle through each when calling {@link next}.
+ */
+export class RoundRobinQueueSelector<T> {
 
     protected selector = 0;
     protected keys: number[] = [];
@@ -94,6 +97,12 @@ export class WipQueueSelector<T> {
         if (index < 0) {
             throw new Error(`unknown queueId=${queueId}`);
         }
+        // Consider the following example:
+        //   this.keys = [0, 1, 2, 3, 4, 5]
+        //   this.selector = 3
+        // We currently have item 3 at index 3 selected.
+        // If we delete item 1 at index 1, then index 3 will point to item 4,
+        // hence why we need to shift the selector index:
         if (this.selector > index) {
             this.selector--;
         }
@@ -101,18 +110,27 @@ export class WipQueueSelector<T> {
         this.queues.delete(queueId);
     }
 
+    current(): [queueId: number, queue: T[]] {
+        if (this.queues.size === 0) {
+            throw new Error('no queue');
+        }
+        const queueId = this.keys[this.selector];
+        const queue = this.queues.get(queueId)!;
+        return [queueId, queue];
+    }
+
     next(): [queueId: number, queue: T[]] {
         if (this.queues.size === 0) {
             throw new Error('no queue');
         }
-        const queueId = this.keys[this.selector++];
+        const queueId = this.keys[this.selector];
         const queue = this.queues.get(queueId)!;
-        this.selector %= this.keys.length;
+        this.selector = (this.selector + 1) % this.keys.length;
         return [queueId, queue];
     }
 }
 
-export class Wip extends AbstractConnection<Multiplexing.Message> {
+export class MultiplexerConnection extends AbstractConnection<Multiplexing.Message> {
 
     state = Connection.State.OPENED;
 
@@ -120,21 +138,31 @@ export class Wip extends AbstractConnection<Multiplexing.Message> {
     protected timeSplit: number;
     protected maxChunkSize: number;
     protected maxTransferRate: number;
-    protected sendQueues = new WipQueueSelector<Iterator<Uint8Array>>();
+    /**
+     * Queue store that can alternate between each.
+     */
+    protected sendQueues = new RoundRobinQueueSelector<Iterator<Uint8Array>>();
+    /**
+     * Accumulate chunks for each message.
+     */
     protected receiveBuffers = new Map<number, Uint8Array[]>();
+    /**
+     * Carry over value from the drain task.
+     */
+    protected sent = 0;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected timeout?: any;
 
     constructor(
-        protected transport: Connection<WipBuffer>,
-        protected encoder: WipEncoder<Multiplexing.Message>,
-        protected decoder: WipDecoder<Multiplexing.Message>,
-        options?: WipOptions
+        protected transport: Connection<SomeBuffer>,
+        protected encoder: Encoder<Multiplexing.Message>,
+        protected decoder: Decoder<Multiplexing.Message>,
+        options?: MultiplexerConnectionOptions
     ) {
         super();
         this.timeSplit = options?.timeSplit ?? 10;
         this.maxChunkSize = options?.maxChunkSize ?? (256 * 1024);
-        this.maxTransferRate = options?.maxTransferRate ?? (10 * 1024 * 1024); // 10MB/s is large...
+        this.maxTransferRate = options?.maxTransferRate ?? (50 * 1024 * 1024); // 50MB/s is large...
         this.transport.onMessage(buffer => this.handleTransportMessage(buffer), undefined, this.disposables);
         this.transport.onClose(() => this.close());
     }
@@ -152,7 +180,7 @@ export class Wip extends AbstractConnection<Multiplexing.Message> {
         this.dispose();
     }
 
-    protected handleTransportMessage(buffer: WipBuffer): void {
+    protected handleTransportMessage(buffer: SomeBuffer): void {
         const frame = this.parseChunkFrame(buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer);
         let chunks = this.receiveBuffers.get(frame.messageId);
         if (!chunks) {
@@ -181,7 +209,7 @@ export class Wip extends AbstractConnection<Multiplexing.Message> {
     /**
      * Take a bite out of {@link buffer} and create a binary chunk frame.
      *
-     * See {@link WipChunkFrame}.
+     * See {@link ChunkFrame}.
      */
     protected createChunkFrame(messageId: number, buffer: Uint8Array, offset: number, size: number): Uint8Array {
         size = Math.min(buffer.length - offset, size);
@@ -202,7 +230,7 @@ export class Wip extends AbstractConnection<Multiplexing.Message> {
         return frame;
     }
 
-    protected parseChunkFrame(frame: Uint8Array): WipChunkFrame {
+    protected parseChunkFrame(frame: Uint8Array): ChunkFrame {
         const dv = new DataView(frame.buffer);
         const last = dv.getUint8(frame.byteOffset);
         const messageId = dv.getUint32(frame.byteOffset + 1);
@@ -237,16 +265,17 @@ export class Wip extends AbstractConnection<Multiplexing.Message> {
      * @param delta Time frame allocated to the drain task in milliseconds.
      */
     protected drain(delta: number): void {
+        const limit = this.maxTransferRate * delta;
         this.timeout = undefined;
-        let sent = 0;
         while (this.sendQueues.size > 0) {
             const [queueId, generators] = this.sendQueues.next();
             const generator = generators[0];
             const next = generator.next();
             if (!next.done) {
                 this.transport.sendMessage(next.value);
-                sent += next.value.length;
-                if (sent >= (this.maxTransferRate * delta)) {
+                this.sent += next.value.length;
+                if (this.sent >= limit) {
+                    this.sent %= limit;
                     this.timeout = this.scheduleDrain();
                     return;
                 }

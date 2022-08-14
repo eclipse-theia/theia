@@ -54,5 +54,6 @@ export { FrontendConnectionParams } from './frontend-connection-params';
 export { Broker, Handler, Middleware, Router } from './routing';
 export { RouteHandlerProvider, RouteHandlerParams, RouteMatch, RouteMatcher } from './route-handler';
 export { Rc } from './reference-counter';
+export { Parameter, ParameterOptions } from './parameter';
 
 export { BackendAndFrontend } from './messaging/messages';

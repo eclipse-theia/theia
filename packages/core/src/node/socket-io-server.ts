@@ -98,7 +98,7 @@ export class SocketIoServer implements Broker<Connection<any>, SocketIoParams> {
  */
 export class SocketIoConnection extends AbstractConnection<any> {
 
-    state = Connection.State.OPENING;
+    state = Connection.State.OPENED;
 
     constructor(
         protected socket: socket_io.Socket
@@ -110,7 +110,6 @@ export class SocketIoConnection extends AbstractConnection<any> {
             this.setClosedAndEmit();
             this.dispose();
         });
-        queueMicrotask(() => this.setOpenedAndEmit());
     }
 
     sendMessage(message: any): void {

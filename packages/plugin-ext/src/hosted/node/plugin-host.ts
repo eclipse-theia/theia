@@ -33,17 +33,17 @@ console.log(`PLUGIN_HOST(${process.pid}) starting instance`);
 
 // #region process exit protection
 
-// override exit() function, to do not allow plugin kill this node
+// override exit() function, to do not allow plugins to kill the plugin host:
 process.exit = function exit(code?: number): never {
-    const error = new Error('An plugin call process.exit() and it was prevented.');
+    const error = new Error('A plugin called process.exit() and it was prevented.');
     console.warn(error.stack);
     throw error;
 };
 
-// same for 'crash'(works only in electron)
+// same for 'crash'(only works in electron):
 if (process.crash) {
     process.crash = function crash(): never {
-        const error = new Error('An plugin call process.crash() and it was prevented.');
+        const error = new Error('A plugin called process.crash() and it was prevented.');
         console.warn(error.stack);
         throw error;
     };

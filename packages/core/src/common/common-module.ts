@@ -63,7 +63,7 @@ export default new ContainerModule(bind => {
     bind(DeferredConnectionFactory)
         .toFunction(promise => new DeferredConnection(promise));
     bind(ContainerScope.Factory)
-        .toFunction((container, callbacks) => new DefaultContainerScope(container, callbacks));
+        .toFunction(container => new DefaultContainerScope(container));
     bind(LazyProxyFactory)
         .toDynamicValue(ctx => promise => {
             // eslint-disable-next-line no-null/no-null
