@@ -366,7 +366,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             if (preserveWindow) {
                 this._workspace = stat;
             }
-            this.openWindow(stat, { preserveWindow });
+            this.openWindow(stat, Object.assign(options ?? {}, { preserveWindow }));
             return;
         }
         throw new Error('Invalid workspace root URI. Expected an existing directory or workspace file.');
@@ -497,10 +497,10 @@ export class WorkspaceService implements FrontendApplicationContribution {
         const workspacePath = uri.resource.path.toString();
 
         if (this.shouldPreserveWindow(options)) {
-            this.reloadWindow();
+            this.reloadWindow(options);
         } else {
             try {
-                this.openNewWindow(workspacePath);
+                this.openNewWindow(workspacePath, options);
             } catch (error) {
                 // Fall back to reloading the current window in case the browser has blocked the new window
                 this._workspace = uri;
@@ -509,7 +509,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         }
     }
 
-    protected reloadWindow(): void {
+    protected reloadWindow(options?: WorkspaceInput): void {
         // Set the new workspace path as the URL fragment.
         if (this._workspace !== undefined) {
             this.setURLFragment(this._workspace.resource.path.toString());
@@ -520,7 +520,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         this.windowService.reload();
     }
 
-    protected openNewWindow(workspacePath: string): void {
+    protected openNewWindow(workspacePath: string, options?: WorkspaceInput): void {
         const url = new URL(window.location.href);
         url.hash = encodeURI(workspacePath);
         this.windowService.openNewWindow(url.toString());
