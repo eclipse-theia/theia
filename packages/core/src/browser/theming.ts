@@ -17,7 +17,7 @@
 import { Emitter, Event } from '../common/event';
 import { Disposable } from '../common/disposable';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
-import { ApplicationProps } from '@theia/application-package/lib/application-props';
+import { ApplicationProps, DefaultTheme } from '@theia/application-package/lib/application-props';
 import { Theme, ThemeChangeEvent } from '../common/theme';
 import { inject, injectable, postConstruct } from 'inversify';
 import { Deferred } from '../common/promise-util';
@@ -136,7 +136,8 @@ export class ThemeService {
      * The default theme. If that is not applicable, returns with the fallback theme.
      */
     get defaultTheme(): Theme {
-        return this.tryGetTheme(FrontendApplicationConfigProvider.get().defaultTheme) ?? this.getTheme(ApplicationProps.DEFAULT.frontend.config.defaultTheme);
+        return this.tryGetTheme(DefaultTheme.defaultForOSTheme(FrontendApplicationConfigProvider.get().defaultTheme))
+            ?? this.getTheme(DefaultTheme.defaultForOSTheme(ApplicationProps.DEFAULT.frontend.config.defaultTheme));
     }
 
     /**
