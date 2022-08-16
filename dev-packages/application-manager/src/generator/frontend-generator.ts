@@ -64,7 +64,8 @@ export class FrontendGenerator extends AbstractGenerator {
         return `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="apple-mobile-web-app-capable" content="yes">`;
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>${this.pck.props.frontend.config.applicationName}</title>`;
     }
 
     protected compileIndexJs(frontendModules: Map<string, string>): string {
