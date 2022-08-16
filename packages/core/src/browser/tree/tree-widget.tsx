@@ -1470,7 +1470,8 @@ export namespace TreeWidget {
                     this.list = (list || undefined);
                     if (this.list && scrollToRow !== undefined) {
                         this.list.scrollIntoView({
-                            index: scrollToRow
+                            index: scrollToRow,
+                            align: 'center'
                         });
                     }
                 }}

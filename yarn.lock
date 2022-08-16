@@ -9465,10 +9465,10 @@ react-tooltip@^4.2.21:
     prop-types "^15.7.2"
     uuid "^7.0.3"
 
-react-virtuoso@^2.16.6:
-  version "2.16.6"
-  resolved "https://registry.yarnpkg.com/react-virtuoso/-/react-virtuoso-2.16.6.tgz#61533bf7428e446a0586acbcffe540dd8e19a5a3"
-  integrity sha512-xpm/edDfrX2auYjnTmzdzpyxppsIvkEWtBgy1In/qMmJHMuXwhTSszCX2zsUs5SbwNCiEAbXjV7Qg1iXVa/QsA==
+react-virtuoso@^2.17.0:
+  version "2.17.0"
+  resolved "https://registry.yarnpkg.com/react-virtuoso/-/react-virtuoso-2.17.0.tgz#5bd0e36c95ef442ac611cc2a0c5530b2c1c989de"
+  integrity sha512-vWYC/ususGOlBQMlymVjYXMa/++cyAIURAuSn4K+tCtJZTgDwXzIQgXBv8RQzwiGZ6O9uXDVq21Xk0eW4d5ukQ==
   dependencies:
     "@virtuoso.dev/react-urx" "^0.2.12"
     "@virtuoso.dev/urx" "^0.2.12"
