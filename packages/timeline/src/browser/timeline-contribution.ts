@@ -44,7 +44,7 @@ export class TimelineContribution implements CommandContribution, TabBarToolbarC
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
-    public static readonly LOAD_MORE_COMMAND = Command.as<[], void>({
+    public static readonly LOAD_MORE_COMMAND = Command.as<() => void>({
         id: 'timeline-load-more'
     });
 

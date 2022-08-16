@@ -32,12 +32,12 @@ import { nls } from '@theia/core/lib/common/nls';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 export namespace PreviewCommands {
-    export const OPEN = Command.toLocalizedCommand<[widget: Widget], void>({
+    export const OPEN = Command.toLocalizedCommand<(widget: Widget) => void>({
         id: 'preview:open',
         label: 'Open Preview',
         iconClass: codicon('open-preview')
     }, 'vscode.markdown-language-features/package/markdown.preview.title');
-    export const OPEN_SOURCE = Command.as<[widget: Widget], void>({
+    export const OPEN_SOURCE = Command.as<(widget: Widget) => void>({
         id: 'preview.open.source',
         iconClass: codicon('go-to-file')
     });

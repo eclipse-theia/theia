@@ -68,17 +68,17 @@ export namespace TerminalMenus {
 
 export namespace TerminalCommands {
     const TERMINAL_CATEGORY = 'Terminal';
-    export const NEW = Command.toDefaultLocalizedCommand<[], void>({
+    export const NEW = Command.toDefaultLocalizedCommand<() => void>({
         id: 'terminal:new',
         category: TERMINAL_CATEGORY,
         label: 'Create New Integrated Terminal'
     });
-    export const NEW_ACTIVE_WORKSPACE = Command.toDefaultLocalizedCommand<[], void>({
+    export const NEW_ACTIVE_WORKSPACE = Command.toDefaultLocalizedCommand<() => void>({
         id: 'terminal:new:active:workspace',
         category: TERMINAL_CATEGORY,
         label: 'Create New Integrated Terminal (In Active Workspace)'
     });
-    export const TERMINAL_CLEAR = Command.toDefaultLocalizedCommand<[], void>({
+    export const TERMINAL_CLEAR = Command.toDefaultLocalizedCommand<() => void>({
         id: 'terminal:clear',
         category: TERMINAL_CATEGORY,
         label: 'Clear'
@@ -88,48 +88,48 @@ export namespace TerminalCommands {
         category: TERMINAL_CATEGORY,
         label: 'Open in Terminal'
     });
-    export const SPLIT = Command.toDefaultLocalizedCommand<[widget: Widget], void>({
+    export const SPLIT = Command.toDefaultLocalizedCommand<(widget: Widget) => void>({
         id: 'terminal:split',
         category: TERMINAL_CATEGORY,
         label: 'Split Terminal'
     });
-    export const TERMINAL_FIND_TEXT = Command.toDefaultLocalizedCommand<[], void>({
+    export const TERMINAL_FIND_TEXT = Command.toDefaultLocalizedCommand<() => void>({
         id: 'terminal:find',
         category: TERMINAL_CATEGORY,
         label: 'Find'
     });
-    export const TERMINAL_FIND_TEXT_CANCEL = Command.toDefaultLocalizedCommand<[], void>({
+    export const TERMINAL_FIND_TEXT_CANCEL = Command.toDefaultLocalizedCommand<() => void>({
         id: 'terminal:find:cancel',
         category: TERMINAL_CATEGORY,
         label: 'Hide Find'
     });
 
-    export const SCROLL_LINE_UP = Command.toDefaultLocalizedCommand<[], void>({
+    export const SCROLL_LINE_UP = Command.toDefaultLocalizedCommand<() => void>({
         id: 'terminal:scroll:line:up',
         category: TERMINAL_CATEGORY,
         label: 'Scroll Up (Line)'
     });
-    export const SCROLL_LINE_DOWN = Command.toDefaultLocalizedCommand<[], void>({
+    export const SCROLL_LINE_DOWN = Command.toDefaultLocalizedCommand<() => void>({
         id: 'terminal:scroll:line:down',
         category: TERMINAL_CATEGORY,
         label: 'Scroll Down (Line)'
     });
-    export const SCROLL_TO_TOP = Command.toDefaultLocalizedCommand<[], void>({
+    export const SCROLL_TO_TOP = Command.toDefaultLocalizedCommand<() => void>({
         id: 'terminal:scroll:top',
         category: TERMINAL_CATEGORY,
         label: 'Scroll to Top'
     });
-    export const SCROLL_PAGE_UP = Command.toDefaultLocalizedCommand<[], void>({
+    export const SCROLL_PAGE_UP = Command.toDefaultLocalizedCommand<() => void>({
         id: 'terminal:scroll:page:up',
         category: TERMINAL_CATEGORY,
         label: 'Scroll Up (Page)'
     });
-    export const SCROLL_PAGE_DOWN = Command.toDefaultLocalizedCommand<[], void>({
+    export const SCROLL_PAGE_DOWN = Command.toDefaultLocalizedCommand<() => void>({
         id: 'terminal:scroll:page:down',
         category: TERMINAL_CATEGORY,
         label: 'Scroll Down (Page)'
     });
-    export const TOGGLE_TERMINAL = Command.toDefaultLocalizedCommand<[], void>({
+    export const TOGGLE_TERMINAL = Command.toDefaultLocalizedCommand<() => void>({
         id: 'workbench.action.terminal.toggleTerminal',
         category: TERMINAL_CATEGORY,
         label: 'Toggle Terminal'
@@ -138,7 +138,7 @@ export namespace TerminalCommands {
     /**
      * Command that displays all terminals that are currently opened
      */
-    export const SHOW_ALL_OPENED_TERMINALS = Command.toDefaultLocalizedCommand<[], void>({
+    export const SHOW_ALL_OPENED_TERMINALS = Command.toDefaultLocalizedCommand<() => void>({
         id: 'workbench.action.showAllTerminals',
         category: CommonCommands.VIEW_CATEGORY,
         label: 'Show All Opened Terminals'

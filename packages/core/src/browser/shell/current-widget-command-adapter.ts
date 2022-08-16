@@ -18,12 +18,12 @@ import { MaybePromise, CommandHandler } from '../../common';
 import { TabBar, Title, Widget } from '../widgets';
 import { ApplicationShell } from './application-shell';
 
-export type TabBarContextMenuCommandHandler<T = unknown> = CommandHandler<[title: Title<Widget> | undefined, tabbar: TabBar<Widget> | undefined, event: Event], T>;
+export type TabBarContextMenuCommandHandler<T = unknown> = CommandHandler<(title: Title<Widget> | undefined, tabbar: TabBar<Widget> | undefined, event: Event) => T>;
 
 /**
  * Creates a command handler that acts on either the widget targeted by a DOM event or the current widget.
  */
-export class CurrentWidgetCommandAdapter<T = unknown> implements CommandHandler<[event: Event], T> {
+export class CurrentWidgetCommandAdapter<T = unknown> implements CommandHandler<(event: Event) => T> {
 
     execute: (event: Event) => MaybePromise<T>;
     isEnabled?: (event: Event) => boolean;

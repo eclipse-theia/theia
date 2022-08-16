@@ -26,7 +26,7 @@ import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { nls } from '@theia/core/lib/common/nls';
 
 export namespace ExternalTerminalCommands {
-    export const OPEN_NATIVE_CONSOLE = Command.toDefaultLocalizedCommand<[], void>({
+    export const OPEN_NATIVE_CONSOLE = Command.toDefaultLocalizedCommand<() => void>({
         id: 'workbench.action.terminal.openNativeConsole',
         label: 'Open New External Terminal'
     });

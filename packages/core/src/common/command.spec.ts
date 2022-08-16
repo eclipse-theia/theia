@@ -193,7 +193,7 @@ describe('Commands', () => {
         });
 
         it('Can properly type commands', () => {
-            const command = Command.as<[a: number, b: string], symbol>({ id: 'typedCommand1' });
+            const command = Command.as<(a: number, b: string) => symbol>({ id: 'typedCommand1' });
             commandRegistry.registerCommand(command, {
                 // @ts-expect-error
                 execute: () => 'wrong return type'
@@ -203,11 +203,11 @@ describe('Commands', () => {
         });
 
         it('Can extend command typings', () => {
-            const command = Command.as<[], void>({ id: 'typedCommand2' });
+            const command = Command.as<() => void>({ id: 'typedCommand2' });
             commandRegistry.registerCommand(command, {
                 execute: () => { }
             });
-            const extended = Command.extend(command).as<[a: number], number>();
+            const extended = Command.extend(command).as<(a: number) => number>();
             commandRegistry.registerHandler(extended.id, {
                 // previous signature should work
                 execute: () => { }

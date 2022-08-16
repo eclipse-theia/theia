@@ -37,10 +37,10 @@ export namespace ProblemsMenu {
 }
 
 export namespace ProblemsCommands {
-    export const COLLAPSE_ALL = Command.as<[], void>({
+    export const COLLAPSE_ALL = Command.as<() => void>({
         id: 'problems.collapse.all'
     });
-    export const COLLAPSE_ALL_TOOLBAR = Command.as<[widget: Widget], void>({
+    export const COLLAPSE_ALL_TOOLBAR = Command.as<(widget: Widget) => void>({
         id: 'problems.collapse.all.toolbar',
         iconClass: codicon('collapse-all')
     });
@@ -50,7 +50,7 @@ export namespace ProblemsCommands {
     export const COPY_MESSAGE = Command.as({
         id: 'problems.copy.message',
     });
-    export const CLEAR_ALL = Command.toLocalizedCommand<[widget: Widget], void>({
+    export const CLEAR_ALL = Command.toLocalizedCommand<(widget: Widget) => void>({
         id: 'problems.clear.all',
         category: 'Problems',
         label: 'Clear All',

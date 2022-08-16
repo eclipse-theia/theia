@@ -86,296 +86,296 @@ export namespace DebugCommands {
     export const DEBUG_CATEGORY = 'Debug';
     export const DEBUG_CATEGORY_KEY = nls.getDefaultKey(DEBUG_CATEGORY);
 
-    export const START = Command.toDefaultLocalizedCommand<[config?: DebugSessionOptions], void>({
+    export const START = Command.toDefaultLocalizedCommand<(config?: DebugSessionOptions) => void>({
         id: 'workbench.action.debug.start',
         category: DEBUG_CATEGORY,
         label: 'Start Debugging',
         iconClass: codicon('debug-alt')
     });
-    export const START_NO_DEBUG = Command.toDefaultLocalizedCommand<[config?: DebugSessionOptions], void>({
+    export const START_NO_DEBUG = Command.toDefaultLocalizedCommand<(config?: DebugSessionOptions) => void>({
         id: 'workbench.action.debug.run',
         category: DEBUG_CATEGORY,
         label: 'Start Without Debugging'
     });
-    export const STOP = Command.toDefaultLocalizedCommand<[], void>({
+    export const STOP = Command.toDefaultLocalizedCommand<() => void>({
         id: 'workbench.action.debug.stop',
         category: DEBUG_CATEGORY,
         label: 'Stop',
         iconClass: codicon('debug-stop')
     });
-    export const RESTART = Command.toDefaultLocalizedCommand<[], DebugSession | undefined>({
+    export const RESTART = Command.toDefaultLocalizedCommand<() => DebugSession | undefined>({
         id: 'workbench.action.debug.restart',
         category: DEBUG_CATEGORY,
         label: 'Restart',
     });
 
-    export const OPEN_CONFIGURATIONS = Command.toDefaultLocalizedCommand<[], void>({
+    export const OPEN_CONFIGURATIONS = Command.toDefaultLocalizedCommand<() => void>({
         id: 'debug.configurations.open',
         category: DEBUG_CATEGORY,
         label: 'Open Configurations'
     });
-    export const ADD_CONFIGURATION = Command.toDefaultLocalizedCommand<[], void>({
+    export const ADD_CONFIGURATION = Command.toDefaultLocalizedCommand<() => void>({
         id: 'debug.configurations.add',
         category: DEBUG_CATEGORY,
         label: 'Add Configuration...'
     });
 
-    export const STEP_OVER = Command.toDefaultLocalizedCommand<[], DebugProtocol.NextResponse | undefined>({
+    export const STEP_OVER = Command.toDefaultLocalizedCommand<() => DebugProtocol.NextResponse | undefined>({
         id: 'workbench.action.debug.stepOver',
         category: DEBUG_CATEGORY,
         label: 'Step Over',
         iconClass: codicon('debug-step-over')
     });
-    export const STEP_INTO = Command.toDefaultLocalizedCommand<[], DebugProtocol.StepInResponse | undefined>({
+    export const STEP_INTO = Command.toDefaultLocalizedCommand<() => DebugProtocol.StepInResponse | undefined>({
         id: 'workbench.action.debug.stepInto',
         category: DEBUG_CATEGORY,
         label: 'Step Into',
         iconClass: codicon('debug-step-into')
     });
-    export const STEP_OUT = Command.toDefaultLocalizedCommand<[], DebugProtocol.StepOutResponse | undefined>({
+    export const STEP_OUT = Command.toDefaultLocalizedCommand<() => DebugProtocol.StepOutResponse | undefined>({
         id: 'workbench.action.debug.stepOut',
         category: DEBUG_CATEGORY,
         label: 'Step Out',
         iconClass: codicon('debug-step-out')
     });
-    export const CONTINUE = Command.toDefaultLocalizedCommand<[], DebugProtocol.ContinueResponse | undefined>({
+    export const CONTINUE = Command.toDefaultLocalizedCommand<() => DebugProtocol.ContinueResponse | undefined>({
         id: 'workbench.action.debug.continue',
         category: DEBUG_CATEGORY,
         label: 'Continue',
         iconClass: codicon('debug-continue')
     });
-    export const PAUSE = Command.toDefaultLocalizedCommand<[], DebugProtocol.PauseResponse | undefined>({
+    export const PAUSE = Command.toDefaultLocalizedCommand<() => DebugProtocol.PauseResponse | undefined>({
         id: 'workbench.action.debug.pause',
         category: DEBUG_CATEGORY,
         label: 'Pause',
         iconClass: codicon('debug-pause')
     });
-    export const CONTINUE_ALL = Command.toLocalizedCommand<[], void>({
+    export const CONTINUE_ALL = Command.toLocalizedCommand<() => void>({
         id: 'debug.thread.continue.all',
         category: DEBUG_CATEGORY,
         label: 'Continue All',
         iconClass: codicon('debug-continue')
     }, 'theia/debug/continueAll', DEBUG_CATEGORY_KEY);
-    export const PAUSE_ALL = Command.toLocalizedCommand<[], void>({
+    export const PAUSE_ALL = Command.toLocalizedCommand<() => void>({
         id: 'debug.thread.pause.all',
         category: DEBUG_CATEGORY,
         label: 'Pause All',
         iconClass: codicon('debug-pause')
     }, 'theia/debug/pauseAll', DEBUG_CATEGORY_KEY);
 
-    export const TOGGLE_BREAKPOINT = Command.toDefaultLocalizedCommand<[], void>({
+    export const TOGGLE_BREAKPOINT = Command.toDefaultLocalizedCommand<() => void>({
         id: 'editor.debug.action.toggleBreakpoint',
         category: DEBUG_CATEGORY,
         label: 'Toggle Breakpoint',
     });
-    export const INLINE_BREAKPOINT = Command.toDefaultLocalizedCommand<[], void>({
+    export const INLINE_BREAKPOINT = Command.toDefaultLocalizedCommand<() => void>({
         id: 'editor.debug.action.inlineBreakpoint',
         category: DEBUG_CATEGORY,
         label: 'Inline Breakpoint',
     });
-    export const ADD_CONDITIONAL_BREAKPOINT = Command.toDefaultLocalizedCommand<[], void>({
+    export const ADD_CONDITIONAL_BREAKPOINT = Command.toDefaultLocalizedCommand<() => void>({
         id: 'debug.breakpoint.add.conditional',
         category: DEBUG_CATEGORY,
         label: 'Add Conditional Breakpoint...',
     });
-    export const ADD_LOGPOINT = Command.toDefaultLocalizedCommand<[], void>({
+    export const ADD_LOGPOINT = Command.toDefaultLocalizedCommand<() => void>({
         id: 'debug.breakpoint.add.logpoint',
         category: DEBUG_CATEGORY,
         label: 'Add Logpoint...',
     });
-    export const ADD_FUNCTION_BREAKPOINT = Command.toDefaultLocalizedCommand<[widget: unknown], void>({
+    export const ADD_FUNCTION_BREAKPOINT = Command.toDefaultLocalizedCommand<(widget: unknown) => void>({
         id: 'debug.breakpoint.add.function',
         category: DEBUG_CATEGORY,
         label: 'Add Function Breakpoint',
     });
-    export const ENABLE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand<[], void>({
+    export const ENABLE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand<() => void>({
         id: 'debug.breakpoint.enableAll',
         category: DEBUG_CATEGORY,
         label: 'Enable All Breakpoints',
     });
-    export const DISABLE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand<[], void>({
+    export const DISABLE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand<() => void>({
         id: 'debug.breakpoint.disableAll',
         category: DEBUG_CATEGORY,
         label: 'Disable All Breakpoints',
     });
-    export const EDIT_BREAKPOINT = Command.toLocalizedCommand<[], void>({
+    export const EDIT_BREAKPOINT = Command.toLocalizedCommand<() => void>({
         id: 'debug.breakpoint.edit',
         category: DEBUG_CATEGORY,
         originalLabel: 'Edit Breakpoint...',
         label: nlsEditBreakpoint('Breakpoint')
     }, '', DEBUG_CATEGORY_KEY);
-    export const EDIT_LOGPOINT = Command.toLocalizedCommand<[], void>({
+    export const EDIT_LOGPOINT = Command.toLocalizedCommand<() => void>({
         id: 'debug.logpoint.edit',
         category: DEBUG_CATEGORY,
         originalLabel: 'Edit Logpoint...',
         label: nlsEditBreakpoint('Logpoint')
     }, '', DEBUG_CATEGORY_KEY);
-    export const REMOVE_BREAKPOINT = Command.toLocalizedCommand<[], void>({
+    export const REMOVE_BREAKPOINT = Command.toLocalizedCommand<() => void>({
         id: 'debug.breakpoint.remove',
         category: DEBUG_CATEGORY,
         originalLabel: 'Remove Breakpoint',
         label: nlsRemoveBreakpoint('Breakpoint')
     }, '', DEBUG_CATEGORY_KEY);
-    export const REMOVE_LOGPOINT = Command.toLocalizedCommand<[], void>({
+    export const REMOVE_LOGPOINT = Command.toLocalizedCommand<() => void>({
         id: 'debug.logpoint.remove',
         category: DEBUG_CATEGORY,
         originalLabel: 'Remove Logpoint',
         label: nlsRemoveBreakpoint('Logpoint')
     }, '', DEBUG_CATEGORY_KEY);
-    export const REMOVE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand<[widget: unknown], void>({
+    export const REMOVE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand<(widget: unknown) => void>({
         id: 'debug.breakpoint.removeAll',
         category: DEBUG_CATEGORY,
         label: 'Remove All Breakpoints',
     });
-    export const TOGGLE_BREAKPOINTS_ENABLED = Command.toLocalizedCommand<[arg: unknown], void>({
+    export const TOGGLE_BREAKPOINTS_ENABLED = Command.toLocalizedCommand<(arg: unknown) => void>({
         id: 'debug.breakpoint.toggleEnabled'
     });
-    export const SHOW_HOVER = Command.toDefaultLocalizedCommand<[], void>({
+    export const SHOW_HOVER = Command.toDefaultLocalizedCommand<() => void>({
         id: 'editor.debug.action.showDebugHover',
         category: DEBUG_CATEGORY,
         label: 'Show Hover'
     });
 
-    export const RESTART_FRAME = Command.toDefaultLocalizedCommand<[], void>({
+    export const RESTART_FRAME = Command.toDefaultLocalizedCommand<() => void>({
         id: 'debug.frame.restart',
         category: DEBUG_CATEGORY,
         label: 'Restart Frame',
     });
-    export const COPY_CALL_STACK = Command.toDefaultLocalizedCommand<[], void>({
+    export const COPY_CALL_STACK = Command.toDefaultLocalizedCommand<() => void>({
         id: 'debug.callStack.copy',
         category: DEBUG_CATEGORY,
         label: 'Copy Call Stack',
     });
 
-    export const SET_VARIABLE_VALUE = Command.toDefaultLocalizedCommand<[], void>({
+    export const SET_VARIABLE_VALUE = Command.toDefaultLocalizedCommand<() => void>({
         id: 'debug.variable.setValue',
         category: DEBUG_CATEGORY,
         label: 'Set Value',
     });
-    export const COPY_VARIABLE_VALUE = Command.toDefaultLocalizedCommand<[], void>({
+    export const COPY_VARIABLE_VALUE = Command.toDefaultLocalizedCommand<() => void>({
         id: 'debug.variable.copyValue',
         category: DEBUG_CATEGORY,
         label: 'Copy Value',
     });
-    export const COPY_VARIABLE_AS_EXPRESSION = Command.toDefaultLocalizedCommand<[], void>({
+    export const COPY_VARIABLE_AS_EXPRESSION = Command.toDefaultLocalizedCommand<() => void>({
         id: 'debug.variable.copyAsExpression',
         category: DEBUG_CATEGORY,
         label: 'Copy as Expression',
     });
-    export const WATCH_VARIABLE = Command.toDefaultLocalizedCommand<[], void>({
+    export const WATCH_VARIABLE = Command.toDefaultLocalizedCommand<() => void>({
         id: 'debug.variable.watch',
         category: DEBUG_CATEGORY,
         label: 'Add to Watch',
     });
 
-    export const ADD_WATCH_EXPRESSION = Command.toDefaultLocalizedCommand<[widget: unknown], void>({
+    export const ADD_WATCH_EXPRESSION = Command.toDefaultLocalizedCommand<(widget: unknown) => void>({
         id: 'debug.watch.addExpression',
         category: DEBUG_CATEGORY,
         label: 'Add Expression'
     });
-    export const EDIT_WATCH_EXPRESSION = Command.toDefaultLocalizedCommand<[], void>({
+    export const EDIT_WATCH_EXPRESSION = Command.toDefaultLocalizedCommand<() => void>({
         id: 'debug.watch.editExpression',
         category: DEBUG_CATEGORY,
         label: 'Edit Expression'
     });
-    export const COPY_WATCH_EXPRESSION_VALUE = Command.toLocalizedCommand<[], void>({
+    export const COPY_WATCH_EXPRESSION_VALUE = Command.toLocalizedCommand<() => void>({
         id: 'debug.watch.copyExpressionValue',
         category: DEBUG_CATEGORY,
         label: 'Copy Expression Value'
     }, 'theia/debug/copyExpressionValue', DEBUG_CATEGORY_KEY);
-    export const REMOVE_WATCH_EXPRESSION = Command.toDefaultLocalizedCommand<[], void>({
+    export const REMOVE_WATCH_EXPRESSION = Command.toDefaultLocalizedCommand<() => void>({
         id: 'debug.watch.removeExpression',
         category: DEBUG_CATEGORY,
         label: 'Remove Expression'
     });
-    export const COLLAPSE_ALL_WATCH_EXPRESSIONS = Command.toDefaultLocalizedCommand<[widget: unknown], void>({
+    export const COLLAPSE_ALL_WATCH_EXPRESSIONS = Command.toDefaultLocalizedCommand<(widget: unknown) => void>({
         id: 'debug.watch.collapseAllExpressions',
         category: DEBUG_CATEGORY,
         label: 'Collapse All'
     });
-    export const REMOVE_ALL_WATCH_EXPRESSIONS = Command.toDefaultLocalizedCommand<[widget: unknown], void>({
+    export const REMOVE_ALL_WATCH_EXPRESSIONS = Command.toDefaultLocalizedCommand<(widget: unknown) => void>({
         id: 'debug.watch.removeAllExpressions',
         category: DEBUG_CATEGORY,
         label: 'Remove All Expressions'
     });
 }
 export namespace DebugThreadContextCommands {
-    export const STEP_OVER = Command.as<[], DebugProtocol.NextResponse | undefined>({
+    export const STEP_OVER = Command.as<() => DebugProtocol.NextResponse | undefined>({
         id: 'debug.thread.context.context.next'
     });
-    export const STEP_INTO = Command.as<[], DebugProtocol.StepInResponse | undefined>({
+    export const STEP_INTO = Command.as<() => DebugProtocol.StepInResponse | undefined>({
         id: 'debug.thread.context.stepin'
     });
-    export const STEP_OUT = Command.as<[], DebugProtocol.StepOutResponse | undefined>({
+    export const STEP_OUT = Command.as<() => DebugProtocol.StepOutResponse | undefined>({
         id: 'debug.thread.context.stepout'
     });
-    export const CONTINUE = Command.as<[], DebugProtocol.ContinueResponse | undefined>({
+    export const CONTINUE = Command.as<() => DebugProtocol.ContinueResponse | undefined>({
         id: 'debug.thread.context.continue'
     });
-    export const PAUSE = Command.as<[], DebugProtocol.PauseResponse | undefined>({
+    export const PAUSE = Command.as<() => DebugProtocol.PauseResponse | undefined>({
         id: 'debug.thread.context.pause'
     });
-    export const TERMINATE = Command.as<[], void>({
+    export const TERMINATE = Command.as<() => void>({
         id: 'debug.thread.context.terminate'
     });
 }
 export namespace DebugSessionContextCommands {
-    export const STOP = Command.as<[], void>({
+    export const STOP = Command.as<() => void>({
         id: 'debug.session.context.stop'
     });
-    export const RESTART = Command.as<[], DebugSession | undefined>({
+    export const RESTART = Command.as<() => DebugSession | undefined>({
         id: 'debug.session.context.restart'
     });
-    export const PAUSE_ALL = Command.as<[], void>({
+    export const PAUSE_ALL = Command.as<() => void>({
         id: 'debug.session.context.pauseAll'
     });
-    export const CONTINUE_ALL = Command.as<[], void>({
+    export const CONTINUE_ALL = Command.as<() => void>({
         id: 'debug.session.context.continueAll'
     });
-    export const REVEAL = Command.as<[], DebugSessionWidget | undefined>({
+    export const REVEAL = Command.as<() => DebugSessionWidget | undefined>({
         id: 'debug.session.context.reveal'
     });
 }
 export namespace DebugEditorContextCommands {
-    export const ADD_BREAKPOINT = Command.as<[position: monaco.Position], void>({
+    export const ADD_BREAKPOINT = Command.as<(position: monaco.Position) => void>({
         id: 'debug.editor.context.addBreakpoint'
     });
-    export const ADD_CONDITIONAL_BREAKPOINT = Command.as<[position: monaco.Position], void>({
+    export const ADD_CONDITIONAL_BREAKPOINT = Command.as<(position: monaco.Position) => void>({
         id: 'debug.editor.context.addBreakpoint.conditional'
     });
-    export const ADD_LOGPOINT = Command.as<[position: monaco.Position], void>({
+    export const ADD_LOGPOINT = Command.as<(position: monaco.Position) => void>({
         id: 'debug.editor.context.add.logpoint'
     });
-    export const REMOVE_BREAKPOINT = Command.as<[position: monaco.Position], void>({
+    export const REMOVE_BREAKPOINT = Command.as<(position: monaco.Position) => void>({
         id: 'debug.editor.context.removeBreakpoint'
     });
-    export const EDIT_BREAKPOINT = Command.as<[position: monaco.Position], void>({
+    export const EDIT_BREAKPOINT = Command.as<(position: monaco.Position) => void>({
         id: 'debug.editor.context.edit.breakpoint'
     });
-    export const ENABLE_BREAKPOINT = Command.as<[position: monaco.Position], void>({
+    export const ENABLE_BREAKPOINT = Command.as<(position: monaco.Position) => void>({
         id: 'debug.editor.context.enableBreakpoint'
     });
-    export const DISABLE_BREAKPOINT = Command.as<[position: monaco.Position], void>({
+    export const DISABLE_BREAKPOINT = Command.as<(position: monaco.Position) => void>({
         id: 'debug.editor.context.disableBreakpoint'
     });
-    export const REMOVE_LOGPOINT = Command.as<[position: monaco.Position], void>({
+    export const REMOVE_LOGPOINT = Command.as<(position: monaco.Position) => void>({
         id: 'debug.editor.context.logpoint.remove'
     });
-    export const EDIT_LOGPOINT = Command.as<[position: monaco.Position], void>({
+    export const EDIT_LOGPOINT = Command.as<(position: monaco.Position) => void>({
         id: 'debug.editor.context.logpoint.edit'
     });
-    export const ENABLE_LOGPOINT = Command.as<[position: monaco.Position], void>({
+    export const ENABLE_LOGPOINT = Command.as<(position: monaco.Position) => void>({
         id: 'debug.editor.context.logpoint.enable'
     });
-    export const DISABLE_LOGPOINT = Command.as<[position: monaco.Position], void>({
+    export const DISABLE_LOGPOINT = Command.as<(position: monaco.Position) => void>({
         id: 'debug.editor.context.logpoint.disable'
     });
 }
 export namespace DebugBreakpointWidgetCommands {
-    export const ACCEPT = Command.as<[], void>({
+    export const ACCEPT = Command.as<() => void>({
         id: 'debug.breakpointWidget.accept'
     });
-    export const CLOSE = Command.as<[], void>({
+    export const CLOSE = Command.as<() => void>({
         id: 'debug.breakpointWidget.close'
     });
 }

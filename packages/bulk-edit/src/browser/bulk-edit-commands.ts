@@ -19,12 +19,12 @@ import { Command } from '@theia/core/lib/common';
 
 export namespace BulkEditCommands {
 
-    export const APPLY = Command.as<[widget: Widget], void>({
+    export const APPLY = Command.as<(widget: Widget) => void>({
         id: 'bulk-edit:apply',
         iconClass: codicon('check')
     });
 
-    export const DISCARD = Command.as<[widget: Widget], void>({
+    export const DISCARD = Command.as<(widget: Widget) => void>({
         id: 'bulk-edit:discard',
         iconClass: codicon('clear-all')
     });

@@ -23,7 +23,7 @@ import { CommonMenus } from '../browser/common-frontend-contribution';
 
 export namespace WindowCommands {
 
-    export const NEW_WINDOW = Command.toDefaultLocalizedCommand<[], void>({
+    export const NEW_WINDOW = Command.toDefaultLocalizedCommand<() => void>({
         id: 'workbench.action.newWindow',
         label: 'New Window'
     });

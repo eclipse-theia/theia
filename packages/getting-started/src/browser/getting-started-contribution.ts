@@ -24,7 +24,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 /**
  * Triggers opening the `GettingStartedWidget`.
  */
-export const GettingStartedCommand = Command.as<[], GettingStartedWidget>({
+export const GettingStartedCommand = Command.as<() => GettingStartedWidget>({
     id: GettingStartedWidget.ID,
     label: GettingStartedWidget.LABEL
 });

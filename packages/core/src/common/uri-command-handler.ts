@@ -22,7 +22,7 @@ import { CommandHandler } from './command';
 import URI from './uri';
 import { MaybeArray } from './types';
 
-export interface UriCommandHandler<T extends MaybeArray<URI>, R = any> extends CommandHandler<[uri: T, ...args: any[]], R> {
+export interface UriCommandHandler<T extends MaybeArray<URI>, R = any> extends CommandHandler<(uri: T, ...args: any[]) => R> {
 
     execute(uri: T, ...args: any[]): R;
 

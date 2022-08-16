@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, space-before-function-paren */
 
 import { injectable, inject, named } from 'inversify';
 import { Event, Emitter, WaitUntilEvent } from './event';
@@ -24,15 +24,42 @@ import { nls } from './nls';
 import debounce = require('p-debounce');
 import { MaybePromise } from './types';
 
+export type CommandSignature = (...params: any[]) => any;
+
 /**
  * This type represents a command id's string but has its arguments and return type information attached to it.
  */
-export type CommandId<Arguments extends any[], ReturnType> = string & {
+export type CommandId<Signature extends CommandSignature = CommandSignature> = string & {
     /**
      * @internal For typing only. This field will never be defined.
      */
-    __typedCommandId: [Arguments, ReturnType];
+    __typedCommandId: Signature;
 };
+
+export namespace CommandId {
+
+    /**
+     * @internal
+     *
+     * Return the signature described by {@link commandId}.
+     */
+    export type Signature<T extends string> = T extends CommandId<infer S> ? S : CommandSignature;
+
+    /**
+     * Type cast a `string` into {@link CommandId}.
+     */
+    export function as<S extends CommandSignature>(id: string): CommandId<S> {
+        return id as CommandId<S>;
+    }
+
+    export function extend<Id extends string>(commandId: Id): {
+        as<S extends CommandSignature>(): CommandId<CommandId.Signature<Id> | S>
+    } {
+        return {
+            as: () => as(commandId)
+        };
+    }
+}
 
 /**
  * A command is a unique identifier of a function
@@ -65,43 +92,17 @@ export namespace Command {
     /**
      * @internal
      *
-     * Return the argument tuple from {@link CommandId} or typed {@link Command}, otherwise return `any[]`.
+     * Return the signature described by {@link command}.
      */
-    export type Arguments<T> = T extends CommandId<infer A1, any> ? A1 : T extends Command<infer Id> ? Arguments<Id> : any[];
-
-    /**
-     * @internal
-     *
-     * Return the return type from {@link CommandId} or typed {@link Command}, otherwise return `any`.
-     */
-    export type ReturnType<T> = T extends CommandId<any, infer R1> ? R1 : T extends Command<infer Id> ? ReturnType<Id> : any;
-
-    /**
-     * @internal
-     *
-     * Return a typed {@link CommandHandler} with the same arguments and return type as {@link CommandId} or typed {@link Command},
-     * otherwise return {@link CommandHandler}.
-     */
-    export type Handler<T> = T extends CommandId<infer A1, infer R1>
-        ? CommandHandler<A1, R1>
-        : T extends Command<infer Id>
-        ? Handler<Id>
-        : CommandHandler;
-
-    /**
-     * Type cast a `string` into {@link CommandId}.
-     */
-    export function asCommandId<A extends any[], R>(id: string): CommandId<A, R> {
-        return id as CommandId<A, R>;
-    }
+    export type Signature<T extends Command> = T extends Command<infer Id> ? CommandId.Signature<Id> : CommandSignature;
 
     /* Determine whether object is a Command */
     export function is(arg: unknown): arg is Command {
         return !!arg && typeof arg === 'object' && 'id' in arg;
     }
 
-    export function as<A extends any[], R = any>(command: Command<string>): Command<CommandId<A, R>> {
-        return command as Command<CommandId<A, R>>;
+    export function as<S extends CommandSignature>(command: Command<string>): Command<CommandId<S>> {
+        return command as Command<CommandId<S>>;
     }
 
     /**
@@ -114,7 +115,7 @@ export namespace Command {
      * const extended = Command.extend(original).as<NewArguments, NewReturnType>();
      */
     export function extend<Cmd extends Command>(command: Cmd): {
-        as<A extends any[], R>(): Command<CommandId<Arguments<Cmd> | A, ReturnType<Cmd> | R>>
+        as<S extends (...params: any[]) => any>(): Command<CommandId<Signature<Cmd> | S>>
     } {
         return {
             as: () => as(command)
@@ -125,7 +126,7 @@ export namespace Command {
      * Utility function to easily translate commands.
      */
     export function toLocalizedCommand(command: Command, nlsLabelKey?: string, nlsCategoryKey?: string): Command;
-    export function toLocalizedCommand<A extends any[] = any, R = any>(command: Command, nlsLabelKey?: string, nlsCategoryKey?: string): Command<CommandId<A, R>>;
+    export function toLocalizedCommand<S extends CommandSignature>(command: Command, nlsLabelKey?: string, nlsCategoryKey?: string): Command<CommandId<S>>;
     export function toLocalizedCommand(command: Command, nlsLabelKey: string = command.id, nlsCategoryKey?: string): Command {
         return {
             ...command,
@@ -140,7 +141,7 @@ export namespace Command {
      * Utility function to easily translate commands.
      */
     export function toDefaultLocalizedCommand(command: Command): Command;
-    export function toDefaultLocalizedCommand<A extends any[] = any, R = any>(command: Command): Command<CommandId<A, R>>;
+    export function toDefaultLocalizedCommand<S extends CommandSignature>(command: Command): Command<CommandId<S>>;
     export function toDefaultLocalizedCommand(command: Command): Command {
         return {
             ...command,
@@ -185,31 +186,31 @@ export namespace Command {
  * but they should be active in different contexts,
  * otherwise first active will be executed.
  */
-export interface CommandHandler<Arguments extends any[] = any, ReturnType = any> {
+export interface CommandHandler<S extends CommandSignature = CommandSignature> {
     /**
      * Execute this handler.
      *
      * Don't call it directly, use `CommandService.executeCommand` instead.
      */
-    execute(...args: Arguments): MaybePromise<ReturnType>;
+    execute(...args: Parameters<S>): MaybePromise<ReturnType<S>>;
     /**
      * Test whether this handler is enabled (active).
      *
      * Return value will be tested for truthfulness.
      */
-    isEnabled?(...args: Arguments): unknown;
+    isEnabled?(...args: Parameters<S>): unknown;
     /**
      * Test whether menu items for this handler should be visible.
      *
      * Return value will be tested for truthfulness.
      */
-    isVisible?(...args: Arguments): unknown;
+    isVisible?(...args: Parameters<S>): unknown;
     /**
      * Test whether menu items for this handler should be toggled.
      *
      * Return value will be tested for truthfulness.
      */
-    isToggled?(...args: Arguments): unknown;
+    isToggled?(...args: Parameters<S>): unknown;
 }
 
 export const CommandContribution = Symbol('CommandContribution');
@@ -242,7 +243,7 @@ export interface CommandService {
      *
      * Reject if a command cannot be executed.
      */
-    executeCommand<T extends Command.ReturnType<Id>, Id extends string>(command: Id, ...args: Command.Arguments<Id>): Promise<T | undefined>;
+    executeCommand<T extends ReturnType<CommandId.Signature<Id>>, Id extends string>(command: Id, ...args: Parameters<CommandId.Signature<Id>>): Promise<T | undefined>;
     /**
      * An event is emitted when a command is about to be executed.
      *
@@ -301,7 +302,7 @@ export class CommandRegistry implements CommandService {
      *
      * Throw if a command is already registered for the given command identifier.
      */
-    registerCommand<Cmd extends Command>(command: Cmd, handler?: Command.Handler<Cmd>): Disposable {
+    registerCommand<Cmd extends Command>(command: Cmd, handler?: CommandHandler<Command.Signature<Cmd>>): Disposable {
         if (this._commands[command.id]) {
             console.warn(`A command ${command.id} is already registered.`);
             return Disposable.NULL;
@@ -351,7 +352,7 @@ export class CommandRegistry implements CommandService {
      * then the given handler is registered as more specific, and
      * has higher priority during enablement, visibility and toggle state evaluations.
      */
-    registerHandler<Id extends string>(command: Id, handler: Command.Handler<Id>): Disposable {
+    registerHandler<Id extends string>(command: Id, handler: CommandHandler<CommandId.Signature<Id>>): Disposable {
         let handlers = this._handlers[command];
         if (!handlers) {
             this._handlers[command] = handlers = [];
@@ -378,21 +379,21 @@ export class CommandRegistry implements CommandService {
     /**
      * Test whether there is an active handler for the given command.
      */
-    isEnabled<Id extends string>(command: Id, ...args: Command.Arguments<Id>): boolean {
+    isEnabled<Id extends string>(command: Id, ...args: Parameters<CommandId.Signature<Id>>): boolean {
         return typeof this.getActiveHandler(command, ...args) !== 'undefined';
     }
 
     /**
      * Test whether there is a visible handler for the given command.
      */
-    isVisible<Id extends string>(command: Id, ...args: Command.Arguments<Id>): boolean {
+    isVisible<Id extends string>(command: Id, ...args: Parameters<CommandId.Signature<Id>>): boolean {
         return typeof this.getVisibleHandler(command, ...args) !== 'undefined';
     }
 
     /**
      * Test whether there is a toggled handler for the given command.
      */
-    isToggled<Id extends string>(command: Id, ...args: Command.Arguments<Id>): boolean {
+    isToggled<Id extends string>(command: Id, ...args: Parameters<CommandId.Signature<Id>>): boolean {
         return typeof this.getToggledHandler(command, ...args) !== 'undefined';
     }
 
@@ -401,7 +402,10 @@ export class CommandRegistry implements CommandService {
      *
      * Reject if a command cannot be executed.
      */
-    async executeCommand<T extends Command.ReturnType<Id>, Id extends string = string>(command: Id, ...args: Command.Arguments<Id>): Promise<T | undefined> {
+    async executeCommand<T extends ReturnType<CommandId.Signature<Id>>, Id extends string = string>(
+        command: Id,
+        ...args: Parameters<CommandId.Signature<Id>>
+    ): Promise<T | undefined> {
         const handler = this.getActiveHandler(command as string, ...args);
         if (handler) {
             await this.fireWillExecuteCommand(command, args);
@@ -422,13 +426,13 @@ export class CommandRegistry implements CommandService {
     /**
      * Get a visible handler for the given command or `undefined`.
      */
-    getVisibleHandler<Id extends string>(command: Id, ...args: Command.Arguments<Id>): Command.Handler<Id> | undefined {
+    getVisibleHandler<Id extends string>(command: Id, ...args: Parameters<CommandId.Signature<Id>>): CommandHandler<CommandId.Signature<Id>> | undefined {
         const handlers = this._handlers[command];
         if (handlers) {
             for (const handler of handlers) {
                 try {
                     if (!handler.isVisible || handler.isVisible(...args)) {
-                        return handler as Command.Handler<Id>;
+                        return handler as CommandHandler<CommandId.Signature<Id>>;
                     }
                 } catch (error) {
                     console.error(error);
@@ -441,13 +445,13 @@ export class CommandRegistry implements CommandService {
     /**
      * Get an active handler for the given command or `undefined`.
      */
-    getActiveHandler<Id extends string>(command: Id, ...args: Command.Arguments<Id>): Command.Handler<Id> | undefined {
+    getActiveHandler<Id extends string>(command: Id, ...args: Parameters<CommandId.Signature<Id>>): CommandHandler<CommandId.Signature<Id>> | undefined {
         const handlers = this._handlers[command];
         if (handlers) {
             for (const handler of handlers) {
                 try {
                     if (!handler.isEnabled || handler.isEnabled(...args)) {
-                        return handler as Command.Handler<Id>;
+                        return handler as CommandHandler<CommandId.Signature<Id>>;
                     }
                 } catch (error) {
                     console.error(error);
@@ -460,13 +464,13 @@ export class CommandRegistry implements CommandService {
     /**
      * Get a toggled handler for the given command or `undefined`.
      */
-    getToggledHandler<Id extends string>(command: Id, ...args: Command.Arguments<Id>): Command.Handler<Id> | undefined {
+    getToggledHandler<Id extends string>(command: Id, ...args: Parameters<CommandId.Signature<Id>>): CommandHandler<CommandId.Signature<Id>> | undefined {
         const handlers = this._handlers[command];
         if (handlers) {
             for (const handler of handlers) {
                 try {
                     if (handler.isToggled && handler.isToggled(...args)) {
-                        return handler as Command.Handler<Id>;
+                        return handler as CommandHandler<CommandId.Signature<Id>>;
                     }
                 } catch (error) {
                     console.error(error);
@@ -480,8 +484,8 @@ export class CommandRegistry implements CommandService {
      * Returns with all handlers for the given command. If the command does not have any handlers,
      * or the command is not registered, returns an empty array.
      */
-    getAllHandlers<Id extends string>(command: Id): Command.Handler<Id>[] {
-        const handlers = this._handlers[command] as Command.Handler<Id>[] | undefined;
+    getAllHandlers<Id extends string>(command: Id): CommandHandler<CommandId.Signature<Id>>[] {
+        const handlers = this._handlers[command] as CommandHandler<CommandId.Signature<Id>>[] | undefined;
         return handlers ? handlers.slice() : [];
     }
 

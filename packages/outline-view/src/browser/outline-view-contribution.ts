@@ -35,7 +35,7 @@ export namespace OutlineViewCommands {
      * Command which collapses all nodes
      * from the `outline-view` tree.
      */
-    export const COLLAPSE_ALL = Command.as<[widget: Widget], void>({
+    export const COLLAPSE_ALL = Command.as<(widget: Widget) => void>({
         id: 'outlineView.collapse.all',
         iconClass: codicon('collapse-all')
     });

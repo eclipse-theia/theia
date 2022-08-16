@@ -31,21 +31,21 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { nls } from '@theia/core/lib/common/nls';
 
 export namespace KeymapsCommands {
-    export const OPEN_KEYMAPS = Command.toDefaultLocalizedCommand<[], KeybindingWidget>({
+    export const OPEN_KEYMAPS = Command.toDefaultLocalizedCommand<() => KeybindingWidget>({
         id: 'keymaps:open',
         category: CommonCommands.PREFERENCES_CATEGORY,
         label: 'Open Keyboard Shortcuts',
     });
-    export const OPEN_KEYMAPS_JSON = Command.toDefaultLocalizedCommand<[], void>({
+    export const OPEN_KEYMAPS_JSON = Command.toDefaultLocalizedCommand<() => void>({
         id: 'keymaps:openJson',
         category: CommonCommands.PREFERENCES_CATEGORY,
         label: 'Open Keyboard Shortcuts (JSON)',
     });
-    export const OPEN_KEYMAPS_JSON_TOOLBAR = Command.as<[widget: Widget], void>({
+    export const OPEN_KEYMAPS_JSON_TOOLBAR = Command.as<(widget: Widget) => void>({
         id: 'keymaps:openJson.toolbar',
         iconClass: codicon('json')
     });
-    export const CLEAR_KEYBINDINGS_SEARCH = Command.as<[widget: Widget], void>({
+    export const CLEAR_KEYBINDINGS_SEARCH = Command.as<(widget: Widget) => void>({
         id: 'keymaps.clearSearch',
         iconClass: codicon('clear-all')
     });

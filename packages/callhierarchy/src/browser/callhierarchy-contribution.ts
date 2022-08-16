@@ -28,7 +28,7 @@ export const CALL_HIERARCHY_TOGGLE_COMMAND_ID = 'callhierarchy:toggle';
 export const CALL_HIERARCHY_LABEL = nls.localizeByDefault('Call Hierarchy');
 
 export namespace CallHierarchyCommands {
-    export const OPEN = Command.toLocalizedCommand<[], CallHierarchyTreeWidget>({
+    export const OPEN = Command.toLocalizedCommand<() => CallHierarchyTreeWidget>({
         id: 'callhierarchy:open',
         label: 'Open Call Hierarchy'
     }, 'theia/callhierarchy/open');

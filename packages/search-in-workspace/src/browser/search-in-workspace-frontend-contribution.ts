@@ -42,62 +42,62 @@ export namespace SearchInWorkspaceCommands {
     export const TOGGLE_SIW_WIDGET = Command.as({
         id: 'search-in-workspace.toggle'
     });
-    export const OPEN_SIW_WIDGET = Command.toDefaultLocalizedCommand<[], void>({
+    export const OPEN_SIW_WIDGET = Command.toDefaultLocalizedCommand<() => void>({
         id: 'search-in-workspace.open',
         category: SEARCH_CATEGORY,
         label: 'Find in Files'
     });
-    export const REPLACE_IN_FILES = Command.toDefaultLocalizedCommand<[], void>({
+    export const REPLACE_IN_FILES = Command.toDefaultLocalizedCommand<() => void>({
         id: 'search-in-workspace.replace',
         category: SEARCH_CATEGORY,
         label: 'Replace in Files'
     });
-    export const FIND_IN_FOLDER = Command.toDefaultLocalizedCommand<[uris: URI[]], void>({
+    export const FIND_IN_FOLDER = Command.toDefaultLocalizedCommand<(uris: URI[]) => void>({
         id: 'search-in-workspace.in-folder',
         category: SEARCH_CATEGORY,
         label: 'Find in Folder...'
     });
-    export const REFRESH_RESULTS = Command.toDefaultLocalizedCommand<[widget: Widget], void>({
+    export const REFRESH_RESULTS = Command.toDefaultLocalizedCommand<(widget: Widget) => void>({
         id: 'search-in-workspace.refresh',
         category: SEARCH_CATEGORY,
         label: 'Refresh',
         iconClass: codicon('refresh')
     });
-    export const CANCEL_SEARCH = Command.toDefaultLocalizedCommand<[widget: Widget], void>({
+    export const CANCEL_SEARCH = Command.toDefaultLocalizedCommand<(widget: Widget) => void>({
         id: 'search-in-workspace.cancel',
         category: SEARCH_CATEGORY,
         label: 'Cancel Search',
         iconClass: codicon('search-stop')
     });
-    export const COLLAPSE_ALL = Command.toDefaultLocalizedCommand<[widget: Widget], void>({
+    export const COLLAPSE_ALL = Command.toDefaultLocalizedCommand<(widget: Widget) => void>({
         id: 'search-in-workspace.collapse-all',
         category: SEARCH_CATEGORY,
         label: 'Collapse All',
         iconClass: codicon('collapse-all')
     });
-    export const EXPAND_ALL = Command.toDefaultLocalizedCommand<[widget: Widget], void>({
+    export const EXPAND_ALL = Command.toDefaultLocalizedCommand<(widget: Widget) => void>({
         id: 'search-in-workspace.expand-all',
         category: SEARCH_CATEGORY,
         label: 'Expand All',
         iconClass: codicon('expand-all')
     });
-    export const CLEAR_ALL = Command.toDefaultLocalizedCommand<[widget: Widget], void>({
+    export const CLEAR_ALL = Command.toDefaultLocalizedCommand<(widget: Widget) => void>({
         id: 'search-in-workspace.clear-all',
         category: SEARCH_CATEGORY,
         label: 'Clear Search Results',
         iconClass: codicon('clear-all')
     });
-    export const COPY_ALL = Command.toDefaultLocalizedCommand<[], void>({
+    export const COPY_ALL = Command.toDefaultLocalizedCommand<() => void>({
         id: 'search.action.copyAll',
         category: SEARCH_CATEGORY,
         label: 'Copy All',
     });
-    export const COPY_ONE = Command.toDefaultLocalizedCommand<[], void>({
+    export const COPY_ONE = Command.toDefaultLocalizedCommand<() => void>({
         id: 'search.action.copyMatch',
         category: SEARCH_CATEGORY,
         label: 'Copy',
     });
-    export const DISMISS_RESULT = Command.toDefaultLocalizedCommand<[], void>({
+    export const DISMISS_RESULT = Command.toDefaultLocalizedCommand<() => void>({
         id: 'search.action.remove',
         category: SEARCH_CATEGORY,
         label: 'Dismiss',
