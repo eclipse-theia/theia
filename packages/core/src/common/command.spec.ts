@@ -16,14 +16,13 @@
 
 import { CommandRegistry, CommandHandler, Command, CommandContribution } from './command';
 import { ContributionProvider } from './contribution-provider';
-import * as chai from 'chai';
-
-const expect = chai.expect;
-let commandRegistry: CommandRegistry;
+import { expect } from 'chai';
 
 /* eslint-disable no-unused-expressions */
 
 describe('Commands', () => {
+
+    let commandRegistry: CommandRegistry;
 
     beforeEach(() => {
         commandRegistry = new CommandRegistry(new EmptyContributionProvider());
@@ -183,6 +182,50 @@ describe('Commands', () => {
 
     });
 
+    // We don't need to run typing tests, we only want it to compile.
+    if (0) {
+        it('Can pass anything without typings', () => {
+            const command: Command = { id: 'untypedCommand' };
+            commandRegistry.registerCommand(command, {
+                execute: (...args: unknown[]) => args
+            });
+            commandRegistry.executeCommand(command.id, 1, '2', undefined, { c: 4 });
+        });
+
+        it('Can properly type commands', () => {
+            const command = Command.as<[a: number, b: string], symbol>({ id: 'typedCommand1' });
+            commandRegistry.registerCommand(command, {
+                // @ts-expect-error
+                execute: () => 'wrong return type'
+            });
+            // @ts-expect-error
+            commandRegistry.executeCommand(command.id, 'wrong argument type');
+        });
+
+        it('Can extend command typings', () => {
+            const command = Command.as<[], void>({ id: 'typedCommand2' });
+            commandRegistry.registerCommand(command, {
+                execute: () => { }
+            });
+            const extended = Command.extend(command).as<[a: number], number>();
+            commandRegistry.registerHandler(extended.id, {
+                // previous signature should work
+                execute: () => { }
+            });
+            commandRegistry.registerHandler(extended.id, {
+                // new signature should work
+                execute: (a?: number) => 0
+            });
+            commandRegistry.registerHandler(extended.id, {
+                // @ts-expect-error
+                execute: (a?: number) => 'wrong return type'
+            });
+            commandRegistry.registerHandler(extended.id, {
+                // @ts-expect-error
+                execute: (a?: 'wrong argument type') => 0
+            });
+        });
+    }
 });
 
 class EmptyContributionProvider implements ContributionProvider<CommandContribution> {
@@ -202,9 +245,9 @@ class ConcatCommandHandler implements CommandHandler {
 }
 
 class StubCommandHandler implements CommandHandler {
-    execute(...args: string[]): undefined { return undefined; }
+    execute(...args: string[]): undefined { return; }
 }
 
 class NeverActiveStubCommandHandler extends StubCommandHandler {
-    isEnabled(): boolean { return false; }
+    isEnabled(): unknown { return '' /* falsy-value */; }
 }

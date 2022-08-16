@@ -105,6 +105,23 @@ export namespace Command {
     }
 
     /**
+     * Use this to extend {@link command}'s typings to support a supplementary signature.
+     *
+     * This will return {@link command} as-is but with the new typings.
+     *
+     * @example
+     *
+     * const extended = Command.extend(original).as<NewArguments, NewReturnType>();
+     */
+    export function extend<Cmd extends Command>(command: Cmd): {
+        as<A extends any[], R>(): Command<CommandId<Arguments<Cmd> | A, ReturnType<Cmd> | R>>
+    } {
+        return {
+            as: () => as(command)
+        };
+    }
+
+    /**
      * Utility function to easily translate commands.
      */
     export function toLocalizedCommand(command: Command, nlsLabelKey?: string, nlsCategoryKey?: string): Command;
@@ -177,16 +194,22 @@ export interface CommandHandler<Arguments extends any[] = any, ReturnType = any>
     execute(...args: Arguments): MaybePromise<ReturnType>;
     /**
      * Test whether this handler is enabled (active).
+     *
+     * Return value will be tested for truthfulness.
      */
-    isEnabled?(...args: Arguments): boolean;
+    isEnabled?(...args: Arguments): unknown;
     /**
      * Test whether menu items for this handler should be visible.
+     *
+     * Return value will be tested for truthfulness.
      */
-    isVisible?(...args: Arguments): boolean;
+    isVisible?(...args: Arguments): unknown;
     /**
      * Test whether menu items for this handler should be toggled.
+     *
+     * Return value will be tested for truthfulness.
      */
-    isToggled?(...args: Arguments): boolean;
+    isToggled?(...args: Arguments): unknown;
 }
 
 export const CommandContribution = Symbol('CommandContribution');
