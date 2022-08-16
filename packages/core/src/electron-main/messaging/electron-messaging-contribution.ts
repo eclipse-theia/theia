@@ -21,8 +21,8 @@ import { MessagingContribution } from '../../node/messaging/messaging-contributi
 import { ElectronConnectionHandler, THEIA_ELECTRON_IPC_CHANNEL_NAME } from '../../electron-common/messaging/electron-connection-handler';
 import { ElectronMainApplicationContribution } from '../electron-main-application';
 import { ElectronMessagingService } from './electron-messaging-service';
-import { Channel, ChannelCloseEvent, ChannelMultiplexer, MessageProvider } from '../../common/message-rpc/channel';
-import { Emitter, Event, WriteBuffer } from '../../common';
+import { AbstractChannel, Channel, ChannelMultiplexer, MessageProvider } from '../../common/message-rpc/channel';
+import { Emitter, WriteBuffer } from '../../common';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
 
 /**
@@ -114,24 +114,13 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
  * Used to establish a connection between the ipcMain and the Electron frontend (window).
  * Messages a transferred via electron IPC.
  */
-export class ElectronWebContentChannel implements Channel {
-    protected readonly onCloseEmitter: Emitter<ChannelCloseEvent> = new Emitter();
-    get onClose(): Event<ChannelCloseEvent> {
-        return this.onCloseEmitter.event;
-    }
+export class ElectronWebContentChannel extends AbstractChannel {
 
     // Make the message emitter public so that we can easily forward messages received from the ipcMain.
-    readonly onMessageEmitter: Emitter<MessageProvider> = new Emitter();
-    get onMessage(): Event<MessageProvider> {
-        return this.onMessageEmitter.event;
-    }
-
-    protected readonly onErrorEmitter: Emitter<unknown> = new Emitter();
-    get onError(): Event<unknown> {
-        return this.onErrorEmitter.event;
-    }
+    override readonly onMessageEmitter: Emitter<MessageProvider> = new Emitter();
 
     constructor(protected readonly sender: Electron.WebContents) {
+        super();
     }
 
     getWriteBuffer(): WriteBuffer {
@@ -145,9 +134,5 @@ export class ElectronWebContentChannel implements Channel {
 
         return writer;
     }
-    close(): void {
-        this.onCloseEmitter.dispose();
-        this.onMessageEmitter.dispose();
-        this.onErrorEmitter.dispose();
-    }
+
 }

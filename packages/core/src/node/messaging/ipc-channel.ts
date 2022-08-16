@@ -17,7 +17,7 @@
 
 import * as cp from 'child_process';
 import { Duplex } from 'stream';
-import { Channel, ChannelCloseEvent, Disposable, DisposableCollection, Emitter, Event, MessageProvider, WriteBuffer } from '../../common';
+import { AbstractChannel, Disposable, WriteBuffer } from '../../common';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
 import { BinaryMessagePipe } from './binary-message-pipe';
 
@@ -26,29 +26,14 @@ import { BinaryMessagePipe } from './binary-message-pipe';
  * This fd is opened as 5th channel in addition to the default stdios (stdin, stdout, stderr, ipc). This means the default channels
  * are not blocked and can be used by the respective process for additional custom message handling.
  */
-export class IPCChannel implements Channel {
-
-    protected readonly onCloseEmitter: Emitter<ChannelCloseEvent> = new Emitter();
-    get onClose(): Event<ChannelCloseEvent> {
-        return this.onCloseEmitter.event;
-    }
-
-    protected readonly onMessageEmitter: Emitter<MessageProvider> = new Emitter();
-    get onMessage(): Event<MessageProvider> {
-        return this.onMessageEmitter.event;
-    }
-
-    protected readonly onErrorEmitter: Emitter<unknown> = new Emitter();
-    get onError(): Event<unknown> {
-        return this.onErrorEmitter.event;
-    }
+export class IPCChannel extends AbstractChannel {
 
     protected messagePipe: BinaryMessagePipe;
-    protected toDispose = new DisposableCollection();
 
     protected ipcErrorListener: (error: Error) => void = error => this.onErrorEmitter.fire(error);
 
     constructor(pipe: Duplex, childProcess?: cp.ChildProcess) {
+        super();
         if (childProcess) {
             this.setupChildProcess(childProcess);
         } else {
@@ -58,7 +43,6 @@ export class IPCChannel implements Channel {
         this.messagePipe.onMessage(message => {
             this.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(message));
         });
-        this.toDispose.pushAll([this.onCloseEmitter, this.onMessageEmitter, this.onErrorEmitter]);
     }
 
     protected setupChildProcess(childProcess: cp.ChildProcess): void {
@@ -86,10 +70,6 @@ export class IPCChannel implements Channel {
         });
 
         return result;
-    }
-
-    close(): void {
-        this.toDispose.dispose();
     }
 
 }

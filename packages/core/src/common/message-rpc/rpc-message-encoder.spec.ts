@@ -15,41 +15,51 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import {
+    EncodingError, MsgPackMessageDecoder, MsgPackMessageEncoder
+} from './rpc-message-encoder';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from './uint8-array-message-buffer';
-import { EncodingError, RpcMessageDecoder, RpcMessageEncoder } from './rpc-message-encoder';
 
-describe('PPC Message Codex', () => {
-    describe('RPC Message Encoder & Decoder', () => {
+describe('PPC Message Encoder & Decoder', () => {
+    describe('Msgpack  Encoder & Decoder', () => {
         it('should encode object into binary message and decode the message back into the original object', () => {
             const buffer = new Uint8Array(1024);
             const writer = new Uint8ArrayWriteBuffer(buffer);
+            const testObject = {
+                string: 'string',
+                boolean: true,
+                integer: 5,
+                float: 14.5,
+                array: ['1', 2, { three: 'three' }],
+                set: new Set([1, 2, 3]),
+                map: new Map([[1, 1], [2, 2], [3, 3]]),
+                buffer: new TextEncoder().encode('ThisIsAUint8Array'),
+                object: { foo: 'bar', baz: true },
+                undefined: undefined,
+                // eslint-disable-next-line no-null/no-null
+                null: null
+            };
 
-            const encoder = new RpcMessageEncoder();
-            const jsonMangled = JSON.parse(JSON.stringify(encoder));
-            // The RpcMessageEncoder can decode/encode collections, whereas JSON.parse can't. => We have to manually restore the set
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            jsonMangled.registeredTags = (encoder as any).registeredTags;
-
-            encoder.writeTypedValue(writer, encoder, new WeakSet());
-
+            const encoder = new MsgPackMessageEncoder();
+            encoder.encode(writer, testObject);
             const written = writer.getCurrentContents();
 
             const reader = new Uint8ArrayReadBuffer(written);
 
-            const decoder = new RpcMessageDecoder();
-            const decoded = decoder.readTypedValue(reader);
+            const decoder = new MsgPackMessageDecoder();
+            const decoded = decoder.decode(reader);
 
-            expect(decoded).deep.equal(jsonMangled);
+            expect(decoded).deep.equal(testObject);
         });
         it('should fail with an EncodingError when trying to encode the object ', () => {
             const x = new Set();
             const y = new Set();
             x.add(y);
             y.add(x);
-            const encoder = new RpcMessageEncoder();
 
             const writer = new Uint8ArrayWriteBuffer();
-            expect(() => encoder.writeTypedValue(writer, x, new WeakSet())).to.throw(EncodingError);
+            const encoder = new MsgPackMessageEncoder();
+            expect(() => encoder.encode(writer, x)).to.throw(EncodingError);
         });
     });
 });

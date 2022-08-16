@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { injectable } from '../../../shared/inversify';
 import { Disposable, DisposableCollection } from '../disposable';
 import { Emitter, Event } from '../event';
 import { ReadBuffer, WriteBuffer } from './message-buffer';
@@ -68,15 +69,11 @@ export interface ChannelCloseEvent {
 export type MessageProvider = () => ReadBuffer;
 
 /**
- * Helper class to implement the single channels on a {@link ChannelMultiplexer}. Simply forwards write requests to
- * the given write buffer source i.e. the main channel of the {@link ChannelMultiplexer}.
+ *  Reusable abstract {@link Channel} implementation that sets up
+ *  the basic channel event listeners and offers a generic close method.
  */
-export class ForwardingChannel implements Channel {
-
-    protected toDispose = new DisposableCollection();
-    constructor(readonly id: string, protected readonly closeHandler: () => void, protected readonly writeBufferSource: () => WriteBuffer) {
-        this.toDispose.pushAll([this.onCloseEmitter, this.onErrorEmitter, this.onMessageEmitter]);
-    }
+@injectable()
+export abstract class AbstractChannel implements Channel {
 
     onCloseEmitter: Emitter<ChannelCloseEvent> = new Emitter();
     get onClose(): Event<ChannelCloseEvent> {
@@ -93,13 +90,37 @@ export class ForwardingChannel implements Channel {
         return this.onMessageEmitter.event;
     };
 
+    protected toDispose: DisposableCollection = new DisposableCollection();
+
+    constructor() {
+        this.toDispose.pushAll([this.onCloseEmitter, this.onErrorEmitter, this.onMessageEmitter]);
+    }
+
+    close(): void {
+        this.toDispose.dispose();
+    }
+
+    abstract getWriteBuffer(): WriteBuffer;
+
+}
+
+/**
+ * Helper class to implement the single channels on a {@link ChannelMultiplexer}. Simply forwards write requests to
+ * the given write buffer source i.e. the main channel of the {@link ChannelMultiplexer}.
+ */
+export class ForwardingChannel extends AbstractChannel {
+
+    constructor(readonly id: string, protected readonly closeHandler: () => void, protected readonly writeBufferSource: () => WriteBuffer) {
+        super();
+    }
+
     getWriteBuffer(): WriteBuffer {
         return this.writeBufferSource();
     }
 
-    close(): void {
+    override close(): void {
+        super.close();
         this.closeHandler();
-        this.toDispose.dispose();
     }
 }
 
