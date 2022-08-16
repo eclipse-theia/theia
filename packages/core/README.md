@@ -97,7 +97,7 @@ export class SomeClass {
     - `inversify` (from [`inversify@^5.1.1`](https://www.npmjs.com/package/inversify))
     - `react-dom` (from [`react-dom@^18.2.0`](https://www.npmjs.com/package/react-dom))
     - `react-dom/client` (from [`react-dom@^18.2.0`](https://www.npmjs.com/package/react-dom))
-    - `react-virtualized` (from [`react-virtualized@^9.20.0`](https://www.npmjs.com/package/react-virtualized))
+    - `react-virtuoso` (from [`react-virtuoso@^2.17.0`](https://www.npmjs.com/package/react-virtuoso))
     - `vscode-languageserver-protocol` (from [`vscode-languageserver-protocol@~3.15.3`](https://www.npmjs.com/package/vscode-languageserver-protocol))
     - `vscode-uri` (from [`vscode-uri@^2.1.1`](https://www.npmjs.com/package/vscode-uri))
     - `dompurify` (from [`dompurify@^2.2.9`](https://www.npmjs.com/package/dompurify))

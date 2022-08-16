@@ -32,7 +32,7 @@ import { notEmpty } from '../../common/objects';
 import { isOSX } from '../../common/os';
 import { ReactWidget } from '../widgets/react-widget';
 import * as React from 'react';
-import { List, ListRowRenderer, ScrollParams, CellMeasurer, CellMeasurerCache } from 'react-virtualized';
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { TopDownTreeIterator } from './tree-iterator';
 import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
 import { TreeSearch } from './tree-search';
@@ -256,7 +256,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.labelProvider.onDidChange(e => {
                 for (const row of this.rows.values()) {
                     if (e.affects(row)) {
-                        this.forceUpdate();
+                        this.update();
                         return;
                     }
                 }
@@ -347,9 +347,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * Update the `scrollToRow`.
      * @param updateOptions the tree widget force update options.
      */
-    protected updateScrollToRow(updateOptions?: TreeWidget.ForceUpdateOptions): void {
+    protected updateScrollToRow(): void {
         this.scrollToRow = this.getScrollToRow();
-        this.forceUpdate(updateOptions);
+        this.update();
     }
 
     protected scheduleUpdateScrollToRow = debounce(this.updateScrollToRow);
@@ -374,22 +374,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected readonly updateDecorations = debounce(() => this.doUpdateDecorations(), 150);
     protected async doUpdateDecorations(): Promise<void> {
         this.decorations = await this.decoratorService.getDecorations(this.model);
-        this.forceUpdate();
-    }
-
-    /**
-     * Force deep resizing and rendering of rows.
-     * https://github.com/bvaughn/react-virtualized/blob/master/docs/List.md#recomputerowheights-index-number
-     */
-    protected forceUpdate({ resize }: TreeWidget.ForceUpdateOptions = { resize: false }): void {
-        if (this.view && this.view.list) {
-            if (resize && this.isVisible) {
-                this.view.cache.clearAll();
-                this.view.list.recomputeRowHeights();
-            } else {
-                this.view.list.forceUpdateGrid();
-            }
-        }
         this.update();
     }
 
@@ -436,7 +420,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
-        this.forceUpdate({ resize: true });
+        this.update();
     }
 
     protected render(): React.ReactNode {
@@ -491,7 +475,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 rows={rows}
                 renderNodeRow={this.renderNodeRow}
                 scrollToRow={this.scrollToRow}
-                handleScroll={this.handleScroll}
             />;
         }
         // eslint-disable-next-line no-null/no-null
@@ -518,20 +501,13 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     /**
-     * Handle the scroll event.
-     */
-    protected readonly handleScroll = (info: ScrollParams) => {
-        this.node.scrollTop = info.scrollTop;
-    };
-
-    /**
      * Render the node row.
      */
     protected readonly renderNodeRow = (row: TreeWidget.NodeRow) => this.doRenderNodeRow(row);
     /**
      * Actually render the node row.
      */
-    protected doRenderNodeRow({ index, node, depth }: TreeWidget.NodeRow): React.ReactNode {
+    protected doRenderNodeRow({ node, depth }: TreeWidget.NodeRow): React.ReactNode {
         return <React.Fragment>
             {this.renderIndent(node, { depth })}
             {this.renderNode(node, { depth })}
@@ -1128,9 +1104,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         this.addKeyListener(this.node, Key.ESCAPE, event => this.handleEscape(event));
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.addEventListener<any>(this.node, 'ps-scroll-y', (e: Event & { target: { scrollTop: number } }) => {
-            if (this.view && this.view.list && this.view.list.Grid) {
+            if (this.view && this.view.list) {
                 const { scrollTop } = e.target;
-                this.view.list.Grid.handleScrollEvent({ scrollTop });
+                this.view.list.scrollTo({
+                    top: scrollTop
+                });
             }
         });
     }
@@ -1445,15 +1423,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 }
 export namespace TreeWidget {
     /**
-     * Representation of the tree force update options.
-     */
-    export interface ForceUpdateOptions {
-        /**
-         * Controls whether to force a resize of the widget.
-         */
-        resize: boolean
-    }
-    /**
      * Representation of a tree node row.
      */
     export interface NodeRow {
@@ -1490,38 +1459,29 @@ export namespace TreeWidget {
          * The list of node rows.
          */
         rows: NodeRow[]
-        handleScroll: (info: ScrollParams) => void
         renderNodeRow: (row: NodeRow) => React.ReactNode
     }
     export class View extends React.Component<ViewProps> {
-        list: List | undefined;
-        readonly cache = new CellMeasurerCache({
-            fixedWidth: true
-        });
+        list: VirtuosoHandle | undefined;
         override render(): React.ReactNode {
-            const { rows, width, height, scrollToRow, handleScroll } = this.props;
-            return <List
-                ref={list => this.list = (list || undefined)}
+            const { rows, width, height, scrollToRow } = this.props;
+            return <Virtuoso
+                ref={list => {
+                    this.list = (list || undefined);
+                    if (this.list && scrollToRow !== undefined) {
+                        this.list.scrollIntoView({
+                            index: scrollToRow,
+                            align: 'center'
+                        });
+                    }
+                }}
+                totalCount={rows.length}
+                itemContent={index => this.props.renderNodeRow(rows[index])}
                 width={width}
                 height={height}
-                rowCount={rows.length}
-                rowHeight={this.cache.rowHeight}
-                rowRenderer={this.renderTreeRow}
-                scrollToIndex={scrollToRow}
-                onScroll={handleScroll}
-                tabIndex={-1}
+                // This is a pixel value, it will scan 200px to the top and bottom of the current view
+                overscan={500}
             />;
         }
-        protected renderTreeRow: ListRowRenderer = ({ key, index, style, parent }) => {
-            const row = this.props.rows[index]!;
-            return <CellMeasurer
-                cache={this.cache}
-                columnIndex={0}
-                key={key}
-                parent={parent}
-                rowIndex={index}>
-                <div key={key} style={style}>{this.props.renderNodeRow(row)}</div>
-            </CellMeasurer>;
-        };
     }
 }
