@@ -4491,7 +4491,7 @@ export module '@theia/plugin' {
          * @param token A token that can be used to signal cancellation.
          * @return A promise that resolves to the selection or `undefined`.
          */
-        export function showQuickPick(readonly items: string[] | Thenable<readonly string[]>, options: QuickPickOptions, token?: CancellationToken): Thenable<string | undefined>;
+        export function showQuickPick(items: readonly string[] | Thenable<readonly string[]>, options?: QuickPickOptions, token?: CancellationToken): Thenable<string | undefined>;
 
         /**
          * Shows a selection list allowing multiple selections.
@@ -4501,7 +4501,7 @@ export module '@theia/plugin' {
          * @param token A token that can be used to signal cancellation.
          * @return A promise that resolves to the selected items or `undefined`.
          */
-        export function showQuickPick(readonly items: string[] | Thenable<readonly string[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): Thenable<string[] | undefined>;
+        export function showQuickPick(items: readonly string[] | Thenable<readonly string[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): Thenable<string[] | undefined>;
 
         /**
          * Shows a selection list.
@@ -4511,7 +4511,7 @@ export module '@theia/plugin' {
          * @param token A token that can be used to signal cancellation.
          * @return A promise that resolves to the selected item or `undefined`.
          */
-        export function showQuickPick<T extends QuickPickItem>(items: readonly T[] | Thenable<readonly T[]>, options: QuickPickOptions, token?: CancellationToken): Thenable<T | undefined>;
+        export function showQuickPick<T extends QuickPickItem>(items: readonly T[] | Thenable<readonly T[]>, options?: QuickPickOptions, token?: CancellationToken): Thenable<T | undefined>;
 
         /**
          * Shows a selection list allowing multiple selections.
