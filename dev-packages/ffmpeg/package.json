@@ -28,7 +28,7 @@
     "clean": "theiaext clean"
   },
   "dependencies": {
-    "@electron/get": "^1.12.4",
+    "@electron/get": "^2.0.0",
     "unzipper": "^0.9.11"
   },
   "devDependencies": {
