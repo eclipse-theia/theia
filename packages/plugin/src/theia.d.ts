@@ -2270,7 +2270,7 @@ declare module '@theia/plugin' {
         /**
          * Items to pick from.
          */
-        items: ReadonlyArray<T>;
+        items: readonly T[];
 
         /**
          * If multiple items can be selected at the same time. Defaults to false.
@@ -2295,22 +2295,22 @@ declare module '@theia/plugin' {
         /**
          * Active items. This can be read and updated by the extension.
          */
-        activeItems: ReadonlyArray<T>;
+        activeItems: readonly T[];
 
         /**
          * An event signaling when the active items have changed.
          */
-        readonly onDidChangeActive: Event<T[]>;
+        readonly onDidChangeActive: Event<readonly T[]>;
 
         /**
          * Selected items. This can be read and updated by the extension.
          */
-        selectedItems: ReadonlyArray<T>;
+        selectedItems: readonly T[];
 
         /**
          * An event signaling when the selected items have changed.
          */
-        readonly onDidChangeSelection: Event<T[]>;
+        readonly onDidChangeSelection: Event<readonly T[]>;
     }
 
     /**
@@ -4204,7 +4204,7 @@ declare module '@theia/plugin' {
          *
          * An editor should only ever fire `CustomDocumentEditEvent` events, or only ever fire `CustomDocumentContentChangeEvent` events.
          */
-        readonly onDidChangeCustomDocument: Event<CustomDocumentContentChangeEvent<T>> | Event<CustomDocumentEditEvent<T>>;
+        readonly onDidChangeCustomDocument: Event<CustomDocumentEditEvent<T>> | Event<CustomDocumentContentChangeEvent<T>>;
 
         /**
          * Save a custom document.
@@ -4421,12 +4421,12 @@ declare module '@theia/plugin' {
         /**
          * The currently opened terminals or an empty array.
          */
-        export let terminals: ReadonlyArray<Terminal>;
+        export let terminals: readonly Terminal[];
 
         /**
          * The currently visible editors or an empty array.
          */
-        export let visibleTextEditors: TextEditor[];
+        export let visibleTextEditors: readonly TextEditor[];
 
         /**
          * An {@link Event event} which fires when the {@link window.activeTerminal active terminal} has changed.
@@ -4445,7 +4445,7 @@ declare module '@theia/plugin' {
          * An {@link Event event} which fires when the array of {@link window.visibleTextEditors visible editors}
          * has changed.
          */
-        export const onDidChangeVisibleTextEditors: Event<TextEditor[]>;
+        export const onDidChangeVisibleTextEditors: Event<readonly TextEditor[]>;
 
         /**
          * An {@link Event event} which fires when the selection in an editor has changed.
@@ -5296,7 +5296,7 @@ declare module '@theia/plugin' {
         /**
          * Element that is expanded or collapsed.
          */
-        element: T;
+        readonly element: T;
 
     }
 
@@ -5308,7 +5308,7 @@ declare module '@theia/plugin' {
         /**
          * Selected elements.
          */
-        readonly selection: T[];
+        readonly selection: readonly T[];
 
     }
 
@@ -5342,7 +5342,7 @@ declare module '@theia/plugin' {
         /**
          * Currently selected elements.
          */
-        readonly selection: ReadonlyArray<T>;
+        readonly selection: readonly T[];
 
         /**
          * Event that is fired when the {@link TreeView.selection selection} has changed
@@ -5384,7 +5384,7 @@ declare module '@theia/plugin' {
          *
          * **NOTE:** {@link TreeDataProvider TreeDataProvider} is required to implement {@link TreeDataProvider.getParent getParent} method to access this API.
          */
-        reveal(element: T, options?: { select?: boolean, focus?: boolean, expand?: boolean | number }): Thenable<void>;
+        reveal(element: T, options?: { select?: boolean; focus?: boolean; expand?: boolean | number }): Thenable<void>;
     }
 
     /**
@@ -6178,7 +6178,7 @@ declare module '@theia/plugin' {
          *
          * @readonly
          */
-        export let textDocuments: TextDocument[];
+        export let textDocuments: readonly TextDocument[];
 
         /**
          * Register a text document content provider.
@@ -6891,11 +6891,11 @@ declare module '@theia/plugin' {
         /**
          * @deprecated Use the autoClosingPairs property in the language configuration file instead.
          */
-        __characterPairSupport?: { autoClosingPairs: { close: String, notIn: String[], open: String }[] }
+        __characterPairSupport?: { autoClosingPairs: { open: string; close: string; notIn?: string[]; }[]; };
         /**
          * @deprecated Do not use. Will be replaced by a better API soon.
          */
-        __electricCharacterSupport?: { brackets: any, docComment: { close: String, lineStart: String, open: String, scope: String } }
+        __electricCharacterSupport?: { brackets?: any, docComment?: { scope: string; open: string; lineStart: string; close?: string; }; };
         /**
          * The language's comment settings.
          */
@@ -8139,7 +8139,7 @@ declare module '@theia/plugin' {
          * @param callback Function to execute for each entry.
          * @param thisArg The `this` context used when invoking the handler function.
          */
-        forEach(callback: (uri: Uri, diagnostics: Diagnostic[], collection: DiagnosticCollection) => any, thisArg?: any): void;
+        forEach(callback: (uri: Uri, diagnostics: readonly Diagnostic[], collection: DiagnosticCollection) => any, thisArg?: any): void;
 
         /**
          * Get the diagnostics for a given resource. *Note* that you cannot
@@ -8148,7 +8148,7 @@ declare module '@theia/plugin' {
          * @param uri A resource identifier.
          * @returns An immutable array of {@link Diagnostic diagnostics} or `undefined`.
          */
-        get(uri: Uri): Diagnostic[] | undefined;
+        get(uri: Uri): readonly Diagnostic[] | undefined;
 
         /**
          * Check if this collection contains diagnostics for a
@@ -11112,7 +11112,7 @@ declare module '@theia/plugin' {
         /**
          * The task item representing the task that got started.
          */
-        execution: TaskExecution;
+        readonly execution: TaskExecution;
     }
 
     /**
@@ -11124,7 +11124,7 @@ declare module '@theia/plugin' {
         /**
          * The task item representing the task that finished.
          */
-        execution: TaskExecution;
+        readonly execution: TaskExecution;
     }
 
     /**
@@ -11135,7 +11135,7 @@ declare module '@theia/plugin' {
         /**
          * The task execution for which the process got started.
          */
-        execution: TaskExecution;
+        readonly execution: TaskExecution;
 
         /**
          * The underlying process id.
@@ -11152,7 +11152,7 @@ declare module '@theia/plugin' {
         /**
          * The task execution for which the process got started.
          */
-        execution: TaskExecution;
+        readonly execution: TaskExecution;
 
         /**
          * The process's exit code.
@@ -11204,7 +11204,7 @@ declare module '@theia/plugin' {
         /**
          * The currently active task executions or an empty array.
          */
-        export const taskExecutions: ReadonlyArray<TaskExecution>;
+        export const taskExecutions: readonly TaskExecution[];
 
         /** Fires when a task starts. */
         export const onDidStartTask: Event<TaskStartEvent>;
