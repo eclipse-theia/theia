@@ -500,7 +500,7 @@ export class ElectronMainApplication {
         app.on('window-all-closed', this.onWindowAllClosed.bind(this));
 
         ipcMain.on(TitleBarStyleChanged, ({ sender }, titleBarStyle: string) => {
-            this.useNativeWindowFrame = titleBarStyle === 'native';
+            this.useNativeWindowFrame = isOSX || titleBarStyle === 'native';
             const browserWindow = BrowserWindow.fromId(sender.id);
             if (browserWindow) {
                 this.saveWindowState(browserWindow);
