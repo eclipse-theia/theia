@@ -181,7 +181,7 @@ export class PreferenceTreeGenerator {
             id: `${group}@${property}`,
             preferenceId: property,
             parent: preferencesGroup,
-            visible: true,
+            visible: data.included !== false,
             preference: { data },
             depth: Preference.TreeNode.isTopLevel(preferencesGroup) ? 1 : 2,
         };

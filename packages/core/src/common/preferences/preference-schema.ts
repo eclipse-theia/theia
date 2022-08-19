@@ -79,6 +79,7 @@ export interface PreferenceDataProperty extends PreferenceItem {
     description?: string;
     markdownDescription?: string;
     scope?: PreferenceScope;
+    included?: boolean;
     typeDetails?: any;
 }
 export namespace PreferenceDataProperty {
