@@ -58,7 +58,7 @@ export class CustomEditorsExtImpl implements CustomEditorsExt {
             disposables.push(this.editorProviders.addCustomProvider(viewType, plugin, provider));
 
             if (this.supportEditing(provider)) {
-                disposables.push(provider.onDidChangeCustomDocument(e => {
+                disposables.push(provider.onDidChangeCustomDocument((e: theia.CustomDocumentEditEvent | theia.CustomDocumentContentChangeEvent) => {
                     const entry = this.getCustomDocumentEntry(viewType, e.document.uri);
                     if (isEditEvent(e)) {
                         const editId = entry.addEdit(e);

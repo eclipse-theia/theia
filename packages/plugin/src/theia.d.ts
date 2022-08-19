@@ -4019,7 +4019,7 @@ declare module '@theia/plugin' {
     /**
      * Event triggered by extensions to signal that an edit has occurred on an [`CustomDocument`](#CustomDocument).
      *
-     * @see [`CustomDocumentProvider.onDidChangeCustomDocument`](#CustomDocumentProvider.onDidChangeCustomDocument).
+     * @see {@link CustomEditorProvider.onDidChangeCustomDocument}.
      */
     interface CustomDocumentEditEvent<T extends CustomDocument = CustomDocument> {
 
@@ -4058,7 +4058,7 @@ declare module '@theia/plugin' {
      * Event triggered by extensions to signal to Theia that the content of a [`CustomDocument`](#CustomDocument)
      * has changed.
      *
-     * @see [`CustomDocumentProvider.onDidChangeCustomDocument`](#CustomDocumentProvider.onDidChangeCustomDocument).
+     * @see {@link CustomEditorProvider.onDidChangeCustomDocument}.
      */
     interface CustomDocumentContentChangeEvent<T extends CustomDocument = CustomDocument> {
         /**
