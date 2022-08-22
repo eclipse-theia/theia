@@ -120,7 +120,7 @@ export class MonacoThemingService {
                 return;
             }
         }
-        this.cleanEmpty(json.colors);
+        this.clean(json.colors);
         return json;
     }
 
@@ -193,10 +193,10 @@ export class MonacoThemingService {
         return str;
     }
 
-    private cleanEmpty(obj: any): void {
+    /** removes all invalid theming values */
+    private clean(obj: any): void {
         for (const key in obj) {
-            // eslint-disable-next-line no-null/no-null
-            if ([null, undefined].includes(obj[key])) {
+            if (typeof obj[key] !== 'string') {
                 delete obj[key];
             }
         }
