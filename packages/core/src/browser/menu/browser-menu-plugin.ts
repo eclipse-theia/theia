@@ -290,7 +290,9 @@ export class DynamicMenuWidget extends MenuWidget {
             const role = menu === this.menu ? CompoundMenuNodeRole.Group : CompoundMenuNode.getRole(menu);
             if (role === CompoundMenuNodeRole.Submenu) {
                 const submenu = this.services.menuWidgetFactory.createMenuWidget(menu, this.options);
-                parentItems.push({ type: 'submenu', submenu });
+                if (submenu.items.length > 0) {
+                    parentItems.push({ type: 'submenu', submenu });
+                }
             } else if (role === CompoundMenuNodeRole.Group && menu.id !== 'inline') {
                 const children = CompoundMenuNode.getFlatChildren(menu.children);
                 const myItems: MenuWidget.IItemOptions[] = [];
