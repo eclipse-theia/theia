@@ -250,14 +250,15 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
             return undefined!;
         }
         const position = this.options && this.options.selection.getStartPosition();
-        const word = position && this.editor.getControl().getModel()!.getWordAtPosition(position);
-        return position && word ? {
-            position: new monaco.Position(position.lineNumber, word.startColumn),
-            preference: [
-                monaco.editor.ContentWidgetPositionPreference.ABOVE,
-                monaco.editor.ContentWidgetPositionPreference.BELOW
-            ]
-        } : undefined!;
+        return position
+            ? {
+                position: new monaco.Position(position.lineNumber, position.column),
+                preference: [
+                    monaco.editor.ContentWidgetPositionPreference.ABOVE,
+                    monaco.editor.ContentWidgetPositionPreference.BELOW,
+                ],
+            }
+            : undefined!;
     }
 
     protected override onUpdateRequest(msg: Message): void {
