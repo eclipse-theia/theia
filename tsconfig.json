@@ -124,6 +124,9 @@
       "path": "packages/plugin-metrics"
     },
     {
+      "path": "packages/plugin-registry"
+    },
+    {
       "path": "packages/preferences"
     },
     {

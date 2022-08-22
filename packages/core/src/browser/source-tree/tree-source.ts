@@ -24,9 +24,9 @@ import { Disposable, DisposableCollection } from '../../common/disposable';
 import { TreeWidget } from '../tree';
 
 export interface TreeElement {
-    /** default: parent id + position among siblings */
+    /** @default parent id + position among siblings */
     readonly id?: number | string | undefined
-    /** default: true */
+    /** @default true */
     readonly visible?: boolean
     render(host: TreeWidget): ReactNode
     open?(): MaybePromise<any>
@@ -46,30 +46,55 @@ export namespace CompositeTreeElement {
     }
 }
 
+/**
+ * ## `abstract class TreeSource`
+ *
+ * A {@link TreeSource} is used to get {@link TreeElement}s for building trees.
+ *
+ * You may be notified when the set of {@link TreeElements} is updated via {@link onDidChange}.
+ */
 @injectable()
 export abstract class TreeSource implements Disposable {
-    protected readonly onDidChangeEmitter = new Emitter<void>();
-    readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
-    protected fireDidChange(): void {
-        this.onDidChangeEmitter.fire(undefined);
-    }
 
-    readonly id: string | undefined;
-    readonly placeholder: string | undefined;
+    abstract getElements(): MaybePromise<IterableIterator<TreeElement>>;
 
-    constructor(@unmanaged() options: TreeSourceOptions = {}) {
-        this.id = options.id;
-        this.placeholder = options.placeholder;
-    }
+    /**
+     * Optional identifier for this {@link TreeSource}.
+     */
+    readonly id?: string;
+    /**
+     * Optional text to display when this {@link TreeSource} is empty.
+     */
+    readonly placeholder?: string;
 
+    protected readonly onDidChangeEmitter = new Emitter<this>();
     protected readonly toDispose = new DisposableCollection(this.onDidChangeEmitter);
+
+    constructor(@unmanaged() options?: TreeSourceOptions) {
+        this.id = options?.id;
+        this.placeholder = options?.placeholder;
+    }
+
+    get onDidChange(): Event<this> {
+        return this.onDidChangeEmitter.event;
+    }
+
     dispose(): void {
         this.toDispose.dispose();
     }
 
-    abstract getElements(): MaybePromise<IterableIterator<TreeElement>>;
+    protected fireDidChange(): void {
+        this.onDidChangeEmitter.fire(this);
+    }
 }
+
 export interface TreeSourceOptions {
+    /**
+     * Optional identifier for the {@link TreeSource}.
+     */
     id?: string
+    /**
+     * Optional text to display when the {@link TreeSource} is empty.
+     */
     placeholder?: string
 }

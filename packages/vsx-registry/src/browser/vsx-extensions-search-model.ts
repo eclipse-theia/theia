@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 
 export enum VSXSearchMode {
     Initial,
@@ -33,15 +33,17 @@ export const RECOMMENDED_QUERY = '@recommended';
 @injectable()
 export class VSXExtensionsSearchModel {
 
-    protected readonly onDidChangeQueryEmitter = new Emitter<string>();
-    readonly onDidChangeQuery = this.onDidChangeQueryEmitter.event;
-    protected readonly specialQueries = new Map<string, VSXSearchMode>([
-        [BUILTIN_QUERY, VSXSearchMode.Builtin],
-        [INSTALLED_QUERY, VSXSearchMode.Installed],
-        [RECOMMENDED_QUERY, VSXSearchMode.Recommended],
-    ]);
-
     protected _query = '';
+    protected onDidChangeQueryEmitter = new Emitter<string>();
+    protected specialQueries = new Map<string, VSXSearchMode>()
+        .set(BUILTIN_QUERY, VSXSearchMode.Builtin)
+        .set(INSTALLED_QUERY, VSXSearchMode.Installed)
+        .set(RECOMMENDED_QUERY, VSXSearchMode.Recommended);
+
+    get onDidChangeQuery(): Event<string> {
+        return this.onDidChangeQueryEmitter.event;
+    }
+
     set query(query: string) {
         if (this._query === query) {
             return;
@@ -49,6 +51,7 @@ export class VSXExtensionsSearchModel {
         this._query = query;
         this.onDidChangeQueryEmitter.fire(this._query);
     }
+
     get query(): string {
         return this._query;
     }
