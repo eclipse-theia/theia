@@ -278,3 +278,9 @@
   align-self: center;
   margin-right: 4px;
 }
+
+.monaco-inputbox.error > .ibwrapper > .input,
+.monaco-inputbox.warning > .ibwrapper > .input,
+.monaco-inputbox.info > .ibwrapper > .input {
+    outline: 0 !important;
+}

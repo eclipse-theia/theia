@@ -16,12 +16,14 @@
 
 import * as express from 'express';
 import { inject, injectable } from 'inversify';
+import { Deferred } from '../../common/promise-util';
 import { BackendApplicationContribution } from '../backend-application';
 import { LocalizationRegistry } from './localization-contribution';
 import { LocalizationProvider } from './localization-provider';
 
 @injectable()
 export class LocalizationBackendContribution implements BackendApplicationContribution {
+    protected readonly initialized = new Deferred<void>();
 
     @inject(LocalizationRegistry)
     protected readonly localizationRegistry: LocalizationRegistry;
@@ -31,15 +33,20 @@ export class LocalizationBackendContribution implements BackendApplicationContri
 
     async initialize(): Promise<void> {
         await this.localizationRegistry.initialize();
+        this.initialized.resolve();
+    }
+
+    waitForInitialization(): Promise<void> {
+        return this.initialized.promise;
     }
 
     configure(app: express.Application): void {
-        app.get('/i18n/:locale', (req, res) => {
+        app.get('/i18n/:locale', async (req, res) => {
+            await this.waitForInitialization();
             let locale = req.params.locale;
             locale = this.localizationProvider.getAvailableLanguages().some(e => e.languageId === locale) ? locale : 'en';
             this.localizationProvider.setCurrentLanguage(locale);
             res.send(this.localizationProvider.loadLocalization(locale));
         });
     }
-
 }

@@ -144,7 +144,8 @@ import {
     ExtensionMode,
     LinkedEditingRanges,
     LanguageStatusSeverity,
-    TextDocumentChangeReason
+    TextDocumentChangeReason,
+    InputBoxValidationSeverity
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -356,7 +357,7 @@ export function createAPIFactory(
                 }
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            showQuickPick(items: any, options: theia.QuickPickOptions, token?: theia.CancellationToken): any {
+            showQuickPick(items: any, options?: theia.QuickPickOptions, token?: theia.CancellationToken): any {
                 return quickOpenExt.showQuickPick(items, options, token);
             },
             createQuickPick<T extends QuickPickItem>(): QuickPick<T> {
@@ -1025,7 +1026,8 @@ export function createAPIFactory(
             FileDecoration,
             CancellationError,
             ExtensionMode,
-            LinkedEditingRanges
+            LinkedEditingRanges,
+            InputBoxValidationSeverity
         };
     };
 }
