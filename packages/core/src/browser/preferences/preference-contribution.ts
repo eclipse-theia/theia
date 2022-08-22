@@ -201,11 +201,11 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         const changes: PreferenceProviderDataChange[] = [];
         const defaultScope = PreferenceSchema.getDefaultScope(schema);
         const overridable = schema.overridable || false;
-        for (const preferenceName of Object.keys(schema.properties)) {
+        for (const [preferenceName, rawSchemaProps] of Object.entries(schema.properties)) {
             if (this.combinedSchema.properties[preferenceName]) {
                 console.error('Preference name collision detected in the schema for property: ' + preferenceName);
-            } else {
-                const schemaProps = PreferenceDataProperty.fromPreferenceSchemaProperty(schema.properties[preferenceName], defaultScope);
+            } else if (!rawSchemaProps.hasOwnProperty('included') || rawSchemaProps.included) {
+                const schemaProps = PreferenceDataProperty.fromPreferenceSchemaProperty(rawSchemaProps, defaultScope);
                 if (typeof schemaProps.overridable !== 'boolean' && overridable) {
                     schemaProps.overridable = true;
                 }

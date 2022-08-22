@@ -67,6 +67,7 @@ export interface PreferenceItem extends IJSONSchema {
      */
     defaultValue?: JSONValue;
     overridable?: boolean;
+    included?: boolean;
     [key: string]: any;
 }
 export interface PreferenceSchemaProperty extends PreferenceItem {
@@ -79,7 +80,6 @@ export interface PreferenceDataProperty extends PreferenceItem {
     description?: string;
     markdownDescription?: string;
     scope?: PreferenceScope;
-    included?: boolean;
     typeDetails?: any;
 }
 export namespace PreferenceDataProperty {
