@@ -202,7 +202,6 @@ export class RegisterOptionsWidget extends MemoryOptionsWidget {
         return !this.radixDisplayed();
     }
 
-    // eslint-disable-next-line max-lines-per-function
     protected renderRegisterFieldGroup(): React.ReactNode {
         return (
             <>

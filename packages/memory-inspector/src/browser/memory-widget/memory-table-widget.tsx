@@ -31,7 +31,7 @@ import { VariableDecoration, VariableFinder } from '../utils/memory-widget-varia
 import { MemoryOptionsWidget } from './memory-options-widget';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
-/* eslint-disable @typescript-eslint/no-explicit-any,no-bitwise,react/destructuring-assignment */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export namespace MemoryTable {
     export interface WrapperHandlers {
         onKeyDown?: React.KeyboardEventHandler;
@@ -112,7 +112,7 @@ export class MemoryTableWidget extends ReactWidget {
     protected variableFinder: VariableFinder | undefined;
     protected deferredScrollContainer = new Deferred<HTMLDivElement>();
 
-    @postConstruct() /* eslint-disable-line @typescript-eslint/require-await */ // extenders may want real async
+    @postConstruct()
     protected async init(): Promise<void> {
         this.id = MemoryTableWidget.ID;
         this.addClass(MemoryTableWidget.ID);
@@ -605,10 +605,8 @@ export class MemoryTableWidget extends ReactWidget {
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected getContextMenuArgs(event: React.MouseEvent): any[] {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const args: any[] = [this];
+    protected getContextMenuArgs(event: React.MouseEvent): unknown[] {
+        const args: unknown[] = [this];
         const id = (event.target as HTMLElement).getAttribute('data-id');
         if (id) {
             const location = hexStrToUnsignedLong(id);

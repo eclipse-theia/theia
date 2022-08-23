@@ -83,7 +83,6 @@ export class MemoryDiffTableWidget extends MemoryTableWidget {
         return offsetData;
     }
 
-    /* eslint-disable no-param-reassign */
     protected setTrailing(offsetData: OffsetData): void {
         const totalBeforeLength = this.diffData.beforeBytes.length - offsetData.before.leading;
         const totalAfterLength = this.diffData.afterBytes.length - offsetData.after.leading;
@@ -285,7 +284,6 @@ export class MemoryDiffTableWidget extends MemoryTableWidget {
         if (newData) {
             container.groups.push(newData.node);
             container.variables.push(...newData.variables);
-            // eslint-disable-next-line no-param-reassign
             container.ascii += newData.ascii;
         }
     }

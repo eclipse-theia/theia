@@ -77,7 +77,7 @@ export class MemoryWidget<
         return `${MemoryWidget.ID}-${optionsWidgetID}`;
     }
 
-    @postConstruct() /* eslint-disable-line @typescript-eslint/require-await */ // Extenders may want real async
+    @postConstruct()
     protected async init(): Promise<void> {
         this.id = MemoryWidget.getIdentifier(this.memoryWidgetOptions.identifier.toString());
         this.addClass(MemoryWidget.ID);

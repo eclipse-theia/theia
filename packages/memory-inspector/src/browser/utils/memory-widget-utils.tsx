@@ -24,7 +24,6 @@ export namespace Constants {
 export namespace Utils {
     export const validateNumericalInputs = (e: React.ChangeEvent<HTMLInputElement>, allowNegative = true): void => {
         const toReplace = allowNegative ? /[^\d-]/g : /[^\d]/g;
-        // eslint-disable-next-line no-param-reassign
         e.target.value = e.target.value.replace(toReplace, '');
     };
 

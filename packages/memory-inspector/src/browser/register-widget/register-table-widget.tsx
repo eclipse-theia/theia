@@ -69,7 +69,7 @@ export class RegisterTableWidget extends MemoryTableWidget {
     protected override options: RegisterOptions;
     protected override memory: Interfaces.WidgetMemoryState = { ...EMPTY_MEMORY, variables: [] };
 
-    @postConstruct() /* eslint-disable-line @typescript-eslint/require-await */ // extenders may want real async
+    @postConstruct()
     protected override async init(): Promise<void> {
         this.id = RegisterTableWidget.ID;
         this.addClass(RegisterTableWidget.ID);
@@ -110,7 +110,6 @@ export class RegisterTableWidget extends MemoryTableWidget {
         return [...this.renderRegRows()];
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected *renderRegRows(result: RegisterReadResult = this.registers): IterableIterator<React.ReactNode> {
         let rowsYielded = 0;
         // For each row...

@@ -43,7 +43,6 @@ import { MemoryDockpanelPlaceholder } from './wrapper-widgets/memory-dockpanel-p
 import { MemoryLayoutWidget } from './wrapper-widgets/memory-layout-widget';
 import { CDTGDBMemoryProvider } from './memory-provider/cdt-gdb-memory-provider';
 
-// eslint-disable-next-line max-lines-per-function
 export default new ContainerModule(bind => {
     bindViewContribution(bind, DebugFrontendContribution);
     bind(ColorContribution).toService(DebugFrontendContribution);

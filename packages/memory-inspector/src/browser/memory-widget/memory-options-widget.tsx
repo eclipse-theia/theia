@@ -13,7 +13,6 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-/* eslint-disable no-bitwise, max-lines */
 
 import { Disposable, DisposableCollection, Emitter, nls } from '@theia/core';
 import { Key, KeyCode, Message, ReactWidget, StatefulWidget } from '@theia/core/lib/browser';
@@ -312,7 +311,6 @@ export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
         );
     }
 
-    // eslint-disable-next-line max-lines-per-function
     protected renderByteDisplayGroup(): React.ReactNode {
         return (
             <div className='t-mv-group settings-group'>
@@ -387,7 +385,6 @@ export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
         }
     };
 
-    // eslint-disable-next-line max-lines-per-function
     protected renderMemoryLocationGroup(): React.ReactNode {
         return (
             <>

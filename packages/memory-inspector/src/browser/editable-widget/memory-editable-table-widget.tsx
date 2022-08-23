@@ -242,7 +242,6 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
         super.doHandleTableRightClick(event);
     }
 
-    // eslint-disable-next-line max-lines-per-function,complexity
     protected handleTableInput = (event: React.KeyboardEvent): void => {
         if (this.highlightedField.lessThan(0)) {
             return;
