@@ -133,12 +133,12 @@
 }
 
 .t-mv-view .eight-bits.changed {
-    background-color: var(--theia-editor-foreground-light);
+    background-color: var(--theia-memoryInspector-foreground);
     color: var(--theia-editor-background);
 }
 
 .t-mv-view .eight-bits.changed:hover {
-    background-color: var(--theia-editor-foreground-light);
+    background-color: var(--theia-memoryInspector-foreground);
     opacity: .85;
 }
 
@@ -158,7 +158,7 @@
 }
 
 .t-mv-memory-container:focus .eight-bits.changed.highlight {
-    background-color: var(--theia-editorLightBulbAutoFix-foreground-light);
+    background-color: var(--theia-memoryInspector-focusBorder);
 }
 
 .t-mv-memory-container:not(:focus) .eight-bits.highlight {
@@ -569,12 +569,12 @@ table.t-mv-view .t-mv-view-address {
 
 .t-mv-view-container span.before.different::before,
 .t-mv-view-container .before.different {
-    background-color: var(--theia-diffEditor-removedTextBackground-light);
+    background-color: var(--theia-memoryDiff-removedTextBackground);
 }
 
 .t-mv-view-container span.after.different::before,
 .t-mv-view-container .after.different {
-    background-color: var(--theia-diffEditor-insertedTextBackground-light);
+    background-color: var(--theia-memoryDiff-insertedTextBackground);
 }
 
 .t-mv-view-container span.before.different.hc::before,

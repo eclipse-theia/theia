@@ -265,36 +265,36 @@ export class DebugFrontendContribution extends AbstractViewContribution<MemoryLa
     registerColors(colorRegistry: ColorRegistry): void {
         colorRegistry.register(
             {
-                id: 'diffEditor.removedTextBackground.light',
+                id: 'memoryDiff.removedTextBackground',
                 defaults: {
                     dark: Color.transparent('diffEditor.removedTextBackground', ONE_HALF_OPACITY),
                     light: Color.transparent('diffEditor.removedTextBackground', ONE_HALF_OPACITY),
                 },
-                description: 'An even lighter version of the diff editor colors for contexts when contrast is an issue.',
+                description: 'A less opaque diff color for use in the Memory Inspector where various overlays may me in place at once.',
             },
             {
-                id: 'diffEditor.insertedTextBackground.light',
+                id: 'memoryDiff.insertedTextBackground',
                 defaults: {
                     dark: Color.transparent('diffEditor.insertedTextBackground', ONE_HALF_OPACITY),
                     light: Color.transparent('diffEditor.insertedTextBackground', ONE_HALF_OPACITY),
                 },
-                description: 'An even lighter version of the diff editor colors for contexts when contrast is an issue.',
+                description: 'A less opaque diff color for use in the Memory Inspector where various overlays may me in place at once.',
             },
             {
-                id: 'editorLightBulbAutoFix.foreground.light',
+                id: 'memoryInspector.focusBorder',
                 defaults: {
-                    dark: Color.transparent('editorLightBulbAutoFix.foreground', ONE_HALF_OPACITY),
-                    light: Color.transparent('editorLightBulbAutoFix.foreground', ONE_HALF_OPACITY),
+                    dark: Color.transparent('focusBorder', ONE_HALF_OPACITY),
+                    light: Color.transparent('focusBorder', ONE_HALF_OPACITY),
                 },
-                description: 'A lighter version of a blue focused editor state background.',
+                description: 'A less opaque focus border color for use in the Memory Inspector where several overlays may be in place at once.',
             },
             {
-                id: 'editor.foreground.light',
+                id: 'memoryInspector.foreground',
                 defaults: {
                     dark: Color.transparent('editor.foreground', ONE_HALF_OPACITY),
                     light: Color.transparent('editor.foreground', ONE_HALF_OPACITY),
                 },
-                description: 'A lighter version of the text in the editor.',
+                description: 'A less opaque foreground text style for use in the Memory Inspector',
             },
         );
     }
