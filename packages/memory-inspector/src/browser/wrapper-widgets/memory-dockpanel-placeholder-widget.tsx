@@ -31,15 +31,7 @@ export class MemoryDockpanelPlaceholder extends ReactWidget {
     render(): React.ReactNode {
         return (
             <div className='t-mv-memory-fetch-error'>
-                Click the
-                {' '}
-                <i className='memory-view-icon toolbar' />
-                {' '}
-                icon to add a new memory view or the
-                {' '}
-                <i className='register-view-icon toolbar' />
-                {' '}
-                icon to add a register view.
+                Click the <i className='memory-view-icon toolbar' /> icon to add a new memory view or the <i className='register-view-icon toolbar' /> icon to add a register view.
             </div>
         );
     }

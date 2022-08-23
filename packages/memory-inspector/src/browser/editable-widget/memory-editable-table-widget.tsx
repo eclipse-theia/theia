@@ -198,7 +198,7 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
         this.memoryEditsCompleted.resolve();
     };
 
-    private createUniqueEdits(): Array<DebugProtocol.WriteMemoryArguments> {
+    protected createUniqueEdits(): Array<DebugProtocol.WriteMemoryArguments> {
         const addressesSubmitted = new Set<string>();
         const edits = [];
         for (const k of this.pendingMemoryEdits.keys()) {
@@ -225,7 +225,7 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
             };
     }
 
-    private handleTableClick = (event: React.MouseEvent): void => {
+    protected handleTableClick = (event: React.MouseEvent): void => {
         const target = event.target as HTMLElement;
         if (target.classList?.contains('eight-bits')) {
             this.highlightedField = hexStrToUnsignedLong(target.getAttribute('data-id') ?? '-0x1');
@@ -243,7 +243,7 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
     }
 
     // eslint-disable-next-line max-lines-per-function,complexity
-    private handleTableInput = (event: React.KeyboardEvent): void => {
+    protected handleTableInput = (event: React.KeyboardEvent): void => {
         if (this.highlightedField.lessThan(0)) {
             return;
         }
@@ -316,7 +316,7 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
         }
     };
 
-    private isInBounds(candidateAddress: Long): boolean {
+    protected isInBounds(candidateAddress: Long): boolean {
         const { address, bytes } = this.memory;
         return candidateAddress.greaterThanOrEqual(address) &&
             candidateAddress.lessThan(address.add(bytes.length));

@@ -46,7 +46,7 @@ export class MemoryDiffTableWidget extends MemoryTableWidget {
     @inject(MemoryDiffWidgetData) protected diffData: MemoryDiffWidgetData;
     @inject(MemoryDiffOptionsWidget) override readonly optionsWidget: MemoryDiffOptionsWidget;
 
-    private diffedSpanCounter = 0;
+    protected diffedSpanCounter = 0;
     protected beforeVariableFinder: VariableFinder;
     protected afterVariableFinder: VariableFinder;
     protected isHighContrast = false;

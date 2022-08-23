@@ -52,11 +52,11 @@ export class VariableFinder {
     ];
 
     protected readonly variables: VariableRange[];
-    private currentIndex = -1;
-    private currentVariable: VariableRange | undefined = undefined;
-    private handledVariables = new Map<string, Long>();
-    private workingColors: string[];
-    private lastCall = Long.MAX_UNSIGNED_VALUE;
+    protected currentIndex = -1;
+    protected currentVariable: VariableRange | undefined = undefined;
+    protected handledVariables = new Map<string, Long>();
+    protected workingColors: string[];
+    protected lastCall = Long.MAX_UNSIGNED_VALUE;
 
     constructor(variables: VariableRange[], highContrast = false) {
         this.variables = variables.sort((a, b) => a.address.lessThan(b.address) ? -1 : 1);

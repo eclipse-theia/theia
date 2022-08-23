@@ -225,7 +225,7 @@ export class RegisterTableWidget extends MemoryTableWidget {
         return this.hoverRenderer.hide();
     }
 
-    private handleRowKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
+    protected handleRowKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
         const keyCode = KeyCode.createKeyCode(event.nativeEvent).key?.keyCode;
         switch (keyCode) {
             case Key.ENTER.keyCode:
