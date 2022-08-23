@@ -312,7 +312,6 @@ export class RegisterOptionsWidget extends MemoryOptionsWidget {
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/member-ordering
     protected updateRegisterView = debounce(this.doUpdateRegisterView.bind(this), Constants.DEBOUNCE_TIME, { trailing: true });
 
     protected async doUpdateRegisterView(): Promise<void> {

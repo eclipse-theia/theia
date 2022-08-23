@@ -462,13 +462,7 @@ export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
         const isCancelKey = 'key' in e && e.key === 'Escape';
         e.stopPropagation();
         if (isMouseDown || isSaveKey || isCancelKey) {
-            if (!isCancelKey && this.headerInputField) {
-                this.title.label = this.headerInputField.value;
-                this.title.caption = this.headerInputField.value;
-            }
-
-            this.isTitleEditable = false;
-            this.update();
+            this.updateHeader(isCancelKey);
         }
     };
 
@@ -479,48 +473,62 @@ export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
         }
     };
 
+    protected updateHeader(isCancelKey: boolean): void {
+        if (!isCancelKey && this.headerInputField) {
+            this.title.label = this.headerInputField.value;
+            this.title.caption = this.headerInputField.value;
+        }
+
+        this.isTitleEditable = false;
+        this.update();
+    }
+
     protected renderToolbar(): React.ReactNode {
         return (
             <div className='memory-widget-toolbar'>
-                {this.memoryWidgetOptions.dynamic !== false && (
-                    <div className='memory-widget-auto-updates-container'>
-                        <div
-                            className={`fa fa-${this.doUpdateAutomatically ? 'unlock' : 'lock'}`}
-                            id={AUTO_UPDATE_TOGGLE_ID}
-                            title={this.doUpdateAutomatically ?
-                                nls.localize('theia/memory-inspector/memory/freeze', 'Freeze Memory View') :
-                                nls.localize('theia/memory-inspector/memory/unfreeze', 'Unfreeze Memory View')
-                            }
-                            onClick={this.toggleAutoUpdate}
-                            onKeyDown={this.toggleAutoUpdate}
-                            role='button'
-                            tabIndex={0}
-                        />
-                    </div>
-                )}
+                {this.renderLockIcon()}
                 {this.renderEditableTitleField()}
-                <div className='toggle-settings-container'>
-                    <div
-                        className='toggle-settings-click-zone'
-                        tabIndex={0}
-                        aria-label={this.doDisplaySettings ?
-                            nls.localize('theia/memory-inspector/memory/hideSettings', 'Hide Settings Panel') :
-                            nls.localize('theia/memory-inspector/memory/showSettings', 'Show Settings Panel')
-                        }
-                        role='button'
-                        onClick={this.toggleDoShowSettings}
-                        onKeyDown={this.toggleDoShowSettings}
-                        title={this.doDisplaySettings ?
-                            nls.localize('theia/memory-inspector/memory/hideSettings', 'Hide Settings Panel') :
-                            nls.localize('theia/memory-inspector/memory/showSettings', 'Show Settings Panel')
-                        }>
-                        <i className='codicon codicon-settings-gear' />
-                        <span>{this.doDisplaySettings ?
-                            nls.localize('theia/memory-inspector/closeSettings', 'Close Settings') :
-                            nls.localizeByDefault('Settings')}
-                        </span>
-                    </div>
-                </div>
+                {this.renderSettingsContainer()}
+            </div>
+        );
+    }
+
+    protected renderSettingsContainer(): React.ReactNode {
+        return <div className='toggle-settings-container'>
+            <div
+                className='toggle-settings-click-zone'
+                tabIndex={0}
+                aria-label={this.doDisplaySettings ?
+                    nls.localize('theia/memory-inspector/memory/hideSettings', 'Hide Settings Panel') :
+                    nls.localize('theia/memory-inspector/memory/showSettings', 'Show Settings Panel')}
+                role='button'
+                onClick={this.toggleDoShowSettings}
+                onKeyDown={this.toggleDoShowSettings}
+                title={this.doDisplaySettings ?
+                    nls.localize('theia/memory-inspector/memory/hideSettings', 'Hide Settings Panel') :
+                    nls.localize('theia/memory-inspector/memory/showSettings', 'Show Settings Panel')}>
+                <i className='codicon codicon-settings-gear' />
+                <span>{this.doDisplaySettings ?
+                    nls.localize('theia/memory-inspector/closeSettings', 'Close Settings') :
+                    nls.localizeByDefault('Settings')}
+                </span>
+            </div>
+        </div>;
+    }
+
+    protected renderLockIcon(): React.ReactNode {
+        return this.memoryWidgetOptions.dynamic !== false && (
+            <div className='memory-widget-auto-updates-container'>
+                <div
+                    className={`fa fa-${this.doUpdateAutomatically ? 'unlock' : 'lock'}`}
+                    id={AUTO_UPDATE_TOGGLE_ID}
+                    title={this.doUpdateAutomatically ?
+                        nls.localize('theia/memory-inspector/memory/freeze', 'Freeze Memory View') :
+                        nls.localize('theia/memory-inspector/memory/unfreeze', 'Unfreeze Memory View')}
+                    onClick={this.toggleAutoUpdate}
+                    onKeyDown={this.toggleAutoUpdate}
+                    role='button'
+                    tabIndex={0} />
             </div>
         );
     }
@@ -623,7 +631,6 @@ export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
         this.updateMemoryView();
     };
 
-    // eslint-disable-next-line @typescript-eslint/member-ordering
     protected updateMemoryView = debounce(this.doUpdateMemoryView.bind(this), Constants.DEBOUNCE_TIME, { trailing: true });
 
     protected async doUpdateMemoryView(): Promise<void> {
@@ -669,7 +676,7 @@ export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected async getMemory(memoryReference: string, count: number, offset: number): Promise<Interfaces.MemoryReadResult> {
-        const result = await this.memoryProvider.readMemory({ memoryReference, count, offset });
+        const result = await this.retrieveMemory(memoryReference, count, offset);
         try {
             this.variables = await this.memoryProvider.getLocals();
         } catch {
@@ -678,6 +685,10 @@ export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
         this.recentLocations.add(memoryReference);
         this.updateDefaults(memoryReference, count, offset);
         return result;
+    }
+
+    private async retrieveMemory(memoryReference: string, count: number, offset: number): Promise<Interfaces.MemoryReadResult> {
+        return this.memoryProvider.readMemory({ memoryReference, count, offset });
     }
 
     // TODO: This may not be necessary if we change how state is stored (currently in the text fields themselves.)
