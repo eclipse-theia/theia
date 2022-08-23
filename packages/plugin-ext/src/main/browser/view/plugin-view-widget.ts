@@ -22,7 +22,7 @@ import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-resto
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { TreeViewWidget } from './tree-view-widget';
 import { DescriptionWidget } from '@theia/core/lib/browser/view-container';
-import { DisposableCollection, Emitter } from '@theia/core/lib/common';
+import { DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 @injectable()
@@ -34,7 +34,14 @@ export class PluginViewWidgetIdentifier {
 @injectable()
 export class PluginViewWidget extends Panel implements StatefulWidget, DescriptionWidget {
 
-    protected readonly toDispose = new DisposableCollection();
+    currentViewContainerId?: string;
+
+    protected _message?: string;
+    protected _description: string = '';
+    protected _suppressUpdateViewVisibility = false;
+    protected updatingViewVisibility = false;
+    protected onDidChangeDescriptionEmitter = new Emitter<void>();
+    protected toDispose = new DisposableCollection(this.onDidChangeDescriptionEmitter);
 
     @inject(MenuModelRegistry)
     protected readonly menus: MenuModelRegistry;
@@ -48,15 +55,11 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
     @inject(PluginViewWidgetIdentifier)
     readonly options: PluginViewWidgetIdentifier;
 
-    currentViewContainerId: string | undefined;
-
     constructor() {
         super();
         this.node.tabIndex = -1;
         this.node.style.height = '100%';
     }
-
-    public onDidChangeDescription: Emitter<void> = new Emitter<void>();
 
     @postConstruct()
     protected init(): void {
@@ -64,6 +67,10 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
         const localContext = this.contextKeyService.createScoped(this.node);
         localContext.setContext('view', this.options.viewId);
         this.toDispose.push(localContext);
+    }
+
+    get onDidChangeDescription(): Event<void> {
+        return this.onDidChangeDescriptionEmitter.event;
     }
 
     protected override onActivateRequest(msg: Message): void {
@@ -97,12 +104,10 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
         }
     }
 
-    protected _suppressUpdateViewVisibility = false;
     set suppressUpdateViewVisibility(suppressUpdateViewVisibility: boolean) {
         this._suppressUpdateViewVisibility = !this.updatingViewVisibility && suppressUpdateViewVisibility;
     }
 
-    protected updatingViewVisibility = false;
     updateViewVisibility(cb: () => void): void {
         if (this._suppressUpdateViewVisibility) {
             return;
@@ -115,7 +120,6 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
         }
     }
 
-    private _message: string | undefined;
     get message(): string | undefined {
         return this._message;
     }
@@ -125,14 +129,13 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
         this.updateWidgetMessage();
     }
 
-    private _description: string = '';
     get description(): string {
         return this._description;
     }
 
     set description(description: string) {
         this._description = description;
-        this.onDidChangeDescription.fire();
+        this.onDidChangeDescriptionEmitter.fire();
     }
 
     private updateWidgetMessage(): void {

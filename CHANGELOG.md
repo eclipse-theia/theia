@@ -14,6 +14,7 @@
 - [core] updated `react` and `react-dom` dependencies to version 18, which introduce new root API for rendering (replaces ReactDOM.render). Since React no longer supports render callbacks, the `onRender` field from `ReactDialog` and `ReactWidget` was removed. [#11455](https://github.com/eclipse-theia/theia/pull/11455) - Contributed on behalf of STMicroelectronics
 - [core] removed `WidgetManager.widgetPromises`; use `WidgetManager.widgets` instead. [#11555](https://github.com/eclipse-theia/theia/pull/11555)
 - [core] Replaced `react-virtualized` with `react-virtuoso` for tree rendering. Removed the `TreeWidget#forceUpdate`, `TreeWidget#handleScroll` and `TreeWidget.View#renderTreeRow` methods in the process. [#11553](https://github.com/eclipse-theia/theia/pull/11553)
+- [core] Replaced `Emitter` fields by `Event` fields in both `DescriptionWidget` and `BadgeWidget`.
 
 ## v1.28.0 - 7/28/2022
 
