@@ -97,7 +97,7 @@
 .t-mv-memory-container.frozen,
 .t-mv-memory-container.frozen:focus {
     font-style: italic;
-    opacity: --var(--memory-widget-disabled-opacity) !important;
+    opacity: var(--memory-widget-disabled-opacity) !important;
 }
 
 .t-mv-memory-fetch-error {
@@ -439,6 +439,13 @@ table.t-mv-view .t-mv-view-address {
 .memory-edit-button-container .memory-edit-error {
     position: absolute;
     width: 100%;
+    bottom: 0;
+    box-sizing: border-box;
+    white-space: normal;
+    padding: var(--theia-ui-padding);
+    background-color: var(--theia-editor-background);
+    color: var(--theia-editorWarning-foreground);
+    z-index: 100;
 }
 
 .memory-diff-select {

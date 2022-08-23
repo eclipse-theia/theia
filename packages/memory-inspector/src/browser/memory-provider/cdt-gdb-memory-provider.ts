@@ -126,7 +126,7 @@ export class CDTGDBMemoryProvider extends AbstractMemoryProvider {
                     name = `${currentLevel.name}${separator}${name}`;
                 }
             }
-            return name;
+            return `&(${name})`;
         }
         return '';
     }
