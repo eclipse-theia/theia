@@ -25,7 +25,7 @@ import { MemoryOptionsWidget } from '../memory-widget/memory-options-widget';
 import { MemoryTable, MemoryTableWidget } from '../memory-widget/memory-table-widget';
 import { MemoryWidget } from '../memory-widget/memory-widget';
 import { EasilyMappedObject } from '../utils/memory-hover-renderer';
-import { Interfaces } from '../utils/memory-widget-utils';
+import { Constants, Interfaces } from '../utils/memory-widget-utils';
 import { nls } from '@theia/core/lib/common/nls';
 
 export type EditableMemoryWidget = MemoryWidget<MemoryOptionsWidget, MemoryEditableTableWidget>;
@@ -39,6 +39,8 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
     protected override previousBytes: Interfaces.LabeledUint8Array | undefined;
     protected memoryEditsCompleted = new Deferred<void>();
     protected highlightedField: Long = Long.fromInt(-1);
+    protected writeErrorInfo: { location: string, error: string } | undefined;
+    protected currentErrorTimeout: number | undefined;
 
     protected doShowMoreMemoryBefore = false;
     protected doShowMoreMemoryAfter = false;
@@ -66,7 +68,6 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
 
     protected override async handleMemoryChange(newMemory: Interfaces.MemoryReadResult): Promise<void> {
         await this.memoryEditsCompleted.promise;
-        this.pendingMemoryEdits.clear();
         super.handleMemoryChange(newMemory);
     }
 
@@ -75,25 +76,30 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
     }
 
     protected override getTableFooter(): React.ReactNode {
+        const showButtons = !!this.pendingMemoryEdits.size;
         return (
-            !!this.pendingMemoryEdits.size && (
+            (showButtons || this.writeErrorInfo) && (
                 <div className='memory-edit-button-container'>
-                    <button
+                    {showButtons && <button
                         className='theia-button secondary'
                         onClick={this.handleClearEditClick}
                         type='reset'
                         title={nls.localize('theia/memory-inspector/editable/clear', 'Clear Changes')}
                     >
                         {nls.localize('theia/memory-inspector/editable/clear', 'Clear Changes')}
-                    </button>
-                    <button
+                    </button>}
+                    {showButtons && <button
                         className='theia-button main'
                         onClick={this.submitMemoryEdits}
                         type='submit'
                         title={nls.localize('theia/memory-inspector/editable/apply', 'Apply Changes')}
                     >
                         {nls.localize('theia/memory-inspector/editable/apply', 'Apply Changes')}
-                    </button>
+                    </button>}
+                    {!!this.writeErrorInfo && <div className='memory-edit-error'>
+                        <div className='memory-edit-error-location'>{`Error writing to 0x${Long.fromString(this.writeErrorInfo?.location).toString(16)}`}</div>
+                        <div className='memory-edit-error-details'>{this.writeErrorInfo?.error}</div>
+                    </div>}
                 </div>)
         );
     }
@@ -188,30 +194,54 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
 
     protected submitMemoryEdits = async (): Promise<void> => {
         this.memoryEditsCompleted = new Deferred();
-        for (const edit of this.createUniqueEdits()) {
+        let didUpdateMemory = false;
+        for (const [key, edit] of this.createUniqueEdits()) {
             try {
                 await this.memoryProvider.writeMemory(edit);
+                didUpdateMemory = true;
+                this.pendingMemoryEdits.delete(key);
             } catch (e) {
-                console.log('Problem writing memory with arguments', edit, '\n', e);
+                console.warn('Problem writing memory with arguments', edit, '\n', e);
+                const text = e instanceof Error ? e.message : 'Unknown error';
+                this.showWriteError(key, text);
+                break;
             }
         }
         this.memoryEditsCompleted.resolve();
+        if (didUpdateMemory) {
+            this.optionsWidget.fetchNewMemory();
+        }
     };
 
-    protected createUniqueEdits(): Array<DebugProtocol.WriteMemoryArguments> {
+    protected createUniqueEdits(): Array<[string, DebugProtocol.WriteMemoryArguments]> {
         const addressesSubmitted = new Set<string>();
-        const edits = [];
+        const edits: Array<[string, DebugProtocol.WriteMemoryArguments]> = [];
         for (const k of this.pendingMemoryEdits.keys()) {
             const address = Long.fromString(k);
             const { address: addressToSend, value: valueToSend } = this.composeByte(address, true);
             const memoryReference = '0x' + addressToSend.toString(16);
             if (!addressesSubmitted.has(memoryReference)) {
                 const data = Buffer.from(valueToSend, 'hex').toString('base64');
-                edits.push({ memoryReference, data });
+                edits.push([k, { memoryReference, data }]);
                 addressesSubmitted.add(memoryReference);
             }
         }
         return edits;
+    }
+
+    protected showWriteError(location: string, error: string): void {
+        if (this.currentErrorTimeout !== undefined) {
+            clearTimeout(this.currentErrorTimeout);
+        }
+        this.writeErrorInfo = { location, error };
+        this.update();
+        this.currentErrorTimeout = window.setTimeout(() => this.hideWriteError(), Constants.ERROR_TIMEOUT);
+    }
+
+    protected hideWriteError(): void {
+        this.currentErrorTimeout = undefined;
+        this.writeErrorInfo = undefined;
+        this.update();
     }
 
     protected override getWrapperHandlers(): MemoryTable.WrapperHandlers {

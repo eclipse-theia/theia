@@ -621,6 +621,10 @@ export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
         }, Constants.ERROR_TIMEOUT);
     };
 
+    fetchNewMemory(): void {
+        this.updateMemoryView();
+    }
+
     protected doRefresh = (event: React.KeyboardEvent<HTMLInputElement> | React.MouseEvent<HTMLButtonElement, MouseEvent>): void => {
         if ('key' in event && event.key !== 'Enter') {
             return;
