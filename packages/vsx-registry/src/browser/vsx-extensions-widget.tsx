@@ -20,7 +20,7 @@ import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extensions-source';
 import { nls } from '@theia/core/lib/common/nls';
 import { BadgeWidget } from '@theia/core/lib/browser/view-container';
-import { Emitter } from '@theia/core/lib/common';
+import { Emitter, Event } from '@theia/core/lib/common';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import * as React from '@theia/core/shared/react';
 
@@ -49,6 +49,9 @@ export class VSXExtensionsWidget extends SourceTreeWidget implements BadgeWidget
         return child.get(VSXExtensionsWidget);
     }
 
+    protected _badge?: number;
+    protected onDidChangeBadgeEmitter = new Emitter<void>();
+
     @inject(VSXExtensionsWidgetOptions)
     protected readonly options: VSXExtensionsWidgetOptions;
 
@@ -74,17 +77,18 @@ export class VSXExtensionsWidget extends SourceTreeWidget implements BadgeWidget
         }));
     }
 
-    private _badge: number | undefined = undefined;
+    get onDidChangeBadge(): Event<void> {
+        return this.onDidChangeBadgeEmitter.event;
+    }
+
     get badge(): number | undefined {
         return this._badge;
     }
 
     set badge(count: number | undefined) {
         this._badge = count;
-        this.onDidChangeBadge.fire();
+        this.onDidChangeBadgeEmitter.fire();
     }
-
-    public onDidChangeBadge: Emitter<void> = new Emitter<void>();
 
     protected computeTitle(): string {
         switch (this.options.id) {
