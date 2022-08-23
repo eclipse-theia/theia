@@ -25,7 +25,7 @@ import {
     DebugAdapter,
     DebugAdapterSession
 } from './debug-model';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 import { DebugChannel } from './debug-service';
 
 /**

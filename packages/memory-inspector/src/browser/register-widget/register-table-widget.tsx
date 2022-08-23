@@ -176,7 +176,7 @@ export class RegisterTableWidget extends MemoryTableWidget {
         return { className };
     }
 
-    protected getExtraRegColumn(options: Pick<RegisterTable.RowOptions, 'hexadecimal' | 'decimal' | 'octal' | 'binary'>): React.ReactNodeArray {
+    protected getExtraRegColumn(options: Pick<RegisterTable.RowOptions, 'hexadecimal' | 'decimal' | 'octal' | 'binary'>): React.ReactNode[] {
         const additionalColumns = [];
         if (this.options.columnsDisplayed.hexadecimal.doRender) {
             additionalColumns.push(<td className={RegisterTable.EXTRA_COLUMN_DATA_CLASS} key='hexadecimal'>{options.hexadecimal}</td>);

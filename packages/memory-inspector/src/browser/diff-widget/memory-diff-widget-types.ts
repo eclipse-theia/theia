@@ -23,7 +23,7 @@ export enum DiffLabels {
 }
 
 export interface RowData {
-    groups: React.ReactNodeArray;
+    groups: React.ReactNode[];
     variables: VariableDecoration[];
     ascii: string;
 }

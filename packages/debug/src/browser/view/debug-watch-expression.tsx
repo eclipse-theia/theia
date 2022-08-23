@@ -17,7 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
 import { ExpressionItem, DebugSessionProvider } from '../console/debug-console-items';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 
 export class DebugWatchExpression extends ExpressionItem {
 

@@ -19,7 +19,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import * as Long from 'long';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 import { hexStrToUnsignedLong } from '../../common/util';
 import { MemoryOptionsWidget } from '../memory-widget/memory-options-widget';
 import { MemoryTable, MemoryTableWidget } from '../memory-widget/memory-table-widget';

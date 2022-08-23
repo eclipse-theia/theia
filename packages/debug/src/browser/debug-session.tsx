@@ -18,7 +18,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { LabelProvider } from '@theia/core/lib/browser';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 import { Emitter, Event, DisposableCollection, Disposable, MessageClient, MessageType, Mutable, ContributionProvider } from '@theia/core/lib/common';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { EditorManager } from '@theia/editor/lib/browser';

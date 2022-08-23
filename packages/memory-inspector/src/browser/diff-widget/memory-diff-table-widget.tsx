@@ -156,7 +156,7 @@ export class MemoryDiffTableWidget extends MemoryTableWidget {
         );
     }
 
-    protected override getExtraColumn(options: DiffExtraColumnOptions): React.ReactNodeArray {
+    protected override getExtraColumn(options: DiffExtraColumnOptions): React.ReactNode[] {
         const additionalColumns = [];
         if (this.options.columnsDisplayed.variables.doRender) {
             additionalColumns.push(this.getDiffedVariables(options));
@@ -181,8 +181,8 @@ export class MemoryDiffTableWidget extends MemoryTableWidget {
 
         let currentText = { ...EMPTY_TEXT };
 
-        const beforeSpans: React.ReactNodeArray = [];
-        const afterSpans: React.ReactNodeArray = [];
+        const beforeSpans: React.ReactNode[] = [];
+        const afterSpans: React.ReactNode[] = [];
         let lastWasSame = true;
 
         for (let i = 0; i < beforeAscii.length; i += 1) {
@@ -207,7 +207,7 @@ export class MemoryDiffTableWidget extends MemoryTableWidget {
         );
     }
 
-    protected addTextBits(beforeSpans: React.ReactNodeArray, afterSpans: React.ReactNodeArray, texts: { before: string; after: string }): void {
+    protected addTextBits(beforeSpans: React.ReactNode[], afterSpans: React.ReactNode[], texts: { before: string; after: string }): void {
         const [newBeforeSpans, newAfterSpans] = this.getAsciiSpan(texts);
         beforeSpans.push(newBeforeSpans);
         afterSpans.push(newAfterSpans);
@@ -232,7 +232,7 @@ export class MemoryDiffTableWidget extends MemoryTableWidget {
 
     protected getDiffedVariables(options: DiffExtraColumnOptions): React.ReactNode {
         const { variables: beforeVariables, afterVariables } = options;
-        const variableSpans: React.ReactNodeArray = [];
+        const variableSpans: React.ReactNode[] = [];
 
         let areDifferent = false;
         for (const beforeVariable of beforeVariables) {

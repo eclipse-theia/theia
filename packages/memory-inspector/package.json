@@ -29,8 +29,8 @@
   "dependencies": {
     "@theia/core": "1.28.0",
     "@theia/debug": "1.28.0",
-    "long": "^4.0.0",
-    "vscode-debugprotocol": "^1.48.0"
+    "@vscode/debugprotocol": "^1.48.0",
+    "long": "^4.0.0"
   },
   "devDependencies": {
     "@types/long": "^4.0.0"

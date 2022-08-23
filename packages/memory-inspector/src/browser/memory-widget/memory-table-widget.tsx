@@ -324,7 +324,7 @@ export class MemoryTableWidget extends ReactWidget {
     protected *renderRows(iteratee: Interfaces.LabeledUint8Array = this.memory.bytes): IterableIterator<React.ReactNode> {
         const bytesPerRow = this.options.bytesPerGroup * this.options.groupsPerRow;
         let rowsYielded = 0;
-        let groups: React.ReactNodeArray = [];
+        let groups: React.ReactNode[] = [];
         let ascii = '';
         let variables: VariableDecoration[] = [];
         let isRowHighlighted = false;
@@ -413,7 +413,7 @@ export class MemoryTableWidget extends ReactWidget {
     }
 
     protected *renderGroups(iteratee: Interfaces.LabeledUint8Array = this.memory.bytes): IterableIterator<MemoryTable.GroupData> {
-        let bytesInGroup: React.ReactNodeArray = [];
+        let bytesInGroup: React.ReactNode[] = [];
         let ascii = '';
         let variables: VariableDecoration[] = [];
         let isGroupHighlighted = false;
@@ -439,7 +439,7 @@ export class MemoryTableWidget extends ReactWidget {
         }
     }
 
-    protected buildGroupByEndianness(oldBytes: React.ReactNodeArray, newByte: React.ReactNode): void {
+    protected buildGroupByEndianness(oldBytes: React.ReactNode[], newByte: React.ReactNode): void {
         if (this.options.endianness === Interfaces.Endianness.Big) {
             oldBytes.push(newByte);
         } else {
@@ -450,7 +450,7 @@ export class MemoryTableWidget extends ReactWidget {
     protected *renderBytes(iteratee: Interfaces.LabeledUint8Array = this.memory.bytes): IterableIterator<MemoryTable.ByteData> {
         const itemsPerByte = this.options.byteSize / 8;
         let currentByte = 0;
-        let chunksInByte: React.ReactNodeArray = [];
+        let chunksInByte: React.ReactNode[] = [];
         let variables: VariableDecoration[] = [];
         let isByteHighlighted = false;
         for (const { node, content, index, variable, isHighlighted = false } of this.renderArrayItems(iteratee)) {

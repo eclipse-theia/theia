@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { DebugVariable } from '@theia/debug/lib/browser/console/debug-console-items';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 import { Interfaces } from '../utils/memory-widget-utils';
 import { VariableRange } from '../utils/memory-widget-variable-utils';
 import Long = require('long');

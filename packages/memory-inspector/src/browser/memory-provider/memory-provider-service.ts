@@ -19,7 +19,7 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { DebugVariable } from '@theia/debug/lib/browser/console/debug-console-items';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 import { Interfaces } from '../utils/memory-widget-utils';
 import { VariableRange } from '../utils/memory-widget-variable-utils';
 import { DefaultMemoryProvider, MemoryProvider } from './memory-provider';

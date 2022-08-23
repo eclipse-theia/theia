@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { LabelProvider, DISABLED_CLASS } from '@theia/core/lib/browser';
