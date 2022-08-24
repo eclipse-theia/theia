@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
+import { environment } from '@theia/application-package/lib/environment';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from './preferences';
 import { SUPPORTED_ENCODINGS } from './supported-encodings';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
@@ -73,7 +74,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             scope: 'application',
             // eslint-disable-next-line max-len
             markdownDescription: nls.localizeByDefault("Control the visibility of the menu bar. A setting of 'toggle' means that the menu bar is hidden and a single press of the Alt key will show it. By default, the menu bar will be visible, unless the window is full screen."),
-            included: !isOSX
+            included: !(isOSX && environment.electron.is())
         },
         'http.proxy': {
             type: 'string',
