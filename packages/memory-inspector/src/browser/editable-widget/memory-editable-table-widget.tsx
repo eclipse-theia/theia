@@ -76,7 +76,7 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
     }
 
     protected override getTableFooter(): React.ReactNode {
-        const showButtons = !!this.pendingMemoryEdits.size;
+        const showButtons = !!this.pendingMemoryEdits.size && !this.writeErrorInfo;
         return (
             (showButtons || this.writeErrorInfo) && (
                 <div className='memory-edit-button-container'>
@@ -227,6 +227,10 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
             }
         }
         return edits;
+    }
+
+    protected doWriteMemory(writeMemoryArgs: DebugProtocol.WriteMemoryArguments): Promise<DebugProtocol.WriteMemoryResponse> {
+        return this.memoryProvider.writeMemory(writeMemoryArgs);
     }
 
     protected showWriteError(location: string, error: string): void {

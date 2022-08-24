@@ -688,7 +688,7 @@ export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
         return result;
     }
 
-    private async retrieveMemory(memoryReference: string, count: number, offset: number): Promise<Interfaces.MemoryReadResult> {
+    protected async retrieveMemory(memoryReference: string, count: number, offset: number): Promise<Interfaces.MemoryReadResult> {
         return this.memoryProvider.readMemory({ memoryReference, count, offset });
     }
 
