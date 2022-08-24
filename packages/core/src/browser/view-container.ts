@@ -54,12 +54,12 @@ export class ViewContainerIdentifier {
 
 export interface DescriptionWidget {
     description: string;
-    onDidChangeDescription: Emitter<void>;
+    onDidChangeDescription: CommonEvent<void>;
 }
 
 export interface BadgeWidget {
-    badge: number | undefined;
-    onDidChangeBadge: Emitter<void>;
+    badge?: number;
+    onDidChangeBadge: CommonEvent<void>;
 }
 
 export namespace DescriptionWidget {
@@ -956,13 +956,11 @@ export class ViewContainerPart extends BaseWidget {
         this.toDispose.push(Disposable.create(() => this.wrapped.title.changed.disconnect(fireTitleChanged)));
 
         if (DescriptionWidget.is(this.wrapped)) {
-            const fireDescriptionChanged = () => this.onDidChangeDescriptionEmitter.fire(undefined);
-            this.toDispose.push(this.wrapped?.onDidChangeDescription.event(fireDescriptionChanged));
+            this.wrapped?.onDidChangeDescription(() => this.onDidChangeDescriptionEmitter.fire(), undefined, this.toDispose);
         }
 
         if (BadgeWidget.is(this.wrapped)) {
-            const fireBadgeChanged = () => this.onDidChangeBadgeEmitter.fire(undefined);
-            this.toDispose.push(this.wrapped?.onDidChangeBadge.event(fireBadgeChanged));
+            this.wrapped?.onDidChangeBadge(() => this.onDidChangeBadgeEmitter.fire(), undefined, this.toDispose);
         }
 
         const { header, body, disposable } = this.createContent();

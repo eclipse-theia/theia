@@ -355,6 +355,18 @@ export class ScmTreeWidget extends TreeWidget {
         }
     }
 
+    selectNodeByUri(uri: URI): void {
+        for (const group of this.model.groups) {
+            const sourceUri = new URI(uri.path.toString());
+            const id = `${group.id}:${sourceUri.toString()}`;
+            const node = this.model.getNode(id);
+            if (SelectableTreeNode.is(node)) {
+                this.model.selectNode(node);
+                return;
+            }
+        }
+    }
+
     protected getFirstSelectableNode(): SelectableTreeNode | undefined {
         if (this.model.root) {
             const root = this.model.root as ScmFileChangeRootNode;

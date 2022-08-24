@@ -67,6 +67,7 @@ export interface PreferenceItem extends IJSONSchema {
      */
     defaultValue?: JSONValue;
     overridable?: boolean;
+    included?: boolean;
     [key: string]: any;
 }
 export interface PreferenceSchemaProperty extends PreferenceItem {
