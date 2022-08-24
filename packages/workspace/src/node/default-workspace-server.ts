@@ -221,11 +221,11 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
     }
 }
 
-interface RecentWorkspacePathsData {
+export interface RecentWorkspacePathsData {
     recentRoots: string[];
 }
 
-namespace RecentWorkspacePathsData {
+export namespace RecentWorkspacePathsData {
     /**
      * Parses `data` as `RecentWorkspacePathsData` but removes any non-string array entry.
      *
