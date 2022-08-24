@@ -14,22 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import assert = require('assert');
-import { connect } from 'net';
 import 'reflect-metadata';
 import { dynamicRequire } from '../dynamic-require';
 import { IPCChannel } from './ipc-channel';
 import { checkParentAlive, IPCEntryPoint } from './ipc-protocol';
-import { THEIA_IPC_SERVER } from './ipc-server';
 
 checkParentAlive();
 
 const entryPoint = IPCEntryPoint.getScriptFromEnv();
-const ipcServer = process.env[THEIA_IPC_SERVER];
-assert(ipcServer !== undefined, `The env variable ${THEIA_IPC_SERVER} is not set!`);
-delete process.env[THEIA_IPC_SERVER];
-const socket = connect(ipcServer);
-const channel = new IPCChannel(socket);
 
-dynamicRequire<{ default: IPCEntryPoint }>(entryPoint).default(channel);
+dynamicRequire<{ default: IPCEntryPoint }>(entryPoint).default(new IPCChannel());
 
