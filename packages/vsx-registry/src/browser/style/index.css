@@ -153,15 +153,12 @@
     padding: calc(var(--theia-ui-padding) * 3) calc(var(--theia-ui-padding) * 3) calc(var(--theia-ui-padding) * 3);
     flex-shrink: 0;
     border-bottom: 1px solid hsla(0, 0% ,50% ,.5);
-    position: sticky;
-    top: 0;
     width: 100%;
     background: var(--theia-editor-background);
 }
 
 .theia-vsx-extension-editor .scroll-container {
-    position: absolute;
-    bottom: 0;
+    position: relative;
     padding-top: 0;
     max-width: 100%;
     width: 100%;
