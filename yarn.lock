@@ -2873,7 +2873,7 @@
   resolved "https://registry.yarnpkg.com/@vscode/codicons/-/codicons-0.0.31.tgz#1dc56f9442c3928b1c851965cf360e7e051e6511"
   integrity sha512-fldpXy7pHsQAMlU1pnGI23ypQ6xLk5u6SiABMFoAmlj4f2MR0iwg7C19IB1xvAEGG+dkxOfRSrbKF8ry7QqGQA==
 
-"@vscode/debugprotocol@^1.48.0":
+"@vscode/debugprotocol@^1.51.0":
   version "1.57.0"
   resolved "https://registry.yarnpkg.com/@vscode/debugprotocol/-/debugprotocol-1.57.0.tgz#f055c0422b1f77358a12b1415623099ba0541647"
   integrity sha512-eww0WhAtj3lPX7+7tGkxQ3P7IRC3hS7+SVL7fmM8CAat2DMM+PVjg1FQbTCtMw6EwNSmT/qMx1iZCyzQguJJKA==
