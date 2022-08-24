@@ -68,6 +68,9 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
 
     protected override async handleMemoryChange(newMemory: Interfaces.MemoryReadResult): Promise<void> {
         await this.memoryEditsCompleted.promise;
+        if (newMemory.bytes.length === 0) {
+            this.pendingMemoryEdits.clear();
+        }
         super.handleMemoryChange(newMemory);
     }
 
@@ -197,7 +200,7 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
         let didUpdateMemory = false;
         for (const [key, edit] of this.createUniqueEdits()) {
             try {
-                await this.memoryProvider.writeMemory(edit);
+                await this.doWriteMemory(edit);
                 didUpdateMemory = true;
                 this.pendingMemoryEdits.delete(key);
             } catch (e) {

@@ -102,8 +102,7 @@
 
 .t-mv-memory-fetch-error {
     margin: var(--theia-ui-padding);
-    text-align: center;
-    color: var(--theia-errorForeground);
+    color: var(--theia-editorWarning-foreground);
 }
 
 .t-mv-memory-fetch-error.show {

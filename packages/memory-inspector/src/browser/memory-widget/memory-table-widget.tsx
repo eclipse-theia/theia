@@ -260,7 +260,7 @@ export class MemoryTableWidget extends ReactWidget {
     }
 
     protected getTableHeaderClass(): string {
-        return MemoryTable.HEADER_ROW_CLASS;
+        return MemoryTable.HEADER_ROW_CLASS + ' no-select';
     }
 
     protected getTableHeaderStyle(numLabels: number): React.CSSProperties {

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Disposable, DisposableCollection, Emitter, nls } from '@theia/core';
+import { deepFreeze, Disposable, DisposableCollection, Emitter, nls } from '@theia/core';
 import { Key, KeyCode, Message, ReactWidget, StatefulWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -30,10 +30,10 @@ import { VariableRange } from '../utils/memory-widget-variable-utils';
 import { MWMultiSelect, SingleSelectItemProps } from '../utils/multi-select-bar';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
-export const EMPTY_MEMORY: Interfaces.MemoryReadResult = {
+export const EMPTY_MEMORY: Interfaces.MemoryReadResult = deepFreeze({
     bytes: new Uint8Array(),
     address: new Long(0, 0, true),
-};
+});
 
 export const LOCATION_FIELD_ID = 't-mv-location';
 export const LENGTH_FIELD_ID = 't-mv-length';
@@ -493,7 +493,7 @@ export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
     protected renderSettingsContainer(): React.ReactNode {
         return <div className='toggle-settings-container'>
             <div
-                className='toggle-settings-click-zone'
+                className='toggle-settings-click-zone no-select'
                 tabIndex={0}
                 aria-label={this.doDisplaySettings ?
                     nls.localize('theia/memory-inspector/memory/hideSettings', 'Hide Settings Panel') :
@@ -541,7 +541,7 @@ export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
             >
                 {!this.isTitleEditable
                     ? (
-                        <h2 className={`memory-widget-header${!this.doUpdateAutomatically ? ' disabled' : ''}`}>
+                        <h2 className={`${MemoryOptionsWidget.WIDGET_H2_CLASS}${!this.doUpdateAutomatically ? ' disabled' : ''} no-select`}>
                             {this.title.label}
                         </h2>
                     )

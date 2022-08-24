@@ -21,6 +21,7 @@ import { MemoryWidget } from '../memory-widget/memory-widget';
 import { RegisterWidget } from '../register-widget/register-widget-types';
 import { MemoryDiffWidgetData, MemoryWidgetOptions } from './memory-widget-utils';
 import { nls } from '@theia/core/lib/common/nls';
+import { EditableMemoryWidget } from '../editable-widget/memory-editable-table-widget';
 
 @injectable()
 export class MemoryWidgetManager implements Disposable {
@@ -94,18 +95,37 @@ export class MemoryWidgetManager implements Disposable {
         this._canCompare = this.availableWidgets.filter(widget => !RegisterWidget.is(widget) && !MemoryDiffWidget.is(widget)).length > 1;
     }
 
-    async createNewMemoryWidget<T extends MemoryWidget>(kind: 'register' | 'memory' = 'memory'): Promise<T> {
+    async createNewMemoryWidget<T extends MemoryWidget>(kind: 'register' | 'memory' | 'writable' | string = 'memory'): Promise<T> {
         this.widgetDisplayId = this._availableWidgets.size !== 0 ? this.widgetDisplayId + 1 : 1;
-        const options: MemoryWidgetOptions = { identifier: this.createdWidgetCount += 1, displayId: this.widgetDisplayId };
-        const widgetId = kind === 'memory'
-            ? MemoryWidget.ID
-            : RegisterWidget.ID;
-        const widget = await this.widgetManager.getOrCreateWidget<T>(widgetId, options);
+        const widget = await this.getWidgetOfKind<T>(kind);
         this._availableWidgets.set(widget.id, widget);
         widget.title.changed.connect(() => this.onChangedEmitter.fire());
         widget.activate();
         this.fireNewWidget(widget);
         return widget;
+    }
+
+    protected getWidgetOfKind<T extends MemoryWidget>(kind: string): Promise<T> {
+        const widgetId = this.getWidgetIdForKind(kind);
+        const options = this.getWidgetOptionsForId(widgetId);
+        return this.widgetManager.getOrCreateWidget<T>(widgetId, options);
+    }
+
+    protected getWidgetIdForKind(kind: string): string {
+        switch (kind) {
+            case 'register':
+            case RegisterWidget.ID:
+                return RegisterWidget.ID;
+            case 'writable':
+            case EditableMemoryWidget.ID:
+                return EditableMemoryWidget.ID;
+            default:
+                return MemoryWidget.ID;
+        }
+    }
+
+    protected getWidgetOptionsForId(widgetId: string): MemoryWidgetOptions {
+        return { identifier: this.createdWidgetCount += 1, displayId: this.widgetDisplayId };
     }
 
     dispose(): void {

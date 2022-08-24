@@ -22,7 +22,7 @@ export interface MWLabelProps { id: string; label: string; disabled?: boolean; c
 
 export const MWLabel: React.FC<MWLabelProps> = ({ id, label, disabled, classNames }) => {
     const additionalClassNames = classNames ? classNames.join(' ') : '';
-    return <label htmlFor={id} className={`t-mv-label theia-header ${additionalClassNames}${disabled ? ' disabled' : ''}`}>{label}</label>;
+    return <label htmlFor={id} className={`t-mv-label theia-header no-select ${additionalClassNames}${disabled ? ' disabled' : ''}`}>{label}</label>;
 };
 
 export interface InputProps<T extends HTMLElement = HTMLElement> {
@@ -171,7 +171,7 @@ export const MWMoreMemorySelect: React.FC<MoreMemoryProps> = ({ options, handler
             onKeyDown={loadMoreMemory}
             ref={containerRef}
         >
-            <div className='mw-more-memory-select-top'>
+            <div className='mw-more-memory-select-top no-select'>
                 Load
                 <select
                     className='theia-select'
