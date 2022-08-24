@@ -53,6 +53,9 @@ export enum DebugState {
 
 // FIXME: make injectable to allow easily inject services
 export class DebugSession implements CompositeTreeElement {
+    private onCapabilitiesConfiguredEmitter = new Emitter<void>();
+    private readonly onCapabilitiesConfigured = this.onCapabilitiesConfiguredEmitter.event;
+
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
     protected fireDidChange(): void {
@@ -507,6 +510,18 @@ export class DebugSession implements CompositeTreeElement {
 
     protected updateCapabilities(capabilities: DebugProtocol.Capabilities): void {
         Object.assign(this._capabilities, capabilities);
+        this.onCapabilitiesConfiguredEmitter.fire(undefined);
+    }
+
+    private waitUntilCapabilitiesConfigured(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (Object.keys(this._capabilities).length !== 0) {
+                resolve();
+            }
+
+            this.onCapabilitiesConfigured(resolve);
+            setTimeout(reject, 300);
+        });
     }
 
     protected readonly _breakpoints = new Map<string, DebugBreakpoint[]>();
@@ -634,6 +649,7 @@ export class DebugSession implements CompositeTreeElement {
             return;
         }
         const { uri, sourceModified } = options;
+        await this.waitUntilCapabilitiesConfigured();
         for (const affectedUri of this.getAffectedUris(uri)) {
             if (affectedUri.toString() === BreakpointManager.EXCEPTION_URI.toString()) {
                 await this.sendExceptionBreakpoints();
