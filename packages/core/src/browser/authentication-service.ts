@@ -63,7 +63,7 @@ export interface SessionRequestInfo {
 
 /**
  * Our authentication provider should at least contain the following information:
- * - The signuature of authentication providers from vscode
+ * - The signature of authentication providers from vscode
  * - Registration information about the provider (id, label)
  * - Provider options (supportsMultipleAccounts)
  *

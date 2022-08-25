@@ -134,7 +134,7 @@ export class TerminalLinkmatcherFiles extends AbstractCmdClickTerminalContributi
 const pathPrefix = '(\\.\\.?|\\~)';
 const pathSeparatorClause = '\\/';
 // '":; are allowed in paths but they are often separators so ignore them
-// Also disallow \\ to prevent a catastropic backtracking case #24795
+// Also disallow \\ to prevent a catastrophic backtracking case #24795
 const excludedPathCharactersClause = '[^\\0\\s!`&*()\\[\\]\'":;\\\\]';
 /** A regex that matches paths in the form /foo, ~/foo, ./foo, ../foo, foo/bar */
 const unixLocalLinkClause = '((' + pathPrefix + '|(' + excludedPathCharactersClause + ')+)?(' + pathSeparatorClause + '(' + excludedPathCharactersClause + ')+)+)';
