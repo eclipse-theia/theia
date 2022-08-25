@@ -16,6 +16,7 @@
 - [core] Replaced `react-virtualized` with `react-virtuoso` for tree rendering. Removed the `TreeWidget#forceUpdate`, `TreeWidget#handleScroll` and `TreeWidget.View#renderTreeRow` methods in the process. [#11553](https://github.com/eclipse-theia/theia/pull/11553)
 - [core] Replaced `Emitter` fields by `Event` fields in both `DescriptionWidget` and `BadgeWidget`.
 - [custom-editor] fixed closing a dirty custom editor based on CustomTextEditorProvider doesn't ask the user to save [#11592](https://github.com/eclipse-theia/theia/issues/11592)
+- [workspace] Removed `DefaultWorkspaceServer#untitledWorkspaceStaleThreshhold`. Use `DefaultWorkspaceServer#untitledWorkspaceStaleThreshold` instead.
 
 ## v1.28.0 - 7/28/2022
 

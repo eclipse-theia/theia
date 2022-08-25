@@ -16,6 +16,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as cp from 'child_process';
+import { Socket } from 'net';
 import { Duplex } from 'stream';
 import { AbstractChannel, Disposable, WriteBuffer } from '../../common';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
@@ -32,14 +33,13 @@ export class IPCChannel extends AbstractChannel {
 
     protected ipcErrorListener: (error: Error) => void = error => this.onErrorEmitter.fire(error);
 
-    constructor(pipe: Duplex, childProcess?: cp.ChildProcess) {
+    constructor(childProcess?: cp.ChildProcess) {
         super();
         if (childProcess) {
             this.setupChildProcess(childProcess);
         } else {
             this.setupProcess();
         }
-        this.messagePipe = new BinaryMessagePipe(pipe);
         this.messagePipe.onMessage(message => {
             this.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(message));
         });
@@ -47,6 +47,7 @@ export class IPCChannel extends AbstractChannel {
 
     protected setupChildProcess(childProcess: cp.ChildProcess): void {
         childProcess.once('exit', code => this.onCloseEmitter.fire({ reason: 'Child process has been terminated', code: code ?? undefined }));
+        this.messagePipe = new BinaryMessagePipe(childProcess.stdio[4] as Duplex);
         childProcess.on('error', this.ipcErrorListener);
         this.toDispose.push(Disposable.create(() => {
             childProcess.removeListener('error', this.ipcErrorListener);
@@ -56,6 +57,7 @@ export class IPCChannel extends AbstractChannel {
 
     protected setupProcess(): void {
         process.once('beforeExit', code => this.onCloseEmitter.fire({ reason: 'Process is about to be terminated', code }));
+        this.messagePipe = new BinaryMessagePipe(new Socket({ fd: 4 }));
         process.on('uncaughtException', this.ipcErrorListener);
         this.toDispose.push(Disposable.create(() => {
             (process as NodeJS.EventEmitter).removeListener('uncaughtException', this.ipcErrorListener);

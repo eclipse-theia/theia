@@ -21,7 +21,6 @@ import { createInterface } from 'readline';
 import { Channel, ConnectionErrorHandler, Disposable, DisposableCollection, ILogger } from '../../common';
 import { IPCChannel } from './ipc-channel';
 import { createIpcEnv } from './ipc-protocol';
-import { createIpcServer, IpcServer, THEIA_IPC_SERVER } from './ipc-server';
 
 export interface ResolvedIPCConnectionOptions {
     readonly serverName: string
@@ -51,47 +50,42 @@ export class IPCConnectionProvider {
     }
 
     protected doListen(options: ResolvedIPCConnectionOptions, acceptor: (connection: Channel) => void): Disposable {
-        const ipcServer = this.createIpcServer();
-        const childProcess = this.fork(options, ipcServer.name);
+        const childProcess = this.fork(options);
+        const channel = new IPCChannel(childProcess);
         const toStop = new DisposableCollection();
         const toCancelStop = toStop.push(Disposable.create(() => childProcess.kill()));
-        ipcServer.client.then(socket => {
-            const channel = new IPCChannel(socket, childProcess);
-
-            const errorHandler = options.errorHandler;
-            if (errorHandler) {
-                let errorCount = 0;
-                channel.onError((err: Error) => {
-                    errorCount++;
-                    if (errorHandler.shouldStop(err, errorCount)) {
-                        toStop.dispose();
-                    }
-                });
-                channel.onClose(() => {
-                    if (toStop.disposed) {
-                        return;
-                    }
-                    if (errorHandler.shouldRestart()) {
-                        toCancelStop.dispose();
-                        toStop.push(this.doListen(options, acceptor));
-                    }
-                });
-            }
-            acceptor(channel);
-        });
-
+        const errorHandler = options.errorHandler;
+        if (errorHandler) {
+            let errorCount = 0;
+            channel.onError((err: Error) => {
+                errorCount++;
+                if (errorHandler.shouldStop(err, errorCount)) {
+                    toStop.dispose();
+                }
+            });
+            channel.onClose(() => {
+                if (toStop.disposed) {
+                    return;
+                }
+                if (errorHandler.shouldRestart()) {
+                    toCancelStop.dispose();
+                    toStop.push(this.doListen(options, acceptor));
+                }
+            });
+        }
+        acceptor(channel);
         return toStop;
     }
 
-    protected createIpcServer(): IpcServer {
-        return createIpcServer();
-    }
-
-    protected fork(options: ResolvedIPCConnectionOptions, ipcServerName: string): cp.ChildProcess {
+    protected fork(options: ResolvedIPCConnectionOptions): cp.ChildProcess {
         const forkOptions: cp.ForkOptions = {
-            silent: true,
-            env: this.createIpcEnv(options, ipcServerName),
-            execArgv: []
+            env: createIpcEnv(options),
+            execArgv: [],
+            // 5th element MUST be 'overlapped' for it to work properly on Windows.
+            // 'overlapped' works just like 'pipe' on non-Windows platforms.
+            // See: https://nodejs.org/docs/latest-v14.x/api/child_process.html#child_process_options_stdio
+            // Note: For some reason `@types/node` does not know about 'overlapped'.
+            stdio: ['pipe', 'pipe', 'pipe', 'ipc', 'overlapped' as 'pipe']
         };
         const inspectArgPrefix = `--${options.serverName}-inspect`;
         const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));
@@ -108,14 +102,6 @@ export class IPCConnectionProvider {
         childProcess.once('exit', () => this.logger.debug(`[${options.serverName}: ${childProcess.pid}] IPC exited`));
 
         return childProcess;
-    }
-
-    protected createIpcEnv(options: ResolvedIPCConnectionOptions, ipcServerName: string): NodeJS.ProcessEnv {
-        const env = createIpcEnv(options);
-        // Temporary add the name of the IPC server pipe as environment variable. The child process should delete
-        // the variable after retrieving the name value.
-        env[THEIA_IPC_SERVER] = ipcServerName;
-        return env;
     }
 
 }

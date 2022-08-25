@@ -497,11 +497,10 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
             averageRating, downloadCount, repository, license, readme
         } = this.props.extension;
 
-        const { baseStyle, scrollStyle } = this.getSubcomponentStyles();
         const sanitizedReadme = !!readme ? DOMPurify.sanitize(readme) : undefined;
 
         return <React.Fragment>
-            <div className='header' style={baseStyle} ref={ref => this.header = (ref || undefined)}>
+            <div className='header' ref={ref => this.header = (ref || undefined)}>
                 {iconUrl ?
                     <img className='icon-container' src={iconUrl} /> :
                     <div className='icon-container placeholder' />}
@@ -534,12 +533,10 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
             {
                 sanitizedReadme &&
                 <div className='scroll-container'
-                    style={scrollStyle}
                     ref={ref => this._scrollContainer = (ref || undefined)}>
                     <div className='body'
                         ref={ref => this.body = (ref || undefined)}
                         onClick={this.openLink}
-                        style={baseStyle}
                         // eslint-disable-next-line react/no-danger
                         dangerouslySetInnerHTML={{ __html: sanitizedReadme }}
                     />
@@ -576,14 +573,6 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
         return <React.Fragment>
             {renderStarAt(1)}{renderStarAt(2)}{renderStarAt(3)}{renderStarAt(4)}{renderStarAt(5)}
         </React.Fragment>;
-    }
-
-    protected getSubcomponentStyles(): { baseStyle: React.CSSProperties, scrollStyle: React.CSSProperties; } {
-        const visibility: 'unset' | 'hidden' = this.header ? 'unset' : 'hidden';
-        const baseStyle = { visibility };
-        const scrollStyle = this.header?.clientHeight ? { visibility, height: `calc(100% - (${this.header.clientHeight}px + 1px))` } : baseStyle;
-
-        return { baseStyle, scrollStyle };
     }
 
     // TODO replace with webview

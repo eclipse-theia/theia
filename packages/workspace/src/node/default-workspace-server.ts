@@ -89,7 +89,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
      * Untitled workspaces that are not among the most recent N workspaces will be deleted on start. Increase this number to keep older files,
      * lower it to delete stale untitled workspaces more aggressively.
      */
-    protected untitledWorkspaceStaleThreshhold = 10;
+    protected untitledWorkspaceStaleThreshold = 10;
 
     @inject(WorkspaceCliContribution)
     protected readonly cliParams: WorkspaceCliContribution;
@@ -209,11 +209,11 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
 
     /**
      * Removes untitled workspaces that are not among the most recently used workspaces.
-     * Use the `untitledWorkspaceStaleThreshhold` to configure when to delete workspaces.
+     * Use the `untitledWorkspaceStaleThreshold` to configure when to delete workspaces.
      */
     protected async removeOldUntitledWorkspaces(): Promise<void> {
         const recents = (await this.getRecentWorkspaces()).map(FileUri.fsPath);
-        const olderUntitledWorkspaces = recents.slice(this.untitledWorkspaceStaleThreshhold).filter(workspace => this.utils.isUntitledWorkspace(FileUri.create(workspace)));
+        const olderUntitledWorkspaces = recents.slice(this.untitledWorkspaceStaleThreshold).filter(workspace => this.utils.isUntitledWorkspace(FileUri.create(workspace)));
         await Promise.all(olderUntitledWorkspaces.map(workspace => fs.promises.unlink(FileUri.fsPath(workspace)).catch(() => { })));
         if (olderUntitledWorkspaces.length > 0) {
             await this.writeToUserHome({ recentRoots: await this.getRecentWorkspaces() });
@@ -221,11 +221,11 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
     }
 }
 
-interface RecentWorkspacePathsData {
+export interface RecentWorkspacePathsData {
     recentRoots: string[];
 }
 
-namespace RecentWorkspacePathsData {
+export namespace RecentWorkspacePathsData {
     /**
      * Parses `data` as `RecentWorkspacePathsData` but removes any non-string array entry.
      *
