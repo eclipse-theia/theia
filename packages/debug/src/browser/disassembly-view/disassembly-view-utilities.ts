@@ -16,7 +16,7 @@
 
 import { IDisposable, IEvent } from '@theia/monaco-editor-core';
 import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 
 export interface DisassemblyViewRendererReference {
     onDidChangeStackFrame: IEvent<void>;

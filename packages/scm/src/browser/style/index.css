@@ -168,16 +168,6 @@
     border-top: none; /* remove top border since the input declares it already */
 }
 
-.no-select {
-    cursor: default;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    -o-user-select: none;
-}
-
 .no-select:focus {
     outline: none;
 }

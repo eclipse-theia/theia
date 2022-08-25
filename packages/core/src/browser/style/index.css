@@ -206,7 +206,8 @@ blockquote {
   display: none !important;
 }
 
-.noselect {
+.noselect,
+.no-select {
   -webkit-touch-callout: none; /* iOS Safari */
     -webkit-user-select: none; /* Safari */
      -khtml-user-select: none; /* Konqueror HTML */
@@ -214,6 +215,8 @@ blockquote {
         -ms-user-select: none; /* Internet Explorer/Edge */
             user-select: none; /* Non-prefixed version, currently
                                   supported by Chrome and Opera */
+         -o-user-select: none;
+                 cursor: default;
 }
 
 :focus {
@@ -276,6 +279,7 @@ button.secondary[disabled], .theia-button.secondary[disabled] {
     border: 1px solid var(--theia-dropdown-border);
     background: var(--theia-dropdown-background);
     outline: none;
+    cursor: pointer;
 }
 
 .theia-select option {

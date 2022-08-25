@@ -48,6 +48,9 @@
       "path": "../../packages/markers"
     },
     {
+      "path": "../../packages/memory-inspector"
+    },
+    {
       "path": "../../packages/messages"
     },
     {

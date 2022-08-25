@@ -32,7 +32,7 @@ import { DebugEditor } from './debug-editor';
 import { DebugHoverWidget, createDebugHoverWidgetContainer } from './debug-hover-widget';
 import { DebugBreakpointWidget } from './debug-breakpoint-widget';
 import { DebugExceptionWidget } from './debug-exception-widget';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 import { DebugInlineValueDecorator, INLINE_VALUE_DECORATION_KEY } from './debug-inline-value-decorator';
 
 export const DebugEditorModelFactory = Symbol('DebugEditorModelFactory');

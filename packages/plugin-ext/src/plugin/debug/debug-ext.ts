@@ -31,7 +31,7 @@ import uuid = require('uuid');
 import { DebugAdapter } from '@theia/debug/lib/common/debug-model';
 import { PluginDebugAdapterCreator } from './plugin-debug-adapter-creator';
 import { NodeDebugAdapterCreator } from '../node/debug/plugin-node-debug-adapter-creator';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 
 interface ConfigurationProviderRecord {
     handle: number;

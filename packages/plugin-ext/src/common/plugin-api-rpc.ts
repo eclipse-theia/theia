@@ -85,7 +85,7 @@ import {
     ProgressOptions,
 } from '@theia/plugin';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ArgumentProcessor } from '../plugin/command-registry';
 import * as files from '@theia/filesystem/lib/common/files';

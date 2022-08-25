@@ -17,7 +17,7 @@
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { DebugSession } from '../debug-session';
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { DEBUG_SCHEME, SCHEME_PATTERN } from '../../common/debug-uri-utils';

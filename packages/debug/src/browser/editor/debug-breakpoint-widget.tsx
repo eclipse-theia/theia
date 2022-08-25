@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection, nls } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
