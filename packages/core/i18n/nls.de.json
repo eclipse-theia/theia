@@ -57,6 +57,7 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Wählen Sie das Stammverzeichnis des Arbeitsbereichs, dem Sie die Konfiguration hinzufügen möchten",
+      "compound-cycle": "Startkonfiguration '{0}' enthält einen Zyklus mit sich selbst",
       "continueAll": "Alle fortsetzen",
       "copyExpressionValue": "Ausdruckswert kopieren",
       "disassembly-view": {
@@ -239,6 +240,82 @@
       "noProblems": "Bisher wurden im Arbeitsbereich keine Probleme festgestellt.",
       "tabbarDecorationsEnabled": "Problemdekorationen (Diagnosemarkierungen) in den Registerkartenleisten anzeigen."
     },
+    "memory-inspector": {
+      "address": "Adresse",
+      "addressTooltip": "Speicherplatz, der angezeigt werden soll, eine Adresse oder ein Ausdruck, der zu einer Adresse ausgewertet wird",
+      "ascii": "ASCII",
+      "binary": "Binär",
+      "byteSize": "Byte Size",
+      "bytesPerGroup": "Bytes Per Group",
+      "closeSettings": "Einstellungen schließen",
+      "columns": "Rubriken",
+      "command": {
+        "createNewMemory": "Neuen Speicherinspektor erstellen",
+        "createNewRegisterView": "Neue Registeransicht erstellen",
+        "followPointer": "Zeigern folgen",
+        "followPointerMemory": "Zeiger im Memory Inspector verfolgen",
+        "resetValue": "Wert zurücksetzen",
+        "showRegister": "Register im Speicherinspektor anzeigen",
+        "viewVariable": "Variable im Speicherinspektor anzeigen"
+      },
+      "data": "Daten",
+      "decimal": "Dezimal",
+      "diff": {
+        "label": "Diff: {0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} Versetzt",
+        "offset-title": "Bytes zum Versetzen des Speichers von {0}"
+      },
+      "editable": {
+        "apply": "Änderungen anwenden",
+        "clear": "Deutliche Änderungen"
+      },
+      "endianness": "Endianness",
+      "extraColumn": "Extra-Spalte",
+      "groupsPerRow": "Gruppen pro Zeile",
+      "hexadecimal": "Hexadezimal",
+      "length": "Länge",
+      "lengthTooltip": "Anzahl der abzurufenden Bytes, dezimal oder hexadezimal",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "Geben Sie eine Adresse oder einen Ausdruck in das Feld Ort ein."
+        },
+        "freeze": "Speicheransicht einfrieren",
+        "hideSettings": "Einstellungsfeld ausblenden",
+        "readError": {
+          "bounds": "Speichergrenzen überschritten, Ergebnis wird abgeschnitten.",
+          "noContents": "Derzeit ist kein Speicherinhalt verfügbar."
+        },
+        "readLength": {
+          "memoryReadError": "Geben Sie eine Länge (Dezimal- oder Hexadezimalzahl) in das Feld Länge ein."
+        },
+        "showSettings": "Einstellungsfeld anzeigen",
+        "unfreeze": "Speicheransicht auftauen",
+        "userError": "Es ist ein Fehler beim Abrufen von Speicher aufgetreten."
+      },
+      "memoryCategory": "Speicherinspektor",
+      "memoryTitle": "Speicher",
+      "octal": "Oktal",
+      "offset": "Versetzt",
+      "offsetTooltip": "Offset, der beim Navigieren zum aktuellen Speicherplatz hinzugefügt wird",
+      "provider": {
+        "localsError": "Lokale Variablen können nicht gelesen werden. Keine aktive Debug-Sitzung.",
+        "readError": "Speicher kann nicht gelesen werden. Keine aktive Debug-Sitzung.",
+        "writeError": "Speicher kann nicht geschrieben werden. Keine aktive Debug-Sitzung."
+      },
+      "register": "Register",
+      "register-widget": {
+        "filter-placeholder": "Filter (beginnt mit)"
+      },
+      "registerReadError": "Es gab einen Fehler beim Abrufen von Registern.",
+      "registers": "Registers",
+      "toggleComparisonWidgetVisibility": "Sichtbarkeit des Vergleichs-Widgets umschalten",
+      "utils": {
+        "afterBytes": "Sie müssen in beide Widgets, die Sie vergleichen möchten, Speicher laden. {0} hat keinen Speicher geladen.",
+        "bytesMessage": "Sie müssen in beide Widgets, die Sie vergleichen möchten, Speicher laden. {0} hat keinen Speicher geladen."
+      }
+    },
     "messages": {
       "notificationTimeout": "Informative Benachrichtigungen werden nach dieser Zeitspanne ausgeblendet.",
       "toggleNotifications": "Benachrichtigungen umschalten"
@@ -380,7 +457,10 @@
       "typeHierarchy": "Typenhierarchie"
     },
     "vsx-registry": {
+      "averageRating": "Durchschnittliche Bewertung: {0} von 5",
+      "downloadCount": "Anzahl der Downloads: {0}",
       "errorFetching": "Fehler beim Abrufen von Erweiterungen.",
+      "license": "Lizenz: {0}",
       "recommendedExtensions": "Eine Liste mit den Namen der Erweiterungen, die für die Verwendung in diesem Arbeitsbereich empfohlen werden.",
       "searchPlaceholder": "Erweiterungen suchen in {0}",
       "showRecommendedExtensions": "Steuert, ob Benachrichtigungen für Erweiterungsempfehlungen angezeigt werden.",

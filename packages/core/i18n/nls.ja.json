@@ -57,6 +57,7 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "設定を追加するワークスペース・ルートを選択します。",
+      "compound-cycle": "起動構成 '{0}' は自分自身とのサイクルを含む",
       "continueAll": "すべてを続ける",
       "copyExpressionValue": "コピー式の値",
       "disassembly-view": {
@@ -239,6 +240,82 @@
       "noProblems": "これまでのところ、ワークスペースに問題は検出されていません。",
       "tabbarDecorationsEnabled": "タブバーに問題のデコレーター(診断マーカー)を表示する。"
     },
+    "memory-inspector": {
+      "address": "住所",
+      "addressTooltip": "表示するメモリ位置、アドレス、またはアドレスに評価される式",
+      "ascii": "ASCII",
+      "binary": "バイナリ",
+      "byteSize": "バイトサイズ",
+      "bytesPerGroup": "1グループあたりのバイト数",
+      "closeSettings": "設定を閉じる",
+      "columns": "コラム",
+      "command": {
+        "createNewMemory": "新しいメモリインスペクタの作成",
+        "createNewRegisterView": "新規登録ビューの作成",
+        "followPointer": "フォローポインター",
+        "followPointerMemory": "メモリインスペクタでポインタをフォローする",
+        "resetValue": "リセット値",
+        "showRegister": "メモリインスペクタにレジスタを表示する",
+        "viewVariable": "メモリインスペクタに変数を表示する"
+      },
+      "data": "データ",
+      "decimal": "10進数",
+      "diff": {
+        "label": "差分です。{0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} オフセット",
+        "offset-title": "からメモリをオフセットするバイト数{0}"
+      },
+      "editable": {
+        "apply": "変更を適用する",
+        "clear": "クリアランス"
+      },
+      "endianness": "エンディアン",
+      "extraColumn": "エクストラコラム",
+      "groupsPerRow": "1行あたりのグループ数",
+      "hexadecimal": "十六進法",
+      "length": "長さ",
+      "lengthTooltip": "取得するバイト数(10進数または16進数)。",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "所在地欄に住所または式を入力する。"
+        },
+        "freeze": "フリーズメモリービュー",
+        "hideSettings": "設定パネルの非表示",
+        "readError": {
+          "bounds": "メモリ境界を超えたため、結果は切り捨てられます。",
+          "noContents": "現在、メモリーコンテンツはございません。"
+        },
+        "readLength": {
+          "memoryReadError": "Lengthの欄に長さ(10進数または16進数)を入力する。"
+        },
+        "showSettings": "設定パネルを表示する",
+        "unfreeze": "アンフリーズメモリービュー",
+        "userError": "メモリの取り込みにエラーが発生しました。"
+      },
+      "memoryCategory": "メモリーインスペクター",
+      "memoryTitle": "メモリ",
+      "octal": "八進数",
+      "offset": "オフセット",
+      "offsetTooltip": "ナビゲート時に現在のメモリ位置に追加されるオフセット値",
+      "provider": {
+        "localsError": "ローカル変数を読み取ることができません。アクティブなデバッグ・セッションがありません。",
+        "readError": "メモリを読み込むことができません。アクティブなデバッグセッションがありません。",
+        "writeError": "メモリの書き込みができません。アクティブなデバッグセッションがありません。"
+      },
+      "register": "登録",
+      "register-widget": {
+        "filter-placeholder": "フィルター(で始まる)"
+      },
+      "registerReadError": "レジスタの取得にエラーが発生しました。",
+      "registers": "レジスター",
+      "toggleComparisonWidgetVisibility": "比較ウィジェットの可視性をトグルする",
+      "utils": {
+        "afterBytes": "比較したい両方のウィジェットにメモリを搭載する必要があります。{0} はメモリが搭載されていません。",
+        "bytesMessage": "比較したい両方のウィジェットにメモリを搭載する必要があります。{0} はメモリが搭載されていません。"
+      }
+    },
     "messages": {
       "notificationTimeout": "このタイムアウト後は、情報提供のための通知が非表示になります。",
       "toggleNotifications": "通知の切り替え"
@@ -380,7 +457,10 @@
       "typeHierarchy": "タイプ階層"
     },
     "vsx-registry": {
+      "averageRating": "平均評価:{0} 5点満点中",
+      "downloadCount": "ダウンロード回数{0}",
       "errorFetching": "拡張機能の取得にエラーが発生しました。",
+      "license": "ライセンス{0}",
       "recommendedExtensions": "このワークスペースでの使用が推奨される拡張機能の名前のリストです。",
       "searchPlaceholder": "{0}で拡張子を検索",
       "showRecommendedExtensions": "拡張機能の推奨事項について、通知を表示するかどうかを制御します。",

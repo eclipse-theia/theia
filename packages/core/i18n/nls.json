@@ -57,6 +57,7 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Select workspace root to add configuration to",
+      "compound-cycle": "Launch configuration '{0}' contains a cycle with itself",
       "continueAll": "Continue All",
       "copyExpressionValue": "Copy Expression Value",
       "disassembly-view": {
@@ -239,6 +240,82 @@
       "noProblems": "No problems have been detected in the workspace so far.",
       "tabbarDecorationsEnabled": "Show problem decorators (diagnostic markers) in the tab bars."
     },
+    "memory-inspector": {
+      "address": "Address",
+      "addressTooltip": "Memory location to display, an address or expression evaluating to an address",
+      "ascii": "ASCII",
+      "binary": "Binary",
+      "byteSize": "Byte Size",
+      "bytesPerGroup": "Bytes Per Group",
+      "closeSettings": "Close Settings",
+      "columns": "Columns",
+      "command": {
+        "createNewMemory": "Create New Memory Inspector",
+        "createNewRegisterView": "Create New Register View",
+        "followPointer": "Follow Pointer",
+        "followPointerMemory": "Follow Pointer in Memory Inspector",
+        "resetValue": "Reset Value",
+        "showRegister": "Show Register in Memory Inspector",
+        "viewVariable": "Show Variable in Memory Inspector"
+      },
+      "data": "Data",
+      "decimal": "Decimal",
+      "diff": {
+        "label": "Diff: {0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} Offset",
+        "offset-title": "Bytes to offset the memory from {0}"
+      },
+      "editable": {
+        "apply": "Apply Changes",
+        "clear": "Clear Changes"
+      },
+      "endianness": "Endianness",
+      "extraColumn": "Extra Column",
+      "groupsPerRow": "Groups Per Row",
+      "hexadecimal": "Hexadecimal",
+      "length": "Length",
+      "lengthTooltip": "Number of bytes to fetch, in decimal or hexadecimal",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "Enter an address or expression in the Location field."
+        },
+        "freeze": "Freeze Memory View",
+        "hideSettings": "Hide Settings Panel",
+        "readError": {
+          "bounds": "Memory bounds exceeded, result will be truncated.",
+          "noContents": "No memory contents currently available."
+        },
+        "readLength": {
+          "memoryReadError": "Enter a length (decimal or hexadecimal number) in the Length field."
+        },
+        "showSettings": "Show Settings Panel",
+        "unfreeze": "Unfreeze Memory View",
+        "userError": "There was an error fetching memory."
+      },
+      "memoryCategory": "Memory Inspector",
+      "memoryTitle": "Memory",
+      "octal": "Octal",
+      "offset": "Offset",
+      "offsetTooltip": "Offset to be added to the current memory location, when navigating",
+      "provider": {
+        "localsError": "Cannot read local variables. No active debug session.",
+        "readError": "Cannot read memory. No active debug session.",
+        "writeError": "Cannot write memory. No active debug session."
+      },
+      "register": "Register",
+      "register-widget": {
+        "filter-placeholder": "Filter (starts with)"
+      },
+      "registerReadError": "There was an error fetching registers.",
+      "registers": "Registers",
+      "toggleComparisonWidgetVisibility": "Toggle Comparison Widget Visibility",
+      "utils": {
+        "afterBytes": "You must load memory in both widgets you would like to compare. {0} has no memory loaded.",
+        "bytesMessage": "You must load memory in both widgets you would like to compare. {0} has no memory loaded."
+      }
+    },
     "messages": {
       "notificationTimeout": "Informative notifications will be hidden after this timeout.",
       "toggleNotifications": "Toggle Notifications"
@@ -380,7 +457,10 @@
       "typeHierarchy": "Type Hierarchy"
     },
     "vsx-registry": {
+      "averageRating": "Average rating: {0} out of 5",
+      "downloadCount": "Download count: {0}",
       "errorFetching": "Error fetching extensions.",
+      "license": "License: {0}",
       "recommendedExtensions": "A list of the names of extensions recommended for use in this workspace.",
       "searchPlaceholder": "Search Extensions in {0}",
       "showRecommendedExtensions": "Controls whether notifications are shown for extension recommendations.",

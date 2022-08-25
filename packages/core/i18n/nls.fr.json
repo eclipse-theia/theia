@@ -57,6 +57,7 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Sélectionnez la racine de l'espace de travail pour y ajouter la configuration",
+      "compound-cycle": "La configuration de lancement '{0}' contient un cycle avec elle-même",
       "continueAll": "Continuer tout",
       "copyExpressionValue": "Copier la valeur de l'expression",
       "disassembly-view": {
@@ -239,6 +240,82 @@
       "noProblems": "Aucun problème n'a été détecté dans l'espace de travail jusqu'à présent.",
       "tabbarDecorationsEnabled": "Afficher les décorateurs de problèmes (marqueurs de diagnostic) dans les barres d'onglets."
     },
+    "memory-inspector": {
+      "address": "Adresse",
+      "addressTooltip": "Emplacement de mémoire à afficher, une adresse ou une expression évaluant une adresse.",
+      "ascii": "ASCII",
+      "binary": "Binaire",
+      "byteSize": "Taille de l'octet",
+      "bytesPerGroup": "Octets par groupe",
+      "closeSettings": "Fermer les paramètres",
+      "columns": "Colonnes",
+      "command": {
+        "createNewMemory": "Créer un nouvel inspecteur de la mémoire",
+        "createNewRegisterView": "Créer une nouvelle vue du registre",
+        "followPointer": "Suivre le pointeur",
+        "followPointerMemory": "Suivre le pointeur dans l'inspecteur de mémoire",
+        "resetValue": "Valeur de réinitialisation",
+        "showRegister": "Afficher le registre dans l'inspecteur de mémoire",
+        "viewVariable": "Afficher la variable dans l'inspecteur de mémoire"
+      },
+      "data": "Données",
+      "decimal": "Décimal",
+      "diff": {
+        "label": "Diff : {0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} Décalage",
+        "offset-title": "Octets pour décaler la mémoire de {0}"
+      },
+      "editable": {
+        "apply": "Appliquer les changements",
+        "clear": "Changements clairs"
+      },
+      "endianness": "Endianness",
+      "extraColumn": "Colonne supplémentaire",
+      "groupsPerRow": "Groupes par rangée",
+      "hexadecimal": "Hexadécimal",
+      "length": "Longueur",
+      "lengthTooltip": "Nombre d'octets à récupérer, en décimal ou en hexadécimal.",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "Saisissez une adresse ou une expression dans le champ Emplacement."
+        },
+        "freeze": "Vue de la mémoire figée",
+        "hideSettings": "Masquer le panneau des paramètres",
+        "readError": {
+          "bounds": "Les limites de la mémoire sont dépassées, le résultat sera tronqué.",
+          "noContents": "Aucun contenu de mémoire n'est actuellement disponible."
+        },
+        "readLength": {
+          "memoryReadError": "Saisissez une longueur (nombre décimal ou hexadécimal) dans le champ Longueur."
+        },
+        "showSettings": "Afficher le panneau des paramètres",
+        "unfreeze": "Dégeler la vue de la mémoire",
+        "userError": "Il y a eu une erreur de récupération de la mémoire."
+      },
+      "memoryCategory": "Inspecteur de la mémoire",
+      "memoryTitle": "Mémoire",
+      "octal": "Octal",
+      "offset": "Décalage",
+      "offsetTooltip": "Décalage à ajouter à l'emplacement mémoire actuel, lors de la navigation.",
+      "provider": {
+        "localsError": "Impossible de lire les variables locales. Aucune session de débogage active.",
+        "readError": "Impossible de lire la mémoire. Aucune session de débogage active.",
+        "writeError": "Impossible d'écrire en mémoire. Aucune session de débogage active."
+      },
+      "register": "Registre",
+      "register-widget": {
+        "filter-placeholder": "Filtre (commence par)"
+      },
+      "registerReadError": "Il y a eu une erreur dans la récupération des registres.",
+      "registers": "Registres",
+      "toggleComparisonWidgetVisibility": "Basculer la visibilité du widget de comparaison",
+      "utils": {
+        "afterBytes": "Vous devez charger de la mémoire dans les deux widgets que vous souhaitez comparer. {0} n'a pas de mémoire chargée.",
+        "bytesMessage": "Vous devez charger de la mémoire dans les deux widgets que vous souhaitez comparer. {0} n'a pas de mémoire chargée."
+      }
+    },
     "messages": {
       "notificationTimeout": "Les notifications informatives seront masquées après ce délai.",
       "toggleNotifications": "Basculer les notifications"
@@ -380,7 +457,10 @@
       "typeHierarchy": "Hiérarchie des types"
     },
     "vsx-registry": {
+      "averageRating": "Note moyenne : {0} sur 5",
+      "downloadCount": "Compte de téléchargement : {0}",
       "errorFetching": "Erreur de récupération des extensions.",
+      "license": "Licence : {0}",
       "recommendedExtensions": "Une liste des noms des extensions dont l'utilisation est recommandée dans cet espace de travail.",
       "searchPlaceholder": "Rechercher les extensions dans {0}",
       "showRecommendedExtensions": "Contrôle si les notifications sont affichées pour les recommandations d'extension.",

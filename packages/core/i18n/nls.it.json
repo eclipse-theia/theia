@@ -57,6 +57,7 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Selezionare lo spazio di lavoro principale a cui aggiungere la configurazione",
+      "compound-cycle": "La configurazione di lancio '{0}' contiene un ciclo con se stessa",
       "continueAll": "Continua tutto",
       "copyExpressionValue": "Copiare il valore dell'espressione",
       "disassembly-view": {
@@ -239,6 +240,82 @@
       "noProblems": "Finora non sono stati rilevati problemi nell'area di lavoro.",
       "tabbarDecorationsEnabled": "Mostra i decoratori di problemi (marcatori diagnostici) nelle barre delle schede."
     },
+    "memory-inspector": {
+      "address": "Indirizzo",
+      "addressTooltip": "Posizione di memoria da visualizzare, un indirizzo o un'espressione che valuta un indirizzo",
+      "ascii": "ASCII",
+      "binary": "Binario",
+      "byteSize": "Dimensione del byte",
+      "bytesPerGroup": "Byte per gruppo",
+      "closeSettings": "Chiudere le impostazioni",
+      "columns": "Colonne",
+      "command": {
+        "createNewMemory": "Creare un nuovo ispettore di memoria",
+        "createNewRegisterView": "Creare una nuova vista del registro",
+        "followPointer": "Seguire il puntatore",
+        "followPointerMemory": "Seguire il puntatore in Memory Inspector",
+        "resetValue": "Valore di reset",
+        "showRegister": "Mostra registro in Memory Inspector",
+        "viewVariable": "Mostra la variabile in Memory Inspector"
+      },
+      "data": "Dati",
+      "decimal": "Decimale",
+      "diff": {
+        "label": "Diff: {0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} Offset",
+        "offset-title": "Byte da cui spostare la memoria {0}"
+      },
+      "editable": {
+        "apply": "Applicare le modifiche",
+        "clear": "Cambiamenti evidenti"
+      },
+      "endianness": "Endianità",
+      "extraColumn": "Colonna extra",
+      "groupsPerRow": "Gruppi per fila",
+      "hexadecimal": "Esadecimale",
+      "length": "Lunghezza",
+      "lengthTooltip": "Numero di byte da recuperare, in formato decimale o esadecimale.",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "Inserire un indirizzo o un'espressione nel campo Posizione."
+        },
+        "freeze": "Congelamento della memoria",
+        "hideSettings": "Nascondere il pannello delle impostazioni",
+        "readError": {
+          "bounds": "I limiti di memoria sono stati superati, il risultato sarà troncato.",
+          "noContents": "Al momento non sono disponibili contenuti di memoria."
+        },
+        "readLength": {
+          "memoryReadError": "Inserire una lunghezza (numero decimale o esadecimale) nel campo Lunghezza."
+        },
+        "showSettings": "Mostra il pannello delle impostazioni",
+        "unfreeze": "Scongelare la vista della memoria",
+        "userError": "Si è verificato un errore nel recupero della memoria."
+      },
+      "memoryCategory": "Ispettore di memoria",
+      "memoryTitle": "Memoria",
+      "octal": "Ottale",
+      "offset": "Offset",
+      "offsetTooltip": "Offset da aggiungere alla posizione di memoria corrente, durante la navigazione",
+      "provider": {
+        "localsError": "Impossibile leggere le variabili locali. Nessuna sessione di debug attiva.",
+        "readError": "Impossibile leggere la memoria. Nessuna sessione di debug attiva.",
+        "writeError": "Impossibile scrivere la memoria. Nessuna sessione di debug attiva."
+      },
+      "register": "Registro",
+      "register-widget": {
+        "filter-placeholder": "Filtro (inizia con)"
+      },
+      "registerReadError": "Si è verificato un errore nel recupero dei registri.",
+      "registers": "Registri",
+      "toggleComparisonWidgetVisibility": "Alterna la visibilità del widget di confronto",
+      "utils": {
+        "afterBytes": "È necessario caricare la memoria in entrambi i widget che si desidera confrontare. {0} non ha memoria caricata.",
+        "bytesMessage": "È necessario caricare la memoria in entrambi i widget che si desidera confrontare. {0} non ha memoria caricata."
+      }
+    },
     "messages": {
       "notificationTimeout": "Le notifiche informative saranno nascoste dopo questo timeout.",
       "toggleNotifications": "Alterna le notifiche"
@@ -380,7 +457,10 @@
       "typeHierarchy": "Gerarchia dei tipi"
     },
     "vsx-registry": {
+      "averageRating": "Valutazione media: {0} su 5",
+      "downloadCount": "Conteggio dei download: {0}",
       "errorFetching": "Errore nel recupero delle estensioni.",
+      "license": "Licenza: {0}",
       "recommendedExtensions": "Una lista dei nomi delle estensioni raccomandate per l'uso in questo spazio di lavoro.",
       "searchPlaceholder": "Estensioni di ricerca in {0}",
       "showRecommendedExtensions": "Controlla se le notifiche sono mostrate per le raccomandazioni di estensione.",

@@ -57,6 +57,7 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "选择要添加配置的工作区根",
+      "compound-cycle": "启动配置'{0}'包含一个与自己的循环",
       "continueAll": "继续所有",
       "copyExpressionValue": "复制表达式的值",
       "disassembly-view": {
@@ -239,6 +240,82 @@
       "noProblems": "到目前为止,在工作区还没有发现任何问题。",
       "tabbarDecorationsEnabled": "在标签栏中显示问题装饰器(诊断标记)。"
     },
+    "memory-inspector": {
+      "address": "地址",
+      "addressTooltip": "要显示的内存位置,一个地址或对一个地址进行评估的表达式",
+      "ascii": "ASCII",
+      "binary": "二进制",
+      "byteSize": "字节大小",
+      "bytesPerGroup": "每组字节数",
+      "closeSettings": "关闭设置",
+      "columns": "专栏",
+      "command": {
+        "createNewMemory": "创建新的内存检查器",
+        "createNewRegisterView": "创建新的注册表视图",
+        "followPointer": "跟随指针",
+        "followPointerMemory": "在内存检查器中跟踪指针",
+        "resetValue": "重置值",
+        "showRegister": "在内存检查器中显示寄存器",
+        "viewVariable": "在内存检查器中显示变量"
+      },
+      "data": "数据",
+      "decimal": "十进制",
+      "diff": {
+        "label": "扩散。{0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} 偏移",
+        "offset-title": "字节,以抵消内存从{0}"
+      },
+      "editable": {
+        "apply": "申请变更",
+        "clear": "清晰的变化"
+      },
+      "endianness": "内联性",
+      "extraColumn": "额外专栏",
+      "groupsPerRow": "每行的组别",
+      "hexadecimal": "十六进制",
+      "length": "长度",
+      "lengthTooltip": "要获取的字节数,以十进制或十六进制表示",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "在位置栏中输入一个地址或表达式。"
+        },
+        "freeze": "冻结内存视图",
+        "hideSettings": "隐藏设置面板",
+        "readError": {
+          "bounds": "超过了内存界限,结果将被截断。",
+          "noContents": "目前没有内存内容。"
+        },
+        "readLength": {
+          "memoryReadError": "在长度字段中输入一个长度(十进制或十六进制数字)。"
+        },
+        "showSettings": "显示设置面板",
+        "unfreeze": "解冻内存视图",
+        "userError": "获取内存时出现了错误。"
+      },
+      "memoryCategory": "内存检查器",
+      "memoryTitle": "记忆",
+      "octal": "八进制",
+      "offset": "偏移",
+      "offsetTooltip": "在导航时,要添加到当前内存位置的偏移量。",
+      "provider": {
+        "localsError": "无法读取本地变量。没有活动的调试会话。",
+        "readError": "无法读取内存。没有活动的调试会话。",
+        "writeError": "无法写入内存。没有活动的调试会话。"
+      },
+      "register": "注册",
+      "register-widget": {
+        "filter-placeholder": "过滤(以)开始"
+      },
+      "registerReadError": "获取寄存器时出现了错误。",
+      "registers": "登记册",
+      "toggleComparisonWidgetVisibility": "切换比较小工具的可见性",
+      "utils": {
+        "afterBytes": "你必须在你想比较的两个部件中加载内存。{0} ,没有加载内存。",
+        "bytesMessage": "你必须在你想比较的两个部件中加载内存。{0} ,没有加载内存。"
+      }
+    },
     "messages": {
       "notificationTimeout": "在此超时后,信息性通知将被隐藏。",
       "toggleNotifications": "切换通知"
@@ -380,7 +457,10 @@
       "typeHierarchy": "类型层次结构"
     },
     "vsx-registry": {
+      "averageRating": "平均评分:{0} (满分5分",
+      "downloadCount": "下载次数。{0}",
       "errorFetching": "取出扩展程序时出错。",
+      "license": "许可证。{0}",
       "recommendedExtensions": "建议在该工作区使用的扩展名称的列表。",
       "searchPlaceholder": "在{0}中搜索扩展",
       "showRecommendedExtensions": "控制是否显示扩展建议的通知。",

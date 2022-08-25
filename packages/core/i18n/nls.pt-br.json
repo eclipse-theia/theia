@@ -57,6 +57,7 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Selecione a raiz do espaço de trabalho para adicionar configuração a",
+      "compound-cycle": "A configuração de lançamento '{0}' contém um ciclo consigo mesmo",
       "continueAll": "Continuar Todos",
       "copyExpressionValue": "Valor de Expressão de Cópia",
       "disassembly-view": {
@@ -239,6 +240,82 @@
       "noProblems": "Até agora não foram detectados problemas no espaço de trabalho.",
       "tabbarDecorationsEnabled": "Mostrar os decoradores de problemas (marcadores de diagnóstico) nas barras de tabulação."
     },
+    "memory-inspector": {
+      "address": "Endereço",
+      "addressTooltip": "Localização da memória a exibir, um endereço ou expressão avaliando para um endereço",
+      "ascii": "ASCII",
+      "binary": "Binário",
+      "byteSize": "Tamanho do byte",
+      "bytesPerGroup": "Bytes Por Grupo",
+      "closeSettings": "Fechar configurações",
+      "columns": "Colunas",
+      "command": {
+        "createNewMemory": "Criar um novo inspetor de memória",
+        "createNewRegisterView": "Criar nova visão de registro",
+        "followPointer": "Siga o Ponteiro",
+        "followPointerMemory": "Siga o Pointer in Memory Inspector",
+        "resetValue": "Valor de reinicialização",
+        "showRegister": "Mostrar Registro no Inspetor de Memória",
+        "viewVariable": "Mostrar Variable in Memory Inspector"
+      },
+      "data": "Dados",
+      "decimal": "Decimal",
+      "diff": {
+        "label": "Dif: {0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} Offset",
+        "offset-title": "Bytes para compensar a memória de {0}"
+      },
+      "editable": {
+        "apply": "Aplicar mudanças",
+        "clear": "Mudanças claras"
+      },
+      "endianness": "Endianness",
+      "extraColumn": "Coluna Extra",
+      "groupsPerRow": "Grupos por fila",
+      "hexadecimal": "Hexadecimal",
+      "length": "Comprimento",
+      "lengthTooltip": "Número de bytes a serem buscados, em decimal ou hexadecimal",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "Digite um endereço ou expressão no campo Localização."
+        },
+        "freeze": "Vista de memória congelada",
+        "hideSettings": "Ocultar Painel de Ajustes",
+        "readError": {
+          "bounds": "Os limites de memória excedidos, o resultado será truncado.",
+          "noContents": "Nenhum conteúdo de memória disponível atualmente."
+        },
+        "readLength": {
+          "memoryReadError": "Digite um comprimento (número decimal ou hexadecimal) no campo Comprimento."
+        },
+        "showSettings": "Mostrar Painel de Ajustes",
+        "unfreeze": "Vista da memória do descongelamento",
+        "userError": "Houve um erro na memória de busca."
+      },
+      "memoryCategory": "Inspetor de memória",
+      "memoryTitle": "Memória",
+      "octal": "Octal",
+      "offset": "Offset",
+      "offsetTooltip": "Offset a ser adicionado ao local atual da memória, durante a navegação",
+      "provider": {
+        "localsError": "Não é possível ler as variáveis locais. Não há sessão de depuração ativa.",
+        "readError": "Não é possível ler a memória. Não há sessão de depuração ativa.",
+        "writeError": "Não é possível escrever memória. Não há sessão de depuração ativa."
+      },
+      "register": "Registre-se",
+      "register-widget": {
+        "filter-placeholder": "Filtro (começa com)"
+      },
+      "registerReadError": "Havia um registro de busca de erros.",
+      "registers": "Registros",
+      "toggleComparisonWidgetVisibility": "Visibilidade do widget de comparação de alternância",
+      "utils": {
+        "afterBytes": "Você deve carregar memória em ambos os widgets que gostaria de comparar. {0} não tem memória carregada.",
+        "bytesMessage": "Você deve carregar memória em ambos os widgets que gostaria de comparar. {0} não tem memória carregada."
+      }
+    },
     "messages": {
       "notificationTimeout": "Notificações informativas serão ocultadas após este tempo limite.",
       "toggleNotifications": "Notificações de alternância"
@@ -380,7 +457,10 @@
       "typeHierarchy": "Tipo Hierarquia"
     },
     "vsx-registry": {
+      "averageRating": "Classificação média: {0} de 5",
+      "downloadCount": "Contagem de downloads: {0}",
       "errorFetching": "Extensões de erro de busca.",
+      "license": "Licença: {0}",
       "recommendedExtensions": "Uma lista dos nomes das extensões recomendadas para uso neste espaço de trabalho.",
       "searchPlaceholder": "Pesquisar extensões em {0}",
       "showRecommendedExtensions": "Controla se as notificações são mostradas para recomendações de extensão.",
