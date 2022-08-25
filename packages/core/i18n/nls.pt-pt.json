@@ -57,6 +57,7 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Seleccione a raiz do espaço de trabalho para adicionar configuração a",
+      "compound-cycle": "Configuração de lançamento '{0}' contém um ciclo consigo mesmo",
       "continueAll": "Continuar Tudo",
       "copyExpressionValue": "Valor de Expressão da Cópia",
       "disassembly-view": {
@@ -239,6 +240,82 @@
       "noProblems": "Até agora não foram detectados problemas no espaço de trabalho.",
       "tabbarDecorationsEnabled": "Mostrar decoradores de problemas (marcadores de diagnóstico) nas barras de tabulação."
     },
+    "memory-inspector": {
+      "address": "Endereço",
+      "addressTooltip": "Localização da memória a exibir, um endereço ou expressão a avaliar para um endereço",
+      "ascii": "ASCII",
+      "binary": "Binário",
+      "byteSize": "Tamanho do byte",
+      "bytesPerGroup": "Bytes Por Grupo",
+      "closeSettings": "Fechar Definições",
+      "columns": "Colunas",
+      "command": {
+        "createNewMemory": "Criar Novo Inspector de Memória",
+        "createNewRegisterView": "Criar Nova Vista de Registo",
+        "followPointer": "Siga o Ponteiro",
+        "followPointerMemory": "Seguir o Ponto em Memória Inspector",
+        "resetValue": "Valor de reinicialização",
+        "showRegister": "Mostrar Registo em Memória Inspector",
+        "viewVariable": "Mostrar Variable in Memory Inspector"
+      },
+      "data": "Dados",
+      "decimal": "Decimal",
+      "diff": {
+        "label": "Dif: {0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} Offset",
+        "offset-title": "Bytes para compensar a memória de {0}"
+      },
+      "editable": {
+        "apply": "Aplicar Alterações",
+        "clear": "Mudanças claras"
+      },
+      "endianness": "Endianness",
+      "extraColumn": "Coluna Extra",
+      "groupsPerRow": "Grupos por fila",
+      "hexadecimal": "Hexadecimal",
+      "length": "Comprimento",
+      "lengthTooltip": "Número de bytes a buscar, em decimal ou hexadecimal",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "Introduzir um endereço ou expressão no campo Localização."
+        },
+        "freeze": "Vista de memória congelada",
+        "hideSettings": "Esconder Painel de Definições",
+        "readError": {
+          "bounds": "Limites de memória excedidos, o resultado será truncado.",
+          "noContents": "Não existe actualmente nenhum conteúdo de memória disponível."
+        },
+        "readLength": {
+          "memoryReadError": "Introduza um comprimento (número decimal ou hexadecimal) no campo Comprimento."
+        },
+        "showSettings": "Mostrar Painel de Ajustes",
+        "unfreeze": "Vista da memória de descongelamento",
+        "userError": "Havia uma memória de busca de erros."
+      },
+      "memoryCategory": "Inspector de Memória",
+      "memoryTitle": "Memória",
+      "octal": "Octal",
+      "offset": "Offset",
+      "offsetTooltip": "Offset a ser adicionado ao local da memória actual, quando se navega",
+      "provider": {
+        "localsError": "Não é possível ler variáveis locais. Não há sessão de depuração activa.",
+        "readError": "Não é possível ler a memória. Sem sessão de depuração activa.",
+        "writeError": "Não é possível escrever memória. Sem sessão de depuração activa."
+      },
+      "register": "Registe-se",
+      "register-widget": {
+        "filter-placeholder": "Filtro (começa por)"
+      },
+      "registerReadError": "Havia um registo de busca de erros.",
+      "registers": "Registos",
+      "toggleComparisonWidgetVisibility": "Visibilidade do widget de comparação de alternância",
+      "utils": {
+        "afterBytes": "Deve carregar memória em ambos os widgets que gostaria de comparar. {0} não tem memória carregada.",
+        "bytesMessage": "Deve carregar memória em ambos os widgets que gostaria de comparar. {0} não tem memória carregada."
+      }
+    },
     "messages": {
       "notificationTimeout": "As notificações informativas serão ocultadas após este intervalo de tempo.",
       "toggleNotifications": "Notificações de alternância"
@@ -380,7 +457,10 @@
       "typeHierarchy": "Tipo Hierarquia"
     },
     "vsx-registry": {
+      "averageRating": "Classificação média: {0} de 5",
+      "downloadCount": "Contagem de downloads: {0}",
       "errorFetching": "Extensões de erro de busca.",
+      "license": "Licença: {0}",
       "recommendedExtensions": "Uma lista dos nomes das extensões recomendadas para utilização neste espaço de trabalho.",
       "searchPlaceholder": "Pesquisar extensões em {0}",
       "showRecommendedExtensions": "Controla se as notificações são mostradas para recomendações de extensão.",
