@@ -19,7 +19,7 @@ import { CancellationToken, nls, QuickPickItemOrSeparator } from '@theia/core/li
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { QuickAccessProvider, QuickAccessRegistry, QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
 import { filterItems, QuickPickItem, QuickPickSeparator } from '@theia/core/lib/browser/quick-input/quick-input-service';
-import { ApplicationShell, NavigatableWidget, Widget } from '@theia/core/lib/browser';
+import { ApplicationShell, NavigatableWidget, TabBar, Widget } from '@theia/core/lib/browser';
 
 @injectable()
 export class QuickEditorService implements QuickAccessContribution, QuickAccessProvider {
@@ -49,18 +49,23 @@ export class QuickEditorService implements QuickAccessContribution, QuickAccessP
             }
             editorItems.push(...widgets.map(widget => this.toItem(widget)));
         };
+        const handleSplittableArea = (tabbars: TabBar<Widget>[], labelPrefix: string) => {
+            tabbars.forEach((tabbar, index) => {
+                const editorsOnTabbar = tabbar.titles.reduce<NavigatableWidget[]>((widgets, title) => {
+                    if (hasUri(title.owner)) {
+                        widgets.push(title.owner);
+                    }
+                    return widgets;
+                }, []);
+                const label = tabbars.length > 1 ? `${labelPrefix} ${this.getGroupLocalization(index)}` : labelPrefix;
+                handleWidgets(editorsOnTabbar, label);
+            });
+        };
 
-        this.shell.mainAreaTabBars.forEach((tabbar, index) => {
-            const editorsOnTabbar = tabbar.titles.reduce<NavigatableWidget[]>((widgets, title) => {
-                if (hasUri(title.owner)) {
-                    widgets.push(title.owner);
-                }
-                return widgets;
-            }, []);
-            handleWidgets(editorsOnTabbar, this.getGroupLocalization(index));
-        });
+        handleSplittableArea(this.shell.mainAreaTabBars, ApplicationShell.areaLabels.main);
+        handleSplittableArea(this.shell.bottomAreaTabBars, ApplicationShell.areaLabels.bottom);
 
-        for (const area of ['left', 'bottom', 'right'] as ApplicationShell.Area[]) {
+        for (const area of ['left', 'right'] as ApplicationShell.Area[]) {
             const editorsInArea = this.shell.getWidgets(area).filter(hasUri);
             handleWidgets(editorsInArea, ApplicationShell.areaLabels[area]);
         }
