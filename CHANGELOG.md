@@ -4,18 +4,53 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## v1.29.0 - unreleased
+## v1.29.0 - 8/25/2022
 
+- [application-manager] added the `applicationName` in the frontend generator [#11575](https://github.com/eclipse-theia/theia/pull/11575)
+- [cli] enhanced the cli to include tooling for checking mismatches of Theia dependencies [#11483](https://github.com/eclipse-theia/theia/pull/11483)
+- [core] added handling to prevent the application on OSX from not displaying menus [#11584](https://github.com/eclipse-theia/theia/pull/11584)
+- [core] added handling to respect the `included` preference schema property [#11588](https://github.com/eclipse-theia/theia/pull/11588)
+- [core] added support for `workbench.action.focusNthEditorGroup` [#11496](https://github.com/eclipse-theia/theia/pull/11496)
+- [core] added support for the `toggle breadcrumbs` command [#11548](https://github.com/eclipse-theia/theia/pull/11548)
+- [core] fixed rendering for empty submenus [#11577](https://github.com/eclipse-theia/theia/pull/11577)
+- [core] updated handling to properly hide toolbars on inactive tabbars [#11480](https://github.com/eclipse-theia/theia/pull/11480)
+- [core] updated to `msgpackr` for encoding of rpc messages [#11447](https://github.com/eclipse-theia/theia/pull/11447)
+- [debug] added support for compound launches [#11444](https://github.com/eclipse-theia/theia/pull/11444)
+- [debug] fixed an issue where the debug hover would not appear [#11597](https://github.com/eclipse-theia/theia/pull/11597)
+- [editor] added support for `next group` and `previous group` commands [#11545](https://github.com/eclipse-theia/theia/pull/11545)
+- [ffmpeg] updated `@electron/get` to `v2.0.0` [#11573](https://github.com/eclipse-theia/theia/pull/11573)
+- [git] fixed an issue with blame annotations [#11540](https://github.com/eclipse-theia/theia/pull/11540)
+- [git] fixed issue when performing `discard changes` on a new file [#11532](https://github.com/eclipse-theia/theia/pull/11532)
+- [memory-inspector] added the `@theia/memory-inspector` extension [#11394](https://github.com/eclipse-theia/theia/pull/11394)
+- [monaco] updated handling for invalid theming values [#11596](https://github.com/eclipse-theia/theia/pull/11596)
+- [plugin] added support for VS Code theme icons [#11527](https://github.com/eclipse-theia/theia/pull/11527)
 - [plugin] added support for `EvaluatableExpressions` [#11484](https://github.com/eclipse-theia/theia/pull/11484) - Contributed on behalf of STMicroelectronics
+- [plugin] added support for `keys` in the `Memento` VS Code API [#11487](https://github.com/eclipse-theia/theia/pull/11487)
+- [plugin] added support for the `InputBoxValidationMessage` VS Code API [#11492](https://github.com/eclipse-theia/theia/pull/11472)
+- [plugin] fixed an issue when the text document provider returns an empty string [#11474](https://github.com/eclipse-theia/theia/pull/11474)
+- [plugin] improved preference access for plugins [#11393](https://github.com/eclipse-theia/theia/pull/11393)
+- [plugin] updated authentication VS Code API [#11564](https://github.com/eclipse-theia/theia/pull/11564)
+- [plugin] updated handling when restoring the current language [#11472](https://github.com/eclipse-theia/theia/pull/11472)
+- [plugin] updated styling for spinning icons [#11542](https://github.com/eclipse-theia/theia/pull/11542)
+- [repo] added `no-unreachable` eslint rule [#11476](https://github.com/eclipse-theia/theia/pull/11476)
+- [repo] replaced usages of `any` [#11490](https://github.com/eclipse-theia/theia/pull/11490)
+- [scm] added handling to select nodes according to the active editor [#11560](https://github.com/eclipse-theia/theia/pull/11560)
+- [terminal] added `toggle terminal` command [#11193](https://github.com/eclipse-theia/theia/pull/11193)
+- [terminal] improved terminal link matching [#11398](https://github.com/eclipse-theia/theia/pull/11398)
+- [terminal] updated the `terminal clear` command to not require terminal focus [#11565](https://github.com/eclipse-theia/theia/pull/11565)
+- [vsx-registry] fixed an issue preventing extensions from being installed on new setups [#11486](https://github.com/eclipse-theia/theia/pull/11486)
+- [vsx-registry] improved styling of the `Extensions` view [#11494](https://github.com/eclipse-theia/theia/pull/11494)
+- [vsx-registry] removed localization for `Open VSX Registry` [#11523](https://github.com/eclipse-theia/theia/pull/11523)
+- [vsx-registry] updated extension editor rendering [#11605](https://github.com/eclipse-theia/theia/pull/11605)
 
 <a name="breaking_changes_1.29.0">[Breaking Changes:](#breaking_changes_1.29.0)</a>
 
+- [core] replaced `Emitter` fields by `Event` fields in both `DescriptionWidget` and `BadgeWidget` [#11601](https://github.com/eclipse-theia/theia/pull/11601)
+- [core] replaced `react-virtualized` with `react-virtuoso` for tree rendering. Removed the `TreeWidget#forceUpdate`, `TreeWidget#handleScroll` and `TreeWidget.View#renderTreeRow` methods in the process [#11553](https://github.com/eclipse-theia/theia/pull/11553)
 - [core] `updateThemePreference` and `updateThemeFromPreference` removed from `CommonFrontendContribution`. Corresponding functionality as been moved to the respective theme service. `load` removed from `IconThemeService` [#11473](https://github.com/eclipse-theia/theia/issues/11473)
+- [core] removed `WidgetManager.widgetPromises`; use `WidgetManager.widgets` instead [#11555](https://github.com/eclipse-theia/theia/pull/11555)
 - [core] updated `react` and `react-dom` dependencies to version 18, which introduce new root API for rendering (replaces ReactDOM.render). Since React no longer supports render callbacks, the `onRender` field from `ReactDialog` and `ReactWidget` was removed. [#11455](https://github.com/eclipse-theia/theia/pull/11455) - Contributed on behalf of STMicroelectronics
-- [core] removed `WidgetManager.widgetPromises`; use `WidgetManager.widgets` instead. [#11555](https://github.com/eclipse-theia/theia/pull/11555)
-- [core] Replaced `react-virtualized` with `react-virtuoso` for tree rendering. Removed the `TreeWidget#forceUpdate`, `TreeWidget#handleScroll` and `TreeWidget.View#renderTreeRow` methods in the process. [#11553](https://github.com/eclipse-theia/theia/pull/11553)
-- [core] Replaced `Emitter` fields by `Event` fields in both `DescriptionWidget` and `BadgeWidget`.
-- [workspace] Removed `DefaultWorkspaceServer#untitledWorkspaceStaleThreshhold`. Use `DefaultWorkspaceServer#untitledWorkspaceStaleThreshold` instead.
+- [workspace] removed `DefaultWorkspaceServer#untitledWorkspaceStaleThreshhold`; use `DefaultWorkspaceServer#untitledWorkspaceStaleThreshold` instead [#11603](https://github.com/eclipse-theia/theia/pull/11603)
 
 ## v1.28.0 - 7/28/2022
 
