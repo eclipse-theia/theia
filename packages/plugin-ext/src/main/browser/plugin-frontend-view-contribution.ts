@@ -31,8 +31,7 @@ export class PluginFrontendViewContribution extends AbstractViewContribution<Plu
                 area: 'left',
                 rank: 400
             },
-            toggleCommandId: 'pluginsView:toggle',
-            toggleKeybinding: 'ctrlcmd+shift+l'
+            toggleCommandId: 'pluginsView:toggle'
         });
     }
 
