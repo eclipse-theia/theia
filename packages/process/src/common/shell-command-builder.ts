@@ -85,7 +85,7 @@ export class ShellCommandBuilder {
         if (cwd) {
             command += `cd ${BashQuotingFunctions.strong(cwd)} && `;
         }
-        if (env) {
+        if (env?.length) {
             command += 'env';
             for (const [key, value] of env) {
                 // eslint-disable-next-line no-null/no-null
@@ -106,7 +106,7 @@ export class ShellCommandBuilder {
         if (cwd) {
             command += `cd ${PowershellQuotingFunctions.strong(cwd)}; `;
         }
-        if (env) {
+        if (env?.length) {
             for (const [key, value] of env) {
                 // Powershell requires special quoting when dealing with
                 // environment variable names.
@@ -130,7 +130,7 @@ export class ShellCommandBuilder {
         if (cwd) {
             command += `cd ${CmdQuotingFunctions.strong(cwd)} && `;
         }
-        if (env) {
+        if (env?.length) {
             command += 'cmd /C "';
             for (const [key, value] of env) {
                 // eslint-disable-next-line no-null/no-null
@@ -142,7 +142,7 @@ export class ShellCommandBuilder {
             }
         }
         command += createShellCommandLine(args, CmdQuotingFunctions);
-        if (env) {
+        if (env?.length) {
             command += '"';
         }
         return command;
