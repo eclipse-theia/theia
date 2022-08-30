@@ -45,7 +45,7 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
         );
     }
     get saveable(): Saveable {
-        return this._modelRef.object;
+        return this._modelRef?.object;
     }
 
     @inject(UndoRedoService)

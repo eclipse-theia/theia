@@ -4,6 +4,11 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.30.0
+
+- [custom-editor] fix the restore editor as part of layout when using the vscode registerWebviewPanelSerializer API [#10787](https://github.com/eclipse-theia/theia/issues/10787)
+
+
 ## v1.29.0 - 8/25/2022
 
 - [application-manager] added the `applicationName` in the frontend generator [#11575](https://github.com/eclipse-theia/theia/pull/11575)
