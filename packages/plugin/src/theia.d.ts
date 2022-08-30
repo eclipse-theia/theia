@@ -67,7 +67,7 @@ export module '@theia/plugin' {
     /**
      * Represents an plugin.
      *
-     * To get an instance of an `Plugin` use [getPlugin](#plugins.getPlugin).
+     * To get an instance of an `Plugin` use {@link plugins.getPlugin getPlugin}.
      */
     export interface Plugin<T> {
 
@@ -195,22 +195,30 @@ export module '@theia/plugin' {
          */
         iconClass?: string;
     }
+
     /**
-     * Command represents a particular invocation of a registered command.
+     * Represents a reference to a command. Provides a title which
+     * will be used to represent a command in the UI and, optionally,
+     * an array of arguments which will be passed to the command handler
+     * function when invoked.
      */
     export interface Command {
         /**
+         * Title of the command, like `save`.
+         */
+        title: string;
+
+        /**
          * The identifier of the actual command handler.
+         * @see {@link commands.registerCommand}
          */
         command: string;
+
         /**
-         * Title of the command invocation, like "Add local variable 'foo'".
-         */
-        title?: string;
-        /**
-         * A tooltip for for command, when represented in the UI.
+         * A tooltip for the command, when represented in the UI.
          */
         tooltip?: string;
+
         /**
          * Arguments that the command handler should be
          * invoked with.
@@ -312,8 +320,8 @@ export module '@theia/plugin' {
         /**
          * Create a new position derived from this position.
          *
-         * @param line Value that should be used as line value, default is the [existing value](#Position.line)
-         * @param character Value that should be used as character value, default is the [existing value](#Position.character)
+         * @param line Value that should be used as line value, default is the {@link Position.line existing value}
+         * @param character Value that should be used as character value, default is the {@link Position.character existing value}
          * @return A position where line and character are replaced by the given values.
          */
         with(line?: number, character?: number): Position;
@@ -539,64 +547,72 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Represents an event describing the change in text editor selections.
+     * Represents an event describing the change in a {@link TextEditor.selections text editor's selections}.
      */
     export interface TextEditorSelectionChangeEvent {
         /**
-         * The text editor for which the selections have changed.
+         * The {@link TextEditor text editor} for which the selections have changed.
          */
-        textEditor: TextEditor;
+        readonly textEditor: TextEditor;
         /**
-         * The new text editor selections
+         * The new value for the {@link TextEditor.selections text editor's selections}.
          */
-        selections: Selection[];
-
-        kind?: TextEditorSelectionChangeKind;
+        readonly selections: readonly Selection[];
+        /**
+         * The {@link TextEditorSelectionChangeKind change kind} which has triggered this
+         * event. Can be `undefined`.
+         */
+        readonly kind: TextEditorSelectionChangeKind | undefined;
     }
 
     /**
-     * Represents an event the change in a text editor's options
+     * Represents an event describing the change in a {@link TextEditor.options text editor's options}.
      */
     export interface TextEditorOptionsChangeEvent {
-        textEditor: TextEditor;
-
-        options: TextEditorOptions;
+        /**
+         * The {@link TextEditor text editor} for which the options have changed.
+         */
+        readonly textEditor: TextEditor;
+        /**
+         * The new value for the {@link TextEditor.options text editor's options}.
+         */
+        readonly options: TextEditorOptions;
     }
 
     /**
-     * Represents an event the change in a text editor's visible ranges
+     * Represents an event describing the change in a {@link TextEditor.visibleRanges text editor's visible ranges}.
      */
     export interface TextEditorVisibleRangesChangeEvent {
         /**
-         * The text editor for which the visible ranges have changes.
+         * The {@link TextEditor text editor} for which the visible ranges have changed.
          */
-        textEditor: TextEditor;
+        readonly textEditor: TextEditor;
         /**
-         * The new text editor visible ranges.
+         * The new value for the {@link TextEditor.visibleRanges text editor's visible ranges}.
          */
-        visibleRanges: Range[];
+        readonly visibleRanges: readonly Range[];
     }
 
     /**
-     * Represents an event describing the change of a text editor's view column.
+     * Represents an event describing the change of a {@link TextEditor.viewColumn text editor's view column}.
      */
     export interface TextEditorViewColumnChangeEvent {
         /**
-         * The text editor for which the options have changed.
+         * The {@link TextEditor text editor} for which the view column has changed.
          */
-        textEditor: TextEditor;
+        readonly textEditor: TextEditor;
         /**
-         * The new value for the text editor's view column.
+         * The new value for the {@link TextEditor.viewColumn text editor's view column}.
          */
-        viewColumn: ViewColumn;
+        readonly viewColumn: ViewColumn;
     }
 
     /**
      * Represents a handle to a set of decorations
-     * sharing the same [styling options](#DecorationRenderOptions) in a [text editor](#TextEditor).
+     * sharing the same {@link DecorationRenderOptions styling options} in a {@link TextEditor text editor}.
      *
      * To get an instance of a `TextEditorDecorationType` use
-     * [createTextEditorDecorationType](#window.createTextEditorDecorationType).
+     * {@link window.createTextEditorDecorationType createTextEditorDecorationType}.
      */
     export interface TextEditorDecorationType {
 
@@ -614,7 +630,7 @@ export module '@theia/plugin' {
     /**
      * Information about where a symbol is defined.
      *
-     * Provides additional metadata over normal [location](#Location) definitions, including the range of
+     * Provides additional metadata over normal {@link Location location} definitions, including the range of
      * the defining symbol
      */
     export interface LocationLink {
@@ -647,7 +663,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * The definition of a symbol represented as one or many [locations](#Location).
+     * The definition of a symbol represented as one or many {@link Location locations}.
      * For most programming languages there is only one location at which a symbol is
      * defined.
      */
@@ -803,7 +819,7 @@ export module '@theia/plugin' {
         /**
          * Appends the given string as codeblock using the provided language.
          * @param value A code snippet.
-         * @param language An optional [language identifier](#languages.getLanguages).
+         * @param language An optional {@link languages.getLanguages language identifier}.
          */
         appendCodeblock(value: string, language?: string): MarkdownString;
     }
@@ -815,7 +831,7 @@ export module '@theia/plugin' {
      *
      * @deprecated This type is deprecated, please use [`MarkdownString`](#MarkdownString) instead.
      */
-    export type MarkedString = MarkdownString | string | { language: string; value: string }; // keep for compatibility reason
+    export type MarkedString = string | { language: string; value: string }; // keep for compatibility reason
 
     export interface ThemableDecorationAttachmentRenderOptions {
         /**
@@ -894,7 +910,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Represents options for a specific decoration in a [decoration set](#TextEditorDecorationType).
+     * Represents options for a specific decoration in a {@link TextEditorDecorationType decoration set}.
      */
     export interface DecorationOptions {
 
@@ -906,7 +922,7 @@ export module '@theia/plugin' {
         /**
          * A message that should be rendered when hovering over the decoration.
          */
-        hoverMessage?: MarkedString | MarkedString[];
+        hoverMessage?: MarkdownString | MarkedString | Array<MarkdownString | MarkedString>;
 
         /**
          * Render options applied to the current decoration. For performance reasons, keep the
@@ -916,12 +932,12 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Represents theme specific rendering styles for a [text editor decoration](#TextEditorDecorationType).
+     * Represents theme specific rendering styles for a {@link TextEditorDecorationType text editor decoration}.
      */
     export interface ThemableDecorationRenderOptions {
         /**
          * Background color of the decoration. Use rgba() and define transparent background colors to play well with other decorations.
-         * Alternatively a color from the color registry can be [referenced](#ThemeColor).
+         * Alternatively a color from the color registry can be {@link ThemeColor referenced}.
          */
         backgroundColor?: string | ThemeColor;
 
@@ -1069,7 +1085,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Represents different positions for rendering a decoration in an [overview ruler](#DecorationRenderOptions.overviewRulerLane).
+     * Represents different positions for rendering a decoration in an {@link DecorationRenderOptions.overviewRulerLane overview ruler}.
      * The overview ruler supports three lanes.
      */
     export enum OverviewRulerLane {
@@ -1080,7 +1096,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Represents rendering styles for a [text editor decoration](#TextEditorDecorationType).
+     * Represents rendering styles for a {@link TextEditorDecorationType text editor decoration}.
      */
     export interface DecorationRenderOptions extends ThemableDecorationRenderOptions {
         /**
@@ -1112,7 +1128,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Represents different [reveal](#TextEditor.revealRange) strategies in a text editor.
+     * Represents different {@link TextEditor.revealRange reveal} strategies in a text editor.
      */
     export enum TextEditorRevealType {
         /**
@@ -1152,13 +1168,13 @@ export module '@theia/plugin' {
         /**
          * The selections in this text editor. The primary selection is always at index 0.
          */
-        selections: Selection[];
+        selections: readonly Selection[];
 
         /**
          * The current visible ranges in the editor (vertically).
          * This accounts only for vertical scrolling, and not for horizontal scrolling.
          */
-        readonly visibleRanges: Range[];
+        readonly visibleRanges: readonly Range[];
 
         /**
          * Text editor options.
@@ -1167,9 +1183,10 @@ export module '@theia/plugin' {
 
         /**
          * The column in which this editor shows. Will be `undefined` in case this
-         * isn't one of the three main editors, e.g an embedded editor.
+         * isn't one of the main editors, e.g. an embedded editor, or when the editor
+         * column is larger than three.
          */
-        viewColumn?: ViewColumn;
+        readonly viewColumn: ViewColumn | undefined;
 
         /**
          * Perform an edit on the document associated with this text editor.
@@ -1185,7 +1202,7 @@ export module '@theia/plugin' {
         edit(callback: (editBuilder: TextEditorEdit) => void, options?: { undoStopBefore: boolean; undoStopAfter: boolean; }): Thenable<boolean>;
 
         /**
-         * Insert a [snippet](#SnippetString) and put the editor into snippet mode. "Snippet mode"
+         * Insert a {@link SnippetString snippet} and put the editor into snippet mode. "Snippet mode"
          * means the editor adds placeholders and additional cursors so that the user can complete
          * or accept the snippet.
          *
@@ -1199,12 +1216,12 @@ export module '@theia/plugin' {
 
         /**
          * Adds a set of decorations to the text editor. If a set of decorations already exists with
-         * the given [decoration type](#TextEditorDecorationType), they will be replaced.
+         * the given {@link TextEditorDecorationType decoration type}, they will be replaced.
          *
-         * @see [createTextEditorDecorationType](#window.createTextEditorDecorationType).
+         * @see {@link window.createTextEditorDecorationType createTextEditorDecorationType}.
          *
          * @param decorationType A decoration type.
-         * @param rangesOrOptions Either [ranges](#Range) or more detailed [options](#DecorationOptions).
+         * @param rangesOrOptions Either {@link Range ranges} or more detailed {@link DecorationOptions options}.
          */
         setDecorations(decorationType: TextEditorDecorationType, rangesOrOptions: Range[] | DecorationOptions[]): void;
 
@@ -1217,11 +1234,11 @@ export module '@theia/plugin' {
         revealRange(range: Range, revealType?: TextEditorRevealType): void;
 
         /**
-         * Shows this text editor. A [column](#ViewColumn) can be provided to control where the editor is being shown. Might change the [active editor](#window.activeTextEditor).
+         * Shows this text editor. A {@link ViewColumn column} can be provided to control where the editor is being shown. Might change the {@link window.activeTextEditor active editor}.
          *
          * @deprecated use [window.showTextDocument](#Window.showTextDocument) instead.
          *
-         * @param column A [view column](#ViewColumn) in which this editor should be shown.
+         * @param column A {@link ViewColumn view column} in which this editor should be shown.
          */
         show(column?: ViewColumn): void;
 
@@ -1239,7 +1256,7 @@ export module '@theia/plugin' {
     export interface TextEditorEdit {
         /**
          * Replace a certain text region with a new value.
-         * You can use \r\n or \n in `value` and they will be normalized to the current [document](#TextDocument).
+         * You can use \r\n or \n in `value` and they will be normalized to the current {@link TextDocument document}.
          *
          * @param location The range this operation should remove.
          * @param value The new text this operation should insert after removing `location`.
@@ -1248,8 +1265,8 @@ export module '@theia/plugin' {
 
         /**
          * Insert text at a location.
-         * You can use \r\n or \n in `value` and they will be normalized to the current [document](#TextDocument).
-         * Although the equivalent text edit can be made with [replace](#TextEditorEdit.replace), `insert` will produce a different resulting selection (it will get moved).
+         * You can use \r\n or \n in `value` and they will be normalized to the current {@link TextDocument document}.
+         * Although the equivalent text edit can be made with {@link TextEditorEdit.replace replace}, `insert` will produce a different resulting selection (it will get moved).
          *
          * @param location The position where the new text should be inserted.
          * @param value The new text this operation should insert.
@@ -1266,7 +1283,7 @@ export module '@theia/plugin' {
         /**
          * Set the end of line sequence.
          *
-         * @param endOfLine The new end of line for the [document](#TextDocument).
+         * @param endOfLine The new end of line for the {@link TextDocument document}.
          */
         setEndOfLine(endOfLine: EndOfLine): void;
     }
@@ -1274,7 +1291,7 @@ export module '@theia/plugin' {
     /**
      * Represents a line of text, such as a line of source code.
      *
-     * TextLine objects are __immutable__. When a [document](#TextDocument) changes,
+     * TextLine objects are __immutable__. When a {@link TextDocument document} changes,
      * previously retrieved lines will not represent the latest state.
      */
     export interface TextLine {
@@ -1312,7 +1329,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Represents an end of line character sequence in a [document](#TextDocument).
+     * Represents an end of line character sequence in a {@link TextDocument document}.
      */
     export enum EndOfLine {
         /**
@@ -1332,7 +1349,7 @@ export module '@theia/plugin' {
     export class Uri {
 
         /**
-         * Create an URI from a file system path. The [scheme](#Uri.scheme)
+         * Create an URI from a file system path. The {@link Uri.scheme scheme}
          * will be `file`.
          *
          * @param path A file system or UNC path.
@@ -1359,7 +1376,7 @@ export module '@theia/plugin' {
          * @param pathSegments One more more path fragments
          * @returns A new uri which path is joined with the given fragments
          */
-        static joinPath(uri: URI, ...pathSegments: string[]): URI;
+        static joinPath(uri: Uri, ...pathSegments: string[]): Uri;
 
         /**
          * Create an URI from a string. Will throw if the given value is not
@@ -1457,7 +1474,7 @@ export module '@theia/plugin' {
 
     /**
      * Represents a text document, such as a source file. Text documents have
-     * [lines](#TextLine) and knowledge about an underlying resource like a file.
+     * {@link TextLine lines} and knowledge about an underlying resource like a file.
      */
     export interface TextDocument {
         /**
@@ -1466,8 +1483,8 @@ export module '@theia/plugin' {
          * *Note* that most documents use the `file`-scheme, which means they are files on disk. However, **not** all documents are
          * saved on disk and therefore the `scheme` must be checked before trying to access the underlying file or siblings on disk.
          *
-         * @see [FileSystemProvider](#FileSystemProvider)
-         * @see [TextDocumentContentProvider](#TextDocumentContentProvider)
+         * @see {@link FileSystemProvider FileSystemProvider}
+         * @see {@link TextDocumentContentProvider TextDocumentContentProvider}
          */
         readonly uri: Uri;
 
@@ -1480,7 +1497,7 @@ export module '@theia/plugin' {
         /**
          * Is this document representing an untitled file which has never been saved yet. *Note* that
          * this does not mean the document will be saved to disk, use [`uri.scheme`](#Uri.scheme)
-         * to figure out where a document will be [saved](#FileSystemProvider), e.g. `file`, `ftp` etc.
+         * to figure out where a document will be {@link FileSystemProvider saved}, e.g. `file`, `ftp` etc.
          */
         readonly isUntitled: boolean;
 
@@ -1513,10 +1530,10 @@ export module '@theia/plugin' {
          * has been saved. If the file was not dirty or the save failed,
          * will return false.
          */
-        save(): Promise<boolean>;
+        save(): Thenable<boolean>;
 
         /**
-         * The [end of line](#EndOfLine) sequence that is predominately
+         * The {@link EndOfLine end of line} sequence that is predominately
          * used in this document.
          */
         readonly eol: EndOfLine;
@@ -1532,7 +1549,7 @@ export module '@theia/plugin' {
          * document are not reflected.
          *
          * @param line A line number in [0, lineCount).
-         * @return A [line](#TextLine).
+         * @return A {@link TextLine line}.
          */
         lineAt(line: number): TextLine;
 
@@ -1541,18 +1558,18 @@ export module '@theia/plugin' {
          * that the returned object is *not* live and changes to the
          * document are not reflected.
          *
-         * The position will be [adjusted](#TextDocument.validatePosition).
+         * The position will be {@link TextDocument.validatePosition adjusted}.
          *
          * @see [TextDocument.lineAt](#TextDocument.lineAt)
          * @param position A position.
-         * @return A [line](#TextLine).
+         * @return A {@link TextLine line}.
          */
         lineAt(position: Position): TextLine;
 
         /**
          * Converts the position to a zero-based offset.
          *
-         * The position will be [adjusted](#TextDocument.validatePosition).
+         * The position will be {@link TextDocument.validatePosition adjusted}.
          *
          * @param position A position.
          * @return A valid zero-based offset.
@@ -1563,13 +1580,13 @@ export module '@theia/plugin' {
          * Converts a zero-based offset to a position.
          *
          * @param offset A zero-based offset.
-         * @return A valid [position](#Position).
+         * @return A valid {@link Position position}.
          */
         positionAt(offset: number): Position;
 
         /**
          * Get the text of this document. A substring can be retrieved by providing
-         * a range. The range will be [adjusted](#TextDocument.validateRange).
+         * a range. The range will be {@link TextDocument.validateRange adjusted}.
          *
          * @param range Include only the text included by the range.
          * @return The text inside the provided range or the entire text.
@@ -1579,7 +1596,7 @@ export module '@theia/plugin' {
         /**
          * Get a word-range at the given position. By default words are defined by
          * common separators, like space, -, _, etc. In addition, per language custom
-         * [word definitions](#LanguageConfiguration.wordPattern) can be defined. It
+         * {@link LanguageConfiguration.wordPattern word definitions} can be defined. It
          * is also possible to provide a custom regular expression.
          *
          * * *Note 1:* A custom regular expression must not match the empty string and
@@ -1588,7 +1605,7 @@ export module '@theia/plugin' {
          * and in the name of speed regular expressions should not match words with
          * spaces. Use [`TextLine.text`](#TextLine.text) for more complex, non-wordy, scenarios.
          *
-         * The position will be [adjusted](#TextDocument.validatePosition).
+         * The position will be {@link TextDocument.validatePosition adjusted}.
          *
          * @param position A position.
          * @param regex Optional regular expression that describes what a word is.
@@ -1636,11 +1653,11 @@ export module '@theia/plugin' {
     }
 
     /**
-     * An event that is fired when a [document](#TextDocument) will be saved.
+     * An event that is fired when a {@link TextDocument document} will be saved.
      *
      * To make modifications to the document before it is being saved, call the
      * [`waitUntil`](#TextDocumentWillSaveEvent.waitUntil)-function with a thenable
-     * that resolves to an array of [text edits](#TextEdit).
+     * that resolves to an array of {@link TextEdit text edits}.
      */
     export interface TextDocumentWillSaveEvent {
 
@@ -1691,7 +1708,7 @@ export module '@theia/plugin' {
      *
      * To make modifications to the workspace before the files are created,
      * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
-     * thenable that resolves to a [workspace edit](#WorkspaceEdit).
+     * thenable that resolves to a {@link WorkspaceEdit workspace edit}.
      */
     export interface FileWillCreateEvent {
 
@@ -1701,7 +1718,7 @@ export module '@theia/plugin' {
         readonly files: ReadonlyArray<Uri>;
 
         /**
-         * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
+         * Allows to pause the event and to apply a {@link WorkspaceEdit workspace edit}.
          *
          * *Note:* This function can only be called during event dispatch and not
          * in an asynchronous manner:
@@ -1746,7 +1763,7 @@ export module '@theia/plugin' {
      *
      * To make modifications to the workspace before the files are deleted,
      * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
-     * thenable that resolves to a [workspace edit](#WorkspaceEdit).
+     * thenable that resolves to a {@link WorkspaceEdit workspace edit}.
      */
     export interface FileWillDeleteEvent {
 
@@ -1756,7 +1773,7 @@ export module '@theia/plugin' {
         readonly files: ReadonlyArray<Uri>;
 
         /**
-         * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
+         * Allows to pause the event and to apply a {@link WorkspaceEdit workspace edit}.
          *
          * *Note:* This function can only be called during event dispatch and not
          * in an asynchronous manner:
@@ -1801,7 +1818,7 @@ export module '@theia/plugin' {
      *
      * To make modifications to the workspace before the files are renamed,
      * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
-     * thenable that resolves to a [workspace edit](#WorkspaceEdit).
+     * thenable that resolves to a {@link WorkspaceEdit workspace edit}.
      */
     export interface FileWillRenameEvent {
 
@@ -1811,7 +1828,7 @@ export module '@theia/plugin' {
         readonly files: ReadonlyArray<{ oldUri: Uri, newUri: Uri }>;
 
         /**
-         * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
+         * Allows to pause the event and to apply a {@link WorkspaceEdit workspace edit}.
          *
          * *Note:* This function can only be called during event dispatch and not
          * in an asynchronous manner:
@@ -1944,7 +1961,7 @@ export module '@theia/plugin' {
         /**
          * The size in spaces a tab takes. This is used for two purposes:
          *  - the rendering width of a tab character;
-         *  - the number of spaces to insert when [insertSpaces](#TextEditorOptions.insertSpaces) is true.
+         *  - the number of spaces to insert when {@link TextEditorOptions.insertSpaces insertSpaces} is true.
          *
          * When getting a text editor's options, this property will always be a number (resolved).
          * When setting a text editor's options, this property is optional and it can be a number or `"auto"`.
@@ -1952,7 +1969,7 @@ export module '@theia/plugin' {
         tabSize?: number | string;
 
         /**
-         * When pressing Tab insert [n](#TextEditorOptions.tabSize) spaces.
+         * When pressing Tab insert {@link TextEditorOptions.tabSize n} spaces.
          * When getting a text editor's options, this property will always be a boolean (resolved).
          * When setting a text editor's options, this property is optional and it can be a boolean or `"auto"`.
          */
@@ -1981,13 +1998,13 @@ export module '@theia/plugin' {
     export enum ViewColumn {
         /**
          * A *symbolic* editor column representing the currently active column. This value
-         * can be used when opening editors, but the *resolved* [viewColumn](#TextEditor.viewColumn)-value
+         * can be used when opening editors, but the *resolved* {@link TextEditor.viewColumn viewColumn}-value
          * of editors will always be `One`, `Two`, `Three`,... or `undefined` but never `Active`.
          */
         Active = -1,
         /**
          * A *symbolic* editor column representing the column to the side of the active one. This value
-         * can be used when opening editors, but the *resolved* [viewColumn](#TextEditor.viewColumn)-value
+         * can be used when opening editors, but the *resolved* {@link TextEditor.viewColumn viewColumn}-value
          * of editors will always be `One`, `Two`, `Three`,... or `undefined` but never `Beside`.
          */
         Beside = -2,
@@ -2045,7 +2062,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * An event emitter used to create and fire an [event](#Event) or to subscribe to.
+     * An event emitter used to create and fire an {@link Event event} or to subscribe to.
      */
     export class EventEmitter<T> {
         /**
@@ -2070,7 +2087,7 @@ export module '@theia/plugin' {
      * on disk.
      *
      * To get an instance of a `FileSystemWatcher` use
-     * [createFileSystemWatcher](#workspace.createFileSystemWatcher).
+     * {@link workspace.createFileSystemWatcher createFileSystemWatcher}.
      */
     export interface FileSystemWatcher extends Disposable {
 
@@ -2127,7 +2144,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * A cancellation token source create and manage a [cancellation token](#CancellationToken)
+     * A cancellation token source create and manage a {@link CancellationToken cancellation token}
      */
     export class CancellationTokenSource {
         token: CancellationToken;
@@ -2139,9 +2156,9 @@ export module '@theia/plugin' {
      * A text document content provider allows to add readonly documents
      * to the editor, such as source from a dll or generated html from md.
      *
-     * Content providers are [registered](#workspace.registerTextDocumentContentProvider)
+     * Content providers are {@link workspace.registerTextDocumentContentProvider registered}
      * for a [uri-scheme](#Uri.scheme). When a uri with that scheme is to
-     * be [loaded](#workspace.openTextDocument) the content provider is
+     * be {@link workspace.openTextDocument loaded} the content provider is
      * asked.
      */
     export interface TextDocumentContentProvider {
@@ -2155,10 +2172,10 @@ export module '@theia/plugin' {
          * Provide textual content for a given uri.
          *
          * The editor will use the returned string-content to create a readonly
-         * [document](#TextDocument). Resources allocated should be released when
-         * the corresponding document has been [closed](#workspace.onDidCloseTextDocument).
+         * {@link TextDocument document}. Resources allocated should be released when
+         * the corresponding document has been {@link workspace.onDidCloseTextDocument closed}.
          *
-         * @param uri An uri which scheme matches the scheme this provider was [registered](#workspace.registerTextDocumentContentProvider) for.
+         * @param uri An uri which scheme matches the scheme this provider was {@link workspace.registerTextDocumentContentProvider registered} for.
          * @param token A cancellation token.
          * @return A string or a thenable that resolves to such.
          */
@@ -2209,9 +2226,9 @@ export module '@theia/plugin' {
     }
 
     /**
-     * A concrete [QuickInput](#QuickInput) to let the user pick an item from a
+     * A concrete {@link QuickInput QuickInput} to let the user pick an item from a
      * list of items of type T. The items can be filtered through a filter text field and
-     * there is an option [canSelectMany](#QuickPick.canSelectMany) to allow for
+     * there is an option {@link QuickPick.canSelectMany canSelectMany} to allow for
      * selecting multiple items.
      *
      * Note that in many cases the more convenient [window.showQuickPick](#window.showQuickPick)
@@ -2253,7 +2270,7 @@ export module '@theia/plugin' {
         /**
          * Items to pick from.
          */
-        items: ReadonlyArray<T>;
+        items: readonly T[];
 
         /**
          * If multiple items can be selected at the same time. Defaults to false.
@@ -2278,22 +2295,22 @@ export module '@theia/plugin' {
         /**
          * Active items. This can be read and updated by the extension.
          */
-        activeItems: ReadonlyArray<T>;
+        activeItems: readonly T[];
 
         /**
          * An event signaling when the active items have changed.
          */
-        readonly onDidChangeActive: Event<T[]>;
+        readonly onDidChangeActive: Event<readonly T[]>;
 
         /**
          * Selected items. This can be read and updated by the extension.
          */
-        selectedItems: ReadonlyArray<T>;
+        selectedItems: readonly T[];
 
         /**
          * An event signaling when the selected items have changed.
          */
-        readonly onDidChangeSelection: Event<T[]>;
+        readonly onDidChangeSelection: Event<readonly T[]>;
     }
 
     /**
@@ -2338,7 +2355,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Options to configure the behaviour of the [workspace folder](#WorkspaceFolder) pick UI.
+     * Options to configure the behaviour of the {@link WorkspaceFolder workspace folder} pick UI.
      */
     export interface WorkspaceFolderPickOptions {
 
@@ -2430,7 +2447,8 @@ export module '@theia/plugin' {
          * @return Either a human-readable string which is presented as an error message or an {@link InputBoxValidationMessage}
          *  which can provide a specific message severity. Return `undefined`, `null`, or the empty string when 'value' is valid.
          */
-        validateInput?: (input: string) => Promise<string | InputBoxValidationMessage | null | undefined> | undefined;
+        validateInput?(value: string): string | InputBoxValidationMessage | undefined | null |
+            Thenable<string | InputBoxValidationMessage | undefined | null>;
 
         /**
          * An optional function that will be called on Enter key.
@@ -2442,13 +2460,13 @@ export module '@theia/plugin' {
      * Namespace for dealing with commands. In short, a command is a function with a
      * unique identifier. The function is sometimes also called _command handler_.
      *
-     * Commands can be added using the [registerCommand](#commands.registerCommand) and
-     * [registerTextEditorCommand](#commands.registerTextEditorCommand) functions.
+     * Commands can be added using the {@link commands.registerCommand registerCommand} and
+     * {@link commands.registerTextEditorCommand registerTextEditorCommand} functions.
      * Registration can be split in two step: first register command without handler,
      * second register handler by command id.
      *
      * Any contributed command are available to any plugin, command can be invoked
-     * by [executeCommand](#commands.executeCommand) function.
+     * by {@link commands.executeCommand executeCommand} function.
      *
      * Simple example that register command:
      * ```javascript
@@ -2485,13 +2503,13 @@ export module '@theia/plugin' {
          * Registers a text editor command that can be invoked via a keyboard shortcut,
          * a menu item, an action, or directly.
          *
-         * Text editor commands are different from ordinary [commands](#commands.registerCommand) as
+         * Text editor commands are different from ordinary {@link commands.registerCommand commands} as
          * they only execute when there is an active editor when the command is called. Also, the
          * command handler of an editor command has access to the active editor and to an
-         * [edit](#TextEditorEdit)-builder.
+         * {@link TextEditorEdit edit}-builder.
          *
          * @param command A unique identifier for the command.
-         * @param callback A command handler function with access to an [editor](#TextEditor) and an [edit](#TextEditorEdit).
+         * @param callback A command handler function with access to an {@link TextEditor editor} and an {@link TextEditorEdit edit}.
          * @param thisArg The `this` context used when invoking the handler function.
          * @return Disposable which unregisters this command on disposal.
          */
@@ -2685,7 +2703,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * A reference to a named icon. Currently only [File](#ThemeIcon.File) and [Folder](#ThemeIcon.Folder) are supported.
+     * A reference to a named icon. Currently only {@link ThemeIcon.File File} and {@link ThemeIcon.Folder Folder} are supported.
      * Using a theme icon is preferred over a custom icon as it gives theme authors the possibility to change the icons.
      */
     export class ThemeIcon {
@@ -2714,7 +2732,7 @@ export module '@theia/plugin' {
          * @param id id of the icon. The available icons are listed in https://code.visualstudio.com/api/references/icons-in-labels#icon-listing.
          * @param color optional `ThemeColor` for the icon. The color is currently only used in {@link TreeItem}.
          */
-        private constructor(public id: string, public color?: ThemeColor);
+        private constructor(id: string, color?: ThemeColor);
     }
 
     /**
@@ -2767,7 +2785,7 @@ export module '@theia/plugin' {
         /**
          * Reveal this channel in the UI.
          *
-         * @param preserveFocus When 'true' the channel will not take focus.
+         * @param preserveFocus When `true` the channel will not take focus.
          */
         show(preserveFocus?: boolean): void;
 
@@ -2956,7 +2974,7 @@ export module '@theia/plugin' {
         /**
          * Current working directory.
          */
-        cwd?: string | URI;
+        cwd?: string | Uri;
 
         /**
          * Environment variables for terminal in format key - value.
@@ -3007,7 +3025,7 @@ export module '@theia/plugin' {
 
     /**
      * Options a virtual process terminal.
-     * @deprecated since 1.23.0 - Use [ExtensionTerminalOptions](#ExtensionTerminalOptions) instead.
+     * @deprecated since 1.23.0 - Use {@link ExtensionTerminalOptions ExtensionTerminalOptions} instead.
      */
     export interface PseudoTerminalOptions {
         /**
@@ -3016,7 +3034,7 @@ export module '@theia/plugin' {
         name: string;
 
         /**
-         * An implementation of [Pseudoterminal](#Pseudoterminal) where an extension can
+         * An implementation of {@link Pseudoterminal Pseudoterminal} where an extension can
          * control it.
          */
         pty: Pseudoterminal;
@@ -3032,7 +3050,7 @@ export module '@theia/plugin' {
         name: string;
 
         /**
-         * An implementation of [Pseudoterminal](#Pseudoterminal) where an extension can
+         * An implementation of {@link Pseudoterminal Pseudoterminal} where an extension can
          * control it.
          */
         pty: Pseudoterminal;
@@ -3191,7 +3209,7 @@ export module '@theia/plugin' {
          *
          * *Note* that this event should be used to propagate information about children.
          *
-         * @see [EventEmitter](#EventEmitter)
+         * @see {@link EventEmitter EventEmitter}
          */
         onDidChangeFileDecorations?: Event<undefined | Uri | Uri[]>;
 
@@ -3200,7 +3218,7 @@ export module '@theia/plugin' {
          *
          * *Note* that this function is only called when a file gets rendered in the UI.
          * This means a decoration from a descendent that propagates upwards must be signaled
-         * to the editor via the [onDidChangeFileDecorations](#FileDecorationProvider.onDidChangeFileDecorations)-event.
+         * to the editor via the {@link FileDecorationProvider.onDidChangeFileDecorations onDidChangeFileDecorations}-event.
          *
          * @param uri The uri of the file to provide a decoration for.
          * @param token A cancellation token.
@@ -3358,13 +3376,13 @@ export module '@theia/plugin' {
 
         /**
          * A memento object that stores state in the context
-         * of the currently opened [workspace](#workspace.workspaceFolders).
+         * of the currently opened {@link workspace.workspaceFolders workspace}.
          */
         workspaceState: Memento;
 
         /**
          * A memento object that stores state independent
-         * of the current opened [workspace](#workspace.workspaceFolders).
+         * of the current opened {@link workspace.workspaceFolders workspace}.
          */
         globalState: Memento & {
             /**
@@ -3420,7 +3438,7 @@ export module '@theia/plugin' {
          * Use [`workspaceState`](#PluginContext.workspaceState) or
          * [`globalState`](#PluginContext.globalState) to store key value data.
          *
-         * @deprecated Use [storageUri](#PluginContext.storageUri) instead.
+         * @deprecated Use {@link PluginContext.storageUri storageUri} instead.
          */
         storagePath: string | undefined;
 
@@ -3445,7 +3463,7 @@ export module '@theia/plugin' {
          *
          * Use [`globalState`](#PluginContext.globalState) to store key value data.
          *
-         * @deprecated Use [globalStorageUri](#PluginContext.globalStorageUri) instead.
+         * @deprecated Use {@link PluginContext.globalStorageUri globalStorageUri} instead.
          */
         readonly globalStoragePath: string;
 
@@ -3932,14 +3950,14 @@ export module '@theia/plugin' {
     }
 
     /**
-     * A uri handler is responsible for handling system-wide [uris](#Uri).
+     * A uri handler is responsible for handling system-wide {@link Uri uris}.
      *
      * @see [window.registerUriHandler](#window.registerUriHandler).
      */
     export interface UriHandler {
 
         /**
-         * Handle the provided system-wide [uri](#Uri).
+         * Handle the provided system-wide {@link Uri uri}.
          *
          * @see [window.registerUriHandler](#window.registerUriHandler).
          */
@@ -4001,7 +4019,7 @@ export module '@theia/plugin' {
     /**
      * Event triggered by extensions to signal that an edit has occurred on an [`CustomDocument`](#CustomDocument).
      *
-     * @see [`CustomDocumentProvider.onDidChangeCustomDocument`](#CustomDocumentProvider.onDidChangeCustomDocument).
+     * @see {@link CustomEditorProvider.onDidChangeCustomDocument}.
      */
     interface CustomDocumentEditEvent<T extends CustomDocument = CustomDocument> {
 
@@ -4040,7 +4058,7 @@ export module '@theia/plugin' {
      * Event triggered by extensions to signal to Theia that the content of a [`CustomDocument`](#CustomDocument)
      * has changed.
      *
-     * @see [`CustomDocumentProvider.onDidChangeCustomDocument`](#CustomDocumentProvider.onDidChangeCustomDocument).
+     * @see {@link CustomEditorProvider.onDidChangeCustomDocument}.
      */
     interface CustomDocumentContentChangeEvent<T extends CustomDocument = CustomDocument> {
         /**
@@ -4186,7 +4204,7 @@ export module '@theia/plugin' {
          *
          * An editor should only ever fire `CustomDocumentEditEvent` events, or only ever fire `CustomDocumentContentChangeEvent` events.
          */
-        readonly onDidChangeCustomDocument: Event<CustomDocumentContentChangeEvent<T>> | Event<CustomDocumentEditEvent<T>>;
+        readonly onDidChangeCustomDocument: Event<CustomDocumentEditEvent<T>> | Event<CustomDocumentContentChangeEvent<T>>;
 
         /**
          * Save a custom document.
@@ -4403,83 +4421,83 @@ export module '@theia/plugin' {
         /**
          * The currently opened terminals or an empty array.
          */
-        export let terminals: ReadonlyArray<Terminal>;
+        export let terminals: readonly Terminal[];
 
         /**
          * The currently visible editors or an empty array.
          */
-        export let visibleTextEditors: TextEditor[];
+        export let visibleTextEditors: readonly TextEditor[];
 
         /**
-         * An [event](#Event) which fires when the [active terminal](#window.activeTerminal) has changed.
+         * An {@link Event event} which fires when the {@link window.activeTerminal active terminal} has changed.
          * *Note* that the event also fires when the active terminal changes to `undefined`.
          */
         export const onDidChangeActiveTerminal: Event<Terminal | undefined>;
 
         /**
-         * An [event](#Event) which fires when the [active editor](#window.activeTextEditor)
+         * An {@link Event event} which fires when the {@link window.activeTextEditor active editor}
          * has changed. *Note* that the event also fires when the active editor changes
          * to `undefined`.
          */
         export const onDidChangeActiveTextEditor: Event<TextEditor | undefined>;
 
         /**
-         * An [event](#Event) which fires when the array of [visible editors](#window.visibleTextEditors)
+         * An {@link Event event} which fires when the array of {@link window.visibleTextEditors visible editors}
          * has changed.
          */
-        export const onDidChangeVisibleTextEditors: Event<TextEditor[]>;
+        export const onDidChangeVisibleTextEditors: Event<readonly TextEditor[]>;
 
         /**
-         * An [event](#Event) which fires when the selection in an editor has changed.
+         * An {@link Event event} which fires when the selection in an editor has changed.
          */
         export const onDidChangeTextEditorSelection: Event<TextEditorSelectionChangeEvent>;
 
         /**
-         * An [event](#Event) which fires when the selection in an editor has changed.
+         * An {@link Event event} which fires when the selection in an editor has changed.
          */
         export const onDidChangeTextEditorVisibleRanges: Event<TextEditorVisibleRangesChangeEvent>;
 
         /**
-         * An [event](#Event) which fires when the options of an editor have changed.
+         * An {@link Event event} which fires when the options of an editor have changed.
          */
         export const onDidChangeTextEditorOptions: Event<TextEditorOptionsChangeEvent>;
 
         /**
-         * An [event](#Event) which fires when the view column of an editor has changed.
+         * An {@link Event event} which fires when the view column of an editor has changed.
          */
         export const onDidChangeTextEditorViewColumn: Event<TextEditorViewColumnChangeEvent>;
 
         /**
-         * Show the given document in a text editor. A [column](#ViewColumn) can be provided
-         * to control where the editor is being shown. Might change the [active editor](#window.activeTextEditor).
+         * Show the given document in a text editor. A {@link ViewColumn column} can be provided
+         * to control where the editor is being shown. Might change the {@link window.activeTextEditor active editor}.
          *
          * @param document A text document to be shown.
-         * @param column A view column in which the [editor](#TextEditor) should be shown. The default is the [active](#ViewColumn.Active), other values
-         * are adjusted to be `Min(column, columnCount + 1)`, the [active](#ViewColumn.Active)-column is not adjusted. Use [`ViewColumn.Beside`](#ViewColumn.Beside)
+         * @param column A view column in which the {@link TextEditor editor} should be shown. The default is the {@link ViewColumn.Active active}, other values
+         * are adjusted to be `Min(column, columnCount + 1)`, the {@link ViewColumn.Active active}-column is not adjusted. Use [`ViewColumn.Beside`](#ViewColumn.Beside)
          * to open the editor to the side of the currently active one.
          * @param preserveFocus When `true` the editor will not take focus.
-         * @return A promise that resolves to an [editor](#TextEditor).
+         * @return A promise that resolves to an {@link TextEditor editor}.
          */
         export function showTextDocument(document: TextDocument, column?: ViewColumn, preserveFocus?: boolean): Thenable<TextEditor>;
 
         /**
-         * Show the given document in a text editor. [Options](#TextDocumentShowOptions) can be provided
-         * to control options of the editor is being shown. Might change the [active editor](#window.activeTextEditor).
+         * Show the given document in a text editor. {@link TextDocumentShowOptions Options} can be provided
+         * to control options of the editor is being shown. Might change the {@link window.activeTextEditor active editor}.
          *
          * @param document A text document to be shown.
-         * @param options [Editor options](#TextDocumentShowOptions) to configure the behavior of showing the [editor](#TextEditor).
-         * @return A promise that resolves to an [editor](#TextEditor).
+         * @param options {@link TextDocumentShowOptions Editor options} to configure the behavior of showing the {@link TextEditor editor}.
+         * @return A promise that resolves to an {@link TextEditor editor}.
          */
         export function showTextDocument(document: TextDocument, options?: TextDocumentShowOptions): Thenable<TextEditor>;
 
         /**
          * A short-hand for `openTextDocument(uri).then(document => showTextDocument(document, options))`.
          *
-         * @see [openTextDocument](#openTextDocument)
+         * @see {@link openTextDocument openTextDocument}
          *
          * @param uri A resource identifier.
-         * @param options [Editor options](#TextDocumentShowOptions) to configure the behavior of showing the [editor](#TextEditor).
-         * @return A promise that resolves to an [editor](#TextEditor).
+         * @param options {@link TextDocumentShowOptions Editor options} to configure the behavior of showing the {@link TextEditor editor}.
+         * @return A promise that resolves to an {@link TextEditor editor}.
          */
         export function showTextDocument(uri: Uri, options?: TextDocumentShowOptions): Thenable<TextEditor>;
 
@@ -4524,19 +4542,19 @@ export module '@theia/plugin' {
         export function showQuickPick<T extends QuickPickItem>(items: readonly T[] | Thenable<readonly T[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): Thenable<T[] | undefined>;
 
         /**
-         * Creates a [QuickPick](#QuickPick) to let the user pick an item from a list
+         * Creates a {@link QuickPick QuickPick} to let the user pick an item from a list
          * of items of type T.
          *
          * Note that in many cases the more convenient [window.showQuickPick](#window.showQuickPick)
          * is easier to use. [window.createQuickPick](#window.createQuickPick) should be used
          * when [window.showQuickPick](#window.showQuickPick) does not offer the required flexibility.
          *
-         * @return A new [QuickPick](#QuickPick).
+         * @return A new {@link QuickPick QuickPick}.
          */
         export function createQuickPick<T extends QuickPickItem>(): QuickPick<T>;
 
         /**
-         * Shows a selection list of [workspace folders](#workspace.workspaceFolders) to pick from.
+         * Shows a selection list of {@link workspace.workspaceFolders workspace folders} to pick from.
          * Returns `undefined` if no folder is open.
          *
          * @param options Configures the behavior of the workspace folder list.
@@ -4715,7 +4733,7 @@ export module '@theia/plugin' {
          * Registers a webview panel serializer.
          *
          * Plugins that support reviving should have an `"onWebviewPanel:viewType"` activation event and
-         * make sure that [registerWebviewPanelSerializer](#registerWebviewPanelSerializer) is called during activation.
+         * make sure that {@link registerWebviewPanelSerializer registerWebviewPanelSerializer} is called during activation.
          *
          * Only a single serializer may be registered at a time for a given `viewType`.
          *
@@ -4854,7 +4872,7 @@ export module '@theia/plugin' {
         export function createStatusBarItem(id: string, alignment?: StatusBarAlignment, priority?: number): StatusBarItem;
 
         /**
-         * Create a new [output channel](#OutputChannel) with the given name.
+         * Create a new {@link OutputChannel output channel} with the given name.
          *
          * @param name String which will be used to represent the channel in the UI.
          */
@@ -4874,7 +4892,7 @@ export module '@theia/plugin' {
         export const onDidCloseTerminal: Event<Terminal>;
 
         /**
-         * An [event](#Event) which fires when a terminal has been created,
+         * An {@link Event event} which fires when a terminal has been created,
          * either through the createTerminal API or commands.
          */
         export const onDidOpenTerminal: Event<Terminal>;
@@ -4902,26 +4920,26 @@ export module '@theia/plugin' {
         export function createTerminal(options: ExtensionTerminalOptions): Terminal;
 
         /**
-         * Register a [TreeDataProvider](#TreeDataProvider) for the view contributed using the extension point `views`.
-         * This will allow you to contribute data to the [TreeView](#TreeView) and update if the data changes.
+         * Register a {@link TreeDataProvider TreeDataProvider} for the view contributed using the extension point `views`.
+         * This will allow you to contribute data to the {@link TreeView TreeView} and update if the data changes.
          *
-         * **Note:** To get access to the [TreeView](#TreeView) and perform operations on it, use [createTreeView](#window.createTreeView).
+         * **Note:** To get access to the {@link TreeView TreeView} and perform operations on it, use {@link window.createTreeView createTreeView}.
          *
          * @param viewId Id of the view contributed using the extension point `views`.
-         * @param treeDataProvider A [TreeDataProvider](#TreeDataProvider) that provides tree data for the view
+         * @param treeDataProvider A {@link TreeDataProvider TreeDataProvider} that provides tree data for the view
          */
         export function registerTreeDataProvider<T>(viewId: string, treeDataProvider: TreeDataProvider<T>): Disposable;
 
         /**
-         * Create a [TreeView](#TreeView) for the view contributed using the extension point `views`.
+         * Create a {@link TreeView TreeView} for the view contributed using the extension point `views`.
          * @param viewId Id of the view contributed using the extension point `views`.
-         * @param options Options object to provide [TreeDataProvider](#TreeDataProvider) for the view.
-         * @returns a [TreeView](#TreeView).
+         * @param options Options object to provide {@link TreeDataProvider TreeDataProvider} for the view.
+         * @returns a {@link TreeView TreeView}.
          */
         export function createTreeView<T>(viewId: string, options: TreeViewOptions<T>): TreeView<T>;
 
         /**
-         * Registers a [uri handler](#UriHandler) capable of handling system-wide [uris](#Uri).
+         * Registers a {@link UriHandler uri handler} capable of handling system-wide {@link Uri uris}.
          * In case there are multiple windows open, the topmost window will handle the uri.
          * A uri handler is scoped to the extension it is contributed from; it will only
          * be able to handle uris which are directed to the extension itself. A uri must respect
@@ -4949,7 +4967,7 @@ export module '@theia/plugin' {
          * progress should show (and other details) is defined via the passed [`ProgressOptions`](#ProgressOptions).
          *
          * @param task A callback returning a promise. Progress state can be reported with
-         * the provided [progress](#Progress)-object.
+         * the provided {@link Progress progress}-object.
          *
          * To report discrete progress, use `increment` to indicate how much work has been completed. Each call with
          * a `increment` value will be summed up and reflected as overall progress until 100% is reached (a value of
@@ -4965,13 +4983,13 @@ export module '@theia/plugin' {
         export function withProgress<R>(options: ProgressOptions, task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => Thenable<R>): Thenable<R>;
 
         /**
-         * Creates a [InputBox](#InputBox) to let the user enter some text input.
+         * Creates a {@link InputBox InputBox} to let the user enter some text input.
          *
          * Note that in many cases the more convenient [window.showInputBox](#window.showInputBox)
          * is easier to use. [window.createInputBox](#window.createInputBox) should be used
          * when [window.showInputBox](#window.showInputBox) does not offer the required flexibility.
          *
-         * @return A new [InputBox](#InputBox).
+         * @return A new {@link InputBox InputBox}.
          */
         export function createInputBox(): InputBox;
 
@@ -4985,8 +5003,8 @@ export module '@theia/plugin' {
         /**
          * Register a file decoration provider.
          *
-         * @param provider A [FileDecorationProvider](#FileDecorationProvider).
-         * @return A [disposable](#Disposable) that unregisters the provider.
+         * @param provider A {@link FileDecorationProvider FileDecorationProvider}.
+         * @return A {@link Disposable disposable} that unregisters the provider.
          */
         export function registerFileDecorationProvider(provider: FileDecorationProvider): Disposable;
 
@@ -4997,7 +5015,7 @@ export module '@theia/plugin' {
         export let activeColorTheme: ColorTheme;
 
         /**
-         * An [event](#Event) which fires when the active color theme is changed or has changes.
+         * An {@link Event event} which fires when the active color theme is changed or has changes.
          */
         export const onDidChangeActiveColorTheme: Event<ColorTheme>;
     }
@@ -5022,12 +5040,12 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Predefined buttons for [QuickPick](#QuickPick) and [InputBox](#InputBox).
+     * Predefined buttons for {@link QuickPick QuickPick} and {@link InputBox InputBox}.
      */
     export class QuickInputButtons {
 
         /**
-         * A back button for [QuickPick](#QuickPick) and [InputBox](#InputBox).
+         * A back button for {@link QuickPick QuickPick} and {@link InputBox InputBox}.
          *
          * When a navigation 'back' button is needed this one should be used for consistency.
          * It comes with a predefined icon, tooltip and location.
@@ -5041,7 +5059,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * A concrete [QuickInput](#QuickInput) to let the user input a text value.
+     * A concrete {@link QuickInput QuickInput} to let the user input a text value.
      *
      * Note that in many cases the more convenient [window.showInputBox](#window.showInputBox)
      * is easier to use. [window.createInputBox](#window.createInputBox) should be used
@@ -5077,7 +5095,7 @@ export module '@theia/plugin' {
         /**
          * Buttons for actions in the UI.
          */
-        buttons: ReadonlyArray<QuickInputButton>;
+        buttons: readonly QuickInputButton[];
 
         /**
          * An event signaling when a button was triggered.
@@ -5116,7 +5134,7 @@ export module '@theia/plugin' {
      * [QuickInput.dispose](#QuickInput.dispose) it to allow for freeing up
      * any resources associated with it.
      *
-     * See [QuickPick](#QuickPick) and [InputBox](#InputBox) for concrete UIs.
+     * See {@link QuickPick QuickPick} and {@link InputBox InputBox} for concrete UIs.
      */
     export interface QuickInput {
 
@@ -5188,14 +5206,14 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Button for an action in a [QuickPick](#QuickPick) or [InputBox](#InputBox).
+     * Button for an action in a {@link QuickPick QuickPick} or {@link InputBox InputBox}.
      */
     export interface QuickInputButton {
 
         /**
          * Icon for the button.
          */
-        readonly iconPath: Uri | { light: string | Uri; dark: string | Uri } | monaco.theme.ThemeIcon;
+        readonly iconPath: Uri | { light: Uri; dark: Uri } | ThemeIcon;
 
         /**
          * An optional tooltip.
@@ -5255,7 +5273,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Options for creating a [TreeView](#TreeView)
+     * Options for creating a {@link TreeView TreeView}
      */
     export interface TreeViewOptions<T> {
 
@@ -5271,14 +5289,14 @@ export module '@theia/plugin' {
     }
 
     /**
-     * The event that is fired when an element in the [TreeView](#TreeView) is expanded or collapsed
+     * The event that is fired when an element in the {@link TreeView TreeView} is expanded or collapsed
      */
     export interface TreeViewExpansionEvent<T> {
 
         /**
          * Element that is expanded or collapsed.
          */
-        element: T;
+        readonly element: T;
 
     }
 
@@ -5290,7 +5308,7 @@ export module '@theia/plugin' {
         /**
          * Selected elements.
          */
-        readonly selection: T[];
+        readonly selection: readonly T[];
 
     }
 
@@ -5300,7 +5318,7 @@ export module '@theia/plugin' {
     export interface TreeViewVisibilityChangeEvent {
 
         /**
-         * `true` if the [tree view](#TreeView) is visible otherwise `false`.
+         * `true` if the {@link TreeView tree view} is visible otherwise `false`.
          */
         readonly visible: boolean;
 
@@ -5324,20 +5342,20 @@ export module '@theia/plugin' {
         /**
          * Currently selected elements.
          */
-        readonly selection: ReadonlyArray<T>;
+        readonly selection: readonly T[];
 
         /**
-         * Event that is fired when the [selection](#TreeView.selection) has changed
+         * Event that is fired when the {@link TreeView.selection selection} has changed
          */
         readonly onDidChangeSelection: Event<TreeViewSelectionChangeEvent<T>>;
 
         /**
-         * `true` if the [tree view](#TreeView) is visible otherwise `false`.
+         * `true` if the {@link TreeView tree view} is visible otherwise `false`.
          */
         readonly visible: boolean;
 
         /**
-         * Event that is fired when [visibility](#TreeView.visible) has changed
+         * Event that is fired when {@link TreeView.visible visibility} has changed
          */
         readonly onDidChangeVisibility: Event<TreeViewVisibilityChangeEvent>;
 
@@ -5364,9 +5382,9 @@ export module '@theia/plugin' {
          *
          * In order to not to select, set the option `select` to `false`.
          *
-         * **NOTE:** [TreeDataProvider](#TreeDataProvider) is required to implement [getParent](#TreeDataProvider.getParent) method to access this API.
+         * **NOTE:** {@link TreeDataProvider TreeDataProvider} is required to implement {@link TreeDataProvider.getParent getParent} method to access this API.
          */
-        reveal(element: T, options?: { select?: boolean, focus?: boolean, expand?: boolean | number }): Thenable<void>;
+        reveal(element: T, options?: { select?: boolean; focus?: boolean; expand?: boolean | number }): Thenable<void>;
     }
 
     /**
@@ -5381,10 +5399,10 @@ export module '@theia/plugin' {
         onDidChangeTreeData?: Event<T | undefined | null>;
 
         /**
-         * Get [TreeItem](#TreeItem) representation of the `element`
+         * Get {@link TreeItem TreeItem} representation of the `element`
          *
-         * @param element The element for which [TreeItem](#TreeItem) representation is asked for.
-         * @return [TreeItem](#TreeItem) representation of the element
+         * @param element The element for which {@link TreeItem TreeItem} representation is asked for.
+         * @return {@link TreeItem TreeItem} representation of the element
          */
         getTreeItem(element: T): TreeItem | Thenable<TreeItem>;
 
@@ -5400,7 +5418,7 @@ export module '@theia/plugin' {
          * Optional method to return the parent of `element`.
          * Return `null` or `undefined` if `element` is a child of root.
          *
-         * **NOTE:** This method should be implemented in order to access [reveal](#TreeView.reveal) API.
+         * **NOTE:** This method should be implemented in order to access {@link TreeView.reveal reveal} API.
          *
          * @param element The element for which the parent has to be returned.
          * @return Parent of `element`.
@@ -5410,7 +5428,7 @@ export module '@theia/plugin' {
 
     export class TreeItem {
         /**
-         * A human-readable string describing this item. When `falsy`, it is derived from [resourceUri](#TreeItem.resourceUri).
+         * A human-readable string describing this item. When `falsy`, it is derived from {@link TreeItem.resourceUri resourceUri}.
          */
         label?: string | TreeItemLabel;
 
@@ -5422,23 +5440,23 @@ export module '@theia/plugin' {
         id?: string;
 
         /**
-         * The icon path or [ThemeIcon](#ThemeIcon) for the tree item.
-         * When `falsy`, [Folder Theme Icon](#ThemeIcon.Folder) is assigned, if item is collapsible otherwise [File Theme Icon](#ThemeIcon.File).
-         * When a [ThemeIcon](#ThemeIcon) is specified, icon is derived from the current file icon theme for the specified theme icon using [resourceUri](#TreeItem.resourceUri) (if provided).
+         * The icon path or {@link ThemeIcon ThemeIcon} for the tree item.
+         * When `falsy`, {@link ThemeIcon.Folder Folder Theme Icon} is assigned, if item is collapsible otherwise {@link ThemeIcon.File File Theme Icon}.
+         * When a {@link ThemeIcon ThemeIcon} is specified, icon is derived from the current file icon theme for the specified theme icon using {@link TreeItem.resourceUri resourceUri} (if provided).
          */
         iconPath?: string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon;
 
         /**
          * A human readable string which is rendered less prominent.
-         * When `true`, it is derived from [resourceUri](#TreeItem.resourceUri) and when `falsy`, it is not shown.
+         * When `true`, it is derived from {@link TreeItem.resourceUri resourceUri} and when `falsy`, it is not shown.
          */
         description?: string | boolean;
 
         /**
-         * The [uri](#Uri) of the resource representing this item.
+         * The {@link Uri uri} of the resource representing this item.
          *
-         * Will be used to derive the [label](#TreeItem.label), when it is not provided.
-         * Will be used to derive the icon from current icon theme, when [iconPath](#TreeItem.iconPath) has [ThemeIcon](#ThemeIcon) value.
+         * Will be used to derive the {@link TreeItem.label label}, when it is not provided.
+         * Will be used to derive the icon from current icon theme, when {@link TreeItem.iconPath iconPath} has {@link ThemeIcon ThemeIcon} value.
          */
         resourceUri?: Uri;
 
@@ -5448,12 +5466,12 @@ export module '@theia/plugin' {
         tooltip?: string | undefined;
 
         /**
-         * The [command](#Command) which should be run when the tree item is selected.
+         * The {@link Command command} which should be run when the tree item is selected.
          */
         command?: Command;
 
         /**
-         * [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item.
+         * {@link TreeItemCollapsibleState TreeItemCollapsibleState} of the tree item.
          */
         collapsibleState?: TreeItemCollapsibleState;
 
@@ -5486,13 +5504,13 @@ export module '@theia/plugin' {
 
         /**
          * @param label A human-readable string describing this item
-         * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
+         * @param collapsibleState {@link TreeItemCollapsibleState TreeItemCollapsibleState} of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
          */
         constructor(label: string | TreeItemLabel, collapsibleState?: TreeItemCollapsibleState);
 
         /**
-         * @param resourceUri The [uri](#Uri) of the resource representing this item.
-         * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
+         * @param resourceUri The {@link Uri uri} of the resource representing this item.
+         * @param collapsibleState {@link TreeItemCollapsibleState TreeItemCollapsibleState} of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
          */
         constructor(resourceUri: Uri, collapsibleState?: TreeItemCollapsibleState);
     }
@@ -5544,7 +5562,7 @@ export module '@theia/plugin' {
      *
      * *Workspace configuration* comes from Workspace Settings and shadows Global configuration.
      *
-     * *Workspace Folder configuration* comes from `.vscode` folder under one of the [workspace folders](#workspace.workspaceFolders).
+     * *Workspace Folder configuration* comes from `.vscode` folder under one of the {@link workspace.workspaceFolders workspace folders}.
      *
      * *Note:* Workspace and Workspace Folder configurations contains `launch` and `tasks` settings. Their basename will be
      * part of the section identifier. The following snippets shows how to retrieve all configurations
@@ -5611,15 +5629,15 @@ export module '@theia/plugin' {
          *
          * A value can be changed in
          *
-         * - [Global configuration](#ConfigurationTarget.Global): Changes the value for all instances of the editor.
-         * - [Workspace configuration](#ConfigurationTarget.Workspace): Changes the value for current workspace, if available.
-         * - [Workspace folder configuration](#ConfigurationTarget.WorkspaceFolder): Changes the value for the
-         * [Workspace folder](#workspace.workspaceFolders) to which the current [configuration](#WorkspaceConfiguration) is scoped to.
+         * - {@link ConfigurationTarget.Global Global configuration}: Changes the value for all instances of the editor.
+         * - {@link ConfigurationTarget.Workspace Workspace configuration}: Changes the value for current workspace, if available.
+         * - {@link ConfigurationTarget.WorkspaceFolder Workspace folder configuration}: Changes the value for the
+         * {@link workspace.workspaceFolders Workspace folder} to which the current {@link WorkspaceConfiguration configuration} is scoped to.
          *
          * *Note 1:* Setting a global value in the presence of a more specific workspace value
          * has no observable effect in that workspace, but in others. Setting a workspace value
          * in the presence of a more specific folder value has no observable effect for the resources
-         * under respective [folder](#workspace.workspaceFolders), but in others. Refer to
+         * under respective {@link workspace.workspaceFolders folder}, but in others. Refer to
          * [Settings Inheritence](https://code.visualstudio.com/docs/getstarted/settings) for more information.
          *
          * *Note 2:* To remove a configuration value use `undefined`, like so: `config.update('somekey', undefined)`
@@ -5633,7 +5651,7 @@ export module '@theia/plugin' {
          *
          * @param section Configuration name, supports _dotted_ names.
          * @param value The new value.
-         * @param configurationTarget The [configuration target](#ConfigurationTarget) or a boolean value.
+         * @param configurationTarget The {@link ConfigurationTarget configuration target} or a boolean value.
          * - If `true` configuration target is `ConfigurationTarget.Global`.
          * - If `false` configuration target is `ConfigurationTarget.Workspace`.
          * - If `undefined` or `null` configuration target is
@@ -5684,18 +5702,18 @@ export module '@theia/plugin' {
     export type ConfigurationScope = Uri | WorkspaceFolder | TextDocument | { uri?: Uri, languageId: string };
 
     /**
-     * An event describing a change to the set of [workspace folders](#workspace.workspaceFolders).
+     * An event describing a change to the set of {@link workspace.workspaceFolders workspace folders}.
      */
     export interface WorkspaceFoldersChangeEvent {
         /**
          * Added workspace folders.
          */
-        readonly added: WorkspaceFolder[];
+        readonly added: readonly WorkspaceFolder[];
 
         /**
          * Removed workspace folders.
          */
-        readonly removed: WorkspaceFolder[];
+        readonly removed: readonly WorkspaceFolder[];
     }
 
     /**
@@ -5706,7 +5724,7 @@ export module '@theia/plugin' {
         /**
          * The associated uri for this workspace folder.
          *
-         * *Note:* The [Uri](#Uri)-type was intentionally chosen such that future releases of the editor can support
+         * *Note:* The {@link Uri Uri}-type was intentionally chosen such that future releases of the editor can support
          * workspace folders that are not stored on the local disk, e.g. `ftp://server/workspaces/foo`.
          */
         readonly uri: Uri;
@@ -5884,22 +5902,22 @@ export module '@theia/plugin' {
      * and to manage files and folders. It allows extensions to serve files from remote places,
      * like ftp-servers, and to seamlessly integrate those into the editor.
      *
-     * * *Note 1:* The filesystem provider API works with [uris](#Uri) and assumes hierarchical
+     * * *Note 1:* The filesystem provider API works with {@link Uri uris} and assumes hierarchical
      * paths, e.g. `foo:/my/path` is a child of `foo:/my/` and a parent of `foo:/my/path/deeper`.
      * * *Note 2:* There is an activation event `onFileSystem:<scheme>` that fires when a file
      * or folder is being accessed.
-     * * *Note 3:* The word 'file' is often used to denote all [kinds](#FileType) of files, e.g.
+     * * *Note 3:* The word 'file' is often used to denote all {@link FileType kinds} of files, e.g.
      * folders, symbolic links, and regular files.
      */
     export interface FileSystemProvider {
 
         /**
          * An event to signal that a resource has been created, changed, or deleted. This
-         * event should fire for resources that are being [watched](#FileSystemProvider.watch)
+         * event should fire for resources that are being {@link FileSystemProvider.watch watched}
          * by clients of this provider.
          *
          * *Note:* It is important that the metadata of the file that changed provides an
-         * updated `mtime` that advanced from the previous value in the [stat](#FileStat) and a
+         * updated `mtime` that advanced from the previous value in the {@link FileStat stat} and a
          * correct `size` value. Otherwise there may be optimizations in place that will not show
          * the change in an editor for example.
          */
@@ -5922,23 +5940,23 @@ export module '@theia/plugin' {
          * Retrieve metadata about a file.
          *
          * Note that the metadata for symbolic links should be the metadata of the file they refer to.
-         * Still, the [SymbolicLink](#FileType.SymbolicLink)-type must be used in addition to the actual type, e.g.
+         * Still, the {@link FileType.SymbolicLink SymbolicLink}-type must be used in addition to the actual type, e.g.
          * `FileType.SymbolicLink | FileType.Directory`.
          *
          * @param uri The uri of the file to retrieve metadata about.
          * @return The file metadata about the file.
          * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
          */
-        stat(uri: Uri): FileStat | Promise<FileStat>;
+        stat(uri: Uri): FileStat | Thenable<FileStat>;
 
         /**
-         * Retrieve all entries of a [directory](#FileType.Directory).
+         * Retrieve all entries of a {@link FileType.Directory directory}.
          *
          * @param uri The uri of the folder.
          * @return An array of name/type-tuples or a thenable that resolves to such.
          * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
          */
-        readDirectory(uri: Uri): [string, FileType][] | Promise<[string, FileType][]>;
+        readDirectory(uri: Uri): [string, FileType][] | Thenable<[string, FileType][]>;
 
         /**
          * Create a new directory (Note, that new files are created via `write`-calls).
@@ -5948,7 +5966,7 @@ export module '@theia/plugin' {
          * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists.
          * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
          */
-        createDirectory(uri: Uri): void | Promise<void>;
+        createDirectory(uri: Uri): void | Thenable<void>;
 
         /**
          * Read the entire contents of a file.
@@ -5957,7 +5975,7 @@ export module '@theia/plugin' {
          * @return An array of bytes or a thenable that resolves to such.
          * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
          */
-        readFile(uri: Uri): Uint8Array | Promise<Uint8Array>;
+        readFile(uri: Uri): Uint8Array | Thenable<Uint8Array>;
 
         /**
          * Write data to a file, replacing its entire contents.
@@ -5970,7 +5988,7 @@ export module '@theia/plugin' {
          * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists, `create` is set but `overwrite` is not set.
          * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
          */
-        writeFile(uri: Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void | Promise<void>;
+        writeFile(uri: Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void | Thenable<void>;
 
         /**
          * Delete a file.
@@ -5980,7 +5998,7 @@ export module '@theia/plugin' {
          * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
          * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
          */
-        delete(uri: Uri, options: { recursive: boolean }): void | Promise<void>;
+        delete(uri: Uri, options: { recursive: boolean }): void | Thenable<void>;
 
         /**
          * Rename a file or folder.
@@ -5993,7 +6011,7 @@ export module '@theia/plugin' {
          * @throws [`FileExists`](#FileSystemError.FileExists) when `newUri` exists and when the `overwrite` option is not `true`.
          * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
          */
-        rename(oldUri: Uri, newUri: Uri, options: { overwrite: boolean }): void | Promise<void>;
+        rename(oldUri: Uri, newUri: Uri, options: { overwrite: boolean }): void | Thenable<void>;
 
         /**
          * Copy files or folders. Implementing this function is optional but it will speedup
@@ -6007,12 +6025,12 @@ export module '@theia/plugin' {
          * @throws [`FileExists`](#FileSystemError.FileExists) when `destination` exists and when the `overwrite` option is not `true`.
          * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
          */
-        copy?(source: Uri, destination: Uri, options: { overwrite: boolean }): void | Promise<void>;
+        copy?(source: Uri, destination: Uri, options: { overwrite: boolean }): void | Thenable<void>;
     }
 
     /**
      * The file system interface exposes the editor's built-in and contributed
-     * [file system providers](#FileSystemProvider). It allows extensions to work
+     * {@link FileSystemProvider file system providers}. It allows extensions to work
      * with files from the local disk as well as files from remote places, like the
      * remote extension host or ftp-servers.
      *
@@ -6029,7 +6047,7 @@ export module '@theia/plugin' {
         stat(uri: Uri): Thenable<FileStat>;
 
         /**
-         * Retrieve all entries of a [directory](#FileType.Directory).
+         * Retrieve all entries of a {@link FileType.Directory directory}.
          *
          * @param uri The uri of the folder.
          * @return An array of name/type-tuples or a thenable that resolves to such.
@@ -6094,14 +6112,14 @@ export module '@theia/plugin' {
      * of the folder that has been opened. There is no workspace when just a file but not a
      * folder has been opened.
      *
-     * The workspace offers support for [listening](#workspace.createFileSystemWatcher) to fs
-     * events and for [finding](#workspace.findFiles) files. Both perform well and run _outside_
+     * The workspace offers support for {@link workspace.createFileSystemWatcher listening} to fs
+     * events and for {@link workspace.findFiles finding} files. Both perform well and run _outside_
      * the editor-process so that they should be always used instead of nodejs-equivalents.
      */
     export namespace workspace {
 
         /**
-         * A [file system](#FileSystem) instance that allows to interact with local and remote
+         * A {@link FileSystem file system} instance that allows to interact with local and remote
          * files, e.g. `workspace.fs.readDirectory(someUri)` allows to retrieve all entries
          * of a directory or `workspace.fs.stat(anotherUri)` returns the meta data for a
          * file.
@@ -6116,7 +6134,7 @@ export module '@theia/plugin' {
          *
          * @readonly
          */
-        export let rootPath: string | undefined;
+        export const rootPath: string | undefined;
 
         /**
          * List of workspace folders or `undefined` when no folder is open.
@@ -6124,7 +6142,7 @@ export module '@theia/plugin' {
          *
          * @readonly
          */
-        export let workspaceFolders: WorkspaceFolder[] | undefined;
+        export const workspaceFolders: readonly WorkspaceFolder[] | undefined;
 
         /**
          * The location of the workspace file, for example:
@@ -6160,7 +6178,7 @@ export module '@theia/plugin' {
          *
          * @readonly
          */
-        export let textDocuments: TextDocument[];
+        export let textDocuments: readonly TextDocument[];
 
         /**
          * Register a text document content provider.
@@ -6169,46 +6187,46 @@ export module '@theia/plugin' {
          *
          * @param scheme The uri-scheme to register for.
          * @param provider A content provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerTextDocumentContentProvider(scheme: string, provider: TextDocumentContentProvider): Disposable;
 
         /**
-         * An event that is emitted when a [text document](#TextDocument) is opened.
+         * An event that is emitted when a {@link TextDocument text document} is opened.
          *
-         * To add an event listener when a visible text document is opened, use the [TextEditor](#TextEditor) events in the
-         * [window](#window) namespace. Note that:
+         * To add an event listener when a visible text document is opened, use the {@link TextEditor TextEditor} events in the
+         * {@link window window} namespace. Note that:
          *
-         * - The event is emitted before the [document](#TextDocument) is updated in the
-         * [active text editor](#window.activeTextEditor)
-         * - When a [text document](#TextDocument) is already open (e.g.: open in another [visible text editor](#window.visibleTextEditors)) this event is not emitted
+         * - The event is emitted before the {@link TextDocument document} is updated in the
+         * {@link window.activeTextEditor active text editor}
+         * - When a {@link TextDocument text document} is already open (e.g.: open in another {@link window.visibleTextEditors visible text editor}) this event is not emitted
          *
          */
         export const onDidOpenTextDocument: Event<TextDocument>;
 
         /**
-         * An event that is emitted when a [text document](#TextDocument) is disposed.
+         * An event that is emitted when a {@link TextDocument text document} is disposed.
          *
-         * To add an event listener when a visible text document is closed, use the [TextEditor](#TextEditor) events in the
-         * [window](#window) namespace. Note that this event is not emitted when a [TextEditor](#TextEditor) is closed
-         * but the document remains open in another [visible text editor](#window.visibleTextEditors).
+         * To add an event listener when a visible text document is closed, use the {@link TextEditor TextEditor} events in the
+         * {@link window window} namespace. Note that this event is not emitted when a {@link TextEditor TextEditor} is closed
+         * but the document remains open in another {@link window.visibleTextEditors visible text editor}.
          */
         export const onDidCloseTextDocument: Event<TextDocument>;
 
         /**
-         * An event that is emitted when a [text document](#TextDocument) is changed. This usually happens
-         * when the [contents](#TextDocument.getText) changes but also when other things like the
-         * [dirty](#TextDocument.isDirty)-state changes.
+         * An event that is emitted when a {@link TextDocument text document} is changed. This usually happens
+         * when the {@link TextDocument.getText contents} changes but also when other things like the
+         * {@link TextDocument.isDirty dirty}-state changes.
          */
         export const onDidChangeTextDocument: Event<TextDocumentChangeEvent>;
 
         /**
-         * An event that is emitted when a [text document](#TextDocument) will be saved to disk.
+         * An event that is emitted when a {@link TextDocument text document} will be saved to disk.
          *
          * *Note 1:* Subscribers can delay saving by registering asynchronous work. For the sake of data integrity the editor
          * might save without firing this event. For instance when shutting down with dirty files.
          *
-         * *Note 2:* Subscribers are called sequentially and they can [delay](#TextDocumentWillSaveEvent.waitUntil) saving
+         * *Note 2:* Subscribers are called sequentially and they can {@link TextDocumentWillSaveEvent.waitUntil delay} saving
          * by registering asynchronous work. Protection against misbehaving listeners is implemented as such:
          *  * there is an overall time budget that all listeners share and if that is exhausted no further listener is called
          *  * listeners that take a long time or produce errors frequently will not be called anymore
@@ -6218,7 +6236,7 @@ export module '@theia/plugin' {
         export const onWillSaveTextDocument: Event<TextDocumentWillSaveEvent>;
 
         /**
-         * An event that is emitted when a [text document](#TextDocument) is saved to disk.
+         * An event that is emitted when a {@link TextDocument text document} is saved to disk.
          */
         export const onDidSaveTextDocument: Event<TextDocument>;
 
@@ -6294,29 +6312,29 @@ export module '@theia/plugin' {
 
         /**
          * Opens a document. Will return early if this document is already open. Otherwise
-         * the document is loaded and the [didOpen](#workspace.onDidOpenTextDocument)-event fires.
+         * the document is loaded and the {@link workspace.onDidOpenTextDocument didOpen}-event fires.
          *
-         * The document is denoted by an [uri](#Uri). Depending on the [scheme](#Uri.scheme) the
+         * The document is denoted by an {@link Uri uri}. Depending on the {@link Uri.scheme scheme} the
          * following rules apply:
          * * `file`-scheme: Open a file on disk, will be rejected if the file does not exist or cannot be loaded.
          * * `untitled`-scheme: A new file that should be saved on disk, e.g. `untitled:c:\frodo\new.js`. The language
          * will be derived from the file name.
-         * * For all other schemes the registered text document content [providers](#TextDocumentContentProvider) are consulted.
+         * * For all other schemes the registered text document content {@link TextDocumentContentProvider providers} are consulted.
          *
          * *Note* that the lifecycle of the returned document is owned by the editor and not by the extension. That means an
          * [`onDidClose`](#workspace.onDidCloseTextDocument)-event can occur at any time after opening it.
          *
          * @param uri Identifies the resource to open.
-         * @return A promise that resolves to a [document](#TextDocument).
+         * @return A promise that resolves to a {@link TextDocument document}.
          */
         export function openTextDocument(uri: Uri): Thenable<TextDocument | undefined>;
 
         /**
          * A short-hand for `openTextDocument(Uri.file(fileName))`.
          *
-         * @see [openTextDocument](#openTextDocument)
+         * @see {@link openTextDocument openTextDocument}
          * @param fileName A name of a file on disk.
-         * @return A promise that resolves to a [document](#TextDocument).
+         * @return A promise that resolves to a {@link TextDocument document}.
          */
         export function openTextDocument(fileName: string): Thenable<TextDocument | undefined>;
 
@@ -6326,7 +6344,7 @@ export module '@theia/plugin' {
          * specify the *language* and/or the *content* of the document.
          *
          * @param options Options to control how the document will be created.
-         * @return A promise that resolves to a [document](#TextDocument).
+         * @return A promise that resolves to a {@link TextDocument document}.
          */
         export function openTextDocument(options?: { language?: string; content?: string; }): Thenable<TextDocument | undefined>;
 
@@ -6346,7 +6364,7 @@ export module '@theia/plugin' {
         export function getConfiguration(section?: string, scope?: ConfigurationScope | null): WorkspaceConfiguration;
 
         /**
-         * An event that is emitted when the [configuration](#WorkspaceConfiguration) changed.
+         * An event that is emitted when the {@link WorkspaceConfiguration configuration} changed.
          */
         export const onDidChangeConfiguration: Event<ConfigurationChangeEvent>;
 
@@ -6356,10 +6374,10 @@ export module '@theia/plugin' {
          * A glob pattern that filters the file events on their absolute path must be provided. Optionally,
          * flags to ignore certain kinds of events can be provided. To stop listening to events the watcher must be disposed.
          *
-         * *Note* that only files within the current [workspace folders](#workspace.workspaceFolders) can be watched.
+         * *Note* that only files within the current {@link workspace.workspaceFolders workspace folders} can be watched.
          *
-         * @param globPattern A [glob pattern](#GlobPattern) that is applied to the absolute paths of created, changed,
-         * and deleted files. Use a [relative pattern](#RelativePattern) to limit events to a certain [workspace folder](#WorkspaceFolder).
+         * @param globPattern A {@link GlobPattern glob pattern} that is applied to the absolute paths of created, changed,
+         * and deleted files. Use a {@link RelativePattern relative pattern} to limit events to a certain {@link WorkspaceFolder workspace folder}.
          * @param ignoreCreateEvents Ignore when files have been created.
          * @param ignoreChangeEvents Ignore when files have been changed.
          * @param ignoreDeleteEvents Ignore when files have been deleted.
@@ -6373,31 +6391,21 @@ export module '@theia/plugin' {
         ): FileSystemWatcher;
 
         /**
-         * Find files across all [workspace folders](#workspace.workspaceFolders) in the workspace.
+         * Find files across all {@link workspace.workspaceFolders workspace folders} in the workspace.
          *
          * @sample `findFiles('**​/*.js', '**​/node_modules/**', 10)`
-         * @param include A [glob pattern](#GlobPattern) that defines the files to search for. The glob pattern
-         * will be matched against the file paths of resulting matches relative to their workspace. Use a [relative pattern](#RelativePattern)
-         * to restrict the search results to a [workspace folder](#WorkspaceFolder).
-         * @param exclude  A [glob pattern](#GlobPattern) that defines files and folders to exclude. The glob pattern
+         * @param include A {@link GlobPattern glob pattern} that defines the files to search for. The glob pattern
+         * will be matched against the file paths of resulting matches relative to their workspace. Use a {@link RelativePattern relative pattern}
+         * to restrict the search results to a {@link WorkspaceFolder workspace folder}.
+         * @param exclude  A {@link GlobPattern glob pattern} that defines files and folders to exclude. The glob pattern
          * will be matched against the file paths of resulting matches relative to their workspace. When `undefined` only default excludes will
          * apply, when `null` no excludes will apply.
          * @param maxResults An upper-bound for the result.
          * @param token A token that can be used to signal cancellation to the underlying search engine.
          * @return A thenable that resolves to an array of resource identifiers. Will return no results if no
-         * [workspace folders](#workspace.workspaceFolders) are opened.
+         * {@link workspace.workspaceFolders workspace folders} are opened.
          */
         export function findFiles(include: GlobPattern, exclude?: GlobPattern | null, maxResults?: number, token?: CancellationToken): Thenable<Uri[]>;
-
-        /**
-         * Find text in files across all [workspace folders] in the workspace
-         * @param query What to search
-         * @param optionsOrCallback
-         * @param callbackOrToken
-         * @param token
-         */
-        export function findTextInFiles(query: TextSearchQuery, optionsOrCallback: FindTextInFilesOptions | ((result: TextSearchResult) => void),
-            callbackOrToken?: CancellationToken | ((result: TextSearchResult) => void), token?: CancellationToken): Promise<TextSearchComplete>;
 
         /**
          * Save all dirty files.
@@ -6409,7 +6417,7 @@ export module '@theia/plugin' {
 
         /**
          * Make changes to one or many resources or create, delete, and rename resources as defined by the given
-         * [workspace edit](#WorkspaceEdit).
+         * {@link WorkspaceEdit workspace edit}.
          *
          * All changes of a workspace edit are applied in the same order in which they have been added. If
          * multiple textual inserts are made at the same position, these strings appear in the resulting text
@@ -6431,15 +6439,15 @@ export module '@theia/plugin' {
          * There can only be one provider per scheme and an error is being thrown when a scheme
          * has been claimed by another provider or when it is reserved.
          *
-         * @param scheme The uri-[scheme](#Uri.scheme) the provider registers for.
+         * @param scheme The uri-{@link Uri.scheme scheme} the provider registers for.
          * @param provider The filesystem provider.
          * @param options Immutable metadata about the provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerFileSystemProvider(scheme: string, provider: FileSystemProvider, options?: { readonly isCaseSensitive?: boolean, readonly isReadonly?: boolean }): Disposable;
 
         /**
-         * Returns the [workspace folder](#WorkspaceFolder) that contains a given uri.
+         * Returns the {@link WorkspaceFolder workspace folder} that contains a given uri.
          * * returns `undefined` when the given uri doesn't match any workspace folder
          *
          * @param uri An uri.
@@ -6450,10 +6458,10 @@ export module '@theia/plugin' {
         /**
          * Returns a path that is relative to the workspace folder or folders.
          *
-         * When there are no [workspace folders](#workspace.workspaceFolders) or when the path
+         * When there are no {@link workspace.workspaceFolders workspace folders} or when the path
          * is not contained in them, the input is returned.
          *
-         * @param pathOrUri A path or uri. When a uri is given its [fsPath](#Uri.fsPath) is used.
+         * @param pathOrUri A path or uri. When a uri is given its {@link Uri.fsPath fsPath} is used.
          * @param includeWorkspaceFolder When `true` and when the given path is contained inside a
          * workspace folder the name of the workspace is prepended. Defaults to `true` when there are
          * multiple workspace folders and `false` otherwise.
@@ -6462,7 +6470,7 @@ export module '@theia/plugin' {
         export function asRelativePath(pathOrUri: string | Uri, includeWorkspaceFolder?: boolean): string | undefined;
 
         /**
-         * This method replaces `deleteCount` [workspace folders](#workspace.workspaceFolders) starting at index `start`
+         * This method replaces `deleteCount` {@link workspace.workspaceFolders workspace folders} starting at index `start`
          * by an optional set of `workspaceFoldersToAdd` on the `theia.workspace.workspaceFolders` array. This "splice"
          * behavior can be used to add, remove and change workspace folders in a single operation.
          *
@@ -6494,7 +6502,7 @@ export module '@theia/plugin' {
          * **Note:** it is not valid to call [updateWorkspaceFolders()](#updateWorkspaceFolders) multiple times
          * without waiting for the [`onDidChangeWorkspaceFolders()`](#onDidChangeWorkspaceFolders) to fire.
          *
-         * @param start the zero-based location in the list of currently opened [workspace folders](#WorkspaceFolder)
+         * @param start the zero-based location in the list of currently opened {@link WorkspaceFolder workspace folders}
          * from which to start deleting workspace folders.
          * @param deleteCount the optional number of workspace folders to remove.
          * @param workspaceFoldersToAdd the optional variable set of workspace folders to add in place of the deleted ones.
@@ -6511,7 +6519,7 @@ export module '@theia/plugin' {
          *
          * @param type The task kind type this provider is registered for.
          * @param provider A task provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerTaskProvider(type: string, provider: TaskProvider): Disposable;
 
@@ -6684,7 +6692,7 @@ export module '@theia/plugin' {
     /**
      * A relative pattern is a helper to construct glob patterns that are matched
      * relatively to a base path. The base path can either be an absolute file path
-     * or a [workspace folder](#WorkspaceFolder).
+     * or a {@link WorkspaceFolder workspace folder}.
      */
     export class RelativePattern {
 
@@ -6715,7 +6723,7 @@ export module '@theia/plugin' {
 
     /**
      * A file glob pattern to match file paths against. This can either be a glob pattern string
-     * (like `**​/*.{ts,js}` or `*.{ts,js}`) or a [relative pattern](#RelativePattern).
+     * (like `**​/*.{ts,js}` or `*.{ts,js}`) or a {@link RelativePattern relative pattern}.
      *
      * Glob patterns can have the following syntax:
      * * `*` to match one or more characters in a path segment
@@ -6729,8 +6737,8 @@ export module '@theia/plugin' {
 
     /**
      * A document filter denotes a document by different properties like
-     * the [language](#TextDocument.languageId), the [scheme](#Uri.scheme) of
-     * its resource, or a glob-pattern that is applied to the [path](#TextDocument.fileName).
+     * the {@link TextDocument.languageId language}, the {@link Uri.scheme scheme} of
+     * its resource, or a glob-pattern that is applied to the {@link TextDocument.fileName path}.
      *
      * @sample A language filter that applies to typescript files on disk: `{ language: 'typescript', scheme: 'file' }`
      * @sample A language filter that applies to all package.json paths: `{ language: 'json', scheme: 'untitled', pattern: '**​/package.json' }`
@@ -6740,23 +6748,23 @@ export module '@theia/plugin' {
         /**
          * A language id, like `typescript`.
          */
-        language?: string;
+        readonly language?: string;
 
         /**
-         * A Uri [scheme](#Uri.scheme), like `file` or `untitled`.
+         * A Uri {@link Uri.scheme scheme}, like `file` or `untitled`.
          */
-        scheme?: string;
+        readonly scheme?: string;
 
         /**
-         * A [glob pattern](#GlobPattern) that is matched on the absolute path of the document. Use a [relative pattern](#RelativePattern)
-         * to filter documents to a [workspace folder](#WorkspaceFolder).
+         * A {@link GlobPattern glob pattern} that is matched on the absolute path of the document. Use a {@link RelativePattern relative pattern}
+         * to filter documents to a {@link WorkspaceFolder workspace folder}.
          */
-        pattern?: GlobPattern;
+        readonly pattern?: GlobPattern;
     }
 
     /**
      * A language selector is the combination of one or many language identifiers
-     * and [language filters](#DocumentFilter).
+     * and {@link DocumentFilter language filters}.
      *
      * *Note* that a document selector that is just a language identifier selects *all*
      * documents, even those that are not saved on disk. Only use such selectors when
@@ -6883,11 +6891,11 @@ export module '@theia/plugin' {
         /**
          * @deprecated Use the autoClosingPairs property in the language configuration file instead.
          */
-        __characterPairSupport?: { autoClosingPairs: { close: String, notIn: String[], open: String }[] }
+        __characterPairSupport?: { autoClosingPairs: { open: string; close: string; notIn?: string[]; }[]; };
         /**
          * @deprecated Do not use. Will be replaced by a better API soon.
          */
-        __electricCharacterSupport?: { brackets: any, docComment: { close: String, lineStart: String, open: String, scope: String } }
+        __electricCharacterSupport?: { brackets?: any, docComment?: { scope: string; open: string; lineStart: string; close?: string; }; };
         /**
          * The language's comment settings.
          */
@@ -7101,7 +7109,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * How a [completion provider](#CompletionItemProvider) was triggered
+     * How a {@link CompletionItemProvider completion provider} was triggered
      */
     export enum CompletionTriggerKind {
         /**
@@ -7120,7 +7128,7 @@ export module '@theia/plugin' {
 
     /**
      * Contains additional information about the context in which
-     * [completion provider](#CompletionItemProvider.provideCompletionItems) is triggered.
+     * {@link CompletionItemProvider.provideCompletionItems completion provider} is triggered.
      */
     export interface CompletionContext {
         /**
@@ -7223,7 +7231,7 @@ export module '@theia/plugin' {
         /**
          * ~~Creates a new symbol information object.~~
          *
-         * @deprecated Please use the constructor taking a [location](#Location) object.
+         * @deprecated Please use the constructor taking a {@link Location location} object.
          *
          * @param name The name of the symbol.
          * @param kind The kind of the symbol.
@@ -7391,15 +7399,15 @@ export module '@theia/plugin' {
         label: string;
 
         /**
-         * An [edit](#TextEdit) which is applied to a document when selecting
-         * this presentation for the color.  When `falsy` the [label](#ColorPresentation.label)
+         * An {@link TextEdit edit} which is applied to a document when selecting
+         * this presentation for the color.  When `falsy` the {@link ColorPresentation.label label}
          * is used.
          */
         textEdit?: TextEdit;
 
         /**
-         * An optional array of additional [text edits](#TextEdit) that are applied when
-         * selecting this color presentation. Edits must not overlap with the main [edit](#ColorPresentation.textEdit) nor with themselves.
+         * An optional array of additional {@link TextEdit text edits} that are applied when
+         * selecting this color presentation. Edits must not overlap with the main {@link ColorPresentation.textEdit edit} nor with themselves.
          */
         additionalTextEdits?: TextEdit[];
 
@@ -7422,13 +7430,13 @@ export module '@theia/plugin' {
          *
          * @param document The document in which the command was invoked.
          * @param token A cancellation token.
-         * @return An array of [color information](#ColorInformation) or a thenable that resolves to such. The lack of a result
+         * @return An array of {@link ColorInformation color information} or a thenable that resolves to such. The lack of a result
          * can be signaled by returning `undefined`, `null`, or an empty array.
          */
         provideDocumentColors(document: TextDocument, token: CancellationToken): ProviderResult<ColorInformation[]>;
 
         /**
-         * Provide [representations](#ColorPresentation) for a color.
+         * Provide {@link ColorPresentation representations} for a color.
          *
          * @param color The color to show and insert.
          * @param context A context object with additional information
@@ -7458,10 +7466,10 @@ export module '@theia/plugin' {
         end: number;
 
         /**
-         * Describes the [Kind](#FoldingRangeKind) of the folding range such as [Comment](#FoldingRangeKind.Comment) or
-         * [Region](#FoldingRangeKind.Region). The kind is used to categorize folding ranges and used by commands
+         * Describes the {@link FoldingRangeKind Kind} of the folding range such as {@link FoldingRangeKind.Comment Comment} or
+         * {@link FoldingRangeKind.Region Region}. The kind is used to categorize folding ranges and used by commands
          * like 'Fold all comments'. See
-         * [FoldingRangeKind](#FoldingRangeKind) for an enumeration of all kinds.
+         * {@link FoldingRangeKind FoldingRangeKind} for an enumeration of all kinds.
          * If not set, the range is originated from a syntax element.
          */
         kind?: FoldingRangeKind;
@@ -7477,7 +7485,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * An enumeration of specific folding range kinds. The kind is an optional field of a [FoldingRange](#FoldingRange)
+     * An enumeration of specific folding range kinds. The kind is an optional field of a {@link FoldingRange FoldingRange}
      * and is used to distinguish specific folding ranges such as ranges originated from comments. The kind is used by commands like
      * `Fold all comments` or `Fold all regions`.
      * If the kind is not set on the range, the range originated from a syntax element other than comments, imports or region markers.
@@ -7605,7 +7613,7 @@ export module '@theia/plugin' {
          * *Note* that the eol-sequence will be applied to the
          * whole document.
          */
-        newEol: EndOfLine;
+        newEol?: EndOfLine;
 
         /**
          * Create a new TextEdit.
@@ -7689,13 +7697,13 @@ export module '@theia/plugin' {
     /**
      * A completion item represents a text snippet that is proposed to complete text that is being typed.
      *
-     * It is sufficient to create a completion item from just a [label](#CompletionItem.label). In that
-     * case the completion item will replace the [word](#TextDocument.getWordRangeAtPosition)
-     * until the cursor with the given label or [insertText](#CompletionItem.insertText). Otherwise the
-     * the given [edit](#CompletionItem.textEdit) is used.
+     * It is sufficient to create a completion item from just a {@link CompletionItem.label label}. In that
+     * case the completion item will replace the {@link TextDocument.getWordRangeAtPosition word}
+     * until the cursor with the given label or {@link CompletionItem.insertText insertText}. Otherwise the
+     * the given {@link CompletionItem.textEdit edit} is used.
      *
      * When selecting a completion item in the editor its defined or synthesized text edit will be applied
-     * to *all* cursors/selections whereas [additionalTextEdits](#additionalTextEdits) will be
+     * to *all* cursors/selections whereas {@link additionalTextEdits additionalTextEdits} will be
      * applied as provided.
      *
      * @see [CompletionItemProvider.provideCompletionItems](#CompletionItemProvider.provideCompletionItems)
@@ -7734,14 +7742,14 @@ export module '@theia/plugin' {
 
         /**
          * A string that should be used when comparing this item
-         * with other items. When `falsy` the [label](#CompletionItem.label)
+         * with other items. When `falsy` the {@link CompletionItem.label label}
          * is used.
          */
         sortText?: string;
 
         /**
          * A string that should be used when filtering a set of
-         * completion items. When `falsy` the [label](#CompletionItem.label)
+         * completion items. When `falsy` the {@link CompletionItem.label label}
          * is used.
          */
         filterText?: string;
@@ -7755,7 +7763,7 @@ export module '@theia/plugin' {
 
         /**
          * A string or snippet that should be inserted in a document when selecting
-         * this completion. When `falsy` the [label](#CompletionItem.label)
+         * this completion. When `falsy` the {@link CompletionItem.label label}
          * is used.
          */
         insertText?: string | SnippetString;
@@ -7763,12 +7771,12 @@ export module '@theia/plugin' {
         /**
          * A range or a insert and replace range selecting the text that should be replaced by this completion item.
          *
-         * When omitted, the range of the [current word](#TextDocument.getWordRangeAtPosition) is used as replace-range
-         * and as insert-range the start of the [current word](#TextDocument.getWordRangeAtPosition) to the
+         * When omitted, the range of the {@link TextDocument.getWordRangeAtPosition current word} is used as replace-range
+         * and as insert-range the start of the {@link TextDocument.getWordRangeAtPosition current word} to the
          * current position is used.
          *
-         * *Note 1:* A range must be a [single line](#Range.isSingleLine) and it must
-         * [contain](#Range.contains) the position at which completion has been [requested](#CompletionItemProvider.provideCompletionItems).
+         * *Note 1:* A range must be a {@link Range.isSingleLine single line} and it must
+         * {@link Range.contains contain} the position at which completion has been {@link CompletionItemProvider.provideCompletionItems requested}.
          * *Note 2:* A insert range must be a prefix of a replace range, that means it must be contained and starting at the same position.
          */
         range?: Range | { inserting: Range; replacing: Range; };
@@ -7781,35 +7789,35 @@ export module '@theia/plugin' {
         commitCharacters?: string[];
 
         /**
-         * Keep whitespace of the [insertText](#CompletionItem.insertText) as is. By default, the editor adjusts leading
+         * Keep whitespace of the {@link CompletionItem.insertText insertText} as is. By default, the editor adjusts leading
          * whitespace of new lines so that they match the indentation of the line for which the item is accepted - setting
          * this to `true` will prevent that.
          */
         keepWhitespace?: boolean;
 
         /**
-         * An optional array of additional [text edits](#TextEdit) that are applied when
-         * selecting this completion. Edits must not overlap with the main [edit](#CompletionItem.textEdit)
+         * An optional array of additional {@link TextEdit text edits} that are applied when
+         * selecting this completion. Edits must not overlap with the main {@link CompletionItem.textEdit edit}
          * nor with themselves.
          */
         additionalTextEdits?: TextEdit[];
 
         /**
-         * An optional [command](#Command) that is executed *after* inserting this completion. *Note* that
+         * An optional {@link Command command} that is executed *after* inserting this completion. *Note* that
          * additional modifications to the current document should be described with the
-         * [additionalTextEdits](#additionalTextEdits)-property.
+         * {@link additionalTextEdits additionalTextEdits}-property.
          */
         command?: Command;
 
         /**
          * @deprecated Use `CompletionItem.insertText` and `CompletionItem.range` instead.
          *
-         * ~~An [edit](#TextEdit) which is applied to a document when selecting
+         * ~~An {@link TextEdit edit} which is applied to a document when selecting
          * this completion. When an edit is provided the value of
-         * [insertText](#CompletionItem.insertText) is ignored.~~
+         * {@link CompletionItem.insertText insertText} is ignored.~~
          *
-         * ~~The [range](#Range) of the edit must be single-line and on the same
-         * line completions were [requested](#CompletionItemProvider.provideCompletionItems) at.~~
+         * ~~The {@link Range range} of the edit must be single-line and on the same
+         * line completions were {@link CompletionItemProvider.provideCompletionItems requested} at.~~
          */
         textEdit?: TextEdit;
 
@@ -7821,17 +7829,17 @@ export module '@theia/plugin' {
         /**
          * Creates a new completion item.
          *
-         * Completion items must have at least a [label](#CompletionItem.label) which then
+         * Completion items must have at least a {@link CompletionItem.label label} which then
          * will be used as insert text as well as for sorting and filtering.
          *
          * @param label The label of the completion.
-         * @param kind The [kind](#CompletionItemKind) of the completion.
+         * @param kind The {@link CompletionItemKind kind} of the completion.
          */
         constructor(label: string | CompletionItemLabel, kind?: CompletionItemKind);
     }
 
     /**
-     * Represents a collection of [completion items](#CompletionItem) to be presented
+     * Represents a collection of {@link CompletionItem completion items} to be presented
      * in the editor.
      */
     export class CompletionList<T extends CompletionItem = CompletionItem> {
@@ -7845,7 +7853,7 @@ export module '@theia/plugin' {
         /**
          * The completion items.
          */
-        items: CompletionItem[];
+        items: T[];
 
         /**
          * Creates a new completion list.
@@ -7853,7 +7861,7 @@ export module '@theia/plugin' {
          * @param items The completion items.
          * @param isIncomplete The list is not complete.
          */
-        constructor(items?: CompletionItem[], isIncomplete?: boolean);
+        constructor(items?: T[], isIncomplete?: boolean);
     }
 
     /**
@@ -7878,7 +7886,7 @@ export module '@theia/plugin' {
          * @param token A cancellation token.
          * @param context How the completion was triggered.
          *
-         * @return An array of completions, a [completion list](#CompletionList), or a thenable that resolves to either.
+         * @return An array of completions, a {@link CompletionList completion list}, or a thenable that resolves to either.
          * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
          */
         provideCompletionItems(document: TextDocument,
@@ -7888,7 +7896,7 @@ export module '@theia/plugin' {
 
         /**
          * Given a completion item fill in more data, like [doc-comment](#CompletionItem.documentation)
-         * or [details](#CompletionItem.detail).
+         * or {@link CompletionItem.detail details}.
          *
          * The editor will only resolve a completion item once.
          *
@@ -7947,7 +7955,7 @@ export module '@theia/plugin' {
         /**
          * An array of resources for which diagnostics have changed.
          */
-        readonly uris: Uri[];
+        readonly uris: readonly Uri[];
     }
 
     /**
@@ -8043,7 +8051,7 @@ export module '@theia/plugin' {
         message: string;
 
         /**
-         * The severity, default is [error](#DiagnosticSeverity.Error).
+         * The severity, default is {@link DiagnosticSeverity.Error error}.
          */
         severity: DiagnosticSeverity;
 
@@ -8056,7 +8064,7 @@ export module '@theia/plugin' {
         /**
          * A code or identifier for this diagnostics. Will not be surfaced
          * to the user, but should be used for later processing, e.g. when
-         * providing [code actions](#CodeActionContext).
+         * providing {@link CodeActionContext code actions}.
          */
         code?: string | number;
 
@@ -8076,7 +8084,7 @@ export module '@theia/plugin' {
          *
          * @param range The range to which this diagnostic applies.
          * @param message The human-readable message.
-         * @param severity The severity, default is [error](#DiagnosticSeverity.Error).
+         * @param severity The severity, default is {@link DiagnosticSeverity.Error error}.
          */
         constructor(range: Range, message: string, severity?: DiagnosticSeverity);
     }
@@ -8131,16 +8139,16 @@ export module '@theia/plugin' {
          * @param callback Function to execute for each entry.
          * @param thisArg The `this` context used when invoking the handler function.
          */
-        forEach(callback: (uri: Uri, diagnostics: Diagnostic[], collection: DiagnosticCollection) => any, thisArg?: any): void;
+        forEach(callback: (uri: Uri, diagnostics: readonly Diagnostic[], collection: DiagnosticCollection) => any, thisArg?: any): void;
 
         /**
          * Get the diagnostics for a given resource. *Note* that you cannot
          * modify the diagnostics-array returned from this call.
          *
          * @param uri A resource identifier.
-         * @returns An immutable array of [diagnostics](#Diagnostic) or `undefined`.
+         * @returns An immutable array of {@link Diagnostic diagnostics} or `undefined`.
          */
-        get(uri: Uri): Diagnostic[] | undefined;
+        get(uri: Uri): readonly Diagnostic[] | undefined;
 
         /**
          * Check if this collection contains diagnostics for a
@@ -8153,7 +8161,7 @@ export module '@theia/plugin' {
 
         /**
          * Dispose and free associated resources. Calls
-         * [clear](#DiagnosticCollection.clear).
+         * {@link DiagnosticCollection.clear clear}.
          */
         dispose(): void;
     }
@@ -8249,22 +8257,22 @@ export module '@theia/plugin' {
         title: string;
 
         /**
-         * [Diagnostics](#Diagnostic) that this code action resolves.
+         * {@link Diagnostic Diagnostics} that this code action resolves.
          */
         diagnostics?: Diagnostic[];
 
         /**
-         * A [workspace edit](#WorkspaceEdit) this code action performs.
+         * A {@link WorkspaceEdit workspace edit} this code action performs.
          */
         edit?: WorkspaceEdit;
 
         /**
-         * A [command](#Command) this code action executes.
+         * A {@link Command command} this code action executes.
          */
         command?: Command;
 
         /**
-         * [Kind](#CodeActionKind) of the code action.
+         * {@link CodeActionKind Kind} of the code action.
          *
          * Used to filter code actions.
          */
@@ -8283,8 +8291,8 @@ export module '@theia/plugin' {
         /**
          * Creates a new code action.
          *
-         * A code action must have at least a [title](#CodeAction.title) and [edits](#CodeAction.edit)
-         * and/or a [command](#CodeAction.command).
+         * A code action must have at least a {@link CodeAction.title title} and {@link CodeAction.edit edits}
+         * and/or a {@link CodeAction.command command}.
          *
          * @param title The title of the code action.
          * @param kind The kind of the code action.
@@ -8296,7 +8304,7 @@ export module '@theia/plugin' {
      * The code action interface defines the contract between extensions and
      * the [light bulb](https://code.visualstudio.com/docs/editor/editingevolved#_code-action) feature.
      *
-     * A code action can be any command that is [known](#commands.getCommands) to the system.
+     * A code action can be any command that is {@link commands.getCommands known} to the system.
      */
     export interface CodeActionProvider<T extends CodeAction = CodeAction> {
         /**
@@ -8330,11 +8338,11 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Metadata about the type of code actions that a [CodeActionProvider](#CodeActionProvider) providers
+     * Metadata about the type of code actions that a {@link CodeActionProvider CodeActionProvider} providers
      */
     export interface CodeActionProviderMetadata {
         /**
-         * [CodeActionKinds](#CodeActionKind) that this provider may return.
+         * {@link CodeActionKind CodeActionKinds} that this provider may return.
          *
          * The list of kinds may be generic, such as `CodeActionKind.Refactor`, or the provider
          * may list our every specific kind they provide, such as `CodeActionKind.Refactor.Extract.append('function`)`
@@ -8350,7 +8358,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * A code lens represents a [command](#Command) that should be shown along with
+     * A code lens represents a {@link Command command} that should be shown along with
      * source text, like the number of references, a way to run tests, etc.
      *
      * A code lens is _unresolved_ when no command is associated to it. For performance
@@ -8386,7 +8394,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * A code lens provider adds [commands](#Command) to source text. The commands will be shown
+     * A code lens provider adds {@link Command commands} to source text. The commands will be shown
      * as dedicated horizontal lines in between the source text.
      */
     export interface CodeLensProvider<T extends CodeLens = CodeLens> {
@@ -8395,9 +8403,9 @@ export module '@theia/plugin' {
          */
         onDidChangeCodeLenses?: Event<void>;
         /**
-         * Compute a list of [lenses](#CodeLens). This call should return as fast as possible and if
+         * Compute a list of {@link CodeLens lenses}. This call should return as fast as possible and if
          * computing the commands is expensive implementors should only return code lens objects with the
-         * range set and implement [resolve](#CodeLensProvider.resolveCodeLens).
+         * range set and implement {@link CodeLensProvider.resolveCodeLens resolve}.
          *
          * @param document The document in which the command was invoked.
          * @param token A cancellation token.
@@ -8407,7 +8415,7 @@ export module '@theia/plugin' {
         provideCodeLenses(document: TextDocument, token: CancellationToken): ProviderResult<T[]>;
         /**
          * This function will be called for each visible code lens, usually when scrolling and after
-         * calls to [compute](#CodeLensProvider.provideCodeLenses)-lenses.
+         * calls to {@link CodeLensProvider.provideCodeLenses compute}-lenses.
          *
          * @param codeLens code lens that must be resolved.
          * @param token A cancellation token.
@@ -8539,13 +8547,13 @@ export module '@theia/plugin' {
 
     /**
      * Contains additional diagnostic information about the context in which
-     * a [code action](#CodeActionProvider.provideCodeActions) is run.
+     * a {@link CodeActionProvider.provideCodeActions code action} is run.
      */
     export interface CodeActionContext {
         /**
          * An array of diagnostics.
          */
-        readonly diagnostics: Diagnostic[];
+        readonly diagnostics: readonly Diagnostic[];
 
         /**
          * Requested kind of actions to return.
@@ -8578,7 +8586,7 @@ export module '@theia/plugin' {
         description?: string;
 
         /**
-         * The icon path or [ThemeIcon](#ThemeIcon) for the edit.
+         * The icon path or {@link ThemeIcon ThemeIcon} for the edit.
          */
         iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
     }
@@ -8587,7 +8595,7 @@ export module '@theia/plugin' {
      * A workspace edit is a collection of textual and files changes for
      * multiple resources and documents.
      *
-     * Use the [applyEdit](#workspace.applyEdit)-function to apply a workspace edit.
+     * Use the {@link workspace.applyEdit applyEdit}-function to apply a workspace edit.
      */
     export class WorkspaceEdit {
 
@@ -8832,13 +8840,13 @@ export module '@theia/plugin' {
          *
          * @param document The document in which the command was invoked.
          * @param token A cancellation token.
-         * @return An array of [document links](#DocumentLink) or a thenable that resolves to such. The lack of a result
+         * @return An array of {@link DocumentLink document links} or a thenable that resolves to such. The lack of a result
          * can be signaled by returning `undefined`, `null`, or an empty array.
          */
         provideDocumentLinks(document: TextDocument, token: CancellationToken): ProviderResult<T[]>;
 
         /**
-         * Given a link fill in its [target](#DocumentLink.target). This method is called when an incomplete
+         * Given a link fill in its {@link DocumentLink.target target}. This method is called when an incomplete
          * link is selected in the UI. Providers can implement this method and return incomplete links
          * (without target) from the [`provideDocumentLinks`](#DocumentLinkProvider.provideDocumentLinks) method which
          * often helps to improve performance.
@@ -8934,8 +8942,8 @@ export module '@theia/plugin' {
 
     /**
      * Represents semantic tokens, either in a range or in an entire document.
-     * @see [provideDocumentSemanticTokens](#DocumentSemanticTokensProvider.provideDocumentSemanticTokens) for an explanation of the format.
-     * @see [SemanticTokensBuilder](#SemanticTokensBuilder) for a helper to create an instance.
+     * @see {@link DocumentSemanticTokensProvider.provideDocumentSemanticTokens provideDocumentSemanticTokens} for an explanation of the format.
+     * @see {@link SemanticTokensBuilder} for a helper to create an instance.
      */
     export class SemanticTokens {
         /**
@@ -8943,10 +8951,10 @@ export module '@theia/plugin' {
          *
          * This is the id that will be passed to `DocumentSemanticTokensProvider.provideDocumentSemanticTokensEdits` (if implemented).
          */
-        readonly resultId?: string;
+        readonly resultId: string | undefined;
         /**
          * The actual tokens data.
-         * @see [provideDocumentSemanticTokens](#DocumentSemanticTokensProvider.provideDocumentSemanticTokens) for an explanation of the format.
+         * @see {@link DocumentSemanticTokensProvider.provideDocumentSemanticTokens provideDocumentSemanticTokens} for an explanation of the format.
          */
         readonly data: Uint32Array;
 
@@ -8955,7 +8963,7 @@ export module '@theia/plugin' {
 
     /**
      * Represents edits to semantic tokens.
-     * @see [provideDocumentSemanticTokensEdits](#DocumentSemanticTokensProvider.provideDocumentSemanticTokensEdits) for an explanation of the format.
+     * @see {@link DocumentSemanticTokensProvider.provideDocumentSemanticTokensEdits provideDocumentSemanticTokensEdits} for an explanation of the format.
      */
     export class SemanticTokensEdits {
         /**
@@ -8963,7 +8971,7 @@ export module '@theia/plugin' {
          *
          * This is the id that will be passed to `DocumentSemanticTokensProvider.provideDocumentSemanticTokensEdits` (if implemented).
          */
-        readonly resultId?: string;
+        readonly resultId: string | undefined;
         /**
          * The edits to the tokens data.
          * All edits refer to the initial data state.
@@ -8975,7 +8983,7 @@ export module '@theia/plugin' {
 
     /**
      * Represents an edit to semantic tokens.
-     * @see [provideDocumentSemanticTokensEdits](#DocumentSemanticTokensProvider.provideDocumentSemanticTokensEdits) for an explanation of the format.
+     * @see {@link DocumentSemanticTokensProvider.provideDocumentSemanticTokensEdits provideDocumentSemanticTokensEdits} for an explanation of the format.
      */
     export class SemanticTokensEdit {
         /**
@@ -8989,7 +8997,7 @@ export module '@theia/plugin' {
         /**
          * The elements to insert.
          */
-        readonly data?: Uint32Array;
+        readonly data: Uint32Array | undefined;
 
         constructor(start: number, deleteCount: number, data?: Uint32Array);
     }
@@ -9059,7 +9067,7 @@ export module '@theia/plugin' {
          *    [  2,5,3,0,3,  0,5,4,1,0,  3,2,7,2,0 ]
          * ```
          *
-         * @see [SemanticTokensBuilder](#SemanticTokensBuilder) for a helper to encode tokens as integers.
+         * @see {@link SemanticTokensBuilder SemanticTokensBuilder} for a helper to encode tokens as integers.
          * *NOTE*: When doing edits, it is possible that multiple edits occur until VS Code decides to invoke the semantic tokens provider.
          * *NOTE*: If the provider cannot temporarily compute semantic tokens, it can indicate this by throwing an error with the message 'Busy'.
          */
@@ -9103,7 +9111,7 @@ export module '@theia/plugin' {
      */
     export interface DocumentRangeSemanticTokensProvider {
         /**
-         * @see [provideDocumentSemanticTokens](#DocumentSemanticTokensProvider.provideDocumentSemanticTokens).
+         * @see {@link DocumentSemanticTokensProvider.provideDocumentSemanticTokens provideDocumentSemanticTokens}.
          */
         provideDocumentRangeSemanticTokens(document: TextDocument, range: Range, token: CancellationToken): ProviderResult<SemanticTokens>;
     }
@@ -9116,7 +9124,7 @@ export module '@theia/plugin' {
         export function getLanguages(): Thenable<string[]>;
 
         /**
-         * Set (and change) the [language](#TextDocument.languageId) that is associated
+         * Set (and change) the {@link TextDocument.languageId language} that is associated
          * with the given document.
          *
          * *Note* that calling this function will trigger the [`onDidCloseTextDocument`](#workspace.onDidCloseTextDocument) event
@@ -9129,7 +9137,7 @@ export module '@theia/plugin' {
         export function setTextDocumentLanguage(document: TextDocument, languageId: string): Thenable<TextDocument>;
 
         /**
-         * Compute the match between a document [selector](#DocumentSelector) and a document. Values
+         * Compute the match between a document {@link DocumentSelector selector} and a document. Values
          * greater than zero mean the selector matches the document.
          *
          * A match is computed according to these rules:
@@ -9168,7 +9176,7 @@ export module '@theia/plugin' {
         export function match(selector: DocumentSelector, document: TextDocument): number;
 
         /**
-         * An [event](#Event) which fires when the global set of diagnostics changes. This is
+         * An {@link Event event} which fires when the global set of diagnostics changes. This is
          * newly added and removed diagnostics.
          */
         export const onDidChangeDiagnostics: Event<DiagnosticChangeEvent>;
@@ -9178,7 +9186,7 @@ export module '@theia/plugin' {
          * all extensions but *not yet* from the task framework.
          *
          * @param resource A resource
-         * @returns An array of [diagnostics](#Diagnostic) objects or an empty array.
+         * @returns An array of {@link Diagnostic diagnostics} objects or an empty array.
          */
         export function getDiagnostics(resource: Uri): Diagnostic[];
 
@@ -9193,17 +9201,17 @@ export module '@theia/plugin' {
         /**
          * Create a diagnostics collection.
          *
-         * @param name The [name](#DiagnosticCollection.name) of the collection.
+         * @param name The {@link DiagnosticCollection.name name} of the collection.
          * @return A new diagnostic collection.
          */
         export function createDiagnosticCollection(name?: string): DiagnosticCollection;
 
         /**
-         * Set a [language configuration](#LanguageConfiguration) for a language.
+         * Set a {@link LanguageConfiguration language configuration} for a language.
          *
          * @param language A language identifier like `typescript`.
          * @param configuration Language configuration.
-         * @return A [disposable](#Disposable) that unsets this configuration.
+         * @return A {@link Disposable disposable} that unsets this configuration.
          */
         export function setLanguageConfiguration(language: string, configuration: LanguageConfiguration): Disposable;
 
@@ -9211,7 +9219,7 @@ export module '@theia/plugin' {
          * Register a completion provider.
          *
          * Multiple providers can be registered for a language. In that case providers are sorted
-         * by their [score](#languages.match) and groups of equal score are sequentially asked for
+         * by their {@link languages.match score} and groups of equal score are sequentially asked for
          * completion items. The process stops when one or many providers of a group return a
          * result. A failing provider (rejected promise or exception) will not fail the whole
          * operation.
@@ -9219,7 +9227,7 @@ export module '@theia/plugin' {
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A completion provider.
          * @param triggerCharacters Trigger completion when the user types one of the characters, like `.` or `:`.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerCompletionItemProvider(selector: DocumentSelector, provider: CompletionItemProvider, ...triggerCharacters: string[]): Disposable;
 
@@ -9232,7 +9240,7 @@ export module '@theia/plugin' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A definition provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerDefinitionProvider(selector: DocumentSelector, provider: DefinitionProvider): Disposable;
 
@@ -9245,7 +9253,7 @@ export module '@theia/plugin' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A declaration provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerDeclarationProvider(selector: DocumentSelector, provider: DeclarationProvider): Disposable;
 
@@ -9253,14 +9261,14 @@ export module '@theia/plugin' {
          * Register a signature help provider.
          *
          * Multiple providers can be registered for a language. In that case providers are sorted
-         * by their [score](#languages.match) and called sequentially until a provider returns a
+         * by their {@link languages.match score} and called sequentially until a provider returns a
          * valid result.
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A signature help provider.
          * @param triggerCharacters Trigger signature help when the user types one of the characters, like `,` or `(`.
          * @param metadata Information about the provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerSignatureHelpProvider(selector: DocumentSelector, provider: SignatureHelpProvider, ...triggerCharacters: string[]): Disposable;
         export function registerSignatureHelpProvider(selector: DocumentSelector, provider: SignatureHelpProvider, metadata: SignatureHelpProviderMetadata): Disposable;
@@ -9274,7 +9282,7 @@ export module '@theia/plugin' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A type definition provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerTypeDefinitionProvider(selector: DocumentSelector, provider: TypeDefinitionProvider): Disposable;
 
@@ -9287,7 +9295,7 @@ export module '@theia/plugin' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider An implementation provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerImplementationProvider(selector: DocumentSelector, provider: ImplementationProvider): Disposable;
 
@@ -9300,7 +9308,7 @@ export module '@theia/plugin' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A hover provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Disposable;
 
@@ -9324,7 +9332,7 @@ export module '@theia/plugin' {
          * not cause a failure of the whole operation.
          *
          * @param provider A workspace symbol provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerWorkspaceSymbolProvider(provider: WorkspaceSymbolProvider): Disposable;
 
@@ -9332,12 +9340,12 @@ export module '@theia/plugin' {
          * Register a document highlight provider.
          *
          * Multiple providers can be registered for a language. In that case providers are sorted
-         * by their [score](#languages.match) and groups sequentially asked for document highlights.
+         * by their {@link languages.match score} and groups sequentially asked for document highlights.
          * The process stops when a provider returns a `non-falsy` or `non-failure` result.
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A document highlight provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerDocumentHighlightProvider(selector: DocumentSelector, provider: DocumentHighlightProvider): Disposable;
 
@@ -9345,29 +9353,29 @@ export module '@theia/plugin' {
          * Register a formatting provider for a document.
          *
          * Multiple providers can be registered for a language. In that case providers are sorted
-         * by their [score](#languages.match) and the best-matching provider is used. Failure
+         * by their {@link languages.match score} and the best-matching provider is used. Failure
          * of the selected provider will cause a failure of the whole operation.
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A document formatting edit provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerDocumentFormattingEditProvider(selector: DocumentSelector, provider: DocumentFormattingEditProvider): Disposable;
 
         /**
          * Register a formatting provider for a document range.
          *
-         * *Note:* A document range provider is also a [document formatter](#DocumentFormattingEditProvider)
-         * which means there is no need to [register](#registerDocumentFormattingEditProvider) a document
+         * *Note:* A document range provider is also a {@link DocumentFormattingEditProvider document formatter}
+         * which means there is no need to {@link registerDocumentFormattingEditProvider register} a document
          * formatter when also registering a range provider.
          *
          * Multiple providers can be registered for a language. In that case providers are sorted
-         * by their [score](#languages.match) and the best-matching provider is used. Failure
+         * by their {@link languages.match score} and the best-matching provider is used. Failure
          * of the selected provider will cause a failure of the whole operation.
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A document range formatting edit provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerDocumentRangeFormattingEditProvider(selector: DocumentSelector, provider: DocumentRangeFormattingEditProvider): Disposable;
 
@@ -9381,7 +9389,7 @@ export module '@theia/plugin' {
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A code action provider.
          * @param metadata Metadata about the kind of code actions the provider providers.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerCodeActionsProvider(selector: DocumentSelector, provider: CodeActionProvider, metadata?: CodeActionProviderMetadata): Disposable;
 
@@ -9394,7 +9402,7 @@ export module '@theia/plugin' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A code lens provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerCodeLensProvider(selector: DocumentSelector, provider: CodeLensProvider): Disposable;
 
@@ -9402,14 +9410,14 @@ export module '@theia/plugin' {
          * Register a formatting provider that works on type. The provider is active when the user enables the setting `editor.formatOnType`.
          *
          * Multiple providers can be registered for a language. In that case providers are sorted
-         * by their [score](#languages.match) and the best-matching provider is used. Failure
+         * by their {@link languages.match score} and the best-matching provider is used. Failure
          * of the selected provider will cause a failure of the whole operation.
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider An on type formatting edit provider.
          * @param firstTriggerCharacter A character on which formatting should be triggered, like `}`.
          * @param moreTriggerCharacter More trigger characters.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerOnTypeFormattingEditProvider(
             selector: DocumentSelector,
@@ -9427,7 +9435,7 @@ export module '@theia/plugin' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A document link provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerDocumentLinkProvider(selector: DocumentSelector, provider: DocumentLinkProvider): Disposable;
 
@@ -9440,7 +9448,7 @@ export module '@theia/plugin' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A reference provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerReferenceProvider(selector: DocumentSelector, provider: ReferenceProvider): Disposable;
 
@@ -9468,7 +9476,7 @@ export module '@theia/plugin' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A color provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerColorProvider(selector: DocumentSelector, provider: DocumentColorProvider): Disposable;
 
@@ -9485,7 +9493,7 @@ export module '@theia/plugin' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A folding range provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerFoldingRangeProvider(selector: DocumentSelector, provider: FoldingRangeProvider): Disposable;
 
@@ -9498,7 +9506,7 @@ export module '@theia/plugin' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A selection range provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerSelectionRangeProvider(selector: DocumentSelector, provider: SelectionRangeProvider): Disposable;
 
@@ -9506,12 +9514,12 @@ export module '@theia/plugin' {
          * Register a reference provider.
          *
          * Multiple providers can be registered for a language. In that case providers are sorted
-         * by their [score](#languages.match) and the best-matching provider is used. Failure
+         * by their {@link languages.match score} and the best-matching provider is used. Failure
          * of the selected provider will cause a failure of the whole operation.
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A rename provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerRenameProvider(selector: DocumentSelector, provider: RenameProvider): Disposable;
 
@@ -9519,12 +9527,12 @@ export module '@theia/plugin' {
          * Register a semantic tokens provider for a whole document.
          *
          * Multiple providers can be registered for a language. In that case providers are sorted
-         * by their [score](#languages.match) and the best-matching provider is used. Failure
+         * by their {@link languages.match score} and the best-matching provider is used. Failure
          * of the selected provider will cause a failure of the whole operation.
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A document semantic tokens provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerDocumentSemanticTokensProvider(selector: DocumentSelector, provider: DocumentSemanticTokensProvider, legend: SemanticTokensLegend): Disposable;
 
@@ -9538,12 +9546,12 @@ export module '@theia/plugin' {
          * will be used.
          *
          * Multiple providers can be registered for a language. In that case providers are sorted
-         * by their [score](#languages.match) and the best-matching provider is used. Failure
+         * by their {@link languages.match score} and the best-matching provider is used. Failure
          * of the selected provider will cause a failure of the whole operation.
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A document range semantic tokens provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerDocumentRangeSemanticTokensProvider(selector: DocumentSelector, provider: DocumentRangeSemanticTokensProvider, legend: SemanticTokensLegend): Disposable;
 
@@ -9556,7 +9564,7 @@ export module '@theia/plugin' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param service A call hierarchy provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerCallHierarchyProvider(selector: DocumentSelector, provider: CallHierarchyProvider): Disposable;
 
@@ -9591,7 +9599,7 @@ export module '@theia/plugin' {
         /**
          * The contents of this hover.
          */
-        contents: MarkedString[];
+        contents: Array<MarkdownString | MarkedString>;
 
         /**
          * The range to which this hover applies. When missing, the
@@ -9711,7 +9719,7 @@ export module '@theia/plugin' {
         range: Range;
 
         /**
-         * The highlight kind, default is [text](#DocumentHighlightKind.Text).
+         * The highlight kind, default is {@link DocumentHighlightKind.Text text}.
          */
         kind?: DocumentHighlightKind;
 
@@ -9719,7 +9727,7 @@ export module '@theia/plugin' {
          * Creates a new document highlight object.
          *
          * @param range The range the highlight applies to.
-         * @param kind The highlight kind, default is [text](#DocumentHighlightKind.Text).
+         * @param kind The highlight kind, default is {@link DocumentHighlightKind.Text text}.
          */
         constructor(range: Range, kind?: DocumentHighlightKind);
     }
@@ -9767,7 +9775,7 @@ export module '@theia/plugin' {
     interface QuickDiffProvider {
 
         /**
-         * Provide a [uri](#Uri) to the original resource of any given resource uri.
+         * Provide a {@link Uri uri} to the original resource of any given resource uri.
          *
          * @param uri The uri of the resource open in a text editor.
          * @param token A cancellation token.
@@ -9778,38 +9786,38 @@ export module '@theia/plugin' {
 
     /**
      * The theme-aware decorations for a
-     * [source control resource state](#SourceControlResourceState).
+     * {@link SourceControlResourceState source control resource state}.
      */
     export interface SourceControlResourceThemableDecorations {
 
         /**
          * The icon path for a specific
-         * [source control resource state](#SourceControlResourceState).
+         * {@link SourceControlResourceState source control resource state}.
          */
         readonly iconPath?: string | Uri;
     }
 
     /**
-     * The decorations for a [source control resource state](#SourceControlResourceState).
+     * The decorations for a {@link SourceControlResourceState source control resource state}.
      * Can be independently specified for light and dark themes.
      */
     export interface SourceControlResourceDecorations extends SourceControlResourceThemableDecorations {
 
         /**
-         * Whether the [source control resource state](#SourceControlResourceState) should
+         * Whether the {@link SourceControlResourceState source control resource state} should
          * be striked-through in the UI.
          */
         readonly strikeThrough?: boolean;
 
         /**
-         * Whether the [source control resource state](#SourceControlResourceState) should
+         * Whether the {@link SourceControlResourceState source control resource state} should
          * be faded in the UI.
          */
         readonly faded?: boolean;
 
         /**
          * The title for a specific
-         * [source control resource state](#SourceControlResourceState).
+         * {@link SourceControlResourceState source control resource state}.
          */
         readonly tooltip?: string;
 
@@ -9826,23 +9834,23 @@ export module '@theia/plugin' {
 
     /**
      * An source control resource state represents the state of an underlying workspace
-     * resource within a certain [source control group](#SourceControlResourceGroup).
+     * resource within a certain {@link SourceControlResourceGroup source control group}.
      */
     export interface SourceControlResourceState {
 
         /**
-         * The [uri](#Uri) of the underlying resource inside the workspace.
+         * The {@link Uri uri} of the underlying resource inside the workspace.
          */
         readonly resourceUri: Uri;
 
         /**
-         * The [command](#Command) which should be run when the resource
+         * The {@link Command command} which should be run when the resource
          * state is open in the Source Control viewlet.
          */
         readonly command?: Command;
 
         /**
-         * The [decorations](#SourceControlResourceDecorations) for this source control
+         * The {@link SourceControlResourceDecorations decorations} for this source control
          * resource state.
          */
         readonly decorations?: SourceControlResourceDecorations;
@@ -9870,7 +9878,7 @@ export module '@theia/plugin' {
 
     /**
      * A source control resource group is a collection of
-     * [source control resource states](#SourceControlResourceState).
+     * {@link SourceControlResourceState source control resource states}.
      */
     export interface SourceControlResourceGroup {
 
@@ -9886,13 +9894,13 @@ export module '@theia/plugin' {
 
         /**
          * Whether this source control resource group is hidden when it contains
-         * no [source control resource states](#SourceControlResourceState).
+         * no {@link SourceControlResourceState source control resource states}.
          */
         hideWhenEmpty?: boolean;
 
         /**
          * This group's collection of
-         * [source control resource states](#SourceControlResourceState).
+         * {@link SourceControlResourceState source control resource states}.
          */
         resourceStates: SourceControlResourceState[];
 
@@ -9903,7 +9911,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * An source control is able to provide [resource states](#SourceControlResourceState)
+     * An source control is able to provide {@link SourceControlResourceState resource states}
      * to the editor and interact with the editor in several source control related ways.
      */
     export interface SourceControl {
@@ -9924,21 +9932,21 @@ export module '@theia/plugin' {
         readonly rootUri: Uri | undefined;
 
         /**
-         * The [input box](#SourceControlInputBox) for this source control.
+         * The {@link SourceControlInputBox input box} for this source control.
          */
         readonly inputBox: SourceControlInputBox;
 
         /**
-         * The UI-visible count of [resource states](#SourceControlResourceState) of
+         * The UI-visible count of {@link SourceControlResourceState resource states} of
          * this source control.
          *
-         * Equals to the total number of [resource state](#SourceControlResourceState)
+         * Equals to the total number of {@link SourceControlResourceState resource state}
          * of this source control, if undefined.
          */
         count?: number;
 
         /**
-         * An optional [quick diff provider](#QuickDiffProvider).
+         * An optional {@link QuickDiffProvider quick diff provider}.
          */
         quickDiffProvider?: QuickDiffProvider;
 
@@ -9966,7 +9974,7 @@ export module '@theia/plugin' {
         statusBarCommands?: Command[];
 
         /**
-         * Create a new [resource group](#SourceControlResourceGroup).
+         * Create a new {@link SourceControlResourceGroup resource group}.
          */
         createResourceGroup(id: string, label: string): SourceControlResourceGroup;
 
@@ -9979,7 +9987,7 @@ export module '@theia/plugin' {
     export namespace scm {
 
         /**
-         * ~~The [input box](#SourceControlInputBox) for the last source control
+         * ~~The {@link SourceControlInputBox input box} for the last source control
          * created by the extension.~~
          *
          * @deprecated Use SourceControl.inputBox instead
@@ -9987,12 +9995,12 @@ export module '@theia/plugin' {
         export const inputBox: SourceControlInputBox;
 
         /**
-         * Creates a new [source control](#SourceControl) instance.
+         * Creates a new {@link SourceControl source control} instance.
          *
          * @param id An `id` for the source control. Something short, eg: `git`.
          * @param label A human-readable string for the source control. Eg: `Git`.
          * @param rootUri An optional Uri of the root of the source control. Eg: `Uri.parse(workspaceRoot)`.
-         * @return An instance of [source control](#SourceControl).
+         * @return An instance of {@link SourceControl source control}.
          */
         export function createSourceControl(id: string, label: string, rootUri?: Uri): SourceControl;
     }
@@ -10054,12 +10062,12 @@ export module '@theia/plugin' {
         readonly id: string;
 
         /**
-         * The debug session's type from the [debug configuration](#DebugConfiguration).
+         * The debug session's type from the {@link DebugConfiguration debug configuration}.
          */
         readonly type: string;
 
         /**
-         * The debug session's name from the [debug configuration](#DebugConfiguration).
+         * The debug session's name from the {@link DebugConfiguration debug configuration}.
          */
         readonly name: string;
 
@@ -10069,7 +10077,7 @@ export module '@theia/plugin' {
         readonly workspaceFolder: WorkspaceFolder | undefined;
 
         /**
-         * The "resolved" [debug configuration](#DebugConfiguration) of this session.
+         * The "resolved" {@link DebugConfiguration debug configuration} of this session.
          */
         readonly configuration: DebugConfiguration;
 
@@ -10089,23 +10097,23 @@ export module '@theia/plugin' {
     }
 
     /**
-     * A custom Debug Adapter Protocol event received from a [debug session](#DebugSession).
+     * A custom Debug Adapter Protocol event received from a {@link DebugSession debug session}.
      */
     export interface DebugSessionCustomEvent {
         /**
-         * The [debug session](#DebugSession) for which the custom event was received.
+         * The {@link DebugSession debug session} for which the custom event was received.
          */
-        session: DebugSession;
+        readonly session: DebugSession;
 
         /**
          * Type of event.
          */
-        event: string;
+        readonly event: string;
 
         /**
          * Event specific information.
          */
-        body?: any;
+        readonly body?: any;
     }
 
     /**
@@ -10147,7 +10155,7 @@ export module '@theia/plugin' {
      */
     export interface DebugConfigurationProvider {
         /**
-         * Provides initial [debug configuration](#DebugConfiguration). If more than one debug configuration provider is
+         * Provides initial {@link DebugConfiguration debug configuration}. If more than one debug configuration provider is
          * registered for the same type, debug configurations are concatenated in arbitrary order.
          *
          * @param folder The workspace folder for which the configurations are used or undefined for a folderless setup.
@@ -10157,14 +10165,14 @@ export module '@theia/plugin' {
         provideDebugConfigurations?(folder: WorkspaceFolder | undefined, token?: CancellationToken): ProviderResult<DebugConfiguration[]>;
 
         /**
-         * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values or by adding/changing/removing attributes.
+         * Resolves a {@link DebugConfiguration debug configuration} by filling in missing values or by adding/changing/removing attributes.
          * If more than one debug configuration provider is registered for the same type, the resolveDebugConfiguration calls are chained
          * in arbitrary order and the initial debug configuration is piped through the chain.
          * Returning the value 'undefined' prevents the debug session from starting.
          * Returning the value 'null' prevents the debug session from starting and opens the underlying debug configuration instead.
          *
          * @param folder The workspace folder from which the configuration originates from or undefined for a folderless setup.
-         * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
+         * @param debugConfiguration The {@link DebugConfiguration debug configuration} to resolve.
          * @param token A cancellation token.
          * @return The resolved debug configuration or undefined or null.
          */
@@ -10172,14 +10180,14 @@ export module '@theia/plugin' {
 
         /**
          * This hook is directly called after 'resolveDebugConfiguration' but with all variables substituted.
-         * It can be used to resolve or verify a [debug configuration](#DebugConfiguration) by filling in missing values or by adding/changing/removing attributes.
+         * It can be used to resolve or verify a {@link DebugConfiguration debug configuration} by filling in missing values or by adding/changing/removing attributes.
          * If more than one debug configuration provider is registered for the same type, the 'resolveDebugConfigurationWithSubstitutedVariables' calls are chained
          * in arbitrary order and the initial debug configuration is piped through the chain.
          * Returning the value 'undefined' prevents the debug session from starting.
          * Returning the value 'null' prevents the debug session from starting and opens the underlying debug configuration instead.
          *
          * @param folder The workspace folder from which the configuration originates from or `undefined` for a folderless setup.
-         * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
+         * @param debugConfiguration The {@link DebugConfiguration debug configuration} to resolve.
          * @param token A cancellation token.
          * @return The resolved debug configuration or undefined or null.
          */
@@ -10221,8 +10229,8 @@ export module '@theia/plugin' {
          * The method 'createDebugAdapterTracker' is called at the start of a debug session in order
          * to return a "tracker" object that provides read-access to the communication between VS Code and a debug adapter.
          *
-         * @param session The [debug session](#DebugSession) for which the debug adapter tracker will be used.
-         * @return A [debug adapter tracker](#DebugAdapterTracker) or undefined.
+         * @param session The {@link DebugSession debug session} for which the debug adapter tracker will be used.
+         * @return A {@link DebugAdapterTracker debug adapter tracker} or undefined.
          */
         createDebugAdapterTracker(session: DebugSession): ProviderResult<DebugAdapterTracker>;
     }
@@ -10350,10 +10358,10 @@ export module '@theia/plugin' {
     export interface DebugAdapterDescriptorFactory {
         /**
          * 'createDebugAdapterDescriptor' is called at the start of a debug session to provide details about the debug adapter to use.
-         * These details must be returned as objects of type [DebugAdapterDescriptor](#DebugAdapterDescriptor).
+         * These details must be returned as objects of type {@link DebugAdapterDescriptor DebugAdapterDescriptor}.
          * Currently two types of debug adapters are supported:
-         * - a debug adapter executable is specified as a command path and arguments (see [DebugAdapterExecutable](#DebugAdapterExecutable)),
-         * - a debug adapter server reachable via a communication port (see [DebugAdapterServer](#DebugAdapterServer)).
+         * - a debug adapter executable is specified as a command path and arguments (see {@link DebugAdapterExecutable DebugAdapterExecutable}),
+         * - a debug adapter server reachable via a communication port (see {@link DebugAdapterServer DebugAdapterServer}).
          * If the method is not implemented the default behavior is this:
          *   createDebugAdapter(session: DebugSession, executable: DebugAdapterExecutable) {
          *      if (typeof session.configuration.debugServer === 'number') {
@@ -10361,9 +10369,9 @@ export module '@theia/plugin' {
          *      }
          *      return executable;
          *   }
-         * @param session The [debug session](#DebugSession) for which the debug adapter will be used.
+         * @param session The {@link DebugSession debug session} for which the debug adapter will be used.
          * @param executable The debug adapter's executable information as specified in the package.json (or undefined if no such information exists).
-         * @return a [debug adapter descriptor](#DebugAdapterDescriptor) or undefined.
+         * @return a {@link DebugAdapterDescriptor debug adapter descriptor} or undefined.
          */
         createDebugAdapterDescriptor(session: DebugSession, executable: DebugAdapterExecutable | undefined): ProviderResult<DebugAdapterDescriptor>;
     }
@@ -10405,23 +10413,23 @@ export module '@theia/plugin' {
     }
 
     /**
-     * An event describing the changes to the set of [breakpoints](#Breakpoint).
+     * An event describing the changes to the set of {@link Breakpoint breakpoints}.
      */
     export interface BreakpointsChangeEvent {
         /**
          * Added breakpoints.
          */
-        readonly added: Breakpoint[];
+        readonly added: readonly Breakpoint[];
 
         /**
          * Removed breakpoints.
          */
-        readonly removed: Breakpoint[];
+        readonly removed: readonly Breakpoint[];
 
         /**
          * Changed breakpoints.
          */
-        readonly changed: Breakpoint[];
+        readonly changed: readonly Breakpoint[];
     }
 
     /**
@@ -10507,57 +10515,57 @@ export module '@theia/plugin' {
     export namespace debug {
 
         /**
-         * The currently active [debug session](#DebugSession) or `undefined`. The active debug session is the one
+         * The currently active {@link DebugSession debug session} or `undefined`. The active debug session is the one
          * represented by the debug action floating window or the one currently shown in the drop down menu of the debug action floating window.
          * If no debug session is active, the value is `undefined`.
          */
         export let activeDebugSession: DebugSession | undefined;
 
         /**
-         * The currently active [debug console](#DebugConsole).
+         * The currently active {@link DebugConsole debug console}.
          */
         export let activeDebugConsole: DebugConsole;
 
         /**
          * List of breakpoints.
          */
-        export let breakpoints: Breakpoint[];
+        export let breakpoints: readonly Breakpoint[];
 
         /**
-         * An [event](#Event) which fires when the [active debug session](#debug.activeDebugSession)
+         * An {@link Event event} which fires when the {@link debug.activeDebugSession active debug session}
          * has changed. *Note* that the event also fires when the active debug session changes
          * to `undefined`.
          */
         export const onDidChangeActiveDebugSession: Event<DebugSession | undefined>;
 
         /**
-         * An [event](#Event) which fires when a new [debug session](#DebugSession) has been started.
+         * An {@link Event event} which fires when a new {@link DebugSession debug session} has been started.
          */
         export const onDidStartDebugSession: Event<DebugSession>;
 
         /**
-         * An [event](#Event) which fires when a custom DAP event is received from the [debug session](#DebugSession).
+         * An {@link Event event} which fires when a custom DAP event is received from the {@link DebugSession debug session}.
          */
         export const onDidReceiveDebugSessionCustomEvent: Event<DebugSessionCustomEvent>;
 
         /**
-         * An [event](#Event) which fires when a [debug session](#DebugSession) has terminated.
+         * An {@link Event event} which fires when a {@link DebugSession debug session} has terminated.
          */
         export const onDidTerminateDebugSession: Event<DebugSession>;
 
         /**
-         * An [event](#Event) that is emitted when the set of breakpoints is added, removed, or changed.
+         * An {@link Event event} that is emitted when the set of breakpoints is added, removed, or changed.
          */
         export const onDidChangeBreakpoints: Event<BreakpointsChangeEvent>;
 
         /**
-         * Register a [debug adapter descriptor factory](#DebugAdapterDescriptorFactory) for a specific debug type.
+         * Register a {@link DebugAdapterDescriptorFactory debug adapter descriptor factory} for a specific debug type.
          * An extension is only allowed to register a DebugAdapterDescriptorFactory for the debug type(s) defined by the extension. Otherwise an error is thrown.
          * Registering more than one DebugAdapterDescriptorFactory for a debug type results in an error.
          *
          * @param debugType The debug type for which the factory is registered.
-         * @param factory The [debug adapter descriptor factory](#DebugAdapterDescriptorFactory) to register.
-         * @return A [disposable](#Disposable) that unregisters this factory when being disposed.
+         * @param factory The {@link DebugAdapterDescriptorFactory debug adapter descriptor factory} to register.
+         * @return A {@link Disposable disposable} that unregisters this factory when being disposed.
          */
         export function registerDebugAdapterDescriptorFactory(debugType: string, factory: DebugAdapterDescriptorFactory): Disposable;
 
@@ -10592,19 +10600,19 @@ export module '@theia/plugin' {
          * Register a debug adapter tracker factory for the given debug type.
          *
          * @param debugType The debug type for which the factory is registered or '*' for matching all debug types.
-         * @param factory The [debug adapter tracker factory](#DebugAdapterTrackerFactory) to register.
-         * @return A [disposable](#Disposable) that unregisters this factory when being disposed.
+         * @param factory The {@link DebugAdapterTrackerFactory debug adapter tracker factory} to register.
+         * @return A {@link Disposable disposable} that unregisters this factory when being disposed.
          */
         export function registerDebugAdapterTrackerFactory(debugType: string, factory: DebugAdapterTrackerFactory): Disposable;
 
         /**
          * Start debugging by using either a named launch or named compound configuration,
-         * or by directly passing a [DebugConfiguration](#DebugConfiguration).
+         * or by directly passing a {@link DebugConfiguration DebugConfiguration}.
          * The named configurations are looked up in '.vscode/launch.json' found in the given folder.
          * Before debugging starts, all unsaved files are saved and the launch configurations are brought up-to-date.
          * Folder specific variables used in the configuration (e.g. '${workspaceFolder}') are resolved against the given folder.
-         * @param folder The [workspace folder](#WorkspaceFolder) for looking up named configurations and resolving variables or `undefined` for a non-folder setup.
-         * @param nameOrConfiguration Either the name of a debug or compound configuration or a [DebugConfiguration](#DebugConfiguration) object.
+         * @param folder The {@link WorkspaceFolder workspace folder} for looking up named configurations and resolving variables or `undefined` for a non-folder setup.
+         * @param nameOrConfiguration Either the name of a debug or compound configuration or a {@link DebugConfiguration DebugConfiguration} object.
          * @param parentSessionOrOptions Debug session options. When passed a parent debug session, assumes options with just this parent session.
          * @return A thenable that resolves when debugging could be successfully started.
          */
@@ -10612,7 +10620,7 @@ export module '@theia/plugin' {
 
         /**
          * Stop the given debug session or stop all debug sessions if session is omitted.
-         * @param session The [debug session](#DebugSession) to stop; if omitted all sessions are stopped.
+         * @param session The {@link DebugSession debug session} to stop; if omitted all sessions are stopped.
          */
         export function stopDebugging(session?: DebugSession): Thenable<void>;
 
@@ -10632,31 +10640,31 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Represents options to configure the behavior of showing a [document](#TextDocument) in an [editor](#TextEditor).
+     * Represents options to configure the behavior of showing a {@link TextDocument document} in an {@link TextEditor editor}.
      */
     export interface TextDocumentShowOptions {
         /**
-         * An optional view column in which the [editor](#TextEditor) should be shown.
-         * The default is the [active](#ViewColumn.Active), other values are adjusted to
-         * be `Min(column, columnCount + 1)`, the [active](#ViewColumn.Active)-column is
+         * An optional view column in which the {@link TextEditor editor} should be shown.
+         * The default is the {@link ViewColumn.Active active}, other values are adjusted to
+         * be `Min(column, columnCount + 1)`, the {@link ViewColumn.Active active}-column is
          * not adjusted. Use [`ViewColumn.Beside`](#ViewColumn.Beside) to open the
          * editor to the side of the currently active one.
          */
         viewColumn?: ViewColumn;
 
         /**
-         * An optional flag that when `true` will stop the [editor](#TextEditor) from taking focus.
+         * An optional flag that when `true` will stop the {@link TextEditor editor} from taking focus.
          */
         preserveFocus?: boolean;
 
         /**
-         * An optional flag that controls if an [editor](#TextEditor)-tab will be replaced
+         * An optional flag that controls if an {@link TextEditor editor}-tab will be replaced
          * with the next editor or if it will be kept.
          */
         preview?: boolean;
 
         /**
-         * An optional selection to apply for the document in the [editor](#TextEditor).
+         * An optional selection to apply for the document in the {@link TextEditor editor}.
          */
         selection?: Range;
     }
@@ -10875,8 +10883,6 @@ export module '@theia/plugin' {
          * were in the task definition will be resolved and passed into the callback as `resolvedDefinition`.
          */
         constructor(callback: (resolvedDefinition: TaskDefinition) => Thenable<Pseudoterminal>);
-
-        readonly callback;
     }
 
     export enum TaskScope {
@@ -11106,7 +11112,7 @@ export module '@theia/plugin' {
         /**
          * The task item representing the task that got started.
          */
-        execution: TaskExecution;
+        readonly execution: TaskExecution;
     }
 
     /**
@@ -11118,7 +11124,7 @@ export module '@theia/plugin' {
         /**
          * The task item representing the task that finished.
          */
-        execution: TaskExecution;
+        readonly execution: TaskExecution;
     }
 
     /**
@@ -11129,7 +11135,7 @@ export module '@theia/plugin' {
         /**
          * The task execution for which the process got started.
          */
-        execution: TaskExecution;
+        readonly execution: TaskExecution;
 
         /**
          * The underlying process id.
@@ -11146,7 +11152,7 @@ export module '@theia/plugin' {
         /**
          * The task execution for which the process got started.
          */
-        execution: TaskExecution;
+        readonly execution: TaskExecution;
 
         /**
          * The process's exit code.
@@ -11174,7 +11180,7 @@ export module '@theia/plugin' {
          *
          * @param type The task kind type this provider is registered for.
          * @param provider A task provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerTaskProvider(type: string, provider: TaskProvider): Disposable;
 
@@ -11198,7 +11204,7 @@ export module '@theia/plugin' {
         /**
          * The currently active task executions or an empty array.
          */
-        export const taskExecutions: ReadonlyArray<TaskExecution>;
+        export const taskExecutions: readonly TaskExecution[];
 
         /** Fires when a task starts. */
         export const onDidStartTask: Event<TaskStartEvent>;
@@ -11219,39 +11225,6 @@ export module '@theia/plugin' {
          * execute an underlying process.
          */
         export const onDidEndTaskProcess: Event<TaskProcessEndEvent>;
-    }
-
-    /**
-     * A memento represents a storage utility. It can store and retrieve
-     * values.
-     */
-    export interface Memento {
-
-        /**
-         * Return a value.
-         *
-         * @param key A string.
-         * @return The stored value or `undefined`.
-         */
-        get<T>(key: string): T | undefined;
-
-        /**
-         * Return a value.
-         *
-         * @param key A string.
-         * @param defaultValue A value that should be returned when there is no
-         * value (`undefined`) with the given key.
-         * @return The stored value or the defaultValue.
-         */
-        get<T>(key: string, defaultValue: T): T;
-
-        /**
-         * Store a value. The value must be JSON-stringifyable.
-         *
-         * @param key A string.
-         * @param value A value. MUST not contain cyclic references.
-         */
-        update(key: string, value: any): Thenable<void>;
     }
 
     /* The workspace symbol provider interface defines the contract between extensions
@@ -11280,7 +11253,7 @@ export module '@theia/plugin' {
         provideWorkspaceSymbols(query: string, token: CancellationToken): ProviderResult<T[]>;
 
         /**
-         * Given a symbol fill in its [location](#SymbolInformation.location). This method is called whenever a symbol
+         * Given a symbol fill in its {@link SymbolInformation.location location}. This method is called whenever a symbol
          * is selected in the UI. Providers can implement this method and return incomplete symbols from
          * [`provideWorkspaceSymbols`](#WorkspaceSymbolProvider.provideWorkspaceSymbols) which often helps to improve
          * performance.
@@ -11297,7 +11270,7 @@ export module '@theia/plugin' {
     // #region Comments
 
     /**
-     * Collapsible state of a [comment thread](#CommentThread)
+     * Collapsible state of a {@link CommentThread comment thread}
      */
     export enum CommentThreadCollapsibleState {
         /**
@@ -11312,7 +11285,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Comment mode of a [comment](#Comment)
+     * Comment mode of a {@link Comment comment}
      */
     export enum CommentMode {
         /**
@@ -11327,7 +11300,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * A collection of [comments](#Comment) representing a conversation at a particular range in a document.
+     * A collection of {@link Comment comments} representing a conversation at a particular range in a document.
      */
     export interface CommentThread {
         /**
@@ -11373,7 +11346,7 @@ export module '@theia/plugin' {
         contextValue?: string;
 
         /**
-         * The optional human-readable label describing the [Comment Thread](#CommentThread)
+         * The optional human-readable label describing the {@link CommentThread Comment Thread}
          */
         label?: string;
 
@@ -11391,7 +11364,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Author information of a [comment](#Comment)
+     * Author information of a {@link Comment comment}
      */
     export interface CommentAuthorInformation {
         /**
@@ -11406,7 +11379,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Reactions of a [comment](#Comment)
+     * Reactions of a {@link Comment comment}
      */
     export interface CommentReaction {
         /**
@@ -11440,12 +11413,12 @@ export module '@theia/plugin' {
         body: string | MarkdownString;
 
         /**
-         * [Comment mode](#CommentMode) of the comment
+         * {@link CommentMode Comment mode} of the comment
          */
         mode: CommentMode;
 
         /**
-         * The [author information](#CommentAuthorInformation) of the comment
+         * The {@link CommentAuthorInformation author information} of the comment
          */
         author: CommentAuthorInformation;
 
@@ -11470,12 +11443,12 @@ export module '@theia/plugin' {
         contextValue?: string;
 
         /**
-         * Optional reactions of the [comment](#Comment)
+         * Optional reactions of the {@link Comment comment}
          */
         reactions?: CommentReaction[];
 
         /**
-         * Optional label describing the [Comment](#Comment)
+         * Optional label describing the {@link Comment Comment}
          * Label will be rendered next to authorName if exists.
          */
         label?: string;
@@ -11486,7 +11459,7 @@ export module '@theia/plugin' {
      */
     export interface CommentReply {
         /**
-         * The active [comment thread](#CommentThread)
+         * The active {@link CommentThread comment thread}
          */
         thread: CommentThread;
 
@@ -11497,7 +11470,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Commenting range provider for a [comment controller](#CommentController).
+     * Commenting range provider for a {@link CommentController comment controller}.
      */
     export interface CommentingRangeProvider {
         /**
@@ -11507,7 +11480,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Represents a [comment controller](#CommentController)'s [options](#CommentController.options).
+     * Represents a {@link CommentController comment controller}'s {@link CommentController.options options}.
      */
     export interface CommentOptions {
         /**
@@ -11522,7 +11495,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * A comment controller is able to provide [comments](#CommentThread) support to the editor and
+     * A comment controller is able to provide {@link CommentThread comments} support to the editor and
      * provide users various ways to interact with comments.
      */
     export interface CommentController {
@@ -11542,14 +11515,14 @@ export module '@theia/plugin' {
         options?: CommentOptions;
 
         /**
-         * Optional commenting range provider. Provide a list [ranges](#Range) which support commenting to any given resource uri.
+         * Optional commenting range provider. Provide a list {@link Range ranges} which support commenting to any given resource uri.
          *
          * If not provided, users can leave comments in any document opened in the editor.
          */
         commentingRangeProvider?: CommentingRangeProvider;
 
         /**
-         * Create a [comment thread](#CommentThread). The comment thread will be displayed in visible text editors (if the resource matches)
+         * Create a {@link CommentThread comment thread}. The comment thread will be displayed in visible text editors (if the resource matches)
          * and Comments Panel once created.
          *
          * @param uri The uri of the document the thread has been created on.
@@ -11559,14 +11532,14 @@ export module '@theia/plugin' {
         createCommentThread(uri: Uri, range: Range, comments: Comment[]): CommentThread;
 
         /**
-         * Optional reaction handler for creating and deleting reactions on a [comment](#Comment).
+         * Optional reaction handler for creating and deleting reactions on a {@link Comment comment}.
          */
-        reactionHandler?: (comment: Comment, reaction: CommentReaction) => Promise<void>;
+        reactionHandler?: (comment: Comment, reaction: CommentReaction) => Thenable<void>;
 
         /**
          * Dispose this comment controller.
          *
-         * Once disposed, all [comment threads](#CommentThread) created by this comment controller will also be removed from the editor
+         * Once disposed, all {@link CommentThread comment threads} created by this comment controller will also be removed from the editor
          * and Comments Panel.
          */
         dispose(): void;
@@ -11574,11 +11547,11 @@ export module '@theia/plugin' {
 
     namespace comments {
         /**
-         * Creates a new [comment controller](#CommentController) instance.
+         * Creates a new {@link CommentController comment controller} instance.
          *
          * @param id An `id` for the comment controller.
          * @param label A human-readable string for the comment controller.
-         * @return An instance of [comment controller](#CommentController).
+         * @return An instance of {@link CommentController comment controller}.
          */
         export function createCommentController(id: string, label: string): CommentController;
     }
@@ -11592,7 +11565,7 @@ export module '@theia/plugin' {
     export class SelectionRange {
 
         /**
-         * The [range](#Range) of this selection range.
+         * The {@link Range range} of this selection range.
          */
         range: Range;
 
@@ -11616,7 +11589,7 @@ export module '@theia/plugin' {
          *
          * Selection ranges should be computed individually and independent for each position. The editor will merge
          * and deduplicate ranges but providers must return hierarchies of selection ranges so that a range
-         * is [contained](#Range.contains) by its parent.
+         * is {@link Range.contains contained} by its parent.
          *
          * @param document The document in which the command was invoked.
          * @param positions The positions at which the command was invoked.
@@ -11798,7 +11771,7 @@ export module '@theia/plugin' {
          * An optional word pattern that describes valid contents for the given ranges.
          * If no pattern is provided, the language configuration's word pattern will be used.
          */
-        readonly wordPattern?: RegExp;
+        readonly wordPattern: RegExp | undefined;
     }
 
     /**
@@ -11841,13 +11814,13 @@ export module '@theia/plugin' {
 
         /**
          * The permissions granted by the session's access token. Available scopes
-         * are defined by the [AuthenticationProvider](#AuthenticationProvider).
+         * are defined by the {@link AuthenticationProvider AuthenticationProvider}.
          */
         readonly scopes: readonly string[];
     }
 
     /**
-     * The information of an account associated with an [AuthenticationSession](#AuthenticationSession).
+     * The information of an account associated with an {@link AuthenticationSession AuthenticationSession}.
      */
     export interface AuthenticationSessionAccountInformation {
         /**
@@ -11862,7 +11835,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Options to be used when getting an [AuthenticationSession](#AuthenticationSession) from an [AuthenticationProvider](#AuthenticationProvider).
+     * Options to be used when getting an {@link AuthenticationSession AuthenticationSession} from an {@link AuthenticationProvider AuthenticationProvider}.
      */
     export interface AuthenticationGetSessionOptions {
         /**
@@ -11880,8 +11853,8 @@ export module '@theia/plugin' {
          * Whether the existing user session preference should be cleared.
          *
          * For authentication providers that support being signed into multiple accounts at once, the user will be
-         * prompted to select an account to use when [getSession](#authentication.getSession) is called. This preference
-         * is remembered until [getSession](#authentication.getSession) is called with this flag.
+         * prompted to select an account to use when {@link authentication.getSession getSession} is called. This preference
+         * is remembered until {@link authentication.getSession getSession} is called with this flag.
          *
          * Defaults to false.
          */
@@ -11911,7 +11884,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Basic information about an [authenticationProvider](#AuthenticationProvider)
+     * Basic information about an {@link AuthenticationProvider authenticationProvider}
      */
     export interface AuthenticationProviderInformation {
         /**
@@ -11926,11 +11899,11 @@ export module '@theia/plugin' {
     }
 
     /**
-     * An [event](#Event) which fires when an [AuthenticationSession](#AuthenticationSession) is added, removed, or changed.
+     * An {@link Event event} which fires when an {@link AuthenticationSession AuthenticationSession} is added, removed, or changed.
      */
     export interface AuthenticationSessionsChangeEvent {
         /**
-         * The [authenticationProvider](#AuthenticationProvider) that has had its sessions change.
+         * The {@link AuthenticationProvider authenticationProvider} that has had its sessions change.
          */
         readonly provider: AuthenticationProviderInformation;
     }
@@ -12026,7 +11999,7 @@ export module '@theia/plugin' {
          * to VS Code that implement GitHub and Microsoft authentication: their providerId's are 'github' and 'microsoft'.
          * @param providerId The id of the provider to use
          * @param scopes A list of scopes representing the permissions requested. These are dependent on the authentication provider
-         * @param options The [getSessionOptions](#GetSessionOptions) to use
+         * @param options The {@link GetSessionOptions getSessionOptions} to use
          * @returns A thenable that resolves to an authentication session
          */
         export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { createIfNone: true }): Thenable<AuthenticationSession>;
@@ -12054,13 +12027,13 @@ export module '@theia/plugin' {
          *
          * @param providerId The id of the provider to use
          * @param scopes A list of scopes representing the permissions requested. These are dependent on the authentication provider
-         * @param options The [getSessionOptions](#GetSessionOptions) to use
+         * @param options The {@link GetSessionOptions getSessionOptions} to use
          * @returns A thenable that resolves to an authentication session if available, or undefined if there are no sessions
          */
         export function getSession(providerId: string, scopes: readonly string[], options?: AuthenticationGetSessionOptions): Thenable<AuthenticationSession | undefined>;
 
         /**
-         * An [event](#Event) which fires when the authentication sessions of an authentication provider have
+         * An {@link Event event} which fires when the authentication sessions of an authentication provider have
          * been added, removed, or changed.
          */
         export const onDidChangeSessions: Event<AuthenticationSessionsChangeEvent>;

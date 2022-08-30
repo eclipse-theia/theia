@@ -24,6 +24,7 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
+import { URI } from '@theia/core/lib/common/uri';
 
 /**
  * Plugin api service allows working with terminal emulator.
@@ -122,7 +123,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
                 title: options.name,
                 shellPath: options.shellPath,
                 shellArgs: options.shellArgs,
-                cwd: options.cwd,
+                cwd: new URI(options.cwd),
                 env: options.env,
                 destroyTermOnClose: true,
                 useServerTitle: false,

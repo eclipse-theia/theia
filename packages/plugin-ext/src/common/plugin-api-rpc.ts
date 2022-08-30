@@ -572,6 +572,7 @@ export interface TransferQuickPickSeparator extends theia.QuickPickItem {
 }
 
 export interface TransferQuickInputButton extends theia.QuickInputButton {
+    iconPath: theia.Uri | { light: theia.Uri, dark: theia.Uri } | ThemeIcon
     handle?: number;
 }
 
