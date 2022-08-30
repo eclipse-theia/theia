@@ -57,6 +57,7 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Válassza ki a munkaterület gyökerét a konfiguráció hozzáadásához",
+      "compound-cycle": "Indítási konfiguráció '{0}' tartalmaz egy ciklust önmagával együtt",
       "continueAll": "Folytassa az összes",
       "copyExpressionValue": "Kifejezés értékének másolása",
       "disassembly-view": {
@@ -239,6 +240,82 @@
       "noProblems": "A munkaterületen eddig nem észleltek problémákat.",
       "tabbarDecorationsEnabled": "Problémadíszítők (diagnosztikai jelölők) megjelenítése a laprudakon."
     },
+    "memory-inspector": {
+      "address": "Cím:",
+      "addressTooltip": "Megjelenítendő memóriahely, cím vagy címre kiértékelő kifejezés",
+      "ascii": "ASCII",
+      "binary": "Bináris",
+      "byteSize": "Byte méret",
+      "bytesPerGroup": "Bájtok csoportonként",
+      "closeSettings": "Beállítások bezárása",
+      "columns": "Oszlopok",
+      "command": {
+        "createNewMemory": "Új memóriaellenőr létrehozása",
+        "createNewRegisterView": "Új nyilvántartási nézet létrehozása",
+        "followPointer": "Kövesse a mutatót",
+        "followPointerMemory": "Kövesse a mutatót a memóriaellenőrben",
+        "resetValue": "Érték visszaállítása",
+        "showRegister": "Regiszter megjelenítése a memória felügyelőben",
+        "viewVariable": "Változó megjelenítése a memória felügyelőben"
+      },
+      "data": "Adatok",
+      "decimal": "Tizedesjegyek",
+      "diff": {
+        "label": "Diff: {0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} Offset",
+        "offset-title": "Bájtok a memória eltolásához a {0}"
+      },
+      "editable": {
+        "apply": "Változások alkalmazása",
+        "clear": "Tiszta változások"
+      },
+      "endianness": "Endianness",
+      "extraColumn": "Extra oszlop",
+      "groupsPerRow": "Csoportok soronként",
+      "hexadecimal": "Hexadecimal",
+      "length": "Hosszúság",
+      "lengthTooltip": "A lekérdezendő bájtok száma decimális vagy hexadecimális értékben",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "Adjon meg egy címet vagy kifejezést a Hely mezőbe."
+        },
+        "freeze": "Memória nézet megállítása",
+        "hideSettings": "Beállítások panel elrejtése",
+        "readError": {
+          "bounds": "A memória határait túllépte, az eredmény csonkolva lesz.",
+          "noContents": "Jelenleg nem áll rendelkezésre memóriatartalom."
+        },
+        "readLength": {
+          "memoryReadError": "Adja meg a hosszat (decimális vagy hexadecimális szám) a Hossz mezőben."
+        },
+        "showSettings": "Beállítások panel megjelenítése",
+        "unfreeze": "Memória nézet feloldása",
+        "userError": "Hiba történt a memória lekérdezésében."
+      },
+      "memoryCategory": "Memória Ellenőr",
+      "memoryTitle": "Memória",
+      "octal": "Octal",
+      "offset": "Offset",
+      "offsetTooltip": "Az aktuális memóriahelyhez hozzáadandó eltolás, amikor navigálsz.",
+      "provider": {
+        "localsError": "Nem lehet helyi változókat olvasni. Nincs aktív hibakeresési munkamenet.",
+        "readError": "Nem tudja olvasni a memóriát. Nincs aktív hibakeresési munkamenet.",
+        "writeError": "Nem tud memóriát írni. Nincs aktív hibakeresési munkamenet."
+      },
+      "register": "Regisztráció",
+      "register-widget": {
+        "filter-placeholder": "Szűrő (kezdődik)"
+      },
+      "registerReadError": "Hiba történt a regiszterek lekérdezésében.",
+      "registers": "Regiszterek",
+      "toggleComparisonWidgetVisibility": "Összehasonlítás Widget láthatóságának átkapcsolása",
+      "utils": {
+        "afterBytes": "Mindkét widgetbe, amelyet össze szeretne hasonlítani, memóriát kell töltenie. {0} nincs betöltve memória.",
+        "bytesMessage": "Mindkét widgetbe, amelyet össze szeretne hasonlítani, memóriát kell töltenie. {0} nincs betöltve memória."
+      }
+    },
     "messages": {
       "notificationTimeout": "Az informatív értesítések el lesznek rejtve az időkorlát után.",
       "toggleNotifications": "Értesítések váltása"
@@ -380,7 +457,10 @@
       "typeHierarchy": "Típushierarchia"
     },
     "vsx-registry": {
+      "averageRating": "Átlagos értékelés: {0} az 5-ből",
+      "downloadCount": "Letöltési szám: {0}",
       "errorFetching": "Hiba a kiterjesztések lekérdezésében.",
+      "license": "Engedély: {0}",
       "recommendedExtensions": "A munkaterületre ajánlott kiterjesztések neveinek listája.",
       "searchPlaceholder": "Keresés kiterjesztések {0}",
       "showRecommendedExtensions": "Szabályozza, hogy a kiterjesztési ajánlásokhoz megjelenjenek-e értesítések.",

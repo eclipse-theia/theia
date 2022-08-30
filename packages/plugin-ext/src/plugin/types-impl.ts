@@ -719,8 +719,7 @@ export class SnippetString {
 
 @es5ClassCompat
 export class ThemeColor {
-    constructor(public id: string) {
-    }
+    constructor(public id: string) { }
 }
 
 @es5ClassCompat
@@ -1098,18 +1097,18 @@ export class SignatureHelp {
 @es5ClassCompat
 export class Hover {
 
-    public contents: theia.MarkdownString[] | theia.MarkedString[];
+    public contents: Array<theia.MarkdownString | theia.MarkedString>;
     public range?: Range;
 
     constructor(
-        contents: theia.MarkdownString | theia.MarkedString | theia.MarkdownString[] | theia.MarkedString[],
+        contents: theia.MarkdownString | theia.MarkedString | Array<theia.MarkdownString | theia.MarkedString>,
         range?: Range
     ) {
         if (!contents) {
             illegalArgument('contents must be defined');
         }
         if (Array.isArray(contents)) {
-            this.contents = <theia.MarkdownString[] | theia.MarkedString[]>contents;
+            this.contents = contents;
         } else {
             this.contents = [contents];
         }
@@ -1554,8 +1553,6 @@ export class QuickInputButtons {
     static readonly Back: theia.QuickInputButton = {
         iconPath: {
             id: 'Back',
-            dark: '',
-            light: ''
         },
         tooltip: 'Back'
     };
@@ -2739,7 +2736,7 @@ export class SemanticTokensBuilder {
 
 @es5ClassCompat
 export class SemanticTokens {
-    readonly resultId?: string;
+    readonly resultId: string | undefined;
     readonly data: Uint32Array;
 
     constructor(data: Uint32Array, resultId?: string) {
@@ -2752,7 +2749,7 @@ export class SemanticTokens {
 export class SemanticTokensEdit {
     readonly start: number;
     readonly deleteCount: number;
-    readonly data?: Uint32Array;
+    readonly data: Uint32Array | undefined;
 
     constructor(start: number, deleteCount: number, data?: Uint32Array) {
         this.start = start;
@@ -2763,7 +2760,7 @@ export class SemanticTokensEdit {
 
 @es5ClassCompat
 export class SemanticTokensEdits {
-    readonly resultId?: string;
+    readonly resultId: string | undefined;
     readonly edits: SemanticTokensEdit[];
 
     constructor(edits: SemanticTokensEdit[], resultId?: string) {

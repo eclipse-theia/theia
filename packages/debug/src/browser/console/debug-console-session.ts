@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import throttle = require('@theia/core/shared/lodash.throttle');
-import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { ConsoleSession, ConsoleItem } from '@theia/console/lib/browser/console-session';
 import { AnsiConsoleItem } from '@theia/console/lib/browser/ansi-console-item';
 import { DebugSession } from '../debug-session';

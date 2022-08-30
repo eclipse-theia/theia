@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { RecursivePartial } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { Range } from '@theia/editor/lib/browser';

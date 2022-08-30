@@ -333,6 +333,23 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Options to specify the size of the result text preview.
+     * These options don't affect the size of the match itself, just the amount of preview text.
+     */
+    export interface TextSearchPreviewOptions {
+        /**
+         * The maximum number of lines in the preview.
+         * Only search providers that support multiline search will ever return more than one line in the match.
+         */
+        matchLines: number;
+
+        /**
+         * The maximum number of characters included per line.
+         */
+        charsPerLine: number;
+    }
+
+    /**
      * A line of context surrounding a TextSearchMatch.
      */
     export interface TextSearchContext {
@@ -367,6 +384,18 @@ export module '@theia/plugin' {
          * - If search hits an internal limit which is less than `maxResults`, this should be true.
          */
         limitHit?: boolean;
+    }
+
+    export namespace workspace {
+        /**
+         * Find text in files across all [workspace folders] in the workspace
+         * @param query What to search
+         * @param optionsOrCallback
+         * @param callbackOrToken
+         * @param token
+         */
+        export function findTextInFiles(query: TextSearchQuery, optionsOrCallback: FindTextInFilesOptions | ((result: TextSearchResult) => void),
+            callbackOrToken?: CancellationToken | ((result: TextSearchResult) => void), token?: CancellationToken): Promise<TextSearchComplete>;
     }
     // #endregion
 
@@ -581,3 +610,21 @@ export module '@theia/plugin' {
 
     // #endregion
 }
+
+/**
+ * Thenable is a common denominator between ES6 promises, Q, jquery.Deferred, WinJS.Promise,
+ * and others. This API makes no assumption about what promise library is being used which
+ * enables reusing existing code without migrating to a specific promise implementation. Still,
+ * we recommend the use of native promises which are available in this editor.
+ */
+interface Thenable<T> {
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult>(onfulfilled?: (value: T) => TResult | Thenable<TResult>, onrejected?: (reason: any) => TResult | Thenable<TResult>): Thenable<TResult>;
+    then<TResult>(onfulfilled?: (value: T) => TResult | Thenable<TResult>, onrejected?: (reason: any) => void): Thenable<TResult>;
+}
+

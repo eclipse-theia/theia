@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { CancellationTokenSource, Emitter, Event } from '@theia/core';
-import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugStackFrame } from './debug-stack-frame';
 import { DebugSession } from '../debug-session';

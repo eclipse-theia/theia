@@ -34,7 +34,7 @@ import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { SourceBreakpoint, FunctionBreakpoint } from '@theia/debug/lib/browser/breakpoint/breakpoint-marker';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { MessageClient } from '@theia/core/lib/common/message-service-protocol';

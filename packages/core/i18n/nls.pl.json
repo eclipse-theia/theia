@@ -57,6 +57,7 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Wybierz główny obszar roboczy, do którego chcesz dodać konfigurację",
+      "compound-cycle": "Konfiguracja startowa \"{0}\" zawiera cykl z samym sobą",
       "continueAll": "Kontynuuj Wszystko",
       "copyExpressionValue": "Kopiuj wartość wyrażenia",
       "disassembly-view": {
@@ -239,6 +240,82 @@
       "noProblems": "Dotychczas nie wykryto żadnych problemów w przestrzeni roboczej.",
       "tabbarDecorationsEnabled": "Pokaż dekoratory problemów (znaczniki diagnostyczne) na paskach kart."
     },
+    "memory-inspector": {
+      "address": "Adres",
+      "addressTooltip": "Miejsce w pamięci do wyświetlenia, adres lub wyrażenie obliczane na adres",
+      "ascii": "ASCII",
+      "binary": "Binarne",
+      "byteSize": "Rozmiar bajtu",
+      "bytesPerGroup": "Bajty na grupę",
+      "closeSettings": "Zamknij ustawienia",
+      "columns": "Kolumny",
+      "command": {
+        "createNewMemory": "Tworzenie nowego inspektora pamięci",
+        "createNewRegisterView": "Utwórz nowy widok rejestru",
+        "followPointer": "Podążaj za wskazówką",
+        "followPointerMemory": "Podążaj za wskaźnikiem w inspektorze pamięci",
+        "resetValue": "Wartość zerowa",
+        "showRegister": "Pokaż rejestr w inspektorze pamięci",
+        "viewVariable": "Pokaż zmienną w inspektorze pamięci"
+      },
+      "data": "Dane",
+      "decimal": "W systemie dziesiętnym",
+      "diff": {
+        "label": "Diff: {0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} Offset",
+        "offset-title": "Bajty do przesunięcia pamięci z {0}"
+      },
+      "editable": {
+        "apply": "Zastosuj zmiany",
+        "clear": "Wyraźne zmiany"
+      },
+      "endianness": "Endianness",
+      "extraColumn": "Dodatkowa kolumna",
+      "groupsPerRow": "Grupy na wiersz",
+      "hexadecimal": "Szesnastkowo",
+      "length": "Długość",
+      "lengthTooltip": "Liczba bajtów do pobrania, w systemie dziesiętnym lub szesnastkowym",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "W polu Lokalizacja wpisz adres lub wyrażenie."
+        },
+        "freeze": "Widok zamrożonej pamięci",
+        "hideSettings": "Ukryj panel ustawień",
+        "readError": {
+          "bounds": "Przekroczone granice pamięci, wynik zostanie obcięty.",
+          "noContents": "Obecnie nie jest dostępna zawartość pamięci."
+        },
+        "readLength": {
+          "memoryReadError": "W polu Długość wprowadź długość (liczbę dziesiętną lub szesnastkową)."
+        },
+        "showSettings": "Pokaż panel ustawień",
+        "unfreeze": "Odmrażanie widoku pamięci",
+        "userError": "Wystąpił błąd w pobieraniu pamięci."
+      },
+      "memoryCategory": "Inspektor pamięci",
+      "memoryTitle": "Pamięć",
+      "octal": "Octal",
+      "offset": "Offset",
+      "offsetTooltip": "Przesunięcie, które ma być dodane do bieżącej lokalizacji pamięci, podczas nawigacji",
+      "provider": {
+        "localsError": "Nie można odczytać zmiennych lokalnych. Brak aktywnej sesji debugowania.",
+        "readError": "Nie można odczytać pamięci. Brak aktywnej sesji debugowania.",
+        "writeError": "Nie można zapisać pamięci. Brak aktywnej sesji debugowania."
+      },
+      "register": "Zarejestruj się",
+      "register-widget": {
+        "filter-placeholder": "Filtr (zaczyna się od)"
+      },
+      "registerReadError": "Wystąpił błąd w pobieraniu rejestrów.",
+      "registers": "Rejestry",
+      "toggleComparisonWidgetVisibility": "Przełączanie widoczności widgetu porównania",
+      "utils": {
+        "afterBytes": "Musisz załadować pamięć w obu widżetach, które chcesz porównać. {0} nie ma załadowanej pamięci.",
+        "bytesMessage": "Musisz załadować pamięć w obu widżetach, które chcesz porównać. {0} nie ma załadowanej pamięci."
+      }
+    },
     "messages": {
       "notificationTimeout": "Powiadomienia informacyjne zostaną ukryte po upływie tego czasu.",
       "toggleNotifications": "Przełącz Powiadomienia"
@@ -380,7 +457,10 @@
       "typeHierarchy": "Hierarchia typów"
     },
     "vsx-registry": {
+      "averageRating": "Średnia ocena: {0} na 5",
+      "downloadCount": "Pobierz licz: {0}",
       "errorFetching": "Błąd pobierania rozszerzeń.",
+      "license": "Licencja: {0}",
       "recommendedExtensions": "Lista nazw rozszerzeń zalecanych do użycia w tym obszarze roboczym.",
       "searchPlaceholder": "Wyszukaj rozszerzenia w {0}.",
       "showRecommendedExtensions": "Określa, czy dla zaleceń dotyczących rozszerzeń mają być wyświetlane powiadomienia.",

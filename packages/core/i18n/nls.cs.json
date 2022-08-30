@@ -57,6 +57,7 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Vyberte kořenový pracovní prostor, do kterého chcete přidat konfiguraci",
+      "compound-cycle": "Konfigurace spuštění '{0}' obsahuje cyklus se sebou samým",
       "continueAll": "Pokračovat ve všem",
       "copyExpressionValue": "Kopírování hodnoty výrazu",
       "disassembly-view": {
@@ -239,6 +240,82 @@
       "noProblems": "V pracovním prostoru zatím nebyly zjištěny žádné problémy.",
       "tabbarDecorationsEnabled": "Zobrazení dekorátorů problémů (diagnostických značek) na pásech karet."
     },
+    "memory-inspector": {
+      "address": "Adresa",
+      "addressTooltip": "Místo v paměti, které se má zobrazit, adresa nebo výraz vyhodnocující adresu.",
+      "ascii": "ASCII",
+      "binary": "Binární",
+      "byteSize": "Velikost bajtu",
+      "bytesPerGroup": "Byty na skupinu",
+      "closeSettings": "Zavřít nastavení",
+      "columns": "Sloupce",
+      "command": {
+        "createNewMemory": "Vytvoření nového inspektora paměti",
+        "createNewRegisterView": "Vytvoření nového zobrazení registru",
+        "followPointer": "Sledování ukazatele",
+        "followPointerMemory": "Sledování ukazatele v aplikaci Inspektor paměti",
+        "resetValue": "Obnovení hodnoty",
+        "showRegister": "Zobrazit registr v Inspektoru paměti",
+        "viewVariable": "Zobrazit proměnnou v Inspektorovi paměti"
+      },
+      "data": "Data",
+      "decimal": "Desetinné číslo",
+      "diff": {
+        "label": "Rozdíl: {0}"
+      },
+      "diff-widget": {
+        "offset-label": "{0} Offset",
+        "offset-title": "Bajty pro odsazení paměti od {0}"
+      },
+      "editable": {
+        "apply": "Použít změny",
+        "clear": "Jasné změny"
+      },
+      "endianness": "Endianness",
+      "extraColumn": "Sloupec navíc",
+      "groupsPerRow": "Skupiny na řádek",
+      "hexadecimal": "Hexadecimální",
+      "length": "Délka",
+      "lengthTooltip": "Počet bajtů k načtení v desítkové nebo šestnáctkové soustavě.",
+      "memory": {
+        "addressField": {
+          "memoryReadError": "Do pole Umístění zadejte adresu nebo výraz."
+        },
+        "freeze": "Zobrazení zmrazení paměti",
+        "hideSettings": "Skrytí panelu nastavení",
+        "readError": {
+          "bounds": "Překročení mezí paměti, výsledek bude zkrácen.",
+          "noContents": "V současné době není k dispozici žádný obsah paměti."
+        },
+        "readLength": {
+          "memoryReadError": "Do pole Délka zadejte délku (desetinné nebo šestnáctinné číslo)."
+        },
+        "showSettings": "Zobrazit panel nastavení",
+        "unfreeze": "Zrušení zmrazení zobrazení paměti",
+        "userError": "Došlo k chybě při načítání paměti."
+      },
+      "memoryCategory": "Inspektor paměti",
+      "memoryTitle": "Paměť",
+      "octal": "Osmičkové",
+      "offset": "Offset",
+      "offsetTooltip": "Odsazení, které se při navigaci přidá k aktuálnímu umístění v paměti.",
+      "provider": {
+        "localsError": "Nelze číst místní proměnné. Není aktivní relace ladění.",
+        "readError": "Nelze číst paměť. Není aktivní relace ladění.",
+        "writeError": "Nelze zapisovat do paměti. Není aktivní relace ladění."
+      },
+      "register": "Registrace",
+      "register-widget": {
+        "filter-placeholder": "Filtr (začíná na)"
+      },
+      "registerReadError": "Došlo k chybě při načítání registrů.",
+      "registers": "Registry",
+      "toggleComparisonWidgetVisibility": "Přepnutí viditelnosti widgetu Srovnání",
+      "utils": {
+        "afterBytes": "V obou widgetech, které chcete porovnat, musíte načíst paměť. {0} nemá načtenou žádnou paměť.",
+        "bytesMessage": "V obou widgetech, které chcete porovnat, musíte načíst paměť. {0} nemá načtenou žádnou paměť."
+      }
+    },
     "messages": {
       "notificationTimeout": "Po uplynutí tohoto časového limitu budou informativní oznámení skryta.",
       "toggleNotifications": "Přepínání oznámení"
@@ -380,7 +457,10 @@
       "typeHierarchy": "Hierarchie typů"
     },
     "vsx-registry": {
+      "averageRating": "Průměrné hodnocení: {0} z 5",
+      "downloadCount": "Počet stažení: {0}",
       "errorFetching": "Chyba při načítání rozšíření.",
+      "license": "Licence: {0}",
       "recommendedExtensions": "Seznam názvů rozšíření doporučených pro použití v tomto pracovním prostoru.",
       "searchPlaceholder": "Hledat rozšíření v {0}",
       "showRecommendedExtensions": "Řídí, zda se mají zobrazovat oznámení pro doporučení rozšíření.",

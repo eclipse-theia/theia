@@ -29,7 +29,7 @@ import { createStringBuilder } from '@theia/monaco-editor-core/esm/vs/editor/com
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { ITextModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 import { DebugSource } from '../model/debug-source';
 import { DisassembledInstructionEntry, DisassemblyViewRendererReference, InstructionColumnTemplateData } from './disassembly-view-utilities';
 

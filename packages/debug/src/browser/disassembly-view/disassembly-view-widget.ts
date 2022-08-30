@@ -17,7 +17,7 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { BaseWidget, LabelProvider, Message, OpenerService, Widget } from '@theia/core/lib/browser';
 import { ArrayUtils } from '@theia/core/lib/common/types';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 import { InstructionBreakpoint } from '../breakpoint/breakpoint-marker';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DebugSessionManager } from '../debug-session-manager';

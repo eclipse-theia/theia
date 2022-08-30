@@ -23,7 +23,7 @@
 import * as React from '@theia/core/shared/react';
 import { WidgetOpenerOptions, DISABLED_CLASS } from '@theia/core/lib/browser';
 import { EditorWidget, Range, Position } from '@theia/editor/lib/browser';
-import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugScope } from '../console/debug-console-items';
 import { DebugSource } from './debug-source';
