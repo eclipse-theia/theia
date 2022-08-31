@@ -143,9 +143,9 @@ export class TabBarRenderer extends TabBar.Renderer {
      * @param {boolean} isInSidePanel An optional check which determines if the tab is in the side-panel.
      * @returns {VirtualElement} The virtual element of the rendered tab.
      */
-    override renderTab(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
+    override renderTab(data: SideBarRenderData, isInSidePanel?: boolean, isPartOfHiddenTabBar?: boolean): VirtualElement {
         const title = data.title;
-        const id = this.createTabId(data.title);
+        const id = this.createTabId(data.title, isPartOfHiddenTabBar);
         const key = this.createTabKey(data);
         const style = this.createTabStyle(data);
         const className = this.createTabClass(data);
@@ -177,8 +177,11 @@ export class TabBarRenderer extends TabBar.Renderer {
         );
     }
 
-    createTabId(title: Title<Widget>): string {
-        return 'shell-tab-' + title.owner.id;
+    /**
+     * If tab is part of hidden horz tab bar, add a suffix to keep the id unique across the DOM
+     */
+    createTabId(title: Title<Widget>, isPartOfHiddenTabBar = false): string {
+        return 'shell-tab-' + title.owner.id + (isPartOfHiddenTabBar ? '-hidden' : '');
     }
 
     /**
@@ -904,7 +907,9 @@ export class SideTabBar extends ScrollableTabBar {
             } else {
                 rd = { title, current, zIndex };
             }
-            content[i] = renderer.renderTab(rd, true);
+            // Based on how renderTabs() is called, assuming renderData will be undefined when
+            // invoked for this.hiddenContentNode
+            content[i] = renderer.renderTab(rd, true, renderData === undefined);
         }
         VirtualDOM.render(content, host);
     }
