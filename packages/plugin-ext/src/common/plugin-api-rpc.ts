@@ -100,7 +100,7 @@ import type {
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ThemeType } from '@theia/core/lib/common/theme';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { PickOptions, QuickInputButtonHandle, QuickPickItem } from '@theia/core/lib/common';
+import { PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
 import { Severity } from '@theia/core/lib/common/severity';
 
 export interface PreferenceData {
@@ -445,12 +445,13 @@ export interface QuickOpenExt {
     $acceptDidChangeValue(sessionId: number, changedValue: string): Promise<void>;
     $acceptOnDidHide(sessionId: number): Promise<void>;
     $acceptOnDidTriggerButton(sessionId: number, btn: QuickInputButtonHandle): Promise<void>;
+    $onDidTriggerItemButton(sessionId: number, itemHandle: number, buttonHandle: number): void;
     $onDidChangeActive(sessionId: number, handles: number[]): void;
     $onDidChangeSelection(sessionId: number, handles: number[]): void;
 
     /* eslint-disable max-len */
     showQuickPick(itemsOrItemsPromise: Array<theia.QuickPickItem> | Promise<Array<theia.QuickPickItem>>, options: theia.QuickPickOptions & { canPickMany: true; },
-        token?: theia.CancellationToken): Promise<Array<QuickPickItem> | undefined>;
+        token?: theia.CancellationToken): Promise<Array<theia.QuickPickItem> | undefined>;
     showQuickPick(itemsOrItemsPromise: string[] | Promise<string[]>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<string | undefined>;
     showQuickPick(itemsOrItemsPromise: Array<theia.QuickPickItem> | Promise<Array<theia.QuickPickItem>>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<theia.QuickPickItem | undefined>;
     showQuickPick(itemsOrItemsPromise: Item[] | Promise<Item[]>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<Item | Item[] | undefined>;
@@ -586,7 +587,8 @@ export interface TransferQuickPickSeparator extends theia.QuickPickItem {
 }
 
 export interface TransferQuickInputButton extends theia.QuickInputButton {
-    iconPath: theia.Uri | { light: theia.Uri, dark: theia.Uri } | ThemeIcon
+    iconPath: theia.Uri | { light: theia.Uri, dark: theia.Uri } | ThemeIcon;
+    iconClass?: string;
     handle?: number;
 }
 
