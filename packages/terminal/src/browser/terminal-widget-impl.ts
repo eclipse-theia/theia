@@ -64,6 +64,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected hoverMessage: HTMLDivElement;
     protected lastTouchEnd: TouchEvent | undefined;
     protected isAttachedCloseListener: boolean = false;
+    protected shown = false;
     override lastCwd = new URI();
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
@@ -349,6 +350,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.lastTouchEnd;
     }
 
+    get hiddenFromUser(): boolean {
+        if (this.shown) {
+            return false;
+        }
+        return this.options.hideFromUser ?? false;
+    }
+
     onDispose(onDispose: () => void): void {
         this.toDispose.push(Disposable.create(onDispose));
     }
@@ -461,6 +469,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.update();
+        this.shown = true;
     }
     protected override onAfterAttach(msg: Message): void {
         Widget.attach(this.searchBox, this.node);
