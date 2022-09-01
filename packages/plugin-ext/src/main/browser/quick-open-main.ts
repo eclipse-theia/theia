@@ -39,7 +39,7 @@ import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposa
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
 import { QuickInputButtons } from '../../plugin/types-impl';
-import { getIconUris } from '../../plugin/quick-open';
+import { getIconPathOrClass } from '../../plugin/quick-open';
 import * as monaco from '@theia/monaco-editor-core';
 import { IQuickPickItem, IQuickInput } from '@theia/monaco-editor-core/esm/vs/base/parts/quickinput/common/quickInput';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
@@ -210,6 +210,9 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                 quickPick.onDidTriggerButton((button: QuickInputButtonHandle) => {
                     this.proxy.$acceptOnDidTriggerButton(sessionId, button);
                 });
+                quickPick.onDidTriggerItemButton(e => {
+                    this.proxy.$onDidTriggerItemButton(sessionId, (e.item as TransferQuickPickItems).handle, (e.button as TransferQuickPickItems).handle);
+                });
                 quickPick.onDidChangeValue((value: string) => {
                     this.proxy.$acceptDidChangeValue(sessionId, value);
                 });
@@ -313,7 +316,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
 
     private convertToQuickInputButtons(buttons: Array<TransferQuickInputButton>): Array<QuickInputButton> {
         return buttons.map((button, i) => ({
-            iconPath: getIconUris(button.iconPath),
+            ...getIconPathOrClass(button),
             tooltip: button.tooltip,
             handle: button === QuickInputButtons.Back ? -1 : i,
         } as QuickInputButton));

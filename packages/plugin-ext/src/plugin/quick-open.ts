@@ -19,7 +19,6 @@ import {
     Item, TransferQuickInputButton, TransferQuickPickItems, TransferQuickInput
 } from '../common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
-import { QuickPickItem, InputBoxOptions, InputBox, QuickPick, QuickInput } from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
@@ -32,6 +31,7 @@ import { PluginPackage } from '../common/plugin-protocol';
 import { QuickInputButtonHandle } from '@theia/core/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import Severity from '@theia/monaco-editor-core/esm/vs/base/common/severity';
+import { ThemeIcon as MonacoThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 const canceledName = 'Canceled';
 /**
@@ -63,6 +63,22 @@ export function getDarkIconUri(iconPath: URI | { light: URI; dark: URI; }): URI 
     return typeof iconPath === 'object' && 'dark' in iconPath ? iconPath.dark : iconPath;
 }
 
+export function getIconPathOrClass(button: theia.QuickInputButton): { iconPath: { dark: URI; light?: URI | undefined; } | undefined; iconClass: string | undefined; } {
+    const iconPathOrIconClass = getIconUris(button.iconPath);
+    let iconPath: { dark: URI; light?: URI | undefined } | undefined;
+    let iconClass: string | undefined;
+    if ('id' in iconPathOrIconClass) {
+        iconClass = MonacoThemeIcon.asClassName(iconPathOrIconClass);
+    } else {
+        iconPath = iconPathOrIconClass;
+    }
+
+    return {
+        iconPath,
+        iconClass
+    };
+}
+
 export class QuickOpenExtImpl implements QuickOpenExt {
     private proxy: QuickOpenMain;
     private onDidSelectItem: undefined | ((handle: number) => void);
@@ -75,9 +91,9 @@ export class QuickOpenExtImpl implements QuickOpenExt {
     }
 
     /* eslint-disable max-len */
-    showQuickPick(itemsOrItemsPromise: Array<QuickPickItem> | Promise<Array<QuickPickItem>>, options: theia.QuickPickOptions & { canPickMany: true; }, token?: theia.CancellationToken): Promise<Array<QuickPickItem> | undefined>;
+    showQuickPick(itemsOrItemsPromise: Array<theia.QuickPickItem> | Promise<Array<theia.QuickPickItem>>, options: theia.QuickPickOptions & { canPickMany: true; }, token?: theia.CancellationToken): Promise<Array<theia.QuickPickItem> | undefined>;
     showQuickPick(itemsOrItemsPromise: string[] | Promise<string[]>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<string | undefined>;
-    showQuickPick(itemsOrItemsPromise: Array<QuickPickItem> | Promise<Array<QuickPickItem>>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<QuickPickItem | undefined>;
+    showQuickPick(itemsOrItemsPromise: Array<theia.QuickPickItem> | Promise<Array<theia.QuickPickItem>>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<theia.QuickPickItem | undefined>;
     showQuickPick(itemsOrItemsPromise: Item[] | Promise<Item[]>, options?: theia.QuickPickOptions, token: theia.CancellationToken = CancellationToken.None): Promise<Item | Item[] | undefined> {
         this.onDidSelectItem = undefined;
 
@@ -145,7 +161,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
 
     // ---- input
 
-    showInput(options?: InputBoxOptions, token: theia.CancellationToken = CancellationToken.None): PromiseLike<string | undefined> {
+    showInput(options?: theia.InputBoxOptions, token: theia.CancellationToken = CancellationToken.None): PromiseLike<string | undefined> {
         this.validateInputHandler = options?.validateInput;
         if (!options) { options = { placeHolder: '' }; }
         return this.proxy.$input(options, typeof this.validateInputHandler === 'function', token);
@@ -190,13 +206,13 @@ export class QuickOpenExtImpl implements QuickOpenExt {
 
     // ---- QuickInput
 
-    createQuickPick<T extends QuickPickItem>(plugin: Plugin): QuickPick<T> {
+    createQuickPick<T extends theia.QuickPickItem>(plugin: Plugin): theia.QuickPick<T> {
         const session: any = new QuickPickExt<T>(this, this.proxy, plugin, () => this._sessions.delete(session._id));
         this._sessions.set(session._id, session);
         return session;
     }
 
-    createInputBox(plugin: Plugin): InputBox {
+    createInputBox(plugin: Plugin): theia.InputBox {
         const session: any = new InputBoxExt(this, this.proxy, plugin, () => this._sessions.delete(session._id));
         this._sessions.set(session._id, session);
         return session;
@@ -252,9 +268,17 @@ export class QuickOpenExtImpl implements QuickOpenExt {
             session._fireDidChangeSelection(handles);
         }
     }
+
+    $onDidTriggerItemButton(sessionId: number, itemHandle: number, buttonHandle: number): void {
+        const session = this._sessions.get(sessionId);
+        if (session instanceof QuickPickExt) {
+            session._fireDidTriggerItemButton(itemHandle, buttonHandle);
+        }
+    }
+
 }
 
-export class QuickInputExt implements QuickInput {
+export class QuickInputExt implements theia.QuickInput {
 
     private static _nextId = 1;
     _id = QuickInputExt._nextId++;
@@ -389,6 +413,7 @@ export class QuickInputExt implements QuickInput {
         this.update({
             buttons: buttons.map<TransferQuickInputButton>((button, i) => ({
                 iconPath: getIconUris(button.iconPath),
+                iconClass: ThemeIcon.is(button.iconPath) ? MonacoThemeIcon.asClassName(button.iconPath) : undefined,
                 tooltip: button.tooltip,
                 handle: button === QuickInputButtons.Back ? -1 : i,
             }))
@@ -514,7 +539,7 @@ export class QuickInputExt implements QuickInput {
  * Base implementation of {@link InputBox} that uses {@link QuickOpenExt}.
  * Missing functionality is going to be implemented in the scope of https://github.com/eclipse-theia/theia/issues/5109
  */
-export class InputBoxExt extends QuickInputExt implements InputBox {
+export class InputBoxExt extends QuickInputExt implements theia.InputBox {
 
     private _password: boolean;
     private _prompt: string | undefined;
@@ -567,7 +592,7 @@ export class InputBoxExt extends QuickInputExt implements InputBox {
  * Base implementation of {@link QuickPick} that uses {@link QuickOpenExt}.
  * Missing functionality is going to be implemented in the scope of https://github.com/eclipse-theia/theia/issues/5059
  */
-export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt implements QuickPick<T> {
+export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt implements theia.QuickPick<T> {
     private _items: T[] = [];
     private _handlesToItems = new Map<number, T>();
     private _itemsToHandles = new Map<T, number>();
@@ -580,6 +605,7 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
     private _selectedItems: T[] = [];
     private readonly _onDidChangeActiveEmitter = new Emitter<T[]>();
     private readonly _onDidChangeSelectionEmitter = new Emitter<T[]>();
+    private readonly _onDidTriggerItemButtonEmitter = new Emitter<theia.QuickPickItemButtonEvent<T>>();
 
     constructor(
         override readonly quickOpen: QuickOpenExtImpl,
@@ -592,6 +618,7 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
 
         this.disposableCollection.push(this._onDidChangeActiveEmitter);
         this.disposableCollection.push(this._onDidChangeSelectionEmitter);
+        this.disposableCollection.push(this._onDidTriggerItemButtonEmitter);
 
         this.update({ type: 'quickPick' });
     }
@@ -620,7 +647,13 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
                     handle: i,
                     detail: item.detail,
                     picked: item.picked,
-                    alwaysShow: item.alwaysShow
+                    alwaysShow: item.alwaysShow,
+                    buttons: item.buttons?.map<TransferQuickInputButton>((button, index) => ({
+                        iconPath: getIconUris(button.iconPath),
+                        iconClass: ThemeIcon.is(button.iconPath) ? MonacoThemeIcon.asClassName(button.iconPath) : undefined,
+                        tooltip: button.tooltip,
+                        handle: button === QuickInputButtons.Back ? -1 : index,
+                    }))
                 };
             })
         });
@@ -703,5 +736,21 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
         const items = handles.map(handle => this._handlesToItems.get(handle)).filter(e => !!e) as T[];
         this._selectedItems = items;
         this._onDidChangeSelectionEmitter.fire(items);
+    }
+
+    onDidTriggerItemButton = this._onDidTriggerItemButtonEmitter.event;
+
+    _fireDidTriggerItemButton(itemHandle: number, buttonHandle: number): void {
+        const item = this._handlesToItems.get(itemHandle)!;
+        if (!item || !item.buttons || !item.buttons.length) {
+            return;
+        }
+        const button = item.buttons[buttonHandle];
+        if (button) {
+            this._onDidTriggerItemButtonEmitter.fire({
+                button,
+                item
+            });
+        }
     }
 }

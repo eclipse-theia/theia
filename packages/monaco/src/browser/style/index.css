@@ -167,6 +167,10 @@
   color: var(--theia-list-focusHighlightForeground) !important;
 }
 
+.quick-input-titlebar .action-item .action-label {
+    color: var(--theia-foreground) !important;
+}
+
 .monaco-list-rows
   .monaco-list-row:not(:first-child)
   .quick-input-list-entry.quick-input-list-separator-border {

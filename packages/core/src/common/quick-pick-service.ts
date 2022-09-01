@@ -57,7 +57,7 @@ export interface QuickPickItem {
     iconClasses?: string[];
     alwaysShow?: boolean;
     highlights?: QuickPickItemHighlights;
-    buttons?: QuickInputButton[];
+    buttons?: readonly QuickInputButton[];
     execute?: () => void;
 }
 
@@ -93,7 +93,7 @@ export interface QuickPickValue<V> extends QuickPickItem {
 }
 
 export interface QuickInputButton {
-    iconPath?: URI | { light?: URI | Uri; dark: URI | Uri } | { id: string };
+    iconPath?: URI | Uri | { light?: URI | Uri; dark: URI | Uri } | { id: string };
     iconClass?: string;
     tooltip?: string;
     /**
