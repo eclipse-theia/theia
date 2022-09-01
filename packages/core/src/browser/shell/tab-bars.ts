@@ -141,6 +141,7 @@ export class TabBarRenderer extends TabBar.Renderer {
      * Render tabs with the default DOM structure, but additionally register a context menu listener.
      * @param {SideBarRenderData} data Data used to render the tab.
      * @param {boolean} isInSidePanel An optional check which determines if the tab is in the side-panel.
+     * @param {boolean} isPartOfHiddenTabBar Optional - Tells us if this entry is part of the hidden horizontal tab bar.
      * @returns {VirtualElement} The virtual element of the rendered tab.
      */
     override renderTab(data: SideBarRenderData, isInSidePanel?: boolean, isPartOfHiddenTabBar?: boolean): VirtualElement {
@@ -178,7 +179,11 @@ export class TabBarRenderer extends TabBar.Renderer {
     }
 
     /**
-     * If tab is part of hidden horz tab bar, add a suffix to keep the id unique across the DOM
+     * Generate ID for an entry in the tab bar
+     * @param {Title<Widget>} title Title of the widget controlled by this tab bar
+     * @param {boolean} isPartOfHiddenTabBar Tells us if this entry is part of the hidden horizontal tab bar.
+     *      If yes, add a suffix to differentiate it's ID from the entry in the visible tab bar
+     * @returns {string} DOM element ID
      */
     createTabId(title: Title<Widget>, isPartOfHiddenTabBar = false): string {
         return 'shell-tab-' + title.owner.id + (isPartOfHiddenTabBar ? '-hidden' : '');
@@ -907,7 +912,7 @@ export class SideTabBar extends ScrollableTabBar {
             } else {
                 rd = { title, current, zIndex };
             }
-            // Based on how renderTabs() is called, assuming renderData will be undefined when
+            // Based on how renderTabs() is called, assume renderData will be undefined when
             // invoked for this.hiddenContentNode
             content[i] = renderer.renderTab(rd, true, renderData === undefined);
         }
