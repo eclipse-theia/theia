@@ -39,8 +39,6 @@ import {
     Command,
     CommandRegistry,
     DisposableCollection,
-    Emitter,
-    Event,
     isOSX,
     MenuModelRegistry,
     MenuPath,
@@ -179,9 +177,6 @@ export const FILE_NAVIGATOR_TOGGLE_COMMAND_ID = 'fileNavigator:toggle';
 @injectable()
 export class FileNavigatorContribution extends AbstractViewContribution<FileNavigatorWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
 
-    protected readonly onDidUpdateOpenEditorsEmitter = new Emitter<void>();
-    protected readonly onDidUpdateOpenEditors: Event<void> = this.onDidUpdateOpenEditorsEmitter.event;
-
     @inject(ClipboardService)
     protected readonly clipboardService: ClipboardService;
 
@@ -243,8 +238,6 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         this.shell.onDidChangeActiveWidget(updateFocusContextKeys);
         this.workspaceCommandContribution.onDidCreateNewFile(async event => this.onDidCreateNewResource(event));
         this.workspaceCommandContribution.onDidCreateNewFolder(async event => this.onDidCreateNewResource(event));
-        this.shell.onDidAddWidget(() => this.onDidUpdateOpenEditorsEmitter.fire());
-        this.shell.onDidRemoveWidget(() => this.onDidUpdateOpenEditorsEmitter.fire());
     }
 
     private async onDidCreateNewResource(event: DidCreateNewResourceEvent): Promise<void> {
@@ -365,12 +358,12 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerCommand(OpenEditorsCommands.CLOSE_ALL_TABS_FROM_TOOLBAR, {
             execute: widget => this.withOpenEditorsWidget(widget, () => this.shell.closeMany(this.editorWidgets)),
-            isEnabled: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length),
+            isEnabled: widget => this.withOpenEditorsWidget(widget, () => true),
             isVisible: widget => this.withOpenEditorsWidget(widget, () => true)
         });
         registry.registerCommand(OpenEditorsCommands.SAVE_ALL_TABS_FROM_TOOLBAR, {
             execute: widget => this.withOpenEditorsWidget(widget, () => registry.executeCommand(CommonCommands.SAVE_ALL.id)),
-            isEnabled: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length),
+            isEnabled: widget => this.withOpenEditorsWidget(widget, () => true),
             isVisible: widget => this.withOpenEditorsWidget(widget, () => true)
         });
 
@@ -630,14 +623,12 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             command: OpenEditorsCommands.SAVE_ALL_TABS_FROM_TOOLBAR.id,
             tooltip: OpenEditorsCommands.SAVE_ALL_TABS_FROM_TOOLBAR.label,
             priority: 0,
-            onDidChange: this.onDidUpdateOpenEditors
         });
         toolbarRegistry.registerItem({
             id: OpenEditorsCommands.CLOSE_ALL_TABS_FROM_TOOLBAR.id,
             command: OpenEditorsCommands.CLOSE_ALL_TABS_FROM_TOOLBAR.id,
             tooltip: OpenEditorsCommands.CLOSE_ALL_TABS_FROM_TOOLBAR.label,
             priority: 1,
-            onDidChange: this.onDidUpdateOpenEditors
         });
     }
 
