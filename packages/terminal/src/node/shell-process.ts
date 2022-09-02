@@ -37,6 +37,7 @@ export interface ShellProcessOptions {
     cols?: number,
     rows?: number,
     env?: { [key: string]: string | null },
+    strictEnv?: boolean,
     isPseudo?: boolean,
 }
 
@@ -70,7 +71,7 @@ export class ShellProcess extends TerminalProcess {
                 cols: options.cols || ShellProcess.defaultCols,
                 rows: options.rows || ShellProcess.defaultRows,
                 cwd: getRootPath(options.rootURI),
-                env: environmentUtils.mergeProcessEnv(options.env),
+                env: options.strictEnv !== true ? environmentUtils.mergeProcessEnv(options.env) : options.env,
             },
             isPseudo: options.isPseudo,
         }, processManager, ringBuffer, logger);

@@ -167,6 +167,11 @@ export interface TerminalWidgetOptions {
     readonly env?: { [key: string]: string | null };
 
     /**
+     * Whether the terminal process environment should be exactly as provided in `env`.
+     */
+    readonly strictEnv?: boolean;
+
+    /**
      * In case `destroyTermOnClose` is true - terminal process will be destroyed on close terminal widget, otherwise will be kept
      * alive.
      */
