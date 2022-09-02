@@ -409,6 +409,9 @@
       "resultSubset": "To jest tylko podzbiór wszystkich wyników. Użyj bardziej szczegółowego terminu wyszukiwania, aby zawęzić listę wyników.",
       "searchOnEditorModification": "Przeszukiwanie aktywnego edytora po modyfikacji."
     },
+    "secondary-window": {
+      "extract-widget": "Przenieś widok do okna podrzędnego"
+    },
     "task": {
       "attachTask": "Dołącz zadanie...",
       "clearHistory": "Czysta historia",

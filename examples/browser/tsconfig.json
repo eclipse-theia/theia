@@ -105,6 +105,9 @@
       "path": "../../packages/search-in-workspace"
     },
     {
+      "path": "../../packages/secondary-window"
+    },
+    {
       "path": "../../packages/task"
     },
     {

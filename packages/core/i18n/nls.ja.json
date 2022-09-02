@@ -409,6 +409,9 @@
       "resultSubset": "これは、すべての結果の一部に過ぎません。より具体的な検索用語を使って、結果リストを絞り込んでください。",
       "searchOnEditorModification": "修正されたときにアクティブなエディタを検索します。"
     },
+    "secondary-window": {
+      "extract-widget": "セカンダリーウィンドウへの表示移動"
+    },
     "task": {
       "attachTask": "タスクの添付...",
       "clearHistory": "明確な歴史",

@@ -20,10 +20,13 @@ import { DefaultWindowService } from '../../browser/window/default-window-servic
 import { FrontendApplicationContribution } from '../frontend-application';
 import { ClipboardService } from '../clipboard-service';
 import { BrowserClipboardService } from '../browser-clipboard-service';
+import { SecondaryWindowService } from './secondary-window-service';
+import { DefaultSecondaryWindowService } from './default-secondary-window-service';
 
 export default new ContainerModule(bind => {
     bind(DefaultWindowService).toSelf().inSingletonScope();
     bind(WindowService).toService(DefaultWindowService);
     bind(FrontendApplicationContribution).toService(DefaultWindowService);
     bind(ClipboardService).to(BrowserClipboardService).inSingletonScope();
+    bind(SecondaryWindowService).to(DefaultSecondaryWindowService).inSingletonScope();
 });

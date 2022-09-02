@@ -52,6 +52,13 @@
 
         postMessage(channel, data) {
             window.parent.postMessage({ target: id, channel, data }, '*');
+            let currentWindow = window;
+            while (currentWindow.parent !== currentWindow) {
+                currentWindow = currentWindow.parent;
+                if (currentWindow.opener) {
+                    currentWindow.opener.postMessage({ target: id, channel, data, fromSecondary: true }, '*');
+                }
+            }
         }
 
         onMessage(channel, handler) {

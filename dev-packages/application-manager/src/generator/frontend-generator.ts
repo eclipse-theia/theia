@@ -25,6 +25,7 @@ export class FrontendGenerator extends AbstractGenerator {
         const frontendModules = this.pck.targetFrontendModules;
         await this.write(this.pck.frontend('index.html'), this.compileIndexHtml(frontendModules));
         await this.write(this.pck.frontend('index.js'), this.compileIndexJs(frontendModules));
+        await this.write(this.pck.frontend('secondary-window.html'), this.compileSecondaryWindowHtml());
         if (this.pck.isElectron()) {
             const electronMainModules = this.pck.targetElectronMainModules;
             await this.write(this.pck.frontend('electron-main.js'), this.compileElectronMain(electronMainModules));
@@ -195,4 +196,48 @@ module.exports = Promise.resolve()${this.compileElectronMainModuleImports(electr
 `;
     }
 
+    /** HTML for secondary windows that contain an extracted widget. */
+    protected compileSecondaryWindowHtml(): string {
+        return `<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Theia — Secondary Window</title>
+    <style>
+    html, body {
+        overflow: hidden;
+        -ms-overflow-style: none;
+    }
+
+    body {
+        margin: 0;
+    }
+
+    html,
+    head,
+    body,
+    #widget-host,
+    .p-Widget {
+        width: 100% !important;
+        height: 100% !important;
+    }
+    </style>
+    <script>
+    window.addEventListener('message', e => {
+        // Only process messages from Theia main window
+        if (e.source === window.opener) {
+            // Delegate message to iframe
+            document.getElementsByTagName('iframe').item(0).contentWindow.postMessage({ ...e.data }, '*');
+        }
+    });
+    </script>
+</head>
+
+<body>
+    <div id="widget-host"></div>
+</body>
+
+</html>`;
+    }
 }

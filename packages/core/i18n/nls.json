@@ -409,6 +409,9 @@
       "resultSubset": "This is only a subset of all results. Use a more specific search term to narrow down the result list.",
       "searchOnEditorModification": "Search the active editor when modified."
     },
+    "secondary-window": {
+      "extract-widget": "Move View to Secondary Window"
+    },
     "task": {
       "attachTask": "Attach Task...",
       "clearHistory": "Clear History",

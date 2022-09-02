@@ -25,6 +25,8 @@ import { ElectronIpcConnectionProvider } from '../messaging/electron-ipc-connect
 import { bindWindowPreferences } from './electron-window-preferences';
 import { FrontendApplicationStateService } from '../../browser/frontend-application-state';
 import { ElectronFrontendApplicationStateService } from './electron-frontend-application-state';
+import { ElectronSecondaryWindowService } from './electron-secondary-window-service';
+import { SecondaryWindowService } from '../../browser/window/secondary-window-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(ElectronMainWindowService).toDynamicValue(context =>
@@ -35,4 +37,5 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplicationContribution).toService(WindowService);
     bind(ClipboardService).to(ElectronClipboardService).inSingletonScope();
     rebind(FrontendApplicationStateService).to(ElectronFrontendApplicationStateService).inSingletonScope();
+    bind(SecondaryWindowService).to(ElectronSecondaryWindowService).inSingletonScope();
 });

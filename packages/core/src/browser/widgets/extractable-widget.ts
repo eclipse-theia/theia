@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2017 TypeFox and others.
+// Copyright (C) 2022 STMicroelectronics, Ericsson, ARM, EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,7 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './widget';
-export * from './react-renderer';
-export * from './react-widget';
-export * from './extractable-widget';
+import { Widget } from './widget';
+
+/**
+ * A contract for widgets that are extractable to a secondary window.
+ */
+export interface ExtractableWidget extends Widget {
+    /** Set to `true` to mark the widget to be extractable. */
+    isExtractable: boolean;
+    /** The secondary window that the window was extracted to or `undefined` if it is not yet extracted. */
+    secondaryWindow: Window | undefined;
+}
+
+export namespace ExtractableWidget {
+    export function is(widget: unknown): widget is ExtractableWidget {
+        return widget instanceof Widget && widget.hasOwnProperty('isExtractable') && (widget as ExtractableWidget).isExtractable === true;
+    }
+}

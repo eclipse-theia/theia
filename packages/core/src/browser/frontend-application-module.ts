@@ -126,6 +126,7 @@ import { TooltipService, TooltipServiceImpl } from './tooltip-service';
 import { BackendRequestService, RequestService, REQUEST_SERVICE_PATH } from '@theia/request';
 import { bindFrontendStopwatch, bindBackendStopwatch } from './performance';
 import { SaveResourceService } from './save-resource-service';
+import { SecondaryWindowHandler } from './secondary-window-handler';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
 import { TheiaDockPanel } from './shell/theia-dock-panel';
 import { bindStatusBar } from './status-bar';
@@ -430,4 +431,6 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(StylingService).toSelf().inSingletonScope();
     bindContributionProvider(bind, StylingParticipant);
     bind(FrontendApplicationContribution).toService(StylingService);
+
+    bind(SecondaryWindowHandler).toSelf().inSingletonScope();
 });

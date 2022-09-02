@@ -409,6 +409,9 @@
       "resultSubset": "这只是所有结果的一个子集。使用一个更具体的搜索词来缩小结果列表。",
       "searchOnEditorModification": "修改时搜索活动的编辑器。"
     },
+    "secondary-window": {
+      "extract-widget": "将视图移至第二窗口"
+    },
     "task": {
       "attachTask": "附加任务...",
       "clearHistory": "清除历史",

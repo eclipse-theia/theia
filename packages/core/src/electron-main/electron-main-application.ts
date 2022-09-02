@@ -16,7 +16,7 @@
 
 import { inject, injectable, named } from 'inversify';
 import * as electronRemoteMain from '../../electron-shared/@electron/remote/main';
-import { screen, ipcMain, app, BrowserWindow, Event as ElectronEvent } from '../../electron-shared/electron';
+import { screen, ipcMain, app, BrowserWindow, Event as ElectronEvent, BrowserWindowConstructorOptions, nativeImage } from '../../electron-shared/electron';
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
@@ -252,6 +252,7 @@ export class ElectronMainApplication {
         electronWindow.onDidClose(() => this.windows.delete(id));
         this.attachSaveWindowState(electronWindow.window);
         electronRemoteMain.enable(electronWindow.window.webContents);
+        this.configureNativeSecondaryWindowCreation(electronWindow.window);
         return electronWindow.window;
     }
 
@@ -315,6 +316,31 @@ export class ElectronMainApplication {
         return electronWindow;
     }
 
+    /** Configures native window creation, i.e. using window.open or links with target "_blank" in the frontend. */
+    protected configureNativeSecondaryWindowCreation(electronWindow: BrowserWindow): void {
+        electronWindow.webContents.setWindowOpenHandler(() => {
+            const { minWidth, minHeight } = this.getDefaultOptions();
+            const options: BrowserWindowConstructorOptions = {
+                ...this.getDefaultTheiaWindowBounds(),
+                // We always need the native window frame for now because the secondary window does not have Theia's title bar by default.
+                // In 'custom' title bar mode this would leave the window without any window controls (close, min, max)
+                // TODO set to this.useNativeWindowFrame when secondary windows support a custom title bar.
+                frame: true,
+                minWidth,
+                minHeight
+            };
+            if (!this.useNativeWindowFrame) {
+                // If the main window does not have a native window frame, do not show  an icon in the secondary window's native title bar.
+                // The data url is a 1x1 transparent png
+                options.icon = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12P4DwQACfsD/WMmxY8AAAAASUVORK5CYII=');
+            }
+            return {
+                action: 'allow',
+                overrideBrowserWindowOptions: options,
+            };
+        });
+    }
+
     /**
      * "Gently" close all windows, application will not stop if a `beforeunload` handler returns `false`.
      */
@@ -348,6 +374,16 @@ export class ElectronMainApplication {
     }
 
     protected getDefaultTheiaWindowOptions(): TheiaBrowserWindowOptions {
+        return {
+            frame: this.useNativeWindowFrame,
+            isFullScreen: false,
+            isMaximized: false,
+            ...this.getDefaultTheiaWindowBounds(),
+            ...this.getDefaultOptions()
+        };
+    }
+
+    protected getDefaultTheiaWindowBounds(): TheiaBrowserWindowOptions {
         // The `screen` API must be required when the application is ready.
         // See: https://electronjs.org/docs/api/screen#screen
         // We must center by hand because `browserWindow.center()` fails on multi-screen setups
@@ -358,14 +394,10 @@ export class ElectronMainApplication {
         const y = Math.round(bounds.y + (bounds.height - height) / 2);
         const x = Math.round(bounds.x + (bounds.width - width) / 2);
         return {
-            frame: this.useNativeWindowFrame,
-            isFullScreen: false,
-            isMaximized: false,
             width,
             height,
             x,
-            y,
-            ...this.getDefaultOptions()
+            y
         };
     }
 
