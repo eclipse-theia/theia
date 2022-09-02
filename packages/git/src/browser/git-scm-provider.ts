@@ -335,7 +335,7 @@ export class GitScmProvider implements ScmProvider {
                 }
                 );
             if (stagedUris.length !== 0) {
-                await this.git.unstage(repository, uris);
+                await this.git.unstage(repository, uris, { reset: 'index' });
             }
         } catch (error) {
             this.gitErrorHandler.handleError(error);
