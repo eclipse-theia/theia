@@ -310,21 +310,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
     }
 
     private getItemDescription(uri: URI): string {
-        const resourcePathLabel = this.labelProvider.getLongName(uri.parent);
-        const rootUri = this.workspaceService.getWorkspaceRootUri(uri);
-
-        // Display the path normally if outside any workspace root.
-        if (!rootUri) {
-            return resourcePathLabel;
-        }
-
-        // Compute the multi-root label for the resource.
-        if (this.workspaceService.isMultiRootWorkspaceOpened) {
-            const rootLabel = this.labelProvider.getName(rootUri);
-            return rootUri.path.toString() === uri.parent.path.toString() ? `${rootLabel}` : `${rootLabel} • ${resourcePathLabel}`;
-        } else {
-            return rootUri.toString() === uri.parent.toString() ? '' : resourcePathLabel;
-        }
+        return this.labelProvider.getDetails(uri);
     }
 
     private getPlaceHolder(): string {

@@ -84,7 +84,7 @@ export class QuickEditorService implements QuickAccessContribution, QuickAccessP
 
         return {
             label: this.labelProvider.getName(uri),
-            description: this.labelProvider.getLongName(uri.parent),
+            description: this.labelProvider.getDetails(uri),
             iconClasses,
             ariaLabel: uri.path.fsPath(),
             alwaysShow: true,
