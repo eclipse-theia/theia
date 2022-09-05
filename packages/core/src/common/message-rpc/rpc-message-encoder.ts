@@ -120,7 +120,7 @@ export interface RpcMessageEncoder {
 
 }
 
-export const defaultMsgPack = new MsgPack({ moreTypes: true, encodeUndefinedAsNil: false, bundleStrings: true });
+export const defaultMsgPack = new MsgPack({ moreTypes: true, encodeUndefinedAsNil: false, bundleStrings: false });
 // Add custom msgpackR extension for ResponseErrors.
 addExtension({
     Class: ResponseError,
