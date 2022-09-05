@@ -177,7 +177,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     protected async installFromVSIX(): Promise<void> {
         const props: OpenFileDialogProps = {
             title: VSXExtensionsCommands.INSTALL_FROM_VSIX.dialogLabel,
-            openLabel: 'Install',
+            openLabel: nls.localizeByDefault('Install from VSIX'),
             filters: { 'VSIX Extensions (*.vsix)': ['vsix'] },
             canSelectMany: false
         };
@@ -187,13 +187,13 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
                 const extensionName = this.labelProvider.getName(extensionUri);
                 try {
                     await this.commandRegistry.executeCommand(VscodeCommands.INSTALL_FROM_VSIX.id, extensionUri);
-                    this.messageService.info(`Completed installing ${extensionName} from VSIX.`);
+                    this.messageService.info(nls.localizeByDefault('Completed installing {0} extension from VSIX.', extensionName));
                 } catch (e) {
-                    this.messageService.error(`Failed to install ${extensionName} from VSIX.`);
+                    this.messageService.error(nls.localize('theia/vsx-registry/failedInstallingVSIX', 'Failed to install {0} from VSIX.', extensionName));
                     console.warn(e);
                 }
             } else {
-                this.messageService.error('The selected file is not a valid "*.vsix" plugin.');
+                this.messageService.error(nls.localize('theia/vsx-registry/invalidVSIX', 'The selected file is not a valid "*.vsix" plugin.'));
             }
         }
     }
@@ -278,12 +278,18 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
                 recommended.delete(installed);
             }
             if (recommended.size) {
-                const userResponse = await this.messageService.info('Would you like to install the recommended extensions?', 'Install', 'Show Recommended');
-                if (userResponse === 'Install') {
+                const install = nls.localizeByDefault('Install');
+                const showRecommendations = nls.localizeByDefault('Show Recommendations');
+                const userResponse = await this.messageService.info(
+                    nls.localizeByDefault('Do you want to install the recommended extensions for this repository?'),
+                    install,
+                    showRecommendations
+                );
+                if (userResponse === install) {
                     for (const recommendation of recommended) {
                         this.model.getExtension(recommendation)?.install();
                     }
-                } else if (userResponse === 'Show Recommended') {
+                } else if (userResponse === showRecommendations) {
                     await this.showRecommendedExtensions();
                 }
             }

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Disposable, DisposableCollection, Emitter } from '@theia/core';
+import { Disposable, DisposableCollection, Emitter, nls } from '@theia/core';
 import { ApplicationShell, Message, Panel, Widget, WidgetManager } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { MemoryDiffSelectWidget } from '../diff-widget/memory-diff-select-widget';
@@ -26,7 +26,7 @@ import { MemoryDockpanelPlaceholder } from './memory-dockpanel-placeholder-widge
 @injectable()
 export class MemoryLayoutWidget extends Panel implements Disposable, ApplicationShell.TrackableWidgetProvider {
     static readonly ID = 'memory-layout-widget';
-    static readonly LABEL = 'Memory Inspector';
+    static readonly LABEL = nls.localize('theia/memory-inspector/memoryInspector', 'Memory Inspector');
 
     // Necessary to inherit theia's tabbar styling
     static readonly DOCK_PANEL_ID = 'theia-main-content-panel';
