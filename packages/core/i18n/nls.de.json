@@ -409,6 +409,9 @@
       "resultSubset": "Dies ist nur eine Teilmenge aller Ergebnisse. Verwenden Sie einen spezifischeren Suchbegriff, um die Ergebnisliste einzugrenzen.",
       "searchOnEditorModification": "Durchsucht den aktiven Editor nach Änderungen."
     },
+    "secondary-window": {
+      "extract-widget": "Ansicht in sekundäres Fenster verschieben"
+    },
     "task": {
       "attachTask": "Aufgabe anhängen...",
       "clearHistory": "Geschichte löschen",

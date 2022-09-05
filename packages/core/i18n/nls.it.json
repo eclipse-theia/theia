@@ -409,6 +409,9 @@
       "resultSubset": "Questo è solo un sottoinsieme di tutti i risultati. Usa un termine di ricerca più specifico per restringere la lista dei risultati.",
       "searchOnEditorModification": "Cerca l'editor attivo quando viene modificato."
     },
+    "secondary-window": {
+      "extract-widget": "Sposta la vista nella finestra secondaria"
+    },
     "task": {
       "attachTask": "Allegare il compito...",
       "clearHistory": "Storia chiara",

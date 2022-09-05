@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2017 TypeFox and others.
+// Copyright (C) 2022 STMicroelectronics, Ericsson, ARM, EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './widget';
-export * from './react-renderer';
-export * from './react-widget';
-export * from './extractable-widget';
+describe('secondary-window package', () => {
+    it('supports code coverage statistics', () => true);
+});

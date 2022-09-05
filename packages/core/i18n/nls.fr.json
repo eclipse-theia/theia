@@ -409,6 +409,9 @@
       "resultSubset": "Il ne s'agit que d'un sous-ensemble de tous les résultats. Utilisez un terme de recherche plus spécifique pour réduire la liste des résultats.",
       "searchOnEditorModification": "Rechercher l'éditeur actif lorsqu'il est modifié."
     },
+    "secondary-window": {
+      "extract-widget": "Déplacer la vue vers une fenêtre secondaire"
+    },
     "task": {
       "attachTask": "Attacher la tâche...",
       "clearHistory": "Histoire claire",

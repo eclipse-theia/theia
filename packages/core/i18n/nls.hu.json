@@ -409,6 +409,9 @@
       "resultSubset": "Ez csak egy részhalmaza az összes eredménynek. A találati lista szűkítéséhez használjon konkrétabb keresési kifejezést.",
       "searchOnEditorModification": "Keresés az aktív szerkesztőben, amikor módosítják."
     },
+    "secondary-window": {
+      "extract-widget": "Nézet áthelyezése másodlagos ablakba"
+    },
     "task": {
       "attachTask": "Feladat csatolása...",
       "clearHistory": "Történelem törlése",

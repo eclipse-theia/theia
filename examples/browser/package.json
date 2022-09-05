@@ -47,6 +47,7 @@
     "@theia/scm": "1.29.0",
     "@theia/scm-extra": "1.29.0",
     "@theia/search-in-workspace": "1.29.0",
+    "@theia/secondary-window": "1.29.0",
     "@theia/task": "1.29.0",
     "@theia/terminal": "1.29.0",
     "@theia/timeline": "1.29.0",

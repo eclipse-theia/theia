@@ -49,6 +49,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
 import { ViewColumn } from '../../../plugin/types-impl';
+import { ExtractableWidget } from '@theia/core/lib/browser/widgets/extractable-widget';
 
 // Style from core
 const TRANSPARENT_OVERLAY_STYLE = 'theia-transparent-overlay';
@@ -85,7 +86,7 @@ export class WebviewWidgetIdentifier {
 export const WebviewWidgetExternalEndpoint = Symbol('WebviewWidgetExternalEndpoint');
 
 @injectable()
-export class WebviewWidget extends BaseWidget implements StatefulWidget {
+export class WebviewWidget extends BaseWidget implements StatefulWidget, ExtractableWidget {
 
     private static readonly standardSupportedLinkSchemes = new Set([
         Schemes.http,
@@ -172,6 +173,9 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     protected readonly toHide = new DisposableCollection();
     protected hideTimeout: any | number | undefined;
+
+    isExtractable: boolean = true;
+    secondaryWindow: Window | undefined = undefined;
 
     @postConstruct()
     protected init(): void {
@@ -564,7 +568,11 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     protected postMessage(channel: string, data?: any): void {
         if (this.element) {
             this.trace('out', channel, data);
-            this.element.contentWindow!.postMessage({ channel, args: data }, '*');
+            if (this.secondaryWindow) {
+                this.secondaryWindow.postMessage({ channel, args: data }, '*');
+            } else {
+                this.element.contentWindow!.postMessage({ channel, args: data }, '*');
+            }
         }
     }
 
