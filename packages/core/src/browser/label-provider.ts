@@ -69,7 +69,7 @@ export interface LabelProviderContribution {
     getLongName?(element: object): string | undefined;
 
     /**
-     * A compromise between getName and getLongName. Can be used to supplement getName in contexts that allow both a primary display field and extra detail.
+     * A compromise between {@link getName} and {@link getLongName}. Can be used to supplement getName in contexts that allow both a primary display field and extra detail.
      */
     getDetails?(element: object): string | undefined;
 
@@ -360,7 +360,7 @@ export class LabelProvider implements FrontendApplicationContribution {
     /**
      * Get details from the list of available {@link LabelProviderContribution} for the given element.
      * @return the details
-     * Can be used to supplement getName in contexts that allow both a primary display field and extra detail.
+     * Can be used to supplement {@link getName} in contexts that allow both a primary display field and extra detail.
      */
     getDetails(element: object): string {
         return this.handleRequest(element, 'getDetails') ?? '';
