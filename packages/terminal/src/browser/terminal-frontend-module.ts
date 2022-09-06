@@ -18,7 +18,7 @@ import '../../src/browser/style/terminal.css';
 import 'xterm/css/xterm.css';
 
 import { ContainerModule, Container } from '@theia/core/shared/inversify';
-import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
+import { CommandContribution, MenuContribution, nls } from '@theia/core/lib/common';
 import { bindContributionProvider } from '@theia/core';
 import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, KeybindingContext, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -61,7 +61,7 @@ export default new ContainerModule(bind => {
             const counter = terminalNum++;
             const domId = options.id || 'terminal-' + counter;
             const widgetOptions: TerminalWidgetOptions = {
-                title: 'Terminal ' + counter,
+                title: `${nls.localizeByDefault('Terminal')} ${counter}`,
                 useServerTitle: true,
                 destroyTermOnClose: true,
                 ...options
