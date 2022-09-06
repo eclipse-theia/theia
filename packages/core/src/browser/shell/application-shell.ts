@@ -1963,6 +1963,7 @@ export namespace ApplicationShell {
         left: nls.localize('theia/shell-area/left', 'Left'),
         right: nls.localize('theia/shell-area/right', 'Right'),
         bottom: nls.localize('theia/shell-area/bottom', 'Bottom'),
+        secondaryWindow: nls.localize('theia/shell-area/secondary', 'Secondary Window'),
     };
 
     /**

@@ -192,7 +192,7 @@ export class OpenEditorsModel extends FileTreeModel {
             const areaNode: CompositeTreeNode & ExpandableTreeNode = {
                 id: `${OpenEditorsModel.AREA_NODE_ID_PREFIX}:${area}`,
                 parent: rootNode,
-                name: area === 'secondaryWindow' ? 'in secondary window' : area,
+                name: ApplicationShell.areaLabels[area],
                 expanded: true,
                 children: []
             };
