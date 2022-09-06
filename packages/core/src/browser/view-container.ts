@@ -524,9 +524,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         // Reorder the parts according to the stored state
         for (let index = 0; index < partStates.length; index++) {
             const partState = partStates[index];
-            const currentIndex = this.getParts().findIndex(part => part.partId === partState.partId);
-            if (currentIndex > index) {
-                this.containerLayout.moveWidget(currentIndex, index, this.getParts()[currentIndex]);
+            const widget = this.getParts().find(part => part.partId === partState.partId);
+            if (widget) {
+                this.containerLayout.insertWidget(index, widget);
             }
         }
 
@@ -547,6 +547,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         // Restore part sizes
         waitForRevealed(this).then(() => {
             this.containerLayout.setPartSizes(partStates.map(partState => partState.relativeSize));
+            this.updateSplitterVisibility();
         });
     }
 
@@ -619,15 +620,16 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     protected moveBefore(toMovedId: string, moveBeforeThisId: string): void {
         const parts = this.getParts();
-        const toMoveIndex = parts.findIndex(part => part.id === toMovedId);
-        const moveBeforeThisIndex = parts.findIndex(part => part.id === moveBeforeThisId);
-        if (toMoveIndex >= 0 && moveBeforeThisIndex >= 0) {
-            this.containerLayout.moveWidget(toMoveIndex, moveBeforeThisIndex, parts[toMoveIndex]);
-            for (let index = Math.min(toMoveIndex, moveBeforeThisIndex); index < parts.length; index++) {
+        const indexToMove = parts.findIndex(part => part.id === toMovedId);
+        const targetIndex = parts.findIndex(part => part.id === moveBeforeThisId);
+        if (indexToMove >= 0 && targetIndex >= 0) {
+            this.containerLayout.insertWidget(targetIndex, parts[indexToMove]);
+            for (let index = Math.min(indexToMove, targetIndex); index < parts.length; index++) {
                 this.refreshMenu(parts[index]);
                 this.activate();
             }
         }
+        this.updateSplitterVisibility();
     }
 
     getTrackableWidgets(): Widget[] {
@@ -1337,22 +1339,6 @@ export class ViewContainerLayout extends SplitLayout {
             this.parent.node.insertBefore(this.handles[index], ref);
             this.parent.fit();
         }
-    }
-
-    override moveWidget(fromIndex: number, toIndex: number, widget: Widget): void {
-        const ref = this.widgets[toIndex < fromIndex ? toIndex : toIndex + 1];
-        super.moveWidget(fromIndex, toIndex, widget);
-        // Keep the order of `_widgets` array just as done before (by `super`) for the `_items` array -
-        // to prevent later bugs relying on index.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ArrayExt.move((this as any)._widgets, fromIndex, toIndex);
-        if (ref) {
-            this.parent!.node.insertBefore(this.handles[toIndex], ref.node);
-        } else {
-            this.parent!.node.appendChild(this.handles[toIndex]);
-        }
-        UnsafeWidgetUtilities.detach(widget);
-        UnsafeWidgetUtilities.attach(widget, this.parent!.node, this.handles[toIndex]);
     }
 
     getPartSize(part: ViewContainerPart): number | undefined {
