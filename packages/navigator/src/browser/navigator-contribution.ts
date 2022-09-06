@@ -358,13 +358,13 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerCommand(OpenEditorsCommands.CLOSE_ALL_TABS_FROM_TOOLBAR, {
             execute: widget => this.withOpenEditorsWidget(widget, () => this.shell.closeMany(this.editorWidgets)),
-            isEnabled: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length),
-            isVisible: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length)
+            isEnabled: widget => this.withOpenEditorsWidget(widget, () => true),
+            isVisible: widget => this.withOpenEditorsWidget(widget, () => true)
         });
         registry.registerCommand(OpenEditorsCommands.SAVE_ALL_TABS_FROM_TOOLBAR, {
             execute: widget => this.withOpenEditorsWidget(widget, () => registry.executeCommand(CommonCommands.SAVE_ALL.id)),
-            isEnabled: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length),
-            isVisible: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length)
+            isEnabled: widget => this.withOpenEditorsWidget(widget, () => true),
+            isVisible: widget => this.withOpenEditorsWidget(widget, () => true)
         });
 
         const filterEditorWidgets = (title: Title<Widget>) => {
