@@ -146,6 +146,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./gh-pages
+          force_orphan: true    # will only keep latest commit on branch gh-pages
 
       - name: Publish NPM
         uses: nick-invision/retry@v2
