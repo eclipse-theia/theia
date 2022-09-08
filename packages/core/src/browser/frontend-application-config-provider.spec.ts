@@ -39,7 +39,7 @@ describe('FrontendApplicationConfigProvider', function (): void {
         expect(config.applicationName).not.equal(DEFAULT.applicationName);
         // defaults
         expect(config.defaultIconTheme).equal(DEFAULT.defaultIconTheme);
-        expect(config.defaultTheme).equal(DEFAULT.defaultTheme);
+        expect(config.defaultTheme).deep.equal(DEFAULT.defaultTheme);
         expect(config.electron.windowOptions).deep.equal(DEFAULT.electron.windowOptions);
     });
 });

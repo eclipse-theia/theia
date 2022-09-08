@@ -58,7 +58,10 @@ async function loadBackendOS(): Promise<void> {
 }
 
 function initBackground(): void {
-    const value = window.localStorage.getItem(DEFAULT_BACKGROUND_COLOR_STORAGE_KEY) || '#1d1d1d';
+    // The default light background color is based on the `colors#editor.background` value from
+    // `packages/monaco/data/monaco-themes/vscode/dark_vs.json` and the dark background comes from the `light_vs.json`.
+    const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const value = window.localStorage.getItem(DEFAULT_BACKGROUND_COLOR_STORAGE_KEY) || (dark ? '#1E1E1E' : '#FFFFFF');
     const documentElement = document.documentElement;
     documentElement.style.setProperty('--theia-editor-background', value);
 }

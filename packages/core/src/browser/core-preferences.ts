@@ -21,6 +21,7 @@ import { SUPPORTED_ENCODINGS } from './supported-encodings';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { isOSX } from '../common/os';
 import { nls } from '../common/nls';
+import { DefaultTheme } from '@theia/application-package/lib/application-props';
 
 export const corePreferenceSchema: PreferenceSchema = {
     'type': 'object',
@@ -151,7 +152,7 @@ export const corePreferenceSchema: PreferenceSchema = {
         },
         'workbench.colorTheme': {
             type: 'string',
-            default: FrontendApplicationConfigProvider.get().defaultTheme,
+            default: DefaultTheme.defaultForOSTheme(FrontendApplicationConfigProvider.get().defaultTheme),
             description: nls.localizeByDefault('Specifies the color theme used in the workbench.')
         },
         'workbench.iconTheme': {

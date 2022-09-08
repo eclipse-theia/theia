@@ -45,6 +45,23 @@ export namespace ElectronFrontendApplicationConfig {
     }
 }
 
+export type DefaultTheme = string | Readonly<{ light: string, dark: string }>;
+export namespace DefaultTheme {
+    export function defaultForOSTheme(theme: DefaultTheme): string {
+        if (typeof theme === 'string') {
+            return theme;
+        }
+        if (
+            typeof window !== 'undefined' &&
+            window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches
+        ) {
+            return theme.dark;
+        }
+        return theme.light;
+    }
+}
+
 /**
  * Application configuration for the frontend. The following properties will be injected into the `index.html`.
  */
@@ -52,7 +69,7 @@ export type FrontendApplicationConfig = RequiredRecursive<FrontendApplicationCon
 export namespace FrontendApplicationConfig {
     export const DEFAULT: FrontendApplicationConfig = {
         applicationName: 'Eclipse Theia',
-        defaultTheme: 'dark',
+        defaultTheme: { light: 'light', dark: 'dark' },
         defaultIconTheme: 'none',
         electron: ElectronFrontendApplicationConfig.DEFAULT,
         defaultLocale: '',
@@ -63,9 +80,9 @@ export namespace FrontendApplicationConfig {
         /**
          * The default theme for the application.
          *
-         * Defaults to `dark`.
+         * Defaults to `dark` if the OS's theme is dark. Otherwise `light`.
          */
-        readonly defaultTheme?: string;
+        readonly defaultTheme?: DefaultTheme;
 
         /**
          * The default icon theme for the application.
