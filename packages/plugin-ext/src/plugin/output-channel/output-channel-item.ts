@@ -52,8 +52,11 @@ export class OutputChannelImpl implements theia.OutputChannel {
         this.proxy.$clear(this.name);
     }
 
-    show(preserveFocus: boolean | undefined): void {
+    show(preserveFocusOrColumn?: boolean | theia.ViewColumn, preserveFocus?: boolean): void {
         this.validate();
+        if (typeof preserveFocusOrColumn === 'boolean') {
+            preserveFocus = preserveFocusOrColumn;
+        }
         this.proxy.$reveal(this.name, !!preserveFocus);
     }
 
