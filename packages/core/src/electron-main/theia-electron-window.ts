@@ -181,7 +181,7 @@ export class TheiaElectronWindow {
     }
 
     protected isSender(e: IpcMainEvent): boolean {
-        return BrowserWindow.fromId(e.sender.id) === this._window;
+        return e.sender.id === this._window.webContents.id;
     }
 
     dispose(): void {
