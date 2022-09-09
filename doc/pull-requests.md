@@ -66,7 +66,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 <a name="checklist-build-and-test"></a>
 - [1.](#checklist-build-and-test) The new code is built and tested according to the `How to test` section of a PR description.
 <a name="checklist-project-org"></a>
-- [2.](#checklist-project-org) The new code is aligned with the [project organization](https://github.com/eclipse-theia/theia/wiki/Code-Organization) and [coding conventions](https://github.com/eclipse-theia/theia/wiki/Coding-Guidelines).
+- [2.](#checklist-project-org) The new code is aligned with the [project organization](code-organization.md) and [coding conventions](coding-guidelines.md).
 <a name="checklist-changelog"></a>
 - [3.](#checklist-changelog) [Changelog](https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md) is updated.
 <a name="checklist-breaking-changes"></a>
@@ -112,7 +112,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
   - Such change requests should be dismissed and an issue should be filed to address them separately.
 <a name="changes-style-agreement"></a>
 - [4.](#changes-style-agreement) Styles and coding preferences should not be discussed on the PR, but raised in [the dev meeting](https://github.com/eclipse-theia/theia/wiki/Dev-Meetings),
-  agreed by the team, applied to [the coding guidelines](https://github.com/eclipse-theia/theia/wiki/Coding-Guidelines) and after that followed by all contributors.
+  agreed by the team, applied to [the coding guidelines](coding-guidelines.md) and after that followed by all contributors.
 
 ### Approving
 

@@ -70,7 +70,7 @@ module.exports = {
         fixable: 'code',
         docs: {
             description: 'prevent imports from folders meant for incompatible runtimes.',
-            url: 'https://github.com/eclipse-theia/theia/wiki/Code-Organization'
+            url: 'https://github.com/eclipse-theia/theia/tree/master/doc/code-organization.md'
         },
     },
     create(context) {

@@ -26,7 +26,8 @@ export const THEIA_EXT = 'theia-workspace';
 export const VSCODE_EXT = 'code-workspace';
 
 /**
- * @deprecated since 1.4.0 - because of https://github.com/eclipse-theia/theia/wiki/Coding-Guidelines#di-function-export, use `WorkspaceService.getUntitledWorkspace` instead
+ * @deprecated since 1.4.0 - because of https://github.com/eclipse-theia/theia/tree/master/doc/coding-guidelines.md#di-function-export,
+ * use `WorkspaceService.getUntitledWorkspace` instead
  */
 export async function getTemporaryWorkspaceFileUri(envVariableServer: EnvVariablesServer): Promise<URI> {
     const configDirUri = await envVariableServer.getConfigDirUri();
