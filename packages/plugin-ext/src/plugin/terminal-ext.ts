@@ -343,6 +343,15 @@ export class PseudoTerminal {
                 }
             });
         }
+        if (pseudoTerminal.onDidChangeName) {
+            pseudoTerminal.onDidChangeName(name => {
+                if (typeof id === 'string') {
+                    this.proxy.$setName(id, name);
+                } else {
+                    this.proxy.$setNameByTerminalId(id, name);
+                }
+            });
+        }
     }
 
     emitOnClose(): void {
