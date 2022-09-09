@@ -69,6 +69,11 @@ export interface LabelProviderContribution {
     getLongName?(element: object): string | undefined;
 
     /**
+     * A compromise between {@link getName} and {@link getLongName}. Can be used to supplement getName in contexts that allow both a primary display field and extra detail.
+     */
+    getDetails?(element: object): string | undefined;
+
+    /**
      * Emit when something has changed that may result in this label provider returning a different
      * value for one or more properties (name, icon etc).
      */
@@ -166,6 +171,14 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
             }
         }
         return uri && uri.path.fsPath();
+    }
+
+    getDetails(element: URI | URIIconReference): string | undefined {
+        const uri = this.getUri(element);
+        if (uri) {
+            return this.getLongName(uri.parent);
+        }
+        return this.getLongName(element);
     }
 
     protected getUri(element: URI | URIIconReference): URI | undefined {
@@ -325,15 +338,7 @@ export class LabelProvider implements FrontendApplicationContribution {
      * @return the icon class
      */
     getIcon(element: object): string {
-        const contributions = this.findContribution(element);
-        for (const contribution of contributions) {
-            const value = contribution.getIcon && contribution.getIcon(element);
-            if (value === undefined) {
-                continue;
-            }
-            return value;
-        }
-        return '';
+        return this.handleRequest(element, 'getIcon') ?? '';
     }
 
     /**
@@ -341,15 +346,7 @@ export class LabelProvider implements FrontendApplicationContribution {
      * @return the short name
      */
     getName(element: object): string {
-        const contributions = this.findContribution(element);
-        for (const contribution of contributions) {
-            const value = contribution.getName && contribution.getName(element);
-            if (value === undefined) {
-                continue;
-            }
-            return value;
-        }
-        return '<unknown>';
+        return this.handleRequest(element, 'getName') ?? '<unknown>';
     }
 
     /**
@@ -357,21 +354,33 @@ export class LabelProvider implements FrontendApplicationContribution {
      * @return the long name
      */
     getLongName(element: object): string {
-        const contributions = this.findContribution(element);
-        for (const contribution of contributions) {
-            const value = contribution.getLongName && contribution.getLongName(element);
-            if (value === undefined) {
-                continue;
-            }
-            return value;
-        }
-        return '';
+        return this.handleRequest(element, 'getLongName') ?? '';
     }
 
-    protected findContribution(element: object): LabelProviderContribution[] {
-        const prioritized = Prioritizeable.prioritizeAllSync(this.contributionProvider.getContributions(), contrib =>
+    /**
+     * Get details from the list of available {@link LabelProviderContribution} for the given element.
+     * @return the details
+     * Can be used to supplement {@link getName} in contexts that allow both a primary display field and extra detail.
+     */
+    getDetails(element: object): string {
+        return this.handleRequest(element, 'getDetails') ?? '';
+    }
+
+    protected handleRequest(element: object, method: keyof Omit<LabelProviderContribution, 'canHandle' | 'onDidChange' | 'affects'>): string | undefined {
+        for (const contribution of this.findContribution(element, method)) {
+            const value = contribution[method]?.(element);
+            if (value !== undefined) {
+                return value;
+            }
+        }
+    }
+
+    protected findContribution(element: object, method?: keyof Omit<LabelProviderContribution, 'canHandle' | 'onDidChange' | 'affects'>): LabelProviderContribution[] {
+        const candidates = method
+            ? this.contributionProvider.getContributions().filter(candidate => candidate[method])
+            : this.contributionProvider.getContributions();
+        return Prioritizeable.prioritizeAllSync(candidates, contrib =>
             contrib.canHandle(element)
-        );
-        return prioritized.map(c => c.value);
+        ).map(entry => entry.value);
     }
 }

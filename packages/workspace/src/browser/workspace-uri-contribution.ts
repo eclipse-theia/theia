@@ -18,13 +18,14 @@ import { DefaultUriLabelProviderContribution, URIIconReference } from '@theia/co
 import URI from '@theia/core/lib/common/uri';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { WorkspaceService } from './workspace-service';
 import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 
 @injectable()
 export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProviderContribution {
 
-    @inject(WorkspaceVariableContribution)
-    protected readonly workspaceVariable: WorkspaceVariableContribution;
+    @inject(WorkspaceVariableContribution) protected readonly workspaceVariable: WorkspaceVariableContribution;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     @postConstruct()
     override async init(): Promise<void> {
@@ -59,6 +60,21 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
         }
         const relativePath = uri && this.workspaceVariable.getWorkspaceRelativePath(uri);
         return relativePath || super.getLongName(this.asURIIconReference(element));
+    }
+
+    override getDetails(element: URI | URIIconReference | FileStat): string | undefined {
+        const uri = this.getUri(element);
+        if (!uri) {
+            return this.getLongName(element);
+        }
+        // Parent in order to omit the name - that's what comes out of `getName`, and `getDetails` should supplement, not duplicate.
+        const relativePath = uri && this.workspaceVariable.getWorkspaceRelativePath(uri.parent);
+        if (relativePath !== undefined) {
+            const prefix = this.workspaceService.tryGetRoots().length > 1 ? this.getName(this.workspaceVariable.getWorkspaceRootUri(uri)!) : '';
+            const separator = prefix && relativePath ? ' • ' : '';
+            return prefix + separator + relativePath;
+        }
+        return this.getLongName(uri.parent);
     }
 
     protected asURIIconReference(element: URI | URIIconReference | FileStat): URI | URIIconReference {

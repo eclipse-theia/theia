@@ -1957,6 +1957,15 @@ export namespace ApplicationShell {
      */
     export type Area = 'main' | 'top' | 'left' | 'right' | 'bottom' | 'secondaryWindow';
 
+    export const areaLabels: Record<Area, string> = {
+        main: nls.localizeByDefault('Main'),
+        top: nls.localize('theia/shell-area/top', 'Top'),
+        left: nls.localize('theia/shell-area/left', 'Left'),
+        right: nls.localize('theia/shell-area/right', 'Right'),
+        bottom: nls.localize('theia/shell-area/bottom', 'Bottom'),
+        secondaryWindow: nls.localize('theia/shell-area/secondary', 'Secondary Window'),
+    };
+
     /**
      * The _side areas_ are those shell areas that can be collapsed and expanded,
      * i.e. `left`, `right`, and `bottom`.

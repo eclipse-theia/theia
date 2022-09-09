@@ -136,23 +136,9 @@ export class OpenEditorsWidget extends FileTreeWidget {
 
     protected getWorkspaceDecoration(node: OpenEditorNode): TreeDecoration.CaptionAffix[] {
         const color = this.getDecorationData(node, 'fontData').find(data => data.color)?.color;
-        const workspaceRoots = this.workspaceService.tryGetRoots();
-        const parentWorkspace = this.workspaceService.getWorkspaceRootUri(node.fileStat.resource);
-        let workspacePrefixString = '';
-        let separator = '';
-        let filePathString = '';
-        const nodeURIDir = node.fileStat.resource.parent;
-        if (parentWorkspace) {
-            const relativeDirFromWorkspace = parentWorkspace.relative(nodeURIDir);
-            workspacePrefixString = workspaceRoots.length > 1 ? this.labelProvider.getName(parentWorkspace) : '';
-            filePathString = relativeDirFromWorkspace?.fsPath() ?? '';
-            separator = filePathString && workspacePrefixString ? ' \u2022 ' : ''; // add a bullet point between workspace and path
-        } else {
-            workspacePrefixString = nodeURIDir.path.fsPath();
-        }
         return [{
             fontData: { color },
-            data: `${workspacePrefixString}${separator}${filePathString}`,
+            data: this.labelProvider.getDetails(node.fileStat),
         }];
     }
 
