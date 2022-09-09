@@ -2074,7 +2074,7 @@ export module '@theia/plugin' {
          * Fire the event and pass data object
          * @param data
          */
-        fire(data?: T): void;
+        fire(data: T): void;
 
         /**
          * Dispose this object
