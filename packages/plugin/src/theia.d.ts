@@ -5499,7 +5499,7 @@ export module '@theia/plugin' {
         /**
          * The tooltip text when you hover over this item.
          */
-        tooltip?: string | undefined;
+        tooltip?: string | MarkdownString | undefined;
 
         /**
          * The {@link Command command} which should be run when the tree item is selected.
