@@ -180,10 +180,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
     }
 
     $setName(id: string, name: string): void {
-        const terminal = this.terminals.getById(id);
-        if (terminal) {
-            terminal.setTitle(name);
-        }
+        this.terminals.getById(id)?.setTitle(name);
     }
 
     $sendTextByTerminalId(id: number, text: string, addNewLine?: boolean): void {
