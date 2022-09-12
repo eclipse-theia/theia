@@ -334,9 +334,9 @@ export interface TerminalServiceMain {
     $dispose(id: string): void;
 
     /**
-     * Set the terminal widget name
-     * @param id  terminal widget id.
-     * @param name  new terminal widget name.
+     * Set the terminal widget name.
+     * @param id terminal widget id.
+     * @param name new terminal widget name.
      */
     $setName(id: string, name: string): void;
 
