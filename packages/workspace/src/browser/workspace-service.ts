@@ -20,7 +20,7 @@ import { WorkspaceServer, CommonWorkspaceUtils } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { DEFAULT_WINDOW_HASH } from '@theia/core/lib/common/window';
 import {
-    FrontendApplicationContribution, PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider, LabelProvider, Widget, Navigatable, FrontendApplication, Saveable
+    FrontendApplicationContribution, PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider, LabelProvider
 } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -115,12 +115,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
             }
         });
         this._ready.resolve();
-    }
-
-    onStart(app: FrontendApplication): void {
-        setInterval(() => {
-            this.updateTitleWidget(app.shell.getCurrentWidget('main'));
-        }, 33);
     }
 
     /**
@@ -287,27 +281,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
                 this.logger.warn(`Not a valid workspace file: ${this.labelProvider.getLongName(this._workspace)}`);
             }
         }
-    }
-
-    protected updateTitleWidget(widget?: Widget): void {
-        let folderName: string | undefined;
-        let folderPath: string | undefined;
-        let dirty: string | undefined;
-        if (Navigatable.is(widget)) {
-            const folder = this.getWorkspaceRootUri(widget.getResourceUri());
-            if (folder) {
-                folderName = this.labelProvider.getName(folder);
-                folderPath = folder.path.toString();
-            }
-        }
-        if (Saveable.isDirty(widget)) {
-            dirty = '●';
-        }
-        this.windowTitleService.update({
-            folderName,
-            folderPath,
-            dirty
-        });
     }
 
     protected updateTitle(): void {

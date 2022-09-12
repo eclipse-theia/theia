@@ -93,7 +93,7 @@ export class WindowTitleService {
                     title = title.replace(regex, value ?? '');
                 }
             }
-            const separatedTitle = title.split('${separator}').filter(e => e.length > 0);
+            const separatedTitle = title.split('${separator}').filter(e => e.trim().length > 0);
             this._title = separatedTitle.join(this.separator);
         }
         const developmentHost = this.titleParts.get('developmentHost');
