@@ -307,7 +307,13 @@ export class Emitter<T = any> {
     }
 }
 
+export type WaitUntilData<T> = Omit<T, 'waitUntil' | 'token'>;
+
 export interface WaitUntilEvent {
+    /**
+     * A cancellation token.
+     */
+    token: CancellationToken;
     /**
      * Allows to pause the event loop until the provided thenable resolved.
      *
@@ -325,18 +331,21 @@ export namespace WaitUntilEvent {
      */
     export async function fire<T extends WaitUntilEvent>(
         emitter: Emitter<T>,
-        event: Omit<T, 'waitUntil'>,
-        timeout: number | undefined = undefined
+        event: WaitUntilData<T>,
+        timeout?: number,
+        token = CancellationToken.None
     ): Promise<void> {
         const waitables: Promise<void>[] = [];
-        const asyncEvent = Object.assign(event, {
+        const asyncEvent = {
+            ...event,
+            token,
             waitUntil: (thenable: Promise<any>) => {
                 if (Object.isFrozen(waitables)) {
                     throw new Error('waitUntil cannot be called asynchronously.');
                 }
                 waitables.push(thenable);
             }
-        }) as T;
+        } as T;
         try {
             emitter.fire(asyncEvent);
             // Asynchronous calls to `waitUntil` should fail.
@@ -364,7 +373,7 @@ export class AsyncEmitter<T extends WaitUntilEvent> extends Emitter<T> {
     /**
      * Fire listeners async one after another.
      */
-    override fire(event: Omit<T, 'waitUntil'>, token: CancellationToken = CancellationToken.None,
+    override fire(event: WaitUntilData<T>, token: CancellationToken = CancellationToken.None,
         promiseJoin?: (p: Promise<any>, listener: Function) => Promise<any>): Promise<void> {
         const callbacks = this._callbacks;
         if (!callbacks) {
@@ -377,14 +386,16 @@ export class AsyncEmitter<T extends WaitUntilEvent> extends Emitter<T> {
         return this.deliveryQueue = this.deliver(listeners, event, token, promiseJoin);
     }
 
-    protected async deliver(listeners: Callback[], event: Omit<T, 'waitUntil'>, token: CancellationToken,
+    protected async deliver(listeners: Callback[], event: WaitUntilData<T>, token: CancellationToken,
         promiseJoin?: (p: Promise<any>, listener: Function) => Promise<any>): Promise<void> {
         for (const listener of listeners) {
             if (token.isCancellationRequested) {
                 return;
             }
             const waitables: Promise<void>[] = [];
-            const asyncEvent = Object.assign(event, {
+            const asyncEvent = {
+                ...event,
+                token,
                 waitUntil: (thenable: Promise<any>) => {
                     if (Object.isFrozen(waitables)) {
                         throw new Error('waitUntil cannot be called asynchronously.');
@@ -394,9 +405,9 @@ export class AsyncEmitter<T extends WaitUntilEvent> extends Emitter<T> {
                     }
                     waitables.push(thenable);
                 }
-            }) as T;
+            } as T;
             try {
-                listener(event);
+                listener(asyncEvent);
                 // Asynchronous calls to `waitUntil` should fail.
                 Object.freeze(waitables);
             } catch (e) {

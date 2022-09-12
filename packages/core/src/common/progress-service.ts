@@ -71,8 +71,8 @@ export class ProgressService {
         return `${this.progressIdPrefix}-${++this.counter}`;
     }
 
-    async withProgress<T>(text: string, locationId: string, task: () => Promise<T>): Promise<T> {
-        const progress = await this.showProgress({ text, options: { cancelable: true, location: locationId } });
+    async withProgress<T>(text: string, locationId: string, task: () => Promise<T>, onDidCancel?: () => void): Promise<T> {
+        const progress = await this.showProgress({ text, options: { cancelable: true, location: locationId } }, onDidCancel);
         try {
             return await task();
         } finally {

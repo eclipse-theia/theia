@@ -28,7 +28,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/tslint/config */
 
-import { Emitter, WaitUntilEvent, AsyncEmitter } from '@theia/core/lib/common/event';
+import { Emitter, WaitUntilEvent, AsyncEmitter, WaitUntilData } from '@theia/core/lib/common/event';
 import { IRelativePattern, parse } from '@theia/core/lib/common/glob';
 import { UriComponents } from '@theia/core/shared/vscode-uri';
 import { Disposable, URI, WorkspaceEdit } from './types-impl';
@@ -222,7 +222,7 @@ export class ExtHostFileSystemEventService implements ExtHostFileSystemEventServ
         }
     }
 
-    private async _fireWillEvent<E extends IWaitUntil>(emitter: AsyncEmitter<E>, data: Omit<E, 'waitUntil'>, timeout: number, token: CancellationToken): Promise<any> {
+    private async _fireWillEvent<E extends IWaitUntil>(emitter: AsyncEmitter<E>, data: WaitUntilData<E>, timeout: number, token: CancellationToken): Promise<any> {
 
         const edits: WorkspaceEdit[] = [];
         await emitter.fire(data, token, async (thenable, listener) => {
