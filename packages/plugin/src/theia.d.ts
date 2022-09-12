@@ -315,7 +315,7 @@ export module '@theia/plugin' {
          * @return A position that reflects the given delta. Will return `this` position if the change
          * is not changing anything.
          */
-        translate(change: { lineDelta?: number; characterDelta?: number; }): Position;
+        translate(change: { lineDelta?: number; characterDelta?: number }): Position;
 
         /**
          * Create a new position derived from this position.
@@ -333,7 +333,7 @@ export module '@theia/plugin' {
          * @return A position that reflects the given change. Will return `this` position if the change
          * is not changing anything.
          */
-        with(change: { line?: number; character?: number; }): Position;
+        with(change: { line?: number; character?: number }): Position;
     }
 
     /**
@@ -8948,7 +8948,7 @@ export module '@theia/plugin' {
          * @param tokenType The token type.
          * @param tokenModifiers The token modifiers.
          */
-        push(range: Range, tokenType: string, tokenModifiers?: string[]): void;
+        push(range: Range, tokenType: string, tokenModifiers?: readonly string[]): void;
 
         /**
          * Finish and create a `SemanticTokens` instance.
