@@ -386,9 +386,9 @@ export interface TerminalServiceMain {
     $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined): void;
 
     /**
-     * Set the terminal widget name
-     * @param id  terminal id.
-     * @param name  new terminal widget name.
+     * Set the terminal widget name.
+     * @param id terminal id.
+     * @param name new terminal widget name.
      */
     $setNameByTerminalId(id: number, name: string): void;
 }
