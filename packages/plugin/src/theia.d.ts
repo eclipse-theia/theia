@@ -6705,6 +6705,18 @@ export module '@theia/plugin' {
         /**
          * A base file path to which this pattern will be matched against relatively.
          */
+        baseUri: Uri;
+
+        /**
+         * A base file path to which this pattern will be matched against relatively.
+         *
+         * This matches the `fsPath` value of {@link RelativePattern.baseUri}.
+         *
+         * *Note:* updating this value will update {@link RelativePattern.baseUri} to
+         * be a uri with `file` scheme.
+         *
+         * @deprecated This property is deprecated, please use {@link RelativePattern.baseUri} instead.
+         */
         base: string;
 
         /**
@@ -6724,7 +6736,7 @@ export module '@theia/plugin' {
          * @param pattern A file glob pattern like `*.{ts,js}` that will be matched on file paths
          * relative to the base path.
          */
-        constructor(base: WorkspaceFolder | string, pattern: string)
+        constructor(base: WorkspaceFolder | Uri | string, pattern: string)
     }
 
     /**
