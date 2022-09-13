@@ -336,8 +336,7 @@ export namespace WaitUntilEvent {
         token = CancellationToken.None
     ): Promise<void> {
         const waitables: Promise<void>[] = [];
-        const asyncEvent = {
-            ...event,
+        const asyncEvent = Object.assign(event, {
             token,
             waitUntil: (thenable: Promise<any>) => {
                 if (Object.isFrozen(waitables)) {
@@ -345,7 +344,7 @@ export namespace WaitUntilEvent {
                 }
                 waitables.push(thenable);
             }
-        } as T;
+        }) as T;
         try {
             emitter.fire(asyncEvent);
             // Asynchronous calls to `waitUntil` should fail.
@@ -393,8 +392,7 @@ export class AsyncEmitter<T extends WaitUntilEvent> extends Emitter<T> {
                 return;
             }
             const waitables: Promise<void>[] = [];
-            const asyncEvent = {
-                ...event,
+            const asyncEvent = Object.assign(event, {
                 token,
                 waitUntil: (thenable: Promise<any>) => {
                     if (Object.isFrozen(waitables)) {
@@ -405,9 +403,9 @@ export class AsyncEmitter<T extends WaitUntilEvent> extends Emitter<T> {
                     }
                     waitables.push(thenable);
                 }
-            } as T;
+            }) as T;
             try {
-                listener(asyncEvent);
+                listener(event);
                 // Asynchronous calls to `waitUntil` should fail.
                 Object.freeze(waitables);
             } catch (e) {
