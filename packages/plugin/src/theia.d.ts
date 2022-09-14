@@ -227,7 +227,12 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Represents a line and character position.
+     * Represents a line and character position, such as
+     * the position of the cursor.
+     *
+     * Position objects are __immutable__. Use the {@link Position.with with} or
+     * {@link Position.translate translate} methods to derive new positions
+     * from an existing position.
      */
     export class Position {
 
@@ -241,6 +246,10 @@ export module '@theia/plugin' {
          */
         readonly character: number;
 
+        /**
+         * @param line A zero-based line value.
+         * @param character A zero-based character value.
+         */
         constructor(line: number, character: number);
 
         /**
@@ -410,15 +419,21 @@ export module '@theia/plugin' {
         /**
          * Derived a new range from this range.
          *
-         * @param start
-         * @param end
+         * @param start A position that should be used as start. The default value is the {@link Range.start current start}.
+         * @param end A position that should be used as end. The default value is the {@link Range.end current end}.
+         * @return A range derived from this range with the given start and end position.
+         * If start and end are not different `this` range will be returned.
          */
         with(start?: Position, end?: Position): Range;
 
         /**
          * Derived a new range from this range.
+         *
+         * @param change An object that describes a change to this range.
+         * @return A range that reflects the given change. Will return `this` range if the change
+         * is not changing anything.
          */
-        with(change: { start?: Position, end?: Position }): Range;
+        with(change: { start?: Position; end?: Position }): Range;
     }
 
     /**
@@ -4376,7 +4391,7 @@ export module '@theia/plugin' {
          *
          * Note that hiding a view using the context menu instead disposes of the view and fires `onDidDispose`.
          */
-        readonly onDidChangeVisibility: Event<boolean>;
+        readonly onDidChangeVisibility: Event<void>;
 
         /**
          * Reveal the view in the UI.
@@ -4614,7 +4629,7 @@ export module '@theia/plugin' {
          * @param items A set of items that will be rendered as actions in the message.
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
-        export function showInformationMessage(message: string, ...items: string[]): Thenable<string | undefined>;
+        export function showInformationMessage<T extends string>(message: string, ...items: T[]): Thenable<T | undefined>;
 
         /**
          * Show an information message.
@@ -4624,7 +4639,7 @@ export module '@theia/plugin' {
          * @param items A set of items that will be rendered as actions in the message.
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
-        export function showInformationMessage(message: string, options: MessageOptions, ...items: string[]): Thenable<string | undefined>;
+        export function showInformationMessage<T extends string>(message: string, options: MessageOptions, ...items: T[]): Thenable<T | undefined>;
 
         /**
          * Show an information message.
@@ -4652,7 +4667,7 @@ export module '@theia/plugin' {
          * @param items A set of items that will be rendered as actions in the message.
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
-        export function showWarningMessage(message: string, ...items: string[]): Thenable<string | undefined>;
+        export function showWarningMessage<T extends string>(message: string, ...items: T[]): Thenable<T | undefined>;
 
         /**
          * Show a warning message.
@@ -4662,7 +4677,7 @@ export module '@theia/plugin' {
          * @param items A set of items that will be rendered as actions in the message.
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
-        export function showWarningMessage(message: string, options: MessageOptions, ...items: string[]): Thenable<string | undefined>;
+        export function showWarningMessage<T extends string>(message: string, options: MessageOptions, ...items: T[]): Thenable<T | undefined>;
 
         /**
          * Show a warning message.
@@ -4690,7 +4705,7 @@ export module '@theia/plugin' {
          * @param items A set of items that will be rendered as actions in the message.
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
-        export function showErrorMessage(message: string, ...items: string[]): Thenable<string | undefined>;
+        export function showErrorMessage<T extends string>(message: string, ...items: T[]): Thenable<T | undefined>;
 
         /**
          * Show an error message.
@@ -4700,7 +4715,7 @@ export module '@theia/plugin' {
          * @param items A set of items that will be rendered as actions in the message.
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
-        export function showErrorMessage(message: string, options: MessageOptions, ...items: string[]): Thenable<string | undefined>;
+        export function showErrorMessage<T extends string>(message: string, options: MessageOptions, ...items: T[]): Thenable<T | undefined>;
 
         /**
          * Show an error message.
@@ -8363,7 +8378,7 @@ export module '@theia/plugin' {
          * @return An array of commands, quick fixes, or refactorings or a thenable of such. The lack of a result can be
          * signaled by returning `undefined`, `null`, or an empty array.
          */
-        provideCodeActions(document: TextDocument, range: Range | Selection, context: CodeActionContext, token: CancellationToken | undefined): ProviderResult<(Command | T)[]>;
+        provideCodeActions(document: TextDocument, range: Range | Selection, context: CodeActionContext, token: CancellationToken): ProviderResult<(Command | T)[]>;
 
         /**
          * Given a code action fill in its `edit`-property. Changes to
@@ -8379,7 +8394,7 @@ export module '@theia/plugin' {
          * @return The resolved code action or a thenable that resolves to such. It is OK to return the given
          * `item`. When no result is returned, the given `item` will be used.
          */
-        resolveCodeAction?(codeAction: T, token: CancellationToken | undefined): ProviderResult<T>;
+        resolveCodeAction?(codeAction: T, token: CancellationToken): ProviderResult<T>;
     }
 
     /**
