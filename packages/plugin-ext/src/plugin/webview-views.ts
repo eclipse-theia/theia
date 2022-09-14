@@ -94,7 +94,7 @@ export class WebviewViewsExtImpl implements WebviewViewsExt {
     ): Promise<void> {
         const webviewView = this.getWebviewView(handle);
         webviewView.setVisible(visible);
-        webviewView.onDidChangeVisibilityEmitter.fire(visible);
+        webviewView.onDidChangeVisibilityEmitter.fire();
     }
 
     async $disposeWebviewView(handle: string): Promise<void> {
@@ -117,7 +117,7 @@ export class WebviewViewsExtImpl implements WebviewViewsExt {
 
 export class WebviewViewExtImpl implements theia.WebviewView {
 
-    readonly onDidChangeVisibilityEmitter = new Emitter<boolean>();
+    readonly onDidChangeVisibilityEmitter = new Emitter<void>();
     readonly onDidChangeVisibility = this.onDidChangeVisibilityEmitter.event;
 
     readonly onDidDisposeEmitter = new Emitter<void>();
@@ -196,7 +196,7 @@ export class WebviewViewExtImpl implements theia.WebviewView {
         }
 
         this._isVisible = visible;
-        this.onDidChangeVisibilityEmitter.fire(this._isVisible);
+        this.onDidChangeVisibilityEmitter.fire();
     }
 
     show(preserveFocus?: boolean): void {
