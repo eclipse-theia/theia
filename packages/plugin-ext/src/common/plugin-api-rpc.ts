@@ -334,6 +334,13 @@ export interface TerminalServiceMain {
     $dispose(id: string): void;
 
     /**
+     * Set the terminal widget name.
+     * @param id terminal widget id.
+     * @param name new terminal widget name.
+     */
+    $setName(id: string, name: string): void;
+
+    /**
      * Send text to the terminal by id.
      * @param id - terminal id.
      * @param text - text content.
@@ -377,6 +384,13 @@ export interface TerminalServiceMain {
     $disposeByTerminalId(id: number, waitOnExit?: boolean | string): void;
 
     $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined): void;
+
+    /**
+     * Set the terminal widget name.
+     * @param id terminal id.
+     * @param name new terminal widget name.
+     */
+    $setNameByTerminalId(id: number, name: string): void;
 }
 
 export interface AutoFocus {

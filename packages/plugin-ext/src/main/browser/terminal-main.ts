@@ -179,6 +179,10 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
         }
     }
 
+    $setName(id: string, name: string): void {
+        this.terminals.getById(id)?.setTitle(name);
+    }
+
     $sendTextByTerminalId(id: number, text: string, addNewLine?: boolean): void {
         const terminal = this.terminals.getByTerminalId(id);
         if (terminal) {
@@ -231,5 +235,9 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
             }
             terminal.dispose();
         }
+    }
+
+    $setNameByTerminalId(id: number, name: string): void {
+        this.terminals.getByTerminalId(id)?.setTitle(name);
     }
 }

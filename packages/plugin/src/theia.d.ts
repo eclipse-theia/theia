@@ -3092,6 +3092,26 @@ export module '@theia/plugin' {
         onDidClose?: Event<void | number>;
 
         /**
+         * An event that when fired allows changing the name of the terminal.
+         *
+         * Events fired before {@link Pseudoterminal.open} is called will be be ignored.
+         *
+         * **Example:** Change the terminal name to "My new terminal".
+         * ```typescript
+         * const writeEmitter = new vscode.EventEmitter<string>();
+         * const changeNameEmitter = new vscode.EventEmitter<string>();
+         * const pty: vscode.Pseudoterminal = {
+         *   onDidWrite: writeEmitter.event,
+         *   onDidChangeName: changeNameEmitter.event,
+         *   open: () => changeNameEmitter.fire('My new terminal'),
+         *   close: () => {}
+         * };
+         * vscode.window.createTerminal({ name: 'My terminal', pty });
+         * ```
+         */
+        onDidChangeName?: Event<string>;
+
+        /**
          * Implement to handle when the pty is opened.
          *
          * @param dimensions The dimensions of the terminal.
