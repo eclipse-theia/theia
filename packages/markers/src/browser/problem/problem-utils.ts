@@ -78,14 +78,13 @@ export namespace ProblemUtils {
         switch (severity) {
             case DiagnosticSeverity.Error: return 'list.errorForeground';
             case DiagnosticSeverity.Warning: return 'list.warningForeground';
-            default: return 'successBackground';
+            default: return ''; // other severities should not be decorated.
         }
     }
 
     export function filterMarker(marker: Marker<Diagnostic>): boolean {
         const { severity } = marker.data;
         return severity === DiagnosticSeverity.Error
-            || severity === DiagnosticSeverity.Warning
-            || severity === DiagnosticSeverity.Information;
+            || severity === DiagnosticSeverity.Warning;
     }
 }
