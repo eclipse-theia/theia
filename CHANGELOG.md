@@ -42,7 +42,6 @@
 - [vsx-registry] improved styling of the `Extensions` view [#11494](https://github.com/eclipse-theia/theia/pull/11494)
 - [vsx-registry] removed localization for `Open VSX Registry` [#11523](https://github.com/eclipse-theia/theia/pull/11523)
 - [vsx-registry] updated extension editor rendering [#11605](https://github.com/eclipse-theia/theia/pull/11605)
-- [custom-editor] fixed closing a dirty custom editor based on CustomTextEditorProvider doesn't ask the user to save [#11592](https://github.com/eclipse-theia/theia/issues/11592)
 
 <a name="breaking_changes_1.29.0">[Breaking Changes:](#breaking_changes_1.29.0)</a>
 
