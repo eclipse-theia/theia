@@ -66,4 +66,20 @@ describe('API Type Implementations:', () => {
                 'myScheme://authority/path/file.js?query#fragment');
         });
     });
+
+    describe('RelativePattern:', () => {
+        it('should update .base when setting .baseUri', () => {
+            const testUri = types.URI.file('/expected/file/path');
+            const rPattern = new types.RelativePattern('/initial/unrelated/path', 'not relevant');
+            rPattern.baseUri = testUri;
+            assert.strictEqual(rPattern.base, testUri.fsPath);
+        });
+
+        it('should update .baseUri when setting .base', () => {
+            const testUri = types.URI.file('/expected/file/path');
+            const rPattern = new types.RelativePattern('/initial/unrelated/path', 'not relevant');
+            rPattern.base = testUri.fsPath;
+            assert.strictEqual(rPattern.baseUri.toString(), testUri.toString());
+        });
+    });
 });

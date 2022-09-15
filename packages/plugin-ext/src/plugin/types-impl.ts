@@ -790,7 +790,14 @@ export enum ConfigurationTarget {
 @es5ClassCompat
 export class RelativePattern {
 
-    base: string;
+    private _base!: string;
+    get base(): string {
+        return this._base;
+    }
+    set base(base: string) {
+        this._base = base;
+        this._baseUri = URI.file(base);
+    }
 
     private _baseUri!: URI;
     get baseUri(): URI {
@@ -819,8 +826,6 @@ export class RelativePattern {
         } else {
             this.baseUri = base.uri;
         }
-
-        this.base = typeof base === 'string' ? base : this.baseUri.fsPath;
     }
 
     pathToRelative(from: string, to: string): string {
