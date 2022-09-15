@@ -38,8 +38,10 @@ export class ShellTerminalServer extends BaseTerminalServer {
 
     async create(options: IShellTerminalServerOptions): Promise<number> {
         try {
-            options.env = this.environmentUtils.mergeProcessEnv(options.env);
-            this.mergedCollection.applyToProcessEnvironment(options.env);
+            if (options.strictEnv !== true) {
+                options.env = this.environmentUtils.mergeProcessEnv(options.env);
+                this.mergedCollection.applyToProcessEnvironment(options.env);
+            }
             const term = this.shellFactory(options);
             this.postCreate(term);
             return term.id;

@@ -428,6 +428,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             shell: this.options.shellPath,
             args: this.options.shellArgs,
             env: this.options.env,
+            strictEnv: this.options.strictEnv,
             isPseudo: this.options.isPseudoTerminal,
             rootURI,
             cols,

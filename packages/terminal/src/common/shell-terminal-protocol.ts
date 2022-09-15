@@ -42,7 +42,8 @@ export interface IShellTerminalServerOptions extends IBaseTerminalServerOptions 
     rootURI?: string,
     cols?: number,
     rows?: number,
-    env?: { [key: string]: string | null };
+    env?: { [key: string]: string | null },
+    strictEnv?: boolean,
     isPseudo?: boolean,
 }
 

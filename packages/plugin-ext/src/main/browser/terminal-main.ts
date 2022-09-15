@@ -125,6 +125,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
                 shellArgs: options.shellArgs,
                 cwd: new URI(options.cwd),
                 env: options.env,
+                strictEnv: options.strictEnv,
                 destroyTermOnClose: true,
                 useServerTitle: false,
                 attributes: options.attributes,
