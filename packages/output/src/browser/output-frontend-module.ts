@@ -32,8 +32,10 @@ import { OutputEditorModelFactory } from './output-editor-model-factory';
 export default new ContainerModule(bind => {
     bind(OutputChannelManager).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(OutputChannelManager);
-    bind(MonacoEditorFactory).to(OutputEditorFactory).inSingletonScope();
-    bind(MonacoEditorModelFactory).to(OutputEditorModelFactory).inSingletonScope();
+    bind(OutputEditorFactory).toSelf().inSingletonScope();
+    bind(MonacoEditorFactory).toService(OutputEditorFactory);
+    bind(OutputEditorModelFactory).toSelf().inSingletonScope();
+    bind(MonacoEditorModelFactory).toService(OutputEditorModelFactory);
     bind(OutputContextMenuService).toSelf().inSingletonScope();
 
     bindOutputPreferences(bind);
