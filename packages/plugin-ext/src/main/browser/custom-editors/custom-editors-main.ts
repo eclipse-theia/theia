@@ -25,7 +25,7 @@ import { RPCProtocol } from '../../../common/rpc-protocol';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 import { PluginCustomEditorRegistry } from './plugin-custom-editor-registry';
 import { CustomEditorWidget } from './custom-editor-widget';
-import { Emitter } from '@theia/core';
+import { Emitter, UNTITLED_SCHEME } from '@theia/core';
 import { UriComponents } from '../../../common/uri-components';
 import { URI } from '@theia/core/shared/vscode-uri';
 import TheiaURI from '@theia/core/lib/common/uri';
@@ -505,7 +505,7 @@ export class MainCustomEditorModel implements CustomEditorModel {
             this.onDirtyChangedEmitter.fire();
         }
 
-        if (this.autoSave !== 'off') {
+        if (this.autoSave !== 'off' && this.dirty && this.resource.scheme !== UNTITLED_SCHEME) {
             const handle = window.setTimeout(() => {
                 this.save();
                 window.clearTimeout(handle);
