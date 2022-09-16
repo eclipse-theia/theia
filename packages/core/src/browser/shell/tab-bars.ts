@@ -141,11 +141,12 @@ export class TabBarRenderer extends TabBar.Renderer {
      * Render tabs with the default DOM structure, but additionally register a context menu listener.
      * @param {SideBarRenderData} data Data used to render the tab.
      * @param {boolean} isInSidePanel An optional check which determines if the tab is in the side-panel.
+     * @param {boolean} isPartOfHiddenTabBar An optional check which determines if the tab is in the hidden horizontal tab bar.
      * @returns {VirtualElement} The virtual element of the rendered tab.
      */
-    override renderTab(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
+    override renderTab(data: SideBarRenderData, isInSidePanel?: boolean, isPartOfHiddenTabBar?: boolean): VirtualElement {
         const title = data.title;
-        const id = this.createTabId(data.title);
+        const id = this.createTabId(data.title, isPartOfHiddenTabBar);
         const key = this.createTabKey(data);
         const style = this.createTabStyle(data);
         const className = this.createTabClass(data);
@@ -177,8 +178,15 @@ export class TabBarRenderer extends TabBar.Renderer {
         );
     }
 
-    createTabId(title: Title<Widget>): string {
-        return 'shell-tab-' + title.owner.id;
+    /**
+     * Generate ID for an entry in the tab bar
+     * @param {Title<Widget>} title Title of the widget controlled by this tab bar
+     * @param {boolean} isPartOfHiddenTabBar Tells us if this entry is part of the hidden horizontal tab bar.
+     *      If yes, add a suffix to differentiate it's ID from the entry in the visible tab bar
+     * @returns {string} DOM element ID
+     */
+    createTabId(title: Title<Widget>, isPartOfHiddenTabBar = false): string {
+        return 'shell-tab-' + title.owner.id + (isPartOfHiddenTabBar ? '-hidden' : '');
     }
 
     /**
@@ -904,7 +912,8 @@ export class SideTabBar extends ScrollableTabBar {
             } else {
                 rd = { title, current, zIndex };
             }
-            content[i] = renderer.renderTab(rd, true);
+            // Based on how renderTabs() is called, assume renderData will be undefined when invoked for this.hiddenContentNode
+            content[i] = renderer.renderTab(rd, true, renderData === undefined);
         }
         VirtualDOM.render(content, host);
     }
