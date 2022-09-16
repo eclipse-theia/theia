@@ -347,9 +347,9 @@ export class GitScmProvider implements ScmProvider {
             try {
                 // discard new files
                 const newUris = this.unstagedChanges.filter(c => c.status === GitFileStatus.New).map(c => c.uri);
-                this.deleteAll(newUris);
+                await this.deleteAll(newUris);
                 // unstage changes
-                const uris = this.unstagedChanges.map(c => c.uri);
+                const uris = this.unstagedChanges.filter(c => c.status !== GitFileStatus.New).map(c => c.uri);
                 await this.git.unstage(this.repository, uris, { treeish: 'HEAD', reset: 'working-tree' });
             } catch (error) {
                 this.gitErrorHandler.handleError(error);
