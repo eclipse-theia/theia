@@ -5441,7 +5441,7 @@ export module '@theia/plugin' {
          * This will trigger the view to update the changed element/root and its children recursively (if shown).
          * To signal that root has changed, do not pass any argument or pass `undefined` or `null`.
          */
-        onDidChangeTreeData?: Event<T | undefined | null>;
+        onDidChangeTreeData?: Event<T | T[] | undefined | null | void>;
 
         /**
          * Get {@link TreeItem TreeItem} representation of the `element`
