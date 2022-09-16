@@ -37,15 +37,16 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
     protected get selectOptions(): SelectOption[] {
         const items: SelectOption[] = [];
         const values = this.enumValues;
-        const defaultValue = this.preferenceNode.preference.data.default;
+        const preferenceData = this.preferenceNode.preference.data;
+        const defaultValue = preferenceData.default;
         for (let i = 0; i < values.length; i++) {
             const value = values[i];
             const stringValue = `${value}`;
-            const label = escapeInvisibleChars(stringValue);
+            const label = escapeInvisibleChars(preferenceData.enumItemLabels?.[i] ?? stringValue);
             const detail = PreferenceProvider.deepEqual(defaultValue, value) ? 'default' : undefined;
-            let enumDescription = this.preferenceNode.preference.data.enumDescriptions?.[i];
+            let enumDescription = preferenceData.enumDescriptions?.[i];
             let markdown = false;
-            const markdownEnumDescription = this.preferenceNode.preference.data.markdownEnumDescriptions?.[i];
+            const markdownEnumDescription = preferenceData.markdownEnumDescriptions?.[i];
             if (markdownEnumDescription) {
                 enumDescription = this.markdownRenderer.renderInline(markdownEnumDescription);
                 markdown = true;
