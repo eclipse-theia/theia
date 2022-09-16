@@ -31,7 +31,7 @@ export const GitConfigSchema: PreferenceSchema = {
         'git.decorations.colors': {
             'type': 'boolean',
             'description': nls.localize('theia/git/gitDecorationsColors', 'Use color decoration in the navigator.'),
-            'default': false
+            'default': true
         },
         'git.editor.decorations.enabled': {
             'type': 'boolean',
