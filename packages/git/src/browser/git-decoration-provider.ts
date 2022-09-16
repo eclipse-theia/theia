@@ -33,12 +33,7 @@ export class GitDecorationProvider implements DecorationsProvider {
     protected colorsEnabled: boolean;
 
     protected decorations = new Map<string, Decoration>();
-    protected uris: Set<string> = new Set<string>();
-
-    /**
-     * Cached change event for re-rendering decorations.
-     */
-    protected changeEvent: GitStatusChangeEvent | undefined;
+    protected uris = new Set<string>();
 
     private readonly onDidChangeDecorationsEmitter = new Emitter<URI[]>();
     readonly onDidChange: Event<URI[]> = this.onDidChangeDecorationsEmitter.event;
@@ -48,24 +43,23 @@ export class GitDecorationProvider implements DecorationsProvider {
         this.decorationsEnabled = this.preferences['git.decorations.enabled'];
         this.colorsEnabled = this.preferences['git.decorations.colors'];
         this.gitRepositoryTracker.onGitEvent((event: GitStatusChangeEvent | undefined) => this.handleGitEvent(event));
-        this.preferences.onPreferenceChanged(event => this.handlePreferenceChange(event));
+        this.preferences.onPreferenceChanged((event: PreferenceChangeEvent<GitConfiguration>) => this.handlePreferenceChange(event));
     }
 
     protected async handleGitEvent(event: GitStatusChangeEvent | undefined): Promise<void> {
-        this.changeEvent = event;
-        this.updateDecorations();
+        this.updateDecorations(event);
+        this.triggerDecorationChange();
     }
 
-    protected updateDecorations(): void {
-        if (!this.changeEvent) {
+    protected updateDecorations(event?: GitStatusChangeEvent): void {
+        if (!event) {
             return;
         }
         const newDecorations = new Map<string, Decoration>();
-        this.collectDecorationData(this.changeEvent.status.changes, newDecorations);
+        this.collectDecorationData(event.status.changes, newDecorations);
 
         this.uris = new Set([...this.decorations.keys()].concat([...newDecorations.keys()]));
         this.decorations = newDecorations;
-        this.triggerDecorationChange();
     }
 
     protected collectDecorationData(changes: GitFileChange[], bucket: Map<string, Decoration>): void {
@@ -73,7 +67,7 @@ export class GitDecorationProvider implements DecorationsProvider {
             const color = GitFileStatus.getColor(change.status, change.staged);
             bucket.set(change.uri, {
                 bubble: true,
-                colorId: this.colorsEnabled ? color.substring(12, color.length - 1).replace(/-/g, '.') : undefined,
+                colorId: color.substring(12, color.length - 1).replace(/-/g, '.'),
                 tooltip: GitFileStatus.toString(change.status),
                 letter: GitFileStatus.toAbbreviation(change.status, change.staged)
             });
@@ -82,26 +76,38 @@ export class GitDecorationProvider implements DecorationsProvider {
 
     provideDecorations(uri: URI, token: CancellationToken): Decoration | Promise<Decoration | undefined> | undefined {
         if (this.decorationsEnabled) {
-            return this.decorations.get(uri.toString());
+            const decoration = this.decorations.get(uri.toString());
+            if (decoration && !this.colorsEnabled) {
+                // Remove decoration color if disabled.
+                return {
+                    ...decoration,
+                    colorId: undefined
+                };
+            }
+            return decoration;
         }
+        return undefined;
     }
 
     protected handlePreferenceChange(event: PreferenceChangeEvent<GitConfiguration>): void {
         const { preferenceName, newValue } = event;
-        if (preferenceName === 'git.decorations.enabled' || preferenceName === 'git.decorations.colors') {
-            if (preferenceName === 'git.decorations.enabled') {
-                const decorationsEnabled = !!newValue;
-                if (this.decorationsEnabled !== decorationsEnabled) {
-                    this.decorationsEnabled = decorationsEnabled;
-                }
+        let updateDecorations = false;
+        if (preferenceName === 'git.decorations.enabled') {
+            updateDecorations = true;
+            const decorationsEnabled = !!newValue;
+            if (this.decorationsEnabled !== decorationsEnabled) {
+                this.decorationsEnabled = decorationsEnabled;
             }
-            if (preferenceName === 'git.decorations.colors') {
-                const colorsEnabled = !!newValue;
-                if (this.colorsEnabled !== colorsEnabled) {
-                    this.colorsEnabled = colorsEnabled;
-                }
+        }
+        if (preferenceName === 'git.decorations.colors') {
+            updateDecorations = true;
+            const colorsEnabled = !!newValue;
+            if (this.colorsEnabled !== colorsEnabled) {
+                this.colorsEnabled = colorsEnabled;
             }
-            this.updateDecorations();
+        }
+        if (updateDecorations) {
+            this.triggerDecorationChange();
         }
     }
 
