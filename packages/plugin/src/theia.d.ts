@@ -20,6 +20,7 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import './theia-extra';
 import './theia-proposed';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -3945,18 +3946,6 @@ export module '@theia/plugin' {
          * @param preserveFocus When `true`, the webview will not take focus.
          */
         reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void;
-
-        /**
-         * Show the webview panel according to a given options.
-         *
-         * A webview panel may only show in a single column at a time. If it is already showing, this
-         * method moves it to a new column.
-         *
-         * @param area target area where webview panel will be resided. Shows in the 'WebviewPanelTargetArea.Main' area if undefined.
-         * @param viewColumn View column to show the panel in. Shows in the current `viewColumn` if undefined.
-         * @param preserveFocus When `true`, the webview will not take focus.
-         */
-        reveal(area?: WebviewPanelTargetArea, viewColumn?: ViewColumn, preserveFocus?: boolean): void;
 
         /**
          * Dispose of the webview panel.
