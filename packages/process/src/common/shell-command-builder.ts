@@ -19,8 +19,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+/* eslint-disable no-null/no-null */
+
 import { injectable } from '@theia/core/shared/inversify';
-import { createShellCommandLine, BashQuotingFunctions, PowershellQuotingFunctions, CmdQuotingFunctions, ShellQuoting, ShellQuotedString } from '../common/shell-quoting';
+import {
+    createShellCommandLine, BashQuotingFunctions, PowershellQuotingFunctions, CmdQuotingFunctions, ShellQuoting, ShellQuotedString, escapeForShell, ShellQuotingFunctions
+} from '../common/shell-quoting';
 
 export interface ProcessInfo {
     executable: string
@@ -85,10 +89,9 @@ export class ShellCommandBuilder {
         if (cwd) {
             command += `cd ${BashQuotingFunctions.strong(cwd)} && `;
         }
-        if (env) {
+        if (env?.length) {
             command += 'env';
             for (const [key, value] of env) {
-                // eslint-disable-next-line no-null/no-null
                 if (value === null) {
                     command += ` -u ${BashQuotingFunctions.strong(key)}`;
                 } else {
@@ -97,7 +100,7 @@ export class ShellCommandBuilder {
             }
             command += ' ';
         }
-        command += createShellCommandLine(args, BashQuotingFunctions);
+        command += this.createShellCommandLine(args, BashQuotingFunctions);
         return command;
     }
 
@@ -106,14 +109,13 @@ export class ShellCommandBuilder {
         if (cwd) {
             command += `cd ${PowershellQuotingFunctions.strong(cwd)}; `;
         }
-        if (env) {
+        if (env?.length) {
             for (const [key, value] of env) {
                 // Powershell requires special quoting when dealing with
                 // environment variable names.
                 const quotedKey = key
                     .replace(/`/g, '````')
                     .replace(/\?/g, '``?');
-                // eslint-disable-next-line no-null/no-null
                 if (value === null) {
                     command += `Remove-Item \${env:${quotedKey}}; `;
                 } else {
@@ -121,7 +123,7 @@ export class ShellCommandBuilder {
                 }
             }
         }
-        command += '& ' + createShellCommandLine(args, PowershellQuotingFunctions);
+        command += '& ' + this.createShellCommandLine(args, PowershellQuotingFunctions);
         return command;
     }
 
@@ -130,10 +132,10 @@ export class ShellCommandBuilder {
         if (cwd) {
             command += `cd ${CmdQuotingFunctions.strong(cwd)} && `;
         }
-        if (env) {
-            command += 'cmd /C "';
+        // Current quoting mechanism only works within a nested `cmd` call:
+        command += 'cmd /C "';
+        if (env?.length) {
             for (const [key, value] of env) {
-                // eslint-disable-next-line no-null/no-null
                 if (value === null) {
                     command += `set ${CmdQuotingFunctions.strong(key)}="" && `;
                 } else {
@@ -141,10 +143,8 @@ export class ShellCommandBuilder {
                 }
             }
         }
-        command += createShellCommandLine(args, CmdQuotingFunctions);
-        if (env) {
-            command += '"';
-        }
+        command += this.createShellCommandLine(args, CmdQuotingFunctions);
+        command += '"';
         return command;
     }
 
@@ -152,4 +152,36 @@ export class ShellCommandBuilder {
         return this.buildForBash(args, cwd, env);
     }
 
+    /**
+     * This method will try to leave `arg[0]` unescaped if possible. The reason
+     * is that shells like `cmd` expect their own commands like `dir` to be
+     * unescaped.
+     *
+     * @returns empty string if `args` is empty, otherwise an escaped command.
+     */
+    protected createShellCommandLine(args: (string | ShellQuotedString)[], quotingFunctions: ShellQuotingFunctions): string {
+        let command = '';
+        if (args.length > 0) {
+            const [exec, ...execArgs] = args;
+            // Some commands like `dir` should not be quoted for `cmd` to understand:
+            command += this.quoteExecutableIfNecessary(exec, quotingFunctions);
+            if (execArgs.length > 0) {
+                command += ' ' + createShellCommandLine(execArgs, quotingFunctions);
+            }
+        }
+        return command;
+    }
+
+    protected quoteExecutableIfNecessary(exec: string | ShellQuotedString, quotingFunctions: ShellQuotingFunctions): string {
+        return typeof exec === 'string' && !this.needsQuoting(exec) ? exec : escapeForShell(exec, quotingFunctions);
+    }
+
+    /**
+     * If this method returns `false` then we definitely need quoting.
+     *
+     * May return false positives.
+     */
+    protected needsQuoting(arg: string): boolean {
+        return /\W/.test(arg);
+    }
 }
