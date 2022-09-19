@@ -6708,7 +6708,7 @@ export module '@theia/plugin' {
         baseUri: Uri;
 
         /**
-         * A base file path to which this pattern will be matched against relatively.
+         * A base file path against which this pattern will be matched relatively.
          *
          * This matches the `fsPath` value of {@link RelativePattern.baseUri}.
          *
