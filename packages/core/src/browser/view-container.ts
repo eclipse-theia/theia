@@ -30,7 +30,7 @@ import { FrontendApplicationStateService } from './frontend-application-state';
 import { ContextMenuRenderer, Anchor } from './context-menu-renderer';
 import { parseCssMagnitude } from './browser';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar, TabBarDelegator, TabBarToolbarItem } from './shell/tab-bar-toolbar';
-import { isEmpty } from '../common';
+import { isEmpty, nls } from '../common';
 import { WidgetManager } from './widget-manager';
 import { Key } from './keys';
 import { ProgressBarFactory } from './progress-bar-factory';
@@ -175,7 +175,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             }),
             menuRegistry.registerMenuAction([...this.contextMenuPath, '0_global'], {
                 commandId: this.globalHideCommandId,
-                label: 'Hide'
+                label: nls.localize('theia/core/hideViewContainer', 'Hide')
             }),
             this.onDidChangeTrackableWidgetsEmitter,
             this.onDidChangeTrackableWidgets(() => this.decoratorService.fireDidChangeDecorations())
