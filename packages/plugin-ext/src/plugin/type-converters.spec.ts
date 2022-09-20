@@ -437,4 +437,24 @@ describe('Type converters:', () => {
             assert.deepStrictEqual(result, showOptions);
         });
     });
+
+    describe('#convertCode', () => {
+        it('should convert a "code" of type "string"', () => {
+            assert.strictEqual(Converter.convertCode('string'), 'string');
+        });
+        it('should convert a "code" of type "number"', () => {
+            assert.strictEqual(Converter.convertCode(4), '4');
+        });
+        it('should convert an undefined "code"', () => {
+            assert.strictEqual(Converter.convertCode(undefined), undefined);
+        });
+        it('should convert a "code" of type "{ value: number, target: Uri }"', () => {
+            const uri = types.URI.parse('foo://example.com:8042/over/there?name=ferret#nose');
+            assert.strictEqual(Converter.convertCode({ value: 4, target: uri }), '4');
+        });
+        it('should convert a "code" of type "{ value: number, target: Uri }"', () => {
+            const uri = types.URI.parse('foo://example.com:8042/over/there?name=ferret#nose');
+            assert.strictEqual(Converter.convertCode({ value: 'string', target: uri }), 'string');
+        });
+    });
 });

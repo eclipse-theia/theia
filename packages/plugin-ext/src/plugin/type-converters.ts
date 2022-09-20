@@ -332,12 +332,15 @@ export function convertDiagnosticToMarkerData(diagnostic: theia.Diagnostic): mod
     };
 }
 
-function convertCode(code: string | number | undefined): string | undefined {
+export function convertCode(code: string | number | { value: string | number; target: theia.Uri } | undefined): string | undefined {
     if (typeof code === 'number') {
         return String(code);
-    } else {
-        return code;
     }
+    if (typeof code === 'string' || typeof code === 'undefined') {
+        return code;
+    } else {
+        return String(code.value);
+    };
 }
 
 function convertSeverity(severity: types.DiagnosticSeverity): types.MarkerSeverity {
