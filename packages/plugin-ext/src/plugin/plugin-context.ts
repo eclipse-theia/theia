@@ -134,6 +134,7 @@ import {
     CallHierarchyItem,
     CallHierarchyIncomingCall,
     CallHierarchyOutgoingCall,
+    TypeHierarchyItem,
     TimelineItem,
     EnvironmentVariableMutatorType,
     SemanticTokensLegend,
@@ -780,6 +781,9 @@ export function createAPIFactory(
             registerCallHierarchyProvider(selector: theia.DocumentSelector, provider: theia.CallHierarchyProvider): theia.Disposable {
                 return languagesExt.registerCallHierarchyProvider(selector, provider);
             },
+            registerTypeHierarchyProvider(selector: theia.DocumentSelector, provider: theia.TypeHierarchyProvider): theia.Disposable {
+                return languagesExt.registerTypeHierarchyProvider(selector, provider);
+            },
             registerLinkedEditingRangeProvider(selector: theia.DocumentSelector, provider: theia.LinkedEditingRangeProvider): theia.Disposable {
                 return languagesExt.registerLinkedEditingRangeProvider(selector, provider);
             },
@@ -1038,6 +1042,7 @@ export function createAPIFactory(
             CallHierarchyItem,
             CallHierarchyIncomingCall,
             CallHierarchyOutgoingCall,
+            TypeHierarchyItem,
             TimelineItem,
             EnvironmentVariableMutatorType,
             SemanticTokensLegend,

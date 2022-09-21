@@ -13,6 +13,7 @@
     "@theia/plugin": "1.30.0",
     "@theia/plugin-ext": "1.30.0",
     "@theia/terminal": "1.30.0",
+    "@theia/typehierarchy": "1.30.0",
     "@theia/userstorage": "1.30.0",
     "@theia/workspace": "1.30.0",
     "@types/request": "^2.0.3",

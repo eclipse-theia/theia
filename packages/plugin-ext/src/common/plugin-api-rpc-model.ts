@@ -565,17 +565,22 @@ export interface RenameLocation {
     text: string;
 }
 
-export interface CallHierarchyItem {
+export class HierarchyItem {
     _sessionId?: string;
     _itemId?: string;
 
     kind: SymbolKind;
+    tags?: readonly SymbolTag[];
     name: string;
     detail?: string;
     uri: UriComponents;
     range: Range;
     selectionRange: Range;
-    tags?: readonly SymbolTag[];
+}
+
+export class TypeHierarchyItem extends HierarchyItem { }
+
+export interface CallHierarchyItem extends HierarchyItem {
     data?: unknown;
 }
 

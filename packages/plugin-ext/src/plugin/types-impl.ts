@@ -2651,6 +2651,43 @@ export class CallHierarchyOutgoingCall {
     }
 }
 
+@es5ClassCompat
+export class TypeHierarchyItem {
+    _sessionId?: string;
+    _itemId?: string;
+
+    kind: SymbolKind;
+    tags?: readonly SymbolTag[];
+    name: string;
+    detail?: string;
+    uri: URI;
+    range: Range;
+    selectionRange: Range;
+
+    constructor(kind: SymbolKind, name: string, detail: string, uri: URI, range: Range, selectionRange: Range) {
+        this.kind = kind;
+        this.name = name;
+        this.detail = detail;
+        this.uri = uri;
+        this.range = range;
+        this.selectionRange = selectionRange;
+    }
+
+    static isTypeHierarchyItem(thing: {}): thing is TypeHierarchyItem {
+        if (thing instanceof TypeHierarchyItem) {
+            return true;
+        }
+        if (!thing) {
+            return false;
+        }
+        return typeof (<TypeHierarchyItem>thing).kind === 'number' &&
+            typeof (<TypeHierarchyItem>thing).name === 'string' &&
+            URI.isUri((<TypeHierarchyItem>thing).uri) &&
+            Range.isRange((<TypeHierarchyItem>thing).range) &&
+            Range.isRange((<TypeHierarchyItem>thing).selectionRange);
+    }
+}
+
 export enum LanguageStatusSeverity {
     Information = 0,
     Warning = 1,

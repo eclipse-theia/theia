@@ -37,6 +37,7 @@ import {
     CallHierarchyItem,
     CallHierarchyIncomingCall,
     CallHierarchyOutgoingCall,
+    TypeHierarchyItem,
     Hover,
     TextEdit,
     FormattingOptions,
@@ -64,13 +65,14 @@ import { SelectableTreeNode } from '@theia/core/lib/browser/tree/tree-selection'
 import { UriComponents } from '@theia/plugin-ext/lib/common/uri-components';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { CallHierarchyServiceProvider, CallHierarchyService } from '@theia/callhierarchy/lib/browser';
+import { TypeHierarchyServiceProvider, TypeHierarchyService } from '@theia/typehierarchy/lib/browser';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import {
     fromCallHierarchyCalleeToModelCallHierarchyOutgoingCall,
     fromCallHierarchyCallerToModelCallHierarchyIncomingCall,
-    fromDefinition,
-    toDefinition
-} from '@theia/plugin-ext/lib/main/browser/callhierarchy/callhierarchy-type-converters';
+    fromItemHierarchyDefinition,
+    toItemHierarchyDefinition
+} from '@theia/plugin-ext/lib/main/browser/hierarchy/hierarchy-types-converters';
 import { CustomEditorOpener } from '@theia/plugin-ext/lib/main/browser/custom-editors/custom-editor-opener';
 import { nls } from '@theia/core/lib/common/nls';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
@@ -170,6 +172,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly fileService: FileService;
     @inject(CallHierarchyServiceProvider)
     protected readonly callHierarchyProvider: CallHierarchyServiceProvider;
+    @inject(TypeHierarchyServiceProvider)
+    protected readonly typeHierarchyProvider: TypeHierarchyServiceProvider;
     @inject(MonacoTextModelService)
     protected readonly textModelService: MonacoTextModelService;
     @inject(WindowService)
@@ -642,7 +646,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                         new CancellationTokenSource().token
                     );
                     if (definition) {
-                        return definition.items.map(item => fromDefinition(item));
+                        return definition.items.map(item => fromItemHierarchyDefinition(item));
                     };
                     return [];
                 }
@@ -657,7 +661,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     const resource = URI.from(item.uri);
                     const provider = await this.getCallHierarchyServiceForUri(resource);
                     const incomingCalls = await provider?.getCallers(
-                        toDefinition(item),
+                        toItemHierarchyDefinition(item),
                         new CancellationTokenSource().token,
                     );
                     if (incomingCalls) {
@@ -676,13 +680,69 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     const resource = URI.from(item.uri);
                     const provider = await this.getCallHierarchyServiceForUri(resource);
                     const outgoingCalls = await provider?.getCallees?.(
-                        toDefinition(item),
+                        toItemHierarchyDefinition(item),
                         new CancellationTokenSource().token,
                     );
                     if (outgoingCalls) {
                         return outgoingCalls.map(fromCallHierarchyCalleeToModelCallHierarchyOutgoingCall);
                     }
                     return [];
+                }
+            }
+        );
+        commands.registerCommand(
+            {
+                id: 'vscode.prepareTypeHierarchy'
+            },
+            {
+                execute: async (resource: URI, position: Position): Promise<TypeHierarchyItem[]> => {
+                    const provider = await this.getTypeHierarchyServiceForUri(resource);
+                    const session = await provider?.prepareSession(
+                        resource.path,
+                        toPosition(position),
+                        new CancellationTokenSource().token
+                    );
+                    return session ? session.items.map(item => fromItemHierarchyDefinition(item)) : [];
+                }
+            }
+        );
+        commands.registerCommand(
+            {
+                id: 'vscode.provideSupertypes'
+            },
+            {
+                execute: async (item: TypeHierarchyItem): Promise<TypeHierarchyItem[]> => {
+                    if (!item._sessionId || !item._itemId) {
+                        return [];
+                    }
+                    const resource = URI.from(item.uri);
+                    const provider = await this.getTypeHierarchyServiceForUri(resource);
+                    const items = await provider?.provideSuperTypes(
+                        item._sessionId,
+                        item._itemId,
+                        new CancellationTokenSource().token
+                    );
+                    return (items ? items : []).map(typeItem => fromItemHierarchyDefinition(typeItem));
+                }
+            }
+        );
+        commands.registerCommand(
+            {
+                id: 'vscode.provideSubtypes'
+            },
+            {
+                execute: async (item: TypeHierarchyItem): Promise<TypeHierarchyItem[]> => {
+                    if (!item._sessionId || !item._itemId) {
+                        return [];
+                    }
+                    const resource = URI.from(item.uri);
+                    const provider = await this.getTypeHierarchyServiceForUri(resource);
+                    const items = await provider?.provideSubTypes(
+                        item._sessionId, item._itemId,
+                        new CancellationTokenSource().token
+                    );
+                    return (items ? items : []).map(typeItem => fromItemHierarchyDefinition(typeItem));
+
                 }
             }
         );
@@ -845,11 +905,20 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
     }
 
-    protected async getCallHierarchyServiceForUri(resource: URI): Promise<CallHierarchyService | undefined> {
+    private async resolveLanguageId(resource: URI): Promise<string> {
         const reference = await this.textModelService.createModelReference(resource);
-        const uri = new TheiaURI(resource);
         const languageId = reference.object.languageId;
         reference.dispose();
-        return this.callHierarchyProvider.get(languageId, uri);
+        return languageId;
+    }
+
+    protected async getCallHierarchyServiceForUri(resource: URI): Promise<CallHierarchyService | undefined> {
+        const languageId = await this.resolveLanguageId(resource);
+        return this.callHierarchyProvider.get(languageId, new TheiaURI(resource));
+    }
+
+    protected async getTypeHierarchyServiceForUri(resource: URI): Promise<TypeHierarchyService | undefined> {
+        const languageId = await this.resolveLanguageId(resource);
+        return this.typeHierarchyProvider.get(languageId, new TheiaURI(resource));
     }
 }
