@@ -88,12 +88,13 @@ export class ThemeService {
     protected updateColorThemePreference = debounce(() => this.doUpdateColorThemePreference(), 500);
 
     protected doUpdateColorThemePreference(): void {
-        const existingSchema = this.schemaProvider.getCombinedSchema();
-        const preference = existingSchema.properties[COLOR_THEME_PREFERENCE_KEY];
-        const sortedThemes = this.getThemes().sort((a, b) => a.label.localeCompare(b.label));
-        preference.enum = sortedThemes.map(e => e.id);
-        preference.enumItemLabels = sortedThemes.map(e => e.label);
-        this.schemaProvider.updateSchemaProperty(COLOR_THEME_PREFERENCE_KEY, preference);
+        const preference = this.schemaProvider.getSchemaProperty(COLOR_THEME_PREFERENCE_KEY);
+        if (preference) {
+            const sortedThemes = this.getThemes().sort((a, b) => a.label.localeCompare(b.label));
+            preference.enum = sortedThemes.map(e => e.id);
+            preference.enumItemLabels = sortedThemes.map(e => e.label);
+            this.schemaProvider.updateSchemaProperty(COLOR_THEME_PREFERENCE_KEY, preference);
+        }
     }
 
     getThemes(): Theme[] {

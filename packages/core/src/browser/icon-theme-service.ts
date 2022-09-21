@@ -195,12 +195,13 @@ export class IconThemeService {
     protected updateIconThemePreference = debounce(() => this.doUpdateIconThemePreference(), 500);
 
     protected doUpdateIconThemePreference(): void {
-        const existingSchema = this.schemaProvider.getCombinedSchema();
-        const preference = existingSchema.properties[ICON_THEME_PREFERENCE_KEY];
-        const sortedThemes = Array.from(this.definitions).sort((a, b) => a.label.localeCompare(b.label));
-        preference.enum = sortedThemes.map(e => e.id);
-        preference.enumItemLabels = sortedThemes.map(e => e.label);
-        this.schemaProvider.updateSchemaProperty(ICON_THEME_PREFERENCE_KEY, preference);
+        const preference = this.schemaProvider.getSchemaProperty(ICON_THEME_PREFERENCE_KEY);
+        if (preference) {
+            const sortedThemes = Array.from(this.definitions).sort((a, b) => a.label.localeCompare(b.label));
+            preference.enum = sortedThemes.map(e => e.id);
+            preference.enumItemLabels = sortedThemes.map(e => e.label);
+            this.schemaProvider.updateSchemaProperty(ICON_THEME_PREFERENCE_KEY, preference);
+        }
     }
 
     get default(): IconTheme {
