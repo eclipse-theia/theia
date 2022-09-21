@@ -52,7 +52,8 @@ import * as theia from '@theia/plugin';
 import { UriComponents } from '../../common/uri-components';
 import { CancellationToken } from '@theia/core/lib/common';
 import { CallHierarchyService, CallHierarchyServiceProvider, CallHierarchyItem } from '@theia/callhierarchy/lib/browser';
-import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller, toCallee } from './callhierarchy/callhierarchy-type-converters';
+import { toItemHierarchyDefinition, toUriComponents, fromItemHierarchyDefinition, fromPosition, toCaller, toCallee } from './hierarchy/hierarchy-types-converters';
+import { TypeHierarchyService, TypeHierarchyServiceProvider } from '@theia/typehierarchy/lib/browser';
 import { Position, DocumentUri, DiagnosticTag } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ObjectIdentifier } from '../../common/object-identifier';
 import { mixin } from '../../common/types';
@@ -98,6 +99,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     @inject(CallHierarchyServiceProvider)
     private readonly callHierarchyServiceContributionRegistry: CallHierarchyServiceProvider;
+
+    @inject(TypeHierarchyServiceProvider)
+    private readonly typeHierarchyServiceContributionRegistry: TypeHierarchyServiceProvider;
 
     @inject(EditorLanguageStatusService)
     protected readonly languageStatusService: EditorLanguageStatusService;
@@ -948,32 +952,40 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                     .then(def => {
                         if (!def) { return undefined; }
                         const defs = Array.isArray(def) ? def : [def];
-                        return { dispose: () => this.proxy.$releaseCallHierarchy(handle, defs[0]?._sessionId), items: defs.map(item => toDefinition(item)) };
+                        return { dispose: () => this.proxy.$releaseCallHierarchy(handle, defs[0]?._sessionId), items: defs.map(item => toItemHierarchyDefinition(item)) };
                     }),
-            getCallers: (definition: CallHierarchyItem, cancellationToken: CancellationToken) => this.proxy.$provideCallers(handle, fromDefinition(definition), cancellationToken)
-                .then(result => {
-                    if (!result) {
+            getCallers:
+                (
+                    definition: CallHierarchyItem,
+                    cancellationToken: CancellationToken
+                ) => this.proxy.$provideCallers(handle, fromItemHierarchyDefinition(definition), cancellationToken)
+                    .then(result => {
+                        if (!result) {
+                            return undefined!;
+                        }
+
+                        if (Array.isArray(result)) {
+                            return result.map(toCaller);
+                        }
+
                         return undefined!;
-                    }
+                    }),
 
-                    if (Array.isArray(result)) {
-                        return result.map(toCaller);
-                    }
+            getCallees:
+                (
+                    definition: CallHierarchyItem,
+                    cancellationToken: CancellationToken
+                ) => this.proxy.$provideCallees(handle, fromItemHierarchyDefinition(definition), cancellationToken)
+                    .then(result => {
+                        if (!result) {
+                            return undefined;
+                        }
+                        if (Array.isArray(result)) {
+                            return result.map(toCallee);
+                        }
 
-                    return undefined!;
-                }),
-
-            getCallees: (definition: CallHierarchyItem, cancellationToken: CancellationToken) => this.proxy.$provideCallees(handle, fromDefinition(definition), cancellationToken)
-                .then(result => {
-                    if (!result) {
                         return undefined;
-                    }
-                    if (Array.isArray(result)) {
-                        return result.map(toCallee);
-                    }
-
-                    return undefined;
-                }),
+                    })
         };
     }
 
@@ -982,8 +994,56 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return this.proxy.$resolveRenameLocation(handle, model.uri, position, token);
     }
 
-    // --- semantic tokens
+    // --- type hierarchy
+    $registerTypeHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = this.toLanguageSelector(selector);
+        const typeHierarchyService = this.createTypeHierarchyService(handle, languageSelector);
+        this.register(handle, this.typeHierarchyServiceContributionRegistry.add(typeHierarchyService));
+    }
 
+    protected createTypeHierarchyService(handle: number, language: LanguageSelector): TypeHierarchyService {
+        return {
+            selector: language,
+            prepareSession: (uri: DocumentUri, position: Position, cancellationToken: CancellationToken) =>
+                this.proxy.$prepareTypeHierarchy(handle, toUriComponents(uri), fromPosition(position), cancellationToken)
+                    .then(result => {
+                        if (!result) {
+                            return undefined;
+                        }
+                        const items = Array.isArray(result) ? result : [result];
+                        return {
+                            dispose: () => this.proxy.$releaseTypeHierarchy(handle, items[0]?._sessionId),
+                            items: items.map(item => toItemHierarchyDefinition(item))
+                        };
+                    }),
+            provideSuperTypes: (sessionId, itemId, cancellationToken: CancellationToken) => this.proxy.$provideSuperTypes(handle, sessionId, itemId, cancellationToken)
+                .then(results => {
+                    if (!results) {
+                        return undefined;
+                    }
+
+                    if (Array.isArray(results)) {
+                        return results.map(toItemHierarchyDefinition);
+                    }
+
+                    return undefined;
+                }),
+            provideSubTypes: async (sessionId, itemId, cancellationToken: CancellationToken) => this.proxy.$provideSubTypes(handle, sessionId, itemId, cancellationToken)
+                .then(results => {
+                    if (!results) {
+                        return undefined;
+                    }
+
+                    if (Array.isArray(results)) {
+                        return results.map(toItemHierarchyDefinition);
+                    }
+
+                    return undefined;
+                })
+        };
+    }
+
+    // --- semantic tokens
     $registerDocumentSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], legend: theia.SemanticTokensLegend,
         eventHandle: number | undefined): void {
         const languageSelector = this.toLanguageSelector(selector);

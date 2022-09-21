@@ -724,8 +724,8 @@ export function toLocation(value: model.Location): types.Location {
     return new types.Location(URI.revive(value.uri), toRange(value.range));
 }
 
-export function fromCallHierarchyItem(item: types.CallHierarchyItem): model.CallHierarchyItem {
-    return <model.CallHierarchyItem>{
+export function fromHierarchyItem(item: types.CallHierarchyItem | types.TypeHierarchyItem): model.HierarchyItem {
+    return {
         kind: SymbolKind.fromSymbolKind(item.kind),
         name: item.name,
         detail: item.detail,
@@ -736,6 +736,10 @@ export function fromCallHierarchyItem(item: types.CallHierarchyItem): model.Call
         _itemId: item._itemId,
         _sessionId: item._sessionId,
     };
+}
+
+export function fromCallHierarchyItem(item: types.CallHierarchyItem): model.CallHierarchyItem {
+    return <model.CallHierarchyItem>fromHierarchyItem(item);
 }
 
 export function toCallHierarchyItem(value: model.CallHierarchyItem): types.CallHierarchyItem {
@@ -764,6 +768,35 @@ export function toCallHierarchyOutgoingCall(value: model.CallHierarchyOutgoingCa
     return new types.CallHierarchyOutgoingCall(
         toCallHierarchyItem(value.to),
         value.fromRanges && value.fromRanges.map(toRange));
+}
+
+export function isModelTypeHierarchyItem(arg: unknown): arg is model.TypeHierarchyItem {
+    const item = arg as model.TypeHierarchyItem;
+    return !!item && typeof item === 'object'
+        && isModelRange(item.range)
+        && isModelRange(item.selectionRange)
+        && isUriComponents(item.uri)
+        && !!item.name;
+}
+
+export function fromTypeHierarchyItem(item: types.TypeHierarchyItem): model.TypeHierarchyItem {
+    return <model.TypeHierarchyItem>fromHierarchyItem(item);
+}
+
+export function toTypeHierarchyItem(value: model.TypeHierarchyItem): types.TypeHierarchyItem {
+    const item = new types.TypeHierarchyItem(
+        SymbolKind.toSymbolKind(value.kind),
+        value.name,
+        value.detail ? value.detail : '',
+        URI.revive(value.uri),
+        toRange(value.selectionRange),
+        toRange(value.range),
+    );
+    item.tags = value.tags;
+    item._itemId = value._itemId;
+    item._sessionId = value._sessionId;
+
+    return item;
 }
 
 export function toWorkspaceFolder(folder: model.WorkspaceFolder): theia.WorkspaceFolder {

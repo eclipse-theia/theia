@@ -80,7 +80,8 @@ import {
     ProvidedTerminalLink,
     InlayHint,
     CachedSession,
-    CachedSessionItem
+    CachedSessionItem,
+    TypeHierarchyItem
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -1566,6 +1567,10 @@ export interface LanguagesExt {
     $provideCallees(handle: number, definition: CallHierarchyItem, token: CancellationToken): Promise<CallHierarchyOutgoingCall[] | undefined>;
     $provideLinkedEditingRanges(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<LinkedEditingRanges | undefined>;
     $releaseCallHierarchy(handle: number, session?: string): Promise<boolean>;
+    $prepareTypeHierarchy(handle: number, resource: UriComponents, location: Position, token: theia.CancellationToken): Promise<TypeHierarchyItem[] | undefined>
+    $provideSuperTypes(handle: number, sessionId: string, itemId: string, token: theia.CancellationToken): Promise<TypeHierarchyItem[] | undefined>
+    $provideSubTypes(handle: number, sessionId: string, itemId: string, token: theia.CancellationToken): Promise<TypeHierarchyItem[] | undefined>;
+    $releaseTypeHierarchy(handle: number, session?: string): Promise<boolean>;
 }
 
 export const LanguagesMainFactory = Symbol('LanguagesMainFactory');
@@ -1620,6 +1625,7 @@ export interface LanguagesMain {
     $registerDocumentRangeSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], legend: theia.SemanticTokensLegend): void;
     $registerCallHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerLinkedEditingRangeProvider(handle: number, selector: SerializedDocumentFilter[]): void;
+    $registerTypeHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $setLanguageStatus(handle: number, status: LanguageStatus): void;
     $removeLanguageStatus(handle: number): void;
 }
