@@ -27,6 +27,7 @@ import { ElectronMessagingService } from './messaging/electron-messaging-service
 import { ElectronConnectionHandler } from '../electron-common/messaging/electron-connection-handler';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory, WindowApplicationConfig } from './theia-electron-window';
+import { ElectronNativeKeymap } from './electron-native-keymap';
 
 const electronSecurityToken: ElectronSecurityToken = { value: v4() };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,4 +60,7 @@ export default new ContainerModule(bind => {
         child.bind(WindowApplicationConfig).toConstantValue(config);
         return child.get(TheiaElectronWindow);
     });
+
+    bind(ElectronNativeKeymap).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(ElectronNativeKeymap);
 });
