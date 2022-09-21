@@ -24,18 +24,26 @@ import { createRoot, Root } from 'react-dom/client';
 @injectable()
 export abstract class ReactDialog<T> extends AbstractDialog<T> {
     protected contentNodeRoot: Root;
+    protected isMounted: boolean;
 
     constructor(
         @inject(DialogProps) props: DialogProps
     ) {
         super(props);
         this.contentNodeRoot = createRoot(this.contentNode);
-        this.toDispose.push(Disposable.create(() => this.contentNodeRoot.unmount()));
+        this.isMounted = true;
+        this.toDispose.push(Disposable.create(() => {
+            this.contentNodeRoot.unmount();
+            this.isMounted = false;
+        }));
     }
 
     protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-        this.contentNodeRoot.render(<>{this.render()}</>);
+        if (!this.isMounted) {
+            this.contentNodeRoot = createRoot(this.contentNode);
+        }
+        this.contentNodeRoot?.render(<>{this.render()}</>);
     }
 
     /**
