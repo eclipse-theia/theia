@@ -20,7 +20,7 @@ import { DocumentsExtImpl } from '../documents';
 import * as dto from '../../common/plugin-api-rpc-model';
 import * as rpc from '../../common/plugin-api-rpc';
 import * as types from '../types-impl';
-import { fromRange } from '../type-converters';
+import { fromRange, SymbolKind } from '../type-converters';
 
 export class CallHierarchyAdapter {
 
@@ -82,7 +82,7 @@ export class CallHierarchyAdapter {
             range: fromRange(item.range),
             selectionRange: fromRange(item.selectionRange),
             name: item.name,
-            kind: item.kind,
+            kind: SymbolKind.fromSymbolKind(item.kind),
             tags: item.tags,
             _itemId: itemId,
             _sessionId: sessionId,

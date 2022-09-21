@@ -14,27 +14,40 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, named } from '@theia/core/shared/inversify';
+import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { ApplicationShell } from '@theia/core/lib/browser/shell';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser/editor-menu';
-import { EditorAccess } from '@theia/editor/lib/browser/editor-manager';
+import { EditorAccess, EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { AbstractViewContribution, OpenViewArguments } from '@theia/core/lib/browser/shell/view-contribution';
 import { TypeHierarchyTree } from './tree/typehierarchy-tree';
 import { TypeHierarchyTreeWidget } from './tree/typehierarchy-tree-widget';
 import { TypeHierarchyDirection } from './typehierarchy-provider';
+import { TypeHierarchyServiceProvider } from './typehierarchy-service';
+import URI from '@theia/core/lib/common/uri';
+
+import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 @injectable()
 export class TypeHierarchyContribution extends AbstractViewContribution<TypeHierarchyTreeWidget> {
+
+    @inject(ApplicationShell)
+    protected override readonly shell: ApplicationShell;
 
     @inject(EditorAccess)
     @named(EditorAccess.CURRENT)
     protected readonly editorAccess: EditorAccess;
 
-    @inject(ApplicationShell)
-    protected override readonly shell: ApplicationShell;
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
+
+    @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
+    protected editorHasTypeHierarchyProvider!: ContextKey<boolean>;
+
+    @inject(TypeHierarchyServiceProvider)
+    protected readonly typeHierarchyServiceProvider: TypeHierarchyServiceProvider;
 
     constructor() {
         super({
@@ -46,6 +59,18 @@ export class TypeHierarchyContribution extends AbstractViewContribution<TypeHier
             toggleCommandId: TypeHierarchyCommands.TOGGLE_VIEW.id,
             toggleKeybinding: 'ctrlcmd+shift+h'
         });
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.editorHasTypeHierarchyProvider = this.contextKeyService.createKey('editorHasTypeHierarchyProvider', false);
+        this.editorManager.onCurrentEditorChanged(() => this.editorHasTypeHierarchyProvider.set(this.isTypeHierarchyAvailable()));
+        this.typeHierarchyServiceProvider.onDidChange(() => this.editorHasTypeHierarchyProvider.set(this.isTypeHierarchyAvailable()));
+    }
+
+    protected isTypeHierarchyAvailable(): boolean {
+        const { selection, languageId } = this.editorAccess;
+        return !!selection && !!languageId && !!this.typeHierarchyServiceProvider.get(languageId, new URI(selection.uri));
     }
 
     override async openView(args?: Partial<TypeHierarchyOpenViewArguments>): Promise<TypeHierarchyTreeWidget> {

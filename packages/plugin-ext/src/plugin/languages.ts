@@ -62,7 +62,8 @@ import {
     CallHierarchyIncomingCall,
     CallHierarchyOutgoingCall,
     LinkedEditingRanges,
-    EvaluatableExpression
+    EvaluatableExpression,
+    TypeHierarchyItem
 } from '../common/plugin-api-rpc-model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -91,6 +92,7 @@ import { Event } from '@theia/core/lib/common/event';
 import { CommandRegistryImpl } from './command-registry';
 import { DeclarationAdapter } from './languages/declaration';
 import { CallHierarchyAdapter } from './languages/call-hierarchy';
+import { TypeHierarchyAdapter } from './languages/type-hierarchy';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { DocumentSemanticTokensAdapter, DocumentRangeSemanticTokensAdapter } from './languages/semantic-highlighting';
 import { isReadonlyArray } from '../common/arrays';
@@ -124,7 +126,8 @@ type Adapter = CompletionAdapter |
     CallHierarchyAdapter |
     DocumentRangeSemanticTokensAdapter |
     DocumentSemanticTokensAdapter |
-    LinkedEditingRangeAdapter;
+    LinkedEditingRangeAdapter |
+    TypeHierarchyAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -655,6 +658,53 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.releaseSession(session), false);
     }
     // ### Call Hierarchy Provider end
+
+    // ### Type hierarchy Provider begin
+    registerTypeHierarchyProvider(selector: theia.DocumentSelector, provider: theia.TypeHierarchyProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new TypeHierarchyAdapter(provider, this.documents));
+        this.proxy.$registerTypeHierarchyProvider(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+
+    $prepareTypeHierarchy(handle: number, resource: UriComponents, location: Position, token: theia.CancellationToken
+    ): Promise<TypeHierarchyItem[] | undefined> {
+        return this.withAdapter(
+            handle,
+            TypeHierarchyAdapter,
+            adapter => adapter.prepareSession(URI.revive(resource), location, token),
+            undefined
+        );
+    }
+
+    $provideSuperTypes(handle: number, sessionId: string, itemId: string, token: theia.CancellationToken):
+        Promise<TypeHierarchyItem[] | undefined> {
+        return this.withAdapter(
+            handle,
+            TypeHierarchyAdapter,
+            adapter => adapter.provideSupertypes(sessionId, itemId, token),
+            undefined
+        );
+    }
+
+    $provideSubTypes(handle: number, sessionId: string, itemId: string, token: theia.CancellationToken):
+        Promise<TypeHierarchyItem[] | undefined> {
+        return this.withAdapter(
+            handle,
+            TypeHierarchyAdapter,
+            adapter => adapter.provideSubtypes(sessionId, itemId, token),
+            undefined
+        );
+    }
+
+    $releaseTypeHierarchy(handle: number, session?: string): Promise<boolean> {
+        return this.withAdapter(
+            handle,
+            TypeHierarchyAdapter,
+            adapter => adapter.releaseSession(session),
+            false);
+    }
+
+    // ### Type hierarchy Provider end
 
     // ### Linked Editing Range Provider begin
     registerLinkedEditingRangeProvider(selector: theia.DocumentSelector, provider: theia.LinkedEditingRangeProvider): theia.Disposable {
