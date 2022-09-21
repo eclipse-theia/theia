@@ -52,6 +52,8 @@ import { WorkspaceTrustService } from './workspace-trust-service';
 import { bindWorkspaceTrustPreferences } from './workspace-trust-preferences';
 import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 import { WorkspaceUserWorkingDirectoryProvider } from './workspace-user-working-directory-provider';
+import { WindowTitleUpdater } from '@theia/core/lib/browser/window/window-title-updater';
+import { WorkspaceWindowTitleUpdater } from './workspace-window-title-updater';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
@@ -108,4 +110,6 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
 
     bind(WorkspaceTrustService).toSelf().inSingletonScope();
     rebind(UserWorkingDirectoryProvider).to(WorkspaceUserWorkingDirectoryProvider).inSingletonScope();
+
+    rebind(WindowTitleUpdater).to(WorkspaceWindowTitleUpdater).inSingletonScope();
 });

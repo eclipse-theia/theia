@@ -20,9 +20,9 @@ import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution } f
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PluginDevServer } from '../common/plugin-dev-protocol';
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
-import { FileStat } from '@theia/filesystem/lib/common/files';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { nls } from '@theia/core/lib/common/nls';
+import { WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';
 
 /**
  * Informs the user whether Theia is running with hosted plugin.
@@ -54,27 +54,29 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
     @inject(FrontendApplicationStateService)
     protected readonly frontendApplicationStateService: FrontendApplicationStateService;
 
+    @inject(WindowTitleService)
+    protected readonly windowTitleService: WindowTitleService;
+
     public initialize(): void {
-        this.workspaceService.roots.then(roots => {
-            const workspaceFolder = roots[0];
-            this.hostedPluginServer.getHostedPlugin().then(pluginMetadata => {
-                if (pluginMetadata) {
-                    this.updateTitle(workspaceFolder);
+        this.hostedPluginServer.getHostedPlugin().then(pluginMetadata => {
+            if (pluginMetadata) {
+                this.windowTitleService.update({
+                    developmentHost: HostedPluginInformer.DEVELOPMENT_HOST_TITLE
+                });
 
-                    this.entry = {
-                        text: `$(cube) ${HostedPluginInformer.DEVELOPMENT_HOST_TITLE}`,
-                        tooltip: `${nls.localize('theia/plugin-dev/hostedPlugin', 'Hosted Plugin')} '${pluginMetadata.model.name}'`,
-                        alignment: StatusBarAlignment.LEFT,
-                        priority: 100
-                    };
+                this.entry = {
+                    text: `$(cube) ${HostedPluginInformer.DEVELOPMENT_HOST_TITLE}`,
+                    tooltip: `${nls.localize('theia/plugin-dev/hostedPlugin', 'Hosted Plugin')} '${pluginMetadata.model.name}'`,
+                    alignment: StatusBarAlignment.LEFT,
+                    priority: 100
+                };
 
-                    this.frontendApplicationStateService.reachedState('ready').then(() => {
-                        this.updateStatusBarElement();
-                    });
+                this.frontendApplicationStateService.reachedState('ready').then(() => {
+                    this.updateStatusBarElement();
+                });
 
-                    this.connectionStatusService.onStatusChange(() => this.updateStatusBarElement());
-                }
-            });
+                this.connectionStatusService.onStatusChange(() => this.updateStatusBarElement());
+            }
         });
     }
 
@@ -86,15 +88,6 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
         }
 
         this.statusBar.setElement(HostedPluginInformer.DEVELOPMENT_HOST, this.entry);
-    }
-
-    private updateTitle(root: FileStat | undefined): void {
-        if (root) {
-            const uri = root.resource;
-            document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE + ' - ' + uri.displayName;
-        } else {
-            document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE;
-        }
     }
 
 }

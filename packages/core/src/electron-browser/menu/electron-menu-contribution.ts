@@ -16,14 +16,11 @@
 
 import * as electron from '../../../electron-shared/electron';
 import * as electronRemote from '../../../electron-shared/@electron/remote';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
+import { Command, CommandContribution, CommandRegistry, isOSX, isWindows, MenuModelRegistry, MenuContribution, Disposable, nls } from '../../common';
 import {
-    Command, CommandContribution, CommandRegistry,
-    isOSX, isWindows, MenuModelRegistry, MenuContribution, Disposable, nls
-} from '../../common';
-import {
-    codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry,
-    PreferenceScope, Widget, FrontendApplication, FrontendApplicationContribution, CommonMenus, CommonCommands, Dialog,
+    codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry, PreferenceScope, Widget,
+    FrontendApplication, FrontendApplicationContribution, CommonMenus, CommonCommands, Dialog, Message, ApplicationShell,
 } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { FrontendApplicationStateService, FrontendApplicationState } from '../../browser/frontend-application-state';
@@ -32,6 +29,7 @@ import { RequestTitleBarStyle, Restart, TitleBarStyleAtStartup, TitleBarStyleCha
 import { ZoomLevel } from '../window/electron-window-preferences';
 import { BrowserMenuBarContribution } from '../../browser/menu/browser-menu-plugin';
 import { WindowService } from '../../browser/window/window-service';
+import { WindowTitleService } from '../../browser/window/window-title-service';
 
 import '../../../src/electron-browser/menu/electron-menu-style.css';
 
@@ -80,6 +78,9 @@ export namespace ElectronMenus {
     export const FILE_CLOSE = [...CommonMenus.FILE_CLOSE, 'window-close'];
 }
 
+export const CustomTitleWidgetFactory = Symbol('CustomTitleWidgetFactory');
+export type CustomTitleWidgetFactory = () => Widget | undefined;
+
 @injectable()
 export class ElectronMenuContribution extends BrowserMenuBarContribution implements FrontendApplicationContribution, CommandContribution, MenuContribution, KeybindingContribution {
 
@@ -88,6 +89,9 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
 
     @inject(WindowService)
     protected readonly windowService: WindowService;
+
+    @inject(CustomTitleWidgetFactory)
+    protected readonly customTitleWidgetFactory: CustomTitleWidgetFactory;
 
     protected titleBarStyleChangeFlag = false;
     protected titleBarStyle?: string;
@@ -212,6 +216,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         dragPanel.id = 'theia-drag-panel';
         app.shell.addWidget(dragPanel, { area: 'top' });
         this.appendMenu(app.shell);
+        this.createCustomTitleWidget(app);
         const controls = document.createElement('div');
         controls.id = 'window-controls';
         controls.append(
@@ -222,6 +227,13 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         );
         app.shell.topPanel.node.append(controls);
         this.handleWindowControls(electronWindow);
+    }
+
+    protected createCustomTitleWidget(app: FrontendApplication): void {
+        const titleWidget = this.customTitleWidgetFactory();
+        if (titleWidget) {
+            app.shell.addWidget(titleWidget, { area: 'top' });
+        }
     }
 
     protected handleWindowControls(electronWindow: electron.BrowserWindow): void {
@@ -413,4 +425,72 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         }
     }
 
+}
+
+@injectable()
+export class CustomTitleWidget extends Widget {
+
+    @inject(ElectronMenuContribution)
+    protected readonly electronMenuContribution: ElectronMenuContribution;
+
+    @inject(WindowTitleService)
+    protected readonly windowTitleService: WindowTitleService;
+
+    @inject(ApplicationShell)
+    protected readonly applicationShell: ApplicationShell;
+
+    constructor() {
+        super();
+        this.id = 'theia-custom-title';
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.updateTitle(this.windowTitleService.title);
+        this.windowTitleService.onDidChangeTitle(title => {
+            this.updateTitle(title);
+        });
+    }
+
+    protected override onResize(msg: Widget.ResizeMessage): void {
+        this.adjustTitleToCenter();
+        super.onResize(msg);
+    }
+
+    protected override onAfterShow(msg: Message): void {
+        this.adjustTitleToCenter();
+        super.onAfterShow(msg);
+    }
+
+    protected updateTitle(title: string): void {
+        this.node.textContent = title;
+        this.adjustTitleToCenter();
+    }
+
+    protected adjustTitleToCenter(): void {
+        const menubar = this.electronMenuContribution.menuBar;
+        if (menubar) {
+            const titleWidth = this.node.clientWidth;
+            const margin = 16;
+            const leftMarker = menubar.node.offsetLeft + menubar.node.clientWidth + margin;
+            const panelWidth = this.applicationShell.topPanel.node.clientWidth;
+            const controlsWidth = 48 * 3; // Each window button has a width of 48px
+            const rightMarker = panelWidth - controlsWidth - margin;
+
+            let hidden = false;
+            let relative = false;
+            this.node.style.left = '50%';
+            // The title has not enough space between the menu and the window controls
+            // So we simply hide it
+            if (rightMarker - leftMarker < titleWidth) {
+                hidden = true;
+            } else if ((panelWidth - titleWidth) / 2 < leftMarker || (panelWidth + titleWidth) / 2 > rightMarker) {
+                // This indicates that the title has either hit the left (menu) or right (window controls) marker
+                relative = true;
+                this.node.style.left = `${leftMarker + (rightMarker - leftMarker - titleWidth) / 2}px`;
+            }
+            this.node.classList.toggle('hidden', hidden);
+            this.node.classList.toggle('relative', relative);
+        }
+    }
 }

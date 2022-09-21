@@ -28,9 +28,9 @@ import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise
 import { WorkspacePreferences } from './workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
 import * as Ajv from '@theia/core/shared/ajv';
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { FileStat, BaseStat } from '@theia/filesystem/lib/common/files';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { workspaceSchema, WorkspaceSchemaUpdater } from './workspace-schema-updater';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
@@ -85,7 +85,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
     @inject(CommonWorkspaceUtils)
     protected readonly utils: CommonWorkspaceUtils;
 
-    protected applicationName: string;
+    @inject(WindowTitleService)
+    protected readonly windowTitleService: WindowTitleService;
 
     protected _ready = new Deferred<void>();
     get ready(): Promise<void> {
@@ -94,7 +95,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     @postConstruct()
     protected async init(): Promise<void> {
-        this.applicationName = FrontendApplicationConfigProvider.get().applicationName;
         const wsUriString = await this.getDefaultWorkspaceUri();
         const wsStat = await this.toFileStat(wsUriString);
         await this.setWorkspace(wsStat);
@@ -283,22 +283,30 @@ export class WorkspaceService implements FrontendApplicationContribution {
         }
     }
 
-    protected formatTitle(title?: string): string {
-        const name = this.applicationName;
-        return title ? `${title} — ${name}` : name;
-    }
-
     protected updateTitle(): void {
-        let title: string | undefined;
+        let rootName: string | undefined;
+        let rootPath: string | undefined;
         if (this._workspace) {
             const displayName = this._workspace.name;
+            const fullName = this._workspace.resource.path.toString();
             if (this.isWorkspaceFile(this._workspace)) {
-                title = this.isUntitledWorkspace(this._workspace.resource) ? nls.localizeByDefault('Untitled (Workspace)') : displayName.slice(0, displayName.lastIndexOf('.'));
+                if (this.isUntitledWorkspace(this._workspace.resource)) {
+                    const untitled = nls.localizeByDefault('Untitled (Workspace)');
+                    rootName = untitled;
+                    rootPath = untitled;
+                } else {
+                    rootName = displayName.slice(0, displayName.lastIndexOf('.'));
+                    rootPath = fullName.slice(0, fullName.lastIndexOf('.'));
+                }
             } else {
-                title = displayName;
+                rootName = displayName;
+                rootPath = fullName;
             }
         }
-        document.title = this.formatTitle(title);
+        this.windowTitleService.update({
+            rootName,
+            rootPath
+        });
     }
 
     /**

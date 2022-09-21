@@ -20,7 +20,7 @@ import { Signal } from '@phosphor/signaling';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { UnsafeWidgetUtilities } from '../widgets';
 import { CorePreferences } from '../core-preferences';
-import { Emitter, environment } from '../../common';
+import { Emitter, Event, environment } from '../../common';
 
 export const MAXIMIZED_CLASS = 'theia-maximized';
 export const ACTIVE_TABBAR_CLASS = 'theia-tabBar-active';
@@ -50,6 +50,10 @@ export class TheiaDockPanel extends DockPanel {
 
     protected readonly onDidToggleMaximizedEmitter = new Emitter<Widget>();
     readonly onDidToggleMaximized = this.onDidToggleMaximizedEmitter.event;
+    protected readonly onDidChangeCurrentEmitter = new Emitter<Title<Widget> | undefined>();
+    get onDidChangeCurrent(): Event<Title<Widget> | undefined> {
+        return this.onDidChangeCurrentEmitter.event;
+    }
 
     constructor(options?: DockPanel.IOptions,
         protected readonly preferences?: CorePreferences
@@ -114,6 +118,7 @@ export class TheiaDockPanel extends DockPanel {
                 title.owner.disposed.disconnect(resetCurrent)
             ));
         }
+        this.onDidChangeCurrentEmitter.fire(title);
     }
 
     markActiveTabBar(title?: Title<Widget>): void {

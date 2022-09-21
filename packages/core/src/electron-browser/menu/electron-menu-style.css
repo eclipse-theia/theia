@@ -29,6 +29,31 @@
   -webkit-app-region: no-drag;
 }
 
+#theia-custom-title {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 0px);
+  line-height: 30px;
+  flex: 0 1 auto;
+  font-size: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+  margin-left: auto;
+  margin-right: auto;
+  zoom: 1;
+  -webkit-app-region: drag !important;
+}
+
+#theia-custom-title.relative {
+  transform: none;
+}
+
+#theia-custom-title.hidden {
+  visibility: hidden;
+}
+
 #window-controls {
   display: grid;
   grid-template-columns: repeat(3, 48px);

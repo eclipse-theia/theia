@@ -242,6 +242,10 @@
     position: relative;
 }
 
+.theia-settings-container li.single-pref p {
+    margin: 0;
+}
+
 .theia-settings-container li.single-pref:hover:not(:focus) {
     background-color: var(--theia-settings-rowHoverBackground);
 }
