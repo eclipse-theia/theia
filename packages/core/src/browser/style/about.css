@@ -14,14 +14,23 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
- ul.theia-aboutDialog {
+.theia-aboutDialog .about-details {
+    padding-left: 10px;
+}
+
+.theia-aboutDialog .about-details a {
+    cursor: pointer;
+}
+
+ul.theia-aboutDialog {
     flex: 1 100%;
     padding-bottom: calc(var(--theia-ui-padding) * 3);
- }
- ul.theia-aboutExtensions {
+}
+
+ul.theia-aboutExtensions {
     height: 200px;
     overflow: hidden;
     overflow-y: scroll;
     list-style-type: none;
     padding: 0;
- }
+}
