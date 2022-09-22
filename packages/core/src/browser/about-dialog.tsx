@@ -21,6 +21,10 @@ import { ReactDialog } from './dialogs/react-dialog';
 import { ApplicationServer, ApplicationInfo, ExtensionInfo } from '../common/application-protocol';
 import { Message } from './widgets/widget';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package/lib/api';
+import { WindowService } from './window/window-service';
+import { Key, KeyCode } from './keys';
+import { nls } from '../common/nls';
 
 export const ABOUT_CONTENT_CLASS = 'theia-aboutDialog';
 export const ABOUT_EXTENSIONS_CLASS = 'theia-aboutExtensions';
@@ -37,6 +41,9 @@ export class AboutDialog extends ReactDialog<void> {
 
     @inject(ApplicationServer)
     protected readonly appServer: ApplicationServer;
+
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
 
     constructor(
         @inject(AboutDialogProps) protected override readonly props: AboutDialogProps
@@ -56,14 +63,35 @@ export class AboutDialog extends ReactDialog<void> {
 
     protected renderHeader(): React.ReactNode {
         const applicationInfo = this.applicationInfo;
-        return applicationInfo && <h3>{applicationInfo.name} {applicationInfo.version}</h3>;
+        const compatibilityUrl = 'https://eclipse-theia.github.io/vscode-theia-comparator/status.html';
+
+        const detailsLabel = nls.localizeByDefault('Details');
+        const versionLabel = nls.localizeByDefault('Version');
+        const defaultApiLabel = nls.localize('theia/core/about/defaultApi', 'Default VS Code API');
+        const compatibilityLabel = nls.localize('theia/core/about/compatibility', 'VS Code Compatibility');
+
+        return <>
+            <h3>{detailsLabel}</h3>
+            <div className='about-details'>
+                {applicationInfo && <p>{`${versionLabel}: ${applicationInfo.version}`}</p>}
+                <p>{`${defaultApiLabel}: ${DEFAULT_SUPPORTED_API_VERSION}`}</p>
+                <p>
+                    <a
+                        role={'button'}
+                        tabIndex={0}
+                        onClick={() => this.doOpenExternalLink(compatibilityUrl)}
+                        onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, compatibilityUrl)}>
+                        {compatibilityLabel}
+                    </a>
+                </p>
+            </div>
+        </>;
     }
 
     protected renderExtensions(): React.ReactNode {
         const extensionsInfos = this.extensionsInfos;
         return <>
             <h3>List of extensions</h3>
-
             <ul className={ABOUT_EXTENSIONS_CLASS}>
                 {
                     extensionsInfos
@@ -84,6 +112,21 @@ export class AboutDialog extends ReactDialog<void> {
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.update();
+    }
+
+    /**
+     * Open a link in an external window.
+     * @param url the link.
+     */
+    protected doOpenExternalLink = (url: string) => this.windowService.openNewWindow(url, { external: true });
+    protected doOpenExternalLinkEnter = (e: React.KeyboardEvent, url: string) => {
+        if (this.isEnterKey(e)) {
+            this.doOpenExternalLink(url);
+        }
+    };
+
+    protected isEnterKey(e: React.KeyboardEvent): boolean {
+        return Key.ENTER.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode;
     }
 
     get value(): undefined { return undefined; }
