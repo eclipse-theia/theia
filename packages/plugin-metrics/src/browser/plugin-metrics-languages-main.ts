@@ -294,9 +294,9 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
         super.$registerOnTypeFormattingProvider(handle, pluginInfo, selector, autoFormatTriggerCharacters);
     }
 
-    override $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], eventHandle: number): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
-        super.$registerFoldingRangeProvider(handle, pluginInfo, selector);
+        super.$registerFoldingRangeProvider(handle, pluginInfo, selector, eventHandle);
     }
 
     override $registerDocumentColorProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {

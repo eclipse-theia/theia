@@ -1578,7 +1578,8 @@ export interface LanguagesMain {
     $emitCodeLensEvent(eventHandle: number, event?: any): void;
     $registerOutlineSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], displayName?: string): void;
     $registerWorkspaceSymbolProvider(handle: number, pluginInfo: PluginInfo): void;
-    $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
+    $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], eventHandle?: number): void;
+    $emitFoldingRangeEvent(handle: number, event?: any): void;
     $registerSelectionRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerDocumentColorProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerRenameProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], supportsResolveInitialValues: boolean): void;

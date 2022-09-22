@@ -679,9 +679,16 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return this.proxy.$provideOnTypeFormattingEdits(handle, model.uri, position, ch, options, token);
     }
 
-    $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], eventHandle: number | undefined): void {
         const languageSelector = this.toLanguageSelector(selector);
         const provider = this.createFoldingRangeProvider(handle);
+
+        if (typeof eventHandle === 'number') {
+            const emitter = new Emitter<monaco.languages.FoldingRangeProvider>();
+            this.services.set(eventHandle, emitter);
+            provider.onDidChange = emitter.event;
+        }
+
         this.register(handle, (monaco.languages.registerFoldingRangeProvider as RegistrationFunction<monaco.languages.FoldingRangeProvider>)(languageSelector, provider));
     }
 
@@ -689,6 +696,13 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return {
             provideFoldingRanges: (model, context, token) => this.provideFoldingRanges(handle, model, context, token)
         };
+    }
+
+    $emitFoldingRangeEvent(eventHandle: number, event?: unknown): void {
+        const obj = this.services.get(eventHandle);
+        if (obj instanceof Emitter) {
+            obj.fire(event);
+        }
     }
 
     protected provideFoldingRanges(handle: number, model: monaco.editor.ITextModel,
