@@ -21,7 +21,8 @@ import { ApplicationProps, DefaultTheme } from '@theia/application-package/lib/a
 import { Theme, ThemeChangeEvent } from '../common/theme';
 import { inject, injectable, postConstruct } from 'inversify';
 import { Deferred } from '../common/promise-util';
-import { PreferenceService } from './preferences';
+import { PreferenceSchemaProvider, PreferenceService } from './preferences';
+import debounce = require('lodash.debounce');
 
 const COLOR_THEME_PREFERENCE_KEY = 'workbench.colorTheme';
 const NO_THEME = { id: 'no-theme', label: 'Not a real theme.', type: 'dark' } as const;
@@ -31,6 +32,7 @@ export class ThemeService {
     static readonly STORAGE_KEY = 'theme';
 
     @inject(PreferenceService) protected readonly preferences: PreferenceService;
+    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
 
     protected themes: { [id: string]: Theme } = {};
     protected activeTheme: Theme = NO_THEME;
@@ -48,6 +50,7 @@ export class ThemeService {
         this.loadUserTheme();
         this.preferences.ready.then(() => {
             this.validateActiveTheme();
+            this.updateColorThemePreference();
             this.preferences.onPreferencesChanged(changes => {
                 if (COLOR_THEME_PREFERENCE_KEY in changes) {
                     this.validateActiveTheme();
@@ -61,6 +64,7 @@ export class ThemeService {
             this.themes[theme.id] = theme;
         }
         this.validateActiveTheme();
+        this.updateColorThemePreference();
         return Disposable.create(() => {
             for (const theme of themes) {
                 delete this.themes[theme.id];
@@ -68,6 +72,7 @@ export class ThemeService {
                     this.setCurrentTheme(this.defaultTheme.id, false);
                 }
             }
+            this.updateColorThemePreference();
         });
     }
 
@@ -77,6 +82,18 @@ export class ThemeService {
             if (configuredTheme && configuredTheme !== this.activeTheme) {
                 this.setCurrentTheme(configuredTheme.id, false);
             }
+        }
+    }
+
+    protected updateColorThemePreference = debounce(() => this.doUpdateColorThemePreference(), 500);
+
+    protected doUpdateColorThemePreference(): void {
+        const preference = this.schemaProvider.getSchemaProperty(COLOR_THEME_PREFERENCE_KEY);
+        if (preference) {
+            const sortedThemes = this.getThemes().sort((a, b) => a.label.localeCompare(b.label));
+            preference.enum = sortedThemes.map(e => e.id);
+            preference.enumItemLabels = sortedThemes.map(e => e.label);
+            this.schemaProvider.updateSchemaProperty(COLOR_THEME_PREFERENCE_KEY, preference);
         }
     }
 

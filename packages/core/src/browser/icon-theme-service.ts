@@ -19,7 +19,8 @@ import { Emitter } from '../common/event';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { LabelProviderContribution, DidChangeLabelEvent } from './label-provider';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
-import { PreferenceService } from './preferences';
+import { PreferenceService, PreferenceSchemaProvider } from './preferences';
+import debounce = require('lodash.debounce');
 
 const ICON_THEME_PREFERENCE_KEY = 'workbench.iconTheme';
 
@@ -95,6 +96,7 @@ export class IconThemeService {
 
     @inject(NoneIconTheme) protected readonly noneIconTheme: NoneIconTheme;
     @inject(PreferenceService) protected readonly preferences: PreferenceService;
+    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
 
     protected readonly onDidChangeCurrentEmitter = new Emitter<string>();
     readonly onDidChangeCurrent = this.onDidChangeCurrentEmitter.event;
@@ -109,6 +111,7 @@ export class IconThemeService {
         this.setCurrent(this.fallback, false);
         this.preferences.ready.then(() => {
             this.validateActiveTheme();
+            this.updateIconThemePreference();
             this.preferences.onPreferencesChanged(changes => {
                 if (ICON_THEME_PREFERENCE_KEY in changes) {
                     this.validateActiveTheme();
@@ -125,7 +128,11 @@ export class IconThemeService {
         this._iconThemes.set(iconTheme.id, iconTheme);
         this.onDidChangeEmitter.fire(undefined);
         this.validateActiveTheme();
-        return Disposable.create(() => this.unregister(iconTheme.id));
+        this.updateIconThemePreference();
+        return Disposable.create(() => {
+            this.unregister(iconTheme.id);
+            this.updateIconThemePreference();
+        });
     }
 
     unregister(id: string): IconTheme | undefined {
@@ -182,6 +189,18 @@ export class IconThemeService {
             if (configured && configured !== this.getCurrent()) {
                 this.setCurrent(configured, false);
             }
+        }
+    }
+
+    protected updateIconThemePreference = debounce(() => this.doUpdateIconThemePreference(), 500);
+
+    protected doUpdateIconThemePreference(): void {
+        const preference = this.schemaProvider.getSchemaProperty(ICON_THEME_PREFERENCE_KEY);
+        if (preference) {
+            const sortedThemes = Array.from(this.definitions).sort((a, b) => a.label.localeCompare(b.label));
+            preference.enum = sortedThemes.map(e => e.id);
+            preference.enumItemLabels = sortedThemes.map(e => e.label);
+            this.schemaProvider.updateSchemaProperty(ICON_THEME_PREFERENCE_KEY, preference);
         }
     }
 

@@ -25,6 +25,7 @@ import {
     TopDownTreeIterator,
     PreferenceChanges,
     ExpandableTreeNode,
+    PreferenceSchemaProvider,
 } from '@theia/core/lib/browser';
 import { unreachable } from '@theia/core/lib/common';
 import { BaseWidget, DEFAULT_SCROLL_OPTIONS } from '@theia/core/lib/browser/widgets/widget';
@@ -34,6 +35,7 @@ import { Preference } from '../util/preference-types';
 import { COMMONLY_USED_SECTION_PREFIX } from '../util/preference-tree-generator';
 import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget';
 import { PreferenceNodeRendererCreatorRegistry } from './components/preference-node-renderer-creator';
+import stableJsonStringify = require('fast-json-stable-stringify');
 
 export interface PreferencesEditorState {
     firstVisibleChildID: string,
@@ -58,6 +60,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     protected isAtScrollTop = true;
     protected firstVisibleChildID = '';
     protected renderers = new Map<string, GeneralPreferenceNodeRenderer>();
+    protected preferenceDataKeys = new Map<string, string>();
     // The commonly used section will duplicate preference ID's, so we'll keep a separate list of them.
     protected commonlyUsedRenderers = new Map<string, GeneralPreferenceNodeRenderer>();
 
@@ -65,6 +68,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     @inject(PreferenceTreeModel) protected readonly model: PreferenceTreeModel;
     @inject(PreferenceNodeRendererFactory) protected readonly rendererFactory: PreferenceNodeRendererFactory;
     @inject(PreferenceNodeRendererCreatorRegistry) protected readonly rendererRegistry: PreferenceNodeRendererCreatorRegistry;
+    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
     @inject(PreferencesScopeTabBar) protected readonly tabbar: PreferencesScopeTabBar;
 
     @postConstruct()
@@ -122,7 +126,8 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
 
     protected handleSchemaChange(isFiltered: boolean): void {
         for (const [id, renderer, collection] of this.allRenderers()) {
-            if (!this.model.getNode(renderer.nodeId)) {
+            const node = this.model.getNode(renderer.nodeId);
+            if (!node || (Preference.LeafNode.is(node) && this.hasSchemaChanged(node))) {
                 renderer.dispose();
                 collection.delete(id);
             }
@@ -137,6 +142,9 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
                     if (!renderer.node.parentElement) { // If it hasn't been attached yet, it hasn't been checked for the current search.
                         this.hideIfFailsFilters(renderer, isFiltered);
                         collection.set(id, renderer);
+                    }
+                    if (!this.preferenceDataKeys.has(node.id) && Preference.LeafNode.is(node)) {
+                        this.setSchemaPropertyKey(node);
                     }
                     if (nextNode !== renderer.node) {
                         if (nextNode) {
@@ -158,6 +166,23 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
             if (isFiltered || !isHidden) {
                 renderer.handleScopeChange?.(isFiltered);
             }
+        }
+    }
+
+    protected hasSchemaChanged(leafNode: Preference.LeafNode): boolean {
+        const oldKey = this.preferenceDataKeys.get(leafNode.id);
+        const newKey = this.setSchemaPropertyKey(leafNode);
+        return oldKey !== newKey;
+    }
+
+    protected setSchemaPropertyKey(leafNode: Preference.LeafNode): string | undefined {
+        const schemaProperty = this.schemaProvider.getSchemaProperty(leafNode.preferenceId);
+        if (schemaProperty) {
+            const key = stableJsonStringify(schemaProperty);
+            this.preferenceDataKeys.set(leafNode.id, key);
+            return key;
+        } else {
+            return undefined;
         }
     }
 

@@ -356,6 +356,15 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         return [][Symbol.iterator]();
     }
 
+    getSchemaProperty(key: string): PreferenceDataProperty | undefined {
+        return this.combinedSchema.properties[key];
+    }
+
+    updateSchemaProperty(key: string, property: PreferenceDataProperty): void {
+        this.updateSchemaProps(key, property);
+        this.fireDidPreferenceSchemaChanged();
+    }
+
     protected updateSchemaProps(key: string, property: PreferenceDataProperty): void {
         this.combinedSchema.properties[key] = property;
 

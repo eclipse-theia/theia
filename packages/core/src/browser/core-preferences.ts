@@ -184,11 +184,15 @@ export const corePreferenceSchema: PreferenceSchema = {
         },
         'workbench.colorTheme': {
             type: 'string',
+            enum: ['dark', 'light', 'hc-theia'],
+            enumItemLabels: ['Dark (Theia)', 'Light (Theia)', 'High Contrast (Theia)'],
             default: DefaultTheme.defaultForOSTheme(FrontendApplicationConfigProvider.get().defaultTheme),
             description: nls.localizeByDefault('Specifies the color theme used in the workbench.')
         },
         'workbench.iconTheme': {
-            type: ['string', 'null'],
+            type: ['string'],
+            enum: ['none', 'theia-file-icons'],
+            enumItemLabels: [nls.localizeByDefault('None'), 'File Icons (Theia)'],
             default: FrontendApplicationConfigProvider.get().defaultIconTheme,
             description: nls.localizeByDefault("Specifies the file icon theme used in the workbench or 'null' to not show any file icons.")
         },
@@ -254,7 +258,7 @@ export interface CoreConfiguration {
     'workbench.editor.mouseBackForwardToNavigate': boolean;
     'workbench.editor.closeOnFileDelete': boolean;
     'workbench.colorTheme': string;
-    'workbench.iconTheme': string | null;
+    'workbench.iconTheme': string;
     'workbench.silentNotifications': boolean;
     'workbench.statusBar.visible': boolean;
     'workbench.tree.renderIndentGuides': 'onHover' | 'none' | 'always';
