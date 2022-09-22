@@ -67,6 +67,7 @@ import { Mutable } from '@theia/core/lib/common/types';
 import { readFileIntoStream } from '../common/io';
 import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
 import { FileSystemUtils } from '../common/filesystem-utils';
+import { nls } from '@theia/core';
 
 export interface FileOperationParticipant {
 
@@ -428,7 +429,7 @@ export class FileService {
     protected async withProvider(resource: URI): Promise<FileSystemProvider> {
         // Assert path is absolute
         if (!resource.path.isAbsolute) {
-            throw new FileOperationError(`Unable to resolve filesystem provider with relative file path ${this.resourceForError(resource)}`, FileOperationResult.FILE_INVALID_PATH);
+            throw new FileOperationError(nls.localizeByDefault("Unable to resolve filesystem provider with relative file path '{0}'", this.resourceForError(resource)), FileOperationResult.FILE_INVALID_PATH);
         }
 
         return this.activateProvider(resource.scheme);
@@ -478,7 +479,7 @@ export class FileService {
 
             // Specially handle file not found case as file operation result
             if (toFileSystemProviderErrorCode(error) === FileSystemProviderErrorCode.FileNotFound) {
-                throw new FileOperationError(`Unable to resolve non-existing file '${this.resourceForError(resource)}'`, FileOperationResult.FILE_NOT_FOUND);
+                throw new FileOperationError(nls.localizeByDefault("Unable to resolve non-existing file '{0}'", this.resourceForError(resource)), FileOperationResult.FILE_NOT_FOUND);
             }
 
             // Bubble up any other error as is
@@ -730,7 +731,7 @@ export class FileService {
 
         // validate binary
         if (options?.acceptTextOnly && decoder.detected.seemsBinary) {
-            throw new TextFileOperationError('File seems to be binary and cannot be opened as text', TextFileOperationResult.FILE_IS_BINARY, options);
+            throw new TextFileOperationError(nls.localizeByDefault('File seems to be binary and cannot be opened as text'), TextFileOperationResult.FILE_IS_BINARY, options);
         }
 
         return [bufferStream, decoder];
@@ -764,7 +765,7 @@ export class FileService {
                 throw new Error('incremental file update is not supported');
             }
         } catch (error) {
-            this.rethrowAsFileOperationError('Unable to write file', resource, error, options);
+            this.rethrowAsFileOperationError("Unable to write file '{0}' ({1})", resource, error, options);
         }
     }
 
@@ -776,7 +777,7 @@ export class FileService {
 
         // validate overwrite
         if (!options?.overwrite && await this.exists(resource)) {
-            throw new FileOperationError(`Unable to create file '${this.resourceForError(resource)}' that already exists when overwrite flag is not set`, FileOperationResult.FILE_MODIFIED_SINCE, options);
+            throw new FileOperationError(nls.localizeByDefault("Unable to create file '{0}' that already exists when overwrite flag is not set", this.resourceForError(resource)), FileOperationResult.FILE_MODIFIED_SINCE, options);
         }
 
         // do write into file (this will create it too)
@@ -831,7 +832,7 @@ export class FileService {
                 await this.doWriteBuffered(provider, resource, bufferOrReadableOrStreamOrBufferedStream instanceof BinaryBuffer ? BinaryBufferReadable.fromBuffer(bufferOrReadableOrStreamOrBufferedStream) : bufferOrReadableOrStreamOrBufferedStream);
             }
         } catch (error) {
-            this.rethrowAsFileOperationError('Unable to write file', resource, error, options);
+            this.rethrowAsFileOperationError("Unable to write file '{0}' ({1})", resource, error, options);
         }
 
         return this.resolve(resource, { resolveMetadata: true });
@@ -847,11 +848,11 @@ export class FileService {
 
         // file cannot be directory
         if ((stat.type & FileType.Directory) !== 0) {
-            throw new FileOperationError(`Unable to write file ${this.resourceForError(resource)} that is actually a directory`, FileOperationResult.FILE_IS_DIRECTORY, options);
+            throw new FileOperationError(nls.localizeByDefault("Unable to write file '{0}' that is actually a directory", this.resourceForError(resource)), FileOperationResult.FILE_IS_DIRECTORY, options);
         }
 
         if (this.modifiedSince(stat, options)) {
-            throw new FileOperationError('File Modified Since', FileOperationResult.FILE_MODIFIED_SINCE, options);
+            throw new FileOperationError(nls.localizeByDefault('File Modified Since'), FileOperationResult.FILE_MODIFIED_SINCE, options);
         }
 
         return stat;
@@ -951,7 +952,7 @@ export class FileService {
                 value: fileStream
             };
         } catch (error) {
-            this.rethrowAsFileOperationError('Unable to read file', resource, error, options);
+            this.rethrowAsFileOperationError("Unable to read file '{0}' ({1})", resource, error, options);
         }
     }
 
@@ -960,7 +961,7 @@ export class FileService {
 
         return transform(fileStream, {
             data: data => data instanceof BinaryBuffer ? data : BinaryBuffer.wrap(data),
-            error: error => this.asFileOperationError('Unable to read file', resource, error, options)
+            error: error => this.asFileOperationError("Unable to read file '{0}' ({1})", resource, error, options)
         }, data => BinaryBuffer.concat(data));
     }
 
@@ -970,7 +971,7 @@ export class FileService {
         readFileIntoStream(provider, resource, stream, data => data, {
             ...options,
             bufferSize: this.BUFFER_SIZE,
-            errorTransformer: error => this.asFileOperationError('Unable to read file', resource, error, options)
+            errorTransformer: error => this.asFileOperationError("Unable to read file '{0}' ({1})", resource, error, options)
         }, token);
 
         return stream;
@@ -980,7 +981,7 @@ export class FileService {
         throw this.asFileOperationError(message, resource, error, options);
     }
     protected asFileOperationError(message: string, resource: URI, error: Error, options?: ReadFileOptions & WriteFileOptions & CreateFileOptions): FileOperationError {
-        const fileOperationError = new FileOperationError(`${message} '${this.resourceForError(resource)}' (${ensureFileSystemProviderError(error).toString()})`,
+        const fileOperationError = new FileOperationError(nls.localizeByDefault(message, this.resourceForError(resource), ensureFileSystemProviderError(error).toString()),
             toFileOperationResult(error), options);
         fileOperationError.stack = `${fileOperationError.stack}\nCaused by: ${error.stack}`;
         return fileOperationError;
@@ -1010,12 +1011,12 @@ export class FileService {
 
         // Throw if resource is a directory
         if (stat.isDirectory) {
-            throw new FileOperationError(`Unable to read file '${this.resourceForError(resource)}' that is actually a directory`, FileOperationResult.FILE_IS_DIRECTORY, options);
+            throw new FileOperationError(nls.localizeByDefault("Unable to read file '{0}' that is actually a directory", this.resourceForError(resource)), FileOperationResult.FILE_IS_DIRECTORY, options);
         }
 
         // Throw if file not modified since (unless disabled)
         if (options && typeof options.etag === 'string' && options.etag !== ETAG_DISABLED && options.etag === stat.etag) {
-            throw new FileOperationError('File not modified since', FileOperationResult.FILE_NOT_MODIFIED_SINCE, options);
+            throw new FileOperationError(nls.localizeByDefault('File not modified since'), FileOperationResult.FILE_NOT_MODIFIED_SINCE, options);
         }
 
         // Throw if file is too large to load
@@ -1037,7 +1038,7 @@ export class FileService {
             }
 
             if (typeof tooLargeErrorResult === 'number') {
-                throw new FileOperationError(`Unable to read file '${this.resourceForError(resource)}' that is too large to open`, tooLargeErrorResult);
+                throw new FileOperationError(nls.localizeByDefault("Unable to read file '{0}' that is too large to open", this.resourceForError(resource)), tooLargeErrorResult);
             }
         }
     }
@@ -1232,11 +1233,11 @@ export class FileService {
             }
 
             if (isSameResourceWithDifferentPathCase && mode === 'copy') {
-                throw new Error(`Unable to copy when source '${this.resourceForError(source)}' is same as target '${this.resourceForError(target)}' with different path case on a case insensitive file system`);
+                throw new Error(nls.localizeByDefault("Unable to move/copy when source '{0}' is parent of target '{1}'.", this.resourceForError(source), this.resourceForError(target)));
             }
 
             if (!isSameResourceWithDifferentPathCase && target.isEqualOrParent(source, isPathCaseSensitive)) {
-                throw new Error(`Unable to move/copy when source '${this.resourceForError(source)}' is parent of target '${this.resourceForError(target)}'.`);
+                throw new Error(nls.localizeByDefault("Unable to move/copy when source '{0}' is parent of target '{1}'.", this.resourceForError(source), this.resourceForError(target)));
             }
         }
 
@@ -1249,7 +1250,7 @@ export class FileService {
             if (sourceProvider === targetProvider) {
                 const isPathCaseSensitive = !!(sourceProvider.capabilities & FileSystemProviderCapabilities.PathCaseSensitive);
                 if (source.isEqualOrParent(target, isPathCaseSensitive)) {
-                    throw new Error(`Unable to move/copy '${this.resourceForError(source)}' into '${this.resourceForError(target)}' since a file would replace the folder it is contained in.`);
+                    throw new Error(nls.localizeByDefault("Unable to move/copy '{0}' into '{1}' since a file would replace the folder it is contained in.", this.resourceForError(source), this.resourceForError(target)));
                 }
             }
         }
@@ -1287,7 +1288,7 @@ export class FileService {
             try {
                 const stat = await provider.stat(directory);
                 if ((stat.type & FileType.Directory) === 0) {
-                    throw new Error(`Unable to create folder ${this.resourceForError(directory)} that already exists but is not a directory`);
+                    throw new Error(nls.localizeByDefault("Unable to create folder '{0}' that already exists but is not a directory", this.resourceForError(directory)));
                 }
 
                 break; // we have hit a directory that exists -> good
@@ -1352,13 +1353,13 @@ export class FileService {
         // Validate trash support
         const useTrash = !!options?.useTrash;
         if (useTrash && !(provider.capabilities & FileSystemProviderCapabilities.Trash)) {
-            throw new Error(`Unable to delete file '${this.resourceForError(resource)}' via trash because provider does not support it.`);
+            throw new Error(nls.localizeByDefault("Unable to delete file '{0}' via trash because provider does not support it.", this.resourceForError(resource)));
         }
 
         // Validate delete
         const exists = await this.exists(resource);
         if (!exists) {
-            throw new FileOperationError(`Unable to delete non-existing file '${this.resourceForError(resource)}'`, FileOperationResult.FILE_NOT_FOUND);
+            throw new FileOperationError(nls.localizeByDefault("Unable to delete non-existing file '{0}'", this.resourceForError(resource)), FileOperationResult.FILE_NOT_FOUND);
         }
 
         // Validate recursive
@@ -1366,7 +1367,7 @@ export class FileService {
         if (!recursive && exists) {
             const stat = await this.resolve(resource);
             if (stat.isDirectory && Array.isArray(stat.children) && stat.children.length > 0) {
-                throw new Error(`Unable to delete non-empty folder '${this.resourceForError(resource)}'.`);
+                throw new Error(nls.localizeByDefault("Unable to delete non-empty folder '{0}'.", this.resourceForError(resource)));
             }
         }
 
@@ -1670,7 +1671,7 @@ export class FileService {
 
     protected throwIfFileSystemIsReadonly<T extends FileSystemProvider>(provider: T, resource: URI): T {
         if (provider.capabilities & FileSystemProviderCapabilities.Readonly) {
-            throw new FileOperationError(`Unable to modify readonly file ${this.resourceForError(resource)}`, FileOperationResult.FILE_PERMISSION_DENIED);
+            throw new FileOperationError(nls.localizeByDefault("Unable to modify readonly file '{0}'", this.resourceForError(resource)), FileOperationResult.FILE_PERMISSION_DENIED);
         }
 
         return provider;
@@ -1699,41 +1700,47 @@ export class FileService {
 
     async runFileOperationParticipants(target: URI, source: URI | undefined, operation: FileOperation): Promise<void> {
         const participantsTimeout = this.preferences['files.participants.timeout'];
-        if (participantsTimeout <= 0) {
+        if (participantsTimeout <= 0 || this.participants.length === 0) {
             return;
         }
 
         const cancellationTokenSource = new CancellationTokenSource();
 
-        return this.progressService.withProgress(this.progressLabel(operation), 'window', async () => {
-            for (const participant of this.participants) {
-                if (cancellationTokenSource.token.isCancellationRequested) {
-                    break;
-                }
+        return this.progressService.withProgress(
+            this.progressLabel(operation),
+            'notification',
+            async () => {
+                for (const participant of this.participants) {
+                    if (cancellationTokenSource.token.isCancellationRequested) {
+                        break;
+                    }
 
-                try {
-                    const promise = participant.participate(target, source, operation, participantsTimeout, cancellationTokenSource.token);
-                    await Promise.race([
-                        promise,
-                        timeout(participantsTimeout, cancellationTokenSource.token).then(() => cancellationTokenSource.dispose(), () => { /* no-op if cancelled */ })
-                    ]);
-                } catch (err) {
-                    console.warn(err);
+                    try {
+                        const promise = participant.participate(target, source, operation, participantsTimeout, cancellationTokenSource.token);
+                        await Promise.race([
+                            promise,
+                            timeout(participantsTimeout, cancellationTokenSource.token).then(() => cancellationTokenSource.dispose(), () => { /* no-op if cancelled */ })
+                        ]);
+                    } catch (err) {
+                        console.warn(err);
+                    }
                 }
-            }
-        });
+            },
+            () => {
+                cancellationTokenSource.cancel();
+            });
     }
 
     private progressLabel(operation: FileOperation): string {
         switch (operation) {
             case FileOperation.CREATE:
-                return "Running 'File Create' participants...";
+                return nls.localizeByDefault("Running 'File Create' participants...");
             case FileOperation.MOVE:
-                return "Running 'File Rename' participants...";
+                return nls.localizeByDefault("Running 'File Rename' participants...");
             case FileOperation.COPY:
-                return "Running 'File Copy' participants...";
+                return nls.localizeByDefault("Running 'File Copy' participants...");
             case FileOperation.DELETE:
-                return "Running 'File Delete' participants...";
+                return nls.localizeByDefault("Running 'File Delete' participants...");
         }
     }
 

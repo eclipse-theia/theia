@@ -1728,6 +1728,11 @@ export module '@theia/plugin' {
     export interface FileWillCreateEvent {
 
         /**
+         * A cancellation token.
+         */
+        readonly token: CancellationToken;
+
+        /**
          * The files that are going to be created.
          */
         readonly files: ReadonlyArray<Uri>;
@@ -1783,6 +1788,11 @@ export module '@theia/plugin' {
     export interface FileWillDeleteEvent {
 
         /**
+         * A cancellation token.
+         */
+        readonly token: CancellationToken;
+
+        /**
          * The files that are going to be deleted.
          */
         readonly files: ReadonlyArray<Uri>;
@@ -1836,6 +1846,11 @@ export module '@theia/plugin' {
      * thenable that resolves to a {@link WorkspaceEdit workspace edit}.
      */
     export interface FileWillRenameEvent {
+
+        /**
+         * A cancellation token.
+         */
+        readonly token: CancellationToken;
 
         /**
          * The files that are going to be renamed.
