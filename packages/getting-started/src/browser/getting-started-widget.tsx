@@ -76,6 +76,7 @@ export class GettingStartedWidget extends ReactWidget {
      * Collection of useful links to display for end users.
      */
     protected readonly documentationUrl = 'https://www.theia-ide.org/docs/';
+    protected readonly compatibilityUrl = 'https://eclipse-theia.github.io/vscode-theia-comparator/status.html';
     protected readonly extensionUrl = 'https://www.theia-ide.org/docs/authoring_extensions';
     protected readonly pluginUrl = 'https://www.theia-ide.org/docs/authoring_plugins';
 
@@ -297,6 +298,15 @@ export class GettingStartedWidget extends ReactWidget {
                     onClick={() => this.doOpenExternalLink(this.documentationUrl)}
                     onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.documentationUrl)}>
                     {nls.localizeByDefault('Documentation')}
+                </a>
+            </div>
+            <div className='gs-action-container'>
+                <a
+                    role={'button'}
+                    tabIndex={0}
+                    onClick={() => this.doOpenExternalLink(this.compatibilityUrl)}
+                    onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.compatibilityUrl)}>
+                    {nls.localize('theia/getting-started/apiComparator', 'VS Code API Compatibility')}
                 </a>
             </div>
             <div className='gs-action-container'>
