@@ -132,23 +132,23 @@ export class RpcProtocol {
         // The last element of the request args might be a cancellation token. As these tokens are not serializable we have to remove it from the
         // args array and the `CANCELLATION_TOKEN_KEY` string instead.
         const cancellationToken: CancellationToken | undefined = args.length && CancellationToken.is(args[args.length - 1]) ? args.pop() : undefined;
-        if (cancellationToken && cancellationToken.isCancellationRequested) {
-            return Promise.reject(this.cancelError());
-        }
 
         if (cancellationToken) {
             args.push(RpcProtocol.CANCELLATION_TOKEN_KEY);
-            cancellationToken.onCancellationRequested(() => {
-                this.sendCancel(id);
-                this.pendingRequests.get(id)?.reject(this.cancelError());
-            }
-            );
         }
+
         this.pendingRequests.set(id, reply);
 
         const output = this.channel.getWriteBuffer();
         this.encoder.request(output, id, method, args);
         output.commit();
+
+        if (cancellationToken?.isCancellationRequested) {
+            this.sendCancel(id);
+        } else {
+            cancellationToken?.onCancellationRequested(() => this.sendCancel(id));
+        }
+
         return reply.promise;
     }
 
@@ -162,12 +162,6 @@ export class RpcProtocol {
         const output = this.channel.getWriteBuffer();
         this.encoder.cancel(output, requestId);
         output.commit();
-    }
-
-    cancelError(): Error {
-        const error = new Error('"Request has already been canceled by the sender"');
-        error.name = 'Cancel';
-        return error;
     }
 
     protected handleCancel(id: number): void {
