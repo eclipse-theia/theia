@@ -582,8 +582,16 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Folding Range Provider begin
     registerFoldingRangeProvider(selector: theia.DocumentSelector, provider: theia.FoldingRangeProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new FoldingProviderAdapter(provider, this.documents));
-        this.proxy.$registerFoldingRangeProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
-        return this.createDisposable(callId);
+        const eventHandle = typeof provider.onDidChangeFoldingRanges === 'function' ? this.nextCallId() : undefined;
+
+        this.proxy.$registerFoldingRangeProvider(callId, pluginInfo, this.transformDocumentSelector(selector), eventHandle);
+        let result = this.createDisposable(callId);
+
+        if (eventHandle !== undefined) {
+            const subscription = provider.onDidChangeFoldingRanges!(() => this.proxy.$emitFoldingRangeEvent(eventHandle));
+            result = Disposable.from(result, subscription);
+        }
+        return result;
     }
 
     $provideFoldingRange(
