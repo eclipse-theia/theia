@@ -356,8 +356,14 @@ export interface CodeAction {
     isPreferred?: boolean;
 }
 
+export enum CodeActionTriggerKind {
+    Invoke = 1,
+    Automatic = 2,
+}
+
 export interface CodeActionContext {
     only?: string;
+    trigger: CodeActionTriggerKind
 }
 
 export type CodeActionProviderDocumentation = ReadonlyArray<{ command: Command, kind: string }>;
