@@ -3240,3 +3240,42 @@ export enum InputBoxValidationSeverity {
 }
 
 // #endregion
+
+// #region Tab Inputs
+
+export class TextTabInput {
+    constructor(readonly uri: URI) { }
+}
+
+export class TextDiffTabInput {
+    constructor(readonly original: URI, readonly modified: URI) { }
+}
+
+export class TextMergeTabInput {
+    constructor(readonly base: URI, readonly input1: URI, readonly input2: URI, readonly result: URI) { }
+}
+
+export class CustomEditorTabInput {
+    constructor(readonly uri: URI, readonly viewType: string) { }
+}
+
+export class WebviewEditorTabInput {
+    constructor(readonly viewType: string) { }
+}
+
+export class NotebookEditorTabInput {
+    constructor(readonly uri: URI, readonly notebookType: string) { }
+}
+
+export class NotebookDiffEditorTabInput {
+    constructor(readonly original: URI, readonly modified: URI, readonly notebookType: string) { }
+}
+
+export class TerminalEditorTabInput {
+    constructor() { }
+}
+export class InteractiveWindowInput {
+    constructor(readonly uri: URI, readonly inputBoxUri: URI) { }
+}
+
+// #endregion
