@@ -584,6 +584,16 @@ export namespace SymbolKind {
     }
 }
 
+export function toCodeActionTriggerKind(triggerKind: model.CodeActionTriggerKind): types.CodeActionTriggerKind  {
+    switch (triggerKind) {
+        case model.CodeActionTriggerKind.Invoke:
+            return types.CodeActionTriggerKind.Invoke;
+
+        case model.CodeActionTriggerKind.Automatic:
+            return types.CodeActionTriggerKind.Automatic;
+    }
+}
+
 export function fromDocumentSymbol(info: theia.DocumentSymbol): model.DocumentSymbol {
     const result: model.DocumentSymbol = {
         name: info.name,

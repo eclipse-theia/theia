@@ -61,7 +61,8 @@ export class CodeActionAdapter {
 
         const codeActionContext: theia.CodeActionContext = {
             diagnostics: allDiagnostics,
-            only: context.only ? new CodeActionKind(context.only) : undefined
+            only: context.only ? new CodeActionKind(context.only) : undefined,
+            triggerKind: Converter.toCodeActionTriggerKind(context.trigger)
         };
 
         const commandsOrActions = await this.provider.provideCodeActions(doc, ran, codeActionContext, token);

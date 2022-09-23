@@ -69,6 +69,7 @@ import { LanguageSelector, RelativePattern } from '@theia/editor/lib/common/lang
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
 import { EvaluatableExpression, EvaluatableExpressionProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { CodeActionTriggerKind } from '../../plugin/types-impl';
 
 /**
  * @monaco-uplift The public API declares these functions as (languageId: string, service).
@@ -782,7 +783,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         rangeOrSelection: Range, context: monaco.languages.CodeActionContext,
         token: monaco.CancellationToken): Promise<monaco.languages.CodeActionList | monaco.languages.CodeActionList> {
         const actions = await this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, {
-            ...context
+            ...context,
+            // the current version of monaco.languages.CodeActionContext has no CodeActionTriggerKind
+            trigger: CodeActionTriggerKind.Automatic
         }, token);
         if (!actions) {
             return undefined!;
