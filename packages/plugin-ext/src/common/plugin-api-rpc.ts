@@ -1919,6 +1919,128 @@ export interface CommentsMain {
     $onDidCommentThreadsChange(handle: number, event: CommentThreadChangedEvent): void;
 }
 
+// #region
+
+export const enum TabInputKind {
+    UnknownInput,
+    TextInput,
+    TextDiffInput,
+    TextMergeInput,
+    NotebookInput,
+    NotebookDiffInput,
+    CustomEditorInput,
+    WebviewEditorInput,
+    TerminalEditorInput,
+    InteractiveEditorInput,
+}
+
+export interface UnknownInputDto {
+    kind: TabInputKind.UnknownInput;
+}
+
+export interface TextInputDto {
+    kind: TabInputKind.TextInput;
+    uri: UriComponents;
+}
+
+export interface TextDiffInputDto {
+    kind: TabInputKind.TextDiffInput;
+    original: UriComponents;
+    modified: UriComponents;
+}
+
+export interface TextMergeInputDto {
+    kind: TabInputKind.TextMergeInput;
+    base: UriComponents;
+    input1: UriComponents;
+    input2: UriComponents;
+    result: UriComponents;
+}
+
+export interface NotebookInputDto {
+    kind: TabInputKind.NotebookInput;
+    notebookType: string;
+    uri: UriComponents;
+}
+
+export interface NotebookDiffInputDto {
+    kind: TabInputKind.NotebookDiffInput;
+    notebookType: string;
+    original: UriComponents;
+    modified: UriComponents;
+}
+
+export interface CustomInputDto {
+    kind: TabInputKind.CustomEditorInput;
+    viewType: string;
+    uri: UriComponents;
+}
+
+export interface WebviewInputDto {
+    kind: TabInputKind.WebviewEditorInput;
+    viewType: string;
+}
+
+export interface InteractiveEditorInputDto {
+    kind: TabInputKind.InteractiveEditorInput;
+    uri: UriComponents;
+    inputBoxUri: UriComponents;
+}
+
+export interface TabInputDto {
+    kind: TabInputKind.TerminalEditorInput;
+}
+
+export type EditorGroupColumn = number;
+export type AnyInputDto = UnknownInputDto | TextInputDto | TextDiffInputDto | TextMergeInputDto | NotebookInputDto | NotebookDiffInputDto | CustomInputDto | WebviewInputDto | InteractiveEditorInputDto | TabInputDto;
+
+export interface TabGroupDto {
+    isActive: boolean;
+    viewColumn: EditorGroupColumn;
+    tabs: TabDto[];
+    groupId: number;
+}
+
+export const enum TabModelOperationKind {
+    TAB_OPEN,
+    TAB_CLOSE,
+    TAB_UPDATE,
+    TAB_MOVE
+}
+
+export interface TabOperation {
+    readonly kind: TabModelOperationKind.TAB_OPEN | TabModelOperationKind.TAB_CLOSE | TabModelOperationKind.TAB_UPDATE | TabModelOperationKind.TAB_MOVE;
+    readonly index: number;
+    readonly tabDto: TabDto;
+    readonly groupId: number;
+    readonly oldIndex?: number;
+}
+
+export interface TabDto {
+    id: string;
+    label: string;
+    input: any;
+    editorId?: string;
+    isActive: boolean;
+    isPinned: boolean;
+    isPreview: boolean;
+    isDirty: boolean;
+}
+
+export interface TabsExt {
+    $acceptEditorTabModel(tabGroups: TabGroupDto[]): void;
+    $acceptTabGroupUpdate(groupDto: TabGroupDto): void;
+    $acceptTabOperation(operation: TabOperation): void;
+}
+
+export interface TabsMain {
+    $moveTab(tabId: string, index: number, viewColumn: EditorGroupColumn, preserveFocus?: boolean): void;
+    $closeTab(tabIds: string[], preserveFocus?: boolean): Promise<boolean>;
+    $closeGroup(groupIds: number[], preservceFocus?: boolean): Promise<boolean>;
+}
+
+// endregion
+
 export const PLUGIN_RPC_CONTEXT = {
     AUTHENTICATION_MAIN: <ProxyIdentifier<AuthenticationMain>>createProxyIdentifier<AuthenticationMain>('AuthenticationMain'),
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
@@ -1952,7 +2074,8 @@ export const PLUGIN_RPC_CONTEXT = {
     LABEL_SERVICE_MAIN: <ProxyIdentifier<LabelServiceMain>>createProxyIdentifier<LabelServiceMain>('LabelServiceMain'),
     TIMELINE_MAIN: <ProxyIdentifier<TimelineMain>>createProxyIdentifier<TimelineMain>('TimelineMain'),
     THEMING_MAIN: <ProxyIdentifier<ThemingMain>>createProxyIdentifier<ThemingMain>('ThemingMain'),
-    COMMENTS_MAIN: <ProxyIdentifier<CommentsMain>>createProxyIdentifier<CommentsMain>('CommentsMain')
+    COMMENTS_MAIN: <ProxyIdentifier<CommentsMain>>createProxyIdentifier<CommentsMain>('CommentsMain'),
+    TABS_MAIN: <ProxyIdentifier<TabsMain>>createProxyIdentifier<TabsMain>('TabsMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -1986,7 +2109,8 @@ export const MAIN_RPC_CONTEXT = {
     LABEL_SERVICE_EXT: createProxyIdentifier<LabelServiceExt>('LabelServiceExt'),
     TIMELINE_EXT: createProxyIdentifier<TimelineExt>('TimeLineExt'),
     THEMING_EXT: createProxyIdentifier<ThemingExt>('ThemingExt'),
-    COMMENTS_EXT: createProxyIdentifier<CommentsExt>('CommentsExt')
+    COMMENTS_EXT: createProxyIdentifier<CommentsExt>('CommentsExt'),
+    TABS_EXT: createProxyIdentifier<TabsExt>('TabsExt')
 };
 
 export interface TasksExt {

@@ -116,3 +116,14 @@ export function isUndefined(obj: any): obj is undefined {
 export function isUndefinedOrNull(obj: any): obj is undefined | null {
     return isUndefined(obj) || obj === null; // eslint-disable-line no-null/no-null
 }
+
+/**
+ * Asserts that the argument passed in is neither undefined nor null.
+ */
+export function assertIsDefined<T>(arg: T | null | undefined): T {
+    if (isUndefinedOrNull(arg)) {
+        throw new Error('Assertion Failed: argument is undefined or null');
+    }
+
+    return arg;
+}

@@ -1298,6 +1298,28 @@ export namespace ThemableDecorationAttachmentRenderOptions {
     }
 }
 
+export namespace ViewColumn {
+    export function from(column?: theia.ViewColumn): rpc.EditorGroupColumn {
+        if (typeof column === 'number' && column >= types.ViewColumn.One) {
+            return column - 1; // adjust zero index (ViewColumn.ONE => 0)
+        }
+
+        if (column === types.ViewColumn.Beside) {
+            return SIDE_GROUP;
+        }
+
+        return ACTIVE_GROUP; // default is always the active group
+    }
+
+    export function to(position: rpc.EditorGroupColumn): theia.ViewColumn {
+        if (typeof position === 'number' && position >= 0) {
+            return position + 1; // adjust to index (ViewColumn.ONE => 1)
+        }
+
+        throw new Error('invalid \'EditorGroupColumn\'');
+    }
+}
+
 export function pathOrURIToURI(value: string | URI): URI {
     if (typeof value === 'undefined') {
         return value;
