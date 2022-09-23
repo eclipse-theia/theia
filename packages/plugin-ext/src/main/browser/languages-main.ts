@@ -784,6 +784,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         token: monaco.CancellationToken): Promise<monaco.languages.CodeActionList | monaco.languages.CodeActionList> {
         const actions = await this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, {
             ...context,
+            // @monaco-uplift
             // the current version of monaco.languages.CodeActionContext has no CodeActionTriggerKind
             trigger: CodeActionTriggerKind.Automatic
         }, token);
