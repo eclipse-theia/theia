@@ -18,6 +18,8 @@
 
 import { AbstractGenerator, GeneratorOptions } from './abstract-generator';
 import { existsSync, readFileSync } from 'fs';
+import { FrontendModuleDescription } from '@theia/application-package';
+import * as os from 'os';
 
 export class FrontendGenerator extends AbstractGenerator {
 
@@ -26,13 +28,14 @@ export class FrontendGenerator extends AbstractGenerator {
         await this.write(this.pck.frontend('index.html'), this.compileIndexHtml(frontendModules));
         await this.write(this.pck.frontend('index.js'), this.compileIndexJs(frontendModules));
         await this.write(this.pck.frontend('secondary-window.html'), this.compileSecondaryWindowHtml());
+        await this.write(this.pck.frontend('secondary-index.js'), this.compileSecondaryIndexJs(frontendModules));
         if (this.pck.isElectron()) {
             const electronMainModules = this.pck.targetElectronMainModules;
             await this.write(this.pck.frontend('electron-main.js'), this.compileElectronMain(electronMainModules));
         }
     }
 
-    protected compileIndexPreload(frontendModules: Map<string, string>): string {
+    protected compileIndexPreload(frontendModules: Map<string, FrontendModuleDescription>): string {
         const template = this.pck.props.generator.config.preloadTemplate;
         if (!template) {
             return '';
@@ -46,7 +49,7 @@ export class FrontendGenerator extends AbstractGenerator {
         return template;
     }
 
-    protected compileIndexHtml(frontendModules: Map<string, string>): string {
+    protected compileIndexHtml(frontendModules: Map<string, FrontendModuleDescription>): string {
         return `<!DOCTYPE html>
 <html lang="en">
 
@@ -61,7 +64,7 @@ export class FrontendGenerator extends AbstractGenerator {
 </html>`;
     }
 
-    protected compileIndexHead(frontendModules: Map<string, string>): string {
+    protected compileIndexHead(frontendModules: Map<string, FrontendModuleDescription>): string {
         return `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -69,7 +72,7 @@ export class FrontendGenerator extends AbstractGenerator {
   <title>${this.pck.props.frontend.config.applicationName}</title>`;
     }
 
-    protected compileIndexJs(frontendModules: Map<string, string>): string {
+    protected compileIndexJs(frontendModules: Map<string, FrontendModuleDescription>): string {
         const compiledModuleImports = this.compileFrontendModuleImports(frontendModules)
             // fix the generated indentation
             .replace(/^    /g, '        ');
@@ -217,12 +220,13 @@ module.exports = Promise.resolve()${this.compileElectronMainModuleImports(electr
     html,
     head,
     body,
-    #widget-host,
-    .p-Widget {
+    .secondary-widget-root,
+    #widget-host {
         width: 100% !important;
         height: 100% !important;
     }
     </style>
+    <link rel="stylesheet" href="./secondary-window.css">
     <script>
     window.addEventListener('message', e => {
         // Only process messages from Theia main window
@@ -239,5 +243,31 @@ module.exports = Promise.resolve()${this.compileElectronMainModuleImports(electr
 </body>
 
 </html>`;
+    }
+
+    protected compileSecondaryModuleImports(frontendModules: Map<string, FrontendModuleDescription>): string {
+        const lines = Array.from(frontendModules.entries()).filter(([moduleName, config]) => config.includeInSecondaryWindow)
+            .map(([moduleName, config]) => `    container.load(require('${config.path}').default);`);
+        return os.EOL + lines.join(os.EOL);
+    }
+
+    protected compileSecondaryIndexJs(frontendModules: Map<string, FrontendModuleDescription>): string {
+        const compiledModuleImports = this.compileSecondaryModuleImports(frontendModules)
+            // fix the generated indentation
+            .replace(/^    /g, '        ');
+        return `\
+// @ts-check
+require('reflect-metadata');
+const { Container } = require('inversify');
+
+const preloader = require('@theia/core/lib/browser/preloader');
+
+module.exports = Promise.resolve().then(() => {
+    const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');
+    const container = new Container();
+    container.load(frontendApplicationModule);
+    ${compiledModuleImports}
+});
+`;
     }
 }

@@ -17,7 +17,10 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/terminal-frontend-module",
+      "frontend": {
+        "path": "lib/browser/terminal-frontend-module",
+        "includeInSecondaryWindow": true
+      },
       "backend": "lib/node/terminal-backend-module"
     }
   ],

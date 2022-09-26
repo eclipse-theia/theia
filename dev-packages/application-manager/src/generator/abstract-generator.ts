@@ -16,7 +16,7 @@
 
 import * as os from 'os';
 import * as fs from 'fs-extra';
-import { ApplicationPackage } from '@theia/application-package';
+import { ApplicationPackage, FrontendModuleDescription } from '@theia/application-package';
 
 export interface GeneratorOptions {
     mode?: 'development' | 'production'
@@ -30,9 +30,9 @@ export abstract class AbstractGenerator {
         protected options: GeneratorOptions = {}
     ) { }
 
-    protected compileFrontendModuleImports(modules: Map<string, string>): string {
+    protected compileFrontendModuleImports(modules: Map<string, FrontendModuleDescription>): string {
         const splitFrontend = this.options.splitFrontend ?? this.options.mode !== 'production';
-        return this.compileModuleImports(modules, splitFrontend ? 'import' : 'require');
+        return this.compileModuleImports(new Map([...modules.entries()].map(([key, module]) => [key, module.path])), splitFrontend ? 'import' : 'require');
     }
 
     protected compileBackendModuleImports(modules: Map<string, string>): string {

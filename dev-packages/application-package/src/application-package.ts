@@ -32,6 +32,11 @@ export class ApplicationPackageOptions {
     readonly appTarget?: ApplicationProps.Target;
 }
 
+export interface FrontendModuleDescription {
+    readonly path: string,
+    readonly includeInSecondaryWindow: boolean
+}
+
 export type ApplicationModuleResolver = (modulePath: string) => string;
 
 export class ApplicationPackage {
@@ -89,8 +94,8 @@ export class ApplicationPackage {
         return this._pck = readJsonFile(this.packagePath);
     }
 
-    protected _frontendModules: Map<string, string> | undefined;
-    protected _frontendElectronModules: Map<string, string> | undefined;
+    protected _frontendModules: Map<string, FrontendModuleDescription> | undefined;
+    protected _frontendElectronModules: Map<string, FrontendModuleDescription> | undefined;
     protected _backendModules: Map<string, string> | undefined;
     protected _backendElectronModules: Map<string, string> | undefined;
     protected _electronMainModules: Map<string, string> | undefined;
@@ -132,52 +137,83 @@ export class ApplicationPackage {
         return new ExtensionPackage(raw, this.registry, options);
     }
 
-    get frontendModules(): Map<string, string> {
+    get frontendModules(): Map<string, FrontendModuleDescription> {
         if (!this._frontendModules) {
-            this._frontendModules = this.computeModules('frontend');
+            this._frontendModules = this.computeFrontendModules('frontend');
         }
         return this._frontendModules;
     }
 
-    get frontendElectronModules(): Map<string, string> {
+    get frontendElectronModules(): Map<string, FrontendModuleDescription> {
         if (!this._frontendElectronModules) {
-            this._frontendElectronModules = this.computeModules('frontendElectron', 'frontend');
+            this._frontendElectronModules = this.computeFrontendModules('frontendElectron', 'frontend');
         }
         return this._frontendElectronModules;
     }
 
     get backendModules(): Map<string, string> {
         if (!this._backendModules) {
-            this._backendModules = this.computeModules('backend');
+            this._backendModules = this.computeBackendModules('backend');
         }
         return this._backendModules;
     }
 
     get backendElectronModules(): Map<string, string> {
         if (!this._backendElectronModules) {
-            this._backendElectronModules = this.computeModules('backendElectron', 'backend');
+            this._backendElectronModules = this.computeBackendModules('backendElectron', 'backend');
         }
         return this._backendElectronModules;
     }
 
     get electronMainModules(): Map<string, string> {
         if (!this._electronMainModules) {
-            this._electronMainModules = this.computeModules('electronMain');
+            this._electronMainModules = this.computeBackendModules('electronMain');
         }
         return this._electronMainModules;
     }
 
-    protected computeModules<P extends keyof Extension, S extends keyof Extension = P>(primary: P, secondary?: S): Map<string, string> {
-        const result = new Map<string, string>();
+    protected computeBackendModules<P extends keyof Extension, S extends keyof Extension = P>(primary: P, secondary?: S): Map<string, string> {
+        return this.computeModules((extensionPackage, config) => {
+            if (typeof config === 'string') {
+                return paths.join(extensionPackage.name, config).split(paths.sep).join('/');
+            }
+            return undefined;
+        }, primary, secondary);
+    }
+
+    protected computeFrontendModules<P extends keyof Extension, S extends keyof Extension = P>(primary: P, secondary?: S): Map<string, FrontendModuleDescription> {
+        return this.computeModules((extensionPackage, config) => {
+            if (typeof config === 'string') {
+                return {
+                    path: paths.join(extensionPackage.name, config).split(paths.sep).join('/'),
+                    includeInSecondaryWindow: false
+                };
+            } else if (config && typeof config === 'object') {
+                const { path, includeInSecondaryWindow } = <FrontendModuleDescription>config;
+                if (typeof path === 'string') {
+                    return {
+                        path: paths.join(extensionPackage.name, path).split(paths.sep).join('/'),
+                        includeInSecondaryWindow: includeInSecondaryWindow || false
+                    };
+                }
+            }
+            return undefined;
+        }, primary, secondary);
+    }
+
+    protected computeModules<T, P extends keyof Extension, S extends keyof Extension = P>(computeConfig: (ext: ExtensionPackage, config: unknown) => T | undefined,
+        primary: P, secondary?: S):
+        Map<string, T> {
+        const result = new Map<string, T>();
         let moduleIndex = 1;
         for (const extensionPackage of this.extensionPackages) {
             const extensions = extensionPackage.theiaExtensions;
             if (extensions) {
                 for (const extension of extensions) {
-                    const modulePath = extension[primary] || (secondary && extension[secondary]);
-                    if (typeof modulePath === 'string') {
-                        const extensionPath = paths.join(extensionPackage.name, modulePath).split(paths.sep).join('/');
-                        result.set(`${primary}_${moduleIndex}`, extensionPath);
+                    const configMarkup = extension[primary] || (secondary && extension[secondary]);
+                    const config = computeConfig(extensionPackage, configMarkup);
+                    if (config) {
+                        result.set(`${primary}_${moduleIndex}`, config);
                         moduleIndex = moduleIndex + 1;
                     }
                 }
@@ -238,7 +274,7 @@ export class ApplicationPackage {
         return this.ifBrowser(this.backendModules, this.backendElectronModules);
     }
 
-    get targetFrontendModules(): Map<string, string> {
+    get targetFrontendModules(): Map<string, FrontendModuleDescription> {
         return this.ifBrowser(this.frontendModules, this.frontendElectronModules);
     }
 
