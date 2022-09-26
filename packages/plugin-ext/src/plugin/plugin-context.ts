@@ -130,6 +130,9 @@ import {
     CallHierarchyItem,
     CallHierarchyIncomingCall,
     CallHierarchyOutgoingCall,
+    InlayHint,
+    InlayHintLabelPart,
+    InlayHintKind,
     TypeHierarchyItem,
     TimelineItem,
     EnvironmentVariableMutatorType,
@@ -766,6 +769,10 @@ export function createAPIFactory(
             registerLinkedEditingRangeProvider(selector: theia.DocumentSelector, provider: theia.LinkedEditingRangeProvider): theia.Disposable {
                 return languagesExt.registerLinkedEditingRangeProvider(selector, provider);
             },
+            registerInlayHintsProvider(selector: theia.DocumentSelector, provider: theia.InlayHintsProvider): theia.Disposable {
+                // TODO: Stubbed, Implement me
+                return Disposable.create(() => {});
+            },
             createLanguageStatusItem(id: string, selector: theia.DocumentSelector): theia.LanguageStatusItem {
                 return languagesExt.createLanguageStatusItem(plugin, id, selector);
             }
@@ -1017,6 +1024,9 @@ export function createAPIFactory(
             CallHierarchyItem,
             CallHierarchyIncomingCall,
             CallHierarchyOutgoingCall,
+            InlayHint,
+            InlayHintLabelPart,
+            InlayHintKind,
             TypeHierarchyItem,
             TimelineItem,
             EnvironmentVariableMutatorType,
