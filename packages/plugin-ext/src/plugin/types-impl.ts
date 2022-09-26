@@ -1094,6 +1094,42 @@ export class SignatureHelp {
     }
 }
 
+export enum InlayHintKind {
+    Type = 1,
+    Parameter = 2,
+}
+
+@es5ClassCompat
+export class InlayHintLabelPart {
+
+    value: string;
+    tooltip?: string | theia.MarkdownString;
+    location?: Location;
+    command?: theia.Command;
+
+    constructor(value: string) {
+        this.value = value;
+    }
+}
+
+@es5ClassCompat
+export class InlayHint implements theia.InlayHint {
+
+    label: string | InlayHintLabelPart[];
+    tooltip?: string | theia.MarkdownString;
+    position: Position;
+    textEdits?: TextEdit[];
+    kind?: theia.InlayHintKind;
+    paddingLeft?: boolean;
+    paddingRight?: boolean;
+
+    constructor(position: Position, label: string | InlayHintLabelPart[], kind?: theia.InlayHintKind) {
+        this.position = position;
+        this.label = label;
+        this.kind = kind;
+    }
+}
+
 @es5ClassCompat
 export class Hover {
 
