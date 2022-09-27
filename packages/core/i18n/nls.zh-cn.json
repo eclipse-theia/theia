@@ -261,7 +261,7 @@
       "data": "数据",
       "decimal": "十进制",
       "diff": {
-        "label": "扩散。{0}"
+        "label": "扩散: {0}"
       },
       "diff-widget": {
         "offset-label": "{0} 偏移",
@@ -460,10 +460,10 @@
       "typeHierarchy": "类型层次结构"
     },
     "vsx-registry": {
-      "averageRating": "平均评分:{0} (满分5分",
-      "downloadCount": "下载次数。{0}",
+      "averageRating": "平均评分: {0} (满分5分)",
+      "downloadCount": "下载次数: {0}",
       "errorFetching": "取出扩展程序时出错。",
-      "license": "许可证。{0}",
+      "license": "许可证: {0}",
       "recommendedExtensions": "建议在该工作区使用的扩展名称的列表。",
       "searchPlaceholder": "在{0}中搜索扩展",
       "showRecommendedExtensions": "控制是否显示扩展建议的通知。",
