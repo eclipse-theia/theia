@@ -38,7 +38,7 @@ export interface IShellTerminalPreferences {
 export interface IShellTerminalServerOptions extends IBaseTerminalServerOptions {
     shellPreferences?: IShellTerminalPreferences,
     shell?: string,
-    args?: string[],
+    args?: string[] | string,
     rootURI?: string,
     cols?: number,
     rows?: number,

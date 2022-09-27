@@ -3071,9 +3071,10 @@ export module '@theia/plugin' {
         shellPath?: string;
 
         /**
-         * Arguments to configure executable shell. For example ["-l"] - run shell without login.
+         * Args for the custom shell executable. A string can be used on Windows only which allows
+         * specifying shell args in [command-line format](https://msdn.microsoft.com/en-au/08dfcab2-eb6e-49a4-80eb-87d4076c98c6).
          */
-        shellArgs?: string[];
+        shellArgs?: string[] | string;
 
         /**
          * Current working directory.
@@ -5026,7 +5027,7 @@ export module '@theia/plugin' {
          * @param shellPath - path to the executable shell. For example "/bin/bash", "bash", "sh".
          * @param shellArgs - arguments to configure executable shell. For example ["-l"] - run shell without login.
          */
-        export function createTerminal(name?: string, shellPath?: string, shellArgs?: string[]): Terminal;
+        export function createTerminal(name?: string, shellPath?: string, shellArgs?: string[] | string): Terminal;
 
         /**
          * Event which fires when terminal did closed. Event value contains closed terminal definition.

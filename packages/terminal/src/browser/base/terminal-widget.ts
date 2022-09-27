@@ -155,9 +155,10 @@ export interface TerminalWidgetOptions {
     readonly shellPath?: string;
 
     /**
-     * Shell arguments to executable shell, for example: [`-l`] - without login.
+     * Args for the custom shell executable. A string can be used on Windows only which allows
+     * specifying shell args in [command-line format](https://msdn.microsoft.com/en-au/08dfcab2-eb6e-49a4-80eb-87d4076c98c6).
      */
-    readonly shellArgs?: string[];
+    readonly shellArgs?: string[] | string;
 
     /**
      * Current working directory.

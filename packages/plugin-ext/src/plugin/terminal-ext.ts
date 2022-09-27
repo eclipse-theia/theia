@@ -61,7 +61,10 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         return [...this._terminals.values()];
     }
 
-    createTerminal(nameOrOptions: TerminalOptions | PseudoTerminalOptions | ExtensionTerminalOptions | (string | undefined), shellPath?: string, shellArgs?: string[]): Terminal {
+    createTerminal(
+        nameOrOptions: TerminalOptions | PseudoTerminalOptions | ExtensionTerminalOptions | (string | undefined),
+        shellPath?: string, shellArgs?: string[] | string
+    ): Terminal {
         let options: TerminalOptions;
         let pseudoTerminal: theia.Pseudoterminal | undefined = undefined;
         const id = `plugin-terminal-${UUID.uuid4()}`;
