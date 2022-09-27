@@ -12,6 +12,7 @@
 
 - [core] Added constructor injection to `ApplicationShell`: `SecondaryWindowHandler`. [#11048](https://github.com/eclipse-theia/theia/pull/11048) - Contributed on behalf of ST Microelectronics and Ericsson and by ARM and EclipseSource
 - [core] Changed type of `FrontendApplicationConfig#defaultTheme` from `string` to `DefaultTheme`. From now on, the default theme can be dispatched based on the OS theme. Use `DefaultTheme#defaultForOSTheme` to derive the `string` theme ID.
+- [plugin-ext] removed `ctrlcmd+shift+l` keybinding for `pluginsView:toggle` [#11608](https://github.com/eclipse-theia/theia/pull/11608)
 
 ## v1.29.0 - 8/25/2022
 
