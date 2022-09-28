@@ -2706,6 +2706,42 @@ export class LinkedEditingRanges {
     }
 }
 
+export enum TestRunProfileKind {
+    Run = 1,
+    Debug = 2,
+    Coverage = 3,
+}
+
+@es5ClassCompat
+export class TestTag implements theia.TestTag {
+    constructor(public readonly id: string) { }
+}
+
+@es5ClassCompat
+export class TestRunRequest implements theia.TestRunRequest {
+    constructor(
+        public readonly include: theia.TestItem[] | undefined = undefined,
+        public readonly exclude: theia.TestItem[] | undefined = undefined,
+        public readonly profile: theia.TestRunProfile | undefined = undefined,
+    ) { }
+}
+
+@es5ClassCompat
+export class TestMessage implements theia.TestMessage {
+    public expectedOutput?: string;
+    public actualOutput?: string;
+    public location?: theia.Location;
+
+    public static diff(message: string | theia.MarkdownString, expected: string, actual: string): theia.TestMessage {
+        const msg = new TestMessage(message);
+        msg.expectedOutput = expected;
+        msg.actualOutput = actual;
+        return msg;
+    }
+
+    constructor(public message: string | theia.MarkdownString) { }
+}
+
 @es5ClassCompat
 export class TimelineItem {
     timestamp: number;
