@@ -154,7 +154,11 @@ import {
     TerminalLink,
     InlayHint,
     InlayHintKind,
-    InlayHintLabelPart
+    InlayHintLabelPart,
+    TestRunProfileKind,
+    TestTag,
+    TestRunRequest,
+    TestMessage
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -184,6 +188,12 @@ import { ClipboardExt } from './clipboard-ext';
 import { WebviewsExtImpl } from './webviews';
 import { ExtHostFileSystemEventService } from './file-system-event-service-ext-impl';
 import { LabelServiceExtImpl } from '../plugin/label-service';
+import {
+    createRunProfile,
+    createTestRun,
+    testItemCollection,
+    createTestItem
+} from './stubs/tests-api';
 import { TimelineExtImpl } from './timeline';
 import { ThemingExtImpl } from './theming';
 import { CommentsExtImpl } from './comments';
@@ -792,6 +802,30 @@ export function createAPIFactory(
             }
         };
 
+        // Tests API (@stubbed)
+        // The following implementation is temporarily `@stubbed` and marked as such under `theia.d.ts`
+        const tests: typeof theia.tests = {
+            createTestController(
+                provider,
+                controllerLabel: string,
+                refreshHandler?: (
+                    token: theia.CancellationToken
+                ) => Thenable<void> | void
+            ) {
+                return {
+                    id: provider,
+                    label: controllerLabel,
+                    items: testItemCollection,
+                    refreshHandler,
+                    createRunProfile,
+                    createTestRun,
+                    createTestItem,
+                    dispose: () => undefined,
+                };
+            },
+        };
+        /* End of Tests API */
+
         const plugins: typeof theia.plugins = {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             get all(): theia.Plugin<any>[] {
@@ -938,6 +972,7 @@ export function createAPIFactory(
             debug,
             tasks,
             scm,
+            tests,
             // Types
             StatusBarAlignment: StatusBarAlignment,
             Disposable: Disposable,
@@ -1061,7 +1096,11 @@ export function createAPIFactory(
             InputBoxValidationSeverity,
             InlayHint,
             InlayHintKind,
-            InlayHintLabelPart
+            InlayHintLabelPart,
+            TestRunProfileKind,
+            TestTag,
+            TestRunRequest,
+            TestMessage
         };
     };
 }
