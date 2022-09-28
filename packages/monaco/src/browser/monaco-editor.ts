@@ -134,6 +134,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
             lightbulb: { enabled: true },
             fixedOverflowWidgets: true,
             scrollbar: {
+                ...options?.scrollbar,
                 useShadows: false,
                 verticalHasArrows: false,
                 horizontalHasArrows: false,

@@ -351,9 +351,9 @@ export class MonacoEditorProvider {
     }
 
     /** @deprecated always pass a language as an overrideIdentifier */
-    protected createOptions(prefixes: string[], uri: string): { [name: string]: any };
-    protected createOptions(prefixes: string[], uri: string, overrideIdentifier: string): { [name: string]: any };
-    protected createOptions(prefixes: string[], uri: string, overrideIdentifier?: string): { [name: string]: any } {
+    protected createOptions(prefixes: string[], uri: string): Record<string, any>;
+    protected createOptions(prefixes: string[], uri: string, overrideIdentifier: string): Record<string, any>;
+    protected createOptions(prefixes: string[], uri: string, overrideIdentifier?: string): Record<string, any> {
         const flat: Record<string, any> = {};
         for (const preferenceName of Object.keys(this.editorPreferences)) {
             flat[preferenceName] = (<any>this.editorPreferences).get({ preferenceName, overrideIdentifier }, undefined, uri);
@@ -361,7 +361,7 @@ export class MonacoEditorProvider {
         return Object.entries(flat).reduce((tree, [preferenceName, value]) => this.setOption(preferenceName, deepClone(value), prefixes, tree), {});
     }
 
-    protected setOption(preferenceName: string, value: any, prefixes: string[], options: { [name: string]: any } = {}): {
+    protected setOption(preferenceName: string, value: any, prefixes: string[], options: Record<string, any> = {}): {
         [name: string]: any;
     } {
         const optionName = this.toOptionName(preferenceName, prefixes);
@@ -376,16 +376,19 @@ export class MonacoEditorProvider {
         }
         return preferenceName;
     }
-    protected doSetOption(obj: { [name: string]: any }, value: any, names: string[], idx: number = 0): void {
-        const name = names[idx];
-        if (!obj[name]) {
-            if (names.length > (idx + 1)) {
-                obj[name] = {};
-                this.doSetOption(obj[name], value, names, (idx + 1));
+    protected doSetOption(obj: Record<string, any>, value: any, names: string[]): void {
+        for (let i = 0; i < names.length - 1; i++) {
+            const name = names[i];
+            if (obj[name] === undefined) {
+                obj = obj[name] = {};
+            } else if (typeof obj[name] !== 'object' || obj[name] === null) { // eslint-disable-line no-null/no-null
+                console.warn(`Preference (diff)editor.${names.join('.')} conflicts with another preference name.`);
+                obj = obj[name] = {};
             } else {
-                obj[name] = value;
+                obj = obj[name];
             }
         }
+        obj[names[names.length - 1]] = value;
     }
 
     getDiffNavigator(editor: TextEditor): DiffNavigator {
