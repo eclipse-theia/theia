@@ -306,7 +306,7 @@ export class GettingStartedWidget extends ReactWidget {
                     tabIndex={0}
                     onClick={() => this.doOpenExternalLink(this.compatibilityUrl)}
                     onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.compatibilityUrl)}>
-                    {nls.localize('theia/getting-started/apiComparator', 'VS Code API Compatibility')}
+                    {nls.localize('theia/getting-started/apiComparator', '{0} API Compatibility', 'VS Code')}
                 </a>
             </div>
             <div className='gs-action-container'>
