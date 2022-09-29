@@ -6,6 +6,10 @@
       "open": "Hiérarchie des appels ouverts"
     },
     "core": {
+      "about": {
+        "compatibility": "{0} Compatibilité",
+        "defaultApi": "API par défaut {0} "
+      },
       "availableLanguages": "Langues disponibles",
       "common": {
         "closeAll": "Fermer tous les onglets",
@@ -27,6 +31,7 @@
       "file": {
         "browse": "Parcourir"
       },
+      "hideViewContainer": "Cacher",
       "highlightModifiedTabs": "Contrôle si une bordure supérieure est dessinée sur les onglets d'éditeur modifiés (sales) ou non.",
       "installedLanguages": "Langues installées",
       "keybindingStatus": "{0} a été appuyé, en attendant d'autres touches.",
@@ -191,6 +196,7 @@
       "uploadedOutOf": "Téléchargé {0} sur {1}"
     },
     "getting-started": {
+      "apiComparator": "{0} Compatibilité avec l'API",
       "newExtension": "Construire une nouvelle extension",
       "newPlugin": "Créer un nouveau plugin"
     },
@@ -295,6 +301,7 @@
         "userError": "Il y a eu une erreur de récupération de la mémoire."
       },
       "memoryCategory": "Inspecteur de la mémoire",
+      "memoryInspector": "Inspecteur de la mémoire",
       "memoryTitle": "Mémoire",
       "octal": "Octal",
       "offset": "Décalage",
@@ -412,6 +419,13 @@
     "secondary-window": {
       "extract-widget": "Déplacer la vue vers une fenêtre secondaire"
     },
+    "shell-area": {
+      "bottom": "Fond",
+      "left": "Gauche",
+      "right": "Droit",
+      "secondary": "Fenêtre secondaire",
+      "top": "Haut"
+    },
     "task": {
       "attachTask": "Attacher la tâche...",
       "clearHistory": "Histoire claire",
@@ -463,6 +477,8 @@
       "averageRating": "Note moyenne : {0} sur 5",
       "downloadCount": "Compte de téléchargement : {0}",
       "errorFetching": "Erreur de récupération des extensions.",
+      "failedInstallingVSIX": "Échec de l'installation de {0} à partir de VSIX.",
+      "invalidVSIX": "Le fichier sélectionné n'est pas un plugin \"*.vsix\" valide.",
       "license": "Licence : {0}",
       "recommendedExtensions": "Une liste des noms des extensions dont l'utilisation est recommandée dans cet espace de travail.",
       "searchPlaceholder": "Rechercher les extensions dans {0}",

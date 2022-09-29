@@ -6,6 +6,10 @@
       "open": "Gerarchia delle chiamate aperte"
     },
     "core": {
+      "about": {
+        "compatibility": "{0} Compatibilità",
+        "defaultApi": "API predefinita {0} "
+      },
       "availableLanguages": "Lingue disponibili",
       "common": {
         "closeAll": "Chiudi tutte le schede",
@@ -27,6 +31,7 @@
       "file": {
         "browse": "Sfogliare"
       },
+      "hideViewContainer": "Nascondere",
       "highlightModifiedTabs": "Controlla se un bordo superiore è disegnato sulle schede dell'editor modificate (sporche) o no.",
       "installedLanguages": "Lingue installate",
       "keybindingStatus": "{0} è stato premuto, in attesa di altri tasti",
@@ -191,6 +196,7 @@
       "uploadedOutOf": "Caricato {0} su {1}"
     },
     "getting-started": {
+      "apiComparator": "{0} Compatibilità API",
       "newExtension": "Costruire una nuova estensione",
       "newPlugin": "Costruire un nuovo plugin"
     },
@@ -295,6 +301,7 @@
         "userError": "Si è verificato un errore nel recupero della memoria."
       },
       "memoryCategory": "Ispettore di memoria",
+      "memoryInspector": "Ispettore di memoria",
       "memoryTitle": "Memoria",
       "octal": "Ottale",
       "offset": "Offset",
@@ -412,6 +419,13 @@
     "secondary-window": {
       "extract-widget": "Sposta la vista nella finestra secondaria"
     },
+    "shell-area": {
+      "bottom": "Basso",
+      "left": "Sinistro",
+      "right": "Diritto",
+      "secondary": "Finestra secondaria",
+      "top": "Alto"
+    },
     "task": {
       "attachTask": "Allegare il compito...",
       "clearHistory": "Storia chiara",
@@ -463,6 +477,8 @@
       "averageRating": "Valutazione media: {0} su 5",
       "downloadCount": "Conteggio dei download: {0}",
       "errorFetching": "Errore nel recupero delle estensioni.",
+      "failedInstallingVSIX": "Impossibile installare {0} da VSIX.",
+      "invalidVSIX": "Il file selezionato non è un plugin \"*.vsix\" valido.",
       "license": "Licenza: {0}",
       "recommendedExtensions": "Una lista dei nomi delle estensioni raccomandate per l'uso in questo spazio di lavoro.",
       "searchPlaceholder": "Estensioni di ricerca in {0}",

@@ -6,6 +6,10 @@
       "open": "Nyílt felhívás hierarchia"
     },
     "core": {
+      "about": {
+        "compatibility": "{0} Kompatibilitás",
+        "defaultApi": "Alapértelmezett {0} API"
+      },
       "availableLanguages": "Elérhető nyelvek",
       "common": {
         "closeAll": "Minden lap bezárása",
@@ -27,6 +31,7 @@
       "file": {
         "browse": "Böngésszen a oldalon."
       },
+      "hideViewContainer": "Rejtsd el",
       "highlightModifiedTabs": "Szabályozza, hogy a módosított (piszkos) szerkesztő lapok felső szegélye kirajzolódjon-e vagy sem.",
       "installedLanguages": "Telepített nyelvek",
       "keybindingStatus": "{0} megnyomva, további billentyűkre várva",
@@ -191,6 +196,7 @@
       "uploadedOutOf": "Feltöltött {0} a {1}-ből {0}"
     },
     "getting-started": {
+      "apiComparator": "{0} API kompatibilitás",
       "newExtension": "Új bővítmény építése",
       "newPlugin": "Egy új plugin építése"
     },
@@ -295,6 +301,7 @@
         "userError": "Hiba történt a memória lekérdezésében."
       },
       "memoryCategory": "Memória Ellenőr",
+      "memoryInspector": "Memória Ellenőr",
       "memoryTitle": "Memória",
       "octal": "Octal",
       "offset": "Offset",
@@ -412,6 +419,13 @@
     "secondary-window": {
       "extract-widget": "Nézet áthelyezése másodlagos ablakba"
     },
+    "shell-area": {
+      "bottom": "Alul",
+      "left": "Balra",
+      "right": "Jobbra",
+      "secondary": "Másodlagos ablak",
+      "top": "Tetejére"
+    },
     "task": {
       "attachTask": "Feladat csatolása...",
       "clearHistory": "Történelem törlése",
@@ -463,6 +477,8 @@
       "averageRating": "Átlagos értékelés: {0} az 5-ből",
       "downloadCount": "Letöltési szám: {0}",
       "errorFetching": "Hiba a kiterjesztések lekérdezésében.",
+      "failedInstallingVSIX": "Nem sikerült telepíteni a {0} oldalt a VSIX-ből.",
+      "invalidVSIX": "A kiválasztott fájl nem érvényes \"*.vsix\" bővítmény.",
       "license": "Engedély: {0}",
       "recommendedExtensions": "A munkaterületre ajánlott kiterjesztések neveinek listája.",
       "searchPlaceholder": "Keresés kiterjesztések {0}",

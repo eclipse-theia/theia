@@ -6,6 +6,10 @@
       "open": "Open Call Hierarchy"
     },
     "core": {
+      "about": {
+        "compatibility": "{0} Compatibility",
+        "defaultApi": "Default {0} API"
+      },
       "availableLanguages": "Available languages",
       "common": {
         "closeAll": "Close All Tabs",
@@ -27,6 +31,7 @@
       "file": {
         "browse": "Browse"
       },
+      "hideViewContainer": "Hide",
       "highlightModifiedTabs": "Controls whether a top border is drawn on modified (dirty) editor tabs or not.",
       "installedLanguages": "Installed languages",
       "keybindingStatus": "{0} was pressed, waiting for more keys",
@@ -191,6 +196,7 @@
       "uploadedOutOf": "Uploaded {0} out of {1}"
     },
     "getting-started": {
+      "apiComparator": "{0} API Compatibility",
       "newExtension": "Building a New Extension",
       "newPlugin": "Building a New Plugin"
     },
@@ -295,6 +301,7 @@
         "userError": "There was an error fetching memory."
       },
       "memoryCategory": "Memory Inspector",
+      "memoryInspector": "Memory Inspector",
       "memoryTitle": "Memory",
       "octal": "Octal",
       "offset": "Offset",
@@ -412,6 +419,13 @@
     "secondary-window": {
       "extract-widget": "Move View to Secondary Window"
     },
+    "shell-area": {
+      "bottom": "Bottom",
+      "left": "Left",
+      "right": "Right",
+      "secondary": "Secondary Window",
+      "top": "Top"
+    },
     "task": {
       "attachTask": "Attach Task...",
       "clearHistory": "Clear History",
@@ -463,6 +477,8 @@
       "averageRating": "Average rating: {0} out of 5",
       "downloadCount": "Download count: {0}",
       "errorFetching": "Error fetching extensions.",
+      "failedInstallingVSIX": "Failed to install {0} from VSIX.",
+      "invalidVSIX": "The selected file is not a valid \"*.vsix\" plugin.",
       "license": "License: {0}",
       "recommendedExtensions": "A list of the names of extensions recommended for use in this workspace.",
       "searchPlaceholder": "Search Extensions in {0}",

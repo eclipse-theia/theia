@@ -6,6 +6,10 @@
       "open": "オープンコールヒエラルキー"
     },
     "core": {
+      "about": {
+        "compatibility": "{0} 互換性",
+        "defaultApi": "デフォルト{0} API"
+      },
       "availableLanguages": "使用可能な言語",
       "common": {
         "closeAll": "すべてのタブを閉じる",
@@ -27,6 +31,7 @@
       "file": {
         "browse": "ブラウズ"
       },
+      "hideViewContainer": "隠す",
       "highlightModifiedTabs": "モディファイド(ダーティ)エディタのタブにトップボーダーを描画するかどうかを制御します。",
       "installedLanguages": "インストールされている言語",
       "keybindingStatus": "{0}が押されたので、さらにキーを待つ",
@@ -191,6 +196,7 @@
       "uploadedOutOf": "{1}のうち{0}をアップロードしました。"
     },
     "getting-started": {
+      "apiComparator": "{0} API互換性",
       "newExtension": "新しいエクステンションの構築",
       "newPlugin": "新しいプラグインの構築"
     },
@@ -295,6 +301,7 @@
         "userError": "メモリの取り込みにエラーが発生しました。"
       },
       "memoryCategory": "メモリーインスペクター",
+      "memoryInspector": "メモリーインスペクター",
       "memoryTitle": "メモリ",
       "octal": "八進数",
       "offset": "オフセット",
@@ -412,6 +419,13 @@
     "secondary-window": {
       "extract-widget": "セカンダリーウィンドウへの表示移動"
     },
+    "shell-area": {
+      "bottom": "底面",
+      "left": "左",
+      "right": "右",
+      "secondary": "セカンダリーウィンドウ",
+      "top": "トップ"
+    },
     "task": {
       "attachTask": "タスクの添付...",
       "clearHistory": "明確な歴史",
@@ -463,6 +477,8 @@
       "averageRating": "平均評価:{0} 5点満点中",
       "downloadCount": "ダウンロード回数{0}",
       "errorFetching": "拡張機能の取得にエラーが発生しました。",
+      "failedInstallingVSIX": "VSIXから{0} のインストールに失敗しました。",
+      "invalidVSIX": "選択されたファイルは、有効な \"*.vsix \"プラグインではありません。",
       "license": "ライセンス{0}",
       "recommendedExtensions": "このワークスペースでの使用が推奨される拡張機能の名前のリストです。",
       "searchPlaceholder": "{0}で拡張子を検索",

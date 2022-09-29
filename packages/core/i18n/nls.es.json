@@ -6,6 +6,10 @@
       "open": "Jerarquía de la convocatoria abierta"
     },
     "core": {
+      "about": {
+        "compatibility": "{0} Compatibilidad",
+        "defaultApi": "API por defecto {0} "
+      },
       "availableLanguages": "Idiomas disponibles",
       "common": {
         "closeAll": "Cerrar todas las pestañas",
@@ -27,6 +31,7 @@
       "file": {
         "browse": "Visite"
       },
+      "hideViewContainer": "Ocultar",
       "highlightModifiedTabs": "Controla si se dibuja un borde superior en las pestañas modificadas (sucias) del editor o no.",
       "installedLanguages": "Idiomas instalados",
       "keybindingStatus": "{0} fue presionado, esperando más teclas",
@@ -191,6 +196,7 @@
       "uploadedOutOf": "Cargado {0} de {1}"
     },
     "getting-started": {
+      "apiComparator": "{0} Compatibilidad con la API",
       "newExtension": "Construir una nueva extensión",
       "newPlugin": "Creación de un nuevo plugin"
     },
@@ -295,6 +301,7 @@
         "userError": "Hubo un error en la obtención de la memoria."
       },
       "memoryCategory": "Inspector de memoria",
+      "memoryInspector": "Inspector de memoria",
       "memoryTitle": "Memoria",
       "octal": "Octal",
       "offset": "Offset",
@@ -412,6 +419,13 @@
     "secondary-window": {
       "extract-widget": "Mover la vista a la ventana secundaria"
     },
+    "shell-area": {
+      "bottom": "En el fondo",
+      "left": "Izquierda",
+      "right": "Derecha",
+      "secondary": "Ventana secundaria",
+      "top": "Top"
+    },
     "task": {
       "attachTask": "Adjuntar tarea...",
       "clearHistory": "Historia clara",
@@ -463,6 +477,8 @@
       "averageRating": "Valoración media: {0} de 5",
       "downloadCount": "Descargue el recuento: {0}",
       "errorFetching": "Error en la búsqueda de extensiones.",
+      "failedInstallingVSIX": "Fallo en la instalación de {0} desde VSIX.",
+      "invalidVSIX": "El archivo seleccionado no es un plugin válido \"*.vsix\".",
       "license": "License: {0}",
       "recommendedExtensions": "Una lista de los nombres de las extensiones recomendadas para su uso en este espacio de trabajo.",
       "searchPlaceholder": "Buscar extensiones en {0}",

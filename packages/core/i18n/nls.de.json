@@ -6,6 +6,10 @@
       "open": "Öffne Aufruf-Hierarchie"
     },
     "core": {
+      "about": {
+        "compatibility": "{0} Kompatibilität",
+        "defaultApi": "Standard {0} API"
+      },
       "availableLanguages": "Verfügbare Sprachen",
       "common": {
         "closeAll": "Alle Registerkarten schließen",
@@ -27,6 +31,7 @@
       "file": {
         "browse": "Durchsuchen"
       },
+      "hideViewContainer": "Ausblenden",
       "highlightModifiedTabs": "Steuert, ob ein oberer Rand auf modifizierten (schmutzigen) Editor-Tabs gezeichnet wird oder nicht.",
       "installedLanguages": "Installierte Sprachen",
       "keybindingStatus": "{0} wurde gedrückt und wartet auf weitere Tasten",
@@ -191,6 +196,7 @@
       "uploadedOutOf": "Hochgeladen {0} von {1}"
     },
     "getting-started": {
+      "apiComparator": "{0} API-Kompatibilität",
       "newExtension": "Bau einer neuen Erweiterung",
       "newPlugin": "Ein neues Plugin erstellen"
     },
@@ -295,6 +301,7 @@
         "userError": "Es ist ein Fehler beim Abrufen von Speicher aufgetreten."
       },
       "memoryCategory": "Speicherinspektor",
+      "memoryInspector": "Speicherinspektor",
       "memoryTitle": "Speicher",
       "octal": "Oktal",
       "offset": "Versetzt",
@@ -412,6 +419,13 @@
     "secondary-window": {
       "extract-widget": "Ansicht in sekundäres Fenster verschieben"
     },
+    "shell-area": {
+      "bottom": "Unten",
+      "left": "Links",
+      "right": "Rechts",
+      "secondary": "Sekundäres Fenster",
+      "top": "Top"
+    },
     "task": {
       "attachTask": "Aufgabe anhängen...",
       "clearHistory": "Geschichte löschen",
@@ -463,6 +477,8 @@
       "averageRating": "Durchschnittliche Bewertung: {0} von 5",
       "downloadCount": "Anzahl der Downloads: {0}",
       "errorFetching": "Fehler beim Abrufen von Erweiterungen.",
+      "failedInstallingVSIX": "Die Installation von {0} aus VSIX ist fehlgeschlagen.",
+      "invalidVSIX": "Die ausgewählte Datei ist kein gültiges \"*.vsix\"-Plugin.",
       "license": "Lizenz: {0}",
       "recommendedExtensions": "Eine Liste mit den Namen der Erweiterungen, die für die Verwendung in diesem Arbeitsbereich empfohlen werden.",
       "searchPlaceholder": "Erweiterungen suchen in {0}",

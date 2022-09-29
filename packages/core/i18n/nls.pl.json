@@ -6,6 +6,10 @@
       "open": "Hierarchia zaproszeń otwartych"
     },
     "core": {
+      "about": {
+        "compatibility": "{0} Zgodność",
+        "defaultApi": "Domyślnie {0} API"
+      },
       "availableLanguages": "Dostępne języki",
       "common": {
         "closeAll": "Zamknij wszystkie karty",
@@ -27,6 +31,7 @@
       "file": {
         "browse": "Przeglądaj stronę"
       },
+      "hideViewContainer": "Ukryj",
       "highlightModifiedTabs": "Określa, czy na zmodyfikowanych (brudnych) zakładkach edytora ma być wyświetlana górna ramka.",
       "installedLanguages": "Zainstalowane języki",
       "keybindingStatus": "{0} zostało naciśnięte, oczekiwanie na kolejne klawisze",
@@ -191,6 +196,7 @@
       "uploadedOutOf": "Przesłano {0} z {1}."
     },
     "getting-started": {
+      "apiComparator": "{0} Zgodność z API",
       "newExtension": "Budowanie nowego rozszerzenia",
       "newPlugin": "Tworzenie nowego pluginu"
     },
@@ -295,6 +301,7 @@
         "userError": "Wystąpił błąd w pobieraniu pamięci."
       },
       "memoryCategory": "Inspektor pamięci",
+      "memoryInspector": "Inspektor pamięci",
       "memoryTitle": "Pamięć",
       "octal": "Octal",
       "offset": "Offset",
@@ -412,6 +419,13 @@
     "secondary-window": {
       "extract-widget": "Przenieś widok do okna podrzędnego"
     },
+    "shell-area": {
+      "bottom": "Dół",
+      "left": "Z lewej strony",
+      "right": "Prawo",
+      "secondary": "Drugie okno",
+      "top": "Top"
+    },
     "task": {
       "attachTask": "Dołącz zadanie...",
       "clearHistory": "Czysta historia",
@@ -463,6 +477,8 @@
       "averageRating": "Średnia ocena: {0} na 5",
       "downloadCount": "Pobierz licz: {0}",
       "errorFetching": "Błąd pobierania rozszerzeń.",
+      "failedInstallingVSIX": "Nie udało się zainstalować {0} z VSIX.",
+      "invalidVSIX": "Wybrany plik nie jest prawidłowym pluginem \"*.vsix\".",
       "license": "Licencja: {0}",
       "recommendedExtensions": "Lista nazw rozszerzeń zalecanych do użycia w tym obszarze roboczym.",
       "searchPlaceholder": "Wyszukaj rozszerzenia w {0}.",
