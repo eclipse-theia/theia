@@ -4,14 +4,53 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## v1.30.0
+## v1.30.0 - 9/29/2022
 
-- [core] Added support for moving webview-based views into a secondary window for browser applications. Added new extension `secondary-window` that contributes the UI integration to use this. [#11048](https://github.com/eclipse-theia/theia/pull/11048) - Contributed on behalf of ST Microelectronics and Ericsson and by ARM and EclipseSource
+- [core] added functionality ot listen to keyboard layout changes [#11689](https://github.com/eclipse-theia/theia/pull/11689)
+- [core] added support for moving webview-based views into a secondary window for browser applications [#11048](https://github.com/eclipse-theia/theia/pull/11048) - Contributed on behalf of ST Microelectronics and Ericsson and by ARM and EclipseSource
+  - Added the new `@theia/secondary-window` extension which contributes the UI to enable the new feature.
+- [core] fixed RPC decoding errors on large objects [#11636](https://github.com/eclipse-theia/theia/pull/11636)
+- [core] fixed `about` dialog rendering when closed and re-opened [#11687](https://github.com/eclipse-theia/theia/pull/11687)
+- [core] fixed programmatic movement of views [#11576](https://github.com/eclipse-theia/theia/pull/11576)
+- [core] improved application title functionality [#10916](https://github.com/eclipse-theia/theia/pull/10916)
+- [core] improved rendering of tab-bars to have unique `id` [#11622](https://github.com/eclipse-theia/theia/pull/11622)
+- [core] restored cancellation token behavior in RPC calls [#11693](https://github.com/eclipse-theia/theia/pull/11693)
+- [core] updated `about` dialog to include additional framework information [#11687](https://github.com/eclipse-theia/theia/pull/11687)
+- [documentation] created dedicated `code guidelines` and `code organization` docs [#11529](https://github.com/eclipse-theia/theia/pull/11529)
+- [documentation] updated minimally supported node version to `>=14.18.0` [#11621](https://github.com/eclipse-theia/theia/pull/11621)
+- [editor] added handling to organize `edt` quick-pick entries by area and groups [#11611](https://github.com/eclipse-theia/theia/pull/11611)
+- [getting-started] updated view to include a link to the API compatibility report [#11691](https://github.com/eclipse-theia/theia/pull/11691)
+- [git] fixed `Discard All` for new files [#11677](https://github.com/eclipse-theia/theia/pull/11677)
+- [git] fixed `unstage` bug where all files were reverted [#11635](https://github.com/eclipse-theia/theia/pull/11635)
+- [git] re-added support for decoration preferences [#11674](https://github.com/eclipse-theia/theia/pull/11674)
+- [markers] updated marker decorations in the navigator [#11671](https://github.com/eclipse-theia/theia/pull/11671)
+- [navigator] fixed `closed all` toolbar enablement and visibility [#11634](https://github.com/eclipse-theia/theia/pull/11634)
+- [navigator] fixed `save all tabs` toolbar enablement and visibility [#11634](https://github.com/eclipse-theia/theia/pull/11634)
+- [output] improved extensibility of `OutputEditorFactory` and `OutputEditorModelFactory` [#11615](https://github.com/eclipse-theia/theia/pull/11615)
+- [plugin] added `buttons` support in the `QuickPickItem` VS Code API [#11650](https://github.com/eclipse-theia/theia/pull/11650)
+- [plugin] added support for `MarkdownString` tooltips in `TreeItem` [#11661](https://github.com/eclipse-theia/theia/pull/11661)
+- [plugin] added support for cancellation tokens on file events [#11658](https://github.com/eclipse-theia/theia/pull/11658)
+- [plugin] added support for the `FoldingRangeProvider#onDidChangeFoldingRanges` VS Code API [#11696](https://github.com/eclipse-theia/theia/pull/11696)
+- [plugin] added support for the `Pseudoterminal#onDidChangeName` VS Code API [#11657](https://github.com/eclipse-theia/theia/pull/11657)
+- [plugin] added support for the `Terminal#creationOptions` VS Code API [#11623](https://github.com/eclipse-theia/theia/pull/11623)
+- [plugin] added support for the `TerminalOptions.strictEnv` VS Code API [#11641](https://github.com/eclipse-theia/theia/pull/11641)
+- [plugin] added support for the deprecated `show` overload [#11649](https://github.com/eclipse-theia/theia/pull/11649)
+- [plugin] fixed `autoSave` behavior for custom-editors [#11599](https://github.com/eclipse-theia/theia/pull/11599)
+- [plugin] fixed handling when closing dirty custom-editors [#11593](https://github.com/eclipse-theia/theia/pull/11593)
+- [plugin] fixed the `EventEmitter.fire` signature according to the VS Code API [#11655](https://github.com/eclipse-theia/theia/pull/11655)
+- [plugin] updated `theia.d.ts` docs, typings and syntax errors [#11493](https://github.com/eclipse-theia/theia/pull/11493)
+- [preferences] improved `color` and `icon` theme preference selection [#11678](https://github.com/eclipse-theia/theia/pull/11678)
+- [process] fixed `env` when building commands [#11609](https://github.com/eclipse-theia/theia/pull/11609)
+- [repo] improved overall repository size [#11653](https://github.com/eclipse-theia/theia/pull/11653)
+- [vscode] added support for `CodeActionTriggerKind` [#11695](https://github.com/eclipse-theia/theia/pull/11695)
+- [vsx-registry] updated `nls` localizations [#11637](https://github.com/eclipse-theia/theia/pull/11637)
+- [workspace] added functionality to pass down `options` to `open` and `reload` window methods [#11571](https://github.com/eclipse-theia/theia/pull/11571)
 
 <a name="breaking_changes_1.30.0">[Breaking Changes:](#breaking_changes_1.30.0)</a>
 
-- [core] Added constructor injection to `ApplicationShell`: `SecondaryWindowHandler`. [#11048](https://github.com/eclipse-theia/theia/pull/11048) - Contributed on behalf of ST Microelectronics and Ericsson and by ARM and EclipseSource
-- [core] Changed type of `FrontendApplicationConfig#defaultTheme` from `string` to `DefaultTheme`. From now on, the default theme can be dispatched based on the OS theme. Use `DefaultTheme#defaultForOSTheme` to derive the `string` theme ID.
+- [core] added constructor injection to `ApplicationShell`: `SecondaryWindowHandler` [#11048](https://github.com/eclipse-theia/theia/pull/11048) - Contributed on behalf of ST Microelectronics and Ericsson and by ARM and EclipseSource
+- [core] changed type of `FrontendApplicationConfig#defaultTheme` from `string` to `DefaultTheme` [#11570](https://github.com/eclipse-theia/theia/pull/11570)
+  - From now on, the default theme can be dispatched based on the OS theme. Use `DefaultTheme#defaultForOSTheme` to derive the `string` theme ID.
 - [plugin-ext] removed `ctrlcmd+shift+l` keybinding for `pluginsView:toggle` [#11608](https://github.com/eclipse-theia/theia/pull/11608)
 
 ## v1.29.0 - 8/25/2022
