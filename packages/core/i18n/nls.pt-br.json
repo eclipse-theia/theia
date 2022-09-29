@@ -6,6 +6,10 @@
       "open": "Hierarquia de Chamadas Abertas"
     },
     "core": {
+      "about": {
+        "compatibility": "{0} Compatibilidade",
+        "defaultApi": "Padrão {0} API"
+      },
       "availableLanguages": "Idiomas disponíveis",
       "common": {
         "closeAll": "Fechar todas as abas",
@@ -27,6 +31,7 @@
       "file": {
         "browse": "Navegue"
       },
+      "hideViewContainer": "Esconder",
       "highlightModifiedTabs": "Controla se uma borda superior é desenhada ou não nas abas do editor modificadas (sujas).",
       "installedLanguages": "Idiomas instalados",
       "keybindingStatus": "{0} foi pressionado, esperando por mais teclas",
@@ -191,6 +196,7 @@
       "uploadedOutOf": "Carregado {0} de {1}"
     },
     "getting-started": {
+      "apiComparator": "{0} Compatibilidade API",
       "newExtension": "Construindo uma nova extensão",
       "newPlugin": "Construindo um Novo Plugin"
     },
@@ -295,6 +301,7 @@
         "userError": "Houve um erro na memória de busca."
       },
       "memoryCategory": "Inspetor de memória",
+      "memoryInspector": "Inspetor de memória",
       "memoryTitle": "Memória",
       "octal": "Octal",
       "offset": "Offset",
@@ -412,6 +419,13 @@
     "secondary-window": {
       "extract-widget": "Mover vista para a janela secundária"
     },
+    "shell-area": {
+      "bottom": "Abaixo",
+      "left": "Esquerda",
+      "right": "Certo",
+      "secondary": "Janela Secundária",
+      "top": "Topo"
+    },
     "task": {
       "attachTask": "Anexar Tarefa...",
       "clearHistory": "Histórico claro",
@@ -463,6 +477,8 @@
       "averageRating": "Classificação média: {0} de 5",
       "downloadCount": "Contagem de downloads: {0}",
       "errorFetching": "Extensões de erro de busca.",
+      "failedInstallingVSIX": "Falha na instalação {0} da VSIX.",
+      "invalidVSIX": "O arquivo selecionado não é um plugin \"*.vsix\" válido.",
       "license": "Licença: {0}",
       "recommendedExtensions": "Uma lista dos nomes das extensões recomendadas para uso neste espaço de trabalho.",
       "searchPlaceholder": "Pesquisar extensões em {0}",

@@ -6,6 +6,10 @@
       "open": "Hierarchie otevřených výzev"
     },
     "core": {
+      "about": {
+        "compatibility": "{0} Kompatibilita",
+        "defaultApi": "Výchozí rozhraní API {0} "
+      },
       "availableLanguages": "Dostupné jazyky",
       "common": {
         "closeAll": "Zavřít všechny karty",
@@ -27,6 +31,7 @@
       "file": {
         "browse": "Procházet"
       },
+      "hideViewContainer": "Skrýt",
       "highlightModifiedTabs": "Řídí, zda se na upravených (špinavých) kartách editoru vykreslí horní rámeček, nebo ne.",
       "installedLanguages": "Nainstalované jazyky",
       "keybindingStatus": "{0} byl stisknut, čeká se na další klávesy",
@@ -191,6 +196,7 @@
       "uploadedOutOf": "Nahráno {0} z {1}"
     },
     "getting-started": {
+      "apiComparator": "{0} Kompatibilita API",
       "newExtension": "Budování nového rozšíření",
       "newPlugin": "Vytvoření nového pluginu"
     },
@@ -295,6 +301,7 @@
         "userError": "Došlo k chybě při načítání paměti."
       },
       "memoryCategory": "Inspektor paměti",
+      "memoryInspector": "Inspektor paměti",
       "memoryTitle": "Paměť",
       "octal": "Osmičkové",
       "offset": "Offset",
@@ -412,6 +419,13 @@
     "secondary-window": {
       "extract-widget": "Přesunutí zobrazení do sekundárního okna"
     },
+    "shell-area": {
+      "bottom": "Spodní část",
+      "left": "Vlevo",
+      "right": "Právo",
+      "secondary": "Sekundární okno",
+      "top": "Nahoru"
+    },
     "task": {
       "attachTask": "Připojte úkol...",
       "clearHistory": "Vymazat historii",
@@ -463,6 +477,8 @@
       "averageRating": "Průměrné hodnocení: {0} z 5",
       "downloadCount": "Počet stažení: {0}",
       "errorFetching": "Chyba při načítání rozšíření.",
+      "failedInstallingVSIX": "Nepodařilo se nainstalovat {0} z VSIX.",
+      "invalidVSIX": "Vybraný soubor není platný zásuvný modul \"*.vsix\".",
       "license": "Licence: {0}",
       "recommendedExtensions": "Seznam názvů rozšíření doporučených pro použití v tomto pracovním prostoru.",
       "searchPlaceholder": "Hledat rozšíření v {0}",

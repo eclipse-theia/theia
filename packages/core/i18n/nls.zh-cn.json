@@ -6,6 +6,10 @@
       "open": "打开调用层次结构"
     },
     "core": {
+      "about": {
+        "compatibility": "{0} 兼容性",
+        "defaultApi": "默认的{0} API"
+      },
       "availableLanguages": "可用的语言",
       "common": {
         "closeAll": "全部关闭",
@@ -27,6 +31,7 @@
       "file": {
         "browse": "浏览"
       },
+      "hideViewContainer": "隐藏",
       "highlightModifiedTabs": "控制是否在修改过的(dirty)编辑器标签上绘制顶部边框。",
       "installedLanguages": "已安装的语言",
       "keybindingStatus": "{0}被按下,等待更多的按键",
@@ -191,6 +196,7 @@
       "uploadedOutOf": "上传了{0}出{1}。"
     },
     "getting-started": {
+      "apiComparator": "{0} API兼容性",
       "newExtension": "构建一个新的扩展",
       "newPlugin": "构建一个新的插件"
     },
@@ -295,6 +301,7 @@
         "userError": "获取内存时出现了错误。"
       },
       "memoryCategory": "内存检查器",
+      "memoryInspector": "内存检查器",
       "memoryTitle": "记忆",
       "octal": "八进制",
       "offset": "偏移",
@@ -412,6 +419,13 @@
     "secondary-window": {
       "extract-widget": "将视图移至第二窗口"
     },
+    "shell-area": {
+      "bottom": "底部",
+      "left": "左边",
+      "right": "右边",
+      "secondary": "二级窗口",
+      "top": "返回顶部"
+    },
     "task": {
       "attachTask": "附加任务...",
       "clearHistory": "清除历史",
@@ -463,6 +477,8 @@
       "averageRating": "平均评分: {0} (满分5分)",
       "downloadCount": "下载次数: {0}",
       "errorFetching": "取出扩展程序时出错。",
+      "failedInstallingVSIX": "从VSIX安装{0} ,失败了。",
+      "invalidVSIX": "所选文件不是有效的 \"*.vsix \"插件。",
       "license": "许可证: {0}",
       "recommendedExtensions": "建议在该工作区使用的扩展名称的列表。",
       "searchPlaceholder": "在{0}中搜索扩展",

@@ -6,6 +6,10 @@
       "open": "Иерархия открытых звонков"
     },
     "core": {
+      "about": {
+        "compatibility": "{0} Совместимость",
+        "defaultApi": "По умолчанию {0} API"
+      },
       "availableLanguages": "Доступные языки",
       "common": {
         "closeAll": "Закрыть все вкладки",
@@ -27,6 +31,7 @@
       "file": {
         "browse": "Просмотреть"
       },
+      "hideViewContainer": "Скрыть",
       "highlightModifiedTabs": "Управляет тем, будет ли рисоваться верхняя граница на измененных (грязных) вкладках редактора или нет.",
       "installedLanguages": "Установленные языки",
       "keybindingStatus": "{0} было нажато, ожидание других клавиш",
@@ -191,6 +196,7 @@
       "uploadedOutOf": "Загружено {0} из {1}"
     },
     "getting-started": {
+      "apiComparator": "{0} Совместимость API",
       "newExtension": "Построение нового расширения",
       "newPlugin": "Создание нового плагина"
     },
@@ -295,6 +301,7 @@
         "userError": "Произошла ошибка при выборке памяти."
       },
       "memoryCategory": "Инспектор памяти",
+      "memoryInspector": "Инспектор памяти",
       "memoryTitle": "Память",
       "octal": "Octal",
       "offset": "Смещение",
@@ -412,6 +419,13 @@
     "secondary-window": {
       "extract-widget": "Переместить вид в дополнительное окно"
     },
+    "shell-area": {
+      "bottom": "Дно",
+      "left": "Слева",
+      "right": "Справа",
+      "secondary": "Вторичное окно",
+      "top": "Топ"
+    },
     "task": {
       "attachTask": "Прикрепите задание...",
       "clearHistory": "Чистая история",
@@ -463,6 +477,8 @@
       "averageRating": "Средняя оценка: {0} из 5",
       "downloadCount": "Скачать граф: {0}",
       "errorFetching": "Ошибка при получении расширений.",
+      "failedInstallingVSIX": "Не удалось установить {0} из VSIX.",
+      "invalidVSIX": "Выбранный файл не является действительным плагином \"*.vsix\".",
       "license": "Лицензия: {0}",
       "recommendedExtensions": "Список имен расширений, рекомендуемых для использования в данной рабочей области.",
       "searchPlaceholder": "Поисковые расширения в {0}",
