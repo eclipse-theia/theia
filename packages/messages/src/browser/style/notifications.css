@@ -37,10 +37,13 @@
 
 /* Toasts */
 
+.theia-notifications-container.theia-notification-toasts .theia-notification-list-item-container {
+    margin-top: 6px;
+}
+
 .theia-notifications-container.theia-notification-toasts .theia-notification-list-item {
     box-shadow: 0px 0px 4px 0px var(--theia-widget-shadow);
     border: 1px solid var(--theia-notificationToast-border);
-    margin-top: 6px;
 }
 
 /* Center */
