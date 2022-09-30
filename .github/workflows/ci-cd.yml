@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2019, ubuntu-18.04, macos-11]
+        os: [windows-2019, ubuntu-latest, macos-11]
         node: [14.x, 16.x]
 
     runs-on: ${{ matrix.os }}
@@ -105,7 +105,7 @@ jobs:
   publish:
     needs: build
     if: github.ref == 'refs/heads/master' && github.event_name != 'schedule' # We still publish the manually dispatched workflows: 'workflow_dispatch'.
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
 
     # The current approach is silly. We should be smarter and use `actions/upload-artifact` and `actions/download-artifact` instead of rebuilding
     # everything from scratch again. (git checkout, Node.js install, yarn, etc.) It was not possible to share artifacts on Travis CI without an
