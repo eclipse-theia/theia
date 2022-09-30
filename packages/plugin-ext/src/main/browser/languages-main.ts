@@ -67,7 +67,13 @@ import { IRelativePattern } from '@theia/monaco-editor-core/esm/vs/base/common/g
 import { EditorLanguageStatusService, LanguageStatus as EditorLanguageStatus } from '@theia/editor/lib/browser/language-status/editor-language-status-service';
 import { LanguageSelector, RelativePattern } from '@theia/editor/lib/common/language-selector';
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
-import { EvaluatableExpression, EvaluatableExpressionProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import {
+    EvaluatableExpression,
+    EvaluatableExpressionProvider,
+    InlineValue,
+    InlineValueContext,
+    InlineValuesProvider
+} from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { CodeActionTriggerKind } from '../../plugin/types-impl';
 
@@ -359,6 +365,33 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
     protected provideEvaluatableExpression(handle: number, model: ITextModel, position: monaco.Position,
         token: monaco.CancellationToken): monaco.languages.ProviderResult<EvaluatableExpression | undefined> {
         return this.proxy.$provideEvaluatableExpression(handle, model.uri, position, token);
+    }
+
+    $registerInlineValuesProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = this.toLanguageSelector(selector);
+        const inlineValuesProvider = this.createInlineValuesProvider(handle);
+        this.register(handle,
+            (StandaloneServices.get(ILanguageFeaturesService).inlineValuesProvider.register as RegistrationFunction<InlineValuesProvider>)
+                (languageSelector, inlineValuesProvider));
+    }
+
+    protected createInlineValuesProvider(handle: number): InlineValuesProvider {
+        return {
+            provideInlineValues: (model, range, context, token) => this.provideInlineValues(handle, model, range, context, token)
+        };
+    }
+
+    protected provideInlineValues(handle: number, model: ITextModel, range: Range,
+        context: InlineValueContext, token: monaco.CancellationToken): monaco.languages.ProviderResult<InlineValue[] | undefined> {
+        return this.proxy.$provideInlineValues(handle, model.uri, range, context, token);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $emitInlineValuesEvent(eventHandle: number, event?: any): void {
+        const obj = this.services.get(eventHandle);
+        if (obj instanceof Emitter) {
+            obj.fire(event);
+        }
     }
 
     $registerDocumentHighlightProvider(handle: number, _pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {

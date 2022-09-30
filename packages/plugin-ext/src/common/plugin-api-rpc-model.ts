@@ -265,6 +265,38 @@ export interface EvaluatableExpressionProvider {
         token: monaco.CancellationToken): EvaluatableExpression | undefined | Thenable<EvaluatableExpression | undefined>;
 }
 
+export interface InlineValueContext {
+    frameId: number;
+    stoppedLocation: Range;
+}
+
+export interface InlineValueText {
+    type: 'text';
+    range: Range;
+    text: string;
+}
+
+export interface InlineValueVariableLookup {
+    type: 'variable';
+    range: Range;
+    variableName?: string;
+    caseSensitiveLookup: boolean;
+}
+
+export interface InlineValueEvaluatableExpression {
+    type: 'expression';
+    range: Range;
+    expression?: string;
+}
+
+export type InlineValue = InlineValueText | InlineValueVariableLookup | InlineValueEvaluatableExpression;
+
+export interface InlineValuesProvider {
+    onDidChangeInlineValues?: TheiaEvent<void> | undefined;
+    provideInlineValues(model: monaco.editor.ITextModel, viewPort: Range, context: InlineValueContext, token: monaco.CancellationToken):
+        InlineValue[] | undefined | Thenable<InlineValue[] | undefined>;
+}
+
 export enum DocumentHighlightKind {
     Text = 0,
     Read = 1,

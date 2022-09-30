@@ -4,6 +4,10 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.31.0 - unreleased
+
+- [plugin] added support for the `InlineValues` feature [#11729](https://github.com/eclipse-theia/theia/pull/11729) - Contributed on behalf of STMicroelectronics
+
 ## v1.30.0 - 9/29/2022
 
 - [core] added functionality ot listen to keyboard layout changes [#11689](https://github.com/eclipse-theia/theia/pull/11689)
