@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
-import { Terminal, TerminalOptions, PseudoTerminalOptions, ExtensionTerminalOptions } from '@theia/plugin';
+import { Terminal, TerminalOptions, PseudoTerminalOptions, ExtensionTerminalOptions, TerminalState } from '@theia/plugin';
 import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
@@ -43,6 +43,9 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
 
     private readonly onDidChangeActiveTerminalEmitter = new Emitter<Terminal | undefined>();
     readonly onDidChangeActiveTerminal: theia.Event<Terminal | undefined> = this.onDidChangeActiveTerminalEmitter.event;
+
+    private readonly onDidChangeTerminalStateEmitter = new Emitter<Terminal>();
+    readonly onDidChangeTerminalState: theia.Event<Terminal> = this.onDidChangeTerminalStateEmitter.event;
 
     protected environmentVariableCollections: Map<string, EnvironmentVariableCollection> = new Map();
 
@@ -105,6 +108,17 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
             return;
         }
         terminal.emitOnInput(data);
+    }
+
+    $terminalStateChanged(id: string): void {
+        const terminal = this._terminals.get(id);
+        if (!terminal) {
+            return;
+        }
+        if (!terminal.state.isInteractedWith) {
+            terminal.state = { isInteractedWith: true };
+            this.onDidChangeTerminalStateEmitter.fire(terminal);
+        }
     }
 
     $terminalSizeChanged(id: string, clos: number, rows: number): void {
@@ -286,6 +300,8 @@ export class TerminalExtImpl implements Terminal {
     }
 
     readonly creationOptions: Readonly<TerminalOptions | ExtensionTerminalOptions>;
+
+    state: TerminalState = { isInteractedWith: false };
 
     constructor(private readonly proxy: TerminalServiceMain, private readonly options: theia.TerminalOptions | theia.ExtensionTerminalOptions) {
         this.creationOptions = this.options;

@@ -3010,6 +3010,11 @@ export module '@theia/plugin' {
         readonly creationOptions: Readonly<TerminalOptions | ExtensionTerminalOptions>
 
         /**
+         * The current state of the terminal.
+         */
+        readonly state: TerminalState;
+
+        /**
          * Send text to the terminal.
          * @param text - text content.
          * @param addNewLine - in case true - apply new line after the text, otherwise don't apply new line. This defaults to `true`.
@@ -3031,6 +3036,13 @@ export module '@theia/plugin' {
          * Destroy terminal.
          */
         dispose(): void;
+    }
+
+    export interface TerminalState {
+        /**
+         * Whether the terminal has been interacted with.
+         */
+        readonly isInteractedWith: boolean;
     }
 
     /**
@@ -4994,6 +5006,11 @@ export module '@theia/plugin' {
          * either through the createTerminal API or commands.
          */
         export const onDidOpenTerminal: Event<Terminal>;
+
+        /**
+         * An {@link Event event} which fires when a terminal's state has changed.
+         */
+        export const onDidChangeTerminalState: Event<Terminal>;
 
         /**
          * Create new terminal with predefined options.

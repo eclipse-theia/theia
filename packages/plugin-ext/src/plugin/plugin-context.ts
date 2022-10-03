@@ -289,7 +289,7 @@ export function createAPIFactory(
             }
         };
 
-        const { onDidChangeActiveTerminal, onDidCloseTerminal, onDidOpenTerminal } = terminalExt;
+        const { onDidChangeActiveTerminal, onDidChangeTerminalState, onDidCloseTerminal, onDidOpenTerminal } = terminalExt;
         const showInformationMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Info);
         const showWarningMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Warning);
         const showErrorMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Error);
@@ -439,6 +439,7 @@ export function createAPIFactory(
                 shellArgs?: string[]): theia.Terminal {
                 return terminalExt.createTerminal(nameOrOptions, shellPath, shellArgs);
             },
+            onDidChangeTerminalState,
             onDidCloseTerminal,
             onDidOpenTerminal,
             createTextEditorDecorationType(options: theia.DecorationRenderOptions): theia.TextEditorDecorationType {
