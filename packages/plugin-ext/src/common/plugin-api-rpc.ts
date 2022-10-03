@@ -77,7 +77,10 @@ import {
     CommentThreadChangedEvent,
     CodeActionProviderDocumentation,
     LinkedEditingRanges,
-    ProvidedTerminalLink
+    ProvidedTerminalLink,
+    InlayHint,
+    CachedSession,
+    CachedSessionItem
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -1550,6 +1553,9 @@ export interface LanguagesExt {
     $provideSelectionRanges(handle: number, resource: UriComponents, positions: Position[], token: CancellationToken): PromiseLike<SelectionRange[][]>;
     $provideDocumentColors(handle: number, resource: UriComponents, token: CancellationToken): PromiseLike<RawColorInfo[]>;
     $provideColorPresentations(handle: number, resource: UriComponents, colorInfo: RawColorInfo, token: CancellationToken): PromiseLike<ColorPresentation[]>;
+    $provideInlayHints(handle: number, resource: UriComponents, range: Range, token: CancellationToken): Promise<InlayHintsDto | undefined>;
+    $resolveInlayHint(handle: number, id: ChainedCacheId, token: CancellationToken): Promise<InlayHintDto | undefined>;
+    $releaseInlayHints(handle: number, id: number): void;
     $provideRenameEdits(handle: number, resource: UriComponents, position: Position, newName: string, token: CancellationToken): PromiseLike<WorkspaceEditDto | undefined>;
     $resolveRenameLocation(handle: number, resource: UriComponents, position: Position, token: CancellationToken): PromiseLike<RenameLocation | undefined>;
     $provideDocumentSemanticTokens(handle: number, resource: UriComponents, previousResultId: number, token: CancellationToken): Promise<BinaryBuffer | null>;
@@ -1605,6 +1611,8 @@ export interface LanguagesMain {
     $emitFoldingRangeEvent(handle: number, event?: any): void;
     $registerSelectionRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerDocumentColorProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
+    $registerInlayHintsProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], displayName?: string, eventHandle?: number): void;
+    $emitInlayHintsEvent(eventHandle: number, event?: any): void;
     $registerRenameProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], supportsResolveInitialValues: boolean): void;
     $registerDocumentSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[],
         legend: theia.SemanticTokensLegend, eventHandle: number | undefined): void;
@@ -2018,3 +2026,6 @@ export interface SecretsMain {
     $setPassword(extensionId: string, key: string, value: string): Promise<void>;
     $deletePassword(extensionId: string, key: string): Promise<void>;
 }
+
+export type InlayHintDto = CachedSessionItem<InlayHint>;
+export type InlayHintsDto = CachedSession<{ hints: InlayHint[] }>;

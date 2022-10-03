@@ -360,6 +360,9 @@ export interface ReferenceContext {
 export type CacheId = number;
 export type ChainedCacheId = [CacheId, CacheId];
 
+export type CachedSessionItem<T> = T & { cacheId?: ChainedCacheId };
+export type CachedSession<T> = T & { cacheId?: CacheId };
+
 export interface DocumentLink {
     cacheId?: ChainedCacheId,
     range: Range;
@@ -727,3 +730,32 @@ export interface CommentInfo {
 export interface ProvidedTerminalLink extends theia.TerminalLink {
     providerId: string
 }
+
+export interface InlayHintLabelPart {
+    label: string;
+    tooltip?: string | MarkdownStringDTO;
+    location?: Location;
+    command?: Command;
+}
+
+export interface InlayHint {
+    position: { lineNumber: number, column: number };
+    label: string | InlayHintLabelPart[];
+    tooltip?: string | MarkdownStringDTO | undefined;
+    kind?: InlayHintKind;
+    textEdits?: TextEdit[];
+    paddingLeft?: boolean;
+    paddingRight?: boolean;
+}
+
+export enum InlayHintKind {
+    Type = 1,
+    Parameter = 2,
+}
+
+export interface InlayHintsProvider {
+    onDidChangeInlayHints?: TheiaEvent<void> | undefined;
+    provideInlayHints(model: monaco.editor.ITextModel, range: Range, token: monaco.CancellationToken): InlayHint[] | undefined | Thenable<InlayHint[] | undefined>;
+    resolveInlayHint?(hint: InlayHint, token: monaco.CancellationToken): InlayHint[] | undefined | Thenable<InlayHint[] | undefined>;
+}
+

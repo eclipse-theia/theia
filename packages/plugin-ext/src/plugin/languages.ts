@@ -25,6 +25,8 @@ import {
     WorkspaceEditDto,
     PluginInfo,
     Plugin,
+    InlayHintsDto,
+    InlayHintDto,
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import * as theia from '@theia/plugin';
@@ -101,6 +103,7 @@ import { DisposableCollection, disposableTimeout, Disposable as TheiaDisposable 
 import { Severity } from '@theia/core/lib/common/severity';
 import { LinkedEditingRangeAdapter } from './languages/linked-editing-range';
 import { serializeEnterRules, serializeIndentation, serializeRegExp } from './languages-utils';
+import { InlayHintsAdapter } from './languages/inlay-hints';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -124,6 +127,7 @@ type Adapter = CompletionAdapter |
     FoldingProviderAdapter |
     SelectionRangeProviderAdapter |
     ColorProviderAdapter |
+    InlayHintsAdapter |
     RenameAdapter |
     CallHierarchyAdapter |
     DocumentRangeSemanticTokensAdapter |
@@ -601,6 +605,35 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, ColorProviderAdapter, adapter => adapter.provideColorPresentations(URI.revive(resource), colorInfo, token), []);
     }
     // ### Color Provider end
+
+    // ### InlayHints Provider begin
+    registerInlayHintsProvider(selector: theia.DocumentSelector, provider: theia.InlayHintsProvider, pluginInfo: PluginInfo): theia.Disposable {
+        const eventHandle = typeof provider.onDidChangeInlayHints === 'function' ? this.nextCallId() : undefined;
+        const callId = this.addNewAdapter(new InlayHintsAdapter(provider, this.documents, this.commands));
+        this.proxy.$registerInlayHintsProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
+
+        let result = this.createDisposable(callId);
+
+        if (eventHandle !== undefined) {
+            const subscription = provider.onDidChangeInlayHints!(() => this.proxy.$emitInlayHintsEvent(eventHandle));
+            result = Disposable.from(result, subscription);
+        }
+
+        return result;
+    }
+
+    $provideInlayHints(handle: number, resource: UriComponents, range: Range, token: theia.CancellationToken): Promise<InlayHintsDto | undefined> {
+        return this.withAdapter(handle, InlayHintsAdapter, adapter => adapter.provideInlayHints(URI.revive(resource), range, token), undefined);
+    }
+
+    $resolveInlayHint(handle: number, id: ChainedCacheId, token: theia.CancellationToken): Promise<InlayHintDto | undefined> {
+        return this.withAdapter(handle, InlayHintsAdapter, adapter => adapter.resolveInlayHint(id, token), undefined);
+    }
+
+    $releaseInlayHints(handle: number, id: number): void {
+        this.withAdapter(handle, InlayHintsAdapter, async adapter => adapter.releaseHints(id), undefined);
+    }
+    // ### InlayHints Provider end
 
     // ### Folding Range Provider begin
     registerFoldingRangeProvider(selector: theia.DocumentSelector, provider: theia.FoldingRangeProvider, pluginInfo: PluginInfo): theia.Disposable {
