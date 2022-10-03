@@ -2489,6 +2489,40 @@ export enum ColorFormat {
 }
 
 @es5ClassCompat
+export class InlayHintLabelPart implements theia.InlayHintLabelPart {
+    value: string;
+    tooltip?: string | theia.MarkdownString | undefined;
+    location?: Location | undefined;
+    command?: theia.Command | undefined;
+
+    constructor(value: string) {
+        this.value = value;
+    }
+}
+
+@es5ClassCompat
+export class InlayHint implements theia.InlayHint {
+    position: theia.Position;
+    label: string | InlayHintLabelPart[];
+    tooltip?: string | theia.MarkdownString | undefined;
+    kind?: InlayHintKind;
+    textEdits?: TextEdit[];
+    paddingLeft?: boolean;
+    paddingRight?: boolean;
+
+    constructor(position: theia.Position, label: string | InlayHintLabelPart[], kind?: InlayHintKind) {
+        this.position = position;
+        this.label = label;
+        this.kind = kind;
+    }
+}
+
+export enum InlayHintKind {
+    Type = 1,
+    Parameter = 2,
+}
+
+@es5ClassCompat
 export class FoldingRange {
     start: number;
     end: number;

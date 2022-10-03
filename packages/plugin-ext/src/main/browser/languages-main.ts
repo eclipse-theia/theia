@@ -33,12 +33,13 @@ import {
     WorkspaceEditDto,
     WorkspaceTextEditDto,
     PluginInfo,
-    LanguageStatus as LanguageStatusDTO
+    LanguageStatus as LanguageStatusDTO,
+    InlayHintDto
 } from '../../common/plugin-api-rpc';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, RelatedInformation,
-    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto, CodeActionProviderDocumentation
+    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto, CodeActionProviderDocumentation, InlayHint, InlayHintLabelPart
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from '@theia/monaco/lib/browser/monaco-languages';
@@ -806,6 +807,63 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         }, token);
     }
 
+    $registerInlayHintsProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], displayName?: string, eventHandle?: number): void {
+        const languageSelector = this.toLanguageSelector(selector);
+        const inlayHintsProvider = this.createInlayHintsProvider(handle);
+        if (typeof eventHandle === 'number') {
+            const emitter = new Emitter<void>();
+            this.register(eventHandle, emitter);
+            inlayHintsProvider.onDidChangeInlayHints = emitter.event;
+        }
+        this.register(handle, (monaco.languages.registerInlayHintsProvider as RegistrationFunction<monaco.languages.InlayHintsProvider>)(languageSelector, inlayHintsProvider));
+
+    }
+
+    createInlayHintsProvider(handle: number): monaco.languages.InlayHintsProvider {
+        return {
+            provideInlayHints: async (model: monaco.editor.ITextModel, range: Range, token: monaco.CancellationToken): Promise<monaco.languages.InlayHintList | undefined> => {
+                const result = await this.proxy.$provideInlayHints(handle, model.uri, range, token);
+                if (!result) {
+                    return;
+                }
+                return {
+                    hints: result.hints.map(hint => reviveHint(hint)),
+                    dispose: () => {
+                        if (typeof result.cacheId === 'number') {
+                            this.proxy.$releaseInlayHints(handle, result.cacheId);
+                        }
+                    }
+                };
+            },
+            resolveInlayHint: async (hint, token): Promise<monaco.languages.InlayHint | undefined> => {
+                const dto: InlayHintDto = hint;
+                if (typeof dto.cacheId !== 'number') {
+                    return hint;
+                }
+                const result = await this.proxy.$resolveInlayHint(handle, dto.cacheId, token);
+                if (token.isCancellationRequested) {
+                    return undefined;
+                }
+                if (!result) {
+                    return hint;
+                }
+                return {
+                    ...hint,
+                    tooltip: result.tooltip,
+                    label: reviveInlayLabel(result.label)
+                };
+            },
+        };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $emitInlayHintsEvent(eventHandle: number, event?: any): void {
+        const obj = this.services.get(eventHandle);
+        if (obj instanceof Emitter) {
+            obj.fire(event);
+        }
+    }
+
     $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], providedCodeActionKinds?: string[],
         documentation?: CodeActionProviderDocumentation): void {
 
@@ -1163,6 +1221,31 @@ function reviveOnEnterRules(onEnterRules?: SerializedOnEnterRule[]): monaco.lang
         return undefined;
     }
     return onEnterRules.map(reviveOnEnterRule);
+}
+
+function reviveInlayLabel(label: string | InlayHintLabelPart[]):  string | monaco.languages.InlayHintLabelPart[] {
+    let monacoLabel: string | monaco.languages.InlayHintLabelPart[];
+    if (typeof label === 'string') {
+        monacoLabel = label;
+    } else {
+        const parts: monaco.languages.InlayHintLabelPart[] = [];
+        for (const part of label) {
+            const result: monaco.languages.InlayHintLabelPart = {
+                ...part,
+                location: !!part.location ? { range: part.location?.range, uri: monaco.Uri.revive(part.location.uri) } : undefined
+            };
+            parts.push(result);
+        }
+        monacoLabel = parts;
+    }
+    return monacoLabel;
+}
+
+function reviveHint(hint: InlayHint): monaco.languages.InlayHint {
+    return {
+        ...hint,
+        label: reviveInlayLabel(hint.label)
+    };
 }
 
 function toMonacoAction(action: CodeAction): monaco.languages.CodeAction {

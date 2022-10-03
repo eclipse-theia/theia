@@ -129,7 +129,7 @@ export function fromRange(range: theia.Range | undefined): model.Range | undefin
     };
 }
 
-export function fromPosition(position: types.Position): Position {
+export function fromPosition(position: types.Position | theia.Position): Position {
     return { lineNumber: position.line + 1, column: position.character + 1 };
 }
 
@@ -1271,3 +1271,11 @@ export function pluginToPluginInfo(plugin: Plugin): rpc.PluginInfo {
     };
 }
 
+export namespace InlayHintKind {
+    export function from(kind: theia.InlayHintKind): model.InlayHintKind {
+        return kind;
+    }
+    export function to(kind: model.InlayHintKind): theia.InlayHintKind {
+        return kind;
+    }
+}
