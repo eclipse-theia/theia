@@ -53,18 +53,6 @@ Here is an [example](https://community.theia-ide.org/t/0-11-0-release/373).
 
 Before publishing it's important to make sure that a functional Theia application can be made from the latest `next` version of the platform. Else we will have problems with "latest" after publishing.
 
-One easy way is to use the theia-apps repo CI:
-
-- Make sure that there is no pending build on Theia master, otherwise a new "next" version might be published while we validate the current "next".
-
-- Go to the `theia-apps` [`actions`](https://github.com/theia-ide/theia-apps/actions?query=workflow%3Aci-cd) and manually trigger a workflow run:
-  - select `run workflow` dropdown
-  - select the `master` branch (should be the default)
-  - click `run workflow`
-- We need to make sure that at least the various "next" builds pass CI.If it doesn't, it needs to be fixed before continuing.
-
-- In case the theia-app images fail CI for reasons not related to the `next` Theia platform extensions (e.g. none of the images currently pass CI including `latest`), a fallback alternative is to build and briefly test one Theia app locally using the `next` version of a good subset of the platform extensions.
-
 - Update the forum release post to ask committers to hold-off merging any PR while the release is ongoing.
 
 
@@ -122,13 +110,13 @@ In order to create a new release, one must:
    ```md
    [Release Changelog](https://github.com/eclipse-theia/theia/blob/2aa2fa1ab091ec36ef851c4e364b322301cddb40/CHANGELOG.md#v120)
    ```
-   
+
 - include a reference to the migration guide in the release description:
-   
+
    ```md
    [Migration Guide](https://github.com/eclipse-theia/theia/blob/master/doc/Migration.md)
    ```
-    
+
 - select _"Publish Release"_ bottom at the bottom of the page.
 
 For additional information, please consult the official GitHub documentation regarding [creating releases](https://help.github.com/en/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release).
@@ -170,9 +158,9 @@ Login to [Eclipse Foundation Theia project page]( https://projects.eclipse.org/p
 ### Update Milestones
 
 * Close current release [milestone](https://github.com/eclipse-theia/theia/milestones).
-* Create the next two milestones in the case they do not already exist. Generally, the release is performed on the last Thursday of the month, but there may be exceptions (bug fix release, holidays, etc.)
+* Create the next two milestones in the case they do not already exist. Generally, the release is performed on the last Thursday of the month, but there may be exceptions (bug fix release, holidays, etc.).
 
 ### Update Roadmap
 
-* If the current release is the last in a quarter, ask the team to update the [roadmap](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Roadmap) of the past quarter (close, remove or move items)
-* If the current release is the second in a quarter, create [roadmap template](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Roadmap) for the next quarter, ask the team to contribute to it and add it to the agenda of the Theia dev meeting
+* If the current release is the last in a quarter, ask the team to update the [roadmap](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Roadmap) of the past quarter (close, remove or move items).
+* If the current release is the second in a quarter, create [roadmap template](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Roadmap) for the next quarter, ask the team to contribute to it and add it to the agenda of the Theia dev meeting.
