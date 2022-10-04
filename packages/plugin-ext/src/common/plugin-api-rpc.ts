@@ -265,6 +265,7 @@ export interface TerminalServiceExt {
     $terminalOnInput(id: string, data: string): void;
     $terminalSizeChanged(id: string, cols: number, rows: number): void;
     $currentTerminalChanged(id: string | undefined): void;
+    $terminalStateChanged(id: string): void;
     $initEnvironmentVariableCollections(collections: [string, SerializableEnvironmentVariableCollection][]): void;
     getEnvironmentVariableCollection(extensionIdentifier: string): theia.EnvironmentVariableCollection;
 }
