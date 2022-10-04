@@ -3010,7 +3010,7 @@ export module '@theia/plugin' {
         readonly creationOptions: Readonly<TerminalOptions | ExtensionTerminalOptions>
 
         /**
-         * The current state of the terminal.
+         * The current state of the {@link Terminal}.
          */
         readonly state: TerminalState;
 
@@ -3040,7 +3040,18 @@ export module '@theia/plugin' {
 
     export interface TerminalState {
         /**
-         * Whether the terminal has been interacted with.
+         * Whether the {@link Terminal} has been interacted with. Interaction means that the
+         * terminal has sent data to the process which depending on the terminal's _mode_. By
+         * default input is sent when a key is pressed or when a command or extension sends text,
+         * but based on the terminal's mode it can also happen on:
+         *
+         * - a pointer click event
+         * - a pointer scroll event
+         * - a pointer move event
+         * - terminal focus in/out
+         *
+         * For more information on events that can send data see "DEC Private Mode Set (DECSET)" on
+         * https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
          */
         readonly isInteractedWith: boolean;
     }
@@ -5008,7 +5019,7 @@ export module '@theia/plugin' {
         export const onDidOpenTerminal: Event<Terminal>;
 
         /**
-         * An {@link Event event} which fires when a terminal's state has changed.
+         * An {@link Event} which fires when a {@link Terminal.state terminal's state} has changed.
          */
         export const onDidChangeTerminalState: Event<Terminal>;
 
