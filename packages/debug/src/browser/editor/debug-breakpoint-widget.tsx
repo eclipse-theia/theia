@@ -309,7 +309,7 @@ export namespace DebugBreakpointWidget {
         const position = editor.getPosition();
         if (model && position) {
             const prevBracket = model.bracketPairs.findPrevBracket(position);
-            if (prevBracket?.isOpen) {
+            if (prevBracket?.bracketInfo.isOpeningBracket) {
                 return true;
             }
         }
