@@ -565,7 +565,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             const originalFunc: (entry: IntersectionObserverEntry) => void = renderService._onIntersectionChange.bind(renderService);
             const replacement = function (entry: IntersectionObserverEntry): void {
                 if (entry.target.ownerDocument !== document) {
-
+                    // in Firefox, the intersection observer always reports the widget as non-intersecting if the dom element
+                    // is in a different document from when the IntersectionObserver started observing. Since we know
+                    // that the widget is always "visible" when in a secondary window, so we mark the entry as "intersecting"
                     const patchedEvent: IntersectionObserverEntry = {
                         ...entry,
                         isIntersecting: true,
@@ -576,7 +578,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 }
             };
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             renderService._onIntersectionChange = replacement;
         }
 
