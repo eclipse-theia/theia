@@ -233,7 +233,7 @@ export function fromGlobPattern(pattern: theia.GlobPattern): string | RelativePa
     }
 
     if (isRelativePattern(pattern)) {
-        return new types.RelativePattern(pattern.base, pattern.pattern);
+        return new types.RelativePattern(pattern.baseUri, pattern.pattern);
     }
 
     return pattern;
@@ -241,7 +241,7 @@ export function fromGlobPattern(pattern: theia.GlobPattern): string | RelativePa
 
 function isRelativePattern(obj: {}): obj is theia.RelativePattern {
     const rp = obj as theia.RelativePattern;
-    return rp && typeof rp.base === 'string' && typeof rp.pattern === 'string';
+    return rp && typeof rp.baseUri === 'string' && typeof rp.pattern === 'string';
 }
 
 export function fromCompletionItemKind(kind?: types.CompletionItemKind): model.CompletionItemKind {
