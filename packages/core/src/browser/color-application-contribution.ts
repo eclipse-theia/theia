@@ -67,10 +67,8 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
     protected readonly toUpdate = new DisposableCollection();
     protected update(): void {
         this.toUpdate.dispose();
-
         this.windows.forEach(win => this.updateWindow(win));
-
-        this.onDidChangeEmitter.fire(undefined);
+        this.onDidChangeEmitter.fire();
     }
 
     protected updateWindow(win: Window): void {
