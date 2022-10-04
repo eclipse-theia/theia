@@ -303,7 +303,7 @@ export interface TerminalServiceMain {
      * Create new Terminal with Terminal options.
      * @param options - object with parameters to create new terminal.
      */
-    $createTerminal(id: string, options: theia.TerminalOptions, isPseudoTerminal?: boolean): Promise<string>;
+    $createTerminal(id: string, options: theia.TerminalOptions, parentId?: string, isPseudoTerminal?: boolean): Promise<string>;
 
     /**
      * Send text to the terminal by id.

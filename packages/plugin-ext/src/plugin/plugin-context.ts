@@ -152,6 +152,7 @@ import {
     TextDocumentChangeReason,
     InputBoxValidationSeverity,
     TerminalLink,
+    TerminalLocation,
     InlayHint,
     InlayHintKind,
     InlayHintLabelPart,
@@ -1088,7 +1089,7 @@ export function createAPIFactory(
                         notebook: theia.NotebookDocument,
                         controller: theia.NotebookController
                     ): (void | Thenable<void>) { },
-                    onDidChangeSelectedNotebooks: () => Disposable.create(() => {}),
+                    onDidChangeSelectedNotebooks: () => Disposable.create(() => { }),
                     updateNotebookAffinity: (notebook: theia.NotebookDocument, affinity: theia.NotebookControllerAffinity) => undefined,
                     dispose: () => undefined,
                 };
@@ -1099,7 +1100,7 @@ export function createAPIFactory(
             ) {
                 return {
                     rendererId,
-                    onDidReceiveMessage: () => Disposable.create(() => {} ),
+                    onDidReceiveMessage: () => Disposable.create(() => { }),
                     postMessage: () => Promise.resolve({}),
                 };
             },
@@ -1284,6 +1285,7 @@ export function createAPIFactory(
             TabInputNotebookDiff: NotebookDiffEditorTabInput,
             TabInputWebview: WebviewEditorTabInput,
             TabInputTerminal: TerminalEditorTabInput,
+            TerminalLocation
         };
     };
 }

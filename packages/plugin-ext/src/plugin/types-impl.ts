@@ -1909,6 +1909,11 @@ export class TerminalLink {
     }
 }
 
+export enum TerminalLocation {
+    Panel = 1,
+    Editor = 2
+}
+
 @es5ClassCompat
 export class FileDecoration {
 

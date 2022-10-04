@@ -85,7 +85,22 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
                 shellArgs: shellArgs
             };
         }
-        this.proxy.$createTerminal(id, options, !!pseudoTerminal);
+
+        let parentId;
+
+        if (options.location && typeof options.location === 'object' && 'parentTerminal' in options.location) {
+            const parentTerminal = options.location.parentTerminal;
+            if (parentTerminal instanceof TerminalExtImpl) {
+                for (const [k, v] of this._terminals) {
+                    if (v === parentTerminal) {
+                        parentId = k;
+                        break;
+                    }
+                }
+            }
+        }
+
+        this.proxy.$createTerminal(id, options, parentId, !!pseudoTerminal);
 
         let creationOptions: theia.TerminalOptions | theia.ExtensionTerminalOptions = options;
         // make sure to pass ExtensionTerminalOptions as creation options
