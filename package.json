@@ -38,6 +38,7 @@
     "glob": "^7.1.7",
     "if-env": "^1.0.4",
     "ignore-styles": "^5.0.1",
+    "improved-yarn-audit": "^3.0.0",
     "jsdom": "^11.5.1",
     "lerna": "5.5.4",
     "node-gyp": "^9.0.0",
