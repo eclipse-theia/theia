@@ -34,6 +34,7 @@ import { WindowTitleService } from '@theia/core/lib/browser/window/window-title-
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { workspaceSchema, WorkspaceSchemaUpdater } from './workspace-schema-updater';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
+import { StopReason } from '@theia/core/lib/common/frontend-application-state';
 
 /**
  * The workspace service.
@@ -464,11 +465,14 @@ export class WorkspaceService implements FrontendApplicationContribution {
      * Clears current workspace root.
      */
     async close(): Promise<void> {
-        this._workspace = undefined;
-        this._roots.length = 0;
+        if (await this.windowService.isSafeToShutDown(StopReason.Reload)) {
+            this.windowService.setSafeToShutDown();
+            this._workspace = undefined;
+            this._roots.length = 0;
 
-        await this.server.setMostRecentlyUsedWorkspace('');
-        this.reloadWindow();
+            await this.server.setMostRecentlyUsedWorkspace('');
+            this.reloadWindow();
+        }
     }
 
     /**
