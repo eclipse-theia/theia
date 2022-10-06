@@ -229,8 +229,6 @@ module.exports = [{
     }
 },
 {
-
-
     mode,
     plugins: [
         new MiniCssExtractPlugin({

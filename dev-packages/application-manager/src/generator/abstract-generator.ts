@@ -32,7 +32,7 @@ export abstract class AbstractGenerator {
 
     protected compileFrontendModuleImports(modules: Map<string, string>): string {
         const splitFrontend = this.options.splitFrontend ?? this.options.mode !== 'production';
-        return this.compileModuleImports(new Map([...modules.entries()].map(([key, path]) => [key, path])), splitFrontend ? 'import' : 'require');
+        return this.compileModuleImports(modules, splitFrontend ? 'import' : 'require');
     }
 
     protected compileBackendModuleImports(modules: Map<string, string>): string {
