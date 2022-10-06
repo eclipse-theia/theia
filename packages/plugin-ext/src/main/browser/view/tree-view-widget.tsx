@@ -52,7 +52,7 @@ import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
-export const VIEW_ITEM_INLINE_MENU: MenuPath = ['view-item-inline-menu'];
+export const VIEW_ITEM_INLINE_MENU: MenuPath = ['view-item-context-menu', 'inline'];
 
 export interface SelectionEventHandler {
     readonly node: SelectableTreeNode;
