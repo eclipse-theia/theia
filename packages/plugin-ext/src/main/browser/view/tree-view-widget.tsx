@@ -288,6 +288,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         this.model.onDidChangeWelcomeState(this.update, this);
         this.toDispose.push(this.model.onDidChangeWelcomeState(this.update, this));
         this.toDispose.push(this.onDidChangeVisibilityEmitter);
+        this.toDispose.push(this.contextKeyService.onDidChange(() => this.update()));
     }
 
     protected markdownItPlugin(): void {
