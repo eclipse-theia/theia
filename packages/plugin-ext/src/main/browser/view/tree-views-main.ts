@@ -163,14 +163,7 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
         }));
 
         this.toDispose.push(treeViewWidget.model.onSelectionChanged(event => {
-            if (event.length === 1) {
-                const { contextValue } = event[0] as TreeViewNode;
-                this.contextKeys.viewItem.set(contextValue);
-            } else {
-                this.contextKeys.viewItem.set('');
-            }
             this.contextKeys.view.set(treeViewId);
-
             this.proxy.$setSelection(treeViewId, event.map((node: TreeViewNode) => node.id));
         }));
 
