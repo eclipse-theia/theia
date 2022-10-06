@@ -23,7 +23,7 @@ import {
 } from '../../common';
 import { KeybindingRegistry } from '../keybinding';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
-import { ContextKeyService } from '../context-key-service';
+import { ContextKeyService, ContextMatcher } from '../context-key-service';
 import { ContextMenuContext } from './context-menu-context';
 import { waitForRevealed } from '../widgets';
 import { ApplicationShell } from '../shell';
@@ -38,6 +38,7 @@ export abstract class MenuBarWidget extends MenuBar {
 export interface BrowserMenuOptions extends MenuWidget.IOptions {
     commands: MenuCommandRegistry,
     context?: HTMLElement,
+    contextKeyService?: ContextMatcher;
     rootMenuPath: MenuPath
 };
 
@@ -107,10 +108,10 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
         }
     }
 
-    createContextMenu(path: MenuPath, args?: unknown[], context?: HTMLElement): MenuWidget {
+    createContextMenu(path: MenuPath, args?: unknown[], context?: HTMLElement, contextKeyService?: ContextMatcher): MenuWidget {
         const menuModel = this.menuProvider.getMenu(path);
         const menuCommandRegistry = this.createMenuCommandRegistry(menuModel, args).snapshot(path);
-        const contextMenu = this.createMenuWidget(menuModel, { commands: menuCommandRegistry, context, rootMenuPath: path });
+        const contextMenu = this.createMenuWidget(menuModel, { commands: menuCommandRegistry, context, rootMenuPath: path, contextKeyService });
         return contextMenu;
     }
 
@@ -286,7 +287,9 @@ export class DynamicMenuWidget extends MenuWidget {
     }
 
     protected buildSubMenus(parentItems: MenuWidget.IItemOptions[], menu: MenuNode, commands: MenuCommandRegistry): MenuWidget.IItemOptions[] {
-        if (CompoundMenuNode.is(menu) && menu.children.length && this.undefinedOrMatch(menu.when, this.options.context)) {
+        if (CompoundMenuNode.is(menu)
+            && menu.children.length
+            && this.undefinedOrMatch(this.options.contextKeyService ?? this.services.contextKeyService, menu.when, this.options.context)) {
             const role = menu === this.menu ? CompoundMenuNodeRole.Group : CompoundMenuNode.getRole(menu);
             if (role === CompoundMenuNodeRole.Submenu) {
                 const submenu = this.services.menuWidgetFactory.createMenuWidget(menu, this.options);
@@ -307,7 +310,7 @@ export class DynamicMenuWidget extends MenuWidget {
             }
         } else if (menu.command) {
             const node = menu.altNode && this.services.context.altPressed ? menu.altNode : (menu as MenuNode & CommandMenuNode);
-            if (commands.isVisible(node.command) && this.undefinedOrMatch(node.when, this.options.context)) {
+            if (commands.isVisible(node.command) && this.undefinedOrMatch(this.options.contextKeyService ?? this.services.contextKeyService, node.when, this.options.context)) {
                 parentItems.push({
                     command: node.command,
                     type: 'command'
@@ -317,8 +320,8 @@ export class DynamicMenuWidget extends MenuWidget {
         return parentItems;
     }
 
-    protected undefinedOrMatch(expression?: string, context?: HTMLElement): boolean {
-        if (expression) { return this.services.contextKeyService.match(expression, context); }
+    protected undefinedOrMatch(contextKeyService: ContextMatcher, expression?: string, context?: HTMLElement): boolean {
+        if (expression) { return contextKeyService.match(expression, context); }
         return true;
     }
 

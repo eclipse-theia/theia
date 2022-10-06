@@ -38,15 +38,18 @@ export interface ContextKeyChangeEvent {
 }
 
 export const ContextKeyService = Symbol('ContextKeyService');
-export interface ContextKeyService extends Disposable {
-    readonly onDidChange: Event<ContextKeyChangeEvent>;
 
-    createKey<T>(key: string, defaultValue: T | undefined): ContextKey<T>;
-
+export interface ContextMatcher extends Disposable {
     /**
      * Whether the expression is satisfied. If `context` provided, the service will attempt to retrieve a context object associated with that element.
      */
     match(expression: string, context?: HTMLElement): boolean;
+}
+
+export interface ContextKeyService extends ContextMatcher {
+    readonly onDidChange: Event<ContextKeyChangeEvent>;
+
+    createKey<T>(key: string, defaultValue: T | undefined): ContextKey<T>;
 
     /**
      * @returns a Set of the keys used by the given `expression` or `undefined` if none are used or the expression cannot be parsed.
@@ -54,8 +57,8 @@ export interface ContextKeyService extends Disposable {
     parseKeys(expression: string): Set<string> | undefined;
 
     /**
-     * Creates a temporary context that will use the `values` passed in when evaluating `callback`
-     * `callback` must be synchronous.
+     * Creates a temporary context that will use the `values` passed in when evaluating {@link callback}.
+     * {@link callback | The callback} must be synchronous.
      */
     with<T>(values: Record<string, unknown>, callback: () => T): T;
 
@@ -66,12 +69,18 @@ export interface ContextKeyService extends Disposable {
     createScoped(target: HTMLElement): ScopedValueStore;
 
     /**
+     * @param overlay values to be used in the new {@link ContextKeyService}. These values will be static.
+     * Creates a child service with a separate context and a set of fixed values to override parent values.
+     */
+    createOverlay(overlay: Iterable<[string, unknown]>): ContextMatcher;
+
+    /**
      * Set or modify a value in the service's context.
      */
     setContext(key: string, value: unknown): void;
 }
 
-export type ScopedValueStore = Omit<ContextKeyService, 'onDidChange' | 'match' | 'parseKeys' | 'with'>;
+export type ScopedValueStore = Omit<ContextKeyService, 'onDidChange' | 'match' | 'parseKeys' | 'with' | 'createOverlay'>;
 
 @injectable()
 export class ContextKeyServiceDummyImpl implements ContextKeyService {
@@ -111,6 +120,13 @@ export class ContextKeyServiceDummyImpl implements ContextKeyService {
      * Details should implemented by an extension, e.g. by the monaco extension.
      */
     createScoped(target: HTMLElement): ContextKeyService {
+        return this;
+    }
+
+    /**
+     * Details should be implemented by an extension, e.g. the monaco extension.
+     */
+    createOverlay(overlay: Iterable<[string, unknown]>): ContextMatcher {
         return this;
     }
 

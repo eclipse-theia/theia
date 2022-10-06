@@ -19,6 +19,7 @@
 import { injectable } from 'inversify';
 import { MenuPath } from '../common/menu';
 import { Disposable, DisposableCollection } from '../common/disposable';
+import { ContextMatcher } from './context-key-service';
 
 export interface Coordinate { x: number; y: number; }
 export const Coordinate = Symbol('Coordinate');
@@ -117,5 +118,6 @@ export interface RenderContextMenuOptions {
      * of menu items registered for this item.
      */
     context?: HTMLElement;
+    contextKeyService?: ContextMatcher;
     onHide?: () => void;
 }

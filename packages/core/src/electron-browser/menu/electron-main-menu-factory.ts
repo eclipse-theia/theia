@@ -24,6 +24,7 @@ import { PreferenceService, CommonCommands } from '../../browser';
 import debounce = require('lodash.debounce');
 import { MAXIMIZED_CLASS } from '../../browser/shell/theia-dock-panel';
 import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin';
+import { ContextMatcher } from 'src/browser/context-key-service';
 
 /**
  * Representation of possible electron menu options.
@@ -39,6 +40,11 @@ export interface ElectronMenuOptions {
      * of menu items registered for this item.
      */
     context?: HTMLElement;
+    /**
+     * A context key service to use when evaluating any `when` clauses.
+     * If none is provided, the global context will be used.
+     */
+    contextKeyService?: ContextMatcher;
     /**
      * The root menu path for which the menu is being built.
      */
@@ -123,9 +129,9 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         return null;
     }
 
-    createElectronContextMenu(menuPath: MenuPath, args?: any[], context?: HTMLElement): Electron.Menu {
+    createElectronContextMenu(menuPath: MenuPath, args?: any[], context?: HTMLElement, contextKeyService?: ContextMatcher): Electron.Menu {
         const menuModel = this.menuProvider.getMenu(menuPath);
-        const template = this.fillMenuTemplate([], menuModel, args, { showDisabled: false, context, rootMenuPath: menuPath });
+        const template = this.fillMenuTemplate([], menuModel, args, { showDisabled: false, context, rootMenuPath: menuPath, contextKeyService });
         return electronRemote.Menu.buildFromTemplate(template);
     }
 
@@ -136,7 +142,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
     ): Electron.MenuItemConstructorOptions[] {
         const showDisabled = options?.showDisabled !== false;
 
-        if (CompoundMenuNode.is(menu) && menu.children.length && this.undefinedOrMatch(menu.when, options.context)) {
+        if (CompoundMenuNode.is(menu) && menu.children.length && this.undefinedOrMatch(options.contextKeyService ?? this.contextKeyService, menu.when, options.context)) {
             const role = CompoundMenuNode.getRole(menu);
             if (role === CompoundMenuNodeRole.Group && menu.id === 'inline') { return parentItems; }
             const children = CompoundMenuNode.getFlatChildren(menu.children);
@@ -162,7 +168,9 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                 return parentItems;
             }
 
-            if (!this.menuCommandExecutor.isVisible(options.rootMenuPath, commandId, ...args) || !this.undefinedOrMatch(node.when, options.context)) {
+            if (
+                !this.menuCommandExecutor.isVisible(options.rootMenuPath, commandId, ...args)
+                || !this.undefinedOrMatch(options.contextKeyService ?? this.contextKeyService, node.when, options.context)) {
                 return parentItems;
             }
 
@@ -202,9 +210,9 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         return parentItems;
     }
 
-    protected undefinedOrMatch(expression?: string, context?: HTMLElement): boolean {
+    protected undefinedOrMatch(contextKeyService: ContextMatcher, expression?: string, context?: HTMLElement): boolean {
         if (expression) {
-            return this.contextKeyService.match(expression, context);
+            return contextKeyService.match(expression, context);
         }
         return true;
     }
