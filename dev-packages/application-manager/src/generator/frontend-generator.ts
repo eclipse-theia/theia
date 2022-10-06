@@ -18,7 +18,6 @@
 
 import { AbstractGenerator, GeneratorOptions } from './abstract-generator';
 import { existsSync, readFileSync } from 'fs';
-import { FrontendModuleDescription } from '@theia/application-package';
 import * as os from 'os';
 
 export class FrontendGenerator extends AbstractGenerator {
@@ -28,14 +27,14 @@ export class FrontendGenerator extends AbstractGenerator {
         await this.write(this.pck.frontend('index.html'), this.compileIndexHtml(frontendModules));
         await this.write(this.pck.frontend('index.js'), this.compileIndexJs(frontendModules));
         await this.write(this.pck.frontend('secondary-window.html'), this.compileSecondaryWindowHtml());
-        await this.write(this.pck.frontend('secondary-index.js'), this.compileSecondaryIndexJs(frontendModules));
+        await this.write(this.pck.frontend('secondary-index.js'), this.compileSecondaryIndexJs(this.pck.secondaryWindowModules));
         if (this.pck.isElectron()) {
             const electronMainModules = this.pck.targetElectronMainModules;
             await this.write(this.pck.frontend('electron-main.js'), this.compileElectronMain(electronMainModules));
         }
     }
 
-    protected compileIndexPreload(frontendModules: Map<string, FrontendModuleDescription>): string {
+    protected compileIndexPreload(frontendModules: Map<string, string>): string {
         const template = this.pck.props.generator.config.preloadTemplate;
         if (!template) {
             return '';
@@ -49,7 +48,7 @@ export class FrontendGenerator extends AbstractGenerator {
         return template;
     }
 
-    protected compileIndexHtml(frontendModules: Map<string, FrontendModuleDescription>): string {
+    protected compileIndexHtml(frontendModules: Map<string, string>): string {
         return `<!DOCTYPE html>
 <html lang="en">
 
@@ -64,7 +63,7 @@ export class FrontendGenerator extends AbstractGenerator {
 </html>`;
     }
 
-    protected compileIndexHead(frontendModules: Map<string, FrontendModuleDescription>): string {
+    protected compileIndexHead(frontendModules: Map<string, string>): string {
         return `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -72,7 +71,7 @@ export class FrontendGenerator extends AbstractGenerator {
   <title>${this.pck.props.frontend.config.applicationName}</title>`;
     }
 
-    protected compileIndexJs(frontendModules: Map<string, FrontendModuleDescription>): string {
+    protected compileIndexJs(frontendModules: Map<string, string>): string {
         const compiledModuleImports = this.compileFrontendModuleImports(frontendModules)
             // fix the generated indentation
             .replace(/^    /g, '        ');
@@ -245,14 +244,14 @@ module.exports = Promise.resolve()${this.compileElectronMainModuleImports(electr
 </html>`;
     }
 
-    protected compileSecondaryModuleImports(frontendModules: Map<string, FrontendModuleDescription>): string {
-        const lines = Array.from(frontendModules.entries()).filter(([moduleName, config]) => config.includeInSecondaryWindow)
-            .map(([moduleName, config]) => `    container.load(require('${config.path}').default);`);
+    protected compileSecondaryModuleImports(secondaryWindowModules: Map<string, string>): string {
+        const lines = Array.from(secondaryWindowModules.entries())
+            .map(([moduleName, path]) => `    container.load(require('${path}').default);`);
         return os.EOL + lines.join(os.EOL);
     }
 
-    protected compileSecondaryIndexJs(frontendModules: Map<string, FrontendModuleDescription>): string {
-        const compiledModuleImports = this.compileSecondaryModuleImports(frontendModules)
+    protected compileSecondaryIndexJs(secondaryWindowModules: Map<string, string>): string {
+        const compiledModuleImports = this.compileSecondaryModuleImports(secondaryWindowModules)
             // fix the generated indentation
             .replace(/^    /g, '        ');
         return `\
