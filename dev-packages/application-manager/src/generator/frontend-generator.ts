@@ -18,7 +18,6 @@
 
 import { AbstractGenerator, GeneratorOptions } from './abstract-generator';
 import { existsSync, readFileSync } from 'fs';
-import * as os from 'os';
 
 export class FrontendGenerator extends AbstractGenerator {
 
@@ -247,7 +246,7 @@ module.exports = Promise.resolve()${this.compileElectronMainModuleImports(electr
     protected compileSecondaryModuleImports(secondaryWindowModules: Map<string, string>): string {
         const lines = Array.from(secondaryWindowModules.entries())
             .map(([moduleName, path]) => `    container.load(require('${path}').default);`);
-        return os.EOL + lines.join(os.EOL);
+        return '\n' + lines.join('\n');
     }
 
     protected compileSecondaryIndexJs(secondaryWindowModules: Map<string, string>): string {

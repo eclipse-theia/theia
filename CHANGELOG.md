@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.31.0
+<a name="breaking_changes_1.31.0">[Breaking Changes:](#breaking_changes_1.31.0)</a>
+
+- [core] the generated webpack configuration (`gen-webpack.config.js`) now exports an array of two webpack configs instead of a single one: the first contains the config for 
+generating the main code bundle (as before), the second serves to generate a *.css file for inclusion into `secondaryWindow.html` [#11707](https://github.com/eclipse-theia/theia/pull/11707)
+
 ## v1.30.0 - 9/29/2022
 
 - [core] added functionality ot listen to keyboard layout changes [#11689](https://github.com/eclipse-theia/theia/pull/11689)
