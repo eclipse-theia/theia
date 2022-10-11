@@ -21,7 +21,6 @@ import * as yargs from 'yargs';
 import yargsFactory = require('yargs/yargs');
 import { ApplicationPackageManager, rebuild } from '@theia/application-manager';
 import { ApplicationProps, DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package';
-import * as ffmpeg from '@theia/ffmpeg';
 import checkDependencies from './check-dependencies';
 import downloadPlugins from './download-plugins';
 import runTest from './run-test';
@@ -559,6 +558,7 @@ async function theiaCli(): Promise<void> {
                 },
             },
             handler: async options => {
+                const ffmpeg = await import('@theia/ffmpeg');
                 await ffmpeg.replaceFfmpeg(options);
             },
         })
@@ -586,8 +586,9 @@ async function theiaCli(): Promise<void> {
                     choices: ['darwin', 'linux', 'win32'] as NodeJS.Platform[],
                 },
             },
-            handler: options => {
-                ffmpeg.checkFfmpeg(options);
+            handler: async options => {
+                const ffmpeg = await import('@theia/ffmpeg');
+                await ffmpeg.checkFfmpeg(options);
             },
         })
         .parserConfiguration({
