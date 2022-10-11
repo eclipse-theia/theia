@@ -14,6 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+// From https://semver.org/#does-semver-have-a-size-limit-on-the-version-string
+// eslint-disable-next-line max-len
+const semverRegex = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
+
 export namespace PluginIdentifiers {
     export interface Components {
         publisher?: string;
@@ -56,7 +60,7 @@ export namespace PluginIdentifiers {
      * @returns a string in the format `<publisher>.<name>`.
      */
     export function unversionedFromVersioned(id: VersionedId): UnversionedId {
-        const endOfId = id.indexOf('@');
+        const endOfId = id.lastIndexOf('@');
         return id.slice(0, endOfId) as UnversionedId;
     }
     /**
@@ -64,21 +68,34 @@ export namespace PluginIdentifiers {
      */
     export function identifiersFromVersionedId(probablyId: string): Components | undefined {
         const endOfPublisher = probablyId.indexOf('.');
-        const endOfName = probablyId.indexOf('@', endOfPublisher);
+        const endOfName = probablyId.lastIndexOf('@');
         if (endOfPublisher === -1 || endOfName === -1) {
             return undefined;
         }
-        return { publisher: probablyId.slice(0, endOfPublisher), name: probablyId.slice(endOfPublisher + 1, endOfName), version: probablyId.slice(endOfName + 1) };
+        const version = probablyId.slice(endOfName + 1);
+        if (!isValidVersion(version)) {
+            return undefined;
+        }
+        return { publisher: probablyId.slice(0, endOfPublisher), name: probablyId.slice(endOfPublisher + 1, endOfName), version };
     }
     /**
      * @returns `undefined` if it looks like the string passed in does not have the format returned by {@link PluginIdentifiers.toVersionedId}.
      */
     export function idAndVersionFromVersionedId(probablyId: string): IdAndVersion | undefined {
         const endOfPublisher = probablyId.indexOf('.');
-        const endOfName = probablyId.indexOf('@', endOfPublisher);
+        const endOfName = probablyId.lastIndexOf('@');
         if (endOfPublisher === -1 || endOfName === -1) {
             return undefined;
         }
-        return { id: probablyId.slice(0, endOfName) as UnversionedId, version: probablyId.slice(endOfName + 1) };
+        const version = probablyId.slice(endOfName + 1);
+        if (!isValidVersion(version)) {
+            return undefined;
+        }
+        return { id: probablyId.slice(0, endOfName) as UnversionedId, version };
+    }
+
+    function isValidVersion(probablyVersion: string): boolean {
+        // eslint-disable-next-line max-len
+        return semverRegex.test(probablyVersion);
     }
 }
