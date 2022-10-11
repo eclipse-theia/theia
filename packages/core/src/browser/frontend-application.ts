@@ -205,41 +205,19 @@ export class FrontendApplication {
         return startupElements.length === 0 ? undefined : startupElements[0] as HTMLElement;
     }
 
-    /* vvv HOTFIX begin vvv
-     *
-     * This is a hotfix against issues eclipse/theia#6459 and gitpod-io/gitpod#875 .
-     * It should be reverted after Theia was updated to the newer Monaco.
-     */
-    protected inComposition = false;
-    /**
-     * Register composition related event listeners.
-     */
-    protected registerCompositionEventListeners(): void {
-        window.document.addEventListener('compositionstart', event => {
-            this.inComposition = true;
-        });
-        window.document.addEventListener('compositionend', event => {
-            this.inComposition = false;
-        });
-    }
-    /* ^^^ HOTFIX end ^^^ */
-
     /**
      * Register global event listeners.
      */
     protected registerEventListeners(): void {
-        this.registerCompositionEventListeners(); /* Hotfix. See above. */
         this.windowsService.onUnload(() => {
             this.stateService.state = 'closing_window';
             this.layoutRestorer.storeLayout(this);
             this.stopContributions();
         });
         window.addEventListener('resize', () => this.shell.update());
-        document.addEventListener('keydown', event => {
-            if (this.inComposition !== true) {
-                this.keybindings.run(event);
-            }
-        }, true);
+
+        this.keybindings.registerEventListeners(window);
+
         document.addEventListener('touchmove', event => { event.preventDefault(); }, { passive: false });
         // Prevent forward/back navigation by scrolling in OS X
         if (isOSX) {

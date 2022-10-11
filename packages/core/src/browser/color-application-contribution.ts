@@ -33,6 +33,7 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
+    private readonly windows: Set<Window> = new Set();
 
     @inject(ColorRegistry)
     protected readonly colors: ColorRegistry;
@@ -52,19 +53,31 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
             this.updateThemeBackground();
         });
         this.colors.onDidChange(() => this.update());
+
+        this.registerWindow(window);
+    }
+
+    registerWindow(win: Window): Disposable {
+        this.windows.add(win);
+        this.updateWindow(win);
+        this.onDidChangeEmitter.fire();
+        return Disposable.create(() => this.windows.delete(win));
     }
 
     protected readonly toUpdate = new DisposableCollection();
     protected update(): void {
-        if (!document) {
-            return;
-        }
         this.toUpdate.dispose();
-        const theme = 'theia-' + this.themeService.getCurrentTheme().type;
-        document.body.classList.add(theme);
-        this.toUpdate.push(Disposable.create(() => document.body.classList.remove(theme)));
+        this.windows.forEach(win => this.updateWindow(win));
+        this.onDidChangeEmitter.fire();
+    }
 
-        const documentElement = document.documentElement;
+    protected updateWindow(win: Window): void {
+        const theme = 'theia-' + this.themeService.getCurrentTheme().type;
+
+        win.document.body.classList.add(theme);
+        this.toUpdate.push(Disposable.create(() => win.document.body.classList.remove(theme)));
+
+        const documentElement = win.document.documentElement;
         if (documentElement) {
             for (const id of this.colors.getColors()) {
                 const variable = this.colors.getCurrentCssVariable(id);
@@ -75,7 +88,6 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
                 }
             }
         }
-        this.onDidChangeEmitter.fire(undefined);
     }
 
     protected updateThemeBackground(): void {

@@ -91,6 +91,7 @@ export class ApplicationPackage {
 
     protected _frontendModules: Map<string, string> | undefined;
     protected _frontendElectronModules: Map<string, string> | undefined;
+    protected _secondaryWindowModules: Map<string, string> | undefined;
     protected _backendModules: Map<string, string> | undefined;
     protected _backendElectronModules: Map<string, string> | undefined;
     protected _electronMainModules: Map<string, string> | undefined;
@@ -144,6 +145,13 @@ export class ApplicationPackage {
             this._frontendElectronModules = this.computeModules('frontendElectron', 'frontend');
         }
         return this._frontendElectronModules;
+    }
+
+    get secondaryWindowModules(): Map<string, string> {
+        if (!this._secondaryWindowModules) {
+            this._secondaryWindowModules = this.computeModules('secondaryWindow');
+        }
+        return this._secondaryWindowModules;
     }
 
     get backendModules(): Map<string, string> {

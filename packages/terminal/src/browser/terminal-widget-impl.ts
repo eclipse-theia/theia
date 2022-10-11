@@ -18,7 +18,7 @@ import { Terminal, RendererType } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, RpcProtocol, RequestHandler } from '@theia/core';
-import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon } from '@theia/core/lib/browser';
+import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon, ExtractableWidget } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/shell-terminal-protocol';
@@ -46,7 +46,9 @@ export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOpti
 }
 
 @injectable()
-export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
+export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget, ExtractableWidget {
+    readonly isExtractable: boolean = true;
+    secondaryWindow: Window | undefined;
 
     static LABEL = nls.localizeByDefault('Terminal');
 
@@ -555,6 +557,30 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return;
         }
         this.term.open(this.node);
+
+        if (isFirefox) {
+            // monkey patching intersection observer handling for secondary window support
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const renderService: any = (this.term as any)._core._renderService;
+            const originalFunc: (entry: IntersectionObserverEntry) => void = renderService._onIntersectionChange.bind(renderService);
+            const replacement = function (entry: IntersectionObserverEntry): void {
+                if (entry.target.ownerDocument !== document) {
+                    // in Firefox, the intersection observer always reports the widget as non-intersecting if the dom element
+                    // is in a different document from when the IntersectionObserver started observing. Since we know
+                    // that the widget is always "visible" when in a secondary window, so we mark the entry as "intersecting"
+                    const patchedEvent: IntersectionObserverEntry = {
+                        ...entry,
+                        isIntersecting: true,
+                    };
+                    originalFunc(patchedEvent);
+                } else {
+                    originalFunc(entry);
+                }
+            };
+
+            renderService._onIntersectionChange = replacement;
+        }
+
         if (this.initialData) {
             this.term.write(this.initialData);
         }
