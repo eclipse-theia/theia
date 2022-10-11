@@ -154,7 +154,6 @@ export class ApplicationPackage {
         return this._secondaryWindowModules;
     }
 
-
     get backendModules(): Map<string, string> {
         if (!this._backendModules) {
             this._backendModules = this.computeModules('backend');
