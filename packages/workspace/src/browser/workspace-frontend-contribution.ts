@@ -18,7 +18,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, MessageService, isWindows, MaybeArray } from '@theia/core/lib/common';
 import { isOSX, environment, OS } from '@theia/core';
 import {
-    open, OpenerService, CommonMenus, ConfirmDialog, KeybindingRegistry, KeybindingContribution,
+    open, OpenerService, CommonMenus, KeybindingRegistry, KeybindingContribution,
     FrontendApplicationContribution, SHELL_TABBAR_CONTEXT_COPY, OnWillStopAction, Navigatable, SaveableSource, Widget
 } from '@theia/core/lib/browser';
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
@@ -403,13 +403,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     }
 
     protected async closeWorkspace(): Promise<void> {
-        const dialog = new ConfirmDialog({
-            title: WorkspaceCommands.CLOSE.label!,
-            msg: nls.localize('theia/workspace/closeWorkspace', 'Do you really want to close the workspace?')
-        });
-        if (await dialog.open()) {
-            await this.workspaceService.close();
-        }
+        await this.workspaceService.close();
     }
 
     /**

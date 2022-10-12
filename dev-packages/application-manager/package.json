@@ -42,6 +42,7 @@
     "circular-dependency-plugin": "^5.2.2",
     "compression-webpack-plugin": "^9.0.0",
     "copy-webpack-plugin": "^8.1.1",
+    "mini-css-extract-plugin": "^2.6.1",
     "css-loader": "^6.2.0",
     "electron-rebuild": "^3.2.7",
     "fs-extra": "^4.0.2",

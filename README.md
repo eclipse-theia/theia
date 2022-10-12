@@ -53,7 +53,6 @@ See [our roadmap](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Road
 
 ## Getting Started
 Here you can find guides and examples for common scenarios:
-- [Run Theia in Docker](https://github.com/theia-ide/theia-apps#theia-docker)
 - [Run Theia in Gitpod - a Theia-based IDE for GitHub](doc/Developing.md#run-the-browser-example-with-gitpod)
 - [Develop a Theia application - your own IDE](https://www.theia-ide.org/doc/Composing_Applications.html)
 - [Develop a Theia plugin - a VS Code like extension](https://www.theia-ide.org/doc/Authoring_Plugins.html)

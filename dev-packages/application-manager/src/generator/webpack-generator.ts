@@ -59,6 +59,7 @@ const yargs = require('yargs');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
 const CompressionPlugin = require('compression-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
 const outputPath = path.resolve(__dirname, 'lib');
 const { mode, staticCompression }  = yargs.option('mode', {
@@ -93,7 +94,7 @@ plugins.push(new CircularDependencyPlugin({
     failOnError: false // https://github.com/nodejs/readable-stream/issues/280#issuecomment-297076462
 }));
 
-module.exports = {
+module.exports = [{
     mode,
     plugins,
     devtool: 'source-map',
@@ -117,8 +118,16 @@ module.exports = {
                 loader: 'string-replace-loader',
                 include: /node_modules[\\\\/]@phosphor[\\\\/]widgets[\\\\/]lib/,
                 options: {
-                    search: /^.*?throw new Error\\('Host is not attached.'\\).*?$/gm,
-                    replace: ''
+                    multiple: [
+                        {
+                            search: /document\\.body\\.contains\\(widget.node\\)/gm,
+                            replace: 'widget.node.ownerDocument.body.contains(widget.node)'
+                        },
+                        {
+                            search: /\\!document\\.body\\.contains\\(host\\)/gm,
+                            replace: ' !host.ownerDocument.body.contains(host)'
+                        }
+                    ]
                 }
             },
             {
@@ -218,7 +227,54 @@ module.exports = {
         warnings: true,
         children: true
     }
-};`;
+},
+{
+    mode,
+    plugins: [
+        new MiniCssExtractPlugin({
+            // Options similar to the same options in webpackOptions.output
+            // both options are optional
+            filename: "[name].css",
+            chunkFilename: "[id].css",
+        }),
+    ],
+    devtool: 'source-map',
+    entry: {
+        "secondary-window": path.resolve(__dirname, 'src-gen/frontend/secondary-index.js'),
+    },
+    output: {
+        filename: '[name].js',
+        path: outputPath,
+        devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
+        globalObject: 'self'
+    },
+    target: 'electron-renderer',
+    cache: staticCompression,
+    module: {
+        rules: [
+            {
+                test: /\.css$/i,
+                use: [MiniCssExtractPlugin.loader, "css-loader"]
+            }
+        ]
+    },
+    resolve: {
+        fallback: {
+            'child_process': false,
+            'crypto': false,
+            'net': false,
+            'path': require.resolve('path-browserify'),
+            'process': false,
+            'os': false,
+            'timers': false
+        },
+        extensions: ['.js']
+    },
+    stats: {
+        warnings: true,
+        children: true
+    }
+}];`;
     }
 
     protected compileUserWebpackConfig(): string {

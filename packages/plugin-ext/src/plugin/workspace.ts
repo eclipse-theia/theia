@@ -180,7 +180,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
                 includePattern = include;
             } else {
                 includePattern = include.pattern;
-                includeFolderUri = URI.file(include.base).toString();
+                includeFolderUri = include.baseUri.toString();
             }
         } else {
             includePattern = '';

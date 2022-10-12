@@ -21,6 +21,8 @@ import { MessageService } from '../common/message-service';
 import { ApplicationShell } from './shell/application-shell';
 import { Emitter } from '../common/event';
 import { SecondaryWindowService } from './window/secondary-window-service';
+import { KeybindingRegistry } from './keybinding';
+import { ColorApplicationContribution } from './color-application-contribution';
 
 /** Widget to be contained directly in a secondary window. */
 class SecondaryWindowRootWidget extends Widget {
@@ -54,6 +56,12 @@ export class SecondaryWindowHandler {
     protected readonly _widgets: ExtractableWidget[] = [];
 
     protected applicationShell: ApplicationShell;
+
+    @inject(KeybindingRegistry)
+    protected keybindings: KeybindingRegistry;
+
+    @inject(ColorApplicationContribution)
+    protected colorAppContribution: ColorApplicationContribution;
 
     protected readonly onDidAddWidgetEmitter = new Emitter<Widget>();
     /** Subscribe to get notified when a widget is added to this handler, i.e. the widget was moved to an secondary window . */
@@ -148,6 +156,7 @@ export class SecondaryWindowHandler {
 
         const mainWindowTitle = document.title;
         newWindow.onload = () => {
+            this.keybindings.registerEventListeners(newWindow);
             // Use the widget's title as the window title
             // Even if the widget's label were malicious, this should be safe against XSS because the HTML standard defines this is inserted via a text node.
             // See https://html.spec.whatwg.org/multipage/dom.html#document.title
@@ -158,17 +167,21 @@ export class SecondaryWindowHandler {
                 console.error('Could not find dom element to attach to in secondary window');
                 return;
             }
+            const unregisterWithColorContribution = this.colorAppContribution.registerWindow(newWindow);
 
             widget.secondaryWindow = newWindow;
             const rootWidget = new SecondaryWindowRootWidget();
+            rootWidget.addClass('secondary-widget-root');
             Widget.attach(rootWidget, element);
             rootWidget.addWidget(widget);
+            widget.show();
             widget.update();
 
             this.addWidget(widget);
 
             // Close the window if the widget is disposed, e.g. by a command closing all widgets.
             widget.disposed.connect(() => {
+                unregisterWithColorContribution.dispose();
                 this.removeWidget(widget);
                 if (!newWindow.closed) {
                     newWindow.close();
@@ -176,8 +189,13 @@ export class SecondaryWindowHandler {
             });
 
             // debounce to avoid rapid updates while resizing the secondary window
-            const updateWidget = debounce(widget.update.bind(widget), 100);
-            newWindow.addEventListener('resize', () => updateWidget());
+            const updateWidget = debounce(() => {
+                rootWidget.update();
+            }, 100);
+            newWindow.addEventListener('resize', () => {
+                updateWidget();
+            });
+            widget.activate();
         };
     }
 

@@ -14,7 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AbstractViewContribution, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider, codicon } from '@theia/core/lib/browser';
+import {
+    AbstractViewContribution, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider, codicon, OnWillStopAction, FrontendApplicationContribution, ConfirmDialog, Dialog
+} from '@theia/core/lib/browser';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable } from '@theia/core/lib/common';
@@ -380,7 +382,8 @@ export namespace DebugBreakpointWidgetCommands {
 }
 
 @injectable()
-export class DebugFrontendApplicationContribution extends AbstractViewContribution<DebugWidget> implements TabBarToolbarContribution, ColorContribution {
+export class DebugFrontendApplicationContribution extends AbstractViewContribution<DebugWidget>
+    implements TabBarToolbarContribution, ColorContribution, FrontendApplicationContribution {
 
     @inject(DebugService)
     protected readonly debug: DebugService;
@@ -473,8 +476,27 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         this.watchManager.save();
     }
 
-    onWillStop(): boolean {
-        return this.preference['debug.confirmOnExit'] === 'always' && !!this.manager.currentSession;
+    onWillStop(): OnWillStopAction | undefined {
+        if (this.preference['debug.confirmOnExit'] === 'always' && this.manager.currentSession) {
+            return {
+                reason: 'active-debug-sessions',
+                action: async () => {
+                    if (this.manager.currentSession) {
+                        const msg = this.manager.sessions.length === 1
+                            ? nls.localize('theia/debug/debugSessionActive', 'There is an active debug session, are you sure you want to stop it?')
+                            : nls.localize('theia/debug/debugSessionActiveMultiple', 'There are active debug sessions, are you sure you want to stop them?');
+                        const safeToExit = await new ConfirmDialog({
+                            title: '',
+                            msg,
+                            ok: nls.localizeByDefault('Stop Debugging'),
+                            cancel: Dialog.CANCEL,
+                        }).open();
+                        return safeToExit === true;
+                    }
+                    return true;
+                },
+            };
+        }
     }
 
     override registerMenus(menus: MenuModelRegistry): void {

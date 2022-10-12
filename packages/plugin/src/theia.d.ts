@@ -20,6 +20,7 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import './theia-extra';
 import './theia-proposed';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -3009,6 +3010,11 @@ export module '@theia/plugin' {
         readonly creationOptions: Readonly<TerminalOptions | ExtensionTerminalOptions>
 
         /**
+         * The current state of the {@link Terminal}.
+         */
+        readonly state: TerminalState;
+
+        /**
          * Send text to the terminal.
          * @param text - text content.
          * @param addNewLine - in case true - apply new line after the text, otherwise don't apply new line. This defaults to `true`.
@@ -3030,6 +3036,24 @@ export module '@theia/plugin' {
          * Destroy terminal.
          */
         dispose(): void;
+    }
+
+    export interface TerminalState {
+        /**
+         * Whether the {@link Terminal} has been interacted with. Interaction means that the
+         * terminal has sent data to the process which depending on the terminal's _mode_. By
+         * default input is sent when a key is pressed or when a command or extension sends text,
+         * but based on the terminal's mode it can also happen on:
+         *
+         * - a pointer click event
+         * - a pointer scroll event
+         * - a pointer move event
+         * - terminal focus in/out
+         *
+         * For more information on events that can send data see "DEC Private Mode Set (DECSET)" on
+         * https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+         */
+        readonly isInteractedWith: boolean;
     }
 
     /**
@@ -3945,18 +3969,6 @@ export module '@theia/plugin' {
          * @param preserveFocus When `true`, the webview will not take focus.
          */
         reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void;
-
-        /**
-         * Show the webview panel according to a given options.
-         *
-         * A webview panel may only show in a single column at a time. If it is already showing, this
-         * method moves it to a new column.
-         *
-         * @param area target area where webview panel will be resided. Shows in the 'WebviewPanelTargetArea.Main' area if undefined.
-         * @param viewColumn View column to show the panel in. Shows in the current `viewColumn` if undefined.
-         * @param preserveFocus When `true`, the webview will not take focus.
-         */
-        reveal(area?: WebviewPanelTargetArea, viewColumn?: ViewColumn, preserveFocus?: boolean): void;
 
         /**
          * Dispose of the webview panel.
@@ -5005,6 +5017,11 @@ export module '@theia/plugin' {
          * either through the createTerminal API or commands.
          */
         export const onDidOpenTerminal: Event<Terminal>;
+
+        /**
+         * An {@link Event} which fires when a {@link Terminal.state terminal's state} has changed.
+         */
+        export const onDidChangeTerminalState: Event<Terminal>;
 
         /**
          * Create new terminal with predefined options.
@@ -6823,6 +6840,18 @@ export module '@theia/plugin' {
         /**
          * A base file path to which this pattern will be matched against relatively.
          */
+        baseUri: Uri;
+
+        /**
+         * A base file path against which this pattern will be matched relatively.
+         *
+         * This matches the `fsPath` value of {@link RelativePattern.baseUri}.
+         *
+         * *Note:* updating this value will update {@link RelativePattern.baseUri} to
+         * be a uri with `file` scheme.
+         *
+         * @deprecated This property is deprecated, please use {@link RelativePattern.baseUri} instead.
+         */
         base: string;
 
         /**
@@ -6842,7 +6871,7 @@ export module '@theia/plugin' {
          * @param pattern A file glob pattern like `*.{ts,js}` that will be matched on file paths
          * relative to the base path.
          */
-        constructor(base: WorkspaceFolder | string, pattern: string)
+        constructor(base: WorkspaceFolder | Uri | string, pattern: string)
     }
 
     /**

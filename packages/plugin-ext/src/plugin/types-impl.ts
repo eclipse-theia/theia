@@ -790,11 +790,27 @@ export enum ConfigurationTarget {
 @es5ClassCompat
 export class RelativePattern {
 
-    base: string;
+    private _base!: string;
+    get base(): string {
+        return this._base;
+    }
+    set base(base: string) {
+        this._base = base;
+        this._baseUri = URI.file(base);
+    }
 
-    constructor(base: theia.WorkspaceFolder | string, public pattern: string) {
+    private _baseUri!: URI;
+    get baseUri(): URI {
+        return this._baseUri;
+    }
+    set baseUri(baseUri: URI) {
+        this._baseUri = baseUri;
+        this.base = baseUri.fsPath;
+    }
+
+    constructor(base: theia.WorkspaceFolder | URI | string, public pattern: string) {
         if (typeof base !== 'string') {
-            if (!base || !URI.isUri(base.uri)) {
+            if (!base || !URI.isUri(base) && !URI.isUri(base.uri)) {
                 throw illegalArgument('base');
             }
         }
@@ -803,7 +819,13 @@ export class RelativePattern {
             throw illegalArgument('pattern');
         }
 
-        this.base = typeof base === 'string' ? base : base.uri.fsPath;
+        if (typeof base === 'string') {
+            this.baseUri = URI.file(base);
+        } else if (URI.isUri(base)) {
+            this.baseUri = base;
+        } else {
+            this.baseUri = base.uri;
+        }
     }
 
     pathToRelative(from: string, to: string): string {

@@ -97,6 +97,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
         }));
         this.toDispose.push(terminal.onData(data => {
             this.extProxy.$terminalOnInput(terminal.id, data);
+            this.extProxy.$terminalStateChanged(terminal.id);
         }));
     }
 

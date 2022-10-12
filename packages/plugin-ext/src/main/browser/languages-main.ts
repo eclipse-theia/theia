@@ -1018,7 +1018,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                 pattern = filter.pattern;
             } else if (filter.pattern) {
                 pattern = {
-                    base: MonacoPath.normalize(filter.pattern.base),
+                    base: MonacoPath.normalize(filter.pattern.baseUri.toString()),
                     pattern: filter.pattern.pattern,
                     pathToRelative: relative
                 };

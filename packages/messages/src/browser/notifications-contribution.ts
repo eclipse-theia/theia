@@ -180,6 +180,14 @@ export class NotificationsContribution implements FrontendApplicationContributio
     }
 
     registerThemeStyle(theme: ColorTheme, collector: CssStyleCollector): void {
+        const notificationsBackground = theme.getColor('notifications.background');
+        if (notificationsBackground) {
+            collector.addRule(`
+                .theia-notification-list-item-container {
+                    background-color: ${notificationsBackground};
+                }
+            `);
+        }
         const notificationHover = theme.getColor('list.hoverBackground');
         if (notificationHover) {
             collector.addRule(`
