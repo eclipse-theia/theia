@@ -16,7 +16,7 @@
 
 import * as theia from '@theia/plugin';
 import * as lstypes from '@theia/core/shared/vscode-languageserver-protocol';
-import { QuickPickItemKind, URI } from './types-impl';
+import { InlineValueEvaluatableExpression, InlineValueText, InlineValueVariableLookup, QuickPickItemKind, URI } from './types-impl';
 import * as rpc from '../common/plugin-api-rpc';
 import {
     DecorationOptions, EditorPosition, Plugin, Position, WorkspaceTextEditDto, WorkspaceFileEditDto, Selection, TaskDto, WorkspaceEditDto
@@ -401,6 +401,39 @@ export function fromEvaluatableExpression(evaluatableExpression: theia.Evaluatab
     };
 }
 
+export function fromInlineValue(inlineValue: theia.InlineValue): model.InlineValue {
+    if (inlineValue instanceof InlineValueText) {
+        return <model.InlineValueText>{
+            type: 'text',
+            range: fromRange(inlineValue.range),
+            text: inlineValue.text
+        };
+    } else if (inlineValue instanceof InlineValueVariableLookup) {
+        return <model.InlineValueVariableLookup>{
+            type: 'variable',
+            range: fromRange(inlineValue.range),
+            variableName: inlineValue.variableName,
+            caseSensitiveLookup: inlineValue.caseSensitiveLookup
+        };
+    } else if (inlineValue instanceof InlineValueEvaluatableExpression) {
+        return <model.InlineValueEvaluatableExpression>{
+            type: 'expression',
+            range: fromRange(inlineValue.range),
+            expression: inlineValue.expression
+        };
+    } else {
+        throw new Error('Unknown InlineValue type');
+    }
+}
+
+export function toInlineValueContext(inlineValueContext: model.InlineValueContext): theia.InlineValueContext {
+    const ivLocation = inlineValueContext.stoppedLocation;
+    return <theia.InlineValueContext>{
+        frameId: inlineValueContext.frameId,
+        stoppedLocation: new types.Range(ivLocation.startLineNumber, ivLocation.startColumn, ivLocation.endLineNumber, ivLocation.endColumn)
+    };
+}
+
 export function fromLocation(location: theia.Location): model.Location {
     return <model.Location>{
         uri: location.uri,
@@ -584,7 +617,7 @@ export namespace SymbolKind {
     }
 }
 
-export function toCodeActionTriggerKind(triggerKind: model.CodeActionTriggerKind): types.CodeActionTriggerKind  {
+export function toCodeActionTriggerKind(triggerKind: model.CodeActionTriggerKind): types.CodeActionTriggerKind {
     switch (triggerKind) {
         case model.CodeActionTriggerKind.Invoke:
             return types.CodeActionTriggerKind.Invoke;
@@ -1237,3 +1270,4 @@ export function pluginToPluginInfo(plugin: Plugin): rpc.PluginInfo {
         displayName: plugin.model.displayName
     };
 }
+

@@ -1156,6 +1156,75 @@ export class EvaluatableExpression {
     }
 }
 
+@es5ClassCompat
+export class InlineValueContext implements theia.InlineValueContext {
+    public frameId: number;
+    public stoppedLocation: Range;
+
+    constructor(frameId: number, stoppedLocation: Range) {
+        if (!frameId) {
+            illegalArgument('frameId must be defined');
+        }
+        if (!stoppedLocation) {
+            illegalArgument('stoppedLocation must be defined');
+        }
+        this.frameId = frameId;
+        this.stoppedLocation = stoppedLocation;
+    }
+}
+
+@es5ClassCompat
+export class InlineValueText implements theia.InlineValueText {
+    public type = 'text';
+    public range: Range;
+    public text: string;
+
+    constructor(range: Range, text: string) {
+        if (!range) {
+            illegalArgument('range must be defined');
+        }
+        if (!text) {
+            illegalArgument('text must be defined');
+        }
+        this.range = range;
+        this.text = text;
+    }
+}
+
+@es5ClassCompat
+export class InlineValueVariableLookup implements theia.InlineValueVariableLookup {
+    public type = 'variable';
+    public range: Range;
+    public variableName?: string;
+    public caseSensitiveLookup: boolean;
+
+    constructor(range: Range, variableName?: string, caseSensitiveLookup?: boolean) {
+        if (!range) {
+            illegalArgument('range must be defined');
+        }
+        this.range = range;
+        this.caseSensitiveLookup = caseSensitiveLookup || true;
+        this.variableName = variableName;
+    }
+}
+
+@es5ClassCompat
+export class InlineValueEvaluatableExpression implements theia.InlineValueEvaluatableExpression {
+    public type = 'expression';
+    public range: Range;
+    public expression?: string;
+
+    constructor(range: Range, expression?: string) {
+        if (!range) {
+            illegalArgument('range must be defined');
+        }
+        this.range = range;
+        this.expression = expression;
+    }
+}
+
+export type InlineValue = InlineValueText | InlineValueVariableLookup | InlineValueEvaluatableExpression;
+
 export enum DocumentHighlightKind {
     Text = 0,
     Read = 1,

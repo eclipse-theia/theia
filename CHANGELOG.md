@@ -5,6 +5,9 @@
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
 ## v1.31.0
+
+- [plugin] added support for the `InlineValues` feature [#11729](https://github.com/eclipse-theia/theia/pull/11729) - Contributed on behalf of STMicroelectronics
+
 <a name="breaking_changes_1.31.0">[Breaking Changes:](#breaking_changes_1.31.0)</a>
 
 - [core] the generated webpack configuration (`gen-webpack.config.js`) now exports an array of two webpack configs instead of a single one: the first contains the config for 

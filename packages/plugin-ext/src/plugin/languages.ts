@@ -62,13 +62,16 @@ import {
     CallHierarchyIncomingCall,
     CallHierarchyOutgoingCall,
     LinkedEditingRanges,
-    EvaluatableExpression
+    EvaluatableExpression,
+    InlineValue,
+    InlineValueContext
 } from '../common/plugin-api-rpc-model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
 import { SignatureHelpAdapter } from './languages/signature';
 import { HoverAdapter } from './languages/hover';
 import { EvaluatableExpressionAdapter } from './languages/evaluatable-expression';
+import { InlineValuesAdapter } from './languages/inline-values';
 import { DocumentHighlightAdapter } from './languages/document-highlight';
 import { DocumentFormattingAdapter } from './languages/document-formatting';
 import { RangeFormattingAdapter } from './languages/range-formatting';
@@ -103,6 +106,7 @@ type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
     HoverAdapter |
     EvaluatableExpressionAdapter |
+    InlineValuesAdapter |
     DocumentHighlightAdapter |
     DocumentFormattingAdapter |
     RangeFormattingAdapter |
@@ -364,6 +368,25 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, EvaluatableExpressionAdapter, adapter => adapter.provideEvaluatableExpression(URI.revive(resource), position, token), undefined);
     }
     // ### EvaluatableExpression Provider end
+
+    // ### InlineValues Provider begin
+    registerInlineValuesProvider(selector: theia.DocumentSelector, provider: theia.InlineValuesProvider, pluginInfo: PluginInfo): theia.Disposable {
+        const eventHandle = typeof provider.onDidChangeInlineValues === 'function' ? this.nextCallId() : undefined;
+        const callId = this.addNewAdapter(new InlineValuesAdapter(provider, this.documents));
+        this.proxy.$registerInlineValuesProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
+        let result = this.createDisposable(callId);
+
+        if (eventHandle !== undefined) {
+            const subscription = provider.onDidChangeInlineValues!(_ => this.proxy.$emitInlineValuesEvent(eventHandle));
+            result = Disposable.from(result, subscription);
+        }
+        return result;
+    }
+
+    $provideInlineValues(handle: number, resource: UriComponents, range: Range, context: InlineValueContext, token: theia.CancellationToken): Promise<InlineValue[] | undefined> {
+        return this.withAdapter(handle, InlineValuesAdapter, adapter => adapter.provideInlineValues(URI.revive(resource), range, context, token), undefined);
+    }
+    // ### InlineValue Provider end
 
     // ### Document Highlight Provider begin
     registerDocumentHighlightProvider(selector: theia.DocumentSelector, provider: theia.DocumentHighlightProvider, pluginInfo: PluginInfo): theia.Disposable {

@@ -79,6 +79,10 @@ import {
     SignatureHelpTriggerKind,
     Hover,
     EvaluatableExpression,
+    InlineValueEvaluatableExpression,
+    InlineValueText,
+    InlineValueVariableLookup,
+    InlineValueContext,
     DocumentHighlightKind,
     DocumentHighlight,
     DocumentLink,
@@ -701,6 +705,9 @@ export function createAPIFactory(
             registerEvaluatableExpressionProvider(selector: theia.DocumentSelector, provider: theia.EvaluatableExpressionProvider): theia.Disposable {
                 return languagesExt.registerEvaluatableExpressionProvider(selector, provider, pluginToPluginInfo(plugin));
             },
+            registerInlineValuesProvider(selector: theia.DocumentSelector, provider: theia.InlineValuesProvider): theia.Disposable {
+                return languagesExt.registerInlineValuesProvider(selector, provider, pluginToPluginInfo(plugin));
+            },
             registerDocumentHighlightProvider(selector: theia.DocumentSelector, provider: theia.DocumentHighlightProvider): theia.Disposable {
                 return languagesExt.registerDocumentHighlightProvider(selector, provider, pluginToPluginInfo(plugin));
             },
@@ -962,6 +969,10 @@ export function createAPIFactory(
             SignatureHelpTriggerKind,
             Hover,
             EvaluatableExpression,
+            InlineValueEvaluatableExpression,
+            InlineValueText,
+            InlineValueVariableLookup,
+            InlineValueContext,
             DocumentHighlightKind,
             DocumentHighlight,
             DocumentLink,
