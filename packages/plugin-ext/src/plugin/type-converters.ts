@@ -750,6 +750,8 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     taskDto.label = task.name;
     taskDto.source = task.source;
 
+    taskDto.runOptions = task.runOptions;
+
     if ((task as types.Task).hasProblemMatchers) {
         taskDto.problemMatcher = task.problemMatchers;
     }
@@ -811,10 +813,11 @@ export function toTask(taskDto: TaskDto): theia.Task {
         throw new Error('Task should be provided for converting');
     }
 
-    const { type, taskType, label, source, scope, problemMatcher, detail, command, args, options, group, presentation, ...properties } = taskDto;
+    const { type, taskType, label, source, scope, problemMatcher, detail, command, args, options, group, presentation, runOptions, ...properties } = taskDto;
     const result = {} as theia.Task;
     result.name = label;
     result.source = source;
+    result.runOptions = runOptions ?? {};
     if (detail) {
         result.detail = detail;
     }

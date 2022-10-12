@@ -235,6 +235,9 @@ describe('Type converters:', () => {
                 options: {
                     cwd
                 }
+            },
+            runOptions: {
+                reevaluateOnRerun: false
             }
         };
 
@@ -264,6 +267,9 @@ describe('Type converters:', () => {
                 options: {
                     cwd
                 }
+            },
+            runOptions: {
+                reevaluateOnRerun: false
             }
         };
 
@@ -291,6 +297,9 @@ describe('Type converters:', () => {
                 options: {
                     cwd
                 }
+            },
+            runOptions: {
+                reevaluateOnRerun: false
             }
         };
 

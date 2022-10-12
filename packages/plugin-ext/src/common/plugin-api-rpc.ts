@@ -1433,8 +1433,13 @@ export interface TaskDto {
     group?: string;
     detail?: string;
     presentation?: TaskPresentationOptionsDTO;
+    runOptions?: RunOptionsDTO;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
+}
+
+export interface RunOptionsDTO {
+    reevaluateOnRerun?: boolean;
 }
 
 export interface TaskPresentationOptionsDTO {
