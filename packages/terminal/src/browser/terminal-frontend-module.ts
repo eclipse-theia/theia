@@ -32,10 +32,7 @@ import { TerminalActiveContext, TerminalSearchVisibleContext } from './terminal-
 import { createCommonBindings } from '../common/terminal-common-module';
 import { TerminalService } from './base/terminal-service';
 import { bindTerminalPreferences } from './terminal-preferences';
-import { URLMatcher, LocalhostMatcher } from './terminal-linkmatcher';
 import { TerminalContribution } from './terminal-contribution';
-import { TerminalLinkmatcherFiles } from './terminal-linkmatcher-files';
-import { TerminalLinkmatcherDiffPre, TerminalLinkmatcherDiffPost } from './terminal-linkmatcher-diff';
 import { TerminalSearchWidgetFactory } from './search/terminal-search-widget';
 import { TerminalQuickOpenService, TerminalQuickOpenContribution } from './terminal-quick-open-service';
 import { createTerminalSearchFactory } from './search/terminal-search-container';
@@ -43,6 +40,9 @@ import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-han
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { TerminalThemeService } from './terminal-theme-service';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
+import { createXtermLinkFactory, TerminalLinkProvider, TerminalLinkProviderContribution, XtermLinkFactory } from './terminal-link-provider';
+import { UrlLinkProvider } from './terminal-url-link-provider';
+import { FileDiffPostLinkProvider, FileDiffPreLinkProvider, FileLinkProvider } from './terminal-file-link-provider';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
@@ -105,23 +105,23 @@ export default new ContainerModule(bind => {
 
     createCommonBindings(bind);
 
-    // link matchers
     bindContributionProvider(bind, TerminalContribution);
 
-    bind(URLMatcher).toSelf().inSingletonScope();
-    bind(TerminalContribution).toService(URLMatcher);
+    // terminal link provider contribution point
+    bindContributionProvider(bind, TerminalLinkProvider);
+    bind(TerminalLinkProviderContribution).toSelf().inSingletonScope();
+    bind(TerminalContribution).toService(TerminalLinkProviderContribution);
+    bind(XtermLinkFactory).toFactory(createXtermLinkFactory);
 
-    bind(LocalhostMatcher).toSelf().inSingletonScope();
-    bind(TerminalContribution).toService(LocalhostMatcher);
-
-    bind(TerminalLinkmatcherFiles).toSelf().inSingletonScope();
-    bind(TerminalContribution).toService(TerminalLinkmatcherFiles);
-
-    bind(TerminalLinkmatcherDiffPre).toSelf().inSingletonScope();
-    bind(TerminalContribution).toService(TerminalLinkmatcherDiffPre);
-
-    bind(TerminalLinkmatcherDiffPost).toSelf().inSingletonScope();
-    bind(TerminalContribution).toService(TerminalLinkmatcherDiffPost);
+    // default terminal link provider
+    bind(UrlLinkProvider).toSelf().inSingletonScope();
+    bind(TerminalLinkProvider).toService(UrlLinkProvider);
+    bind(FileLinkProvider).toSelf().inSingletonScope();
+    bind(TerminalLinkProvider).toService(FileLinkProvider);
+    bind(FileDiffPreLinkProvider).toSelf().inSingletonScope();
+    bind(TerminalLinkProvider).toService(FileDiffPreLinkProvider);
+    bind(FileDiffPostLinkProvider).toSelf().inSingletonScope();
+    bind(TerminalLinkProvider).toService(FileDiffPostLinkProvider);
 
     bind(FrontendApplicationContribution).to(TerminalFrontendContribution);
 });

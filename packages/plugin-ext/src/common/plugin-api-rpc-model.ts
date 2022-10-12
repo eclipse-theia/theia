@@ -723,3 +723,7 @@ export interface CommentInfo {
     threads: CommentThread[];
     commentingRanges: CommentingRanges;
 }
+
+export interface ProvidedTerminalLink extends theia.TerminalLink {
+    providerId: string
+}

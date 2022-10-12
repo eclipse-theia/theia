@@ -149,7 +149,8 @@ import {
     LinkedEditingRanges,
     LanguageStatusSeverity,
     TextDocumentChangeReason,
-    InputBoxValidationSeverity
+    InputBoxValidationSeverity,
+    TerminalLink
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -471,8 +472,8 @@ export function createAPIFactory(
             createInputBox(): theia.InputBox {
                 return quickOpenExt.createInputBox(plugin);
             },
-            registerTerminalLinkProvider(provider: theia.TerminalLinkProvider): void {
-                /* NOOP. To be implemented at later stage */
+            registerTerminalLinkProvider(provider: theia.TerminalLinkProvider): theia.Disposable {
+                return terminalExt.registerTerminalLinkProvider(provider);
             },
             get activeColorTheme(): theia.ColorTheme {
                 return themingExt.activeColorTheme;
@@ -1036,6 +1037,7 @@ export function createAPIFactory(
             ColorThemeKind,
             SourceControlInputBoxValidationType,
             FileDecoration,
+            TerminalLink,
             CancellationError,
             ExtensionMode,
             LinkedEditingRanges,

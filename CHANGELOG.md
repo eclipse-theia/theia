@@ -61,6 +61,7 @@ generating the main code bundle (as before), the second serves to generate a *.c
 - [core] changed type of `FrontendApplicationConfig#defaultTheme` from `string` to `DefaultTheme` [#11570](https://github.com/eclipse-theia/theia/pull/11570)
   - From now on, the default theme can be dispatched based on the OS theme. Use `DefaultTheme#defaultForOSTheme` to derive the `string` theme ID.
 - [plugin-ext] removed `ctrlcmd+shift+l` keybinding for `pluginsView:toggle` [#11608](https://github.com/eclipse-theia/theia/pull/11608)
+- [terminal] The `AbstractCmdClickTerminalContribution` API has been removed in favor of the `TerminalLinkProvider` interface [#11552](https://github.com/eclipse-theia/theia/pull/11552) - Contributed on behalf of STMicroelectronics
 
 ## v1.29.0 - 8/25/2022
 

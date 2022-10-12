@@ -76,7 +76,8 @@ import {
     CommentThread,
     CommentThreadChangedEvent,
     CodeActionProviderDocumentation,
-    LinkedEditingRanges
+    LinkedEditingRanges,
+    ProvidedTerminalLink
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -269,6 +270,8 @@ export interface TerminalServiceExt {
     $currentTerminalChanged(id: string | undefined): void;
     $terminalStateChanged(id: string): void;
     $initEnvironmentVariableCollections(collections: [string, SerializableEnvironmentVariableCollection][]): void;
+    $provideTerminalLinks(line: string, terminalId: string, token: theia.CancellationToken): Promise<ProvidedTerminalLink[]>;
+    $handleTerminalLink(link: ProvidedTerminalLink): Promise<void>;
     getEnvironmentVariableCollection(extensionIdentifier: string): theia.EnvironmentVariableCollection;
 }
 export interface OutputChannelRegistryExt {
@@ -394,6 +397,18 @@ export interface TerminalServiceMain {
      * @param name new terminal widget name.
      */
     $setNameByTerminalId(id: number, name: string): void;
+
+    /**
+     * Register a new terminal link provider.
+     * @param providerId id of the terminal link provider to be registered.
+     */
+    $registerTerminalLinkProvider(providerId: string): Promise<void>;
+
+    /**
+     * Unregister the terminal link provider with the specified id.
+     * @param providerId id of the terminal link provider to be unregistered.
+     */
+    $unregisterTerminalLinkProvider(providerId: string): Promise<void>;
 }
 
 export interface AutoFocus {

@@ -1650,6 +1650,29 @@ export class QuickInputButtons {
 }
 
 @es5ClassCompat
+export class TerminalLink {
+
+    static validate(candidate: TerminalLink): void {
+        if (typeof candidate.startIndex !== 'number') {
+            throw new Error('Should provide a startIndex inside candidate field');
+        }
+        if (typeof candidate.length !== 'number') {
+            throw new Error('Should provide a length inside candidate field');
+        }
+    }
+
+    startIndex: number;
+    length: number;
+    tooltip?: string;
+
+    constructor(startIndex: number, length: number, tooltip?: string) {
+        this.startIndex = startIndex;
+        this.length = length;
+        this.tooltip = tooltip;
+    }
+}
+
+@es5ClassCompat
 export class FileDecoration {
 
     static validate(d: FileDecoration): void {

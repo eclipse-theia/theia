@@ -14,67 +14,58 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { OS } from '@theia/core/lib/common';
+import { OS, Path } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
-import { Position } from '@theia/editor/lib/browser';
-import { AbstractCmdClickTerminalContribution } from './terminal-linkmatcher';
-import { TerminalWidgetImpl } from './terminal-widget-impl';
-import { Path } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { Position } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { TerminalWidget } from './base/terminal-widget';
+import { TerminalLink, TerminalLinkProvider } from './terminal-link-provider';
+import { TerminalWidgetImpl } from './terminal-widget-impl';
 
 @injectable()
-export class TerminalLinkmatcherFiles extends AbstractCmdClickTerminalContribution {
+export class FileLinkProvider implements TerminalLinkProvider {
 
-    @inject(OpenerService) protected openerService: OpenerService;
+    @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(FileService) protected fileService: FileService;
 
-    async getRegExp(): Promise<RegExp> {
+    async provideLinks(line: string, terminal: TerminalWidget): Promise<TerminalLink[]> {
+        const links: TerminalLink[] = [];
+        const regExp = await this.createRegExp();
+        let regExpResult: RegExpExecArray | null;
+        while (regExpResult = regExp.exec(line)) {
+            const match = regExpResult[0];
+            if (await this.isValidFile(match, terminal)) {
+                links.push({
+                    startIndex: regExp.lastIndex - match.length,
+                    length: match.length,
+                    handle: () => this.open(match, terminal)
+                });
+            }
+        }
+        return links;
+    }
+
+    protected async createRegExp(): Promise<RegExp> {
         const baseLocalLinkClause = OS.backend.isWindows ? winLocalLinkClause : unixLocalLinkClause;
-        return new RegExp(`${baseLocalLinkClause}(${lineAndColumnClause})`);
+        return new RegExp(`${baseLocalLinkClause}(${lineAndColumnClause})`, 'g');
     }
 
-    override getValidate(terminalWidget: TerminalWidgetImpl): (link: string) => Promise<boolean> {
-        return async match => {
-            try {
-                const toOpen = await this.toURI(match, await terminalWidget.cwd);
-                if (toOpen) {
-                    // TODO: would be better to ask the opener service, but it returns positively even for unknown files.
-                    try {
-                        const stat = await this.fileService.resolve(toOpen);
-                        return !stat.isDirectory;
-                    } catch { }
-                }
-            } catch (err) {
-                console.trace('Error validating ' + match);
+    protected async isValidFile(match: string, terminal: TerminalWidget): Promise<boolean> {
+        try {
+            const toOpen = await this.toURI(match, await this.getCwd(terminal));
+            if (toOpen) {
+                // TODO: would be better to ask the opener service, but it returns positively even for unknown files.
+                try {
+                    const stat = await this.fileService.resolve(toOpen);
+                    return !stat.isDirectory;
+                } catch { }
             }
-            return false;
-        };
-    }
-
-    getHandler(terminalWidget: TerminalWidgetImpl): (event: MouseEvent, link: string) => void {
-        return async (event, fullMatch) => {
-            const toOpen = await this.toURI(fullMatch, await terminalWidget.cwd);
-            if (!toOpen) {
-                return;
-            }
-            const position = await this.extractPosition(fullMatch);
-            let options = {};
-            if (position) {
-                options = {
-                    selection: {
-                        start: position
-                    }
-                };
-            }
-            try {
-                const opener = await this.openerService.getOpener(toOpen, options);
-                opener.open(toOpen, options);
-            } catch (err) {
-                console.error('Cannot open link ' + fullMatch, err);
-            }
-        };
+        } catch (err) {
+            console.trace('Error validating ' + match, err);
+        }
+        return false;
     }
 
     protected async toURI(match: string, cwd: URI): Promise<URI | undefined> {
@@ -86,12 +77,44 @@ export class TerminalLinkmatcherFiles extends AbstractCmdClickTerminalContributi
         return pathObj.isAbsolute ? cwd.withPath(path) : cwd.resolve(path);
     }
 
+    protected async getCwd(terminal: TerminalWidget): Promise<URI> {
+        if (terminal instanceof TerminalWidgetImpl) {
+            return terminal.cwd;
+        }
+        return terminal.lastCwd;
+    }
+
+    protected async extractPath(link: string): Promise<string | undefined> {
+        const matches: string[] | null = (await this.createRegExp()).exec(link);
+        if (!matches) {
+            return undefined;
+        }
+        return matches[1];
+    }
+
+    async open(match: string, terminal: TerminalWidget): Promise<void> {
+        const toOpen = await this.toURI(match, await this.getCwd(terminal));
+        if (!toOpen) {
+            return;
+        }
+
+        const position = await this.extractPosition(match);
+        let options = {};
+        if (position) {
+            options = { selection: { start: position } };
+        }
+
+        try {
+            const opener = await this.openerService.getOpener(toOpen, options);
+            opener.open(toOpen, options);
+        } catch (err) {
+            console.error('Cannot open link ' + match, err);
+        }
+    }
+
     protected async extractPosition(link: string): Promise<Position> {
-        const matches: string[] | null = (await this.getRegExp()).exec(link);
-        const info: Position = {
-            line: 1,
-            character: 1
-        };
+        const matches: string[] | null = (await this.createRegExp()).exec(link);
+        const info: Position = { line: 1, character: 1 };
 
         if (!matches) {
             return info;
@@ -114,12 +137,19 @@ export class TerminalLinkmatcherFiles extends AbstractCmdClickTerminalContributi
         return info;
     }
 
-    protected async extractPath(link: string): Promise<string | undefined> {
-        const matches: string[] | null = (await this.getRegExp()).exec(link);
-        if (!matches) {
-            return undefined;
-        }
-        return matches[1];
+}
+
+@injectable()
+export class FileDiffPreLinkProvider extends FileLinkProvider {
+    override async createRegExp(): Promise<RegExp> {
+        return /^--- a\/(\S*)/g;
+    }
+}
+
+@injectable()
+export class FileDiffPostLinkProvider extends FileLinkProvider {
+    override async createRegExp(): Promise<RegExp> {
+        return /^\+\+\+ b\/(\S*)/g;
     }
 }
 

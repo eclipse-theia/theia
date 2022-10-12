@@ -3274,7 +3274,7 @@ export module '@theia/plugin' {
     /**
      * A link on a terminal line.
      */
-    export interface TerminalLink {
+    export class TerminalLink {
         /**
          * The start index of the link on [TerminalLinkContext.line](#TerminalLinkContext.line].
          */
@@ -3293,6 +3293,18 @@ export module '@theia/plugin' {
          * depending on OS, user settings, and localization.
          */
         tooltip?: string;
+
+        /**
+         * Creates a new terminal link.
+         * @param startIndex The start index of the link on [TerminalLinkContext.line](#TerminalLinkContext.line].
+         * @param length The length of the link on [TerminalLinkContext.line](#TerminalLinkContext.line].
+         * @param tooltip The tooltip text when you hover over this link.
+         *
+         * If a tooltip is provided, is will be displayed in a string that includes instructions on
+         * how to trigger the link, such as `{0} (ctrl + click)`. The specific instructions vary
+         * depending on OS, user settings, and localization.
+         */
+        constructor(startIndex: number, length: number, tooltip?: string);
     }
 
     /**
@@ -5124,7 +5136,7 @@ export module '@theia/plugin' {
          * @param provider The provider that provides the terminal links.
          * @return Disposable that unregisters the provider.
          */
-        export function registerTerminalLinkProvider(provider: TerminalLinkProvider): void;
+        export function registerTerminalLinkProvider(provider: TerminalLinkProvider): Disposable;
 
         /**
          * Register a file decoration provider.
