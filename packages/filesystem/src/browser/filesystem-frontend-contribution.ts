@@ -121,12 +121,19 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(FileSystemCommands.UPLOAD, new FileSelection.CommandHandler(this.selectionService, {
-            multi: false,
-            isEnabled: selection => this.canUpload(selection),
-            isVisible: selection => this.canUpload(selection),
-            execute: selection => this.upload(selection)
-        }));
+        commands.registerCommand(FileSystemCommands.UPLOAD, {
+            isEnabled: (...args: unknown[]) => {
+                const selection = this.getSelection(...args);
+                return !!selection && this.canUpload(selection);
+            },
+            isVisible: () => !environment.electron.is(),
+            execute: (...args: unknown[]) => {
+                const selection = this.getSelection(...args);
+                if (selection) {
+                    return this.upload(selection);
+                }
+            }
+        });
     }
 
     protected canUpload({ fileStat }: FileSelection): boolean {
@@ -146,6 +153,15 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
                 console.error(e);
             }
         }
+    }
+
+    protected getSelection(...args: unknown[]): FileSelection | undefined {
+        const { selection } = this.selectionService;
+        return this.toSelection(args[0]) ?? (Array.isArray(selection) ? selection.find(FileSelection.is) : this.toSelection(selection));
+    };
+
+    protected toSelection(arg: unknown): FileSelection | undefined {
+        return FileSelection.is(arg) ? arg : undefined;
     }
 
     protected pendingOperation = Promise.resolve();
