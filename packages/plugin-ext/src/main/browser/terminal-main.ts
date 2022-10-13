@@ -129,12 +129,13 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
                 title: options.name,
                 shellPath: options.shellPath,
                 shellArgs: options.shellArgs,
-                cwd: new URI(options.cwd),
+                cwd: options.cwd ? new URI(options.cwd) : undefined,
                 env: options.env,
                 strictEnv: options.strictEnv,
                 destroyTermOnClose: true,
                 useServerTitle: false,
                 attributes: options.attributes,
+                hideFromUser: options.hideFromUser,
                 isPseudoTerminal
             });
             if (options.message) {

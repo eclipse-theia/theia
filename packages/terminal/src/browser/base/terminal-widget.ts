@@ -51,6 +51,9 @@ export abstract class TerminalWidget extends BaseWidget {
 
     abstract readonly exitStatus: TerminalExitStatus | undefined;
 
+    /** Terminal widget can be hidden from users until explicitly shown once. */
+    abstract readonly hiddenFromUser: boolean;
+
     /** The last CWD assigned to the terminal, useful when attempting getCwdURI on a task terminal fails */
     lastCwd: URI;
 
@@ -202,4 +205,9 @@ export interface TerminalWidgetOptions {
      * Terminal kind that indicates whether a terminal is created by a user or by some extension for a user
      */
     readonly kind?: 'user' | string;
+
+    /**
+     * When enabled the terminal will run the process as normal but not be surfaced to the user until `Terminal.show` is called.
+     */
+    readonly hideFromUser?: boolean;
 }
