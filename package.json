@@ -71,6 +71,7 @@
     "download:plugins": "theia download:plugins",
     "electron": "yarn -s --cwd examples/electron",
     "license:check": "node scripts/check_3pp_licenses.js",
+    "license:check:review": "node scripts/check_3pp_licenses.js --review",
     "lint": "lerna run lint",
     "lint:clean": "rimraf .eslintcache",
     "lint:oneshot": "node --max-old-space-size=4096 node_modules/eslint/bin/eslint.js --cache=true \"{dev-packages,packages,examples}/**/*.{ts,tsx}\"",
