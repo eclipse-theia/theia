@@ -83,13 +83,13 @@ export class HostedPluginSupport {
     protected readonly logger: ILogger;
 
     @inject(HostedPluginServer)
-    private readonly server: JsonRpcProxy<HostedPluginServer>;
+    protected readonly server: JsonRpcProxy<HostedPluginServer>;
 
     @inject(HostedPluginWatcher)
-    private readonly watcher: HostedPluginWatcher;
+    protected readonly watcher: HostedPluginWatcher;
 
     @inject(PluginContributionHandler)
-    private readonly contributionHandler: PluginContributionHandler;
+    protected readonly contributionHandler: PluginContributionHandler;
 
     @inject(ContributionProvider)
     @named(MainPluginApiProvider)
@@ -102,10 +102,10 @@ export class HostedPluginSupport {
     protected readonly preferenceProviderProvider: PreferenceProviderProvider;
 
     @inject(PreferenceServiceImpl)
-    private readonly preferenceServiceImpl: PreferenceServiceImpl;
+    protected readonly preferenceServiceImpl: PreferenceServiceImpl;
 
     @inject(PluginPathsService)
-    private readonly pluginPathsService: PluginPathsService;
+    protected readonly pluginPathsService: PluginPathsService;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
@@ -161,11 +161,11 @@ export class HostedPluginSupport {
     @inject(Stopwatch)
     protected readonly stopwatch: Stopwatch;
 
-    private theiaReadyPromise: Promise<any>;
+    protected theiaReadyPromise: Promise<any>;
 
     protected readonly managers = new Map<string, PluginManagerExt>();
 
-    private readonly contributions = new Map<PluginIdentifiers.UnversionedId, PluginContributions>();
+    protected readonly contributions = new Map<PluginIdentifiers.UnversionedId, PluginContributions>();
 
     protected readonly activationEvents = new Set<string>();
 
@@ -533,7 +533,7 @@ export class HostedPluginSupport {
         return rpc;
     }
 
-    private createServerRpc(pluginHostId: string): RPCProtocol {
+    protected createServerRpc(pluginHostId: string): RPCProtocol {
         const emitter = new Emitter<string>();
         this.watcher.onPostMessageEvent(received => {
             if (pluginHostId === received.pluginHostId) {
@@ -548,7 +548,7 @@ export class HostedPluginSupport {
         });
     }
 
-    private async updateStoragePath(): Promise<void> {
+    protected async updateStoragePath(): Promise<void> {
         const path = await this.getStoragePath();
         for (const manager of this.managers.values()) {
             manager.$updateStoragePath(path);
