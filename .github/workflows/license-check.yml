@@ -48,4 +48,6 @@ jobs:
         if: matrix.tests != 'skip'
         shell: bash
         run: |
-          yarn license:check
+          yarn license:check:review
+        env:
+          DASH_LICENSES_PAT: ${{ secrets.DASH_LICENSES_PAT }}
