@@ -53,23 +53,23 @@ export const implementedVSCodeContributionPoints = [
 
 export type ContributionPoint = (typeof implementedVSCodeContributionPoints)[number];
 
-/** The values are combinations of MenuPath and `when` clause, if any */
-export const codeToTheiaMappings = new Map<ContributionPoint, Array<[MenuPath] | [MenuPath, string]>>([
-    ['comments/comment/context', [[COMMENT_CONTEXT]]],
-    ['comments/comment/title', [[COMMENT_TITLE]]],
-    ['comments/commentThread/context', [[COMMENT_THREAD_CONTEXT]]],
-    ['debug/callstack/context', [[DebugStackFramesWidget.CONTEXT_MENU], [DebugThreadsWidget.CONTEXT_MENU]]],
-    ['editor/context', [[EDITOR_CONTEXT_MENU]]],
-    ['editor/title', [[PLUGIN_EDITOR_TITLE_MENU]]],
-    ['editor/title/context', [[SHELL_TABBAR_CONTEXT_MENU, 'resourceSet']]],
-    ['explorer/context', [[NAVIGATOR_CONTEXT_MENU]]],
-    ['scm/resourceFolder/context', [[ScmTreeWidget.RESOURCE_FOLDER_CONTEXT_MENU]]],
-    ['scm/resourceGroup/context', [[ScmTreeWidget.RESOURCE_GROUP_CONTEXT_MENU]]],
-    ['scm/resourceState/context', [[ScmTreeWidget.RESOURCE_CONTEXT_MENU]]],
-    ['scm/title', [[PLUGIN_SCM_TITLE_MENU]]],
-    ['timeline/item/context', [[TIMELINE_ITEM_CONTEXT_MENU]]],
-    ['view/item/context', [[VIEW_ITEM_CONTEXT_MENU]]],
-    ['view/title', [[PLUGIN_VIEW_TITLE_MENU]]],
+/** The values are menu paths to which the VSCode contribution points correspond */
+export const codeToTheiaMappings = new Map<ContributionPoint, MenuPath[]>([
+    ['comments/comment/context', [COMMENT_CONTEXT]],
+    ['comments/comment/title', [COMMENT_TITLE]],
+    ['comments/commentThread/context', [COMMENT_THREAD_CONTEXT]],
+    ['debug/callstack/context', [DebugStackFramesWidget.CONTEXT_MENU, DebugThreadsWidget.CONTEXT_MENU]],
+    ['editor/context', [EDITOR_CONTEXT_MENU]],
+    ['editor/title', [PLUGIN_EDITOR_TITLE_MENU]],
+    ['editor/title/context', [SHELL_TABBAR_CONTEXT_MENU]],
+    ['explorer/context', [NAVIGATOR_CONTEXT_MENU]],
+    ['scm/resourceFolder/context', [ScmTreeWidget.RESOURCE_FOLDER_CONTEXT_MENU]],
+    ['scm/resourceGroup/context', [ScmTreeWidget.RESOURCE_GROUP_CONTEXT_MENU]],
+    ['scm/resourceState/context', [ScmTreeWidget.RESOURCE_CONTEXT_MENU]],
+    ['scm/title', [PLUGIN_SCM_TITLE_MENU]],
+    ['timeline/item/context', [TIMELINE_ITEM_CONTEXT_MENU]],
+    ['view/item/context', [VIEW_ITEM_CONTEXT_MENU]],
+    ['view/title', [PLUGIN_VIEW_TITLE_MENU]],
 ]);
 
 type CodeEditorWidget = EditorWidget | WebviewWidget;

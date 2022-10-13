@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { MenuPath, CommandRegistry, Disposable, DisposableCollection, ActionMenuNode, MenuCommandAdapterRegistry, Emitter, CompoundMenuNodeRole } from '@theia/core';
+import { MenuPath, CommandRegistry, Disposable, DisposableCollection, ActionMenuNode, MenuCommandAdapterRegistry, Emitter } from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DeployedPlugin, IconUrl, Menu } from '../../../common';
@@ -25,7 +25,7 @@ import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { PluginViewWidget } from '../view/plugin-view-widget';
 import { QuickCommandService } from '@theia/core/lib/browser';
 import {
-    CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint, implementedVSCodeContributionPoints,
+    CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint,
     PLUGIN_EDITOR_TITLE_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
 } from './vscode-theia-menu-mappings';
 import { PluginMenuCommandAdapter, ReferenceCountingSet } from './plugin-menu-command-adapter';
@@ -55,10 +55,6 @@ export class MenusContributionPointHandler {
     private initialize(): void {
         this.initialized = true;
         this.commandAdapterRegistry.registerAdapter(this.commandAdapter);
-        for (const contributionPoint of implementedVSCodeContributionPoints) {
-            this.menuRegistry.registerIndependentSubmenu(contributionPoint, '');
-            this.getMatchingMenu(contributionPoint)!.forEach(([menu, when]) => this.menuRegistry.linkSubmenu(menu, contributionPoint, { role: CompoundMenuNodeRole.Flat, when }));
-        }
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_EDITOR_TITLE_MENU, widget => this.codeEditorWidgetUtil.is(widget));
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_SCM_TITLE_MENU, widget => widget instanceof ScmWidget);
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_VIEW_TITLE_MENU, widget => widget instanceof PluginViewWidget);
@@ -70,7 +66,7 @@ export class MenusContributionPointHandler {
         });
     }
 
-    private getMatchingMenu(contributionPoint: ContributionPoint): Array<[MenuPath] | [MenuPath, string]> | undefined {
+    private getMatchingMenu(contributionPoint: ContributionPoint): MenuPath[] | undefined {
         return codeToTheiaMappings.get(contributionPoint);
     }
 
@@ -96,20 +92,22 @@ export class MenusContributionPointHandler {
                         toDispose.push(this.registerCommandPaletteAction(item));
                     } else {
                         this.checkTitleContribution(contributionPoint, item, toDispose);
-                        if (item.submenu) {
-                            const targets = this.getMatchingMenu(contributionPoint as ContributionPoint) ?? [contributionPoint];
-                            const { group, order } = this.parseGroup(item.group);
-                            targets.forEach(([target]) => toDispose.push(this.menuRegistry.linkSubmenu(target, item.submenu!, { order, when: item.when }, group)));
-                        } else if (item.command) {
-                            toDispose.push(this.commandAdapter.addCommand(item.command));
-                            const { group, order } = this.parseGroup(item.group);
-                            const node = new ActionMenuNode({
-                                commandId: item.command,
-                                when: item.when,
-                                order,
-                            }, this.commands);
-                            const parent = this.menuRegistry.getMenuNode(contributionPoint, group);
-                            toDispose.push(parent.addNode(node));
+                        const targets = this.getMatchingMenu(contributionPoint as ContributionPoint) ?? [contributionPoint];
+                        const { group, order } = this.parseGroup(item.group);
+                        const { submenu, command } = item;
+                        if (submenu) {
+                            targets.forEach(target => toDispose.push(this.menuRegistry.linkSubmenu(target, submenu!, { order, when: item.when }, group)));
+                        } else if (command) {
+                            toDispose.push(this.commandAdapter.addCommand(command));
+                            targets.forEach(target => {
+                                const node = new ActionMenuNode({
+                                    commandId: command,
+                                    when: item.when,
+                                    order,
+                                }, this.commands);
+                                const parent = this.menuRegistry.getMenuNode(target, group);
+                                toDispose.push(parent.addNode(node));
+                            });
                         }
                     }
                 } catch (error) {
