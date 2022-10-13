@@ -53,7 +53,7 @@ export const implementedVSCodeContributionPoints = [
 
 export type ContributionPoint = (typeof implementedVSCodeContributionPoints)[number];
 
-/** The values are combinations of MenuPath and `when` clause, if any */
+/** The values are menu paths to which the VSCode contribution points correspond */
 export const codeToTheiaMappings = new Map<ContributionPoint, MenuPath[]>([
     ['comments/comment/context', [COMMENT_CONTEXT]],
     ['comments/comment/title', [COMMENT_TITLE]],
