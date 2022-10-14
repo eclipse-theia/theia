@@ -22,7 +22,7 @@ const readline = require('readline');
 const kSECRET = Symbol('secret');
 
 // Submit any suspicious dependencies for review by the Eclipse Foundation, using dash-license "review" mode?
-const autoReviewMode = process.argv.includes('--review');
+var autoReviewMode = process.argv.includes('--review');
 const project = process.argv.find(arg => /--project=(\S+)/.exec(arg)?.[1]) ?? 'ecd.theia';
 
 const NO_COLOR = Boolean(process.env['NO_COLOR']);
@@ -45,9 +45,10 @@ main().catch(error => {
 
 async function main() {
     if (autoReviewMode && !personalAccessToken) {
-        error('Please setup an Eclipse Foundation Gitlab Personal Access Token to run the license check in "review" mode');
-        error('It should be set in an environment variable named "DASH_LICENSES_PAT"');
-        process.exit(1);
+        warn('Please setup an Eclipse Foundation Gitlab Personal Access Token to run the license check in "review" mode');
+        warn('It should be set in an environment variable named "DASH_LICENSES_PAT"');
+        warn('Proceeding in normal mode since the PAT is not currently set');
+        autoReviewMode = false;
     }
     if (!fs.existsSync(dashLicensesJar)) {
         info('Fetching dash-licenses...');
