@@ -7,6 +7,7 @@
 ## v1.31.0
 
 - [plugin] added support for the `InlineValues` feature [#11729](https://github.com/eclipse-theia/theia/pull/11729) - Contributed on behalf of STMicroelectronics
+- [plugin] Added support for `resolveTreeItem` of `TreeDataProvider` [#11708](https://github.com/eclipse-theia/theia/pull/11708) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.31.0">[Breaking Changes:](#breaking_changes_1.31.0)</a>
 
