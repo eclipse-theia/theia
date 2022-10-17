@@ -51,11 +51,11 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
         await this.copyDirectory(context);
         const types: PluginDeployerEntryType[] = [];
         const packageJson: PluginPackage = context.pluginEntry().getValue('package.json');
-        if (packageJson.main) {
-            types.push(PluginDeployerEntryType.BACKEND);
-        }
         if (packageJson.browser) {
             types.push(PluginDeployerEntryType.FRONTEND);
+        }
+        if (packageJson.main || !packageJson.browser) {
+            types.push(PluginDeployerEntryType.BACKEND);
         }
         context.pluginEntry().accept(...types);
     }
