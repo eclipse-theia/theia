@@ -28,6 +28,11 @@ export const FileNavigatorConfigSchema: PreferenceSchema = {
             description: nls.localizeByDefault('Controls whether the explorer should automatically reveal and select files when opening them.'),
             default: true
         },
+        'explorer.decorations.colors': {
+            type: 'boolean',
+            description: nls.localizeByDefault('Controls whether file decorations should use colors.'),
+            default: true
+        },
         [EXPLORER_COMPACT_FOLDERS]: {
             type: 'boolean',
             // eslint-disable-next-line max-len
@@ -39,6 +44,7 @@ export const FileNavigatorConfigSchema: PreferenceSchema = {
 
 export interface FileNavigatorConfiguration {
     'explorer.autoReveal': boolean;
+    'explorer.decorations.colors': boolean;
     [EXPLORER_COMPACT_FOLDERS]: boolean;
 }
 
