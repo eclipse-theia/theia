@@ -816,7 +816,7 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     taskDto.label = task.name;
     taskDto.source = task.source;
 
-    taskDto.runOptions = task.runOptions;
+    taskDto.runOptions = { reevaluateOnRerun: task.runOptions.reevaluateOnRerun };
 
     if ((task as types.Task).hasProblemMatchers) {
         taskDto.problemMatcher = task.problemMatchers;

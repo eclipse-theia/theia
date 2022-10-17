@@ -501,7 +501,7 @@ export class TaskService implements TaskConfigurationClient {
      * @param token  The cache token for the user interaction in progress
      */
     async runLastTask(token: number): Promise<TaskInfo | undefined> {
-        if (!this.lastTask || !this.lastTask.resolvedTask) {
+        if (!this.lastTask?.resolvedTask) {
             return;
         }
         if (!this.lastTask.resolvedTask.runOptions?.reevaluateOnRerun) {
