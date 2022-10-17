@@ -243,14 +243,17 @@ export function createAPIFactory(
                 return authenticationExt.onDidChangeSessions;
             }
         };
+        function commandIsDeclaredInPackage(id: string, model: PluginPackage): boolean {
+            const rawCommands = model.contributes?.commands;
+            if (!rawCommands) { return false; }
+            return Array.isArray(rawCommands) ? rawCommands.some(candidate => candidate.command === id) : rawCommands.command === id;
+        }
         const commands: typeof theia.commands = {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             registerCommand(command: theia.CommandDescription | string, handler?: <T>(...args: any[]) => T | Thenable<T | undefined>, thisArg?: any): Disposable {
                 // use of the ID when registering commands
                 if (typeof command === 'string') {
-                    const rawCommands = plugin.rawModel.contributes && plugin.rawModel.contributes.commands;
-                    const contributedCommands = rawCommands ? Array.isArray(rawCommands) ? rawCommands : [rawCommands] : undefined;
-                    if (handler && contributedCommands && contributedCommands.some(item => item.command === command)) {
+                    if (handler && commandIsDeclaredInPackage(command, plugin.rawModel)) {
                         return commandRegistry.registerHandler(command, handler, thisArg);
                     }
                     return commandRegistry.registerCommand({ id: command }, handler, thisArg);
@@ -262,7 +265,7 @@ export function createAPIFactory(
                 return commandRegistry.executeCommand<T>(commandId, ...args);
             },
             registerTextEditorCommand(command: string, handler: (textEditor: theia.TextEditor, edit: theia.TextEditorEdit, ...arg: any[]) => void, thisArg?: any): Disposable {
-                return commandRegistry.registerCommand({ id: command }, (...args: any[]): any => {
+                const internalHandler = (...args: any[]): any => {
                     const activeTextEditor = editors.getActiveEditor();
                     if (!activeTextEditor) {
                         console.warn('Cannot execute ' + command + ' because there is no active text editor.');
@@ -279,7 +282,10 @@ export function createAPIFactory(
                     }, err => {
                         console.warn('An error occurred while running command ' + command, err);
                     });
-                });
+                };
+                return commandIsDeclaredInPackage(command, plugin.rawModel)
+                    ? commandRegistry.registerHandler(command, internalHandler)
+                    : commandRegistry.registerCommand({ id: command }, internalHandler);
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             registerHandler(commandId: string, handler: (...args: any[]) => any, thisArg?: any): Disposable {
