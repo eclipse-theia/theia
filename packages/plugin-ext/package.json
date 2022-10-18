@@ -45,7 +45,7 @@
     "uuid": "^8.0.0",
     "vhost": "^3.0.2",
     "vscode-proxy-agent": "^0.11.0",
-    "vscode-textmate": "7.0.1"
+    "vscode-textmate": "^7.0.3"
   },
   "publishConfig": {
     "access": "public"

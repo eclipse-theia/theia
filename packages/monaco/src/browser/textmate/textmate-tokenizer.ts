@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { INITIAL, StackElement, IGrammar } from 'vscode-textmate';
+import { INITIAL, StateStack, IGrammar } from 'vscode-textmate';
 import * as monaco from '@theia/monaco-editor-core';
 
 export class TokenizerState implements monaco.languages.IState {
 
     constructor(
-        public readonly ruleStack: StackElement
+        public readonly ruleStack: StateStack
     ) { }
 
     clone(): monaco.languages.IState {
