@@ -18,7 +18,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { IRawThemeSetting } from 'vscode-textmate';
+import { IRawThemeSetting } from 'vscode-textmate/release/theme';
 import * as monaco from '@theia/monaco-editor-core';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
