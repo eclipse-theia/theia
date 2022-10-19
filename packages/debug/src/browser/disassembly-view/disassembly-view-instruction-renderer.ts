@@ -25,7 +25,7 @@ import { Disposable, dispose } from '@theia/monaco-editor-core/esm/vs/base/commo
 import { isAbsolute } from '@theia/monaco-editor-core/esm/vs/base/common/path';
 import { Constants } from '@theia/monaco-editor-core/esm/vs/base/common/uint';
 import { applyFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/browser/config/domFontInfo';
-import { createStringBuilder } from '@theia/monaco-editor-core/esm/vs/editor/common/core/stringBuilder';
+import { StringBuilder } from '@theia/monaco-editor-core/esm/vs/editor/common/core/stringBuilder';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { ITextModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
@@ -92,14 +92,14 @@ export class InstructionRenderer extends Disposable implements ITableRenderer<Di
         column.currentElement.element = element;
         const instruction = element.instruction;
         column.sourcecode.innerText = '';
-        const sb = createStringBuilder(1000);
+        const sb = new StringBuilder(1000);
 
         if (this._disassemblyView.isSourceCodeRender && instruction.location?.path && instruction.line) {
             const sourceURI = this.getUriFromSource(instruction);
 
             if (sourceURI) {
                 let textModel: ITextModel | undefined = undefined;
-                const sourceSB = createStringBuilder(10000);
+                const sourceSB = new StringBuilder(10000);
                 const ref = await this.textModelService.createModelReference(sourceURI);
                 textModel = ref.object.textEditorModel;
                 column.cellDisposable.push(ref);

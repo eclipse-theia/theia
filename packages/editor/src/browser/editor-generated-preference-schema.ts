@@ -26,13 +26,6 @@ import { PreferenceSchema } from '@theia/core/lib/browser';
  */
 
 export const editorGeneratedPreferenceProperties: PreferenceSchema['properties'] = {
-    "editor.rename.enablePreview": {
-        "scope": "language-overridable",
-        "description": nls.localizeByDefault("Enable/disable the ability to preview changes before renaming"),
-        "default": true,
-        "type": "boolean",
-        "restricted": false
-    },
     "editor.tabSize": {
         "type": "number",
         "default": 4,
@@ -189,6 +182,13 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "scope": "language-overridable",
         "restricted": false
     },
+    "diffEditor.renderMarginRevertIcon": {
+        "type": "boolean",
+        "default": true,
+        "description": nls.localize("theia/editor/diffEditor.renderMarginRevertIcon", "When enabled, the diff editor shows arrows in its glyph margin to revert changes."),
+        "scope": "language-overridable",
+        "restricted": false
+    },
     "diffEditor.ignoreTrimWhitespace": {
         "type": "boolean",
         "default": true,
@@ -222,6 +222,20 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Lines will never wrap."),
             nls.localizeByDefault("Lines will wrap at the viewport width."),
             nls.localizeByDefault("Lines will wrap according to the `#editor.wordWrap#` setting.")
+        ],
+        "scope": "language-overridable",
+        "restricted": false
+    },
+    "diffEditor.diffAlgorithm": {
+        "type": "string",
+        "enum": [
+            "smart",
+            "experimental"
+        ],
+        "default": "smart",
+        "markdownEnumDescriptions": [
+            nls.localize("theia/editor/diffEditor.diffAlgorithm.smart", "Uses the default diffing algorithm."),
+            nls.localize("theia/editor/diffEditor.diffAlgorithm.experimental", "Uses an experimental diffing algorithm.")
         ],
         "scope": "language-overridable",
         "restricted": false
@@ -610,6 +624,13 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "scope": "language-overridable",
         "restricted": false
     },
+    "editor.dropIntoEditor.enabled": {
+        "type": "boolean",
+        "default": true,
+        "markdownDescription": nls.localize("theia/editor/editor.dropIntoEditor.enabled", "Controls whether you can drag and drop a file into a text editor by holding down `shift` (instead of opening the file in an editor)."),
+        "scope": "language-overridable",
+        "restricted": false
+    },
     "editor.emptySelectionClipboard": {
         "description": nls.localizeByDefault("Controls whether copying without a selection copies the current line."),
         "type": "boolean",
@@ -659,17 +680,11 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "enumDescriptions": [
             nls.localizeByDefault('Never turn on Find in selection automatically (default).'),
             nls.localizeByDefault('Always turn on Find in selection automatically.'),
-            nls.localizeByDefault('Turn on Find in selection automatically when multiple lines of content are selected.')
+            nls.localizeByDefault('Turn on Find in selection automatically when multiple lines of content are selected.'),
         ],
-        "description": nls.localizeByDefault('Controls the condition for turning on find in selection automatically.'),
+        "description": nls.localizeByDefault("Controls the condition for turning on find in selection automatically."),
         "scope": "language-overridable",
         "restricted": false
-    },
-    "editor.find.globalFindClipboard": {
-        "type": "boolean",
-        "default": false,
-        "description": nls.localizeByDefault("Controls whether the Find Widget should read or modify the shared find clipboard on macOS."),
-        "included": isOSX
     },
     "editor.find.addExtraSpaceOnTop": {
         "type": "boolean",
@@ -825,7 +840,6 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     },
     "editor.gotoLocation.multiple": {
         "deprecationMessage": "This setting is deprecated, please use separate settings like 'editor.editor.gotoLocation.multipleDefinitions' or 'editor.editor.gotoLocation.multipleImplementations' instead.",
-        "type": ["string", "null"],
         "default": null,
         "scope": "language-overridable",
         "restricted": false
@@ -1137,6 +1151,13 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "scope": "language-overridable",
         "restricted": false
     },
+    "editor.minimap.autohide": {
+        "type": "boolean",
+        "default": false,
+        "description": nls.localize("theia/editor/editor.minimap.autohide", "Controls whether the minimap is hidden automatically."),
+        "scope": "language-overridable",
+        "restricted": false
+    },
     "editor.minimap.size": {
         "type": "string",
         "enum": [
@@ -1230,7 +1251,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Maps to `Control` on Windows and Linux and to `Command` on macOS."),
             nls.localizeByDefault("Maps to `Alt` on Windows and Linux and to `Option` on macOS.")
         ],
-        "markdownDescription": nls.localizeByDefault('The modifier to be used to add multiple cursors with the mouse. The Go To Definition and Open Link mouse gestures will adapt such that they do not conflict with the multicursor modifier. [Read more](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier).'),
+        "markdownDescription": nls.localize("theia/editor/editor.multiCursorModifier", "The modifier to be used to add multiple cursors with the mouse. The Go to Definition and Open Link mouse gestures will adapt such that they do not conflict with the [multicursor modifier](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier)."),
         "type": "string",
         "enum": [
             "ctrlCmd",
@@ -1324,88 +1345,82 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.quickSuggestions": {
-        "anyOf": [
-            {
-                "type": "boolean"
-            },
-            {
-                "type": "object",
-                "properties": {
-                    "strings": {
-                        "anyOf": [
-                            {
-                                "type": "boolean"
-                            },
-                            {
-                                "type": "string",
-                                "enum": [
-                                    "on",
-                                    "inline",
-                                    "off"
-                                ],
-                                "enumDescriptions": [
-                                    nls.localize("theia/editor/editor.quickSuggestions0", "Quick suggestions show inside the suggest widget"),
-                                    nls.localize("theia/editor/editor.quickSuggestions1", "Quick suggestions show as ghost text"),
-                                    nls.localize("theia/editor/editor.quickSuggestions2", "Quick suggestions are disabled")
-                                ]
-                            }
-                        ],
-                        "default": "off",
-                        "description": nls.localizeByDefault("Enable quick suggestions inside strings.")
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "strings": {
+                "anyOf": [
+                    {
+                        "type": "boolean"
                     },
-                    "comments": {
-                        "anyOf": [
-                            {
-                                "type": "boolean"
-                            },
-                            {
-                                "type": "string",
-                                "enum": [
-                                    "on",
-                                    "inline",
-                                    "off"
-                                ],
-                                "enumDescriptions": [
-                                    nls.localize("theia/editor/editor.quickSuggestions0", "Quick suggestions show inside the suggest widget"),
-                                    nls.localize("theia/editor/editor.quickSuggestions1", "Quick suggestions show as ghost text"),
-                                    nls.localize("theia/editor/editor.quickSuggestions2", "Quick suggestions are disabled")
-                                ]
-                            }
+                    {
+                        "type": "string",
+                        "enum": [
+                            "on",
+                            "inline",
+                            "off"
                         ],
-                        "default": "off",
-                        "description": nls.localizeByDefault("Enable quick suggestions inside comments.")
-                    },
-                    "other": {
-                        "anyOf": [
-                            {
-                                "type": "boolean"
-                            },
-                            {
-                                "type": "string",
-                                "enum": [
-                                    "on",
-                                    "inline",
-                                    "off"
-                                ],
-                                "enumDescriptions": [
-                                    nls.localize("theia/editor/editor.quickSuggestions0", "Quick suggestions show inside the suggest widget"),
-                                    nls.localize("theia/editor/editor.quickSuggestions1", "Quick suggestions show as ghost text"),
-                                    nls.localize("theia/editor/editor.quickSuggestions2", "Quick suggestions are disabled")
-                                ]
-                            }
-                        ],
-                        "default": "on",
-                        "description": nls.localizeByDefault("Enable quick suggestions outside of strings and comments.")
+                        "enumDescriptions": [
+                            nls.localize("theia/editor/editor.quickSuggestions0", "Quick suggestions show inside the suggest widget"),
+                            nls.localize("theia/editor/editor.quickSuggestions1", "Quick suggestions show as ghost text"),
+                            nls.localize("theia/editor/editor.quickSuggestions2", "Quick suggestions are disabled")
+                        ]
                     }
-                }
+                ],
+                "default": "off",
+                "description": nls.localizeByDefault("Enable quick suggestions inside strings.")
+            },
+            "comments": {
+                "anyOf": [
+                    {
+                        "type": "boolean"
+                    },
+                    {
+                        "type": "string",
+                        "enum": [
+                            "on",
+                            "inline",
+                            "off"
+                        ],
+                        "enumDescriptions": [
+                            nls.localize("theia/editor/editor.quickSuggestions0", "Quick suggestions show inside the suggest widget"),
+                            nls.localize("theia/editor/editor.quickSuggestions1", "Quick suggestions show as ghost text"),
+                            nls.localize("theia/editor/editor.quickSuggestions2", "Quick suggestions are disabled")
+                        ]
+                    }
+                ],
+                "default": "off",
+                "description": nls.localizeByDefault("Enable quick suggestions inside comments.")
+            },
+            "other": {
+                "anyOf": [
+                    {
+                        "type": "boolean"
+                    },
+                    {
+                        "type": "string",
+                        "enum": [
+                            "on",
+                            "inline",
+                            "off"
+                        ],
+                        "enumDescriptions": [
+                            nls.localize("theia/editor/editor.quickSuggestions0", "Quick suggestions show inside the suggest widget"),
+                            nls.localize("theia/editor/editor.quickSuggestions1", "Quick suggestions show as ghost text"),
+                            nls.localize("theia/editor/editor.quickSuggestions2", "Quick suggestions are disabled")
+                        ]
+                    }
+                ],
+                "default": "on",
+                "description": nls.localizeByDefault("Enable quick suggestions outside of strings and comments.")
             }
-        ],
+        },
         "default": {
             "other": "on",
             "comments": "off",
             "strings": "off"
         },
-        "markdownDescription": nls.localizeByDefault("Controls whether suggestions should automatically show up while typing."),
+        "markdownDescription": nls.localize("theia/editor/editor.quickSuggestions", "Controls whether suggestions should automatically show up while typing. This can be controlled for typing in comments, strings, and other code. Quick suggestion can be configured to show as ghost text or with the suggest widget. Also be aware of the '#editor.suggestOnTriggerCharacters#'-setting which controls if suggestions are triggered by special characters."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1584,7 +1599,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.scrollBeyondLastColumn": {
         "description": nls.localizeByDefault("Controls the number of extra characters beyond which the editor will scroll horizontally."),
         "type": "integer",
-        "default": 5,
+        "default": 4,
         "minimum": 0,
         "maximum": 1073741824,
         "scope": "language-overridable",
@@ -1604,6 +1619,12 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "scope": "language-overridable",
         "restricted": false
     },
+    "editor.selectionClipboard": {
+        "type": "boolean",
+        "default": true,
+        "description": nls.localizeByDefault("Controls whether the Linux primary clipboard should be supported."),
+        "included": !isOSX && !isWindows
+    },
     "editor.selectionHighlight": {
         "description": nls.localizeByDefault("Controls whether the editor should highlight matches similar to the selection."),
         "type": "boolean",
@@ -1614,12 +1635,14 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.showFoldingControls": {
         "enumDescriptions": [
             nls.localizeByDefault("Always show the folding controls."),
+            nls.localize("theia/editor/editor.showFoldingControls1", "Never show the folding controls and reduce the gutter size."),
             nls.localizeByDefault("Only show the folding controls when the mouse is over the gutter.")
         ],
         "description": nls.localizeByDefault("Controls when the folding controls on the gutter are shown."),
         "type": "string",
         "enum": [
             "always",
+            "never",
             "mouseover"
         ],
         "default": "mouseover",
@@ -1663,6 +1686,22 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "description": nls.localizeByDefault("Controls whether the editor will scroll using an animation."),
         "type": "boolean",
         "default": false,
+        "scope": "language-overridable",
+        "restricted": false
+    },
+    "editor.stickyScroll.enabled": {
+        "type": "boolean",
+        "default": false,
+        "description": nls.localize("theia/editor/editor.stickyScroll.enabled", "Shows the nested current scopes during the scroll at the top of the editor."),
+        "scope": "language-overridable",
+        "restricted": false
+    },
+    "editor.stickyScroll.maxLineCount": {
+        "type": "number",
+        "default": 5,
+        "minimum": 1,
+        "maximum": 10,
+        "description": nls.localize("theia/editor/editor.stickyScroll.maxLineCount", "Defines the maximum number of sticky lines to show."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1783,6 +1822,13 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "type": "boolean",
         "default": true,
         "markdownDescription": nls.localize("theia/editor/editor.suggest.showDeprecated", "When enabled IntelliSense shows `deprecated`-suggestions."),
+        "scope": "language-overridable",
+        "restricted": false
+    },
+    "editor.suggest.matchOnWordStartOnly": {
+        "type": "boolean",
+        "default": true,
+        "markdownDescription": nls.localize("theia/editor/editor.suggest.matchOnWordStartOnly", "When enabled IntelliSense filtering requires that the first character matches on a word start, e.g `c` on `Console` or `WebContext` but _not_ on `description`. When disabled IntelliSense will show more results but still sorts them by match quality."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -2214,8 +2260,8 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "markdownEnumDescriptions": [
             nls.localize("theia/editor/editor.inlayHints.enabled0", "Inlay hints are enabled"),
-            nls.localize("theia/editor/editor.inlayHints.enabled1", "Inlay hints are showing by default and hide when holding `Ctrl+Alt`"),
-            nls.localize("theia/editor/editor.inlayHints.enabled2", "Inlay hints are hidden by default and show when holding `Ctrl+Alt`"),
+            nls.localize("theia/editor/editor.inlayHints.enabled1", "Inlay hints are showing by default and hide when holding Ctrl+Alt"),
+            nls.localize("theia/editor/editor.inlayHints.enabled2", "Inlay hints are hidden by default and show when holding Ctrl+Alt"),
             nls.localize("theia/editor/editor.inlayHints.enabled3", "Inlay hints are disabled")
         ],
         "scope": "language-overridable",
@@ -2235,18 +2281,45 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "scope": "language-overridable",
         "restricted": false
     },
-    "editor.selectionClipboard": {
+    "editor.inlayHints.padding": {
         "type": "boolean",
+        "default": false,
+        "description": nls.localize("theia/editor/editor.inlayHints.padding", "Enables the padding around the inlay hints in the editor."),
+        "scope": "language-overridable",
+        "restricted": false
+    },
+    "editor.codeActionWidget.showHeaders": {
+        "type": "boolean",
+        "description": nls.localize("theia/editor/editor.codeActionWidget.showHeaders", "Enable/disable showing group headers in the code action menu."),
         "default": true,
-        "description": nls.localizeByDefault("Controls whether the Linux primary clipboard should be supported."),
-        "included": !isOSX && !isWindows
+        "scope": "language-overridable",
+        "restricted": false
+    },
+    "editor.experimental.pasteActions.enabled": {
+        "type": "boolean",
+        "description": nls.localize("theia/editor/editor.experimental.pasteActions.enabled", "Enable/disable running edits from extensions on paste."),
+        "default": false,
+        "scope": "language-overridable",
+        "restricted": false
+    },
+    "editor.rename.enablePreview": {
+        "description": nls.localizeByDefault("Enable/disable the ability to preview changes before renaming"),
+        "default": true,
+        "type": "boolean",
+        "scope": "language-overridable",
+        "restricted": false
+    },
+    "editor.find.globalFindClipboard": {
+        "type": "boolean",
+        "default": false,
+        "description": nls.localizeByDefault("Controls whether the Find Widget should read or modify the shared find clipboard on macOS."),
+        "included": isOSX
     }
 };
 
 type QuickSuggestionValues = boolean | 'on' | 'inline' | 'off';
 
 export interface GeneratedEditorPreferences {
-    'editor.rename.enablePreview': boolean;
     'editor.tabSize': number;
     'editor.insertSpaces': boolean;
     'editor.detectIndentation': boolean;
@@ -2257,15 +2330,17 @@ export interface GeneratedEditorPreferences {
     'editor.semanticHighlighting.enabled': true | false | 'configuredByTheme';
     'editor.stablePeek': boolean;
     'editor.maxTokenizationLineLength': number;
-    'editor.language.brackets': Array<[string, string]> | null;
+    'editor.language.brackets': Array<[string, string]> | null | 'null';
     'editor.language.colorizedBracketPairs': Array<[string, string]> | null;
     'diffEditor.maxComputationTime': number;
     'diffEditor.maxFileSize': number;
     'diffEditor.renderSideBySide': boolean;
+    'diffEditor.renderMarginRevertIcon': boolean;
     'diffEditor.ignoreTrimWhitespace': boolean;
     'diffEditor.renderIndicators': boolean;
     'diffEditor.codeLens': boolean;
     'diffEditor.wordWrap': 'off' | 'on' | 'inherit';
+    'diffEditor.diffAlgorithm': 'smart' | 'experimental';
     'editor.acceptSuggestionOnCommitCharacter': boolean;
     'editor.acceptSuggestionOnEnter': 'on' | 'smart' | 'off';
     'editor.accessibilitySupport': 'auto' | 'on' | 'off';
@@ -2298,12 +2373,12 @@ export interface GeneratedEditorPreferences {
     'editor.cursorSurroundingLinesStyle': 'default' | 'all';
     'editor.cursorWidth': number;
     'editor.dragAndDrop': boolean;
+    'editor.dropIntoEditor.enabled': boolean;
     'editor.emptySelectionClipboard': boolean;
     'editor.fastScrollSensitivity': number;
     'editor.find.cursorMoveOnType': boolean;
     'editor.find.seedSearchStringFromSelection': 'never' | 'always' | 'selection';
     'editor.find.autoFindInSelection': 'never' | 'always' | 'multiline';
-    'editor.find.globalFindClipboard': boolean;
     'editor.find.addExtraSpaceOnTop': boolean;
     'editor.find.loop': boolean;
     'editor.folding': boolean;
@@ -2319,7 +2394,7 @@ export interface GeneratedEditorPreferences {
     'editor.formatOnPaste': boolean;
     'editor.formatOnType': boolean;
     'editor.glyphMargin': boolean;
-    'editor.gotoLocation.multiple': null | 'peek' | 'gotoAndPeek' | 'goto';
+    'editor.gotoLocation.multiple': null;
     'editor.gotoLocation.multipleDefinitions': 'peek' | 'gotoAndPeek' | 'goto';
     'editor.gotoLocation.multipleTypeDefinitions': 'peek' | 'gotoAndPeek' | 'goto';
     'editor.gotoLocation.multipleDeclarations': 'peek' | 'gotoAndPeek' | 'goto';
@@ -2344,6 +2419,7 @@ export interface GeneratedEditorPreferences {
     'editor.links': boolean;
     'editor.matchBrackets': 'always' | 'near' | 'never';
     'editor.minimap.enabled': boolean;
+    'editor.minimap.autohide': boolean;
     'editor.minimap.size': 'proportional' | 'fill' | 'fit';
     'editor.minimap.side': 'left' | 'right';
     'editor.minimap.showSlider': 'always' | 'mouseover';
@@ -2381,12 +2457,15 @@ export interface GeneratedEditorPreferences {
     'editor.scrollBeyondLastColumn': number;
     'editor.scrollBeyondLastLine': boolean;
     'editor.scrollPredominantAxis': boolean;
+    'editor.selectionClipboard': boolean;
     'editor.selectionHighlight': boolean;
-    'editor.showFoldingControls': 'always' | 'mouseover';
+    'editor.showFoldingControls': 'always' | 'never' | 'mouseover';
     'editor.showUnused': boolean;
     'editor.snippetSuggestions': 'top' | 'bottom' | 'inline' | 'none';
     'editor.smartSelect.selectLeadingAndTrailingWhitespace': boolean;
     'editor.smoothScrolling': boolean;
+    'editor.stickyScroll.enabled': boolean;
+    'editor.stickyScroll.maxLineCount': number;
     'editor.stickyTabStops': boolean;
     'editor.suggest.insertMode': 'insert' | 'replace';
     'editor.suggest.filterGraceful': boolean;
@@ -2403,6 +2482,7 @@ export interface GeneratedEditorPreferences {
     'editor.suggest.showFunctions': boolean;
     'editor.suggest.showConstructors': boolean;
     'editor.suggest.showDeprecated': boolean;
+    'editor.suggest.matchOnWordStartOnly': boolean;
     'editor.suggest.showFields': boolean;
     'editor.suggest.showVariables': boolean;
     'editor.suggest.showClasses': boolean;
@@ -2451,5 +2531,9 @@ export interface GeneratedEditorPreferences {
     'editor.inlayHints.enabled': 'on' | 'onUnlessPressed' | 'offUnlessPressed' | 'off';
     'editor.inlayHints.fontSize': number;
     'editor.inlayHints.fontFamily': string;
-    'editor.selectionClipboard': boolean;
+    'editor.inlayHints.padding': boolean;
+    'editor.codeActionWidget.showHeaders': boolean;
+    'editor.experimental.pasteActions.enabled': boolean;
+    'editor.rename.enablePreview': boolean;
+    'editor.find.globalFindClipboard': boolean;
 }

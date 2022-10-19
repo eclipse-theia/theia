@@ -7,7 +7,7 @@
     "@theia/editor": "1.31.0",
     "@theia/filesystem": "1.31.0",
     "@theia/monaco": "1.31.0",
-    "@theia/monaco-editor-core": "1.67.2",
+    "@theia/monaco-editor-core": "1.72.3",
     "@theia/workspace": "1.31.0"
   },
   "publishConfig": {

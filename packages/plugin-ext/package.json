@@ -16,7 +16,7 @@
     "@theia/markers": "1.31.0",
     "@theia/messages": "1.31.0",
     "@theia/monaco": "1.31.0",
-    "@theia/monaco-editor-core": "1.67.2",
+    "@theia/monaco-editor-core": "1.72.3",
     "@theia/navigator": "1.31.0",
     "@theia/output": "1.31.0",
     "@theia/plugin": "1.31.0",

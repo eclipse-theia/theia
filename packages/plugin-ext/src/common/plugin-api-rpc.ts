@@ -1407,8 +1407,8 @@ export interface WorkspaceEditMetadataDto {
 }
 
 export interface WorkspaceFileEditDto {
-    oldUri?: UriComponents;
-    newUri?: UriComponents;
+    oldResource?: UriComponents;
+    newResource?: UriComponents;
     options?: FileOperationOptions;
     metadata?: WorkspaceEditMetadataDto;
 }
@@ -1416,7 +1416,7 @@ export interface WorkspaceFileEditDto {
 export interface WorkspaceTextEditDto {
     resource: UriComponents;
     modelVersionId?: number;
-    edit: TextEdit;
+    textEdit: TextEdit;
     metadata?: WorkspaceEditMetadataDto;
 
 }
@@ -1424,9 +1424,9 @@ export namespace WorkspaceTextEditDto {
     export function is(arg: WorkspaceTextEditDto | WorkspaceFileEditDto): arg is WorkspaceTextEditDto {
         return !!arg
             && 'resource' in arg
-            && 'edit' in arg
-            && arg.edit !== null
-            && typeof arg.edit === 'object';
+            && 'textEdit' in arg
+            && arg.textEdit !== null
+            && typeof arg.textEdit === 'object';
     }
 }
 

@@ -39,7 +39,7 @@ import {
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, RelatedInformation,
-    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto, CodeActionProviderDocumentation, InlayHint, InlayHintLabelPart
+    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto, CodeActionProviderDocumentation, InlayHint, InlayHintLabelPart, CodeActionContext
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from '@theia/monaco/lib/browser/monaco-languages';
@@ -868,42 +868,57 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         }
     }
 
-    $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], providedCodeActionKinds?: string[],
-        documentation?: CodeActionProviderDocumentation): void {
-
+    $registerQuickFixProvider(
+        handle: number,
+        pluginInfo: PluginInfo,
+        selector: SerializedDocumentFilter[],
+        providedCodeActionKinds?: string[],
+        documentation?: CodeActionProviderDocumentation
+    ): void {
         const languageSelector = this.toLanguageSelector(selector);
-        const quickFixProvider = {
-            provideCodeActions: (model: monaco.editor.ITextModel, range: monaco.Range,
-                context: monaco.languages.CodeActionContext, token: monaco.CancellationToken): monaco.languages.CodeActionList | Promise<monaco.languages.CodeActionList> => {
+        const quickFixProvider: monaco.languages.CodeActionProvider = {
+            provideCodeActions: (model, range, context, token) => {
                 const markers = StandaloneServices.get(IMarkerService)
                     .read({ resource: model.uri })
                     .filter(m => monaco.Range.areIntersectingOrTouching(m, range)) as monaco.editor.IMarkerData[];
-                return this.provideCodeActions(handle, model, range, { markers, only: context.only }, token);
+                return this.provideCodeActions(handle, model, range, { ...context, markers }, token);
             },
-            resolveCodeAction: (codeAction: monaco.languages.CodeAction, token: monaco.CancellationToken): Promise<monaco.languages.CodeAction> =>
-                this.resolveCodeAction(handle, codeAction, token),
-            providedCodeActionKinds,
-            documentation
+            resolveCodeAction: (codeAction, token) => this.resolveCodeAction(handle, codeAction, token)
         };
         this.register(handle, (monaco.languages.registerCodeActionProvider as RegistrationFunction<monaco.languages.CodeActionProvider>)(languageSelector, quickFixProvider));
     }
 
-    protected async provideCodeActions(handle: number, model: monaco.editor.ITextModel,
-        rangeOrSelection: Range, context: monaco.languages.CodeActionContext,
-        token: monaco.CancellationToken): Promise<monaco.languages.CodeActionList | monaco.languages.CodeActionList> {
-        const actions = await this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, {
-            ...context,
-            // @monaco-uplift
-            // the current version of monaco.languages.CodeActionContext has no CodeActionTriggerKind
-            trigger: CodeActionTriggerKind.Automatic
-        }, token);
+    protected async provideCodeActions(
+        handle: number,
+        model: monaco.editor.ITextModel,
+        rangeOrSelection: Range,
+        context: monaco.languages.CodeActionContext,
+        token: monaco.CancellationToken
+    ): Promise<monaco.languages.CodeActionList | undefined> {
+        const actions = await this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, this.toModelCodeActionContext(context), token);
         if (!actions) {
-            return undefined!;
+            return undefined;
         }
         return {
             actions: actions.map(a => toMonacoAction(a)),
             dispose: () => this.proxy.$releaseCodeActions(handle, actions.map(a => a.cacheId))
         };
+    }
+
+    protected toModelCodeActionContext(context: monaco.languages.CodeActionContext): CodeActionContext {
+        return {
+            ...context,
+            trigger: this.toCodeActionTriggerKind(context.trigger)
+        };
+    }
+
+    toCodeActionTriggerKind(type: monaco.languages.CodeActionTriggerType): CodeActionTriggerKind {
+        switch (type) {
+            case monaco.languages.CodeActionTriggerType.Auto:
+                return CodeActionTriggerKind.Automatic;
+            case monaco.languages.CodeActionTriggerType.Invoke:
+                return CodeActionTriggerKind.Invoke;
+        }
     }
 
     protected async resolveCodeAction(handle: number, codeAction: monaco.languages.CodeAction, token: monaco.CancellationToken): Promise<monaco.languages.CodeAction> {
@@ -1283,7 +1298,7 @@ function reviveOnEnterRules(onEnterRules?: SerializedOnEnterRule[]): monaco.lang
     return onEnterRules.map(reviveOnEnterRule);
 }
 
-function reviveInlayLabel(label: string | InlayHintLabelPart[]):  string | monaco.languages.InlayHintLabelPart[] {
+function reviveInlayLabel(label: string | InlayHintLabelPart[]): string | monaco.languages.InlayHintLabelPart[] {
     let monacoLabel: string | monaco.languages.InlayHintLabelPart[];
     if (typeof label === 'string') {
         monacoLabel = label;
@@ -1337,14 +1352,17 @@ export function toMonacoWorkspaceEdit(data: WorkspaceEditDto | undefined): monac
     return {
         edits: (data && data.edits || []).map(edit => {
             if (WorkspaceTextEditDto.is(edit)) {
-                return <monaco.languages.WorkspaceTextEdit>{
+                return <monaco.languages.IWorkspaceTextEdit>{
                     resource: monaco.Uri.revive(edit.resource),
-                    edit: edit.edit, metadata: edit.metadata
+                    textEdit: edit.textEdit,
+                    metadata: edit.metadata
                 };
             } else {
-                return <monaco.languages.WorkspaceFileEdit>{
-                    newUri: monaco.Uri.revive(edit.newUri), oldUri: monaco.Uri.revive(edit.oldUri),
-                    options: edit.options, metadata: edit.metadata
+                return <monaco.languages.IWorkspaceFileEdit>{
+                    newResource: monaco.Uri.revive(edit.newResource),
+                    oldResource: monaco.Uri.revive(edit.oldResource),
+                    options: edit.options,
+                    metadata: edit.metadata
                 };
             }
         })

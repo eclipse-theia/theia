@@ -309,8 +309,8 @@ export class ApplicationShell extends Widget {
     }
 
     protected initFocusKeyContexts(): void {
-        const sideBarFocus = this.contextKeyService.createKey('sideBarFocus', false);
-        const panelFocus = this.contextKeyService.createKey('panelFocus', false);
+        const sideBarFocus = this.contextKeyService.createKey<boolean>('sideBarFocus', false);
+        const panelFocus = this.contextKeyService.createKey<boolean>('panelFocus', false);
         const updateFocusContextKeys = () => {
             const area = this.activeWidget && this.getAreaFor(this.activeWidget);
             sideBarFocus.set(area === 'left');

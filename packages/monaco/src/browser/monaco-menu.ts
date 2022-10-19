@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR, MenuPath } from '@theia/core/lib/common';
+import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR, MenuPath, MenuAction } from '@theia/core/lib/common';
 import { EditorMainMenu, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { nls } from '@theia/core/lib/common/nls';
-import { isIMenuItem, MenuId, MenuRegistry } from '@theia/monaco-editor-core/esm/vs/platform/actions/common/actions';
+import { IMenuItem, isIMenuItem, MenuId, MenuRegistry } from '@theia/monaco-editor-core/esm/vs/platform/actions/common/actions';
 
 export interface MonacoActionGroup {
     id: string;
@@ -46,7 +46,7 @@ export class MonacoEditorMenuContribution implements MenuContribution {
             const commandId = this.commands.validate(item.command.id);
             if (commandId) {
                 const menuPath = [...EDITOR_CONTEXT_MENU, (item.group || '')];
-                registry.registerMenuAction(menuPath, { commandId });
+                registry.registerMenuAction(menuPath, this.buildMenuAction(commandId, item));
             }
         }
 
@@ -60,10 +60,7 @@ export class MonacoEditorMenuContribution implements MenuContribution {
             const commandId = this.commands.validate(item.command.id);
             if (commandId) {
                 const menuPath = [...MonacoMenus.SELECTION, (item.group || '')];
-                const title = typeof item.command.title === 'string' ? item.command.title : item.command.title.value;
-                const label = this.removeMnemonic(title);
-                const order = item.order ? String(item.order) : '';
-                registry.registerMenuAction(menuPath, { commandId, order, label });
+                registry.registerMenuAction(menuPath, this.buildMenuAction(commandId, item));
             }
         }
 
@@ -75,27 +72,33 @@ export class MonacoEditorMenuContribution implements MenuContribution {
         });
         registry.registerMenuAction(EditorMainMenu.LANGUAGE_FEATURES_GROUP, {
             commandId: 'editor.action.revealDefinition',
+            label: nls.localizeByDefault('Go to Definition'),
             order: '2'
         });
         registry.registerMenuAction(EditorMainMenu.LANGUAGE_FEATURES_GROUP, {
             commandId: 'editor.action.revealDeclaration',
+            label: nls.localizeByDefault('Go to Declaration'),
             order: '3'
         });
         registry.registerMenuAction(EditorMainMenu.LANGUAGE_FEATURES_GROUP, {
             commandId: 'editor.action.goToTypeDefinition',
+            label: nls.localizeByDefault('Go to Type Definition'),
             order: '4'
         });
         registry.registerMenuAction(EditorMainMenu.LANGUAGE_FEATURES_GROUP, {
             commandId: 'editor.action.goToImplementation',
+            label: nls.localizeByDefault('Go to Implementations'),
             order: '5'
         });
         registry.registerMenuAction(EditorMainMenu.LANGUAGE_FEATURES_GROUP, {
             commandId: 'editor.action.goToReferences',
+            label: nls.localizeByDefault('Go to References'),
             order: '6'
         });
 
         registry.registerMenuAction(EditorMainMenu.LOCATION_GROUP, {
             commandId: 'editor.action.jumpToBracket',
+            label: nls.localizeByDefault('Go to Bracket'),
             order: '2'
         });
 
@@ -121,10 +124,16 @@ export class MonacoEditorMenuContribution implements MenuContribution {
             }
             const commandId = this.commands.validate(item.command.id);
             if (commandId) {
-                const order = item.order ? String(item.order) : '';
-                registry.registerMenuAction([...MonacoMenus.PEEK_CONTEXT_SUBMENU, item.group || ''], { commandId, order });
+                registry.registerMenuAction([...MonacoMenus.PEEK_CONTEXT_SUBMENU, item.group || ''], this.buildMenuAction(commandId, item));
             }
         }
+    }
+
+    protected buildMenuAction(commandId: string, item: IMenuItem): MenuAction {
+        const title = typeof item.command.title === 'string' ? item.command.title : item.command.title.value;
+        const label = this.removeMnemonic(title);
+        const order = item.order ? String(item.order) : '';
+        return { commandId, order, label };
     }
 
     protected removeMnemonic(label: string): string {

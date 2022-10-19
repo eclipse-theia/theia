@@ -6,7 +6,7 @@
     "@theia/core": "1.31.0",
     "@theia/editor": "1.31.0",
     "@theia/monaco": "1.31.0",
-    "@theia/monaco-editor-core": "1.67.2",
+    "@theia/monaco-editor-core": "1.72.3",
     "@types/p-queue": "^2.3.1",
     "p-queue": "^2.4.2"
   },

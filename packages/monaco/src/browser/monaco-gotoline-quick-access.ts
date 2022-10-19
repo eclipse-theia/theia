@@ -41,7 +41,7 @@ export class GotoLineQuickAccessContribution implements QuickAccessContribution 
             ctor: GotoLineQuickAccess,
             prefix: ':',
             placeholder: '',
-            helpEntries: [{ description: 'Go to line', needsEditor: true }]
+            helpEntries: [{ description: 'Go to line' }]
         });
     }
 }

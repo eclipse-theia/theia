@@ -428,8 +428,8 @@ export interface WorkspaceEditMetadata {
 }
 
 export interface WorkspaceFileEdit {
-    oldUri?: UriComponents;
-    newUri?: UriComponents;
+    newResource?: UriComponents;
+    oldResource?: UriComponents;
     options?: { overwrite?: boolean, ignoreIfNotExists?: boolean, ignoreIfExists?: boolean, recursive?: boolean };
     metadata?: WorkspaceEditMetadata;
 }
@@ -437,7 +437,7 @@ export interface WorkspaceFileEdit {
 export interface WorkspaceTextEdit {
     resource: UriComponents;
     modelVersionId?: number;
-    edit: TextEdit;
+    textEdit: TextEdit;
     metadata?: WorkspaceEditMetadata;
 }
 

@@ -565,10 +565,22 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
         if (Array.isArray(uriOrEdits)) {
             // text edits
             const doc = documents ? documents.getDocument(uri.toString()) : undefined;
-            result.edits.push(<WorkspaceTextEditDto>{ resource: uri, modelVersionId: doc && doc.version, edit: uriOrEdits.map(fromTextEdit)[0], metadata: entry[2] });
+            const workspaceTextEditDto: WorkspaceTextEditDto = {
+                resource: uri,
+                modelVersionId: doc?.version,
+                textEdit: uriOrEdits.map(fromTextEdit)[0],
+                metadata: entry[2] as types.WorkspaceEditMetadata
+            };
+            result.edits.push(workspaceTextEditDto);
         } else {
             // resource edits
-            result.edits.push(<WorkspaceFileEditDto>{ oldUri: uri, newUri: uriOrEdits, options: entry[2], metadata: entry[3] });
+            const workspaceFileEditDto: WorkspaceFileEditDto = {
+                oldResource: uri,
+                newResource: uriOrEdits,
+                options: entry[2] as types.FileOperationOptions,
+                metadata: entry[3]
+            };
+            result.edits.push(workspaceFileEditDto);
         }
     }
     return result;

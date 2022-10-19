@@ -644,10 +644,10 @@ SPAN {
         editor.getControl().revealPosition({ lineNumber, column });
         assert.equal(currentChar(), ';');
 
-        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codeAction/browser/codeActionCommands').QuickFixController} */
-        const quickFixController = editor.getControl().getContribution('editor.contrib.quickFixController');
+        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codeAction/browser/codeActionCommands').CodeActionController} */
+        const codeActionController = editor.getControl().getContribution('editor.contrib.codeActionController');
         const lightBulbNode = () => {
-            const ui = quickFixController['_ui'].rawValue;
+            const ui = codeActionController['_ui'].rawValue;
             const lightBulb = ui && ui['_lightBulbWidget'].rawValue;
             return lightBulb && lightBulb['_domNode'];
         };
@@ -660,10 +660,12 @@ SPAN {
         await waitForAnimation(() => lightBulbVisible());
 
         await commands.executeCommand('editor.action.quickFix');
-        await waitForAnimation(() => !!document.querySelector('.p-Widget.p-Menu'), 5000);
+        const codeActionSelector = '.codeActionWidget';
+        assert.isFalse(!!document.querySelector(codeActionSelector), 'codeActionWidget should not be visible');
+
+        await waitForAnimation(() => !!document.querySelector(codeActionSelector), 5000);
         await animationFrame();
 
-        keybindings.dispatchKeyDown('ArrowDown');
         keybindings.dispatchKeyDown('Enter');
 
         await waitForAnimation(() => currentChar() === 'd', 5000);
@@ -737,10 +739,10 @@ SPAN {
 
     it('Can execute code actions', async function () {
         const editor = await openEditor(demoFileUri);
-        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codeAction/browser/codeActionCommands').QuickFixController} */
-        const quickFixController = editor.getControl().getContribution('editor.contrib.quickFixController');
+        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codeAction/browser/codeActionCommands').CodeActionController} */
+        const codeActionController = editor.getControl().getContribution('editor.contrib.codeActionController');
         const isActionAvailable = () => {
-            const lightbulbVisibility = quickFixController['_ui'].rawValue?.['_lightBulbWidget'].rawValue?.['_domNode'].style.visibility;
+            const lightbulbVisibility = codeActionController['_ui'].rawValue?.['_lightBulbWidget'].rawValue?.['_domNode'].style.visibility;
             return lightbulbVisibility !== undefined && lightbulbVisibility !== 'hidden';
         }
         assert.isFalse(isActionAvailable());
@@ -752,12 +754,14 @@ SPAN {
         assert.isTrue(isActionAvailable());
 
         await commands.executeCommand('editor.action.quickFix');
-        await waitForAnimation(() => Boolean(document.querySelector('.p-Widget.p-Menu')), 5000, 'No context menu appeared. (1)');
+        await waitForAnimation(() => Boolean(document.querySelector('.context-view-pointerBlock')), 5000, 'No context menu appeared. (1)');
         await animationFrame();
 
-        keybindings.dispatchKeyDown('ArrowDown');
         keybindings.dispatchKeyDown('Enter');
 
+        assert.isNotNull(editor.getControl());
+        assert.isNotNull(editor.getControl().getModel());
+        console.log(`content: ${editor.getControl().getModel().getLineContent(30)}`);
         await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import * as demoDefinitionsFile from "./demo-definitions-file";', 5000, 'The namespace import did not take effect.');
 
         editor.getControl().setSelection(new Selection(30, 1, 30, 64));
@@ -765,10 +769,9 @@ SPAN {
 
         // Change it back: https://github.com/eclipse-theia/theia/issues/11059
         await commands.executeCommand('editor.action.quickFix');
-        await waitForAnimation(() => Boolean(document.querySelector('.p-Widget.p-Menu')), 5000, 'No context menu appeared. (2)');
+        await waitForAnimation(() => Boolean(document.querySelector('.context-view-pointerBlock')), 5000, 'No context menu appeared. (2)');
         await animationFrame();
 
-        keybindings.dispatchKeyDown('ArrowDown');
         keybindings.dispatchKeyDown('Enter');
 
         await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import { DefinedInterface } from "./demo-definitions-file";', 5000, 'The named import did not take effect.');

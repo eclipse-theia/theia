@@ -20,6 +20,7 @@ import {
     IBulkEditOptions, IBulkEditPreviewHandler, IBulkEditResult, IBulkEditService, ResourceEdit
 } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 import { IDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
+import { WorkspaceEdit } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 
 @injectable()
 export class MonacoBulkEditService implements IBulkEditService {
@@ -30,9 +31,11 @@ export class MonacoBulkEditService implements IBulkEditService {
 
     private _previewHandler?: IBulkEditPreviewHandler;
 
-    async apply(edits: ResourceEdit[], options?: IBulkEditOptions): Promise<IBulkEditResult & { success: boolean }> {
+    async apply(editsIn: ResourceEdit[] | WorkspaceEdit, options?: IBulkEditOptions): Promise<IBulkEditResult & { success: boolean }> {
+        const edits = Array.isArray(editsIn) ? editsIn : ResourceEdit.convert(editsIn);
+
         if (this._previewHandler && (options?.showPreview || edits.some(value => value.metadata?.needsConfirmation))) {
-            edits = await this._previewHandler(edits, options);
+            editsIn = await this._previewHandler(edits, options);
             return { ariaSummary: '', success: true };
         } else {
             return this.workspace.applyBulkEdit(edits);

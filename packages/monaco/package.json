@@ -7,7 +7,7 @@
     "@theia/editor": "1.31.0",
     "@theia/filesystem": "1.31.0",
     "@theia/markers": "1.31.0",
-    "@theia/monaco-editor-core": "1.67.2",
+    "@theia/monaco-editor-core": "1.72.3",
     "@theia/outline-view": "1.31.0",
     "fast-plist": "^0.1.2",
     "idb": "^4.0.5",

@@ -164,8 +164,8 @@ export class DebugEditorModel implements Disposable {
             this.createInlineValueDecorations()
         ]);
         const codeEditor = this.editor.getControl() as unknown as StandaloneCodeEditor;
-        codeEditor.removeDecorations(INLINE_VALUE_DECORATION_KEY);
-        codeEditor.setDecorations('Inline debug decorations', INLINE_VALUE_DECORATION_KEY, inlineValueDecorations);
+        codeEditor.removeDecorations([INLINE_VALUE_DECORATION_KEY]);
+        codeEditor.setDecorationsByType('Inline debug decorations', INLINE_VALUE_DECORATION_KEY, inlineValueDecorations);
         this.editorDecorations = this.deltaDecorations(this.editorDecorations, newFrameDecorations);
     }
 

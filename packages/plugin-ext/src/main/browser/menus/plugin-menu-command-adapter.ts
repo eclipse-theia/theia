@@ -247,9 +247,11 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
 
     protected getSelectedResources(): [CodeUri | TreeViewSelection | undefined, CodeUri[] | undefined] {
         const selection = this.selectionService.selection;
+        const resourceKey = this.resourceContextKey.get();
+        const resourceUri = resourceKey ? CodeUri.parse(resourceKey) : undefined;
         const firstMember = TreeWidgetSelection.is(selection) && selection.source instanceof TreeViewWidget && selection[0]
             ? selection.source.toTreeViewSelection(selection[0])
-            : (UriSelection.getUri(selection) ?? this.resourceContextKey.get())?.['codeUri'];
+            : UriSelection.getUri(selection)?.['codeUri'] ?? resourceUri;
         const secondMember = TreeWidgetSelection.is(selection)
             ? UriSelection.getUris(selection).map(uri => uri['codeUri'])
             : undefined;

@@ -26,6 +26,7 @@ import { VariableInput } from './variable-input';
 import { QuickInputService, QuickPickValue } from '@theia/core/lib/browser';
 import { MaybeArray, RecursivePartial } from '@theia/core/lib/common/types';
 import { cancelled } from '@theia/core/lib/common/cancellation';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class CommonVariableContribution implements VariableContribution {
@@ -68,7 +69,7 @@ export class CommonVariableContribution implements VariableContribution {
         });
         variables.registerVariable({
             name: 'config',
-            resolve: (resourceUri = this.resourceContextKey.get(), preferenceName) => {
+            resolve: (resourceUri = new URI(this.resourceContextKey.get()), preferenceName) => {
                 if (!preferenceName) {
                     return undefined;
                 }
@@ -93,7 +94,7 @@ export class CommonVariableContribution implements VariableContribution {
         });
         variables.registerVariable({
             name: 'input',
-            resolve: async (resourceUri = this.resourceContextKey.get(), variable, section) => {
+            resolve: async (resourceUri = new URI(this.resourceContextKey.get()), variable, section) => {
                 if (!variable || !section) {
                     return undefined;
                 }
