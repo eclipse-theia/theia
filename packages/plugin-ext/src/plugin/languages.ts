@@ -250,7 +250,8 @@ export class LanguagesExtImpl implements LanguagesExt {
                 $serialized: true,
                 language: selector.language,
                 scheme: selector.scheme,
-                pattern: selector.pattern
+                pattern: selector.pattern,
+                notebookType: selector.notebookType
             };
         }
 

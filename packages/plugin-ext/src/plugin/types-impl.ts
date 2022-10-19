@@ -134,6 +134,8 @@ export class Disposable {
     static create(func: () => void): Disposable {
         return new Disposable(func);
     }
+
+    static NULL: Disposable;
 }
 
 export interface AccessibilityInformation {
@@ -1095,6 +1097,218 @@ export enum MarkerSeverity {
 export enum MarkerTag {
     Unnecessary = 1,
     Deprecated = 2,
+}
+
+export enum NotebookCellKind {
+    Markup = 1,
+    Code = 2
+}
+
+export enum NotebookCellStatusBarAlignment {
+    Left = 1,
+    Right = 2
+}
+
+export enum NotebookControllerAffinity {
+    Default = 1,
+    Preferred = 2
+}
+
+export enum NotebookEditorRevealType {
+    Default = 0,
+    InCenter = 1,
+    InCenterIfOutsideViewport = 2,
+    AtTop = 3
+}
+@es5ClassCompat
+export class NotebookCellData implements theia.NotebookCellData {
+    languageId: string;
+    kind: NotebookCellKind;
+    value: string;
+    outputs?: theia.NotebookCellOutput[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    metadata?: { [key: string]: any };
+    executionSummary?: theia.NotebookCellExecutionSummary;
+
+    constructor(kind: NotebookCellKind, value: string, languageId: string) {
+        this.kind = kind;
+        this.value = value;
+        this.languageId = languageId;
+    }
+}
+
+@es5ClassCompat
+export class NotebookCellOutput implements theia.NotebookCellOutput {
+    items: theia.NotebookCellOutputItem[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    metadata?: { [key: string]: any };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    constructor(items: theia.NotebookCellOutputItem[], metadata?: { [key: string]: any }) {
+        this.items = items;
+        this.metadata = metadata;
+    }
+}
+
+export class NotebookCellOutputItem implements theia.NotebookCellOutputItem {
+    mime: string;
+    data: Uint8Array;
+
+    static #encoder = new TextEncoder();
+
+    static text(value: string, mime?: string): NotebookCellOutputItem {
+        const bytes = NotebookCellOutputItem.#encoder.encode(String(value));
+        return new NotebookCellOutputItem(bytes, mime || 'text/plain');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static json(value: any, mime?: string): NotebookCellOutputItem {
+        const jsonStr = JSON.stringify(value, undefined, '\t');
+        return NotebookCellOutputItem.text(jsonStr, mime);
+    }
+
+    static stdout(value: string): NotebookCellOutputItem {
+        return NotebookCellOutputItem.text(value, 'application/vnd.code.notebook.stdout');
+    }
+
+    static stderr(value: string): NotebookCellOutputItem {
+        return NotebookCellOutputItem.text(value, 'application/vnd.code.notebook.stderr');
+    }
+
+    static error(value: Error): NotebookCellOutputItem {
+        return NotebookCellOutputItem.json(value, 'application/vnd.code.notebook.error');
+    }
+
+    constructor(data: Uint8Array, mime: string) {
+        this.data = data;
+        this.mime = mime;
+    }
+}
+
+@es5ClassCompat
+export class NotebookCellStatusBarItem implements theia.NotebookCellStatusBarItem {
+    text: string;
+    alignment: NotebookCellStatusBarAlignment;
+    command?: string | theia.Command;
+    tooltip?: string;
+    priority?: number;
+    accessibilityInformation?: AccessibilityInformation;
+
+    /**
+     * Creates a new NotebookCellStatusBarItem.
+     * @param text The text to show for the item.
+     * @param alignment Whether the item is aligned to the left or right.
+     * @stubbed
+     */
+    constructor(text: string, alignment: NotebookCellStatusBarAlignment) {
+        this.text = text;
+        this.alignment = alignment;
+    }
+}
+
+@es5ClassCompat
+export class NotebookData implements theia.NotebookData {
+    cells: NotebookCellData[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    metadata?: { [key: string]: any };
+
+    constructor(cells: NotebookCellData[]) {
+        this.cells = cells;
+    }
+}
+
+export class NotebookDocument implements theia.NotebookDocument {
+    readonly uri: theia.Uri;
+    readonly notebookType: string;
+    readonly version: number;
+    readonly isDirty: boolean;
+    readonly isUntitled: boolean;
+    readonly isClosed: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    readonly metadata: { [key: string]: any };
+    readonly cellCount: number;
+
+    cellAt(index: number): theia.NotebookCell {
+        return {} as theia.NotebookCell;
+    }
+    save(): theia.Thenable<boolean> {
+        return Promise.resolve(false);
+    }
+
+    getCells(range?: theia.NotebookRange | undefined): theia.NotebookCell[] {
+        return [] as NotebookCell[];
+    }
+}
+export class NotebookCell implements theia.NotebookCell {
+    readonly index: number;
+    readonly notebook: theia.NotebookDocument;
+    readonly kind: theia.NotebookCellKind;
+    readonly document: theia.TextDocument;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    readonly metadata: { readonly [key: string]: any; };
+    readonly outputs: readonly theia.NotebookCellOutput[];
+    readonly executionSummary: theia.NotebookCellExecutionSummary | undefined;
+
+}
+
+export class NotebookRange implements theia.NotebookRange {
+    readonly start: number;
+    readonly end: number;
+    readonly isEmpty: boolean;
+
+    with(change: { start?: number; end?: number }): NotebookRange {
+        let newStart = this.start;
+        let newEnd = this.end;
+
+        if (change.start !== undefined) {
+            newStart = change.start;
+        }
+        if (change.end !== undefined) {
+            newEnd = change.end;
+        }
+        if (newStart === this.start && newEnd === this.end) {
+            return this;
+        }
+        return new NotebookRange(newStart, newEnd);
+    }
+
+    constructor(start: number, end: number) {
+        this.start = start;
+        this.end = end;
+    }
+
+}
+
+@es5ClassCompat
+export class NotebookEdit implements theia.NotebookEdit {
+    range: theia.NotebookRange;
+    newCells: theia.NotebookCellData[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    newCellMetadata?: { [key: string]: any; } | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    newNotebookMetadata?: { [key: string]: any; } | undefined;
+
+    static replaceCells(range: NotebookRange, newCells: NotebookCellData[]): NotebookEdit {
+        return new NotebookEdit();
+    }
+
+    static insertCells(index: number, newCells: NotebookCellData[]): NotebookEdit {
+        return new NotebookEdit();
+    }
+
+    static deleteCells(range: NotebookRange): NotebookEdit {
+        return new NotebookEdit();
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static updateCellMetadata(index: number, newCellMetadata: { [key: string]: any }): NotebookEdit {
+        return new NotebookEdit();
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static updateNotebookMetadata(newNotebookMetadata: { [key: string]: any }): NotebookEdit {
+        return new NotebookEdit();
+    }
 }
 
 @es5ClassCompat

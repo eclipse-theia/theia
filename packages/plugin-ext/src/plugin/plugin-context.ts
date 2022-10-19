@@ -155,6 +155,19 @@ import {
     InlayHint,
     InlayHintKind,
     InlayHintLabelPart,
+    NotebookCell,
+    NotebookCellKind,
+    NotebookCellStatusBarAlignment,
+    NotebookEditorRevealType,
+    NotebookControllerAffinity,
+    NotebookCellData,
+    NotebookCellOutput,
+    NotebookCellOutputItem,
+    NotebookData,
+    NotebookDocument,
+    NotebookRange,
+    NotebookCellStatusBarItem,
+    NotebookEdit,
     TestRunProfileKind,
     TestTag,
     TestRunRequest,
@@ -385,6 +398,26 @@ export function createAPIFactory(
                     throw new Error(`Failed to show text document ${documentArg.toString()}`);
                 }
             },
+            get visibleNotebookEditors(): theia.NotebookEditor[] {
+                return [] as theia.NotebookEditor[];
+            },
+            onDidChangeVisibleNotebookEditors(listener, thisArg?, disposables?) {
+                return Disposable.NULL;
+            },
+            get activeNotebookEditor(): theia.NotebookEditor | undefined {
+                return undefined;
+            }, onDidChangeActiveNotebookEditor(listener, thisArg?, disposables?) {
+                return Disposable.NULL;
+            },
+            onDidChangeNotebookEditorSelection(listener, thisArg?, disposables?) {
+                return Disposable.NULL;
+            },
+            onDidChangeNotebookEditorVisibleRanges(listener, thisArg?, disposables?) {
+                return Disposable.NULL;
+            },
+            showNotebookDocument(document: NotebookDocument, options?: theia.NotebookDocumentShowOptions) {
+                return Promise.resolve({} as theia.NotebookEditor);
+            },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             showQuickPick(items: any, options?: theia.QuickPickOptions, token?: theia.CancellationToken): any {
                 return quickOpenExt.showQuickPick(items, options, token);
@@ -532,6 +565,9 @@ export function createAPIFactory(
             onDidChangeWorkspaceFolders(listener, thisArg?, disposables?): theia.Disposable {
                 return workspaceExt.onDidChangeWorkspaceFolders(listener, thisArg, disposables);
             },
+            get notebookDocuments(): theia.NotebookDocument[] {
+                return [] as theia.NotebookDocument[];
+            },
             get textDocuments(): theia.TextDocument[] {
                 return documents.getAllDocumentData().map(data => data.document);
             },
@@ -540,6 +576,18 @@ export function createAPIFactory(
             },
             onDidCloseTextDocument(listener, thisArg?, disposables?) {
                 return documents.onDidRemoveDocument(listener, thisArg, disposables);
+            },
+            onDidOpenNotebookDocument(listener, thisArg?, disposables?) {
+                return Disposable.NULL;
+            },
+            onDidCloseNotebookDocument(listener, thisArg?, disposables?) {
+                return Disposable.NULL;
+            },
+            onDidChangeNotebookDocument(listener, thisArg?, disposables?) {
+                return Disposable.NULL;
+            },
+            onDidSaveNotebookDocument(listener, thisArg?, disposables?) {
+                return Disposable.NULL;
             },
             onDidOpenTextDocument(listener, thisArg?, disposables?) {
                 return documents.onDidAddDocument(listener, thisArg, disposables);
@@ -585,6 +633,9 @@ export function createAPIFactory(
                 const data = await documents.openDocument(uri);
                 return data && data.document;
             },
+            openNotebookDocument(uriOrString: theia.Uri | string, content?: NotebookData): Promise<theia.NotebookDocument | undefined> {
+                return Promise.reject(new Error('Notebook API is stubbed'));
+            },
             createFileSystemWatcher: (pattern, ignoreCreate, ignoreChange, ignoreDelete): theia.FileSystemWatcher =>
                 extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern), ignoreCreate, ignoreChange, ignoreDelete),
             findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<URI[]> {
@@ -623,6 +674,9 @@ export function createAPIFactory(
             },
             registerTimelineProvider(scheme: string | string[], provider: theia.TimelineProvider): theia.Disposable {
                 return timelineExt.registerTimelineProvider(plugin, scheme, provider);
+            },
+            registerNotebookSerializer(notebookType: string, serializer: theia.NotebookSerializer, options?: theia.NotebookDocumentContentOptions): theia.Disposable {
+                return Disposable.NULL;
             },
             get isTrusted(): boolean {
                 return workspaceExt.trusted;
@@ -988,6 +1042,66 @@ export function createAPIFactory(
             }
         };
 
+        // notebooks API (@stubbed)
+        // The following implementation is temporarily `@stubbed` and marked as such under `theia.d.ts`
+        const notebooks: typeof theia.notebooks = {
+            createNotebookController(
+                id,
+                notebookType,
+                label,
+                handler?: (cells: theia.NotebookCell[],
+                    notebook: theia.NotebookDocument,
+                    controller: theia.NotebookController) => void | Thenable<void>
+            ) {
+                return {
+                    id,
+                    notebookType,
+                    label,
+                    handler,
+                    createNotebookCellExecution: (cell: NotebookCell) => ({
+                        cell,
+                        token: CancellationToken.None,
+                        executionOrder: undefined,
+                        start: () => undefined,
+                        end: () => undefined,
+                        clearOutput: () => ({} as Thenable<void>),
+                        replaceOutput: () => ({} as Thenable<void>),
+                        appendOutput: () => ({} as Thenable<void>),
+                        replaceOutputItems: () => ({} as Thenable<void>),
+                        appendOutputItems: () => ({} as Thenable<void>)
+                    }),
+                    executeHandler(
+                        cells: theia.NotebookCell[],
+                        notebook: theia.NotebookDocument,
+                        controller: theia.NotebookController
+                    ): (void | Thenable<void>) { },
+                    onDidChangeSelectedNotebooks: ({} as theia.Event<{ readonly notebook: theia.NotebookDocument; readonly selected: boolean }>),
+                    updateNotebookAffinity: (notebook: theia.NotebookDocument, affinity: theia.NotebookControllerAffinity) => undefined,
+                    dispose: () => undefined,
+                };
+
+            },
+            createRendererMessaging(
+                rendererId
+            ) {
+                return {
+                    rendererId,
+                    onDidReceiveMessage: ({} as theia.Event<{ readonly editor: theia.NotebookEditor; readonly message: any }>),
+                    postMessage: (message: any, editor?: theia.NotebookEditor) => ({} as Thenable<boolean>),
+                };
+            },
+            registerNotebookCellStatusBarItemProvider(
+                notebookType,
+                provider
+            ) {
+                return {
+                    notebookType,
+                    provider,
+                    dispose: () => undefined,
+                };
+            }
+        };
+
         return <typeof theia>{
             version: require('../../package.json').version,
             authentication,
@@ -1002,6 +1116,7 @@ export function createAPIFactory(
             debug,
             tasks,
             scm,
+            notebooks,
             tests,
             // Types
             StatusBarAlignment: StatusBarAlignment,
@@ -1128,6 +1243,18 @@ export function createAPIFactory(
             InlayHint,
             InlayHintKind,
             InlayHintLabelPart,
+            NotebookCellData,
+            NotebookCellKind,
+            NotebookCellOutput,
+            NotebookCellOutputItem,
+            NotebookCellStatusBarAlignment,
+            NotebookCellStatusBarItem,
+            NotebookControllerAffinity,
+            NotebookData,
+            NotebookEditorRevealType,
+            NotebookDocument,
+            NotebookRange,
+            NotebookEdit,
             TestRunProfileKind,
             TestTag,
             TestRunRequest,

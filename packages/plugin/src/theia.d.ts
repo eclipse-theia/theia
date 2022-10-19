@@ -4643,6 +4643,60 @@ export module '@theia/plugin' {
         export function showTextDocument(uri: Uri, options?: TextDocumentShowOptions): Thenable<TextEditor>;
 
         /**
+         * The currently visible {@link NotebookEditor notebook editors} or an empty array.
+         * @stubbed
+         */
+        export const visibleNotebookEditors: readonly NotebookEditor[];
+
+        /**
+         * An {@link Event} which fires when the {@link window.visibleNotebookEditors visible notebook editors}
+         * has changed.
+         * @stubbed
+         */
+        export const onDidChangeVisibleNotebookEditors: Event<readonly NotebookEditor[]>;
+
+        /**
+         * The currently active {@link NotebookEditor notebook editor} or `undefined`. The active editor is the one
+         * that currently has focus or, when none has focus, the one that has changed
+         * input most recently.
+         * @stubbed
+         */
+        export const activeNotebookEditor: NotebookEditor | undefined;
+
+        /**
+         * An {@link Event} which fires when the {@link window.activeNotebookEditor active notebook editor}
+         * has changed. *Note* that the event also fires when the active editor changes
+         * to `undefined`.
+         * @stubbed
+         */
+        export const onDidChangeActiveNotebookEditor: Event<NotebookEditor | undefined>;
+
+        /**
+         * An {@link Event} which fires when the {@link NotebookEditor.selections notebook editor selections}
+         * have changed.
+         * @stubbed
+         */
+        export const onDidChangeNotebookEditorSelection: Event<NotebookEditorSelectionChangeEvent>;
+
+        /**
+         * An {@link Event} which fires when the {@link NotebookEditor.visibleRanges notebook editor visible ranges}
+         * have changed.
+         * @stubbed
+         */
+        export const onDidChangeNotebookEditorVisibleRanges: Event<NotebookEditorVisibleRangesChangeEvent>;
+
+        /**
+         * Show the given {@link NotebookDocument} in a {@link NotebookEditor notebook editor}.
+         *
+         * @param document A text document to be shown.
+         * @param options {@link NotebookDocumentShowOptions Editor options} to configure the behavior of showing the {@link NotebookEditor notebook editor}.
+         *
+         * @return A promise that resolves to an {@link NotebookEditor notebook editor}.
+         * @stubbed
+         */
+        export function showNotebookDocument(document: NotebookDocument, options?: NotebookDocumentShowOptions): Thenable<NotebookEditor>;
+
+        /**
          * Shows a selection list.
          *
          * @param items An array of strings, or a promise that resolves to an array of strings.
@@ -6411,6 +6465,14 @@ export module '@theia/plugin' {
         export let textDocuments: readonly TextDocument[];
 
         /**
+         * All notebook documents currently known to the editor.
+         *
+         * @readonly
+         * @stubbed
+         */
+        export let notebookDocuments: readonly NotebookDocument[];
+
+        /**
          * Register a text document content provider.
          *
          * Only one provider can be registered per scheme.
@@ -6422,6 +6484,40 @@ export module '@theia/plugin' {
         export function registerTextDocumentContentProvider(scheme: string, provider: TextDocumentContentProvider): Disposable;
 
         /**
+         * An event that is emitted when a {@link NotebookDocument notebook} is opened.
+         * @stubbed
+         */
+        export const onDidOpenNotebookDocument: Event<NotebookDocument>;
+
+        /**
+         * An event that is emitted when a notebook is disposed.
+         *
+         * Note 1: There is no guarantee that this event fires when an editor tab is closed.
+         *
+         * Note 2: A notebook can be open but not shown in an editor which means this event can fire for a notebook that has not been shown in an editor.
+         * @stubbed
+         */
+        export const onDidCloseNotebookDocument: Event<NotebookDocument>;
+
+        /**
+         * An event that is emitted when a {@link NotebookDocument notebook} is saved.
+         * @stubbed
+         */
+        export const onDidSaveNotebookDocument: Event<NotebookDocument>;
+
+        /**
+         * Register a notebook serializer.
+         *
+         * A notebook serializer must be contributed through the notebooks extension point. When opening a notebook file, the editor will send the onNotebook:<notebookType> activation event, and extensions must register their serializer in return.
+         * @param notebookType a notebook.
+         * @param serializer a notebook serializer.
+         * @param options Optional context options that define what parts of a notebook should be persisted
+         * @return A {@link Disposable disposable} that unregisters this serializer when being disposed.
+         * @stubbed
+         */
+        export function registerNotebookSerializer(notebookType: string, serializer: NotebookSerializer, options?: NotebookDocumentContentOptions): Disposable;
+
+        /**
          * An event that is emitted when a {@link TextDocument text document} is opened.
          *
          * To add an event listener when a visible text document is opened, use the {@link TextEditor TextEditor} events in the
@@ -6430,9 +6526,13 @@ export module '@theia/plugin' {
          * - The event is emitted before the {@link TextDocument document} is updated in the
          * {@link window.activeTextEditor active text editor}
          * - When a {@link TextDocument text document} is already open (e.g.: open in another {@link window.visibleTextEditors visible text editor}) this event is not emitted
-         *
          */
         export const onDidOpenTextDocument: Event<TextDocument>;
+
+        /**
+         * An event that is emitted when a {@link TextDocument text document} is saved to disk.
+         */
+        export const onDidSaveTextDocument: Event<TextDocument>;
 
         /**
          * An event that is emitted when a {@link TextDocument text document} is disposed.
@@ -6466,9 +6566,10 @@ export module '@theia/plugin' {
         export const onWillSaveTextDocument: Event<TextDocumentWillSaveEvent>;
 
         /**
-         * An event that is emitted when a {@link TextDocument text document} is saved to disk.
+         * An event that is emitted when a {@link Notebook notebook} has changed.
+         * @stubbed
          */
-        export const onDidSaveTextDocument: Event<TextDocument>;
+        export const onDidChangeNotebookDocument: Event<NotebookDocumentChangeEvent>;
 
         /**
          * An event that is emitted when files are being created.
@@ -6577,6 +6678,31 @@ export module '@theia/plugin' {
          * @return A promise that resolves to a {@link TextDocument document}.
          */
         export function openTextDocument(options?: { language?: string; content?: string; }): Thenable<TextDocument | undefined>;
+
+        /**
+         *  Open a notebook. Will return early if this notebook is already {@link NotebookDocument loaded}.
+         *  Otherwise the notebook is loaded and the {@link onDidOpenNotebookDocument onDidOpenNotebookDocument}-event fires.
+         *
+         *  Note that the lifecycle of the returned notebook is owned by the editor and not by the extension.
+         *  That means an  {@link onDidCloseNotebookDocument onDidCloseNotebookDocument}-event can occur at any time after.
+         *  Note that opening a notebook does not show a notebook editor. This function only returns a notebook document
+         *  which can be shown in a notebook editor but it can also be used for other things.
+         *
+         * @param uri The resource to open.
+         * @return A promise that resolves to a {@link NotebookDocument notebook}.
+         * @stubbed
+         */
+        export function openNotebookDocument(uri: Uri): Thenable<NotebookDocument> | undefined;
+
+        /**
+         * Open an untitled notebook. The editor will prompt the user for a file path when the document is to be saved.
+         *
+         * @param notebookType The notebook type that should be used.
+         * @param content The initial contents of the notebook.
+         * @return A promise that resolves to a {@link NotebookDocument notebook}.
+         * @stubbed
+         */
+        export function openNotebookDocument(notebookType: string, content?: NotebookData): Thenable<NotebookDocument> | undefined;
 
         /**
          * Get a workspace configuration object.
@@ -7002,6 +7128,19 @@ export module '@theia/plugin' {
          * to filter documents to a {@link WorkspaceFolder workspace folder}.
          */
         readonly pattern?: GlobPattern;
+
+        /**
+         * The {@link NotebookDocument.notebookType type} of a notebook, like `jupyter-notebook`. This allows
+         * to narrow down on the type of a notebook that a {@link NotebookCell.document cell document} belongs to.
+         *
+         * *Note* that setting the `notebookType`-property changes how `scheme` and `pattern` are interpreted. When set
+         * they are evaluated against the {@link NotebookDocument.uri notebook uri}, not the document uri.
+         *
+         * @example <caption>Match python document inside jupyter notebook that aren't stored yet (`untitled`)</caption>
+         * { language: 'python', notebookType: 'jupyter-notebook', scheme: 'untitled' }
+         * @stubbed
+         */
+        readonly notebookType?: string;
     }
 
     /**
@@ -12965,6 +13104,1246 @@ export module '@theia/plugin' {
          * @return A {@link Disposable} that unregisters this provider when being disposed.
          */
         export function registerAuthenticationProvider(id: string, label: string, provider: AuthenticationProvider, options?: AuthenticationProviderOptions): Disposable;
+    }
+
+    /**
+     * Represents a notebook editor that is attached to a {@link NotebookDocument notebook}.
+     */
+    export enum NotebookEditorRevealType {
+        /**
+         * The range will be revealed with as little scrolling as possible.
+         */
+        Default = 0,
+
+        /**
+         * The range will always be revealed in the center of the viewport.
+         */
+        InCenter = 1,
+
+        /**
+         * If the range is outside the viewport, it will be revealed in the center of the viewport.
+         * Otherwise, it will be revealed with as little scrolling as possible.
+         */
+        InCenterIfOutsideViewport = 2,
+
+        /**
+         * The range will always be revealed at the top of the viewport.
+         */
+        AtTop = 3
+    }
+
+    /**
+     * Represents a notebook editor that is attached to a {@link NotebookDocument notebook}.
+     * Additional properties of the NotebookEditor are available in the proposed
+     * API, which will be finalized later.
+     */
+    export interface NotebookEditor {
+
+        /**
+         * The {@link NotebookDocument notebook document} associated with this notebook editor.
+         * @stubbed
+         */
+        readonly notebook: NotebookDocument;
+
+        /**
+         * The primary selection in this notebook editor.
+         * @stubbed
+         */
+        selection: NotebookRange;
+
+        /**
+         * All selections in this notebook editor.
+         *
+         * The primary selection (or focused range) is `selections[0]`. When the document has no cells, the primary selection is empty `{ start: 0, end: 0 }`;
+         * @stubbed
+         */
+        selections: readonly NotebookRange[];
+
+        /**
+         * The current visible ranges in the editor (vertically).
+         * @stubbed
+         */
+        readonly visibleRanges: readonly NotebookRange[];
+
+        /**
+         * The column in which this editor shows.
+         * @stubbed
+         */
+        readonly viewColumn?: ViewColumn;
+
+        /**
+         * Scroll as indicated by `revealType` in order to reveal the given range.
+         *
+         * @param range A range.
+         * @param revealType The scrolling strategy for revealing `range`.
+         * @stubbed
+         */
+        revealRange(range: NotebookRange, revealType?: NotebookEditorRevealType): void;
+    }
+
+    /**
+     * Renderer messaging is used to communicate with a single renderer. It's returned from {@link notebooks.createRendererMessaging}.
+     */
+    export interface NotebookRendererMessaging {
+        /**
+         * An event that fires when a message is received from a renderer.
+         * @stubbed
+         */
+        readonly onDidReceiveMessage: Event<{
+            readonly editor: NotebookEditor;
+            readonly message: any;
+        }>;
+
+        /**
+         * Send a message to one or all renderer.
+         *
+         * @param message Message to send
+         * @param editor Editor to target with the message. If not provided, the
+         * message is sent to all renderers.
+         * @returns a boolean indicating whether the message was successfully
+         * delivered to any renderer.
+         * @stubbed
+         */
+        postMessage(message: any, editor?: NotebookEditor): Thenable<boolean>;
+    }
+
+    /**
+     * A notebook cell kind.
+     */
+    export enum NotebookCellKind {
+
+        /**
+         * A markup-cell is formatted source that is used for display.
+         */
+        Markup = 1,
+
+        /**
+         * A code-cell is source that can be {@link NotebookController executed} and that
+         * produces {@link NotebookCellOutput output}.
+         */
+        Code = 2
+    }
+
+    /**
+     * Represents a cell of a {@link NotebookDocument notebook}, either a {@link NotebookCellKind.Code code}-cell
+     * or {@link NotebookCellKind.Markup markup}-cell.
+     *
+     * NotebookCell instances are immutable and are kept in sync for as long as they are part of their notebook.
+     */
+    export interface NotebookCell {
+
+        /**
+         * The index of this cell in its {@link NotebookDocument.cellAt containing notebook}. The
+         * index is updated when a cell is moved within its notebook. The index is `-1`
+         * when the cell has been removed from its notebook.
+         * @stubbed
+         */
+        readonly index: number;
+
+        /**
+         * The {@link NotebookDocument notebook} that contains this cell.
+         * @stubbed
+         */
+        readonly notebook: NotebookDocument;
+
+        /**
+         * The kind of this cell.
+         * @stubbed
+         */
+        readonly kind: NotebookCellKind;
+
+        /**
+         * The {@link TextDocument text} of this cell, represented as text document.
+         * @stubbed
+         */
+        readonly document: TextDocument;
+
+        /**
+         * The metadata of this cell. Can be anything but must be JSON-stringifyable.
+         * @stubbed
+         */
+        readonly metadata: { readonly [key: string]: any };
+
+        /**
+         * The outputs of this cell.
+         * @stubbed
+         */
+        readonly outputs: readonly NotebookCellOutput[];
+
+        /**
+         * The most recent {@link NotebookCellExecutionSummary execution summary} for this cell.
+         * @stubbed
+         */
+        readonly executionSummary: NotebookCellExecutionSummary | undefined;
+    }
+
+    /**
+     * Represents a notebook which itself is a sequence of {@link NotebookCell code or markup cells}. Notebook documents are
+     * created from {@link NotebookData notebook data}.
+     */
+    export interface NotebookDocument {
+
+        /**
+         * The associated uri for this notebook.
+         *
+         * *Note* that most notebooks use the `file`-scheme, which means they are files on disk. However, **not** all notebooks are
+         * saved on disk and therefore the `scheme` must be checked before trying to access the underlying file or siblings on disk.
+         * @stubbed
+         *
+         * @see {@link FileSystemProvider}
+         */
+        readonly uri: Uri;
+
+        /**
+         * The type of notebook.
+         * @stubbed
+         */
+        readonly notebookType: string;
+
+        /**
+         * The version number of this notebook (it will strictly increase after each
+         * change, including undo/redo).
+         * @stubbed
+         */
+        readonly version: number;
+
+        /**
+         * `true` if there are unpersisted changes.
+         * @stubbed
+         */
+        readonly isDirty: boolean;
+
+        /**
+         * Is this notebook representing an untitled file which has not been saved yet.
+         * @stubbed
+         */
+        readonly isUntitled: boolean;
+
+        /**
+         * `true` if the notebook has been closed. A closed notebook isn't synchronized anymore
+         * and won't be re-used when the same resource is opened again.
+         * @stubbed
+         */
+        readonly isClosed: boolean;
+
+        /**
+         * Arbitrary metadata for this notebook. Can be anything but must be JSON-stringifyable.
+         * @stubbed
+         */
+        readonly metadata: { [key: string]: any };
+
+        /**
+         * The number of cells in the notebook.
+         * @stubbed
+         */
+        readonly cellCount: number;
+
+        /**
+         * Return the cell at the specified index. The index will be adjusted to the notebook.
+         *
+         * @param index - The index of the cell to retrieve.
+         * @return A {@link NotebookCell cell}.
+         * @stubbed
+         */
+        cellAt(index: number): NotebookCell;
+
+        /**
+         * Get the cells of this notebook. A subset can be retrieved by providing
+         * a range. The range will be adjusted to the notebook.
+         *
+         * @param range A notebook range.
+         * @returns The cells contained by the range or all cells.
+         * @stubbed
+         */
+        getCells(range?: NotebookRange): NotebookCell[];
+
+        /**
+         * Save the document. The saving will be handled by the corresponding {@link NotebookSerializer serializer}.
+         *
+         * @return A promise that will resolve to true when the document
+         * has been saved. Will return false if the file was not dirty or when save failed.
+         * @stubbed
+         */
+        save(): Thenable<boolean>;
+    }
+
+    /**
+     * Describes a change to a notebook cell.
+     *
+     * @see {@link NotebookDocumentChangeEvent}
+     */
+    export interface NotebookDocumentCellChange {
+
+        /**
+         * The affected cell.
+         * @stubbed
+         */
+        readonly cell: NotebookCell;
+
+        /**
+         * The document of the cell or `undefined` when it did not change.
+         *
+         * *Note* that you should use the {@link workspace.onDidChangeTextDocument onDidChangeTextDocument}-event
+         * for detailed change information, like what edits have been performed.
+         * @stubbed
+         */
+        readonly document: TextDocument | undefined;
+
+        /**
+         * The new metadata of the cell or `undefined` when it did not change.
+         * @stubbed
+         */
+        readonly metadata: { [key: string]: any } | undefined;
+
+        /**
+         * The new outputs of the cell or `undefined` when they did not change.
+         * @stubbed
+         */
+        readonly outputs: readonly NotebookCellOutput[] | undefined;
+
+        /**
+         * The new execution summary of the cell or `undefined` when it did not change.
+         * @stubbed
+         */
+        readonly executionSummary: NotebookCellExecutionSummary | undefined;
+    }
+
+    /**
+     * Describes a structural change to a notebook document, e.g newly added and removed cells.
+     *
+     * @see {@link NotebookDocumentChangeEvent}
+     */
+    export interface NotebookDocumentContentChange {
+
+        /**
+         * The range at which cells have been either added or removed.
+         *
+         * Note that no cells have been {@link NotebookDocumentContentChange.removedCells removed}
+         * when this range is {@link NotebookRange.isEmpty empty}.
+         * @stubbed
+         */
+        readonly range: NotebookRange;
+
+        /**
+         * Cells that have been added to the document.
+         * @stubbed
+         */
+        readonly addedCells: readonly NotebookCell[];
+
+        /**
+         * Cells that have been removed from the document.
+         * @stubbed
+         */
+        readonly removedCells: readonly NotebookCell[];
+    }
+
+    /**
+     * An event describing a transactional {@link NotebookDocument notebook} change.
+     */
+    export interface NotebookDocumentChangeEvent {
+
+        /**
+         * The affected notebook.
+         * @stubbed
+         */
+        readonly notebook: NotebookDocument;
+
+        /**
+         * The new metadata of the notebook or `undefined` when it did not change.
+         * @stubbed
+         */
+        readonly metadata: { [key: string]: any } | undefined;
+
+        /**
+         * An array of content changes describing added or removed {@link NotebookCell cells}.
+         * @stubbed
+         */
+        readonly contentChanges: readonly NotebookDocumentContentChange[];
+
+        /**
+         * An array of {@link NotebookDocumentCellChange cell changes}.
+         * @stubbed
+         */
+        readonly cellChanges: readonly NotebookDocumentCellChange[];
+    }
+
+    /**
+     * The summary of a notebook cell execution.
+     */
+    export interface NotebookCellExecutionSummary {
+
+        /**
+         * The order in which the execution happened.
+         * @stubbed
+         */
+        readonly executionOrder?: number;
+
+        /**
+         * If the execution finished successfully.
+         * @stubbed
+         */
+        readonly success?: boolean;
+
+        /**
+         * The times at which execution started and ended, as unix timestamps
+         * @stubbed
+         */
+        readonly timing?: { readonly startTime: number; readonly endTime: number };
+    }
+
+    /**
+     * A notebook range represents an ordered pair of two cell indices.
+     * It is guaranteed that start is less than or equal to end.
+     */
+    export class NotebookRange {
+
+        /**
+         * The zero-based start index of this range.
+         * @stubbed
+         */
+        readonly start: number;
+
+        /**
+         * The exclusive end index of this range (zero-based).
+         * @stubbed
+         */
+        readonly end: number;
+
+        /**
+         * `true` if `start` and `end` are equal.
+         * @stubbed
+         */
+        readonly isEmpty: boolean;
+
+        /**
+         * Create a new notebook range. If `start` is not
+         * before or equal to `end`, the values will be swapped.
+         *
+         * @param start start index
+         * @param end end index.
+         * @stubbed
+         */
+        constructor(start: number, end: number);
+
+        /**
+         * Derive a new range for this range.
+         *
+         * @param change An object that describes a change to this range.
+         * @return A range that reflects the given change. Will return `this` range if the change
+         * is not changing anything.
+         * @stubbed
+         */
+        with(change: { start?: number; end?: number }): NotebookRange;
+    }
+
+    /**
+     * One representation of a {@link NotebookCellOutput notebook output}, defined by MIME type and data.
+     */
+    export class NotebookCellOutputItem {
+
+        /**
+         * Factory function to create a `NotebookCellOutputItem` from a string.
+         *
+         * *Note* that an UTF-8 encoder is used to create bytes for the string.
+         *
+         * @param value A string.
+         * @param mime Optional MIME type, defaults to `text/plain`.
+         * @returns A new output item object.
+         */
+        static text(value: string, mime?: string): NotebookCellOutputItem;
+
+        /**
+         * Factory function to create a `NotebookCellOutputItem` from
+         * a JSON object.
+         *
+         * *Note* that this function is not expecting "stringified JSON" but
+         * an object that can be stringified. This function will throw an error
+         * when the passed value cannot be JSON-stringified.
+         *
+         * @param value A JSON-stringifyable value.
+         * @param mime Optional MIME type, defaults to `application/json`
+         * @returns A new output item object.
+         */
+        static json(value: any, mime?: string): NotebookCellOutputItem;
+
+        /**
+         * Factory function to create a `NotebookCellOutputItem` that uses
+         * uses the `application/vnd.code.notebook.stdout` mime type.
+         *
+         * @param value A string.
+         * @returns A new output item object.
+         */
+        static stdout(value: string): NotebookCellOutputItem;
+
+        /**
+         * Factory function to create a `NotebookCellOutputItem` that uses
+         * uses the `application/vnd.code.notebook.stderr` mime type.
+         *
+         * @param value A string.
+         * @returns A new output item object.
+         */
+        static stderr(value: string): NotebookCellOutputItem;
+
+        /**
+         * Factory function to create a `NotebookCellOutputItem` that uses
+         * uses the `application/vnd.code.notebook.error` mime type.
+         *
+         * @param value An error object.
+         * @returns A new output item object.
+         */
+        static error(value: Error): NotebookCellOutputItem;
+
+        /**
+         * The mime type which determines how the {@linkcode NotebookCellOutputItem.data data}-property
+         * is interpreted.
+         *
+         * Notebooks have built-in support for certain mime-types, extensions can add support for new
+         * types and override existing types.
+         */
+        mime: string;
+
+        /**
+         * The data of this output item. Must always be an array of unsigned 8-bit integers.
+         */
+        data: Uint8Array;
+
+        /**
+         * Create a new notebook cell output item.
+         *
+         * @param data The value of the output item.
+         * @param mime The mime type of the output item.
+         */
+        constructor(data: Uint8Array, mime: string);
+    }
+
+    /**
+     * Notebook cell output represents a result of executing a cell. It is a container type for multiple
+     * {@link NotebookCellOutputItem output items} where contained items represent the same result but
+     * use different MIME types.
+     */
+    export class NotebookCellOutput {
+
+        /**
+         * The output items of this output. Each item must represent the same result. _Note_ that repeated
+         * MIME types per output is invalid and that the editor will just pick one of them.
+         *
+         * ```ts
+         * new vscode.NotebookCellOutput([
+         *  vscode.NotebookCellOutputItem.text('Hello', 'text/plain'),
+         *  vscode.NotebookCellOutputItem.text('<i>Hello</i>', 'text/html'),
+         *  vscode.NotebookCellOutputItem.text('_Hello_', 'text/markdown'),
+         *  vscode.NotebookCellOutputItem.text('Hey', 'text/plain'), // INVALID: repeated type, editor will pick just one
+         * ])
+         * ```
+         * @stubbed
+         */
+        items: NotebookCellOutputItem[];
+
+        /**
+         * Arbitrary metadata for this cell output. Can be anything but must be JSON-stringifyable.
+         * @stubbed
+         */
+        metadata?: { [key: string]: any };
+
+        /**
+         * Create new notebook output.
+         *
+         * @param items Notebook output items.
+         * @param metadata Optional metadata.
+         * @stubbed
+         */
+        constructor(items: NotebookCellOutputItem[], metadata?: { [key: string]: any });
+    }
+
+    /**
+     * NotebookCellData is the raw representation of notebook cells. Its is part of {@linkcode NotebookData}.
+     */
+    export class NotebookCellData {
+
+        /**
+         * The {@link NotebookCellKind kind} of this cell data.
+         * @stubbed
+         */
+        kind: NotebookCellKind;
+
+        /**
+         * The source value of this cell data - either source code or formatted text.
+         * @stubbed
+         */
+        value: string;
+
+        /**
+         * The language identifier of the source value of this cell data. Any value from
+         * {@linkcode languages.getLanguages getLanguages} is possible.
+         * @stubbed
+         */
+        languageId: string;
+
+        /**
+         * The outputs of this cell data.
+         * @stubbed
+         */
+        outputs?: NotebookCellOutput[];
+
+        /**
+         * Arbitrary metadata of this cell data. Can be anything but must be JSON-stringifyable.
+         */
+        metadata?: { [key: string]: any };
+
+        /**
+         * The execution summary of this cell data.
+         * @stubbed
+         */
+        executionSummary?: NotebookCellExecutionSummary;
+
+        /**
+         * Create new cell data. Minimal cell data specifies its kind, its source value, and the
+         * language identifier of its source.
+         *
+         * @param kind The kind.
+         * @param value The source value.
+         * @param languageId The language identifier of the source value.
+         * @stubbed
+         */
+        constructor(kind: NotebookCellKind, value: string, languageId: string);
+    }
+
+    /**
+     * Raw representation of a notebook.
+     *
+     * Extensions are responsible for creating {@linkcode NotebookData} so that the editor
+     * can create a {@linkcode NotebookDocument}.
+     *
+     * @see {@link NotebookSerializer}
+     */
+    export class NotebookData {
+        /**
+         * The cell data of this notebook data.
+         * @stubbed
+         */
+        cells: NotebookCellData[];
+
+        /**
+         * Arbitrary metadata of notebook data.
+         * @stubbed
+         */
+        metadata?: { [key: string]: any };
+
+        /**
+         * Create new notebook data.
+         *
+         * @param cells An array of cell data.
+         * @stubbed
+         */
+        constructor(cells: NotebookCellData[]);
+    }
+
+    /**
+     * The notebook serializer enables the editor to open notebook files.
+     *
+     * At its core the editor only knows a {@link NotebookData notebook data structure} but not
+     * how that data structure is written to a file, nor how it is read from a file. The
+     * notebook serializer bridges this gap by deserializing bytes into notebook data and
+     * vice versa.
+     */
+    export interface NotebookSerializer {
+
+        /**
+         * Deserialize contents of a notebook file into the notebook data structure.
+         *
+         * @param content Contents of a notebook file.
+         * @param token A cancellation token.
+         * @return Notebook data or a thenable that resolves to such.
+         * @stubbed
+         */
+        deserializeNotebook(content: Uint8Array, token: CancellationToken): NotebookData | Thenable<NotebookData>;
+
+        /**
+         * Serialize notebook data into file contents.
+         *
+         * @param data A notebook data structure.
+         * @param token A cancellation token.
+         * @returns An array of bytes or a thenable that resolves to such.
+         * @stubbed
+         */
+        serializeNotebook(data: NotebookData, token: CancellationToken): Uint8Array | Thenable<Uint8Array>;
+    }
+
+    /**
+     * Notebook content options define what parts of a notebook are persisted. Note
+     *
+     * For instance, a notebook serializer can opt-out of saving outputs and in that case the editor doesn't mark a
+     * notebooks as {@link NotebookDocument.isDirty dirty} when its output has changed.
+     */
+    export interface NotebookDocumentContentOptions {
+        /**
+         * Controls if output change events will trigger notebook document content change events and
+         * if it will be used in the diff editor, defaults to false. If the content provider doesn't
+         * persist the outputs in the file document, this should be set to true.
+         * @stubbed
+         */
+        transientOutputs?: boolean;
+
+        /**
+         * Controls if a cell metadata property change event will trigger notebook document content
+         * change events and if it will be used in the diff editor, defaults to false. If the
+         * content provider doesn't persist a metadata property in the file document, it should be
+         * set to true.
+         * @stubbed
+         */
+        transientCellMetadata?: { [key: string]: boolean | undefined };
+
+        /**
+         * Controls if a document metadata property change event will trigger notebook document
+         * content change event and if it will be used in the diff editor, defaults to false. If the
+         * content provider doesn't persist a metadata property in the file document, it should be
+         * set to true.
+         * @stubbed
+         */
+        transientDocumentMetadata?: { [key: string]: boolean | undefined };
+    }
+
+    /**
+     * Represents options to configure the behavior of showing a {@link NotebookDocument notebook document} in an {@link NotebookEditor notebook editor}.
+     */
+    export interface NotebookDocumentShowOptions {
+        /**
+         * An optional view column in which the {@link NotebookEditor notebook editor} should be shown.
+         * The default is the {@link ViewColumn.Active active}. Columns that do not exist
+         * will be created as needed up to the maximum of {@linkcode ViewColumn.Nine}.
+         * Use {@linkcode ViewColumn.Beside} to open the editor to the side of the currently
+         * active one.
+         * @stubbed
+         */
+        readonly viewColumn?: ViewColumn;
+
+        /**
+         * An optional flag that when `true` will stop the {@link NotebookEditor notebook editor} from taking focus.
+         * @stubbed
+         */
+        readonly preserveFocus?: boolean;
+
+        /**
+         * An optional flag that controls if an {@link NotebookEditor notebook editor}-tab shows as preview. Preview tabs will
+         * be replaced and reused until set to stay - either explicitly or through editing. The default behaviour depends
+         * on the `workbench.editor.enablePreview`-setting.
+         * @stubbed
+         */
+        readonly preview?: boolean;
+
+        /**
+         * An optional selection to apply for the document in the {@link NotebookEditor notebook editor}.
+         * @stubbed
+         */
+        readonly selections?: readonly NotebookRange[];
+    }
+
+    /**
+     * A notebook edit represents edits that should be applied to the contents of a notebook.
+     */
+    export class NotebookEdit {
+
+        /**
+         * Utility to create a edit that replaces cells in a notebook.
+         *
+         * @param range The range of cells to replace
+         * @param newCells The new notebook cells.
+         * @stubbed
+         */
+        static replaceCells(range: NotebookRange, newCells: NotebookCellData[]): NotebookEdit;
+
+        /**
+         * Utility to create an edit that replaces cells in a notebook.
+         *
+         * @param index The index to insert cells at.
+         * @param newCells The new notebook cells.
+         * @stubbed
+         */
+        static insertCells(index: number, newCells: NotebookCellData[]): NotebookEdit;
+
+        /**
+         * Utility to create an edit that deletes cells in a notebook.
+         *
+         * @param range The range of cells to delete.
+         * @stubbed
+         */
+        static deleteCells(range: NotebookRange): NotebookEdit;
+
+        /**
+         * Utility to create an edit that update a cell's metadata.
+         *
+         * @param index The index of the cell to update.
+         * @param newCellMetadata The new metadata for the cell.
+         * @stubbed
+         */
+        static updateCellMetadata(index: number, newCellMetadata: { [key: string]: any }): NotebookEdit;
+
+        /**
+         * Utility to create an edit that updates the notebook's metadata.
+         *
+         * @param newNotebookMetadata The new metadata for the notebook.
+         * @stubbed
+         */
+        static updateNotebookMetadata(newNotebookMetadata: { [key: string]: any }): NotebookEdit;
+
+        /**
+         * Range of the cells being edited. May be empty.
+         * @stubbed
+         */
+        range: NotebookRange;
+
+        /**
+         * New cells being inserted. May be empty.
+         * @stubbed
+         */
+        newCells: NotebookCellData[];
+
+        /**
+         * Optional new metadata for the cells.
+         * @stubbed
+         */
+        newCellMetadata?: { [key: string]: any };
+
+        /**
+         * Optional new metadata for the notebook.
+         * @stubbed
+         */
+        newNotebookMetadata?: { [key: string]: any };
+
+        constructor(range: NotebookRange, newCells: NotebookCellData[]);
+    }
+
+    /**
+     * Represents an event describing the change in a {@link NotebookEditor.selections notebook editor's selections}.
+     */
+    export interface NotebookEditorSelectionChangeEvent {
+        /**
+         * The {@link NotebookEditor notebook editor} for which the selections have changed.
+         * @stubbed
+         */
+        readonly notebookEditor: NotebookEditor;
+
+        /**
+         * The new value for the {@link NotebookEditor.selections notebook editor's selections}.
+         * @stubbed
+         */
+        readonly selections: readonly NotebookRange[];
+    }
+
+    /**
+     * Represents an event describing the change in a {@link NotebookEditor.visibleRanges notebook editor's visibleRanges}.
+     */
+    export interface NotebookEditorVisibleRangesChangeEvent {
+        /**
+         * The {@link NotebookEditor notebook editor} for which the visible ranges have changed.
+         * @stubbed
+         */
+        readonly notebookEditor: NotebookEditor;
+
+        /**
+         * The new value for the {@link NotebookEditor.visibleRanges notebook editor's visibleRanges}.
+         * @stubbed
+         */
+        readonly visibleRanges: readonly NotebookRange[];
+    }
+
+    /**
+     * Notebook controller affinity for notebook documents.
+     *
+     * @see {@link NotebookController.updateNotebookAffinity}
+     */
+    export enum NotebookControllerAffinity {
+        /**
+         * Default affinity.
+         */
+        Default = 1,
+        /**
+         * A controller is preferred for a notebook.
+         */
+        Preferred = 2
+    }
+
+    /**
+     * A notebook controller represents an entity that can execute notebook cells. This is often referred to as a kernel.
+     *
+     * There can be multiple controllers and the editor will let users choose which controller to use for a certain notebook. The
+     * {@linkcode NotebookController.notebookType notebookType}-property defines for what kind of notebooks a controller is for and
+     * the {@linkcode NotebookController.updateNotebookAffinity updateNotebookAffinity}-function allows controllers to set a preference
+     * for specific notebook documents. When a controller has been selected its
+     * {@link NotebookController.onDidChangeSelectedNotebooks onDidChangeSelectedNotebooks}-event fires.
+     *
+     * When a cell is being run the editor will invoke the {@linkcode NotebookController.executeHandler executeHandler} and a controller
+     * is expected to create and finalize a {@link NotebookCellExecution notebook cell execution}. However, controllers are also free
+     * to create executions by themselves.
+     */
+    export interface NotebookController {
+
+        /**
+         * The identifier of this notebook controller.
+         *
+         * _Note_ that controllers are remembered by their identifier and that extensions should use
+         * stable identifiers across sessions.
+         * @stubbed
+         */
+        readonly id: string;
+
+        /**
+         * The notebook type this controller is for.
+         * @stubbed
+         */
+        readonly notebookType: string;
+
+        /**
+         * An array of language identifiers that are supported by this
+         * controller. Any language identifier from {@linkcode languages.getLanguages getLanguages}
+         * is possible. When falsy all languages are supported.
+         *
+         * Samples:
+         * ```js
+         * // support JavaScript and TypeScript
+         * myController.supportedLanguages = ['javascript', 'typescript']
+         *
+         * // support all languages
+         * myController.supportedLanguages = undefined; // falsy
+         * myController.supportedLanguages = []; // falsy
+         * ```
+         * @stubbed
+         */
+        supportedLanguages?: string[];
+
+        /**
+         * The human-readable label of this notebook controller.
+         * @stubbed
+         */
+        label: string;
+
+        /**
+         * The human-readable description which is rendered less prominent.
+         * @stubbed
+         */
+        description?: string;
+
+        /**
+         * The human-readable detail which is rendered less prominent.
+         * @stubbed
+         */
+        detail?: string;
+
+        /**
+         * Whether this controller supports execution order so that the
+         * editor can render placeholders for them.
+         * @stubbed
+         */
+        supportsExecutionOrder?: boolean;
+
+        /**
+         * Create a cell execution task.
+         *
+         * _Note_ that there can only be one execution per cell at a time and that an error is thrown if
+         * a cell execution is created while another is still active.
+         *
+         * This should be used in response to the {@link NotebookController.executeHandler execution handler}
+         * being called or when cell execution has been started else, e.g when a cell was already
+         * executing or when cell execution was triggered from another source.
+         *
+         * @param cell The notebook cell for which to create the execution.
+         * @returns A notebook cell execution.
+         * @stubbed
+         */
+        createNotebookCellExecution(cell: NotebookCell): NotebookCellExecution;
+
+        /**
+         * The execute handler is invoked when the run gestures in the UI are selected, e.g Run Cell, Run All,
+         * Run Selection etc. The execute handler is responsible for creating and managing {@link NotebookCellExecution execution}-objects.
+         * @stubbed
+         */
+        executeHandler: (cells: NotebookCell[], notebook: NotebookDocument, controller: NotebookController) => void | Thenable<void>;
+
+        /**
+         * Optional interrupt handler.
+         *
+         * By default cell execution is canceled via {@link NotebookCellExecution.token tokens}. Cancellation
+         * tokens require that a controller can keep track of its execution so that it can cancel a specific execution at a later
+         * point. Not all scenarios allow for that, eg. REPL-style controllers often work by interrupting whatever is currently
+         * running. For those cases the interrupt handler exists - it can be thought of as the equivalent of `SIGINT`
+         * or `Control+C` in terminals.
+         *
+         * _Note_ that supporting {@link NotebookCellExecution.token cancellation tokens} is preferred and that interrupt handlers should
+         * only be used when tokens cannot be supported.
+         * @stubbed
+         */
+        interruptHandler?: (notebook: NotebookDocument) => void | Thenable<void>;
+
+        /**
+         * An event that fires whenever a controller has been selected or un-selected for a notebook document.
+         *
+         * There can be multiple controllers for a notebook and in that case a controllers needs to be _selected_. This is a user gesture
+         * and happens either explicitly or implicitly when interacting with a notebook for which a controller was _suggested_. When possible,
+         * the editor _suggests_ a controller that is most likely to be _selected_.
+         *
+         * _Note_ that controller selection is persisted (by the controllers {@link NotebookController.id id}) and restored as soon as a
+         * controller is re-created or as a notebook is {@link workspace.onDidOpenNotebookDocument opened}.
+         * @stubbed
+         */
+        readonly onDidChangeSelectedNotebooks: Event<{ readonly notebook: NotebookDocument; readonly selected: boolean }>;
+
+        /**
+         * A controller can set affinities for specific notebook documents. This allows a controller
+         * to be presented more prominent for some notebooks.
+         *
+         * @param notebook The notebook for which a priority is set.
+         * @param affinity A controller affinity
+         * @stubbed
+         */
+        updateNotebookAffinity(notebook: NotebookDocument, affinity: NotebookControllerAffinity): void;
+
+        /**
+         * Dispose and free associated resources.
+         * @stubbed
+         */
+        dispose(): void;
+    }
+
+    /**
+     * A NotebookCellExecution is how {@link NotebookController notebook controller} modify a notebook cell as
+     * it is executing.
+     *
+     * When a cell execution object is created, the cell enters the {@linkcode NotebookCellExecutionState.Pending Pending} state.
+     * When {@linkcode NotebookCellExecution.start start(...)} is called on the execution task, it enters the {@linkcode NotebookCellExecutionState.Executing Executing} state. When
+     * {@linkcode NotebookCellExecution.end end(...)} is called, it enters the {@linkcode NotebookCellExecutionState.Idle Idle} state.
+     */
+    export interface NotebookCellExecution {
+
+        /**
+         * The {@link NotebookCell cell} for which this execution has been created.
+         * @stubbed
+         */
+        readonly cell: NotebookCell;
+
+        /**
+         * A cancellation token which will be triggered when the cell execution is canceled
+         * from the UI.
+         *
+         * _Note_ that the cancellation token will not be triggered when the {@link NotebookController controller}
+         * that created this execution uses an {@link NotebookController.interruptHandler interrupt-handler}.
+         * @stubbed
+         */
+        readonly token: CancellationToken;
+
+        /**
+         * Set and unset the order of this cell execution.
+         * @stubbed
+         */
+        executionOrder: number | undefined;
+
+        /**
+         * Signal that the execution has begun.
+         *
+         * @param startTime The time that execution began, in milliseconds in the Unix epoch. Used to drive the clock
+         * that shows for how long a cell has been running. If not given, the clock won't be shown.
+         * @stubbed
+         */
+        start(startTime?: number): void;
+
+        /**
+         * Signal that execution has ended.
+         *
+         * @param success If true, a green check is shown on the cell status bar.
+         * If false, a red X is shown.
+         * If undefined, no check or X icon is shown.
+         * @param endTime The time that execution finished, in milliseconds in the Unix epoch.
+         * @stubbed
+         */
+        end(success: boolean | undefined, endTime?: number): void;
+
+        /**
+         * Clears the output of the cell that is executing or of another cell that is affected by this execution.
+         *
+         * @param cell Cell for which output is cleared. Defaults to the {@link NotebookCellExecution.cell cell} of
+         * this execution.
+         * @return A thenable that resolves when the operation finished.
+         * @stubbed
+         */
+        clearOutput(cell?: NotebookCell): Thenable<void>;
+
+        /**
+         * Replace the output of the cell that is executing or of another cell that is affected by this execution.
+         *
+         * @param out Output that replaces the current output.
+         * @param cell Cell for which output is cleared. Defaults to the {@link NotebookCellExecution.cell cell} of
+         * this execution.
+         * @return A thenable that resolves when the operation finished.
+         * @stubbed
+         */
+        replaceOutput(out: NotebookCellOutput | readonly NotebookCellOutput[], cell?: NotebookCell): Thenable<void>;
+
+        /**
+         * Append to the output of the cell that is executing or to another cell that is affected by this execution.
+         *
+         * @param out Output that is appended to the current output.
+         * @param cell Cell for which output is cleared. Defaults to the {@link NotebookCellExecution.cell cell} of
+         * this execution.
+         * @return A thenable that resolves when the operation finished.
+         * @stubbed
+         */
+        appendOutput(out: NotebookCellOutput | readonly NotebookCellOutput[], cell?: NotebookCell): Thenable<void>;
+
+        /**
+         * Replace all output items of existing cell output.
+         *
+         * @param items Output items that replace the items of existing output.
+         * @param output Output object that already exists.
+         * @return A thenable that resolves when the operation finished.
+         * @stubbed
+         */
+        replaceOutputItems(items: NotebookCellOutputItem | readonly NotebookCellOutputItem[], output: NotebookCellOutput): Thenable<void>;
+
+        /**
+         * Append output items to existing cell output.
+         *
+         * @param items Output items that are append to existing output.
+         * @param output Output object that already exists.
+         * @return A thenable that resolves when the operation finished.
+         * @stubbed
+         */
+        appendOutputItems(items: NotebookCellOutputItem | readonly NotebookCellOutputItem[], output: NotebookCellOutput): Thenable<void>;
+    }
+
+    /**
+     * Represents the alignment of status bar items.
+     */
+    export enum NotebookCellStatusBarAlignment {
+
+        /**
+         * Aligned to the left side.
+         */
+        Left = 1,
+
+        /**
+         * Aligned to the right side.
+         */
+        Right = 2
+    }
+
+    /**
+     * A contribution to a cell's status bar
+     */
+    export class NotebookCellStatusBarItem {
+        /**
+         * The text to show for the item.
+         * @stubbed
+         */
+        text: string;
+
+        /**
+         * Whether the item is aligned to the left or right.
+         * @stubbed
+         */
+        alignment: NotebookCellStatusBarAlignment;
+
+        /**
+         * An optional {@linkcode Command} or identifier of a command to run on click.
+         *
+         * The command must be {@link commands.getCommands known}.
+         *
+         * Note that if this is a {@linkcode Command} object, only the {@linkcode Command.command command} and {@linkcode Command.arguments arguments}
+         * are used by the editor.
+         * @stubbed
+         */
+        command?: string | Command;
+
+        /**
+         * A tooltip to show when the item is hovered.
+         * @stubbed
+         */
+        tooltip?: string;
+
+        /**
+         * The priority of the item. A higher value item will be shown more to the left.
+         * @stubbed
+         */
+        priority?: number;
+
+        /**
+         * Accessibility information used when a screen reader interacts with this item.
+         * @stubbed
+         */
+        accessibilityInformation?: AccessibilityInformation;
+
+        /**
+         * Creates a new NotebookCellStatusBarItem.
+         * @param text The text to show for the item.
+         * @param alignment Whether the item is aligned to the left or right.
+         * @stubbed
+         */
+        constructor(text: string, alignment: NotebookCellStatusBarAlignment);
+    }
+
+    /**
+     * A provider that can contribute items to the status bar that appears below a cell's editor.
+     */
+    export interface NotebookCellStatusBarItemProvider {
+        /**
+         * An optional event to signal that statusbar items have changed. The provide method will be called again.
+         * @stubbed
+         */
+        onDidChangeCellStatusBarItems?: Event<void>;
+
+        /**
+         * The provider will be called when the cell scrolls into view, when its content, outputs, language, or metadata change, and when it changes execution state.
+         * @param cell The cell for which to return items.
+         * @param token A token triggered if this request should be cancelled.
+         * @return One or more {@link NotebookCellStatusBarItem cell statusbar items}
+         * @stubbed
+         */
+        provideCellStatusBarItems(cell: NotebookCell, token: CancellationToken): ProviderResult<NotebookCellStatusBarItem | NotebookCellStatusBarItem[]>;
+    }
+
+    /**
+     * Namespace for notebooks.
+     * The notebooks functionality is composed of three loosely coupled components:
+     * -{@link NotebookSerializer} enable the editor to open, show, and save notebooks
+     * -{@link NotebookController} own the execution of notebooks, e.g they create output from code cells.
+     * -{@link NotebookRenderer} present notebook output in the editor. They run in a separate context.
+     *
+     */
+    export namespace notebooks {
+
+        /**
+         * Creates a new notebook controller.
+         * @param id Identifier of the controller. Must be unique per extension.
+         * @param notebookType A notebook type for which this controller is for.
+         * @param label The label of the controller.
+         * @param handler The execute-handler of the controller.
+         * @returns a new instance of {@link NotebookController}
+         * @stubbed
+         */
+        export function createNotebookController(
+            id: string,
+            notebookType: string,
+            label: string,
+            handler?: (cells: NotebookCell[],
+                notebook: NotebookDocument,
+                controller: NotebookController) => void | Thenable<void>): NotebookController;
+
+        /**
+         * Creates a new messaging instance used to communicate with a specific renderer.
+         * - Note 1: Extensions can only create renderer that they have defined in their package.json - file
+         * - Note 2: A renderer only has access to messaging if requiresMessaging is set to always or optional in its notebookRenderer contribution.
+         * @param rendererId The renderer ID to communicate with
+         * @returns A new notebook renderer messaging object.
+         * @stubbed
+         */
+        export function createRendererMessaging(rendererId: string): NotebookRendererMessaging;
+
+        /**
+         * Register a cell statusbar item provider for the given notebook type.
+         * @param notebookType The notebook type to register for.
+         * @param provider A cell status bar provider.
+         * @returns A Disposable that unregisters this provider when being disposed.
+         * @stubbed
+         */
+        export function registerNotebookCellStatusBarItemProvider(notebookType: string, provider: NotebookCellStatusBarItemProvider): Disposable;
     }
 }
 
