@@ -110,6 +110,8 @@ export abstract class TerminalWidget extends BaseWidget {
 
     abstract write(data: string): void;
 
+    abstract  selectRead(): string;
+
     abstract resize(cols: number, rows: number): void;
 
     /**

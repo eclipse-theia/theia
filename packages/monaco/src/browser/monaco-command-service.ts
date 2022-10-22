@@ -20,6 +20,8 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import ICommandEvent = monaco.commands.ICommandEvent;
 import ICommandService = monaco.commands.ICommandService;
+import { LocalStorageService } from '@theia/core/lib/browser/storage-service';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 
 export const MonacoCommandServiceFactory = Symbol('MonacoCommandServiceFactory');
 export interface MonacoCommandServiceFactory {
@@ -38,6 +40,12 @@ export class MonacoCommandService implements ICommandService, Disposable {
 
     protected delegate: monaco.services.StandaloneCommandService | undefined;
     protected readonly delegateListeners = new DisposableCollection();
+
+    @inject(LocalStorageService)
+    protected readonly storage: LocalStorageService;
+
+    @inject(ClipboardService)
+    protected readonly clipboardService: ClipboardService;
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry
@@ -78,7 +86,18 @@ export class MonacoCommandService implements ICommandService, Disposable {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async executeCommand(commandId: any, ...args: any[]): Promise<any> {
         try {
-            await this.commandRegistry.executeCommand(commandId, ...args);
+            if (commandId === 'paste' && await this.storage.getData<boolean>('x-webide-ext')) {
+                let data = await this.storage.getData('storageTemp');
+                const clipboardData = await this.storage.getData('clipboardTemp');
+                const clipboardTempData = await this.clipboardService.readText();
+                if (clipboardData && clipboardTempData !== clipboardData) {
+                    data = clipboardData;
+                }
+                const pasteMap = {'text': data };
+                await this.commandRegistry.executeCommand(commandId, pasteMap);
+            } else {
+                await this.commandRegistry.executeCommand(commandId, ...args);
+            }
         } catch (e) {
             if (e.code === 'NO_ACTIVE_HANDLER') {
                 return this.executeMonacoCommand(commandId, ...args);

@@ -29,7 +29,7 @@ import {
 } from '@theia/core/lib/common';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager,
-    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService, codicon
+    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService, codicon, LocalStorageService
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from './terminal-widget-impl';
@@ -48,6 +48,7 @@ import { terminalAnsiColorMap } from './terminal-theme-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { TerminalWatcher } from '../common/terminal-watcher';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import {
     ENVIRONMENT_VARIABLE_COLLECTIONS_KEY,
     SerializableExtensionEnvironmentVariableCollection
@@ -79,6 +80,16 @@ export namespace TerminalCommands {
         id: 'terminal:clear',
         category: TERMINAL_CATEGORY,
         label: 'Clear Terminal'
+    };
+    export  const TERMINAL_PASTE: Command = {
+        id: 'terminal:paste',
+        category: TERMINAL_CATEGORY,
+        label: 'Paste Text in Terminal'
+    };
+    export  const TERMINAL_COPY: Command = {
+        id: 'terminal:copy',
+        category: TERMINAL_CATEGORY,
+        label: 'Copy Text in Terminal'
     };
     export const TERMINAL_CONTEXT: Command = {
         id: 'terminal:context',
@@ -159,6 +170,8 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     protected readonly terminalWatcher: TerminalWatcher;
     @inject(StorageService)
     protected readonly storageService: StorageService;
+    @inject(LocalStorageService)
+    protected readonly storage: LocalStorageService;
 
     protected readonly onDidCreateTerminalEmitter = new Emitter<TerminalWidget>();
     readonly onDidCreateTerminal: Event<TerminalWidget> = this.onDidCreateTerminalEmitter.event;
@@ -168,6 +181,9 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(ClipboardService)
+    protected readonly clipboardService: ClipboardService;
 
     @postConstruct()
     protected init(): void {
@@ -305,6 +321,28 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         commands.registerCommand(TerminalCommands.TERMINAL_CONTEXT, UriAwareCommandHandler.MonoSelect(this.selectionService, {
             execute: uri => this.openInTerminal(uri)
         }));
+        commands.registerCommand(TerminalCommands.TERMINAL_PASTE);
+        commands.registerHandler(TerminalCommands.TERMINAL_PASTE.id, {
+            isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
+            execute: async () => {
+                let storageTemp: string = await this.storage.getData<string>('storageTemp');
+                const clipboardData = await this.storage.getData('clipboardTemp');
+                const clipboardTempData = await this.clipboardService.readText();
+                if (clipboardTempData && clipboardTempData !== clipboardData) {
+                    storageTemp = clipboardData;
+                }
+                (this.shell.activeWidget as TerminalWidget).write(storageTemp);
+            }
+        });
+        commands.registerCommand(TerminalCommands.TERMINAL_COPY);
+        commands.registerHandler(TerminalCommands.TERMINAL_COPY.id, {
+            isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
+            execute: async () => {
+                const clipboardTempData = await this.clipboardService.readText();
+                await this.storage.setData('clipboardTempData', clipboardTempData);
+                await this.storage.setData('storageTemp', (this.shell.activeWidget as TerminalWidget).selectRead());
+            }
+        });
         commands.registerCommand(TerminalCommands.TERMINAL_FIND_TEXT);
         commands.registerHandler(TerminalCommands.TERMINAL_FIND_TEXT.id, {
             isEnabled: () => {
@@ -418,7 +456,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         });
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
+    async registerKeybindings(keybindings: KeybindingRegistry): Promise<void> {
         /* Register passthrough keybindings for combinations recognized by
            xterm.js and converted to control characters.
              See: https://github.com/xtermjs/xterm.js/blob/v3/src/Terminal.ts#L1684 */
@@ -515,6 +553,18 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             keybinding: 'ctrlcmd+k',
             context: TerminalKeybindingContexts.terminalActive
         });
+        if ( await this.storage.getData<boolean>('x-webide-ext')) {
+            keybindings.registerKeybinding({
+                command: TerminalCommands.TERMINAL_PASTE.id,
+                keybinding: 'ctrlcmd+v',
+                context: TerminalKeybindingContexts.terminalActive
+            });
+            keybindings.registerKeybinding({
+                command: TerminalCommands.TERMINAL_COPY.id,
+                keybinding: 'ctrlcmd+c',
+                context: TerminalKeybindingContexts.terminalActive
+            });
+        }
         keybindings.registerKeybinding({
             command: TerminalCommands.TERMINAL_FIND_TEXT.id,
             keybinding: 'ctrlcmd+f',

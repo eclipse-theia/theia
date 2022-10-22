@@ -19,7 +19,7 @@ import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
 import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon } from '@theia/core/lib/browser';
-import { isOSX } from '@theia/core/lib/common';
+import { isOSX, MessageService } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/shell-terminal-protocol';
 import { terminalsPath } from '../common/terminal-protocol';
@@ -77,6 +77,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(TerminalCopyOnSelectionHandler) protected readonly copyOnSelectionHandler: TerminalCopyOnSelectionHandler;
     @inject(TerminalThemeService) protected readonly themeService: TerminalThemeService;
     @inject(ShellCommandBuilder) protected readonly shellCommandBuilder: ShellCommandBuilder;
+    @inject(MessageService) protected readonly messageSeervice: MessageService;
 
     protected readonly onDidOpenEmitter = new Emitter<void>();
     readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;
@@ -219,6 +220,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.onDispose(() => {
             document.removeEventListener('touchend', touchEndListener);
         });
+
+        if (!this.enableContextMenu) {
+            document.addEventListener('contextmenu', e =>{
+               e.preventDefault();
+               this.messageSeervice.warn('Please use the keyboard shortcut.');
+            });
+        }
 
         this.toDispose.push(this.term.onSelectionChange(() => {
             if (this.copyOnSelection) {
@@ -555,6 +563,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
     }
 
+    selectRead(): string {
+        return this.term.getSelection();
+    }
+
     resize(cols: number, rows: number): void {
         this.term.resize(cols, rows);
     }
@@ -674,6 +686,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     protected get copyOnSelection(): boolean {
         return this.preferences['terminal.integrated.copyOnSelection'];
+    }
+
+    protected get enableContextMenu(): boolean {
+        return this.preferences['terminal.enableContextMenu'];
     }
 
     protected attachCustomKeyEventHandler(): void {

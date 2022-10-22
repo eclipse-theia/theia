@@ -31,6 +31,11 @@ export const TerminalConfigSchema: PreferenceSchema = {
             description: 'Enable ctrl-v (cmd-v on macOS) to paste from clipboard',
             default: true
         },
+        'terminal.enableContextMenu': {
+            type: 'boolean',
+            description: 'Enable right click ContextMenu',
+            default: false
+        },
         'terminal.integrated.fontFamily': {
             type: 'string',
             description: 'Controls the font family of the terminal.',
@@ -151,6 +156,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
 export interface TerminalConfiguration {
     'terminal.enableCopy': boolean
     'terminal.enablePaste': boolean
+    'terminal.enableContextMenu': boolean
     // xterm compatible, see https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/
     'terminal.integrated.fontFamily': string
     'terminal.integrated.fontSize': number

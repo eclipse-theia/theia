@@ -18,6 +18,8 @@ import { injectable, inject, named } from 'inversify';
 import { Event, Emitter, WaitUntilEvent } from './event';
 import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
+import { LocalStorageService } from '../browser/storage-service';
+import { ClipboardService } from '../browser/clipboard-service';
 // eslint-disable-next-line @theia/runtime-import-check
 import { nls } from '../browser/nls';
 
@@ -189,6 +191,12 @@ export class CommandRegistry implements CommandService {
     protected readonly onDidExecuteCommandEmitter = new Emitter<CommandEvent>();
     readonly onDidExecuteCommand = this.onDidExecuteCommandEmitter.event;
 
+    @inject(LocalStorageService)
+    protected readonly storage: LocalStorageService;
+
+    @inject(ClipboardService)
+    protected readonly clipboardService: ClipboardService;
+
     constructor(
         @inject(ContributionProvider) @named(CommandContribution)
         protected readonly contributionProvider: ContributionProvider<CommandContribution>
@@ -306,7 +314,18 @@ export class CommandRegistry implements CommandService {
         const handler = this.getActiveHandler(commandId, ...args);
         if (handler) {
             await this.fireWillExecuteCommand(commandId, args);
-            const result = await handler.execute(...args);
+            let result;
+            if (commandId === 'core.copy' && await this.storage.getData<boolean>('x-webide-ext')){
+                const selection = document.getSelection();
+                if (selection) {
+                    const clipboardTempData = await this.clipboardService.readText();
+                    await this.storage.setData('clipboardTemp', clipboardTempData);
+                    await this.storage.setData('storageTemp', selection.toString());
+                    result = 'undefined';
+                }
+            } else {
+                result = await handler.execute(...args);
+            }
             this.onDidExecuteCommandEmitter.fire({ commandId, args });
             return result;
         }
