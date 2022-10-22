@@ -18,7 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import { FrontendApplication } from '../frontend-application';
 import { WidgetManager, WidgetConstructionOptions } from '../widget-manager';
-import { StorageService } from '../storage-service';
+import { StorageService, LocalStorageService } from '../storage-service';
 import { ILogger } from '../../common/logger';
 import { CommandContribution, CommandRegistry, Command } from '../../common/command';
 import { ThemeService } from '../theming';
@@ -127,7 +127,8 @@ export class ShellLayoutRestorer implements CommandContribution {
     constructor(
         @inject(WidgetManager) protected widgetManager: WidgetManager,
         @inject(ILogger) protected logger: ILogger,
-        @inject(StorageService) protected storageService: StorageService) { }
+        @inject(StorageService) protected storageService: StorageService,
+        @inject(LocalStorageService) protected storage: LocalStorageService ) { }
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(RESET_LAYOUT, {
@@ -162,6 +163,11 @@ export class ShellLayoutRestorer implements CommandContribution {
     async restoreLayout(app: FrontendApplication): Promise<boolean> {
         this.logger.info('>>> Restoring the layout state...');
         const serializedLayoutData = await this.storageService.getData<string>(this.storageKey);
+        if ((await fetch(window.location.href, { method: 'GET'})).headers.has('x-webide-ext')) {
+            await this.storage.setData('x-webide-ext', true);
+        } else {
+            await this.storage.setData('x-webide-ext', false);
+        }
         if (serializedLayoutData === undefined) {
             this.logger.info('<<< Nothing to restore.');
             return false;

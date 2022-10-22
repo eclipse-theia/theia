@@ -52,7 +52,9 @@ export class FrontendGenerator extends AbstractGenerator {
 <head>${this.compileIndexHead(frontendModules)}
   <script type="text/javascript" src="./bundle.js" charset="utf-8"></script>
 </head>
-
+<script>
+console.log('test');
+</script>
 <body>
   <div class="theia-preload">${this.compileIndexPreload(frontendModules)}</div>
 </body>
