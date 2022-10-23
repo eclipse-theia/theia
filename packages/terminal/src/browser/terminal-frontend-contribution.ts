@@ -329,7 +329,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
                 const clipboardData = await this.storage.getData('clipboardTemp');
                 const clipboardTempData = await this.clipboardService.readText();
                 if (clipboardTempData && clipboardTempData !== clipboardData) {
-                    storageTemp = clipboardData;
+                    storageTemp = clipboardTempData;
                 }
                 (this.shell.activeWidget as TerminalWidget).write(storageTemp);
             }
