@@ -325,7 +325,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         commands.registerHandler(TerminalCommands.TERMINAL_PASTE.id, {
             isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
             execute: async () => {
-                let storageTemp: string = await this.storage.getData<string>('storageTemp');
+                let storageTemp: string = await this.storage.getData<string>('storageTemp') || '';
                 const clipboardData = await this.storage.getData('clipboardTemp');
                 const clipboardTempData = await this.clipboardService.readText();
                 if (clipboardTempData && clipboardTempData !== clipboardData) {
