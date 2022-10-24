@@ -1849,6 +1849,13 @@ export class ApplicationShell extends Widget {
                     }
                     return true;
                 } else if (ci === 0) {
+                    if (current && current.titles.length > 0) {
+                        current.currentIndex = current.titles.length - 1;
+                        if (current.currentTitle) {
+                            this.activateWidget(current.currentTitle.owner.id);
+                        }
+                        return true;
+                    }
                     return this.activatePreviousTabBar(current);
                 }
             }
