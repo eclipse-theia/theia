@@ -53,7 +53,47 @@ export class FrontendGenerator extends AbstractGenerator {
   <script type="text/javascript" src="./bundle.js" charset="utf-8"></script>
 </head>
 <script>
-console.log('test');
+fetch(window.location.href, {method:'GET'}).then(res => {
+  if (res.headers.has('w-webide-ext')) {
+      fetch('/api/v1/echo', { method: 'GET'}).then(res => {
+          var userId = 'not_identified';
+          if (res.header('w-webide-echo')) {
+              var header = res.headers.get('x-webide-echo');
+              if (header !== ''){
+                  header = header.split('.')[1];
+                  header = atob(header);
+                  var user = JSON.parse(header);
+                  userId  = user.uname;
+              }
+          }
+          var bodyElemnt = document.getElementsByTagName('body')[0];
+          var watermarkElement = document.createElement("p");
+          watermarkElement.id = 'watermarkId';
+          watermarkElement.style['color'] = 'rgba(128, 128, 128, 0.2)';
+          watermarkElement.style['left'] = '0';
+          watermarkElement.style['width'] = '120%';
+          watermarkElement.style['height'] = '100%';
+          watermarkElement.style['line-height'] = '7';
+          watermarkElement.style['margin'] = '0';
+          watermarkElement.style['position'] = 'fixed';
+          watermarkElement.style['top'] = '0';
+          watermarkElement.style['transform'] = 'rotate(-30deg)';
+          watermarkElement.style['transform-origin'] = '0 100%';
+          watermarkElement.style['word-spacing'] = '10px';
+          watermarkElement.style['z-index'] = '10000';
+          watermarkElement.style['pointer-events'] = 'none';
+          watermarkElement.style['user-select'] = 'none';
+          bodyElemnt.appendChild(watermarkElement);
+          
+          var watermarkText = '';
+          var n = 10000;
+          for (var i = 0; i < n; i++) {
+              watermarkText += '' +userId;
+          }
+          document.getElementById('watermarkId').innerHTML = watermarkText;
+      });
+  }
+});
 </script>
 <body>
   <div class="theia-preload">${this.compileIndexPreload(frontendModules)}</div>
