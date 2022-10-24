@@ -128,7 +128,7 @@ export class ShellLayoutRestorer implements CommandContribution {
         @inject(WidgetManager) protected widgetManager: WidgetManager,
         @inject(ILogger) protected logger: ILogger,
         @inject(StorageService) protected storageService: StorageService,
-        @inject(LocalStorageService) protected storage: LocalStorageService ) { }
+        @inject(LocalStorageService) protected readonly storage: LocalStorageService) { }
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(RESET_LAYOUT, {
@@ -163,7 +163,7 @@ export class ShellLayoutRestorer implements CommandContribution {
     async restoreLayout(app: FrontendApplication): Promise<boolean> {
         this.logger.info('>>> Restoring the layout state...');
         const serializedLayoutData = await this.storageService.getData<string>(this.storageKey);
-        if ((await fetch(window.location.href, { method: 'GET'})).headers.has('x-webide-ext')) {
+        if ((await fetch(window.location.href, { method: 'GET' })).headers.has('x-webide-ext')) {
             await this.storage.setData('x-webide-ext', true);
         } else {
             await this.storage.setData('x-webide-ext', false);
