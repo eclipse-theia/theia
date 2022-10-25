@@ -5109,6 +5109,18 @@ export module '@theia/plugin' {
         export function registerUriHandler(handler: UriHandler): Disposable;
 
         /**
+         * Show progress in the Source Control viewlet while running the given callback and while
+         * its returned promise isn't resolve or rejected.
+         *
+         * @deprecated Use `withProgress` instead.
+         *
+         * @param task A callback returning a promise. Progress increments can be reported with
+         * the provided {@link Progress}-object.
+         * @return The thenable the task did return.
+         */
+        export function withScmProgress<R>(task: (progress: Progress<number>) => Thenable<R>): Thenable<R>;
+
+        /**
          * Show progress in the editor. Progress is shown while running the given callback
          * and while the promise it returned isn't resolved nor rejected. The location at which
          * progress should show (and other details) is defined via the passed [`ProgressOptions`](#ProgressOptions).

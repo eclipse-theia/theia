@@ -476,6 +476,10 @@ export function createAPIFactory(
             createTreeView<T>(viewId: string, options: { treeDataProvider: theia.TreeDataProvider<T> }): theia.TreeView<T> {
                 return treeViewsExt.createTreeView(plugin, viewId, options);
             },
+            withScmProgress<R>(task: (progress: theia.Progress<number>) => Thenable<R>) {
+                const options: ProgressOptions = { location: ProgressLocation.SourceControl };
+                return notificationExt.withProgress(options, () => task({ report() { /* noop */ } }));
+            },
             withProgress<R>(
                 options: ProgressOptions,
                 task: (progress: Progress<{ message?: string; increment?: number }>, token: theia.CancellationToken) => PromiseLike<R>
