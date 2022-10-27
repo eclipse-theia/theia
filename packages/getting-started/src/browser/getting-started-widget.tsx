@@ -17,7 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import URI from '@theia/core/lib/common/uri';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
+import { Message, ReactWidget } from '@theia/core/lib/browser';
 import { CommandRegistry, isOSX, environment, Path } from '@theia/core/lib/common';
 import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browser';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
@@ -109,6 +109,14 @@ export class GettingStartedWidget extends ReactWidget {
         this.recentWorkspaces = await this.workspaceService.recentWorkspaces();
         this.home = new URI(await this.environments.getHomeDirUri()).path.toString();
         this.update();
+    }
+
+    protected override onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        const htmlElement = document.getElementById('getting.started.widget');
+        if (htmlElement) {
+            htmlElement?.focus();
+        }
     }
 
     /**
