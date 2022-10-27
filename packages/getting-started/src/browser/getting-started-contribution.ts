@@ -51,14 +51,14 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
     async onStart(app: FrontendApplication): Promise<void> {
         if (!this.workspaceService.opened) {
             this.stateService.reachedState('ready').then(
-                () => this.openView({ reveal: true })
+                () => this.openView({ reveal: true, activate: true })
             );
         }
     }
 
     override registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(GettingStartedCommand, {
-            execute: () => this.openView({ reveal: true }),
+            execute: () => this.openView({ reveal: true, activate: true }),
         });
     }
 
