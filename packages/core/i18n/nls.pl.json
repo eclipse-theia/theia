@@ -65,6 +65,8 @@
       "compound-cycle": "Konfiguracja startowa \"{0}\" zawiera cykl z samym sobą",
       "continueAll": "Kontynuuj Wszystko",
       "copyExpressionValue": "Kopiuj wartość wyrażenia",
+      "debugSessionActive": "Jest aktywna sesja debugowania, czy na pewno chcesz ją zatrzymać?",
+      "debugSessionActiveMultiple": "Istnieją aktywne sesje debugowania, czy na pewno chcesz je zatrzymać?",
       "disassembly-view": {
         "show-source-code": "Pokaż kod źródłowy w widoku demontażu."
       },
@@ -493,7 +495,6 @@
       "messageWarning": "            Wzorzec hosta punktu końcowego {0} został zmieniony na `{1}`; zmiana wzorca może prowadzić do luk w zabezpieczeniach.             Zobacz `{2}` aby uzyskać więcej informacji."
     },
     "workspace": {
-      "closeWorkspace": "Czy naprawdę chcesz zamknąć obszar roboczy?",
       "compareWithEachOther": "Porównaj z innymi",
       "confirmDeletePermanently.description": "Nie udało się usunąć \"{0}\" za pomocą Kosza. Czy chcesz usunąć go na stałe?",
       "confirmDeletePermanently.solution": "Możesz wyłączyć korzystanie z Kosza w preferencjach.",

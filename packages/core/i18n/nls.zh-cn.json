@@ -65,6 +65,8 @@
       "compound-cycle": "启动配置'{0}'包含一个与自己的循环",
       "continueAll": "继续所有",
       "copyExpressionValue": "复制表达式的值",
+      "debugSessionActive": "有一个活跃的调试会话,你确定你要停止它吗?",
+      "debugSessionActiveMultiple": "有活跃的调试会话,你确定你要停止它们吗?",
       "disassembly-view": {
         "show-source-code": "在反汇编视图中显示源代码。"
       },
@@ -493,7 +495,6 @@
       "messageWarning": "            {0}端点的主机模式已改为`{1}`;改变模式可能导致安全漏洞。             参见`{2}`以了解更多信息。"
     },
     "workspace": {
-      "closeWorkspace": "你真的想关闭工作区吗?",
       "compareWithEachOther": "互相比较",
       "confirmDeletePermanently.description": "使用垃圾箱删除\"{0}\"失败。你想永久删除吗?",
       "confirmDeletePermanently.solution": "你可以在偏好设置中禁用垃圾桶的使用。",

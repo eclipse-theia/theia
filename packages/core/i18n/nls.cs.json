@@ -65,6 +65,8 @@
       "compound-cycle": "Konfigurace spuštění '{0}' obsahuje cyklus se sebou samým",
       "continueAll": "Pokračovat ve všem",
       "copyExpressionValue": "Kopírování hodnoty výrazu",
+      "debugSessionActive": "Je aktivní relace ladění, jste si jisti, že ji chcete zastavit?",
+      "debugSessionActiveMultiple": "Jsou aktivní relace ladění, jste si jisti, že je chcete zastavit?",
       "disassembly-view": {
         "show-source-code": "Zobrazení zdrojového kódu v zobrazení disassembleru."
       },
@@ -493,7 +495,6 @@
       "messageWarning": "            Vzor hostitele {0} byl změněn na `{1}`; změna vzoru může vést k bezpečnostním zranitelnostem.             Další informace naleznete v části `{2}`."
     },
     "workspace": {
-      "closeWorkspace": "Opravdu chcete zavřít pracovní prostor?",
       "compareWithEachOther": "Vzájemné porovnání",
       "confirmDeletePermanently.description": "Nepodařilo se odstranit položku \"{0}\" pomocí Koše. Chcete jej místo toho trvale odstranit?",
       "confirmDeletePermanently.solution": "Používání Koše můžete zakázat v předvolbách.",
