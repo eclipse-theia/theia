@@ -98,7 +98,7 @@ describe('PreferenceRegistryExtImpl:', () => {
                 'a.constructor.prototype.injectedParsedConstructorPrototype': true,
                 'constructor.prototype.injectedParsedConstructorPrototype': true,
                 '[python].some.key.foo': 'value',
-                '[python].a.constructor.prototype.injectedParsedConsttructorPrototype': true
+                '[python].a.constructor.prototype.injectedParsedConstructorPrototype': true
             };
             const result = preferenceRegistryExtImpl['parseConfigurationData'](value);
             expect(result.contents.my).to.be.an('object');
@@ -205,7 +205,7 @@ describe('PreferenceRegistryExtImpl:', () => {
             expect(affectsChecker.affectsConfiguration('whole-section.subsection', { languageId: 'typescript', uri: URI.parse('/very/specific/path') })).to.be.true;
         });
 
-        it('Reports true if no language override is provided and a language overriden preference changes', () => {
+        it('Reports true if no language override is provided and a language overridden preference changes', () => {
             const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent'](
                 [{ newValue: 'bar', preferenceName: '[typescript].whole-section.subitem', scope: 'file:///somewhat-specific-path' }]
             );
