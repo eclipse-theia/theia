@@ -21,7 +21,7 @@ import {
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from './uint8-array-message-buffer';
 
 describe('PPC Message Encoder & Decoder', () => {
-    describe('Msgpack  Encoder & Decoder', () => {
+    describe('MsgPack  Encoder & Decoder', () => {
         it('should encode object into binary message and decode the message back into the original object', () => {
             const buffer = new Uint8Array(1024);
             const writer = new Uint8ArrayWriteBuffer(buffer);

@@ -4,22 +4,44 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## v1.31.0
+## v1.31.0 - 10/27/2022
 
-- [plugin] added support for the `InlineValues` feature [#11729](https://github.com/eclipse-theia/theia/pull/11729) - Contributed on behalf of STMicroelectronics
-- [plugin] Added support for `resolveTreeItem` of `TreeDataProvider` [#11708](https://github.com/eclipse-theia/theia/pull/11708) - Contributed on behalf of STMicroelectronics
+- [debug] added confirmation message for debug exit [#11546](https://github.com/eclipse-theia/theia/pull/11546)
+- [messages] fixed transparent notifications issue [#11714](https://github.com/eclipse-theia/theia/pull/11714)
+- [monaco] fixed issue with `editor-*` preferences not being applied properly [#11711](https://github.com/eclipse-theia/theia/pull/11711)
+- [output] fixed issue with channel selector [#11727](https://github.com/eclipse-theia/theia/pull/11727)
+- [plugin] added handling to check if commands registered via `registerTextEditorCommand` are declared in the `package.json` [#11764](https://github.com/eclipse-theia/theia/pull/11764)
+- [plugin] added stubs for the `Tests` VS Code API [#11717](https://github.com/eclipse-theia/theia/pull/11717)
+- [plugin] added support for the `InlayHints` VS Code API [#11736](https://github.com/eclipse-theia/theia/pull/11736)
+- [plugin] added support for the `InlineValues` VS Code API [#11729](https://github.com/eclipse-theia/theia/pull/11729) - Contributed on behalf of STMicroelectronics
+- [plugin] added support for the `RelativePattern.baseUri` VS Code API [#11670](https://github.com/eclipse-theia/theia/pull/11670)
+- [plugin] added support for the `Terminal.state` VS Code API [#11733](https://github.com/eclipse-theia/theia/pull/11733)
+- [plugin] added support for the `TerminalLinkProviders` VS Code API [#11552](https://github.com/eclipse-theia/theia/pull/11552) - Contributed on behalf of STMicroelectronics
+- [plugin] added support for the `TerminalOptions.hideFromUser` VS Code API [#11630](https://github.com/eclipse-theia/theia/pull/11630)
+- [plugin] added support for the `TreeDataProvider.resolveTreeItem` VS Code API [#11708](https://github.com/eclipse-theia/theia/pull/11708) - Contributed on behalf of STMicroelectronics
+- [plugin] added support for the `TypeHierarchy` VS Code API [#11694](https://github.com/eclipse-theia/theia/pull/11694)
+- [plugin] fixed issues when registering VS Code menus to corresponding internal menus [#11741](https://github.com/eclipse-theia/theia/pull/11741)
+- [plugin] improved extensibility of `HostedPluginSupport` [#11755](https://github.com/eclipse-theia/theia/pull/11755)
+- [plugin] improved support for VS Code web extensions [#11752](https://github.com/eclipse-theia/theia/pull/11752)
+- [plugin] introduced `theia-extra.d.ts` for plugin APIs specific to Theia [#11684](https://github.com/eclipse-theia/theia/pull/11684)
+- [process] fixed issue where an incorrect terminal is attached when switching workspaces [#11440](https://github.com/eclipse-theia/theia/pull/11440)
+- [repo] added automated license check reviews through `dash-licenses` [#11766](https://github.com/eclipse-theia/theia/pull/11766)
+- [repo] performed `yarn upgrade` [#11773](https://github.com/eclipse-theia/theia/pull/11773)
+- [repo] updated CI runners from `ubuntu-18.04` to `ubuntu-latest` [#11731](https://github.com/eclipse-theia/theia/pull/11731)
+- [repo] upgraded `lerna` to `v5.5.4` [#11738](https://github.com/eclipse-theia/theia/pull/11738)
+- [terminal] added secondary window support to extract terminals [#11707](https://github.com/eclipse-theia/theia/pull/11707)
 
 <a name="breaking_changes_1.31.0">[Breaking Changes:](#breaking_changes_1.31.0)</a>
 
-- [core] the generated webpack configuration (`gen-webpack.config.js`) now exports an array of two webpack configs instead of a single one: the first contains the config for 
+- [core] the generated webpack configuration (`gen-webpack.config.js`) now exports an array of two webpack configs instead of a single one: the first contains the config for
 generating the main code bundle (as before), the second serves to generate a *.css file for inclusion into `secondaryWindow.html` [#11707](https://github.com/eclipse-theia/theia/pull/11707)
 - [plugin-ext] `when` clauses removed from `codeToTheiaMappings` [#11741](https://github.com/eclipse-theia/theia/pull/#11741)
-- [terminal] The `AbstractCmdClickTerminalContribution` API has been removed in favor of the `TerminalLinkProvider` interface [#11552](https://github.com/eclipse-theia/theia/pull/11552) - Contributed on behalf of STMicroelectronics
+- [terminal] the `AbstractCmdClickTerminalContribution` API has been removed in favor of the `TerminalLinkProvider` interface [#11552](https://github.com/eclipse-theia/theia/pull/11552) - Contributed on behalf of STMicroelectronics
 - [typehierarchy] - Adding Support of vscode TypeHierarchy API with the following breaking changes: [#11694](https://github.com/eclipse-theia/theia/pull/11694)
   -  [plugin-ext/main] The file `callhierarchy-type-converters.ts` was renamed to `hierarchy-types-converters.ts`
       - The method `toDefinition` was renamed to `toItemHierarchyDefinition` and the overloaded signatures were removed.
       - The method `fromDefinition` was replaced for `fromItemHierarchyDefinition` to convert both `TypeHierarchyItem` and `CallHierarchyItem` to a common `HierarchyItem`.
-  - [plugin-ext/plugin] - `thype-converters.ts #fromCallHierarchyItem` was replaced by `fromHierarchyItem` to convert from `CallHierarchyItem` or  `TypeHierarchyItem` to `HierarchyItem`.
+  - [plugin-ext/plugin] - `type-converters.ts #fromCallHierarchyItem` was replaced by `fromHierarchyItem` to convert from `CallHierarchyItem` or  `TypeHierarchyItem` to `HierarchyItem`.
 
 ## v1.30.0 - 9/29/2022
 
