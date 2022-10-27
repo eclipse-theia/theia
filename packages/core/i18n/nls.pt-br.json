@@ -65,6 +65,8 @@
       "compound-cycle": "A configuração de lançamento '{0}' contém um ciclo consigo mesmo",
       "continueAll": "Continuar Todos",
       "copyExpressionValue": "Valor de Expressão de Cópia",
+      "debugSessionActive": "Há uma sessão de depuração ativa, você tem certeza de que quer interrompê-la?",
+      "debugSessionActiveMultiple": "Há sessões de depuração ativas, você tem certeza de que quer interrompê-las?",
       "disassembly-view": {
         "show-source-code": "Mostrar Código Fonte em Vista de Desmontagem."
       },
@@ -493,7 +495,6 @@
       "messageWarning": "            O padrão de host do terminal {0} foi alterado para `{1}'; mudar o padrão pode levar a vulnerabilidades de segurança.             Veja `{2}` para mais informações."
     },
     "workspace": {
-      "closeWorkspace": "Você realmente quer fechar o espaço de trabalho?",
       "compareWithEachOther": "Compare uns com os outros",
       "confirmDeletePermanently.description": "Falha em excluir \"{0}\" usando o Lixo. Você quer excluir permanentemente em seu lugar?",
       "confirmDeletePermanently.solution": "Você pode desativar o uso de Lixo nas preferências.",

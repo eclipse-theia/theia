@@ -65,6 +65,8 @@
       "compound-cycle": "起動構成 '{0}' は自分自身とのサイクルを含む",
       "continueAll": "すべてを続ける",
       "copyExpressionValue": "コピー式の値",
+      "debugSessionActive": "デバッグセッションがアクティブになっていますが、本当に停止しますか?",
+      "debugSessionActiveMultiple": "アクティブなデバッグセッションがありますが、本当に停止しますか?",
       "disassembly-view": {
         "show-source-code": "逆アセンブルビューでソースコードを表示する"
       },
@@ -493,7 +495,6 @@
       "messageWarning": "           {0}エンドポイントのホストパターンが`{1}`に変更されました。パターンを変更すると、セキュリティ上の脆弱性が発生する可能性があります。             詳しくは `{2}` をご覧ください。"
     },
     "workspace": {
-      "closeWorkspace": "本当にワークスペースを閉じたいのですか?",
       "compareWithEachOther": "互いの比較",
       "confirmDeletePermanently.description": "ゴミ箱を使った「{0}」の削除に失敗しました。代わりに永久に削除しますか?",
       "confirmDeletePermanently.solution": "環境設定でゴミ箱の使用を無効にすることができます。",
