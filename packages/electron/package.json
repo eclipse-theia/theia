@@ -1,6 +1,6 @@
 {
   "name": "@theia/electron",
-  "version": "1.30.0",
+  "version": "1.31.0",
   "description": "Theia - Electron utility package",
   "dependencies": {
     "@electron/remote": "^2.0.1 <2.0.4 || >2.0.4",
@@ -9,8 +9,8 @@
     "native-keymap": "^2.2.1"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.30.0",
-    "@theia/re-exports": "1.30.0"
+    "@theia/ext-scripts": "1.31.0",
+    "@theia/re-exports": "1.31.0"
   },
   "peerDependencies": {
     "electron": "^15.3.5"

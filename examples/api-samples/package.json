@@ -1,19 +1,19 @@
 {
   "private": true,
   "name": "@theia/api-samples",
-  "version": "1.30.0",
+  "version": "1.31.0",
   "description": "Theia - Example code to demonstrate Theia API",
   "dependencies": {
-    "@theia/core": "1.30.0",
-    "@theia/file-search": "1.30.0",
-    "@theia/filesystem": "1.30.0",
-    "@theia/monaco": "1.30.0",
+    "@theia/core": "1.31.0",
+    "@theia/file-search": "1.31.0",
+    "@theia/filesystem": "1.31.0",
+    "@theia/monaco": "1.31.0",
     "@theia/monaco-editor-core": "1.67.2",
-    "@theia/output": "1.30.0",
-    "@theia/search-in-workspace": "1.30.0",
-    "@theia/toolbar": "1.30.0",
-    "@theia/vsx-registry": "1.30.0",
-    "@theia/workspace": "1.30.0"
+    "@theia/output": "1.31.0",
+    "@theia/search-in-workspace": "1.31.0",
+    "@theia/toolbar": "1.31.0",
+    "@theia/vsx-registry": "1.31.0",
+    "@theia/workspace": "1.31.0"
   },
   "theiaExtensions": [
     {
@@ -52,6 +52,6 @@
     "clean": "theiaext clean"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.30.0"
+    "@theia/ext-scripts": "1.31.0"
   }
 }
