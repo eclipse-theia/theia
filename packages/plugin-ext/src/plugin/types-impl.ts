@@ -213,6 +213,11 @@ export enum ExtensionMode {
     Test = 3,
 }
 
+export enum ExtensionKind {
+    UI = 1,
+    Workspace = 2
+}
+
 /**
  * Represents the validation type of the Source Control input.
  */
