@@ -48,6 +48,6 @@ jobs:
         if: matrix.tests != 'skip'
         shell: bash
         run: |
-          yarn license:check:review
+          yarn license:check:review || ( sleep 15m && yarn license:check:review )
         env:
           DASH_LICENSES_PAT: ${{ secrets.DASH_LICENSES_PAT }}
