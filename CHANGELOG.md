@@ -7,6 +7,7 @@
 ## v1.31.0 - 10/27/2022
 
 - [debug] added confirmation message for debug exit [#11546](https://github.com/eclipse-theia/theia/pull/11546)
+- [git] fixed the implementation of the `unstage all` command [#11805](https://github.com/eclipse-theia/theia/pull/11805)
 - [messages] fixed transparent notifications issue [#11714](https://github.com/eclipse-theia/theia/pull/11714)
 - [monaco] fixed issue with `editor-*` preferences not being applied properly [#11711](https://github.com/eclipse-theia/theia/pull/11711)
 - [output] fixed issue with channel selector [#11727](https://github.com/eclipse-theia/theia/pull/11727)
