@@ -180,7 +180,7 @@ import { ConnectionImpl } from '../common/connection';
 import { TasksExtImpl } from './tasks/tasks';
 import { DebugExtImpl } from './debug/debug-ext';
 import { FileSystemExtImpl } from './file-system-ext-impl';
-import { QuickPick, QuickPickItem, ResourceLabelFormatter, LineChange } from '@theia/plugin';
+import { QuickPick, QuickPickItem, ResourceLabelFormatter, LineChange, ExtensionKind } from '@theia/plugin';
 import { ScmExtImpl } from './scm';
 import { DecorationsExtImpl } from './decorations';
 import { TextEditorExt } from './text-editor';
@@ -1100,14 +1100,10 @@ export function createAPIFactory(
             TestRunProfileKind,
             TestTag,
             TestRunRequest,
-            TestMessage
+            TestMessage,
+            ExtensionKind
         };
     };
-}
-
-export enum ExtensionKind {
-    UI = 1,
-    Workspace = 2
 }
 
 /**
