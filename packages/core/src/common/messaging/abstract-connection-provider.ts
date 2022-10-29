@@ -78,6 +78,9 @@ export abstract class AbstractConnectionProvider<AbstractOptions extends object>
     protected reconnectChannelOpeners: Array<() => Promise<void>> = [];
 
     protected initializeMultiplexer(): void {
+        if (this.channelMultiplexer) {
+            return;
+        }
         const mainChannel = this.createMainChannel();
         mainChannel.onMessage(() => this.onIncomingMessageActivityEmitter.fire());
         this.channelMultiplexer = new ChannelMultiplexer(mainChannel);

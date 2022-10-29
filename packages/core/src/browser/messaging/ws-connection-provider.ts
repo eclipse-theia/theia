@@ -19,7 +19,8 @@ import { JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event, Channel } from '../.
 import { Endpoint } from '../endpoint';
 import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
 import { io, Socket } from 'socket.io-client';
-import { IWebSocket, WebSocketChannel } from '../../common/messaging/web-socket-channel';
+import { IWebSocket, PersistentWebSocket, WebSocketChannel } from '../../common/messaging/web-socket-channel';
+import { v4 as uuid } from 'uuid';
 
 decorate(injectable(), JsonRpcProxyFactory);
 decorate(unmanaged(), JsonRpcProxyFactory, 0);
@@ -55,20 +56,21 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
         const url = this.createWebSocketUrl(WebSocketChannel.wsPath);
         this.socket = this.createWebSocket(url);
         this.socket.on('connect', () => {
-            this.initializeMultiplexer();
             if (this.reconnectChannelOpeners.length > 0) {
                 this.reconnectChannelOpeners.forEach(opener => opener());
                 this.reconnectChannelOpeners = [];
             }
-            this.socket.on('disconnect', () => this.fireSocketDidClose());
-            this.socket.on('message', () => this.onIncomingMessageActivityEmitter.fire(undefined));
             this.fireSocketDidOpen();
         });
+        this.socket.on('disconnect', () => this.fireSocketDidClose());
+        this.socket.on('message', () => this.onIncomingMessageActivityEmitter.fire(undefined));
+        this.initializeMultiplexer();
         this.socket.connect();
     }
 
     protected createMainChannel(): Channel {
-        return new WebSocketChannel(this.toIWebSocket(this.socket));
+        const websocket = new PersistentWebSocket(this.toIWebSocket(this.socket));
+        return new WebSocketChannel(websocket);
     }
 
     protected toIWebSocket(socket: Socket): IWebSocket {
@@ -82,20 +84,9 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
             onClose: cb => socket.on('disconnect', reason => cb(reason)),
             onError: cb => socket.on('error', reason => cb(reason)),
             onMessage: cb => socket.on('message', data => cb(data)),
-            send: message => socket.emit('message', message)
+            send: message => socket.emit('message', message),
+            onConnect: cb => socket.on('connect', cb),
         };
-    }
-
-    override async openChannel(path: string, handler: (channel: Channel) => void, options?: WebSocketOptions): Promise<void> {
-        if (this.socket.connected) {
-            return super.openChannel(path, handler, options);
-        } else {
-            const openChannel = () => {
-                this.socket.off('connect', openChannel);
-                this.openChannel(path, handler, options);
-            };
-            this.socket.on('connect', openChannel);
-        }
     }
 
     /**
@@ -104,11 +95,12 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
     protected createWebSocketUrl(path: string): string {
         // Since we are using Socket.io, the path should look like the following:
         // proto://domain.com/{path}
-        return new Endpoint().getWebSocketUrl().withPath(path).toString();
-    }
-
-    protected createHttpWebSocketUrl(path: string): string {
-        return new Endpoint({ path }).getRestUrl().toString();
+        const url = new Endpoint()
+            .getWebSocketUrl()
+            .withPath(path)
+            // add reconnect key for persistent websocket
+            .withQuery(`${PersistentWebSocket.ReconnectionKey}=${uuid()}`)
+            .toString();
     }
 
     /**

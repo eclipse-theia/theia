@@ -51,6 +51,7 @@ function toIWebSocket(socket: Socket): IWebSocket {
         onClose: cb => socket.on('disconnect', reason => cb(reason)),
         onError: cb => socket.on('error', reason => cb(reason)),
         onMessage: cb => socket.on('message', data => cb(data)),
-        send: message => socket.emit('message', message)
+        send: message => socket.emit('message', message),
+        onConnect: cb => socket.on('connect', cb),
     };
 }

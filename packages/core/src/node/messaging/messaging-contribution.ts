@@ -19,7 +19,7 @@ import * as https from 'https';
 import { Server, Socket } from 'socket.io';
 import { injectable, inject, named, postConstruct, interfaces, Container } from 'inversify';
 import { ContributionProvider, ConnectionHandler, bindContributionProvider } from '../../common';
-import { IWebSocket, WebSocketChannel } from '../../common/messaging/web-socket-channel';
+import { IWebSocket, PersistentWebSocket, WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { BackendApplicationContribution } from '../backend-application';
 import { MessagingService } from './messaging-service';
 import { ConnectionContainerModule } from './connection-container-module';
@@ -50,6 +50,8 @@ export class MessagingContribution implements BackendApplicationContribution, Me
 
     protected readonly wsHandlers = new MessagingContribution.ConnectionHandlers<Socket>();
     protected readonly channelHandlers = new MessagingContribution.ConnectionHandlers<Channel>();
+
+    private persistentConnections = new Map<string, PersistentWebSocket>();
 
     @postConstruct()
     protected init(): void {
@@ -107,7 +109,26 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     }
 
     protected handleChannels(socket: Socket): void {
-        const socketChannel = new WebSocketChannel(this.toIWebSocket(socket));
+        const reconnectionKey = new URL(socket.request.url!, 'http://localhost/').searchParams.get(PersistentWebSocket.ReconnectionKey) || '';
+        const toClose: PersistentWebSocket[] = [];
+        this.persistentConnections.forEach((persistentConnection, connectionKey) => {
+            if (key !== reconnectionKey && !value.underlyingSocketConnected) {
+                toClose.push(value);
+            }
+        });
+        // close other non-connected connections when there is a connection in
+        toClose.forEach(value => value.fireClose());
+
+        const persistent = this.persistentConnections.get(reconnectionKey);
+        if (persistent) {
+            // on re-connect, accept the connection
+            persistent.acceptReconnection(this.toIWebSocket(socket));
+            return;
+        }
+
+        const persistentWebsocket = new PersistentWebSocket(this.toIWebSocket(socket));
+        this.persistentConnections.set(reconnectionKey, persistentWebsocket);
+        const socketChannel = new WebSocketChannel(persistentWebsocket);
         const multiplexer = new ChannelMultiplexer(socketChannel);
         const channelHandlers = this.getConnectionChannelHandlers(socket);
         multiplexer.onDidOpenChannel(event => {
@@ -115,6 +136,9 @@ export class MessagingContribution implements BackendApplicationContribution, Me
                 console.debug(`Opening channel for service path '${event.id}'.`);
                 event.channel.onClose(() => console.debug(`Closing channel on service path '${event.id}'.`));
             }
+        });
+        persistentWebsocket.onClose(() => {
+            this.persistentConnections.delete(reconnectionKey);
         });
     }
 
@@ -130,7 +154,8 @@ export class MessagingContribution implements BackendApplicationContribution, Me
             onClose: cb => socket.on('disconnect', reason => cb(reason)),
             onError: cb => socket.on('error', error => cb(error)),
             onMessage: cb => socket.on('message', data => cb(data)),
-            send: message => socket.emit('message', message)
+            send: message => socket.emit('message', message),
+            onConnect: cb => socket.on('connect', cb),
         };
     }
 

@@ -16,10 +16,12 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Emitter, Event } from '../event';
 import { WriteBuffer } from '../message-rpc';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../message-rpc/uint8-array-message-buffer';
 import { AbstractChannel } from '../message-rpc/channel';
 import { Disposable } from '../disposable';
+import { ProcessTimeRunOnceScheduler } from '../scheduler';
 
 /**
  * A channel that manages the main websocket connection between frontend and backend. All service channels
@@ -89,5 +91,130 @@ export interface IWebSocket {
      * @param cb The callback.
      */
     onClose(cb: (reason: string, code?: number) => void): void;
+    /**
+     * Listener callback to handle connect events (Remote side).
+     * @param cb The callback.
+     */
+    onConnect(cb: () => void): void;
 }
 
+/**
+ * A persistant WebSocket implementation based on the `{@link IWebSocket}.
+ * For the client side, it will always try to reconnect to the remote.
+ * For the sever side, it will close itself after the `ReconnectionGraceTime` time.
+ */
+export class PersistentWebSocket implements IWebSocket {
+
+    /**
+     * Maximal grace time between the first and the last reconnection...
+     */
+    static ReconnectionGraceTime: number = 10 * 60 * 1000; // 10 min
+    static ReconnectionKey: string = 'persistent_key';
+
+    public underlyingSocketConnected = true;
+
+    private readonly _onCloseEmitter = new Emitter<string>();
+    private readonly _onClose: Event<string> = this._onCloseEmitter.event;
+    private _onCloseReason: string;
+    private readonly _onSocketDisconnect = new Emitter<void>();
+    public readonly onSocketDisconnect: Event<void> = this._onSocketDisconnect.event;
+
+    private readonly _onMessageEmitter = new Emitter<Uint8Array>();
+    private readonly _onMessage: Event<Uint8Array> = this._onMessageEmitter.event;
+
+    private readonly _onErrorEmitter = new Emitter<any>();
+    private readonly _onError: Event<any> = this._onErrorEmitter.event;
+
+    private readonly _onConnectEmitter = new Emitter<void>();
+    private readonly _onConnect: Event<void> = this._onConnectEmitter.event;
+
+    private readonly _reconnectionShortGraceTime: number;
+    private _disconnectRunner: ProcessTimeRunOnceScheduler;
+
+    private pendingData: Uint8Array[] = [];
+
+    constructor(protected socket: IWebSocket) {
+        this._reconnectionShortGraceTime = PersistentWebSocket.ReconnectionGraceTime;
+        this._disconnectRunner = new ProcessTimeRunOnceScheduler(() => {
+            this.fireClose();
+        }, this._reconnectionShortGraceTime);
+
+        socket.onClose(reason => {
+            this.handleSocketDisconnect(reason);
+        });
+        socket.onConnect(() => {
+            this.handleReconnect();
+        });
+
+        socket.onMessage(message => this._onMessageEmitter.fire(message));
+        socket.onError(message => this._onErrorEmitter.fire(message));
+    }
+
+    send(message: Uint8Array): void {
+        if (this.socket.isConnected()) {
+            this.socket.send(message);
+        } else {
+            this.pendingData.push(message);
+        }
+    }
+
+    protected handleSocketDisconnect(reason: string): void {
+        this.underlyingSocketConnected = false;
+        this._onCloseReason = reason;
+        // The socket has closed, let's give the renderer a certain amount of time to reconnect
+        if (!this._disconnectRunner.isScheduled()) {
+            this._disconnectRunner.schedule();
+        }
+        this._onSocketDisconnect.fire();
+    }
+
+    protected handleReconnect(): void {
+        this.underlyingSocketConnected = true;
+        if (this._disconnectRunner.isScheduled()) {
+            this._disconnectRunner.cancel();
+        }
+        const pending = this.pendingData;
+        this.pendingData = [];
+        for (const content of pending) {
+            this.send(content);
+        }
+        this._onConnectEmitter.fire();
+    }
+
+    close(): void {
+        this.socket.close();
+    }
+
+    isConnected(): boolean {
+        return true;
+    }
+
+    onMessage(cb: (message: Uint8Array) => void): void {
+        this._onMessage(cb);
+    }
+
+    onError(cb: (reason: any) => void): void {
+        this._onError(cb);
+    }
+
+    onClose(cb: (reason: string, code?: number | undefined) => void): void {
+        this._onClose(cb);
+    }
+
+    onConnect(cb: () => void): void {
+        this._onConnect(cb);
+    }
+
+    public fireClose(): void {
+        this._onCloseEmitter.fire(this._onCloseReason);
+    }
+
+    public acceptReconnection(socket: IWebSocket): void {
+        this.socket.close();
+        this.socket = socket;
+        socket.onClose(reason => this.handleSocketDisconnect(reason));
+        socket.onMessage(message => this._onMessageEmitter.fire(message));
+        socket.onError(message => this._onErrorEmitter.fire(message));
+        this.handleReconnect();
+    }
+}

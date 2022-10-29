@@ -140,7 +140,6 @@ export enum MessageTypes {
  * messages and always in one go.
  */
 export class ChannelMultiplexer implements Disposable {
-    protected pendingOpen: Map<string, (channel: ForwardingChannel) => void> = new Map();
     protected openChannels: Map<string, ForwardingChannel> = new Map();
 
     protected readonly onOpenChannelEmitter = new Emitter<{ id: string, channel: Channel }>();
@@ -168,7 +167,6 @@ export class ChannelMultiplexer implements Disposable {
     onUnderlyingChannelClose(event?: ChannelCloseEvent): void {
         if (!this.toDispose.disposed) {
             this.toDispose.push(Disposable.create(() => {
-                this.pendingOpen.clear();
                 this.openChannels.forEach(channel => {
                     channel.onCloseEmitter.fire(event ?? { reason: 'Multiplexer main channel has been closed from the remote side!' });
                 });
@@ -185,7 +183,7 @@ export class ChannelMultiplexer implements Disposable {
         const id = buffer.readString();
         switch (type) {
             case MessageTypes.AckOpen: {
-                return this.handleAckOpen(id);
+                break;
             }
             case MessageTypes.Open: {
                 return this.handleOpen(id);
@@ -199,28 +197,10 @@ export class ChannelMultiplexer implements Disposable {
         }
     }
 
-    protected handleAckOpen(id: string): void {
-        // edge case: both side try to open a channel at the same time.
-        const resolve = this.pendingOpen.get(id);
-        if (resolve) {
-            const channel = this.createChannel(id);
-            this.pendingOpen.delete(id);
-            this.openChannels.set(id, channel);
-            resolve!(channel);
-            this.onOpenChannelEmitter.fire({ id, channel });
-        }
-    }
-
     protected handleOpen(id: string): void {
         if (!this.openChannels.has(id)) {
             const channel = this.createChannel(id);
             this.openChannels.set(id, channel);
-            const resolve = this.pendingOpen.get(id);
-            if (resolve) {
-                // edge case: both side try to open a channel at the same time.
-                resolve(channel);
-            }
-            this.underlyingChannel.getWriteBuffer().writeUint8(MessageTypes.AckOpen).writeString(id).commit();
             this.onOpenChannelEmitter.fire({ id, channel });
         }
     }
@@ -237,6 +217,13 @@ export class ChannelMultiplexer implements Disposable {
         const channel = this.openChannels.get(id);
         if (channel) {
             channel.onMessageEmitter.fire(() => data);
+        } else {
+            const newChannel = this.createChannel(id);
+            this.openChannels.set(id, newChannel);
+            this.onOpenChannelEmitter.fire({ id, channel: newChannel });
+            setTimeout(() => {
+                newChannel.onMessageEmitter.fire(() => data);
+            });
         }
     }
 
@@ -263,11 +250,15 @@ export class ChannelMultiplexer implements Disposable {
     }
 
     open(id: string): Promise<Channel> {
-        const result = new Promise<Channel>((resolve, reject) => {
-            this.pendingOpen.set(id, resolve);
-        });
-        this.underlyingChannel.getWriteBuffer().writeUint8(MessageTypes.Open).writeString(id).commit();
-        return result;
+        const channel = this.openChannels.get(id) || this.createChannel(id);
+        this.openChannels.set(id, channel);
+        this.underlyingChannel
+            .getWriteBuffer()
+            .writeUint8(MessageTypes.Open)
+            .writeString(id)
+            .commit();
+        this.onOpenChannelEmitter.fire({ id, channel });
+        return Promise.resolve(channel);
     }
 
     getOpenChannel(id: string): Channel | undefined {
