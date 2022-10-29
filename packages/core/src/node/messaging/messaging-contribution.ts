@@ -112,8 +112,8 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         const reconnectionKey = new URL(socket.request.url!, 'http://localhost/').searchParams.get(PersistentWebSocket.ReconnectionKey) || '';
         const toClose: PersistentWebSocket[] = [];
         this.persistentConnections.forEach((persistentConnection, connectionKey) => {
-            if (key !== reconnectionKey && !value.underlyingSocketConnected) {
-                toClose.push(value);
+            if (connectionKey !== reconnectionKey && !persistentConnection.underlyingSocketConnected) {
+                toClose.push(persistentConnection);
             }
         });
         // close other non-connected connections when there is a connection in
