@@ -1,0 +1,7 @@
+require:
+  - 'ignore-styles'
+  - 'reflect-metadata/Reflect'
+reporter: 'spec'
+watch-files:
+    - '**/*.js'
+exit: true
