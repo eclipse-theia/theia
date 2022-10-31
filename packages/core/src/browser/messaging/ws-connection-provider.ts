@@ -101,6 +101,7 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
             // add reconnect key for persistent websocket
             .withQuery(`${PersistentWebSocket.ReconnectionKey}=${uuid()}`)
             .toString();
+        return url;
     }
 
     /**

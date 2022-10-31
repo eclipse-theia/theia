@@ -16,6 +16,7 @@
 
 import * as http from 'http';
 import * as https from 'https';
+import * as url from 'url';
 import { Server, Socket } from 'socket.io';
 import { injectable, inject, named, postConstruct, interfaces, Container } from 'inversify';
 import { ContributionProvider, ConnectionHandler, bindContributionProvider } from '../../common';
@@ -109,7 +110,8 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     }
 
     protected handleChannels(socket: Socket): void {
-        const reconnectionKey = new URL(socket.request.url!, 'http://localhost/').searchParams.get(PersistentWebSocket.ReconnectionKey) || '';
+        const query = url.parse(socket.request.url!, true).query;
+        const reconnectionKey = query[PersistentWebSocket.ReconnectionKey] as string | undefined || '';
         const toClose: PersistentWebSocket[] = [];
         this.persistentConnections.forEach((persistentConnection, connectionKey) => {
             if (connectionKey !== reconnectionKey && !persistentConnection.underlyingSocketConnected) {
