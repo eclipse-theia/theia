@@ -9,13 +9,14 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ### General
 
-Due to a [colors.js](https://github.com/Marak/colors.js) issue, a [resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/) may be necessary for your application in order to workaround the problem:
+Prior to [`v1.31.1`](https://github.com/eclipse-theia/theia/releases/tag/v1.31.1), a [resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/) might be necessary to work-around a recently discovered [critical vulnerability](https://security.snyk.io/vuln/SNYK-JS-SOCKETIOPARSER-3091012) in one of our runtime dependencies [socket.io-parser](https://github.com/socketio/socket.io-parser).
 
 For example:
 
 ```json
 "resolutions": {
-    "**/colors": "<=1.4.0"
+    "**/socket.io": "^4.5.3",
+    "**/socket.io-client": "^4.5.3"
 }
 ```
 
@@ -108,6 +109,18 @@ as it is now required by the new WebSocket implementation using Socket.io protoc
 For more details, see the socket.io documentation about [using multiple nodes](https://socket.io/docs/v4/using-multiple-nodes/#enabling-sticky-session).
 
 ### v1.22.0
+
+#### Resolutions
+
+Due to a [colors.js](https://github.com/Marak/colors.js) issue, a [resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/) may be necessary for your application in order to workaround the problem:
+
+For example:
+
+```json
+"resolutions": {
+    "**/colors": "<=1.4.0"
+}
+```
 
 #### Electron Update
 
