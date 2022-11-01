@@ -4,6 +4,10 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.31.1 - 11/01/2022
+
+- [core] upgrade `socket.io` to `v4.5.3` [#11819](https://github.com/eclipse-theia/theia/pull/11819)
+
 ## v1.31.0 - 10/27/2022
 
 - [debug] added confirmation message for debug exit [#11546](https://github.com/eclipse-theia/theia/pull/11546)
