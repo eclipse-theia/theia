@@ -289,9 +289,9 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
         const accountUsages = await readAccountUsages(this.storageService, this.id, accountName);
         const sessionsForAccount = this.accounts.get(accountName);
         const result = await this.messageService.info(accountUsages.length
-            ? nls.localizeByDefault('The account {0} has been used by: \n\n{1}\n\n Sign out of these features?', accountName,
+            ? nls.localizeByDefault("The account '{0}' has been used by: \n\n{1}\n\n Sign out from these extensions?", accountName,
                 accountUsages.map(usage => usage.extensionName).join(', '))
-            : nls.localizeByDefault('Sign out of {0}?', accountName),
+            : nls.localizeByDefault("Sign out of '{0}'?", accountName),
             nls.localizeByDefault('Sign Out'),
             Dialog.CANCEL);
 
