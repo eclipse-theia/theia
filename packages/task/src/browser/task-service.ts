@@ -87,13 +87,18 @@ export interface TaskEndedInfo {
     value: number | boolean | undefined
 }
 
+export interface LastRunTaskInfo {
+    resolvedTask?: TaskConfiguration;
+    option?: RunTaskOption
+}
+
 @injectable()
 export class TaskService implements TaskConfigurationClient {
 
     /**
      * The last executed task.
      */
-    protected lastTask: { source: string, taskLabel: string, scope: TaskConfigurationScope } | undefined = undefined;
+    protected lastTask: LastRunTaskInfo = {resolvedTask: undefined, option: undefined};
     protected cachedRecentTasks: TaskConfiguration[] = [];
     protected runningTasks = new Map<number, {
         exitCode: Deferred<number | undefined>,
@@ -470,7 +475,7 @@ export class TaskService implements TaskConfigurationClient {
      *
      * @returns the last executed task or `undefined`.
      */
-    getLastTask(): { source: string, taskLabel: string, scope: TaskConfigurationScope } | undefined {
+    getLastTask(): LastRunTaskInfo {
         return this.lastTask;
     }
 
@@ -496,11 +501,14 @@ export class TaskService implements TaskConfigurationClient {
      * @param token  The cache token for the user interaction in progress
      */
     async runLastTask(token: number): Promise<TaskInfo | undefined> {
-        if (!this.lastTask) {
+        if (!this.lastTask?.resolvedTask) {
             return;
         }
-        const { source, taskLabel, scope } = this.lastTask;
-        return this.run(token, source, taskLabel, scope);
+        if (!this.lastTask.resolvedTask.runOptions?.reevaluateOnRerun) {
+            return this.runResolvedTask(this.lastTask.resolvedTask, this.lastTask.option);
+        }
+        const { _source, label, _scope } = this.lastTask.resolvedTask;
+        return this.run(token, _source, label, _scope);
     }
 
     /**
@@ -737,7 +745,7 @@ export class TaskService implements TaskConfigurationClient {
         try {
             // resolve problemMatchers
             if (!option && task.problemMatcher) {
-                const customizationObject: TaskCustomization = { type: task.taskType, problemMatcher: task.problemMatcher };
+                const customizationObject: TaskCustomization = { type: task.taskType, problemMatcher: task.problemMatcher, runOptions: task.runOptions };
                 const resolvedMatchers = await this.resolveProblemMatchers(task, customizationObject);
                 option = {
                     customization: { ...customizationObject, ...{ problemMatcher: resolvedMatchers } }
@@ -949,7 +957,7 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     protected async getTaskCustomization(task: TaskConfiguration): Promise<TaskCustomization> {
-        const customizationObject: TaskCustomization = { type: '', _scope: task._scope };
+        const customizationObject: TaskCustomization = { type: '', _scope: task._scope, runOptions: task.runOptions };
         const customizationFound = this.taskConfigurations.getCustomizationForTask(task);
         if (customizationFound) {
             Object.assign(customizationObject, customizationFound);
@@ -982,12 +990,11 @@ export class TaskService implements TaskConfigurationClient {
      * @param option options to run the resolved task
      */
     protected async runResolvedTask(resolvedTask: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
-        const source = resolvedTask._source;
         const taskLabel = resolvedTask.label;
         let taskInfo: TaskInfo | undefined;
         try {
             taskInfo = await this.taskServer.run(resolvedTask, this.getContext(), option);
-            this.lastTask = { source, taskLabel, scope: resolvedTask._scope };
+            this.lastTask = {resolvedTask, option };
             this.logger.debug(`Task created. Task id: ${taskInfo.taskId}`);
 
             /**

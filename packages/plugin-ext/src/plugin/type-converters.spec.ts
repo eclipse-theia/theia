@@ -202,7 +202,10 @@ describe('Type converters:', () => {
                 reveal: 3,
                 focus: true
             },
-            group: groupDto
+            group: groupDto,
+            runOptions: {
+                reevaluateOnRerun: false
+            }
         };
 
         const shellTaskDtoWithCommandLine: TaskDto = {
@@ -213,7 +216,10 @@ describe('Type converters:', () => {
             scope: 2,
             command: commandLine,
             options: { cwd },
-            additionalProperty
+            additionalProperty,
+            runOptions: {
+                reevaluateOnRerun: false
+            }
         };
 
         const shellPluginTask: theia.Task = {
@@ -235,6 +241,9 @@ describe('Type converters:', () => {
                 options: {
                     cwd
                 }
+            },
+            runOptions: {
+                reevaluateOnRerun: false
             }
         };
 
@@ -264,6 +273,9 @@ describe('Type converters:', () => {
                 options: {
                     cwd
                 }
+            },
+            runOptions: {
+                reevaluateOnRerun: false
             }
         };
 
@@ -291,6 +303,9 @@ describe('Type converters:', () => {
                 options: {
                     cwd
                 }
+            },
+            runOptions: {
+                reevaluateOnRerun: false
             }
         };
 

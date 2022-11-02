@@ -328,7 +328,7 @@ export class TaskConfigurations implements Disposable {
             console.error('Detected / Contributed tasks should have a task definition.');
             return;
         }
-        const customization: TaskCustomization = { type: task.type };
+        const customization: TaskCustomization = { type: task.type, runOptions: task.runOptions };
         definition.properties.all.forEach(p => {
             if (task[p] !== undefined) {
                 customization[p] = task[p];

@@ -11532,6 +11532,16 @@ export module '@theia/plugin' {
         clear?: boolean;
     }
 
+    /**
+     * Run options for a task.
+     */
+    export interface RunOptions {
+        /**
+         * Controls whether task variables are re-evaluated on rerun.
+         */
+        reevaluateOnRerun?: boolean;
+    }
+
     export class Task {
 
         /**
@@ -11618,6 +11628,11 @@ export module '@theia/plugin' {
          * array.
          */
         problemMatchers?: string[];
+
+        /**
+         * Run options for the task
+         */
+        runOptions: RunOptions;
     }
 
     /**
