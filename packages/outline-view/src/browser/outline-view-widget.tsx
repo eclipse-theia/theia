@@ -29,7 +29,7 @@ import {
 } from '@theia/core/lib/browser';
 import { OutlineViewTreeModel } from './outline-view-tree-model';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
-import { Emitter, Mutable, UriSelection } from '@theia/core';
+import { Emitter, Is, Mutable, UriSelection } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
@@ -64,7 +64,7 @@ export namespace OutlineSymbolInformationNode {
     }
 
     export function hasRange(node: unknown): node is { range: Range } {
-        return typeof node === 'object' && !!node && 'range' in node && Range.is((node as { range: Range }).range);
+        return Is.object<{ range: Range }>(node) && Range.is(node.range);
     }
 }
 

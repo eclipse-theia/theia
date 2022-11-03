@@ -16,6 +16,7 @@
 
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { SelectionCommandHandler } from '@theia/core/lib/common/selection-command-handler';
+import { Is } from '@theia/core/lib/common/is';
 import { FileStat } from '../common/files';
 
 export interface FileSelection {
@@ -23,7 +24,7 @@ export interface FileSelection {
 }
 export namespace FileSelection {
     export function is(arg: unknown): arg is FileSelection {
-        return !!arg && typeof arg === 'object' && ('fileStat' in arg) && FileStat.is((arg as FileSelection).fileStat);
+        return Is.object<FileSelection>(arg) && FileStat.is(arg.fileStat);
     }
     export class CommandHandler extends SelectionCommandHandler<FileSelection> {
 

@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { JsonSchemaContribution, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
-import { InMemoryResources } from '@theia/core/lib/common';
+import { InMemoryResources, Is } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import URI from '@theia/core/lib/common/uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -114,12 +114,11 @@ export class WorkspaceSchemaUpdater implements JsonSchemaContribution {
 export type WorkspaceSchema = Required<Pick<IJSONSchema, 'properties' | 'required'>>;
 
 export namespace WorkspaceSchema {
-    export const is = (candidate: unknown): candidate is WorkspaceSchema => !!candidate
-        && typeof candidate === 'object'
-        && 'properties' in candidate
-        && typeof (candidate as WorkspaceSchema).properties === 'object'
-        && 'required' in candidate
-        && Array.isArray((candidate as WorkspaceSchema).required);
+    export function is(candidate: unknown): candidate is WorkspaceSchema {
+        return Is.object<WorkspaceSchema>(candidate)
+            && typeof candidate.properties === 'object'
+            && Array.isArray(candidate.required);
+    }
 }
 
 export const workspaceSchemaId = 'vscode://schemas/workspace';

@@ -20,7 +20,7 @@ import debounce = require('p-debounce');
 import { injectable, inject } from 'inversify';
 import { JSONExt, JSONValue } from '@phosphor/coreutils';
 import URI from '../../common/uri';
-import { Disposable, DisposableCollection, Emitter, Event } from '../../common';
+import { Disposable, DisposableCollection, Emitter, Event, Is } from '../../common';
 import { Deferred } from '../../common/promise-util';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceLanguageOverrideService } from './preference-language-override-service';
@@ -253,16 +253,12 @@ export abstract class PreferenceProvider implements Disposable {
 
     protected getParsedContent(jsonData: any): { [key: string]: any } {
         const preferences: { [key: string]: any } = {};
-        if (typeof jsonData !== 'object') {
+        if (!Is.object(jsonData)) {
             return preferences;
         }
-        // eslint-disable-next-line guard-for-in
-        for (const preferenceName in jsonData) {
-            const preferenceValue = jsonData[preferenceName];
+        for (const [preferenceName, preferenceValue] of Object.entries(jsonData)) {
             if (this.preferenceOverrideService.testOverrideValue(preferenceName, preferenceValue)) {
-                // eslint-disable-next-line guard-for-in
-                for (const overriddenPreferenceName in preferenceValue) {
-                    const overriddenValue = preferenceValue[overriddenPreferenceName];
+                for (const [overriddenPreferenceName, overriddenValue] of Object.entries(preferenceValue)) {
                     preferences[`${preferenceName}.${overriddenPreferenceName}`] = overriddenValue;
                 }
             } else {

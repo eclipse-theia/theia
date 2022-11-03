@@ -21,6 +21,7 @@ import { UriSelection } from '../common/selection';
 import { CommandHandler } from './command';
 import URI from './uri';
 import { MaybeArray } from './types';
+import { Is } from './is';
 
 export interface UriCommandHandler<T extends MaybeArray<URI>> extends CommandHandler {
 
@@ -59,7 +60,7 @@ export class UriAwareCommandHandler<T extends MaybeArray<URI>> implements UriCom
     protected getUri(...args: any[]): T | undefined {
         const [maybeUriArray] = args;
         const firstArgIsOK = this.isMulti()
-            ? Array.isArray(maybeUriArray) && maybeUriArray.every(uri => uri instanceof URI)
+            ? Is.typedArray(maybeUriArray, uri => uri instanceof URI)
             : maybeUriArray instanceof URI;
 
         if (firstArgIsOK) {

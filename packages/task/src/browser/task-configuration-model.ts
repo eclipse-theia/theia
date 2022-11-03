@@ -19,6 +19,7 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { TaskCustomization, TaskConfiguration, TaskConfigurationScope } from '../common/task-protocol';
 import { PreferenceProvider, PreferenceProviderDataChanges, PreferenceProviderDataChange } from '@theia/core/lib/browser';
+import { Is } from '@theia/core/lib/common/is';
 
 /**
  * Holds the task configurations associated with a particular file. Uses an editor model to facilitate
@@ -80,11 +81,9 @@ export class TaskConfigurationModel implements Disposable {
         const configurations: (TaskCustomization | TaskConfiguration)[] = [];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { configUri, value } = this.preferences.resolve<any>('tasks', this.getWorkspaceFolder());
-        if (value && typeof value === 'object' && 'tasks' in value) {
-            if (Array.isArray(value.tasks)) {
-                for (const taskConfig of value.tasks) {
-                    configurations.push(taskConfig);
-                }
+        if (Is.object(value) && Array.isArray(value.tasks)) {
+            for (const taskConfig of value.tasks) {
+                configurations.push(taskConfig);
             }
         }
         return {

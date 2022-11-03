@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, unmanaged } from '@theia/core/shared/inversify';
-import { ILogger, Emitter, Event } from '@theia/core/lib/common';
+import { ILogger, Emitter, Event, Is } from '@theia/core/lib/common';
 import { FileUri } from '@theia/core/lib/node';
 import { isOSX, isWindows } from '@theia/core';
 import { Readable, Writable } from 'stream';
@@ -169,7 +169,7 @@ export abstract class Process implements ManagedProcess {
     }
 
     protected isForkOptions(options: unknown): options is ForkOptions {
-        return !!options && typeof options === 'object' && !!(options as ForkOptions).modulePath;
+        return Is.object<ForkOptions>(options) && !!options.modulePath;
     }
 
     protected readonly initialCwd: string;

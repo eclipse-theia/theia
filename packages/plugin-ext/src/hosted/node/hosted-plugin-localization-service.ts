@@ -23,7 +23,7 @@ import { DeployedPlugin, Localization as PluginLocalization, PluginIdentifiers }
 import { URI } from '@theia/core/shared/vscode-uri';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { Disposable, MaybePromise } from '@theia/core';
+import { Disposable, Is, MaybePromise } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export interface VSCodeNlsConfig {
@@ -205,7 +205,7 @@ interface LocalizeInfo {
 }
 
 function isLocalizeInfo(obj: unknown): obj is LocalizeInfo {
-    return typeof obj === 'object' && obj && 'message' in obj || false;
+    return Is.object(obj) && 'message' in obj || false;
 }
 
 function coerceLocalizations(translations: Record<string, string | LocalizeInfo>): Record<string, string> {
@@ -243,7 +243,7 @@ function localizePackage(value: unknown, translations: PackageTranslation, callb
         }
         return result;
     }
-    if (typeof value === 'object' && value) {
+    if (Is.object(value)) {
         const result: Record<string, unknown> = {};
         for (const [name, item] of Object.entries(value)) {
             result[name] = localizePackage(item, translations, callback);

@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 import { Event, Emitter } from './event';
+import { Is } from './is';
 
 export interface Disposable {
     /**
@@ -24,7 +25,7 @@ export interface Disposable {
 
 export namespace Disposable {
     export function is(arg: unknown): arg is Disposable {
-        return !!arg && typeof arg === 'object' && typeof (arg as Disposable).dispose === 'function';
+        return Is.object<Disposable>(arg) && Is.func(arg.dispose);
     }
     export function create(func: () => void): Disposable {
         return { dispose: func };

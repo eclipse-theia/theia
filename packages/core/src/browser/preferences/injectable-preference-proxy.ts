@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import { PreferenceSchema } from '../../common/preferences/preference-schema';
-import { Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '../../common';
+import { Disposable, DisposableCollection, Emitter, Event, Is, MaybePromise } from '../../common';
 import { PreferenceChangeEvent, PreferenceEventEmitter, PreferenceProxy, PreferenceProxyOptions, PreferenceRetrieval } from './preference-proxy';
 import { PreferenceChange, PreferenceChangeImpl, PreferenceChanges, PreferenceScope, PreferenceService } from './preference-service';
 import { JSONValue } from '@phosphor/coreutils';
@@ -103,7 +103,9 @@ export class InjectablePreferenceProxy<T extends Record<string, JSONValue>> impl
     }
 
     get(target: unknown, property: string, receiver: unknown): unknown {
-        if (typeof property !== 'string') { throw new Error(`Unexpected property: ${String(property)}`); }
+        if (typeof property !== 'string') {
+            throw new Error(`Unexpected property: ${String(property)}`);
+        }
         const preferenceName = this.prefix + property;
         if (this.schema && (this.isFlat || !property.includes('.')) && this.schema.properties[preferenceName]) {
             const { overrideIdentifier } = this;
@@ -143,7 +145,7 @@ export class InjectablePreferenceProxy<T extends Record<string, JSONValue>> impl
             } while (parentSegment && value === undefined);
 
             let segment;
-            while (typeof value === 'object' && (segment = segments.pop())) {
+            while (Is.object(value) && (segment = segments.pop())) {
                 value = value[segment];
             }
             return segments.length ? undefined : value;

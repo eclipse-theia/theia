@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from 'react';
-import { ArrayUtils, Event, MenuPath } from '../../../common';
+import { ArrayUtils, Event, Is, MenuPath } from '../../../common';
 import { Widget } from '../../widgets';
 
 /** Items whose group is exactly 'navigation' will be rendered inline. */
@@ -27,13 +27,9 @@ export interface TabBarDelegator extends Widget {
 }
 
 export namespace TabBarDelegator {
-    export const is = (candidate?: Widget): candidate is TabBarDelegator => {
-        if (candidate) {
-            const asDelegator = candidate as TabBarDelegator;
-            return typeof asDelegator.getTabBarDelegate === 'function';
-        }
-        return false;
-    };
+    export function is(candidate?: Widget): candidate is TabBarDelegator {
+        return Is.object<TabBarDelegator>(candidate) && Is.func(candidate.getTabBarDelegate);
+    }
 }
 
 interface RegisteredToolbarItem {
@@ -172,14 +168,13 @@ export namespace TabBarToolbarItem {
     };
 
     export function is(arg: unknown): arg is TabBarToolbarItem {
-        return !!arg && typeof arg === 'object' && 'command' in arg && typeof (arg as TabBarToolbarItem).command === 'string';
+        return Is.object<TabBarToolbarItem>(arg) && Is.string(arg.command);
     }
 
 }
 
 export namespace MenuToolbarItem {
     export function getMenuPath(item: AnyToolbarItem): MenuPath | undefined {
-        const asDelegate = item as MenuToolbarItem;
-        return Array.isArray(asDelegate.menuPath) ? asDelegate.menuPath : undefined;
+        return Array.isArray(item.menuPath) ? item.menuPath : undefined;
     }
 }

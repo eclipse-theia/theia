@@ -44,6 +44,7 @@ export * from './nls';
 export * from './numbers';
 export * from './performance';
 export * from './view-column';
+export * from './is';
 
 import { environment } from '@theia/application-package/lib/environment';
 export { environment };

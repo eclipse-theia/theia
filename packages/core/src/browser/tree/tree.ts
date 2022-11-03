@@ -20,6 +20,7 @@ import { Disposable, DisposableCollection } from '../../common/disposable';
 import { CancellationToken, CancellationTokenSource } from '../../common/cancellation';
 import { Mutable } from '../../common/types';
 import { timeout } from '../../common/promise-util';
+import { Is } from '../../common/is';
 
 export const Tree = Symbol('Tree');
 
@@ -124,7 +125,7 @@ export interface TreeNode {
 
 export namespace TreeNode {
     export function is(node: unknown): node is TreeNode {
-        return !!node && typeof node === 'object' && 'id' in node && 'parent' in node;
+        return Is.object(node) && 'id' in node && 'parent' in node;
     }
 
     export function equals(left: TreeNode | undefined, right: TreeNode | undefined): boolean {
@@ -148,7 +149,7 @@ export interface CompositeTreeNode extends TreeNode {
 
 export namespace CompositeTreeNode {
     export function is(node: unknown): node is CompositeTreeNode {
-        return typeof node === 'object' && !!node && 'children' in node;
+        return Is.object(node) && 'children' in node;
     }
 
     export function getFirstChild(parent: CompositeTreeNode): TreeNode | undefined {

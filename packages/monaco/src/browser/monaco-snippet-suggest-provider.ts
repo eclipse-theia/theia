@@ -26,6 +26,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError } from '@theia/filesystem/lib/common/files';
 import * as monaco from '@theia/monaco-editor-core';
 import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
+import { Is } from '@theia/core/lib/common/is';
 
 @injectable()
 export class MonacoSnippetSuggestProvider implements monaco.languages.CompletionItemProvider {
@@ -191,15 +192,11 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
         return toDispose;
     }
     protected parseSnippets(snippets: JsonSerializedSnippets | undefined, accept: (name: string, snippet: JsonSerializedSnippet) => void): void {
-        if (typeof snippets === 'object') {
-            // eslint-disable-next-line guard-for-in
-            for (const name in snippets) {
-                const scopeOrTemplate = snippets[name];
-                if (JsonSerializedSnippet.is(scopeOrTemplate)) {
-                    accept(name, scopeOrTemplate);
-                } else {
-                    this.parseSnippets(scopeOrTemplate, accept);
-                }
+        for (const [name, scopeOrTemplate] of Object.entries(snippets ?? {})) {
+            if (JsonSerializedSnippet.is(scopeOrTemplate)) {
+                accept(name, scopeOrTemplate);
+            } else {
+                this.parseSnippets(scopeOrTemplate, accept);
             }
         }
     }
@@ -250,7 +247,7 @@ export interface JsonSerializedSnippet {
 }
 export namespace JsonSerializedSnippet {
     export function is(obj: unknown): obj is JsonSerializedSnippet {
-        return !!obj && typeof obj === 'object' && 'body' in obj && 'prefix' in obj;
+        return Is.object(obj) && 'body' in obj && 'prefix' in obj;
     }
 }
 

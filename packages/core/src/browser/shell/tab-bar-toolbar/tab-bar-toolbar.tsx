@@ -109,7 +109,7 @@ export class TabBarToolbar extends ReactWidget {
         const classNames = [];
         if (item.text) {
             for (const labelPart of this.labelParser.parse(item.text)) {
-                if (typeof labelPart !== 'string' && LabelIcon.is(labelPart)) {
+                if (LabelIcon.is(labelPart)) {
                     const className = `fa fa-${labelPart.name}${labelPart.animation ? ' fa-' + labelPart.animation : ''}`;
                     classNames.push(...className.split(' '));
                 } else {

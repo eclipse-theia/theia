@@ -16,7 +16,7 @@
 
 import * as Ajv from 'ajv';
 import { inject, injectable, interfaces, named, postConstruct } from 'inversify';
-import { ContributionProvider, bindContributionProvider, Emitter, Event, Disposable } from '../../common';
+import { ContributionProvider, bindContributionProvider, Emitter, Event, Disposable, Is } from '../../common';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceProvider, PreferenceProviderDataChange } from './preference-provider';
 import {
@@ -80,7 +80,7 @@ export interface FrontendApplicationPreferenceConfig extends FrontendApplication
 }
 export namespace FrontendApplicationPreferenceConfig {
     export function is(config: FrontendApplicationConfig): config is FrontendApplicationPreferenceConfig {
-        return 'preferences' in config && typeof config['preferences'] === 'object';
+        return Is.object(config.preferences);
     }
 }
 

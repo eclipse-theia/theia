@@ -16,7 +16,7 @@
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { ContributionProvider, MaybePromise, Prioritizeable } from '@theia/core';
+import { ContributionProvider, Is, MaybePromise, Prioritizeable } from '@theia/core';
 
 export const PreviewHandler = Symbol('PreviewHandler');
 
@@ -36,7 +36,7 @@ export interface RenderContentParams {
 
 export namespace RenderContentParams {
     export function is(params: unknown): params is RenderContentParams {
-        return !!params && typeof params === 'object' && 'content' in params && 'originUri' in params;
+        return Is.object(params) && 'content' in params && 'originUri' in params;
     }
 }
 

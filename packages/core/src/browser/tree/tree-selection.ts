@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { TreeNode } from './tree';
-import { Event, Disposable, SelectionProvider } from '../../common';
+import { Event, Disposable, SelectionProvider, Is } from '../../common';
 
 /**
  * The tree selection service.
@@ -87,7 +87,7 @@ export namespace TreeSelection {
     }
 
     export function is(arg: unknown): arg is TreeSelection {
-        return !!arg && typeof arg === 'object' && 'node' in arg;
+        return Is.object(arg) && 'node' in arg;
     }
 
     export function isRange(arg: TreeSelection | SelectionType | undefined): boolean {

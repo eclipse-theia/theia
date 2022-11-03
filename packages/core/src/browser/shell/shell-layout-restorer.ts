@@ -28,6 +28,7 @@ import { ApplicationShell, applicationShellLayoutVersion, ApplicationShellLayout
 import { CommonCommands } from '../common-frontend-contribution';
 import { WindowService } from '../window/window-service';
 import { StopReason } from '../../common/frontend-application-state';
+import { Is } from '../../common/is';
 
 /**
  * A contract for widgets that want to store and restore their inner state, between sessions.
@@ -47,7 +48,7 @@ export interface StatefulWidget {
 
 export namespace StatefulWidget {
     export function is(arg: unknown): arg is StatefulWidget {
-        return !!arg && typeof arg === 'object' && typeof (arg as StatefulWidget).storeState === 'function' && typeof (arg as StatefulWidget).restoreState === 'function';
+        return Is.object<StatefulWidget>(arg) && Is.func(arg.storeState) && Is.func(arg.restoreState);
     }
 }
 
@@ -232,11 +233,7 @@ export class ShellLayoutRestorer implements CommandContribution {
         const parseContext = new ShellLayoutRestorer.ParseContext();
         const layout = this.parse<ApplicationShell.LayoutData>(layoutData, parseContext);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let layoutVersion: number | any;
-        try {
-            layoutVersion = 'version' in layout && Number(layout.version);
-        } catch { /* no-op */ }
+        const layoutVersion = Number(layout.version);
         if (typeof layoutVersion !== 'number' || Number.isNaN(layoutVersion)) {
             throw new Error('could not resolve a layout version');
         }
@@ -282,9 +279,8 @@ export class ShellLayoutRestorer implements CommandContribution {
                     });
                 }
                 return widgets;
-            } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const copy: any = {};
+            } else if (Is.object<Record<string, WidgetDescription>>(value) && !Array.isArray(value)) {
+                const copy: Record<string, unknown> = {};
                 for (const p in value) {
                     if (this.isWidgetProperty(p)) {
                         parseContext.push(async context => {
@@ -306,7 +302,7 @@ export class ShellLayoutRestorer implements CommandContribution {
                 // don't catch exceptions, if one migration fails all should fail.
                 const migrated = await migration.onWillInflateWidget(desc, context);
                 if (migrated) {
-                    if (migrated.innerWidgetState && typeof migrated.innerWidgetState !== 'string') {
+                    if (Is.object(migrated.innerWidgetState)) {
                         // in order to inflate nested widgets
                         migrated.innerWidgetState = JSON.stringify(migrated.innerWidgetState);
                     }

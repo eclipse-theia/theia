@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Is } from '../is';
 import { escapeRegExpCharacters } from '../strings';
 import { UriComponents } from '../uri';
 import { escapeIcons } from './icon-utilities';
@@ -37,8 +38,7 @@ export namespace MarkdownString {
      * @returns whether the candidate satisfies the interface of a markdown string
      */
     export function is(candidate: unknown): candidate is MarkdownString {
-        const maybeMarkdownString = candidate as MarkdownString;
-        return typeof maybeMarkdownString === 'object' && !!maybeMarkdownString && typeof maybeMarkdownString.value === 'string';
+        return Is.object<MarkdownString>(candidate) && Is.string(candidate.value);
     }
 }
 

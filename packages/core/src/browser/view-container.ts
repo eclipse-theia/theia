@@ -30,7 +30,7 @@ import { FrontendApplicationStateService } from './frontend-application-state';
 import { ContextMenuRenderer, Anchor } from './context-menu-renderer';
 import { parseCssMagnitude } from './browser';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar, TabBarDelegator, TabBarToolbarItem } from './shell/tab-bar-toolbar';
-import { isEmpty, nls } from '../common';
+import { isEmpty, Is, nls } from '../common';
 import { WidgetManager } from './widget-manager';
 import { Key } from './keys';
 import { ProgressBarFactory } from './progress-bar-factory';
@@ -64,13 +64,13 @@ export interface BadgeWidget {
 
 export namespace DescriptionWidget {
     export function is(arg: unknown): arg is DescriptionWidget {
-        return !!arg && typeof arg === 'object' && 'onDidChangeDescription' in arg;
+        return Is.object(arg) && 'onDidChangeDescription' in arg;
     }
 }
 
 export namespace BadgeWidget {
     export function is(arg: unknown): arg is BadgeWidget {
-        return !!arg && typeof arg === 'object' && 'onDidChangeBadge' in arg;
+        return Is.object(arg) && 'onDidChangeBadge' in arg;
     }
 }
 

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, MenuPath, nls } from '@theia/core';
+import { Command, Is, MenuPath, nls } from '@theia/core';
 import { CommonCommands } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
@@ -74,6 +74,6 @@ export namespace ToolbarMenus {
 export type ReactInteraction<T = Element, U = MouseEvent> = React.MouseEvent<T, U> | React.KeyboardEvent<T>;
 export namespace ReactKeyboardEvent {
     export function is(obj: unknown): obj is React.KeyboardEvent {
-        return typeof obj === 'object' && !!obj && 'key' in obj;
+        return Is.object(obj) && 'key' in obj;
     }
 }

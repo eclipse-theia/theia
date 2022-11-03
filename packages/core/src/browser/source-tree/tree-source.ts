@@ -22,6 +22,7 @@ import { Emitter, Event } from '../../common/event';
 import { MaybePromise } from '../../common/types';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { TreeWidget } from '../tree';
+import { Is } from '../../common/is';
 
 export interface TreeElement {
     /** default: parent id + position among siblings */
@@ -39,7 +40,7 @@ export interface CompositeTreeElement extends TreeElement {
 }
 export namespace CompositeTreeElement {
     export function is(element: unknown): element is CompositeTreeElement {
-        return !!element && typeof element === 'object' && 'getElements' in element;
+        return Is.object(element) && 'getElements' in element;
     }
     export function hasElements(element: unknown): element is CompositeTreeElement {
         return is(element) && element.hasElements !== false;

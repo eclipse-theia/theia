@@ -14,12 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Is } from '@theia/core/lib/common/is';
+
 export interface FileDownloadData {
     readonly uris: string[];
 }
 
 export namespace FileDownloadData {
     export function is(arg: unknown): arg is FileDownloadData {
-        return !!arg && typeof arg === 'object' && 'uris' in arg;
+        return Is.object(arg) && 'uris' in arg;
     }
 }

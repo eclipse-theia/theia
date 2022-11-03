@@ -17,6 +17,7 @@
 import URI from '../common/uri';
 import { MaybeArray } from '../common/types';
 import { Widget, BaseWidget } from './widgets';
+import { Is } from '../common/is';
 
 /**
  * `Navigatable` provides an access to an URI of an underlying instance of `Resource`.
@@ -34,7 +35,7 @@ export interface Navigatable {
 
 export namespace Navigatable {
     export function is(arg: unknown): arg is Navigatable {
-        return !!arg && typeof arg === 'object' && 'getResourceUri' in arg && 'createMoveToUri' in arg;
+        return Is.object(arg) && 'getResourceUri' in arg && 'createMoveToUri' in arg;
     }
 }
 
@@ -71,12 +72,12 @@ export namespace NavigatableWidget {
 }
 
 export interface NavigatableWidgetOptions {
-    kind: 'navigatable',
-    uri: string,
-    counter?: number,
+    kind: 'navigatable';
+    uri: string;
+    counter?: number;
 }
 export namespace NavigatableWidgetOptions {
     export function is(arg: unknown): arg is NavigatableWidgetOptions {
-        return !!arg && typeof arg === 'object' && 'kind' in arg && (arg as NavigatableWidgetOptions).kind === 'navigatable';
+        return Is.object(arg) && arg.kind === 'navigatable';
     }
 }

@@ -33,6 +33,7 @@ import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
 import URI from '@theia/core/lib/common/uri';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Range, Position } from '../plugin/types-impl';
+import { Is } from '@theia/core/lib/common/is';
 
 export interface MessageConnection {
     send(msg: string): void;
@@ -74,7 +75,7 @@ export namespace ConnectionClosedError {
         return Object.assign(new Error(message), { code });
     }
     export function is(error: unknown): error is ConnectionClosedError {
-        return !!error && typeof error === 'object' && 'code' in error && (error as ConnectionClosedError).code === code;
+        return Is.object(error) && 'code' in error && (error as ConnectionClosedError).code === code;
     }
 }
 

@@ -15,8 +15,7 @@
 // *****************************************************************************
 
 import URI from '@theia/core/lib/common/uri';
-import { Path } from '@theia/core';
-import { nls } from '@theia/core/lib/common/nls';
+import { Is, Path, nls } from '@theia/core';
 
 export interface WorkingDirectoryStatus {
 
@@ -217,7 +216,7 @@ export namespace Repository {
         return repository === repository2;
     }
     export function is(repository: unknown): repository is Repository {
-        return !!repository && typeof repository === 'object' && 'localUri' in repository;
+        return Is.object(repository) && 'localUri' in repository;
     }
     export function relativePath(repository: Repository | URI, uri: URI | string): Path | undefined {
         const repositoryUri = new URI(Repository.is(repository) ? repository.localUri : String(repository));

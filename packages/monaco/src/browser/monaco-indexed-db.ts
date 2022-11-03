@@ -21,7 +21,7 @@ import * as monaco from '@theia/monaco-editor-core';
 import { injectable } from '@theia/core/shared/inversify';
 import type { ThemeMix } from './textmate/monaco-theme-types';
 import { Theme } from '@theia/core/lib/common/theme';
-import { Emitter, Event } from '@theia/core';
+import { Emitter, Event, Is } from '@theia/core';
 
 let _monacoDB: Promise<idb.IDBPDatabase> | undefined;
 if ('indexedDB' in window) {
@@ -45,7 +45,7 @@ export interface MonacoThemeState {
 }
 export namespace MonacoThemeState {
     export function is(state: unknown): state is MonacoThemeState {
-        return !!state && typeof state === 'object' && 'id' in state && 'label' in state && 'uiTheme' in state && 'data' in state;
+        return Is.object(state) && 'id' in state && 'label' in state && 'uiTheme' in state && 'data' in state;
     }
 }
 

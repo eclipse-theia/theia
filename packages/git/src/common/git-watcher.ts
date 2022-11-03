@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { JsonRpcServer, JsonRpcProxy } from '@theia/core';
+import { JsonRpcServer, JsonRpcProxy, Is } from '@theia/core';
 import { Repository, WorkingDirectoryStatus } from './git-model';
 import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 
@@ -48,7 +48,7 @@ export namespace GitStatusChangeEvent {
      * @param event the argument to check whether it is a Git status change event or not.
      */
     export function is(event: unknown): event is GitStatusChangeEvent {
-        return !!event && typeof event === 'object' && ('source' in event) && ('status' in event);
+        return Is.object(event) && ('source' in event) && ('status' in event);
     }
 
 }

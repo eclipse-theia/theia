@@ -16,6 +16,7 @@
 
 import { ScmCommit } from '@theia/scm/lib/browser/scm-provider';
 import URI from '@theia/core/lib/common/uri';
+import { Is } from '@theia/core/lib/common/is';
 
 export interface ScmFileChangeNode {
     readonly fileChange: ScmFileChange;
@@ -24,7 +25,7 @@ export interface ScmFileChangeNode {
 }
 export namespace ScmFileChangeNode {
     export function is(node: unknown): node is ScmFileChangeNode {
-        return !!node && typeof node === 'object' && 'fileChange' in node && 'commitId' in node;
+        return Is.object(node) && 'fileChange' in node && 'commitId' in node;
     }
 }
 

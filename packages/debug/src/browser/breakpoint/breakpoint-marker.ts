@@ -18,6 +18,7 @@ import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import URI from '@theia/core/lib/common/uri';
 import { Marker } from '@theia/markers/lib/common/marker';
 import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
+import { Is } from '@theia/core/lib/common/is';
 
 export const BREAKPOINT_KIND = 'breakpoint';
 
@@ -96,8 +97,7 @@ export namespace InstructionBreakpoint {
         };
     }
 
-    export function is(thing: BaseBreakpoint): thing is InstructionBreakpoint {
-        const candidate = thing as InstructionBreakpoint;
-        return 'instructionReference' in candidate && typeof candidate.instructionReference === 'string';
+    export function is(arg: BaseBreakpoint): arg is InstructionBreakpoint {
+        return Is.object<InstructionBreakpoint>(arg) && Is.string(arg.instructionReference);
     }
 }
