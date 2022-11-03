@@ -453,12 +453,10 @@ export class DebugSessionManager {
         if (session) {
             if (session.options.compoundRoot) {
                 session.options.compoundRoot.stopSession();
+            } else if (session.parentSession && session.configuration.lifecycleManagedByParent) {
+                this.terminateSession(session.parentSession);
             } else {
-                if (session.parentSession && session.configuration.lifecycleManagedByParent) {
-                    this.terminateSession(session.parentSession);
-                } else {
-                    session.stop(false, () => this.debug.terminateDebugSession(session!.id));
-                }
+                session.stop(false, () => this.debug.terminateDebugSession(session!.id));
             }
         }
     }
