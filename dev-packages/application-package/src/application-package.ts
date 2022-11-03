@@ -21,6 +21,7 @@ import { Extension, ExtensionPackage, ExtensionPackageOptions, RawExtensionPacka
 import { ExtensionPackageCollector } from './extension-package-collector';
 import { ApplicationProps } from './application-props';
 import deepmerge = require('deepmerge');
+import resolvePackagePath = require('resolve-package-path');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ApplicationLog = (message?: any, ...optionalParams: any[]) => void;
@@ -281,8 +282,14 @@ export class ApplicationPackage {
      */
     get resolveModule(): ApplicationModuleResolver {
         if (!this._moduleResolver) {
-            const resolutionPaths = [this.packagePath || process.cwd()];
-            this._moduleResolver = modulePath => require.resolve(modulePath, { paths: resolutionPaths });
+            const resolutionPaths = this.packagePath || process.cwd();
+            this._moduleResolver = modulePath => {
+                const resolved = resolvePackagePath(modulePath, resolutionPaths);
+                if (!resolved) {
+                    throw new Error('Could not resolve module: ' + modulePath);
+                }
+                return resolved;
+            };
         }
         return this._moduleResolver!;
     }
