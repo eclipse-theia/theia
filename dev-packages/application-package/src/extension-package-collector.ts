@@ -62,8 +62,8 @@ export class ExtensionPackageCollector {
 
         let packagePath: string | undefined;
         try {
-            packagePath = this.resolveModule(name + '/package.json');
-        } catch (error) {
+            packagePath = this.resolveModule(name);
+        } catch {
             console.warn(`Failed to resolve module: ${name}`);
         }
         if (!packagePath) {
