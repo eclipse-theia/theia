@@ -35,8 +35,13 @@
 }
 
 .theia-plugin-view-container {
-    -webkit-mask: url('');
-    mask: url('');
+    /*
+        It might take a second or two until the real plugin mask is loaded
+        To prevent flickering on the icon, we set a transparent mask instead
+        Since masks only support images, svg or gradients, we create a transparent gradient here
+    */
+    -webkit-mask: linear-gradient(transparent, transparent);
+    mask: linear-gradient(transparent, transparent);
     background-color: var(--theia-activityBar-inactiveForeground);
 }
 
@@ -51,10 +56,10 @@
 .theia-plugin-root-folder-expanded-icon,
 .theia-plugin-root-folder-expanded-icon::before {
     padding-right: var(--theia-ui-padding);
-	width: var(--theia-icon-size);
-	height: var(--theia-content-line-height);
-	line-height: inherit !important;
-	display: inline-block;
+    width: var(--theia-icon-size);
+    height: var(--theia-content-line-height);
+    line-height: inherit !important;
+    display: inline-block;
 }
 
 .p-TabBar.theia-app-sides .theia-plugin-file-icon,
