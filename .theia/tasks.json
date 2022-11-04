@@ -1,0 +1,30 @@
+{
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "build",
+      "problemMatcher": [
+        "$eslint-stylish"
+      ],
+      "group": "build",
+      "label": "build"
+    },
+    {
+      "type": "npm",
+      "script": "lint",
+      "problemMatcher": [
+        "$eslint-stylish"
+      ],
+      "label": "lint"
+    },
+    {
+      "type": "npm",
+      "script": "lintAAA",
+      "path": "packages/task/",
+      "problemMatcher": [
+        "$eslint-stylish"
+      ],
+      "label": "lintAAA - packages/task"
+    }
+  ]
+}

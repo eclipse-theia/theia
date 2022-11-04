@@ -55,6 +55,57 @@
                     "dir"
                 ]
             }
+        },
+        {
+            "label": "Test compile problemMatcher",
+            "type": "shell",
+            "command": "tsc ${file}",
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "Test presentation",
+            "type": "shell",
+            "command": "echo New window opened!",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "clear": true
+            }
+        },
+        {
+            "label": "Test Compound tasks",
+            "type": "shell",
+            "command": "echo Test Compound is done!",
+            "dependsOn": [
+                "test task",
+                "test input variables"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "clear": true
+            }
+        },
+        {
+            "label": "test input variables",
+            "type": "shell",
+            "command": "echo the new task name is: ${input:taskName}",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "clear": true
+            },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "taskName",
+            "description": "enter the task name",
+            "type": "promptString",
+            "default": "Create a new class"
         }
     ]
 }
