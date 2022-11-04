@@ -635,16 +635,18 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
             this._handlesToItems.set(i, item);
             this._itemsToHandles.set(item, i);
         });
-        this.update({
-            items: items.map((item, i) => {
-                if (item.kind === QuickPickItemKind.Separator) {
-                    return { kind: item.kind, label: item.label };
-                }
-                return {
+
+        const pickItems: TransferQuickPickItems[] = [];
+        for (let handle = 0; handle < items.length; handle++) {
+            const item = items[handle];
+            if (item.kind === QuickPickItemKind.Separator) {
+                pickItems.push({ type: 'separator', label: item.label, handle });
+            } else {
+                pickItems.push({
                     kind: item.kind,
                     label: item.label,
                     description: item.description,
-                    handle: i,
+                    handle,
                     detail: item.detail,
                     picked: item.picked,
                     alwaysShow: item.alwaysShow,
@@ -654,8 +656,12 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
                         tooltip: button.tooltip,
                         handle: button === QuickInputButtons.Back ? -1 : index,
                     }))
-                };
-            })
+                });
+            }
+        }
+
+        this.update({
+            items: pickItems,
         });
     }
 
