@@ -319,7 +319,7 @@ export class GitScmProvider implements ScmProvider {
         try {
             const { repository, stagedChanges } = this;
             const uris = stagedChanges.map(c => c.uri);
-            await this.git.unstage(repository, uris);
+            await this.git.unstage(repository, uris, { reset: 'index' });
         } catch (error) {
             this.gitErrorHandler.handleError(error);
         }

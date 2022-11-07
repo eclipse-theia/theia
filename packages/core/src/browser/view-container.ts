@@ -175,7 +175,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             }),
             menuRegistry.registerMenuAction([...this.contextMenuPath, '0_global'], {
                 commandId: this.globalHideCommandId,
-                label: nls.localize('theia/core/hideViewContainer', 'Hide')
+                label: nls.localizeByDefault('Hide')
             }),
             this.onDidChangeTrackableWidgetsEmitter,
             this.onDidChangeTrackableWidgets(() => this.decoratorService.fireDidChangeDecorations())

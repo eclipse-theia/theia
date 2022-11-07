@@ -533,6 +533,36 @@ export class KeybindingRegistry {
         return input;
     }
 
+    registerEventListeners(win: Window): Disposable {
+        /* vvv HOTFIX begin vvv
+        *
+        * This is a hotfix against issues eclipse/theia#6459 and gitpod-io/gitpod#875 .
+        * It should be reverted after Theia was updated to the newer Monaco.
+        */
+        let inComposition = false;
+        const compositionStart = () => {
+            inComposition = true;
+        };
+        win.document.addEventListener('compositionstart', compositionStart);
+
+        const compositionEnd = () => {
+            inComposition = false;
+        };
+        win.document.addEventListener('compositionend', compositionEnd);
+
+        const keydown = (event: KeyboardEvent) => {
+            if (inComposition !== true) {
+                this.run(event);
+            }
+        };
+        win.document.addEventListener('keydown', keydown, true);
+
+        return Disposable.create(() => {
+            win.document.removeEventListener('compositionstart', compositionStart);
+            win.document.removeEventListener('compositionend', compositionEnd);
+            win.document.removeEventListener('keydown', keydown);
+        });
+    }
     /**
      * Run the command matching to the given keyboard event.
      */

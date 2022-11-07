@@ -79,6 +79,10 @@ import {
     SignatureHelpTriggerKind,
     Hover,
     EvaluatableExpression,
+    InlineValueEvaluatableExpression,
+    InlineValueText,
+    InlineValueVariableLookup,
+    InlineValueContext,
     DocumentHighlightKind,
     DocumentHighlight,
     DocumentLink,
@@ -130,6 +134,7 @@ import {
     CallHierarchyItem,
     CallHierarchyIncomingCall,
     CallHierarchyOutgoingCall,
+    TypeHierarchyItem,
     TimelineItem,
     EnvironmentVariableMutatorType,
     SemanticTokensLegend,
@@ -145,7 +150,15 @@ import {
     LinkedEditingRanges,
     LanguageStatusSeverity,
     TextDocumentChangeReason,
-    InputBoxValidationSeverity
+    InputBoxValidationSeverity,
+    TerminalLink,
+    InlayHint,
+    InlayHintKind,
+    InlayHintLabelPart,
+    TestRunProfileKind,
+    TestTag,
+    TestRunRequest,
+    TestMessage
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -175,6 +188,12 @@ import { ClipboardExt } from './clipboard-ext';
 import { WebviewsExtImpl } from './webviews';
 import { ExtHostFileSystemEventService } from './file-system-event-service-ext-impl';
 import { LabelServiceExtImpl } from '../plugin/label-service';
+import {
+    createRunProfile,
+    createTestRun,
+    testItemCollection,
+    createTestItem
+} from './stubs/tests-api';
 import { TimelineExtImpl } from './timeline';
 import { ThemingExtImpl } from './theming';
 import { CommentsExtImpl } from './comments';
@@ -235,14 +254,17 @@ export function createAPIFactory(
                 return authenticationExt.onDidChangeSessions;
             }
         };
+        function commandIsDeclaredInPackage(id: string, model: PluginPackage): boolean {
+            const rawCommands = model.contributes?.commands;
+            if (!rawCommands) { return false; }
+            return Array.isArray(rawCommands) ? rawCommands.some(candidate => candidate.command === id) : rawCommands.command === id;
+        }
         const commands: typeof theia.commands = {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             registerCommand(command: theia.CommandDescription | string, handler?: <T>(...args: any[]) => T | Thenable<T | undefined>, thisArg?: any): Disposable {
                 // use of the ID when registering commands
                 if (typeof command === 'string') {
-                    const rawCommands = plugin.rawModel.contributes && plugin.rawModel.contributes.commands;
-                    const contributedCommands = rawCommands ? Array.isArray(rawCommands) ? rawCommands : [rawCommands] : undefined;
-                    if (handler && contributedCommands && contributedCommands.some(item => item.command === command)) {
+                    if (handler && commandIsDeclaredInPackage(command, plugin.rawModel)) {
                         return commandRegistry.registerHandler(command, handler, thisArg);
                     }
                     return commandRegistry.registerCommand({ id: command }, handler, thisArg);
@@ -254,7 +276,7 @@ export function createAPIFactory(
                 return commandRegistry.executeCommand<T>(commandId, ...args);
             },
             registerTextEditorCommand(command: string, handler: (textEditor: theia.TextEditor, edit: theia.TextEditorEdit, ...arg: any[]) => void, thisArg?: any): Disposable {
-                return commandRegistry.registerCommand({ id: command }, (...args: any[]): any => {
+                const internalHandler = (...args: any[]): any => {
                     const activeTextEditor = editors.getActiveEditor();
                     if (!activeTextEditor) {
                         console.warn('Cannot execute ' + command + ' because there is no active text editor.');
@@ -271,7 +293,10 @@ export function createAPIFactory(
                     }, err => {
                         console.warn('An error occurred while running command ' + command, err);
                     });
-                });
+                };
+                return commandIsDeclaredInPackage(command, plugin.rawModel)
+                    ? commandRegistry.registerHandler(command, internalHandler)
+                    : commandRegistry.registerCommand({ id: command }, internalHandler);
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             registerHandler(commandId: string, handler: (...args: any[]) => any, thisArg?: any): Disposable {
@@ -467,8 +492,8 @@ export function createAPIFactory(
             createInputBox(): theia.InputBox {
                 return quickOpenExt.createInputBox(plugin);
             },
-            registerTerminalLinkProvider(provider: theia.TerminalLinkProvider): void {
-                /* NOOP. To be implemented at later stage */
+            registerTerminalLinkProvider(provider: theia.TerminalLinkProvider): theia.Disposable {
+                return terminalExt.registerTerminalLinkProvider(provider);
             },
             get activeColorTheme(): theia.ColorTheme {
                 return themingExt.activeColorTheme;
@@ -701,6 +726,9 @@ export function createAPIFactory(
             registerEvaluatableExpressionProvider(selector: theia.DocumentSelector, provider: theia.EvaluatableExpressionProvider): theia.Disposable {
                 return languagesExt.registerEvaluatableExpressionProvider(selector, provider, pluginToPluginInfo(plugin));
             },
+            registerInlineValuesProvider(selector: theia.DocumentSelector, provider: theia.InlineValuesProvider): theia.Disposable {
+                return languagesExt.registerInlineValuesProvider(selector, provider, pluginToPluginInfo(plugin));
+            },
             registerDocumentHighlightProvider(selector: theia.DocumentSelector, provider: theia.DocumentHighlightProvider): theia.Disposable {
                 return languagesExt.registerDocumentHighlightProvider(selector, provider, pluginToPluginInfo(plugin));
             },
@@ -740,6 +768,9 @@ export function createAPIFactory(
             registerColorProvider(selector: theia.DocumentSelector, provider: theia.DocumentColorProvider): theia.Disposable {
                 return languagesExt.registerColorProvider(selector, provider, pluginToPluginInfo(plugin));
             },
+            registerInlayHintsProvider(selector: theia.DocumentSelector, provider: theia.InlayHintsProvider): theia.Disposable {
+                return languagesExt.registerInlayHintsProvider(selector, provider, pluginToPluginInfo(plugin));
+            },
             registerFoldingRangeProvider(selector: theia.DocumentSelector, provider: theia.FoldingRangeProvider): theia.Disposable {
                 return languagesExt.registerFoldingRangeProvider(selector, provider, pluginToPluginInfo(plugin));
             },
@@ -760,6 +791,9 @@ export function createAPIFactory(
             registerCallHierarchyProvider(selector: theia.DocumentSelector, provider: theia.CallHierarchyProvider): theia.Disposable {
                 return languagesExt.registerCallHierarchyProvider(selector, provider);
             },
+            registerTypeHierarchyProvider(selector: theia.DocumentSelector, provider: theia.TypeHierarchyProvider): theia.Disposable {
+                return languagesExt.registerTypeHierarchyProvider(selector, provider);
+            },
             registerLinkedEditingRangeProvider(selector: theia.DocumentSelector, provider: theia.LinkedEditingRangeProvider): theia.Disposable {
                 return languagesExt.registerLinkedEditingRangeProvider(selector, provider);
             },
@@ -767,6 +801,30 @@ export function createAPIFactory(
                 return languagesExt.createLanguageStatusItem(plugin, id, selector);
             }
         };
+
+        // Tests API (@stubbed)
+        // The following implementation is temporarily `@stubbed` and marked as such under `theia.d.ts`
+        const tests: typeof theia.tests = {
+            createTestController(
+                provider,
+                controllerLabel: string,
+                refreshHandler?: (
+                    token: theia.CancellationToken
+                ) => Thenable<void> | void
+            ) {
+                return {
+                    id: provider,
+                    label: controllerLabel,
+                    items: testItemCollection,
+                    refreshHandler,
+                    createRunProfile,
+                    createTestRun,
+                    createTestItem,
+                    dispose: () => undefined,
+                };
+            },
+        };
+        /* End of Tests API */
 
         const plugins: typeof theia.plugins = {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -914,6 +972,7 @@ export function createAPIFactory(
             debug,
             tasks,
             scm,
+            tests,
             // Types
             StatusBarAlignment: StatusBarAlignment,
             Disposable: Disposable,
@@ -962,6 +1021,10 @@ export function createAPIFactory(
             SignatureHelpTriggerKind,
             Hover,
             EvaluatableExpression,
+            InlineValueEvaluatableExpression,
+            InlineValueText,
+            InlineValueVariableLookup,
+            InlineValueContext,
             DocumentHighlightKind,
             DocumentHighlight,
             DocumentLink,
@@ -1014,6 +1077,7 @@ export function createAPIFactory(
             CallHierarchyItem,
             CallHierarchyIncomingCall,
             CallHierarchyOutgoingCall,
+            TypeHierarchyItem,
             TimelineItem,
             EnvironmentVariableMutatorType,
             SemanticTokensLegend,
@@ -1025,10 +1089,18 @@ export function createAPIFactory(
             ColorThemeKind,
             SourceControlInputBoxValidationType,
             FileDecoration,
+            TerminalLink,
             CancellationError,
             ExtensionMode,
             LinkedEditingRanges,
-            InputBoxValidationSeverity
+            InputBoxValidationSeverity,
+            InlayHint,
+            InlayHintKind,
+            InlayHintLabelPart,
+            TestRunProfileKind,
+            TestTag,
+            TestRunRequest,
+            TestMessage
         };
     };
 }

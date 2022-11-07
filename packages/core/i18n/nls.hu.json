@@ -65,6 +65,8 @@
       "compound-cycle": "Indítási konfiguráció '{0}' tartalmaz egy ciklust önmagával együtt",
       "continueAll": "Folytassa az összes",
       "copyExpressionValue": "Kifejezés értékének másolása",
+      "debugSessionActive": "Aktív hibakeresési munkamenet van, biztos, hogy le akarja állítani?",
+      "debugSessionActiveMultiple": "Aktív hibakeresési munkamenetek vannak, biztos, hogy le akarja állítani őket?",
       "disassembly-view": {
         "show-source-code": "Forráskód megjelenítése szétszerelési nézetben."
       },
@@ -493,7 +495,6 @@
       "messageWarning": "            A {0} végpont hoszt mintája `{1}-re` változott; a minta megváltoztatása biztonsági réseket okozhat.             További információért lásd a `{2}` című részt."
     },
     "workspace": {
-      "closeWorkspace": "Tényleg be akarja zárni a munkaterületet?",
       "compareWithEachOther": "Összehasonlítás egymással",
       "confirmDeletePermanently.description": "Nem sikerült törölni a \"{0}\" fájlt a Kukában. Szeretné véglegesen törölni?",
       "confirmDeletePermanently.solution": "A beállítások között letilthatja a Trash használatát.",

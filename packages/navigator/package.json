@@ -1,12 +1,12 @@
 {
   "name": "@theia/navigator",
-  "version": "1.30.0",
+  "version": "1.31.0",
   "description": "Theia - Navigator Extension",
   "dependencies": {
-    "@theia/core": "1.30.0",
-    "@theia/filesystem": "1.30.0",
-    "@theia/workspace": "1.30.0",
-    "minimatch": "^3.0.4"
+    "@theia/core": "1.31.0",
+    "@theia/filesystem": "1.31.0",
+    "@theia/workspace": "1.31.0",
+    "minimatch": "^5.1.0"
   },
   "publishConfig": {
     "access": "public"
@@ -44,7 +44,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.30.0"
+    "@theia/ext-scripts": "1.31.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

@@ -65,6 +65,8 @@
       "compound-cycle": "La configurazione di lancio '{0}' contiene un ciclo con se stessa",
       "continueAll": "Continua tutto",
       "copyExpressionValue": "Copiare il valore dell'espressione",
+      "debugSessionActive": "C'è una sessione di debug attiva, sei sicuro di volerla interrompere?",
+      "debugSessionActiveMultiple": "Ci sono sessioni di debug attive, sei sicuro di volerle interrompere?",
       "disassembly-view": {
         "show-source-code": "Mostra il codice sorgente nella vista di disassemblaggio."
       },
@@ -493,7 +495,6 @@
       "messageWarning": "            Lo schema dell'host dell'endpoint {0} è stato cambiato in `{1}`; cambiare lo schema può portare a vulnerabilità di sicurezza.             Vedere `{2}` per maggiori informazioni."
     },
     "workspace": {
-      "closeWorkspace": "Vuoi davvero chiudere lo spazio di lavoro?",
       "compareWithEachOther": "Confrontare con l'altro",
       "confirmDeletePermanently.description": "Impossibile eliminare \"{0}\" usando il Cestino. Vuoi invece eliminare definitivamente?",
       "confirmDeletePermanently.solution": "Potete disabilitare l'uso del Cestino nelle preferenze.",

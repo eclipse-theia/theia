@@ -51,8 +51,8 @@ export class TerminalQuickOpenService implements QuickAccessProvider {
     async getPicks(filter: string, token: CancellationToken): Promise<QuickPicks> {
         const items: QuickPickItem[] = [];
 
-        // Get the sorted list of currently opened terminal widgets
-        const widgets: TerminalWidget[] = this.terminalService.all
+        // Get the sorted list of currently opened terminal widgets that aren't hidden from users
+        const widgets: TerminalWidget[] = this.terminalService.all.filter(widget => !widget.hiddenFromUser)
             .sort((a: TerminalWidget, b: TerminalWidget) => this.compareItems(a, b));
 
         for (const widget of widgets) {

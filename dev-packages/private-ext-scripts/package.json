@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@theia/ext-scripts",
-  "version": "1.30.0",
+  "version": "1.31.0",
   "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "description": "NPM scripts for Theia packages.",
   "bin": {
@@ -19,8 +19,8 @@
     "ext:lint:clean": "rimraf .eslintcache",
     "ext:watch": "concurrently --kill-others -n cleanup,tsc -c magenta,red \"ts-clean -w\" \"tsc -b -w --preserveWatchOutput\"",
     "ext:watch:fast": "tsc -p -w",
-    "ext:test": "nyc mocha --opts ../../configs/mocha.opts \"./lib/**/*.*spec.js\"",
-    "ext:test:watch": "mocha -w --opts ../../configs/mocha.opts \"./lib/**/*.*spec.js\"",
+    "ext:test": "nyc mocha --config ../../configs/mocharc.yml \"./lib/**/*.*spec.js\"",
+    "ext:test:watch": "mocha -w --config ../../configs/mocharc.yml \"./lib/**/*.*spec.js\"",
     "ext:test:clean": "rimraf .nyc_output coverage"
   }
 }

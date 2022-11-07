@@ -129,6 +129,8 @@ export interface TaskCustomization {
     /** The order the dependsOn tasks should be executed in. */
     dependsOrder?: DependsOrder;
 
+    runOptions?: RunOptions;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [name: string]: any;
 }
@@ -228,6 +230,10 @@ export interface TaskCustomizationData {
 
 export interface RunTaskOption {
     customization?: TaskCustomizationData;
+}
+
+export interface RunOptions {
+    reevaluateOnRerun?: boolean;
 }
 
 /** Event sent when a task has concluded its execution */

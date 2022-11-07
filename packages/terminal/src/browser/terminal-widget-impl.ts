@@ -18,7 +18,7 @@ import { Terminal, RendererType } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, RpcProtocol, RequestHandler } from '@theia/core';
-import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon } from '@theia/core/lib/browser';
+import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon, ExtractableWidget } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/shell-terminal-protocol';
@@ -50,7 +50,9 @@ export interface TerminalContribution {
 }
 
 @injectable()
-export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
+export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget, ExtractableWidget {
+    readonly isExtractable: boolean = true;
+    secondaryWindow: Window | undefined;
 
     static LABEL = nls.localizeByDefault('Terminal');
 
@@ -65,9 +67,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected restored = false;
     protected closeOnDispose = true;
     protected waitForConnection: Deferred<RpcProtocol> | undefined;
-    protected hoverMessage: HTMLDivElement;
+    protected linkHover: HTMLDivElement;
+    protected linkHoverButton: HTMLAnchorElement;
     protected lastTouchEnd: TouchEvent | undefined;
+    protected lastMousePosition: { x: number, y: number } | undefined;
     protected isAttachedCloseListener: boolean = false;
+    protected shown = false;
     override lastCwd = new URI();
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
@@ -99,6 +104,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     protected readonly onKeyEmitter = new Emitter<{ key: string, domEvent: KeyboardEvent }>();
     readonly onKey: Event<{ key: string, domEvent: KeyboardEvent }> = this.onKeyEmitter.event;
+
+    protected readonly onMouseEnterLinkHoverEmitter = new Emitter<MouseEvent>();
+    readonly onMouseEnterLinkHover: Event<MouseEvent> = this.onMouseEnterLinkHoverEmitter.event;
+
+    protected readonly onMouseLeaveLinkHoverEmitter = new Emitter<MouseEvent>();
+    readonly onMouseLeaveLinkHover: Event<MouseEvent> = this.onMouseLeaveLinkHoverEmitter.event;
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
@@ -140,21 +151,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.fitAddon = new FitAddon();
         this.term.loadAddon(this.fitAddon);
 
-        this.hoverMessage = document.createElement('div');
-        this.hoverMessage.textContent = TerminalWidgetImpl.getFollowLinkHover();
-        this.hoverMessage.style.position = 'fixed';
-        this.hoverMessage.style.color = 'var(--theia-editorHoverWidget-foreground)';
-        this.hoverMessage.style.backgroundColor = 'var(--theia-editorHoverWidget-background)';
-        this.hoverMessage.style.borderColor = 'var(--theia-editorHoverWidget-border)';
-        this.hoverMessage.style.borderWidth = '0.5px';
-        this.hoverMessage.style.borderStyle = 'solid';
-        this.hoverMessage.style.padding = '5px';
-        // Above the xterm.js canvas layers:
-        // https://github.com/xtermjs/xterm.js/blob/ff790236c1b205469f17a21246141f512d844295/src/renderer/Renderer.ts#L41-L46
-        this.hoverMessage.style.zIndex = '10';
-        // Initially invisible:
-        this.hoverMessage.style.display = 'none';
-        this.node.appendChild(this.hoverMessage);
+        this.initializeLinkHover();
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             const lastSeparator = change.preferenceName.lastIndexOf('.');
@@ -231,6 +228,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             document.removeEventListener('touchend', touchEndListener);
         });
 
+        const mouseListener = (event: MouseEvent) => {
+            this.lastMousePosition = { x: event.x, y: event.y };
+        };
+        this.node.addEventListener('mousemove', mouseListener);
+        this.onDispose(() => {
+            this.node.removeEventListener('mousemove', mouseListener);
+        });
+
         this.toDispose.push(this.term.onSelectionChange(() => {
             if (this.copyOnSelection) {
                 this.copyOnSelectionHandler.copy(this.term.getSelection());
@@ -261,11 +266,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.searchBox);
     }
 
-    static getFollowLinkHover(): string {
-        const cmdCtrl = isOSX ? 'cmd' : 'ctrl';
-        return `${nls.localizeByDefault('Follow link')} (${nls.localizeByDefault(`${cmdCtrl} + click`)})`;
-    }
-
     get kind(): 'user' | string {
         return this.terminalKind;
     }
@@ -291,15 +291,59 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return DEFAULT_TERMINAL_RENDERER_TYPE;
     }
 
-    showHoverMessage(x: number, y: number, message: string): void {
-        this.hoverMessage.innerText = message;
-        this.hoverMessage.style.display = 'inline';
-        this.hoverMessage.style.top = `${y - 30}px`;
-        this.hoverMessage.style.left = `${x - 60}px`;
+    protected initializeLinkHover(): void {
+        this.linkHover = document.createElement('div');
+        this.linkHover.style.position = 'fixed';
+        this.linkHover.style.color = 'var(--theia-editorHoverWidget-foreground)';
+        this.linkHover.style.backgroundColor = 'var(--theia-editorHoverWidget-background)';
+        this.linkHover.style.borderColor = 'var(--theia-editorHoverWidget-border)';
+        this.linkHover.style.borderWidth = '0.5px';
+        this.linkHover.style.borderStyle = 'solid';
+        this.linkHover.style.padding = '5px';
+        // Above the xterm.js canvas layers:
+        // https://github.com/xtermjs/xterm.js/blob/ff790236c1b205469f17a21246141f512d844295/src/renderer/Renderer.ts#L41-L46
+        this.linkHover.style.zIndex = '10';
+        // Initially invisible:
+        this.linkHover.style.display = 'none';
+
+        this.linkHoverButton = document.createElement('a');
+        this.linkHoverButton.textContent = this.linkHoverMessage();
+        this.linkHoverButton.style.cursor = 'pointer';
+        this.linkHover.appendChild(this.linkHoverButton);
+
+        const cmdCtrl = isOSX ? 'cmd' : 'ctrl';
+        const cmdHint = document.createTextNode(` (${nls.localizeByDefault(`${cmdCtrl} + click`)})`);
+        this.linkHover.appendChild(cmdHint);
+
+        const onMouseEnter = (mouseEvent: MouseEvent) => this.onMouseEnterLinkHoverEmitter.fire(mouseEvent);
+        this.linkHover.addEventListener('mouseenter', onMouseEnter);
+        this.toDispose.push(Disposable.create(() => this.linkHover.removeEventListener('mouseenter', onMouseEnter)));
+
+        const onMouseLeave = (mouseEvent: MouseEvent) => this.onMouseLeaveLinkHoverEmitter.fire(mouseEvent);
+        this.linkHover.addEventListener('mouseleave', onMouseLeave);
+        this.toDispose.push(Disposable.create(() => this.linkHover.removeEventListener('mouseleave', onMouseLeave)));
+
+        this.node.appendChild(this.linkHover);
     }
 
-    hideHover(): void {
-        this.hoverMessage.style.display = 'none';
+    showLinkHover(invokeAction: (event: MouseEvent) => void, x: number, y: number, message?: string): void {
+        const mouseY = this.lastMousePosition?.y ?? y;
+        const mouseX = this.lastMousePosition?.x ?? x;
+        this.linkHoverButton.textContent = this.linkHoverMessage(message);
+        this.linkHoverButton.onclick = (mouseEvent: MouseEvent) => invokeAction(mouseEvent);
+        this.linkHover.style.display = 'inline';
+        this.linkHover.style.top = `${mouseY - 30}px`;
+        this.linkHover.style.left = `${mouseX - 60}px`;
+    }
+
+    protected linkHoverMessage(message?: string): string {
+        return message ?? nls.localizeByDefault('Follow link');
+    }
+
+    hideLinkHover(): void {
+        this.linkHover.style.display = 'none';
+        // eslint-disable-next-line no-null/no-null
+        this.linkHoverButton.onclick = null;
     }
 
     getTerminal(): Terminal {
@@ -351,6 +395,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     get lastTouchEndEvent(): TouchEvent | undefined {
         return this.lastTouchEnd;
+    }
+
+    get hiddenFromUser(): boolean {
+        if (this.shown) {
+            return false;
+        }
+        return this.options.hideFromUser ?? false;
     }
 
     onDispose(onDispose: () => void): void {
@@ -465,6 +516,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.update();
+        this.shown = true;
     }
     protected override onAfterAttach(msg: Message): void {
         Widget.attach(this.searchBox, this.node);
@@ -559,6 +611,30 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return;
         }
         this.term.open(this.node);
+
+        if (isFirefox) {
+            // monkey patching intersection observer handling for secondary window support
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const renderService: any = (this.term as any)._core._renderService;
+            const originalFunc: (entry: IntersectionObserverEntry) => void = renderService._onIntersectionChange.bind(renderService);
+            const replacement = function (entry: IntersectionObserverEntry): void {
+                if (entry.target.ownerDocument !== document) {
+                    // in Firefox, the intersection observer always reports the widget as non-intersecting if the dom element
+                    // is in a different document from when the IntersectionObserver started observing. Since we know
+                    // that the widget is always "visible" when in a secondary window, so we mark the entry as "intersecting"
+                    const patchedEvent: IntersectionObserverEntry = {
+                        ...entry,
+                        isIntersecting: true,
+                    };
+                    originalFunc(patchedEvent);
+                } else {
+                    originalFunc(entry);
+                }
+            };
+
+            renderService._onIntersectionChange = replacement;
+        }
+
         if (this.initialData) {
             this.term.write(this.initialData);
         }

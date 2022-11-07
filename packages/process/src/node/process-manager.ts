@@ -18,12 +18,13 @@ import { Emitter, Event } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { ManagedProcessManager, ManagedProcess } from '../common/process-manager-types';
+import { MAX_SAFE_INTEGER } from '@theia/core/lib/common/numbers';
+import { Process } from './process';
 
 @injectable()
 export class ProcessManager implements ManagedProcessManager, BackendApplicationContribution {
 
-    protected id: number = 0;
-    protected readonly processes: Map<number, ManagedProcess>;
+    protected readonly processes: Map<number, Process>;
     protected readonly deleteEmitter: Emitter<number>;
 
     constructor(
@@ -39,11 +40,24 @@ export class ProcessManager implements ManagedProcessManager, BackendApplication
      *
      * @param process the process to register.
      */
-    register(process: ManagedProcess): number {
-        const id = this.id;
+    register(process: Process): number {
+        const id = this.generateId();
         this.processes.set(id, process);
         process.onError(() => this.unregister(process));
-        this.id++;
+        return id;
+    }
+
+    /**
+     * @returns a random id for a process that is not assigned to a different process yet.
+     */
+    protected generateId(): number {
+        let id = undefined;
+        while (id === undefined) {
+            const candidate = Math.floor(Math.random() * MAX_SAFE_INTEGER);
+            if (!this.processes.has(candidate)) {
+                id = candidate;
+            }
+        }
         return id;
     }
 

@@ -128,8 +128,8 @@
       "args": [
         "--no-timeouts",
         "--colors",
-        "--opts",
-        "${workspaceFolder}/configs/mocha.opts",
+        "--config",
+        "${workspaceFolder}/configs/mocharc.yml",
         "**/${fileBasenameNoExtension}.js"
       ],
       "env": {

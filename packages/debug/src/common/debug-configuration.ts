@@ -37,6 +37,8 @@ export interface DebugConfiguration {
 
     parentSession?: { id: string };
 
+    lifecycleManagedByParent?: boolean;
+
     consoleMode?: DebugConsoleMode;
 
     compact?: boolean;
@@ -77,6 +79,7 @@ export namespace DebugConfiguration {
 }
 
 export interface DebugSessionOptions {
+    lifecycleManagedByParent?: boolean;
     parentSession?: { id: string };
     consoleMode?: DebugConsoleMode;
     noDebug?: boolean;

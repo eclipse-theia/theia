@@ -65,6 +65,8 @@
       "compound-cycle": "Launch configuration '{0}' contains a cycle with itself",
       "continueAll": "Continue All",
       "copyExpressionValue": "Copy Expression Value",
+      "debugSessionActive": "There is an active debug session, are you sure you want to stop it?",
+      "debugSessionActiveMultiple": "There are active debug sessions, are you sure you want to stop them?",
       "disassembly-view": {
         "show-source-code": "Show Source Code in Disassembly View."
       },
@@ -493,7 +495,6 @@
       "messageWarning": "            The {0} endpoint's host pattern has been changed to `{1}`; changing the pattern can lead to security vulnerabilities.             See `{2}` for more information."
     },
     "workspace": {
-      "closeWorkspace": "Do you really want to close the workspace?",
       "compareWithEachOther": "Compare with Each Other",
       "confirmDeletePermanently.description": "Failed to delete \"{0}\" using the Trash. Do you want to permanently delete instead?",
       "confirmDeletePermanently.solution": "You can disable the use of Trash in the preferences.",

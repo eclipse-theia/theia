@@ -265,6 +265,38 @@ export interface EvaluatableExpressionProvider {
         token: monaco.CancellationToken): EvaluatableExpression | undefined | Thenable<EvaluatableExpression | undefined>;
 }
 
+export interface InlineValueContext {
+    frameId: number;
+    stoppedLocation: Range;
+}
+
+export interface InlineValueText {
+    type: 'text';
+    range: Range;
+    text: string;
+}
+
+export interface InlineValueVariableLookup {
+    type: 'variable';
+    range: Range;
+    variableName?: string;
+    caseSensitiveLookup: boolean;
+}
+
+export interface InlineValueEvaluatableExpression {
+    type: 'expression';
+    range: Range;
+    expression?: string;
+}
+
+export type InlineValue = InlineValueText | InlineValueVariableLookup | InlineValueEvaluatableExpression;
+
+export interface InlineValuesProvider {
+    onDidChangeInlineValues?: TheiaEvent<void> | undefined;
+    provideInlineValues(model: monaco.editor.ITextModel, viewPort: Range, context: InlineValueContext, token: monaco.CancellationToken):
+        InlineValue[] | undefined | Thenable<InlineValue[] | undefined>;
+}
+
 export enum DocumentHighlightKind {
     Text = 0,
     Read = 1,
@@ -327,6 +359,9 @@ export interface ReferenceContext {
 
 export type CacheId = number;
 export type ChainedCacheId = [CacheId, CacheId];
+
+export type CachedSessionItem<T> = T & { cacheId?: ChainedCacheId };
+export type CachedSession<T> = T & { cacheId?: CacheId };
 
 export interface DocumentLink {
     cacheId?: ChainedCacheId,
@@ -530,17 +565,22 @@ export interface RenameLocation {
     text: string;
 }
 
-export interface CallHierarchyItem {
+export class HierarchyItem {
     _sessionId?: string;
     _itemId?: string;
 
     kind: SymbolKind;
+    tags?: readonly SymbolTag[];
     name: string;
     detail?: string;
     uri: UriComponents;
     range: Range;
     selectionRange: Range;
-    tags?: readonly SymbolTag[];
+}
+
+export class TypeHierarchyItem extends HierarchyItem { }
+
+export interface CallHierarchyItem extends HierarchyItem {
     data?: unknown;
 }
 
@@ -691,3 +731,36 @@ export interface CommentInfo {
     threads: CommentThread[];
     commentingRanges: CommentingRanges;
 }
+
+export interface ProvidedTerminalLink extends theia.TerminalLink {
+    providerId: string
+}
+
+export interface InlayHintLabelPart {
+    label: string;
+    tooltip?: string | MarkdownStringDTO;
+    location?: Location;
+    command?: Command;
+}
+
+export interface InlayHint {
+    position: { lineNumber: number, column: number };
+    label: string | InlayHintLabelPart[];
+    tooltip?: string | MarkdownStringDTO | undefined;
+    kind?: InlayHintKind;
+    textEdits?: TextEdit[];
+    paddingLeft?: boolean;
+    paddingRight?: boolean;
+}
+
+export enum InlayHintKind {
+    Type = 1,
+    Parameter = 2,
+}
+
+export interface InlayHintsProvider {
+    onDidChangeInlayHints?: TheiaEvent<void> | undefined;
+    provideInlayHints(model: monaco.editor.ITextModel, range: Range, token: monaco.CancellationToken): InlayHint[] | undefined | Thenable<InlayHint[] | undefined>;
+    resolveInlayHint?(hint: InlayHint, token: monaco.CancellationToken): InlayHint[] | undefined | Thenable<InlayHint[] | undefined>;
+}
+

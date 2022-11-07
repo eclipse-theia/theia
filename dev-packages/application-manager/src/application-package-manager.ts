@@ -18,7 +18,6 @@ import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as cp from 'child_process';
 import * as semver from 'semver';
-import * as ffmpeg from '@theia/ffmpeg';
 import { ApplicationPackage, ApplicationPackageOptions } from '@theia/application-package';
 import { WebpackGenerator, FrontendGenerator, BackendGenerator } from './generator';
 import { ApplicationProcess } from './application-process';
@@ -181,6 +180,7 @@ export class ApplicationPackageManager {
         if (!theiaElectron.electronVersion || !semver.satisfies(theiaElectron.electronVersion, currentRange)) {
             throw new AbortError('Dependencies are out of sync, please run "install" again');
         }
+        const ffmpeg = await import('@theia/ffmpeg');
         await ffmpeg.replaceFfmpeg();
         await ffmpeg.checkFfmpeg();
     }

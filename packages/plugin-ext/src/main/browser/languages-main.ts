@@ -33,12 +33,13 @@ import {
     WorkspaceEditDto,
     WorkspaceTextEditDto,
     PluginInfo,
-    LanguageStatus as LanguageStatusDTO
+    LanguageStatus as LanguageStatusDTO,
+    InlayHintDto
 } from '../../common/plugin-api-rpc';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, RelatedInformation,
-    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto, CodeActionProviderDocumentation
+    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto, CodeActionProviderDocumentation, InlayHint, InlayHintLabelPart
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from '@theia/monaco/lib/browser/monaco-languages';
@@ -51,7 +52,8 @@ import * as theia from '@theia/plugin';
 import { UriComponents } from '../../common/uri-components';
 import { CancellationToken } from '@theia/core/lib/common';
 import { CallHierarchyService, CallHierarchyServiceProvider, CallHierarchyItem } from '@theia/callhierarchy/lib/browser';
-import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller, toCallee } from './callhierarchy/callhierarchy-type-converters';
+import { toItemHierarchyDefinition, toUriComponents, fromItemHierarchyDefinition, fromPosition, toCaller, toCallee } from './hierarchy/hierarchy-types-converters';
+import { TypeHierarchyService, TypeHierarchyServiceProvider } from '@theia/typehierarchy/lib/browser';
 import { Position, DocumentUri, DiagnosticTag } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ObjectIdentifier } from '../../common/object-identifier';
 import { mixin } from '../../common/types';
@@ -67,7 +69,13 @@ import { IRelativePattern } from '@theia/monaco-editor-core/esm/vs/base/common/g
 import { EditorLanguageStatusService, LanguageStatus as EditorLanguageStatus } from '@theia/editor/lib/browser/language-status/editor-language-status-service';
 import { LanguageSelector, RelativePattern } from '@theia/editor/lib/common/language-selector';
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
-import { EvaluatableExpression, EvaluatableExpressionProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import {
+    EvaluatableExpression,
+    EvaluatableExpressionProvider,
+    InlineValue,
+    InlineValueContext,
+    InlineValuesProvider
+} from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { CodeActionTriggerKind } from '../../plugin/types-impl';
 
@@ -91,6 +99,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     @inject(CallHierarchyServiceProvider)
     private readonly callHierarchyServiceContributionRegistry: CallHierarchyServiceProvider;
+
+    @inject(TypeHierarchyServiceProvider)
+    private readonly typeHierarchyServiceContributionRegistry: TypeHierarchyServiceProvider;
 
     @inject(EditorLanguageStatusService)
     protected readonly languageStatusService: EditorLanguageStatusService;
@@ -359,6 +370,33 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
     protected provideEvaluatableExpression(handle: number, model: ITextModel, position: monaco.Position,
         token: monaco.CancellationToken): monaco.languages.ProviderResult<EvaluatableExpression | undefined> {
         return this.proxy.$provideEvaluatableExpression(handle, model.uri, position, token);
+    }
+
+    $registerInlineValuesProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = this.toLanguageSelector(selector);
+        const inlineValuesProvider = this.createInlineValuesProvider(handle);
+        this.register(handle,
+            (StandaloneServices.get(ILanguageFeaturesService).inlineValuesProvider.register as RegistrationFunction<InlineValuesProvider>)
+                (languageSelector, inlineValuesProvider));
+    }
+
+    protected createInlineValuesProvider(handle: number): InlineValuesProvider {
+        return {
+            provideInlineValues: (model, range, context, token) => this.provideInlineValues(handle, model, range, context, token)
+        };
+    }
+
+    protected provideInlineValues(handle: number, model: ITextModel, range: Range,
+        context: InlineValueContext, token: monaco.CancellationToken): monaco.languages.ProviderResult<InlineValue[] | undefined> {
+        return this.proxy.$provideInlineValues(handle, model.uri, range, context, token);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $emitInlineValuesEvent(eventHandle: number, event?: any): void {
+        const obj = this.services.get(eventHandle);
+        if (obj instanceof Emitter) {
+            obj.fire(event);
+        }
     }
 
     $registerDocumentHighlightProvider(handle: number, _pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
@@ -773,6 +811,63 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         }, token);
     }
 
+    $registerInlayHintsProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], displayName?: string, eventHandle?: number): void {
+        const languageSelector = this.toLanguageSelector(selector);
+        const inlayHintsProvider = this.createInlayHintsProvider(handle);
+        if (typeof eventHandle === 'number') {
+            const emitter = new Emitter<void>();
+            this.register(eventHandle, emitter);
+            inlayHintsProvider.onDidChangeInlayHints = emitter.event;
+        }
+        this.register(handle, (monaco.languages.registerInlayHintsProvider as RegistrationFunction<monaco.languages.InlayHintsProvider>)(languageSelector, inlayHintsProvider));
+
+    }
+
+    createInlayHintsProvider(handle: number): monaco.languages.InlayHintsProvider {
+        return {
+            provideInlayHints: async (model: monaco.editor.ITextModel, range: Range, token: monaco.CancellationToken): Promise<monaco.languages.InlayHintList | undefined> => {
+                const result = await this.proxy.$provideInlayHints(handle, model.uri, range, token);
+                if (!result) {
+                    return;
+                }
+                return {
+                    hints: result.hints.map(hint => reviveHint(hint)),
+                    dispose: () => {
+                        if (typeof result.cacheId === 'number') {
+                            this.proxy.$releaseInlayHints(handle, result.cacheId);
+                        }
+                    }
+                };
+            },
+            resolveInlayHint: async (hint, token): Promise<monaco.languages.InlayHint | undefined> => {
+                const dto: InlayHintDto = hint;
+                if (typeof dto.cacheId !== 'number') {
+                    return hint;
+                }
+                const result = await this.proxy.$resolveInlayHint(handle, dto.cacheId, token);
+                if (token.isCancellationRequested) {
+                    return undefined;
+                }
+                if (!result) {
+                    return hint;
+                }
+                return {
+                    ...hint,
+                    tooltip: result.tooltip,
+                    label: reviveInlayLabel(result.label)
+                };
+            },
+        };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    $emitInlayHintsEvent(eventHandle: number, event?: any): void {
+        const obj = this.services.get(eventHandle);
+        if (obj instanceof Emitter) {
+            obj.fire(event);
+        }
+    }
+
     $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], providedCodeActionKinds?: string[],
         documentation?: CodeActionProviderDocumentation): void {
 
@@ -857,32 +952,40 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                     .then(def => {
                         if (!def) { return undefined; }
                         const defs = Array.isArray(def) ? def : [def];
-                        return { dispose: () => this.proxy.$releaseCallHierarchy(handle, defs[0]?._sessionId), items: defs.map(item => toDefinition(item)) };
+                        return { dispose: () => this.proxy.$releaseCallHierarchy(handle, defs[0]?._sessionId), items: defs.map(item => toItemHierarchyDefinition(item)) };
                     }),
-            getCallers: (definition: CallHierarchyItem, cancellationToken: CancellationToken) => this.proxy.$provideCallers(handle, fromDefinition(definition), cancellationToken)
-                .then(result => {
-                    if (!result) {
+            getCallers:
+                (
+                    definition: CallHierarchyItem,
+                    cancellationToken: CancellationToken
+                ) => this.proxy.$provideCallers(handle, fromItemHierarchyDefinition(definition), cancellationToken)
+                    .then(result => {
+                        if (!result) {
+                            return undefined!;
+                        }
+
+                        if (Array.isArray(result)) {
+                            return result.map(toCaller);
+                        }
+
                         return undefined!;
-                    }
+                    }),
 
-                    if (Array.isArray(result)) {
-                        return result.map(toCaller);
-                    }
+            getCallees:
+                (
+                    definition: CallHierarchyItem,
+                    cancellationToken: CancellationToken
+                ) => this.proxy.$provideCallees(handle, fromItemHierarchyDefinition(definition), cancellationToken)
+                    .then(result => {
+                        if (!result) {
+                            return undefined;
+                        }
+                        if (Array.isArray(result)) {
+                            return result.map(toCallee);
+                        }
 
-                    return undefined!;
-                }),
-
-            getCallees: (definition: CallHierarchyItem, cancellationToken: CancellationToken) => this.proxy.$provideCallees(handle, fromDefinition(definition), cancellationToken)
-                .then(result => {
-                    if (!result) {
                         return undefined;
-                    }
-                    if (Array.isArray(result)) {
-                        return result.map(toCallee);
-                    }
-
-                    return undefined;
-                }),
+                    })
         };
     }
 
@@ -891,8 +994,56 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return this.proxy.$resolveRenameLocation(handle, model.uri, position, token);
     }
 
-    // --- semantic tokens
+    // --- type hierarchy
+    $registerTypeHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = this.toLanguageSelector(selector);
+        const typeHierarchyService = this.createTypeHierarchyService(handle, languageSelector);
+        this.register(handle, this.typeHierarchyServiceContributionRegistry.add(typeHierarchyService));
+    }
 
+    protected createTypeHierarchyService(handle: number, language: LanguageSelector): TypeHierarchyService {
+        return {
+            selector: language,
+            prepareSession: (uri: DocumentUri, position: Position, cancellationToken: CancellationToken) =>
+                this.proxy.$prepareTypeHierarchy(handle, toUriComponents(uri), fromPosition(position), cancellationToken)
+                    .then(result => {
+                        if (!result) {
+                            return undefined;
+                        }
+                        const items = Array.isArray(result) ? result : [result];
+                        return {
+                            dispose: () => this.proxy.$releaseTypeHierarchy(handle, items[0]?._sessionId),
+                            items: items.map(item => toItemHierarchyDefinition(item))
+                        };
+                    }),
+            provideSuperTypes: (sessionId, itemId, cancellationToken: CancellationToken) => this.proxy.$provideSuperTypes(handle, sessionId, itemId, cancellationToken)
+                .then(results => {
+                    if (!results) {
+                        return undefined;
+                    }
+
+                    if (Array.isArray(results)) {
+                        return results.map(toItemHierarchyDefinition);
+                    }
+
+                    return undefined;
+                }),
+            provideSubTypes: async (sessionId, itemId, cancellationToken: CancellationToken) => this.proxy.$provideSubTypes(handle, sessionId, itemId, cancellationToken)
+                .then(results => {
+                    if (!results) {
+                        return undefined;
+                    }
+
+                    if (Array.isArray(results)) {
+                        return results.map(toItemHierarchyDefinition);
+                    }
+
+                    return undefined;
+                })
+        };
+    }
+
+    // --- semantic tokens
     $registerDocumentSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], legend: theia.SemanticTokensLegend,
         eventHandle: number | undefined): void {
         const languageSelector = this.toLanguageSelector(selector);
@@ -1130,6 +1281,31 @@ function reviveOnEnterRules(onEnterRules?: SerializedOnEnterRule[]): monaco.lang
         return undefined;
     }
     return onEnterRules.map(reviveOnEnterRule);
+}
+
+function reviveInlayLabel(label: string | InlayHintLabelPart[]):  string | monaco.languages.InlayHintLabelPart[] {
+    let monacoLabel: string | monaco.languages.InlayHintLabelPart[];
+    if (typeof label === 'string') {
+        monacoLabel = label;
+    } else {
+        const parts: monaco.languages.InlayHintLabelPart[] = [];
+        for (const part of label) {
+            const result: monaco.languages.InlayHintLabelPart = {
+                ...part,
+                location: !!part.location ? { range: part.location?.range, uri: monaco.Uri.revive(part.location.uri) } : undefined
+            };
+            parts.push(result);
+        }
+        monacoLabel = parts;
+    }
+    return monacoLabel;
+}
+
+function reviveHint(hint: InlayHint): monaco.languages.InlayHint {
+    return {
+        ...hint,
+        label: reviveInlayLabel(hint.label)
+    };
 }
 
 function toMonacoAction(action: CodeAction): monaco.languages.CodeAction {

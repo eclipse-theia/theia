@@ -21,6 +21,7 @@ import { Extension, ExtensionPackage, ExtensionPackageOptions, RawExtensionPacka
 import { ExtensionPackageCollector } from './extension-package-collector';
 import { ApplicationProps } from './application-props';
 import deepmerge = require('deepmerge');
+import resolvePackagePath = require('resolve-package-path');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ApplicationLog = (message?: any, ...optionalParams: any[]) => void;
@@ -91,6 +92,7 @@ export class ApplicationPackage {
 
     protected _frontendModules: Map<string, string> | undefined;
     protected _frontendElectronModules: Map<string, string> | undefined;
+    protected _secondaryWindowModules: Map<string, string> | undefined;
     protected _backendModules: Map<string, string> | undefined;
     protected _backendElectronModules: Map<string, string> | undefined;
     protected _electronMainModules: Map<string, string> | undefined;
@@ -144,6 +146,13 @@ export class ApplicationPackage {
             this._frontendElectronModules = this.computeModules('frontendElectron', 'frontend');
         }
         return this._frontendElectronModules;
+    }
+
+    get secondaryWindowModules(): Map<string, string> {
+        if (!this._secondaryWindowModules) {
+            this._secondaryWindowModules = this.computeModules('secondaryWindow');
+        }
+        return this._secondaryWindowModules;
     }
 
     get backendModules(): Map<string, string> {
@@ -273,8 +282,14 @@ export class ApplicationPackage {
      */
     get resolveModule(): ApplicationModuleResolver {
         if (!this._moduleResolver) {
-            const resolutionPaths = [this.packagePath || process.cwd()];
-            this._moduleResolver = modulePath => require.resolve(modulePath, { paths: resolutionPaths });
+            const resolutionPaths = this.packagePath || process.cwd();
+            this._moduleResolver = modulePath => {
+                const resolved = resolvePackagePath(modulePath, resolutionPaths);
+                if (!resolved) {
+                    throw new Error('Could not resolve module: ' + modulePath);
+                }
+                return resolved;
+            };
         }
         return this._moduleResolver!;
     }

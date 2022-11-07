@@ -117,9 +117,6 @@ export class DebugSession implements CompositeTreeElement {
             this.connection.on('capabilities', event => this.updateCapabilities(event.body.capabilities)),
             this.breakpoints.onDidChangeMarkers(uri => this.updateBreakpoints({ uri, sourceModified: true }))
         ]);
-        if (this.options.compoundRoot) {
-            this.toDispose.push(this.options.compoundRoot.onDidSessionStop(() => this.stop(false, () => { })));
-        }
     }
 
     get onDispose(): Event<void> {
@@ -354,9 +351,6 @@ export class DebugSession implements CompositeTreeElement {
                 } catch (e) {
                     console.error('Error on disconnect', e);
                 }
-            }
-            if (!isRestart) {
-                this.options.compoundRoot?.stopSession();
             }
             callback();
         }

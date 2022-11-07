@@ -48,7 +48,7 @@
       "offline": "Hors ligne",
       "proxySupportFallback": "Active la prise en charge du proxy pour les extensions, se rabat sur les options de requête, si aucun proxy n'est trouvé.",
       "quitMessage": "Les modifications non sauvegardées ne seront pas enregistrées.",
-      "quitTitle": "Tu es sûr de vouloir arrêter ?",
+      "quitTitle": "Tu es sûr de vouloir arrêter?",
       "resetWorkbenchLayout": "Réinitialisation de la disposition de l'établi",
       "sashDelay": "Contrôle le délai de rétroaction du survol en millisecondes de la zone de glissement entre les vues/éditeurs.",
       "sashSize": "Contrôle la taille de la zone de retour en pixels de la zone de glissement entre les vues/éditeurs. Définissez une valeur plus grande si nécessaire.",
@@ -65,6 +65,8 @@
       "compound-cycle": "La configuration de lancement '{0}' contient un cycle avec elle-même",
       "continueAll": "Continuer tout",
       "copyExpressionValue": "Copier la valeur de l'expression",
+      "debugSessionActive": "Il y a une session de débogage active, êtes-vous sûr de vouloir l'arrêter?",
+      "debugSessionActiveMultiple": "Il y a des sessions de débogage actives, êtes-vous sûr de vouloir les arrêter?",
       "disassembly-view": {
         "show-source-code": "Afficher le code source en vue du désassemblage."
       },
@@ -168,7 +170,7 @@
     },
     "fileSystem": {
       "fileResource": {
-        "overWriteBody": "Voulez-vous écraser les modifications apportées à '{0}' sur le système de fichiers ?"
+        "overWriteBody": "Voulez-vous écraser les modifications apportées à '{0}' sur le système de fichiers?"
       }
     },
     "filesystem": {
@@ -182,7 +184,7 @@
         "navigateUp": "Naviguer vers le haut d'un répertoire"
       },
       "fileResource": {
-        "binaryFileQuery": "L'ouvrir peut prendre un certain temps et peut rendre l'IDE non réactif. Voulez-vous ouvrir '{0}' de toute façon ?",
+        "binaryFileQuery": "L'ouvrir peut prendre un certain temps et peut rendre l'IDE non réactif. Voulez-vous ouvrir '{0}' de toute façon?",
         "binaryTitle": "Le fichier est soit binaire, soit utilise un encodage de texte non pris en charge.",
         "largeFileTitle": "Le fichier est trop volumineux ({0}).",
         "overwriteTitle": "Le fichier '{0}' a été modifié sur le système de fichiers."
@@ -234,7 +236,7 @@
       "editKeybindingTitle": "Modifier le raccourci clavier pour {0}",
       "keybindingCollidesValidation": "Les combinaisons de touches sont actuellement en conflit",
       "requiredKeybindingValidation": "la valeur du keybinding est requise",
-      "resetKeybindingConfirmation": "Voulez-vous vraiment réinitialiser ce raccourci clavier à sa valeur par défaut ?",
+      "resetKeybindingConfirmation": "Voulez-vous vraiment réinitialiser ce raccourci clavier à sa valeur par défaut?",
       "resetKeybindingTitle": "Réinitialiser le raccourci clavier pour {0}",
       "resetMultipleKeybindingsWarning": "Si plusieurs combinaisons de touches existent pour cette commande, elles seront toutes réinitialisées."
     },
@@ -445,8 +447,8 @@
       "shellOsx": "Le chemin de l'interpréteur de commandes que le terminal utilise sous macOS (par défaut : '{0}'}).",
       "shellWindows": "Le chemin du shell que le terminal utilise sous Windows. (par défaut : '{0}').",
       "terminate": "Fin",
-      "terminateActive": "Voulez-vous mettre fin à la session active du terminal ?",
-      "terminateActiveMultiple": "Voulez-vous mettre fin aux {0} sessions actives du terminal ?"
+      "terminateActive": "Voulez-vous mettre fin à la session active du terminal?",
+      "terminateActiveMultiple": "Voulez-vous mettre fin aux {0} sessions actives du terminal?"
     },
     "toolbar": {
       "addCommand": "Ajouter une commande à la barre d'outils",
@@ -465,7 +467,7 @@
       "rightColumn": "Colonne de droite",
       "selectIcon": "Sélectionnez l'icône",
       "toggleToolbar": "Afficher la barre d'outils",
-      "toolbarLocationPlaceholder": "Où souhaitez-vous que la commande soit ajoutée ?",
+      "toolbarLocationPlaceholder": "Où souhaitez-vous que la commande soit ajoutée?",
       "useDefaultIcon": "Utiliser l'icône par défaut"
     },
     "typehierarchy": {
@@ -493,16 +495,15 @@
       "messageWarning": "            Le modèle d'hôte du point de terminaison {0} a été remplacé par `{1}` ; la modification du modèle peut entraîner des failles de sécurité.             Voir `{2}` pour plus d'informations."
     },
     "workspace": {
-      "closeWorkspace": "Voulez-vous vraiment fermer l'espace de travail ?",
       "compareWithEachOther": "Comparer entre eux",
-      "confirmDeletePermanently.description": "Impossible de supprimer \"{0}\" avec la corbeille. Voulez-vous le supprimer définitivement ?",
+      "confirmDeletePermanently.description": "Impossible de supprimer \"{0}\" avec la corbeille. Voulez-vous le supprimer définitivement?",
       "confirmDeletePermanently.solution": "Vous pouvez désactiver l'utilisation de la corbeille dans les préférences.",
       "confirmDeletePermanently.title": "Erreur lors de la suppression d'un fichier",
-      "confirmMessage.delete": "Voulez-vous vraiment supprimer les fichiers suivants ?",
-      "confirmMessage.dirtyMultiple": "Voulez-vous vraiment supprimer {0} fichiers avec des modifications non sauvegardées ?",
-      "confirmMessage.dirtySingle": "Voulez-vous vraiment supprimer {0} avec les modifications non sauvegardées ?",
-      "confirmMessage.uriMultiple": "Voulez-vous vraiment supprimer tous les {0} fichiers sélectionnés ?",
-      "confirmMessage.uriSingle": "Voulez-vous vraiment supprimer {0} ?",
+      "confirmMessage.delete": "Voulez-vous vraiment supprimer les fichiers suivants?",
+      "confirmMessage.dirtyMultiple": "Voulez-vous vraiment supprimer {0} fichiers avec des modifications non sauvegardées?",
+      "confirmMessage.dirtySingle": "Voulez-vous vraiment supprimer {0} avec les modifications non sauvegardées?",
+      "confirmMessage.uriMultiple": "Voulez-vous vraiment supprimer tous les {0} fichiers sélectionnés?",
+      "confirmMessage.uriSingle": "Voulez-vous vraiment supprimer {0}?",
       "duplicate": "Duplicate",
       "failApply": "Impossible d'appliquer les changements au nouveau fichier",
       "failSaveAs": "Impossible d'exécuter \"{0}\" pour le widget actuel.",
@@ -510,16 +511,16 @@
       "openRecentPlaceholder": "Tapez le nom de l'espace de travail que vous voulez ouvrir.",
       "openRecentWorkspace": "Ouvrir l'espace de travail récent...",
       "preserveWindow": "Permet d'ouvrir les espaces de travail dans la fenêtre actuelle.",
-      "removeFolder": "Êtes-vous sûr de vouloir supprimer le dossier suivant de l'espace de travail ?",
-      "removeFolders": "Êtes-vous sûr de vouloir supprimer les dossiers suivants de l'espace de travail ?",
+      "removeFolder": "Êtes-vous sûr de vouloir supprimer le dossier suivant de l'espace de travail?",
+      "removeFolders": "Êtes-vous sûr de vouloir supprimer les dossiers suivants de l'espace de travail?",
       "supportMultiRootWorkspace": "Contrôle si le support de l'espace de travail multi-root est activé.",
       "trashTitle": "Déplacer {0} vers la corbeille",
       "trustEmptyWindow": "Contrôle si l'espace de travail vide est fiable ou non par défaut.",
       "trustEnabled": "Contrôle si la confiance de l'espace de travail est activée ou non. S'il est désactivé, tous les espaces de travail sont fiables.",
       "trustPrompt": "Contrôle l'affichage de l'invite de démarrage pour la confiance dans un espace de travail.",
-      "trustRequest": "Une extension demande la confiance dans l'espace de travail mais l'API correspondante n'est pas encore totalement prise en charge. Voulez-vous faire confiance à cet espace de travail ?",
+      "trustRequest": "Une extension demande la confiance dans l'espace de travail mais l'API correspondante n'est pas encore totalement prise en charge. Voulez-vous faire confiance à cet espace de travail?",
       "untitled-cleanup": "Il semble y avoir de nombreux fichiers d'espace de travail sans titre. Veuillez vérifier {0} et supprimer tous les fichiers inutilisés.",
-      "workspaceFolderAdded": "Un espace de travail avec plusieurs racines a été créé. Voulez-vous enregistrer la configuration de votre espace de travail dans un fichier ?",
+      "workspaceFolderAdded": "Un espace de travail avec plusieurs racines a été créé. Voulez-vous enregistrer la configuration de votre espace de travail dans un fichier?",
       "workspaceFolderAddedTitle": "Dossier ajouté à l'espace de travail"
     }
   }

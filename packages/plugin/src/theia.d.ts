@@ -3095,6 +3095,15 @@ export module '@theia/plugin' {
         strictEnv?: boolean;
 
         /**
+         * When enabled the terminal will run the process as normal but not be surfaced to the user
+         * until `Terminal.show` is called. The typical usage for this is when you need to run
+         * something that may need interactivity but only want to tell the user about it when
+         * interaction is needed. Note that the terminals will still be exposed to all extensions
+         * as normal.
+         */
+        hideFromUser?: boolean;
+
+        /**
          * A message to write to the terminal on first launch. Note that this is not sent to the
          * process, but rather written directly to the terminal. This supports escape sequences such
          * as setting text style.
@@ -3274,7 +3283,7 @@ export module '@theia/plugin' {
     /**
      * A link on a terminal line.
      */
-    export interface TerminalLink {
+    export class TerminalLink {
         /**
          * The start index of the link on [TerminalLinkContext.line](#TerminalLinkContext.line].
          */
@@ -3293,6 +3302,18 @@ export module '@theia/plugin' {
          * depending on OS, user settings, and localization.
          */
         tooltip?: string;
+
+        /**
+         * Creates a new terminal link.
+         * @param startIndex The start index of the link on [TerminalLinkContext.line](#TerminalLinkContext.line].
+         * @param length The length of the link on [TerminalLinkContext.line](#TerminalLinkContext.line].
+         * @param tooltip The tooltip text when you hover over this link.
+         *
+         * If a tooltip is provided, is will be displayed in a string that includes instructions on
+         * how to trigger the link, such as `{0} (ctrl + click)`. The specific instructions vary
+         * depending on OS, user settings, and localization.
+         */
+        constructor(startIndex: number, length: number, tooltip?: string);
     }
 
     /**
@@ -5124,7 +5145,7 @@ export module '@theia/plugin' {
          * @param provider The provider that provides the terminal links.
          * @return Disposable that unregisters the provider.
          */
-        export function registerTerminalLinkProvider(provider: TerminalLinkProvider): void;
+        export function registerTerminalLinkProvider(provider: TerminalLinkProvider): Disposable;
 
         /**
          * Register a file decoration provider.
@@ -5565,6 +5586,29 @@ export module '@theia/plugin' {
          * @return Parent of `element`.
          */
         getParent?(element: T): ProviderResult<T>;
+
+        /**
+         * Called on hover to resolve the {@link TreeItem.tooltip TreeItem} property if it is undefined.
+         * Called on tree item click/open to resolve the {@link TreeItem.command TreeItem} property if it is undefined.
+         * Only properties that were undefined can be resolved in `resolveTreeItem`.
+         * Functionality may be expanded later to include being called to resolve other missing
+         * properties on selection and/or on open.
+         *
+         * Will only ever be called once per TreeItem.
+         *
+         * onDidChangeTreeData should not be triggered from within resolveTreeItem.
+         *
+         * *Note* that this function is called when tree items are already showing in the UI.
+         * Because of that, no property that changes the presentation (label, description, etc.)
+         * can be changed.
+         *
+         * @param item Undefined properties of `item` should be set then `item` should be returned.
+         * @param element The object associated with the TreeItem.
+         * @param token A cancellation token.
+         * @return The resolved tree item or a thenable that resolves to such. It is OK to return the given
+         * `item`. When no result is returned, the given `item` will be used.
+         */
+        resolveTreeItem?(item: TreeItem, element: T, token: CancellationToken): ProviderResult<TreeItem>;
     }
 
     export class TreeItem {
@@ -7601,6 +7645,176 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Inlay hint kinds.
+     *
+     * The kind of an inline hint defines its appearance, e.g the corresponding foreground and background colors are being
+     * used.
+     */
+    export enum InlayHintKind {
+        /**
+         * An inlay hint that for a type annotation.
+         */
+        Type = 1,
+        /**
+         * An inlay hint that is for a parameter.
+         */
+        Parameter = 2,
+    }
+
+    /**
+     * An inlay hint label part allows for interactive and composite labels of inlay hints.
+     */
+    export class InlayHintLabelPart {
+
+        /**
+         * The value of this label part.
+         */
+        value: string;
+
+        /**
+         * The tooltip text when you hover over this label part.
+         *
+         * *Note* that this property can be set late during
+         * {@link InlayHintsProvider.resolveInlayHint resolving} of inlay hints.
+         */
+        tooltip?: string | MarkdownString | undefined;
+
+        /**
+         * An optional {@link Location source code location} that represents this label
+         * part.
+         *
+         * The editor will use this location for the hover and for code navigation features: This
+         * part will become a clickable link that resolves to the definition of the symbol at the
+         * given location (not necessarily the location itself), it shows the hover that shows at
+         * the given location, and it shows a context menu with further code navigation commands.
+         *
+         * *Note* that this property can be set late during
+         * {@link InlayHintsProvider.resolveInlayHint resolving} of inlay hints.
+         */
+        location?: Location | undefined;
+
+        /**
+         * An optional command for this label part.
+         *
+         * The editor renders parts with commands as clickable links. The command is added to the context menu
+         * when a label part defines {@link InlayHintLabelPart.location location} and {@link InlayHintLabelPart.command command} .
+         *
+         * *Note* that this property can be set late during
+         * {@link InlayHintsProvider.resolveInlayHint resolving} of inlay hints.
+         */
+        command?: Command | undefined;
+
+        /**
+         * Creates a new inlay hint label part.
+         *
+         * @param value The value of the part.
+         */
+        constructor(value: string);
+    }
+
+    /**
+     * Inlay hint information.
+     */
+    export class InlayHint {
+
+        /**
+         * The position of this hint.
+         */
+        position: Position;
+
+        /**
+         * The label of this hint. A human readable string or an array of {@link InlayHintLabelPart label parts}.
+         *
+         * *Note* that neither the string nor the label part can be empty.
+         */
+        label: string | InlayHintLabelPart[];
+
+        /**
+         * The tooltip text when you hover over this item.
+         *
+         * *Note* that this property can be set late during
+         * {@link InlayHintsProvider.resolveInlayHint resolving} of inlay hints.
+         */
+        tooltip?: string | MarkdownString | undefined;
+
+        /**
+         * The kind of this hint. The inlay hint kind defines the appearance of this inlay hint.
+         */
+        kind?: InlayHintKind;
+
+        /**
+         * Optional {@link TextEdit text edits} that are performed when accepting this inlay hint. The default
+         * gesture for accepting an inlay hint is the double click.
+         *
+         * *Note* that edits are expected to change the document so that the inlay hint (or its nearest variant) is
+         * now part of the document and the inlay hint itself is now obsolete.
+         *
+         * *Note* that this property can be set late during
+         * {@link InlayHintsProvider.resolveInlayHint resolving} of inlay hints.
+         */
+        textEdits?: TextEdit[];
+
+        /**
+         * Render padding before the hint. Padding will use the editor's background color,
+         * not the background color of the hint itself. That means padding can be used to visually
+         * align/separate an inlay hint.
+         */
+        paddingLeft?: boolean;
+
+        /**
+         * Render padding after the hint. Padding will use the editor's background color,
+         * not the background color of the hint itself. That means padding can be used to visually
+         * align/separate an inlay hint.
+         */
+        paddingRight?: boolean;
+
+        /**
+         * Creates a new inlay hint.
+         *
+         * @param position The position of the hint.
+         * @param label The label of the hint.
+         * @param kind The {@link InlayHintKind kind} of the hint.
+         */
+        constructor(position: Position, label: string | InlayHintLabelPart[], kind?: InlayHintKind);
+    }
+
+    /**
+     * The inlay hints provider interface defines the contract between extensions and
+     * the inlay hints feature.
+     */
+    export interface InlayHintsProvider<T extends InlayHint = InlayHint> {
+
+        /**
+         * An optional event to signal that inlay hints from this provider have changed.
+         */
+        onDidChangeInlayHints?: Event<void>;
+
+        /**
+         * Provide inlay hints for the given range and document.
+         *
+         * *Note* that inlay hints that are not {@link Range.contains contained} by the given range are ignored.
+         *
+         * @param document The document in which the command was invoked.
+         * @param range The range for which inlay hints should be computed.
+         * @param token A cancellation token.
+         * @return An array of inlay hints or a thenable that resolves to such.
+         */
+        provideInlayHints(document: TextDocument, range: Range, token: CancellationToken): ProviderResult<T[]>;
+
+        /**
+         * Given an inlay hint fill in {@link InlayHint.tooltip tooltip}, {@link InlayHint.textEdits text edits},
+         * or complete label {@link InlayHintLabelPart parts}.
+         *
+         * *Note* that the editor will resolve an inlay hint at most once.
+         *
+         * @param hint An inlay hint.
+         * @param token A cancellation token.
+         * @return The resolved inlay hint or a thenable that resolves to such. It is OK to return the given `item`. When no result is returned, the given `item` will be used.
+         */
+        resolveInlayHint?(hint: T, token: CancellationToken): ProviderResult<T>;
+    }
+
+    /**
      * A line based folding range. To be valid, start and end line must a zero or larger and smaller than the number of lines in the document.
      * Invalid ranges will be ignored.
      */
@@ -9507,6 +9721,21 @@ export module '@theia/plugin' {
         export function registerEvaluatableExpressionProvider(selector: DocumentSelector, provider: EvaluatableExpressionProvider): Disposable;
 
         /**
+         * Register a provider that returns data for the debugger's 'inline value' feature.
+         * Whenever the generic debugger has stopped in a source file, providers registered for the language of the file
+         * are called to return textual data that will be shown in the editor at the end of lines.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider An inline values provider.
+         * @return A {@link Disposable} that unregisters this provider when being disposed.
+         */
+        export function registerInlineValuesProvider(selector: DocumentSelector, provider: InlineValuesProvider): Disposable;
+
+        /**
          * Register a workspace symbol provider.
          *
          * Multiple providers can be registered for a language. In that case providers are asked in
@@ -9663,6 +9892,19 @@ export module '@theia/plugin' {
         export function registerColorProvider(selector: DocumentSelector, provider: DocumentColorProvider): Disposable;
 
         /**
+         * Register a inlay hints provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider An inlay hints provider.
+         * @return A {@link Disposable} that unregisters this provider when being disposed.
+         */
+        export function registerInlayHintsProvider(selector: DocumentSelector, provider: InlayHintsProvider): Disposable;
+
+        /**
          * Register a folding range provider.
          *
          * Multiple providers can be registered for a language. In that case providers are asked in
@@ -9749,6 +9991,15 @@ export module '@theia/plugin' {
          * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerCallHierarchyProvider(selector: DocumentSelector, provider: CallHierarchyProvider): Disposable;
+
+        /**
+         * Register a type hierarchy provider.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A type hierarchy provider.
+         * @return A {@link Disposable} that unregisters this provider when being disposed.
+         */
+        export function registerTypeHierarchyProvider(selector: DocumentSelector, provider: TypeHierarchyProvider): Disposable;
 
         /**
          * Register a linked editing range provider.
@@ -9865,6 +10116,134 @@ export module '@theia/plugin' {
          * signaled by returning `undefined` or `null`.
          */
         provideEvaluatableExpression(document: TextDocument, position: Position, token: CancellationToken | undefined): ProviderResult<EvaluatableExpression>;
+    }
+
+    /**
+     * Provide inline value as text.
+     */
+    export class InlineValueText {
+        /**
+         * The document range for which the inline value applies.
+         */
+        readonly range: Range;
+        /**
+         * The text of the inline value.
+         */
+        readonly text: string;
+        /**
+         * Creates a new InlineValueText object.
+         *
+         * @param range The document line where to show the inline value.
+         * @param text The value to be shown for the line.
+         */
+        constructor(range: Range, text: string);
+    }
+
+    /**
+     * Provide inline value through a variable lookup.
+     * If only a range is specified, the variable name will be extracted from the underlying document.
+     * An optional variable name can be used to override the extracted name.
+     */
+    export class InlineValueVariableLookup {
+        /**
+         * The document range for which the inline value applies.
+         * The range is used to extract the variable name from the underlying document.
+         */
+        readonly range: Range;
+        /**
+         * If specified the name of the variable to look up.
+         */
+        readonly variableName?: string | undefined;
+        /**
+         * How to perform the lookup.
+         */
+        readonly caseSensitiveLookup: boolean;
+        /**
+         * Creates a new InlineValueVariableLookup object.
+         *
+         * @param range The document line where to show the inline value.
+         * @param variableName The name of the variable to look up.
+         * @param caseSensitiveLookup How to perform the lookup. If missing lookup is case sensitive.
+         */
+        constructor(range: Range, variableName?: string, caseSensitiveLookup?: boolean);
+    }
+
+    /**
+     * Provide an inline value through an expression evaluation.
+     * If only a range is specified, the expression will be extracted from the underlying document.
+     * An optional expression can be used to override the extracted expression.
+     */
+    export class InlineValueEvaluatableExpression {
+        /**
+         * The document range for which the inline value applies.
+         * The range is used to extract the evaluatable expression from the underlying document.
+         */
+        readonly range: Range;
+        /**
+         * If specified the expression overrides the extracted expression.
+         */
+        readonly expression?: string | undefined;
+        /**
+         * Creates a new InlineValueEvaluatableExpression object.
+         *
+         * @param range The range in the underlying document from which the evaluatable expression is extracted.
+         * @param expression If specified overrides the extracted expression.
+         */
+        constructor(range: Range, expression?: string);
+    }
+
+    /**
+     * Inline value information can be provided by different means:
+     * - directly as a text value (class InlineValueText).
+     * - as a name to use for a variable lookup (class InlineValueVariableLookup)
+     * - as an evaluatable expression (class InlineValueEvaluatableExpression)
+     * The InlineValue types combines all inline value types into one type.
+     */
+    export type InlineValue = InlineValueText | InlineValueVariableLookup | InlineValueEvaluatableExpression;
+
+    /**
+     * A value-object that contains contextual information when requesting inline values from a InlineValuesProvider.
+     */
+    export interface InlineValueContext {
+
+        /**
+         * The stack frame (as a DAP Id) where the execution has stopped.
+         */
+        readonly frameId: number;
+
+        /**
+         * The document range where execution has stopped.
+         * Typically the end position of the range denotes the line where the inline values are shown.
+         */
+        readonly stoppedLocation: Range;
+    }
+
+    /**
+     * The inline values provider interface defines the contract between extensions and the editor's debugger inline values feature.
+     * In this contract the provider returns inline value information for a given document range
+     * and the editor shows this information in the editor at the end of lines.
+     */
+    export interface InlineValuesProvider {
+
+        /**
+         * An optional event to signal that inline values have changed.
+         * @see {@link EventEmitter}
+         */
+        onDidChangeInlineValues?: Event<void> | undefined;
+
+        /**
+         * Provide "inline value" information for a given document and range.
+         * The editor calls this method whenever debugging stops in the given document.
+         * The returned inline values information is rendered in the editor at the end of lines.
+         *
+         * @param document The document for which the inline values information is needed.
+         * @param viewPort The visible document range for which inline values should be computed.
+         * @param context A bag containing contextual information like the current location.
+         * @param token A cancellation token.
+         * @return An array of InlineValueDescriptors or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
+        provideInlineValues(document: TextDocument, viewPort: Range, context: InlineValueContext, token: CancellationToken): ProviderResult<InlineValue[]>;
     }
 
     /**
@@ -10308,6 +10687,13 @@ export module '@theia/plugin' {
          * "parent" debug session.
          */
         parentSession?: DebugSession;
+
+        /**
+         * Controls whether lifecycle requests like 'restart' are sent to the newly created session or its parent session.
+         * By default (if the property is false or missing), lifecycle requests are sent to the new session.
+         * This property is ignored if the session has no parent session.
+         */
+        lifecycleManagedByParent?: boolean;
 
         /**
          * Controls whether this session should have a separate debug console or share it
@@ -11153,6 +11539,16 @@ export module '@theia/plugin' {
         clear?: boolean;
     }
 
+    /**
+     * Run options for a task.
+     */
+    export interface RunOptions {
+        /**
+         * Controls whether task variables are re-evaluated on rerun.
+         */
+        reevaluateOnRerun?: boolean;
+    }
+
     export class Task {
 
         /**
@@ -11239,6 +11635,11 @@ export module '@theia/plugin' {
          * array.
          */
         problemMatchers?: string[];
+
+        /**
+         * Run options for the task
+         */
+        runOptions: RunOptions;
     }
 
     /**
@@ -11932,6 +12333,104 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Represents an item of a type hierarchy, like a class or an interface.
+     */
+    export class TypeHierarchyItem {
+        /**
+         * The name of this item.
+         */
+        name: string;
+
+        /**
+         * The kind of this item.
+         */
+        kind: SymbolKind;
+
+        /**
+         * Tags for this item.
+         */
+        tags?: ReadonlyArray<SymbolTag>;
+
+        /**
+         * More detail for this item, e.g. the signature of a function.
+         */
+        detail?: string;
+
+        /**
+         * The resource identifier of this item.
+         */
+        uri: Uri;
+
+        /**
+         * The range enclosing this symbol not including leading/trailing whitespace
+         * but everything else, e.g. comments and code.
+         */
+        range: Range;
+
+        /**
+         * The range that should be selected and revealed when this symbol is being
+         * picked, e.g. the name of a class. Must be contained by the {@link TypeHierarchyItem.range range}-property.
+         */
+        selectionRange: Range;
+
+        /**
+         * Creates a new type hierarchy item.
+         *
+         * @param kind The kind of the item.
+         * @param name The name of the item.
+         * @param detail The details of the item.
+         * @param uri The Uri of the item.
+         * @param range The whole range of the item.
+         * @param selectionRange The selection range of the item.
+         */
+        constructor(kind: SymbolKind, name: string, detail: string, uri: Uri, range: Range, selectionRange: Range);
+    }
+
+    /**
+     * The type hierarchy provider interface describes the contract between extensions
+     * and the type hierarchy feature.
+     */
+    export interface TypeHierarchyProvider {
+
+        /**
+         * Bootstraps type hierarchy by returning the item that is denoted by the given document
+         * and position. This item will be used as entry into the type graph. Providers should
+         * return `undefined` or `null` when there is no item at the given location.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @param token A cancellation token.
+         * @returns One or multiple type hierarchy items or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined`, `null`, or an empty array.
+         */
+        prepareTypeHierarchy(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<TypeHierarchyItem | TypeHierarchyItem[]>;
+
+        /**
+         * Provide all supertypes for an item, e.g all types from which a type is derived/inherited. In graph terms this describes directed
+         * and annotated edges inside the type graph, e.g the given item is the starting node and the result is the nodes
+         * that can be reached.
+         *
+         * @param item The hierarchy item for which super types should be computed.
+         * @param token A cancellation token.
+         * @returns A set of direct supertypes or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
+        provideTypeHierarchySupertypes(item: TypeHierarchyItem, token: CancellationToken): ProviderResult<TypeHierarchyItem[]>;
+
+        /**
+         * Provide all subtypes for an item, e.g all types which are derived/inherited from the given item. In
+         * graph terms this describes directed and annotated edges inside the type graph, e.g the given item is the starting
+         * node and the result is the nodes that can be reached.
+         *
+         * @param item The hierarchy item for which subtypes should be computed.
+         * @param token A cancellation token.
+         * @returns A set of direct subtypes or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
+        provideTypeHierarchySubtypes(item: TypeHierarchyItem, token: CancellationToken): ProviderResult<TypeHierarchyItem[]>;
+    }
+
+    /**
      * Represents a list of ranges that can be edited together along with a word pattern to describe valid range contents.
      */
     export class LinkedEditingRanges {
@@ -12234,6 +12733,589 @@ export module '@theia/plugin' {
          */
         export function registerAuthenticationProvider(id: string, label: string, provider: AuthenticationProvider, options?: AuthenticationProviderOptions): Disposable;
     }
+}
+
+/**
+ * Namespace for testing functionality. Tests are published by registering
+ * {@link TestController} instances, then adding {@link TestItem TestItems}.
+ * Controllers may also describe how to run tests by creating one or more
+ * {@link TestRunProfile} instances.
+ */
+export namespace tests {
+    /**
+     * Creates a new test controller.
+     *
+     * @param id Identifier for the controller, must be globally unique.
+     * @param label A human-readable label for the controller.
+     * @returns An instance of the {@link TestController}.
+     * @stubbed
+     */
+    export function createTestController(id: string, label: string): TestController;
+}
+
+/**
+ * The kind of executions that {@link TestRunProfile TestRunProfiles} control.
+ */
+export enum TestRunProfileKind {
+    Run = 1,
+    Debug = 2,
+    Coverage = 3,
+}
+
+/**
+ * Tags can be associated with {@link TestItem TestItems} and
+ * {@link TestRunProfile TestRunProfiles}. A profile with a tag can only
+ * execute tests that include that tag in their {@link TestItem.tags} array.
+ */
+export class TestTag {
+    /**
+     * ID of the test tag. `TestTag` instances with the same ID are considered
+     * to be identical.
+     */
+    readonly id: string;
+
+    /**
+     * Creates a new TestTag instance.
+     * @param id ID of the test tag.
+     */
+    constructor(id: string);
+}
+
+/**
+ * A TestRunProfile describes one way to execute tests in a {@link TestController}.
+ */
+export interface TestRunProfile {
+    /**
+     * Label shown to the user in the UI.
+     *
+     * Note that the label has some significance if the user requests that
+     * tests be re-run in a certain way. For example, if tests were run
+     * normally and the user requests to re-run them in debug mode, the editor
+     * will attempt use a configuration with the same label of the `Debug`
+     * kind. If there is no such configuration, the default will be used.
+     * @stubbed
+     */
+    label: string;
+
+    /**
+     * Configures what kind of execution this profile controls. If there
+     * are no profiles for a kind, it will not be available in the UI.
+     * @stubbed
+     */
+    readonly kind: TestRunProfileKind;
+
+    /**
+     * Controls whether this profile is the default action that will
+     * be taken when its kind is actioned. For example, if the user clicks
+     * the generic "run all" button, then the default profile for
+     * {@link TestRunProfileKind.Run} will be executed, although the
+     * user can configure this.
+     * @stubbed
+     */
+    isDefault: boolean;
+
+    /**
+     * Associated tag for the profile. If this is set, only {@link TestItem}
+     * instances with the same tag will be eligible to execute in this profile.
+     * @stubbed
+     */
+    tag: TestTag | undefined;
+
+    /**
+     * If this method is present, a configuration gear will be present in the
+     * UI, and this method will be invoked when it's clicked. When called,
+     * you can take other editor actions, such as showing a quick pick or
+     * opening a configuration file.
+     * @stubbed
+     */
+    configureHandler: (() => void) | undefined;
+
+    /**
+     * Handler called to start a test run. When invoked, the function should call
+     * {@link TestController.createTestRun} at least once, and all test runs
+     * associated with the request should be created before the function returns
+     * or the returned promise is resolved.
+     *
+     * @param request Request information for the test run.
+     * @param cancellationToken Token that signals the used asked to abort the
+     * test run. If cancellation is requested on this token, all {@link TestRun}
+     * instances associated with the request will be
+     * automatically cancelled as well.
+     * @stubbed
+     */
+    runHandler: (request: TestRunRequest, token: CancellationToken) => Thenable<void> | void;
+
+    /**
+     * Deletes the run profile.
+     * @stubbed
+     */
+    dispose(): void;
+}
+
+/**
+ * Entry point to discover and execute tests. It contains {@link TestController.items} which
+ * are used to populate the editor UI, and is associated with
+ * {@link TestController.createRunProfile run profiles} to allow
+ * for tests to be executed.
+ */
+export interface TestController {
+    /**
+     * The id of the controller passed in {@link vscode.tests.createTestController}.
+     * This must be globally unique.
+     * @stubbed
+     */
+    readonly id: string;
+
+    /**
+     * Human-readable label for the test controller.
+     * @stubbed
+     */
+    label: string;
+
+    /**
+     * A collection of "top-level" {@link TestItem} instances, which can in
+     * turn have their own {@link TestItem.children children} to form the
+     * "test tree."
+     *
+     * The extension controls when to add tests. For example, extensions should
+     * add tests for a file when {@link vscode.workspace.onDidOpenTextDocument}
+     * fires in order for decorations for tests within a file to be visible.
+     *
+     * However, the editor may sometimes explicitly request children using the
+     * {@link resolveHandler} See the documentation on that method for more details.
+     * @stubbed
+     */
+    readonly items: TestItemCollection;
+
+    /**
+     * Creates a profile used for running tests. Extensions must create
+     * at least one profile in order for tests to be run.
+     * @param label A human-readable label for this profile.
+     * @param kind Configures what kind of execution this profile manages.
+     * @param runHandler Function called to start a test run.
+     * @param isDefault Whether this is the default action for its kind.
+     * @param tag Profile test tag.
+     * @returns An instance of a {@link TestRunProfile}, which is automatically
+     * associated with this controller.
+     * @stubbed
+     */
+    createRunProfile(label: string, kind: TestRunProfileKind, runHandler: (request: TestRunRequest, token: CancellationToken) => Thenable<void> | void, isDefault?: boolean, tag?: TestTag): TestRunProfile;
+
+    /**
+     * A function provided by the extension that the editor may call to request
+     * children of a test item, if the {@link TestItem.canResolveChildren} is
+     * `true`. When called, the item should discover children and call
+     * {@link vscode.tests.createTestItem} as children are discovered.
+     *
+     * Generally the extension manages the lifecycle of test items, but under
+     * certain conditions the editor may request the children of a specific
+     * item to be loaded. For example, if the user requests to re-run tests
+     * after reloading the editor, the editor may need to call this method
+     * to resolve the previously-run tests.
+     *
+     * The item in the explorer will automatically be marked as "busy" until
+     * the function returns or the returned thenable resolves.
+     *
+     * @param item An unresolved test item for which children are being
+     * requested, or `undefined` to resolve the controller's initial {@link TestController.items items}.
+     * @stubbed
+     */
+    resolveHandler?: (item: TestItem | undefined) => Thenable<void> | void;
+
+    /**
+     * If this method is present, a refresh button will be present in the
+     * UI, and this method will be invoked when it's clicked. When called,
+     * the extension should scan the workspace for any new, changed, or
+     * removed tests.
+     *
+     * It's recommended that extensions try to update tests in realtime, using
+     * a {@link FileSystemWatcher} for example, and use this method as a fallback.
+     *
+     * @returns A thenable that resolves when tests have been refreshed.
+     * @stubbed
+     */
+    refreshHandler: ((token: CancellationToken) => Thenable<void> | void) | undefined;
+
+    /**
+     * Creates a {@link TestRun}. This should be called by the
+     * {@link TestRunProfile} when a request is made to execute tests, and may
+     * also be called if a test run is detected externally. Once created, tests
+     * that are included in the request will be moved into the queued state.
+     *
+     * All runs created using the same `request` instance will be grouped
+     * together. This is useful if, for example, a single suite of tests is
+     * run on multiple platforms.
+     *
+     * @param request Test run request. Only tests inside the `include` may be
+     * modified, and tests in its `exclude` are ignored.
+     * @param name The human-readable name of the run. This can be used to
+     * disambiguate multiple sets of results in a test run. It is useful if
+     * tests are run across multiple platforms, for example.
+     * @param persist Whether the results created by the run should be
+     * persisted in the editor. This may be false if the results are coming from
+     * a file already saved externally, such as a coverage information file.
+     * @returns An instance of the {@link TestRun}. It will be considered "running"
+     * from the moment this method is invoked until {@link TestRun.end} is called.
+     * @stubbed
+     */
+    createTestRun(request: TestRunRequest, name?: string, persist?: boolean): TestRun;
+
+    /**
+     * Creates a new managed {@link TestItem} instance. It can be added into
+     * the {@link TestItem.children} of an existing item, or into the
+     * {@link TestController.items}.
+     *
+     * @param id Identifier for the TestItem. The test item's ID must be unique
+     * in the {@link TestItemCollection} it's added to.
+     * @param label Human-readable label of the test item.
+     * @param uri URI this TestItem is associated with. May be a file or directory.
+     * @stubbed
+     */
+    createTestItem(id: string, label: string, uri?: Uri): TestItem;
+
+    /**
+     * Unregisters the test controller, disposing of its associated tests
+     * and unpersisted results.
+     * @stubbed
+     */
+    dispose(): void;
+}
+
+/**
+ * A TestRunRequest is a precursor to a {@link TestRun}, which in turn is
+ * created by passing a request to {@link tests.runTests}. The TestRunRequest
+ * contains information about which tests should be run, which should not be
+ * run, and how they are run (via the {@link TestRunRequest.profile profile}).
+ *
+ * In general, TestRunRequests are created by the editor and pass to
+ * {@link TestRunProfile.runHandler}, however you can also create test
+ * requests and runs outside of the `runHandler`.
+ */
+export class TestRunRequest {
+    /**
+     * A filter for specific tests to run. If given, the extension should run
+     * all of the included tests and all their children, excluding any tests
+     * that appear in {@link TestRunRequest.exclude}. If this property is
+     * undefined, then the extension should simply run all tests.
+     *
+     * The process of running tests should resolve the children of any test
+     * items who have not yet been resolved.
+     */
+    readonly include: readonly TestItem[] | undefined;
+
+    /**
+     * An array of tests the user has marked as excluded from the test included
+     * in this run; exclusions should apply after inclusions.
+     *
+     * May be omitted if no exclusions were requested. Test controllers should
+     * not run excluded tests or any children of excluded tests.
+     */
+    readonly exclude: readonly TestItem[] | undefined;
+
+    /**
+     * The profile used for this request. This will always be defined
+     * for requests issued from the editor UI, though extensions may
+     * programmatically create requests not associated with any profile.
+     */
+    readonly profile: TestRunProfile | undefined;
+
+    /**
+     * @param include Array of specific tests to run, or undefined to run all tests
+     * @param exclude An array of tests to exclude from the run.
+     * @param profile The run profile used for this request.
+     */
+    constructor(include?: readonly TestItem[], exclude?: readonly TestItem[], profile?: TestRunProfile);
+}
+
+/**
+ * Options given to {@link TestController.runTests}
+ */
+export interface TestRun {
+    /**
+     * The human-readable name of the run. This can be used to
+     * disambiguate multiple sets of results in a test run. It is useful if
+     * tests are run across multiple platforms, for example.
+     * @stubbed
+     */
+    readonly name: string | undefined;
+
+    /**
+     * A cancellation token which will be triggered when the test run is
+     * canceled from the UI.
+     * @stubbed
+     */
+    readonly token: CancellationToken;
+
+    /**
+     * Whether the test run will be persisted across reloads by the editor.
+     * @stubbed
+     */
+    readonly isPersisted: boolean;
+
+    /**
+     * Indicates a test is queued for later execution.
+     * @param test Test item to update.
+     * @stubbed
+     */
+    enqueued(test: TestItem): void;
+
+    /**
+     * Indicates a test has started running.
+     * @param test Test item to update.
+     * @stubbed
+     */
+    started(test: TestItem): void;
+
+    /**
+     * Indicates a test has been skipped.
+     * @param test Test item to update.
+     * @stubbed
+     */
+    skipped(test: TestItem): void;
+
+    /**
+     * Indicates a test has failed. You should pass one or more
+     * {@link TestMessage TestMessages} to describe the failure.
+     * @param test Test item to update.
+     * @param message Messages associated with the test failure.
+     * @param duration How long the test took to execute, in milliseconds.
+     * @stubbed
+     */
+    failed(test: TestItem, message: TestMessage | readonly TestMessage[], duration?: number): void;
+
+    /**
+     * Indicates a test has errored. You should pass one or more
+     * {@link TestMessage TestMessages} to describe the failure. This differs
+     * from the "failed" state in that it indicates a test that couldn't be
+     * executed at all, from a compilation error for example.
+     * @param test Test item to update.
+     * @param message Messages associated with the test failure.
+     * @param duration How long the test took to execute, in milliseconds.
+     * @stubbed
+     */
+    errored(test: TestItem, message: TestMessage | readonly TestMessage[], duration?: number): void;
+
+    /**
+     * Indicates a test has passed.
+     * @param test Test item to update.
+     * @param duration How long the test took to execute, in milliseconds.
+     * @stubbed
+     */
+    passed(test: TestItem, duration?: number): void;
+
+    /**
+     * Appends raw output from the test runner. On the user's request, the
+     * output will be displayed in a terminal. ANSI escape sequences,
+     * such as colors and text styles, are supported.
+     *
+     * @param output Output text to append.
+     * @param location Indicate that the output was logged at the given
+     * location.
+     * @param test Test item to associate the output with.
+     * @stubbed
+     */
+    appendOutput(output: string, location?: Location, test?: TestItem): void;
+
+    /**
+     * Signals that the end of the test run. Any tests included in the run whose
+     * states have not been updated will have their state reset.
+     * @stubbed
+     */
+    end(): void;
+}
+
+/**
+ * Collection of test items, found in {@link TestItem.children} and
+ * {@link TestController.items}.
+ */
+export interface TestItemCollection extends Iterable<[id: string, testItem: TestItem]> {
+    /**
+     * Gets the number of items in the collection.
+     * @stubbed
+     */
+    readonly size: number;
+
+    /**
+     * Replaces the items stored by the collection.
+     * @param items Items to store.
+     * @stubbed
+     */
+    replace(items: readonly TestItem[]): void;
+
+    /**
+     * Iterate over each entry in this collection.
+     *
+     * @param callback Function to execute for each entry.
+     * @param thisArg The `this` context used when invoking the handler function.
+     * @stubbed
+     */
+    forEach(callback: (item: TestItem, collection: TestItemCollection) => unknown, thisArg?: any): void;
+
+    /**
+     * Adds the test item to the children. If an item with the same ID already
+     * exists, it'll be replaced.
+     * @param item Item to add.
+     * @stubbed
+     */
+    add(item: TestItem): void;
+
+    /**
+     * Removes a single test item from the collection.
+     * @param itemId Item ID to delete.
+     * @stubbed
+     */
+    delete(itemId: string): void;
+
+    /**
+     * Efficiently gets a test item by ID, if it exists, in the children.
+     * @param itemId Item ID to get.
+     * @returns The found item or undefined if it does not exist.
+     * @stubbed
+     */
+    get(itemId: string): TestItem | undefined;
+}
+
+/**
+ * An item shown in the "test explorer" view.
+ *
+ * A `TestItem` can represent either a test suite or a test itself, since
+ * they both have similar capabilities.
+ */
+export interface TestItem {
+    /**
+     * Identifier for the `TestItem`. This is used to correlate
+     * test results and tests in the document with those in the workspace
+     * (test explorer). This cannot change for the lifetime of the `TestItem`,
+     * and must be unique among its parent's direct children.
+     * @stubbed
+     */
+    readonly id: string;
+
+    /**
+     * URI this `TestItem` is associated with. May be a file or directory.
+     * @stubbed
+     */
+    readonly uri: Uri | undefined;
+
+    /**
+     * The children of this test item. For a test suite, this may contain the
+     * individual test cases or nested suites.
+     * @stubbed
+     */
+    readonly children: TestItemCollection;
+
+    /**
+     * The parent of this item. It's set automatically, and is undefined
+     * top-level items in the {@link TestController.items} and for items that
+     * aren't yet included in another item's {@link TestItem.children children}.
+     * @stubbed
+     */
+    readonly parent: TestItem | undefined;
+
+    /**
+     * Tags associated with this test item. May be used in combination with
+     * {@link TestRunProfile.tags}, or simply as an organizational feature.
+     * @stubbed
+     */
+    tags: readonly TestTag[];
+
+    /**
+     * Indicates whether this test item may have children discovered by resolving.
+     *
+     * If true, this item is shown as expandable in the Test Explorer view and
+     * expanding the item will cause {@link TestController.resolveHandler}
+     * to be invoked with the item.
+     *
+     * Default to `false`.
+     * @stubbed
+     */
+    canResolveChildren: boolean;
+
+    /**
+     * Controls whether the item is shown as "busy" in the Test Explorer view.
+     * This is useful for showing status while discovering children.
+     *
+     * Defaults to `false`.
+     * @stubbed
+     */
+    busy: boolean;
+
+    /**
+     * Display name describing the test case.
+     * @stubbed
+     */
+    label: string;
+
+    /**
+     * Optional description that appears next to the label.
+     * @stubbed
+     */
+    description?: string;
+
+    /**
+     * A string that should be used when comparing this item
+     * with other items. When `falsy` the {@link TestItem.label label}
+     * is used.
+     * @stubbed
+     */
+    sortText?: string | undefined;
+
+    /**
+     * Location of the test item in its {@link TestItem.uri uri}.
+     *
+     * This is only meaningful if the `uri` points to a file.
+     * @stubbed
+     */
+    range: Range | undefined;
+
+    /**
+     * Optional error encountered while loading the test.
+     *
+     * Note that this is not a test result and should only be used to represent errors in
+     * test discovery, such as syntax errors.
+     * @stubbed
+     */
+    error: string | MarkdownString | undefined;
+}
+
+/**
+ * Message associated with the test state. Can be linked to a specific
+ * source range -- useful for assertion failures, for example.
+ */
+export class TestMessage {
+    /**
+     * Human-readable message text to display.
+     */
+    message: string | MarkdownString;
+
+    /**
+     * Expected test output. If given with {@link TestMessage.actualOutput actualOutput }, a diff view will be shown.
+     */
+    expectedOutput?: string;
+
+    /**
+     * Actual test output. If given with {@link TestMessage.expectedOutput expectedOutput }, a diff view will be shown.
+     */
+    actualOutput?: string;
+
+    /**
+     * Associated file location.
+     */
+    location?: Location;
+
+    /**
+     * Creates a new TestMessage that will present as a diff in the editor.
+     * @param message Message to display to the user.
+     * @param expected Expected output.
+     * @param actual Actual output.
+     */
+    static diff(message: string | MarkdownString, expected: string, actual: string): TestMessage;
+
+    /**
+     * Creates a new TestMessage instance.
+     * @param message The message to show to the user.
+     */
+    constructor(message: string | MarkdownString);
 }
 
 /**

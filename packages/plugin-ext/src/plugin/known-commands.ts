@@ -17,11 +17,12 @@
 import { Range as R, Position as P, Location as L } from '@theia/core/shared/vscode-languageserver-protocol';
 import * as theia from '@theia/plugin';
 import { cloneAndChange } from '../common/objects';
-import { Position, Range, Location, CallHierarchyItem, URI, TextDocumentShowOptions } from './types-impl';
+import { Position, Range, Location, CallHierarchyItem, TypeHierarchyItem, URI, TextDocumentShowOptions } from './types-impl';
 import {
     fromPosition, fromRange, fromLocation,
     isModelLocation, toLocation,
     isModelCallHierarchyItem, fromCallHierarchyItem, toCallHierarchyItem,
+    isModelTypeHierarchyItem, fromTypeHierarchyItem, toTypeHierarchyItem,
     isModelCallHierarchyIncomingCall, toCallHierarchyIncomingCall,
     isModelCallHierarchyOutgoingCall, toCallHierarchyOutgoingCall, fromTextDocumentShowOptions
 } from './type-converters';
@@ -294,6 +295,10 @@ export namespace KnownCommands {
     mappings['vscode.prepareCallHierarchy'] = ['vscode.prepareCallHierarchy', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
     mappings['vscode.provideIncomingCalls'] = ['vscode.provideIncomingCalls', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
     mappings['vscode.provideOutgoingCalls'] = ['vscode.provideOutgoingCalls', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.prepareTypeHierarchy'] = ['vscode.prepareTypeHierarchy', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.provideSupertypes'] = ['vscode.provideSupertypes', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.provideSubtypes'] = ['vscode.provideSubtypes', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+
     mappings['vscode.open'] = ['vscode.open', CONVERT_VSCODE_TO_MONACO];
     mappings['vscode.diff'] = ['vscode.diff', CONVERT_VSCODE_TO_MONACO];
 
@@ -351,6 +356,9 @@ export namespace KnownCommands {
             if (CallHierarchyItem.isCallHierarchyItem(value)) {
                 return fromCallHierarchyItem(value);
             }
+            if (TypeHierarchyItem.isTypeHierarchyItem(value)) {
+                return fromTypeHierarchyItem(value);
+            }
             if (TextDocumentShowOptions.isTextDocumentShowOptions(value)) {
                 return fromTextDocumentShowOptions(value);
             }
@@ -375,6 +383,9 @@ export namespace KnownCommands {
         return cloneAndChange(args, function (value) {
             if (isModelCallHierarchyItem(value)) {
                 return toCallHierarchyItem(value);
+            }
+            if (isModelTypeHierarchyItem(value)) {
+                return toTypeHierarchyItem(value);
             }
             if (isModelCallHierarchyIncomingCall(value)) {
                 return toCallHierarchyIncomingCall(value);

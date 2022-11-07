@@ -25,6 +25,8 @@ import {
     WorkspaceEditDto,
     PluginInfo,
     Plugin,
+    InlayHintsDto,
+    InlayHintDto,
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import * as theia from '@theia/plugin';
@@ -62,13 +64,17 @@ import {
     CallHierarchyIncomingCall,
     CallHierarchyOutgoingCall,
     LinkedEditingRanges,
-    EvaluatableExpression
+    EvaluatableExpression,
+    InlineValue,
+    InlineValueContext,
+    TypeHierarchyItem
 } from '../common/plugin-api-rpc-model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
 import { SignatureHelpAdapter } from './languages/signature';
 import { HoverAdapter } from './languages/hover';
 import { EvaluatableExpressionAdapter } from './languages/evaluatable-expression';
+import { InlineValuesAdapter } from './languages/inline-values';
 import { DocumentHighlightAdapter } from './languages/document-highlight';
 import { DocumentFormattingAdapter } from './languages/document-formatting';
 import { RangeFormattingAdapter } from './languages/range-formatting';
@@ -91,6 +97,7 @@ import { Event } from '@theia/core/lib/common/event';
 import { CommandRegistryImpl } from './command-registry';
 import { DeclarationAdapter } from './languages/declaration';
 import { CallHierarchyAdapter } from './languages/call-hierarchy';
+import { TypeHierarchyAdapter } from './languages/type-hierarchy';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { DocumentSemanticTokensAdapter, DocumentRangeSemanticTokensAdapter } from './languages/semantic-highlighting';
 import { isReadonlyArray } from '../common/arrays';
@@ -98,11 +105,13 @@ import { DisposableCollection, disposableTimeout, Disposable as TheiaDisposable 
 import { Severity } from '@theia/core/lib/common/severity';
 import { LinkedEditingRangeAdapter } from './languages/linked-editing-range';
 import { serializeEnterRules, serializeIndentation, serializeRegExp } from './languages-utils';
+import { InlayHintsAdapter } from './languages/inlay-hints';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
     HoverAdapter |
     EvaluatableExpressionAdapter |
+    InlineValuesAdapter |
     DocumentHighlightAdapter |
     DocumentFormattingAdapter |
     RangeFormattingAdapter |
@@ -120,11 +129,13 @@ type Adapter = CompletionAdapter |
     FoldingProviderAdapter |
     SelectionRangeProviderAdapter |
     ColorProviderAdapter |
+    InlayHintsAdapter |
     RenameAdapter |
     CallHierarchyAdapter |
     DocumentRangeSemanticTokensAdapter |
     DocumentSemanticTokensAdapter |
-    LinkedEditingRangeAdapter;
+    LinkedEditingRangeAdapter |
+    TypeHierarchyAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -365,6 +376,25 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
     // ### EvaluatableExpression Provider end
 
+    // ### InlineValues Provider begin
+    registerInlineValuesProvider(selector: theia.DocumentSelector, provider: theia.InlineValuesProvider, pluginInfo: PluginInfo): theia.Disposable {
+        const eventHandle = typeof provider.onDidChangeInlineValues === 'function' ? this.nextCallId() : undefined;
+        const callId = this.addNewAdapter(new InlineValuesAdapter(provider, this.documents));
+        this.proxy.$registerInlineValuesProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
+        let result = this.createDisposable(callId);
+
+        if (eventHandle !== undefined) {
+            const subscription = provider.onDidChangeInlineValues!(_ => this.proxy.$emitInlineValuesEvent(eventHandle));
+            result = Disposable.from(result, subscription);
+        }
+        return result;
+    }
+
+    $provideInlineValues(handle: number, resource: UriComponents, range: Range, context: InlineValueContext, token: theia.CancellationToken): Promise<InlineValue[] | undefined> {
+        return this.withAdapter(handle, InlineValuesAdapter, adapter => adapter.provideInlineValues(URI.revive(resource), range, context, token), undefined);
+    }
+    // ### InlineValue Provider end
+
     // ### Document Highlight Provider begin
     registerDocumentHighlightProvider(selector: theia.DocumentSelector, provider: theia.DocumentHighlightProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new DocumentHighlightAdapter(provider, this.documents));
@@ -579,6 +609,35 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
     // ### Color Provider end
 
+    // ### InlayHints Provider begin
+    registerInlayHintsProvider(selector: theia.DocumentSelector, provider: theia.InlayHintsProvider, pluginInfo: PluginInfo): theia.Disposable {
+        const eventHandle = typeof provider.onDidChangeInlayHints === 'function' ? this.nextCallId() : undefined;
+        const callId = this.addNewAdapter(new InlayHintsAdapter(provider, this.documents, this.commands));
+        this.proxy.$registerInlayHintsProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
+
+        let result = this.createDisposable(callId);
+
+        if (eventHandle !== undefined) {
+            const subscription = provider.onDidChangeInlayHints!(() => this.proxy.$emitInlayHintsEvent(eventHandle));
+            result = Disposable.from(result, subscription);
+        }
+
+        return result;
+    }
+
+    $provideInlayHints(handle: number, resource: UriComponents, range: Range, token: theia.CancellationToken): Promise<InlayHintsDto | undefined> {
+        return this.withAdapter(handle, InlayHintsAdapter, adapter => adapter.provideInlayHints(URI.revive(resource), range, token), undefined);
+    }
+
+    $resolveInlayHint(handle: number, id: ChainedCacheId, token: theia.CancellationToken): Promise<InlayHintDto | undefined> {
+        return this.withAdapter(handle, InlayHintsAdapter, adapter => adapter.resolveInlayHint(id, token), undefined);
+    }
+
+    $releaseInlayHints(handle: number, id: number): void {
+        this.withAdapter(handle, InlayHintsAdapter, async adapter => adapter.releaseHints(id), undefined);
+    }
+    // ### InlayHints Provider end
+
     // ### Folding Range Provider begin
     registerFoldingRangeProvider(selector: theia.DocumentSelector, provider: theia.FoldingRangeProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new FoldingProviderAdapter(provider, this.documents));
@@ -655,6 +714,53 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.releaseSession(session), false);
     }
     // ### Call Hierarchy Provider end
+
+    // ### Type hierarchy Provider begin
+    registerTypeHierarchyProvider(selector: theia.DocumentSelector, provider: theia.TypeHierarchyProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new TypeHierarchyAdapter(provider, this.documents));
+        this.proxy.$registerTypeHierarchyProvider(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+
+    $prepareTypeHierarchy(handle: number, resource: UriComponents, location: Position, token: theia.CancellationToken
+    ): Promise<TypeHierarchyItem[] | undefined> {
+        return this.withAdapter(
+            handle,
+            TypeHierarchyAdapter,
+            adapter => adapter.prepareSession(URI.revive(resource), location, token),
+            undefined
+        );
+    }
+
+    $provideSuperTypes(handle: number, sessionId: string, itemId: string, token: theia.CancellationToken):
+        Promise<TypeHierarchyItem[] | undefined> {
+        return this.withAdapter(
+            handle,
+            TypeHierarchyAdapter,
+            adapter => adapter.provideSupertypes(sessionId, itemId, token),
+            undefined
+        );
+    }
+
+    $provideSubTypes(handle: number, sessionId: string, itemId: string, token: theia.CancellationToken):
+        Promise<TypeHierarchyItem[] | undefined> {
+        return this.withAdapter(
+            handle,
+            TypeHierarchyAdapter,
+            adapter => adapter.provideSubtypes(sessionId, itemId, token),
+            undefined
+        );
+    }
+
+    $releaseTypeHierarchy(handle: number, session?: string): Promise<boolean> {
+        return this.withAdapter(
+            handle,
+            TypeHierarchyAdapter,
+            adapter => adapter.releaseSession(session),
+            false);
+    }
+
+    // ### Type hierarchy Provider end
 
     // ### Linked Editing Range Provider begin
     registerLinkedEditingRangeProvider(selector: theia.DocumentSelector, provider: theia.LinkedEditingRangeProvider): theia.Disposable {

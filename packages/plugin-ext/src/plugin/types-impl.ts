@@ -1156,6 +1156,75 @@ export class EvaluatableExpression {
     }
 }
 
+@es5ClassCompat
+export class InlineValueContext implements theia.InlineValueContext {
+    public frameId: number;
+    public stoppedLocation: Range;
+
+    constructor(frameId: number, stoppedLocation: Range) {
+        if (!frameId) {
+            illegalArgument('frameId must be defined');
+        }
+        if (!stoppedLocation) {
+            illegalArgument('stoppedLocation must be defined');
+        }
+        this.frameId = frameId;
+        this.stoppedLocation = stoppedLocation;
+    }
+}
+
+@es5ClassCompat
+export class InlineValueText implements theia.InlineValueText {
+    public type = 'text';
+    public range: Range;
+    public text: string;
+
+    constructor(range: Range, text: string) {
+        if (!range) {
+            illegalArgument('range must be defined');
+        }
+        if (!text) {
+            illegalArgument('text must be defined');
+        }
+        this.range = range;
+        this.text = text;
+    }
+}
+
+@es5ClassCompat
+export class InlineValueVariableLookup implements theia.InlineValueVariableLookup {
+    public type = 'variable';
+    public range: Range;
+    public variableName?: string;
+    public caseSensitiveLookup: boolean;
+
+    constructor(range: Range, variableName?: string, caseSensitiveLookup?: boolean) {
+        if (!range) {
+            illegalArgument('range must be defined');
+        }
+        this.range = range;
+        this.caseSensitiveLookup = caseSensitiveLookup || true;
+        this.variableName = variableName;
+    }
+}
+
+@es5ClassCompat
+export class InlineValueEvaluatableExpression implements theia.InlineValueEvaluatableExpression {
+    public type = 'expression';
+    public range: Range;
+    public expression?: string;
+
+    constructor(range: Range, expression?: string) {
+        if (!range) {
+            illegalArgument('range must be defined');
+        }
+        this.range = range;
+        this.expression = expression;
+    }
+}
+
+export type InlineValue = InlineValueText | InlineValueVariableLookup | InlineValueEvaluatableExpression;
+
 export enum DocumentHighlightKind {
     Text = 0,
     Read = 1,
@@ -1581,6 +1650,29 @@ export class QuickInputButtons {
 }
 
 @es5ClassCompat
+export class TerminalLink {
+
+    static validate(candidate: TerminalLink): void {
+        if (typeof candidate.startIndex !== 'number') {
+            throw new Error('Should provide a startIndex inside candidate field');
+        }
+        if (typeof candidate.length !== 'number') {
+            throw new Error('Should provide a length inside candidate field');
+        }
+    }
+
+    startIndex: number;
+    length: number;
+    tooltip?: string;
+
+    constructor(startIndex: number, length: number, tooltip?: string) {
+        this.startIndex = startIndex;
+        this.length = length;
+        this.tooltip = tooltip;
+    }
+}
+
+@es5ClassCompat
 export class FileDecoration {
 
     static validate(d: FileDecoration): void {
@@ -1965,6 +2057,7 @@ export class Task {
     private taskSource: string;
     private taskGroup: TaskGroup | undefined;
     private taskPresentationOptions: theia.TaskPresentationOptions;
+    private taskRunOptions: theia.RunOptions;
     constructor(
         taskDefinition: theia.TaskDefinition,
         scope: theia.WorkspaceFolder | theia.TaskScope.Global | theia.TaskScope.Workspace,
@@ -2136,6 +2229,17 @@ export class Task {
             value = Object.create(null);
         }
         this.taskPresentationOptions = value;
+    }
+
+    get runOptions(): theia.RunOptions {
+        return this.taskRunOptions;
+    }
+
+    set runOptions(value: theia.RunOptions) {
+        if (value === null || value === undefined) {
+            value = Object.create(null);
+        }
+        this.taskRunOptions = value;
     }
 }
 
@@ -2397,6 +2501,40 @@ export enum ColorFormat {
 }
 
 @es5ClassCompat
+export class InlayHintLabelPart implements theia.InlayHintLabelPart {
+    value: string;
+    tooltip?: string | theia.MarkdownString | undefined;
+    location?: Location | undefined;
+    command?: theia.Command | undefined;
+
+    constructor(value: string) {
+        this.value = value;
+    }
+}
+
+@es5ClassCompat
+export class InlayHint implements theia.InlayHint {
+    position: theia.Position;
+    label: string | InlayHintLabelPart[];
+    tooltip?: string | theia.MarkdownString | undefined;
+    kind?: InlayHintKind;
+    textEdits?: TextEdit[];
+    paddingLeft?: boolean;
+    paddingRight?: boolean;
+
+    constructor(position: theia.Position, label: string | InlayHintLabelPart[], kind?: InlayHintKind) {
+        this.position = position;
+        this.label = label;
+        this.kind = kind;
+    }
+}
+
+export enum InlayHintKind {
+    Type = 1,
+    Parameter = 2,
+}
+
+@es5ClassCompat
 export class FoldingRange {
     start: number;
     end: number;
@@ -2525,6 +2663,43 @@ export class CallHierarchyOutgoingCall {
     }
 }
 
+@es5ClassCompat
+export class TypeHierarchyItem {
+    _sessionId?: string;
+    _itemId?: string;
+
+    kind: SymbolKind;
+    tags?: readonly SymbolTag[];
+    name: string;
+    detail?: string;
+    uri: URI;
+    range: Range;
+    selectionRange: Range;
+
+    constructor(kind: SymbolKind, name: string, detail: string, uri: URI, range: Range, selectionRange: Range) {
+        this.kind = kind;
+        this.name = name;
+        this.detail = detail;
+        this.uri = uri;
+        this.range = range;
+        this.selectionRange = selectionRange;
+    }
+
+    static isTypeHierarchyItem(thing: {}): thing is TypeHierarchyItem {
+        if (thing instanceof TypeHierarchyItem) {
+            return true;
+        }
+        if (!thing) {
+            return false;
+        }
+        return typeof (<TypeHierarchyItem>thing).kind === 'number' &&
+            typeof (<TypeHierarchyItem>thing).name === 'string' &&
+            URI.isUri((<TypeHierarchyItem>thing).uri) &&
+            Range.isRange((<TypeHierarchyItem>thing).range) &&
+            Range.isRange((<TypeHierarchyItem>thing).selectionRange);
+    }
+}
+
 export enum LanguageStatusSeverity {
     Information = 0,
     Warning = 1,
@@ -2541,6 +2716,42 @@ export class LinkedEditingRanges {
         this.ranges = ranges;
         this.wordPattern = wordPattern;
     }
+}
+
+export enum TestRunProfileKind {
+    Run = 1,
+    Debug = 2,
+    Coverage = 3,
+}
+
+@es5ClassCompat
+export class TestTag implements theia.TestTag {
+    constructor(public readonly id: string) { }
+}
+
+@es5ClassCompat
+export class TestRunRequest implements theia.TestRunRequest {
+    constructor(
+        public readonly include: theia.TestItem[] | undefined = undefined,
+        public readonly exclude: theia.TestItem[] | undefined = undefined,
+        public readonly profile: theia.TestRunProfile | undefined = undefined,
+    ) { }
+}
+
+@es5ClassCompat
+export class TestMessage implements theia.TestMessage {
+    public expectedOutput?: string;
+    public actualOutput?: string;
+    public location?: theia.Location;
+
+    public static diff(message: string | theia.MarkdownString, expected: string, actual: string): theia.TestMessage {
+        const msg = new TestMessage(message);
+        msg.expectedOutput = expected;
+        msg.actualOutput = actual;
+        return msg;
+    }
+
+    constructor(public message: string | theia.MarkdownString) { }
 }
 
 @es5ClassCompat

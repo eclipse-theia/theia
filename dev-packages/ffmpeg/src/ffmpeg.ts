@@ -26,18 +26,6 @@ export interface FfmpegNativeAddon {
     codecs(ffmpegPath: string): Codec[]
 }
 
-let _FFMPEG: FfmpegNativeAddon;
-try {
-    _FFMPEG = require('../build/Release/ffmpeg.node');
-} catch (error) {
-    if (error.code === 'MODULE_NOT_FOUND') {
-        _FFMPEG = require('../build/Debug/ffmpeg.node');
-    } else {
-        throw error;
-    }
-}
-export { _FFMPEG };
-
 export interface FfmpegNameAndLocation {
     /**
      * Name with extension of the shared library.
@@ -54,6 +42,21 @@ export interface FfmpegOptions {
     electronDist?: string
     ffmpegPath?: string
     platform?: NodeJS.Platform
+}
+
+/**
+ * @internal
+ */
+export function _loadFfmpegNativeAddon(): FfmpegNativeAddon {
+    try {
+        return require('../build/Release/ffmpeg.node');
+    } catch (error) {
+        if (error.code === 'MODULE_NOT_FOUND') {
+            return require('../build/Debug/ffmpeg.node');
+        } else {
+            throw error;
+        }
+    }
 }
 
 /**
@@ -107,5 +110,5 @@ export function ffmpegAbsolutePath(options: FfmpegOptions = {}): string {
  * @returns list of codecs for the given ffmpeg shared library.
  */
 export function getFfmpegCodecs(ffmpegPath: string): Codec[] {
-    return _FFMPEG.codecs(ffmpegPath);
+    return _loadFfmpegNativeAddon().codecs(ffmpegPath);
 }

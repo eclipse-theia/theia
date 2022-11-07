@@ -49,7 +49,15 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
 
     async handle(context: PluginDeployerDirectoryHandlerContext): Promise<void> {
         await this.copyDirectory(context);
-        context.pluginEntry().accept(PluginDeployerEntryType.BACKEND);
+        const types: PluginDeployerEntryType[] = [];
+        const packageJson: PluginPackage = context.pluginEntry().getValue('package.json');
+        if (packageJson.browser) {
+            types.push(PluginDeployerEntryType.FRONTEND);
+        }
+        if (packageJson.main || !packageJson.browser) {
+            types.push(PluginDeployerEntryType.BACKEND);
+        }
+        context.pluginEntry().accept(...types);
     }
 
     protected async copyDirectory(context: PluginDeployerDirectoryHandlerContext): Promise<void> {

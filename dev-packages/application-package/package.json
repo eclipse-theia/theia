@@ -1,6 +1,6 @@
 {
   "name": "@theia/application-package",
-  "version": "1.30.0",
+  "version": "1.31.0",
   "description": "Theia application package API.",
   "publishConfig": {
     "access": "public"
@@ -38,11 +38,12 @@
     "is-electron": "^2.1.0",
     "nano": "^9.0.5",
     "request": "^2.82.0",
+    "resolve-package-path": "^4.0.3",
     "semver": "^5.4.1",
     "write-json-file": "^2.2.0"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.30.0"
+    "@theia/ext-scripts": "1.31.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

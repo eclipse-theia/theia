@@ -65,6 +65,8 @@
       "compound-cycle": "La configuración de lanzamiento '{0}' contiene un ciclo consigo mismo",
       "continueAll": "Continuar todo",
       "copyExpressionValue": "Copiar el valor de la expresión",
+      "debugSessionActive": "Hay una sesión de depuración activa, ¿está seguro de que quiere detenerla?",
+      "debugSessionActiveMultiple": "Hay sesiones de depuración activas, ¿estás seguro de que quieres detenerlas?",
       "disassembly-view": {
         "show-source-code": "Mostrar el código fuente en la vista de desensamblaje."
       },
@@ -493,7 +495,6 @@
       "messageWarning": "            El patrón de host del punto final {0} se ha cambiado a `{1}`; el cambio de patrón puede dar lugar a vulnerabilidades de seguridad.             Consulte `{2}` para obtener más información."
     },
     "workspace": {
-      "closeWorkspace": "¿Realmente quieres cerrar el espacio de trabajo?",
       "compareWithEachOther": "Comparar con los demás",
       "confirmDeletePermanently.description": "No se ha podido eliminar \"{0}\" con la papelera. Quieres eliminar permanentemente en su lugar?",
       "confirmDeletePermanently.solution": "Puedes desactivar el uso de la papelera en las preferencias.",

@@ -1240,7 +1240,8 @@ export class ApplicationShell extends Widget {
 
         let start = 0;
         const step: FrameRequestCallback = timestamp => {
-            if (document.activeElement && widget.node.contains(document.activeElement)) {
+            const activeElement = widget.node.ownerDocument.activeElement;
+            if (activeElement && widget.node.contains(activeElement)) {
                 return;
             }
             if (!start) {

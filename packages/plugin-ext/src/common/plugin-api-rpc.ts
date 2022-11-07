@@ -42,6 +42,8 @@ import {
     SignatureHelp,
     Hover,
     EvaluatableExpression,
+    InlineValue,
+    InlineValueContext,
     DocumentHighlight,
     FormattingOptions,
     ChainedCacheId,
@@ -74,7 +76,12 @@ import {
     CommentThread,
     CommentThreadChangedEvent,
     CodeActionProviderDocumentation,
-    LinkedEditingRanges
+    LinkedEditingRanges,
+    ProvidedTerminalLink,
+    InlayHint,
+    CachedSession,
+    CachedSessionItem,
+    TypeHierarchyItem
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -267,6 +274,8 @@ export interface TerminalServiceExt {
     $currentTerminalChanged(id: string | undefined): void;
     $terminalStateChanged(id: string): void;
     $initEnvironmentVariableCollections(collections: [string, SerializableEnvironmentVariableCollection][]): void;
+    $provideTerminalLinks(line: string, terminalId: string, token: theia.CancellationToken): Promise<ProvidedTerminalLink[]>;
+    $handleTerminalLink(link: ProvidedTerminalLink): Promise<void>;
     getEnvironmentVariableCollection(extensionIdentifier: string): theia.EnvironmentVariableCollection;
 }
 export interface OutputChannelRegistryExt {
@@ -392,6 +401,18 @@ export interface TerminalServiceMain {
      * @param name new terminal widget name.
      */
     $setNameByTerminalId(id: number, name: string): void;
+
+    /**
+     * Register a new terminal link provider.
+     * @param providerId id of the terminal link provider to be registered.
+     */
+    $registerTerminalLinkProvider(providerId: string): Promise<void>;
+
+    /**
+     * Unregister the terminal link provider with the specified id.
+     * @param providerId id of the terminal link provider to be unregistered.
+     */
+    $unregisterTerminalLinkProvider(providerId: string): Promise<void>;
 }
 
 export interface AutoFocus {
@@ -712,6 +733,8 @@ export interface TreeViewsMain {
 
 export interface TreeViewsExt {
     $getChildren(treeViewId: string, treeItemId: string | undefined): Promise<TreeViewItem[] | undefined>;
+    $hasResolveTreeItem(treeViewId: string): Promise<boolean>;
+    $resolveTreeItem(treeViewId: string, treeItemId: string, token: CancellationToken): Promise<TreeViewItem | undefined>;
     $setExpanded(treeViewId: string, treeItemId: string, expanded: boolean): Promise<any>;
     $setSelection(treeViewId: string, treeItemIds: string[]): Promise<void>;
     $setVisible(treeViewId: string, visible: boolean): Promise<void>;
@@ -735,7 +758,7 @@ export interface TreeViewItem {
 
     resourceUri?: UriComponents;
 
-    tooltip?: string;
+    tooltip?: string | MarkdownString;
 
     collapsibleState?: TreeViewItemCollapsibleState;
 
@@ -1433,8 +1456,13 @@ export interface TaskDto {
     group?: string;
     detail?: string;
     presentation?: TaskPresentationOptionsDTO;
+    runOptions?: RunOptionsDTO;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
+}
+
+export interface RunOptionsDTO {
+    reevaluateOnRerun?: boolean;
 }
 
 export interface TaskPresentationOptionsDTO {
@@ -1490,6 +1518,7 @@ export interface LanguagesExt {
     $releaseSignatureHelp(handle: number, id: number): void;
     $provideHover(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Hover | undefined>;
     $provideEvaluatableExpression(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<EvaluatableExpression | undefined>;
+    $provideInlineValues(handle: number, resource: UriComponents, range: Range, context: InlineValueContext, token: CancellationToken): Promise<InlineValue[] | undefined>;
     $provideDocumentHighlights(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<DocumentHighlight[] | undefined>;
     $provideDocumentFormattingEdits(handle: number, resource: UriComponents,
         options: FormattingOptions, token: CancellationToken): Promise<TextEdit[] | undefined>;
@@ -1530,6 +1559,9 @@ export interface LanguagesExt {
     $provideSelectionRanges(handle: number, resource: UriComponents, positions: Position[], token: CancellationToken): PromiseLike<SelectionRange[][]>;
     $provideDocumentColors(handle: number, resource: UriComponents, token: CancellationToken): PromiseLike<RawColorInfo[]>;
     $provideColorPresentations(handle: number, resource: UriComponents, colorInfo: RawColorInfo, token: CancellationToken): PromiseLike<ColorPresentation[]>;
+    $provideInlayHints(handle: number, resource: UriComponents, range: Range, token: CancellationToken): Promise<InlayHintsDto | undefined>;
+    $resolveInlayHint(handle: number, id: ChainedCacheId, token: CancellationToken): Promise<InlayHintDto | undefined>;
+    $releaseInlayHints(handle: number, id: number): void;
     $provideRenameEdits(handle: number, resource: UriComponents, position: Position, newName: string, token: CancellationToken): PromiseLike<WorkspaceEditDto | undefined>;
     $resolveRenameLocation(handle: number, resource: UriComponents, position: Position, token: CancellationToken): PromiseLike<RenameLocation | undefined>;
     $provideDocumentSemanticTokens(handle: number, resource: UriComponents, previousResultId: number, token: CancellationToken): Promise<BinaryBuffer | null>;
@@ -1540,6 +1572,10 @@ export interface LanguagesExt {
     $provideCallees(handle: number, definition: CallHierarchyItem, token: CancellationToken): Promise<CallHierarchyOutgoingCall[] | undefined>;
     $provideLinkedEditingRanges(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<LinkedEditingRanges | undefined>;
     $releaseCallHierarchy(handle: number, session?: string): Promise<boolean>;
+    $prepareTypeHierarchy(handle: number, resource: UriComponents, location: Position, token: theia.CancellationToken): Promise<TypeHierarchyItem[] | undefined>
+    $provideSuperTypes(handle: number, sessionId: string, itemId: string, token: theia.CancellationToken): Promise<TypeHierarchyItem[] | undefined>
+    $provideSubTypes(handle: number, sessionId: string, itemId: string, token: theia.CancellationToken): Promise<TypeHierarchyItem[] | undefined>;
+    $releaseTypeHierarchy(handle: number, session?: string): Promise<boolean>;
 }
 
 export const LanguagesMainFactory = Symbol('LanguagesMainFactory');
@@ -1567,6 +1603,8 @@ export interface LanguagesMain {
     $registerSignatureHelpProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], metadata: theia.SignatureHelpProviderMetadata): void;
     $registerHoverProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerEvaluatableExpressionProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
+    $registerInlineValuesProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
+    $emitInlineValuesEvent(eventHandle: number, event?: any): void;
     $registerDocumentHighlightProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], codeActionKinds?: string[], documentation?: CodeActionProviderDocumentation): void;
     $clearDiagnostics(id: string): void;
@@ -1583,6 +1621,8 @@ export interface LanguagesMain {
     $emitFoldingRangeEvent(handle: number, event?: any): void;
     $registerSelectionRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerDocumentColorProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
+    $registerInlayHintsProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], displayName?: string, eventHandle?: number): void;
+    $emitInlayHintsEvent(eventHandle: number, event?: any): void;
     $registerRenameProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], supportsResolveInitialValues: boolean): void;
     $registerDocumentSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[],
         legend: theia.SemanticTokensLegend, eventHandle: number | undefined): void;
@@ -1590,6 +1630,7 @@ export interface LanguagesMain {
     $registerDocumentRangeSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], legend: theia.SemanticTokensLegend): void;
     $registerCallHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerLinkedEditingRangeProvider(handle: number, selector: SerializedDocumentFilter[]): void;
+    $registerTypeHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $setLanguageStatus(handle: number, status: LanguageStatus): void;
     $removeLanguageStatus(handle: number): void;
 }
@@ -1996,3 +2037,6 @@ export interface SecretsMain {
     $setPassword(extensionId: string, key: string, value: string): Promise<void>;
     $deletePassword(extensionId: string, key: string): Promise<void>;
 }
+
+export type InlayHintDto = CachedSessionItem<InlayHint>;
+export type InlayHintsDto = CachedSession<{ hints: InlayHint[] }>;

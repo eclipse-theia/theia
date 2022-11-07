@@ -75,12 +75,9 @@ export class CompositeMenuNode implements MenuNode, CompoundMenuNode, CompoundMe
      * @param id node id.
      */
     public removeNode(id: string): void {
-        const node = this._children.find(n => n.id === id);
-        if (node) {
-            const idx = this._children.indexOf(node);
-            if (idx >= 0) {
-                this._children.splice(idx, 1);
-            }
+        const idx = this._children.findIndex(n => n.id === id);
+        if (idx >= 0) {
+            this._children.splice(idx, 1);
         }
     }
 

@@ -65,6 +65,8 @@
       "compound-cycle": "Startkonfiguration '{0}' enthält einen Zyklus mit sich selbst",
       "continueAll": "Alle fortsetzen",
       "copyExpressionValue": "Ausdruckswert kopieren",
+      "debugSessionActive": "Es gibt eine aktive Debug-Sitzung. Sind Sie sicher, dass Sie sie beenden wollen?",
+      "debugSessionActiveMultiple": "Es gibt aktive Debug-Sitzungen. Sind Sie sicher, dass Sie diese beenden wollen?",
       "disassembly-view": {
         "show-source-code": "Quellcode in der Disassemblierungsansicht anzeigen."
       },
@@ -493,7 +495,6 @@
       "messageWarning": "            Das Host-Muster des {0}-Endpunkts wurde in `{1}` geändert; die Änderung des Musters kann zu Sicherheitslücken führen.             Siehe `{2}` für weitere Informationen."
     },
     "workspace": {
-      "closeWorkspace": "Wollen Sie den Arbeitsbereich wirklich schließen?",
       "compareWithEachOther": "Miteinander vergleichen",
       "confirmDeletePermanently.description": "Das Löschen von \"{0}\" über den Papierkorb ist fehlgeschlagen. Möchten Sie stattdessen dauerhaft löschen?",
       "confirmDeletePermanently.solution": "Sie können die Verwendung des Papierkorbs in den Einstellungen deaktivieren.",

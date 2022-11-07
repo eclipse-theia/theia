@@ -16,7 +16,7 @@
 
 import * as theia from '@theia/plugin';
 import * as lstypes from '@theia/core/shared/vscode-languageserver-protocol';
-import { QuickPickItemKind, URI } from './types-impl';
+import { InlineValueEvaluatableExpression, InlineValueText, InlineValueVariableLookup, QuickPickItemKind, URI } from './types-impl';
 import * as rpc from '../common/plugin-api-rpc';
 import {
     DecorationOptions, EditorPosition, Plugin, Position, WorkspaceTextEditDto, WorkspaceFileEditDto, Selection, TaskDto, WorkspaceEditDto
@@ -129,7 +129,7 @@ export function fromRange(range: theia.Range | undefined): model.Range | undefin
     };
 }
 
-export function fromPosition(position: types.Position): Position {
+export function fromPosition(position: types.Position | theia.Position): Position {
     return { lineNumber: position.line + 1, column: position.character + 1 };
 }
 
@@ -401,6 +401,39 @@ export function fromEvaluatableExpression(evaluatableExpression: theia.Evaluatab
     };
 }
 
+export function fromInlineValue(inlineValue: theia.InlineValue): model.InlineValue {
+    if (inlineValue instanceof InlineValueText) {
+        return <model.InlineValueText>{
+            type: 'text',
+            range: fromRange(inlineValue.range),
+            text: inlineValue.text
+        };
+    } else if (inlineValue instanceof InlineValueVariableLookup) {
+        return <model.InlineValueVariableLookup>{
+            type: 'variable',
+            range: fromRange(inlineValue.range),
+            variableName: inlineValue.variableName,
+            caseSensitiveLookup: inlineValue.caseSensitiveLookup
+        };
+    } else if (inlineValue instanceof InlineValueEvaluatableExpression) {
+        return <model.InlineValueEvaluatableExpression>{
+            type: 'expression',
+            range: fromRange(inlineValue.range),
+            expression: inlineValue.expression
+        };
+    } else {
+        throw new Error('Unknown InlineValue type');
+    }
+}
+
+export function toInlineValueContext(inlineValueContext: model.InlineValueContext): theia.InlineValueContext {
+    const ivLocation = inlineValueContext.stoppedLocation;
+    return <theia.InlineValueContext>{
+        frameId: inlineValueContext.frameId,
+        stoppedLocation: new types.Range(ivLocation.startLineNumber, ivLocation.startColumn, ivLocation.endLineNumber, ivLocation.endColumn)
+    };
+}
+
 export function fromLocation(location: theia.Location): model.Location {
     return <model.Location>{
         uri: location.uri,
@@ -584,7 +617,7 @@ export namespace SymbolKind {
     }
 }
 
-export function toCodeActionTriggerKind(triggerKind: model.CodeActionTriggerKind): types.CodeActionTriggerKind  {
+export function toCodeActionTriggerKind(triggerKind: model.CodeActionTriggerKind): types.CodeActionTriggerKind {
     switch (triggerKind) {
         case model.CodeActionTriggerKind.Invoke:
             return types.CodeActionTriggerKind.Invoke;
@@ -691,8 +724,8 @@ export function toLocation(value: model.Location): types.Location {
     return new types.Location(URI.revive(value.uri), toRange(value.range));
 }
 
-export function fromCallHierarchyItem(item: types.CallHierarchyItem): model.CallHierarchyItem {
-    return <model.CallHierarchyItem>{
+export function fromHierarchyItem(item: types.CallHierarchyItem | types.TypeHierarchyItem): model.HierarchyItem {
+    return {
         kind: SymbolKind.fromSymbolKind(item.kind),
         name: item.name,
         detail: item.detail,
@@ -703,6 +736,10 @@ export function fromCallHierarchyItem(item: types.CallHierarchyItem): model.Call
         _itemId: item._itemId,
         _sessionId: item._sessionId,
     };
+}
+
+export function fromCallHierarchyItem(item: types.CallHierarchyItem): model.CallHierarchyItem {
+    return <model.CallHierarchyItem>fromHierarchyItem(item);
 }
 
 export function toCallHierarchyItem(value: model.CallHierarchyItem): types.CallHierarchyItem {
@@ -733,6 +770,35 @@ export function toCallHierarchyOutgoingCall(value: model.CallHierarchyOutgoingCa
         value.fromRanges && value.fromRanges.map(toRange));
 }
 
+export function isModelTypeHierarchyItem(arg: unknown): arg is model.TypeHierarchyItem {
+    const item = arg as model.TypeHierarchyItem;
+    return !!item && typeof item === 'object'
+        && isModelRange(item.range)
+        && isModelRange(item.selectionRange)
+        && isUriComponents(item.uri)
+        && !!item.name;
+}
+
+export function fromTypeHierarchyItem(item: types.TypeHierarchyItem): model.TypeHierarchyItem {
+    return <model.TypeHierarchyItem>fromHierarchyItem(item);
+}
+
+export function toTypeHierarchyItem(value: model.TypeHierarchyItem): types.TypeHierarchyItem {
+    const item = new types.TypeHierarchyItem(
+        SymbolKind.toSymbolKind(value.kind),
+        value.name,
+        value.detail ? value.detail : '',
+        URI.revive(value.uri),
+        toRange(value.selectionRange),
+        toRange(value.range),
+    );
+    item.tags = value.tags;
+    item._itemId = value._itemId;
+    item._sessionId = value._sessionId;
+
+    return item;
+}
+
 export function toWorkspaceFolder(folder: model.WorkspaceFolder): theia.WorkspaceFolder {
     return {
         uri: URI.revive(folder.uri),
@@ -749,6 +815,8 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     const taskDto = {} as TaskDto;
     taskDto.label = task.name;
     taskDto.source = task.source;
+
+    taskDto.runOptions = { reevaluateOnRerun: task.runOptions.reevaluateOnRerun };
 
     if ((task as types.Task).hasProblemMatchers) {
         taskDto.problemMatcher = task.problemMatchers;
@@ -811,10 +879,11 @@ export function toTask(taskDto: TaskDto): theia.Task {
         throw new Error('Task should be provided for converting');
     }
 
-    const { type, taskType, label, source, scope, problemMatcher, detail, command, args, options, group, presentation, ...properties } = taskDto;
+    const { type, taskType, label, source, scope, problemMatcher, detail, command, args, options, group, presentation, runOptions, ...properties } = taskDto;
     const result = {} as theia.Task;
     result.name = label;
     result.source = source;
+    result.runOptions = runOptions ?? {};
     if (detail) {
         result.detail = detail;
     }
@@ -1236,4 +1305,13 @@ export function pluginToPluginInfo(plugin: Plugin): rpc.PluginInfo {
         name: plugin.model.name,
         displayName: plugin.model.displayName
     };
+}
+
+export namespace InlayHintKind {
+    export function from(kind: theia.InlayHintKind): model.InlayHintKind {
+        return kind;
+    }
+    export function to(kind: model.InlayHintKind): theia.InlayHintKind {
+        return kind;
+    }
 }

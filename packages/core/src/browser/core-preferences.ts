@@ -84,15 +84,15 @@ export const corePreferenceSchema: PreferenceSchema = {
             type: 'string',
             enum: ['classic', 'visible', 'hidden', 'compact'],
             markdownEnumDescriptions: [
-                nls.localizeByDefault('Menu is only hidden in full screen mode.'),
-                nls.localizeByDefault('Menu is always visible even in full screen mode.'),
+                nls.localizeByDefault('Menu is displayed at the top of the window and only hidden in full screen mode.'),
+                nls.localizeByDefault('Menu is always visible at the top of the window even in full screen mode.'),
                 nls.localizeByDefault('Menu is always hidden.'),
                 nls.localizeByDefault('Menu is displayed as a compact button in the sidebar. This value is ignored when `#window.titleBarStyle#` is `native`.')
             ],
             default: 'classic',
             scope: 'application',
             // eslint-disable-next-line max-len
-            markdownDescription: nls.localizeByDefault("Control the visibility of the menu bar. A setting of 'toggle' means that the menu bar is hidden and a single press of the Alt key will show it. By default, the menu bar will be visible, unless the window is full screen."),
+            markdownDescription: nls.localizeByDefault('Control the visibility of the menu bar. A setting of \'toggle\' means that the menu bar is hidden and a single press of the Alt key will show it. A setting of \'compact\' will move the menu into the sidebar.'),
             included: !(isOSX && environment.electron.is())
         },
         'window.title': {
@@ -144,7 +144,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             type: 'boolean',
             default: true,
             // eslint-disable-next-line max-len
-            description: nls.localizeByDefault('Controls whether CA certificates should be loaded from the OS. (On Windows and macOS a reload of the window is required after turning this off.)'),
+            description: nls.localizeByDefault('Controls whether CA certificates should be loaded from the OS. (On Windows and macOS, a reload of the window is required after turning this off.)'),
             scope: 'application'
         },
         'workbench.list.openMode': {
@@ -155,7 +155,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             ],
             default: 'singleClick',
             // eslint-disable-next-line max-len
-            description: nls.localizeByDefault('Controls how to open items in trees and lists using the mouse (if supported). For parents with children in trees, this setting will control if a single click expands the parent or a double click. Note that some trees and lists might choose to ignore this setting if it is not applicable. ')
+            description: nls.localizeByDefault('Controls how to open items in trees and lists using the mouse (if supported). Note that some trees and lists might choose to ignore this setting if it is not applicable.')
         },
         'workbench.editor.highlightModifiedTabs': {
             'type': 'boolean',
@@ -222,19 +222,15 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: 300,
             minimum: 0,
             maximum: 2000,
-            // nls-todo: Will be available with VSCode API 1.55
-            description: nls.localize('theia/core/sashDelay', 'Controls the hover feedback delay in milliseconds of the dragging area in between views/editors.')
+            description: nls.localizeByDefault('Controls the hover feedback delay in milliseconds of the dragging area in between views/editors.')
         },
         'workbench.sash.size': {
             type: 'number',
             default: 4,
             minimum: 1,
             maximum: 20,
-            // nls-todo: Will be available with VSCode API 1.55
-            description: nls.localize(
-                'theia/core/sashSize',
-                'Controls the feedback area size in pixels of the dragging area in between views/editors. Set it to a larger value if needed.'
-            )
+            // eslint-disable-next-line max-len
+            description: nls.localizeByDefault('Controls the feedback area size in pixels of the dragging area in between views/editors. Set it to a larger value if you feel it\'s hard to resize views using the mouse.')
         },
         'workbench.tab.maximize': {
             type: 'boolean',

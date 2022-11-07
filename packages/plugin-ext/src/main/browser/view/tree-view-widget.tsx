@@ -49,10 +49,13 @@ import { AccessibilityInformation } from '@theia/plugin';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { DecoratedTreeNode } from '@theia/core/lib/browser/tree/tree-decorator';
 import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
+import { CancellationTokenSource, CancellationToken } from '@theia/core/lib/common';
+import { mixin } from '../../../common/types';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
-export const VIEW_ITEM_INLINE_MENU: MenuPath = ['view-item-inline-menu'];
+export const VIEW_ITEM_INLINE_MENU: MenuPath = ['view-item-context-menu', 'inline'];
 
 export interface SelectionEventHandler {
     readonly node: SelectableTreeNode;
@@ -64,7 +67,7 @@ export interface TreeViewNode extends SelectableTreeNode, DecoratedTreeNode {
     command?: Command;
     resourceUri?: string;
     themeIcon?: ThemeIcon;
-    tooltip?: string;
+    tooltip?: string | MarkdownString;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     description?: string | boolean | any;
     accessibilityInformation?: AccessibilityInformation;
@@ -72,6 +75,78 @@ export interface TreeViewNode extends SelectableTreeNode, DecoratedTreeNode {
 export namespace TreeViewNode {
     export function is(arg: TreeNode | undefined): arg is TreeViewNode {
         return !!arg && SelectableTreeNode.is(arg) && DecoratedTreeNode.is(arg);
+    }
+}
+
+export class ResolvableTreeViewNode implements TreeViewNode {
+    contextValue?: string;
+    command?: Command;
+    resourceUri?: string;
+    themeIcon?: ThemeIcon;
+    tooltip?: string | MarkdownString;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    description?: string | boolean | any;
+    accessibilityInformation?: AccessibilityInformation;
+    selected: boolean;
+    focus?: boolean;
+    id: string;
+    name?: string;
+    icon?: string;
+    visible?: boolean;
+    parent: Readonly<CompositeTreeNode>;
+    previousSibling?: TreeNode;
+    nextSibling?: TreeNode;
+    busy?: number;
+    decorationData: WidgetDecoration.Data;
+
+    resolve: ((token: CancellationToken) => Promise<void>);
+
+    private _resolved = false;
+    private resolving: Deferred<void> | undefined;
+
+    constructor(treeViewNode: Partial<TreeViewNode>, resolve: (token: CancellationToken) => Promise<TreeViewItem | undefined>) {
+        mixin(this, treeViewNode);
+        this.resolve = async (token: CancellationToken) => {
+            if (this.resolving) {
+                return this.resolving.promise;
+            }
+            if (!this._resolved) {
+                this.resolving = new Deferred();
+                const resolvedTreeItem = await resolve(token);
+                if (resolvedTreeItem) {
+                    this.command = this.command ?? resolvedTreeItem.command;
+                    this.tooltip = this.tooltip ?? resolvedTreeItem.tooltip;
+                }
+                this.resolving.resolve();
+                this.resolving = undefined;
+            }
+            if (!token.isCancellationRequested) {
+                this._resolved = true;
+            }
+        };
+    }
+
+    reset(): void {
+        this._resolved = false;
+        this.resolving = undefined;
+        this.command = undefined;
+        this.tooltip = undefined;
+    }
+
+    get resolved(): boolean {
+        return this._resolved;
+    }
+}
+
+export class ResolvableCompositeTreeViewNode extends ResolvableTreeViewNode implements CompositeTreeViewNode {
+    expanded: boolean;
+    children: readonly TreeNode[];
+    constructor(
+        treeViewNode: Pick<CompositeTreeViewNode, 'children' | 'expanded'> & Partial<TreeViewNode>,
+        resolve: (token: CancellationToken) => Promise<TreeViewItem | undefined>) {
+        super(treeViewNode, resolve);
+        this.expanded = treeViewNode.expanded;
+        this.children = treeViewNode.children;
     }
 }
 
@@ -108,12 +183,22 @@ export class PluginTree extends TreeImpl {
     private _proxy: TreeViewsExt | undefined;
     private _viewInfo: View | undefined;
     private _isEmpty: boolean;
+    private _hasTreeItemResolve: Promise<boolean> = Promise.resolve(false);
 
     set proxy(proxy: TreeViewsExt | undefined) {
         this._proxy = proxy;
+        if (proxy) {
+            this._hasTreeItemResolve = proxy.$hasResolveTreeItem(this.identifier.id);
+        } else {
+            this._hasTreeItemResolve = Promise.resolve(false);
+        }
     }
     get proxy(): TreeViewsExt | undefined {
         return this._proxy;
+    }
+
+    get hasTreeItemResolve(): Promise<boolean> {
+        return this._hasTreeItemResolve;
     }
 
     set viewInfo(viewInfo: View) {
@@ -129,7 +214,8 @@ export class PluginTree extends TreeImpl {
             return super.resolveChildren(parent);
         }
         const children = await this.fetchChildren(this._proxy, parent);
-        return children.map(value => this.createTreeNode(value, parent));
+        const hasResolve = await this.hasTreeItemResolve;
+        return children.map(value => hasResolve ? this.createResolvableTreeNode(value, parent) : this.createTreeNode(value, parent));
     }
 
     protected async fetchChildren(proxy: TreeViewsExt, parent: CompositeTreeNode): Promise<TreeViewItem[]> {
@@ -152,22 +238,7 @@ export class PluginTree extends TreeImpl {
     }
 
     protected createTreeNode(item: TreeViewItem, parent: CompositeTreeNode): TreeNode {
-        const decorationData = this.toDecorationData(item);
-        const icon = this.toIconClass(item);
-        const resourceUri = item.resourceUri && URI.revive(item.resourceUri).toString();
-        const themeIcon = item.themeIcon ? item.themeIcon : item.collapsibleState !== TreeViewItemCollapsibleState.None ? { id: 'folder' } : undefined;
-        const update: Partial<TreeViewNode> = {
-            name: item.label,
-            decorationData,
-            icon,
-            description: item.description,
-            themeIcon,
-            resourceUri,
-            tooltip: item.tooltip,
-            contextValue: item.contextValue,
-            command: item.command,
-            accessibilityInformation: item.accessibilityInformation,
-        };
+        const update: Partial<TreeViewNode> = this.createTreeNodeUpdate(item);
         const node = this.getNode(item.id);
         if (item.collapsibleState !== undefined && item.collapsibleState !== TreeViewItemCollapsibleState.None) {
             if (CompositeTreeViewNode.is(node)) {
@@ -193,6 +264,66 @@ export class PluginTree extends TreeImpl {
             selected: false,
             command: item.command,
         }, update);
+    }
+
+    /** Creates a resolvable tree node. If a node already exists, reset it because the underlying TreeViewItem might have been disposed in the backend. */
+    protected createResolvableTreeNode(item: TreeViewItem, parent: CompositeTreeNode): TreeNode {
+        const update: Partial<TreeViewNode> = this.createTreeNodeUpdate(item);
+        const node = this.getNode(item.id);
+
+        // Node is a composite node that might contain children
+        if (item.collapsibleState !== undefined && item.collapsibleState !== TreeViewItemCollapsibleState.None) {
+            // Reuse existing composite node and reset it
+            if (node instanceof ResolvableCompositeTreeViewNode) {
+                node.reset();
+                return Object.assign(node, update);
+            }
+            // Create new composite node
+            const compositeNode = Object.assign({
+                id: item.id,
+                parent,
+                visible: true,
+                selected: false,
+                expanded: TreeViewItemCollapsibleState.Expanded === item.collapsibleState,
+                children: [],
+                command: item.command
+            }, update);
+            return new ResolvableCompositeTreeViewNode(compositeNode, async (token: CancellationToken) => this._proxy?.$resolveTreeItem(this.identifier.id, item.id, token));
+        }
+
+        // Node is a leaf
+        // Reuse existing node and reset it.
+        if (node instanceof ResolvableTreeViewNode && !ExpandableTreeNode.is(node)) {
+            node.reset();
+            return Object.assign(node, update);
+        }
+        const treeNode = Object.assign({
+            id: item.id,
+            parent,
+            visible: true,
+            selected: false,
+            command: item.command,
+        }, update);
+        return new ResolvableTreeViewNode(treeNode, async (token: CancellationToken) => this._proxy?.$resolveTreeItem(this.identifier.id, item.id, token));
+    }
+
+    protected createTreeNodeUpdate(item: TreeViewItem): Partial<TreeViewNode> {
+        const decorationData = this.toDecorationData(item);
+        const icon = this.toIconClass(item);
+        const resourceUri = item.resourceUri && URI.revive(item.resourceUri).toString();
+        const themeIcon = item.themeIcon ? item.themeIcon : item.collapsibleState !== TreeViewItemCollapsibleState.None ? { id: 'folder' } : undefined;
+        return {
+            name: item.label,
+            decorationData,
+            icon,
+            description: item.description,
+            themeIcon,
+            resourceUri,
+            tooltip: item.tooltip,
+            contextValue: item.contextValue,
+            command: item.command,
+            accessibilityInformation: item.accessibilityInformation,
+        };
     }
 
     protected toDecorationData(item: TreeViewItem): WidgetDecoration.Data {
@@ -233,6 +364,10 @@ export class PluginTreeModel extends TreeModelImpl {
         return this.tree.proxy;
     }
 
+    get hasTreeItemResolve(): Promise<boolean> {
+        return this.tree.hasTreeItemResolve;
+    }
+
     set viewInfo(viewInfo: View) {
         this.tree.viewInfo = viewInfo;
     }
@@ -245,6 +380,12 @@ export class PluginTreeModel extends TreeModelImpl {
         return this.tree.onDidChangeWelcomeState;
     }
 
+    override doOpenNode(node: TreeNode): void {
+        super.doOpenNode(node);
+        if (node instanceof ResolvableTreeViewNode) {
+            node.resolve(CancellationToken.None);
+        }
+    }
 }
 
 @injectable()
@@ -288,6 +429,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         this.model.onDidChangeWelcomeState(this.update, this);
         this.toDispose.push(this.model.onDidChangeWelcomeState(this.update, this));
         this.toDispose.push(this.onDidChangeVisibilityEmitter);
+        this.toDispose.push(this.contextKeyService.onDidChange(() => this.update()));
     }
 
     protected markdownItPlugin(): void {
@@ -338,7 +480,40 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
             };
         }
 
-        if (node.tooltip && MarkdownString.is(node.tooltip)) {
+        const elementRef = React.createRef<HTMLDivElement & Partial<TooltipAttributes>>();
+        if (!node.tooltip && node instanceof ResolvableTreeViewNode) {
+            let configuredTip = false;
+            let source: CancellationTokenSource | undefined;
+            attrs = {
+                ...attrs,
+                'data-for': this.tooltipService.tooltipId,
+                onMouseLeave: () => source?.cancel(),
+                onMouseEnter: async () => {
+                    if (configuredTip) {
+                        return;
+                    }
+                    if (!node.resolved) {
+                        source = new CancellationTokenSource();
+                        const token = source.token;
+                        await node.resolve(token);
+                        if (token.isCancellationRequested) {
+                            return;
+                        }
+                    }
+                    if (elementRef.current) {
+                        // Set the resolved tooltip. After an HTML element was created data-* properties must be accessed via the dataset
+                        elementRef.current.dataset.tip = MarkdownString.is(node.tooltip) ? this.markdownIt.render(node.tooltip.value) : node.tooltip;
+                        this.tooltipService.update();
+                        configuredTip = true;
+                        // Manually fire another mouseenter event to get react-tooltip to update the tooltip content.
+                        // Without this, the resolved tooltip is only shown after re-entering the tree item with the mouse.
+                        elementRef.current.dispatchEvent(new MouseEvent('mouseenter'));
+                    } else {
+                        console.error(`Could not set resolved tooltip for tree node '${node.id}' because its React Ref was not set.`);
+                    }
+                }
+            };
+        } else if (MarkdownString.is(node.tooltip)) {
             // Render markdown in custom tooltip
             const tooltip = this.markdownIt.render(node.tooltip.value);
 
@@ -374,7 +549,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         if (description) {
             children.push(<span className='theia-tree-view-description'>{description}</span>);
         }
-        return React.createElement('div', attrs, ...children);
+        return <div {...attrs} ref={elementRef}>{...children}</div>;
     }
 
     protected override renderTailDecorations(node: TreeViewNode, props: NodeProps): React.ReactNode {
@@ -435,17 +610,18 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
 
     protected override tapNode(node?: TreeNode): void {
         super.tapNode(node);
-        const commandMap = this.findCommands(node);
-        if (commandMap.size > 0) {
-            this.tryExecuteCommandMap(commandMap);
-        } else if (node && this.isExpandable(node)) {
-            this.model.toggleNodeExpansion(node);
-        }
+        this.findCommands(node).then(commandMap => {
+            if (commandMap.size > 0) {
+                this.tryExecuteCommandMap(commandMap);
+            } else if (node && this.isExpandable(node)) {
+                this.model.toggleNodeExpansion(node);
+            }
+        });
     }
 
     // execute TreeItem.command if present
-    protected tryExecuteCommand(node?: TreeNode): void {
-        this.tryExecuteCommandMap(this.findCommands(node));
+    protected async tryExecuteCommand(node?: TreeNode): Promise<void> {
+        this.tryExecuteCommandMap(await this.findCommands(node));
     }
 
     protected tryExecuteCommandMap(commandMap: Map<string, unknown[]>): void {
@@ -454,9 +630,23 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         });
     }
 
-    protected findCommands(node?: TreeNode): Map<string, unknown[]> {
+    protected async findCommands(node?: TreeNode): Promise<Map<string, unknown[]>> {
         const commandMap = new Map<string, unknown[]>();
         const treeNodes = (node ? [node] : this.model.selectedNodes) as TreeViewNode[];
+        if (await this.model.hasTreeItemResolve) {
+            const cancellationToken = new CancellationTokenSource().token;
+            // Resolve all resolvable nodes that don't have a command and haven't been resolved.
+            const allResolved = Promise.all(treeNodes.map(maybeNeedsResolve => {
+                if (!maybeNeedsResolve.command && maybeNeedsResolve instanceof ResolvableTreeViewNode && !maybeNeedsResolve.resolved) {
+                    return maybeNeedsResolve.resolve(cancellationToken).catch(err => {
+                        console.error(`Failed to resolve tree item '${maybeNeedsResolve.id}'`, err);
+                    });
+                }
+                return Promise.resolve(maybeNeedsResolve);
+            }));
+            // Only need to wait but don't need the values because tree items are resolved in place.
+            await allResolved;
+        }
         for (const treeNode of treeNodes) {
             if (treeNode && treeNode.command) {
                 commandMap.set(treeNode.command.id, treeNode.command.arguments || []);

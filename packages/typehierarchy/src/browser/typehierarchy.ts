@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2019 TypeFox and others.
+// Copyright (C) 2022 Ericsson and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,19 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
-import { TerminalLinkmatcherFiles } from './terminal-linkmatcher-files';
+import { UriComponents } from '@theia/core/lib/common/uri';
+import { Range, SymbolKind, SymbolTag } from '@theia/core/shared/vscode-languageserver-protocol';
 
-@injectable()
-export class TerminalLinkmatcherDiffPre extends TerminalLinkmatcherFiles {
-    override async getRegExp(): Promise<RegExp> {
-        return /^--- a\/(\S*)/;
-    }
-}
+export interface TypeHierarchyItem {
+    _sessionId?: string;
+    _itemId?: string;
 
-@injectable()
-export class TerminalLinkmatcherDiffPost extends TerminalLinkmatcherFiles {
-    override async getRegExp(): Promise<RegExp> {
-        return /^\+\+\+ b\/(\S*)/;
-    }
+    kind: SymbolKind;
+    tags?: readonly SymbolTag[];
+    name: string;
+    detail?: string;
+    uri: UriComponents;
+    range: Range;
+    selectionRange: Range;
 }

@@ -88,7 +88,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Suggest words from all open documents of the same language."),
             nls.localizeByDefault("Suggest words from all open documents.")
         ],
-        "description": nls.localize("theia/editor/editor.wordBasedSuggestionsMode", "Controls from which documents word based completions are computed."),
+        "description": nls.localizeByDefault("Controls from which documents word based completions are computed."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -298,10 +298,10 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.autoClosingDelete": {
         "enumDescriptions": [
             "",
-            nls.localize("theia/editor/editor.autoClosingDelete1", "Remove adjacent closing quotes or brackets only if they were automatically inserted."),
+            nls.localizeByDefault("Remove adjacent closing quotes or brackets only if they were automatically inserted."),
             ""
         ],
-        "description": nls.localize("theia/editor/editor.autoClosingDelete", "Controls whether the editor should remove adjacent closing quotes or brackets when deleting."),
+        "description": nls.localizeByDefault("Controls whether the editor should remove adjacent closing quotes or brackets when deleting."),
         "type": "string",
         "enum": [
             "always",
@@ -657,8 +657,8 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "never",
         "enumDescriptions": [
-            nls.localize("theia/editor/editor.find.autoFindInSelection0", "Never turn on Find in Selection automatically (default)."),
-            nls.localize("theia/editor/editor.find.autoFindInSelection1", "Always turn on Find in Selection automatically."),
+            nls.localizeByDefault('Never turn on Find in selection automatically (default).'),
+            nls.localizeByDefault('Always turn on Find in selection automatically.'),
             nls.localizeByDefault('Turn on Find in selection automatically when multiple lines of content are selected.')
         ],
         "description": nls.localizeByDefault('Controls the condition for turning on find in selection automatically.'),
@@ -1461,7 +1461,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.renderLineHighlightOnlyWhenFocus": {
-        "description": nls.localize("theia/editor/editor.renderLineHighlightOnlyWhenFocus", "Controls if the editor should render the current line highlight only when the editor is focused."),
+        "description": nls.localizeByDefault("Controls if the editor should render the current line highlight only when the editor is focused."),
         "type": "boolean",
         "default": false,
         "scope": "language-overridable",
@@ -1472,7 +1472,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "",
             nls.localizeByDefault("Render whitespace characters except for single spaces between words."),
             nls.localizeByDefault("Render whitespace characters only on selected text."),
-            nls.localize("theia/editor/editor.renderWhitespace3", "Render only trailing whitespace characters."),
+            nls.localizeByDefault("Render only trailing whitespace characters."),
             ""
         ],
         "description": nls.localizeByDefault("Controls how the editor should render whitespace characters."),
@@ -1667,7 +1667,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.stickyTabStops": {
-        "description": nls.localize("theia/editor/editor.stickyTabStops", "Emulate selection behavior of tab characters when using spaces for indentation. Selection will stick to tab stops."),
+        "description": nls.localizeByDefault("Emulate selection behavior of tab characters when using spaces for indentation. Selection will stick to tab stops."),
         "type": "boolean",
         "default": false,
         "scope": "language-overridable",
@@ -1698,7 +1698,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.suggest.localityBonus": {
         "type": "boolean",
         "default": false,
-        "description": nls.localize("theia/editor/editor.suggest.localityBonus", "Controls whether sorting favors words that appear close to the cursor."),
+        "description": nls.localizeByDefault("Controls whether sorting favors words that appear close to the cursor."),
         "scope": "language-overridable",
         "restricted": false
     },
