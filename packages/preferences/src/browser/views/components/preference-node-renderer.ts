@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct, interfaces } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import {
     PreferenceService, ContextMenuRenderer, PreferenceInspection,
     PreferenceScope, PreferenceProvider, codicon, OpenerService, open
@@ -30,7 +30,6 @@ import { PreferencesSearchbarWidget } from '../preference-searchbar-widget';
 import * as markdownit from '@theia/core/shared/markdown-it';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import URI from '@theia/core/lib/common/uri';
-import { PreferenceNodeRendererContribution, PreferenceNodeRendererCreator, PreferenceNodeRendererCreatorRegistry } from './preference-node-renderer-creator';
 
 export const PreferenceNodeRendererFactory = Symbol('PreferenceNodeRendererFactory');
 export type PreferenceNodeRendererFactory = (node: Preference.TreeNode) => PreferenceNodeRenderer;
@@ -149,26 +148,6 @@ export class PreferenceHeaderRenderer extends PreferenceNodeRenderer {
         label.textContent = name;
         wrapper.appendChild(label);
         return wrapper;
-    }
-}
-
-@injectable()
-export class PreferenceHeaderRendererContribution implements PreferenceNodeRendererCreator, PreferenceNodeRendererContribution {
-    static ID = 'preference-header-renderer';
-    id = PreferenceHeaderRendererContribution.ID;
-
-    registerPreferenceNodeRendererCreator(registry: PreferenceNodeRendererCreatorRegistry): void {
-        registry.registerPreferenceNodeRendererCreator(this);
-    }
-
-    canHandle(node: Preference.TreeNode): number {
-        return !Preference.LeafNode.is(node) ? 1 : 0;
-    }
-
-    createRenderer(node: Preference.TreeNode, container: interfaces.Container): PreferenceNodeRenderer {
-        const grandchild = container.createChild();
-        grandchild.bind(Preference.Node).toConstantValue(node);
-        return grandchild.get(PreferenceHeaderRenderer);
     }
 }
 

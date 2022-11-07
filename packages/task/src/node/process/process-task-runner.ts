@@ -33,7 +33,7 @@ import {
     ShellQuotedString, ShellQuotingFunctions, BashQuotingFunctions, CmdQuotingFunctions, PowershellQuotingFunctions, createShellCommandLine, ShellQuoting,
 } from '@theia/process/lib/common/shell-quoting';
 import { TaskFactory } from './process-task';
-import { TaskRunner } from '../task-runner';
+import { TaskRunner } from '../task-runner-protocol';
 import { Task } from '../task';
 import { TaskConfiguration } from '../../common/task-protocol';
 import { ProcessTaskError, CommandOptions } from '../../common/process/task-protocol';

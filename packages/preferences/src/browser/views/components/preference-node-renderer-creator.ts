@@ -17,7 +17,7 @@
 import { ContributionProvider, Disposable, Emitter, Event, Prioritizeable } from '@theia/core';
 import { inject, injectable, interfaces, named } from '@theia/core/shared/inversify';
 import { Preference } from '../../util/preference-types';
-import { PreferenceNodeRenderer } from './preference-node-renderer';
+import { PreferenceHeaderRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
 
 export const PreferenceNodeRendererCreatorRegistry = Symbol('PreferenceNodeRendererCreatorRegistry');
 export interface PreferenceNodeRendererCreatorRegistry {
@@ -118,4 +118,24 @@ export abstract class PreferenceLeafNodeRendererContribution implements Preferen
     }
 
     abstract createLeafNodeRenderer(container: interfaces.Container): PreferenceNodeRenderer;
+}
+
+@injectable()
+export class PreferenceHeaderRendererContribution implements PreferenceNodeRendererCreator, PreferenceNodeRendererContribution {
+    static ID = 'preference-header-renderer';
+    id = PreferenceHeaderRendererContribution.ID;
+
+    registerPreferenceNodeRendererCreator(registry: PreferenceNodeRendererCreatorRegistry): void {
+        registry.registerPreferenceNodeRendererCreator(this);
+    }
+
+    canHandle(node: Preference.TreeNode): number {
+        return !Preference.LeafNode.is(node) ? 1 : 0;
+    }
+
+    createRenderer(node: Preference.TreeNode, container: interfaces.Container): PreferenceNodeRenderer {
+        const grandchild = container.createChild();
+        grandchild.bind(Preference.Node).toConstantValue(node);
+        return grandchild.get(PreferenceHeaderRenderer);
+    }
 }

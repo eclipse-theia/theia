@@ -17,8 +17,8 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { ProcessTaskRunner } from './process/process-task-runner';
-import { Task } from './task';
-import { TaskConfiguration } from '../common/task-protocol';
+import { TaskRunner } from './task-runner-protocol';
+export { TaskRunner };
 
 export const TaskRunnerContribution = Symbol('TaskRunnerContribution');
 
@@ -29,21 +29,6 @@ export interface TaskRunnerContribution {
      * @param runners the common task runner registry.
      */
     registerRunner(runners: TaskRunnerRegistry): void;
-}
-
-export const TaskRunner = Symbol('TaskRunner');
-/**
- * A {@link TaskRunner} knows how to run a task configuration of a particular type.
- */
-export interface TaskRunner {
-    /**
-     * Runs a task based on the given `TaskConfiguration`.
-     * @param taskConfig the task configuration that should be executed.
-     * @param ctx the execution context.
-     *
-     * @returns a promise of the (currently running) {@link Task}.
-     */
-    run(tskConfig: TaskConfiguration, ctx?: string): Promise<Task>;
 }
 
 /**

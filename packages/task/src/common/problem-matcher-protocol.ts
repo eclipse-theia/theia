@@ -25,7 +25,6 @@ import { Severity } from '@theia/core/lib/common/severity';
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
 // TODO use URI from `@theia/core` instead
 import { URI } from '@theia/core/shared/vscode-uri';
-import { ProblemPatternContribution, WatchingMatcherContribution } from './task-protocol';
 
 export enum ApplyToKind {
     allDocuments,
@@ -190,4 +189,47 @@ export namespace ProblemMatchData {
     export function is(data: ProblemMatch): data is ProblemMatchData {
         return 'marker' in data;
     }
+}
+
+export interface WatchingMatcherContribution {
+    // If set to true the background monitor is in active mode when the task starts.
+    // This is equals of issuing a line that matches the beginPattern
+    activeOnStart?: boolean;
+    beginsPattern: string | WatchingPattern;
+    endsPattern: string | WatchingPattern;
+}
+
+export interface ProblemMatcherContribution {
+    base?: string;
+    name?: string;
+    label: string;
+    deprecated?: boolean;
+
+    owner: string;
+    source?: string;
+    applyTo?: string;
+    fileLocation?: 'absolute' | 'relative' | string[];
+    pattern: string | ProblemPatternContribution | ProblemPatternContribution[];
+    severity?: string;
+    watching?: WatchingMatcherContribution; // deprecated. Use `background`.
+    background?: WatchingMatcherContribution;
+}
+
+export interface ProblemPatternContribution {
+    name?: string;
+    regexp: string;
+
+    kind?: string;
+    file?: number;
+    message?: number;
+    location?: number;
+    line?: number;
+    character?: number;
+    column?: number;
+    endLine?: number;
+    endCharacter?: number;
+    endColumn?: number;
+    code?: number;
+    severity?: number;
+    loop?: boolean;
 }

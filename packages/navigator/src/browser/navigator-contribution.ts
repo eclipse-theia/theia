@@ -31,12 +31,10 @@ import {
     ApplicationShell,
     TabBar,
     Title,
-    codicon,
     SHELL_TABBAR_CONTEXT_MENU
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import {
-    Command,
     CommandRegistry,
     DisposableCollection,
     isOSX,
@@ -75,60 +73,8 @@ import { OpenEditorsCommands } from './open-editors-widget/navigator-open-editor
 import { nls } from '@theia/core/lib/common/nls';
 import URI from '@theia/core/lib/common/uri';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-
-export namespace FileNavigatorCommands {
-    export const REVEAL_IN_NAVIGATOR = Command.toLocalizedCommand({
-        id: 'navigator.reveal',
-        label: 'Reveal in Explorer'
-    }, 'theia/navigator/reveal');
-    export const TOGGLE_HIDDEN_FILES = Command.toLocalizedCommand({
-        id: 'navigator.toggle.hidden.files',
-        label: 'Toggle Hidden Files'
-    }, 'theia/navigator/toggleHiddenFiles');
-    export const TOGGLE_AUTO_REVEAL = Command.toLocalizedCommand({
-        id: 'navigator.toggle.autoReveal',
-        category: CommonCommands.FILE_CATEGORY,
-        label: 'Auto Reveal'
-    }, 'theia/navigator/autoReveal', CommonCommands.FILE_CATEGORY_KEY);
-    export const REFRESH_NAVIGATOR = Command.toLocalizedCommand({
-        id: 'navigator.refresh',
-        category: CommonCommands.FILE_CATEGORY,
-        label: 'Refresh in Explorer',
-        iconClass: codicon('refresh')
-    }, 'theia/navigator/refresh', CommonCommands.FILE_CATEGORY_KEY);
-    export const COLLAPSE_ALL = Command.toDefaultLocalizedCommand({
-        id: 'navigator.collapse.all',
-        category: CommonCommands.FILE_CATEGORY,
-        label: 'Collapse Folders in Explorer',
-        iconClass: codicon('collapse-all')
-    });
-    export const ADD_ROOT_FOLDER: Command = {
-        id: 'navigator.addRootFolder'
-    };
-    export const FOCUS = Command.toDefaultLocalizedCommand({
-        id: 'workbench.files.action.focusFilesExplorer',
-        category: CommonCommands.FILE_CATEGORY,
-        label: 'Focus on Files Explorer'
-    });
-    export const OPEN = Command.toDefaultLocalizedCommand({
-        id: 'navigator.open',
-        category: CommonCommands.FILE_CATEGORY,
-        label: 'Open'
-    });
-    export const NEW_FILE_TOOLBAR: Command = {
-        id: `${WorkspaceCommands.NEW_FILE.id}.toolbar`,
-        iconClass: codicon('new-file')
-    };
-    export const NEW_FOLDER_TOOLBAR: Command = {
-        id: `${WorkspaceCommands.NEW_FOLDER.id}.toolbar`,
-        iconClass: codicon('new-folder')
-    };
-
-    /**
-     * @deprecated since 1.21.0. Use WorkspaceCommands.COPY_RELATIVE_FILE_COMMAND instead.
-     */
-    export const COPY_RELATIVE_FILE_PATH = WorkspaceCommands.COPY_RELATIVE_FILE_PATH;
-}
+import { FileNavigatorCommands } from './file-navigator-commands';
+export { FileNavigatorCommands };
 
 /**
  * Navigator `More Actions...` toolbar item groups.

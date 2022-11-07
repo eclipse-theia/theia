@@ -17,6 +17,7 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Emitter, Event, ILogger } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { Task } from './task';
+import { ManagedTaskManager } from '../common';
 
 // inspired by process-manager.ts
 
@@ -24,7 +25,7 @@ import { Task } from './task';
  * The {@link TaskManager} is the common component responsible for managing running tasks.
  */
 @injectable()
-export class TaskManager implements BackendApplicationContribution {
+export class TaskManager implements BackendApplicationContribution, ManagedTaskManager<Task> {
 
     /** contains all running tasks */
     protected readonly tasks: Map<number, Task> = new Map();
@@ -104,7 +105,9 @@ export class TaskManager implements BackendApplicationContribution {
             const tasksForWS = this.tasksPerCtx.get(ctx);
             if (tasksForWS !== undefined) {
                 const idx = tasksForWS.indexOf(task);
-                tasksForWS.splice(idx, 1);
+                if (idx !== -1) {
+                    tasksForWS.splice(idx, 1);
+                }
             }
         }
         this.deleteEmitter.fire(task.id);

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ScmProvider } from '@theia/scm/lib/browser/scm-provider';
-import { ScmHistorySupport } from './scm-history-widget';
+import { ScmHistorySupport } from './scm-history-constants';
 
 export interface ScmHistoryProvider extends ScmProvider {
     historySupport?: ScmHistorySupport;

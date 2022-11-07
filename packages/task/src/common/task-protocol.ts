@@ -14,9 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Event } from '@theia/core';
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
-import { ProblemMatcher, ProblemMatch, WatchingPattern } from './problem-matcher-protocol';
+import { ProblemMatcher, ProblemMatch, WatchingMatcherContribution, ProblemMatcherContribution, ProblemPatternContribution } from './problem-matcher-protocol';
+export { WatchingMatcherContribution, ProblemMatcherContribution, ProblemPatternContribution };
 
 export const taskPath = '/services/task';
 
@@ -290,45 +292,15 @@ export interface TaskDefinition {
     }
 }
 
-export interface WatchingMatcherContribution {
-    // If set to true the background monitor is in active mode when the task starts.
-    // This is equals of issuing a line that matches the beginPattern
-    activeOnStart?: boolean;
-    beginsPattern: string | WatchingPattern;
-    endsPattern: string | WatchingPattern;
+export interface ManagedTask {
+    id: number;
+    context?: string;
 }
 
-export interface ProblemMatcherContribution {
-    base?: string;
-    name?: string;
-    label: string;
-    deprecated?: boolean;
-
-    owner: string;
-    source?: string;
-    applyTo?: string;
-    fileLocation?: 'absolute' | 'relative' | string[];
-    pattern: string | ProblemPatternContribution | ProblemPatternContribution[];
-    severity?: string;
-    watching?: WatchingMatcherContribution; // deprecated. Use `background`.
-    background?: WatchingMatcherContribution;
-}
-
-export interface ProblemPatternContribution {
-    name?: string;
-    regexp: string;
-
-    kind?: string;
-    file?: number;
-    message?: number;
-    location?: number;
-    line?: number;
-    character?: number;
-    column?: number;
-    endLine?: number;
-    endCharacter?: number;
-    endColumn?: number;
-    code?: number;
-    severity?: number;
-    loop?: boolean;
+export interface ManagedTaskManager<T extends ManagedTask> {
+    onDelete: Event<number>;
+    register(task: T, context?: string): number;
+    get(id: number): T | undefined;
+    getTasks(context?: string): T[] | undefined;
+    delete(task: T): void;
 }

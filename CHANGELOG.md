@@ -13,6 +13,7 @@
 <a name="breaking_changes_1.32.0">[Breaking Changes:](#breaking_changes_1.32.0)</a>
 
 - [tasks] if the variables of a task should be reevaluated on a rerun (this was the behavior until now) the `reevaluateOnRerun` run option in the task description needs to be set to `true` from now on [#11759](https://github.com/eclipse-theia/theia/pull/11759) - Contributed on behalf of STMicroelectronics
+- [preferences] `PreferenceHeaderRendererContribution` moved to `preference-node-renderer-creator.ts`. [#11432](https://github.com/eclipse-theia/theia/pull/11432)
 
 ## v1.31.0 - 10/27/2022
 
