@@ -226,7 +226,16 @@ module.exports = [{
     stats: {
         warnings: true,
         children: true
-    }
+    },
+    ignoreWarnings: [
+        // Some packages do not have source maps, that's ok
+        /Failed to parse source map/,
+        {
+            // Monaco uses 'require' in a non-standard way
+            module: /@theia\\/monaco-editor-core/,
+            message: /require function is used in a way in which dependencies cannot be statically extracted/
+        }
+    ]
 },
 {
     mode,
