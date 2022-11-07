@@ -1,8 +1,8 @@
 {
-  "disassemblyView": "拆卸视图",
+  "disassemblyView": "反汇编视图",
   "theia": {
     "callhierarchy": {
-      "noCallers": "没有发现来电者。",
+      "noCallers": "没有发现调用者。",
       "open": "打开调用层次结构"
     },
     "core": {
@@ -53,7 +53,7 @@
       "sashDelay": "控制视图/编辑器之间拖动区域的悬停反馈延迟,单位为毫秒。",
       "sashSize": "控制在视图/编辑器之间的拖动区域的反馈区域大小,以像素为单位。如果需要的话,把它设置成一个较大的值。",
       "searchbox": {
-        "close": "关闭 (逃离)",
+        "close": "关闭 (Escape)",
         "next": "下一页 (向下)",
         "previous": "上一页 (向上)"
       },
@@ -73,10 +73,10 @@
       "instruction-breakpoint": "指令断点",
       "instructionAddress": "地址",
       "instructionBytes": "字节数",
-      "instructionNotAvailable": "不提供拆卸服务。",
-      "instructionText": "指示",
+      "instructionNotAvailable": "无反汇编代码。",
+      "instructionText": "指令",
       "missingConfiguration": "动态配置'{0}:{1}'缺少或不适用",
-      "open-disassembly-view": "开放式拆卸视图",
+      "open-disassembly-view": "打开反汇编视图",
       "pauseAll": "暂停所有",
       "reveal": "显示",
       "threads": "线程",
@@ -269,7 +269,7 @@
       "data": "数据",
       "decimal": "十进制",
       "diff": {
-        "label": "扩散: {0}"
+        "label": "差异: {0}"
       },
       "diff-widget": {
         "offset-label": "{0} 偏移",
@@ -392,7 +392,7 @@
       "directory": "目录",
       "lastModified": "最后修改",
       "location": "位置",
-      "noProperties": "没有可用的房产。",
+      "noProperties": "没有可用的属性。",
       "path": "路径",
       "properties": "属性",
       "size": "尺寸",
@@ -453,7 +453,7 @@
     "toolbar": {
       "addCommand": "将命令添加到工具栏",
       "addCommandPlaceholder": "找到一个要添加到工具栏的命令",
-      "centerColumn": "中心柱",
+      "centerColumn": "中央栏",
       "failedUpdate": "更新'{0}'在'{1}'的值失败。",
       "filterIcons": "过滤器图标",
       "iconSelectDialog": "为'{0}'选择一个图标",
