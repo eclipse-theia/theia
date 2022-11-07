@@ -250,8 +250,9 @@ export class DebugSessionManager {
 
     protected async startCompound(options: DebugCompoundSessionOptions): Promise<boolean | undefined> {
         let configurations: DebugConfigurationSessionOptions[] = [];
+        const compoundRoot = options.compound.stopAll ? new DebugCompoundRoot() : undefined;
         try {
-            configurations = this.getCompoundConfigurations(options);
+            configurations = this.getCompoundConfigurations(options, compoundRoot);
         } catch (error) {
             this.messageService.error(error.message);
             return;
@@ -265,19 +266,25 @@ export class DebugSessionManager {
         }
 
         // Compound launch is a success only if each configuration launched successfully
-        const values = await Promise.all(configurations.map(configuration => this.startConfiguration(configuration)));
+        const values = await Promise.all(configurations.map(async configuration => {
+            const newSession = await this.startConfiguration(configuration);
+            if (newSession) {
+                compoundRoot?.onDidSessionStop(() => newSession.stop(false, () => this.debug.terminateDebugSession(newSession.id)));
+            }
+            return newSession;
+        }));
         const result = values.every(success => !!success);
         return result;
     }
 
-    protected getCompoundConfigurations(options: DebugCompoundSessionOptions): DebugConfigurationSessionOptions[] {
+    protected getCompoundConfigurations(options: DebugCompoundSessionOptions, compoundRoot: DebugCompoundRoot | undefined): DebugConfigurationSessionOptions[] {
         const compound = options.compound;
         if (!compound.configurations) {
             throw new Error(nls.localizeByDefault('Compound must have "configurations" attribute set in order to start multiple configurations.'));
         }
 
-        const compoundRoot = compound.stopAll ? new DebugCompoundRoot() : undefined;
         const configurations: DebugConfigurationSessionOptions[] = [];
+
         for (const configData of compound.configurations) {
             const name = typeof configData === 'string' ? configData : configData.name;
             if (name === compound.name) {
@@ -431,6 +438,7 @@ export class DebugSessionManager {
             await session.restart();
             return session;
         }
+
         const { options, configuration } = session;
         session.stop(isRestart, () => this.debug.terminateDebugSession(session.id));
         configuration.__restart = isRestart;
@@ -443,7 +451,13 @@ export class DebugSessionManager {
             session = this._currentSession;
         }
         if (session) {
-            session.stop(false, () => this.debug.terminateDebugSession(session!.id));
+            if (session.options.compoundRoot) {
+                session.options.compoundRoot.stopSession();
+            } else if (session.parentSession && session.configuration.lifecycleManagedByParent) {
+                this.terminateSession(session.parentSession);
+            } else {
+                session.stop(false, () => this.debug.terminateDebugSession(session!.id));
+            }
         }
     }
 
@@ -452,8 +466,13 @@ export class DebugSessionManager {
             this.updateCurrentSession(this._currentSession);
             session = this._currentSession;
         }
+
         if (session) {
-            return this.doRestart(session, true);
+            if (session.parentSession && session.configuration.lifecycleManagedByParent) {
+                return this.restartSession(session.parentSession);
+            } else {
+                return this.doRestart(session, true);
+            }
         }
     }
 
