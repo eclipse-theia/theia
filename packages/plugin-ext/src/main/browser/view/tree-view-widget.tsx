@@ -31,7 +31,8 @@ import {
     TreeModelImpl,
     TreeViewWelcomeWidget,
     TooltipService,
-    TooltipAttributes
+    TooltipAttributes,
+    TreeSelection
 } from '@theia/core/lib/browser';
 import { MenuPath, MenuModelRegistry, ActionMenuNode } from '@theia/core/lib/common/menu';
 import * as React from '@theia/core/shared/react';
@@ -680,5 +681,34 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
 
     override shouldShowWelcomeView(): boolean {
         return (this.model.proxy === undefined || this.model.isTreeEmpty) && this.message === undefined;
+    }
+
+    protected override handleContextMenuEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement, MouseEvent>): void {
+        if (SelectableTreeNode.is(node)) {
+            // Keep the selection for the context menu, if the widget support multi-selection and the right click happens on an already selected node.
+            if (!this.props.multiSelect || !node.selected) {
+                const type = !!this.props.multiSelect && this.hasCtrlCmdMask(event) ? TreeSelection.SelectionType.TOGGLE : TreeSelection.SelectionType.DEFAULT;
+                this.model.addSelection({ node, type });
+            }
+            this.focusService.setFocus(node);
+            const contextMenuPath = this.props.contextMenuPath;
+            if (contextMenuPath) {
+                const { x, y } = event.nativeEvent;
+                const args = this.toContextMenuArgs(node);
+                const contextKeyService = this.contextKeyService.createOverlay([
+                    ['viewItem', (TreeViewNode.is(node) && node.contextValue) || undefined],
+                    ['view', this.identifier.id]
+                ]);
+                setTimeout(() => this.contextMenuRenderer.render({
+                    menuPath: contextMenuPath,
+                    anchor: { x, y },
+                    args,
+                    contextKeyService,
+                    onHide: () => contextKeyService.dispose(),
+                }), 10);
+            }
+        }
+        event.stopPropagation();
+        event.preventDefault();
     }
 }

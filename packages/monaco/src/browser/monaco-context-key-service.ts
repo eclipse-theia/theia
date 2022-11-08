@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { ContextKeyService as TheiaContextKeyService, ContextKey, ContextKeyChangeEvent, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
+import { ContextKeyService as TheiaContextKeyService, ContextKey, ContextKeyChangeEvent, ScopedValueStore, ContextMatcher } from '@theia/core/lib/browser/context-key-service';
 import { Emitter } from '@theia/core';
 import { AbstractContextKeyService, ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
-import { ContextKeyExpr, ContextKeyExpression, IContext } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
+import { ContextKeyExpr, ContextKeyExpression, IContext, IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 
 @injectable()
 export class MonacoContextKeyService implements TheiaContextKeyService {
@@ -55,7 +55,7 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
         return true;
     }
 
-    protected identifyContext(callersContext?: HTMLElement | IContext): IContext | undefined {
+    protected identifyContext(callersContext?: HTMLElement | IContext, service: IContextKeyService = this.contextKeyService): IContext | undefined {
         if (callersContext && 'getValue' in callersContext) {
             return callersContext;
         } else if (this.activeContext && 'getValue' in this.activeContext) {
@@ -63,7 +63,7 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
         }
         const browserContext = callersContext ?? this.activeContext ?? (document.activeElement instanceof HTMLElement ? document.activeElement : undefined);
         if (browserContext) {
-            return this.contextKeyService.getContext(browserContext);
+            return service.getContext(browserContext);
         }
         return undefined;
     }
@@ -109,6 +109,24 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
         return this;
     }
 
+    createOverlay(overlay: Iterable<[string, unknown]>): ContextMatcher {
+        const delegate = this.contextKeyService.createOverlay(overlay);
+        return {
+            match: (expression: string, context?: HTMLElement) => {
+                const parsed = this.parse(expression);
+                if (parsed) {
+                    const ctx = this.identifyContext(context, delegate);
+                    if (!ctx) {
+                        return delegate.contextMatchesRules(parsed);
+                    }
+                    return parsed.evaluate(ctx);
+                }
+                return true;
+            },
+            dispose: () => delegate.dispose(),
+        };
+    }
+
     setContext(key: string, value: unknown): void {
         this.contextKeyService.setContext(key, value);
     }
@@ -119,3 +137,4 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
         this.contextKeyService.dispose();
     }
 }
+
