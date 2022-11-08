@@ -20,7 +20,6 @@ Feel free to [open new issues](https://github.com/eclipse-theia/theia/issues/new
 The report can be found here:
 
 [![API Compatibility](https://img.shields.io/badge/API_Compatibility-Status_Report-blue.svg?style=flat-curved)](https://eclipse-theia.github.io/vscode-theia-comparator/status.html)
-[![API Compatibility](https://img.shields.io/badge/API_Compatibility-Filtered_Status_Report_(unsupported_only)-blue.svg?style=flat-curved)](https://eclipse-theia.github.io/vscode-theia-comparator/filtered-status.html)
 
 ## Relevant Theia source code
 
