@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - id: compute-milestone
         run: |
           export THEIA_CORE_VERSION=$(node -p "require(\"./packages/core/package.json\").version")
