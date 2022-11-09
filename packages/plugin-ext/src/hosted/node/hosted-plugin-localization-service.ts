@@ -23,7 +23,7 @@ import { DeployedPlugin, Localization as PluginLocalization, PluginIdentifiers }
 import { URI } from '@theia/core/shared/vscode-uri';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { Disposable } from '@theia/core';
+import { Disposable, MaybePromise } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export interface VSCodeNlsConfig {
@@ -56,10 +56,10 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
      */
     ready = this._ready.promise;
 
-    async initialize(): Promise<void> {
-        const cacheDir = await this.getLocalizationCacheDir();
-        await fs.emptyDir(cacheDir);
-        this._ready.resolve();
+    initialize(): MaybePromise<void> {
+        this.getLocalizationCacheDir()
+            .then(cacheDir => fs.emptyDir(cacheDir))
+            .then(() => this._ready.resolve());
     }
 
     deployLocalizations(plugin: DeployedPlugin): void {
