@@ -47,7 +47,7 @@ export class TheiaQuickCommandPalette extends TheiaPageObject {
             this.open();
         }
         let selected = await this.selectedCommand();
-        while (!(await selected?.getAttribute('aria-label') === commandName)) {
+        while (!(await selected?.innerText() === commandName)) {
             await this.page.keyboard.press('ArrowDown');
             selected = await this.selectedCommand();
         }
@@ -70,6 +70,6 @@ export class TheiaQuickCommandPalette extends TheiaPageObject {
         if (!command) {
             throw new Error('No selected command found!');
         }
-        return command.$('.monaco-list-row.focused');
+        return command.$('.monaco-list-row.focused .monaco-highlighted-label');
     }
 }
