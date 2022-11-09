@@ -42,6 +42,7 @@ import { CommandService } from '@theia/core/lib/common';
 import { OpenEditorsCommands } from './navigator-open-editors-commands';
 import { nls } from '@theia/core/lib/common/nls';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { AbstractNavigatorTreeWidget } from '../abstract-navigator-tree-widget';
 
 export const OPEN_EDITORS_PROPS: TreeProps = {
     ...defaultTreeProps,
@@ -54,7 +55,7 @@ export interface OpenEditorsNodeRow extends TreeWidget.NodeRow {
     node: OpenEditorNode;
 }
 @injectable()
-export class OpenEditorsWidget extends FileTreeWidget {
+export class OpenEditorsWidget extends AbstractNavigatorTreeWidget {
     static ID = 'theia-open-editors-widget';
     static LABEL = nls.localizeByDefault('Open Editors');
 

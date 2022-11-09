@@ -19,7 +19,7 @@ import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService } from '@theia/core/lib/common';
 import { Key, TreeModel, SelectableTreeNode, OpenerService, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode } from '@theia/core/lib/browser';
-import { FileTreeWidget, FileNode, DirNode } from '@theia/filesystem/lib/browser';
+import { FileNode, DirNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { WorkspaceNode, WorkspaceRootNode } from './navigator-tree';
@@ -29,13 +29,14 @@ import * as React from '@theia/core/shared/react';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 import { FileNavigatorCommands } from './file-navigator-commands';
 import { nls } from '@theia/core/lib/common/nls';
+import { AbstractNavigatorTreeWidget } from './abstract-navigator-tree-widget';
 
 export const FILE_NAVIGATOR_ID = 'files';
 export const LABEL = nls.localizeByDefault('No Folder Opened');
 export const CLASS = 'theia-Files';
 
 @injectable()
-export class FileNavigatorWidget extends FileTreeWidget {
+export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
 
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
     @inject(CommandService) protected readonly commandService: CommandService;
