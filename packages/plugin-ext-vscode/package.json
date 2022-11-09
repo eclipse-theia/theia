@@ -1,20 +1,20 @@
 {
   "name": "@theia/plugin-ext-vscode",
-  "version": "1.29.1",
+  "version": "1.29.2",
   "description": "Theia - Plugin Extension for VsCode",
   "dependencies": {
-    "@theia/callhierarchy": "1.29.1",
-    "@theia/core": "1.29.1",
-    "@theia/editor": "1.29.1",
-    "@theia/filesystem": "1.29.1",
-    "@theia/monaco": "1.29.1",
+    "@theia/callhierarchy": "1.29.2",
+    "@theia/core": "1.29.2",
+    "@theia/editor": "1.29.2",
+    "@theia/filesystem": "1.29.2",
+    "@theia/monaco": "1.29.2",
     "@theia/monaco-editor-core": "1.67.2",
-    "@theia/navigator": "1.29.1",
-    "@theia/plugin": "1.29.1",
-    "@theia/plugin-ext": "1.29.1",
-    "@theia/terminal": "1.29.1",
-    "@theia/userstorage": "1.29.1",
-    "@theia/workspace": "1.29.1",
+    "@theia/navigator": "1.29.2",
+    "@theia/plugin": "1.29.2",
+    "@theia/plugin-ext": "1.29.2",
+    "@theia/terminal": "1.29.2",
+    "@theia/userstorage": "1.29.2",
+    "@theia/workspace": "1.29.2",
     "@types/request": "^2.0.3",
     "filenamify": "^4.1.0",
     "request": "^2.82.0"
@@ -53,7 +53,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.29.1"
+    "@theia/ext-scripts": "1.29.2"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
