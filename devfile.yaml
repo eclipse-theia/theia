@@ -36,7 +36,7 @@ commands:
         component: che-dev
         command: >
           killall node;
-          yarn && yarn build:examples
+          yarn && yarn download:plugins && yarn build:examples
         workdir: /projects/theia
   - name: >
       theia: Launch Browser Backend
