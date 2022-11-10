@@ -86,7 +86,7 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         ignoreErrors = false,
         apiVersion = DEFAULT_SUPPORTED_API_VERSION,
         apiUrl = 'https://open-vsx.org/api',
-        parallel = true,
+        parallel = false,
         proxyUrl,
         proxyAuthorization,
         strictSsl

@@ -343,7 +343,7 @@ async function theiaCli(): Promise<void> {
                 'parallel': {
                     describe: 'Download in parallel',
                     boolean: true,
-                    default: true
+                    default: false
                 },
                 'proxy-url': {
                     describe: 'Proxy URL'

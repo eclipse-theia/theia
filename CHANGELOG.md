@@ -17,6 +17,7 @@
 - [preferences] `PreferenceHeaderRendererContribution` moved to `preference-node-renderer-creator.ts`. [#11432](https://github.com/eclipse-theia/theia/pull/11432)
 - [workspace] removed `workspace.supportMultiRootWorkspace` preference [#11538](https://github.com/eclipse-theia/theia/pull/11538)
 - [workspace] removed method `isMultiRootWorkspaceEnabled` from `WorkspaceService` [#11538](https://github.com/eclipse-theia/theia/pull/11538)
+- [repo] the `download:plugins` script resolves plugins sequentially by default [#11860](https://github.com/eclipse-theia/theia/pull/11860)
 
 ## v1.31.0 - 10/27/2022
 
