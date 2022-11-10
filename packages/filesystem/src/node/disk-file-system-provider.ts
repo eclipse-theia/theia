@@ -708,7 +708,7 @@ export class DiskFileSystemProvider implements Disposable,
         copiedSources[source] = true; // remember as copied
 
         // Create folder
-        this.mkdirp(target, fileStat.mode & 511);
+        await this.mkdirp(target, fileStat.mode & 511);
 
         // Copy each file recursively
         const files = await promisify(readdir)(source);
