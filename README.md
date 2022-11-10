@@ -12,11 +12,11 @@
   [![Discourse status](https://img.shields.io/discourse/status?label=Chat&server=https%3A%2F%2Fcommunity.theia-ide.org%2F)](https://community.theia-ide.org/)
   [![Build Status](https://github.com/eclipse-theia/theia/workflows/Build/badge.svg?branch=master)](https://github.com/eclipse-theia/theia/actions?query=branch%3Amaster+event%3Apush+event%3Aschedule)
   [![Publish VS Code Built-in Extensions](https://github.com/eclipse-theia/vscode-builtin-extensions/actions/workflows/publish-vsx-latest.yml/badge.svg?branch=master)](https://github.com/eclipse-theia/vscode-builtin-extensions/actions/workflows/publish-vsx-latest.yml)
-  [![Open questions](https://img.shields.io/badge/Open-questions-blue.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/question)
+  [![Open questions](https://img.shields.io/badge/Open-questions-blue.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/discussions/categories/q-a)
   [![Open bugs](https://img.shields.io/badge/Open-bugs-red.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/bug)
   [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/eclipse-theia/theia)
 
-  Eclipse Theia is an extensible framework to develop full-fledged multi-language Cloud & Desktop IDEs and tools with  state-of-the-art web technologies.
+Eclipse Theia is an extensible framework to develop full-fledged multi-language Cloud & Desktop IDEs and tools with  state-of-the-art web technologies.
 
 </div>
 
@@ -45,7 +45,7 @@
 
 ## Releases
 
-- [All available releases](https://github.com/eclipse-theia/theia/releases) are available on Github including changelogs.
+- [All available releases](https://github.com/eclipse-theia/theia/releases) are available on GitHub including changelogs.
 - [Detailed release announcements](https://theia-ide.org/resources/) are linked on the Theia website.
 - [Community Releases](https://theia-ide.org/releases/) are listed on the Theia website.
 - [Visit the release website](https://theia-ide.org/releases/) for more information.
@@ -64,7 +64,7 @@ See [our roadmap](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Road
 
 ## Getting Started
 Here you can find guides and examples for common scenarios to adopt Theia:
-- [Get an overview about how to get started](https://theia-ide.org/#gettingstarted) on the Theia website
+- [Get an overview of how to get started](https://theia-ide.org/#gettingstarted) on the Theia website
 - [Develop a Theia application - your own IDE/Tool](https://www.theia-ide.org/doc/Composing_Applications.html)
 - [Learn about Theia's extension mechanisms](https://theia-ide.org/docs/extensions/)
 - [Develop a VS Code like extension](https://theia-ide.org/docs/authoring_vscode_extensions/)
