@@ -256,7 +256,8 @@ export class DebugBreakpointWidget implements Disposable {
                 }
             }
         }];
-        (this._input.getControl() as unknown as StandaloneCodeEditor).setDecorations('Debug breakpoint placeholder', DebugBreakpointWidget.PLACEHOLDER_DECORATION, decorations);
+        (this._input.getControl() as unknown as StandaloneCodeEditor)
+            .setDecorationsByType('Debug breakpoint placeholder', DebugBreakpointWidget.PLACEHOLDER_DECORATION, decorations);
     }
     protected get placeholder(): string {
         if (this.context === 'logMessage') {

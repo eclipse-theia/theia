@@ -47,7 +47,7 @@ export class GotoSymbolQuickAccessContribution implements QuickAccessContributio
             ctor: GotoSymbolQuickAccess,
             prefix: '@',
             placeholder: '',
-            helpEntries: [{ description: 'Go to symbol', needsEditor: true }]
+            helpEntries: [{ description: 'Go to symbol' }]
         });
     }
 }

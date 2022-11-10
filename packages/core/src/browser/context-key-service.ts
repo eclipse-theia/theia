@@ -18,7 +18,11 @@ import { injectable } from 'inversify';
 import { Disposable } from '../common';
 import { Emitter, Event } from '../common/event';
 
-export interface ContextKey<T> {
+export type ContextKeyValue = null | undefined | boolean | number | string
+    | Array<null | undefined | boolean | number | string>
+    | Record<string, null | undefined | boolean | number | string>;
+
+export interface ContextKey<T extends ContextKeyValue = ContextKeyValue> {
     set(value: T | undefined): void;
     reset(): void;
     get(): T | undefined;
@@ -49,7 +53,7 @@ export interface ContextMatcher extends Disposable {
 export interface ContextKeyService extends ContextMatcher {
     readonly onDidChange: Event<ContextKeyChangeEvent>;
 
-    createKey<T>(key: string, defaultValue: T | undefined): ContextKey<T>;
+    createKey<T extends ContextKeyValue>(key: string, defaultValue: T | undefined): ContextKey<T>;
 
     /**
      * @returns a Set of the keys used by the given `expression` or `undefined` if none are used or the expression cannot be parsed.
@@ -91,7 +95,7 @@ export class ContextKeyServiceDummyImpl implements ContextKeyService {
         this.onDidChangeEmitter.fire(event);
     }
 
-    createKey<T>(key: string, defaultValue: T | undefined): ContextKey<T> {
+    createKey<T extends ContextKeyValue>(key: string, defaultValue: T | undefined): ContextKey<T> {
         return ContextKey.None;
     }
     /**

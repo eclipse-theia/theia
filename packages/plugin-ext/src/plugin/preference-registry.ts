@@ -239,7 +239,15 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         Object.keys(data[PreferenceScope.Folder]).forEach(resource => {
             folderConfigurations.set(URI.parse(resource), this.getConfigurationModel(data[PreferenceScope.Folder][resource]));
         });
-        return new Configuration(defaultConfiguration, userConfiguration, undefined, workspaceConfiguration, folderConfigurations);
+        return new Configuration(
+            defaultConfiguration,
+            new ConfigurationModel(), /** policy configuration. */
+            new ConfigurationModel(), /** application configuration. */
+            userConfiguration,
+            new ConfigurationModel(), /** remote configuration. */
+            workspaceConfiguration,
+            folderConfigurations
+        );
     }
 
     private getConfigurationModel(data: { [key: string]: any }): ConfigurationModel {

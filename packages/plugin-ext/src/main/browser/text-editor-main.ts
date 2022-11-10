@@ -282,7 +282,8 @@ export class TextEditorMain implements Disposable {
         if (!this.editor) {
             return;
         }
-        (this.editor.getControl() as unknown as StandaloneCodeEditor).setDecorations('Plugin decorations', key, ranges.map(option => Object.assign(option, { color: undefined })));
+        (this.editor.getControl() as unknown as StandaloneCodeEditor)
+            .setDecorationsByType('Plugin decorations', key, ranges.map(option => Object.assign(option, { color: undefined })));
     }
 
     setDecorationsFast(key: string, _ranges: number[]): void {
@@ -294,7 +295,7 @@ export class TextEditorMain implements Disposable {
         for (let i = 0; i < len; i++) {
             ranges[i] = new monaco.Range(_ranges[4 * i], _ranges[4 * i + 1], _ranges[4 * i + 2], _ranges[4 * i + 3]);
         }
-        (this.editor.getControl() as unknown as StandaloneCodeEditor).setDecorationsFast(key, ranges);
+        (this.editor.getControl() as unknown as StandaloneCodeEditor).setDecorationsByTypeFast(key, ranges);
     }
 
     private static toMonacoSelections(selection: Selection): monaco.Selection {

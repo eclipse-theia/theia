@@ -520,7 +520,8 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.createDisposable(callId, disposables?.dispose);
     }
 
-    $provideCodeActions(handle: number,
+    $provideCodeActions(
+        handle: number,
         resource: UriComponents,
         rangeOrSelection: Range | Selection,
         context: CodeActionContext,

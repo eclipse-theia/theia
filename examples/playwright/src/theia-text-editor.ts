@@ -152,9 +152,10 @@ export class TheiaTextEditor extends TheiaEditor {
     }
 
     protected replaceEditorSymbolsWithSpace(content: string): string | Promise<string | undefined> {
-        // [ ] &nbsp; => \u00a0
-        // [·] &middot; => \u00b7
-        return content.replace(/[\u00a0\u00b7]/g, ' ');
+        // [ ] &nbsp; => \u00a0 -- NO-BREAK SPACE
+        // [·] &middot; => \u00b7 -- MIDDLE DOT
+        // [] &zwnj; => \u200c -- ZERO WIDTH NON-JOINER
+        return content.replace(/[\u00a0\u00b7]/g, ' ').replace(/[\u200c]/g, '');
     }
 
     protected async selectedSuggestion(): Promise<ElementHandle<SVGElement | HTMLElement>> {

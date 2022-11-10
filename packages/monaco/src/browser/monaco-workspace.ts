@@ -39,24 +39,24 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 
 export namespace WorkspaceFileEdit {
-    export function is(arg: Edit): arg is monaco.languages.WorkspaceFileEdit {
-        return ('oldUri' in arg && monaco.Uri.isUri(arg.oldUri)) ||
-            ('newUri' in arg && monaco.Uri.isUri(arg.newUri));
+    export function is(arg: Edit): arg is monaco.languages.IWorkspaceFileEdit {
+        return ('oldResource' in arg && monaco.Uri.isUri(arg.oldResource)) ||
+            ('newResource' in arg && monaco.Uri.isUri(arg.newResource));
     }
 }
 
 export namespace WorkspaceTextEdit {
-    export function is(arg: Edit): arg is monaco.languages.WorkspaceTextEdit {
+    export function is(arg: Edit): arg is monaco.languages.IWorkspaceTextEdit {
         return !!arg && typeof arg === 'object'
             && 'resource' in arg
             && monaco.Uri.isUri(arg.resource)
-            && 'edit' in arg
-            && arg.edit !== null
-            && typeof arg.edit === 'object';
+            && 'textEdit' in arg
+            && arg.textEdit !== null
+            && typeof arg.textEdit === 'object';
     }
 }
 
-export type Edit = monaco.languages.WorkspaceFileEdit | monaco.languages.WorkspaceTextEdit;
+export type Edit = monaco.languages.IWorkspaceFileEdit | monaco.languages.IWorkspaceTextEdit;
 
 export namespace ResourceFileEdit {
     export function is(arg: ResourceEdit): arg is MonacoResourceFileEdit {

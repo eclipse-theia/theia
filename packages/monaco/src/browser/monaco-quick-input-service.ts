@@ -200,7 +200,11 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     // Keep the styles up to date with https://github.com/microsoft/vscode/blob/7888ff3a6b104e9e2e3d0f7890ca92dd0828215f/src/vs/platform/quickinput/browser/quickInput.ts#L171.
     private getStyles(): IQuickInputStyles {
         return {
-            widget: {},
+            widget: {
+                quickInputBackground: this.colorRegistry.getColor('quickInput.background'),
+                quickInputForeground: this.colorRegistry.getColor('quickInput.foreground'),
+                quickInputTitleBackground: this.colorRegistry.getColor('quickInputTitle.background')
+            },
             list: {
                 listBackground: this.colorRegistry.getColor('quickInput.background'),
                 listInactiveFocusForeground: this.colorRegistry.getColor('quickInputList.focusForeground'),
