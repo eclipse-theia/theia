@@ -15,7 +15,10 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { ContextKeyService as TheiaContextKeyService, ContextKey, ContextKeyChangeEvent, ScopedValueStore, ContextMatcher, ContextKeyValue } from '@theia/core/lib/browser/context-key-service';
+import {
+    ContextKeyService as TheiaContextKeyService, ContextKey, ContextKeyChangeEvent,
+    ScopedValueStore, ContextMatcher, ContextKeyValue
+} from '@theia/core/lib/browser/context-key-service';
 import { Emitter } from '@theia/core';
 import { AbstractContextKeyService, ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
 import { ContextKeyExpr, ContextKeyExpression, IContext, IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
