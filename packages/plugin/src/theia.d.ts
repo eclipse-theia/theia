@@ -10077,7 +10077,7 @@ export module '@theia/plugin' {
          * @return A hover or a thenable that resolves to such. The lack of a result can be
          * signaled by returning `undefined` or `null`.
          */
-        provideHover(document: TextDocument, position: Position, token: CancellationToken | undefined): ProviderResult<Hover>;
+        provideHover(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<Hover>;
     }
 
     /**

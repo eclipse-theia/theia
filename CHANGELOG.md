@@ -9,6 +9,7 @@
 - [plugin] added `Task#runOptions` field and `RunOptions` interface [#11759](https://github.com/eclipse-theia/theia/pull/11759) - Contributed on behalf of STMicroelectronics
 - [tasks] added support for `reevaluateOnRerun` run option [#11759](https://github.com/eclipse-theia/theia/pull/11759) - Contributed on behalf of STMicroelectronics
 - [plugin] updated the default VS Code API version from `1.53.2` to `1.55.2` [#11823](https://github.com/eclipse-theia/theia/pull/11823)
+- [plugin] aligned typings for `HoverProvider.provideHover` with VS Code [#11862](https://github.com/eclipse-theia/theia/pull/11862) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.32.0">[Breaking Changes:](#breaking_changes_1.32.0)</a>
 
