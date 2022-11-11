@@ -158,7 +158,8 @@ import {
     TestRunProfileKind,
     TestTag,
     TestRunRequest,
-    TestMessage
+    TestMessage,
+    ExtensionKind
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -180,7 +181,6 @@ import { ConnectionImpl } from '../common/connection';
 import { TasksExtImpl } from './tasks/tasks';
 import { DebugExtImpl } from './debug/debug-ext';
 import { FileSystemExtImpl } from './file-system-ext-impl';
-import { QuickPick, QuickPickItem, ResourceLabelFormatter, LineChange } from '@theia/plugin';
 import { ScmExtImpl } from './scm';
 import { DecorationsExtImpl } from './decorations';
 import { TextEditorExt } from './text-editor';
@@ -308,7 +308,7 @@ export function createAPIFactory(
             getCommands(filterInternal: boolean = false): PromiseLike<string[]> {
                 return commandRegistry.getCommands(filterInternal);
             },
-            registerDiffInformationCommand(command: string, callback: (diff: LineChange[], ...args: any[]) => any, thisArg?: any): Disposable {
+            registerDiffInformationCommand(command: string, callback: (diff: theia.LineChange[], ...args: any[]) => any, thisArg?: any): Disposable {
                 // Dummy implementation.
                 return new Disposable(() => { });
             }
@@ -385,7 +385,7 @@ export function createAPIFactory(
             showQuickPick(items: any, options?: theia.QuickPickOptions, token?: theia.CancellationToken): any {
                 return quickOpenExt.showQuickPick(items, options, token);
             },
-            createQuickPick<T extends QuickPickItem>(): QuickPick<T> {
+            createQuickPick<T extends theia.QuickPickItem>(): theia.QuickPick<T> {
                 return quickOpenExt.createQuickPick(plugin);
             },
             showWorkspaceFolderPick(options?: theia.WorkspaceFolderPickOptions): PromiseLike<theia.WorkspaceFolder | undefined> {
@@ -614,7 +614,7 @@ export function createAPIFactory(
             registerTaskProvider(type: string, provider: theia.TaskProvider): theia.Disposable {
                 return tasks.registerTaskProvider(type, provider);
             },
-            registerResourceLabelFormatter(formatter: ResourceLabelFormatter): theia.Disposable {
+            registerResourceLabelFormatter(formatter: theia.ResourceLabelFormatter): theia.Disposable {
                 return labelServiceExt.$registerResourceLabelFormatter(formatter);
             },
             registerTimelineProvider(scheme: string | string[], provider: theia.TimelineProvider): theia.Disposable {
@@ -1104,14 +1104,10 @@ export function createAPIFactory(
             TestRunProfileKind,
             TestTag,
             TestRunRequest,
-            TestMessage
+            TestMessage,
+            ExtensionKind
         };
     };
-}
-
-export enum ExtensionKind {
-    UI = 1,
-    Workspace = 2
 }
 
 /**
@@ -1135,7 +1131,7 @@ export interface ExtensionPlugin<T> extends theia.Plugin<T> {
      * is defined in the `package.json`-file of extensions. When no remote extension host exists,
      * the value is {@linkcode ExtensionKind.UI}.
      */
-    extensionKind: ExtensionKind;
+    extensionKind: theia.ExtensionKind;
 }
 
 export class Plugin<T> implements theia.Plugin<T> {
