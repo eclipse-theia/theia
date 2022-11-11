@@ -490,19 +490,22 @@ In case if a few providers are registered the chain will be executed until one o
 To contribute a hover it is only needed to provide a function that can be called with a `TextDocument` and a `Position` returning hover info. Registration is done using a document selector which either a language id ('typescript', 'javascript' etc.) or a more complex filter like `{scheme: 'file', language: 'typescript'}`.
 
 For example,
+
 ```typescript
 theia.languages.registerHoverProvider('typescript', {
-    provideHover(doc: theia.TextDocument, position: theia.Position) {
+    provideHover(doc: theia.TextDocument, position: theia.Position, token: theia.CancellationToken) {
         return new theia.Hover('Hover for all **typescript** files.');
     }
 });
 ```
+
 will show the hover message for all `typescript` files.
 
 The code below puts word under cursor into hover message:
+
 ```typescript
 theia.languages.registerHoverProvider({scheme: 'file'}, {
-    provideHover(doc: theia.TextDocument, position: theia.Position) {
+    provideHover(doc: theia.TextDocument, position: theia.Position, token: theia.CancellationToken) {
         const range = doc.getWordRangeAtPosition(position);
         const text = doc.getText(range);
         return new theia.Hover(text);
