@@ -492,7 +492,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
                         if (MarkdownString.is(node.tooltip)) {
                             this.hoverService.requestHover({
                                 content: node.tooltip,
-                                target: event.currentTarget,
+                                target: event.target as HTMLElement,
                                 position: 'right'
                             });
                         }
@@ -509,7 +509,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
                     if (MarkdownString.is(node.tooltip)) {
                         this.hoverService.requestHover({
                             content: node.tooltip,
-                            target: event.currentTarget,
+                            target: event.target as HTMLElement,
                             position: 'right'
                         });
                     } else {
@@ -527,7 +527,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
                 onMouseEnter: event => {
                     this.hoverService.requestHover({
                         content: node.tooltip!,
-                        target: event.currentTarget,
+                        target: event.target as HTMLElement,
                         position: 'right'
                     });
                 }
