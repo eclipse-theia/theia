@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as markdownit from '@theia/core/shared/markdown-it';
 import * as React from '@theia/core/shared/react';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -29,9 +28,10 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { CommandRegistry, MenuPath, nls } from '@theia/core/lib/common';
-import { codicon, ContextMenuRenderer, TooltipService, TreeWidget } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer, HoverService, TreeWidget } from '@theia/core/lib/browser';
 import { VSXExtensionNamespaceAccess, VSXUser } from '@theia/ovsx-client/lib/ovsx-types';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 
 export const EXTENSIONS_CONTEXT_MENU: MenuPath = ['extensions_context_menu'];
 
@@ -124,8 +124,8 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     @inject(VSXExtensionsSearchModel)
     readonly search: VSXExtensionsSearchModel;
 
-    @inject(TooltipService)
-    readonly tooltipService: TooltipService;
+    @inject(HoverService)
+    protected readonly hoverService: HoverService;
 
     @inject(WindowService)
     readonly windowService: WindowService;
@@ -266,10 +266,6 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
         return this.getData('publishedBy');
     }
 
-    get tooltipId(): string {
-        return this.tooltipService.tooltipId;
-    }
-
     get tooltip(): string {
         let md = `__${this.displayName}__ ${VSXExtension.formatVersion(this.version)}\n\n${this.description}\n_____\n\n${nls.localizeByDefault('Publisher: {0}', this.publisher)}`;
 
@@ -285,7 +281,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
             md += `  \r${getAverageRatingTitle(this.averageRating)}`;
         }
 
-        return markdownit().render(md);
+        return md;
     }
 
     protected _busy = 0;
@@ -364,9 +360,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     render(host: TreeWidget): React.ReactNode {
-        const node = <VSXExtensionComponent extension={this} host={host} />;
-        this.tooltipService.update();
-        return node;
+        return <VSXExtensionComponent extension={this} host={host} hoverService={this.hoverService} />;
     }
 }
 
@@ -451,14 +445,24 @@ const getAverageRatingTitle = (averageRating: number): string =>
 export namespace VSXExtensionComponent {
     export interface Props extends AbstractVSXExtensionComponent.Props {
         host: TreeWidget;
+        hoverService: HoverService;
     }
 }
 
 export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = VSXExtensionComponent.Props> extends AbstractVSXExtensionComponent<Props> {
     override render(): React.ReactNode {
-        const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltipId, tooltip } = this.props.extension;
+        const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltip } = this.props.extension;
 
-        return <div className='theia-vsx-extension noselect' data-for={tooltipId} data-tip={tooltip}>
+        return <div
+            className='theia-vsx-extension noselect'
+            onMouseEnter={event => {
+                this.props.hoverService.requestHover({
+                    content: new MarkdownStringImpl(tooltip),
+                    target: event.currentTarget,
+                    position: 'right'
+                });
+            }}
+        >
             {iconUrl ?
                 <img className='theia-vsx-extension-icon' src={iconUrl} /> :
                 <div className='theia-vsx-extension-icon placeholder' />}

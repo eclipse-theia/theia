@@ -16,17 +16,14 @@
 
 import { interfaces } from 'inversify';
 import { StatusBarImpl } from './status-bar';
-import { StatusBarHoverManager } from './status-bar-hover-manager';
 import { StatusBar } from './status-bar-types';
 import { StatusBarViewModel } from './status-bar-view-model';
 export * from './status-bar';
 export * from './status-bar-types';
 export * from './status-bar-view-model';
-export * from './status-bar-hover-manager';
 
 export function bindStatusBar(bind: interfaces.Bind): void {
     bind(StatusBarImpl).toSelf().inSingletonScope();
     bind(StatusBar).to(StatusBarImpl).inSingletonScope();
     bind(StatusBarViewModel).toSelf().inSingletonScope();
-    bind(StatusBarHoverManager).toSelf().inSingletonScope();
 }

@@ -24,7 +24,7 @@ import { LabelParser, LabelIcon } from '../label-parser';
 import { PreferenceService } from '../preferences';
 import { StatusBar, StatusBarEntry, StatusBarAlignment, StatusBarViewEntry } from './status-bar-types';
 import { StatusBarViewModel } from './status-bar-view-model';
-import { StatusBarHoverManager } from './status-bar-hover-manager';
+import { HoverService } from '../hover-service';
 import { codicon } from '../widgets';
 export { StatusBar, StatusBarAlignment, StatusBarEntry };
 
@@ -40,7 +40,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService,
         @inject(PreferenceService) protected readonly preferences: PreferenceService,
         @inject(StatusBarViewModel) protected readonly viewModel: StatusBarViewModel,
-        @inject(StatusBarHoverManager) protected readonly hoverManager: StatusBarHoverManager,
+        @inject(HoverService) protected readonly hoverService: HoverService,
     ) {
         super();
         delete this.scrollOptions;
@@ -136,7 +136,11 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         }
 
         if (entry.tooltip) {
-            attrs.onMouseEnter = e => this.hoverManager.requestHover(entry.tooltip!, e.currentTarget);
+            attrs.onMouseEnter = e => this.hoverService.requestHover({
+                content: entry.tooltip!,
+                target: e.currentTarget,
+                position: 'top'
+            });
         }
         if (entry.className) {
             attrs.className += ' ' + entry.className;

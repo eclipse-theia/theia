@@ -33,6 +33,7 @@ import { NavigatableWidget } from '../navigatable-types';
 import { IDragEvent } from '@phosphor/dragdrop';
 import { PINNED_CLASS } from '../widgets/widget';
 import { CorePreferences } from '../core-preferences';
+import { HoverService } from '../hover-service';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -90,7 +91,8 @@ export class TabBarRenderer extends TabBar.Renderer {
         protected readonly iconThemeService?: IconThemeService,
         protected readonly selectionService?: SelectionService,
         protected readonly commandService?: CommandService,
-        protected readonly corePreferences?: CorePreferences
+        protected readonly corePreferences?: CorePreferences,
+        protected readonly hoverService?: HoverService
     ) {
         super();
         if (this.decoratorService) {
@@ -146,7 +148,7 @@ export class TabBarRenderer extends TabBar.Renderer {
      */
     override renderTab(data: SideBarRenderData, isInSidePanel?: boolean, isPartOfHiddenTabBar?: boolean): VirtualElement {
         const title = data.title;
-        const id = this.createTabId(data.title, isPartOfHiddenTabBar);
+        const id = this.createTabId(title, isPartOfHiddenTabBar);
         const key = this.createTabKey(data);
         const style = this.createTabStyle(data);
         const className = this.createTabClass(data);
@@ -154,9 +156,17 @@ export class TabBarRenderer extends TabBar.Renderer {
         const closeIconTitle = data.title.className.includes(PINNED_CLASS)
             ? nls.localizeByDefault('Unpin')
             : nls.localizeByDefault('Close');
+
+        const hover = this.tabBar && this.tabBar.orientation === 'horizontal' ? {
+            title: title.caption
+        } : {
+            onmouseenter: this.handleMouseEnterEvent
+        };
+
         return h.li(
             {
-                key, className, id, title: title.caption, style, dataset,
+                ...hover,
+                key, className, id, style, dataset,
                 oncontextmenu: this.handleContextMenuEvent,
                 ondblclick: this.handleDblClickEvent,
                 onauxclick: (e: MouseEvent) => {
@@ -457,6 +467,20 @@ export class TabBarRenderer extends TabBar.Renderer {
         return h.div({ className: baseClassName, style }, data.title.iconLabel);
     }
 
+    protected handleMouseEnterEvent = (event: MouseEvent) => {
+        if (this.tabBar && this.hoverService && event.currentTarget instanceof HTMLElement) {
+            const id = event.currentTarget.id;
+            const title = this.tabBar.titles.find(t => this.createTabId(t) === id);
+            if (title) {
+                this.hoverService.requestHover({
+                    content: title.caption,
+                    target: event.currentTarget,
+                    position: 'right'
+                });
+            }
+        }
+    };
+
     protected handleContextMenuEvent = (event: MouseEvent) => {
         if (this.contextMenuRenderer && this.contextMenuPath && event.currentTarget instanceof HTMLElement) {
             event.stopPropagation();
@@ -501,9 +525,8 @@ export class TabBarRenderer extends TabBar.Renderer {
         }
         if (this.tabBar && event.currentTarget instanceof HTMLElement) {
             const id = event.currentTarget.id;
-            // eslint-disable-next-line no-null/no-null
-            const title = this.tabBar.titles.find(t => this.createTabId(t) === id) || null;
-            const area = title && title.owner.parent;
+            const title = this.tabBar.titles.find(t => this.createTabId(t) === id);
+            const area = title?.owner.parent;
             if (area instanceof TheiaDockPanel && (area.id === BOTTOM_AREA_ID || area.id === MAIN_AREA_ID)) {
                 area.toggleMaximized();
             }
