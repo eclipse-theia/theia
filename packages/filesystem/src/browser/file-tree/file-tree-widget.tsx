@@ -26,6 +26,7 @@ import { DirNode, FileStatNode, FileStatNodeData } from './file-tree';
 import { FileTreeModel } from './file-tree-model';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 import { FileStat, FileType } from '../../common/files';
+import { isOSX } from '@theia/core';
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
@@ -154,6 +155,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
     protected handleDragOverEvent(node: TreeNode | undefined, event: React.DragEvent): void {
         event.preventDefault();
         event.stopPropagation();
+        event.dataTransfer.dropEffect = this.getDropEffect(event);
         if (!this.toCancelNodeExpansion.disposed) {
             return;
         }
@@ -176,13 +178,17 @@ export class FileTreeWidget extends CompressedTreeWidget {
         try {
             event.preventDefault();
             event.stopPropagation();
-            event.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+            event.dataTransfer.dropEffect = this.getDropEffect(event);
             const containing = this.getDropTargetDirNode(node);
             if (containing) {
                 const resources = this.getSelectedTreeNodesFromData(event.dataTransfer);
                 if (resources.length > 0) {
                     for (const treeNode of resources) {
-                        await this.model.move(treeNode, containing);
+                        if (event.dataTransfer.dropEffect === 'copy' && FileStatNode.is(treeNode)) {
+                            await this.model.copy(treeNode.uri, containing);
+                        } else {
+                            await this.model.move(treeNode, containing);
+                        }
                     }
                 } else {
                     await this.uploadService.upload(containing.uri, { source: event.dataTransfer });
@@ -205,6 +211,11 @@ export class FileTreeWidget extends CompressedTreeWidget {
             }
         }
         return DirNode.getContainingDir(node);
+    }
+
+    protected getDropEffect(event: React.DragEvent): 'copy' | 'move' {
+        const isCopy = isOSX ? event.altKey : event.ctrlKey;
+        return isCopy ? 'copy' : 'move';
     }
 
     protected setTreeNodeAsData(data: DataTransfer, node: TreeNode): void {
