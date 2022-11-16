@@ -20,6 +20,20 @@ For example:
 }
 ```
 
+### v1.32.0
+
+#### Removal of `CircularDependencyPlugin`
+
+We no longer enforce usage of the `CircularDependencyPlugin` in the generated webpack configuration. This plugin previously informed users of any non-fatal circular dependencies in their JavaScript imports.
+Note that Theia adopters can enable the plugin again by manually adding `circular-dependency-plugin` as a dev dependency and adding the following snippet to their `webpack.config.js` file.
+
+```js
+config[0].module.plugins.push(new CircularDependencyPlugin({
+    exclude: /(node_modules)[\\\\|\/]./,
+    failOnError: false
+}));
+```
+
 ### v1.30.0
 
 #### lerna 5.5.4
