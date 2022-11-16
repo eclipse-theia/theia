@@ -252,7 +252,7 @@ export class DebugExtImpl implements DebugExt {
         }
     }
 
-    async $sessionDidCreate(sessionId: string): Promise<void> {
+    async $sessionDidStart(sessionId: string): Promise<void> {
         const session = this.sessions.get(sessionId);
         if (session) {
             this.onDidStartDebugSessionEmitter.fire(session);

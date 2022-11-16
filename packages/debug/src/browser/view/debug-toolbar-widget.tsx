@@ -16,7 +16,8 @@
 
 import * as React from '@theia/core/shared/react';
 import { inject, postConstruct, injectable } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, MenuPath } from '@theia/core';
+import { ActionMenuNode, CommandRegistry, CompositeMenuNode, Disposable, DisposableCollection, MenuModelRegistry, MenuPath } from '@theia/core';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ReactWidget } from '@theia/core/lib/browser/widgets';
 import { DebugViewModel } from './debug-view-model';
 import { DebugState } from '../debug-session';
@@ -28,8 +29,10 @@ export class DebugToolBar extends ReactWidget {
 
     static readonly MENU: MenuPath = ['debug-toolbar-menu'];
 
-    @inject(DebugViewModel)
-    protected readonly model: DebugViewModel;
+    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
+    @inject(MenuModelRegistry) protected readonly menuModelRegistry: MenuModelRegistry;
+    @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
+    @inject(DebugViewModel) protected readonly model: DebugViewModel;
 
     protected readonly onRender = new DisposableCollection();
 
@@ -65,6 +68,7 @@ export class DebugToolBar extends ReactWidget {
     protected render(): React.ReactNode {
         const { state } = this.model;
         return <React.Fragment>
+            {this.renderContributedCommands()}
             {this.renderContinue()}
             <DebugAction enabled={state === DebugState.Stopped} run={this.stepOver} label={nls.localizeByDefault('Step Over')}
                 iconClass='debug-step-over' ref={this.setStepRef} />
@@ -77,6 +81,29 @@ export class DebugToolBar extends ReactWidget {
             {this.renderStart()}
         </React.Fragment>;
     }
+
+    protected renderContributedCommands(): React.ReactNode {
+        return this.menuModelRegistry
+            .getMenu(DebugToolBar.MENU)
+            .children.filter(node => node instanceof CompositeMenuNode)
+            .map(node => (node as CompositeMenuNode).children)
+            .reduce((acc, curr) => acc.concat(curr), [])
+            .filter(node => node instanceof ActionMenuNode)
+            .map(node => this.debugAction(node as ActionMenuNode));
+    }
+
+    protected debugAction(node: ActionMenuNode): React.ReactNode {
+        const { label, command, when, icon: iconClass = '' } = node;
+        const run = () => this.commandRegistry.executeCommand(command);
+        const enabled = when ? this.contextKeyService.match(when) : true;
+        return enabled && <DebugAction
+            key={command}
+            enabled={enabled}
+            label={label}
+            iconClass={iconClass}
+            run={run} />;
+    }
+
     protected renderStart(): React.ReactNode {
         const { state } = this.model;
         if (state === DebugState.Inactive && this.model.sessionCount === 1) {

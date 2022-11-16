@@ -33,6 +33,14 @@ export interface TextEditorDocument extends lsp.TextDocument, Saveable, Disposab
      * @since 1.8.0
      */
     findMatches?(options: FindMatchesOptions): FindMatch[];
+    /**
+     * Create a valid position.
+     */
+    validatePosition(position: Position): Position;
+    /**
+     * Create a valid range.
+     */
+    validateRange(range: Range): Range;
 }
 
 // Refactoring

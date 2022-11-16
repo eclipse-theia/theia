@@ -113,7 +113,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.toDispose.pushAll([
             this.breakpointsManager.onDidChangeBreakpoints(fireDidChangeBreakpoints),
             this.breakpointsManager.onDidChangeFunctionBreakpoints(fireDidChangeBreakpoints),
-            this.sessionManager.onDidCreateDebugSession(debugSession => this.debugExt.$sessionDidCreate(debugSession.id)),
+            this.sessionManager.onDidStartDebugSession(debugSession => this.debugExt.$sessionDidStart(debugSession.id)),
             this.sessionManager.onDidDestroyDebugSession(debugSession => this.debugExt.$sessionDidDestroy(debugSession.id)),
             this.sessionManager.onDidChangeActiveDebugSession(event => this.debugExt.$sessionDidChange(event.current && event.current.id)),
             this.sessionManager.onDidReceiveDebugSessionCustomEvent(event => this.debugExt.$onSessionCustomEvent(event.session.id, event.event, event.body))
