@@ -69,14 +69,6 @@
   background: var(--theia-scrollbarSlider-activeBackground) !important;
 }
 
-.monaco-scrollable-element > .scrollbar.vertical > .slider {
-  width: var(--theia-scrollbar-width) !important;
-}
-
-.monaco-scrollable-element > .scrollbar.horizontal > .slider {
-  height: var(--theia-scrollbar-width) !important;
-}
-
 .monaco-editor .codicon.codicon-debug-start {
   color: var(--theia-debugIcon-startForeground) !important;
 }
