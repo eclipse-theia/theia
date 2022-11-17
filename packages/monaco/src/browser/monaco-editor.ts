@@ -134,12 +134,12 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
             lightbulb: { enabled: true },
             fixedOverflowWidgets: true,
             scrollbar: {
-                ...options?.scrollbar,
                 useShadows: false,
                 verticalHasArrows: false,
                 horizontalHasArrows: false,
                 verticalScrollbarSize: 10,
-                horizontalScrollbarSize: 10
+                horizontalScrollbarSize: 10,
+                ...options?.scrollbar,
             }
         } as IStandaloneEditorConstructionOptions;
         const instantiator = this.getInstantiatorWithOverrides(override);
