@@ -57,7 +57,6 @@ const path = require('path');
 const webpack = require('webpack');
 const yargs = require('yargs');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const CircularDependencyPlugin = require('circular-dependency-plugin');
 const CompressionPlugin = require('compression-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
@@ -89,10 +88,6 @@ const plugins = [
 if (staticCompression) {
     plugins.push(new CompressionPlugin({}));
 }
-plugins.push(new CircularDependencyPlugin({
-    exclude: /(node_modules|examples)[\\\\|\/]./,
-    failOnError: false // https://github.com/nodejs/readable-stream/issues/280#issuecomment-297076462
-}));
 
 module.exports = [{
     mode,

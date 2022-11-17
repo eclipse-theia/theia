@@ -39,7 +39,6 @@
     "@types/semver": "^7.3.8",
     "babel-loader": "^8.2.2",
     "buffer": "^6.0.3",
-    "circular-dependency-plugin": "^5.2.2",
     "compression-webpack-plugin": "^9.0.0",
     "copy-webpack-plugin": "^8.1.1",
     "css-loader": "^6.2.0",
