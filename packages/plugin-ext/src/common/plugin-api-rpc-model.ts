@@ -764,3 +764,98 @@ export interface InlayHintsProvider {
     resolveInlayHint?(hint: InlayHint, token: monaco.CancellationToken): InlayHint[] | undefined | Thenable<InlayHint[] | undefined>;
 }
 
+/**
+ * How an {@link InlineCompletionsProvider inline completion provider} was triggered.
+ */
+export enum InlineCompletionTriggerKind {
+    /**
+     * Completion was triggered automatically while editing.
+     * It is sufficient to return a single completion item in this case.
+     */
+    Automatic = 0,
+
+    /**
+     * Completion was triggered explicitly by a user gesture.
+     * Return multiple completion items to enable cycling through them.
+     */
+    Explicit = 1,
+}
+
+export interface InlineCompletionContext {
+    /**
+     * How the completion was triggered.
+     */
+    readonly triggerKind: InlineCompletionTriggerKind;
+
+    readonly selectedSuggestionInfo: SelectedSuggestionInfo | undefined;
+}
+
+export interface SelectedSuggestionInfo {
+    range: Range;
+    text: string;
+    isSnippetText: boolean;
+    completionKind: CompletionItemKind;
+}
+
+export interface InlineCompletion {
+    /**
+     * The text to insert.
+     * If the text contains a line break, the range must end at the end of a line.
+     * If existing text should be replaced, the existing text must be a prefix of the text to insert.
+     *
+     * The text can also be a snippet. In that case, a preview with default parameters is shown.
+     * When accepting the suggestion, the full snippet is inserted.
+     */
+    readonly insertText: string | { snippet: string };
+
+    /**
+     * A text that is used to decide if this inline completion should be shown.
+     * An inline completion is shown if the text to replace is a subword of the filter text.
+     */
+    readonly filterText?: string;
+
+    /**
+     * An optional array of additional text edits that are applied when
+     * selecting this completion. Edits must not overlap with the main edit
+     * nor with themselves.
+     */
+    readonly additionalTextEdits?: SingleEditOperation[];
+
+    /**
+     * The range to replace.
+     * Must begin and end on the same line.
+     */
+    readonly range?: Range;
+
+    readonly command?: Command;
+
+    /**
+     * If set to `true`, unopened closing brackets are removed and unclosed opening brackets are closed.
+     * Defaults to `false`.
+     */
+    readonly completeBracketPairs?: boolean;
+}
+
+export interface InlineCompletions<TItem extends InlineCompletion = InlineCompletion> {
+    readonly items: readonly TItem[];
+}
+
+export interface InlineCompletionsProvider<T extends InlineCompletions = InlineCompletions> {
+    provideInlineCompletions(
+        model: monaco.editor.ITextModel,
+        position: monaco.Position,
+        context: InlineCompletionContext,
+        token: monaco.CancellationToken
+    ): T[] | undefined | Thenable<T[] | undefined>;
+
+    /**
+     * Will be called when an item is shown.
+     */
+    handleItemDidShow?(completions: T, item: T['items'][number]): void;
+
+    /**
+     * Will be called when a completions list is no longer in use and can be garbage-collected.
+     */
+    freeInlineCompletions(completions: T): void;
+}
+

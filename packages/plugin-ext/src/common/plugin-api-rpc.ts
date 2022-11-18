@@ -81,7 +81,10 @@ import {
     InlayHint,
     CachedSession,
     CachedSessionItem,
-    TypeHierarchyItem
+    TypeHierarchyItem,
+    InlineCompletion,
+    InlineCompletions,
+    InlineCompletionContext
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -1576,6 +1579,8 @@ export interface LanguagesExt {
     $provideSuperTypes(handle: number, sessionId: string, itemId: string, token: theia.CancellationToken): Promise<TypeHierarchyItem[] | undefined>
     $provideSubTypes(handle: number, sessionId: string, itemId: string, token: theia.CancellationToken): Promise<TypeHierarchyItem[] | undefined>;
     $releaseTypeHierarchy(handle: number, session?: string): Promise<boolean>;
+    $provideInlineCompletions(handle: number, resource: UriComponents, position: Position, context: InlineCompletionContext, token: CancellationToken): Promise<IdentifiableInlineCompletions | undefined>;
+    $freeInlineCompletionsList(handle: number, pid: number): void;
 }
 
 export const LanguagesMainFactory = Symbol('LanguagesMainFactory');
@@ -1633,6 +1638,7 @@ export interface LanguagesMain {
     $registerTypeHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $setLanguageStatus(handle: number, status: LanguageStatus): void;
     $removeLanguageStatus(handle: number): void;
+    $registerInlineCompletionsSupport(handle: number, selector: SerializedDocumentFilter[]): void;
 }
 
 export interface WebviewInitData {
@@ -2040,3 +2046,11 @@ export interface SecretsMain {
 
 export type InlayHintDto = CachedSessionItem<InlayHint>;
 export type InlayHintsDto = CachedSession<{ hints: InlayHint[] }>;
+
+export interface IdentifiableInlineCompletions extends InlineCompletions<IdentifiableInlineCompletion> {
+    pid: number;
+}
+
+export interface IdentifiableInlineCompletion extends InlineCompletion {
+    idx: number;
+}

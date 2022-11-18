@@ -992,6 +992,37 @@ export class CompletionList {
     }
 }
 
+export enum InlineCompletionTriggerKind {
+    Invoke = 0,
+    Automatic = 1,
+}
+
+@es5ClassCompat
+export class InlineCompletionItem implements theia.InlineCompletionItem {
+
+    filterText?: string;
+    insertText: string;
+    range?: Range;
+    command?: theia.Command;
+
+    constructor(insertText: string, range?: Range, command?: theia.Command) {
+        this.insertText = insertText;
+        this.range = range;
+        this.command = command;
+    }
+}
+
+@es5ClassCompat
+export class InlineCompletionList implements theia.InlineCompletionList {
+
+    items: theia.InlineCompletionItem[];
+    commands: theia.Command[] | undefined = undefined;
+
+    constructor(items: theia.InlineCompletionItem[]) {
+        this.items = items;
+    }
+}
+
 export enum DiagnosticSeverity {
     Error = 0,
     Warning = 1,
