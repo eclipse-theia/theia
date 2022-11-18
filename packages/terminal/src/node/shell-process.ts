@@ -32,7 +32,7 @@ export const ShellProcessOptions = Symbol('ShellProcessOptions');
 export interface ShellProcessOptions {
     shellPreferences?: IShellTerminalPreferences,
     shell?: string,
-    args?: string[],
+    args?: string[] | string,
     rootURI?: string,
     cols?: number,
     rows?: number,

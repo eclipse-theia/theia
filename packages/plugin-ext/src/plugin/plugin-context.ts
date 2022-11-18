@@ -461,7 +461,7 @@ export function createAPIFactory(
             },
             createTerminal(nameOrOptions: theia.TerminalOptions | theia.PseudoTerminalOptions | theia.ExtensionTerminalOptions | (string | undefined),
                 shellPath?: string,
-                shellArgs?: string[]): theia.Terminal {
+                shellArgs?: string[] | string): theia.Terminal {
                 return terminalExt.createTerminal(nameOrOptions, shellPath, shellArgs);
             },
             onDidChangeTerminalState,
