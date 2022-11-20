@@ -668,6 +668,24 @@ export function createAPIFactory(
             get onDidChangeLogLevel(): theia.Event<theia.LogLevel> { return onDidChangeLogLevel.event; }
         });
 
+        const extensions: typeof theia.extensions = Object.freeze({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            getExtension<T = any>(extensionId: string): theia.Extension<T> | undefined {
+                const plg = pluginManager.getPluginById(extensionId.toLowerCase());
+                if (plg) {
+                    return new PluginExt(pluginManager, plg);
+                }
+                return undefined;
+            },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            get all(): readonly theia.Extension<any>[] {
+                return pluginManager.getAllPlugins().map(plg => new PluginExt(pluginManager, plg));
+            },
+            get onDidChange(): theia.Event<void> {
+                return pluginManager.onDidChange;
+            }
+        });
+
         const languages: typeof theia.languages = {
             getLanguages(): PromiseLike<string[]> {
                 return languagesExt.getLanguages();
@@ -929,6 +947,7 @@ export function createAPIFactory(
             window,
             workspace,
             env,
+            extensions,
             languages,
             plugins,
             debug,
@@ -1046,7 +1065,8 @@ export function createAPIFactory(
             FileDecoration,
             CancellationError,
             ExtensionMode,
-            LinkedEditingRanges
+            LinkedEditingRanges,
+            ExtensionKind
         };
     };
 }
@@ -1077,7 +1097,7 @@ export interface ExtensionPlugin<T> extends theia.Plugin<T> {
      * is defined in the `package.json`-file of extensions. When no remote extension host exists,
      * the value is {@linkcode ExtensionKind.UI}.
      */
-    extensionKind: ExtensionKind;
+    extensionKind: theia.ExtensionKind;
 }
 
 export class Plugin<T> implements theia.Plugin<T> {
