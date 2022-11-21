@@ -26,11 +26,6 @@
     margin-left: var(--theia-ui-padding);
 }
 
-.theia-side-panel .theia-debug-container .theia-ExpansionToggle {
-    padding-right: 4px;
-    min-width: 10px;
-}
-
 .theia-source-breakpoint,
 .theia-debug-session,
 .theia-debug-thread,
