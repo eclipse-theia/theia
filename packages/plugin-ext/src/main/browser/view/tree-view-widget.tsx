@@ -37,13 +37,12 @@ import {
 import { MenuPath, MenuModelRegistry, ActionMenuNode } from '@theia/core/lib/common/menu';
 import * as React from '@theia/core/shared/react';
 import { PluginSharedStyle } from '../plugin-shared-style';
-import { ACTION_ITEM, codicon, Widget } from '@theia/core/lib/browser/widgets/widget';
+import { ACTION_ITEM, Widget } from '@theia/core/lib/browser/widgets/widget';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { View } from '../../../common/plugin-protocol';
 import CoreURI from '@theia/core/lib/common/uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import * as markdownit from '@theia/core/shared/markdown-it';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
 import { AccessibilityInformation } from '@theia/plugin';
@@ -418,31 +417,16 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     @inject(ColorRegistry)
     protected readonly colorRegistry: ColorRegistry;
 
-    protected readonly markdownIt = markdownit();
-
     @postConstruct()
     protected override init(): void {
         super.init();
         this.id = this.identifier.id;
         this.addClass('theia-tree-view');
         this.node.style.height = '100%';
-        this.markdownItPlugin();
         this.model.onDidChangeWelcomeState(this.update, this);
         this.toDispose.push(this.model.onDidChangeWelcomeState(this.update, this));
         this.toDispose.push(this.onDidChangeVisibilityEmitter);
         this.toDispose.push(this.contextKeyService.onDidChange(() => this.update()));
-    }
-
-    protected markdownItPlugin(): void {
-        this.markdownIt.renderer.rules.text = (tokens, idx) => {
-            const content = tokens[idx].content;
-            return this.labelParser.parse(content).map(chunk => {
-                if (typeof chunk === 'string') {
-                    return chunk;
-                }
-                return `<i class="${codicon(chunk.name)} ${chunk.animation ? `fa-${chunk.animation}` : ''} icon-inline"></i>`;
-            }).join('');
-        };
     }
 
     protected override renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {

@@ -37,6 +37,7 @@
 .theia-hover hr {
     border-top: 1px solid var(--theia-editorHoverWidgetInternalBorder);
     border-bottom: 0px solid var(--theia-editorHoverWidgetInternalBorder);
+    margin: var(--theia-ui-padding) calc(var(--theia-ui-padding) * -1);
 }
 
 .theia-hover a {
