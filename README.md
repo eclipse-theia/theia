@@ -7,7 +7,7 @@
 
 <div id="badges" align="center">
 
- 
+
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/help%20wanted)
   [![Discourse status](https://img.shields.io/discourse/status?label=Chat&server=https%3A%2F%2Fcommunity.theia-ide.org%2F)](https://community.theia-ide.org/)
   [![Build Status](https://github.com/eclipse-theia/theia/workflows/Build/badge.svg?branch=master)](https://github.com/eclipse-theia/theia/actions?query=branch%3Amaster+event%3Apush+event%3Aschedule)
@@ -96,6 +96,7 @@ Read below how to engage with Theia community:
 
 - [API Documentation](https://eclipse-theia.github.io/theia/docs/next/index.html)
 - [General Documentation](https://theia-ide.org/docs/)
+- [VS Code API Compatibility Report](https://eclipse-theia.github.io/vscode-theia-comparator/status.html)
 - Useful Links:
   - [Developing](doc/Developing.md)
   - [Testing](doc/Testing.md)
