@@ -135,6 +135,7 @@ import { bindStatusBar } from './status-bar';
 import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from './markdown-rendering/markdown-renderer';
 import { StylingParticipant, StylingService } from './styling-service';
 import { bindCommonStylingParticipants } from './common-styling-participants';
+import { HoverService } from './hover-service';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -186,7 +187,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         const selectionService = container.get(SelectionService);
         const commandService = container.get<CommandService>(CommandService);
         const corePreferences = container.get<CorePreferences>(CorePreferences);
-        return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService, commandService, corePreferences);
+        const hoverService = container.get(HoverService);
+        return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService, commandService, corePreferences, hoverService);
     });
     bind(TheiaDockPanel.Factory).toFactory(({ container }) => options => {
         const corePreferences = container.get<CorePreferences>(CorePreferences);
@@ -432,6 +434,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(SaveResourceService).toSelf().inSingletonScope();
     bind(UserWorkingDirectoryProvider).toSelf().inSingletonScope();
+
+    bind(HoverService).toSelf().inSingletonScope();
 
     bind(StylingService).toSelf().inSingletonScope();
     bindContributionProvider(bind, StylingParticipant);

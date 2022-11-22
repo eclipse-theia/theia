@@ -43,3 +43,4 @@ export * from './breadcrumbs';
 export * from './tooltip-service';
 export * from './decoration-style';
 export * from './styling-service';
+export * from './hover-service';

@@ -30,20 +30,19 @@ import {
     TREE_NODE_TAIL_CLASS,
     TreeModelImpl,
     TreeViewWelcomeWidget,
-    TooltipService,
     TooltipAttributes,
-    TreeSelection
+    TreeSelection,
+    HoverService
 } from '@theia/core/lib/browser';
 import { MenuPath, MenuModelRegistry, ActionMenuNode } from '@theia/core/lib/common/menu';
 import * as React from '@theia/core/shared/react';
 import { PluginSharedStyle } from '../plugin-shared-style';
-import { ACTION_ITEM, codicon, Widget } from '@theia/core/lib/browser/widgets/widget';
+import { ACTION_ITEM, Widget } from '@theia/core/lib/browser/widgets/widget';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { View } from '../../../common/plugin-protocol';
 import CoreURI from '@theia/core/lib/common/uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import * as markdownit from '@theia/core/shared/markdown-it';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
 import { AccessibilityInformation } from '@theia/plugin';
@@ -409,8 +408,8 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
-    @inject(TooltipService)
-    protected readonly tooltipService: TooltipService;
+    @inject(HoverService)
+    protected readonly hoverService: HoverService;
 
     @inject(LabelParser)
     protected readonly labelParser: LabelParser;
@@ -418,31 +417,16 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     @inject(ColorRegistry)
     protected readonly colorRegistry: ColorRegistry;
 
-    protected readonly markdownIt = markdownit();
-
     @postConstruct()
     protected override init(): void {
         super.init();
         this.id = this.identifier.id;
         this.addClass('theia-tree-view');
         this.node.style.height = '100%';
-        this.markdownItPlugin();
         this.model.onDidChangeWelcomeState(this.update, this);
         this.toDispose.push(this.model.onDidChangeWelcomeState(this.update, this));
         this.toDispose.push(this.onDidChangeVisibilityEmitter);
         this.toDispose.push(this.contextKeyService.onDidChange(() => this.update()));
-    }
-
-    protected markdownItPlugin(): void {
-        this.markdownIt.renderer.rules.text = (tokens, idx) => {
-            const content = tokens[idx].content;
-            return this.labelParser.parse(content).map(chunk => {
-                if (typeof chunk === 'string') {
-                    return chunk;
-                }
-                return `<i class="${codicon(chunk.name)} ${chunk.animation ? `fa-${chunk.animation}` : ''} icon-inline"></i>`;
-            }).join('');
-        };
     }
 
     protected override renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
@@ -481,16 +465,21 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
             };
         }
 
-        const elementRef = React.createRef<HTMLDivElement & Partial<TooltipAttributes>>();
         if (!node.tooltip && node instanceof ResolvableTreeViewNode) {
             let configuredTip = false;
             let source: CancellationTokenSource | undefined;
             attrs = {
                 ...attrs,
-                'data-for': this.tooltipService.tooltipId,
                 onMouseLeave: () => source?.cancel(),
-                onMouseEnter: async () => {
+                onMouseEnter: async event => {
                     if (configuredTip) {
+                        if (MarkdownString.is(node.tooltip)) {
+                            this.hoverService.requestHover({
+                                content: node.tooltip,
+                                target: event.target as HTMLElement,
+                                position: 'right'
+                            });
+                        }
                         return;
                     }
                     if (!node.resolved) {
@@ -501,27 +490,31 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
                             return;
                         }
                     }
-                    if (elementRef.current) {
-                        // Set the resolved tooltip. After an HTML element was created data-* properties must be accessed via the dataset
-                        elementRef.current.dataset.tip = MarkdownString.is(node.tooltip) ? this.markdownIt.render(node.tooltip.value) : node.tooltip;
-                        this.tooltipService.update();
-                        configuredTip = true;
-                        // Manually fire another mouseenter event to get react-tooltip to update the tooltip content.
-                        // Without this, the resolved tooltip is only shown after re-entering the tree item with the mouse.
-                        elementRef.current.dispatchEvent(new MouseEvent('mouseenter'));
+                    if (MarkdownString.is(node.tooltip)) {
+                        this.hoverService.requestHover({
+                            content: node.tooltip,
+                            target: event.target as HTMLElement,
+                            position: 'right'
+                        });
                     } else {
-                        console.error(`Could not set resolved tooltip for tree node '${node.id}' because its React Ref was not set.`);
+                        const title = node.tooltip ||
+                            (node.resourceUri && this.labelProvider.getLongName(new CoreURI(node.resourceUri)))
+                            || this.toNodeName(node);
+                        event.currentTarget.title = title;
                     }
+                    configuredTip = true;
                 }
             };
         } else if (MarkdownString.is(node.tooltip)) {
-            // Render markdown in custom tooltip
-            const tooltip = this.markdownIt.render(node.tooltip.value);
-
             attrs = {
                 ...attrs,
-                'data-tip': tooltip,
-                'data-for': this.tooltipService.tooltipId
+                onMouseEnter: event => {
+                    this.hoverService.requestHover({
+                        content: node.tooltip!,
+                        target: event.target as HTMLElement,
+                        position: 'right'
+                    });
+                }
             };
         } else {
             const title = node.tooltip ||
@@ -550,7 +543,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         if (description) {
             children.push(<span className='theia-tree-view-description'>{description}</span>);
         }
-        return <div {...attrs} ref={elementRef}>{...children}</div>;
+        return <div {...attrs}>{...children}</div>;
     }
 
     protected override renderTailDecorations(node: TreeViewNode, props: NodeProps): React.ReactNode {
@@ -667,9 +660,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     }
 
     protected override render(): React.ReactNode {
-        const node = React.createElement('div', this.createContainerAttributes(), this.renderSearchInfo(), this.renderTree(this.model));
-        this.tooltipService.update();
-        return node;
+        return React.createElement('div', this.createContainerAttributes(), this.renderSearchInfo(), this.renderTree(this.model));
     }
 
     protected renderSearchInfo(): React.ReactNode {
