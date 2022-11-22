@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { nls } from '@theia/core';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { Preference } from '../../util/preference-types';
 import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
@@ -101,16 +102,16 @@ export class PreferenceNumberInputRenderer extends PreferenceLeafNodeRenderer<nu
         const errorMessages: string[] = [];
 
         if (input === '' || isNaN(inputValue)) {
-            return { value: NaN, message: 'Value must be a number.' };
+            return { value: NaN, message: nls.localizeByDefault('Value must be a number.') };
         }
         if (data.minimum && inputValue < data.minimum) {
-            errorMessages.push(`Value must be greater than or equal to ${data.minimum}.`);
+            errorMessages.push(nls.localizeByDefault('Value must be greater than or equal to {0}.', data.minimum));
         };
         if (data.maximum && inputValue > data.maximum) {
-            errorMessages.push(`Value must be less than or equal to ${data.maximum}.`);
+            errorMessages.push(nls.localizeByDefault('Value must be less than or equal to {0}.', data.maximum));
         };
         if (data.type === 'integer' && !Number.isInteger(inputValue)) {
-            errorMessages.push('Value must be an integer.');
+            errorMessages.push(nls.localizeByDefault('Value must be an integer.'));
         }
 
         return {
