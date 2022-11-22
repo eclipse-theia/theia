@@ -23,7 +23,7 @@ import { isOSX } from '@theia/core/lib/common/os';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { TreeWidget, TreeNode, SelectableTreeNode, TreeModel, TreeProps, NodeProps, TREE_NODE_SEGMENT_CLASS, TREE_NODE_SEGMENT_GROW_CLASS } from '@theia/core/lib/browser/tree';
 import { ScmTreeModel, ScmFileChangeRootNode, ScmFileChangeGroupNode, ScmFileChangeFolderNode, ScmFileChangeNode } from './scm-tree-model';
-import { MenuModelRegistry, ActionMenuNode, CompositeMenuNode, MenuPath } from '@theia/core/lib/common/menu';
+import { MenuModelRegistry, ActionMenuNode, CompoundMenuNode, MenuPath } from '@theia/core/lib/common/menu';
 import { ScmResource } from './scm-provider';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { ContextMenuRenderer, LabelProvider, CorePreferences, DiffUris, ACTION_ITEM } from '@theia/core/lib/browser';
@@ -762,7 +762,7 @@ export class ScmInlineActions extends React.Component<ScmInlineActions.Props> {
 export namespace ScmInlineActions {
     export interface Props {
         hover: boolean;
-        menu: CompositeMenuNode;
+        menu: CompoundMenuNode;
         commands: CommandRegistry;
         model: ScmTreeModel;
         treeNode: TreeNode;

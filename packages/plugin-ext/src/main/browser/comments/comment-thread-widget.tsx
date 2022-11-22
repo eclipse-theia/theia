@@ -28,7 +28,7 @@ import { CommentsService } from './comments-service';
 import {
     ActionMenuNode,
     CommandRegistry,
-    CompositeMenuNode,
+    CompoundMenuNode,
     MenuModelRegistry,
     MenuPath
 } from '@theia/core/lib/common';
@@ -52,7 +52,7 @@ export class CommentThreadWidget extends BaseWidget {
     protected readonly zoneWidget: MonacoEditorZoneWidget;
     protected readonly containerNodeRoot: Root;
     protected readonly commentGlyphWidget: CommentGlyphWidget;
-    protected readonly contextMenu: CompositeMenuNode;
+    protected readonly contextMenu: CompoundMenuNode;
     protected readonly commentFormRef: RefObject<CommentForm> = React.createRef<CommentForm>();
 
     protected isExpanded?: boolean;
@@ -316,7 +316,7 @@ namespace CommentForm {
 }
 
 export class CommentForm<P extends CommentForm.Props = CommentForm.Props> extends React.Component<P, CommentForm.State> {
-    private readonly menu: CompositeMenuNode;
+    private readonly menu: CompoundMenuNode;
     private inputRef: RefObject<HTMLTextAreaElement> = React.createRef<HTMLTextAreaElement>();
     private inputValue: string = '';
     private readonly getInput = () => this.inputValue;
@@ -619,7 +619,7 @@ namespace CommentActions {
     export interface Props {
         contextKeyService: CommentsContextKeyService;
         commands: CommandRegistry;
-        menu: CompositeMenuNode;
+        menu: CompoundMenuNode;
         commentThread: CommentThread;
         getInput: () => string;
         clearInput: () => void;

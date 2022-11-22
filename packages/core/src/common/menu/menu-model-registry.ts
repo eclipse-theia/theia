@@ -19,7 +19,7 @@ import { Disposable } from '../disposable';
 import { CommandRegistry, Command } from '../command';
 import { ContributionProvider } from '../contribution-provider';
 import { CompositeMenuNode, CompositeMenuNodeWrapper } from './composite-menu-node';
-import { MenuAction, MenuNode, MenuPath, SubMenuOptions } from './menu-types';
+import { CompoundMenuNode, MenuAction, MenuNode, MenuPath, MutableCompoundMenuNode, SubMenuOptions } from './menu-types';
 import { ActionMenuNode } from './action-menu-node';
 
 export const MenuContribution = Symbol('MenuContribution');
@@ -66,7 +66,7 @@ export interface MenuContribution {
 @injectable()
 export class MenuModelRegistry {
     protected readonly root = new CompositeMenuNode('');
-    protected readonly independentSubmenus = new Map<string, CompositeMenuNode>();
+    protected readonly independentSubmenus = new Map<string, MutableCompoundMenuNode>();
 
     constructor(
         @inject(ContributionProvider) @named(MenuContribution)
@@ -100,7 +100,7 @@ export class MenuModelRegistry {
         return parent.addNode(menuNode);
     }
 
-    getMenuNode(menuPath: MenuPath | string, group?: string): CompositeMenuNode {
+    getMenuNode(menuPath: MenuPath | string, group?: string): MutableCompoundMenuNode {
         if (typeof menuPath === 'string') {
             const target = this.independentSubmenus.get(menuPath);
             if (!target) { throw new Error(`Could not find submenu with id ${menuPath}`); }
@@ -141,20 +141,8 @@ export class MenuModelRegistry {
             groupNode = new CompositeMenuNode(menuId, label, options, parent);
             return parent.addNode(groupNode);
         } else {
-            if (!groupNode.label) {
-                groupNode.label = label;
-            } else if (groupNode.label !== label) {
-                throw new Error("The group '" + menuPath.join('/') + "' already has a different label.");
-            }
-            if (options) {
-                if (!groupNode.iconClass) {
-                    groupNode.iconClass = options.iconClass;
-                }
-                if (!groupNode.order) {
-                    groupNode.order = options.order;
-                }
-            }
-            return { dispose: () => { } };
+            groupNode.updateOptions({ ...options, label });
+            return Disposable.NULL;
         }
     }
 
@@ -214,9 +202,9 @@ export class MenuModelRegistry {
      * @param id technical identifier of the `MenuNode`.
      */
     unregisterMenuNode(id: string): void {
-        const recurse = (root: CompositeMenuNode) => {
+        const recurse = (root: MutableCompoundMenuNode) => {
             root.children.forEach(node => {
-                if (node instanceof CompositeMenuNode) {
+                if (CompoundMenuNode.isMutable(node)) {
                     node.removeNode(id);
                     recurse(node);
                 }
@@ -229,8 +217,8 @@ export class MenuModelRegistry {
      * Finds a submenu as a descendant of the `root` node.
      * See {@link MenuModelRegistry.findSubMenu findSubMenu}.
      */
-    protected findGroup(menuPath: MenuPath, options?: SubMenuOptions): CompositeMenuNode {
-        let currentMenu = this.root;
+    protected findGroup(menuPath: MenuPath, options?: SubMenuOptions): MutableCompoundMenuNode {
+        let currentMenu: MutableCompoundMenuNode = this.root;
         for (const segment of menuPath) {
             currentMenu = this.findSubMenu(currentMenu, segment, options);
         }
@@ -239,11 +227,11 @@ export class MenuModelRegistry {
 
     /**
      * Finds or creates a submenu as an immediate child of `current`.
-     * @throws if a node with the given `menuId` exists but is not a {@link CompositeMenuNode}.
+     * @throws if a node with the given `menuId` exists but is not a {@link MutableCompoundMenuNode}.
      */
-    protected findSubMenu(current: CompositeMenuNode, menuId: string, options?: SubMenuOptions): CompositeMenuNode {
+    protected findSubMenu(current: MutableCompoundMenuNode, menuId: string, options?: SubMenuOptions): MutableCompoundMenuNode {
         const sub = current.children.find(e => e.id === menuId);
-        if (sub instanceof CompositeMenuNode) {
+        if (CompoundMenuNode.isMutable(sub)) {
             return sub;
         }
         if (sub) {
@@ -262,7 +250,7 @@ export class MenuModelRegistry {
      * @returns the root menu when `menuPath` is empty. If `menuPath` is not empty the specified menu is
      * returned if it exists, otherwise an error is thrown.
      */
-    getMenu(menuPath: MenuPath = []): CompositeMenuNode {
+    getMenu(menuPath: MenuPath = []): MutableCompoundMenuNode {
         return this.findGroup(menuPath);
     }
 

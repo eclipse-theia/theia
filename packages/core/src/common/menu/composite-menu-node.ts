@@ -15,17 +15,17 @@
 // *****************************************************************************
 
 import { Disposable } from '../disposable';
-import { CompoundMenuNode, CompoundMenuNodeMetadata, CompoundMenuNodeRole, MenuNode, SubMenuOptions } from './menu-types';
+import { CompoundMenuNode, CompoundMenuNodeRole, MenuNode, MutableCompoundMenuNode, SubMenuOptions } from './menu-types';
 
 /**
  * Node representing a (sub)menu in the menu tree structure.
  */
-export class CompositeMenuNode implements MenuNode, CompoundMenuNode, CompoundMenuNodeMetadata {
+export class CompositeMenuNode implements MutableCompoundMenuNode {
     protected readonly _children: MenuNode[] = [];
     public iconClass?: string;
     public order?: string;
-    readonly when?: string;
-    readonly _role?: CompoundMenuNodeRole;
+    protected _when?: string;
+    protected _role?: CompoundMenuNodeRole;
 
     constructor(
         public readonly id: string,
@@ -33,30 +33,15 @@ export class CompositeMenuNode implements MenuNode, CompoundMenuNode, CompoundMe
         options?: SubMenuOptions,
         readonly parent?: MenuNode & CompoundMenuNode,
     ) {
-        if (options) {
-            this.iconClass = options.iconClass;
-            this.order = options.order;
-            this.when = options.when;
-            this._role = options?.role;
-        }
+        this.updateOptions(options);
     }
 
-    get icon(): string | undefined {
-        return this.iconClass;
-    }
-
-    get children(): ReadonlyArray<MenuNode> {
-        return this._children;
-    }
-
+    get when(): string | undefined { return this._when; }
+    get icon(): string | undefined { return this.iconClass; }
+    get children(): ReadonlyArray<MenuNode> { return this._children; }
     get role(): CompoundMenuNodeRole { return this._role ?? (this.label ? CompoundMenuNodeRole.Submenu : CompoundMenuNodeRole.Group); }
 
-    /**
-     * Inserts the given node at the position indicated by `sortString`.
-     *
-     * @returns a disposable which, when called, will remove the given node again.
-     */
-    public addNode(node: MenuNode): Disposable {
+    addNode(node: MenuNode): Disposable {
         this._children.push(node);
         this._children.sort(CompoundMenuNode.sortChildren);
         return {
@@ -69,15 +54,20 @@ export class CompositeMenuNode implements MenuNode, CompoundMenuNode, CompoundMe
         };
     }
 
-    /**
-     * Removes the first node with the given id.
-     *
-     * @param id node id.
-     */
-    public removeNode(id: string): void {
+    removeNode(id: string): void {
         const idx = this._children.findIndex(n => n.id === id);
         if (idx >= 0) {
             this._children.splice(idx, 1);
+        }
+    }
+
+    updateOptions(options?: SubMenuOptions): void {
+        if (options) {
+            this.iconClass ??= options.icon ?? options.iconClass;
+            this.label ??= options.label;
+            this.order ??= options.order;
+            this._role ??= options.role;
+            this._when ??= options.when;
         }
     }
 
@@ -93,14 +83,14 @@ export class CompositeMenuNode implements MenuNode, CompoundMenuNode, CompoundMe
     static isNavigationGroup = CompoundMenuNode.isNavigationGroup;
 }
 
-export class CompositeMenuNodeWrapper implements MenuNode, CompoundMenuNodeMetadata {
-    constructor(protected readonly wrapped: Readonly<CompositeMenuNode>, readonly parent: MenuNode & CompoundMenuNode, protected readonly options?: SubMenuOptions) { }
+export class CompositeMenuNodeWrapper implements MutableCompoundMenuNode {
+    constructor(protected readonly wrapped: Readonly<MutableCompoundMenuNode>, readonly parent: CompoundMenuNode, protected readonly options?: SubMenuOptions) { }
 
     get id(): string { return this.wrapped.id; }
 
     get label(): string | undefined { return this.wrapped.label; }
 
-    get sortString(): string { return this.order || this.id; }
+    get sortString(): string { return this.options?.order || this.wrapped.sortString; }
 
     get isSubmenu(): boolean { return Boolean(this.label); }
 
@@ -108,11 +98,17 @@ export class CompositeMenuNodeWrapper implements MenuNode, CompoundMenuNodeMetad
 
     get icon(): string | undefined { return this.iconClass; }
 
-    get iconClass(): string | undefined { return this.options?.iconClass ?? this.wrapped.iconClass; }
+    get iconClass(): string | undefined { return this.options?.iconClass ?? this.wrapped.icon; }
 
-    get order(): string | undefined { return this.options?.order ?? this.wrapped.order; }
+    get order(): string | undefined { return this.sortString; }
 
     get when(): string | undefined { return this.options?.when ?? this.wrapped.when; }
 
     get children(): ReadonlyArray<MenuNode> { return this.wrapped.children; }
+
+    addNode(node: MenuNode): Disposable { return this.wrapped.addNode(node); }
+
+    removeNode(id: string): void { return this.wrapped.removeNode(id); }
+
+    updateOptions(options: SubMenuOptions): void { return this.wrapped.updateOptions(options); }
 }
