@@ -16,7 +16,7 @@
 
 import { inject, injectable } from 'inversify';
 import * as React from 'react';
-import { CommandRegistry, CompoundMenuNodeRole, Disposable, DisposableCollection, MenuCommandExecutor, MenuModelRegistry, MenuPath, nls } from '../../../common';
+import { CommandRegistry, Disposable, DisposableCollection, MenuCommandExecutor, MenuModelRegistry, MenuPath, nls } from '../../../common';
 import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../../context-menu-renderer';
 import { LabelIcon, LabelParser } from '../../label-parser';
 import { ACTION_ITEM, codicon, ReactWidget, Widget } from '../../widgets';
@@ -176,11 +176,11 @@ export class TabBarToolbar extends ReactWidget {
         this.addClass('menu-open');
         toDisposeOnHide.push(Disposable.create(() => this.removeClass('menu-open')));
         if (subpath) {
-            toDisposeOnHide.push(this.menus.linkSubmenu(TAB_BAR_TOOLBAR_CONTEXT_MENU, subpath, { role: CompoundMenuNodeRole.Flat, when: '' }));
+            toDisposeOnHide.push(this.menus.linkSubmenu(TAB_BAR_TOOLBAR_CONTEXT_MENU, subpath));
         } else {
             for (const item of this.more.values() as IterableIterator<AnyToolbarItem>) {
                 if (item.menuPath && !item.command) {
-                    toDisposeOnHide.push(this.menus.linkSubmenu(TAB_BAR_TOOLBAR_CONTEXT_MENU, item.menuPath, { role: CompoundMenuNodeRole.Flat, when: '' }, item.group));
+                    toDisposeOnHide.push(this.menus.linkSubmenu(TAB_BAR_TOOLBAR_CONTEXT_MENU, item.menuPath, undefined, item.group));
                 } else if (item.command) {
                     // Register a submenu for the item, if the group is in format `<submenu group>/<submenu name>/.../<item group>`
                     if (item.group?.includes('/')) {
