@@ -197,10 +197,10 @@ export interface CommandMenuNode extends MenuNodeBase {
 }
 
 export namespace CommandMenuNode {
-    export function is(candidate: MenuNode): candidate is CommandMenuNode { return Boolean(candidate.command); }
-    export function hasAltHandler(candidate: MenuNode): candidate is AlternativeHandlerMenuNode {
+    export function is(candidate?: MenuNode): candidate is CommandMenuNode { return Boolean(candidate?.command); }
+    export function hasAltHandler(candidate?: MenuNode): candidate is AlternativeHandlerMenuNode {
         const asAltNode = candidate as AlternativeHandlerMenuNode;
-        return is(asAltNode) && is(asAltNode.altNode);
+        return is(asAltNode) && is(asAltNode?.altNode);
     }
 }
 
