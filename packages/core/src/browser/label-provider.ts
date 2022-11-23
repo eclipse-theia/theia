@@ -369,7 +369,7 @@ export class LabelProvider implements FrontendApplicationContribution {
     protected handleRequest(element: object, method: keyof Omit<LabelProviderContribution, 'canHandle' | 'onDidChange' | 'affects'>): string | undefined {
         for (const contribution of this.findContribution(element, method)) {
             const value = contribution[method]?.(element);
-            if (!!value) {
+            if (value !== undefined) {
                 return value;
             }
         }

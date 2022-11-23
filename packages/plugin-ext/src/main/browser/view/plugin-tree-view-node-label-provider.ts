@@ -34,7 +34,7 @@ export class PluginTreeViewNodeLabelProvider implements LabelProviderContributio
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     canHandle(element: TreeViewNode | any): number {
         if (TreeNode.is(element) && ('resourceUri' in element || 'themeIcon' in element)) {
-            return this.treeLabelProvider.canHandle(element) + 1;
+            return Number.MAX_SAFE_INTEGER - 512;
         }
         return 0;
     }
