@@ -67,7 +67,7 @@ export class NoneIconTheme implements IconTheme, LabelProviderContribution {
         if (this.toDeactivate.disposed) {
             return 0;
         }
-        return Number.MAX_SAFE_INTEGER;
+        return Number.MAX_SAFE_INTEGER - 1024;
     }
 
     getIcon(): string {
