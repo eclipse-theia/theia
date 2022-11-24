@@ -78,8 +78,8 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
             }
         });
 
-        sender.once('did-navigate', () => multiplexer.onUnderlyingChannelClose({ reason: 'Window was refreshed' })); // When refreshing the browser window.
-        sender.once('destroyed', () => multiplexer.onUnderlyingChannelClose({ reason: 'Window was closed' })); // When closing the browser window.
+        sender.once('did-navigate', () => this.disposeMultiplexer(sender.id, multiplexer, 'Window was refreshed')); // When refreshing the browser window.
+        sender.once('destroyed', () => this.disposeMultiplexer(sender.id, multiplexer, 'Window was closed')); // When closing the browser window.
         const data = { channel: mainChannel, multiplexer };
         this.windowChannelMultiplexer.set(sender.id, data);
         return data;
@@ -91,6 +91,11 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
      */
     protected createWindowMainChannel(sender: WebContents): ElectronWebContentChannel {
         return new ElectronWebContentChannel(sender);
+    }
+
+    protected disposeMultiplexer(windowId: number, multiplexer: ChannelMultiplexer, reason: string): void {
+        multiplexer.onUnderlyingChannelClose({ reason });
+        this.windowChannelMultiplexer.delete(windowId);
     }
 
     onStart(): void {
