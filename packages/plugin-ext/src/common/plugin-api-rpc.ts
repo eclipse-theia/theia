@@ -109,6 +109,7 @@ import { ThemeType } from '@theia/core/lib/common/theme';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
 import { Severity } from '@theia/core/lib/common/severity';
+import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -1800,10 +1801,10 @@ export interface DebugExt {
     $resolveDebugConfigurationWithSubstitutedVariablesByHandle(
         handle: number,
         workspaceFolder: string | undefined,
-        debugConfiguration: theia.DebugConfiguration
+        debugConfiguration: DebugConfiguration
     ): Promise<theia.DebugConfiguration | undefined | null>;
 
-    $createDebugSession(debugConfiguration: theia.DebugConfiguration, workspaceFolder: string | undefined): Promise<string>;
+    $createDebugSession(debugConfiguration: DebugConfiguration, workspaceFolder: string | undefined): Promise<string>;
     $terminateDebugSession(sessionId: string): Promise<void>;
     $getTerminalCreationOptions(debugType: string): Promise<TerminalOptionsExt | undefined>;
 }
@@ -1817,7 +1818,7 @@ export interface DebugMain {
     $unregisterDebugConfigurationProvider(handle: number): Promise<void>;
     $addBreakpoints(breakpoints: Breakpoint[]): Promise<void>;
     $removeBreakpoints(breakpoints: string[]): Promise<void>;
-    $startDebugging(folder: theia.WorkspaceFolder | undefined, nameOrConfiguration: string | theia.DebugConfiguration, options: theia.DebugSessionOptions): Promise<boolean>;
+    $startDebugging(folder: theia.WorkspaceFolder | undefined, nameOrConfiguration: string | theia.DebugConfiguration, options: DebugSessionOptions): Promise<boolean>;
     $stopDebugging(sessionId?: string): Promise<void>;
     $customRequest(sessionId: string, command: string, args?: any): Promise<DebugProtocol.Response>;
     $getDebugProtocolBreakpoint(sessionId: string, breakpointId: string): Promise<theia.DebugProtocolBreakpoint | undefined>;

@@ -24,11 +24,7 @@ import { DebugChannel } from '@theia/debug/lib/common/debug-service';
 /**
  * Server debug adapter session.
  */
-export class PluginDebugAdapterSession extends DebugAdapterSessionImpl {
-    readonly type: string;
-    readonly name: string;
-    readonly workspaceFolder: theia.WorkspaceFolder | undefined;
-    readonly configuration: theia.DebugConfiguration;
+export class PluginDebugAdapterSession extends DebugAdapterSessionImpl implements theia.DebugSession {
 
     constructor(
         override readonly debugAdapter: DebugAdapter,
@@ -36,12 +32,24 @@ export class PluginDebugAdapterSession extends DebugAdapterSessionImpl {
         protected readonly theiaSession: theia.DebugSession) {
 
         super(theiaSession.id, debugAdapter);
-
-        this.type = theiaSession.type;
-        this.name = theiaSession.name;
-        this.workspaceFolder = theiaSession.workspaceFolder;
-        this.configuration = theiaSession.configuration;
     }
+
+    get parentSession(): theia.DebugSession | undefined {
+        return this.theiaSession.parentSession;
+    }
+
+    get type(): string {
+        return this.theiaSession.type;
+    }
+    get name(): string {
+        return this.theiaSession.name;
+    };
+    get workspaceFolder(): theia.WorkspaceFolder | undefined {
+        return this.theiaSession.workspaceFolder;
+    };
+    get configuration(): theia.DebugConfiguration {
+        return this.theiaSession.configuration;
+    };
 
     override async start(channel: DebugChannel): Promise<void> {
         if (this.tracker.onWillStartSession) {

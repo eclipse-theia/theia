@@ -10665,6 +10665,12 @@ export module '@theia/plugin' {
         readonly name: string;
 
         /**
+         * The parent session of this debug session, if it was created as a child.
+         * @see DebugSessionOptions.parentSession
+         */
+        readonly parentSession?: DebugSession;
+
+        /**
          * The workspace folder of this session or `undefined` for a folderless setup.
          */
         readonly workspaceFolder: WorkspaceFolder | undefined;

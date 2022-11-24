@@ -35,7 +35,7 @@ export interface DebugConfiguration {
      */
     [key: string]: any;
 
-    parentSession?: { id: string };
+    parentSessionId?: string;
 
     lifecycleManagedByParent?: boolean;
 
@@ -80,7 +80,7 @@ export namespace DebugConfiguration {
 
 export interface DebugSessionOptions {
     lifecycleManagedByParent?: boolean;
-    parentSession?: { id: string };
+    parentSessionId?: string;
     consoleMode?: DebugConsoleMode;
     noDebug?: boolean;
     compact?: boolean;
