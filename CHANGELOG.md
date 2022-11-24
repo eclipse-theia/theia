@@ -4,20 +4,47 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## v1.32.0
+## v1.32.0 - 11/24/2022
 
+- [application-manager] fixed various webpack warnings during the build [#11830](https://github.com/eclipse-theia/theia/pull/11830)
+- [application-package] fixed "Failed to resolve module" warnings during the build [#11830](https://github.com/eclipse-theia/theia/pull/11830)
+- [core] added support for a generic hover service [#11869](https://github.com/eclipse-theia/theia/pull/11869)
+- [core] added unit tests for `objects.ts` [#11762](https://github.com/eclipse-theia/theia/pull/11762)
+- [core] fixed an issue when cycling tabs [#11794](https://github.com/eclipse-theia/theia/pull/11794)
+- [core] fixed an issue with context-menus for tree-views [#11742](https://github.com/eclipse-theia/theia/pull/11742)
+- [core] fixed issue on electron when reloading or opening new windows [#11810](https://github.com/eclipse-theia/theia/pull/11810)
+- [core] fixed issue regarding theme-icons in tree-views [#11914](https://github.com/eclipse-theia/theia/pull/11914)
+- [core] fixed various `zh-cn` localizations [#11842](https://github.com/eclipse-theia/theia/pull/11842)
+- [core] upgraded `nls` metadata to VS Code `v1.55.2` [#11824](https://github.com/eclipse-theia/theia/pull/11824)
+- [debug] fixed the styling for the expansion toggle in the debug-view [#11895](https://github.com/eclipse-theia/theia/pull/11895)
+- [filesystem] added support for copy when performing drag-and-drop [#11872](https://github.com/eclipse-theia/theia/pull/11872)
+- [filesystem] fixed a potential race condition when copying files and directories [#11857](https://github.com/eclipse-theia/theia/pull/11857)
+- [git] upgraded `dugite-extra` from `v0.1.16` to `v0.1.17` [#11782](https://github.com/eclipse-theia/theia/pull/11782)
+- [monaco] uplifted `monaco` to VS Code `v1.73.3` [#11787](https://github.com/eclipse-theia/theia/pull/11787)
+- [navigator] added support for the `explorer.decorations.colors` preference [#11802](https://github.com/eclipse-theia/theia/pull/11802)
 - [plugin] added `Task#runOptions` field and `RunOptions` interface [#11759](https://github.com/eclipse-theia/theia/pull/11759) - Contributed on behalf of STMicroelectronics
-- [tasks] added support for `reevaluateOnRerun` run option [#11759](https://github.com/eclipse-theia/theia/pull/11759) - Contributed on behalf of STMicroelectronics
-- [plugin] updated the default VS Code API version from `1.53.2` to `1.55.2` [#11823](https://github.com/eclipse-theia/theia/pull/11823)
+- [plugin] added full support for the `TerminalOptions.shellArgs` VS Code API [#11767](https://github.com/eclipse-theia/theia/pull/11767)
+- [plugin] added full support for the `withScmProgress` VS Code API [#11798](https://github.com/eclipse-theia/theia/pull/11798)
+- [plugin] added support for the `DebugSessionOptions#lifecycleManagedByParent` VS Code API [#11751](https://github.com/eclipse-theia/theia/pull/11751)
 - [plugin] aligned typings for `HoverProvider.provideHover` with VS Code [#11862](https://github.com/eclipse-theia/theia/pull/11862) - Contributed on behalf of STMicroelectronics
+- [plugin] fixed initialization of the localization service [#11853](https://github.com/eclipse-theia/theia/pull/11853)
+- [plugin] fixed issues when using the `separator` in `quick-open` menus [#11834](https://github.com/eclipse-theia/theia/pull/11834)
+- [plugin] updated the default VS Code API version from `v1.53.2` to `v1.55.2` [#11823](https://github.com/eclipse-theia/theia/pull/11823)
+- [preferences] added localizations for preference validations [#11906](https://github.com/eclipse-theia/theia/pull/11906)
+- [repo] fixed various circular dependency warnings [#11432](https://github.com/eclipse-theia/theia/pull/11432)
+- [repo] upgraded `minimatch` from `v3.0.4` to `v5.1.0` [#11820](https://github.com/eclipse-theia/theia/pull/11820)
+- [repo] upgraded the `lerna` from `v5.5.4` to `v6.0.1` [#11820](https://github.com/eclipse-theia/theia/pull/11820)
+- [repo] upgraded the `mocha` dependency and configurations from `^7.0.0` to `^10.1.0` [#11820](https://github.com/eclipse-theia/theia/pull/11820)
+- [tasks] added support for `reevaluateOnRerun` run option [#11759](https://github.com/eclipse-theia/theia/pull/11759) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.32.0">[Breaking Changes:](#breaking_changes_1.32.0)</a>
 
+- [application-manager] removed `circular-dependency-plugin` [#11864](https://github.com/eclipse-theia/theia/pull/11864)
+- [cli] updated the `download:plugins` script to download and resolve plugins sequentially by default [#11860](https://github.com/eclipse-theia/theia/pull/11860)
+- [preferences] moved `PreferenceHeaderRendererContribution` to `preference-node-renderer-creator.ts` [#11432](https://github.com/eclipse-theia/theia/pull/11432)
 - [tasks] if the variables of a task should be reevaluated on a rerun (this was the behavior until now) the `reevaluateOnRerun` run option in the task description needs to be set to `true` from now on [#11759](https://github.com/eclipse-theia/theia/pull/11759) - Contributed on behalf of STMicroelectronics
-- [preferences] `PreferenceHeaderRendererContribution` moved to `preference-node-renderer-creator.ts`. [#11432](https://github.com/eclipse-theia/theia/pull/11432)
 - [workspace] removed `workspace.supportMultiRootWorkspace` preference [#11538](https://github.com/eclipse-theia/theia/pull/11538)
 - [workspace] removed method `isMultiRootWorkspaceEnabled` from `WorkspaceService` [#11538](https://github.com/eclipse-theia/theia/pull/11538)
-- [repo] the `download:plugins` script resolves plugins sequentially by default [#11860](https://github.com/eclipse-theia/theia/pull/11860)
 
 ## v1.31.0 - 10/27/2022
 
