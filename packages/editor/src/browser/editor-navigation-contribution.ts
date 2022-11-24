@@ -100,6 +100,11 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
             execute: () => this.toggleWordWrap(),
             isEnabled: () => true,
         });
+        this.commandRegistry.registerHandler(EditorCommands.TOGGLE_STICKY_SCROLL.id, {
+            execute: () => this.toggleStickyScroll(),
+            isEnabled: () => true,
+            isToggled: () => this.isStickyScrollEnabled()
+        });
         this.commandRegistry.registerHandler(EditorCommands.REOPEN_CLOSED_EDITOR.id, {
             execute: () => this.reopenLastClosedEditor()
         });
@@ -186,6 +191,14 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
         if (index > -1) {
             this.preferenceService.set('editor.wordWrap', values[index % values.length], PreferenceScope.User);
         }
+    }
+
+    /**
+     * Toggle the display of sticky scroll in the editor.
+     */
+    protected async toggleStickyScroll(): Promise<void> {
+        const value: boolean | undefined = this.preferenceService.get('editor.stickyScroll.enabled');
+        this.preferenceService.set('editor.stickyScroll.enabled', !value, PreferenceScope.User);
     }
 
     /**
@@ -312,4 +325,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
         return !!this.preferenceService.get(EditorNavigationContribution.MOUSE_NAVIGATION_PREFERENCE);
     }
 
+    private isStickyScrollEnabled(): boolean {
+        return !!this.preferenceService.get('editor.stickyScroll.enabled');
+    }
 }
