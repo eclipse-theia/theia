@@ -83,6 +83,7 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
     }
 
     protected readonly NONE = '<no channels>';
+    protected readonly OUTPUT_CHANNEL_LIST_ID = 'outputChannelList';
 
     protected renderChannelSelector(): React.ReactNode {
         const channelOptionElements: SelectOption[] = [];
@@ -96,7 +97,7 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
                 value: this.NONE
             });
         }
-        return <div id='outputChannelList'>
+        return <div id={this.OUTPUT_CHANNEL_LIST_ID} key={this.OUTPUT_CHANNEL_LIST_ID}>
             <SelectComponent
                 key={this.outputChannelManager.selectedChannel?.name}
                 options={channelOptionElements}
