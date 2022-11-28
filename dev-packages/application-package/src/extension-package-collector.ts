@@ -36,13 +36,11 @@ export class ExtensionPackageCollector {
     }
 
     protected collectPackages(pck: NodePackage): void {
-        if (!pck.dependencies) {
-            return;
-        }
-        // eslint-disable-next-line guard-for-in
-        for (const dependency in pck.dependencies) {
-            const versionRange = pck.dependencies[dependency]!;
-            this.collectPackage(dependency, versionRange);
+        for (const [dependency, versionRange] of [
+            ...Object.entries(pck.dependencies ?? {}),
+            ...Object.entries(pck.peerDependencies ?? {})
+        ]) {
+            this.collectPackage(dependency, versionRange!);
         }
     }
 

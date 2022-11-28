@@ -47,6 +47,7 @@ export interface NodePackage {
     maintainers?: Maintainer[];
     keywords?: string[];
     dependencies?: Dependencies;
+    peerDependencies?: Dependencies;
     [property: string]: any;
 }
 
