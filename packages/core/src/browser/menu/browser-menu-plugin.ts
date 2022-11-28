@@ -18,8 +18,8 @@ import { injectable, inject } from 'inversify';
 import { MenuBar, Menu as MenuWidget, Widget } from '@phosphor/widgets';
 import { CommandRegistry as PhosphorCommandRegistry } from '@phosphor/commands';
 import {
-    CommandRegistry, CompositeMenuNode, environment,
-    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, DisposableCollection, Disposable, MenuNode, MenuCommandExecutor, CompoundMenuNode, CompoundMenuNodeRole, CommandMenuNode
+    CommandRegistry, environment, DisposableCollection, Disposable,
+    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, MenuNode, MenuCommandExecutor, CompoundMenuNode, CompoundMenuNodeRole, CommandMenuNode
 } from '../../common';
 import { KeybindingRegistry } from '../keybinding';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
@@ -101,7 +101,7 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
         const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
         const menuCommandRegistry = this.createMenuCommandRegistry(menuModel);
         for (const menu of menuModel.children) {
-            if (menu instanceof CompositeMenuNode) {
+            if (CompoundMenuNode.is(menu)) {
                 const menuWidget = this.createMenuWidget(menu, { commands: menuCommandRegistry, rootMenuPath: MAIN_MENU_BAR });
                 menuBar.addMenu(menuWidget);
             }
@@ -115,11 +115,11 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
         return contextMenu;
     }
 
-    createMenuWidget(menu: CompositeMenuNode, options: BrowserMenuOptions): DynamicMenuWidget {
+    createMenuWidget(menu: CompoundMenuNode, options: BrowserMenuOptions): DynamicMenuWidget {
         return new DynamicMenuWidget(menu, options, this.services);
     }
 
-    protected createMenuCommandRegistry(menu: CompositeMenuNode, args: unknown[] = []): MenuCommandRegistry {
+    protected createMenuCommandRegistry(menu: CompoundMenuNode, args: unknown[] = []): MenuCommandRegistry {
         const menuCommandRegistry = new MenuCommandRegistry(this.services);
         this.registerMenu(menuCommandRegistry, menu, args);
         return menuCommandRegistry;
@@ -130,7 +130,7 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
             menu.children.forEach(child => this.registerMenu(menuCommandRegistry, child, args));
         } else if (CommandMenuNode.is(menu)) {
             menuCommandRegistry.registerActionMenu(menu, args);
-            if (menu.altNode) {
+            if (CommandMenuNode.hasAltHandler(menu)) {
                 menuCommandRegistry.registerActionMenu(menu.altNode, args);
             }
 
@@ -243,7 +243,7 @@ export class DynamicMenuWidget extends MenuWidget {
     protected previousFocusedElement: HTMLElement | undefined;
 
     constructor(
-        protected menu: CompositeMenuNode,
+        protected menu: CompoundMenuNode,
         protected options: BrowserMenuOptions,
         protected services: MenuServices
     ) {
@@ -251,8 +251,8 @@ export class DynamicMenuWidget extends MenuWidget {
         if (menu.label) {
             this.title.label = menu.label;
         }
-        if (menu.iconClass) {
-            this.title.iconClass = menu.iconClass;
+        if (menu.icon) {
+            this.title.iconClass = menu.icon;
         }
         this.updateSubMenus(this, this.menu, this.options.commands);
     }
@@ -276,7 +276,7 @@ export class DynamicMenuWidget extends MenuWidget {
         super.open(x, y, options);
     }
 
-    protected updateSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: MenuCommandRegistry): void {
+    protected updateSubMenus(parent: MenuWidget, menu: CompoundMenuNode, commands: MenuCommandRegistry): void {
         const items = this.buildSubMenus([], menu, commands);
         while (items[items.length - 1]?.type === 'separator') {
             items.pop();

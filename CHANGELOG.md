@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.33.0 - unreleased
+
+<a name="breaking_changes_1.33.0">[Breaking Changes:](#breaking_changes_1.33.0)</a>
+
+- [core] returns of many methods of `MenuModelRegistry` changed from `CompositeMenuNode` to `MutableCompoundMenuNode`. To mutate a menu, use the `updateOptions` method or add a check for `instanceof CompositeMenuNode`, which will be true in most cases.
+
 ## v1.32.0 - 11/24/2022
 
 - [application-manager] fixed various webpack warnings during the build [#11830](https://github.com/eclipse-theia/theia/pull/11830)
