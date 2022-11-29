@@ -31,8 +31,6 @@ import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/mark
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
-const BUILD_GROUP = 'build';
-const TEST_GROUP = 'test';
 
 export function toViewColumn(ep?: EditorPosition): theia.ViewColumn | undefined {
     if (typeof ep !== 'number') {
@@ -846,11 +844,11 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
         taskDto.presentation = task.presentationOptions;
     }
 
-    const group = task.group;
-    if (group === types.TaskGroup.Build) {
-        taskDto.group = BUILD_GROUP;
-    } else if (group === types.TaskGroup.Test) {
-        taskDto.group = TEST_GROUP;
+    if (task.group) {
+        taskDto.group = {
+            kind: <rpc.TaskGroupKind>task.group.id,
+            isDefault: !!task.group.isDefault
+        };
     }
 
     const taskDefinition = task.definition;
@@ -936,11 +934,11 @@ export function toTask(taskDto: TaskDto): theia.Task {
     }
 
     if (group) {
-        if (group === BUILD_GROUP) {
-            result.group = types.TaskGroup.Build;
-        } else if (group === TEST_GROUP) {
-            result.group = types.TaskGroup.Test;
-        }
+        result.group = new types.TaskGroup(
+            group.kind,
+            group.kind,
+            group.isDefault
+        );
     }
 
     if (presentation) {

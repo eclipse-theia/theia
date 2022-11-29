@@ -2008,7 +2008,6 @@ export class CustomExecution {
 
 @es5ClassCompat
 export class TaskGroup {
-    private groupId: string;
 
     public static Clean: TaskGroup = new TaskGroup('clean', 'Clean');
     public static Build: TaskGroup = new TaskGroup('build', 'Build');
@@ -2030,19 +2029,13 @@ export class TaskGroup {
         }
     }
 
-    constructor(id: string, label: string) {
-        if (typeof id !== 'string') {
-            throw illegalArgument('id');
-        }
-        if (typeof label !== 'string') {
-            throw illegalArgument('name');
-        }
-        this.groupId = id;
+    constructor(id: 'clean' | 'build' | 'rebuild' | 'test', label: string);
+    constructor(id: 'clean' | 'build' | 'rebuild' | 'test', label: string, isDefault?: boolean | undefined);
+    constructor(readonly id: 'clean' | 'build' | 'rebuild' | 'test', label: string, isDefault?: boolean | undefined) {
+        this.isDefault = !!isDefault;
     }
 
-    get id(): string {
-        return this.groupId;
-    }
+    readonly isDefault: boolean;
 }
 
 export enum TaskScope {
@@ -2127,6 +2120,7 @@ export class Task {
         }
         this.isTaskBackground = false;
         this.presentationOptions = Object.create(null);
+        this.taskRunOptions = Object.create(null);
     }
 
     get definition(): theia.TaskDefinition {

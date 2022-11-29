@@ -185,7 +185,6 @@ describe('Type converters:', () => {
         const args = ['run', 'build'];
         const cwd = '/projects/theia';
         const additionalProperty = 'some property';
-        const groupDto = 'build';
         const group = TaskGroup.Build;
 
         const shellTaskDto: TaskDto = {
@@ -202,7 +201,10 @@ describe('Type converters:', () => {
                 reveal: 3,
                 focus: true
             },
-            group: groupDto,
+            group: {
+                kind: 'build',
+                isDefault: false
+            },
             runOptions: {
                 reevaluateOnRerun: false
             }

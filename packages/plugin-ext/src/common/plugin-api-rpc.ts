@@ -1444,6 +1444,7 @@ export interface CommandProperties {
     };
 }
 
+export type TaskGroupKind = 'build' | 'test' | 'rebuild' | 'clean'
 export interface TaskDto {
     type: string;
     taskType?: 'shell' | 'process' | 'customExecution'; // the task execution type
@@ -1454,7 +1455,10 @@ export interface TaskDto {
     // Provide a more specific type when necessary (see ProblemMatcherContribution)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     problemMatcher?: any;
-    group?: string;
+    group?: {
+        kind: TaskGroupKind;
+        isDefault: boolean;
+    }
     detail?: string;
     presentation?: TaskPresentationOptionsDTO;
     runOptions?: RunOptionsDTO;

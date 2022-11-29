@@ -26,7 +26,7 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { TaskProviderRegistry, TaskResolverRegistry, TaskProvider, TaskResolver } from '@theia/task/lib/browser/task-contribution';
 import { interfaces } from '@theia/core/shared/inversify';
-import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskCustomization, TaskOutputPresentation, RevealKind, PanelKind } from '@theia/task/lib/common/task-protocol';
+import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskOutputPresentation, RevealKind, PanelKind } from '@theia/task/lib/common/task-protocol';
 import { TaskWatcher } from '@theia/task/lib/common/task-watcher';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TaskDefinitionRegistry } from '@theia/task/lib/browser';
@@ -207,8 +207,11 @@ export class TasksMainImpl implements TasksMain, Disposable {
         if (presentation) {
             partialConfig.presentation = this.convertTaskPresentation(presentation);
         }
-        if (group === 'build' || group === 'test') {
-            partialConfig.group = group;
+        if (group) {
+            partialConfig.group = {
+                kind: group.kind,
+                isDefault: group.isDefault
+            };
         }
         return {
             ...common,
@@ -225,12 +228,13 @@ export class TasksMainImpl implements TasksMain, Disposable {
         if (presentation) {
             partialDto.presentation = this.convertTaskPresentation(presentation);
         }
-        if (group) {
-            if (TaskCustomization.isBuildTask(task)) {
-                partialDto.group = 'build';
-            } else if (TaskCustomization.isTestTask(task)) {
-                partialDto.group = 'test';
-            }
+        if (group === 'build' || group === 'test') {
+            partialDto.group = {
+                kind: group,
+                isDefault: false
+            };
+        } else if (typeof group === 'object') {
+            partialDto.group = group;
         }
         return {
             ...common,
