@@ -47,19 +47,6 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
 function createVSCodeAPI(apiFactory: PluginAPIFactory, plugin: Plugin): typeof theia {
     const vscode = Object.assign(apiFactory(plugin), { ExtensionKind });
 
-    // use Theia plugin api to implement vscode extensions api
-    (<any>vscode).extensions = {
-        get all(): any[] {
-            return vscode.plugins.all;
-        },
-        getExtension(pluginId: string): any | undefined {
-            return vscode.plugins.getPlugin(pluginId);
-        },
-        get onDidChange(): theia.Event<void> {
-            return vscode.plugins.onDidChange;
-        }
-    };
-
     // override the version for vscode to be a VSCode version
     (<any>vscode).version = process.env['VSCODE_API_VERSION'] || VSCODE_DEFAULT_API_VERSION;
     return vscode;
