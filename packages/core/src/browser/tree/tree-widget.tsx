@@ -862,7 +862,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             } else {
                 classNames.push(renderIndentGuides === 'onHover' ? 'hover' : 'always');
             }
-            const paddingLeft = this.props.leftPadding * depth;
+            const paddingLeft = this.getDepthPadding(depth);
             indentDivs.unshift(<div key={depth} className={classNames.join(' ')} style={{
                 paddingLeft: `${paddingLeft}px`
             }} />);
@@ -969,7 +969,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected getPaddingLeft(node: TreeNode, props: NodeProps): number {
-        return props.depth * this.props.leftPadding + (this.needsExpansionTogglePadding(node) ? this.props.expansionTogglePadding : 0);
+        return this.getDepthPadding(props.depth) + (this.needsExpansionTogglePadding(node) ? this.props.expansionTogglePadding : 0);
     }
 
     /**
@@ -1419,7 +1419,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected toNodeDescription(node: TreeNode): string {
         return this.labelProvider.getLongName(node);
     }
-
+    protected getDepthPadding(depth: number): number {
+        return depth * this.props.leftPadding;
+    }
 }
 export namespace TreeWidget {
     /**
