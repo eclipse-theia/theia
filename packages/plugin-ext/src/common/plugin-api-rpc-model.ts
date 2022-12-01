@@ -89,7 +89,7 @@ export enum CompletionTriggerKind {
 
 export interface CompletionContext {
     triggerKind: CompletionTriggerKind;
-    triggerCharacter?: string;
+    triggerCharacter: string | undefined ;
 }
 
 export enum CompletionItemInsertTextRule {

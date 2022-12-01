@@ -168,7 +168,7 @@ export interface TerminalWidgetOptions {
     /**
      * Environment variables for terminal.
      */
-    readonly env?: { [key: string]: string | null };
+    readonly env?: { [key: string]: string | null | undefined };
 
     /**
      * Whether the terminal process environment should be exactly as provided in `env`.

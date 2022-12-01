@@ -172,7 +172,7 @@ export interface MergedEnvironmentVariableCollection {
     /**
      * Applies this collection to a process environment.
      */
-    applyToProcessEnvironment(env: { [key: string]: string | null }): void;
+    applyToProcessEnvironment(env: { [key: string]: string | null | undefined }): void;
 }
 
 export interface SerializableExtensionEnvironmentVariableCollection {

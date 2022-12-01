@@ -7351,7 +7351,7 @@ export module '@theia/plugin' {
          *
          * The trigger character is already in the document when the completion provider is triggered.
          */
-        readonly triggerCharacter?: string;
+        readonly triggerCharacter: string | undefined;
     }
 
     /**

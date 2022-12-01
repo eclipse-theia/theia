@@ -72,7 +72,7 @@ export class SignatureHelpAdapter {
                 activeSignatureHelp = revivedSignatureHelp;
             }
         }
-        return { ...context, activeSignatureHelp };
+        return { ...context, activeSignatureHelp, triggerCharacter: context.triggerCharacter };
     }
 
     releaseSignatureHelp(id: number): void {
