@@ -16,15 +16,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { CancellationToken, CancellationTokenSource } from '../cancellation';
-import { DisposableCollection } from '../disposable';
+import { Disposable, DisposableCollection } from '../disposable';
 import { Emitter, Event } from '../event';
 import { Deferred } from '../promise-util';
 import { Channel } from './channel';
 import { MsgPackMessageDecoder, MsgPackMessageEncoder, RpcMessage, RpcMessageDecoder, RpcMessageEncoder, RpcMessageType } from './rpc-message-encoder';
-import { Uint8ArrayWriteBuffer } from './uint8-array-message-buffer';
 
 /**
- * Handles request messages received by the {@link RpcServer}.
+ * Handles request messages received by the {@link RPCProtocol}.
  */
 export type RequestHandler = (method: string, args: any[]) => Promise<any>;
 
@@ -39,15 +38,20 @@ export interface RpcProtocolOptions {
     /**
      * The message decoder that should be used. If `undefined` the default {@link RpcMessageDecoder} will be used.
      */
-    decoder?: RpcMessageDecoder
+    decoder?: RpcMessageDecoder,
+    /**
+     * The runtime mode determines whether the RPC protocol is bi-directional (default) or acts as a client or server only.
+     */
+    mode?: 'default' | 'clientOnly' | 'serverOnly'
 }
 
 /**
- * Establish a bi-directional RPC protocol on top of a given channel. Bi-directional means to send
- * sends requests and notifications to the remote side as well as receiving requests and notifications from the remote side.
+ * Establish a RPC protocol on top of a given channel. By default the rpc protocol is bi-directional, meaning it is possible to send
+ * requests and notifications to the remote side (i.e. acts as client) as well as receiving requests and notifications from the remote side (i.e. acts as a server).
  * Clients can get a promise for a remote request result that will be either resolved or
  * rejected depending on the success of the request. Keeps track of outstanding requests and matches replies to the appropriate request
  * Currently, there is no timeout handling for long running requests implemented.
+ * The bi-directional mode can be reconfigured using the {@link RpcProtocolOptions} to construct an RPC protocol instance that acts only as client or server instead.
  */
 export class RpcProtocol {
     static readonly CANCELLATION_TOKEN_KEY = 'add.cancellation.token';
@@ -58,6 +62,7 @@ export class RpcProtocol {
 
     protected readonly encoder: RpcMessageEncoder;
     protected readonly decoder: RpcMessageDecoder;
+    protected readonly mode: 'default' | 'clientOnly' | 'serverOnly';
 
     protected readonly onNotificationEmitter: Emitter<{ method: string; args: any[]; }> = new Emitter();
     protected readonly cancellationTokenSources = new Map<number, CancellationTokenSource>();
@@ -68,37 +73,50 @@ export class RpcProtocol {
 
     protected toDispose = new DisposableCollection();
 
-    constructor(public readonly channel: Channel, public readonly requestHandler: RequestHandler, options: RpcProtocolOptions = {}) {
+    constructor(public readonly channel: Channel, public readonly requestHandler: RequestHandler | undefined, options: RpcProtocolOptions = {}) {
         this.encoder = options.encoder ?? new MsgPackMessageEncoder();
         this.decoder = options.decoder ?? new MsgPackMessageDecoder();
         this.toDispose.push(this.onNotificationEmitter);
-        this.toDispose.push(channel.onMessage(readBuffer => this.handleMessage(this.decoder.parse(readBuffer()))));
         channel.onClose(() => this.toDispose.dispose());
+        this.toDispose.push(channel.onMessage(readBuffer => this.handleMessage(this.decoder.parse(readBuffer()))));
+        this.mode = options.mode ?? 'default';
+
+        if (this.mode !== 'clientOnly' && requestHandler === undefined) {
+            console.error('RPCProtocol was initialized without a request handler but was not set to clientOnly mode.');
+        }
     }
 
     handleMessage(message: RpcMessage): void {
-        switch (message.type) {
-            case RpcMessageType.Cancel: {
-                this.handleCancel(message.id);
-                break;
-            }
-            case RpcMessageType.Request: {
-                this.handleRequest(message.id, message.method, message.args);
-                break;
-            }
-            case RpcMessageType.Notification: {
-                this.handleNotify(message.id, message.method, message.args);
-                break;
-            }
-            case RpcMessageType.Reply: {
-                this.handleReply(message.id, message.res);
-                break;
-            }
-            case RpcMessageType.ReplyErr: {
-                this.handleReplyErr(message.id, message.err);
-                break;
+        if (this.mode !== 'clientOnly') {
+            switch (message.type) {
+                case RpcMessageType.Cancel: {
+                    this.handleCancel(message.id);
+                    return;
+                }
+                case RpcMessageType.Request: {
+                    this.handleRequest(message.id, message.method, message.args);
+                    return;
+                }
+                case RpcMessageType.Notification: {
+                    this.handleNotify(message.id, message.method, message.args);
+                    return;
+                }
             }
         }
+        if (this.mode !== 'serverOnly') {
+            switch (message.type) {
+                case RpcMessageType.Reply: {
+                    this.handleReply(message.id, message.res);
+                    return;
+                }
+                case RpcMessageType.ReplyErr: {
+                    this.handleReplyErr(message.id, message.err);
+                    return;
+                }
+            }
+        }
+        // If the message was not handled until here, it is incompatible with the mode.
+        console.warn(`Received message incompatible with this RPCProtocol's mode '${this.mode}'. Type: ${message.type}. ID: ${message.id}.`);
     }
 
     protected handleReply(id: number, value: any): void {
@@ -126,12 +144,12 @@ export class RpcProtocol {
     }
 
     sendRequest<T>(method: string, args: any[]): Promise<T> {
-        const id = this.nextMessageId++;
-        const reply = new Deferred<T>();
-
         // The last element of the request args might be a cancellation token. As these tokens are not serializable we have to remove it from the
         // args array and the `CANCELLATION_TOKEN_KEY` string instead.
         const cancellationToken: CancellationToken | undefined = args.length && CancellationToken.is(args[args.length - 1]) ? args.pop() : undefined;
+
+        const id = this.nextMessageId++;
+        const reply = new Deferred<T>();
 
         if (cancellationToken) {
             args.push(RpcProtocol.CANCELLATION_TOKEN_KEY);
@@ -153,6 +171,13 @@ export class RpcProtocol {
     }
 
     sendNotification(method: string, args: any[]): void {
+        // If the notification supports a CancellationToken, it needs to be treated like a request
+        // because cancellation does not work with the simplified "fire and forget" approach of simple notifications.
+        if (args.length && CancellationToken.is(args[args.length - 1])) {
+            this.sendRequest(method, args);
+            return;
+        }
+
         const output = this.channel.getWriteBuffer();
         this.encoder.notification(output, this.nextMessageId++, method, args);
         output.commit();
@@ -167,7 +192,6 @@ export class RpcProtocol {
     protected handleCancel(id: number): void {
         const cancellationTokenSource = this.cancellationTokenSources.get(id);
         if (cancellationTokenSource) {
-            this.cancellationTokenSources.delete(id);
             cancellationTokenSource.cancel();
         }
     }
@@ -185,14 +209,14 @@ export class RpcProtocol {
         }
 
         try {
-            const result = await this.requestHandler(method, args);
+            const result = await this.requestHandler!(method, args);
             this.cancellationTokenSources.delete(id);
             this.encoder.replyOK(output, id, result);
             output.commit();
         } catch (err) {
             // In case of an error the output buffer might already contains parts of an message.
             // => Dispose the current buffer and retrieve a new, clean one for writing the response error.
-            if (output instanceof Uint8ArrayWriteBuffer) {
+            if (Disposable.is(output)) {
                 output.dispose();
             }
             const errorOutput = this.channel.getWriteBuffer();

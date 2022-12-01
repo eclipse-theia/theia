@@ -66,6 +66,8 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
+import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
@@ -534,18 +536,25 @@ export class HostedPluginSupport {
     }
 
     protected createServerRpc(pluginHostId: string): RPCProtocol {
-        const emitter = new Emitter<string>();
+
+        const channel = new BasicChannel(() => {
+            const writer = new Uint8ArrayWriteBuffer();
+            writer.onCommit(buffer => {
+                this.server.onMessage(pluginHostId, buffer);
+            });
+            return writer;
+        });
+
+        // Create RPC protocol before adding the listener to the watcher to receive the watcher's cached messages after the rpc protocol was created.
+        const rpc = new RPCProtocolImpl(channel);
+
         this.watcher.onPostMessageEvent(received => {
             if (pluginHostId === received.pluginHostId) {
-                emitter.fire(received.message);
+                channel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(received.message));
             }
         });
-        return new RPCProtocolImpl({
-            onMessage: emitter.event,
-            send: message => {
-                this.server.onMessage(pluginHostId, message);
-            }
-        });
+
+        return rpc;
     }
 
     protected async updateStoragePath(): Promise<void> {

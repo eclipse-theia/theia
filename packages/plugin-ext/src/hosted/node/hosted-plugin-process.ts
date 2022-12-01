@@ -14,16 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as cp from 'child_process';
-import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { ILogger, ConnectionErrorHandler, ContributionProvider, MessageService } from '@theia/core/lib/common';
-import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
-import { HostedPluginClient, ServerPluginRunner, PluginHostEnvironmentVariable, DeployedPlugin, PLUGIN_HOST_BACKEND, PluginIdentifiers } from '../../common/plugin-protocol';
-import { MessageType } from '../../common/rpc-protocol';
-import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
-import * as psTree from 'ps-tree';
+import { ConnectionErrorHandler, ContributionProvider, ILogger, MessageService } from '@theia/core/lib/common';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import * as cp from 'child_process';
+import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
+import { ProcessTerminatedMessage, ProcessTerminateMessage } from './hosted-plugin-protocol';
+import { BinaryMessagePipe } from '@theia/core/lib/node/messaging/binary-message-pipe';
+import { DeployedPlugin, HostedPluginClient, PluginHostEnvironmentVariable, PluginIdentifiers, PLUGIN_HOST_BACKEND, ServerPluginRunner } from '../../common/plugin-protocol';
+import psTree = require('ps-tree');
+import { Duplex } from 'stream';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;
@@ -60,6 +62,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
     protected readonly localizationService: HostedPluginLocalizationService;
 
     private childProcess: cp.ChildProcess | undefined;
+    private messagePipe?: BinaryMessagePipe;
     private client: HostedPluginClient;
 
     private terminatingPluginServer = false;
@@ -82,14 +85,14 @@ export class HostedPluginProcess implements ServerPluginRunner {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public acceptMessage(pluginHostId: string, message: string): boolean {
+    public acceptMessage(pluginHostId: string, message: Uint8Array): boolean {
         return pluginHostId === 'main';
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public onMessage(pluginHostId: string, jsonMessage: string): void {
-        if (this.childProcess) {
-            this.childProcess.send(jsonMessage);
+    public onMessage(pluginHostId: string, message: Uint8Array): void {
+        if (this.messagePipe) {
+            this.messagePipe.send(message);
         }
     }
 
@@ -106,12 +109,12 @@ export class HostedPluginProcess implements ServerPluginRunner {
         const waitForTerminated = new Deferred<void>();
         cp.on('message', message => {
             const msg = JSON.parse(message as string);
-            if ('type' in msg && msg.type === MessageType.Terminated) {
+            if (ProcessTerminatedMessage.is(msg)) {
                 waitForTerminated.resolve();
             }
         });
         const stopTimeout = this.cli.pluginHostStopTimeout;
-        cp.send(JSON.stringify({ type: MessageType.Terminate, stopTimeout }));
+        cp.send(JSON.stringify({ type: ProcessTerminateMessage.TYPE, stopTimeout }));
 
         const terminateTimeout = this.cli.pluginHostTerminateTimeout;
         if (terminateTimeout) {
@@ -156,9 +159,11 @@ export class HostedPluginProcess implements ServerPluginRunner {
             logger: this.logger,
             args: []
         });
-        this.childProcess.on('message', message => {
+
+        this.messagePipe = new BinaryMessagePipe(this.childProcess.stdio[4] as Duplex);
+        this.messagePipe.onMessage(buffer => {
             if (this.client) {
-                this.client.postMessage(PLUGIN_HOST_BACKEND, message as string);
+                this.client.postMessage(PLUGIN_HOST_BACKEND, buffer);
             }
         });
     }
@@ -184,7 +189,11 @@ export class HostedPluginProcess implements ServerPluginRunner {
             silent: true,
             env: env,
             execArgv: [],
-            stdio: ['pipe', 'pipe', 'pipe', 'ipc']
+            // 5th element MUST be 'overlapped' for it to work properly on Windows.
+            // 'overlapped' works just like 'pipe' on non-Windows platforms.
+            // See: https://nodejs.org/docs/latest-v14.x/api/child_process.html#child_process_options_stdio
+            // Note: For some reason `@types/node` does not know about 'overlapped'.
+            stdio: ['pipe', 'pipe', 'pipe', 'ipc', 'overlapped' as 'pipe']
         };
         const inspectArgPrefix = `--${options.serverName}-inspect`;
         const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));
