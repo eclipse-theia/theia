@@ -82,7 +82,7 @@ export class DisassemblyViewWidget extends BaseWidget {
         this.id = DisassemblyViewWidget.ID;
         this.addClass(DisassemblyViewWidget.ID);
         this.title.closable = true;
-        this.title.label = 'Disassembly';
+        this.title.label = nls.localize('theia/debug/disassembly-view/disassembly', 'Disassembly');
         const updateIcon = () => this.title.iconClass = this.labelProvider.getIcon(this.iconReferenceUri) + ' file-icon';
         updateIcon();
         this.toDispose.push(this.labelProvider.onDidChange(updateIcon));
@@ -461,4 +461,3 @@ export class DisassemblyViewWidget extends BaseWidget {
         return disposable;
     }
 }
-
