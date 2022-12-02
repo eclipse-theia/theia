@@ -1444,7 +1444,7 @@ export interface CommandProperties {
     };
 }
 
-export type TaskGroupKind = 'build' | 'test' | 'rebuild' | 'clean'
+export type TaskGroupKind = 'build' | 'test' | 'rebuild' | 'clean';
 export interface TaskDto {
     type: string;
     taskType?: 'shell' | 'process' | 'customExecution'; // the task execution type

@@ -22,7 +22,6 @@ import * as model from '../common/plugin-api-rpc-model';
 import { MarkdownString } from './markdown-string';
 import { MarkdownString as MarkdownStringInterface } from '@theia/core/lib/common/markdown-rendering';
 import { TaskDto } from '../common/plugin-api-rpc';
-import { TaskGroup } from './types-impl';
 
 describe('Type converters:', () => {
 
@@ -185,7 +184,7 @@ describe('Type converters:', () => {
         const args = ['run', 'build'];
         const cwd = '/projects/theia';
         const additionalProperty = 'some property';
-        const group = TaskGroup.Build;
+        const group = new types.TaskGroup('build', 'Build');
 
         const shellTaskDto: TaskDto = {
             type: shellType,
