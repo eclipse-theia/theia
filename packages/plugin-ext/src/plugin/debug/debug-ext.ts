@@ -32,6 +32,7 @@ import { DebugAdapter } from '@theia/debug/lib/common/debug-model';
 import { PluginDebugAdapterCreator } from './plugin-debug-adapter-creator';
 import { NodeDebugAdapterCreator } from '../node/debug/plugin-node-debug-adapter-creator';
 import { DebugProtocol } from '@vscode/debugprotocol';
+import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 
 interface ConfigurationProviderRecord {
     handle: number;
@@ -171,7 +172,13 @@ export class DebugExtImpl implements DebugExt {
     }
 
     startDebugging(folder: theia.WorkspaceFolder | undefined, nameOrConfiguration: string | theia.DebugConfiguration, options: theia.DebugSessionOptions): PromiseLike<boolean> {
-        return this.proxy.$startDebugging(folder, nameOrConfiguration, options);
+        return this.proxy.$startDebugging(folder, nameOrConfiguration, {
+            parentSessionId: options.parentSession?.id,
+            compact: options.compact,
+            consoleMode: options.consoleMode,
+            lifecycleManagedByParent: options.lifecycleManagedByParent,
+            noDebug: options.noDebug
+        });
     }
 
     stopDebugging(session?: theia.DebugSession): PromiseLike<void> {
@@ -313,13 +320,15 @@ export class DebugExtImpl implements DebugExt {
         return undefined;
     }
 
-    async $createDebugSession(debugConfiguration: theia.DebugConfiguration, workspaceFolderUri: string | undefined): Promise<string> {
+    async $createDebugSession(debugConfiguration: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<string> {
         const sessionId = uuid.v4();
 
+        const parentSession = debugConfiguration.parentSessionId ? this.sessions.get(debugConfiguration.parentSessionId) : undefined;
         const theiaSession: theia.DebugSession = {
             id: sessionId,
             type: debugConfiguration.type,
             name: debugConfiguration.name,
+            parentSession: parentSession,
             workspaceFolder: this.toWorkspaceFolder(workspaceFolderUri),
             configuration: debugConfiguration,
             customRequest: async (command: string, args?: any) => {
