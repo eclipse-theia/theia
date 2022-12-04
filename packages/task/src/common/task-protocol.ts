@@ -115,7 +115,7 @@ export namespace TaskOutputPresentation {
 
 export interface TaskCustomization {
     type: string;
-    group?: 'build' | 'test' | 'none' | { kind: 'build' | 'test', isDefault: true };
+    group?: 'build' | 'test' | 'rebuild' | 'clean' | 'none' | { kind: 'build' | 'test' | 'rebuild' | 'clean', isDefault: boolean };
     problemMatcher?: string | ProblemMatcherContribution | (string | ProblemMatcherContribution)[];
     presentation?: TaskOutputPresentation;
     detail?: string;
@@ -136,19 +136,23 @@ export interface TaskCustomization {
 }
 export namespace TaskCustomization {
     export function isBuildTask(task: TaskCustomization): boolean {
-        return task.group === 'build' || !!task.group && typeof task.group === 'object' && task.group.kind === 'build';
+        return task.group === 'build' || typeof task.group === 'object' && task.group.kind === 'build';
     }
 
     export function isDefaultBuildTask(task: TaskCustomization): boolean {
-        return !!task.group && typeof task.group === 'object' && task.group.kind === 'build' && task.group.isDefault;
+        return isDefaultTask(task) && isBuildTask(task);
+    }
+
+    export function isDefaultTask(task: TaskCustomization): boolean {
+        return typeof task.group === 'object' && task.group.isDefault;
     }
 
     export function isTestTask(task: TaskCustomization): boolean {
-        return task.group === 'test' || !!task.group && typeof task.group === 'object' && task.group.kind === 'test';
+        return task.group === 'test' || typeof task.group === 'object' && task.group.kind === 'test';
     }
 
     export function isDefaultTestTask(task: TaskCustomization): boolean {
-        return !!task.group && typeof task.group === 'object' && task.group.kind === 'test' && task.group.isDefault;
+        return isDefaultTask(task) && isTestTask(task);
     }
 }
 
