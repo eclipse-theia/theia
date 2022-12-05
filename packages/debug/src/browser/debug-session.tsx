@@ -40,7 +40,7 @@ import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/brows
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DebugContribution } from './debug-contribution';
-import { waitForEvent } from '@theia/core/lib/common/promise-util';
+import { Deferred, waitForEvent } from '@theia/core/lib/common/promise-util';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
 
@@ -53,6 +53,8 @@ export enum DebugState {
 
 // FIXME: make injectable to allow easily inject services
 export class DebugSession implements CompositeTreeElement {
+    protected readonly deferredOnDidConfigureCapabilities = new Deferred<void>();
+
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
     protected fireDidChange(): void {
@@ -501,6 +503,7 @@ export class DebugSession implements CompositeTreeElement {
 
     protected updateCapabilities(capabilities: DebugProtocol.Capabilities): void {
         Object.assign(this._capabilities, capabilities);
+        this.deferredOnDidConfigureCapabilities.resolve();
     }
 
     protected readonly _breakpoints = new Map<string, DebugBreakpoint[]>();
@@ -628,6 +631,7 @@ export class DebugSession implements CompositeTreeElement {
             return;
         }
         const { uri, sourceModified } = options;
+        await this.deferredOnDidConfigureCapabilities.promise;
         for (const affectedUri of this.getAffectedUris(uri)) {
             if (affectedUri.toString() === BreakpointManager.EXCEPTION_URI.toString()) {
                 await this.sendExceptionBreakpoints();
