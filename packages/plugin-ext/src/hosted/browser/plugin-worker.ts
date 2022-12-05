@@ -13,8 +13,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
 import { injectable } from '@theia/core/shared/inversify';
-import { Emitter } from '@theia/core/lib/common/event';
 import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 
 @injectable()
@@ -25,22 +26,27 @@ export class PluginWorker {
     public readonly rpc: RPCProtocol;
 
     constructor() {
-        const emitter = new Emitter<string>();
-
         this.worker = new Worker(new URL('./worker/worker-main',
             // @ts-expect-error (TS1343)
             // We compile to CommonJS but `import.meta` is still available in the browser
             import.meta.url));
 
-        this.worker.onmessage = m => emitter.fire(m.data);
-        this.worker.onerror = e => console.error(e);
-
-        this.rpc = new RPCProtocolImpl({
-            onMessage: emitter.event,
-            send: (m: string) => {
-                this.worker.postMessage(m);
-            }
+        const channel = new BasicChannel(() => {
+            const writer = new Uint8ArrayWriteBuffer();
+            writer.onCommit(buffer => {
+                this.worker.postMessage(buffer);
+            });
+            return writer;
         });
+
+        this.rpc = new RPCProtocolImpl(channel);
+
+        // eslint-disable-next-line arrow-body-style
+        this.worker.onmessage = buffer => channel.onMessageEmitter.fire(() => {
+            return new Uint8ArrayReadBuffer(buffer.data);
+        });
+
+        this.worker.onerror = e => channel.onErrorEmitter.fire(e);
     }
 
 }

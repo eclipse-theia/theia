@@ -13,28 +13,29 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
-
-import { Emitter } from '@theia/core/lib/common/event';
-import { RPCProtocolImpl } from '../../../common/rpc-protocol';
-import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
-import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin, TerminalServiceExt } from '../../../common/plugin-api-rpc';
-import { createAPIFactory } from '../../../plugin/plugin-context';
-import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import 'reflect-metadata';
+import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
 import * as theia from '@theia/plugin';
-import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
+import { emptyPlugin, MAIN_RPC_CONTEXT, Plugin, TerminalServiceExt } from '../../../common/plugin-api-rpc';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
-import { createDebugExtStub } from './debug-stub';
-import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents';
-import { WorkspaceExtImpl } from '../../../plugin/workspace';
-import { MessageRegistryExt } from '../../../plugin/message-registry';
-import { WorkerEnvExtImpl } from './worker-env-ext';
+import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
+import { RPCProtocolImpl } from '../../../common/rpc-protocol';
 import { ClipboardExt } from '../../../plugin/clipboard-ext';
+import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents';
+import { MessageRegistryExt } from '../../../plugin/message-registry';
+import { createAPIFactory } from '../../../plugin/plugin-context';
+import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
 import { KeyValueStorageProxy } from '../../../plugin/plugin-storage';
-import { WebviewsExtImpl } from '../../../plugin/webviews';
-import { loadManifest } from './plugin-manifest-loader';
-import { TerminalServiceExtImpl } from '../../../plugin/terminal-ext';
-import { reviver } from '../../../plugin/types-impl';
+import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
 import { SecretsExtImpl } from '../../../plugin/secrets-ext';
+import { TerminalServiceExtImpl } from '../../../plugin/terminal-ext';
+import { WebviewsExtImpl } from '../../../plugin/webviews';
+import { WorkspaceExtImpl } from '../../../plugin/workspace';
+import { createDebugExtStub } from './debug-stub';
+import { loadManifest } from './plugin-manifest-loader';
+import { WorkerEnvExtImpl } from './worker-env-ext';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -42,21 +43,19 @@ const ctx = self as any;
 const pluginsApiImpl = new Map<string, typeof theia>();
 const pluginsModulesNames = new Map<string, Plugin>();
 
-const emitter = new Emitter<string>();
-const rpc = new RPCProtocolImpl({
-    onMessage: emitter.event,
-    send: (m: string) => {
-        ctx.postMessage(m);
-    },
-},
-{
-    reviver: reviver
+const channel = new BasicChannel(() => {
+    const writeBuffer = new Uint8ArrayWriteBuffer();
+    writeBuffer.onCommit(buffer => {
+        ctx.postMessage(buffer);
+    });
+    return writeBuffer;
 });
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 addEventListener('message', (message: any) => {
-    emitter.fire(message.data);
+    channel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(message.data));
 });
+
+const rpc = new RPCProtocolImpl(channel);
 
 const scripts = new Set<string>();
 

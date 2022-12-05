@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '../../../shared/inversify';
 import { Disposable, DisposableCollection } from '../disposable';
 import { Emitter, Event } from '../event';
 import { ReadBuffer, WriteBuffer } from './message-buffer';
@@ -72,7 +71,6 @@ export type MessageProvider = () => ReadBuffer;
  *  Reusable abstract {@link Channel} implementation that sets up
  *  the basic channel event listeners and offers a generic close method.
  */
-@injectable()
 export abstract class AbstractChannel implements Channel {
 
     onCloseEmitter: Emitter<ChannelCloseEvent> = new Emitter();
@@ -101,7 +99,21 @@ export abstract class AbstractChannel implements Channel {
     }
 
     abstract getWriteBuffer(): WriteBuffer;
+}
 
+/**
+ * A very basic {@link AbstractChannel} implementation which takes a function
+ * for retrieving the {@link WriteBuffer} as constructor argument.
+ */
+export class BasicChannel extends AbstractChannel {
+
+    constructor(protected writeBufferProvider: () => WriteBuffer) {
+        super();
+    }
+
+    getWriteBuffer(): WriteBuffer {
+        return this.writeBufferProvider();
+    }
 }
 
 /**
@@ -194,7 +206,7 @@ export class ChannelMultiplexer implements Disposable {
                 return this.handleClose(id);
             }
             case MessageTypes.Data: {
-                return this.handleData(id, buffer.sliceAtReadPosition());
+                return this.handleData(id, buffer);
             }
         }
     }
@@ -206,7 +218,7 @@ export class ChannelMultiplexer implements Disposable {
             const channel = this.createChannel(id);
             this.pendingOpen.delete(id);
             this.openChannels.set(id, channel);
-            resolve!(channel);
+            resolve(channel);
             this.onOpenChannelEmitter.fire({ id, channel });
         }
     }
@@ -236,7 +248,7 @@ export class ChannelMultiplexer implements Disposable {
     protected handleData(id: string, data: ReadBuffer): void {
         const channel = this.openChannels.get(id);
         if (channel) {
-            channel.onMessageEmitter.fire(() => data);
+            channel.onMessageEmitter.fire(() => data.sliceAtReadPosition());
         }
     }
 
@@ -263,6 +275,9 @@ export class ChannelMultiplexer implements Disposable {
     }
 
     open(id: string): Promise<Channel> {
+        if (this.openChannels.has(id)) {
+            throw new Error(`Another channel with the id '${id}' is already open.`);
+        }
         const result = new Promise<Channel>((resolve, reject) => {
             this.pendingOpen.set(id, resolve);
         });

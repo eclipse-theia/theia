@@ -9,6 +9,7 @@
 <a name="breaking_changes_1.33.0">[Breaking Changes:](#breaking_changes_1.33.0)</a>
 
 - [core] returns of many methods of `MenuModelRegistry` changed from `CompositeMenuNode` to `MutableCompoundMenuNode`. To mutate a menu, use the `updateOptions` method or add a check for `instanceof CompositeMenuNode`, which will be true in most cases.
+- [plugin-ext] refactored the plugin RPC API - now also reuses the msgpackR based RPC protocol that is better suited for handling binary data and enables message tunneling [#11228](https://github.com/eclipse-theia/theia/pull/11261). All plugin protocol types now use `UInt8Array` as type for message parameters instead of `string`  - Contributed on behalf of STMicroelectronics.
 
 ## v1.32.0 - 11/24/2022
 
