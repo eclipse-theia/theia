@@ -6,6 +6,8 @@
 
 ## v1.33.0 - unreleased
 
+- [scripts] integrated start-up performance scripts into nightly master build [#10463](https://github.com/eclipse-theia/theia/pull/10463) - Contributed on behalf of STMicroelectronics
+
 <a name="breaking_changes_1.33.0">[Breaking Changes:](#breaking_changes_1.33.0)</a>
 
 - [core] returns of many methods of `MenuModelRegistry` changed from `CompositeMenuNode` to `MutableCompoundMenuNode`. To mutate a menu, use the `updateOptions` method or add a check for `instanceof CompositeMenuNode`, which will be true in most cases.

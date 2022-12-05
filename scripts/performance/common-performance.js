@@ -40,9 +40,28 @@
  */
 
 const fs = require('fs');
+const { resolve } = require('path');
 
 const performanceTag = braceText('Performance');
 const lcp = 'Largest Contentful Paint (LCP)';
+
+/**
+ * A GitHub performance results record.
+ * 
+ * @typedef PerformanceResult
+ * @property {string} name The performance measurement name
+ * @property {string} unit The performance unit of measure
+ * @property {number} value The performance measurement
+ * @property {number} [range] The standard deviation (the GitHub action calls it a "range") of the measurement
+ */
+
+/**
+ * Configuration of reporting of performance test results in a GitHub build.
+ * 
+ * @property {boolean} enabled whether GitHub result reporting is enabled (`false` by default)
+ * @property {Array<PerformanceResult>} results the performance results, if reporting is enabled
+ */
+var githubReporting = { enabled: false, results: [] };
 
 /**
  * Measure the performance of a `test` function implementing some `scenario` of interest.
@@ -90,7 +109,33 @@ function logSummary(name, scenario, durations) {
         const stdev = calculateStandardDeviation(mean, durations);
         logDuration(name, 'MEAN', scenario, mean);
         logDuration(name, 'STDEV', scenario, stdev);
+        if (githubReporting.enabled) {
+            githubResult({ name, unit: 'seconds', value: prec(mean), range: prec(stdev) });
+        }
+    } else if (githubReporting.enabled) {
+        // Only one duration
+        githubResult({ name, unit: 'seconds', value: prec(durations[0]) });
     }
+}
+
+function prec(value, precision = 3) {
+    return Number.parseFloat(value.toPrecision(precision));
+}
+
+/**
+ * Report the performance result for GitHub to pick up.
+ * 
+ * @param {PerformanceResult} result the performance result to report
+ */
+function githubResult(result) {
+    const resultsFile = resolve('../..', 'performance-result.json');
+
+    // We append to any previous results that there may have been from another script
+    const previousResults = fs.existsSync(resultsFile) ? JSON.parse(fs.readFileSync(resultsFile, 'utf-8')) : [];
+    githubReporting.results.push(...previousResults);
+
+    githubReporting.results.push(result);
+    fs.writeFileSync(resultsFile, JSON.stringify(githubReporting.results, undefined, 2), 'utf-8');
 }
 
 /**
@@ -227,6 +272,7 @@ function delay(time) {
 }
 
 module.exports = {
+    githubReporting,
     measure, analyzeTrace,
     calculateMean, calculateStandardDeviation,
     duration, logDuration, logSummary,
