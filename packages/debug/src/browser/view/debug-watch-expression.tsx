@@ -24,6 +24,7 @@ import { nls } from '@theia/core';
 export class DebugWatchExpression extends ExpressionItem {
 
     readonly id: number;
+    protected isError: boolean;
 
     constructor(protected readonly options: {
         id: number,
@@ -40,9 +41,12 @@ export class DebugWatchExpression extends ExpressionItem {
         await super.evaluate('watch');
     }
 
-    protected override setResult(body?: DebugProtocol.EvaluateResponse['body']): void {
-        // overridden to ignore error
-        super.setResult(body);
+    protected override setResult(body?: DebugProtocol.EvaluateResponse['body'], error?: string): void {
+        if (!this.options.session()) {
+            return;
+        }
+        super.setResult(body, error);
+        this.isError = !!error;
         this.options.onDidChange();
     }
 
@@ -50,7 +54,7 @@ export class DebugWatchExpression extends ExpressionItem {
         return <div className='theia-debug-console-variable'>
             <div className={TREE_NODE_SEGMENT_GROW_CLASS}>
                 <span title={this.type || this._expression} className='name'>{this._expression}: </span>
-                <span title={this._value} ref={this.setValueRef}>{this._value}</span>
+                <span title={this._value} ref={this.setValueRef} className={this.isError ? 'watch-error' : ''}>{this._value}</span>
             </div>
             <div className={codicon('close', true)} title={nls.localizeByDefault('Remove Expression')} onClick={this.options.remove} />
         </div>;
