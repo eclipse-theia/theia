@@ -195,6 +195,15 @@
     color: var(--theia-variable-name-color);
 }
 
+.theia-TreeNode:not(:hover) .theia-debug-console-variable .action-label {
+    visibility: hidden;
+}
+
+.theia-debug-console-variable .action-label {
+    /* Vertically center the button in the tree node */
+    margin: auto;
+}
+
 /** Editor **/
 
 .theia-debug-breakpoint-icon {
