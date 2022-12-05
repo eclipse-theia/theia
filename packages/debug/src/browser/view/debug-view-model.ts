@@ -165,11 +165,12 @@ export class DebugViewModel implements Disposable {
     }
 
     async addWatchExpression(expression: string = ''): Promise<DebugWatchExpression | undefined> {
-        const watchExpression = new DebugWatchExpression({
+        const watchExpression: DebugWatchExpression = new DebugWatchExpression({
             id: Number.MAX_SAFE_INTEGER,
             expression,
             session: () => this.currentSession,
-            onDidChange: () => { /* no-op */ }
+            remove: () => this.removeWatchExpression(watchExpression),
+            onDidChange: () => { /* no-op */ },
         });
         await watchExpression.open();
         if (!watchExpression.expression) {
@@ -194,10 +195,11 @@ export class DebugViewModel implements Disposable {
             toRemove.delete(id);
             if (!this._watchExpressions.has(id)) {
                 added = true;
-                const watchExpression = new DebugWatchExpression({
+                const watchExpression: DebugWatchExpression = new DebugWatchExpression({
                     id,
                     expression,
                     session: () => this.currentSession,
+                    remove: () => this.removeWatchExpression(watchExpression),
                     onDidChange: () => this.fireDidChangeWatchExpressions()
                 });
                 this._watchExpressions.set(id, watchExpression);

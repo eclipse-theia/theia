@@ -169,7 +169,7 @@
 }
 
 .theia-debug-console-variable {
-    width: 100%;
+    display: flex;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
