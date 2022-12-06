@@ -632,9 +632,13 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         };
     }
 
-    protected async provideSignatureHelp(handle: number, model: monaco.editor.ITextModel,
-        position: monaco.Position, token: monaco.CancellationToken,
-        context: monaco.languages.SignatureHelpContext): Promise<monaco.languages.ProviderResult<monaco.languages.SignatureHelpResult>> {
+    protected async provideSignatureHelp(
+        handle: number,
+        model: monaco.editor.ITextModel,
+        position: monaco.Position,
+        token: monaco.CancellationToken,
+        context: monaco.languages.SignatureHelpContext
+    ): Promise<monaco.languages.ProviderResult<monaco.languages.SignatureHelpResult>> {
         const value = await this.proxy.$provideSignatureHelp(handle, model.uri, position, context, token);
         if (!value) {
             return undefined;

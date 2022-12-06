@@ -7259,7 +7259,7 @@ export module '@theia/plugin' {
          * This is `undefined` when signature help is not triggered by typing, such as when manually invoking
          * signature help or when moving the cursor.
          */
-        readonly triggerCharacter?: string;
+        readonly triggerCharacter: string | undefined;
 
         /**
          * `true` if signature help was already showing when it was triggered.

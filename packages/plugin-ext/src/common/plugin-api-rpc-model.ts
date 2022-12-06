@@ -241,7 +241,7 @@ export interface SignatureHelp extends IdObject {
 
 export interface SignatureHelpContext {
     triggerKind: theia.SignatureHelpTriggerKind;
-    triggerCharacter?: string;
+    triggerCharacter: string | undefined;
     isRetrigger: boolean;
     activeSignatureHelp?: SignatureHelp;
 }
