@@ -15,10 +15,20 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { BackendApplicationServer } from '@theia/core/lib/node';
+import { BackendApplicationContribution, BackendApplicationServer } from '@theia/core/lib/node';
 import { SampleBackendApplicationServer } from './sample-backend-application-server';
+import { SampleMockOpenVsxServer } from './sample-mock-open-vsx-server';
+import { SampleAppInfo } from '../common/vsx/sample-app-info';
+import { SampleBackendAppInfo } from './sample-backend-app-info';
+import { rebindOVSXClientFactory } from '../common/vsx/sample-ovsx-client-factory';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    rebindOVSXClientFactory(rebind);
+    bind(SampleBackendAppInfo).toSelf().inSingletonScope();
+    bind(SampleAppInfo).toService(SampleBackendAppInfo);
+    bind(BackendApplicationContribution).toService(SampleBackendAppInfo);
+    // bind a mock/sample OpenVSX registry:
+    bind(BackendApplicationContribution).to(SampleMockOpenVsxServer).inSingletonScope();
     if (process.env.SAMPLE_BACKEND_APPLICATION_SERVER) {
         bind(BackendApplicationServer).to(SampleBackendApplicationServer).inSingletonScope();
     }

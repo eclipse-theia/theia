@@ -33,21 +33,14 @@ import { VSXExtensionsSourceOptions } from './vsx-extensions-source';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { bindExtensionPreferences } from './recommended-extensions/recommended-extensions-preference-contribution';
 import { bindPreferenceProviderOverrides } from './recommended-extensions/preference-provider-overrides';
-import { OVSXClientProvider, createOVSXClient } from '../common/ovsx-client-provider';
 import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
-import { RequestService } from '@theia/core/shared/@theia/request';
 import { LanguageQuickPickService } from '@theia/core/lib/browser/i18n/language-quick-pick-service';
 import { VSXLanguageQuickPickService } from './vsx-language-quick-pick-service';
 
-export default new ContainerModule((bind, unbind, _, rebind) => {
-    bind<OVSXClientProvider>(OVSXClientProvider).toDynamicValue(ctx => {
-        const clientPromise = createOVSXClient(ctx.container.get(VSXEnvironment), ctx.container.get(RequestService));
-        return () => clientPromise;
-    }).inSingletonScope();
-    bind(VSXEnvironment).toDynamicValue(
-        ctx => WebSocketConnectionProvider.createProxy(ctx.container, VSX_ENVIRONMENT_PATH)
-    ).inSingletonScope();
-
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    bind(VSXEnvironment)
+        .toDynamicValue(ctx => WebSocketConnectionProvider.createProxy(ctx.container, VSX_ENVIRONMENT_PATH))
+        .inSingletonScope();
     bind(VSXExtension).toSelf();
     bind(VSXExtensionFactory).toFactory(ctx => (option: VSXExtensionOptions) => {
         const child = ctx.container.createChild();

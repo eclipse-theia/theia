@@ -66,7 +66,7 @@
     "compile": "tsc -b",
     "lint": "theiaext lint",
     "rebuild": "theia rebuild:electron --cacheRoot ../..",
-    "start": "theia start --plugins=local-dir:../../plugins",
+    "start": "yarn -s rebuild && theia start --plugins=local-dir:../../plugins --ovsx-router-config=../ovsx-router-config.json",
     "start:debug": "yarn -s start --log-level=debug --remote-debugging-port=9222",
     "start:watch": "concurrently --kill-others -n tsc,bundle,run -c red,yellow,green \"tsc -b -w --preserveWatchOutput\" \"yarn -s watch:bundle\" \"yarn -s start\"",
     "test": "electron-mocha --timeout 60000 \"./lib/test/**/*.espec.js\"",

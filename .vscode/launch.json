@@ -34,7 +34,8 @@
         "--app-project-path=${workspaceFolder}/examples/electron",
         "--remote-debugging-port=9222",
         "--no-app-auto-install",
-        "--plugins=local-dir:../../plugins"
+        "--plugins=local-dir:../../plugins",
+        "--ovsx-router-config=examples/ovsx-router-config.json"
       ],
       "env": {
         "NODE_ENV": "development"
@@ -44,6 +45,7 @@
         "${workspaceFolder}/examples/electron/lib/backend/electron-main.js",
         "${workspaceFolder}/examples/electron/lib/backend/main.js",
         "${workspaceFolder}/examples/electron/lib/**/*.js",
+        "${workspaceFolder}/examples/api-samples/lib/**/*.js",
         "${workspaceFolder}/packages/*/lib/**/*.js",
         "${workspaceFolder}/dev-packages/*/lib/**/*.js"
       ],
@@ -62,7 +64,8 @@
         "--no-cluster",
         "--app-project-path=${workspaceFolder}/examples/browser",
         "--plugins=local-dir:plugins",
-        "--hosted-plugin-inspect=9339"
+        "--hosted-plugin-inspect=9339",
+        "--ovsx-router-config=examples/ovsx-router-config.json"
       ],
       "env": {
         "NODE_ENV": "development"
@@ -71,6 +74,7 @@
       "outFiles": [
         "${workspaceFolder}/examples/browser/src-gen/backend/*.js",
         "${workspaceFolder}/examples/browser/lib/**/*.js",
+        "${workspaceFolder}/examples/api-samples/lib/**/*.js",
         "${workspaceFolder}/packages/*/lib/**/*.js",
         "${workspaceFolder}/dev-packages/*/lib/**/*.js"
       ],

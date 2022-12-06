@@ -10,6 +10,7 @@
     "@theia/monaco": "1.38.0",
     "@theia/monaco-editor-core": "1.72.3",
     "@theia/output": "1.38.0",
+    "@theia/ovsx-client": "1.38.0",
     "@theia/search-in-workspace": "1.38.0",
     "@theia/toolbar": "1.38.0",
     "@theia/vsx-registry": "1.38.0",

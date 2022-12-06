@@ -34,22 +34,22 @@ import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { BUILTIN_QUERY, INSTALLED_QUERY, RECOMMENDED_QUERY } from './vsx-extensions-search-model';
 import { IGNORE_RECOMMENDATIONS_ID } from './recommended-extensions/recommended-extensions-preference-contribution';
 import { VSXExtensionsCommands } from './vsx-extension-commands';
-import { VSXExtensionRaw } from '@theia/ovsx-client';
+import { VSXExtensionRaw, OVSXApiFilter } from '@theia/ovsx-client';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
 
 @injectable()
-export class VSXExtensionsContribution extends AbstractViewContribution<VSXExtensionsViewContainer>
-    implements ColorContribution, FrontendApplicationContribution {
+export class VSXExtensionsContribution extends AbstractViewContribution<VSXExtensionsViewContainer> implements ColorContribution, FrontendApplicationContribution {
 
-    @inject(VSXExtensionsModel) protected readonly model: VSXExtensionsModel;
-    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
-    @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
-    @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-    @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
-    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
-    @inject(OVSXClientProvider) protected readonly clientProvider: OVSXClientProvider;
-    @inject(QuickInputService) protected readonly quickInput: QuickInputService;
+    @inject(VSXExtensionsModel) protected model: VSXExtensionsModel;
+    @inject(CommandRegistry) protected commandRegistry: CommandRegistry;
+    @inject(FileDialogService) protected fileDialogService: FileDialogService;
+    @inject(MessageService) protected messageService: MessageService;
+    @inject(LabelProvider) protected labelProvider: LabelProvider;
+    @inject(ClipboardService) protected clipboardService: ClipboardService;
+    @inject(PreferenceService) protected preferenceService: PreferenceService;
+    @inject(OVSXClientProvider) protected clientProvider: OVSXClientProvider;
+    @inject(OVSXApiFilter) protected vsxApiFilter: OVSXApiFilter;
+    @inject(QuickInputService) protected quickInput: QuickInputService;
 
     constructor() {
         super({
@@ -209,8 +209,8 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         const extensionId = extension.id;
         const currentVersion = extension.version;
         const client = await this.clientProvider();
-        const extensions = await client.getAllVersions(extensionId);
-        const latestCompatible = await client.getLatestCompatibleExtensionVersion(extensionId);
+        const { extensions } = await client.query({ extensionId, includeAllVersions: true });
+        const latestCompatible = this.vsxApiFilter.getLatestCompatibleExtension(extensions);
         let compatibleExtensions: VSXExtensionRaw[] = [];
         let activeItem = undefined;
         if (latestCompatible) {

@@ -35,3 +35,4 @@ dependency-check-summary.txt*
 *-trace.json
 .tours
 /performance-result.json
+*.vsix

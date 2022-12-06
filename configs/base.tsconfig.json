@@ -14,14 +14,14 @@
     "emitDecoratorMetadata": true,
     "downlevelIteration": true,
     "resolveJsonModule": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "target": "ES2017",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "target": "ES2019",
     "jsx": "react",
     "lib": [
-      "ES2017",
+      "ES2019",
       "ES2020.Promise",
-      "dom"
+      "DOM"
     ],
     "sourceMap": true
   }

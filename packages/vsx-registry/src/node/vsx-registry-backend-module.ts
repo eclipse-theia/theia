@@ -14,24 +14,22 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { VSXExtensionResolver } from './vsx-extension-resolver';
-import { PluginDeployerResolver } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { OVSXClientProvider, createOVSXClient } from '../common/ovsx-client-provider';
-import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
-import { VSXEnvironmentImpl } from './vsx-environment-impl';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
-import { RequestService } from '@theia/core/shared/@theia/request';
+import { CliContribution } from '@theia/core/lib/node';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { PluginDeployerResolver } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
+import { VsxCli } from './vsx-cli';
+import { VSXEnvironmentImpl } from './vsx-environment-impl';
+import { VSXExtensionResolver } from './vsx-extension-resolver';
 
 export default new ContainerModule(bind => {
-    bind<OVSXClientProvider>(OVSXClientProvider).toDynamicValue(ctx => {
-        const clientPromise = createOVSXClient(ctx.container.get(VSXEnvironment), ctx.container.get(RequestService));
-        return () => clientPromise;
-    }).inSingletonScope();
     bind(VSXEnvironment).to(VSXEnvironmentImpl).inSingletonScope();
-    bind(ConnectionHandler).toDynamicValue(
-        ctx => new JsonRpcConnectionHandler(VSX_ENVIRONMENT_PATH, () => ctx.container.get(VSXEnvironment))
-    ).inSingletonScope();
+    bind(VsxCli).toSelf().inSingletonScope();
+    bind(CliContribution).toService(VsxCli);
+    bind(ConnectionHandler)
+        .toDynamicValue(ctx => new JsonRpcConnectionHandler(VSX_ENVIRONMENT_PATH, () => ctx.container.get(VSXEnvironment)))
+        .inSingletonScope();
     bind(VSXExtensionResolver).toSelf().inSingletonScope();
     bind(PluginDeployerResolver).toService(VSXExtensionResolver);
 });

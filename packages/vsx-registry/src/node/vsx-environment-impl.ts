@@ -14,10 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { OVSXRouterConfig } from '@theia/ovsx-client';
 import { PluginVsCodeCliContribution } from '@theia/plugin-ext-vscode/lib/node/plugin-vscode-cli-contribution';
 import { VSXEnvironment } from '../common/vsx-environment';
+import { VsxCli } from './vsx-cli';
 
 @injectable()
 export class VSXEnvironmentImpl implements VSXEnvironment {
@@ -26,6 +28,9 @@ export class VSXEnvironmentImpl implements VSXEnvironment {
 
     @inject(PluginVsCodeCliContribution)
     protected readonly pluginVscodeCli: PluginVsCodeCliContribution;
+
+    @inject(VsxCli)
+    protected vsxCli: VsxCli;
 
     async getRegistryUri(): Promise<string> {
         return this._registryUri.toString(true);
@@ -37,5 +42,9 @@ export class VSXEnvironmentImpl implements VSXEnvironment {
 
     async getVscodeApiVersion(): Promise<string> {
         return this.pluginVscodeCli.vsCodeApiVersionPromise;
+    }
+
+    async getOvsxRouterConfig(): Promise<OVSXRouterConfig | undefined> {
+        return this.vsxCli.ovsxRouterConfig;
     }
 }

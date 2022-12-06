@@ -26,6 +26,8 @@ import { bindSampleToolbarContribution } from './toolbar/sample-toolbar-contribu
 
 import '../../src/browser/style/branding.css';
 import { bindMonacoPreferenceExtractor } from './monaco-editor-preferences/monaco-editor-preference-extractor';
+import { rebindOVSXClientFactory } from '../common/vsx/sample-ovsx-client-factory';
+import { bindSampleAppInfo } from './vsx/sample-frontend-app-info';
 
 export default new ContainerModule((
     bind: interfaces.Bind,
@@ -42,4 +44,6 @@ export default new ContainerModule((
     bindSampleFilteredCommandContribution(bind);
     bindSampleToolbarContribution(bind, rebind);
     bindMonacoPreferenceExtractor(bind);
+    bindSampleAppInfo(bind);
+    rebindOVSXClientFactory(rebind);
 });

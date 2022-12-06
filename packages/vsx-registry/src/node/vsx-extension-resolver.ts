@@ -22,7 +22,7 @@ import URI from '@theia/core/lib/common/uri';
 import { PluginDeployerHandler, PluginDeployerResolver, PluginDeployerResolverContext, PluginDeployOptions, PluginIdentifiers } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
-import { VSXExtensionRaw } from '@theia/ovsx-client';
+import { OVSXApiFilter, VSXExtensionRaw } from '@theia/ovsx-client';
 import { RequestService } from '@theia/core/shared/@theia/request';
 import { PluginVSCodeEnvironment } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-environment';
 import { PluginUninstallationManager } from '@theia/plugin-ext/lib/main/node/plugin-uninstallation-manager';
@@ -35,6 +35,7 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
     @inject(RequestService) protected requestService: RequestService;
     @inject(PluginVSCodeEnvironment) protected readonly environment: PluginVSCodeEnvironment;
     @inject(PluginUninstallationManager) protected readonly uninstallationManager: PluginUninstallationManager;
+    @inject(OVSXApiFilter) protected vsxApiFilter: OVSXApiFilter;
 
     accept(pluginId: string): boolean {
         return !!VSCodeExtensionUri.toId(new URI(pluginId));
@@ -49,10 +50,12 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         const client = await this.clientProvider();
         if (options) {
             console.log(`[${id}]: trying to resolve version ${options.version}...`);
-            extension = await client.getExtension(id, { extensionVersion: options.version, includeAllVersions: true });
+            const { extensions } = await client.query({ extensionId: id, extensionVersion: options.version, includeAllVersions: true });
+            extension = extensions[0];
         } else {
             console.log(`[${id}]: trying to resolve latest version...`);
-            extension = await client.getLatestCompatibleExtensionVersion(id);
+            const { extensions } = await client.query({ extensionId: id });
+            extension = this.vsxApiFilter.getLatestCompatibleExtension(extensions);
         }
         if (!extension) {
             return;

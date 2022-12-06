@@ -21,6 +21,7 @@
     "@typescript-eslint/eslint-plugin": "^4.8.1",
     "@typescript-eslint/eslint-plugin-tslint": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
+    "@vscode/vsce": "^2.15.0",
     "chai": "4.3.4",
     "chai-spies": "1.0.0",
     "chai-string": "^1.4.0",
@@ -94,7 +95,8 @@
   "workspaces": [
     "dev-packages/*",
     "examples/*",
-    "packages/*"
+    "packages/*",
+    "sample-plugins/*/*"
   ],
   "theiaPluginsDir": "plugins",
   "theiaPlugins": {
