@@ -660,6 +660,8 @@ export interface Comment {
     readonly contextValue?: string;
     readonly label?: string;
     readonly mode?: CommentMode;
+    /** Timestamp serialized as ISO date string via Date.prototype.toISOString */
+    readonly timestamp?: string;
 }
 
 export enum CommentThreadCollapsibleState {

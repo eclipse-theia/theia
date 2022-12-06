@@ -12084,6 +12084,11 @@ export module '@theia/plugin' {
          * Label will be rendered next to authorName if exists.
          */
         label?: string;
+
+        /**
+         * Optional timestamp.
+         */
+        timestamp?: Date;
     }
 
     /**

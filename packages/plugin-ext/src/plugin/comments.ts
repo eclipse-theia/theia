@@ -491,6 +491,7 @@ function convertToModeComment(thread: ExtHostCommentThread, commentController: C
     }
 
     const iconPath = theiaComment.author && theiaComment.author.iconPath ? theiaComment.author.iconPath.toString() : undefined;
+    const date = theiaComment.timestamp ? theiaComment.timestamp.toISOString() : undefined;
 
     return {
         mode: theiaComment.mode,
@@ -500,6 +501,7 @@ function convertToModeComment(thread: ExtHostCommentThread, commentController: C
         userName: theiaComment.author.name,
         userIconPath: iconPath,
         label: theiaComment.label,
+        timestamp: date,
     };
 }
 
