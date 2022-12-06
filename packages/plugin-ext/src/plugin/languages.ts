@@ -27,6 +27,7 @@ import {
     Plugin,
     InlayHintsDto,
     InlayHintDto,
+    IdentifiableInlineCompletions,
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import * as theia from '@theia/plugin';
@@ -67,7 +68,8 @@ import {
     EvaluatableExpression,
     InlineValue,
     InlineValueContext,
-    TypeHierarchyItem
+    TypeHierarchyItem,
+    InlineCompletionContext
 } from '../common/plugin-api-rpc-model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -106,6 +108,7 @@ import { Severity } from '@theia/core/lib/common/severity';
 import { LinkedEditingRangeAdapter } from './languages/linked-editing-range';
 import { serializeEnterRules, serializeIndentation, serializeRegExp } from './languages-utils';
 import { InlayHintsAdapter } from './languages/inlay-hints';
+import { InlineCompletionAdapter, InlineCompletionAdapterBase } from './languages/inline-completion';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -135,7 +138,8 @@ type Adapter = CompletionAdapter |
     DocumentRangeSemanticTokensAdapter |
     DocumentSemanticTokensAdapter |
     LinkedEditingRangeAdapter |
-    TypeHierarchyAdapter;
+    TypeHierarchyAdapter |
+    InlineCompletionAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -274,6 +278,28 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.createDisposable(callId);
     }
     // ### Completion end
+
+    // ### Inline completion provider begin
+    registerInlineCompletionsProvider(selector: theia.DocumentSelector, provider: theia.InlineCompletionItemProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new InlineCompletionAdapter(this.documents, provider, this.commands));
+        this.proxy.$registerInlineCompletionsSupport(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+
+    $provideInlineCompletions(
+        handle: number,
+        resource: UriComponents,
+        position: Position,
+        context: InlineCompletionContext,
+        token: theia.CancellationToken
+    ): Promise<IdentifiableInlineCompletions | undefined> {
+        return this.withAdapter(handle, InlineCompletionAdapterBase, adapter => adapter.provideInlineCompletions(URI.revive(resource), position, context, token), undefined);
+    }
+
+    $freeInlineCompletionsList(handle: number, pid: number): void {
+        this.withAdapter(handle, InlineCompletionAdapterBase, async adapter => { adapter.disposeCompletions(pid); }, undefined);
+    }
+    // ### Inline completion provider end
 
     // ### Definition provider begin
     $provideDefinition(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Definition | undefined> {

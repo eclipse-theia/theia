@@ -34,7 +34,8 @@ import {
     WorkspaceTextEditDto,
     PluginInfo,
     LanguageStatus as LanguageStatusDTO,
-    InlayHintDto
+    InlayHintDto,
+    IdentifiableInlineCompletions
 } from '../../common/plugin-api-rpc';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
@@ -866,6 +867,22 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         if (obj instanceof Emitter) {
             obj.fire(event);
         }
+    }
+
+    $registerInlineCompletionsSupport(handle: number, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = this.toLanguageSelector(selector);
+        const provider: monaco.languages.InlineCompletionsProvider<IdentifiableInlineCompletions> = {
+            provideInlineCompletions: async (
+                model: monaco.editor.ITextModel,
+                position: monaco.Position,
+                context: monaco.languages.InlineCompletionContext,
+                token: CancellationToken
+            ): Promise<IdentifiableInlineCompletions | undefined> => this.proxy.$provideInlineCompletions(handle, model.uri, position, context, token),
+            freeInlineCompletions: (completions: IdentifiableInlineCompletions): void => {
+                this.proxy.$freeInlineCompletionsList(handle, completions.pid);
+            }
+        };
+        this.register(handle, (monaco.languages.registerInlineCompletionsProvider as RegistrationFunction<monaco.languages.InlineCompletionsProvider>)(languageSelector, provider));
     }
 
     $registerQuickFixProvider(
