@@ -137,7 +137,7 @@ class FsLinkProvider {
 
 class ConsumerFileSystem implements vscode.FileSystem {
 
-    constructor(private _proxy: FileSystemMain) { }
+    constructor(private _proxy: FileSystemMain, private _capabilities: Map<string, number>) { }
 
     stat(uri: vscode.Uri): Promise<vscode.FileStat> {
         return this._proxy.$stat(uri).catch(ConsumerFileSystem._handleError);
@@ -148,7 +148,7 @@ class ConsumerFileSystem implements vscode.FileSystem {
     createDirectory(uri: vscode.Uri): Promise<void> {
         return this._proxy.$mkdir(uri).catch(ConsumerFileSystem._handleError);
     }
-    async readFile(uri: vscode.Uri): Promise<Uint8Array> {
+    readFile(uri: vscode.Uri): Promise<Uint8Array> {
         return this._proxy.$readFile(uri).then(buff => buff.buffer).catch(ConsumerFileSystem._handleError);
     }
     writeFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
@@ -162,6 +162,13 @@ class ConsumerFileSystem implements vscode.FileSystem {
     }
     copy(source: vscode.Uri, destination: vscode.Uri, options?: { overwrite?: boolean }): Promise<void> {
         return this._proxy.$copy(source, destination, { ...{ overwrite: false }, ...options }).catch(ConsumerFileSystem._handleError);
+    }
+    isWritableFileSystem(scheme: string): boolean | undefined {
+        const capabilities = this._capabilities.get(scheme);
+        if (typeof capabilities === 'number') {
+            return !(capabilities & files.FileSystemProviderCapabilities.Readonly);
+        }
+        return undefined;
     }
     private static _handleError(err: any): never {
         // generic error
@@ -193,17 +200,18 @@ export class FileSystemExtImpl implements FileSystemExt {
     private readonly _proxy: FileSystemMain;
     private readonly _linkProvider = new FsLinkProvider();
     private readonly _fsProvider = new Map<number, vscode.FileSystemProvider>();
+    private readonly _capabilities = new Map<string, number>();
     private readonly _usedSchemes = new Set<string>();
     private readonly _watches = new Map<number, IDisposable>();
 
     private _linkProviderRegistration?: IDisposable;
     private _handlePool: number = 0;
 
-    readonly fileSystem: vscode.FileSystem;
+    readonly fileSystem: ConsumerFileSystem;
 
     constructor(rpc: RPCProtocol, private _extHostLanguageFeatures: LanguagesExtImpl) {
         this._proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.FILE_SYSTEM_MAIN);
-        this.fileSystem = new ConsumerFileSystem(this._proxy);
+        this.fileSystem = new ConsumerFileSystem(this._proxy, this._capabilities);
 
         // register used schemes
         Object.keys(Schemas).forEach(scheme => this._usedSchemes.add(scheme));
@@ -254,6 +262,7 @@ export class FileSystemExtImpl implements FileSystemExt {
             capabilities += files.FileSystemProviderCapabilities.FileOpenReadWriteClose;
         }
 
+        this._capabilities.set(scheme, capabilities);
         this._proxy.$registerFileSystemProvider(handle, scheme, capabilities);
 
         const subscription = provider.onDidChangeFile(event => {
@@ -286,6 +295,7 @@ export class FileSystemExtImpl implements FileSystemExt {
         return {
             dispose: () => {
                 subscription.dispose();
+                this._capabilities.delete(scheme);
                 this._linkProvider.delete(scheme);
                 this._usedSchemes.delete(scheme);
                 this._fsProvider.delete(handle);
@@ -295,8 +305,8 @@ export class FileSystemExtImpl implements FileSystemExt {
     }
 
     private static _asIStat(stat: vscode.FileStat): files.Stat {
-        const { type, ctime, mtime, size } = stat;
-        return { type, ctime, mtime, size };
+        const { type, ctime, mtime, size, permissions } = stat;
+        return { type, ctime, mtime, size, permissions };
     }
 
     $stat(handle: number, resource: UriComponents): Promise<files.Stat> {

@@ -40,6 +40,7 @@ export namespace FileResourceVersion {
 }
 
 export interface FileResourceOptions {
+    isReadonly: boolean
     shouldOverwrite: () => Promise<boolean>
     shouldOpenAsText: (error: string) => Promise<boolean>
 }
@@ -184,15 +185,7 @@ export class FileResource implements Resource {
         }
     }
 
-    saveContents(content: string, options?: ResourceSaveOptions): Promise<void> {
-        return this.doWrite(content, options);
-    }
-
-    saveStream(content: Readable<string>, options?: ResourceSaveOptions): Promise<void> {
-        return this.doWrite(content, options);
-    }
-
-    protected async doWrite(content: string | Readable<string>, options?: ResourceSaveOptions): Promise<void> {
+    protected doWrite = async (content: string | Readable<string>, options?: ResourceSaveOptions): Promise<void> => {
         const version = options?.version || this._version;
         const current = FileResourceVersion.is(version) ? version : undefined;
         const etag = current?.etag;
@@ -218,14 +211,22 @@ export class FileResource implements Resource {
             }
             throw e;
         }
-    }
+    };
 
+    saveStream?: Resource['saveStream'];
+    saveContents?: Resource['saveContents'];
     saveContentChanges?: Resource['saveContentChanges'];
     protected updateSavingContentChanges(): void {
-        if (this.fileService.hasCapability(this.uri, FileSystemProviderCapabilities.Update)) {
-            this.saveContentChanges = this.doSaveContentChanges;
-        } else {
+        if (this.options.isReadonly || this.fileService.hasCapability(this.uri, FileSystemProviderCapabilities.Readonly)) {
             delete this.saveContentChanges;
+            delete this.saveContents;
+            delete this.saveStream;
+        } else {
+            this.saveContents = this.doWrite;
+            this.saveStream = this.doWrite;
+            if (this.fileService.hasCapability(this.uri, FileSystemProviderCapabilities.Update)) {
+                this.saveContentChanges = this.doSaveContentChanges;
+            }
         }
     }
     protected doSaveContentChanges: Resource['saveContentChanges'] = async (changes, options) => {
@@ -317,6 +318,7 @@ export class FileResourceResolver implements ResourceResolver {
             throw new Error('The given uri is a directory: ' + this.labelProvider.getLongName(uri));
         }
         return new FileResource(uri, this.fileService, {
+            isReadonly: stat?.isReadonly ?? false,
             shouldOverwrite: () => this.shouldOverwrite(uri),
             shouldOpenAsText: error => this.shouldOpenAsText(uri, error)
         });

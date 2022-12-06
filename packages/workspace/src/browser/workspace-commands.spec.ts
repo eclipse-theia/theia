@@ -48,6 +48,7 @@ describe('workspace-commands', () => {
         isFile: true,
         isDirectory: false,
         isSymbolicLink: false,
+        isReadonly: false,
         resource: new URI('foo/bar'),
         name: 'bar',
     };
@@ -56,6 +57,7 @@ describe('workspace-commands', () => {
         isFile: false,
         isDirectory: true,
         isSymbolicLink: false,
+        isReadonly: false,
         resource: new URI('foo'),
         name: 'foo',
         children: [

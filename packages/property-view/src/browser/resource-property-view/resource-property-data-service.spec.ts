@@ -39,6 +39,7 @@ const mockFileStat: FileStat = {
     isFile: false,
     isDirectory: true,
     isSymbolicLink: false,
+    isReadonly: false,
     resource: new URI('resource'),
     name: 'name'
 };
