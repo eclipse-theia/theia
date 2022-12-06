@@ -18,6 +18,8 @@ import * as React from '@theia/core/shared/react';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
 import { ExpressionItem, DebugSessionProvider } from '../console/debug-console-items';
 import { DebugProtocol } from '@vscode/debugprotocol';
+import { codicon, TREE_NODE_SEGMENT_GROW_CLASS } from '@theia/core/lib/browser';
+import { nls } from '@theia/core';
 
 export class DebugWatchExpression extends ExpressionItem {
 
@@ -27,6 +29,7 @@ export class DebugWatchExpression extends ExpressionItem {
         id: number,
         expression: string,
         session: DebugSessionProvider,
+        remove: () => void,
         onDidChange: () => void
     }) {
         super(options.expression, options.session);
@@ -45,9 +48,12 @@ export class DebugWatchExpression extends ExpressionItem {
 
     override render(): React.ReactNode {
         return <div className='theia-debug-console-variable'>
-            <span title={this.type || this._expression} className='name'>{this._expression}: </span>
-            <span title={this._value} ref={this.setValueRef}>{this._value}</span>
-        </div >;
+            <div className={TREE_NODE_SEGMENT_GROW_CLASS}>
+                <span title={this.type || this._expression} className='name'>{this._expression}: </span>
+                <span title={this._value} ref={this.setValueRef}>{this._value}</span>
+            </div>
+            <div className={codicon('close', true)} title={nls.localizeByDefault('Remove Expression')} onClick={this.options.remove} />
+        </div>;
     }
 
     async open(): Promise<void> {

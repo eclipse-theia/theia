@@ -171,10 +171,6 @@
     opacity: var(--theia-mod-disabled-opacity);
 }
 
-.theia-tree-element-node {
-    width: 100%
-}
-
 .theia-tree-node-indent {
     position: absolute;
     height: var(--theia-content-line-height);

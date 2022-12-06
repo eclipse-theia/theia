@@ -169,7 +169,7 @@
 }
 
 .theia-debug-console-variable {
-    width: 100%;
+    display: flex;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -193,6 +193,15 @@
 
 .theia-debug-console-variable .name {
     color: var(--theia-variable-name-color);
+}
+
+.theia-TreeNode:not(:hover) .theia-debug-console-variable .action-label {
+    visibility: hidden;
+}
+
+.theia-debug-console-variable .action-label {
+    /* Vertically center the button in the tree node */
+    margin: auto;
 }
 
 /** Editor **/

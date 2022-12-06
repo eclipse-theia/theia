@@ -17,7 +17,7 @@
 import * as React from 'react';
 import { injectable, postConstruct, interfaces, Container } from 'inversify';
 import { DisposableCollection } from '../../common/disposable';
-import { TreeWidget, TreeNode, createTreeContainer, TreeProps, TreeModel } from '../tree';
+import { TreeWidget, TreeNode, createTreeContainer, TreeProps, TreeModel, TREE_NODE_SEGMENT_GROW_CLASS } from '../tree';
 import { TreeSource, TreeElement } from './tree-source';
 import { SourceTree, TreeElementNode, TreeSourceNode } from './source-tree';
 
@@ -86,7 +86,7 @@ export class SourceTreeWidget extends TreeWidget {
         return undefined;
     }
     protected createTreeElementNodeClassNames(node: TreeElementNode): string[] {
-        return ['theia-tree-element-node'];
+        return [TREE_NODE_SEGMENT_GROW_CLASS];
     }
 
     override storeState(): object {
