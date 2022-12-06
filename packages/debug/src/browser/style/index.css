@@ -204,6 +204,11 @@
     margin: auto;
 }
 
+.theia-debug-console-variable .watch-error {
+    font-style: italic;
+    color: var(--theia-debugConsole-errorForeground);
+}
+
 /** Editor **/
 
 .theia-debug-breakpoint-icon {
