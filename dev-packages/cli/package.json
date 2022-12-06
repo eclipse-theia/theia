@@ -44,6 +44,7 @@
     "chalk": "4.0.0",
     "decompress": "^4.2.1",
     "glob": "^8.0.3",
+    "limiter": "^2.1.0",
     "log-update": "^4.0.0",
     "mocha": "^10.1.0",
     "puppeteer": "^2.0.0",
