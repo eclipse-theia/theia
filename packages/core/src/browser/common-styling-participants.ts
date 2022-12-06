@@ -200,7 +200,7 @@ export class TabbarStylingParticipant implements StylingParticipant {
             #theia-main-content-panel .p-TabBar .p-TabBar-tab.p-mod-current {
                 color: var(--theia-tab-activeForeground);
                 ${tabActiveBackground && `background: ${tabActiveBackground};`}
-                box-shadow: 0 1px 0 ${tabActiveBorderTop}, 0 -1px 0 ${tabActiveBorder} inset;
+                box-shadow: 0 1px 0 ${tabActiveBorderTop} inset, 0 -1px 0 ${tabActiveBorder} inset;
             }
         `);
         // Hover Background
