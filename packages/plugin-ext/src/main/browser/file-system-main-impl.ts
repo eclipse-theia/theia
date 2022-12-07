@@ -27,7 +27,7 @@ import { URI } from '@theia/core/shared/vscode-uri';
 import { interfaces } from '@theia/core/shared/inversify';
 import CoreURI from '@theia/core/lib/common/uri';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { Disposable } from '@theia/core/lib/common/disposable';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { MAIN_RPC_CONTEXT, FileSystemMain, FileSystemExt, IFileChangeDto } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
@@ -46,15 +46,24 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
     private readonly _proxy: FileSystemExt;
     private readonly _fileProvider = new Map<number, RemoteFileSystemProvider>();
     private readonly _fileService: FileService;
+    private readonly _disposables = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this._proxy = rpc.getProxy(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT);
         this._fileService = container.get(FileService);
+
+        for (const { scheme, capabilities } of this._fileService.listCapabilities()) {
+            this._proxy.$acceptProviderInfos(scheme, capabilities);
+        }
+
+        this._disposables.push(this._fileService.onDidChangeFileSystemProviderRegistrations(e => this._proxy.$acceptProviderInfos(e.scheme, e.provider?.capabilities)));
+        this._disposables.push(this._fileService.onDidChangeFileSystemProviderCapabilities(e => this._proxy.$acceptProviderInfos(e.scheme, e.provider.capabilities)));
+        this._disposables.push(Disposable.create(() => this._fileProvider.forEach(value => value.dispose())));
+        this._disposables.push(Disposable.create(() => this._fileProvider.clear()));
     }
 
     dispose(): void {
-        this._fileProvider.forEach(value => value.dispose());
-        this._fileProvider.clear();
+        this._disposables.dispose();
     }
 
     $registerFileSystemProvider(handle: number, scheme: string, capabilities: FileSystemProviderCapabilities): void {

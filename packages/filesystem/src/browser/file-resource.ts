@@ -61,6 +61,9 @@ export class FileResource implements Resource {
     get encoding(): string | undefined {
         return this._version?.encoding;
     }
+    get isReadonly(): boolean {
+        return this.options.isReadonly || this.fileService.hasCapability(this.uri, FileSystemProviderCapabilities.Readonly);
+    }
 
     constructor(
         readonly uri: URI,
@@ -217,7 +220,7 @@ export class FileResource implements Resource {
     saveContents?: Resource['saveContents'];
     saveContentChanges?: Resource['saveContentChanges'];
     protected updateSavingContentChanges(): void {
-        if (this.options.isReadonly || this.fileService.hasCapability(this.uri, FileSystemProviderCapabilities.Readonly)) {
+        if (this.isReadonly) {
             delete this.saveContentChanges;
             delete this.saveContents;
             delete this.saveStream;

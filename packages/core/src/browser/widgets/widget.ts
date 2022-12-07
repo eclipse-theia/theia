@@ -53,6 +53,7 @@ export const CODICON_LOADING_CLASSES = codiconArray('loading');
 export const SELECTED_CLASS = 'theia-mod-selected';
 export const FOCUS_CLASS = 'theia-mod-focus';
 export const PINNED_CLASS = 'theia-mod-pinned';
+export const LOCKED_CLASS = 'theia-mod-locked';
 export const DEFAULT_SCROLL_OPTIONS: PerfectScrollbar.Options = {
     suppressScrollX: true,
     minScrollbarLength: 35,
@@ -368,6 +369,12 @@ export function pin(title: Title<Widget>): void {
     title.closable = false;
     if (!title.className.includes(PINNED_CLASS)) {
         title.className += ` ${PINNED_CLASS}`;
+    }
+}
+
+export function lock(title: Title<Widget>): void {
+    if (!title.className.includes(LOCKED_CLASS)) {
+        title.className += ` ${LOCKED_CLASS}`;
     }
 }
 

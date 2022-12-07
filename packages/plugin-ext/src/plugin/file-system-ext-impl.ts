@@ -166,7 +166,7 @@ class ConsumerFileSystem implements vscode.FileSystem {
     isWritableFileSystem(scheme: string): boolean | undefined {
         const capabilities = this._capabilities.get(scheme);
         if (typeof capabilities === 'number') {
-            return !(capabilities & files.FileSystemProviderCapabilities.Readonly);
+            return (capabilities & files.FileSystemProviderCapabilities.Readonly) === 0;
         }
         return undefined;
     }
@@ -262,7 +262,6 @@ export class FileSystemExtImpl implements FileSystemExt {
             capabilities += files.FileSystemProviderCapabilities.FileOpenReadWriteClose;
         }
 
-        this._capabilities.set(scheme, capabilities);
         this._proxy.$registerFileSystemProvider(handle, scheme, capabilities);
 
         const subscription = provider.onDidChangeFile(event => {
@@ -295,7 +294,6 @@ export class FileSystemExtImpl implements FileSystemExt {
         return {
             dispose: () => {
                 subscription.dispose();
-                this._capabilities.delete(scheme);
                 this._linkProvider.delete(scheme);
                 this._usedSchemes.delete(scheme);
                 this._fsProvider.delete(handle);
@@ -307,6 +305,14 @@ export class FileSystemExtImpl implements FileSystemExt {
     private static _asIStat(stat: vscode.FileStat): files.Stat {
         const { type, ctime, mtime, size, permissions } = stat;
         return { type, ctime, mtime, size, permissions };
+    }
+
+    $acceptProviderInfos(scheme: string, capabilities?: files.FileSystemProviderCapabilities): void {
+        if (typeof capabilities === 'number') {
+            this._capabilities.set(scheme, capabilities);
+        } else {
+            this._capabilities.delete(scheme);
+        }
     }
 
     $stat(handle: number, resource: UriComponents): Promise<files.Stat> {

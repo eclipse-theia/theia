@@ -426,6 +426,16 @@ export class FileService {
         return !!(provider && (provider.capabilities & capability));
     }
 
+    /**
+     * List the schemes and capabilities for registered file system providers
+     */
+    listCapabilities(): { scheme: string; capabilities: FileSystemProviderCapabilities }[] {
+        return Array.from(this.providers.entries()).map(([scheme, provider]) => ({
+            scheme,
+            capabilities: provider.capabilities
+        }));
+    }
+
     protected async withProvider(resource: URI): Promise<FileSystemProvider> {
         // Assert path is absolute
         if (!resource.path.isAbsolute) {

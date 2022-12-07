@@ -173,6 +173,18 @@
     background: none;
 }
 
+.p-TabBar-tabLock:after {
+    content: "\ebe7";
+    opacity: 0.75;
+    margin-left: 4px;
+    color: inherit;
+    font-family: codicon;
+    font-size: 16px;
+    font-weight: normal;
+    display: inline-block;
+    vertical-align: top;
+}
+
 /* file icons */
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tabIcon.file-icon,
 .p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon.file-icon {

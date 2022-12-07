@@ -1829,6 +1829,7 @@ export interface DebugMain {
 }
 
 export interface FileSystemExt {
+    $acceptProviderInfos(scheme: string, capabilities?: files.FileSystemProviderCapabilities): void;
     $stat(handle: number, resource: UriComponents): Promise<files.Stat>;
     $readdir(handle: number, resource: UriComponents): Promise<[string, files.FileType][]>;
     $readFile(handle: number, resource: UriComponents): Promise<BinaryBuffer>;

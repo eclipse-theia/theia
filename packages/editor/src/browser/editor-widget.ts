@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Disposable, SelectionService, Event, UNTITLED_SCHEME } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget } from '@theia/core/lib/browser';
+import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget, lock } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { TextEditor } from './editor';
 
@@ -27,6 +27,9 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
     ) {
         super(editor);
         this.addClass('theia-editor');
+        if (editor.isReadonly) {
+            lock(this.title);
+        }
         this.toDispose.push(this.editor);
         this.toDispose.push(this.editor.onSelectionChanged(() => this.setSelection()));
         this.toDispose.push(this.editor.onFocusChanged(() => this.setSelection()));

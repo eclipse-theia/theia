@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { SelectionService } from '@theia/core/lib/common';
+import { nls, SelectionService } from '@theia/core/lib/common';
 import { NavigatableWidgetOptions, WidgetFactory, LabelProvider } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { TextEditorProvider } from './editor';
@@ -72,6 +72,9 @@ export class EditorWidgetFactory implements WidgetFactory {
 
     private setLabels(editor: EditorWidget, uri: URI): void {
         editor.title.caption = uri.path.fsPath();
+        if (editor.editor.isReadonly) {
+            editor.title.caption += ` • ${nls.localize('theia/editor/readOnly', 'Read Only')}`;
+        }
         const icon = this.labelProvider.getIcon(uri);
         editor.title.label = this.labelProvider.getName(uri);
         editor.title.iconClass = icon + ' file-icon';
