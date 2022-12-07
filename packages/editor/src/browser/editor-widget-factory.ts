@@ -73,6 +73,7 @@ export class EditorWidgetFactory implements WidgetFactory {
     private setLabels(editor: EditorWidget, uri: URI): void {
         editor.title.caption = uri.path.fsPath();
         if (editor.editor.isReadonly) {
+            // nls-todo: 'Read Only' be available with newer VSCode API
             editor.title.caption += ` • ${nls.localize('theia/editor/readOnly', 'Read Only')}`;
         }
         const icon = this.labelProvider.getIcon(uri);

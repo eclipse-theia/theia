@@ -207,7 +207,7 @@ export class FileSystemExtImpl implements FileSystemExt {
     private _linkProviderRegistration?: IDisposable;
     private _handlePool: number = 0;
 
-    readonly fileSystem: ConsumerFileSystem;
+    readonly fileSystem: vscode.FileSystem;
 
     constructor(rpc: RPCProtocol, private _extHostLanguageFeatures: LanguagesExtImpl) {
         this._proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.FILE_SYSTEM_MAIN);
