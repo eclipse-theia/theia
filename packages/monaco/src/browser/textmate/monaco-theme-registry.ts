@@ -43,6 +43,9 @@ export class MonacoThemeRegistry {
         this.register(require('../../../data/monaco-themes/vscode/hc_theia.json'), {
             './hc_black.json': require('../../../data/monaco-themes/vscode/hc_black.json')
         }, 'hc-theia', 'hc-black');
+        this.register(require('../../../data/monaco-themes/vscode/hc_theia_light.json'), {
+            './hc_light.json': require('../../../data/monaco-themes/vscode/hc_light.json')
+        }, 'hc-theia-light', 'hc-light');
     }
 
     getThemeData(): ThemeMix;
@@ -169,4 +172,5 @@ export namespace MonacoThemeRegistry {
     export const DARK_DEFAULT_THEME = 'dark-theia';
     export const LIGHT_DEFAULT_THEME = 'light-theia';
     export const HC_DEFAULT_THEME = 'hc-theia';
+    export const HC_LIGHT_THEME = 'hc-theia-light';
 }

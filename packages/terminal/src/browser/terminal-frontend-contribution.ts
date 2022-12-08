@@ -717,7 +717,8 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             defaults: {
                 dark: 'panel.background',
                 light: 'panel.background',
-                hc: 'panel.background'
+                hcDark: 'panel.background',
+                hcLight: 'panel.background'
             },
             description: 'The background color of the terminal, this allows coloring the terminal differently to the panel.'
         });
@@ -726,7 +727,8 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             defaults: {
                 light: '#333333',
                 dark: '#CCCCCC',
-                hc: '#FFFFFF'
+                hcDark: '#FFFFFF',
+                hcLight: '#292929'
             },
             description: 'The foreground color of the terminal.'
         });
@@ -741,9 +743,10 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         colors.register({
             id: 'terminal.selectionBackground',
             defaults: {
-                light: '#00000040',
-                dark: '#FFFFFF40',
-                hc: '#FFFFFF80'
+                light: 'editor.selectionBackground',
+                dark: 'editor.selectionBackground',
+                hcDark: 'editor.selectionBackground',
+                hcLight: 'editor.selectionBackground'
             },
             description: 'The selection background color of the terminal.'
         });
@@ -752,7 +755,8 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             defaults: {
                 light: 'panel.border',
                 dark: 'panel.border',
-                hc: 'panel.border'
+                hcDark: 'panel.border',
+                hcLight: 'panel.border'
             },
             description: 'The color of the border that separates split panes within the terminal. This defaults to panel.border.'
         });

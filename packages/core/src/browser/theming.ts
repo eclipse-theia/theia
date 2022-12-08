@@ -188,9 +188,17 @@ export class BuiltinThemeProvider {
         editorTheme: 'hc-theia' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
     };
 
+    static readonly hcLightTheme: Theme = {
+        id: 'hc-theia-light',
+        type: 'hcLight',
+        label: 'High Contrast Light (Theia)',
+        editorTheme: 'hc-theia-light' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
+    };
+
     static readonly themes = [
         BuiltinThemeProvider.darkTheme,
         BuiltinThemeProvider.lightTheme,
-        BuiltinThemeProvider.hcTheme
+        BuiltinThemeProvider.hcTheme,
+        BuiltinThemeProvider.hcLightTheme
     ];
 }

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export type ThemeType = 'light' | 'dark' | 'hc';
+export type ThemeType = 'light' | 'dark' | 'hc' | 'hcLight';
 
 export interface Theme {
     readonly id: string;
@@ -27,7 +27,7 @@ export interface Theme {
 }
 
 export function isHighContrast(scheme: ThemeType): boolean {
-    return scheme === 'hc';
+    return scheme === 'hc' || scheme === 'hcLight';
 }
 
 export interface ThemeChangeEvent {

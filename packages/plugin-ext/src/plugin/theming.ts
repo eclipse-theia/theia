@@ -59,6 +59,9 @@ export class ThemingExtImpl implements ThemingExt {
             case 'hc':
                 kind = ColorThemeKind.HighContrast;
                 break;
+            case 'hcLight':
+                kind = ColorThemeKind.HighContrastLight;
+                break;
         }
         return kind;
     }

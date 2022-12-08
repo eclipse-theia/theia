@@ -158,14 +158,16 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
                 id: 'extensionEditor.tableHeadBorder', defaults: {
                     dark: Color.transparent('#ffffff', 0.7),
                     light: Color.transparent('#000000', 0.7),
-                    hc: Color.white
+                    hcDark: Color.white,
+                    hcLight: Color.black
                 }, description: 'Border color for the table head row of the extension editor view'
             },
             {
                 id: 'extensionEditor.tableCellBorder', defaults: {
                     dark: Color.transparent('#ffffff', 0.2),
                     light: Color.transparent('#000000', 0.2),
-                    hc: Color.white
+                    hcDark: Color.white,
+                    hcLight: Color.black
                 }, description: 'Border color for a table row of the extension editor view'
             },
         );
