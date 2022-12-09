@@ -173,6 +173,10 @@ export class EditorMenuContribution implements MenuContribution {
             commandId: EditorCommands.TOGGLE_RENDER_WHITESPACE.id,
             order: '3'
         });
+        registry.registerMenuAction(CommonMenus.VIEW_TOGGLE, {
+            commandId: EditorCommands.TOGGLE_STICKY_SCROLL.id,
+            order: '4'
+        });
         registry.registerMenuAction(CommonMenus.FILE_CLOSE, {
             commandId: CommonCommands.CLOSE_MAIN_TAB.id,
             label: nls.localizeByDefault('Close Editor'),

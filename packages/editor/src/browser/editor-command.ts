@@ -151,6 +151,14 @@ export namespace EditorCommands {
         label: 'Toggle Word Wrap'
     });
     /**
+     * Command that toggles sticky scroll.
+     */
+    export const TOGGLE_STICKY_SCROLL = Command.toLocalizedCommand({
+        id: 'editor.action.toggleStickyScroll',
+        category: CommonCommands.VIEW_CATEGORY,
+        label: 'Toggle Sticky Scroll',
+    }, 'theia/editor/toggleStickyScroll', EDITOR_CATEGORY_KEY);
+    /**
      * Command that re-opens the last closed editor.
      */
     export const REOPEN_CLOSED_EDITOR = Command.toDefaultLocalizedCommand({
@@ -265,6 +273,7 @@ export class EditorCommandContribution implements CommandContribution {
         registry.registerCommand(EditorCommands.TOGGLE_MINIMAP);
         registry.registerCommand(EditorCommands.TOGGLE_RENDER_WHITESPACE);
         registry.registerCommand(EditorCommands.TOGGLE_WORD_WRAP);
+        registry.registerCommand(EditorCommands.TOGGLE_STICKY_SCROLL);
         registry.registerCommand(EditorCommands.REOPEN_CLOSED_EDITOR);
 
         registry.registerCommand(CommonCommands.AUTO_SAVE, {
