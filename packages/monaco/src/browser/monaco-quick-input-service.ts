@@ -334,7 +334,10 @@ export class MonacoQuickInputService implements QuickInputService {
                         options.onDidAccept();
                     }
                     wrapped.hide();
-                    resolve(wrapped.selectedItems[0]);
+                    const firstSelectedElement = wrapped.selectedItems[0];
+                    const firstElement = wrapped.items.find(i => !QuickPickSeparator.is(i)) as T | undefined;
+                    const result = firstSelectedElement || firstElement;
+                    resolve(result);
                 });
 
                 wrapped.onDidHide(() => {
