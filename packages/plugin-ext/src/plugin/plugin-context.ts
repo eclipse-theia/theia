@@ -204,6 +204,7 @@ import { CustomEditorsExtImpl } from './custom-editors';
 import { WebviewViewsExtImpl } from './webview-views';
 import { PluginPackage } from '../common';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
+import { FilePermission } from '@theia/filesystem/lib/common/files';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -602,8 +603,8 @@ export function createAPIFactory(
             registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider): theia.Disposable {
                 return workspaceExt.registerTextDocumentContentProvider(scheme, provider);
             },
-            registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider): theia.Disposable {
-                return fileSystemExt.registerFileSystemProvider(scheme, provider);
+            registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): theia.Disposable {
+                return fileSystemExt.registerFileSystemProvider(scheme, provider, options);
             },
             getWorkspaceFolder(uri: theia.Uri): theia.WorkspaceFolder | undefined {
                 return workspaceExt.getWorkspaceFolder(uri);
@@ -1071,6 +1072,7 @@ export function createAPIFactory(
             WorkspaceEdit,
             SymbolInformation,
             FileType,
+            FilePermission,
             FileChangeType,
             ShellQuoting,
             ShellExecution,

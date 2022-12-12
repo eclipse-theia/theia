@@ -220,6 +220,10 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         return this.onDocumentContentChangedEmitter.event;
     }
 
+    get isReadonly(): boolean {
+        return this.document.isReadonly();
+    }
+
     get cursor(): Position {
         const { lineNumber, column } = this.editor.getPosition()!;
         return this.m2p.asPosition(lineNumber, column);

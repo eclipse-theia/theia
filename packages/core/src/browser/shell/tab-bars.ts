@@ -31,7 +31,7 @@ import { IconThemeService } from '../icon-theme-service';
 import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { NavigatableWidget } from '../navigatable-types';
 import { IDragEvent } from '@phosphor/dragdrop';
-import { PINNED_CLASS } from '../widgets/widget';
+import { LOCKED_CLASS, PINNED_CLASS } from '../widgets/widget';
 import { CorePreferences } from '../core-preferences';
 import { HoverService } from '../hover-service';
 
@@ -178,7 +178,8 @@ export class TabBarRenderer extends TabBar.Renderer {
                 { className: 'theia-tab-icon-label' },
                 this.renderIcon(data, isInSidePanel),
                 this.renderLabel(data, isInSidePanel),
-                this.renderBadge(data, isInSidePanel)
+                this.renderBadge(data, isInSidePanel),
+                this.renderLock(data, isInSidePanel)
             ),
             h.div({
                 className: 'p-TabBar-tabCloseIcon action-label',
@@ -273,6 +274,12 @@ export class TabBarRenderer extends TabBar.Renderer {
         return isInSidePanel
             ? h.div({ className: 'theia-badge-decorator-sidebar' }, `${limitedBadge}`)
             : h.div({ className: 'theia-badge-decorator-horizontal' }, `${limitedBadge}`);
+    }
+
+    renderLock(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
+        return !isInSidePanel && data.title.className.includes(LOCKED_CLASS)
+            ? h.div({ className: 'p-TabBar-tabLock' })
+            : h.div({});
     }
 
     protected readonly decorations = new Map<Title<Widget>, WidgetDecoration.Data[]>();

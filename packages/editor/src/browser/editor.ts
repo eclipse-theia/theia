@@ -196,6 +196,7 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
     readonly node: HTMLElement;
 
     readonly uri: URI;
+    readonly isReadonly: boolean;
     readonly document: TextEditorDocument;
     readonly onDocumentContentChanged: Event<TextDocumentChangeEvent>;
 

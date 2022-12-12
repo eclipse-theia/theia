@@ -235,6 +235,11 @@ export interface FileStat extends BaseStat {
     isSymbolicLink: boolean;
 
     /**
+     * The resource is read only.
+     */
+    isReadonly: boolean;
+
+    /**
      * The children of the file stat or undefined if none.
      */
     children?: FileStat[];
@@ -277,6 +282,7 @@ export namespace FileStat {
             isFile: (stat.type & FileType.File) !== 0,
             isDirectory: (stat.type & FileType.Directory) !== 0,
             isSymbolicLink: (stat.type & FileType.SymbolicLink) !== 0,
+            isReadonly: !!stat.permissions && (stat.permissions & FilePermission.Readonly) !== 0,
             mtime: stat.mtime,
             ctime: stat.ctime,
             size: stat.size,
@@ -485,6 +491,14 @@ export enum FileType {
     SymbolicLink = 64
 }
 
+export enum FilePermission {
+
+    /**
+     * File is readonly.
+     */
+    Readonly = 1
+}
+
 export interface Stat {
     type: FileType;
 
@@ -499,6 +513,8 @@ export interface Stat {
     ctime: number;
 
     size: number;
+
+    permissions?: FilePermission;
 }
 
 export interface WatchOptions {

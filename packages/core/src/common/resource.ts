@@ -55,6 +55,7 @@ export interface Resource extends Disposable {
      * Undefined if a resource did not read content yet.
      */
     readonly encoding?: string | undefined;
+    readonly isReadonly?: boolean;
     /**
      * Reads latest content of this resource.
      *
