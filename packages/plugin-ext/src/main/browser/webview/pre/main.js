@@ -479,7 +479,14 @@
                 const newFrame = document.createElement('iframe');
                 newFrame.setAttribute('id', 'pending-frame');
                 newFrame.setAttribute('frameborder', '0');
-                newFrame.setAttribute('sandbox', options.allowScripts ? 'allow-scripts allow-forms allow-same-origin allow-downloads' : 'allow-same-origin');
+                const sandboxOptions = ['allow-same-origin'];
+                if (options.allowScripts) {
+                    sandboxOptions.push('allow-scripts', 'allow-downloads');
+                }
+                if (options.allowForms || (options.allowScripts && options.allowForms === undefined)) {
+                    sandboxOptions.push('allow-forms');
+                }
+                newFrame.setAttribute('sandbox', sandboxOptions.join(' '));
                 if (host.fakeLoad) {
                     // We should just be able to use srcdoc, but I wasn't
                     // seeing the service worker applying properly.

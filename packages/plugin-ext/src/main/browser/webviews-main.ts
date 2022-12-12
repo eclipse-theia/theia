@@ -67,10 +67,11 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         this.hookWebview(view);
         view.viewType = viewType;
         view.title.label = title;
-        const { enableFindWidget, retainContextWhenHidden, enableScripts, localResourceRoots, ...contentOptions } = options;
+        const { enableFindWidget, retainContextWhenHidden, enableScripts, enableForms, localResourceRoots, ...contentOptions } = options;
         view.options = { enableFindWidget, retainContextWhenHidden };
         view.setContentOptions({
             allowScripts: enableScripts,
+            allowForms: enableForms,
             localResourceRoots: localResourceRoots && localResourceRoots.map(root => root.toString()),
             ...contentOptions
         });
@@ -171,9 +172,10 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
 
     async $setOptions(handle: string, options: WebviewOptions): Promise<void> {
         const webview = await this.getWebview(handle);
-        const { enableScripts, localResourceRoots, ...contentOptions } = options;
+        const { enableScripts, enableForms, localResourceRoots, ...contentOptions } = options;
         webview.setContentOptions({
             allowScripts: enableScripts,
+            allowForms: enableForms,
             localResourceRoots: localResourceRoots && localResourceRoots.map(root => root.toString()),
             ...contentOptions
         });
@@ -210,10 +212,11 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         }
 
         const options = widget.options;
-        const { allowScripts, localResourceRoots, ...contentOptions } = widget.contentOptions;
+        const { allowScripts, allowForms, localResourceRoots, ...contentOptions } = widget.contentOptions;
         this.updateViewState(widget);
         await this.proxy.$deserializeWebviewPanel(handle, widget.viewType, title, state, widget.viewState, {
             enableScripts: allowScripts,
+            enableForms: allowForms,
             localResourceRoots: localResourceRoots && localResourceRoots.map(root => URI.parse(root)),
             ...contentOptions,
             ...options

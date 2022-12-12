@@ -223,11 +223,12 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
         const view = await this.widgetManager.getOrCreateWidget<CustomEditorWidget>(CustomEditorWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: panelId });
         this.webviewsMain.hookWebview(view);
         view.title.label = title;
-        const { enableFindWidget, retainContextWhenHidden, enableScripts, localResourceRoots, ...contentOptions } = options;
+        const { enableFindWidget, retainContextWhenHidden, enableScripts, enableForms, localResourceRoots, ...contentOptions } = options;
         view.viewColumn = ViewColumn.One; // behaviour might be overridden later using widgetOpenerOptions (if available)
         view.options = { enableFindWidget, retainContextWhenHidden };
         view.setContentOptions({
             allowScripts: enableScripts,
+            allowForms: enableForms,
             localResourceRoots: localResourceRoots && localResourceRoots.map(root => root.toString()),
             ...contentOptions,
             ...view.contentOptions
