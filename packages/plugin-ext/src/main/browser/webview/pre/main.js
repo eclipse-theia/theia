@@ -483,7 +483,7 @@
                 if (options.allowScripts) {
                     sandboxOptions.push('allow-scripts', 'allow-downloads');
                 }
-                if (options.allowForms || (options.allowScripts && options.allowForms === undefined)) {
+                if (options.allowForms ?? options.allowScripts) {
                     sandboxOptions.push('allow-forms');
                 }
                 newFrame.setAttribute('sandbox', sandboxOptions.join(' '));
