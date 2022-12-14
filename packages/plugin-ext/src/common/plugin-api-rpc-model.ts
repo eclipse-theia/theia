@@ -79,6 +79,7 @@ export interface SerializedDocumentFilter {
     language?: string;
     scheme?: string;
     pattern?: theia.GlobPattern;
+    notebookType?: string;
 }
 
 export enum CompletionTriggerKind {
