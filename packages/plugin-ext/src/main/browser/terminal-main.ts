@@ -260,11 +260,11 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         }
     }
 
-    async provideLinks(line: string, terminal: TerminalWidget, cancelationToken?: CancellationToken | undefined): Promise<TerminalLink[]> {
+    async provideLinks(line: string, terminal: TerminalWidget, cancellationToken?: CancellationToken | undefined): Promise<TerminalLink[]> {
         if (this.terminalLinkProviders.length < 1) {
             return [];
         }
-        const links = await this.extProxy.$provideTerminalLinks(line, terminal.id, cancelationToken ?? CancellationToken.None);
+        const links = await this.extProxy.$provideTerminalLinks(line, terminal.id, cancellationToken ?? CancellationToken.None);
         return links.map(link => ({ ...link, handle: () => this.extProxy.$handleTerminalLink(link) }));
     }
 
