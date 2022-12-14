@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { inject, postConstruct, injectable } from '@theia/core/shared/inversify';
-import { ActionMenuNode, CommandRegistry, CompositeMenuNode, Disposable, DisposableCollection, MenuModelRegistry, MenuPath } from '@theia/core';
+import { CommandMenuNode, CommandRegistry, CompoundMenuNode, Disposable, DisposableCollection, MenuModelRegistry, MenuNodeMetadata, MenuPath } from '@theia/core';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ReactWidget } from '@theia/core/lib/browser/widgets';
 import { DebugViewModel } from './debug-view-model';
@@ -83,24 +83,31 @@ export class DebugToolBar extends ReactWidget {
     }
 
     protected renderContributedCommands(): React.ReactNode {
+        const match = ({ when }: MenuNodeMetadata) => !when || this.contextKeyService.match(when);
         return this.menuModelRegistry
-            .getMenu(DebugToolBar.MENU)
-            .children.filter(node => node instanceof CompositeMenuNode)
-            .map(node => (node as CompositeMenuNode).children)
+            .getMenu(DebugToolBar.MENU).children
+            .filter(CompoundMenuNode.is)
+            .filter(compoundNode => match(compoundNode))
+            .map(compoundNode => compoundNode.children)
             .reduce((acc, curr) => acc.concat(curr), [])
-            .filter(node => node instanceof ActionMenuNode)
-            .map(node => this.debugAction(node as ActionMenuNode));
+            .filter(CommandMenuNode.is)
+            .filter(commandNode => match(commandNode))
+            .map(commandNode => this.debugAction(commandNode));
     }
 
-    protected debugAction(node: ActionMenuNode): React.ReactNode {
-        const { label, command, when, icon: iconClass = '' } = node;
+    protected debugAction(node: CommandMenuNode): React.ReactNode {
+        const { label = '', command, icon = '' } = node;
+        if (!label && !icon) {
+            const { when } = node;
+            console.warn(`Neither 'label' nor 'icon' properties were defined for the command menu node. ('command': ${command}${when ? `, 'when': ${when}` : ''}. Skipping.`);
+            return undefined;
+        }
         const run = () => this.commandRegistry.executeCommand(command);
-        const enabled = when ? this.contextKeyService.match(when) : true;
-        return enabled && <DebugAction
+        return <DebugAction
             key={command}
-            enabled={enabled}
+            enabled={true}
             label={label}
-            iconClass={iconClass}
+            iconClass={icon}
             run={run} />;
     }
 
