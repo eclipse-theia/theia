@@ -52,9 +52,9 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
 
     private readonly _pseudoTerminals = new Map<string, PseudoTerminal>();
 
-    private static nextTerminalLinkProviderId = 0;
+    private static nextProviderId = 0;
     private readonly terminalLinkProviders = new Map<string, theia.TerminalLinkProvider>();
-
+    private readonly terminalProfileProviders = new Map<string, theia.TerminalProfileProvider>();
     private readonly onDidCloseTerminalEmitter = new Emitter<Terminal>();
     readonly onDidCloseTerminal: theia.Event<Terminal> = this.onDidCloseTerminalEmitter.event;
 
@@ -81,9 +81,9 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         nameOrOptions: TerminalOptions | PseudoTerminalOptions | ExtensionTerminalOptions | (string | undefined),
         shellPath?: string, shellArgs?: string[] | string
     ): Terminal {
-        let options: TerminalOptions | ExtensionTerminalOptions;
-        let pseudoTerminal: theia.Pseudoterminal | undefined = undefined;
         const id = `plugin-terminal-${UUID.uuid4()}`;
+        let options: TerminalOptions;
+        let pseudoTerminal: theia.Pseudoterminal | undefined = undefined;
         if (typeof nameOrOptions === 'object') {
             if ('pty' in nameOrOptions) {
                 pseudoTerminal = nameOrOptions.pty;
@@ -220,13 +220,43 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
     }
 
     registerTerminalLinkProvider(provider: theia.TerminalLinkProvider): theia.Disposable {
-        const providerId = (TerminalServiceExtImpl.nextTerminalLinkProviderId++).toString();
+        const providerId = (TerminalServiceExtImpl.nextProviderId++).toString();
         this.terminalLinkProviders.set(providerId, provider);
         this.proxy.$registerTerminalLinkProvider(providerId);
         return Disposable.create(() => {
             this.proxy.$unregisterTerminalLinkProvider(providerId);
             this.terminalLinkProviders.delete(providerId);
         });
+    }
+
+    registerTerminalProfileProvider(id: string, provider: theia.TerminalProfileProvider): theia.Disposable {
+        this.terminalProfileProviders.set(id, provider);
+        return Disposable.create(() => {
+            this.terminalProfileProviders.delete(id);
+        });
+    }
+
+    protected isExtensionTerminalOptions(options: theia.TerminalOptions | theia.ExtensionTerminalOptions): options is theia.ExtensionTerminalOptions {
+        return 'pty' in options;
+    }
+
+    async $startProfile(profileId: string, cancellationToken: theia.CancellationToken): Promise<string> {
+        const provider = this.terminalProfileProviders.get(profileId);
+        if (!provider) {
+            throw new Error(`No terminal profile provider with id '${profileId}'`);
+        }
+        const profile = await provider.provideTerminalProfile(cancellationToken);
+        if (!profile) {
+            throw new Error(`Profile with id ${profileId} could not be created`);
+        }
+        const id = `plugin-terminal-${UUID.uuid4()}`;
+        const options = profile.options;
+        if (this.isExtensionTerminalOptions(options)) {
+            this._pseudoTerminals.set(id, new PseudoTerminal(id, this.proxy, options.pty));
+            return this.proxy.$createTerminal(id, { name: options.name }, undefined, true);
+        } else {
+            return this.proxy.$createTerminal(id, profile.options);
+        }
     }
 
     async $provideTerminalLinks(line: string, terminalId: string, token: theia.CancellationToken): Promise<ProvidedTerminalLink[]> {

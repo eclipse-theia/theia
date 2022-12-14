@@ -16,7 +16,6 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { CancellationToken } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TerminalEditorLocationOptions, TerminalOptions } from '@theia/plugin';
 import { TerminalLocation, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -28,6 +27,9 @@ import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-termi
 import { TerminalLink, TerminalLinkProvider } from '@theia/terminal/lib/browser/terminal-link-provider';
 import { URI } from '@theia/core/lib/common/uri';
 import { getIconClass } from '../../plugin/terminal-ext';
+import { PluginTerminalRegistry } from './plugin-terminal-registry';
+import { CancellationToken } from '@theia/core';
+import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 
 /**
  * Plugin api service allows working with terminal emulator.
@@ -35,6 +37,8 @@ import { getIconClass } from '../../plugin/terminal-ext';
 export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLinkProvider, Disposable {
 
     private readonly terminals: TerminalService;
+    private readonly pluginTerminalRegistry: PluginTerminalRegistry;
+    private readonly hostedPluginSupport: HostedPluginSupport;
     private readonly shell: ApplicationShell;
     private readonly extProxy: TerminalServiceExt;
     private readonly shellTerminalServer: ShellTerminalServerProxy;
@@ -44,6 +48,8 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.terminals = container.get(TerminalService);
+        this.pluginTerminalRegistry = container.get(PluginTerminalRegistry);
+        this.hostedPluginSupport = container.get(HostedPluginSupport);
         this.shell = container.get(ApplicationShell);
         this.shellTerminalServer = container.get(ShellTerminalServerProxy);
         this.extProxy = rpc.getProxy(MAIN_RPC_CONTEXT.TERMINAL_EXT);
@@ -59,7 +65,14 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
             this.extProxy.$initEnvironmentVariableCollections(serializedCollections);
         }
 
+        this.pluginTerminalRegistry.startCallback = id => this.startProfile(id);
+
         container.bind(TerminalLinkProvider).toDynamicValue(() => this);
+    }
+
+    async startProfile(id: string): Promise<string> {
+        await this.hostedPluginSupport.activateByTerminalProfile(id);
+        return this.extProxy.$startProfile(id, CancellationToken.None);
     }
 
     $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined): void {
@@ -124,32 +137,28 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
     }
 
     async $createTerminal(id: string, options: TerminalOptions, parentId?: string, isPseudoTerminal?: boolean): Promise<string> {
-        try {
-            const terminal = await this.terminals.newTerminal({
-                id,
-                title: options.name,
-                iconClass: getIconClass(options),
-                shellPath: options.shellPath,
-                shellArgs: options.shellArgs,
-                cwd: options.cwd ? new URI(options.cwd) : undefined,
-                env: options.env,
-                strictEnv: options.strictEnv,
-                destroyTermOnClose: true,
-                useServerTitle: false,
-                attributes: options.attributes,
-                hideFromUser: options.hideFromUser,
-                location: this.getTerminalLocation(options, parentId),
-                isPseudoTerminal,
-                isTransient: options.isTransient
-            });
-            if (options.message) {
-                terminal.writeLine(options.message);
-            }
-            terminal.start();
-            return terminal.id;
-        } catch (error) {
-            throw new Error('Failed to create terminal. Cause: ' + error);
+        const terminal = await this.terminals.newTerminal({
+            id,
+            title: options.name,
+            iconClass: getIconClass(options),
+            shellPath: options.shellPath,
+            shellArgs: options.shellArgs,
+            cwd: options.cwd ? new URI(options.cwd) : undefined,
+            env: options.env,
+            strictEnv: options.strictEnv,
+            destroyTermOnClose: true,
+            useServerTitle: false,
+            attributes: options.attributes,
+            hideFromUser: options.hideFromUser,
+            location: this.getTerminalLocation(options, parentId),
+            isPseudoTerminal,
+            isTransient: options.isTransient
+        });
+        if (options.message) {
+            terminal.writeLine(options.message);
         }
+        terminal.start();
+        return terminal.id;
     }
 
     protected getTerminalLocation(options: TerminalOptions, parentId?: string): TerminalLocation | TerminalEditorLocationOptions | { parentTerminal: string; } | undefined {

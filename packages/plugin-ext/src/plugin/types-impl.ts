@@ -1974,6 +1974,14 @@ export enum TerminalLocation {
     Panel = 1,
     Editor = 2
 }
+export class TerminalProfile {
+    /**
+     * Creates a new terminal profile.
+     * @param options The options that the terminal will launch with.
+     */
+    constructor(readonly options: theia.TerminalOptions | theia.ExtensionTerminalOptions) {
+    }
+}
 
 @es5ClassCompat
 export class FileDecoration {

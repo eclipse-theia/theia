@@ -3299,6 +3299,35 @@ export module '@theia/plugin' {
         parentTerminal: Terminal;
     }
 
+    /*
+     * Provides a terminal profile for the contributed terminal profile when launched via the UI or
+     * command.
+     */
+    export interface TerminalProfileProvider {
+        /**
+         * Provide the terminal profile.
+         * @param token A cancellation token that indicates the result is no longer needed.
+         * @returns The terminal profile.
+         */
+        provideTerminalProfile(token: CancellationToken): ProviderResult<TerminalProfile>;
+    }
+
+    /**
+     * A terminal profile defines how a terminal will be launched.
+     */
+    export class TerminalProfile {
+        /**
+         * The options that the terminal will launch with.
+         */
+        options: TerminalOptions | ExtensionTerminalOptions;
+
+        /**
+         * Creates a new terminal profile.
+         * @param options The options that the terminal will launch with.
+         */
+        constructor(options: TerminalOptions | ExtensionTerminalOptions);
+    }
+
     /**
      * A file decoration represents metadata that can be rendered with a file.
      */
@@ -5316,6 +5345,12 @@ export module '@theia/plugin' {
          * @return Disposable that unregisters the provider.
          */
         export function registerTerminalLinkProvider(provider: TerminalLinkProvider): Disposable;
+        /**
+         * Registers a provider for a contributed terminal profile.
+         * @param id The ID of the contributed terminal profile.
+         * @param provider The terminal profile provider.
+         */
+        export function registerTerminalProfileProvider(id: string, provider: TerminalProfileProvider): Disposable;
 
         /**
          * Register a file decoration provider.
