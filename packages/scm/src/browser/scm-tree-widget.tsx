@@ -536,6 +536,7 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
         const color = decoration && decoration.colorId ? `var(${colors.toCssVariableName(decoration.colorId)})` : '';
         const letter = decoration && decoration.letter || '';
         const tooltip = decoration && decoration.tooltip || '';
+        const textDecoration = treeNode.decorations?.strikeThrough === true ? 'line-through' : 'normal';
         const relativePath = parentPath.relative(resourceUri.parent);
         const path = relativePath ? relativePath.fsPath() : labelProvider.getLongName(resourceUri.parent);
         const title = tooltip.length !== 0
@@ -554,8 +555,8 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
             <span className={icon + ' file-icon'} />
             {this.props.renderExpansionToggle()}
             <div className={`noWrapInfo ${TREE_NODE_SEGMENT_GROW_CLASS}`} >
-                <span className='name'>{caption}</span>
-                <span className='path'>{path}</span>
+                <span className='name' style={{ textDecoration }}>{caption}</span>
+                <span className='path' style={{ textDecoration }}>{path}</span>
             </div>
             <ScmInlineActions {...{
                 hover,

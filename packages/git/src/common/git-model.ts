@@ -150,6 +150,10 @@ export namespace GitFileStatus {
         }
     }
 
+    export function toStrikethrough(status: GitFileStatus): boolean {
+        return status === GitFileStatus.Deleted;
+    }
+
 }
 
 /**
