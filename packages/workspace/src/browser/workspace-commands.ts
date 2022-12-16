@@ -316,9 +316,9 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 const text = uris.map((uri: URI) => {
                     const workspaceRoot = this.workspaceService.getWorkspaceRootUri(uri);
                     if (workspaceRoot) {
-                        return workspaceRoot.relative(uri);
+                        return workspaceRoot.relative(uri)?.fsPath();
                     } else {
-                        return uri.path;
+                        return uri.path.fsPath();
                     }
                 }).join(lineDelimiter);
                 await this.clipboardService.writeText(text);
@@ -425,7 +425,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
 
     protected trimFileName(name: string): string {
         if (name && name.length > 30) {
-            return `${name.substr(0, 30)}...`;
+            return `${name.substring(0, 30)}...`;
         }
         return name;
     }
