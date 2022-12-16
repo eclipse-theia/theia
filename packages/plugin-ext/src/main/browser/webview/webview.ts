@@ -73,6 +73,7 @@ export const enum WebviewMessageChannels {
 
 export interface WebviewContentOptions {
     readonly allowScripts?: boolean;
+    readonly allowForms?: boolean;
     readonly localResourceRoots?: ReadonlyArray<string>;
     readonly portMapping?: ReadonlyArray<WebviewPortMapping>;
     readonly enableCommandUris?: boolean;

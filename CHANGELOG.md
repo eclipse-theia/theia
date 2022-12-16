@@ -7,6 +7,7 @@
 ## v1.33.0 - unreleased
 
 - [scripts] integrated start-up performance scripts into nightly master build [#10463](https://github.com/eclipse-theia/theia/pull/10463) - Contributed on behalf of STMicroelectronics
+- [plugin] added `enableForms` field to `WebviewOptions` [#11983](https://github.com/eclipse-theia/theia/pull/11983) - Contributed on behalf of STMicroelectronics
 - [vscode] stub 'notebook' VS Code APIs [#11993](https://github.com/eclipse-theia/theia/pull/11993)- Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.33.0">[Breaking Changes:](#breaking_changes_1.33.0)</a>
