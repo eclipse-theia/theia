@@ -1075,7 +1075,7 @@ export function createAPIFactory(
                         notebook: theia.NotebookDocument,
                         controller: theia.NotebookController
                     ): (void | Thenable<void>) { },
-                    onDidChangeSelectedNotebooks: ({} as theia.Event<{ readonly notebook: theia.NotebookDocument; readonly selected: boolean }>),
+                    onDidChangeSelectedNotebooks: () => Disposable.create(() => {}),
                     updateNotebookAffinity: (notebook: theia.NotebookDocument, affinity: theia.NotebookControllerAffinity) => undefined,
                     dispose: () => undefined,
                 };
@@ -1086,8 +1086,8 @@ export function createAPIFactory(
             ) {
                 return {
                     rendererId,
-                    onDidReceiveMessage: ({} as theia.Event<{ readonly editor: theia.NotebookEditor; readonly message: any }>),
-                    postMessage: (message: any, editor?: theia.NotebookEditor) => ({} as Thenable<boolean>),
+                    onDidReceiveMessage: () => Disposable.create(() => {} ),
+                    postMessage: () => Promise.resolve({}),
                 };
             },
             registerNotebookCellStatusBarItemProvider(
