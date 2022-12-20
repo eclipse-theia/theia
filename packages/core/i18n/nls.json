@@ -65,6 +65,7 @@
       "debugSessionActive": "There is an active debug session, are you sure you want to stop it?",
       "debugSessionActiveMultiple": "There are active debug sessions, are you sure you want to stop them?",
       "disassembly-view": {
+        "disassembly": "Disassembly",
         "show-source-code": "Show Source Code in Disassembly View."
       },
       "instruction-breakpoint": "Instruction Breakpoint",
@@ -161,11 +162,13 @@
       "files.autoSave.onWindowChange": "An editor with changes is automatically saved when the window loses focus.",
       "formatOnSaveTimeout": "Timeout in milliseconds after which the formatting that is run on file save is cancelled.",
       "persistClosedEditors": "Controls whether to persist closed editor history for the workspace across window reloads.",
+      "readOnly": "Read Only",
       "showAllEditors": "Show All Opened Editors",
       "splitHorizontal": "Split Editor Horizontal",
       "splitVertical": "Split Editor Vertical",
       "status-bar-pin": "Add to Status Bar",
-      "status-bar-unpin": "Remove from Status Bar"
+      "status-bar-unpin": "Remove from Status Bar",
+      "toggleStickyScroll": "Toggle Sticky Scroll"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Press {0} to show/hide ignored files)"

@@ -65,6 +65,7 @@
       "debugSessionActive": "Aktív hibakeresési munkamenet van, biztos, hogy le akarja állítani?",
       "debugSessionActiveMultiple": "Aktív hibakeresési munkamenetek vannak, biztos, hogy le akarja állítani őket?",
       "disassembly-view": {
+        "disassembly": "Szétszerelés",
         "show-source-code": "Forráskód megjelenítése szétszerelési nézetben."
       },
       "instruction-breakpoint": "Megszakítási pont",
@@ -161,11 +162,13 @@
       "files.autoSave.onWindowChange": "A szerkesztő a módosításokkal automatikusan elmentésre kerül, amikor az ablak elveszíti a fókuszt.",
       "formatOnSaveTimeout": "A milliszekundumban megadott időkorlát, amely után a fájl mentésekor lefutó formázás törlődik.",
       "persistClosedEditors": "Azt szabályozza, hogy a munkaterület lezárt szerkesztési előzményei az ablak újratöltése során megmaradjanak-e.",
+      "readOnly": "Csak olvasható",
       "showAllEditors": "Minden megnyitott szerkesztő megjelenítése",
       "splitHorizontal": "Osztott szerkesztő vízszintes",
       "splitVertical": "Függőleges osztott szerkesztő",
       "status-bar-pin": "Hozzáadás az állapotsorhoz",
-      "status-bar-unpin": "Eltávolítás az állapotsorból"
+      "status-bar-unpin": "Eltávolítás az állapotsorból",
+      "toggleStickyScroll": "Ragadós görgetés bekapcsolása"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Nyomja meg a {0} gombot a figyelmen kívül hagyott fájlok megjelenítéséhez/elrejtéséhez)"

@@ -65,6 +65,7 @@
       "debugSessionActive": "Je aktivní relace ladění, jste si jisti, že ji chcete zastavit?",
       "debugSessionActiveMultiple": "Jsou aktivní relace ladění, jste si jisti, že je chcete zastavit?",
       "disassembly-view": {
+        "disassembly": "Demontáž",
         "show-source-code": "Zobrazení zdrojového kódu v zobrazení disassembleru."
       },
       "instruction-breakpoint": "Bod přerušení instrukcí",
@@ -161,11 +162,13 @@
       "files.autoSave.onWindowChange": "Editor se změnami se automaticky uloží, když okno ztratí fokus.",
       "formatOnSaveTimeout": "Časový limit v milisekundách, po jehož uplynutí se formátování spuštěné při ukládání souboru zruší.",
       "persistClosedEditors": "Řídí, zda má historie zavřených editorů přetrvávat v pracovním prostoru i po opětovném načtení okna.",
+      "readOnly": "Pouze pro čtení",
       "showAllEditors": "Zobrazit všechny otevřené editory",
       "splitHorizontal": "Rozdělený editor Horizontální",
       "splitVertical": "Rozdělený editor Vertikální",
       "status-bar-pin": "Přidat na stavový řádek",
-      "status-bar-unpin": "Odstranění ze stavového řádku"
+      "status-bar-unpin": "Odstranění ze stavového řádku",
+      "toggleStickyScroll": "Přepnout rychlé posouvání"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Stisknutím {0} zobrazíte/skryjete ignorované soubory)"
