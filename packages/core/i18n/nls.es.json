@@ -65,6 +65,7 @@
       "debugSessionActive": "Hay una sesión de depuración activa, ¿está seguro de que quiere detenerla?",
       "debugSessionActiveMultiple": "Hay sesiones de depuración activas, ¿estás seguro de que quieres detenerlas?",
       "disassembly-view": {
+        "disassembly": "Desmontaje",
         "show-source-code": "Mostrar el código fuente en la vista de desensamblaje."
       },
       "instruction-breakpoint": "Punto de interrupción de la instrucción",
@@ -161,11 +162,13 @@
       "files.autoSave.onWindowChange": "Un editor con cambios se guarda automáticamente cuando la ventana pierde el foco.",
       "formatOnSaveTimeout": "Tiempo de espera en milisegundos tras el cual se cancela el formato que se ejecuta al guardar el archivo.",
       "persistClosedEditors": "Controla si se mantiene el historial del editor cerrado para el espacio de trabajo a través de las recargas de la ventana.",
+      "readOnly": "Sólo lectura",
       "showAllEditors": "Mostrar todos los editores abiertos",
       "splitHorizontal": "Editor de división horizontal",
       "splitVertical": "Split Editor Vertical",
       "status-bar-pin": "Añadir a la barra de estado",
-      "status-bar-unpin": "Eliminar de la barra de estado"
+      "status-bar-unpin": "Eliminar de la barra de estado",
+      "toggleStickyScroll": "Alternar desplazamiento permanente"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Pulse {0} para mostrar/ocultar los archivos ignorados)"

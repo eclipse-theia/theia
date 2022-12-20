@@ -65,6 +65,7 @@
       "debugSessionActive": "有一个活跃的调试会话,你确定你要停止它吗?",
       "debugSessionActiveMultiple": "有活跃的调试会话,你确定你要停止它们吗?",
       "disassembly-view": {
+        "disassembly": "拆卸",
         "show-source-code": "在反汇编视图中显示源代码。"
       },
       "instruction-breakpoint": "指令断点",
@@ -161,11 +162,13 @@
       "files.autoSave.onWindowChange": "当窗口失去焦点时,有变化的编辑器会自动保存。",
       "formatOnSaveTimeout": "超时,以毫秒为单位,超时后文件保存时运行的格式化被取消。",
       "persistClosedEditors": "控制是否为工作区持续保存关闭的编辑器历史,跨越窗口重新加载。",
+      "readOnly": "只读",
       "showAllEditors": "显示所有打开的编辑器",
       "splitHorizontal": "水平拆分编辑器",
       "splitVertical": "垂直拆分编辑器",
       "status-bar-pin": "添加到状态栏",
-      "status-bar-unpin": "从状态栏中删除"
+      "status-bar-unpin": "从状态栏中删除",
+      "toggleStickyScroll": "切换粘滞滚动"
     },
     "file-search": {
       "toggleIgnoredFiles": "(按{0}显示/隐藏被忽略的文件)"

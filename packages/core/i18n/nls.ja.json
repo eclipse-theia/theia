@@ -65,6 +65,7 @@
       "debugSessionActive": "デバッグセッションがアクティブになっていますが、本当に停止しますか?",
       "debugSessionActiveMultiple": "アクティブなデバッグセッションがありますが、本当に停止しますか?",
       "disassembly-view": {
+        "disassembly": "分解",
         "show-source-code": "逆アセンブルビューでソースコードを表示する"
       },
       "instruction-breakpoint": "命令ブレークポイント",
@@ -161,11 +162,13 @@
       "files.autoSave.onWindowChange": "変更されたエディタは、ウィンドウのフォーカスが外れたときに自動的に保存されます。",
       "formatOnSaveTimeout": "ファイル保存時に実行されるフォーマットがキャンセルされるまでのタイムアウト(ミリ秒)。",
       "persistClosedEditors": "ウィンドウの再読み込み時に、ワークスペースの閉じたエディタの履歴を保持するかどうかを制御します。",
+      "readOnly": "読み取り専用",
       "showAllEditors": "開いているエディタをすべて表示",
       "splitHorizontal": "スプリットエディタ横",
       "splitVertical": "スプリットエディタ縦",
       "status-bar-pin": "ステータスバーへの追加",
-      "status-bar-unpin": "ステータスバーから削除する"
+      "status-bar-unpin": "ステータスバーから削除する",
+      "toggleStickyScroll": "固定スクロールの切り替えル"
     },
     "file-search": {
       "toggleIgnoredFiles": "({0}を押すと、無視されたファイルの表示/非表示を切り替えることができます。"

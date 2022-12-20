@@ -65,6 +65,7 @@
       "debugSessionActive": "Il y a une session de débogage active, êtes-vous sûr de vouloir l'arrêter?",
       "debugSessionActiveMultiple": "Il y a des sessions de débogage actives, êtes-vous sûr de vouloir les arrêter?",
       "disassembly-view": {
+        "disassembly": "Démontage",
         "show-source-code": "Afficher le code source en vue du désassemblage."
       },
       "instruction-breakpoint": "Point d'arrêt de l'instruction",
@@ -161,11 +162,13 @@
       "files.autoSave.onWindowChange": "Un éditeur avec des modifications est automatiquement sauvegardé lorsque la fenêtre perd le focus.",
       "formatOnSaveTimeout": "Délai en millisecondes après lequel le formatage qui est exécuté lors de l'enregistrement du fichier est annulé.",
       "persistClosedEditors": "Contrôle la persistance ou non de l'historique de l'éditeur fermé pour l'espace de travail lors des rechargements de la fenêtre.",
+      "readOnly": "Lecture seulement",
       "showAllEditors": "Afficher tous les éditeurs ouverts",
       "splitHorizontal": "Split Editor Horizontal",
       "splitVertical": "Split Editor Vertical",
       "status-bar-pin": "Ajouter à la barre d'état",
-      "status-bar-unpin": "Supprimer de la barre d'état"
+      "status-bar-unpin": "Supprimer de la barre d'état",
+      "toggleStickyScroll": "Activer/désactiver le défilement épinglé"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Appuyez sur {0} pour afficher/masquer les fichiers ignorés)"
