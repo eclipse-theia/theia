@@ -62,6 +62,7 @@ export interface ScmResourceDecorations {
     source?: string;
     letter?: string;
     color?: string;
+    strikeThrough?: boolean;
 }
 
 export interface ScmCommand {
