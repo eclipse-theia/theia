@@ -4,16 +4,33 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## v1.33.0 - unreleased
+## v1.33.0 - 12/20/2022
 
-- [scripts] integrated start-up performance scripts into nightly master build [#10463](https://github.com/eclipse-theia/theia/pull/10463) - Contributed on behalf of STMicroelectronics
+- [application-package] added support for declaring extensions as peer dependencies [#11808](https://github.com/eclipse-theia/theia/pull/11808)
+- [core] added handling for filesystem permissions [#11965](https://github.com/eclipse-theia/theia/pull/11965)
+- [core] fixed handling of submenu children for toolbars [#11910](https://github.com/eclipse-theia/theia/pull/11910)
+- [core] fixed top border theming for tabs [#11957](https://github.com/eclipse-theia/theia/pull/11957)
+- [debug] added ability to remove watch expressions individually [#11956](https://github.com/eclipse-theia/theia/pull/11956)
+- [debug] added handling to wait for debugger capabilities initialization before breakpoints update [#11607](https://github.com/eclipse-theia/theia/pull/11607)
+- [debug] added localization for the disassembly view title [#11939](https://github.com/eclipse-theia/theia/pull/11939)
+- [debug] fixed `watch` expression errors [#11953](https://github.com/eclipse-theia/theia/pull/11953)
+- [editor] added `toggle sticky scroll` command and menu item [#11926](https://github.com/eclipse-theia/theia/pull/11926)
+- [monaco] added handling to properly respect scrollbar preferences for editors [#11883](https://github.com/eclipse-theia/theia/pull/11883)
+- [output] fixed unique key error for the output channel selector [#11922](https://github.com/eclipse-theia/theia/pull/11922)
 - [plugin] added `enableForms` field to `WebviewOptions` [#11983](https://github.com/eclipse-theia/theia/pull/11983) - Contributed on behalf of STMicroelectronics
-- [vscode] stub 'notebook' VS Code APIs [#11993](https://github.com/eclipse-theia/theia/pull/11993)- Contributed on behalf of STMicroelectronics
+- [plugin] added stubbing of `notebook` related VS Code APIs [#11993](https://github.com/eclipse-theia/theia/pull/11993)- Contributed on behalf of STMicroelectronics
+- [plugin] added support for the `DebugSession.parentSession` VS Code API [#11925](https://github.com/eclipse-theia/theia/pull/11925)
+- [plugin] added support for the `InlineCompletion` related VS Code APIs [#11901](https://github.com/eclipse-theia/theia/pull/11901)
+- [plugin] added support for the `TaskGroup.id` VS Code API [#11944](https://github.com/eclipse-theia/theia/pull/11944)
+- [plugin] added support for the `TaskGroup.isDefault` VS Code API [#11944](https://github.com/eclipse-theia/theia/pull/11944)
+- [plugin] added support for the `hcLight` VS Code API [#11589](https://github.com/eclipse-theia/theia/pull/11589)
+- [preferences] fixed issue regarding step validation in numeric inputs [#11927](https://github.com/eclipse-theia/theia/pull/11927)
+- [scripts] integrated start-up performance scripts into nightly master build [#10463](https://github.com/eclipse-theia/theia/pull/10463) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.33.0">[Breaking Changes:](#breaking_changes_1.33.0)</a>
 
-- [core] returns of many methods of `MenuModelRegistry` changed from `CompositeMenuNode` to `MutableCompoundMenuNode`. To mutate a menu, use the `updateOptions` method or add a check for `instanceof CompositeMenuNode`, which will be true in most cases.
-- [plugin-ext] refactored the plugin RPC API - now also reuses the msgpackR based RPC protocol that is better suited for handling binary data and enables message tunneling [#11228](https://github.com/eclipse-theia/theia/pull/11261). All plugin protocol types now use `UInt8Array` as type for message parameters instead of `string`  - Contributed on behalf of STMicroelectronics.
+- [core] updated the returns of many methods of `MenuModelRegistry` changed from `CompositeMenuNode` to `MutableCompoundMenuNode`. To mutate a menu, use the `updateOptions` method or add a check for `instanceof CompositeMenuNode`, which will be true in most cases [#11910](https://github.com/eclipse-theia/theia/pull/11910)
+- [plugin-ext] refactored the plugin RPC API - now also reuses the msgpackR based RPC protocol that is better suited for handling binary data and enables message tunneling [#11228](https://github.com/eclipse-theia/theia/pull/11261). All plugin protocol types now use `UInt8Array` as type for message parameters instead of `string` - Contributed on behalf of STMicroelectronics.
 
 ## v1.32.0 - 11/24/2022
 
@@ -95,7 +112,7 @@ generating the main code bundle (as before), the second serves to generate a *.c
   -  [plugin-ext/main] The file `callhierarchy-type-converters.ts` was renamed to `hierarchy-types-converters.ts`
       - The method `toDefinition` was renamed to `toItemHierarchyDefinition` and the overloaded signatures were removed.
       - The method `fromDefinition` was replaced for `fromItemHierarchyDefinition` to convert both `TypeHierarchyItem` and `CallHierarchyItem` to a common `HierarchyItem`.
-  - [plugin-ext/plugin] - `type-converters.ts #fromCallHierarchyItem` was replaced by `fromHierarchyItem` to convert from `CallHierarchyItem` or  `TypeHierarchyItem` to `HierarchyItem`.
+  - [plugin-ext/plugin] - `type-converters.ts #fromCallHierarchyItem` was replaced by `fromHierarchyItem` to convert from `CallHierarchyItem` or `TypeHierarchyItem` to `HierarchyItem`.
 
 ## v1.30.0 - 9/29/2022
 
