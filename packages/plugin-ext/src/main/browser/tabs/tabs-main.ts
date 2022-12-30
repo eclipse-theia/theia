@@ -15,16 +15,60 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-
-import { TabsMain } from '../../../common/plugin-api-rpc';
+import { ApplicationShell, PINNED_CLASS, Saveable, TabBar, Widget } from '@theia/core/lib/browser';
+import { MAIN_RPC_CONTEXT, TabDto, TabGroupDto, TabsExt, TabsMain } from '../../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../../common/rpc-protocol';
+import { EditorPreviewWidget } from '@theia/editor-preview/lib/browser/editor-preview-widget';
 
 export class TabsMainImp implements TabsMain {
+
+    private readonly proxy: TabsExt;
+    private tabGroupModel: TabGroupDto[] = [];
+
+    private applicationShell: ApplicationShell;
 
     constructor(
         rpc: RPCProtocol,
         container: interfaces.Container
-    ) {}
+    ) {
+        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TABS_EXT);
+        console.log('TabsMainImp constructor called!');
+        console.log(this.proxy);
+
+        this.applicationShell = container.get(ApplicationShell);
+        this.applicationShell.mainPanel.onDidChangeCurrent(() => this.createTabsModel());
+        this.createTabsModel();
+    }
+
+    private createTabsModel(): void {
+        const activeWidget = this.applicationShell.activeWidget;
+        console.log(activeWidget);
+        this.tabGroupModel = this.applicationShell.mainAreaTabBars.map((tabBar: TabBar<Widget>, groupId: number) => {
+            let groupIsActive = false;
+            const tabs: TabDto[] = tabBar.titles.map(title => {
+                const widget = title.owner;
+                let isActive = false;
+                if (activeWidget?.id === widget.id) {
+                    isActive = true;
+                    groupIsActive = true;
+                }
+                return {
+                    id: widget.id,
+                    label: title.label,
+                    input: '',
+                    isActive,
+                    isPinned: title.className.includes(PINNED_CLASS),
+                    isDirty: Saveable.isDirty(widget),
+                    isPreview: widget instanceof EditorPreviewWidget && widget.isPreview
+                };
+            });
+            const viewColumn = 1;
+            return {
+                groupId, tabs, isActive: groupIsActive, viewColumn
+            };
+        });
+        this.proxy.$acceptEditorTabModel(this.tabGroupModel);
+    }
 
     // #region Messages received from Ext Host
     $moveTab(tabId: string, index: number, viewColumn: number, preserveFocus?: boolean): void {
@@ -32,7 +76,16 @@ export class TabsMainImp implements TabsMain {
     }
 
     async $closeTab(tabIds: string[], preserveFocus?: boolean): Promise<boolean> {
-        return false;
+        for (const tabId of tabIds) {
+            const widget = this.applicationShell.getWidgetById(tabId);
+            if (!widget) {
+                continue;
+            }
+            widget.dispose();
+            // TODO if this was an active widget/tab we need to activate another widget in the the parent widget/group
+            // after disposing this. If this was the last one the first widget in the first group should be activated.
+        }
+        return true;
     }
 
     async $closeGroup(groupIds: number[], preserveFocus?: boolean): Promise<boolean> {

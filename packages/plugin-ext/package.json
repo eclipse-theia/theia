@@ -11,6 +11,7 @@
     "@theia/core": "1.33.0",
     "@theia/debug": "1.33.0",
     "@theia/editor": "1.33.0",
+    "@theia/editor-preview": "1.33.0",
     "@theia/file-search": "1.33.0",
     "@theia/filesystem": "1.33.0",
     "@theia/markers": "1.33.0",

@@ -325,8 +325,9 @@ export class TabsExtImpl implements TabsExt {
             return group;
         });
 
+        const groupId = tabGroups.find(group => group.isActive === true)?.groupId;
         // Set the active tab group id
-        const activeTabGroupId = assertIsDefined(tabGroups.find(group => group.isActive === true)?.groupId);
+        const activeTabGroupId = assertIsDefined(groupId);
         if (activeTabGroupId !== undefined && this.activeGroupId !== activeTabGroupId) {
             this.activeGroupId = activeTabGroupId;
         }
