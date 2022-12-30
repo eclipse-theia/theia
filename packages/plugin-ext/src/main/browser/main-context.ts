@@ -58,6 +58,7 @@ import { WebviewViewsMainImpl } from './webview-views/webview-views-main';
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import { UntitledResourceResolver } from '@theia/core/lib/common/resource';
 import { ThemeService } from '@theia/core/lib/browser/theming';
+import { TabsMainImp } from './tabs/tabs-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -180,4 +181,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const commentsMain = new CommentsMainImp(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.COMMENTS_MAIN, commentsMain);
+
+    const tabsMain = new TabsMainImp(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.TABS_MAIN, tabsMain);
 }
