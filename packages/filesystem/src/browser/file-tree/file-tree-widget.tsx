@@ -25,6 +25,7 @@ import { FileUploadService } from '../file-upload-service';
 import { DirNode, FileStatNode, FileStatNodeData } from './file-tree';
 import { FileTreeModel } from './file-tree-model';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
+import { ApplicationShell } from '@theia/core/lib/browser/shell';
 import { FileStat, FileType } from '../../common/files';
 import { isOSX } from '@theia/core';
 
@@ -119,14 +120,18 @@ export class FileTreeWidget extends CompressedTreeWidget {
 
     protected handleDragStartEvent(node: TreeNode, event: React.DragEvent): void {
         event.stopPropagation();
-        let selectedNodes;
-        if (this.model.selectedNodes.find(selected => TreeNode.equals(selected, node))) {
-            selectedNodes = [...this.model.selectedNodes];
-        } else {
-            selectedNodes = [node];
-        }
-        this.setSelectedTreeNodesAsData(event.dataTransfer, node, selectedNodes);
         if (event.dataTransfer) {
+            let selectedNodes;
+            if (this.model.selectedNodes.find(selected => TreeNode.equals(selected, node))) {
+                selectedNodes = [...this.model.selectedNodes];
+            } else {
+                selectedNodes = [node];
+            }
+            this.setSelectedTreeNodesAsData(event.dataTransfer, node, selectedNodes);
+            const uris = selectedNodes.filter(n => FileStatNode.is(n)).map(n => (n as FileStatNode).fileStat.resource);
+            if (uris.length > 0) {
+                ApplicationShell.setDraggedEditorUris(event.dataTransfer, uris);
+            }
             let label: string;
             if (selectedNodes.length === 1) {
                 label = this.toNodeName(node);

@@ -41,6 +41,8 @@ import { Deferred } from '../../common/promise-util';
 import { SaveResourceService } from '../save-resource-service';
 import { nls } from '../../common/nls';
 import { SecondaryWindowHandler } from '../secondary-window-handler';
+import URI from '../../common/uri';
+import { OpenerService } from '../opener-service';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -190,9 +192,13 @@ export class ApplicationShell extends Widget {
 
     private readonly tracker = new FocusTracker<Widget>();
     private dragState?: WidgetDragState;
+    additionalDraggedUris: URI[] | undefined;
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     protected readonly onDidAddWidgetEmitter = new Emitter<Widget>();
     readonly onDidAddWidget = this.onDidAddWidgetEmitter.event;
@@ -498,7 +504,66 @@ export class ApplicationShell extends Widget {
         dockPanel.id = MAIN_AREA_ID;
         dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
+
+        const openUri = async (fileUri: URI) => {
+            try {
+                const opener = await this.openerService.getOpener(fileUri);
+                opener.open(fileUri);
+            } catch (e) {
+                console.info(`no opener found for '${fileUri}'`);
+            }
+        };
+
+        dockPanel.node.addEventListener('drop', event => {
+            if (event.dataTransfer) {
+                const uris = this.additionalDraggedUris || ApplicationShell.getDraggedEditorUris(event.dataTransfer);
+                if (uris.length > 0) {
+                    uris.forEach(openUri);
+                } else if (event.dataTransfer.files?.length > 0) {
+                    // the files were dragged from the outside the workspace
+                    Array.from(event.dataTransfer.files).forEach(async file => {
+                        if (file.path) {
+                            const fileUri = URI.fromComponents({
+                                scheme: 'file',
+                                path: file.path,
+                                authority: '',
+                                query: '',
+                                fragment: ''
+                            });
+                            openUri(fileUri);
+                        }
+                    });
+                }
+            }
+        });
+        const handler = (e: DragEvent) => {
+            if (e.dataTransfer) {
+                e.dataTransfer.dropEffect = 'link';
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
+        dockPanel.node.addEventListener('dragover', handler);
+        dockPanel.node.addEventListener('dragenter', handler);
+
         return dockPanel;
+    }
+
+    addAdditionalDraggedEditorUris(uris: URI[]): void {
+        this.additionalDraggedUris = uris;
+    }
+
+    clearAdditionalDraggedEditorUris(): void {
+        this.additionalDraggedUris = undefined;
+    }
+
+    static getDraggedEditorUris(dataTransfer: DataTransfer): URI[] {
+        const data = dataTransfer.getData('theia-editor-dnd');
+        return data ? data.split('\n').map(entry => new URI(entry)) : [];
+    }
+
+    static setDraggedEditorUris(dataTransfer: DataTransfer, uris: URI[]): void {
+        dataTransfer.setData('theia-editor-dnd', uris.map(uri => uri.toString()).join('\r\n'));
     }
 
     /**

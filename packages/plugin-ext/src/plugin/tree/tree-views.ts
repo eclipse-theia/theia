@@ -18,18 +18,20 @@
 
 import {
     TreeDataProvider, TreeView, TreeViewExpansionEvent, TreeItem, TreeItemLabel,
-    TreeViewSelectionChangeEvent, TreeViewVisibilityChangeEvent, CancellationToken
+    TreeViewSelectionChangeEvent, TreeViewVisibilityChangeEvent, CancellationToken, TreeDragAndDropController, DataTransferFile
 } from '@theia/plugin';
 // TODO: extract `@theia/util` for event, disposable, cancellation and common types
 // don't use @theia/core directly from plugin host
 import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { Disposable as PluginDisposable, ThemeIcon } from '../types-impl';
-import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem, TreeViewRevealOptions } from '../../common/plugin-api-rpc';
+import { DataTransfer, DataTransferItem, Disposable as PluginDisposable, ThemeIcon } from '../types-impl';
+import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem, TreeViewRevealOptions, DataTransferFileDTO } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { CommandRegistryImpl, CommandsConverter } from '../command-registry';
 import { TreeViewSelection } from '../../common';
 import { PluginIconPath } from '../plugin-icon-path';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { UriComponents } from '@theia/core/lib/common/uri';
 
 export class TreeViewsExtImpl implements TreeViewsExt {
 
@@ -50,6 +52,13 @@ export class TreeViewsExtImpl implements TreeViewsExt {
             }
         });
     }
+    $dragStarted(treeViewId: string, treeItemIds: string[], token: CancellationToken): Promise<UriComponents[] | undefined> {
+        return this.getTreeView(treeViewId).onDragStarted(treeItemIds, token);
+    }
+
+    $drop(treeViewId: string, treeItemId: string | undefined, dataTransferItems: [string, string | DataTransferFileDTO][], token: CancellationToken): Promise<void> {
+        return this.getTreeView(treeViewId).handleDrop!(treeItemId, dataTransferItems, token);
+    }
 
     registerTreeDataProvider<T>(plugin: Plugin, treeViewId: string, treeDataProvider: TreeDataProvider<T>): PluginDisposable {
         const treeView = this.createTreeView(plugin, treeViewId, { treeDataProvider });
@@ -60,12 +69,12 @@ export class TreeViewsExtImpl implements TreeViewsExt {
         });
     }
 
-    createTreeView<T>(plugin: Plugin, treeViewId: string, options: { treeDataProvider: TreeDataProvider<T> }): TreeView<T> {
+    createTreeView<T>(plugin: Plugin, treeViewId: string, options: { treeDataProvider: TreeDataProvider<T>, dragAndDropController?: TreeDragAndDropController<T> }): TreeView<T> {
         if (!options || !options.treeDataProvider) {
             throw new Error('Options with treeDataProvider is mandatory');
         }
 
-        const treeView = new TreeViewExtImpl(plugin, treeViewId, options.treeDataProvider, this.proxy, this.commandRegistry.converter);
+        const treeView = new TreeViewExtImpl(plugin, treeViewId, options.treeDataProvider, options.dragAndDropController, this.proxy, this.commandRegistry.converter);
         this.treeViews.set(treeViewId, treeView);
 
         return {
@@ -187,6 +196,8 @@ class TreeViewExtImpl<T> implements Disposable {
     private readonly nodes = new Map<string, TreeExtNode<T>>();
     private pendingRefresh = Promise.resolve();
 
+    private localDataTransfer: DataTransfer = new DataTransfer();
+
     private readonly toDispose = new DisposableCollection(
         Disposable.create(() => this.clearAll()),
         this.onDidExpandElementEmitter,
@@ -199,10 +210,15 @@ class TreeViewExtImpl<T> implements Disposable {
         private plugin: Plugin,
         private treeViewId: string,
         private treeDataProvider: TreeDataProvider<T>,
+        private dragAndDropController: TreeDragAndDropController<T> | undefined,
         private proxy: TreeViewsMain,
         readonly commandsConverter: CommandsConverter) {
 
-        proxy.$registerTreeDataProvider(treeViewId);
+        const dragTypes = dragAndDropController?.dragMimeTypes ? [...dragAndDropController.dragMimeTypes] : undefined;
+        const dropTypes = dragAndDropController?.dropMimeTypes ? [...dragAndDropController.dropMimeTypes] : undefined;
+
+        proxy.$registerTreeDataProvider(treeViewId, dragTypes, dropTypes);
+
         this.toDispose.push(Disposable.create(() => this.proxy.$unregisterTreeDataProvider(treeViewId)));
 
         if (treeDataProvider.onDidChangeTreeData) {
@@ -535,4 +551,56 @@ class TreeViewExtImpl<T> implements Disposable {
         }
     }
 
+    async onDragStarted(treeItemIds: string[], token: CancellationToken): Promise<UriComponents[] | undefined> {
+        const treeItems: T[] = [];
+        for (const id of treeItemIds) {
+            const item = this.getTreeItem(id);
+            if (item) {
+                treeItems.push(item);
+            }
+        }
+        if (this.dragAndDropController && this.dragAndDropController.handleDrag) {
+            this.localDataTransfer.clear();
+            await this.dragAndDropController.handleDrag(treeItems, this.localDataTransfer, token);
+            const uriList = await this.localDataTransfer.get('text/uri-list')?.asString();
+            if (uriList) {
+                return uriList.split('\n').map(str => URI.parse(str));
+            }
+        }
+        return undefined;
+    }
+
+    async handleDrop(treeItemId: string | undefined, dataTransferItems: [string, string | DataTransferFileDTO][], token: CancellationToken): Promise<void> {
+        const treeItem = treeItemId ? this.getTreeItem(treeItemId) : undefined;
+        const dropTransfer = new DataTransfer();
+        if (this.dragAndDropController && this.dragAndDropController.handleDrop) {
+            this.localDataTransfer.forEach((item, type) => {
+                dropTransfer.set(type, item);
+            });
+            for (const [type, item] of dataTransferItems) {
+                // prefer the item the plugin has set in `onDragStarted`;
+                if (!dropTransfer.has(type)) {
+                    if (typeof item === 'string') {
+                        dropTransfer.set(type, new DataTransferItem(item));
+                    } else {
+                        const file: DataTransferFile = {
+                            name: item.name,
+                            data: () => this.proxy.$readDroppedFile(item.contentId).then(buffer => buffer.buffer),
+                            uri: item.uri ? URI.revive(item.uri) : undefined
+                        };
+
+                        const fileItem = new class extends DataTransferItem {
+                            override asFile(): DataTransferFile | undefined {
+                                return file;
+                            }
+                        }(file);
+
+                        dropTransfer.set(type, fileItem);
+                    }
+                }
+            }
+
+            return Promise.resolve(this.dragAndDropController.handleDrop(treeItem, dropTransfer, token));
+        }
+    }
 }

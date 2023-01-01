@@ -26,8 +26,10 @@ import {
 } from '@theia/core/lib/browser';
 import { ViewContextKeyService } from './view-context-key-service';
 import { Disposable, DisposableCollection } from '@theia/core';
-import { TreeViewWidget, TreeViewNode, PluginTreeModel } from './tree-view-widget';
+import { TreeViewWidget, TreeViewNode, PluginTreeModel, TreeViewWidgetOptions } from './tree-view-widget';
 import { PluginViewWidget } from './plugin-view-widget';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { DnDFileContentStore } from './dnd-file-content-store';
 
 export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
 
@@ -35,6 +37,7 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
     private readonly viewRegistry: PluginViewRegistry;
     private readonly contextKeys: ViewContextKeyService;
     private readonly widgetManager: WidgetManager;
+    private readonly fileContentStore: DnDFileContentStore;
 
     private readonly treeViewProviders = new Map<string, Disposable>();
 
@@ -48,15 +51,22 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
 
         this.contextKeys = this.container.get(ViewContextKeyService);
         this.widgetManager = this.container.get(WidgetManager);
+        this.fileContentStore = this.container.get(DnDFileContentStore);
     }
 
     dispose(): void {
         this.toDispose.dispose();
     }
 
-    async $registerTreeDataProvider(treeViewId: string): Promise<void> {
+    async $registerTreeDataProvider(treeViewId: string, dragMimetypes: string[] | undefined, dropMimetypes: string[] | undefined): Promise<void> {
         this.treeViewProviders.set(treeViewId, this.viewRegistry.registerViewDataProvider(treeViewId, async ({ state, viewInfo }) => {
-            const widget = await this.widgetManager.getOrCreateWidget<TreeViewWidget>(PLUGIN_VIEW_DATA_FACTORY_ID, { id: treeViewId });
+            const options: TreeViewWidgetOptions = {
+                id: treeViewId,
+                dragMimeTypes: dragMimetypes,
+                dropMimeTypes: dropMimetypes
+            };
+
+            const widget = await this.widgetManager.getOrCreateWidget<TreeViewWidget>(PLUGIN_VIEW_DATA_FACTORY_ID, options);
             widget.model.viewInfo = viewInfo;
             if (state) {
                 widget.restoreState(state);
@@ -92,6 +102,12 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
             this.treeViewProviders.delete(treeViewId);
             treeDataProvider.dispose();
         }
+    }
+
+    async $readDroppedFile(contentId: string): Promise<BinaryBuffer> {
+        const file = this.fileContentStore.getFile(contentId);
+        const buffer = await file.arrayBuffer();
+        return BinaryBuffer.wrap(new Uint8Array(buffer));
     }
 
     async $refresh(treeViewId: string): Promise<void> {

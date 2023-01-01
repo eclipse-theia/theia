@@ -93,6 +93,8 @@ import {
     CodeActionTriggerKind,
     TextDocumentSaveReason,
     CodeAction,
+    DataTransferItem,
+    DataTransfer,
     TreeItem,
     TreeItemCollapsibleState,
     DocumentSymbol,
@@ -523,7 +525,7 @@ export function createAPIFactory(
             registerTreeDataProvider<T>(viewId: string, treeDataProvider: theia.TreeDataProvider<T>): Disposable {
                 return treeViewsExt.registerTreeDataProvider(plugin, viewId, treeDataProvider);
             },
-            createTreeView<T>(viewId: string, options: { treeDataProvider: theia.TreeDataProvider<T> }): theia.TreeView<T> {
+            createTreeView<T>(viewId: string, options: theia.TreeViewOptions<T>): theia.TreeView<T> {
                 return treeViewsExt.createTreeView(plugin, viewId, options);
             },
             withScmProgress<R>(task: (progress: theia.Progress<number>) => Thenable<R>) {
@@ -1199,6 +1201,8 @@ export function createAPIFactory(
             CodeActionTriggerKind,
             TextDocumentSaveReason,
             CodeAction,
+            DataTransferItem,
+            DataTransfer,
             TreeItem,
             TreeItemCollapsibleState,
             SymbolKind,
