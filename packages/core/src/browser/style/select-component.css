@@ -47,6 +47,7 @@
     outline: var(--theia-focusBorder) solid 1px;
     outline-offset: -1px;
     user-select: none;
+    overflow: auto;
 }
 
 .theia-select-component-dropdown .theia-select-component-option {

@@ -317,6 +317,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             bottom: invert ? clientRect.top + clientRect.height - this.state.dimensions.top : 'none',
             left: this.state.dimensions.left,
             width: Math.min(calculatedWidth, maxWidth),
+            maxHeight: clientRect.height - (invert ? clientRect.height - this.state.dimensions.bottom : this.state.dimensions.top) - this.state.dimensions.height,
             position: 'absolute'
         }}>
             {items}
