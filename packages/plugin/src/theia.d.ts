@@ -3016,6 +3016,19 @@ export module '@theia/plugin' {
          * Terminal attributes. Can be useful to apply some implementation specific information.
          */
         attributes?: { [key: string]: string | null };
+
+        /**
+         * The icon path or {@link ThemeIcon} for the terminal.
+         */
+        iconPath?: ThemeIcon;
+
+        /**
+         * The icon {@link ThemeColor} for the terminal.
+         * The `terminal.ansi*` theme keys are
+         * recommended for the best contrast and consistency across themes.
+         * @stubbed
+         */
+        color?: ThemeColor;
     }
 
     /**
@@ -3089,6 +3102,19 @@ export module '@theia/plugin' {
          * This will only take effect when `terminal.integrated.enablePersistentSessions` is enabled.
          */
         isTransient?: boolean;
+
+        /**
+         * The icon path or {@link ThemeIcon} for the terminal.
+         */
+        iconPath?: ThemeIcon;
+
+        /**
+         * The icon {@link ThemeColor} for the terminal.
+         * The standard `terminal.ansi*` theme keys are
+         * recommended for the best contrast and consistency across themes.
+         * @stubbed
+         */
+        color?: ThemeColor;
     }
 
     /**

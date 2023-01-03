@@ -20,9 +20,25 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as theia from '@theia/plugin';
-import { Disposable, EnvironmentVariableMutatorType } from './types-impl';
+import { Disposable, EnvironmentVariableMutatorType, ThemeIcon } from './types-impl';
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ProvidedTerminalLink } from '../common/plugin-api-rpc-model';
+import { ThemeIcon as MonacoThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
+
+export function getIconUris(iconPath: theia.TerminalOptions['iconPath']): { id: string } | undefined {
+    if (ThemeIcon.is(iconPath)) {
+        return { id: iconPath.id };
+    }
+    return undefined;
+}
+
+export function getIconClass(options: theia.TerminalOptions | theia.ExtensionTerminalOptions): string | undefined {
+    const iconClass = getIconUris(options.iconPath);
+    if (iconClass) {
+        return MonacoThemeIcon.asClassName(iconClass);
+    }
+    return undefined;
+}
 
 /**
  * Provides high level terminal plugin api to use in the Theia plugins.
@@ -65,7 +81,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         nameOrOptions: TerminalOptions | PseudoTerminalOptions | ExtensionTerminalOptions | (string | undefined),
         shellPath?: string, shellArgs?: string[] | string
     ): Terminal {
-        let options: TerminalOptions;
+        let options: TerminalOptions | ExtensionTerminalOptions;
         let pseudoTerminal: theia.Pseudoterminal | undefined = undefined;
         const id = `plugin-terminal-${UUID.uuid4()}`;
         if (typeof nameOrOptions === 'object') {

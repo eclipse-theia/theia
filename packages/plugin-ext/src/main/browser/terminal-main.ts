@@ -27,6 +27,7 @@ import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/c
 import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { TerminalLink, TerminalLinkProvider } from '@theia/terminal/lib/browser/terminal-link-provider';
 import { URI } from '@theia/core/lib/common/uri';
+import { getIconClass } from '../../plugin/terminal-ext';
 
 /**
  * Plugin api service allows working with terminal emulator.
@@ -127,6 +128,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
             const terminal = await this.terminals.newTerminal({
                 id,
                 title: options.name,
+                iconClass: getIconClass(options),
                 shellPath: options.shellPath,
                 shellArgs: options.shellArgs,
                 cwd: options.cwd ? new URI(options.cwd) : undefined,

@@ -168,6 +168,11 @@ export interface TerminalWidgetOptions {
     readonly title?: string;
 
     /**
+     * icon class
+     */
+    readonly iconClass?: string;
+
+    /**
      * Path to the executable shell. For example: `/bin/bash`, `bash`, `sh`.
      */
     readonly shellPath?: string;

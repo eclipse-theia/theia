@@ -117,7 +117,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @postConstruct()
     protected init(): void {
         this.setTitle(this.options.title || TerminalWidgetImpl.LABEL);
-        this.title.iconClass = codicon('terminal');
+
+        if (this.options.iconClass) {
+            this.title.iconClass = this.options.iconClass;
+        } else {
+            this.title.iconClass = codicon('terminal');
+        }
 
         if (this.options.kind) {
             this.terminalKind = this.options.kind;
