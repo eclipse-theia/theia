@@ -1555,6 +1555,7 @@ export class CodeActionKind {
     public static readonly Refactor = CodeActionKind.Empty.append('refactor');
     public static readonly RefactorExtract = CodeActionKind.Refactor.append('extract');
     public static readonly RefactorInline = CodeActionKind.Refactor.append('inline');
+    public static readonly RefactorMove = CodeActionKind.Refactor.append('move');
     public static readonly RefactorRewrite = CodeActionKind.Refactor.append('rewrite');
     public static readonly Source = CodeActionKind.Empty.append('source');
     public static readonly SourceOrganizeImports = CodeActionKind.Source.append('organizeImports');
