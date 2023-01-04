@@ -17,11 +17,10 @@
 import * as React from '@theia/core/shared/react';
 import URI from '@theia/core/lib/common/uri';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { CommandRegistry, isOSX, environment, Path } from '@theia/core/lib/common';
 import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browser';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
-import { CommonCommands, LabelProvider, Key, KeyCode, codicon } from '@theia/core/lib/browser';
+import { Message, ReactWidget, CommonCommands, LabelProvider, Key, KeyCode, codicon } from '@theia/core/lib/browser';
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -109,6 +108,14 @@ export class GettingStartedWidget extends ReactWidget {
         this.recentWorkspaces = await this.workspaceService.recentWorkspaces();
         this.home = new URI(await this.environments.getHomeDirUri()).path.toString();
         this.update();
+    }
+
+    protected override onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        const elArr = this.node.getElementsByTagName('a');
+        if (elArr && elArr.length > 0) {
+            (elArr[0] as HTMLElement).focus();
+        }
     }
 
     /**
