@@ -9180,14 +9180,13 @@ export module '@theia/plugin' {
         static readonly RefactorInline: CodeActionKind;
 
         /**
-         * Base kind for refactoring inline actions: `refactor.inline`
+         * Base kind for refactoring inline actions: `refactor.move`
          *
-         * Example inline actions:
+         * Example move actions:
          *
-         * - Inline function
-         * - Inline variable
-         * - Inline constant
-         * - ...
+         * - Move a function to a new file
+         * - Move a property between classes
+         * - Move method to base class
          */
         static readonly RefactorMove: CodeActionKind;
 
