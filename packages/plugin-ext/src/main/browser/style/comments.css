@@ -149,6 +149,12 @@
     line-height: var(--theia-content-line-height);
 }
 
+.monaco-editor .review-widget .body .review-comment .review-comment-contents .timestamp {
+    line-height: var(--theia-content-line-height);
+    margin: 0 5px 0 5px;
+    padding: 0 2px 0 2px;
+}
+
 .monaco-editor .review-widget .body .review-comment .review-comment-contents .isPending {
     margin: 0 5px 0 5px;
     padding: 0 2px 0 2px;

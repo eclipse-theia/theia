@@ -479,6 +479,7 @@ export class ReviewComment<P extends ReviewComment.Props = ReviewComment.Props> 
             <div className={'review-comment-contents'}>
                 <div className={'comment-title monaco-mouse-cursor-text'}>
                     <strong className={'author'}>{comment.userName}</strong>
+                    <small className={'timestamp'}>{this.localeDate(comment.timestamp)}</small>
                     <span className={'isPending'}>{comment.label}</span>
                     <div className={'theia-comments-inline-actions-container'}>
                         <div className={'theia-comments-inline-actions'} role={'toolbar'}>
@@ -497,6 +498,16 @@ export class ReviewComment<P extends ReviewComment.Props = ReviewComment.Props> 
                     commands={commands} />
             </div>
         </div>;
+    }
+    protected localeDate(timestamp: string | undefined): string {
+        if (timestamp === undefined) {
+            return '';
+        }
+        const date = new Date(timestamp);
+        if (!isNaN(date.getTime())) {
+            return date.toLocaleString();
+        }
+        return '';
     }
 }
 
