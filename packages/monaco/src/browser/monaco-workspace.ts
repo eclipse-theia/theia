@@ -36,6 +36,8 @@ import {
 import { IEditorWorkerService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
+import { TextEdit } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { isObject, MaybePromise } from '@theia/core/lib/common';
 
 export namespace WorkspaceFileEdit {
@@ -288,7 +290,7 @@ export class MonacoWorkspace {
                 const uri = monaco.Uri.parse(key);
                 let eol: EndOfLineSequence | undefined;
                 const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-                const minimalEdits = await StandaloneServices.get(IEditorWorkerService).computeMoreMinimalEdits(uri, value.map(v => v.textEdit));
+                const minimalEdits = await StandaloneServices.get(IEditorWorkerService).computeMoreMinimalEdits(uri, value.map(this.transformSnippetStringToInsertText));
                 if (minimalEdits) {
                     for (const textEdit of minimalEdits) {
                         if (typeof textEdit.eol === 'number') {
@@ -362,6 +364,14 @@ export class MonacoWorkspace {
                 }
                 await this.fileService.create(new URI(edit.newResource), undefined, { overwrite: options.overwrite });
             }
+        }
+    }
+
+    private transformSnippetStringToInsertText(resourceEdit: MonacoResourceTextEdit): TextEdit & { insertAsSnippet?: boolean } {
+        if (resourceEdit.textEdit.insertAsSnippet) {
+            return { ...resourceEdit.textEdit, insertAsSnippet: false, text: SnippetParser.asInsertText(resourceEdit.textEdit.text) };
+        } else {
+            return resourceEdit.textEdit;
         }
     }
 }
