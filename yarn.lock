@@ -8707,10 +8707,10 @@ npmlog@^6.0.0, npmlog@^6.0.2:
     gauge "^4.0.3"
     set-blocking "^2.0.0"
 
-nsfw@^2.1.2:
-  version "2.2.3"
-  resolved "https://registry.yarnpkg.com/nsfw/-/nsfw-2.2.3.tgz#2ffaebfa6d87195d3a9bdd932cbf1f3ee7b9f985"
-  integrity sha512-b4r7VcFLMN9L6tMH38L/J7y1y8zu5UzFJyC47Dnae3QmCWIGuwhvOvFjuCtqvMsguomu5/pqM6rMKiUy4l3pYA==
+nsfw@^2.2.4:
+  version "2.2.4"
+  resolved "https://registry.yarnpkg.com/nsfw/-/nsfw-2.2.4.tgz#4ed94544a63fc843b7e3ccff6668dce13d27a33a"
+  integrity sha512-sTRNa7VYAiy5ARP8etIBfkIfxU0METW40UinDnv0epQMe1pzj285HdXKRKkdrV3rRzMNcuNZn2foTNszV0x+OA==
   dependencies:
     node-addon-api "^5.0.0"
 

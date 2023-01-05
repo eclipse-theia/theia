@@ -42,7 +42,7 @@
     "jsdom": "^11.5.1",
     "lerna": "^6.0.1",
     "node-gyp": "^9.0.0",
-    "nsfw": "^2.1.2",
+    "nsfw": "^2.2.4",
     "nyc": "^15.0.0",
     "puppeteer": "^2.0.0",
     "puppeteer-to-istanbul": "^1.2.2",
