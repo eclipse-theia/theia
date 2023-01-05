@@ -316,6 +316,14 @@ export function fromTextEdit(edit: theia.TextEdit): model.TextEdit {
     };
 }
 
+function fromSnippetTextEdit(edit: theia.SnippetTextEdit): model.TextEdit & { insertAsSnippet?: boolean } {
+    return {
+        text: edit.snippet.value,
+        range: fromRange(edit.range),
+        insertAsSnippet: true
+    };
+}
+
 export function convertDiagnosticToMarkerData(diagnostic: theia.Diagnostic): model.MarkerData {
     return {
         code: convertCode(diagnostic.code),
@@ -567,7 +575,7 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
             const workspaceTextEditDto: WorkspaceTextEditDto = {
                 resource: uri,
                 modelVersionId: doc?.version,
-                textEdit: uriOrEdits.map(fromTextEdit)[0],
+                textEdit: uriOrEdits.map(edit => (edit instanceof types.TextEdit) ? fromTextEdit(edit) : fromSnippetTextEdit(edit))[0],
                 metadata: entry[2] as types.WorkspaceEditMetadata
             };
             result.edits.push(workspaceTextEditDto);

@@ -1279,6 +1279,36 @@ export class NotebookRange implements theia.NotebookRange {
 
 }
 
+export class SnippetTextEdit implements theia.SnippetTextEdit {
+    range: Range;
+    snippet: SnippetString;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static isSnippetTextEdit(thing: any): thing is SnippetTextEdit {
+        if (thing instanceof SnippetTextEdit) {
+            return true;
+        }
+        if (!thing) {
+            return false;
+        }
+        return Range.isRange((<SnippetTextEdit>thing).range)
+            && SnippetString.isSnippetString((<SnippetTextEdit>thing).snippet);
+    }
+
+    static replace(range: Range, snippet: SnippetString): SnippetTextEdit {
+        return new SnippetTextEdit(range, snippet);
+    }
+
+    static insert(position: Position, snippet: SnippetString): SnippetTextEdit {
+        return SnippetTextEdit.replace(new Range(position, position), snippet);
+    }
+
+    constructor(range: Range, snippet: SnippetString) {
+        this.range = range;
+        this.snippet = snippet;
+    }
+}
+
 @es5ClassCompat
 export class NotebookEdit implements theia.NotebookEdit {
     range: theia.NotebookRange;
@@ -1623,11 +1653,17 @@ export interface WorkspaceEditMetadata {
     } | {
         light: URI;
         dark: URI;
-    };
+    } | ThemeIcon;
+}
+
+export const enum FileEditType {
+    File = 1,
+    Text = 2,
+    Snippet = 6,
 }
 
 export interface FileOperation {
-    _type: 1;
+    _type: FileEditType.File;
     from: URI | undefined;
     to: URI | undefined;
     options?: FileOperationOptions;
@@ -1635,16 +1671,26 @@ export interface FileOperation {
 }
 
 export interface FileTextEdit {
-    _type: 2;
+    _type: FileEditType.Text;
     uri: URI;
     edit: TextEdit;
     metadata?: WorkspaceEditMetadata;
 }
 
+export interface FileSnippetTextEdit {
+    readonly _type: FileEditType.Snippet;
+    readonly uri: URI;
+    readonly range: Range;
+    readonly edit: SnippetTextEdit;
+    readonly metadata?: theia.WorkspaceEditEntryMetadata;
+}
+
+type WorkspaceEditEntry = FileOperation | FileTextEdit | FileSnippetTextEdit | undefined;
+
 @es5ClassCompat
 export class WorkspaceEdit implements theia.WorkspaceEdit {
 
-    private _edits = new Array<FileOperation | FileTextEdit | undefined>();
+    private _edits = new Array<WorkspaceEditEntry>();
 
     renameFile(from: theia.Uri, to: theia.Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }, metadata?: WorkspaceEditMetadata): void {
         this._edits.push({ _type: 1, from, to, options, metadata });
@@ -1679,21 +1725,41 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
         return false;
     }
 
-    set(uri: URI, edits: TextEdit[]): void {
+    set(uri: URI, edits: ReadonlyArray<TextEdit | SnippetTextEdit>): void;
+    set(uri: URI, edits: ReadonlyArray<[TextEdit | SnippetTextEdit, theia.WorkspaceEditEntryMetadata]>): void;
+
+    set(uri: URI, edits: ReadonlyArray<TextEdit | SnippetTextEdit | [TextEdit | SnippetTextEdit, theia.WorkspaceEditEntryMetadata]>): void {
         if (!edits) {
             // remove all text edits for `uri`
             for (let i = 0; i < this._edits.length; i++) {
                 const element = this._edits[i];
-                if (element && element._type === 2 && element.uri.toString() === uri.toString()) {
+                if (element &&
+                    (element._type === FileEditType.Text || element._type === FileEditType.Snippet) &&
+                    element.uri.toString() === uri.toString()) {
                     this._edits[i] = undefined;
                 }
             }
             this._edits = this._edits.filter(e => !!e);
         } else {
             // append edit to the end
-            for (const edit of edits) {
-                if (edit) {
-                    this._edits.push({ _type: 2, uri, edit });
+            for (const editOrTuple of edits) {
+                if (!editOrTuple) {
+                    continue;
+                }
+
+                let edit: TextEdit | SnippetTextEdit;
+                let metadata: theia.WorkspaceEditEntryMetadata | undefined;
+                if (Array.isArray(editOrTuple)) {
+                    edit = editOrTuple[0];
+                    metadata = editOrTuple[1];
+                } else {
+                    edit = editOrTuple;
+                }
+
+                if (SnippetTextEdit.isSnippetTextEdit(edit)) {
+                    this._edits.push({ _type: FileEditType.Snippet, uri, range: edit.range, edit, metadata });
+                } else {
+                    this._edits.push({ _type: FileEditType.Text, uri, edit });
                 }
             }
         }
@@ -1715,7 +1781,7 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
     entries(): [URI, TextEdit[]][] {
         const textEdits = new Map<string, [URI, TextEdit[]]>();
         for (const candidate of this._edits) {
-            if (candidate && candidate._type === 2) {
+            if (candidate && candidate._type === FileEditType.Text) {
                 let textEdit = textEdits.get(candidate.uri.toString());
                 if (!textEdit) {
                     textEdit = [candidate.uri, []];
@@ -1729,13 +1795,13 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
         return result;
     }
 
-    _allEntries(): ([URI, TextEdit[], WorkspaceEditMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] {
-        const res: ([URI, TextEdit[], WorkspaceEditMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] = [];
+    _allEntries(): ([URI, Array<TextEdit | SnippetTextEdit>, theia.WorkspaceEditEntryMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] {
+        const res: ([URI, Array<TextEdit | SnippetTextEdit>, theia.WorkspaceEditEntryMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] = [];
         for (const edit of this._edits) {
             if (!edit) {
                 continue;
             }
-            if (edit._type === 1) {
+            if (edit._type === FileEditType.File) {
                 res.push([edit.from!, edit.to!, edit.options!, edit.metadata!]);
             } else {
                 res.push([edit.uri, [edit.edit], edit.metadata!]);
