@@ -180,6 +180,8 @@
     },
     "filesystem": {
       "copyDownloadLink": "Download-Link kopieren",
+      "prepareDownloadLink": "Download-Link wird vorbereitet...",
+      "prepareDownload": "Download wird vorbereitet...",
       "dialog": {
         "initialLocation": "Zum Ausgangsort gehen",
         "multipleItemMessage": "Sie können nur ein Element auswählen",

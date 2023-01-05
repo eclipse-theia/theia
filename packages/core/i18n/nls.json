@@ -179,6 +179,8 @@
       }
     },
     "filesystem": {
+      "prepareDownloadLink": "Preparing download link...",
+      "prepareDownload": "Preparing download...",
       "copyDownloadLink": "Copy Download Link",
       "dialog": {
         "initialLocation": "Go To Initial Location",
