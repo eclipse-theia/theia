@@ -388,7 +388,6 @@ export class DebugConfigurationManager {
         }
         const root = await this.quickPickService.show(items, {
             placeholder: nls.localize('theia/debug/addConfigurationPlaceholder', 'Select workspace root to add configuration to'),
-            ignoreFocusOut: true
         });
         return root?.value;
     }
