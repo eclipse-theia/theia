@@ -26,6 +26,7 @@ import { MonacoTextModelService } from './monaco-text-model-service';
 import { WillSaveMonacoModelEvent, MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
 import { ProblemManager } from '@theia/markers/lib/browser';
+import { ArrayUtils, MaybePromise } from '@theia/core/lib/common/types';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
 import * as monaco from '@theia/monaco-editor-core';
@@ -38,6 +39,7 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
 import { TextEdit } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import { SnippetController2 } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetController2';
 import { isObject, MaybePromise } from '@theia/core/lib/common';
 
 export namespace WorkspaceFileEdit {
@@ -229,7 +231,8 @@ export class MonacoWorkspace {
             let totalEdits = 0;
             let totalFiles = 0;
             const fileEdits = edits.filter(edit => edit instanceof MonacoResourceFileEdit);
-            const textEdits = edits.filter(edit => edit instanceof MonacoResourceTextEdit);
+            const [snippetEdits, textEdits] = ArrayUtils.partition(edits.filter(edit => edit instanceof MonacoResourceTextEdit) as MonacoResourceTextEdit[],
+                edit => edit.textEdit.insertAsSnippet && (edit.resource.toString() === this.editorManager.activeEditor?.getResourceUri()?.toString()));
 
             if (fileEdits.length > 0) {
                 await this.performFileEdits(<MonacoResourceFileEdit[]>fileEdits);
@@ -239,6 +242,10 @@ export class MonacoWorkspace {
                 const result = await this.performTextEdits(<MonacoResourceTextEdit[]>textEdits);
                 totalEdits += result.totalEdits;
                 totalFiles += result.totalFiles;
+            }
+
+            if (snippetEdits.length > 0) {
+                await this.performSnippetEdits(<MonacoResourceTextEdit[]>snippetEdits);
             }
 
             const ariaSummary = this.getAriaSummary(totalEdits, totalFiles);
@@ -364,6 +371,14 @@ export class MonacoWorkspace {
                 }
                 await this.fileService.create(new URI(edit.newResource), undefined, { overwrite: options.overwrite });
             }
+        }
+    }
+
+    private async performSnippetEdits(edits: MonacoResourceTextEdit[]): Promise<void> {
+        const activeEditor = MonacoEditor.getActive(this.editorManager)?.getControl();
+        if (activeEditor) {
+            const snippetController: SnippetController2 = activeEditor.getContribution('snippetController2')!;
+            snippetController.apply(edits.map(edit => ({ range: monaco.Range.lift(edit.textEdit.range), template: edit.textEdit.text })));
         }
     }
 
