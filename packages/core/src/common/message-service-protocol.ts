@@ -16,6 +16,7 @@
 
 import { injectable } from 'inversify';
 import { CancellationToken } from './cancellation';
+import { nls } from './nls';
 
 export const messageServicePath = '/services/messageService';
 
@@ -52,7 +53,7 @@ export interface ProgressMessage extends Message {
     readonly options?: ProgressMessageOptions;
 }
 export namespace ProgressMessage {
-    export const Cancel = 'Cancel';
+    export const Cancel = nls.localizeByDefault('Cancel');
     export function isCancelable(message: ProgressMessage): boolean {
         return !!message.options?.cancelable;
     }
