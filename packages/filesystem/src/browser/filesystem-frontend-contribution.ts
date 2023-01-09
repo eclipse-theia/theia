@@ -34,6 +34,7 @@ import { FileUploadService, FileUploadResult } from './file-upload-service';
 import { FileService, UserFileOperationEvent } from './file-service';
 import { FileChangesEvent, FileChangeType, FileOperation } from '../common/files';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { nls } from '@theia/core';
 
 export namespace FileSystemCommands {
 
@@ -267,7 +268,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         return targetUri && widget.createMoveToUri(targetUri);
     }
 
-    protected readonly deletedSuffix = ' (deleted)';
+    protected readonly deletedSuffix = nls.localizeByDefault('{0} (deleted)', '');
     protected async updateWidgets(event: FileChangesEvent): Promise<void> {
         if (!event.gotDeleted() && !event.gotAdded()) {
             return;
