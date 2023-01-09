@@ -17,7 +17,7 @@
 import { Terminal, RendererType } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, RpcProtocol, RequestHandler } from '@theia/core';
+import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, Channel } from '@theia/core';
 import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon, ExtractableWidget } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -67,7 +67,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected searchBox: TerminalSearchWidget;
     protected restored = false;
     protected closeOnDispose = true;
-    protected waitForConnection: Deferred<RpcProtocol> | undefined;
+    protected waitForConnection: Deferred<Channel> | undefined;
     protected linkHover: HTMLDivElement;
     protected linkHoverButton: HTMLAnchorElement;
     protected lastTouchEnd: TouchEvent | undefined;
@@ -566,23 +566,18 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.toDisposeOnConnect.dispose();
         this.toDispose.push(this.toDisposeOnConnect);
-        const waitForConnection = this.waitForConnection = new Deferred<RpcProtocol>();
+        const waitForConnection = this.waitForConnection = new Deferred<Channel>();
         this.webSocketConnectionProvider.listen({
             path: `${terminalsPath}/${this.terminalId}`,
             onConnection: connection => {
-                const requestHandler: RequestHandler = _method => this.logger.warn('Received an unhandled RPC request from the terminal process');
-
-                const rpc = new RpcProtocol(connection, requestHandler);
-                rpc.onNotification(event => {
-                    if (event.method === 'onData') {
-                        this.write(event.args[0]);
-                    }
+                connection.onMessage(e => {
+                    this.write(e().readString());
                 });
 
                 // Excludes the device status code emitted by Xterm.js
                 const sendData = (data?: string) => {
                     if (data && !this.deviceStatusCodes.has(data) && !this.disableEnterWhenAttachCloseListener()) {
-                        return rpc.sendRequest('write', [data]);
+                        connection.getWriteBuffer().writeString(data).commit();
                     }
                 };
 
@@ -593,7 +588,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 connection.onClose(() => disposable.dispose());
 
                 if (waitForConnection) {
-                    waitForConnection.resolve(rpc);
+                    waitForConnection.resolve(connection);
                 }
             }
         }, { reconnecting: false });
@@ -667,7 +662,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     sendText(text: string): void {
         if (this.waitForConnection) {
             this.waitForConnection.promise.then(connection =>
-                connection.sendRequest('write', [text])
+                connection.getWriteBuffer().writeString(text).commit()
             );
         }
     }
