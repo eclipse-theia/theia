@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Mutable } from '@theia/core';
-import { MarkdownStringImpl as BaseMarkdownString, MarkdownString as MarkdownStringInterface } from '@theia/core/lib/common/markdown-rendering';
+import { MarkdownStringImpl as BaseMarkdownString, MarkdownString as MarkdownStringInterface, MarkdownTrust } from '@theia/core/lib/common/markdown-rendering';
 import * as pluginAPI from '@theia/plugin';
 import { es5ClassCompat } from '../common/types';
 import { URI } from './types-impl';
@@ -49,11 +49,11 @@ export class MarkdownString implements pluginAPI.MarkdownString {
         this.#delegate.value = value;
     }
 
-    get isTrusted(): boolean | undefined {
+    get isTrusted(): MarkdownTrust | undefined {
         return this.#delegate.isTrusted;
     }
 
-    set isTrusted(value: boolean | undefined) {
+    set isTrusted(value: MarkdownTrust | undefined) {
         this.#delegate.isTrusted = value;
     }
 

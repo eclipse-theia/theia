@@ -661,8 +661,12 @@ export module '@theia/plugin' {
         /**
          * Indicates that this markdown string is from a trusted source. Only *trusted*
          * markdown supports links that execute commands, e.g. `[Run it](command:myCommandId)`.
+         *
+         * Defaults to `false` (commands are disabled).
+         *
+         * If this is an object, only the set of commands listed in `enabledCommands` are allowed.
          */
-        isTrusted?: boolean;
+        isTrusted?: boolean | { readonly enabledCommands: readonly string[] };
 
         /**
          * Indicates that this markdown string can contain {@link ThemeIcon ThemeIcons}, e.g. `$(zap)`.
@@ -2581,7 +2585,7 @@ export module '@theia/plugin' {
          * The priority of this item. Higher value means the item should
          * be shown more to the left.
          */
-        readonly priority: number;
+        readonly priority: number | undefined;
 
         /**
          * The name of the entry, like 'Python Language Indicator', 'Git Status' etc.
@@ -2641,7 +2645,8 @@ export module '@theia/plugin' {
         hide(): void;
 
         /**
-         * Dispose and free associated resources. Hide the entry in the status bar.
+         * Dispose and free associated resources. Call
+         * {@link StatusBarItem.hide hide}.
          */
         dispose(): void;
     }
@@ -3873,7 +3878,7 @@ export module '@theia/plugin' {
          *
          * Defaults to false.
          */
-        readonly enableCommandUris?: boolean;
+        readonly enableCommandUris?: boolean | readonly string[];
 
         /**
          * Root paths from which the webview can load local (filesystem) resources using the `theia-resource:` scheme.
@@ -3882,7 +3887,7 @@ export module '@theia/plugin' {
          *
          * Pass in an empty array to disallow access to any local resources.
          */
-        readonly localResourceRoots?: ReadonlyArray<Uri>;
+        readonly localResourceRoots?: readonly Uri[];
 
         /**
          * Mappings of localhost ports used inside the webview.
@@ -7548,7 +7553,7 @@ export module '@theia/plugin' {
          * This is `undefined` when signature help is not triggered by typing, such as when manually invoking
          * signature help or when moving the cursor.
          */
-        readonly triggerCharacter?: string;
+        readonly triggerCharacter: string | undefined;
 
         /**
          * `true` if signature help was already showing when it was triggered.
@@ -7564,7 +7569,7 @@ export module '@theia/plugin' {
          * The `activeSignatureHelp` has its [`SignatureHelp.activeSignature`] field updated based on
          * the user arrowing through available signatures.
          */
-        readonly activeSignatureHelp?: SignatureHelp;
+        readonly activeSignatureHelp: SignatureHelp | undefined;
     }
 
     /**
@@ -12422,7 +12427,7 @@ export module '@theia/plugin' {
         /**
          * The ordered comments of the thread.
          */
-        comments: ReadonlyArray<Comment>;
+        comments: readonly Comment[];
 
         /**
          * Whether the thread should be collapsed or expanded when opening the document.

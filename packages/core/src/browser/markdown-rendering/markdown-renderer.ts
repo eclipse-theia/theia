@@ -17,12 +17,12 @@
 import * as DOMPurify from 'dompurify';
 import { injectable, inject, postConstruct } from 'inversify';
 import * as markdownit from 'markdown-it';
-import { MarkdownString } from '../../common/markdown-rendering/markdown-string';
+import { MarkdownString, MarkdownTrust } from '../../common/markdown-rendering/markdown-string';
 import { Disposable, DisposableGroup } from '../../common';
 import { LabelParser } from '../label-parser';
 import { codicon } from '../widgets';
 
-// #region Copied from Copied from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/base/browser/formattedTextRenderer.ts
+// #region Copied from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/base/browser/formattedTextRenderer.ts
 export interface ContentActionHandler {
     callback: (content: string, event?: MouseEvent) => void;
     readonly disposables: DisposableGroup;
@@ -37,7 +37,7 @@ export interface FormattedTextRenderOptions {
 
 // #endregion
 
-// #region Copied from Copied from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/base/browser/markdownRenderer.ts
+// #region Copied from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/base/browser/markdownRenderer.ts
 
 export interface MarkdownRenderResult extends Disposable {
     element: HTMLElement;
@@ -76,6 +76,7 @@ export class MarkdownRendererImpl implements MarkdownRenderer {
     render(markdown: MarkdownString | undefined, options?: MarkdownRenderOptions): MarkdownRenderResult {
         const host = document.createElement('div');
         if (markdown) {
+            this.updateMarkdownTrust(markdown.isTrusted);
             const html = this.markdownIt.render(markdown.value);
             host.innerHTML = DOMPurify.sanitize(html, {
                 ALLOW_UNKNOWN_PROTOCOLS: true // DOMPurify usually strips non http(s) links from hrefs
@@ -94,5 +95,28 @@ export class MarkdownRendererImpl implements MarkdownRenderer {
                 return `<i class="${codicon(chunk.name)} ${chunk.animation ? `fa-${chunk.animation}` : ''} icon-inline"></i>`;
             }).join('');
         };
+    }
+
+    protected updateMarkdownTrust(trust?: MarkdownTrust): void {
+        if (trust === true) {
+            this.markdownIt.validateLink = url => this.validateLink(url);
+        } else if (trust === undefined || trust === false) {
+            this.markdownIt.validateLink = url => this.validateLink(url, []);
+        } else {
+            const commands = trust.enabledCommands;
+            this.markdownIt.validateLink = url => this.validateLink(url, commands);
+        }
+    }
+
+    protected validateLink(url: string, enabledCommands?: readonly string[]): boolean {
+        const illegalSchemes = ['javascript:', 'vbscript:', 'data:'];
+        if (illegalSchemes.some(scheme => url.startsWith(scheme))) {
+            return false;
+        }
+        if (url.startsWith('command:') && enabledCommands) {
+            const id = url.substring('command:'.length);
+            return enabledCommands.includes(id);
+        }
+        return true;
     }
 }

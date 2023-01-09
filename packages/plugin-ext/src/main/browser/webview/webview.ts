@@ -76,7 +76,7 @@ export interface WebviewContentOptions {
     readonly allowForms?: boolean;
     readonly localResourceRoots?: ReadonlyArray<string>;
     readonly portMapping?: ReadonlyArray<WebviewPortMapping>;
-    readonly enableCommandUris?: boolean;
+    readonly enableCommandUris?: boolean | readonly string[];
 }
 
 @injectable()
@@ -441,17 +441,21 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
     }
 
     protected toSupportedLink(link: URI): URI | undefined {
+        const linkAsString = link.toString();
         if (WebviewWidget.standardSupportedLinkSchemes.has(link.scheme)) {
-            const linkAsString = link.toString();
             for (const resourceRoot of [this.externalEndpoint + '/theia-resource', this.externalEndpoint + '/vscode-resource']) {
                 if (linkAsString.startsWith(resourceRoot + '/')) {
-                    return this.normalizeRequestUri(linkAsString.substr(resourceRoot.length));
+                    return this.normalizeRequestUri(linkAsString.substring(resourceRoot.length));
                 }
             }
             return link;
         }
-        if (!!this.contentOptions.enableCommandUris && link.scheme === Schemes.command) {
-            return link;
+        if (link.scheme === Schemes.command) {
+            const enableCommands = this.contentOptions.enableCommandUris;
+            const commandId = linkAsString.substring('command:'.length);
+            if (enableCommands === true || (Array.isArray(enableCommands) && enableCommands.includes(commandId))) {
+                return link;
+            }
         }
         return undefined;
     }
