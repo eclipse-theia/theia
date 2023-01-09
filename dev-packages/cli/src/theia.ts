@@ -343,7 +343,12 @@ async function theiaCli(): Promise<void> {
                 'parallel': {
                     describe: 'Download in parallel',
                     boolean: true,
-                    default: false
+                    default: true
+                },
+                'rate-limit': {
+                    describe: 'Amount of maximum open-vsx requests per second',
+                    number: true,
+                    default: 15
                 },
                 'proxy-url': {
                     describe: 'Proxy URL'
