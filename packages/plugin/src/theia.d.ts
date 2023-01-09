@@ -3002,6 +3002,11 @@ export module '@theia/plugin' {
         message?: string;
 
         /**
+         * The {@link TerminalLocation} or {@link TerminalEditorLocationOptions} or {@link TerminalSplitLocationOptions} for the terminal.
+         */
+        location?: TerminalLocation | TerminalEditorLocationOptions | TerminalSplitLocationOptions;
+
+        /**
          * Terminal attributes. Can be useful to apply some implementation specific information.
          */
         attributes?: { [key: string]: string | null };
@@ -3067,6 +3072,11 @@ export module '@theia/plugin' {
          * control it.
          */
         pty: Pseudoterminal;
+
+        /**
+         * The {@link TerminalLocation} or {@link TerminalEditorLocationOptions} or {@link TerminalSplitLocationOptions} for the terminal.
+         */
+        location?: TerminalLocation | TerminalEditorLocationOptions | TerminalSplitLocationOptions;
     }
 
     /**
@@ -3205,6 +3215,50 @@ export module '@theia/plugin' {
          * depending on OS, user settings, and localization.
          */
         constructor(startIndex: number, length: number, tooltip?: string);
+    }
+
+    /**
+     * The location of the {@link Terminal}.
+     */
+    export enum TerminalLocation {
+        /**
+         * In the terminal view
+         */
+        Panel = 1,
+        /**
+         * In the editor area
+         */
+        Editor = 2,
+    }
+
+    /**
+     * Assumes a {@link TerminalLocation} of editor and allows specifying a {@link ViewColumn} and
+     * {@link TerminalEditorLocationOptions.preserveFocus preserveFocus } property
+     */
+    export interface TerminalEditorLocationOptions {
+        /**
+         * A view column in which the {@link Terminal terminal} should be shown in the editor area.
+         * Use {@link ViewColumn.Active active} to open in the active editor group, other values are
+         * adjusted to be `Min(column, columnCount + 1)`, the
+         * {@link ViewColumn.Active active}-column is not adjusted. Use
+         * {@linkcode ViewColumn.Beside} to open the editor to the side of the currently active one.
+         */
+        viewColumn: ViewColumn;
+        /**
+         * An optional flag that when `true` will stop the {@link Terminal} from taking focus.
+         */
+        preserveFocus?: boolean;
+    }
+
+    /**
+     * Uses the parent {@link Terminal}'s location for the terminal
+     */
+    export interface TerminalSplitLocationOptions {
+        /**
+         * The parent terminal to split this terminal beside. This works whether the parent terminal
+         * is in the panel or the editor area.
+         */
+        parentTerminal: Terminal;
     }
 
     /**

@@ -25,7 +25,8 @@ import {
     isOSX,
     SelectionService,
     Emitter,
-    Event
+    Event,
+    ViewColumn
 } from '@theia/core/lib/common';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager,
@@ -36,7 +37,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl } from './terminal-widget-impl';
 import { TerminalKeybindingContexts } from './terminal-keybinding-contexts';
 import { TerminalService } from './base/terminal-service';
-import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget, TerminalLocation } from './base/terminal-widget';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import URI from '@theia/core/lib/common/uri';
@@ -644,20 +645,46 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     // TODO: reuse WidgetOpenHandler.open
     open(widget: TerminalWidget, options?: WidgetOpenerOptions): void {
+        const area = widget.location === TerminalLocation.Editor ? 'main' : 'bottom';
+        const widgetOptions: ApplicationShell.WidgetOptions = { area: area, ...options?.widgetOptions };
+        let preserveFocus = false;
+
+        if (typeof widget.location === 'object') {
+            if ('parentTerminal' in widget.location) {
+                widgetOptions.ref = this.getById(widget.location.parentTerminal);
+                widgetOptions.mode = 'split-right';
+            } else if ('viewColumn' in widget.location) {
+                preserveFocus = widget.location.preserveFocus ?? false;
+                switch (widget.location.viewColumn) {
+                    case ViewColumn.Active:
+                        widgetOptions.ref = this.shell.currentWidget;
+                        widgetOptions.mode = 'tab-after';
+                        break;
+                    case ViewColumn.Beside:
+                        widgetOptions.ref = this.shell.currentWidget;
+                        widgetOptions.mode = 'split-right';
+                        break;
+                    default:
+                        widgetOptions.area = 'main';
+                        const mainAreaTerminals = this.shell.getWidgets('main').filter(w => w instanceof TerminalWidget && w.isVisible);
+                        const column = Math.min(widget.location.viewColumn, mainAreaTerminals.length);
+                        widgetOptions.mode = widget.location.viewColumn <= mainAreaTerminals.length ? 'split-left' : 'split-right';
+                        widgetOptions.ref = mainAreaTerminals[column - 1];
+                }
+            }
+        }
+
         const op: WidgetOpenerOptions = {
             mode: 'activate',
             ...options,
-            widgetOptions: {
-                area: 'bottom',
-                ...(options && options.widgetOptions)
-            }
+            widgetOptions: widgetOptions
         };
         if (!widget.isAttached) {
             this.shell.addWidget(widget, op.widgetOptions);
         }
-        if (op.mode === 'activate') {
+        if (op.mode === 'activate' && !preserveFocus) {
             this.shell.activateWidget(widget.id);
-        } else if (op.mode === 'reveal') {
+        } else if (op.mode === 'reveal' || preserveFocus) {
             this.shell.revealWidget(widget.id);
         }
     }

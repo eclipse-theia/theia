@@ -43,6 +43,7 @@ export * from './contribution-filter';
 export * from './nls';
 export * from './numbers';
 export * from './performance';
+export * from './view-column';
 
 import { environment } from '@theia/application-package/lib/environment';
 export { environment };

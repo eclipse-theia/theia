@@ -25,7 +25,7 @@ import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/s
 import { terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalServer, TerminalProcessInfo } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus } from './base/terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus, TerminalLocationOptions, TerminalLocation } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE, CursorStyle } from './terminal-preferences';
 import URI from '@theia/core/lib/common/uri';
@@ -53,6 +53,7 @@ export interface TerminalContribution {
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget, ExtractableWidget {
     readonly isExtractable: boolean = true;
     secondaryWindow: Window | undefined;
+    location: TerminalLocationOptions;
 
     static LABEL = nls.localizeByDefault('Terminal');
 
@@ -127,6 +128,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 this.term.dispose()
             ));
         }
+
+        this.location = this.options.location || TerminalLocation.Panel;
 
         this.title.closable = true;
         this.addClass('terminal-container');

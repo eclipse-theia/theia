@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event } from '@theia/core';
+import { Event, ViewColumn } from '@theia/core';
 import { BaseWidget } from '@theia/core/lib/browser';
 import { CommandLineOptions } from '@theia/process/lib/common/shell-command-builder';
 import { TerminalSearchWidget } from '../search/terminal-search-widget';
@@ -30,13 +30,28 @@ export interface TerminalExitStatus {
     readonly code: number | undefined;
 }
 
+export type TerminalLocationOptions = TerminalLocation | TerminalEditorLocation | TerminalSplitLocation;
+
+export enum TerminalLocation {
+    Panel = 1,
+    Editor = 2
+}
+
+export interface TerminalEditorLocation {
+    readonly viewColumn: ViewColumn;
+    readonly preserveFocus?: boolean;
+}
+
+export interface TerminalSplitLocation {
+    readonly parentTerminal: string;
+}
+
 /**
  * Terminal UI widget.
  */
 export abstract class TerminalWidget extends BaseWidget {
 
     abstract processId: Promise<number>;
-
     /**
      * Get the current executable and arguments.
      */
@@ -53,6 +68,9 @@ export abstract class TerminalWidget extends BaseWidget {
 
     /** Terminal widget can be hidden from users until explicitly shown once. */
     abstract readonly hiddenFromUser: boolean;
+
+    /** The position of the terminal widget. */
+    abstract readonly location: TerminalLocationOptions;
 
     /** The last CWD assigned to the terminal, useful when attempting getCwdURI on a task terminal fails */
     lastCwd: URI;
@@ -211,4 +229,6 @@ export interface TerminalWidgetOptions {
      * When enabled the terminal will run the process as normal but not be surfaced to the user until `Terminal.show` is called.
      */
     readonly hideFromUser?: boolean;
+
+    readonly location?: TerminalLocationOptions;
 }

@@ -16,9 +16,9 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { TerminalOptions } from '@theia/plugin';
 import { CancellationToken } from '@theia/core/shared/vscode-languageserver-protocol';
-import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalEditorLocationOptions, TerminalOptions } from '@theia/plugin';
+import { TerminalLocation, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
@@ -122,7 +122,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         terminal.resize(cols, rows);
     }
 
-    async $createTerminal(id: string, options: TerminalOptions, isPseudoTerminal?: boolean): Promise<string> {
+    async $createTerminal(id: string, options: TerminalOptions, parentId?: string, isPseudoTerminal?: boolean): Promise<string> {
         try {
             const terminal = await this.terminals.newTerminal({
                 id,
@@ -136,6 +136,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
                 useServerTitle: false,
                 attributes: options.attributes,
                 hideFromUser: options.hideFromUser,
+                location: this.getTerminalLocation(options, parentId),
                 isPseudoTerminal
             });
             if (options.message) {
@@ -146,6 +147,23 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         } catch (error) {
             throw new Error('Failed to create terminal. Cause: ' + error);
         }
+    }
+
+    protected getTerminalLocation(options: TerminalOptions, parentId?: string): TerminalLocation | TerminalEditorLocationOptions | { parentTerminal: string; } | undefined {
+        if (typeof options.location === 'number' && Object.values(TerminalLocation).includes(options.location)) {
+            return options.location;
+        } else if (options.location && typeof options.location === 'object') {
+            if ('parentTerminal' in options.location) {
+                if (!parentId) {
+                    throw new Error('parentTerminal is set but no parentId is provided');
+                }
+                return { 'parentTerminal': parentId };
+            } else {
+                return options.location;
+            }
+        }
+
+        return undefined;
     }
 
     $sendText(id: string, text: string, addNewLine?: boolean): void {
