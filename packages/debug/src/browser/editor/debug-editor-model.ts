@@ -20,6 +20,7 @@ import * as monaco from '@theia/monaco-editor-core';
 import { IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
 import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
+import { IEditorHoverOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection, MenuPath, isOSX } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
@@ -146,7 +147,7 @@ export class DebugEditorModel implements Disposable {
                     resource: model.uri,
                     overrideIdentifier: model.getLanguageId(),
                 };
-                const { enabled, delay, sticky } = this.configurationService.getValue('editor.hover', overrides);
+                const { enabled, delay, sticky } = this.configurationService.getValue<IEditorHoverOptions>('editor.hover', overrides);
                 codeEditor.updateOptions({
                     hover: {
                         enabled,

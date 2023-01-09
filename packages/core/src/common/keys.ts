@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { isOSX } from './os';
+import { isObject } from './types';
 
 export type KeySequence = KeyCode[];
 export namespace KeySequence {
@@ -489,7 +490,7 @@ export namespace SpecialCases {
 export namespace Key {
 
     export function isKey(arg: unknown): arg is Key {
-        return !!arg && typeof arg === 'object' && 'code' in arg && 'keyCode' in arg;
+        return isObject(arg) && 'code' in arg && 'keyCode' in arg;
     }
 
     export function getKey(arg: string | number): Key | undefined {

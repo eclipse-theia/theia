@@ -16,6 +16,7 @@
 
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { SelectionCommandHandler } from '@theia/core/lib/common/selection-command-handler';
+import { isObject } from '@theia/core/lib/common';
 import { Marker } from '../../common/marker';
 import { ProblemMarker } from '../../common/problem-marker';
 
@@ -24,7 +25,7 @@ export interface ProblemSelection {
 }
 export namespace ProblemSelection {
     export function is(arg: unknown): arg is ProblemSelection {
-        return !!arg && typeof arg === 'object' && ('marker' in arg) && ProblemMarker.is((arg as ProblemSelection).marker);
+        return isObject<ProblemSelection>(arg) && ProblemMarker.is(arg.marker);
     }
 
     export class CommandHandler extends SelectionCommandHandler<ProblemSelection> {

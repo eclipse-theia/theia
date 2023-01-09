@@ -26,7 +26,6 @@ import { MonacoTextModelService } from './monaco-text-model-service';
 import { WillSaveMonacoModelEvent, MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
 import { ProblemManager } from '@theia/markers/lib/browser';
-import { MaybePromise } from '@theia/core/lib/common/types';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
 import * as monaco from '@theia/monaco-editor-core';
@@ -37,6 +36,7 @@ import {
 import { IEditorWorkerService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { isObject, MaybePromise } from '@theia/core/lib/common';
 
 export namespace WorkspaceFileEdit {
     export function is(arg: Edit): arg is monaco.languages.IWorkspaceFileEdit {
@@ -47,12 +47,9 @@ export namespace WorkspaceFileEdit {
 
 export namespace WorkspaceTextEdit {
     export function is(arg: Edit): arg is monaco.languages.IWorkspaceTextEdit {
-        return !!arg && typeof arg === 'object'
-            && 'resource' in arg
+        return isObject<monaco.languages.IWorkspaceTextEdit>(arg)
             && monaco.Uri.isUri(arg.resource)
-            && 'textEdit' in arg
-            && arg.textEdit !== null
-            && typeof arg.textEdit === 'object';
+            && isObject(arg.textEdit);
     }
 }
 
@@ -60,8 +57,7 @@ export type Edit = monaco.languages.IWorkspaceFileEdit | monaco.languages.IWorks
 
 export namespace ResourceFileEdit {
     export function is(arg: ResourceEdit): arg is MonacoResourceFileEdit {
-        return typeof arg === 'object' && (('oldResource' in arg) && monaco.Uri.isUri((arg as MonacoResourceFileEdit).oldResource)) ||
-            ('newResource' in arg && monaco.Uri.isUri((arg as MonacoResourceFileEdit).newResource));
+        return isObject<MonacoResourceFileEdit>(arg) && (monaco.Uri.isUri(arg.oldResource) || monaco.Uri.isUri(arg.newResource));
     }
 }
 

@@ -18,8 +18,7 @@ import { inject, injectable, named, postConstruct } from 'inversify';
 import * as fileIcons from 'file-icons-js';
 import URI from '../common/uri';
 import { ContributionProvider } from '../common/contribution-provider';
-import { Prioritizeable } from '../common/types';
-import { Event, Emitter, Disposable, Path } from '../common';
+import { Event, Emitter, Disposable, isObject, Path, Prioritizeable } from '../common';
 import { FrontendApplicationContribution } from './frontend-application';
 import { EnvVariablesServer } from '../common/env-variables/env-variables-protocol';
 import { ResourceLabelFormatter, ResourceLabelFormatting } from '../common/label-protocol';
@@ -99,7 +98,7 @@ export interface URIIconReference {
 }
 export namespace URIIconReference {
     export function is(element: unknown): element is URIIconReference {
-        return !!element && typeof element === 'object' && 'kind' in element && (element as URIIconReference).kind === 'uriIconReference';
+        return isObject(element) && element.kind === 'uriIconReference';
     }
     export function create(id: URIIconReference['id'], uri?: URI): URIIconReference {
         return { kind: 'uriIconReference', id, uri };

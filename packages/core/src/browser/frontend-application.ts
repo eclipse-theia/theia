@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, Stopwatch } from '../common';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, Stopwatch, isObject } from '../common';
 import { MaybePromise } from '../common/types';
 import { KeybindingRegistry } from './keybinding';
 import { Widget } from './widgets';
@@ -101,7 +101,7 @@ export interface OnWillStopAction<T = unknown> {
 
 export namespace OnWillStopAction {
     export function is(candidate: unknown): candidate is OnWillStopAction {
-        return typeof candidate === 'object' && !!candidate && 'action' in candidate && 'reason' in candidate;
+        return isObject(candidate) && 'action' in candidate && 'reason' in candidate;
     }
 }
 

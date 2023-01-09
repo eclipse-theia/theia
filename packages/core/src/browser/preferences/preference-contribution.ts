@@ -26,7 +26,7 @@ import { FrontendApplicationConfigProvider } from '../frontend-application-confi
 import { FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import { bindPreferenceConfigurations, PreferenceConfigurations } from './preference-configurations';
 export { PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty };
-import { Mutable } from '../../common/types';
+import { isObject, Mutable } from '../../common/types';
 import { PreferenceLanguageOverrideService } from './preference-language-override-service';
 import { JSONValue } from '@phosphor/coreutils';
 
@@ -80,7 +80,7 @@ export interface FrontendApplicationPreferenceConfig extends FrontendApplication
 }
 export namespace FrontendApplicationPreferenceConfig {
     export function is(config: FrontendApplicationConfig): config is FrontendApplicationPreferenceConfig {
-        return 'preferences' in config && typeof config['preferences'] === 'object';
+        return isObject(config.preferences);
     }
 }
 

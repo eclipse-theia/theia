@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { Range } from 'vscode-languageserver-protocol';
+import { isNumber, isObject, isString, isUndefined } from './types';
 
 export interface TextDocumentContentChangeDelta {
     readonly range: Range;
@@ -24,12 +25,10 @@ export interface TextDocumentContentChangeDelta {
 export namespace TextDocumentContentChangeDelta {
 
     export function is(arg: unknown): arg is TextDocumentContentChangeDelta {
-        const changeDelta = arg as TextDocumentContentChangeDelta;
-        return !!changeDelta
-            && typeof changeDelta === 'object'
-            && typeof changeDelta.text === 'string'
-            && (typeof changeDelta.rangeLength === 'number' || typeof changeDelta.rangeLength === 'undefined')
-            && Range.is(changeDelta.range);
+        return isObject<TextDocumentContentChangeDelta>(arg)
+            && isString(arg.text)
+            && (isNumber(arg.rangeLength) || isUndefined(arg.rangeLength))
+            && Range.is(arg.range);
     }
 
 }

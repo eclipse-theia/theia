@@ -19,7 +19,7 @@
 import { injectable, decorate, unmanaged } from 'inversify';
 import { Title, Widget } from '@phosphor/widgets';
 import { Message, MessageLoop } from '@phosphor/messaging';
-import { Emitter, Event, Disposable, DisposableCollection, MaybePromise } from '../../common';
+import { Emitter, Event, Disposable, DisposableCollection, MaybePromise, isObject } from '../../common';
 import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
 
 import PerfectScrollbar from 'perfect-scrollbar';
@@ -248,7 +248,7 @@ export interface EventListenerObject<K extends keyof HTMLElementEventMap> {
 }
 export namespace EventListenerObject {
     export function is<K extends keyof HTMLElementEventMap>(listener: unknown): listener is EventListenerObject<K> {
-        return !!listener && typeof listener === 'object' && 'handleEvent' in listener;
+        return isObject(listener) && 'handleEvent' in listener;
     }
 }
 export type EventListenerOrEventListenerObject<K extends keyof HTMLElementEventMap> = EventListener<K> | EventListenerObject<K>;
