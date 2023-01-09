@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from 'react';
-import { ArrayUtils, Event, Is, MenuPath } from '../../../common';
+import { ArrayUtils, Event, isFunction, isObject, isString, MenuPath } from '../../../common';
 import { Widget } from '../../widgets';
 
 /** Items whose group is exactly 'navigation' will be rendered inline. */
@@ -28,7 +28,7 @@ export interface TabBarDelegator extends Widget {
 
 export namespace TabBarDelegator {
     export function is(candidate?: Widget): candidate is TabBarDelegator {
-        return Is.object<TabBarDelegator>(candidate) && Is.func(candidate.getTabBarDelegate);
+        return isObject<TabBarDelegator>(candidate) && isFunction(candidate.getTabBarDelegate);
     }
 }
 
@@ -168,7 +168,7 @@ export namespace TabBarToolbarItem {
     };
 
     export function is(arg: unknown): arg is TabBarToolbarItem {
-        return Is.object<TabBarToolbarItem>(arg) && Is.string(arg.command);
+        return isObject<TabBarToolbarItem>(arg) && isString(arg.command);
     }
 
 }

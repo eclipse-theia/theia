@@ -26,7 +26,7 @@ import { BinaryBuffer, BinaryBufferReadableStream } from '@theia/core/lib/common
 import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ReadableStreamEvents } from '@theia/core/lib/common/stream';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
-import { Is } from '@theia/core/lib/common/is';
+import { isObject } from '@theia/core/lib/common';
 
 export const enum FileOperation {
     CREATE,
@@ -202,7 +202,7 @@ export interface BaseStat {
 }
 export namespace BaseStat {
     export function is(arg: unknown): arg is BaseStat {
-        return Is.object<BaseStat>(arg)
+        return isObject<BaseStat>(arg)
             && arg.resource instanceof URI
             && typeof arg.name === 'string';
     }

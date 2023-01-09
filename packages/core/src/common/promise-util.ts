@@ -17,7 +17,7 @@
 import { Disposable } from './disposable';
 import { Event } from './event';
 import { CancellationToken, CancellationError, cancelled } from './cancellation';
-import { Is } from './is';
+import { isFunction, isObject } from './types';
 
 /**
  * Simple implementation of the deferred pattern.
@@ -127,5 +127,5 @@ export function waitForEvent<T>(event: Event<T>, ms: number, thisArg?: any, disp
 }
 
 export function isThenable<T>(obj: unknown): obj is Promise<T> {
-    return Is.object<Promise<unknown>>(obj) && Is.func(obj.then);
+    return isObject<Promise<unknown>>(obj) && isFunction(obj.then);
 }

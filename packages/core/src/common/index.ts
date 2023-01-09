@@ -14,37 +14,36 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './types';
-export * from './disposable';
-export * from './reference';
-export * from './event';
+export { environment } from '@theia/application-package/lib/environment';
+export * from './application-error';
 export * from './cancellation';
 export * from './command';
-export * from './menu';
-export * from './selection-service';
-export * from './objects';
-export * from './os';
-export * from './resource';
+export * from './contribution-filter';
 export * from './contribution-provider';
-export * from './path';
+export * from './disposable';
+export * from './event';
 export * from './logger';
-export * from './messaging';
+export * from './lsp-types';
+export * from './menu';
 export * from './message-rpc';
 export * from './message-service';
 export * from './message-service-protocol';
+export * from './messaging';
+export * from './nls';
+export * from './numbers';
+export * from './objects';
+export * from './os';
+export * from './path';
+export * from './performance';
 export * from './progress-service';
 export * from './progress-service-protocol';
 export * from './quick-pick-service';
+export * from './reference';
+export * from './resource';
 export * from './selection';
+export * from './selection-service';
 export * from './strings';
-export * from './application-error';
-export * from './lsp-types';
-export * from './contribution-filter';
-export * from './nls';
-export * from './numbers';
-export * from './performance';
+export * from './types';
+export { default as URI } from './uri';
 export * from './view-column';
-export * from './is';
 
-import { environment } from '@theia/application-package/lib/environment';
-export { environment };

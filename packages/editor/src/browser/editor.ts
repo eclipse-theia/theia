@@ -17,7 +17,7 @@
 import { Position, Range, Location } from '@theia/core/shared/vscode-languageserver-protocol';
 import * as lsp from '@theia/core/shared/vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
-import { Event, Disposable, TextDocumentContentChangeDelta, Reference, Is } from '@theia/core/lib/common';
+import { Event, Disposable, TextDocumentContentChangeDelta, Reference, isObject } from '@theia/core/lib/common';
 import { Saveable, Navigatable, Widget } from '@theia/core/lib/browser';
 import { EditorDecoration } from './decorations/editor-decoration';
 
@@ -331,7 +331,7 @@ export interface ReplaceOperation {
 
 export namespace TextEditorSelection {
     export function is(arg: unknown): arg is TextEditorSelection {
-        return Is.object<TextEditorSelection>(arg) && arg.uri instanceof URI;
+        return isObject<TextEditorSelection>(arg) && arg.uri instanceof URI;
     }
 }
 

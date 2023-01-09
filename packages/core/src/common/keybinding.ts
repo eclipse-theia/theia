@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Is } from './is';
+import { isObject } from './types';
 
 /**
  * A Keybinding binds a specific key sequence ({@link Keybinding#keybinding}) to trigger a command ({@link Keybinding#command}). A Keybinding optionally may
@@ -105,7 +105,7 @@ export namespace Keybinding {
 
     /* Determine whether object is a KeyBinding */
     export function is(arg: unknown): arg is Keybinding {
-        return Is.object(arg) && 'command' in arg && 'keybinding' in arg;
+        return isObject(arg) && 'command' in arg && 'keybinding' in arg;
     }
 }
 
@@ -121,6 +121,6 @@ export interface RawKeybinding extends Omit<Keybinding, 'keybinding'> {
 
 export namespace RawKeybinding {
     export function is(candidate: unknown): candidate is RawKeybinding {
-        return Is.object(candidate) && 'command' in candidate && 'key' in candidate;
+        return isObject(candidate) && 'command' in candidate && 'key' in candidate;
     }
 }

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Is } from '@theia/core/lib/common/is';
+import { isObject } from '@theia/core/lib/common';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { OpenFileDialogProps } from '@theia/filesystem/lib/browser';
@@ -32,7 +32,7 @@ export interface FileNodeTypeDetails {
 
 export namespace FileNodeTypeDetails {
     export function is(typeDetails: unknown): typeDetails is FileNodeTypeDetails {
-        return Is.object<FileNodeTypeDetails>(typeDetails) && !!typeDetails.isFilepath;
+        return isObject<FileNodeTypeDetails>(typeDetails) && !!typeDetails.isFilepath;
     }
 }
 

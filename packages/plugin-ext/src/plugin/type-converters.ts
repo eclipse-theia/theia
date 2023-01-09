@@ -28,7 +28,7 @@ import * as types from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { isReadonlyArray } from '../common/arrays';
 import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
-import { Is } from '@theia/core/lib/common/is';
+import { isObject } from '@theia/core/lib/common';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -137,7 +137,7 @@ export function toPosition(position: Position): types.Position {
 }
 
 function isDecorationOptions(arg: unknown): arg is theia.DecorationOptions {
-    return Is.object<theia.DecorationOptions>(arg) && typeof arg.range !== 'undefined';
+    return isObject<theia.DecorationOptions>(arg) && typeof arg.range !== 'undefined';
 }
 
 export function isDecorationOptionsArr(something: theia.Range[] | theia.DecorationOptions[]): something is theia.DecorationOptions[] {
@@ -181,7 +181,7 @@ interface Codeblock {
 }
 
 function isCodeblock(arg: unknown): arg is Codeblock {
-    return Is.object<Codeblock>(arg)
+    return isObject<Codeblock>(arg)
         && typeof arg.language === 'string'
         && typeof arg.value === 'string';
 }
@@ -678,13 +678,13 @@ export function toSymbolTag(kind: model.SymbolTag): types.SymbolTag {
 }
 
 export function isModelLocation(arg: unknown): arg is model.Location {
-    return Is.object<model.Location>(arg) &&
+    return isObject<model.Location>(arg) &&
         isModelRange(arg.range) &&
         isUriComponents(arg.uri);
 }
 
 export function isModelRange(arg: unknown): arg is model.Range {
-    return Is.object<model.Range>(arg) &&
+    return isObject<model.Range>(arg) &&
         typeof arg.startLineNumber === 'number' &&
         typeof arg.startColumn === 'number' &&
         typeof arg.endLineNumber === 'number' &&
@@ -692,7 +692,7 @@ export function isModelRange(arg: unknown): arg is model.Range {
 }
 
 export function isUriComponents(arg: unknown): arg is UriComponents {
-    return Is.object<UriComponents>(arg) &&
+    return isObject<UriComponents>(arg) &&
         typeof arg.scheme === 'string' &&
         typeof arg.path === 'string' &&
         typeof arg.query === 'string' &&
@@ -700,7 +700,7 @@ export function isUriComponents(arg: unknown): arg is UriComponents {
 }
 
 export function isModelCallHierarchyItem(arg: unknown): arg is model.CallHierarchyItem {
-    return Is.object<model.CallHierarchyItem>(arg)
+    return isObject<model.CallHierarchyItem>(arg)
         && isModelRange(arg.range)
         && isModelRange(arg.selectionRange)
         && isUriComponents(arg.uri)
@@ -708,14 +708,14 @@ export function isModelCallHierarchyItem(arg: unknown): arg is model.CallHierarc
 }
 
 export function isModelCallHierarchyIncomingCall(arg: unknown): arg is model.CallHierarchyIncomingCall {
-    return Is.object<model.CallHierarchyIncomingCall>(arg) &&
+    return isObject<model.CallHierarchyIncomingCall>(arg) &&
         'from' in arg &&
         'fromRanges' in arg &&
         isModelCallHierarchyItem(arg.from);
 }
 
 export function isModelCallHierarchyOutgoingCall(arg: unknown): arg is model.CallHierarchyOutgoingCall {
-    return Is.object<model.CallHierarchyOutgoingCall>(arg) &&
+    return isObject<model.CallHierarchyOutgoingCall>(arg) &&
         'to' in arg &&
         'fromRanges' in arg &&
         isModelCallHierarchyItem(arg.to);
@@ -772,7 +772,7 @@ export function toCallHierarchyOutgoingCall(value: model.CallHierarchyOutgoingCa
 }
 
 export function isModelTypeHierarchyItem(arg: unknown): arg is model.TypeHierarchyItem {
-    return Is.object<model.TypeHierarchyItem>(arg)
+    return isObject<model.TypeHierarchyItem>(arg)
         && isModelRange(arg.range)
         && isModelRange(arg.selectionRange)
         && isUriComponents(arg.uri)

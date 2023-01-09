@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Disposable } from '../disposable';
-import { Is } from '../is';
+import { isObject } from '../types';
 
 export type MenuPath = string[];
 export const MAIN_MENU_BAR: MenuPath = ['menubar'];
@@ -87,7 +87,7 @@ export interface MenuAction extends MenuNodeRenderingData, Pick<MenuNodeMetadata
 export namespace MenuAction {
     /* Determine whether object is a MenuAction */
     export function is(arg: unknown): arg is MenuAction {
-        return Is.object(arg) && 'commandId' in arg;
+        return isObject(arg) && 'commandId' in arg;
     }
 }
 

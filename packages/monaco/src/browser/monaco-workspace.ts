@@ -26,7 +26,6 @@ import { MonacoTextModelService } from './monaco-text-model-service';
 import { WillSaveMonacoModelEvent, MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
 import { ProblemManager } from '@theia/markers/lib/browser';
-import { MaybePromise } from '@theia/core/lib/common/types';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
 import * as monaco from '@theia/monaco-editor-core';
@@ -37,7 +36,7 @@ import {
 import { IEditorWorkerService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
-import { Is } from '@theia/core/lib/common/is';
+import { isObject, MaybePromise } from '@theia/core/lib/common';
 
 export namespace WorkspaceFileEdit {
     export function is(arg: Edit): arg is monaco.languages.IWorkspaceFileEdit {
@@ -48,9 +47,9 @@ export namespace WorkspaceFileEdit {
 
 export namespace WorkspaceTextEdit {
     export function is(arg: Edit): arg is monaco.languages.IWorkspaceTextEdit {
-        return Is.object<monaco.languages.IWorkspaceTextEdit>(arg)
+        return isObject<monaco.languages.IWorkspaceTextEdit>(arg)
             && monaco.Uri.isUri(arg.resource)
-            && Is.object(arg.textEdit);
+            && isObject(arg.textEdit);
     }
 }
 
@@ -58,7 +57,7 @@ export type Edit = monaco.languages.IWorkspaceFileEdit | monaco.languages.IWorks
 
 export namespace ResourceFileEdit {
     export function is(arg: ResourceEdit): arg is MonacoResourceFileEdit {
-        return Is.object<MonacoResourceFileEdit>(arg) && (monaco.Uri.isUri(arg.oldResource) || monaco.Uri.isUri(arg.newResource));
+        return isObject<MonacoResourceFileEdit>(arg) && (monaco.Uri.isUri(arg.oldResource) || monaco.Uri.isUri(arg.newResource));
     }
 }
 

@@ -18,7 +18,7 @@ import * as http from 'http';
 import * as cookie from 'cookie';
 import * as crypto from 'crypto';
 import { injectable, postConstruct } from 'inversify';
-import { Is, MaybePromise } from '../../common';
+import { isObject, isString, MaybePromise } from '../../common';
 import { ElectronSecurityToken } from '../../electron-common/electron-token';
 import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
 
@@ -44,9 +44,9 @@ export class ElectronTokenValidator implements WsRequestValidatorContribution {
      */
     allowRequest(request: http.IncomingMessage): boolean {
         const cookieHeader = request.headers.cookie;
-        if (Is.string(cookieHeader)) {
+        if (isString(cookieHeader)) {
             const token = cookie.parse(cookieHeader)[ElectronSecurityToken];
-            if (Is.string(token)) {
+            if (isString(token)) {
                 return this.isTokenValid(JSON.parse(token));
             }
         }
@@ -61,7 +61,7 @@ export class ElectronTokenValidator implements WsRequestValidatorContribution {
      * @param token Parsed object sent by the client as the token.
      */
     isTokenValid(token: unknown): boolean {
-        if (Is.object(token) && Is.string(token.value)) {
+        if (isObject(token) && isString(token.value)) {
             try {
                 const received = Buffer.from(token.value, 'utf8');
                 const expected = Buffer.from(this.electronSecurityToken!.value, 'utf8');

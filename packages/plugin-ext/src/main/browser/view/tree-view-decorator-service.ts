@@ -16,7 +16,7 @@
 
 import { inject, injectable, interfaces, named } from '@theia/core/shared/inversify';
 import { AbstractTreeDecoratorService, TreeDecorator } from '@theia/core/lib/browser/tree/tree-decorator';
-import { bindContributionProvider, ContributionProvider, Is } from '@theia/core';
+import { bindContributionProvider, ContributionProvider, isObject } from '@theia/core';
 import { TreeNode } from '@theia/core/lib/browser';
 import { TreeItem } from '@theia/plugin';
 import URI from '@theia/core/lib/common/uri';
@@ -33,7 +33,7 @@ export class TreeViewDecoratorAdapter extends FileTreeDecoratorAdapter {
     }
 
     protected isTreeItem(node: unknown): node is TreeItem {
-        return Is.object<TreeItem>(node) && !!node.resourceUri;
+        return isObject<TreeItem>(node) && !!node.resourceUri;
     }
 }
 

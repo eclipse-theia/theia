@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Is } from './is';
 import { isOSX } from './os';
+import { isObject } from './types';
 
 export type KeySequence = KeyCode[];
 export namespace KeySequence {
@@ -490,7 +490,7 @@ export namespace SpecialCases {
 export namespace Key {
 
     export function isKey(arg: unknown): arg is Key {
-        return Is.object(arg) && 'code' in arg && 'keyCode' in arg;
+        return isObject(arg) && 'code' in arg && 'keyCode' in arg;
     }
 
     export function getKey(arg: string | number): Key | undefined {

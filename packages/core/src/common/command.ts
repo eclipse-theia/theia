@@ -20,7 +20,7 @@ import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
 import { nls } from './nls';
 import debounce = require('p-debounce');
-import { Is } from './is';
+import { isObject } from './types';
 
 /**
  * A command is a unique identifier of a function
@@ -51,7 +51,7 @@ export interface Command {
 export namespace Command {
     /* Determine whether object is a Command */
     export function is(arg: unknown): arg is Command {
-        return Is.object(arg) && 'id' in arg;
+        return isObject(arg) && 'id' in arg;
     }
 
     /** Utility function to easily translate commands */

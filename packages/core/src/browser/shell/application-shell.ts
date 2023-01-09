@@ -22,7 +22,7 @@ import {
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
-import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment, Is } from '../../common';
+import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment, isObject } from '../../common';
 import { animationFrame } from '../browser';
 import { Saveable, SaveableWidget, SaveOptions, SaveableSource } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
@@ -2108,7 +2108,7 @@ export namespace ApplicationShell {
 
     export namespace TrackableWidgetProvider {
         export function is(widget: unknown): widget is TrackableWidgetProvider {
-            return Is.object(widget) && 'getTrackableWidgets' in widget;
+            return isObject(widget) && 'getTrackableWidgets' in widget;
         }
     }
 

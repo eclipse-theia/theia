@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Disposable, Event, Is, MaybePromise } from '../../common';
+import { Disposable, Event, isObject, MaybePromise } from '../../common';
 import { PreferenceService } from './preference-service';
 import { PreferenceSchema } from './preference-contribution';
 import { PreferenceScope } from './preference-scope';
@@ -332,7 +332,7 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
             } while (parentSegment && value === undefined);
 
             let segment;
-            while (Is.object(value) && (segment = segments.pop())) {
+            while (isObject(value) && (segment = segments.pop())) {
                 value = value[segment];
             }
             return segments.length ? undefined : value;

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { escapeRegExpCharacters, Is } from '../../common';
+import { escapeRegExpCharacters, isObject } from '../../common';
 import { PreferenceSchemaProperties } from '../../common/preferences/preference-schema';
 
 export interface OverridePreferenceName {
@@ -24,7 +24,7 @@ export interface OverridePreferenceName {
 }
 export namespace OverridePreferenceName {
     export function is(arg: unknown): arg is OverridePreferenceName {
-        return Is.object(arg) && 'preferenceName' in arg && 'overrideIdentifier' in arg;
+        return isObject(arg) && 'preferenceName' in arg && 'overrideIdentifier' in arg;
     }
 }
 

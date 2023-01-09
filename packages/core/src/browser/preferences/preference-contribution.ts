@@ -16,7 +16,7 @@
 
 import * as Ajv from 'ajv';
 import { inject, injectable, interfaces, named, postConstruct } from 'inversify';
-import { ContributionProvider, bindContributionProvider, Emitter, Event, Disposable, Is } from '../../common';
+import { ContributionProvider, bindContributionProvider, Emitter, Event, Disposable } from '../../common';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceProvider, PreferenceProviderDataChange } from './preference-provider';
 import {
@@ -26,7 +26,7 @@ import { FrontendApplicationConfigProvider } from '../frontend-application-confi
 import { FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import { bindPreferenceConfigurations, PreferenceConfigurations } from './preference-configurations';
 export { PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty };
-import { Mutable } from '../../common/types';
+import { isObject, Mutable } from '../../common/types';
 import { PreferenceLanguageOverrideService } from './preference-language-override-service';
 import { JSONValue } from '@phosphor/coreutils';
 
@@ -80,7 +80,7 @@ export interface FrontendApplicationPreferenceConfig extends FrontendApplication
 }
 export namespace FrontendApplicationPreferenceConfig {
     export function is(config: FrontendApplicationConfig): config is FrontendApplicationPreferenceConfig {
-        return Is.object(config.preferences);
+        return isObject(config.preferences);
     }
 }
 

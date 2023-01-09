@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import { PreferenceSchema } from '../../common/preferences/preference-schema';
-import { Disposable, DisposableCollection, Emitter, Event, Is, MaybePromise } from '../../common';
+import { Disposable, DisposableCollection, Emitter, Event, isObject, MaybePromise } from '../../common';
 import { PreferenceChangeEvent, PreferenceEventEmitter, PreferenceProxy, PreferenceProxyOptions, PreferenceRetrieval } from './preference-proxy';
 import { PreferenceChange, PreferenceChangeImpl, PreferenceChanges, PreferenceScope, PreferenceService } from './preference-service';
 import { JSONValue } from '@phosphor/coreutils';
@@ -145,7 +145,7 @@ export class InjectablePreferenceProxy<T extends Record<string, JSONValue>> impl
             } while (parentSegment && value === undefined);
 
             let segment;
-            while (Is.object(value) && (segment = segments.pop())) {
+            while (isObject(value) && (segment = segments.pop())) {
                 value = value[segment];
             }
             return segments.length ? undefined : value;

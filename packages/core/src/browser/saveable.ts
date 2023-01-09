@@ -22,7 +22,7 @@ import { Key } from './keyboard/keys';
 import { AbstractDialog } from './dialogs';
 import { waitForClosed } from './widgets';
 import { nls } from '../common/nls';
-import { Is } from '../common/is';
+import { isObject } from '../common';
 
 export interface Saveable {
     readonly dirty: boolean;
@@ -61,10 +61,10 @@ export namespace Saveable {
 
     export type Snapshot = { value: string } | { read(): string | null };
     export function isSource(arg: unknown): arg is SaveableSource {
-        return Is.object<SaveableSource>(arg) && is(arg.saveable);
+        return isObject<SaveableSource>(arg) && is(arg.saveable);
     }
     export function is(arg: unknown): arg is Saveable {
-        return Is.object(arg) && 'dirty' in arg && 'onDirtyChanged' in arg;
+        return isObject(arg) && 'dirty' in arg && 'onDirtyChanged' in arg;
     }
     export function get(arg: unknown): Saveable | undefined {
         if (is(arg)) {

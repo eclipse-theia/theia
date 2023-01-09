@@ -17,9 +17,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { JSONValue } from '@phosphor/coreutils';
-import { Is } from '../is';
 import { IJSONSchema } from '../json-schema';
 import { PreferenceScope } from './preference-scope';
+import { isObject, isString } from '../types';
 
 export interface PreferenceSchema {
     [name: string]: any,
@@ -29,7 +29,7 @@ export interface PreferenceSchema {
 }
 export namespace PreferenceSchema {
     export function is(obj: unknown): obj is PreferenceSchema {
-        return Is.object<PreferenceSchema>(obj) && PreferenceSchemaProperties.is(obj.properties);
+        return isObject<PreferenceSchema>(obj) && PreferenceSchemaProperties.is(obj.properties);
     }
     export function getDefaultScope(schema: PreferenceSchema): PreferenceScope {
         let defaultScope: PreferenceScope = PreferenceScope.Workspace;
@@ -47,7 +47,7 @@ export interface PreferenceSchemaProperties {
 }
 export namespace PreferenceSchemaProperties {
     export function is(obj: unknown): obj is PreferenceSchemaProperties {
-        return Is.object(obj);
+        return isObject(obj);
     }
 }
 
@@ -87,7 +87,7 @@ export namespace PreferenceDataProperty {
     export function fromPreferenceSchemaProperty(schemaProps: PreferenceSchemaProperty, defaultScope: PreferenceScope = PreferenceScope.Workspace): PreferenceDataProperty {
         if (!schemaProps.scope) {
             schemaProps.scope = defaultScope;
-        } else if (Is.string(schemaProps.scope)) {
+        } else if (isString(schemaProps.scope)) {
             return Object.assign(schemaProps, { scope: PreferenceScope.fromString(schemaProps.scope) || defaultScope });
         }
         return <PreferenceDataProperty>schemaProps;

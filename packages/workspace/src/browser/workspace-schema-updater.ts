@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { JsonSchemaContribution, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
-import { InMemoryResources, Is } from '@theia/core/lib/common';
+import { InMemoryResources, isArray, isObject } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import URI from '@theia/core/lib/common/uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -115,9 +115,9 @@ export type WorkspaceSchema = Required<Pick<IJSONSchema, 'properties' | 'require
 
 export namespace WorkspaceSchema {
     export function is(candidate: unknown): candidate is WorkspaceSchema {
-        return Is.object<WorkspaceSchema>(candidate)
+        return isObject<WorkspaceSchema>(candidate)
             && typeof candidate.properties === 'object'
-            && Array.isArray(candidate.required);
+            && isArray(candidate.required);
     }
 }
 

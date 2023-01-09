@@ -31,7 +31,7 @@ import { SymbolKind } from '../common/plugin-api-rpc-model';
 import { FileSystemProviderErrorCode, markAsFileSystemProviderError } from '@theia/filesystem/lib/common/files';
 import * as paths from 'path';
 import { es5ClassCompat } from '../common/types';
-import { Is } from '@theia/core/lib/common/is';
+import { isObject, isStringArray } from '@theia/core/lib/common';
 
 /**
  * This is an implementation of #theia.Uri based on vscode-uri.
@@ -545,7 +545,7 @@ export class Range {
         if (arg instanceof Range) {
             return true;
         }
-        return Is.object<theia.Range>(arg)
+        return isObject<theia.Range>(arg)
             && Position.isPosition(arg.start)
             && Position.isPosition(arg.end);
     }
@@ -730,7 +730,7 @@ export class ThemeIcon {
 
 export namespace ThemeIcon {
     export function is(item: unknown): item is ThemeIcon {
-        return Is.object(item) && 'id' in item;
+        return isObject(item) && 'id' in item;
     }
 }
 
@@ -3021,7 +3021,7 @@ export class SemanticTokensLegend {
 }
 
 function isStrArrayOrUndefined(arg: unknown): arg is string[] | undefined {
-    return typeof arg === 'undefined' || Is.stringArray(arg);
+    return typeof arg === 'undefined' || isStringArray(arg);
 }
 
 @es5ClassCompat

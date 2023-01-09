@@ -23,12 +23,11 @@ import { ILogger } from '../../common/logger';
 import { CommandContribution, CommandRegistry, Command } from '../../common/command';
 import { ThemeService } from '../theming';
 import { ContributionProvider } from '../../common/contribution-provider';
-import { MaybePromise } from '../../common/types';
 import { ApplicationShell, applicationShellLayoutVersion, ApplicationShellLayoutVersion } from './application-shell';
 import { CommonCommands } from '../common-frontend-contribution';
 import { WindowService } from '../window/window-service';
 import { StopReason } from '../../common/frontend-application-state';
-import { Is } from '../../common/is';
+import { isFunction, isObject, MaybePromise } from '../../common';
 
 /**
  * A contract for widgets that want to store and restore their inner state, between sessions.
@@ -48,7 +47,7 @@ export interface StatefulWidget {
 
 export namespace StatefulWidget {
     export function is(arg: unknown): arg is StatefulWidget {
-        return Is.object<StatefulWidget>(arg) && Is.func(arg.storeState) && Is.func(arg.restoreState);
+        return isObject<StatefulWidget>(arg) && isFunction(arg.storeState) && isFunction(arg.restoreState);
     }
 }
 
@@ -279,7 +278,7 @@ export class ShellLayoutRestorer implements CommandContribution {
                     });
                 }
                 return widgets;
-            } else if (Is.object<Record<string, WidgetDescription>>(value) && !Array.isArray(value)) {
+            } else if (isObject<Record<string, WidgetDescription>>(value) && !Array.isArray(value)) {
                 const copy: Record<string, unknown> = {};
                 for (const p in value) {
                     if (this.isWidgetProperty(p)) {
@@ -302,7 +301,7 @@ export class ShellLayoutRestorer implements CommandContribution {
                 // don't catch exceptions, if one migration fails all should fail.
                 const migrated = await migration.onWillInflateWidget(desc, context);
                 if (migrated) {
-                    if (Is.object(migrated.innerWidgetState)) {
+                    if (isObject(migrated.innerWidgetState)) {
                         // in order to inflate nested widgets
                         migrated.innerWidgetState = JSON.stringify(migrated.innerWidgetState);
                     }

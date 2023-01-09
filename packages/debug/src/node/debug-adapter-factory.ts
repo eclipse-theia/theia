@@ -41,7 +41,7 @@ import {
 import { DebugAdapterSessionImpl } from '../common/debug-adapter-session';
 import { environment } from '@theia/core/shared/@theia/application-package';
 import { ProcessDebugAdapter, SocketDebugAdapter } from './stream-debug-adapter';
-import { Is } from '@theia/core/lib/common/is';
+import { isObject } from '@theia/core/lib/common';
 
 /**
  * [DebugAdapterFactory](#DebugAdapterFactory) implementation based on
@@ -68,7 +68,7 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
 
     private childProcess(executable: DebugAdapterExecutable): RawProcess {
         const isForkOptions = (forkOptions: unknown): forkOptions is RawForkOptions =>
-            Is.object(forkOptions) && 'modulePath' in forkOptions;
+            isObject(forkOptions) && 'modulePath' in forkOptions;
 
         const processOptions: RawProcessOptions | RawForkOptions = { ...executable };
         const options: { stdio: (string | number)[], env?: object, execArgv?: string[] } = { stdio: ['pipe', 'pipe', 2] };

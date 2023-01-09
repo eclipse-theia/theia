@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Is } from './is';
+import { isObject } from './types';
 
 export function deepClone<T>(obj: T): T {
-    if (!Is.object(obj)) {
+    if (!isObject(obj)) {
         return obj;
     }
     if (obj instanceof RegExp) {
@@ -27,7 +27,7 @@ export function deepClone<T>(obj: T): T {
     const result: any = Array.isArray(obj) ? [] : {};
     Object.keys(obj).forEach((key: string) => {
         const prop = obj[key];
-        if (Is.object(prop)) {
+        if (isObject(prop)) {
             result[key] = deepClone(prop);
         } else {
             result[key] = prop;
@@ -37,7 +37,7 @@ export function deepClone<T>(obj: T): T {
 }
 
 export function deepFreeze<T>(obj: T): T {
-    if (!Is.object(obj)) {
+    if (!isObject(obj)) {
         return obj;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,7 +48,7 @@ export function deepFreeze<T>(obj: T): T {
         for (const key in objectToFreeze) {
             if (_hasOwnProperty.call(objectToFreeze, key)) {
                 const prop = objectToFreeze[key];
-                if (Is.object(prop) && !Object.isFrozen(prop)) {
+                if (isObject(prop) && !Object.isFrozen(prop)) {
                     stack.push(prop);
                 }
             }

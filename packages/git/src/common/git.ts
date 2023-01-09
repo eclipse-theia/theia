@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ChildProcess } from 'child_process';
-import { Disposable, Is } from '@theia/core';
+import { Disposable, isObject } from '@theia/core';
 import {
     Repository, WorkingDirectoryStatus, Branch, GitResult, GitError, GitFileStatus,
     GitFileChange, CommitWithChanges, GitFileBlame, Remote as RemoteModel, StashEntry
@@ -854,42 +854,42 @@ export namespace GitUtils {
      * `true` if the argument is an option for renaming an existing branch in the repository.
      */
     export function isBranchRename(arg: unknown): arg is Git.Options.BranchCommand.Rename {
-        return Is.object(arg) && 'newName' in arg;
+        return isObject(arg) && 'newName' in arg;
     }
 
     /**
      * `true` if the argument is an option for deleting an existing branch in the repository.
      */
     export function isBranchDelete(arg: unknown): arg is Git.Options.BranchCommand.Delete {
-        return Is.object(arg) && 'toDelete' in arg;
+        return isObject(arg) && 'toDelete' in arg;
     }
 
     /**
      * `true` if the argument is an option for creating a new branch in the repository.
      */
     export function isBranchCreate(arg: unknown): arg is Git.Options.BranchCommand.Create {
-        return Is.object(arg) && 'toCreate' in arg;
+        return isObject(arg) && 'toCreate' in arg;
     }
 
     /**
      * `true` if the argument is an option for listing the branches in a repository.
      */
     export function isBranchList(arg: unknown): arg is Git.Options.BranchCommand.List {
-        return Is.object(arg) && 'type' in arg;
+        return isObject(arg) && 'type' in arg;
     }
 
     /**
      * `true` if the argument is an option for checking out a new local branch.
      */
     export function isBranchCheckout(arg: unknown): arg is Git.Options.Checkout.CheckoutBranch {
-        return Is.object(arg) && 'branch' in arg;
+        return isObject(arg) && 'branch' in arg;
     }
 
     /**
      * `true` if the argument is an option for checking out a working tree file.
      */
     export function isWorkingTreeFileCheckout(arg: unknown): arg is Git.Options.Checkout.WorkingTreeFile {
-        return Is.object(arg) && 'paths' in arg;
+        return isObject(arg) && 'paths' in arg;
     }
 
     /**

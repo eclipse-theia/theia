@@ -22,7 +22,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Channel, Disposable, DisposableCollection, ReadBuffer, WriteBuffer } from '@theia/core';
+import { Channel, Disposable, DisposableCollection, isObject, ReadBuffer, URI, WriteBuffer } from '@theia/core';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ChannelMultiplexer, MessageProvider } from '@theia/core/lib/common/message-rpc/channel';
 import { MsgPackMessageDecoder, MsgPackMessageEncoder } from '@theia/core/lib/common/message-rpc/rpc-message-encoder';
@@ -30,10 +30,8 @@ import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/com
 import { ClientProxyHandler, RpcInvocationHandler } from './proxy-handler';
 import { MsgPackExtensionManager } from '@theia/core/lib/common/message-rpc/msg-pack-extension-manager';
 import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
-import URI from '@theia/core/lib/common/uri';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Range, Position } from '../plugin/types-impl';
-import { Is } from '@theia/core/lib/common/is';
 
 export interface MessageConnection {
     send(msg: string): void;
@@ -75,7 +73,7 @@ export namespace ConnectionClosedError {
         return Object.assign(new Error(message), { code });
     }
     export function is(error: unknown): error is ConnectionClosedError {
-        return Is.object(error) && 'code' in error && (error as ConnectionClosedError).code === code;
+        return isObject(error) && 'code' in error && (error as ConnectionClosedError).code === code;
     }
 }
 

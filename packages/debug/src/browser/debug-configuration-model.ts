@@ -20,7 +20,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { DebugConfiguration } from '../common/debug-common';
 import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
 import { DebugCompound } from '../common/debug-compound';
-import { Is } from '@theia/core/lib/common/is';
+import { isObject } from '@theia/core/lib/common';
 
 export class DebugConfigurationModel implements Disposable {
 
@@ -72,7 +72,7 @@ export class DebugConfigurationModel implements Disposable {
         const configurations: DebugConfiguration[] = [];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { configUri, value } = this.preferences.resolve<any>('launch', undefined, this.workspaceFolderUri);
-        if (Is.object(value) && Array.isArray(value.configurations)) {
+        if (isObject(value) && Array.isArray(value.configurations)) {
             for (const configuration of value.configurations) {
                 if (DebugConfiguration.is(configuration)) {
                     configurations.push(configuration);
@@ -80,7 +80,7 @@ export class DebugConfigurationModel implements Disposable {
             }
         }
         const compounds: DebugCompound[] = [];
-        if (Is.object(value) && Array.isArray(value.compounds)) {
+        if (isObject(value) && Array.isArray(value.compounds)) {
             for (const compound of value.compounds) {
                 if (DebugCompound.is(compound)) {
                     compounds.push(compound);

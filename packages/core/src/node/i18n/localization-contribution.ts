@@ -16,7 +16,7 @@
 
 import * as fs from 'fs-extra';
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, Is } from '../../common';
+import { ContributionProvider, isObject } from '../../common';
 import { LanguageInfo, Localization } from '../../common/i18n/localization';
 import { LocalizationProvider } from './localization-provider';
 
@@ -79,12 +79,12 @@ export class LocalizationRegistry {
     }
 
     protected flattenTranslations(localization: unknown): Record<string, string> {
-        if (Is.object(localization)) {
+        if (isObject(localization)) {
             const record: Record<string, string> = {};
             for (const [key, value] of Object.entries(localization)) {
                 if (typeof value === 'string') {
                     record[key] = value;
-                } else if (Is.object(value)) {
+                } else if (isObject(value)) {
                     const flattened = this.flattenTranslations(value);
                     for (const [flatKey, flatValue] of Object.entries(flattened)) {
                         record[`${key}/${flatKey}`] = flatValue;

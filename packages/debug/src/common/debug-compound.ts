@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Is } from '@theia/core/lib/common/is';
+import { isObject } from '@theia/core/lib/common';
 import { TaskIdentifier } from '@theia/task/lib/common';
 
 export const defaultCompound: DebugCompound = { name: 'Compound', configurations: [] };
@@ -28,6 +28,6 @@ export interface DebugCompound {
 
 export namespace DebugCompound {
     export function is(arg: unknown): arg is DebugCompound {
-        return Is.object(arg) && 'name' in arg && 'configurations' in arg;
+        return isObject(arg) && 'name' in arg && 'configurations' in arg;
     }
 }

@@ -20,7 +20,7 @@ import debounce = require('p-debounce');
 import { injectable, inject } from 'inversify';
 import { JSONExt, JSONValue } from '@phosphor/coreutils';
 import URI from '../../common/uri';
-import { Disposable, DisposableCollection, Emitter, Event, Is } from '../../common';
+import { Disposable, DisposableCollection, Emitter, Event, isObject } from '../../common';
 import { Deferred } from '../../common/promise-util';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceLanguageOverrideService } from './preference-language-override-service';
@@ -253,7 +253,7 @@ export abstract class PreferenceProvider implements Disposable {
 
     protected getParsedContent(jsonData: any): { [key: string]: any } {
         const preferences: { [key: string]: any } = {};
-        if (!Is.object(jsonData)) {
+        if (!isObject(jsonData)) {
             return preferences;
         }
         for (const [preferenceName, preferenceValue] of Object.entries(jsonData)) {

@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Event, Emitter } from './event';
-import { Is } from './is';
+import { isBoolean, isObject } from './types';
 
 export interface CancellationToken {
     readonly isCancellationRequested: boolean;
@@ -52,9 +52,9 @@ export namespace CancellationToken {
     });
 
     export function is(value: unknown): value is CancellationToken {
-        return Is.object<CancellationToken>(value) && (value === CancellationToken.None
+        return isObject<CancellationToken>(value) && (value === CancellationToken.None
             || value === CancellationToken.Cancelled
-            || (Is.boolean(value.isCancellationRequested) && !!value.onCancellationRequested));
+            || (isBoolean(value.isCancellationRequested) && !!value.onCancellationRequested));
     }
 }
 

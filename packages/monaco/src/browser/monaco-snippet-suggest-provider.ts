@@ -26,7 +26,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError } from '@theia/filesystem/lib/common/files';
 import * as monaco from '@theia/monaco-editor-core';
 import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
-import { Is } from '@theia/core/lib/common/is';
+import { isObject } from '@theia/core/lib/common';
 
 @injectable()
 export class MonacoSnippetSuggestProvider implements monaco.languages.CompletionItemProvider {
@@ -247,7 +247,7 @@ export interface JsonSerializedSnippet {
 }
 export namespace JsonSerializedSnippet {
     export function is(obj: unknown): obj is JsonSerializedSnippet {
-        return Is.object(obj) && 'body' in obj && 'prefix' in obj;
+        return isObject(obj) && 'body' in obj && 'prefix' in obj;
     }
 }
 
