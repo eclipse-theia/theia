@@ -137,7 +137,8 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
                 attributes: options.attributes,
                 hideFromUser: options.hideFromUser,
                 location: this.getTerminalLocation(options, parentId),
-                isPseudoTerminal
+                isPseudoTerminal,
+                isTransient: options.isTransient
             });
             if (options.message) {
                 terminal.writeLine(options.message);

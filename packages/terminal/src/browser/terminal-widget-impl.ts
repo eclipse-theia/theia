@@ -407,6 +407,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.options.hideFromUser ?? false;
     }
 
+    get transient(): boolean {
+        // The terminal is transient if session persistence is disabled or it's explicitly marked as transient
+        return !this.preferences['terminal.integrated.enablePersistentSessions'] || !!this.options.isTransient;
+    }
+
     onDispose(onDispose: () => void): void {
         this.toDispose.push(Disposable.create(onDispose));
     }
@@ -421,15 +426,15 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     storeState(): object {
         this.closeOnDispose = false;
-        if (this.options.isPseudoTerminal) {
+        if (this.transient || this.options.isPseudoTerminal) {
             return {};
         }
         return { terminalId: this.terminalId, titleLabel: this.title.label };
     }
 
     restoreState(oldState: object): void {
-        // pseudo terminal can not restore
-        if (this.options.isPseudoTerminal) {
+        // transient terminals and pseudo terminals are not restored
+        if (this.transient || this.options.isPseudoTerminal) {
             this.dispose();
             return;
         }

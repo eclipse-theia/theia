@@ -231,4 +231,9 @@ export interface TerminalWidgetOptions {
     readonly hideFromUser?: boolean;
 
     readonly location?: TerminalLocationOptions;
+
+    /**
+     * When enabled, the terminal will not be persisted across window reloads.
+     */
+    readonly isTransient?: boolean;
 }
