@@ -543,7 +543,7 @@ export class InputBoxExt extends QuickInputExt implements theia.InputBox {
 
     private _password: boolean;
     private _prompt: string | undefined;
-    private _valueSelection: readonly [number, number]
+    private _valueSelection: readonly [number, number];
     private _validationMessage: string | undefined;
 
     constructor(
