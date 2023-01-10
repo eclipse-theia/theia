@@ -29,7 +29,7 @@ import { expectThrowsAsync } from '@theia/core/lib/common/test/expect';
 import { TestWebSocketChannelSetup } from '@theia/core/lib/node/messaging/test/test-web-socket-channel';
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
-import { RpcProtocol } from '@theia/core';
+import { StringBufferingStream } from '@theia/terminal/lib/node/buffering-stream';
 
 // test scripts that we bundle with tasks
 const commandShortRunning = './task';
@@ -89,12 +89,6 @@ describe('Task server / back-end', function (): void {
     it('task running in terminal - expected data is received from the terminal ws server', async function (): Promise<void> {
         const someString = 'someSingleWordString';
 
-        // This test is flaky on Windows and fails intermittently. Disable it for now
-        if (isWindows) {
-            this.skip();
-            return;
-        }
-
         // create task using terminal process
         const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', `${command} ${someString}`), wsRoot);
@@ -103,40 +97,28 @@ describe('Task server / back-end', function (): void {
         const messagesToWaitFor = 10;
         const messages: string[] = [];
 
+        // check output of task on terminal is what we expect
+        const expected = `${isOSX ? 'tasking osx' : 'tasking'}... ${someString}`;
+
         // hook-up to terminal's ws and confirm that it outputs expected tasks' output
         await new Promise<void>((resolve, reject) => {
             const setup = new TestWebSocketChannelSetup({ server, path: `${terminalsPath}/${terminalId}` });
+            const stringBuffer = new StringBufferingStream();
             setup.multiplexer.onDidOpenChannel(event => {
-                const channel = event.channel;
-                const connection = new RpcProtocol(channel, async (method, args) => {
-                    const error = new Error(`Received unexpected request: ${method} with args: ${args} `);
-                    reject(error);
-                    throw error;
-                });
-                channel.onError(reject);
-                channel.onClose(() => reject(new Error('Channel has been closed')));
-                connection.onNotification(not => {
-                    // check output of task on terminal is what we expect
-                    const expected = `${isOSX ? 'tasking osx' : 'tasking'}... ${someString}`;
-                    // Instead of waiting for one message from the terminal, we wait for several ones as the very first message can be something unexpected.
-                    // For instance: `nvm is not compatible with the \"PREFIX\" environment variable: currently set to \"/usr/local\"\r\n`
-                    const currentMessage = not.args[0];
-                    messages.unshift(currentMessage);
-                    if (currentMessage.indexOf(expected) !== -1) {
-                        resolve();
-                        channel.close();
-                        return;
-                    }
-                    if (messages.length >= messagesToWaitFor) {
-                        reject(new Error(`expected sub-string not found in terminal output. Expected: "${expected}" vs Actual messages: ${JSON.stringify(messages)}`));
-                        channel.close();
-                    }
-                });
-                channel.onMessage(reader => {
-
-                });
+                event.channel.onMessage(e => stringBuffer.push(e().readString()));
+                event.channel.onError(reject);
+                event.channel.onClose(() => reject(new Error('Channel has been closed')));
             });
-
+            stringBuffer.onData(currentMessage => {
+                // Instead of waiting for one message from the terminal, we wait for several ones as the very first message can be something unexpected.
+                // For instance: `nvm is not compatible with the \"PREFIX\" environment variable: currently set to \"/usr/local\"\r\n`
+                messages.unshift(currentMessage);
+                if (currentMessage.includes(expected)) {
+                    resolve();
+                } else if (messages.length >= messagesToWaitFor) {
+                    reject(new Error(`expected sub-string not found in terminal output. Expected: "${expected}" vs Actual messages: ${JSON.stringify(messages)}`));
+                }
+            });
         });
     });
 
