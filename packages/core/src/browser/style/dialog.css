@@ -64,10 +64,14 @@
     justify-content: space-around;
     align-items: stretch;
     position: relative;
-    margin: calc(var(--theia-ui-padding)*2);
+    padding: calc(var(--theia-ui-padding)*2);
     white-space: pre-line;
     max-height: 50vh;
     overflow-y: auto;
+}
+
+.p-Widget.dialogOverlay .dialogContent > * {
+    height: 100%;
 }
 
 .p-Widget.dialogOverlay .dialogControl {

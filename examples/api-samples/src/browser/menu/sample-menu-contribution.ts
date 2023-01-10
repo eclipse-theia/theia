@@ -32,7 +32,11 @@ const SampleCommand2: Command = {
 const SampleCommandConfirmDialog: Command = {
     id: 'sample-command-confirm-dialog',
     label: 'Sample Confirm Dialog'
-}
+};
+const SampleComplexCommandConfirmDialog: Command = {
+    id: 'sample-command-complex-confirm-dialog',
+    label: 'Sample Complex Confirm Dialog'
+};
 const SampleCommandWithProgressMessage: Command = {
     id: 'sample-command-with-progress',
     label: 'Sample Command With Progress Message'
@@ -71,10 +75,29 @@ export class SampleCommandContribution implements CommandContribution {
             execute: async () => {
                 const choice = await new ConfirmDialog({
                     title: 'Sample Confirm Dialog',
-                    msg: 'This is a ssample with lots of text:' + Array(100)
+                    msg: 'This is a sample with lots of text:' + Array(100)
                         .fill(undefined)
                         .map((element, index) => `\n\nExtra line #${index}`)
                         .join('')
+                }).open();
+                this.messageService.info(`Sample confirm dialog returned with: \`${JSON.stringify(choice)}\``);
+            }
+        });
+        commands.registerCommand(SampleComplexCommandConfirmDialog, {
+            execute: async () => {
+                const mainDiv: HTMLElement = document.createElement('div');
+                for (let i = 0; i <= 3; i++) {
+                    const innerDiv = document.createElement('div');
+                    innerDiv.textContent = 'This is a sample with lots of text:' + Array(100)
+                        .fill(undefined)
+                        .map((_, index) => `\n\nExtra line #${index}`)
+                        .join('');
+                    mainDiv.appendChild(innerDiv);
+                }
+
+                const choice = await new ConfirmDialog({
+                    title: 'Sample Confirm Dialog',
+                    msg: mainDiv
                 }).open();
                 this.messageService.info(`Sample confirm dialog returned with: \`${JSON.stringify(choice)}\``);
             }
