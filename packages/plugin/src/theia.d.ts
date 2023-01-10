@@ -5377,7 +5377,6 @@ export module '@theia/plugin' {
          */
         password: boolean;
 
-
         /**
          * Selection range in the input value. Defined as tuple of two number where the
          * first is the inclusive start index and the second the exclusive end index. When `undefined` the whole
@@ -5388,7 +5387,6 @@ export module '@theia/plugin' {
          * but it can be updated by the extension.
          */
         valueSelection: readonly [number, number];
-
 
         /**
          * An event signaling when the value has changed.
