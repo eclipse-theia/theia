@@ -338,7 +338,7 @@
 
 /** Hover */
 .theia-debug-hover {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     border: 1px solid var(--theia-editorHoverWidget-border);
     background: var(--theia-editorHoverWidget-background);
