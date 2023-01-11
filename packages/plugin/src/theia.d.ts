@@ -3007,6 +3007,12 @@ export module '@theia/plugin' {
         location?: TerminalLocation | TerminalEditorLocationOptions | TerminalSplitLocationOptions;
 
         /**
+         * Opt-out of the default terminal persistence on restart and reload.
+         * This will only take effect when `terminal.integrated.enablePersistentSessions` is enabled.
+         */
+        isTransient?: boolean;
+
+        /**
          * Terminal attributes. Can be useful to apply some implementation specific information.
          */
         attributes?: { [key: string]: string | null };
@@ -3077,6 +3083,12 @@ export module '@theia/plugin' {
          * The {@link TerminalLocation} or {@link TerminalEditorLocationOptions} or {@link TerminalSplitLocationOptions} for the terminal.
          */
         location?: TerminalLocation | TerminalEditorLocationOptions | TerminalSplitLocationOptions;
+
+        /**
+         * Opt-out of the default terminal persistence on restart and reload.
+         * This will only take effect when `terminal.integrated.enablePersistentSessions` is enabled.
+         */
+        isTransient?: boolean;
     }
 
     /**

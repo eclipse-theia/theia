@@ -153,6 +153,11 @@ export const TerminalConfigSchema: PreferenceSchema = {
                 nls.localize('theia/terminal/confirmCloseChildren', 'Confirm if there are any terminals that have child processes.'),
             ],
             default: 'never'
+        },
+        'terminal.integrated.enablePersistentSessions': {
+            type: 'boolean',
+            description: nls.localizeByDefault('Persist terminal sessions for the workspace across window reloads.'),
+            default: true
         }
     }
 };
@@ -181,7 +186,8 @@ export interface TerminalConfiguration {
     'terminal.integrated.shellArgs.windows': string[],
     'terminal.integrated.shellArgs.osx': string[],
     'terminal.integrated.shellArgs.linux': string[],
-    'terminal.integrated.confirmOnExit': ConfirmOnExitType
+    'terminal.integrated.confirmOnExit': ConfirmOnExitType,
+    'terminal.integrated.enablePersistentSessions': boolean
 }
 
 type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
