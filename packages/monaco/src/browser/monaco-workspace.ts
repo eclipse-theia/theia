@@ -297,7 +297,8 @@ export class MonacoWorkspace {
                 const uri = monaco.Uri.parse(key);
                 let eol: EndOfLineSequence | undefined;
                 const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-                const minimalEdits = await StandaloneServices.get(IEditorWorkerService).computeMoreMinimalEdits(uri, value.map(this.transformSnippetStringToInsertText));
+                const minimalEdits = await StandaloneServices.get(IEditorWorkerService)
+                    .computeMoreMinimalEdits(uri, value.map(edit => this.transformSnippetStringToInsertText(edit)));
                 if (minimalEdits) {
                     for (const textEdit of minimalEdits) {
                         if (typeof textEdit.eol === 'number') {
@@ -374,7 +375,7 @@ export class MonacoWorkspace {
         }
     }
 
-    private async performSnippetEdits(edits: MonacoResourceTextEdit[]): Promise<void> {
+    protected async performSnippetEdits(edits: MonacoResourceTextEdit[]): Promise<void> {
         const activeEditor = MonacoEditor.getActive(this.editorManager)?.getControl();
         if (activeEditor) {
             const snippetController: SnippetController2 = activeEditor.getContribution('snippetController2')!;
@@ -382,7 +383,7 @@ export class MonacoWorkspace {
         }
     }
 
-    private transformSnippetStringToInsertText(resourceEdit: MonacoResourceTextEdit): TextEdit & { insertAsSnippet?: boolean } {
+    protected transformSnippetStringToInsertText(resourceEdit: MonacoResourceTextEdit): TextEdit & { insertAsSnippet?: boolean } {
         if (resourceEdit.textEdit.insertAsSnippet) {
             return { ...resourceEdit.textEdit, insertAsSnippet: false, text: SnippetParser.asInsertText(resourceEdit.textEdit.text) };
         } else {
