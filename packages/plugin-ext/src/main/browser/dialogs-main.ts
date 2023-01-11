@@ -24,6 +24,7 @@ import { FileUploadService } from '@theia/filesystem/lib/browser/file-upload-ser
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { nls } from '@theia/core';
 
 export class DialogsMainImpl implements DialogsMain {
 
@@ -146,7 +147,7 @@ export class DialogsMainImpl implements DialogsMain {
         try {
             // Create save file dialog props
             const dialogProps = {
-                title: options.title ?? 'Save',
+                title: options.title ?? nls.localizeByDefault('Save'),
                 saveLabel: options.saveLabel,
                 filters: options.filters,
                 inputValue: fileNameValue

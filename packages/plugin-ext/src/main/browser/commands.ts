@@ -71,7 +71,7 @@ class OpenNewTabDialog extends AbstractDialog<string> {
 
     constructor(windowService: WindowService) {
         super({
-            title: 'Your browser prevented opening of a new tab'
+            title: nls.localize('theia/plugin/blockNewTab', 'Your browser prevented opening of a new tab')
         });
         this.windowService = windowService;
 
