@@ -170,7 +170,9 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
             },
             update: (key: string, value: any, targetScope?: ConfigurationTarget | boolean, withLanguageOverride?: boolean): PromiseLike<void> => {
                 const resourceStr = overrides.resource?.toString();
-                const fullPath = `${overrides.overrideIdentifier ? `[${overrides.overrideIdentifier}].` : ''}${rawSection}.${key}`;
+                const overrideSegment = overrides.overrideIdentifier ? `[${overrides.overrideIdentifier}].` : '';
+                const preferenceKey = rawSection ? `${rawSection}.${key}` : key;
+                const fullPath = overrideSegment + preferenceKey;
                 if (typeof value !== 'undefined') {
                     return this.proxy.$updateConfigurationOption(targetScope, fullPath, value, resourceStr, withLanguageOverride);
                 } else {
@@ -178,7 +180,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                 }
             },
             inspect: <T>(key: string): ConfigurationInspect<T> | undefined => {
-                const path = `${rawSection}.${key}`;
+                const path = rawSection ? `${rawSection}.${key}` : key;
                 const result = this._preferences.inspect<T>(path, overrides, new TheiaWorkspace(this.workspace));
 
                 if (!result) {
