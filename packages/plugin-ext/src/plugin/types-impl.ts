@@ -1285,7 +1285,7 @@ export class SnippetTextEdit implements theia.SnippetTextEdit {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static isSnippetTextEdit(thing: unknown): thing is SnippetTextEdit {
-        return isObject<SnippetTextEdit>(thing)
+        return thing instanceof SnippetTextEdit || isObject<SnippetTextEdit>(thing)
             && Range.isRange((<SnippetTextEdit>thing).range)
             && SnippetString.isSnippetString((<SnippetTextEdit>thing).snippet);
     }
