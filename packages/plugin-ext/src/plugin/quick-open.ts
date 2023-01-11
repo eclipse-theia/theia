@@ -582,8 +582,8 @@ export class InputBoxExt extends QuickInputExt implements theia.InputBox {
     }
 
     set valueSelection(valueSelection: readonly [number, number] | undefined) {
-        this._valueSelection = valueSelection ? valueSelection : [0, this.value.length]
-        this.update({ valueSelection })
+        this._valueSelection = valueSelection ? valueSelection : [0, this.value.length];
+        this.update({ valueSelection });
     }
 
     get validationMessage(): string | undefined {
