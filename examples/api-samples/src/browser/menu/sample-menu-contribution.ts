@@ -85,16 +85,17 @@ export class SampleCommandContribution implements CommandContribution {
         });
         commands.registerCommand(SampleComplexCommandConfirmDialog, {
             execute: async () => {
-                const mainDiv: HTMLElement = document.createElement('div');
-                for (let i = 0; i <= 3; i++) {
+                const mainDiv = document.createElement('div');
+                for (const color of ['#FF00007F', '#00FF007F', '#0000FF7F']) {
                     const innerDiv = document.createElement('div');
-                    innerDiv.textContent = 'This is a sample with lots of text:' + Array(100)
+                    innerDiv.textContent = 'This is a sample with lots of text:' + Array(50)
                         .fill(undefined)
                         .map((_, index) => `\n\nExtra line #${index}`)
                         .join('');
+                    innerDiv.style.backgroundColor = color;
+                    innerDiv.style.padding = '5px';
                     mainDiv.appendChild(innerDiv);
                 }
-
                 const choice = await new ConfirmDialog({
                     title: 'Sample Confirm Dialog',
                     msg: mainDiv
