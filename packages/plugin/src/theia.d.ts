@@ -5386,7 +5386,7 @@ export module '@theia/plugin' {
          * This property does not get updated when the user types or makes a selection,
          * but it can be updated by the extension.
          */
-        valueSelection: readonly [number, number];
+        valueSelection: readonly [number, number] | undefined;
 
         /**
          * An event signaling when the value has changed.
