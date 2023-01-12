@@ -415,14 +415,14 @@ export class GitScmProvider implements ScmProvider {
             fileText = `${paths.length} files`;
         }
         return new ConfirmDialog({
-            title: nls.localize('theia/git/replaceConfirmDiscardTitle', 'Discard changes'),
+            title: nls.localize('vscode.git/package/command.clean', 'Discard changes'),
             msg: nls.localize('vscode.git/commands/confirm discard', 'Do you really want to discard changes in {0}?', fileText)
         }).open();
     }
 
     protected confirmAll(): Promise<boolean | undefined> {
         return new ConfirmDialog({
-            title: nls.localize('theia/git/replaceConfirmDiscardAllTitle', 'Discard All Changes'),
+            title: nls.localize('vscode.git/package/command.cleanAll', 'Discard All Changes'),
             msg: nls.localize('vscode.git/commands/confirm discard all', 'Do you really want to discard all changes?')
         }).open();
     }

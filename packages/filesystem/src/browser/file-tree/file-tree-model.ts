@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { CompositeTreeNode, TreeNode, ConfirmDialog, CompressedTreeModel } from '@theia/core/lib/browser';
+import { CompositeTreeNode, TreeNode, ConfirmDialog, CompressedTreeModel, Dialog } from '@theia/core/lib/browser';
 import { FileStatNode, DirNode, FileNode } from './file-tree';
 import { LocationService } from '../location';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
@@ -202,9 +202,9 @@ export class FileTreeModel extends CompressedTreeModel implements LocationServic
     protected async shouldReplace(fileName: string): Promise<boolean> {
         const dialog = new ConfirmDialog({
             title: nls.localize('theia/filesystem/replaceTitle', 'Replace file'),
-            msg: nls.localize('theia/filesystem/fileVariableInput', 'File \'{0}\' already exists in the destination folder. Do you want to replace it?', fileName),
-            ok: nls.localizeByDefault('Yes'),
-            cancel: nls.localizeByDefault('No')
+            msg: nls.localizeByDefault('{0} already exists. Are you sure you want to overwrite it?', fileName),
+            ok: Dialog.YES,
+            cancel: Dialog.NO
         });
         return !!await dialog.open();
     }
