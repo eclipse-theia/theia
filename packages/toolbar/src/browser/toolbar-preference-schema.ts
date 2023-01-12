@@ -31,7 +31,8 @@ const toolbarColumnGroup: IJSONSchema = {
                 'command': { 'type': 'string' },
                 'icon': { 'type': 'string' },
                 'tooltip': { 'type': 'string' },
-                'group': { 'enum': ['contributed'] }
+                'group': { 'enum': ['contributed'] },
+                'when': { 'type': 'string' },
             },
             'required': [
                 'id',
