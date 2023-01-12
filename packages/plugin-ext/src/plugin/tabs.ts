@@ -406,7 +406,7 @@ export class TabsExtImpl implements TabsExt {
         return this.proxy.$closeTab(extHostTabIds, preserveFocus);
     }
 
-    private async _closeGroups(groups: theia.TabGroup[], preserverFocus?: boolean): Promise<boolean> {
+    private async _closeGroups(groups: theia.TabGroup[], preserveFocus?: boolean): Promise<boolean> {
         const extHostGroupIds: number[] = [];
         for (const group of groups) {
             const extHostGroup = this._findExtHostTabGroupFromApi(group);
@@ -415,7 +415,7 @@ export class TabsExtImpl implements TabsExt {
             }
             extHostGroupIds.push(extHostGroup.groupId);
         }
-        return this.proxy.$closeGroup(extHostGroupIds, preserverFocus);
+        return this.proxy.$closeGroup(extHostGroupIds, preserveFocus);
     }
 }
 
