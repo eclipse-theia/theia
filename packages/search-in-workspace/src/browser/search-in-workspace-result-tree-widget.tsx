@@ -842,7 +842,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const fileNode = node.parent;
         const rightPositionedNodes = fileNode.children.filter(rl => rl.line === node.line && rl.character > node.character);
         const diff = this._replaceTerm.length - this.searchTerm.length;
-        rightPositionedNodes.map(r => r.character += diff);
+        rightPositionedNodes.forEach(r => r.character += diff);
     }
 
     /**
