@@ -159,12 +159,7 @@ export class BackendApplication {
         protected readonly contributionsProvider: ContributionProvider<BackendApplicationContribution>,
         @inject(BackendApplicationCliContribution) protected readonly cliParams: BackendApplicationCliContribution) {
         process.on('uncaughtException', error => {
-            if (error) {
-                console.error('Uncaught Exception: ', error.toString());
-                if (error.stack) {
-                    console.error(error.stack);
-                }
-            }
+            this.handleUncaughtError(error);
         });
 
         // Workaround for Electron not installing a handler to ignore SIGPIPE error
@@ -333,6 +328,15 @@ export class BackendApplication {
 
     protected async measure<T>(name: string, fn: () => MaybePromise<T>): Promise<T> {
         return this.stopwatch.startAsync(name, `Backend ${name}`, fn, { thresholdMillis: TIMER_WARNING_THRESHOLD });
+    }
+
+    protected handleUncaughtError(error: Error): void {
+        if (error) {
+            console.error('Uncaught Exception: ', error.toString());
+            if (error.stack) {
+                console.error(error.stack);
+            }
+        }
     }
 
 }
