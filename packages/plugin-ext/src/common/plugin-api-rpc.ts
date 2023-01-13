@@ -2036,7 +2036,7 @@ export interface TabsExt {
 export interface TabsMain {
     $moveTab(tabId: string, index: number, viewColumn: EditorGroupColumn, preserveFocus?: boolean): void;
     $closeTab(tabIds: string[], preserveFocus?: boolean): Promise<boolean>;
-    $closeGroup(groupIds: number[], preservceFocus?: boolean): Promise<boolean>;
+    $closeGroup(groupIds: number[], preserveFocus?: boolean): Promise<boolean>;
 }
 
 // endregion
