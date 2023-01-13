@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2022 ST Microelectronics and others.
+// Copyright (C) 2022 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -18,8 +18,9 @@ import { injectable } from '@theia/core/shared/inversify';
 
 @injectable()
 export class DnDFileContentStore {
-    static id: number = 0;
+    private static id: number = 0;
     private files: Map<string, File> = new Map();
+
     addFile(f: File): string {
         const id = (DnDFileContentStore.id++).toString();
         this.files.set(id, f);

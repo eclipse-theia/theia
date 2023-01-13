@@ -557,13 +557,13 @@ export class ApplicationShell extends Widget {
         this.additionalDraggedUris = undefined;
     }
 
-    static getDraggedEditorUris(dataTransfer: DataTransfer): URI[] {
+    protected static getDraggedEditorUris(dataTransfer: DataTransfer): URI[] {
         const data = dataTransfer.getData('theia-editor-dnd');
         return data ? data.split('\n').map(entry => new URI(entry)) : [];
     }
 
     static setDraggedEditorUris(dataTransfer: DataTransfer, uris: URI[]): void {
-        dataTransfer.setData('theia-editor-dnd', uris.map(uri => uri.toString()).join('\r\n'));
+        dataTransfer.setData('theia-editor-dnd', uris.map(uri => uri.toString()).join('\n'));
     }
 
     /**

@@ -41,7 +41,7 @@ import { ACTION_ITEM, Widget } from '@theia/core/lib/browser/widgets/widget';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { View } from '../../../common/plugin-protocol';
-import CoreURI, { URI } from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/lib/common/uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
@@ -427,7 +427,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     protected readonly dndFileContentStore: DnDFileContentStore;
 
     protected treeDragType: string;
-    expansionTimeouts: Map<string, number> = new Map();
+    protected readonly expansionTimeouts: Map<string, number> = new Map();
 
     @postConstruct()
     protected override init(): void {
@@ -511,7 +511,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
                         });
                     } else {
                         const title = node.tooltip ||
-                            (node.resourceUri && this.labelProvider.getLongName(new CoreURI(node.resourceUri)))
+                            (node.resourceUri && this.labelProvider.getLongName(new URI(node.resourceUri)))
                             || this.toNodeName(node);
                         event.currentTarget.title = title;
                     }
@@ -531,7 +531,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
             };
         } else {
             const title = node.tooltip ||
-                (node.resourceUri && this.labelProvider.getLongName(new CoreURI(node.resourceUri)))
+                (node.resourceUri && this.labelProvider.getLongName(new URI(node.resourceUri)))
                 || this.toNodeName(node);
 
             attrs = {
@@ -624,7 +624,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
 
         this.model.proxy!.$dragStarted(this.options.id, selectedNodes.map(selected => selected.id), CancellationToken.None).then(maybeUris => {
             if (maybeUris) {
-                this.applicationShell.addAdditionalDraggedEditorUris(maybeUris.map(CoreURI.fromComponents));
+                this.applicationShell.addAdditionalDraggedEditorUris(maybeUris.map(URI.fromComponents));
             }
         });
     }
@@ -635,9 +635,9 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
 
     handleDragOver(event: React.DragEvent<HTMLElement>): void {
         if (event.dataTransfer) {
-            const canDrop = event.dataTransfer.types.some(type => event.dataTransfer.types.indexOf(type) >= 0) ||
-                event.dataTransfer.types.indexOf(this.treeDragType) > 0 ||
-                this.options.dropMimeTypes!.indexOf('files') > 0 && event.dataTransfer.files.length > 0;
+            const canDrop = event.dataTransfer.types.some(type => this.options.dropMimeTypes!.includes(type)) ||
+                event.dataTransfer.types.includes(this.treeDragType) ||
+                this.options.dropMimeTypes!.includes('files') && event.dataTransfer.files.length > 0;
             if (canDrop) {
                 event.preventDefault();
                 event.dataTransfer.dropEffect = 'move';
@@ -677,21 +677,21 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
                         }
                     }
                 }
-                if (items.length > 0 || event.dataTransfer.types.indexOf(this.treeDragType) >= 0) {
+                if (items.length > 0 || event.dataTransfer.types.includes(this.treeDragType)) {
                     event.preventDefault();
                     event.stopPropagation();
-                    const filesCopy = [...files];
-                    this.model.proxy?.$drop(this.id, node?.id, items, CancellationToken.None).then(() => {
-                        for (const file of filesCopy) {
+                    this.model.proxy?.$drop(this.id, node?.id, items, CancellationToken.None).finally(() => {
+                        for (const file of files) {
                             this.dndFileContentStore.removeFile(file);
                         }
                     });
                     files = [];
                 }
-            } finally {
+            } catch (e) {
                 for (const file of files) {
                     this.dndFileContentStore.removeFile(file);
                 }
+                throw e;
             }
         }
     }
