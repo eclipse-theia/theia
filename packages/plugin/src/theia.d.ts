@@ -8872,11 +8872,21 @@ export module '@theia/plugin' {
         source?: string;
 
         /**
-         * A code or identifier for this diagnostics. Will not be surfaced
-         * to the user, but should be used for later processing, e.g. when
-         * providing {@link CodeActionContext code actions}.
+         * A code or identifier for this diagnostic.
+         * Should be used for later processing, e.g. when providing {@link CodeActionContext code actions}.
          */
-        code?: string | number;
+        code?: string | number | {
+            /**
+             * A code or identifier for this diagnostic.
+             * Should be used for later processing, e.g. when providing {@link CodeActionContext code actions}.
+             */
+            value: string | number;
+
+            /**
+             * A target URI to open with more information about the diagnostic error.
+             */
+            target: Uri;
+        };
 
         /**
          * An array of related diagnostic information, e.g. when symbol-names within
