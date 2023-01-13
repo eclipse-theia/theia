@@ -1095,7 +1095,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }
 
         const lines = content.split('\n');
-        node.children.map(l => {
+        node.children.forEach(l => {
             const leftPositionedNodes = node.children.filter(rl => rl.line === l.line && rl.character < l.character);
             const diff = (this._replaceTerm.length - this.searchTerm.length) * leftPositionedNodes.length;
             const start = lines[l.line - 1].substr(0, l.character - 1 + diff);
@@ -1122,7 +1122,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     protected createEditorDecorations(resultNode: SearchInWorkspaceFileNode | undefined): EditorDecoration[] {
         const decorations: EditorDecoration[] = [];
         if (resultNode) {
-            resultNode.children.map(res => {
+            resultNode.children.forEach(res => {
                 decorations.push({
                     range: {
                         start: {
