@@ -630,7 +630,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected updateCurrentEditorDecorations(): void {
-        this.shell.allTabBars.map(tb => {
+        this.shell.allTabBars.forEach(tb => {
             const currentTitle = tb.currentTitle;
             if (currentTitle && currentTitle.owner instanceof EditorWidget) {
                 const widget = currentTitle.owner;
