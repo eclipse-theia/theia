@@ -10831,6 +10831,11 @@ export module '@theia/plugin' {
          * Controls whether the input box is visible (default is true).
          */
         visible: boolean;
+
+        /**
+         * Controls whether the input box is enabled (default is `true`).
+         */
+        enabled: boolean;
     }
 
     interface QuickDiffProvider {

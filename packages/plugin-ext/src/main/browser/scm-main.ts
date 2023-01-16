@@ -440,4 +440,14 @@ export class ScmMainImpl implements ScmMain {
 
         repository.input.visible = visible;
     }
+
+    $setInputBoxEnabled(sourceControlHandle: number, enabled: boolean): void {
+        const repository = this.repositories.get(sourceControlHandle);
+
+        if (!repository) {
+            return;
+        }
+
+        repository.input.enabled = enabled;
+    }
 }
