@@ -149,7 +149,7 @@ export class TabBarToolbar extends ReactWidget {
         }
         const tooltip = item.tooltip || (command && command.label);
 
-        const toolbarItemClassNames = this.getToolbarItemClassNames(command?.id ?? item.command, this.evalualteWhenClause(item.when));
+        const toolbarItemClassNames = this.getToolbarItemClassNames(command?.id ?? item.command, this.evaluateWhenClause(item.when));
         if (item.menuPath && !item.command) { toolbarItemClassNames.push('enabled'); }
         return <div key={item.id}
             ref={this.onRender}
@@ -255,7 +255,7 @@ export class TabBarToolbar extends ReactWidget {
         e.stopPropagation();
 
         const item: AnyToolbarItem | undefined = this.inline.get(e.currentTarget.id);
-        if (this.evalualteWhenClause(item?.when)) {
+        if (this.evaluateWhenClause(item?.when)) {
             if (item?.command && item.menuPath) {
                 this.menuCommandExecutor.executeCommand(item.menuPath, item.command, this.current);
             } else if (item?.command) {

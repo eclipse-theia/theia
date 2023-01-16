@@ -235,7 +235,7 @@ export class ToolbarImpl extends TabBarToolbar {
 
         if (TabBarToolbarItem.is(item)) {
             toolbarItemClassNames = TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM;
-            if (this.evalualteWhenClause(item.when)) {
+            if (this.evaluateWhenClause(item.when)) {
                 toolbarItemClassNames += ' enabled';
             }
             renderBody = this.renderItem(item);
