@@ -1407,7 +1407,7 @@ export interface WorkspaceEditMetadataDto {
     } | {
         light: UriComponents;
         dark: UriComponents;
-    };
+    } | ThemeIcon;
 }
 
 export interface WorkspaceFileEditDto {
@@ -1420,9 +1420,8 @@ export interface WorkspaceFileEditDto {
 export interface WorkspaceTextEditDto {
     resource: UriComponents;
     modelVersionId?: number;
-    textEdit: TextEdit;
+    textEdit: TextEdit & { insertAsSnippet?: boolean };
     metadata?: WorkspaceEditMetadataDto;
-
 }
 export namespace WorkspaceTextEditDto {
     export function is(arg: WorkspaceTextEditDto | WorkspaceFileEditDto): arg is WorkspaceTextEditDto {

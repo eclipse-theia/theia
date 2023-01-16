@@ -93,6 +93,13 @@ export namespace ArrayUtils {
         return -(low + 1);
     }
 
+    export function partition<T>(array: T[], filter: (e: T, idx: number, arr: T[]) => boolean | undefined): [T[], T[]] {
+        const pass: T[] = [];
+        const fail: T[] = [];
+        array.forEach((e, idx, arr) => (filter(e, idx, arr) ? pass : fail).push(e));
+        return [pass, fail];
+    }
+
     /**
      * @returns New array with all falsy values removed. The original array IS NOT modified.
      */
