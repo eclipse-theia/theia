@@ -246,7 +246,7 @@ export class TabBarToolbar extends ReactWidget {
         return this.commands.isToggled(command, this.current);
     }
 
-    protected evalualteWhenClause(whenClause: string | undefined): boolean {
+    protected evaluateWhenClause(whenClause: string | undefined): boolean {
         return whenClause ? this.contextKeyService.match(whenClause) : true;
     }
 
