@@ -492,8 +492,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         const { cols, rows } = this.term;
 
         const terminalId = await this.shellTerminalServer.create({
-            shell: this.options.shellPath || this.shellPreferences.shell[OS.type()],
-            args: this.options.shellArgs || this.shellPreferences.shellArgs[OS.type()],
+            shell: this.options.shellPath || this.shellPreferences.shell[OS.backend.type()],
+            args: this.options.shellArgs || this.shellPreferences.shellArgs[OS.backend.type()],
             env: this.options.env,
             strictEnv: this.options.strictEnv,
             isPseudo: this.options.isPseudoTerminal,

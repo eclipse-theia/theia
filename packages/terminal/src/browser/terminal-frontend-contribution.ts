@@ -27,8 +27,7 @@ import {
     Emitter,
     Event,
     ViewColumn,
-    OS,
-    isWindows
+    OS
 } from '@theia/core/lib/common';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager, PreferenceService,
@@ -258,7 +257,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         this.profileService.onAdded(id => {
             // extension contributions get read after this point: need to set the default profile if necessary
             let defaultProfileId;
-            switch (OS.type()) {
+            switch (OS.backend.type()) {
                 case OS.Type.Windows: {
                     defaultProfileId = this.terminalPreferences['terminal.integrated.defaultProfile.windows'];
                     break;
@@ -277,7 +276,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     }
 
     async contributeDefaultProfiles(): Promise<void> {
-        if (isWindows) {
+        if (OS.backend.isWindows) {
             this.contributedProfileStore.registerTerminalProfile('cmd', new ShellTerminalProfile(this, {
                 shellPath: await this.resolveShellPath([
                     '${env:windir}\\Sysnative\\cmd.exe',
@@ -300,7 +299,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         let legacyShellPath: string | undefined;
         let legacyShellArgs: string[] | undefined;
         const removed = new Set(this.userProfileStore.all.map(([id, profile]) => id));
-        switch (OS.type()) {
+        switch (OS.backend.type()) {
             case OS.Type.Windows: {
                 profiles = this.terminalPreferences['terminal.integrated.profiles.windows'];
                 defaultProfile = this.terminalPreferences['terminal.integrated.defaultProfile.windows'];
@@ -968,7 +967,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             return;
         }
 
-        this.preferenceService.set(`terminal.integrated.defaultProfile.${OS.type().toLowerCase()}`, result[0], PreferenceScope.User);
+        this.preferenceService.set(`terminal.integrated.defaultProfile.${OS.backend.type().toLowerCase()}`, result[0], PreferenceScope.User);
     }
 
     protected async openActiveWorkspaceTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {

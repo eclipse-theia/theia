@@ -38,7 +38,7 @@ const commonProfileProperties: PreferenceSchemaProperties = {
     },
     icon: {
         type: 'string',
-        markdownDescription: nls.localize('theia/terminal/profileIcon', 'A codicon ID to associate with the terminal icon.  \nterminal-tmux:"$(terminal-tmux)"')
+        markdownDescription: nls.localize('theia/terminal/profileIcon', 'A codicon ID to associate with the terminal icon.\nterminal-tmux:"$(terminal-tmux)"')
     },
     color: {
         type: 'string',
