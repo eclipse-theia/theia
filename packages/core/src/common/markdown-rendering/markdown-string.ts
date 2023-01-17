@@ -21,14 +21,16 @@ import { isObject, isString } from '../types';
 
 export interface MarkdownString {
     readonly value: string;
-    readonly isTrusted?: MarkdownTrust;
+    readonly isTrusted?: boolean | MarkdownStringTrustedOptions;
     readonly supportThemeIcons?: boolean;
     readonly supportHtml?: boolean;
     readonly baseUri?: UriComponents;
     uris?: { [href: string]: UriComponents };
 }
 
-export type MarkdownTrust = boolean | { readonly enabledCommands: readonly string[] };
+export interface MarkdownStringTrustedOptions {
+    readonly enabledCommands: readonly string[]
+}
 
 export enum MarkdownStringTextNewlineStyle {
     Paragraph = 0,
@@ -49,14 +51,14 @@ export namespace MarkdownString {
 export class MarkdownStringImpl implements MarkdownString {
 
     public value: string;
-    public isTrusted?: MarkdownTrust;
+    public isTrusted?: boolean | MarkdownStringTrustedOptions;
     public supportThemeIcons?: boolean;
     public supportHtml?: boolean;
     public baseUri?: UriComponents;
 
     constructor(
         value: string = '',
-        isTrustedOrOptions: boolean | { isTrusted?: MarkdownTrust; supportThemeIcons?: boolean; supportHtml?: boolean } = false,
+        isTrustedOrOptions: boolean | { isTrusted?: boolean | MarkdownStringTrustedOptions; supportThemeIcons?: boolean; supportHtml?: boolean } = false,
     ) {
         this.value = value;
         if (typeof this.value !== 'string') {
