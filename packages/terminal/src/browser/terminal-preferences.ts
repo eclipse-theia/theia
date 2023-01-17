@@ -65,9 +65,7 @@ const pathProperty: IJSONSchema = {
 };
 
 function shellArgsDeprecatedMessage(type: OS.Type): string {
-    return nls.localize('theia/terminal/shell.deprecated', 'This is deprecated, the new recommended way to configure your default shell is by creating a '
-        + 'terminal profile in \'terminal.integrated.profiles.{0}\' and setting its profile name as the default in '
-        + '\'terminal.integrated.defaultProfile.{0}.\'', type.toString().toLowerCase());
+    return nls.localize('theia/terminal/shell.deprecated', 'This is deprecated, the new recommended way to configure your default shell is by creating a terminal profile in \'terminal.integrated.profiles.{0}\' and setting its profile name as the default in \'terminal.integrated.defaultProfile.{0}.\'', type.toString().toLowerCase());
 }
 
 export const TerminalConfigSchema: PreferenceSchema = {
@@ -229,9 +227,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
             description: nls.localize('theia/terminal/defaultProfile', 'The default profile used on {0}', OS.Type.OSX.toString())
         },
         'terminal.integrated.profiles.windows': {
-            markdownDescription: nls.localize('theia/terminal/profiles', 'The profiles to present when creating a new terminal. Set the path '
-                + 'property manually with optional args.\n'
-                + 'Set an existing profile to `null` to hide the profile from the list, for example: `"{0}": null`.', 'cmd'),
+            markdownDescription: nls.localize('theia/terminal/profiles', 'The profiles to present when creating a new terminal. Set the path property manually with optional args.\nSet an existing profile to `null` to hide the profile from the list, for example: `"{0}": null`.', 'cmd'),
             anyOf: [
                 {
                     type: 'object',
@@ -286,9 +282,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
             ]
         },
         'terminal.integrated.profiles.linux': {
-            markdownDescription: nls.localize('theia/terminal/profiles', 'The profiles to present when creating a new terminal. Set the path '
-                + 'property manually with optional args.\n'
-                + 'Set an existing profile to `null` to hide the profile from the list, for example: `"{0}": null`.', 'bash'),
+            markdownDescription: nls.localize('theia/terminal/profiles', 'The profiles to present when creating a new terminal. Set the path property manually with optional args.\nSet an existing profile to `null` to hide the profile from the list, for example: `"{0}": null`.', 'bash'),
             anyOf: [{
                 type: 'object',
                 properties: {
@@ -322,9 +316,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
             ]
         },
         'terminal.integrated.profiles.osx': {
-            markdownDescription: nls.localize('theia/terminal/profiles', 'The profiles to present when creating a new terminal. Set the path '
-                + 'property manually with optional args.\n'
-                + 'Set an existing profile to `null` to hide the profile from the list, for example: `"{0}": null`.', 'zsh'),
+            markdownDescription: nls.localize('theia/terminal/profiles', 'The profiles to present when creating a new terminal. Set the path property manually with optional args.\nSet an existing profile to `null` to hide the profile from the list, for example: `"{0}": null`.', 'zsh'),
             anyOf: [{
                 type: 'object',
                 properties: {
