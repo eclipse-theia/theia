@@ -78,7 +78,7 @@ export class ToolbarImpl extends TabBarToolbar {
         this.inline.clear();
         const { items } = this.model.toolbarItems;
 
-        const contextKeys: Set<string> = new Set();
+        const contextKeys = new Set<string>();
         for (const column of Object.keys(items)) {
             for (const group of items[column as ToolbarAlignment]) {
                 for (const item of group) {

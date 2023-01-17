@@ -65,7 +65,7 @@ export class TabBarToolbar extends ReactWidget {
         this.inline.clear();
         this.more.clear();
 
-        const contextKeys: Set<string> = new Set();
+        const contextKeys = new Set<string>();
         for (const item of items.sort(TabBarToolbarItem.PRIORITY_COMPARATOR).reverse()) {
             if ('render' in item || item.group === undefined || item.group === 'navigation') {
                 this.inline.set(item.id, item);
@@ -149,7 +149,7 @@ export class TabBarToolbar extends ReactWidget {
         }
         const tooltip = item.tooltip || (command && command.label);
 
-        const toolbarItemClassNames = this.getToolbarItemClassNames(command?.id ?? item.command, this.evaluateWhenClause(item.when));
+        const toolbarItemClassNames = this.getToolbarItemClassNames(item);
         if (item.menuPath && !item.command) { toolbarItemClassNames.push('enabled'); }
         return <div key={item.id}
             ref={this.onRender}
@@ -164,13 +164,13 @@ export class TabBarToolbar extends ReactWidget {
         </div>;
     }
 
-    protected getToolbarItemClassNames(commandId: string | undefined, whenClauseResult: boolean): string[] {
+    protected getToolbarItemClassNames(item: AnyToolbarItem): string[] {
         const classNames = [TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM];
-        if (commandId) {
-            if (this.commandIsEnabled(commandId) && whenClauseResult) {
+        if (item.command) {
+            if (this.commandIsEnabled(item.command) && this.evaluateWhenClause(item.when)) {
                 classNames.push('enabled');
             }
-            if (this.commandIsToggled(commandId)) {
+            if (this.commandIsToggled(item.command)) {
                 classNames.push('toggled');
             }
         }
@@ -255,14 +255,17 @@ export class TabBarToolbar extends ReactWidget {
         e.stopPropagation();
 
         const item: AnyToolbarItem | undefined = this.inline.get(e.currentTarget.id);
-        if (this.evaluateWhenClause(item?.when)) {
-            if (item?.command && item.menuPath) {
-                this.menuCommandExecutor.executeCommand(item.menuPath, item.command, this.current);
-            } else if (item?.command) {
-                this.commands.executeCommand(item.command, this.current);
-            } else if (item?.menuPath) {
-                this.renderMoreContextMenu(this.toAnchor(e), item.menuPath);
-            }
+
+        if (!this.evaluateWhenClause(item?.when)) {
+            return;
+        }
+
+        if (item?.command && item.menuPath) {
+            this.menuCommandExecutor.executeCommand(item.menuPath, item.command, this.current);
+        } else if (item?.command) {
+            this.commands.executeCommand(item.command, this.current);
+        } else if (item?.menuPath) {
+            this.renderMoreContextMenu(this.toAnchor(e), item.menuPath);
         }
         this.update();
     };
