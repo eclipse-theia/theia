@@ -727,7 +727,7 @@ export interface TreeViewRevealOptions {
 }
 
 export interface TreeViewsMain {
-    $registerTreeDataProvider(treeViewId: string, dragMimetypes: string[] | undefined, dropMimetypes: string[] | undefined): void;
+    $registerTreeDataProvider(treeViewId: string, canSelectMany: boolean | undefined, dragMimetypes: string[] | undefined, dropMimetypes: string[] | undefined): void;
     $readDroppedFile(contentId: string): Promise<BinaryBuffer>;
     $unregisterTreeDataProvider(treeViewId: string): void;
     $refresh(treeViewId: string): Promise<void>;
@@ -785,13 +785,13 @@ export interface TreeViewItem {
 
 }
 
-export interface TreeViewSelection {
-    treeViewId: string
-    treeItemId: string
+export interface TreeViewItemReference {
+    viewId: string
+    itemId: string,
 }
-export namespace TreeViewSelection {
-    export function is(arg: unknown): arg is TreeViewSelection {
-        return isObject(arg) && 'treeViewId' in arg && 'treeItemId' in arg;
+export namespace TreeViewItemReference {
+    export function is(arg: unknown): arg is TreeViewItemReference {
+        return !!arg && typeof arg === 'object' && 'viewId' in arg && 'itemId' in arg;
     }
 }
 

@@ -58,10 +58,11 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
         this.toDispose.dispose();
     }
 
-    async $registerTreeDataProvider(treeViewId: string, dragMimeTypes: string[] | undefined, dropMimeTypes: string[] | undefined): Promise<void> {
+    async $registerTreeDataProvider(treeViewId: string, canSelectMany: boolean | undefined, dragMimeTypes: string[] | undefined, dropMimeTypes: string[] | undefined): Promise<void> {
         this.treeViewProviders.set(treeViewId, this.viewRegistry.registerViewDataProvider(treeViewId, async ({ state, viewInfo }) => {
             const options: TreeViewWidgetOptions = {
                 id: treeViewId,
+                multiSelect: canSelectMany,
                 dragMimeTypes,
                 dropMimeTypes
             };

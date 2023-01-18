@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { TreeViewsExt, TreeViewItemCollapsibleState, TreeViewItem, TreeViewSelection, ThemeIcon, DataTransferFileDTO } from '../../../common/plugin-api-rpc';
+import { TreeViewsExt, TreeViewItemCollapsibleState, TreeViewItem, TreeViewItemReference, ThemeIcon, DataTransferFileDTO } from '../../../common/plugin-api-rpc';
 import { Command } from '../../../common/plugin-api-rpc-model';
 import {
     TreeNode,
@@ -164,6 +164,7 @@ export namespace CompositeTreeViewNode {
 @injectable()
 export class TreeViewWidgetOptions {
     id: string;
+    multiSelect: boolean | undefined;
     dragMimeTypes: string[] | undefined;
     dropMimeTypes: string[] | undefined;
 }
@@ -699,38 +700,42 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     protected override renderTailDecorations(node: TreeViewNode, props: NodeProps): React.ReactNode {
         return this.contextKeys.with({ view: this.id, viewItem: node.contextValue }, () => {
             const menu = this.menus.getMenu(VIEW_ITEM_INLINE_MENU);
-            const arg = this.toTreeViewSelection(node);
+            const args = this.toContextMenuArgs(node);
             const inlineCommands = menu.children.filter((item): item is ActionMenuNode => item instanceof ActionMenuNode);
             const tailDecorations = super.renderTailDecorations(node, props);
             return <React.Fragment>
                 {inlineCommands.length > 0 && <div className={TREE_NODE_SEGMENT_CLASS + ' flex'}>
-                    {inlineCommands.map((item, index) => this.renderInlineCommand(item, index, this.focusService.hasFocus(node), arg))}
+                    {inlineCommands.map((item, index) => this.renderInlineCommand(item, index, this.focusService.hasFocus(node), args))}
                 </div>}
                 {tailDecorations !== undefined && <div className={TREE_NODE_SEGMENT_CLASS + ' flex'}>{tailDecorations}</div>}
             </React.Fragment>;
         });
     }
 
-    toTreeViewSelection(node: TreeNode): TreeViewSelection {
-        return { treeViewId: this.id, treeItemId: node.id };
+    toTreeViewItemReference(node: TreeNode): TreeViewItemReference {
+        return { viewId: this.id, itemId: node.id };
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected renderInlineCommand(node: ActionMenuNode, index: number, tabbable: boolean, arg: any): React.ReactNode {
+    protected renderInlineCommand(node: ActionMenuNode, index: number, tabbable: boolean, args: any[]): React.ReactNode {
         const { icon } = node;
-        if (!icon || !this.commands.isVisible(node.command, arg) || !node.when || !this.contextKeys.match(node.when)) {
+        if (!icon || !this.commands.isVisible(node.command, args) || !node.when || !this.contextKeys.match(node.when)) {
             return false;
         }
         const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, icon, ACTION_ITEM, 'theia-tree-view-inline-action'].join(' ');
         const tabIndex = tabbable ? 0 : undefined;
         return <div key={index} className={className} title={node.label} tabIndex={tabIndex} onClick={e => {
             e.stopPropagation();
-            this.commands.executeCommand(node.command, arg);
+            this.commands.executeCommand(node.command, ...args);
         }} />;
     }
 
-    protected override toContextMenuArgs(node: SelectableTreeNode): [TreeViewSelection] {
-        return [this.toTreeViewSelection(node)];
+    protected override toContextMenuArgs(target: SelectableTreeNode): [TreeViewItemReference, TreeViewItemReference[]] | [TreeViewItemReference] {
+        if (this.options.multiSelect) {
+            return [this.toTreeViewItemReference(target), this.model.selectedNodes.map(node => this.toTreeViewItemReference(node))];
+        } else {
+            return [this.toTreeViewItemReference(target)];
+        }
     }
 
     override setFlag(flag: Widget.Flag): void {

@@ -22,7 +22,7 @@ import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-se
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { TimelineItem } from '@theia/timeline/lib/common/timeline-model';
-import { ScmCommandArg, TimelineCommandArg, TreeViewSelection } from '../../../common';
+import { ScmCommandArg, TimelineCommandArg, TreeViewItemReference } from '../../../common';
 import { PluginScmProvider, PluginScmResource, PluginScmResourceGroup } from '../scm-main';
 import { TreeViewWidget } from '../view/tree-view-widget';
 import { CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint } from './vscode-theia-menu-mappings';
@@ -238,19 +238,21 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
     protected toTreeArgs(...args: any[]): any[] {
         const treeArgs: any[] = [];
         for (const arg of args) {
-            if (TreeViewSelection.is(arg)) {
+            if (TreeViewItemReference.is(arg)) {
                 treeArgs.push(arg);
+            } else if (Array.isArray(arg)) {
+                treeArgs.push(arg.filter(TreeViewItemReference.is));
             }
         }
         return treeArgs;
     }
 
-    protected getSelectedResources(): [CodeUri | TreeViewSelection | undefined, CodeUri[] | undefined] {
+    protected getSelectedResources(): [CodeUri | TreeViewItemReference | undefined, CodeUri[] | undefined] {
         const selection = this.selectionService.selection;
         const resourceKey = this.resourceContextKey.get();
         const resourceUri = resourceKey ? CodeUri.parse(resourceKey) : undefined;
         const firstMember = TreeWidgetSelection.is(selection) && selection.source instanceof TreeViewWidget && selection[0]
-            ? selection.source.toTreeViewSelection(selection[0])
+            ? selection.source.toTreeViewItemReference(selection[0])
             : UriSelection.getUri(selection)?.['codeUri'] ?? resourceUri;
         const secondMember = TreeWidgetSelection.is(selection)
             ? UriSelection.getUris(selection).map(uri => uri['codeUri'])
