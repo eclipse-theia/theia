@@ -72,18 +72,27 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
         }
         const { line, column, endLine, endColumn } = this.raw;
         const selection: RecursivePartial<Range> = {
-            start: Position.create(line - 1, column - 1)
+            start: Position.create(this.coerceNonNegative(line - 1), this.coerceNonNegative(column - 1))
         };
         if (typeof endLine === 'number') {
             selection.end = {
-                line: endLine - 1,
-                character: typeof endColumn === 'number' ? endColumn - 1 : undefined
+                line: this.coerceNonNegative(endLine - 1),
+                character: typeof endColumn === 'number' ? this.coerceNonNegative(endColumn - 1) : undefined
             };
         }
         this.source.open({
             ...options,
             selection
         });
+    }
+
+    /**
+     * Debugger can send `column: 0` value despite of initializing the debug session with `columnsStartAt1: true`.
+     * This method can be used to ensure that neither `column` nor `column` are negative numbers.
+     * See https://github.com/microsoft/vscode-mock-debug/issues/85.
+     */
+    protected coerceNonNegative(value: number): number {
+        return value < 0 ? 0 : value;
     }
 
     protected scopes: Promise<DebugScope[]> | undefined;
