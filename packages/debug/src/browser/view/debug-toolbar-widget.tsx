@@ -92,10 +92,10 @@ export class DebugToolBar extends ReactWidget {
             .reduce((acc, curr) => acc.concat(curr), [])
             .filter(CommandMenuNode.is)
             .filter(commandNode => match(commandNode))
-            .map(commandNode => this.debugAction(commandNode));
+            .map(commandNode => this.createDebugAction(commandNode));
     }
 
-    protected debugAction(node: CommandMenuNode): React.ReactNode {
+    protected createDebugAction(node: CommandMenuNode): React.ReactNode {
         const { label = '', command, icon = '' } = node;
         if (!label && !icon) {
             const { when } = node;
