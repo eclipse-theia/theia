@@ -67,6 +67,7 @@ export class DebugExtImpl implements DebugExt {
     private readonly onDidChangeBreakpointsEmitter = new Emitter<theia.BreakpointsChangeEvent>();
     private readonly onDidChangeActiveDebugSessionEmitter = new Emitter<theia.DebugSession | undefined>();
     private readonly onDidTerminateDebugSessionEmitter = new Emitter<theia.DebugSession>();
+    private readonly onDidCreateDebugSessionEmitter = new Emitter<theia.DebugSession>();
     private readonly onDidStartDebugSessionEmitter = new Emitter<theia.DebugSession>();
     private readonly onDidReceiveDebugSessionCustomEmitter = new Emitter<theia.DebugSessionCustomEvent>();
 
@@ -129,6 +130,10 @@ export class DebugExtImpl implements DebugExt {
 
     get onDidTerminateDebugSession(): theia.Event<theia.DebugSession> {
         return this.onDidTerminateDebugSessionEmitter.event;
+    }
+
+    get onDidCreateDebugSession(): theia.Event<theia.DebugSession> {
+        return this.onDidCreateDebugSessionEmitter.event;
     }
 
     get onDidStartDebugSession(): theia.Event<theia.DebugSession> {
@@ -249,6 +254,13 @@ export class DebugExtImpl implements DebugExt {
         const session = this.sessions.get(sessionId);
         if (session) {
             this.onDidReceiveDebugSessionCustomEmitter.fire({ event, body, session });
+        }
+    }
+
+    async $sessionDidCreate(sessionId: string): Promise<void> {
+        const session = this.sessions.get(sessionId);
+        if (session) {
+            this.onDidCreateDebugSessionEmitter.fire(session);
         }
     }
 
