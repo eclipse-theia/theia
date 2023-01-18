@@ -87,10 +87,6 @@ export class DebugSession implements CompositeTreeElement {
     protected readonly toDispose = new DisposableCollection();
 
     protected isStopping: boolean = false;
-    /**
-     * Number of millis after a `stop` request times out.
-     */
-    protected stopTimeout = 5_000;
 
     constructor(
         readonly id: string,
@@ -105,6 +101,10 @@ export class DebugSession implements CompositeTreeElement {
         protected readonly fileService: FileService,
         protected readonly debugContributionProvider: ContributionProvider<DebugContribution>,
         protected readonly workspaceService: WorkspaceService,
+        /**
+         * Number of millis after a `stop` request times out. It's 5 seconds by default.
+         */
+        protected readonly stopTimeout = 5_000,
     ) {
         this.connection.onRequest('runInTerminal', (request: DebugProtocol.RunInTerminalRequest) => this.runInTerminal(request));
         this.connection.onDidClose(() => {
