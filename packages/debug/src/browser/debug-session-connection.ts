@@ -215,7 +215,7 @@ export class DebugSessionConnection implements Disposable {
             };
 
             this.pendingRequests.set(request.seq, result);
-            if (typeof timeout === 'number') {
+            if (timeout) {
                 const handle = setTimeout(() => {
                     const pendingRequest = this.pendingRequests.get(request.seq);
                     if (pendingRequest) {
