@@ -1531,6 +1531,68 @@ export class DocumentLink {
 }
 
 @es5ClassCompat
+export class DocumentDropEdit {
+    insertText: string | SnippetString;
+
+    additionalEdit?: WorkspaceEdit;
+
+    constructor(insertText: string | SnippetString) {
+        this.insertText = insertText;
+    }
+}
+
+export class DataTransferItem {
+    asString(): Thenable<string> {
+        return Promise.resolve(typeof this.value === 'string' ? this.value : JSON.stringify(this.value));
+    }
+
+    asFile(): theia.DataTransferFile | undefined {
+        return undefined;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    constructor(readonly value: any) {
+    }
+}
+
+/**
+ * A map containing a mapping of the mime type of the corresponding transferred data.
+ *
+ * Drag and drop controllers that implement {@link TreeDragAndDropController.handleDrag `handleDrag`} can add additional mime types to the
+ * data transfer. These additional mime types will only be included in the `handleDrop` when the the drag was initiated from
+ * an element in the same drag and drop controller.
+ */
+@es5ClassCompat
+export class DataTransfer implements Iterable<[mimeType: string, item: DataTransferItem]> {
+    private items: Map<string, DataTransferItem> = new Map();
+
+    get(mimeType: string): DataTransferItem | undefined {
+        return this.items.get(mimeType);
+    }
+    set(mimeType: string, value: DataTransferItem): void {
+        this.items.set(mimeType, value);
+    }
+
+    has(mimeType: string): boolean {
+        return this.items.has(mimeType);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    forEach(callbackfn: (item: DataTransferItem, mimeType: string, dataTransfer: DataTransfer) => void, thisArg?: any): void {
+        this.items.forEach((item, mimetype) => {
+            callbackfn.apply(thisArg, [item, mimetype, this]);
+        });
+    }
+    [Symbol.iterator](): IterableIterator<[mimeType: string, item: DataTransferItem]> {
+        return this.items[Symbol.iterator]();
+    }
+
+    clear(): void {
+        this.items.clear();
+    }
+}
+
+@es5ClassCompat
 export class CodeLens {
 
     range: Range;

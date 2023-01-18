@@ -18,7 +18,7 @@ import * as theia from '@theia/plugin';
 import type * as monaco from '@theia/monaco-editor-core';
 import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
 import { UriComponents } from './uri-components';
-import { CompletionItemTag } from '../plugin/types-impl';
+import { CompletionItemTag, SnippetString } from '../plugin/types-impl';
 import { Event as TheiaEvent } from '@theia/core/lib/common/event';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { SerializedRegExp } from './plugin-api-rpc';
@@ -322,6 +322,26 @@ export interface TextEdit {
     range: Range;
     text: string;
     eol?: monaco.editor.EndOfLineSequence;
+}
+
+export interface DocumentDropEdit {
+    insertText: string | SnippetString;
+    additionalEdit?: WorkspaceEdit;
+}
+
+export interface DataTransferFileDTO {
+    readonly name: string;
+    readonly uri?: UriComponents;
+}
+
+export interface DataTransferItemDTO {
+    readonly asString: string;
+    readonly fileData: DataTransferFileDTO | undefined;
+    readonly uriListData?: ReadonlyArray<string | UriComponents>;
+}
+
+export interface DataTransferDTO {
+    readonly items: Array<[/* type */string, DataTransferItemDTO]>;
 }
 
 export interface Location {

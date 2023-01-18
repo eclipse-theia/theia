@@ -69,7 +69,9 @@ import {
     InlineValue,
     InlineValueContext,
     TypeHierarchyItem,
-    InlineCompletionContext
+    InlineCompletionContext,
+    DocumentDropEdit,
+    DataTransferDTO
 } from '../common/plugin-api-rpc-model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -109,6 +111,7 @@ import { LinkedEditingRangeAdapter } from './languages/linked-editing-range';
 import { serializeEnterRules, serializeIndentation, serializeRegExp } from './languages-utils';
 import { InlayHintsAdapter } from './languages/inlay-hints';
 import { InlineCompletionAdapter, InlineCompletionAdapterBase } from './languages/inline-completion';
+import { DocumentDropEditAdapter } from './languages/document-drop-edit';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -139,7 +142,8 @@ type Adapter = CompletionAdapter |
     DocumentSemanticTokensAdapter |
     LinkedEditingRangeAdapter |
     TypeHierarchyAdapter |
-    InlineCompletionAdapter;
+    InlineCompletionAdapter |
+    DocumentDropEditAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -462,6 +466,19 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, DocumentFormattingAdapter, adapter => adapter.provideDocumentFormattingEdits(URI.revive(resource), options, token), undefined);
     }
     // ### Document Formatting Edit end
+
+    // ### Drop Edit Provider start
+    $provideDocumentDropEdits(handle: number, resource: UriComponents, position: Position,
+        dataTransfer: DataTransferDTO, token: theia.CancellationToken): Promise<DocumentDropEdit | undefined> {
+        return this.withAdapter(handle, DocumentDropEditAdapter, adapter => adapter.provideDocumentDropEdits(URI.revive(resource), position, dataTransfer, token), undefined);
+    }
+
+    registerDocumentDropEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentDropEditProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new DocumentDropEditAdapter(provider, this.documents));
+        this.proxy.$registerDocumentDropEditProvider(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+    // ### Drop Edit Provider end
 
     // ### Document Range Formatting Edit begin
     registerDocumentRangeFormattingEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentRangeFormattingEditProvider,
