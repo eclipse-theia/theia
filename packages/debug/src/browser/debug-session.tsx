@@ -51,7 +51,11 @@ export enum DebugState {
     Running,
     Stopped
 }
-export function debugStateLabel(state: DebugState): string {
+/**
+ * The mapped string values must not change as they are used for the `debugState` when context closure.
+ * For more details see the `Debugger contexts` section of the [official doc](https://code.visualstudio.com/api/references/when-clause-contexts#available-contexts).
+ */
+export function debugStateContextValue(state: DebugState): string {
     switch (state) {
         case DebugState.Initializing: return 'initializing';
         case DebugState.Stopped: return 'stopped';
