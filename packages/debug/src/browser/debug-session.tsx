@@ -43,7 +43,6 @@ import { DebugContribution } from './debug-contribution';
 import { Deferred, waitForEvent } from '@theia/core/lib/common/promise-util';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 
 export enum DebugState {
     Inactive,
@@ -291,11 +290,10 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     protected async initialize(): Promise<void> {
-        const clientName = FrontendApplicationConfigProvider.get().applicationName;
         try {
             const response = await this.connection.sendRequest('initialize', {
-                clientID: clientName.toLocaleLowerCase().replace(/\s+/g, '_'),
-                clientName,
+                clientID: 'Theia',
+                clientName: 'Theia IDE',
                 adapterID: this.configuration.type,
                 locale: 'en-US',
                 linesStartAt1: true,
