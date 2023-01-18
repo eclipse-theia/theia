@@ -293,12 +293,12 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         return this.model.getLineMaxColumn(lineNumber);
     }
 
-    validatePosition(position: Position): Position {
+    toValidPosition(position: Position): Position {
         const { lineNumber, column } = this.model.validatePosition(this.p2m.asPosition(position));
         return this.m2p.asPosition(lineNumber, column);
     }
 
-    validateRange(range: Range): Range {
+    toValidRange(range: Range): Range {
         return this.m2p.asRange(this.model.validateRange(this.p2m.asRange(range)));
     }
 

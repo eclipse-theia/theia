@@ -34,13 +34,16 @@ export interface TextEditorDocument extends lsp.TextDocument, Saveable, Disposab
      */
     findMatches?(options: FindMatchesOptions): FindMatch[];
     /**
-     * Create a valid position.
+     * Creates a valid position. If the position is outside of the backing document, this method will return a position that is ensured to be inside the document and valid.
+     * For example, when the `position` is `{ line: 1, character: 0 }` and the document is empty, this method will return with `{ line: 0, character: 0 }`.
      */
-    validatePosition(position: Position): Position;
+    toValidPosition(position: Position): Position;
     /**
-     * Create a valid range.
+     * Creates a valid range. If the `range` argument is outside of the document, this method will return with a new range that does not exceed the boundaries of the document.
+     * For example, if the argument is `{ start: { line: 1, character: 0 }, end: { line: 1, character: 0 } }` and the document is empty, the return value is
+     * `{ start: { line: 0, character: 0 }, end: { line: 0, character: 0 } }`.
      */
-    validateRange(range: Range): Range;
+    toValidRange(range: Range): Range;
 }
 
 // Refactoring
