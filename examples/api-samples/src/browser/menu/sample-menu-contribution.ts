@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { QuickInputService } from '@theia/core/lib/browser';
+import { ConfirmDialog, QuickInputService } from '@theia/core/lib/browser';
 import {
     Command, CommandContribution, CommandRegistry, MAIN_MENU_BAR,
     MenuContribution, MenuModelRegistry, MenuNode, MessageService, SubMenuOptions
@@ -28,6 +28,14 @@ const SampleCommand: Command = {
 const SampleCommand2: Command = {
     id: 'sample-command2',
     label: 'Sample Command2'
+};
+const SampleCommandConfirmDialog: Command = {
+    id: 'sample-command-confirm-dialog',
+    label: 'Sample Confirm Dialog'
+};
+const SampleComplexCommandConfirmDialog: Command = {
+    id: 'sample-command-complex-confirm-dialog',
+    label: 'Sample Complex Confirm Dialog'
 };
 const SampleCommandWithProgressMessage: Command = {
     id: 'sample-command-with-progress',
@@ -61,6 +69,38 @@ export class SampleCommandContribution implements CommandContribution {
         commands.registerCommand(SampleCommand2, {
             execute: () => {
                 alert('This is sample command2!');
+            }
+        });
+        commands.registerCommand(SampleCommandConfirmDialog, {
+            execute: async () => {
+                const choice = await new ConfirmDialog({
+                    title: 'Sample Confirm Dialog',
+                    msg: 'This is a sample with lots of text:' + Array(100)
+                        .fill(undefined)
+                        .map((element, index) => `\n\nExtra line #${index}`)
+                        .join('')
+                }).open();
+                this.messageService.info(`Sample confirm dialog returned with: \`${JSON.stringify(choice)}\``);
+            }
+        });
+        commands.registerCommand(SampleComplexCommandConfirmDialog, {
+            execute: async () => {
+                const mainDiv = document.createElement('div');
+                for (const color of ['#FF00007F', '#00FF007F', '#0000FF7F']) {
+                    const innerDiv = document.createElement('div');
+                    innerDiv.textContent = 'This is a sample with lots of text:' + Array(50)
+                        .fill(undefined)
+                        .map((_, index) => `\n\nExtra line #${index}`)
+                        .join('');
+                    innerDiv.style.backgroundColor = color;
+                    innerDiv.style.padding = '5px';
+                    mainDiv.appendChild(innerDiv);
+                }
+                const choice = await new ConfirmDialog({
+                    title: 'Sample Confirm Dialog',
+                    msg: mainDiv
+                }).open();
+                this.messageService.info(`Sample confirm dialog returned with: \`${JSON.stringify(choice)}\``);
             }
         });
         commands.registerCommand(SampleQuickInputCommand, {
