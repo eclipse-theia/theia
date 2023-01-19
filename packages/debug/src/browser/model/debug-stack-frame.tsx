@@ -72,12 +72,12 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
         }
         const { line, column, endLine, endColumn } = this.raw;
         const selection: RecursivePartial<Range> = {
-            start: Position.create(this.coerceNonNegative(line - 1), this.coerceNonNegative(column - 1))
+            start: Position.create(this.clampPositive(line - 1), this.clampPositive(column - 1))
         };
         if (typeof endLine === 'number') {
             selection.end = {
-                line: this.coerceNonNegative(endLine - 1),
-                character: typeof endColumn === 'number' ? this.coerceNonNegative(endColumn - 1) : undefined
+                line: this.clampPositive(endLine - 1),
+                character: typeof endColumn === 'number' ? this.clampPositive(endColumn - 1) : undefined
             };
         }
         this.source.open({
@@ -91,8 +91,8 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
      * This method can be used to ensure that neither `column` nor `column` are negative numbers.
      * See https://github.com/microsoft/vscode-mock-debug/issues/85.
      */
-    protected coerceNonNegative(value: number): number {
-        return value < 0 ? 0 : value;
+    protected clampPositive(value: number): number {
+        return Math.max(value, 0);
     }
 
     protected scopes: Promise<DebugScope[]> | undefined;
