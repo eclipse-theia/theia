@@ -1837,7 +1837,7 @@ export class DataTransferItem {
  */
 @es5ClassCompat
 export class DataTransfer implements Iterable<[mimeType: string, item: DataTransferItem]> {
-    private items: Map<string, DataTransferItem> = new Map();
+    private items = new Map<string, DataTransferItem>();
     get(mimeType: string): DataTransferItem | undefined {
         return this.items.get(mimeType);
     }
@@ -1852,7 +1852,7 @@ export class DataTransfer implements Iterable<[mimeType: string, item: DataTrans
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     forEach(callbackfn: (item: DataTransferItem, mimeType: string, dataTransfer: DataTransfer) => void, thisArg?: any): void {
         this.items.forEach((item, mimetype) => {
-            callbackfn.apply(thisArg, [item, mimetype, this]);
+            callbackfn.call(thisArg, item, mimetype, this);
         });
     }
     [Symbol.iterator](): IterableIterator<[mimeType: string, item: DataTransferItem]> {
