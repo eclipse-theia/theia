@@ -64,9 +64,7 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
         }));
     }
 
-    async open(options: WidgetOpenerOptions = {
-        mode: 'reveal'
-    }): Promise<EditorWidget | undefined> {
+    async open(options?: WidgetOpenerOptions): Promise<EditorWidget | undefined> {
         if (!this.source) {
             return undefined;
         }
@@ -81,6 +79,7 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
             };
         }
         this.source.open({
+            mode: 'reveal',
             ...options,
             selection
         });
