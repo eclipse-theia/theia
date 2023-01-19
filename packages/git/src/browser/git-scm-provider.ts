@@ -208,6 +208,8 @@ export class GitScmProvider implements ScmProvider {
 
     protected addScmResource(group: ScmResourceGroup, change: GitFileChange): void {
         const sourceUri = new URI(change.uri);
+        const icon = group.resources[0].decorations?.icon;
+        const iconDark = group.resources[0].decorations?.iconDark;
         group.resources.push({
             group,
             sourceUri,
@@ -215,7 +217,9 @@ export class GitScmProvider implements ScmProvider {
                 letter: GitFileStatus.toAbbreviation(change.status, change.staged),
                 color: GitFileStatus.getColor(change.status, change.staged),
                 tooltip: GitFileStatus.toString(change.status),
-                strikeThrough: GitFileStatus.toStrikethrough(change.status)
+                strikeThrough: GitFileStatus.toStrikethrough(change.status),
+                icon,
+                iconDark,
             },
             open: async () => this.open(change, { mode: 'reveal' })
         });

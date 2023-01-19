@@ -24,7 +24,7 @@ import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposa
 import { TreeWidget, TreeNode, SelectableTreeNode, TreeModel, TreeProps, NodeProps, TREE_NODE_SEGMENT_CLASS, TREE_NODE_SEGMENT_GROW_CLASS } from '@theia/core/lib/browser/tree';
 import { ScmTreeModel, ScmFileChangeRootNode, ScmFileChangeGroupNode, ScmFileChangeFolderNode, ScmFileChangeNode } from './scm-tree-model';
 import { MenuModelRegistry, ActionMenuNode, CompoundMenuNode, MenuPath } from '@theia/core/lib/common/menu';
-import { ScmResource } from './scm-provider';
+import { ScmResource, ScmResourceDecorations } from './scm-provider';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { ContextMenuRenderer, LabelProvider, CorePreferences, DiffUris, ACTION_ITEM } from '@theia/core/lib/browser';
 import { ScmContextKeyService } from './scm-context-key-service';
@@ -33,6 +33,7 @@ import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorations-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 @injectable()
 export class ScmTreeWidget extends TreeWidget {
@@ -570,8 +571,20 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
                 <div title={tooltip} className='status' style={{ color }}>
                     {letter}
                 </div>
+                <span className={this.getIconClassName(treeNode.decorations)}></span>
             </ScmInlineActions>
         </div >;
+    }
+
+    protected getIconClassName(decorations?: ScmResourceDecorations): string {
+        if (!decorations) {
+            return '';
+        }
+        const icon = decorations.icon;
+        if (ThemeIcon.isThemeIcon(icon)) {
+            return ThemeIcon.asClassName(icon);
+        }
+        return '';
     }
 
     protected open = () => {

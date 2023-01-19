@@ -18,6 +18,7 @@
 
 import { Disposable, Event } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 export interface ScmProvider extends Disposable {
     readonly id: string;
@@ -63,6 +64,8 @@ export interface ScmResourceDecorations {
     letter?: string;
     color?: string;
     strikeThrough?: boolean;
+    icon?: URI | ThemeIcon;
+    iconDark?: URI | ThemeIcon;
 }
 
 export interface ScmCommand {

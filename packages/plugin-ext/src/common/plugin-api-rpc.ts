@@ -938,7 +938,7 @@ export interface SourceControlGroupFeatures {
 export interface ScmRawResource {
     handle: number,
     sourceUri: UriComponents,
-    icons: UriComponents[],
+    icons: [UriComponents | ThemeIcon | undefined, UriComponents | ThemeIcon | undefined] /* icons: light, dark */,
     tooltip: string,
     strikeThrough: boolean,
     faded: boolean,

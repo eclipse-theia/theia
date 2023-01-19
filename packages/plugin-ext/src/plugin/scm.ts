@@ -38,17 +38,23 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { URI } from './types-impl';
 import { ScmCommandArg } from '../common/plugin-api-rpc';
 import { sep } from '@theia/core/lib/common/paths';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
+
 type ProviderHandle = number;
 type GroupHandle = number;
 type ResourceStateHandle = number;
 
-function getIconResource(decorations?: theia.SourceControlResourceThemableDecorations): theia.Uri | undefined {
+function getIconResource(decorations?: theia.SourceControlResourceThemableDecorations): theia.Uri | ThemeIcon | undefined {
     if (!decorations) {
         return undefined;
     } else if (typeof decorations.iconPath === 'string') {
         return URI.file(decorations.iconPath);
-    } else {
+    } else if (URI.isUri(decorations.iconPath)) {
         return decorations.iconPath;
+    } else if (ThemeIcon.isThemeIcon(decorations.iconPath)) {
+        return decorations.iconPath;
+    } else {
+        return undefined;
     }
 }
 
@@ -111,8 +117,8 @@ function compareResourceThemableDecorations(a: theia.SourceControlResourceThemab
         return 1;
     }
 
-    const aPath = typeof a.iconPath === 'string' ? a.iconPath : a.iconPath.fsPath;
-    const bPath = typeof b.iconPath === 'string' ? b.iconPath : b.iconPath.fsPath;
+    const aPath = typeof a.iconPath === 'string' ? a.iconPath : URI.isUri(a.iconPath) ? a.iconPath.fsPath : (a.iconPath as ThemeIcon).id;
+    const bPath = typeof b.iconPath === 'string' ? b.iconPath : URI.isUri(b.iconPath) ? b.iconPath.fsPath : (b.iconPath as ThemeIcon).id;
     return comparePaths(aPath, bPath);
 }
 
@@ -443,10 +449,10 @@ class SsmResourceGroupImpl implements theia.SourceControlResourceGroup {
                 this.resourceStatesMap.set(handle, r);
 
                 const sourceUri = r.resourceUri;
-                const iconUri = getIconResource(r.decorations);
-                const lightIconUri = r.decorations && getIconResource(r.decorations.light) || iconUri;
-                const darkIconUri = r.decorations && getIconResource(r.decorations.dark) || iconUri;
-                const icons: UriComponents[] = [];
+                const icon = getIconResource(r.decorations);
+                const lightIcon = r.decorations && getIconResource(r.decorations.light) || icon;
+                const darkIcon = r.decorations && getIconResource(r.decorations.dark) || icon;
+                const icons: ScmRawResource['icons'] = [lightIcon, darkIcon];
                 let command: Command | undefined;
 
                 if (r.command) {
@@ -459,14 +465,6 @@ class SsmResourceGroupImpl implements theia.SourceControlResourceGroup {
                     }
                 }
 
-                if (lightIconUri) {
-                    icons.push(lightIconUri);
-                }
-
-                if (darkIconUri && (darkIconUri.toString() !== lightIconUri?.toString())) {
-                    icons.push(darkIconUri);
-                }
-
                 const tooltip = (r.decorations && r.decorations.tooltip) || '';
                 const strikeThrough = r.decorations && !!r.decorations.strikeThrough;
                 const faded = r.decorations && !!r.decorations.faded;
@@ -474,8 +472,13 @@ class SsmResourceGroupImpl implements theia.SourceControlResourceGroup {
 
                 // TODO remove the letter and colorId fields when the FileDecorationProvider is applied, see https://github.com/eclipse-theia/theia/pull/8911
                 const rawResource = {
+                    handle,
+                    sourceUri,
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    handle, sourceUri, letter: (r as any).letter, colorId: (r as any).color.id, icons,
+                    letter: (r as any).letter,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    colorId: (r as any).color.id,
+                    icons,
                     tooltip, strikeThrough, faded, contextValue, command
                 } as ScmRawResource;
 

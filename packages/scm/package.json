@@ -6,6 +6,7 @@
     "@theia/core": "1.33.0",
     "@theia/editor": "1.33.0",
     "@theia/filesystem": "1.33.0",
+    "@theia/monaco-editor-core": "1.72.3",
     "@types/diff": "^3.2.2",
     "diff": "^3.4.0",
     "p-debounce": "^2.1.0",

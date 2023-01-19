@@ -40,6 +40,7 @@ import { URI as vscodeURI } from '@theia/core/shared/vscode-uri';
 import { Splice } from '../../common/arrays';
 import { UriComponents } from '../../common/uri-components';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 export class PluginScmResourceGroup implements ScmResourceGroup {
 
@@ -222,13 +223,14 @@ export class PluginScmProvider implements ScmProvider {
                 const { start, deleteCount, rawResources } = groupSlice;
                 const resources = rawResources.map(rawResource => {
                     const { handle, sourceUri, icons, tooltip, strikeThrough, faded, contextValue, command } = rawResource;
-                    const icon = icons[0];
-                    const iconDark = icons[1] || icon;
+                    const [light, dark] = icons;
+                    const icon = ThemeIcon.isThemeIcon(light) ? light : vscodeURI.revive(light);
+                    const iconDark = (ThemeIcon.isThemeIcon(dark) ? dark : vscodeURI.revive(dark)) || icon;
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const colorVariable = (rawResource as any).colorId && this.colors.toCssVariableName((rawResource as any).colorId);
                     const decorations = {
-                        icon: icon ? vscodeURI.revive(icon) : undefined,
-                        iconDark: iconDark ? vscodeURI.revive(iconDark) : undefined,
+                        icon,
+                        iconDark,
                         tooltip,
                         strikeThrough,
                         // TODO remove the letter and colorId fields when the FileDecorationProvider is applied, see https://github.com/eclipse-theia/theia/pull/8911

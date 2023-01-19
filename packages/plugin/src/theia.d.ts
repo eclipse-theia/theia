@@ -10895,7 +10895,7 @@ export module '@theia/plugin' {
          * The icon path for a specific
          * {@link SourceControlResourceState source control resource state}.
          */
-        readonly iconPath?: string | Uri;
+        readonly iconPath?: string | Uri | ThemeIcon;
     }
 
     /**
