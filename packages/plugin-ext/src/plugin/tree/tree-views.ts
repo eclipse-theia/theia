@@ -196,7 +196,7 @@ class TreeViewExtImpl<T> implements Disposable {
     private readonly nodes = new Map<string, TreeExtNode<T>>();
     private pendingRefresh = Promise.resolve();
 
-    private localDataTransfer: DataTransfer = new DataTransfer();
+    private localDataTransfer = new DataTransfer();
 
     private readonly toDispose = new DisposableCollection(
         Disposable.create(() => this.clearAll()),

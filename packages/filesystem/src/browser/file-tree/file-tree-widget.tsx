@@ -128,7 +128,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
                 selectedNodes = [node];
             }
             this.setSelectedTreeNodesAsData(event.dataTransfer, node, selectedNodes);
-            const uris = selectedNodes.filter(n => FileStatNode.is(n)).map(n => (n as FileStatNode).fileStat.resource);
+            const uris = selectedNodes.filter(FileStatNode.is).map(n => n.fileStat.resource);
             if (uris.length > 0) {
                 ApplicationShell.setDraggedEditorUris(event.dataTransfer, uris);
             }

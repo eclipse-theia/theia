@@ -521,7 +521,7 @@ export class ApplicationShell extends Widget {
                     uris.forEach(openUri);
                 } else if (event.dataTransfer.files?.length > 0) {
                     // the files were dragged from the outside the workspace
-                    Array.from(event.dataTransfer.files).forEach(async file => {
+                    Array.from(event.dataTransfer.files).forEach(file => {
                         if (file.path) {
                             const fileUri = URI.fromComponents({
                                 scheme: 'file',
