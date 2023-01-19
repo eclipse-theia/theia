@@ -616,6 +616,10 @@ export class HostedPluginSupport {
         return this.activateByEvent(`onFileSystem:${event.scheme}`);
     }
 
+    activateByTerminalProfile(profileId: string): Promise<void> {
+        return this.activateByEvent(`onTerminalProfile:${profileId}`);
+    }
+
     protected ensureFileSystemActivation(event: FileSystemProviderActivationEvent): void {
         event.waitUntil(this.activateByFileSystem(event));
     }

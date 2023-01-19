@@ -17,7 +17,7 @@
 import { Terminal, RendererType } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, Channel } from '@theia/core';
+import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, Channel, OS } from '@theia/core';
 import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon, ExtractableWidget } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -492,9 +492,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         const { cols, rows } = this.term;
 
         const terminalId = await this.shellTerminalServer.create({
-            shellPreferences: this.shellPreferences,
-            shell: this.options.shellPath,
-            args: this.options.shellArgs,
+            shell: this.options.shellPath || this.shellPreferences.shell[OS.backend.type()],
+            args: this.options.shellArgs || this.shellPreferences.shellArgs[OS.backend.type()],
             env: this.options.env,
             strictEnv: this.options.strictEnv,
             isPseudo: this.options.isPseudoTerminal,

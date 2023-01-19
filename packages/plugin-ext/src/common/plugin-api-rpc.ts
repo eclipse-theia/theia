@@ -269,6 +269,7 @@ export interface CommandRegistryExt {
 }
 
 export interface TerminalServiceExt {
+    $startProfile(providerId: string, cancellationToken: theia.CancellationToken): Promise<string>;
     $terminalCreated(id: string, name: string): void;
     $terminalNameChanged(id: string, name: string): void;
     $terminalOpened(id: string, processId: number, terminalId: number, cols: number, rows: number): void;

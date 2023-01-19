@@ -80,6 +80,7 @@ import { bindTreeViewDecoratorUtilities, TreeViewDecoratorService } from './view
 import { CodeEditorWidgetUtil } from './menus/vscode-theia-menu-mappings';
 import { PluginMenuCommandAdapter } from './menus/plugin-menu-command-adapter';
 import './theme-icon-override';
+import { PluginTerminalRegistry } from './plugin-terminal-registry';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -240,4 +241,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(PluginAuthenticationServiceImpl).toSelf().inSingletonScope();
     rebind(AuthenticationService).toService(PluginAuthenticationServiceImpl);
+
+    bind(PluginTerminalRegistry).toSelf().inSingletonScope();
 });

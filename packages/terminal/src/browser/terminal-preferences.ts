@@ -17,9 +17,56 @@
 /* eslint-disable max-len */
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
+import { IJSONSchema } from '@theia/core/lib/common/json-schema';
+import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
+import { OS } from '@theia/core';
+import { terminalAnsiColorMap } from './terminal-theme-service';
+
+const commonProfileProperties: PreferenceSchemaProperties = {
+    env: {
+        type: 'object',
+        additionalProperties: {
+            type: 'string'
+        },
+        markdownDescription: nls.localize('theia/terminal/profileEnv', 'An object with environment variables that will be added to the terminal profile process. Set to `null` to delete environment variables from the base environment.'),
+    },
+    overrideName: {
+        type: 'boolean',
+        description: nls.localizeByDefault('Controls whether or not the profile name overrides the auto detected one.')
+    },
+    icon: {
+        type: 'string',
+        markdownDescription: nls.localize('theia/terminal/profileIcon', 'A codicon ID to associate with the terminal icon.\nterminal-tmux:"$(terminal-tmux)"')
+    },
+    color: {
+        type: 'string',
+        enum: Object.getOwnPropertyNames(terminalAnsiColorMap),
+        description: nls.localize('theia/terminal/profileColor', 'A terminal theme color ID to associate with the terminal.')
+    }
+};
+
+const stringOrStringArray: IJSONSchema = {
+    oneOf: [
+        { type: 'string' },
+        {
+            type: 'array',
+            items: {
+                type: 'string'
+            }
+        }
+    ]
+};
+
+const pathProperty: IJSONSchema = {
+    description: nls.localize('theia/terminal/profilePath', 'The path of the shell that this profile uses.'),
+    ...stringOrStringArray
+};
+
+function shellArgsDeprecatedMessage(type: OS.Type): string {
+    return nls.localize('theia/terminal/shell.deprecated', 'This is deprecated, the new recommended way to configure your default shell is by creating a terminal profile in \'terminal.integrated.profiles.{0}\' and setting its profile name as the default in \'terminal.integrated.defaultProfile.{0}.\'', type.toString().toLowerCase());
+}
 
 export const TerminalConfigSchema: PreferenceSchema = {
     type: 'object',
@@ -113,34 +160,40 @@ export const TerminalConfigSchema: PreferenceSchema = {
             type: ['string', 'null'],
             typeDetails: { isFilepath: true },
             markdownDescription: nls.localize('theia/terminal/shellWindows', 'The path of the shell that the terminal uses on Windows. (default: \'{0}\').', 'C:\\Windows\\System32\\cmd.exe'),
-            default: undefined
+            default: undefined,
+            deprecationMessage: shellArgsDeprecatedMessage(OS.Type.Windows),
         },
         'terminal.integrated.shell.osx': {
             type: ['string', 'null'],
             markdownDescription: nls.localize('theia/terminal/shellOsx', 'The path of the shell that the terminal uses on macOS (default: \'{0}\'}).', '/bin/bash'),
-            default: undefined
+            default: undefined,
+            deprecationMessage: shellArgsDeprecatedMessage(OS.Type.OSX),
         },
         'terminal.integrated.shell.linux': {
             type: ['string', 'null'],
             markdownDescription: nls.localize('theia/terminal/shellLinux', 'The path of the shell that the terminal uses on Linux (default: \'{0}\'}).', '/bin/bash'),
-            default: undefined
+            default: undefined,
+            deprecationMessage: shellArgsDeprecatedMessage(OS.Type.Linux),
         },
         'terminal.integrated.shellArgs.windows': {
             type: 'array',
             markdownDescription: nls.localize('theia/terminal/shellArgsWindows', 'The command line arguments to use when on the Windows terminal.'),
-            default: []
+            default: [],
+            deprecationMessage: shellArgsDeprecatedMessage(OS.Type.Windows),
         },
         'terminal.integrated.shellArgs.osx': {
             type: 'array',
             markdownDescription: nls.localize('theia/terminal/shellArgsOsx', 'The command line arguments to use when on the macOS terminal.'),
             default: [
                 '-l'
-            ]
+            ],
+            deprecationMessage: shellArgsDeprecatedMessage(OS.Type.OSX),
         },
         'terminal.integrated.shellArgs.linux': {
             type: 'array',
             markdownDescription: nls.localize('theia/terminal/shellArgsLinux', 'The command line arguments to use when on the Linux terminal.'),
-            default: []
+            default: [],
+            deprecationMessage: shellArgsDeprecatedMessage(OS.Type.Linux),
         },
         'terminal.integrated.confirmOnExit': {
             type: 'string',
@@ -158,7 +211,156 @@ export const TerminalConfigSchema: PreferenceSchema = {
             type: 'boolean',
             description: nls.localizeByDefault('Persist terminal sessions for the workspace across window reloads.'),
             default: true
-        }
+        },
+        'terminal.integrated.defaultProfile.windows': {
+            type: 'string',
+            description: nls.localize('theia/terminal/defaultProfile', 'The default profile used on {0}', OS.Type.Windows.toString())
+
+        },
+        'terminal.integrated.defaultProfile.linux': {
+            type: 'string',
+            description: nls.localize('theia/terminal/defaultProfile', 'The default profile used on {0}', OS.Type.Linux.toString())
+
+        },
+        'terminal.integrated.defaultProfile.osx': {
+            type: 'string',
+            description: nls.localize('theia/terminal/defaultProfile', 'The default profile used on {0}', OS.Type.OSX.toString())
+        },
+        'terminal.integrated.profiles.windows': {
+            markdownDescription: nls.localize('theia/terminal/profiles', 'The profiles to present when creating a new terminal. Set the path property manually with optional args.\nSet an existing profile to `null` to hide the profile from the list, for example: `"{0}": null`.', 'cmd'),
+            anyOf: [
+                {
+                    type: 'object',
+                    properties: {
+                    },
+                    additionalProperties: {
+                        oneOf: [{
+                            type: 'object',
+                            additionalProperties: false,
+                            properties: {
+                                path: pathProperty,
+                                args: {
+                                    ...stringOrStringArray,
+                                    description: nls.localize('theia/terminal/profileArgs', 'The shell arguments that this profile uses.'),
+
+                                },
+                                ...commonProfileProperties
+                            },
+                            required: ['path']
+                        },
+                        {
+                            type: 'object',
+                            additionalProperties: false,
+                            properties: {
+                                source: {
+                                    type: 'string',
+                                    description: nls.localize('theia/terminal/profileSource', 'A profile source that will auto detect the paths to the shell. Note that non-standard executable locations are not supported and must be created manually in a new profile.')
+                                },
+                                args: {
+                                    ...stringOrStringArray,
+                                    description: nls.localize('theia/terminal/profileArgs', 'The shell arguments that this profile uses.'),
+
+                                },
+                                ...commonProfileProperties
+                            },
+                            required: ['source'],
+                            default: {
+                                path: 'C:\\Windows\\System32\\cmd.exe'
+                            }
+
+                        }, {
+                            type: 'null'
+                        }]
+                    },
+                    default: {
+                        cmd: {
+                            path: 'C:\\Windows\\System32\\cmd.exe'
+                        }
+                    }
+                },
+                { type: 'null' }
+            ]
+        },
+        'terminal.integrated.profiles.linux': {
+            markdownDescription: nls.localize('theia/terminal/profiles', 'The profiles to present when creating a new terminal. Set the path property manually with optional args.\nSet an existing profile to `null` to hide the profile from the list, for example: `"{0}": null`.', 'bash'),
+            anyOf: [{
+                type: 'object',
+                properties: {
+                },
+                additionalProperties: {
+                    oneOf: [
+                        {
+                            type: 'object',
+                            properties: {
+                                path: pathProperty,
+                                args: {
+                                    type: 'array',
+                                    items: { type: 'string' },
+                                    description: nls.localize('theia/terminal/profileArgs', 'The shell arguments that this profile uses.'),
+                                },
+                                ...commonProfileProperties
+                            },
+                            required: ['path'],
+                            additionalProperties: false,
+                        },
+                        { type: 'null' }
+                    ]
+                },
+                default: {
+                    path: '${env:SHELL}',
+                    args: ['-l']
+                }
+
+            },
+            { type: 'null' }
+            ]
+        },
+        'terminal.integrated.profiles.osx': {
+            markdownDescription: nls.localize('theia/terminal/profiles', 'The profiles to present when creating a new terminal. Set the path property manually with optional args.\nSet an existing profile to `null` to hide the profile from the list, for example: `"{0}": null`.', 'zsh'),
+            anyOf: [{
+                type: 'object',
+                properties: {
+                },
+                additionalProperties: {
+                    oneOf: [
+                        {
+                            type: 'object',
+                            properties: {
+                                path: pathProperty,
+                                args: {
+                                    type: 'array',
+                                    items: { type: 'string' },
+                                    description: nls.localize('theia/terminal/profileArgs', 'The shell arguments that this profile uses.'),
+                                },
+                                ...commonProfileProperties
+                            },
+                            required: ['path'],
+                            additionalProperties: false,
+                        },
+                        { type: 'null' }
+                    ]
+                },
+                default: {
+                    path: '${env:SHELL}',
+                    args: ['-l']
+                }
+
+            },
+            { type: 'null' }
+            ]
+        },
+    }
+};
+
+export type Profiles = null | {
+    [key: string]: {
+        path?: string | string[],
+        source?: string,
+        args?: string | string[],
+        env?: { [key: string]: string },
+        overrideName?: boolean;
+        icon?: string,
+        color?: string
     }
 };
 
@@ -186,7 +388,13 @@ export interface TerminalConfiguration {
     'terminal.integrated.shellArgs.windows': string[],
     'terminal.integrated.shellArgs.osx': string[],
     'terminal.integrated.shellArgs.linux': string[],
-    'terminal.integrated.confirmOnExit': ConfirmOnExitType,
+    'terminal.integrated.defaultProfile.windows': string,
+    'terminal.integrated.defaultProfile.linux': string,
+    'terminal.integrated.defaultProfile.osx': string,
+    'terminal.integrated.profiles.windows': Profiles
+    'terminal.integrated.profiles.linux': Profiles,
+    'terminal.integrated.profiles.osx': Profiles,
+    'terminal.integrated.confirmOnExit': ConfirmOnExitType
     'terminal.integrated.enablePersistentSessions': boolean
 }
 

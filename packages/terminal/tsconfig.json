@@ -22,6 +22,9 @@
       "path": "../process"
     },
     {
+      "path": "../variable-resolver"
+    },
+    {
       "path": "../workspace"
     }
   ]

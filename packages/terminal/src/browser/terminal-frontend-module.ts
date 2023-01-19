@@ -43,6 +43,10 @@ import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/qui
 import { createXtermLinkFactory, TerminalLinkProvider, TerminalLinkProviderContribution, XtermLinkFactory } from './terminal-link-provider';
 import { UrlLinkProvider } from './terminal-url-link-provider';
 import { FileDiffPostLinkProvider, FileDiffPreLinkProvider, FileLinkProvider } from './terminal-file-link-provider';
+import {
+    ContributedTerminalProfileStore, DefaultProfileStore, DefaultTerminalProfileService,
+    TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore
+} from './terminal-profile-service';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
@@ -122,6 +126,14 @@ export default new ContainerModule(bind => {
     bind(TerminalLinkProvider).toService(FileDiffPreLinkProvider);
     bind(FileDiffPostLinkProvider).toSelf().inSingletonScope();
     bind(TerminalLinkProvider).toService(FileDiffPostLinkProvider);
+
+    bind(ContributedTerminalProfileStore).to(DefaultProfileStore).inSingletonScope();
+    bind(UserTerminalProfileStore).to(DefaultProfileStore).inSingletonScope();
+    bind(TerminalProfileService).toDynamicValue(ctx => {
+        const userStore = ctx.container.get<TerminalProfileStore>(UserTerminalProfileStore);
+        const contributedStore = ctx.container.get<TerminalProfileStore>(ContributedTerminalProfileStore);
+        return new DefaultTerminalProfileService(userStore, contributedStore);
+    }).inSingletonScope();
 
     bind(FrontendApplicationContribution).to(TerminalFrontendContribution);
 });
