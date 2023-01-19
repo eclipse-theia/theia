@@ -447,7 +447,7 @@
       "confirmCloseNever": "Niemals bestätigen.",
       "enableCopy": "Aktivieren von ctrl-c (cmd-c unter macOS) zum Kopieren von markiertem Text",
       "enablePaste": "Aktivieren von ctrl-v (cmd-v unter macOS) zum Einfügen aus der Zwischenablage",
-      "profileNew": "Neues Terminal...",
+      "profileNew": "Neues Terminal (mit Profil)...",
       "profileDefault": "Standardprofil wählen...",
       "selectProfile": "Wählen Sie ein Profil für das neue Terminal",
       "shellArgsLinux": "Die Befehlszeilenargumente, die im Linux-Terminal zu verwenden sind.",

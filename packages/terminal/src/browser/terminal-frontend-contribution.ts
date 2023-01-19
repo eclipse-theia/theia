@@ -656,7 +656,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
         menus.registerMenuAction(TerminalMenus.TERMINAL_NEW, {
             commandId: TerminalCommands.PROFILE_NEW.id,
-            label: nls.localize('theia/terminal/profileNew', 'New Terminal...'),
+            label: nls.localize('theia/terminal/profileNew', 'New Terminal (With Profile)...'),
             order: '1'
         });
 
