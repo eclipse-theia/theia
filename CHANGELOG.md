@@ -5,7 +5,7 @@
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
 ## v1.34.0 - 01/26/2023
-
+- [plugin] Fixed some API inconsistencies related to web views [#12087](https://github.com/eclipse-theia/theia/issues/12087) - Contributed on behalf of STMicroelectronics
 - [plugin] added support for `isTransient` of `TerminalOptions` and `ExternalTerminalOptions` VS Code API [#12055](https://github.com/eclipse-theia/theia/pull/12055) - Contributed on behalf of STMicroelectronics
 - [terminal] added support for preference `terminal.integrated.enablePersistentSessions` to allow disabling restoring terminals on reload [#12055](https://github.com/eclipse-theia/theia/pull/12055) - Contributed on behalf of STMicroelectronics
 

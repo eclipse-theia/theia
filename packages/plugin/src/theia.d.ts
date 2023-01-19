@@ -3871,9 +3871,11 @@ export module '@theia/plugin' {
         /**
          * Controls whether command uris are enabled in webview content or not.
          *
-         * Defaults to false.
+         * Defaults to `false` (command uris are disabled).
+         *
+         * If you pass in an array, only the commands in the array are allowed.
          */
-        readonly enableCommandUris?: boolean;
+        readonly enableCommandUris?: boolean | readonly string[];
 
         /**
          * Root paths from which the webview can load local (filesystem) resources using the `theia-resource:` scheme.
@@ -5026,7 +5028,7 @@ export module '@theia/plugin' {
          *
          * @return New webview panel.
          */
-        export function createWebviewPanel(viewType: string, title: string, showOptions: ViewColumn | WebviewPanelShowOptions,
+        export function createWebviewPanel(viewType: string, title: string, showOptions: ViewColumn | { readonly viewColumn: ViewColumn; readonly preserveFocus?: boolean },
             options?: WebviewPanelOptions & WebviewOptions): WebviewPanel;
 
         /**
