@@ -1457,8 +1457,6 @@ export interface WorkspaceEditDto {
     edits: Array<WorkspaceTextEditDto | WorkspaceFileEditDto>;
 }
 
-
-
 export interface CommandProperties {
     command: string;
     args?: string[];

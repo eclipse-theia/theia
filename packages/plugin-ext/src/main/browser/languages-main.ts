@@ -71,6 +71,7 @@ import { EditorLanguageStatusService, LanguageStatus as EditorLanguageStatus } f
 import { LanguageSelector, RelativePattern } from '@theia/editor/lib/common/language-selector';
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
 import {
+    DocumentOnDropEdit,
     DocumentOnDropEditProvider,
     EvaluatableExpression,
     EvaluatableExpressionProvider,
@@ -80,8 +81,8 @@ import {
 } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { CodeActionTriggerKind, SnippetString } from '../../plugin/types-impl';
-import { StandaloneCodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditorService';
 import { DataTransfer } from '../../plugin/type-converters';
+import { VSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
 
 /**
  * @monaco-uplift The public API declares these functions as (languageId: string, service).
@@ -109,9 +110,6 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     @inject(EditorLanguageStatusService)
     protected readonly languageStatusService: EditorLanguageStatusService;
-
-    @inject(StandaloneCodeEditorService)
-    protected readonly monacoEditorService: StandaloneCodeEditorService
 
     private readonly proxy: LanguagesExt;
     private readonly services = new Map<number, Disposable>();
@@ -730,16 +728,20 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     createDocumentDropEditProvider(handle: number): DocumentOnDropEditProvider {
         return {
-            provideDocumentOnDropEdits: async (model, position, dataTransfer, token) =>
-                this.proxy.$provideDocumentDropEdits(handle, model.uri, position, await DataTransfer.toDataTransferDTO(dataTransfer), token).then(edit => {
-                    if (edit) {
-                        return {
-                            insertText: edit.insertText instanceof SnippetString ? { snippet: edit.insertText.value } : edit.insertText,
-                            additionalEdit: toMonacoWorkspaceEdit(edit?.additionalEdit)
-                        }
-                    }
-                })
-        }
+            provideDocumentOnDropEdits: async (model, position, dataTransfer, token) => this.provideDocumentDropEdits(handle, model, position, dataTransfer, token)
+        };
+    }
+
+    protected async provideDocumentDropEdits(handle: number, model: ITextModel, position: monaco.IPosition,
+        dataTransfer: VSDataTransfer, token: CancellationToken): Promise<DocumentOnDropEdit | undefined> {
+        return this.proxy.$provideDocumentDropEdits(handle, model.uri, position, await DataTransfer.toDataTransferDTO(dataTransfer), token).then(edit => {
+            if (edit) {
+                return {
+                    insertText: edit.insertText instanceof SnippetString ? { snippet: edit.insertText.value } : edit.insertText,
+                    additionalEdit: toMonacoWorkspaceEdit(edit?.additionalEdit)
+                };
+            }
+        });
     }
 
     $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], eventHandle: number | undefined): void {

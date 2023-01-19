@@ -1351,7 +1351,7 @@ export namespace InlayHintKind {
 }
 
 export namespace DataTransferItem {
-    export function to(mime: string, item: model.DataTransferItemDTO, resolveFileData: () => Promise<Uint8Array>): types.DataTransferItem {
+    export function to(mime: string, item: model.DataTransferItemDTO, resolveFileData: () => Promise<Uint8Array>): theia.DataTransferItem {
         const file = item.fileData;
         if (file) {
             return new class extends types.DataTransferItem {
@@ -1397,7 +1397,6 @@ export namespace DataTransferItem {
             }
 
             try {
-                0
                 return URI.parse(part);
             } catch {
                 // noop
@@ -1412,24 +1411,23 @@ export namespace DataTransferItem {
     }
 }
 
-
 export namespace DataTransfer {
-    export function toDataTransfer(value: model.DataTransferDTO, resolveFileData: (itemId: string) => Promise<Uint8Array>): types.DataTransfer {
+    export function toDataTransfer(value: model.DataTransferDTO, resolveFileData: (itemId: string) => Promise<Uint8Array>): theia.DataTransfer {
         const dataTransfer = new types.DataTransfer();
-        for (let [mimeType, item] of value.items) {
+        for (const [mimeType, item] of value.items) {
             dataTransfer.set(mimeType, DataTransferItem.to(mimeType, item, () => Promise.resolve(new Uint8Array)));
         }
-        return dataTransfer
+        return dataTransfer;
     }
 
     export async function toDataTransferDTO(value: theia.DataTransfer | VSDataTransfer): Promise<model.DataTransferDTO> {
         const newDTO: model.DataTransferDTO = { items: [] };
 
-        const promises: Promise<any>[] = [];
+        const promises: Promise<unknown>[] = [];
 
-        value.forEach((value, key) => {
+        value.forEach((val, key) => {
             promises.push((async () => {
-                newDTO.items.push([key, await DataTransferItem.from(key, value)]);
+                newDTO.items.push([key, await DataTransferItem.from(key, val)]);
             })());
         });
 
