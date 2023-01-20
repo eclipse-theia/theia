@@ -38,7 +38,7 @@ export class LanguageQuickPickService {
         const quickInputItems: (LanguageQuickPickItem | QuickPickSeparator)[] = [
             {
                 type: 'separator',
-                label: nls.localize('theia/core/installedLanguages', 'Installed languages')
+                label: nls.localizeByDefault('Installed languages')
             },
             ...installedItems
         ];
@@ -55,7 +55,7 @@ export class LanguageQuickPickService {
             if (availableItems.length > 0) {
                 quickInputItems.push({
                     type: 'separator',
-                    label: nls.localize('theia/core/availableLanguages', 'Available languages')
+                    label: nls.localizeByDefault('Available languages')
                 });
                 const installed = new Set(installedItems.map(e => e.languageId));
                 for (const available of availableItems) {

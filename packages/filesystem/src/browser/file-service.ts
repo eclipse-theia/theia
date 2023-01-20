@@ -489,7 +489,7 @@ export class FileService {
 
             // Specially handle file not found case as file operation result
             if (toFileSystemProviderErrorCode(error) === FileSystemProviderErrorCode.FileNotFound) {
-                throw new FileOperationError(nls.localizeByDefault("Unable to resolve non-existing file '{0}'", this.resourceForError(resource)), FileOperationResult.FILE_NOT_FOUND);
+                throw new FileOperationError(nls.localizeByDefault("Unable to resolve nonexistent file '{0}'", this.resourceForError(resource)), FileOperationResult.FILE_NOT_FOUND);
             }
 
             // Bubble up any other error as is
@@ -1369,7 +1369,7 @@ export class FileService {
         // Validate delete
         const exists = await this.exists(resource);
         if (!exists) {
-            throw new FileOperationError(nls.localizeByDefault("Unable to delete non-existing file '{0}'", this.resourceForError(resource)), FileOperationResult.FILE_NOT_FOUND);
+            throw new FileOperationError(nls.localizeByDefault("Unable to delete nonexistent file '{0}'", this.resourceForError(resource)), FileOperationResult.FILE_NOT_FOUND);
         }
 
         // Validate recursive

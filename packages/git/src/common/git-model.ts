@@ -109,6 +109,7 @@ export namespace GitFileStatus {
             case GitFileStatus.Copied: return nls.localize('theia/git/copied', 'Copied');
             // eslint-disable-next-line @theia/localization-check
             case GitFileStatus.Modified: return nls.localize('vscode.git/repository/modified', 'Modified');
+            // eslint-disable-next-line @theia/localization-check
             case GitFileStatus.Deleted: return nls.localize('vscode.git/repository/deleted', 'Deleted');
             case GitFileStatus.Conflicted: return nls.localize('theia/git/conflicted', 'Conflicted');
             default: throw new Error(`Unexpected Git file stats: ${status}.`);

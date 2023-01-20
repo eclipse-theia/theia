@@ -54,8 +54,8 @@ export const SCM_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
 export namespace SCM_COMMANDS {
     export const CHANGE_REPOSITORY = {
         id: 'scm.change.repository',
-        category: nls.localizeByDefault('SCM'),
-        originalCategory: 'SCM',
+        category: nls.localizeByDefault('Source Control'),
+        originalCategory: 'Source Control',
         label: nls.localize('theia/scm/changeRepository', 'Change Repository...'),
         originalLabel: 'Change Repository...'
     };
@@ -78,8 +78,8 @@ export namespace SCM_COMMANDS {
     };
     export const COLLAPSE_ALL = {
         id: 'scm.collapseAll',
-        category: nls.localizeByDefault('SCM'),
-        originalCategory: 'SCM',
+        category: nls.localizeByDefault('Source Control'),
+        originalCategory: 'Source Control',
         tooltip: nls.localizeByDefault('Collapse All'),
         iconClass: codicon('collapse-all'),
         label: nls.localizeByDefault('Collapse All'),

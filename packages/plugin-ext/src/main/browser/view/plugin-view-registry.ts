@@ -148,7 +148,10 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 const disposable = new DisposableCollection();
                 disposable.push(this.registerViewWelcome({
                     view: 'explorer',
-                    content: nls.localizeByDefault('You have not yet opened a folder.\n[Open Folder](command:{0})', 'workbench.action.files.openFolder'),
+                    content: nls.localizeByDefault(
+                        'You have not yet opened a folder.\n{0}',
+                        `[${nls.localizeByDefault('Open Folder')}](command:workbench.action.files.openFolder)`
+                    ),
                     order: 0
                 }));
                 disposable.push(event.widget.onDidDispose(() => disposable.dispose()));

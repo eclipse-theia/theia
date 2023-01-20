@@ -24,7 +24,7 @@ export const EditorPreviewConfigSchema: PreferenceSchema = {
         'editor.enablePreview': {
             type: 'boolean',
             // eslint-disable-next-line max-len
-            description: nls.localizeByDefault('Controls whether opened editors show as preview. Preview editors do not keep open and are reused until explicitly set to be kept open (e.g. via double click or editing) and show up with an italic font style.'),
+            description: nls.localizeByDefault('Controls whether opened editors show as preview editors. Preview editors do not stay open, are reused until explicitly set to be kept open (e.g. via double click or editing), and show file names in italics.'),
             default: true
         },
     }

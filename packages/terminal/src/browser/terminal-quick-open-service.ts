@@ -60,7 +60,7 @@ export class TerminalQuickOpenService implements QuickAccessProvider {
         }
         // Append a quick open item to create a new terminal.
         items.push({
-            label: nls.localizeByDefault('Create New Integrated Terminal'),
+            label: nls.localizeByDefault('Create New Terminal'),
             iconClasses: codiconArray('add'),
             execute: () => this.doCreateNewTerminal()
         });

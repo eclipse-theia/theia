@@ -230,8 +230,8 @@ export class EditorLanguageStatusService {
         pin.className = this.pinnedCommands.has(id) ? codicon('pinned', true) : codicon('pin', true);
         pin.ariaRoleDescription = 'button';
         const pinText = this.pinnedCommands.has(id)
-            ? nls.localize('theia/editor/status-bar-unpin', 'Remove from Status Bar')
-            : nls.localize('theia/editor/status-bar-pin', 'Add to Status Bar');
+            ? nls.localizeByDefault('Remove from Status Bar')
+            : nls.localizeByDefault('Add to Status Bar');
         pin.ariaLabel = pinText;
         pin.title = pinText;
     }

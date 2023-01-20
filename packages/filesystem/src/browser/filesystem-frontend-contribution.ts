@@ -268,7 +268,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         return targetUri && widget.createMoveToUri(targetUri);
     }
 
-    protected readonly deletedSuffix = nls.localizeByDefault('{0} (deleted)', '');
+    protected readonly deletedSuffix = `(${nls.localizeByDefault('Deleted')})`;
     protected async updateWidgets(event: FileChangesEvent): Promise<void> {
         if (!event.gotDeleted() && !event.gotAdded()) {
             return;
