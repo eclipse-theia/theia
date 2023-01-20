@@ -51,7 +51,7 @@ export class DebugWatchExpression extends ExpressionItem {
     }
 
     override render(): React.ReactNode {
-        return <div className='theia-debug-console-variable'>
+        return <div className='theia-debug-console-variable theia-debug-watch-expression'>
             <div className={TREE_NODE_SEGMENT_GROW_CLASS}>
                 <span title={this.type || this._expression} className='name'>{this._expression}: </span>
                 <span title={this._value} ref={this.setValueRef} className={this.isError ? 'watch-error' : ''}>{this._value}</span>
