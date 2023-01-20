@@ -216,7 +216,6 @@ blockquote {
             user-select: none; /* Non-prefixed version, currently
                                   supported by Chrome and Opera */
          -o-user-select: none;
-                 cursor: default;
 }
 
 :focus {
