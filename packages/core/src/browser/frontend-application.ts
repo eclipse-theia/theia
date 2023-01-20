@@ -224,10 +224,18 @@ export class FrontendApplication {
             document.body.addEventListener('wheel', preventNavigation, { passive: false });
         }
         // Prevent the default browser behavior when dragging and dropping files into the window.
-        window.addEventListener('dragover', event => {
+        document.addEventListener('dragenter', event => {
+            if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = 'none';
+            }
             event.preventDefault();
         }, false);
-        window.addEventListener('drop', event => {
+        document.addEventListener('dragover', event => {
+            if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = 'none';
+            } event.preventDefault();
+        }, false);
+        document.addEventListener('drop', event => {
             event.preventDefault();
         }, false);
 
