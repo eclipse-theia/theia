@@ -77,7 +77,7 @@ export namespace TerminalCommands {
     export const NEW = Command.toDefaultLocalizedCommand({
         id: 'terminal:new',
         category: TERMINAL_CATEGORY,
-        label: 'Create New Integrated Terminal'
+        label: 'Create New Terminal'
     });
     export const PROFILE_NEW = Command.toLocalizedCommand({
         id: 'terminal:new:profile',
@@ -92,7 +92,7 @@ export namespace TerminalCommands {
     export const NEW_ACTIVE_WORKSPACE = Command.toDefaultLocalizedCommand({
         id: 'terminal:new:active:workspace',
         category: TERMINAL_CATEGORY,
-        label: 'Create New Integrated Terminal (In Active Workspace)'
+        label: 'Create New Terminal (In Active Workspace)'
     });
     export const TERMINAL_CLEAR = Command.toDefaultLocalizedCommand({
         id: 'terminal:clear',

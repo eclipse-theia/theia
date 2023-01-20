@@ -147,8 +147,7 @@ export namespace EditorCommands {
      */
     export const TOGGLE_WORD_WRAP = Command.toDefaultLocalizedCommand({
         id: 'editor.action.toggleWordWrap',
-        category: CommonCommands.VIEW_CATEGORY,
-        label: 'Toggle Word Wrap'
+        label: 'View: Toggle Word Wrap'
     });
     /**
      * Command that toggles sticky scroll.
