@@ -269,6 +269,6 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
 
 // Utility to assist with Monaco uplifts to generate preference schema. Not for regular use in the application.
 export function bindMonacoPreferenceExtractor(bind: interfaces.Bind): void {
-    bind(MonacoEditorPreferenceSchemaExtractor).toSelf().inSingletonScope();
-    bind(CommandContribution).toService(MonacoEditorPreferenceSchemaExtractor);
+    // bind(MonacoEditorPreferenceSchemaExtractor).toSelf().inSingletonScope();
+    // bind(CommandContribution).toService(MonacoEditorPreferenceSchemaExtractor);
 }
