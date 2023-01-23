@@ -41,7 +41,11 @@ export class TabsMainImp implements TabsMain, Disposable {
 
         this.applicationShell = container.get(ApplicationShell);
         this.createTabsModel();
-        this.attachListenersToTabBar(this.applicationShell.mainPanel.currentTabBar);
+
+        const tabBars = this.applicationShell.mainPanel.tabBars();
+        for (let tabBar; tabBar = tabBars.next();) {
+            this.attachListenersToTabBar(tabBar);
+        }
 
         this.toDispose.push(
             this.applicationShell.mainPanelRenderer.onTabBarCreated(tabBar => {
@@ -93,6 +97,10 @@ export class TabsMainImp implements TabsMain, Disposable {
         if (!tabBar) {
             return;
         }
+        tabBar.titles.forEach((title, index) => {
+            this.connectToSignal(title.changed, () => this.onTabTitleChanged(title, { title, index }, tabBar));
+        });
+
         this.connectToSignal((tabBar as ScrollableTabBar)?.tabCreated, this.onTabCreated);
         this.connectToSignal(tabBar.tabActivateRequested, this.onTabActivated);
         this.connectToSignal(tabBar.tabCloseRequested, this.onTabClosed);
@@ -134,82 +142,99 @@ export class TabsMainImp implements TabsMain, Disposable {
         this.toDispose.push(Disposable.create(() => signal.disconnect(listener)));
     }
 
+    protected updateActiveGroup(): void {
+        const activeWidgetId = this.applicationShell.activeWidget?.id;
+        if (activeWidgetId) {
+            for (const tabGroup of this.tabGroupModel) {
+                for (const tab of tabGroup.tabs) {
+                    tab.isActive = activeWidgetId === tab.id;
+                    tabGroup.isActive = activeWidgetId === tab.id;
+                }
+            }
+        }
+    }
+
     // #region event listeners
     private onTabCreated(tabBar: TabBar<Widget>, args: TabBar.ITabActivateRequestedArgs<Widget>): void {
         console.log('onTabCreated');
+        const groupId = this.applicationShell.mainAreaTabBars.indexOf(tabBar);
         this.connectToSignal(args.title.changed, title => this.onTabTitleChanged(title, args, tabBar));
-        this.tabGroupModel[this.applicationShell.mainAreaTabBars.indexOf(tabBar)].tabs.splice(args.index, 0, this.createTabDto(args.title));
+        this.tabGroupModel[groupId].tabs.splice(args.index, 0, this.createTabDto(args.title));
         this.proxy.$acceptTabOperation({
             kind: TabModelOperationKind.TAB_OPEN,
             index: args.index,
             tabDto: this.createTabDto(args.title),
-            groupId: this.applicationShell.mainAreaTabBars.indexOf(tabBar)
+            groupId
         });
     }
 
     private onTabTitleChanged(title: Title<Widget>, args: TabBar.ITabActivateRequestedArgs<Widget>, tabBar: TabBar<Widget>): void {
-        const oldTabDto = this.tabGroupModel[this.applicationShell.mainAreaTabBars.indexOf(tabBar)].tabs[args.index];
+        const groupId = this.applicationShell.mainAreaTabBars.indexOf(tabBar);
+        const oldTabDto = this.tabGroupModel[groupId].tabs[args.index];
         const newTabDto = this.createTabDto(title);
         if (oldTabDto !== newTabDto) {
             console.log('onTabTitleChanged');
-            this.tabGroupModel[this.applicationShell.mainAreaTabBars.indexOf(tabBar)].tabs.splice(args.index, 1, newTabDto);
+            this.tabGroupModel[groupId].tabs.splice(args.index, 1, newTabDto);
             this.proxy.$acceptTabOperation({
                 kind: TabModelOperationKind.TAB_UPDATE,
                 index: args.index,
                 tabDto: newTabDto,
-                groupId: this.applicationShell.mainAreaTabBars.indexOf(tabBar)
+                groupId
             });
         }
     }
 
     private onTabActivated(tabBar: TabBar<Widget>, args: TabBar.ITabActivateRequestedArgs<Widget>): void {
         console.log('onTabActivated');
-        const tabDto = this.createTabDto(args.title)
-        this.tabGroupModel[this.applicationShell.mainAreaTabBars.indexOf(tabBar)].tabs.splice(args.index, 1, tabDto);
+        const groupId = this.applicationShell.mainAreaTabBars.indexOf(tabBar);
+        const tabDto = this.createTabDto(args.title);
+        this.tabGroupModel[groupId].tabs.splice(args.index, 1, tabDto);
         this.proxy.$acceptTabOperation({
             kind: TabModelOperationKind.TAB_UPDATE,
             index: args.index,
             tabDto: tabDto,
-            groupId: this.applicationShell.mainAreaTabBars.indexOf(tabBar)
+            groupId
         });
     }
 
     private onTabClosed(tabBar: TabBar<Widget>, args: TabBar.ITabCloseRequestedArgs<Widget>): void {
         console.log('onTabClosed');
-        this.tabGroupModel[this.applicationShell.mainAreaTabBars.indexOf(tabBar)].tabs.splice(args.index, 1);
+        const groupId = this.applicationShell.mainAreaTabBars.indexOf(tabBar);
+        this.tabGroupModel[groupId].tabs.splice(args.index, 1);
         this.proxy.$acceptTabOperation({
             kind: TabModelOperationKind.TAB_CLOSE,
             index: args.index,
             tabDto: this.createTabDto(args.title),
-            groupId: this.applicationShell.mainAreaTabBars.indexOf(tabBar)
+            groupId
         });
     }
 
     private onTabMoved(tabBar: TabBar<Widget>, args: TabBar.ITabMovedArgs<Widget>): void {
         console.log('onTabMoved');
-        this.tabGroupModel[this.applicationShell.mainAreaTabBars.indexOf(tabBar)].tabs.splice(args.fromIndex, 1);
-        this.tabGroupModel[this.applicationShell.mainAreaTabBars.indexOf(tabBar)].tabs.splice(args.toIndex, 1, this.createTabDto(args.title));
+        const groupId = this.applicationShell.mainAreaTabBars.indexOf(tabBar);
+        this.tabGroupModel[groupId].tabs.splice(args.fromIndex, 1);
+        this.tabGroupModel[groupId].tabs.splice(args.toIndex, 1, this.createTabDto(args.title));
         this.proxy.$acceptTabOperation({
             kind: TabModelOperationKind.TAB_MOVE,
             index: args.toIndex,
             tabDto: this.createTabDto(args.title),
-            groupId: this.applicationShell.mainAreaTabBars.indexOf(tabBar),
+            groupId,
             oldIndex: args.fromIndex
         });
     }
 
     private onTabGroupCreated(tabBar: TabBar<Widget>): void {
-        setTimeout(() => {
-            console.log('update groups');
-            this.createTabsModel();
-        });
+        console.log('update groups');
+        this.tabGroupModel.push(this.createTabGroupDto(tabBar, this.tabGroupModel.length));
+        this.updateActiveGroup();
+        this.proxy.$acceptEditorTabModel(this.tabGroupModel);
     }
 
     private onTabGroupClosed(tabBar: TabBar<Widget>): void {
-        setTimeout(() => {
-            console.log('update groups');
-            this.createTabsModel();
-        });
+        console.log('update groups');
+        this.tabGroupModel.splice(this.applicationShell.mainAreaTabBars.indexOf(tabBar), 1);
+        this.updateActiveGroup();
+        this.proxy.$acceptEditorTabModel(this.tabGroupModel);
     }
     // #endregion
 
