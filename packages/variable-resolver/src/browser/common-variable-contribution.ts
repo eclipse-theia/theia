@@ -135,7 +135,8 @@ export class CommonVariableContribution implements VariableContribution {
                             });
                         }
                     }
-                    return this.quickInputService?.showQuickPick(elements, { placeholder: input.description });
+                    const selectedPick = await this.quickInputService?.showQuickPick(elements, { placeholder: input.description });
+                    return selectedPick?.value;
                 }
                 if (input.type === 'command') {
                     if (typeof input.command !== 'string') {
