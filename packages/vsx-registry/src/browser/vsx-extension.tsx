@@ -440,7 +440,7 @@ const downloadFormatter = new Intl.NumberFormat();
 const downloadCompactFormatter = new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' } as any);
 const averageRatingFormatter = (averageRating: number): number => Math.round(averageRating * 2) / 2;
 const getAverageRatingTitle = (averageRating: number): string =>
-    nls.localize('theia/vsx-registry/averageRating', 'Average rating: {0} out of 5', averageRatingFormatter(averageRating));
+    nls.localizeByDefault('Average rating: {0} out of 5', averageRatingFormatter(averageRating));
 
 export namespace VSXExtensionComponent {
     export interface Props extends AbstractVSXExtensionComponent.Props {

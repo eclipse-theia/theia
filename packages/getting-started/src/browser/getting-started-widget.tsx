@@ -47,7 +47,7 @@ export class GettingStartedWidget extends ReactWidget {
     /**
      * The widget `label` which is used for display purposes.
      */
-    static readonly LABEL = nls.localizeByDefault('Getting Started');
+    static readonly LABEL = nls.localizeByDefault('Get Started');
 
     /**
      * The `ApplicationInfo` for the application if available.
@@ -253,7 +253,17 @@ export class GettingStartedWidget extends ReactWidget {
             <h3 className='gs-section-header'>
                 <i className={codicon('history')}></i>{nls.localizeByDefault('Recent')}
             </h3>
-            {items.length > 0 ? content : <p className='gs-no-recent'>{nls.localizeByDefault('No recent folders')}</p>}
+            {items.length > 0 ? content : <p className='gs-no-recent'>
+                {nls.localizeByDefault('You have no recent folders,') + ' '}
+                <a
+                    role={'button'}
+                    tabIndex={0}
+                    onClick={this.doOpenWorkspace}
+                    onKeyDown={this.doOpenWorkspaceEnter}>
+                    {nls.localizeByDefault('open a folder')}
+                </a>
+                {' ' + nls.localizeByDefault('to start.')}
+            </p>}
             {more}
         </div>;
     }

@@ -105,7 +105,7 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
             infoNode.children.push(this.createResultLineNode('location', nls.localize('theia/property-view/location', 'Location'),
                 this.getLocationString(fileStatObject), infoNode));
             infoNode.children.push(this.createResultLineNode('name', nls.localizeByDefault('Name'), this.getFileName(fileStatObject), infoNode));
-            infoNode.children.push(this.createResultLineNode('path', nls.localize('theia/property-view/path', 'Path'), this.getFilePath(fileStatObject), infoNode));
+            infoNode.children.push(this.createResultLineNode('path', nls.localizeByDefault('Path'), this.getFilePath(fileStatObject), infoNode));
             infoNode.children.push(this.createResultLineNode('lastModification', nls.localize('theia/property-view/lastModified', 'Last modified'),
                 this.getLastModificationString(fileStatObject), infoNode));
             infoNode.children.push(this.createResultLineNode('created', nls.localize('theia/property-view/created', 'Created'),

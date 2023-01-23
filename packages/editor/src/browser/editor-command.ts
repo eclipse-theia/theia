@@ -147,8 +147,7 @@ export namespace EditorCommands {
      */
     export const TOGGLE_WORD_WRAP = Command.toDefaultLocalizedCommand({
         id: 'editor.action.toggleWordWrap',
-        category: CommonCommands.VIEW_CATEGORY,
-        label: 'Toggle Word Wrap'
+        label: 'View: Toggle Word Wrap'
     });
     /**
      * Command that toggles sticky scroll.
@@ -373,7 +372,7 @@ export class EditorCommandContribution implements CommandContribution {
             return;
         }
         if (editor.document.dirty && isReopenWithEncoding) {
-            this.messageService.info(nls.localizeByDefault('The file is dirty. Please save it first before reopening it with another encoding.'));
+            this.messageService.info(nls.localize('theia/editor/dirtyEncoding', 'The file is dirty. Please save it first before reopening it with another encoding.'));
             return;
         } else if (selectedFileEncoding.value) {
             editor.setEncoding(selectedFileEncoding.value.id, isReopenWithEncoding ? EncodingMode.Decode : EncodingMode.Encode);

@@ -77,7 +77,7 @@ export namespace TerminalCommands {
     export const NEW = Command.toDefaultLocalizedCommand({
         id: 'terminal:new',
         category: TERMINAL_CATEGORY,
-        label: 'Create New Integrated Terminal'
+        label: 'Create New Terminal'
     });
     export const PROFILE_NEW = Command.toLocalizedCommand({
         id: 'terminal:new:profile',
@@ -92,7 +92,7 @@ export namespace TerminalCommands {
     export const NEW_ACTIVE_WORKSPACE = Command.toDefaultLocalizedCommand({
         id: 'terminal:new:active:workspace',
         category: TERMINAL_CATEGORY,
-        label: 'Create New Integrated Terminal (In Active Workspace)'
+        label: 'Create New Terminal (In Active Workspace)'
     });
     export const TERMINAL_CLEAR = Command.toDefaultLocalizedCommand({
         id: 'terminal:clear',
@@ -407,12 +407,12 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     protected async confirmExitWithActiveTerminals(activeTerminalCount: number): Promise<boolean> {
         const msg = activeTerminalCount === 1
-            ? nls.localize('theia/terminal/terminateActive', 'Do you want to terminate the active terminal session?')
-            : nls.localize('theia/terminal/terminateActiveMultiple', 'Do you want to terminate the {0} active terminal sessions?', activeTerminalCount);
+            ? nls.localizeByDefault('Do you want to terminate the active terminal session?')
+            : nls.localizeByDefault('Do you want to terminate the {0} active terminal sessions?', activeTerminalCount);
         const safeToExit = await new ConfirmDialog({
             title: '',
             msg,
-            ok: nls.localize('theia/terminal/terminate', 'Terminate'),
+            ok: nls.localizeByDefault('Terminate'),
             cancel: Dialog.CANCEL,
         }).open();
         return safeToExit === true;

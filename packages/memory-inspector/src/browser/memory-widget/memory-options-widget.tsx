@@ -67,7 +67,7 @@ export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
     protected memoryReadResult: Interfaces.MemoryReadResult = EMPTY_MEMORY;
     protected columnsDisplayed: Interfaces.ColumnsDisplayed = {
         address: {
-            label: nls.localize('theia/memory-inspector/address', 'Address'),
+            label: nls.localizeByDefault('Address'),
             doRender: true
         },
         data: {
@@ -391,7 +391,7 @@ export class MemoryOptionsWidget extends ReactWidget implements StatefulWidget {
                 <div className='t-mv-group view-group'>
                     <MWInputWithSelect
                         id={LOCATION_FIELD_ID}
-                        label={nls.localize('theia/memory-inspector/address', 'Address')}
+                        label={nls.localizeByDefault('Address')}
                         title={nls.localize('theia/memory-inspector/addressTooltip', 'Memory location to display, an address or expression evaluating to an address')}
                         defaultValue={`${this.address}`}
                         onSelectChange={this.setAddressFromSelect}

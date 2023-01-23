@@ -121,7 +121,7 @@ const fileContributionSchema: PreferenceSchema['properties'] = {
         'type': 'number',
         'default': 1000,
         'minimum': 0,
-        'markdownDescription': nls.localizeByDefault('Controls the delay in ms after which a dirty editor is saved automatically. Only applies when `#files.autoSave#` is set to `{0}`.', 'afterDelay')
+        'markdownDescription': nls.localizeByDefault('Controls the delay in milliseconds after which an editor with unsaved changes is saved automatically. Only applies when `#files.autoSave#` is set to `{0}`.', 'afterDelay')
     },
 };
 

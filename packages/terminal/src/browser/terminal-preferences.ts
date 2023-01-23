@@ -30,7 +30,7 @@ const commonProfileProperties: PreferenceSchemaProperties = {
         additionalProperties: {
             type: 'string'
         },
-        markdownDescription: nls.localize('theia/terminal/profileEnv', 'An object with environment variables that will be added to the terminal profile process. Set to `null` to delete environment variables from the base environment.'),
+        markdownDescription: nls.localizeByDefault('An object with environment variables that will be added to the terminal profile process. Set to `null` to delete environment variables from the base environment.'),
     },
     overrideName: {
         type: 'boolean',
@@ -131,7 +131,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
             default: 5,
         },
         'terminal.integrated.rendererType': {
-            description: nls.localizeByDefault('Controls how the terminal is rendered.'),
+            description: nls.localize('theia/terminal/rendererType', 'Controls how the terminal is rendered.'),
             type: 'string',
             enum: ['canvas', 'dom'],
             default: 'canvas'
@@ -197,13 +197,12 @@ export const TerminalConfigSchema: PreferenceSchema = {
         },
         'terminal.integrated.confirmOnExit': {
             type: 'string',
-            // nls-todo: Will be included by default in VSCode version 1.58.0
-            description: nls.localize('theia/terminal/confirmClose', 'Controls whether to confirm when the window closes if there are active terminal sessions.'),
+            description: nls.localizeByDefault('Controls whether to confirm when the window closes if there are active terminal sessions.'),
             enum: ['never', 'always', 'hasChildProcesses'],
             enumDescriptions: [
-                nls.localize('theia/terminal/confirmCloseNever', 'Never confirm.'),
-                nls.localize('theia/terminal/confirmCloseAlways', 'Always confirm if there are terminals.'),
-                nls.localize('theia/terminal/confirmCloseChildren', 'Confirm if there are any terminals that have child processes.'),
+                nls.localizeByDefault('Never confirm.'),
+                nls.localizeByDefault('Always confirm if there are terminals.'),
+                nls.localizeByDefault('Confirm if there are any terminals that have child processes.'),
             ],
             default: 'never'
         },

@@ -51,7 +51,7 @@ const disassemblyNotAvailable: DisassembledInstructionEntry = {
     isBreakpointEnabled: false,
     instruction: {
         address: '-1',
-        instruction: nls.localize('theia/debug/instructionNotAvailable', 'Disassembly not available.')
+        instruction: nls.localizeByDefault('Disassembly not available.')
     },
     instructionAddress: BigInt(-1)
 } as const;
@@ -82,7 +82,7 @@ export class DisassemblyViewWidget extends BaseWidget {
         this.id = DisassemblyViewWidget.ID;
         this.addClass(DisassemblyViewWidget.ID);
         this.title.closable = true;
-        this.title.label = nls.localize('theia/debug/disassembly-view/disassembly', 'Disassembly');
+        this.title.label = nls.localizeByDefault('Disassembly');
         const updateIcon = () => this.title.iconClass = this.labelProvider.getIcon(this.iconReferenceUri) + ' file-icon';
         updateIcon();
         this.toDispose.push(this.labelProvider.onDidChange(updateIcon));
@@ -239,7 +239,7 @@ export class DisassemblyViewWidget extends BaseWidget {
                     project(row: DisassembledInstructionEntry): DisassembledInstructionEntry { return row; }
                 },
                 {
-                    label: nls.localize('theia/disassembly-view/disassemblyTableColumnLabel', 'instructions'),
+                    label: nls.localizeByDefault('instructions'),
                     tooltip: '',
                     weight: 0.3,
                     templateId: InstructionRenderer.TEMPLATE_ID,

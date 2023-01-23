@@ -199,7 +199,7 @@ export class AuthenticationMainImpl implements AuthenticationMain {
 
     protected async loginPrompt(providerName: string, extensionName: string, recreatingSession: boolean, _detail?: string): Promise<boolean> {
         const message = recreatingSession
-            ? nls.localize('theia/plugin-ext/signInAgain', "The extension '{0}' wants you to sign in again using {1}.", extensionName, providerName)
+            ? nls.localizeByDefault("The extension '{0}' wants you to sign in again using {1}.", extensionName, providerName)
             : nls.localizeByDefault("The extension '{0}' wants to sign in using {1}.", extensionName, providerName);
         const choice = await this.messageService.info(message, 'Allow', 'Cancel');
         return choice === 'Allow';

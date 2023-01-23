@@ -124,7 +124,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         });
         menus.registerMenuAction(VSXExtensionsContextMenu.COPY, {
             commandId: VSXExtensionsCommands.COPY_EXTENSION_ID.id,
-            label: nls.localizeByDefault('Copy Extension Id'),
+            label: nls.localizeByDefault('Copy Extension ID'),
             order: '1'
         });
         menus.registerMenuAction(VSXExtensionsContextMenu.INSTALL, {

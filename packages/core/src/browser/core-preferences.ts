@@ -87,12 +87,12 @@ export const corePreferenceSchema: PreferenceSchema = {
                 nls.localizeByDefault('Menu is displayed at the top of the window and only hidden in full screen mode.'),
                 nls.localizeByDefault('Menu is always visible at the top of the window even in full screen mode.'),
                 nls.localizeByDefault('Menu is always hidden.'),
-                nls.localizeByDefault('Menu is displayed as a compact button in the sidebar. This value is ignored when `#window.titleBarStyle#` is `native`.')
+                nls.localizeByDefault('Menu is displayed as a compact button in the side bar. This value is ignored when `#window.titleBarStyle#` is `native`.')
             ],
             default: 'classic',
             scope: 'application',
             // eslint-disable-next-line max-len
-            markdownDescription: nls.localizeByDefault('Control the visibility of the menu bar. A setting of \'toggle\' means that the menu bar is hidden and a single press of the Alt key will show it. A setting of \'compact\' will move the menu into the sidebar.'),
+            markdownDescription: nls.localizeByDefault("Control the visibility of the menu bar. A setting of 'toggle' means that the menu bar is hidden and a single press of the Alt key will show it. A setting of 'compact' will move the menu into the side bar."),
             included: !(isOSX && environment.electron.is())
         },
         'window.title': {
@@ -133,7 +133,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             enumDescriptions: [
                 nls.localizeByDefault('Disable proxy support for extensions.'),
                 nls.localizeByDefault('Enable proxy support for extensions.'),
-                nls.localize('theia/core/proxySupportFallback', 'Enable proxy support for extensions, fall back to request options, when no proxy found.'),
+                nls.localizeByDefault('Enable proxy support for extensions, fall back to request options, when no proxy found.'),
                 nls.localizeByDefault('Enable proxy support for extensions, override request options.'),
             ],
             default: 'override',
@@ -166,13 +166,12 @@ export const corePreferenceSchema: PreferenceSchema = {
         'workbench.editor.closeOnFileDelete': {
             'type': 'boolean',
             // eslint-disable-next-line max-len
-            'description': nls.localizeByDefault('Controls whether editors showing a file that was opened during the session should close automatically when getting deleted or renamed by some other process. Disabling this will keep the editor open  on such an event. Note that deleting from within the application will always close the editor and that dirty files will never close to preserve your data.'),
+            'description': nls.localizeByDefault('Controls whether editors showing a file that was opened during the session should close automatically when getting deleted or renamed by some other process. Disabling this will keep the editor open  on such an event. Note that deleting from within the application will always close the editor and that editors with unsaved changes will never close to preserve your data.'),
             'default': false
         },
         'workbench.editor.mouseBackForwardToNavigate': {
             'type': 'boolean',
-            // nls-todo: Will be available with newer VSCode API
-            'description': nls.localize('theia/core/mouseBackForwardToNavigate', "Enables the use of mouse buttons four and five for commands 'Go Back' and 'Go Forward'."),
+            'description': nls.localizeByDefault("Enables the use of mouse buttons four and five for commands 'Go Back' and 'Go Forward'."),
             'default': true
         },
         'workbench.commandPalette.history': {

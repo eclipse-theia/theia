@@ -2033,9 +2033,9 @@ export namespace ApplicationShell {
     export const areaLabels: Record<Area, string> = {
         main: nls.localizeByDefault('Main'),
         top: nls.localize('theia/shell-area/top', 'Top'),
-        left: nls.localize('theia/shell-area/left', 'Left'),
-        right: nls.localize('theia/shell-area/right', 'Right'),
-        bottom: nls.localize('theia/shell-area/bottom', 'Bottom'),
+        left: nls.localizeByDefault('Left'),
+        right: nls.localizeByDefault('Right'),
+        bottom: nls.localizeByDefault('Bottom'),
         secondaryWindow: nls.localize('theia/shell-area/secondary', 'Secondary Window'),
     };
 

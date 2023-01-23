@@ -62,7 +62,7 @@ export const debugPreferencesSchema: PreferenceSchema = {
             default: 'never'
         },
         'debug.disassemblyView.showSourceCode': {
-            description: nls.localize('theia/debug/disassembly-view/show-source-code', 'Show Source Code in Disassembly View.'),
+            description: nls.localizeByDefault('Show Source Code in Disassembly View.'),
             type: 'boolean',
             default: true,
         }
