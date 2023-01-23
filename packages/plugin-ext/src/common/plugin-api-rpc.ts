@@ -2019,7 +2019,7 @@ export interface TabOperation {
 export interface TabDto {
     id: string;
     label: string;
-    input: any;
+    input: AnyInputDto;
     editorId?: string;
     isActive: boolean;
     isPinned: boolean;

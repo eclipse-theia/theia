@@ -291,14 +291,6 @@ export class TabsExtImpl implements TabsExt {
                         return this._closeTabs(tabsOrTabGroups as theia.Tab[], preserveFocus);
                     }
                 },
-                // move: async (tab: theia.Tab, viewColumn: ViewColumn, index: number, preserveFocus?: boolean) => {
-                //  const extHostTab = this._findExtHostTabFromApi(tab);
-                //  if (!extHostTab) {
-                //      throw new Error('Invalid tab');
-                //  }
-                //  this._proxy.$moveTab(extHostTab.tabId, index, typeConverters.ViewColumn.from(viewColumn), preserveFocus);
-                //  return;
-                // }
             };
             this.apiObject = Object.freeze(obj);
         }

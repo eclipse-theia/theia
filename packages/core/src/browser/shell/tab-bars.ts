@@ -19,7 +19,7 @@ import { TabBar, Title, Widget } from '@phosphor/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@phosphor/virtualdom';
 import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
-import { Signal, Slot } from '@phosphor/signaling';
+import { ISignal, Signal, Slot } from '@phosphor/signaling';
 import { Message, MessageLoop } from '@phosphor/messaging';
 import { ArrayExt } from '@phosphor/algorithm';
 import { ElementExt } from '@phosphor/domutils';
@@ -547,6 +547,9 @@ export class TabBarRenderer extends TabBar.Renderer {
  */
 export class ScrollableTabBar extends TabBar<Widget> {
 
+    private readonly _tabCreated = new Signal<this, TabBar.ITabActivateRequestedArgs<Widget>>(this);
+    readonly tabCreated: ISignal<this, TabBar.ITabActivateRequestedArgs<Widget>> = this._tabCreated;
+
     protected scrollBar?: PerfectScrollbar;
 
     private scrollBarFactory: () => PerfectScrollbar;
@@ -565,6 +568,15 @@ export class ScrollableTabBar extends TabBar<Widget> {
         }
         super.dispose();
         this.toDispose.dispose();
+    }
+
+    override insertTab(index: number, value: Title<Widget> | Title.IOptions<Widget>): Title<Widget> {
+        const title = super.insertTab(index, value);
+        this._tabCreated.emit({
+            index: this.titles.length - 1,
+            title: title
+        });
+        return title;
     }
 
     protected override onAfterAttach(msg: Message): void {
