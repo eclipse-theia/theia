@@ -99,28 +99,8 @@
 
 /* Monaco Quick Input */
 .quick-input-widget {
-  width: 600px !important;
-  margin-left: -300px !important;
   background-color: var(--theia-quickInput-background) !important;
   color: var(--theia-foreground) !important;
-}
-
-.quick-input-list
-  .quick-input-list-rows
-  > .quick-input-list-row
-  .monaco-icon-label,
-.quick-input-list
-  .quick-input-list-rows
-  > .quick-input-list-row
-  .monaco-icon-label
-  .monaco-icon-label-container,
-.quick-input-list
-  .quick-input-list-rows
-  > .quick-input-list-row
-  .monaco-icon-label
-  .monaco-icon-label-container
-  > .monaco-icon-name-container {
-  display: flex !important;
 }
 
 .quick-input-list .monaco-list-row.focused {

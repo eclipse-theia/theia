@@ -95,6 +95,7 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         this.themeService.initialized.then(() => this.controller.applyStyles(this.getStyles()));
         // Hook into the theming service of Monaco to ensure that the updates are ready.
         StandaloneServices.get(IStandaloneThemeService).onDidColorThemeChange(() => this.controller.applyStyles(this.getStyles()));
+        window.addEventListener('resize', () => this.updateLayout());
     }
 
     setContextKey(key: string | undefined): void {
@@ -176,7 +177,20 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
 
     private initController(): void {
         this.controller = new QuickInputController(this.getOptions());
-        this.controller.layout({ width: 600, height: 1200 }, 0);
+        this.updateLayout();
+    }
+
+    private updateLayout(): void {
+        // Initialize the layout using screen dimensions as monaco computes the actual sizing.
+        // https://github.com/microsoft/vscode/blob/6261075646f055b99068d3688932416f2346dd3b/src/vs/base/parts/quickinput/browser/quickInput.ts#L1799
+        this.controller.layout(this.getClientDimension(), 0);
+    }
+
+    private getClientDimension(): monaco.editor.IDimension {
+        return {
+            width: window.innerWidth,
+            height: window.innerHeight
+        };
     }
 
     private getOptions(): IQuickInputOptions {
@@ -184,7 +198,7 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
             idPrefix: 'quickInput_',
             container: this.container,
             styles: { widget: {}, list: {}, inputBox: {}, countBadge: {}, button: {}, progressBar: {}, keybindingLabel: {}, },
-            ignoreFocusOut: () => false,
+            ignoreFocusOut: () => true, // TODO: REVERT.
             isScreenReaderOptimized: () => true,
             backKeybindingLabel: () => undefined,
             setContextKey: (id?: string) => this.setContextKey(id),
