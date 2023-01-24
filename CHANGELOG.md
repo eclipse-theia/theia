@@ -8,6 +8,7 @@
 
 - [plugin] added support for `isTransient` of `TerminalOptions` and `ExternalTerminalOptions` VS Code API [#12055](https://github.com/eclipse-theia/theia/pull/12055) - Contributed on behalf of STMicroelectronics
 - [terminal] added support for preference `terminal.integrated.enablePersistentSessions` to allow disabling restoring terminals on reload [#12055](https://github.com/eclipse-theia/theia/pull/12055) - Contributed on behalf of STMicroelectronics
+- [variable-resolver] fixed evaluations of `pickString` variables [#12100](https://github.com/eclipse-theia/theia/pull/12100) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.34.0">[Breaking Changes:](#breaking_changes_1.34.0)</a>
 
