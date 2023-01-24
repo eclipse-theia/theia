@@ -89,6 +89,7 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
             ['comments/comment/title', toCommentArgs],
             ['comments/commentThread/context', toCommentArgs],
             ['debug/callstack/context', firstArgOnly],
+            ['debug/variables/context', firstArgOnly],
             ['debug/toolBar', noArgs],
             ['editor/context', selectedResource],
             ['editor/title', widgetURI],

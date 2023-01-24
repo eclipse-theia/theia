@@ -64,26 +64,34 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
         }));
     }
 
-    async open(options: WidgetOpenerOptions = {
-        mode: 'reveal'
-    }): Promise<EditorWidget | undefined> {
+    async open(options?: WidgetOpenerOptions): Promise<EditorWidget | undefined> {
         if (!this.source) {
             return undefined;
         }
         const { line, column, endLine, endColumn } = this.raw;
         const selection: RecursivePartial<Range> = {
-            start: Position.create(line - 1, column - 1)
+            start: Position.create(this.clampPositive(line - 1), this.clampPositive(column - 1))
         };
         if (typeof endLine === 'number') {
             selection.end = {
-                line: endLine - 1,
-                character: typeof endColumn === 'number' ? endColumn - 1 : undefined
+                line: this.clampPositive(endLine - 1),
+                character: typeof endColumn === 'number' ? this.clampPositive(endColumn - 1) : undefined
             };
         }
         this.source.open({
+            mode: 'reveal',
             ...options,
             selection
         });
+    }
+
+    /**
+     * Debugger can send `column: 0` value despite of initializing the debug session with `columnsStartAt1: true`.
+     * This method can be used to ensure that neither `column` nor `column` are negative numbers.
+     * See https://github.com/microsoft/vscode-mock-debug/issues/85.
+     */
+    protected clampPositive(value: number): number {
+        return Math.max(value, 0);
     }
 
     protected scopes: Promise<DebugScope[]> | undefined;

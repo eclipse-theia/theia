@@ -253,6 +253,12 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
 
     protected getSelection(widget: EditorWidget, selection: RecursivePartial<Range>): Range | Position | undefined {
         const { start, end } = selection;
+        if (Position.is(start)) {
+            if (Position.is(end)) {
+                return widget.editor.document.toValidRange({ start, end });
+            }
+            return widget.editor.document.toValidPosition(start);
+        }
         const line = start && start.line !== undefined && start.line >= 0 ? start.line : undefined;
         if (line === undefined) {
             return undefined;

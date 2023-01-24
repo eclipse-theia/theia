@@ -21,6 +21,8 @@ import { injectable } from '@theia/core/shared/inversify';
 import { URI as CodeUri } from '@theia/core/shared/vscode-uri';
 import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
 import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
+import { DebugToolBar } from '@theia/debug/lib/browser/view/debug-toolbar-widget';
+import { DebugVariablesWidget } from '@theia/debug/lib/browser/view/debug-variables-widget';
 import { EditorWidget, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
@@ -38,6 +40,8 @@ export const implementedVSCodeContributionPoints = [
     'comments/comment/title',
     'comments/commentThread/context',
     'debug/callstack/context',
+    'debug/variables/context',
+    'debug/toolBar',
     'editor/context',
     'editor/title',
     'editor/title/context',
@@ -59,6 +63,8 @@ export const codeToTheiaMappings = new Map<ContributionPoint, MenuPath[]>([
     ['comments/comment/title', [COMMENT_TITLE]],
     ['comments/commentThread/context', [COMMENT_THREAD_CONTEXT]],
     ['debug/callstack/context', [DebugStackFramesWidget.CONTEXT_MENU, DebugThreadsWidget.CONTEXT_MENU]],
+    ['debug/variables/context', [DebugVariablesWidget.CONTEXT_MENU]],
+    ['debug/toolBar', [DebugToolBar.MENU]],
     ['editor/context', [EDITOR_CONTEXT_MENU]],
     ['editor/title', [PLUGIN_EDITOR_TITLE_MENU]],
     ['editor/title/context', [SHELL_TABBAR_CONTEXT_MENU]],
