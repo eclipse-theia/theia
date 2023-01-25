@@ -787,7 +787,7 @@ export interface TreeViewItem {
 
 export interface TreeViewItemReference {
     viewId: string
-    itemId: string,
+    itemId: string
 }
 export namespace TreeViewItemReference {
     export function is(arg: unknown): arg is TreeViewItemReference {
