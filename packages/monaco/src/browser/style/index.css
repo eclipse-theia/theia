@@ -99,8 +99,6 @@
 
 /* Monaco Quick Input */
 .quick-input-widget {
-  width: 600px !important;
-  margin-left: -300px !important;
   background-color: var(--theia-quickInput-background) !important;
   color: var(--theia-foreground) !important;
 }
@@ -121,6 +119,7 @@
   .monaco-icon-label-container
   > .monaco-icon-name-container {
   display: flex !important;
+  overflow: hidden;
 }
 
 .quick-input-list .monaco-list-row.focused {
@@ -170,15 +169,6 @@
   line-height: 22px;
 }
 
-.quick-input-list
-  .quick-input-list-rows
-  > .quick-input-list-row
-  .monaco-icon-label
-  .monaco-icon-label-container
-  > .monaco-icon-name-container {
-  flex: 0 !important;
-}
-
 .quick-input-list-rows
   .quick-input-list-row
   .monaco-icon-label
@@ -198,6 +188,8 @@
     font-family: var(--theia-ui-font-family);
     font-size: var(--theia-ui-font-size1) !important;
     color: var(--theia-foreground) !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .quick-input-list .monaco-icon-label::before {
