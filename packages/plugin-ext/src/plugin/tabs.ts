@@ -298,7 +298,6 @@ export class TabsExtImpl implements TabsExt {
     }
 
     $acceptEditorTabModel(tabGroups: TabGroupDto[]): void {
-
         const groupIdsBefore = new Set(this.tabGroupArr.map(group => group.groupId));
         const groupIdsAfter = new Set(tabGroups.map(dto => dto.groupId));
         const diff = diffSets(groupIdsBefore, groupIdsAfter);
@@ -318,10 +317,12 @@ export class TabsExtImpl implements TabsExt {
         });
 
         const groupId = tabGroups.find(group => group.isActive === true)?.groupId;
-        // Set the active tab group id
-        const activeTabGroupId = assertIsDefined(groupId);
-        if (activeTabGroupId !== undefined && this.activeGroupId !== activeTabGroupId) {
-            this.activeGroupId = activeTabGroupId;
+        // Set the active tab group id. skip if no tabgroups are open
+        if (tabGroups.length > 0) {
+            const activeTabGroupId = assertIsDefined(groupId);
+            if (activeTabGroupId !== undefined && this.activeGroupId !== activeTabGroupId) {
+                this.activeGroupId = activeTabGroupId;
+            }
         }
         this.onDidChangeTabGroups.fire(Object.freeze({ opened, closed, changed }));
     }
