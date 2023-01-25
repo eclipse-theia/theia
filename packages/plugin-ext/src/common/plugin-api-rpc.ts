@@ -110,7 +110,7 @@ import type {
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ThemeType } from '@theia/core/lib/common/theme';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { isObject, PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
+import { isString, isObject, PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
 import { Severity } from '@theia/core/lib/common/severity';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
 
@@ -791,7 +791,7 @@ export interface TreeViewItemReference {
 }
 export namespace TreeViewItemReference {
     export function is(arg: unknown): arg is TreeViewItemReference {
-        return !!arg && typeof arg === 'object' && 'viewId' in arg && 'itemId' in arg;
+        return isObject(arg) && isString(arg.viewId) && isString(arg.itemId);
     }
 }
 
