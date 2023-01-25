@@ -720,6 +720,12 @@ export interface DialogsMain {
     $showUploadDialog(options: UploadDialogOptionsMain): Promise<string[] | undefined>;
 }
 
+export interface RegisterTreeDataProviderOptions {
+    canSelectMany?: boolean
+    dragMimeTypes?: string[]
+    dropMimeTypes?: string[]
+}
+
 export interface TreeViewRevealOptions {
     select: boolean
     focus: boolean
@@ -727,7 +733,7 @@ export interface TreeViewRevealOptions {
 }
 
 export interface TreeViewsMain {
-    $registerTreeDataProvider(treeViewId: string, canSelectMany: boolean | undefined, dragMimetypes: string[] | undefined, dropMimetypes: string[] | undefined): void;
+    $registerTreeDataProvider(treeViewId: string, options?: RegisterTreeDataProviderOptions): void;
     $readDroppedFile(contentId: string): Promise<BinaryBuffer>;
     $unregisterTreeDataProvider(treeViewId: string): void;
     $refresh(treeViewId: string): Promise<void>;

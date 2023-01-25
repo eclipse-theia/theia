@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { MAIN_RPC_CONTEXT, TreeViewsMain, TreeViewsExt, TreeViewRevealOptions } from '../../../common/plugin-api-rpc';
+import { MAIN_RPC_CONTEXT, TreeViewsMain, TreeViewsExt, TreeViewRevealOptions, RegisterTreeDataProviderOptions } from '../../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { PluginViewRegistry, PLUGIN_VIEW_DATA_FACTORY_ID } from './plugin-view-registry';
 import {
@@ -58,15 +58,14 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
         this.toDispose.dispose();
     }
 
-    async $registerTreeDataProvider(treeViewId: string, canSelectMany: boolean | undefined, dragMimeTypes: string[] | undefined, dropMimeTypes: string[] | undefined): Promise<void> {
+    async $registerTreeDataProvider(treeViewId: string, $options: RegisterTreeDataProviderOptions): Promise<void> {
         this.treeViewProviders.set(treeViewId, this.viewRegistry.registerViewDataProvider(treeViewId, async ({ state, viewInfo }) => {
             const options: TreeViewWidgetOptions = {
                 id: treeViewId,
-                multiSelect: canSelectMany,
-                dragMimeTypes,
-                dropMimeTypes
+                multiSelect: $options.canSelectMany,
+                dragMimeTypes: $options.dragMimeTypes,
+                dropMimeTypes: $options.dropMimeTypes
             };
-
             const widget = await this.widgetManager.getOrCreateWidget<TreeViewWidget>(PLUGIN_VIEW_DATA_FACTORY_ID, options);
             widget.model.viewInfo = viewInfo;
             if (state) {
