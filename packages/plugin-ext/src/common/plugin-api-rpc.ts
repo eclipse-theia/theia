@@ -110,7 +110,7 @@ import type {
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ThemeType } from '@theia/core/lib/common/theme';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { isObject, PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
+import { isString, isObject, PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
 import { Severity } from '@theia/core/lib/common/severity';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
 
@@ -720,6 +720,12 @@ export interface DialogsMain {
     $showUploadDialog(options: UploadDialogOptionsMain): Promise<string[] | undefined>;
 }
 
+export interface RegisterTreeDataProviderOptions {
+    canSelectMany?: boolean
+    dragMimeTypes?: string[]
+    dropMimeTypes?: string[]
+}
+
 export interface TreeViewRevealOptions {
     select: boolean
     focus: boolean
@@ -727,7 +733,7 @@ export interface TreeViewRevealOptions {
 }
 
 export interface TreeViewsMain {
-    $registerTreeDataProvider(treeViewId: string, dragMimetypes: string[] | undefined, dropMimetypes: string[] | undefined): void;
+    $registerTreeDataProvider(treeViewId: string, options?: RegisterTreeDataProviderOptions): void;
     $readDroppedFile(contentId: string): Promise<BinaryBuffer>;
     $unregisterTreeDataProvider(treeViewId: string): void;
     $refresh(treeViewId: string): Promise<void>;
@@ -785,13 +791,13 @@ export interface TreeViewItem {
 
 }
 
-export interface TreeViewSelection {
-    treeViewId: string
-    treeItemId: string
+export interface TreeViewItemReference {
+    viewId: string
+    itemId: string
 }
-export namespace TreeViewSelection {
-    export function is(arg: unknown): arg is TreeViewSelection {
-        return isObject(arg) && 'treeViewId' in arg && 'treeItemId' in arg;
+export namespace TreeViewItemReference {
+    export function is(arg: unknown): arg is TreeViewItemReference {
+        return isObject(arg) && isString(arg.viewId) && isString(arg.itemId);
     }
 }
 

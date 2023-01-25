@@ -148,14 +148,15 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(DnDFileContentStore).toSelf().inSingletonScope();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: PLUGIN_VIEW_DATA_FACTORY_ID,
-        createWidget: (identifier: TreeViewWidgetOptions) => {
+        createWidget: (options: TreeViewWidgetOptions) => {
             const props = {
                 contextMenuPath: VIEW_ITEM_CONTEXT_MENU,
                 expandOnlyOnExpansionToggleClick: true,
                 expansionTogglePadding: 22,
                 globalSelection: true,
                 leftPadding: 8,
-                search: true
+                search: true,
+                multiSelect: options.multiSelect
             };
             const child = createTreeContainer(container, {
                 props,
@@ -164,7 +165,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
                 widget: TreeViewWidget,
                 decoratorService: TreeViewDecoratorService
             });
-            child.bind(TreeViewWidgetOptions).toConstantValue(identifier);
+            child.bind(TreeViewWidgetOptions).toConstantValue(options);
             return child.get(TreeWidget);
         }
     })).inSingletonScope();
