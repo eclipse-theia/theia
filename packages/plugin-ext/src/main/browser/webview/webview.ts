@@ -76,7 +76,7 @@ export interface WebviewContentOptions {
     readonly allowForms?: boolean;
     readonly localResourceRoots?: ReadonlyArray<string>;
     readonly portMapping?: ReadonlyArray<WebviewPortMapping>;
-    readonly enableCommandUris?: boolean;
+    readonly enableCommandUris?: boolean | readonly string[];
 }
 
 @injectable()
@@ -450,8 +450,12 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
             }
             return link;
         }
-        if (!!this.contentOptions.enableCommandUris && link.scheme === Schemes.command) {
-            return link;
+        if (link.scheme === Schemes.command) {
+            if (Array.isArray(this.contentOptions.enableCommandUris) && this.contentOptions.enableCommandUris.some(value => value === link.path.toString())) {
+                return link;
+            } else if (this.contentOptions.enableCommandUris === true) {
+                return link;
+            }
         }
         return undefined;
     }
