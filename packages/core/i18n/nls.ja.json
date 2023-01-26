@@ -1,5 +1,6 @@
 {
-  "disassemblyView": "分解図",
+  "terminal:new:profile": "プロファイルから新しい統合端末を作成する",
+  "terminal:profile:default": "デフォルトの端末プロファイルを選択",
   "theia": {
     "callhierarchy": {
       "noCallers": "発信者は検出されていません。",
@@ -8,9 +9,9 @@
     "core": {
       "about": {
         "compatibility": "{0} 互換性",
-        "defaultApi": "デフォルト{0} API"
+        "defaultApi": "デフォルト{0} API",
+        "version": "バージョン"
       },
-      "availableLanguages": "使用可能な言語",
       "common": {
         "closeAll": "すべてのタブを閉じる",
         "closeAllTabMain": "メインエリアのすべてのタブを閉じる",
@@ -32,7 +33,6 @@
         "browse": "ブラウズ"
       },
       "highlightModifiedTabs": "モディファイド(ダーティ)エディタのタブにトップボーダーを描画するかどうかを制御します。",
-      "installedLanguages": "インストールされている言語",
       "keybindingStatus": "{0}が押されたので、さらにキーを待つ",
       "keyboard": {
         "choose": "キーボードレイアウトの選択",
@@ -43,11 +43,8 @@
         "pc": "PCキーボード",
         "tryDetect": "ブラウザの情報や押されたキーからキーボードの配列を検出してみてください。"
       },
-      "mouseBackForwardToNavigate": "戻る」「進む」コマンドでマウスボタン4と5を使用できるようにする。",
       "offline": "オフライン",
-      "proxySupportFallback": "拡張機能のプロキシサポートを有効にし、プロキシが見つからない場合、リクエストオプションにフォールバックする。",
       "quitMessage": "保存されていない変更は、保存されません。",
-      "quitTitle": "本当に辞めたいのか?",
       "resetWorkbenchLayout": "ワークベンチレイアウトのリセット",
       "searchbox": {
         "close": "閉じる(エスケープ)",
@@ -62,99 +59,30 @@
       "compound-cycle": "起動構成 '{0}' は自分自身とのサイクルを含む",
       "continueAll": "すべてを続ける",
       "copyExpressionValue": "コピー式の値",
-      "debugSessionActive": "デバッグセッションがアクティブになっていますが、本当に停止しますか?",
-      "debugSessionActiveMultiple": "アクティブなデバッグセッションがありますが、本当に停止しますか?",
-      "disassembly-view": {
-        "disassembly": "分解",
-        "show-source-code": "逆アセンブルビューでソースコードを表示する"
-      },
+      "debugVariableInput": "設定{0} 値",
       "instruction-breakpoint": "命令ブレークポイント",
-      "instructionAddress": "住所",
-      "instructionBytes": "バイト",
-      "instructionNotAvailable": "分解はできません。",
-      "instructionText": "インストラクション",
       "missingConfiguration": "ダイナミックコンフィギュレーション「{0}:{1}」が存在しないか、適用できない",
-      "open-disassembly-view": "オープン分解図",
       "pauseAll": "ポーズ・オール",
       "reveal": "暴露",
       "threads": "スレッド",
       "toggleTracing": "デバッグアダプタとの通信のトレースの有効化/無効化"
     },
-    "disassembly-view": {
-      "disassemblyTableColumnLabel": "指令"
-    },
     "editor": {
       "diffEditor.diffAlgorithm.experimental": "実験的な差分アルゴリズムを使用。",
       "diffEditor.diffAlgorithm.smart": "デフォルトの diffing アルゴリズムを使用します。",
-      "diffEditor.maxFileSize": "差分を計算するファイルの最大サイズをMBで指定します。制限しない場合は 0 を使用します。",
       "diffEditor.renderMarginRevertIcon": "有効にすると、diff エディタのグリフマージンに矢印が表示され、変更を元に戻すことができます。",
-      "editor.accessibilityPageSize": "スクリーン・リーダーが一度に読み上げられるエディターの行数を制御します。スクリーン・リーダーが検出されると、自動的にデフォルトが500に設定されます。警告: デフォルト値よりも大きな数値を設定した場合、パフォーマンスが低下します。",
-      "editor.bracketPairColorization.enabled": "ブラケットペアの色付けを有効にするかどうかを制御します。ブラケットのハイライト色をオーバーライドするには 'workbench.colorCustomizations' を使用します。",
-      "editor.bracketPairColorization.independentColorPoolPerBracketType": "各ブラケットタイプに独立したカラープールを持たせるかどうかを制御します。",
+      "dirtyEncoding": "ファイルが汚れています。別のエンコーディングで開き直す前に、まず保存してください。",
       "editor.codeActionWidget.showHeaders": "コードアクションメニューにグループヘッダを表示するかどうかを設定します。",
-      "editor.codeLensFontSize": "CodeLensのフォントサイズをピクセル単位で制御します。0`に設定すると、`#editor.fontSize#`の90%が使用されます。",
-      "editor.dropIntoEditor.enabled": "ファイルをエディターで開くのではなく、`shift`を押しながらドラッグ＆ドロップしてテキストエディタに入れるかどうかをコントロールします。",
-      "editor.experimental.pasteActions.enabled": "ペースト時に拡張機能からの編集を実行するかしないかを設定します。",
-      "editor.find.seedSearchStringFromSelection0": "エディタ選択から検索文字列をシードすることはありません。",
-      "editor.find.seedSearchStringFromSelection1": "カーソル位置の単語を含め、常にエディタの選択範囲から検索文字列をシードします。",
-      "editor.find.seedSearchStringFromSelection2": "エディタ選択からシード検索文字列のみ。",
-      "editor.foldingImportsByDefault": "エディターがインポート範囲を自動的に折りたたむかどうかを制御します。",
-      "editor.foldingMaximumRegions": "折りたたみ可能な領域の最大数。この値を大きくすると、電流源の折りたたみ領域が多い場合にエディタの応答が悪くなることがあります。",
       "editor.formatOnSaveMode.modificationsIfAvailable": "変更点のみをフォーマットしようとします(ソースコントロールが必要です)。ソースコントロールが使用できない場合は、ファイル全体がフォーマットされます。",
-      "editor.guides.bracketPairs": "ブラケットペアガイドを有効にするかどうかを制御します。",
-      "editor.guides.bracketPairs0": "ブラケットペアガイドを有効にします。",
-      "editor.guides.bracketPairs1": "アクティブなブラケットペアにのみブラケットペアガイドを有効にします。",
-      "editor.guides.bracketPairs2": "ブラケットペアガイドを無効化します。",
-      "editor.guides.bracketPairsHorizontal": "水平ブラケットペアガイドを有効にするかどうかを制御します。",
-      "editor.guides.bracketPairsHorizontal0": "垂直方向のブラケットペアガイドに加え、水平方向のガイドを有効にします。",
-      "editor.guides.bracketPairsHorizontal1": "アクティブなブラケットペアにのみ水平方向のガイドを有効にします。",
-      "editor.guides.bracketPairsHorizontal2": "水平ブラケットペアガイドを無効にします。",
-      "editor.guides.highlightActiveBracketPair": "エディターがアクティブなブラケットペアをハイライト表示するかどうかを制御します。",
-      "editor.guides.highlightActiveIndentation0": "アクティブなインデントガイドをハイライト表示します。",
-      "editor.guides.highlightActiveIndentation1": "ブラケットガイドがハイライトされている場合でも、アクティブなインデントガイドをハイライトします。",
-      "editor.guides.highlightActiveIndentation2": "アクティブなインデントガイドをハイライト表示しない。",
-      "editor.hover.above": "スペースがある場合は、行の上にホバー表示することを優先します。",
-      "editor.inlayHints.enabled": "エディタでインレイのヒントを有効にします。",
-      "editor.inlayHints.enabled0": "インレイヒントが有効",
       "editor.inlayHints.enabled1": "インレイのヒントはデフォルトで表示され、`Ctrl+Alt`を押すと隠れます。",
       "editor.inlayHints.enabled2": "インレイのヒントはデフォルトでは非表示で、`Ctrl+Alt`を押したときに表示されます。",
-      "editor.inlayHints.enabled3": "インレイヒントが無効",
-      "editor.inlayHints.fontFamily": "エディタ内のインレイヒントのフォントファミリーを制御します。空白に設定すると、`#editor.fontFamily#`が使用されます。",
-      "editor.inlayHints.fontSize": "エディターでのインレイヒントのフォントサイズを制御します。設定値が `5` 未満またはエディタのフォントサイズより大きい場合、デフォルトの `#editor.fontSize#` の 90% が使用されます。",
-      "editor.inlayHints.padding": "エディタでインレイのヒントの周りにパディングを有効にします。",
-      "editor.inlineSuggest.enabled": "エディタにインラインのサジェストを自動的に表示するかどうかを制御します。",
-      "editor.language.colorizedBracketPairs": "ブラケットペアの色付けが有効な場合に、その入れ子レベルによって色付けされるブラケットペアを定義する。",
-      "editor.lineHeight": "行の高さを制御します。\n - 0を指定すると、フォントサイズから自動的に行の高さが計算されます。\n - 0から8までの値は、フォントサイズとの乗数として使用されます。\n - 8以上の値は、有効な値として使用されます。",
       "editor.minimap.autohide": "ミニマップを自動的に隠すかどうかを制御します。",
       "editor.multiCursorModifier": "マウスで複数のカーソルを追加するときに使用するモディファイアです。定義へ移動およびリンクを開くマウスジェスチャは、[multicursor modifier](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier)と競合しないように適応されます。",
       "editor.quickSuggestions": "入力中に自動的にサジェストを表示するかどうかを制御します。コメント、文字列、その他のコードを入力する際に制御できます。クイックサジェストは、ゴーストテキストとして表示するか、サジェストウィジェットで表示するかを設定できます。また、'#editor.suggestOnTriggerCharacters#'設定は、特殊な文字でサジェストが発生するかどうかを制御します。",
-      "editor.quickSuggestions0": "サジェストウィジェットの中にクイックサジェストを表示",
-      "editor.quickSuggestions1": "クイックサジェスト機能をゴーストテキストで表示",
-      "editor.quickSuggestions2": "クイックサジェスト機能を無効化",
-      "editor.scrollbar.horizontal": "水平スクロールバーの表示/非表示を制御します。",
-      "editor.scrollbar.horizontal0": "水平スクロールバーは、必要なときだけ表示されます。",
-      "editor.scrollbar.horizontal1": "水平方向のスクロールバーは常に表示されます。",
-      "editor.scrollbar.horizontal2": "水平方向のスクロールバーは常に非表示になります。",
-      "editor.scrollbar.horizontalScrollbarSize": "水平スクロールバーの高さを指定します。",
-      "editor.scrollbar.scrollByPage": "クリックがページ単位でスクロールするか、クリック位置までジャンプするかを制御します。",
-      "editor.scrollbar.vertical": "垂直スクロールバーの表示/非表示を制御する。",
-      "editor.scrollbar.vertical0": "垂直スクロールバーは、必要なときだけ表示されます。",
-      "editor.scrollbar.vertical1": "垂直スクロールバーは常に表示されます。",
-      "editor.scrollbar.vertical2": "垂直スクロールバーは常に非表示になります。",
-      "editor.scrollbar.verticalScrollbarSize": "縦スクロールバーの幅を指定します。",
       "editor.showFoldingControls1": "決して折りたたみ操作を見せず、ガターサイズを小さくする。",
       "editor.stickyScroll.enabled": "エディタ上部のスクロール中に、ネストされた現在のスコープを表示します。",
       "editor.stickyScroll.maxLineCount": "表示する付箋の最大数を定義します。",
       "editor.suggest.matchOnWordStartOnly": "インテリセンスのフィルタリングを有効にすると、最初の文字が単語の先頭にマッチする必要があります。例えば、`Console` や `WebContext` では `c` ですが、`description` では _not_ です。無効化すると、インテリセンスはより多くの結果を表示しますが、マッチの質でソートされます。",
-      "editor.suggest.preview": "提案の結果をエディターでプレビューするかどうかを制御します。",
-      "editor.suggest.showDeprecated": "IntelliSenseを有効にすると、「非推奨」のサジェスチョンが表示されます。",
-      "editor.unicodeHighlight.allowedCharacters": "ハイライトされない文字を定義する。",
-      "editor.unicodeHighlight.allowedLocales": "許可されたロケールで一般的なUnicode文字がハイライトされていません。",
-      "editor.unicodeHighlight.ambiguousCharacters": "現在のユーザーロケールで一般的な文字を除き、基本的なASCII文字と混同される可能性のある文字をハイライト表示するかどうかを制御します。",
-      "editor.unicodeHighlight.includeComments": "コメント中の文字もunicodeハイライトの対象とするかどうかを制御する。",
-      "editor.unicodeHighlight.includeStrings": "文字列内の文字もUnicodeハイライトの対象とするかどうかを制御する。",
-      "editor.unicodeHighlight.invisibleCharacters": "スペースを確保するだけの文字や幅のない文字を強調表示するかどうかを制御します。",
-      "editor.unicodeHighlight.nonBasicASCII": "すべての非基本ASCII文字をハイライト表示するかどうかを制御します。U+0020 から U+007E までの文字、タブ、ラインフィード、キャリッジリターンのみが基本 ASCII とみなされます。",
       "files.autoSave": "未保存の変更があるエディターの[自動保存](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save)を制御します。",
       "files.autoSave.afterDelay": "変更されたエディターは、設定された `#files.autoSaveDelay#` の後に自動的に保存されます。",
       "files.autoSave.off": "変更されたエディタは、自動的に保存されることはありません。",
@@ -162,12 +90,9 @@
       "files.autoSave.onWindowChange": "変更されたエディタは、ウィンドウのフォーカスが外れたときに自動的に保存されます。",
       "formatOnSaveTimeout": "ファイル保存時に実行されるフォーマットがキャンセルされるまでのタイムアウト(ミリ秒)。",
       "persistClosedEditors": "ウィンドウの再読み込み時に、ワークスペースの閉じたエディタの履歴を保持するかどうかを制御します。",
-      "readOnly": "読み取り専用",
       "showAllEditors": "開いているエディタをすべて表示",
       "splitHorizontal": "スプリットエディタ横",
       "splitVertical": "スプリットエディタ縦",
-      "status-bar-pin": "ステータスバーへの追加",
-      "status-bar-unpin": "ステータスバーから削除する",
       "toggleStickyScroll": "固定スクロールの切り替えル"
     },
     "file-search": {
@@ -198,7 +123,10 @@
       "format": "フォーマット:",
       "maxConcurrentUploads": "複数のファイルをアップロードする際に、同時にアップロードするファイルの最大数です。0の場合は、すべてのファイルが同時にアップロードされます。",
       "maxFileSizeMB": "開くことのできる最大ファイルサイズ(MB)を制御します。",
+      "prepareDownload": "ダウンロードの準備中...",
+      "prepareDownloadLink": "ダウンロードリンクの準備中...",
       "processedOutOf": "{1}のうち{0}を処理",
+      "replaceTitle": "ファイルの置き換え",
       "uploadFiles": "ファイルのアップロード...",
       "uploadedOutOf": "{1}のうち{0}をアップロードしました。"
     },
@@ -254,7 +182,6 @@
       "tabbarDecorationsEnabled": "タブバーに問題のデコレーター(診断マーカー)を表示する。"
     },
     "memory-inspector": {
-      "address": "住所",
       "addressTooltip": "表示するメモリ位置、アドレス、またはアドレスに評価される式",
       "ascii": "ASCII",
       "binary": "バイナリ",
@@ -353,8 +280,10 @@
       "hiddenChannels": "隠しチャンネル",
       "hideOutputChannel": "出力チャンネルを隠す...",
       "maxChannelHistory": "1つの出力チャネルの最大エントリ数。",
-      "outputChannels": "出力チャンネル",
       "showOutputChannel": "出力チャンネルを表示..."
+    },
+    "plugin": {
+      "blockNewTab": "お使いのブラウザで新しいタブを開くことができませんでした"
     },
     "plugin-dev": {
       "alreadyRunning": "ホストされているインスタンスはすでに実行されています。",
@@ -385,7 +314,6 @@
     },
     "plugin-ext": {
       "plugins": "プラグイン",
-      "signInAgain": "拡張子「{0}」は、「{1}」を使って再度サインインしてほしいと言っています。",
       "webviewTrace": "ウェブビューによる通信のトレースを制御します。",
       "webviewWarnIfUnsecure": "現在、ウェブビューが安全でない状態で展開されていることをユーザーに警告します。"
     },
@@ -398,7 +326,6 @@
       "lastModified": "最終更新日",
       "location": "所在地",
       "noProperties": "物件はありません。",
-      "path": "パス",
       "properties": "プロパティ",
       "size": "サイズ",
       "symbolicLink": "シンボリックリンク"
@@ -427,9 +354,6 @@
       "extract-widget": "セカンダリーウィンドウへの表示移動"
     },
     "shell-area": {
-      "bottom": "底面",
-      "left": "左",
-      "right": "右",
       "secondary": "セカンダリーウィンドウ",
       "top": "トップ"
     },
@@ -439,21 +363,26 @@
       "openUserTasks": "ユーザータスクを開く"
     },
     "terminal": {
-      "confirmClose": "アクティブなターミナルセッションがある場合、ウィンドウが閉じるときに確認するかどうかを制御します。",
-      "confirmCloseAlways": "端子があるかどうかは必ず確認してください。",
-      "confirmCloseChildren": "子プロセスが存在する端末があるかどうかを確認します。",
-      "confirmCloseNever": "絶対に確認しないでください。",
+      "defaultProfile": "で使用されるデフォルトのプロファイルです。{0}",
       "enableCopy": "ctrl-c(macOSではcmd-c)で選択されたテキストをコピーできるようになりました。",
       "enablePaste": "ctrl-v(macOSではcmd-v)でクリップボードからの貼り付けを可能にする。",
+      "profileArgs": "このプロファイルが使用するシェル引数。",
+      "profileColor": "端末と関連付ける端末テーマカラーID。",
+      "profileDefault": "Default Profileを選択する...",
+      "profileIcon": "ターミナルアイコンに関連付けるコーディコンIDです。\nterminal-tmux:\"$(terminal-tmux)\" とする。",
+      "profileNew": "新端末(プロフィール付き)...",
+      "profilePath": "このプロファイルが使用するシェルのパス。",
+      "profileSource": "シェルへのパスを自動検出するプロファイルソースです。非標準の実行可能位置はサポートされていないので、新しいプロファイルで手動で作成する必要があることに注意してください。",
+      "profiles": "新しいターミナルを作成するときに提示するプロファイル。オプションのアーギュメントを使用して、手動でパスプロパティを設定します。\n既存のプロファイルを `null` に設定すると、リストからプロファイルを隠すことができます。 例: `\"{0}\": null`.",
+      "rendererType": "端末のレンダリング方法を制御する。",
+      "selectProfile": "新規端末のプロファイルを選択する",
+      "shell.deprecated": "これは非推奨です。デフォルトシェルを設定する新しい推奨方法は、 'terminal.integrated.profiles.{0}' でターミナルプロファイルを作成し、 'terminal.integrated.defaultProfile.{0}.' でそのプロファイル名をデフォルトとして設定する方法です。",
       "shellArgsLinux": "Linux端末で使用するコマンドライン引数です。",
       "shellArgsOsx": "macOSのターミナルで使用するコマンドライン引数です。",
       "shellArgsWindows": "Windows端末で使用するコマンドライン引数です。",
       "shellLinux": "Linuxでターミナルが使用するシェルのパス(デフォルト:'{0}'})。",
       "shellOsx": "macOSでターミナルが使用するシェルのパスです(デフォルト:'{0}'})。",
-      "shellWindows": "Windowsでターミナルが使用するシェルのパスです。(デフォルト: '{0}')を指定します。",
-      "terminate": "終了",
-      "terminateActive": "アクティブなターミナルセッションを終了しますか?",
-      "terminateActiveMultiple": "{0}のアクティブな端末セッションを終了しますか?"
+      "shellWindows": "Windowsでターミナルが使用するシェルのパスです。(デフォルト: '{0}')を指定します。"
     },
     "toolbar": {
       "addCommand": "ツールバーへのコマンド追加",
@@ -477,11 +406,9 @@
     },
     "typehierarchy": {
       "subtypeHierarchy": "サブタイプヒエラルキー",
-      "supertypeHierarchy": "スーパータイプヒエラルキー",
-      "typeHierarchy": "タイプ階層"
+      "supertypeHierarchy": "スーパータイプヒエラルキー"
     },
     "vsx-registry": {
-      "averageRating": "平均評価:{0} 5点満点中",
       "downloadCount": "ダウンロード回数{0}",
       "errorFetching": "拡張機能の取得にエラーが発生しました。",
       "failedInstallingVSIX": "VSIXから{0} のインストールに失敗しました。",
@@ -521,7 +448,6 @@
       "trashTitle": "{0}をゴミ箱に移動",
       "trustEmptyWindow": "空のワークスペースをデフォルトで信頼するかどうかを制御します。",
       "trustEnabled": "ワークスペースの信頼を有効にするかどうかを制御します。無効の場合、すべてのワークスペースが信頼されます。",
-      "trustPrompt": "ワークスペースを信頼するための起動時のプロンプトを表示するタイミングを制御します。",
       "trustRequest": "拡張機能がワークスペースの信頼を要求していますが、対応する API はまだ完全にはサポートされていません。このワークスペースを信頼しますか?",
       "untitled-cleanup": "名称未設定のワークスペースファイルが多数あるようです。{0}を確認して、未使用のファイルを削除してください。",
       "workspaceFolderAdded": "複数のルートを持つワークスペースが作成されました。ワークスペースの構成をファイルとして保存しますか?",

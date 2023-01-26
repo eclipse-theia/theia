@@ -1,5 +1,6 @@
 {
-  "disassemblyView": "Disassembly View",
+  "terminal:new:profile": "Create New Integrated Terminal from a Profile",
+  "terminal:profile:default": "Choose the default Terminal Profile",
   "theia": {
     "callhierarchy": {
       "noCallers": "No callers have been detected.",
@@ -8,9 +9,9 @@
     "core": {
       "about": {
         "compatibility": "{0} Compatibility",
-        "defaultApi": "Default {0} API"
+        "defaultApi": "Default {0} API",
+        "version": "Version"
       },
-      "availableLanguages": "Available languages",
       "common": {
         "closeAll": "Close All Tabs",
         "closeAllTabMain": "Close All Tabs in Main Area",
@@ -32,7 +33,6 @@
         "browse": "Browse"
       },
       "highlightModifiedTabs": "Controls whether a top border is drawn on modified (dirty) editor tabs or not.",
-      "installedLanguages": "Installed languages",
       "keybindingStatus": "{0} was pressed, waiting for more keys",
       "keyboard": {
         "choose": "Choose Keyboard Layout",
@@ -43,11 +43,8 @@
         "pc": "PC Keyboards",
         "tryDetect": "Try to detect the keyboard layout from browser information and pressed keys."
       },
-      "mouseBackForwardToNavigate": "Enables the use of mouse buttons four and five for commands 'Go Back' and 'Go Forward'.",
       "offline": "Offline",
-      "proxySupportFallback": "Enable proxy support for extensions, fall back to request options, when no proxy found.",
       "quitMessage": "Any unsaved changes will not be saved.",
-      "quitTitle": "Are you sure you want to quit?",
       "resetWorkbenchLayout": "Reset Workbench Layout",
       "searchbox": {
         "close": "Close (Escape)",
@@ -62,99 +59,30 @@
       "compound-cycle": "Launch configuration '{0}' contains a cycle with itself",
       "continueAll": "Continue All",
       "copyExpressionValue": "Copy Expression Value",
-      "debugSessionActive": "There is an active debug session, are you sure you want to stop it?",
-      "debugSessionActiveMultiple": "There are active debug sessions, are you sure you want to stop them?",
-      "disassembly-view": {
-        "disassembly": "Disassembly",
-        "show-source-code": "Show Source Code in Disassembly View."
-      },
+      "debugVariableInput": "Set {0} Value",
       "instruction-breakpoint": "Instruction Breakpoint",
-      "instructionAddress": "Address",
-      "instructionBytes": "Bytes",
-      "instructionNotAvailable": "Disassembly not available.",
-      "instructionText": "Instruction",
       "missingConfiguration": "Dynamic configuration '{0}:{1}' is missing or not applicable",
-      "open-disassembly-view": "Open Disassembly View",
       "pauseAll": "Pause All",
       "reveal": "Reveal",
       "threads": "Threads",
       "toggleTracing": "Enable/disable tracing communications with debug adapters"
     },
-    "disassembly-view": {
-      "disassemblyTableColumnLabel": "instructions"
-    },
     "editor": {
       "diffEditor.diffAlgorithm.experimental": "Uses an experimental diffing algorithm.",
       "diffEditor.diffAlgorithm.smart": "Uses the default diffing algorithm.",
-      "diffEditor.maxFileSize": "Maximum file size in MB for which to compute diffs. Use 0 for no limit.",
       "diffEditor.renderMarginRevertIcon": "When enabled, the diff editor shows arrows in its glyph margin to revert changes.",
-      "editor.accessibilityPageSize": "Controls the number of lines in the editor that can be read out by a screen reader at once. When we detect a screen reader we automatically set the default to be 500. Warning: this has a performance implication for numbers larger than the default.",
-      "editor.bracketPairColorization.enabled": "Controls whether bracket pair colorization is enabled or not. Use `#workbench.colorCustomizations#` to override the bracket highlight colors.",
-      "editor.bracketPairColorization.independentColorPoolPerBracketType": "Controls whether each bracket type has its own independent color pool.",
+      "dirtyEncoding": "The file is dirty. Please save it first before reopening it with another encoding.",
       "editor.codeActionWidget.showHeaders": "Enable/disable showing group headers in the code action menu.",
-      "editor.codeLensFontSize": "Controls the font size in pixels for CodeLens. When set to `0`, 90% of `#editor.fontSize#` is used.",
-      "editor.dropIntoEditor.enabled": "Controls whether you can drag and drop a file into a text editor by holding down `shift` (instead of opening the file in an editor).",
-      "editor.experimental.pasteActions.enabled": "Enable/disable running edits from extensions on paste.",
-      "editor.find.seedSearchStringFromSelection0": "Never seed search string from the editor selection.",
-      "editor.find.seedSearchStringFromSelection1": "Always seed search string from the editor selection, including word at cursor position.",
-      "editor.find.seedSearchStringFromSelection2": "Only seed search string from the editor selection.",
-      "editor.foldingImportsByDefault": "Controls whether the editor automatically collapses import ranges.",
-      "editor.foldingMaximumRegions": "The maximum number of foldable regions. Increasing this value may result in the editor becoming less responsive when the current source has a large number of foldable regions.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Will attempt to format modifications only (requires source control). If source control can't be used, then the whole file will be formatted.",
-      "editor.guides.bracketPairs": "Controls whether bracket pair guides are enabled or not.",
-      "editor.guides.bracketPairs0": "Enables bracket pair guides.",
-      "editor.guides.bracketPairs1": "Enables bracket pair guides only for the active bracket pair.",
-      "editor.guides.bracketPairs2": "Disables bracket pair guides.",
-      "editor.guides.bracketPairsHorizontal": "Controls whether horizontal bracket pair guides are enabled or not.",
-      "editor.guides.bracketPairsHorizontal0": "Enables horizontal guides as addition to vertical bracket pair guides.",
-      "editor.guides.bracketPairsHorizontal1": "Enables horizontal guides only for the active bracket pair.",
-      "editor.guides.bracketPairsHorizontal2": "Disables horizontal bracket pair guides.",
-      "editor.guides.highlightActiveBracketPair": "Controls whether the editor should highlight the active bracket pair.",
-      "editor.guides.highlightActiveIndentation0": "Highlights the active indent guide.",
-      "editor.guides.highlightActiveIndentation1": "Highlights the active indent guide even if bracket guides are highlighted.",
-      "editor.guides.highlightActiveIndentation2": "Do not highlight the active indent guide.",
-      "editor.hover.above": "Prefer showing hovers above the line, if there's space.",
-      "editor.inlayHints.enabled": "Enables the inlay hints in the editor.",
-      "editor.inlayHints.enabled0": "Inlay hints are enabled",
       "editor.inlayHints.enabled1": "Inlay hints are showing by default and hide when holding Ctrl+Alt",
       "editor.inlayHints.enabled2": "Inlay hints are hidden by default and show when holding Ctrl+Alt",
-      "editor.inlayHints.enabled3": "Inlay hints are disabled",
-      "editor.inlayHints.fontFamily": "Controls font family of inlay hints in the editor. When set to empty, the `#editor.fontFamily#` is used.",
-      "editor.inlayHints.fontSize": "Controls font size of inlay hints in the editor. As default the `#editor.fontSize#` is used when the configured value is less than `5` or greater than the editor font size.",
-      "editor.inlayHints.padding": "Enables the padding around the inlay hints in the editor.",
-      "editor.inlineSuggest.enabled": "Controls whether to automatically show inline suggestions in the editor.",
-      "editor.language.colorizedBracketPairs": "Defines the bracket pairs that are colorized by their nesting level if bracket pair colorization is enabled.",
-      "editor.lineHeight": "Controls the line height. \n - Use 0 to automatically compute the line height from the font size.\n - Values between 0 and 8 will be used as a multiplier with the font size.\n - Values greater than or equal to 8 will be used as effective values.",
       "editor.minimap.autohide": "Controls whether the minimap is hidden automatically.",
       "editor.multiCursorModifier": "The modifier to be used to add multiple cursors with the mouse. The Go to Definition and Open Link mouse gestures will adapt such that they do not conflict with the [multicursor modifier](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier).",
       "editor.quickSuggestions": "Controls whether suggestions should automatically show up while typing. This can be controlled for typing in comments, strings, and other code. Quick suggestion can be configured to show as ghost text or with the suggest widget. Also be aware of the '#editor.suggestOnTriggerCharacters#'-setting which controls if suggestions are triggered by special characters.",
-      "editor.quickSuggestions0": "Quick suggestions show inside the suggest widget",
-      "editor.quickSuggestions1": "Quick suggestions show as ghost text",
-      "editor.quickSuggestions2": "Quick suggestions are disabled",
-      "editor.scrollbar.horizontal": "Controls the visibility of the horizontal scrollbar.",
-      "editor.scrollbar.horizontal0": "The horizontal scrollbar will be visible only when necessary.",
-      "editor.scrollbar.horizontal1": "The horizontal scrollbar will always be visible.",
-      "editor.scrollbar.horizontal2": "The horizontal scrollbar will always be hidden.",
-      "editor.scrollbar.horizontalScrollbarSize": "The height of the horizontal scrollbar.",
-      "editor.scrollbar.scrollByPage": "Controls whether clicks scroll by page or jump to click position.",
-      "editor.scrollbar.vertical": "Controls the visibility of the vertical scrollbar.",
-      "editor.scrollbar.vertical0": "The vertical scrollbar will be visible only when necessary.",
-      "editor.scrollbar.vertical1": "The vertical scrollbar will always be visible.",
-      "editor.scrollbar.vertical2": "The vertical scrollbar will always be hidden.",
-      "editor.scrollbar.verticalScrollbarSize": "The width of the vertical scrollbar.",
       "editor.showFoldingControls1": "Never show the folding controls and reduce the gutter size.",
       "editor.stickyScroll.enabled": "Shows the nested current scopes during the scroll at the top of the editor.",
       "editor.stickyScroll.maxLineCount": "Defines the maximum number of sticky lines to show.",
       "editor.suggest.matchOnWordStartOnly": "When enabled IntelliSense filtering requires that the first character matches on a word start, e.g `c` on `Console` or `WebContext` but _not_ on `description`. When disabled IntelliSense will show more results but still sorts them by match quality.",
-      "editor.suggest.preview": "Controls whether to preview the suggestion outcome in the editor.",
-      "editor.suggest.showDeprecated": "When enabled IntelliSense shows `deprecated`-suggestions.",
-      "editor.unicodeHighlight.allowedCharacters": "Defines allowed characters that are not being highlighted.",
-      "editor.unicodeHighlight.allowedLocales": "Unicode characters that are common in allowed locales are not being highlighted.",
-      "editor.unicodeHighlight.ambiguousCharacters": "Controls whether characters are highlighted that can be confused with basic ASCII characters, except those that are common in the current user locale.",
-      "editor.unicodeHighlight.includeComments": "Controls whether characters in comments should also be subject to unicode highlighting.",
-      "editor.unicodeHighlight.includeStrings": "Controls whether characters in strings should also be subject to unicode highlighting.",
-      "editor.unicodeHighlight.invisibleCharacters": "Controls whether characters that just reserve space or have no width at all are highlighted.",
-      "editor.unicodeHighlight.nonBasicASCII": "Controls whether all non-basic ASCII characters are highlighted. Only characters between U+0020 and U+007E, tab, line-feed and carriage-return are considered basic ASCII.",
       "files.autoSave": "Controls [auto save](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) of editors that have unsaved changes.",
       "files.autoSave.afterDelay": "An editor with changes is automatically saved after the configured `#files.autoSaveDelay#`.",
       "files.autoSave.off": "An editor with changes is never automatically saved.",
@@ -162,12 +90,9 @@
       "files.autoSave.onWindowChange": "An editor with changes is automatically saved when the window loses focus.",
       "formatOnSaveTimeout": "Timeout in milliseconds after which the formatting that is run on file save is cancelled.",
       "persistClosedEditors": "Controls whether to persist closed editor history for the workspace across window reloads.",
-      "readOnly": "Read Only",
       "showAllEditors": "Show All Opened Editors",
       "splitHorizontal": "Split Editor Horizontal",
       "splitVertical": "Split Editor Vertical",
-      "status-bar-pin": "Add to Status Bar",
-      "status-bar-unpin": "Remove from Status Bar",
       "toggleStickyScroll": "Toggle Sticky Scroll"
     },
     "file-search": {
@@ -198,7 +123,10 @@
       "format": "Format:",
       "maxConcurrentUploads": "Maximum number of concurrent files to upload when uploading multiple files. 0 means all files will be uploaded concurrently.",
       "maxFileSizeMB": "Controls the max file size in MB which is possible to open.",
+      "prepareDownload": "Preparing download...",
+      "prepareDownloadLink": "Preparing download link...",
       "processedOutOf": "Processed {0} out of {1}",
+      "replaceTitle": "Replace File",
       "uploadFiles": "Upload Files...",
       "uploadedOutOf": "Uploaded {0} out of {1}"
     },
@@ -254,7 +182,6 @@
       "tabbarDecorationsEnabled": "Show problem decorators (diagnostic markers) in the tab bars."
     },
     "memory-inspector": {
-      "address": "Address",
       "addressTooltip": "Memory location to display, an address or expression evaluating to an address",
       "ascii": "ASCII",
       "binary": "Binary",
@@ -353,8 +280,10 @@
       "hiddenChannels": "Hidden Channels",
       "hideOutputChannel": "Hide Output Channel...",
       "maxChannelHistory": "The maximum number of entries in an output channel.",
-      "outputChannels": "Output Channels",
       "showOutputChannel": "Show Output Channel..."
+    },
+    "plugin": {
+      "blockNewTab": "Your browser prevented opening of a new tab"
     },
     "plugin-dev": {
       "alreadyRunning": "Hosted instance is already running.",
@@ -385,7 +314,6 @@
     },
     "plugin-ext": {
       "plugins": "Plugins",
-      "signInAgain": "The extension '{0}' wants you to sign in again using {1}.",
       "webviewTrace": "Controls communication tracing with webviews.",
       "webviewWarnIfUnsecure": "Warns users that webviews are currently deployed unsecurely."
     },
@@ -398,7 +326,6 @@
       "lastModified": "Last modified",
       "location": "Location",
       "noProperties": "No properties available.",
-      "path": "Path",
       "properties": "Properties",
       "size": "Size",
       "symbolicLink": "Symbolic link"
@@ -427,9 +354,6 @@
       "extract-widget": "Move View to Secondary Window"
     },
     "shell-area": {
-      "bottom": "Bottom",
-      "left": "Left",
-      "right": "Right",
       "secondary": "Secondary Window",
       "top": "Top"
     },
@@ -439,21 +363,26 @@
       "openUserTasks": "Open User Tasks"
     },
     "terminal": {
-      "confirmClose": "Controls whether to confirm when the window closes if there are active terminal sessions.",
-      "confirmCloseAlways": "Always confirm if there are terminals.",
-      "confirmCloseChildren": "Confirm if there are any terminals that have child processes.",
-      "confirmCloseNever": "Never confirm.",
+      "defaultProfile": "The default profile used on {0}",
       "enableCopy": "Enable ctrl-c (cmd-c on macOS) to copy selected text",
       "enablePaste": "Enable ctrl-v (cmd-v on macOS) to paste from clipboard",
+      "profileArgs": "The shell arguments that this profile uses.",
+      "profileColor": "A terminal theme color ID to associate with the terminal.",
+      "profileDefault": "Choose Default Profile...",
+      "profileIcon": "A codicon ID to associate with the terminal icon.\nterminal-tmux:\"$(terminal-tmux)\"",
+      "profileNew": "New Terminal (With Profile)...",
+      "profilePath": "The path of the shell that this profile uses.",
+      "profileSource": "A profile source that will auto detect the paths to the shell. Note that non-standard executable locations are not supported and must be created manually in a new profile.",
+      "profiles": "The profiles to present when creating a new terminal. Set the path property manually with optional args.\nSet an existing profile to `null` to hide the profile from the list, for example: `\"{0}\": null`.",
+      "rendererType": "Controls how the terminal is rendered.",
+      "selectProfile": "Select a profile for the new terminal",
+      "shell.deprecated": "This is deprecated, the new recommended way to configure your default shell is by creating a terminal profile in 'terminal.integrated.profiles.{0}' and setting its profile name as the default in 'terminal.integrated.defaultProfile.{0}.'",
       "shellArgsLinux": "The command line arguments to use when on the Linux terminal.",
       "shellArgsOsx": "The command line arguments to use when on the macOS terminal.",
       "shellArgsWindows": "The command line arguments to use when on the Windows terminal.",
       "shellLinux": "The path of the shell that the terminal uses on Linux (default: '{0}'}).",
       "shellOsx": "The path of the shell that the terminal uses on macOS (default: '{0}'}).",
-      "shellWindows": "The path of the shell that the terminal uses on Windows. (default: '{0}').",
-      "terminate": "Terminate",
-      "terminateActive": "Do you want to terminate the active terminal session?",
-      "terminateActiveMultiple": "Do you want to terminate the {0} active terminal sessions?"
+      "shellWindows": "The path of the shell that the terminal uses on Windows. (default: '{0}')."
     },
     "toolbar": {
       "addCommand": "Add Command to Toolbar",
@@ -477,11 +406,9 @@
     },
     "typehierarchy": {
       "subtypeHierarchy": "Subtype Hierarchy",
-      "supertypeHierarchy": "Supertype Hierarchy",
-      "typeHierarchy": "Type Hierarchy"
+      "supertypeHierarchy": "Supertype Hierarchy"
     },
     "vsx-registry": {
-      "averageRating": "Average rating: {0} out of 5",
       "downloadCount": "Download count: {0}",
       "errorFetching": "Error fetching extensions.",
       "failedInstallingVSIX": "Failed to install {0} from VSIX.",
@@ -521,7 +448,6 @@
       "trashTitle": "Move {0} to Trash",
       "trustEmptyWindow": "Controls whether or not the empty workspace is trusted by default.",
       "trustEnabled": "Controls whether or not workspace trust is enabled. If disabled, all workspaces are trusted.",
-      "trustPrompt": "Controls when the startup prompt to trust a workspace is shown.",
       "trustRequest": "An extension requests workspace trust but the corresponding API is not yet fully supported. Do you want to trust this workspace?",
       "untitled-cleanup": "There appear to be many untitled workspace files. Please check {0} and remove any unused files.",
       "workspaceFolderAdded": "A workspace with multiple roots was created. Do you want to save your workspace configuration as a file?",

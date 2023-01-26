@@ -1,5 +1,6 @@
 {
-  "disassemblyView": "Pohled na demontáž",
+  "terminal:new:profile": "Vytvoření nového integrovaného terminálu z profilu",
+  "terminal:profile:default": "Zvolte výchozí profil terminálu",
   "theia": {
     "callhierarchy": {
       "noCallers": "Nebyl zjištěn žádný volající.",
@@ -8,9 +9,9 @@
     "core": {
       "about": {
         "compatibility": "{0} Kompatibilita",
-        "defaultApi": "Výchozí rozhraní API {0} "
+        "defaultApi": "Výchozí rozhraní API {0} ",
+        "version": "Verze"
       },
-      "availableLanguages": "Dostupné jazyky",
       "common": {
         "closeAll": "Zavřít všechny karty",
         "closeAllTabMain": "Zavření všech karet v hlavní oblasti",
@@ -32,7 +33,6 @@
         "browse": "Procházet"
       },
       "highlightModifiedTabs": "Řídí, zda se na upravených (špinavých) kartách editoru vykreslí horní rámeček, nebo ne.",
-      "installedLanguages": "Nainstalované jazyky",
       "keybindingStatus": "{0} byl stisknut, čeká se na další klávesy",
       "keyboard": {
         "choose": "Výběr rozložení klávesnice",
@@ -43,11 +43,8 @@
         "pc": "Klávesnice PC",
         "tryDetect": "Pokuste se zjistit rozložení klávesnice z informací o prohlížeči a stisknutých klávesách."
       },
-      "mouseBackForwardToNavigate": "Umožňuje používat tlačítka myši čtyři a pět pro příkazy \"Zpět\" a \"Vpřed\".",
       "offline": "Offline",
-      "proxySupportFallback": "Povolit podporu proxy pro rozšíření, vrátit se k možnostem vyžádání, pokud není nalezen žádný proxy.",
       "quitMessage": "Neuložené změny se neuloží.",
-      "quitTitle": "Jste si jistý, že chcete skončit?",
       "resetWorkbenchLayout": "Obnovení rozložení pracovního stolu",
       "searchbox": {
         "close": "Zavřít (únik)",
@@ -62,99 +59,30 @@
       "compound-cycle": "Konfigurace spuštění '{0}' obsahuje cyklus se sebou samým",
       "continueAll": "Pokračovat ve všem",
       "copyExpressionValue": "Kopírování hodnoty výrazu",
-      "debugSessionActive": "Je aktivní relace ladění, jste si jisti, že ji chcete zastavit?",
-      "debugSessionActiveMultiple": "Jsou aktivní relace ladění, jste si jisti, že je chcete zastavit?",
-      "disassembly-view": {
-        "disassembly": "Demontáž",
-        "show-source-code": "Zobrazení zdrojového kódu v zobrazení disassembleru."
-      },
+      "debugVariableInput": "Nastavení hodnoty {0} ",
       "instruction-breakpoint": "Bod přerušení instrukcí",
-      "instructionAddress": "Adresa",
-      "instructionBytes": "Byty",
-      "instructionNotAvailable": "Demontáž není k dispozici.",
-      "instructionText": "Pokyny",
       "missingConfiguration": "Dynamická konfigurace '{0}:{1}' chybí nebo není použitelná",
-      "open-disassembly-view": "Otevřený pohled na demontáž",
       "pauseAll": "Pozastavit vše",
       "reveal": "Odhalení",
       "threads": "Vlákna",
       "toggleTracing": "Povolení/zakázání sledování komunikace s ladicími adaptéry"
     },
-    "disassembly-view": {
-      "disassemblyTableColumnLabel": "pokyny"
-    },
     "editor": {
       "diffEditor.diffAlgorithm.experimental": "Používá experimentální algoritmus diffing.",
       "diffEditor.diffAlgorithm.smart": "Používá výchozí algoritmus porovnávání.",
-      "diffEditor.maxFileSize": "Maximální velikost souboru v MB, pro kterou se vypočítávají rozdíly. Použijte hodnotu 0 pro žádný limit.",
       "diffEditor.renderMarginRevertIcon": "Pokud je tato funkce povolena, zobrazuje editor rozdílů na okraji glyfů šipky pro vrácení změn.",
-      "editor.accessibilityPageSize": "Řídí počet řádků v editoru, které může čtečka obrazovky přečíst najednou. Při detekci čtečky obrazovky automaticky nastavíme výchozí hodnotu na 500. Upozornění: Pro čísla větší než výchozí to má vliv na výkon.",
-      "editor.bracketPairColorization.enabled": "Ovládá, zda je obarvení dvojice závorek povoleno, nebo ne. Pro přepsání barev zvýraznění závorek použijte 'workbench.colorCustomizations'.",
-      "editor.bracketPairColorization.independentColorPoolPerBracketType": "Řídí, zda má každý typ závorky svůj vlastní nezávislý fond barev.",
+      "dirtyEncoding": "Soubor je znečištěný. Než jej znovu otevřete v jiném kódování, nejprve jej uložte.",
       "editor.codeActionWidget.showHeaders": "Povolení/zakázání zobrazování záhlaví skupin v nabídce akcí kódu.",
-      "editor.codeLensFontSize": "Ovládá velikost písma v pixelech pro CodeLens. Při nastavení na `0` se použije 90 % hodnoty `#editor.fontSize#`.",
-      "editor.dropIntoEditor.enabled": "Ovládá, zda můžete soubor přetáhnout do textového editoru podržením klávesy `shift` (namísto otevření souboru v editoru).",
-      "editor.experimental.pasteActions.enabled": "Povolení/zakázání spouštění úprav z rozšíření při vkládání.",
-      "editor.find.seedSearchStringFromSelection0": "Nikdy nezadávejte vyhledávací řetězec z výběru editoru.",
-      "editor.find.seedSearchStringFromSelection1": "Hledaný řetězec se vždy vytvoří z výběru editoru, včetně slova na pozici kurzoru.",
-      "editor.find.seedSearchStringFromSelection2": "Z výběru v editoru vybíráte pouze vyhledávací řetězec.",
-      "editor.foldingImportsByDefault": "Řídí, zda editor automaticky sbalí rozsahy importu.",
-      "editor.foldingMaximumRegions": "Maximální počet skládaných oblastí. Zvýšení této hodnoty může vést k tomu, že editor bude méně citlivý, pokud má aktuální zdroj velký počet skládaných oblastí.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Pokusí se formátovat pouze změny (vyžaduje kontrolu zdrojů). Pokud nelze použít kontrolu zdrojů, bude formátován celý soubor.",
-      "editor.guides.bracketPairs": "Řídí, zda jsou vodítka dvojic držáků povolena, nebo ne.",
-      "editor.guides.bracketPairs0": "Povoluje vodítka dvojic držáků.",
-      "editor.guides.bracketPairs1": "Povolí vodítka dvojice držáků pouze pro aktivní dvojici držáků.",
-      "editor.guides.bracketPairs2": "Zakáže vodítka dvojic držáků.",
-      "editor.guides.bracketPairsHorizontal": "Řídí, zda jsou vodítka vodorovných dvojic konzol povolena, nebo ne.",
-      "editor.guides.bracketPairsHorizontal0": "Umožňuje kromě vodítek svislých dvojic držáků také vodorovná vodítka.",
-      "editor.guides.bracketPairsHorizontal1": "Povolí vodorovná vodítka pouze pro aktivní pár držáků.",
-      "editor.guides.bracketPairsHorizontal2": "Zakáže vodítka vodorovných dvojic konzol.",
-      "editor.guides.highlightActiveBracketPair": "Řídí, zda má editor zvýraznit aktivní dvojici závorek.",
-      "editor.guides.highlightActiveIndentation0": "Zvýrazní aktivního průvodce odsazením.",
-      "editor.guides.highlightActiveIndentation1": "Zvýrazní aktivní vodítko odsazení, i když jsou zvýrazněna vodítka závorek.",
-      "editor.guides.highlightActiveIndentation2": "Nezvýrazňujte aktivního průvodce odsazením.",
-      "editor.hover.above": "Pokud je místo, raději se zobrazí nad řádkem.",
-      "editor.inlayHints.enabled": "Povolí v editoru nápovědy pro vložení.",
-      "editor.inlayHints.enabled0": "Nápovědy pro vložení jsou povoleny",
       "editor.inlayHints.enabled1": "Vložené nápovědy se zobrazují ve výchozím nastavení a skrývají se při podržení `Ctrl+Alt`",
       "editor.inlayHints.enabled2": "Vložené nápovědy jsou ve výchozím nastavení skryté a zobrazí se při podržení `Ctrl+Alt`.",
-      "editor.inlayHints.enabled3": "Nápovědy pro vložení jsou zakázány",
-      "editor.inlayHints.fontFamily": "Řídí rodinu písma vložených nápověd v editoru. Je-li nastaveno na prázdnou hodnotu, použije se `#editor.fontFamily#`.",
-      "editor.inlayHints.fontSize": "Ovládá velikost písma vložených nápověd v editoru. Pokud je nakonfigurovaná hodnota menší než `5` nebo větší než velikost písma editoru, použije se výchozí hodnota 90 % z `#editor.fontSize#`.",
-      "editor.inlayHints.padding": "Povolí v editoru vkládání výplně kolem náznaků vložky.",
-      "editor.inlineSuggest.enabled": "Ovládá, zda se mají v editoru automaticky zobrazovat návrhy na řádkování.",
-      "editor.language.colorizedBracketPairs": "Definuje dvojice závorek, které jsou obarveny podle úrovně vnoření, pokud je obarvení dvojic závorek povoleno.",
-      "editor.lineHeight": "Ovládá výšku čáry.\n - Chcete-li automaticky vypočítat výšku řádku z velikosti písma, použijte hodnotu 0.\n - Hodnoty mezi 0 a 8 se použijí jako násobitel s velikostí písma.\n - Hodnoty větší nebo rovné 8 budou použity jako efektivní hodnoty.",
       "editor.minimap.autohide": "Ovládá, zda se má minimapa automaticky skrýt.",
       "editor.multiCursorModifier": "Modifikátor, který se použije pro přidání více kurzorů myši. Gesta myši Přejít na definici a Otevřít odkaz se přizpůsobí tak, aby nebyla v konfliktu s modifikátorem [více kurzorů](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier).",
       "editor.quickSuggestions": "Ovládá, zda se mají při psaní automaticky zobrazovat návrhy. To lze ovládat při psaní komentářů, řetězců a dalšího kódu. Rychlé návrhy lze nakonfigurovat tak, aby se zobrazovaly jako text ducha nebo s widgetem návrhu. Mějte také na paměti nastavení '#editor.suggestOnTriggerCharacters#', které řídí, zda se návrhy spouštějí pomocí speciálních znaků.",
-      "editor.quickSuggestions0": "Rychlé návrhy se zobrazují uvnitř widgetu pro navrhování",
-      "editor.quickSuggestions1": "Rychlé návrhy se zobrazují jako text duchů",
-      "editor.quickSuggestions2": "Rychlé návrhy jsou zakázány",
-      "editor.scrollbar.horizontal": "Ovládá viditelnost vodorovného posuvníku.",
-      "editor.scrollbar.horizontal0": "Vodorovný posuvník se zobrazí pouze v případě potřeby.",
-      "editor.scrollbar.horizontal1": "Vodorovný posuvník bude vždy viditelný.",
-      "editor.scrollbar.horizontal2": "Vodorovný posuvník bude vždy skrytý.",
-      "editor.scrollbar.horizontalScrollbarSize": "Výška horizontálního posuvníku.",
-      "editor.scrollbar.scrollByPage": "Řídí, zda se kliknutí posouvají podle stránky, nebo zda se přeskočí na pozici kliknutí.",
-      "editor.scrollbar.vertical": "Ovládá viditelnost svislého posuvníku.",
-      "editor.scrollbar.vertical0": "Svislý posuvník se zobrazí pouze v případě potřeby.",
-      "editor.scrollbar.vertical1": "Svislý posuvník bude vždy viditelný.",
-      "editor.scrollbar.vertical2": "Svislý posuvník bude vždy skrytý.",
-      "editor.scrollbar.verticalScrollbarSize": "Šířka svislého posuvníku.",
       "editor.showFoldingControls1": "Nikdy nezobrazujte skládací ovládací prvky a zmenšujte velikost žlabu.",
       "editor.stickyScroll.enabled": "Zobrazí vnořené aktuální obory během posouvání v horní části editoru.",
       "editor.stickyScroll.maxLineCount": "Definuje maximální počet lepicích řádků, které se mají zobrazit.",
       "editor.suggest.matchOnWordStartOnly": "Je-li zapnuto filtrování IntelliSense, vyžaduje, aby první znak odpovídal začátku slova, např. `c` u `Console` nebo `WebContext`, ale _ne_ u `description`. Když je funkce IntelliSense vypnutá, zobrazí více výsledků, ale stále je třídí podle kvality shody.",
-      "editor.suggest.preview": "Ovládá, zda se má v editoru zobrazit náhled výsledku návrhu.",
-      "editor.suggest.showDeprecated": "Pokud je funkce IntelliSense zapnutá, zobrazuje `deprecated` návrhy.",
-      "editor.unicodeHighlight.allowedCharacters": "Definuje povolené znaky, které nejsou zvýrazněny.",
-      "editor.unicodeHighlight.allowedLocales": "Znaky Unicode, které jsou běžné v povolených lokalitách, nejsou zvýrazněny.",
-      "editor.unicodeHighlight.ambiguousCharacters": "Řídí, zda budou zvýrazněny znaky, které lze zaměnit se základními znaky ASCII, s výjimkou těch, které jsou běžné v aktuálním uživatelském prostředí.",
-      "editor.unicodeHighlight.includeComments": "Řídí, zda mají být zvýrazněny i znaky v komentářích.",
-      "editor.unicodeHighlight.includeStrings": "Řídí, zda mají být znaky v řetězcích také zvýrazněny pomocí unicode.",
-      "editor.unicodeHighlight.invisibleCharacters": "Řídí, zda se zvýrazní znaky, které mají pouze rezervní místo nebo nemají žádnou šířku.",
-      "editor.unicodeHighlight.nonBasicASCII": "Řídí, zda se zvýrazní všechny nezákladní znaky ASCII. Za základní ASCII se považují pouze znaky mezi U+0020 a U+007E, tabulátor, řádkový posuv a carriage-return.",
       "files.autoSave": "Ovládá [automatické ukládání](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) editorů, které mají neuložené změny.",
       "files.autoSave.afterDelay": "Editor se změnami se automaticky uloží po uplynutí nastavené doby `#files.autoSaveDelay#`.",
       "files.autoSave.off": "Editor se změnami se nikdy automaticky neuloží.",
@@ -162,12 +90,9 @@
       "files.autoSave.onWindowChange": "Editor se změnami se automaticky uloží, když okno ztratí fokus.",
       "formatOnSaveTimeout": "Časový limit v milisekundách, po jehož uplynutí se formátování spuštěné při ukládání souboru zruší.",
       "persistClosedEditors": "Řídí, zda má historie zavřených editorů přetrvávat v pracovním prostoru i po opětovném načtení okna.",
-      "readOnly": "Pouze pro čtení",
       "showAllEditors": "Zobrazit všechny otevřené editory",
       "splitHorizontal": "Rozdělený editor Horizontální",
       "splitVertical": "Rozdělený editor Vertikální",
-      "status-bar-pin": "Přidat na stavový řádek",
-      "status-bar-unpin": "Odstranění ze stavového řádku",
       "toggleStickyScroll": "Přepnout rychlé posouvání"
     },
     "file-search": {
@@ -198,7 +123,10 @@
       "format": "Formát:",
       "maxConcurrentUploads": "Maximální počet současně nahrávaných souborů při nahrávání více souborů. 0 znamená, že všechny soubory budou nahrávány současně.",
       "maxFileSizeMB": "Ovládá maximální velikost souboru v MB, který je možné otevřít.",
+      "prepareDownload": "Příprava ke stažení...",
+      "prepareDownloadLink": "Připravujeme odkaz ke stažení...",
       "processedOutOf": "Zpracováno {0} z {1}",
+      "replaceTitle": "Nahradit soubor",
       "uploadFiles": "Nahrávání souborů...",
       "uploadedOutOf": "Nahráno {0} z {1}"
     },
@@ -254,7 +182,6 @@
       "tabbarDecorationsEnabled": "Zobrazení dekorátorů problémů (diagnostických značek) na pásech karet."
     },
     "memory-inspector": {
-      "address": "Adresa",
       "addressTooltip": "Místo v paměti, které se má zobrazit, adresa nebo výraz vyhodnocující adresu.",
       "ascii": "ASCII",
       "binary": "Binární",
@@ -353,8 +280,10 @@
       "hiddenChannels": "Skryté kanály",
       "hideOutputChannel": "Skrýt výstupní kanál...",
       "maxChannelHistory": "Maximální počet záznamů ve výstupním kanálu.",
-      "outputChannels": "Výstupní kanály",
       "showOutputChannel": "Zobrazit výstupní kanál..."
+    },
+    "plugin": {
+      "blockNewTab": "Váš prohlížeč zabránil otevření nové karty"
     },
     "plugin-dev": {
       "alreadyRunning": "Hostovaná instance je již spuštěna.",
@@ -385,7 +314,6 @@
     },
     "plugin-ext": {
       "plugins": "Zásuvné moduly",
-      "signInAgain": "Rozšíření \"{0}\" po vás chce, abyste se znovu přihlásili pomocí {1}.",
       "webviewTrace": "Řídí sledování komunikace s webovými pohledy.",
       "webviewWarnIfUnsecure": "Upozorňuje uživatele, že webové náhledy jsou v současné době nasazeny nezabezpečeně."
     },
@@ -398,7 +326,6 @@
       "lastModified": "Naposledy upraveno",
       "location": "Umístění",
       "noProperties": "Žádné vlastnosti nejsou k dispozici.",
-      "path": "Cesta",
       "properties": "Vlastnosti",
       "size": "Velikost",
       "symbolicLink": "Symbolický odkaz"
@@ -427,9 +354,6 @@
       "extract-widget": "Přesunutí zobrazení do sekundárního okna"
     },
     "shell-area": {
-      "bottom": "Spodní část",
-      "left": "Vlevo",
-      "right": "Právo",
       "secondary": "Sekundární okno",
       "top": "Nahoru"
     },
@@ -439,21 +363,26 @@
       "openUserTasks": "Otevřené uživatelské úlohy"
     },
     "terminal": {
-      "confirmClose": "Řídí, zda se má při zavření okna potvrdit, že jsou aktivní relace terminálu.",
-      "confirmCloseAlways": "Vždy si ověřte, zda jsou k dispozici svorky.",
-      "confirmCloseChildren": "Zkontrolujte, zda existují terminály s podřízenými procesy.",
-      "confirmCloseNever": "Nikdy nepotvrzujte.",
+      "defaultProfile": "Výchozí profil používaný v {0}",
       "enableCopy": "Povolení funkce ctrl-c (cmd-c v systému macOS) pro kopírování vybraného textu",
       "enablePaste": "Povolení funkce ctrl-v (cmd-v v systému macOS) pro vkládání ze schránky",
+      "profileArgs": "Argumenty shellu, které tento profil používá.",
+      "profileColor": "ID barvy motivu terminálu, které se přiřadí k terminálu.",
+      "profileDefault": "Zvolte výchozí profil...",
+      "profileIcon": "ID kodikonu, které se přiřadí k ikoně terminálu.\nterminal-tmux:\"$(terminal-tmux)\"",
+      "profileNew": "Nový terminál (s profilem)...",
+      "profilePath": "Cesta k shellu, který tento profil používá.",
+      "profileSource": "Zdroj profilu, který automaticky detekuje cesty k shellu. Všimněte si, že nestandardní umístění spustitelných souborů nejsou podporována a musí být vytvořena ručně v novém profilu.",
+      "profiles": "Profily, které se mají zobrazit při vytváření nového terminálu. Vlastnost path nastavte ručně pomocí nepovinných argumentů.\nNastavením existujícího profilu na `null` jej skryjete ze seznamu, například: `\"{0}\": null`.",
+      "rendererType": "Ovládá způsob vykreslování terminálu.",
+      "selectProfile": "Výběr profilu pro nový terminál",
+      "shell.deprecated": "Tento postup je zastaralý, nový doporučený způsob konfigurace výchozího shellu je vytvoření profilu terminálu v 'terminal.integrated.profiles.{0}' a nastavení jeho názvu jako výchozího v 'terminal.integrated.defaultProfile.{0}.'",
       "shellArgsLinux": "Argumenty příkazového řádku, které se použijí v terminálu Linuxu.",
       "shellArgsOsx": "Argumenty příkazového řádku, které se použijí v terminálu systému macOS.",
       "shellArgsWindows": "Argumenty příkazového řádku, které se použijí v terminálu systému Windows.",
       "shellLinux": "Cesta k shellu, který terminál používá v Linuxu (výchozí: '{0}'}).",
       "shellOsx": "Cesta k shellu, který terminál používá v systému macOS (výchozí: '{0}'}).",
-      "shellWindows": "Cesta k shellu, který terminál používá v systému Windows. (výchozí: '{0}').",
-      "terminate": "Konec",
-      "terminateActive": "Chcete ukončit aktivní relaci terminálu?",
-      "terminateActiveMultiple": "Chcete ukončit aktivní relace terminálu {0}?"
+      "shellWindows": "Cesta k shellu, který terminál používá v systému Windows. (výchozí: '{0}')."
     },
     "toolbar": {
       "addCommand": "Přidání příkazu na panel nástrojů",
@@ -477,11 +406,9 @@
     },
     "typehierarchy": {
       "subtypeHierarchy": "Hierarchie podtypů",
-      "supertypeHierarchy": "Hierarchie nadtypů",
-      "typeHierarchy": "Hierarchie typů"
+      "supertypeHierarchy": "Hierarchie nadtypů"
     },
     "vsx-registry": {
-      "averageRating": "Průměrné hodnocení: {0} z 5",
       "downloadCount": "Počet stažení: {0}",
       "errorFetching": "Chyba při načítání rozšíření.",
       "failedInstallingVSIX": "Nepodařilo se nainstalovat {0} z VSIX.",
@@ -521,7 +448,6 @@
       "trashTitle": "Přesun {0} do koše",
       "trustEmptyWindow": "Řídí, zda má být prázdný pracovní prostor ve výchozím nastavení důvěryhodný.",
       "trustEnabled": "Řídí, zda je povolena důvěryhodnost pracovního prostoru. Pokud je zakázáno, jsou důvěryhodné všechny pracovní prostory.",
-      "trustPrompt": "Řídí, kdy se zobrazí výzva ke svěření pracovního prostoru při spuštění.",
       "trustRequest": "Rozšíření požaduje důvěryhodnost pracovního prostoru, ale odpovídající rozhraní API ještě není plně podporováno. Chcete tomuto pracovnímu prostoru důvěřovat?",
       "untitled-cleanup": "Zdá se, že existuje mnoho nepojmenovaných souborů pracovního prostoru. Zkontrolujte prosím {0} a odstraňte všechny nepoužívané soubory.",
       "workspaceFolderAdded": "Byl vytvořen pracovní prostor s více kořeny. Chcete uložit konfiguraci pracovního prostoru jako soubor?",
