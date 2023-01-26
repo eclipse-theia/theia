@@ -24,10 +24,17 @@ import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
 import { toUriComponents } from '../hierarchy/hierarchy-types-converters';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 
+interface TabInfo {
+    tab: TabDto;
+    tabIndex: number;
+    group: TabGroupDto;
+}
+
 export class TabsMainImp implements TabsMain, Disposable {
 
     private readonly proxy: TabsExt;
     private tabGroupModel = new Map<TabBar<Widget>, TabGroupDto>();
+    private tabInfoLookup = new Map<Title<Widget>, TabInfo>();
 
     private applicationShell: ApplicationShell;
 
@@ -35,6 +42,7 @@ export class TabsMainImp implements TabsMain, Disposable {
     private toDisposeOnDestroy: Disposable[] = [];
 
     private GroupIdCounter = 0;
+    private currentActiveGroup: TabGroupDto;
 
     private tabGroupChanged: boolean = false;
 
@@ -59,24 +67,24 @@ export class TabsMainImp implements TabsMain, Disposable {
             })
         );
 
-        this.connectToSignal(this.toDisposeOnDestroy, this.applicationShell.mainPanel.widgetAdded, (sender, widget) => {
+        this.connectToSignal(this.toDisposeOnDestroy, this.applicationShell.mainPanel.widgetAdded, (mainPanel, widget) => {
             if (this.tabGroupChanged || this.tabGroupModel.size === 0) {
                 this.tabGroupChanged = false;
                 this.createTabsModel();
             } else {
-                const tabBar = this.applicationShell.mainPanel.findTabBar(widget.title)!;
+                const tabBar = mainPanel.findTabBar(widget.title)!;
                 this.onTabCreated(tabBar, { index: tabBar.titles.indexOf(widget.title), title: widget.title });
             }
         });
 
-        this.connectToSignal(this.toDisposeOnDestroy, this.applicationShell.mainPanel.widgetRemoved, (sender, widget) => {
+        this.connectToSignal(this.toDisposeOnDestroy, this.applicationShell.mainPanel.widgetRemoved, (mainPanel, widget) => {
             if (!(widget instanceof TabBar)) {
                 if (this.tabGroupChanged) {
                     this.tabGroupChanged = false;
                     this.createTabsModel();
                 } else {
-                    const tabBar = this.applicationShell.mainPanel.findTabBar(widget.title)!;
-                    this.onTabClosed(tabBar, { index: tabBar.titles.indexOf(widget.title), title: widget.title });
+                    const tabInfo = this.tabInfoLookup.get(widget.title)!;
+                    this.onTabClosed(tabInfo, widget.title);
                 }
             }
         });
@@ -84,11 +92,16 @@ export class TabsMainImp implements TabsMain, Disposable {
 
     protected createTabsModel(): void {
         const newTabGroupModel = new Map<TabBar<Widget>, TabGroupDto>();
+        this.tabInfoLookup.clear();
         this.disposableTabBarListeners.forEach(disposable => disposable.dispose());
         this.applicationShell.mainAreaTabBars.forEach(tabBar => {
             this.attachListenersToTabBar(tabBar);
 
             const groupDto = this.createTabGroupDto(tabBar);
+            if (groupDto.isActive) {
+                this.currentActiveGroup = groupDto;
+            }
+            tabBar.titles.forEach((title, index) => this.tabInfoLookup.set(title, { group: groupDto, tab: groupDto.tabs[index], tabIndex: index }));
             newTabGroupModel.set(tabBar, groupDto);
         });
         if (newTabGroupModel.size > 0 && !Array.from(newTabGroupModel.values()).some(groupDto => groupDto.isActive)) {
@@ -116,8 +129,8 @@ export class TabsMainImp implements TabsMain, Disposable {
         };
     }
 
-    protected generateTabId(tab: Title<Widget>, groupId: number): string {
-        return `${groupId}~${tab.owner.id}`;
+    protected generateTabId(tabTitle: Title<Widget>, groupId: number): string {
+        return `${groupId}~${tabTitle.owner.id}`;
     }
 
     protected createTabGroupDto(tabBar: TabBar<Widget>): TabGroupDto {
@@ -200,6 +213,7 @@ export class TabsMainImp implements TabsMain, Disposable {
         const group = this.tabGroupModel.get(tabBar)!;
         this.connectToSignal(this.disposableTabBarListeners, args.title.changed, this.onTabTitleChanged);
         const tabDto = this.createTabDto(args.title, group.groupId);
+        this.tabInfoLookup.set(args.title, { group, tab: tabDto, tabIndex: args.index });
         group.tabs.splice(args.index, 0, tabDto);
         this.proxy.$acceptTabOperation({
             kind: TabModelOperationKind.TAB_OPEN,
@@ -210,50 +224,51 @@ export class TabsMainImp implements TabsMain, Disposable {
     }
 
     private onTabTitleChanged(title: Title<Widget>): void {
-        const tabBar = this.applicationShell.mainPanel.findTabBar(title)!;
-        const tabIndex = tabBar?.titles.indexOf(title);
-        const group = this.tabGroupModel.get(tabBar);
-        if (!group) {
+        const tabInfo = this.tabInfoLookup.get(title);
+        if (!tabInfo) {
             return;
         }
-        const oldTabDto = group.tabs[tabIndex];
-        const newTabDto = this.createTabDto(title, group.groupId);
+        const oldTabDto = tabInfo.tab;
+        const newTabDto = this.createTabDto(title, tabInfo.group.groupId);
+        if (newTabDto.isActive && !tabInfo.group.isActive) {
+            tabInfo.group.isActive = true;
+            this.currentActiveGroup.isActive = false;
+            this.currentActiveGroup = tabInfo.group;
+            this.proxy.$acceptTabGroupUpdate(tabInfo.group);
+        }
         if (!this.tabDtosEqual(oldTabDto, newTabDto)) {
-            if (!oldTabDto.isActive && newTabDto.isActive && !group.isActive) {
-                group.isActive = true;
-                this.proxy.$acceptTabGroupUpdate(group);
-            }
-            group.tabs.splice(tabIndex, 1, newTabDto);
+            tabInfo.group.tabs.splice(tabInfo.tabIndex, 1, newTabDto);
             this.proxy.$acceptTabOperation({
                 kind: TabModelOperationKind.TAB_UPDATE,
-                index: tabIndex,
+                index: tabInfo.tabIndex,
                 tabDto: newTabDto,
-                groupId: group.groupId
+                groupId: tabInfo.group.groupId
             });
         }
     }
 
-    private onTabClosed(tabBar: TabBar<Widget>, args: TabBar.ITabCloseRequestedArgs<Widget>): void {
-        const group = this.tabGroupModel.get(tabBar)!;
-        group.tabs.splice(args.index, 1);
+    private onTabClosed(tabInfo: TabInfo, title: Title<Widget>): void {
+        tabInfo.group.tabs.splice(tabInfo.tabIndex, 1);
+        this.tabInfoLookup.delete(title);
         this.proxy.$acceptTabOperation({
             kind: TabModelOperationKind.TAB_CLOSE,
-            index: args.index,
-            tabDto: this.createTabDto(args.title, group.groupId),
-            groupId: group.groupId
+            index: tabInfo.tabIndex,
+            tabDto: this.createTabDto(title, tabInfo.group.groupId),
+            groupId: tabInfo.group.groupId
         });
     }
 
     private onTabMoved(tabBar: TabBar<Widget>, args: TabBar.ITabMovedArgs<Widget>): void {
-        const group = this.tabGroupModel.get(tabBar)!;
-        const tabDto = this.createTabDto(args.title, group.groupId);
-        group.tabs.splice(args.fromIndex, 1);
-        group.tabs.splice(args.toIndex, 1, tabDto);
+        const tabInfo = this.tabInfoLookup.get(args.title)!;
+        tabInfo.tabIndex = args.toIndex;
+        const tabDto = this.createTabDto(args.title, tabInfo.group.groupId);
+        tabInfo.group.tabs.splice(args.fromIndex, 1);
+        tabInfo.group.tabs.splice(args.toIndex, 1, tabDto);
         this.proxy.$acceptTabOperation({
             kind: TabModelOperationKind.TAB_MOVE,
             index: args.toIndex,
             tabDto,
-            groupId: group.groupId,
+            groupId: tabInfo.group.groupId,
             oldIndex: args.fromIndex
         });
     }
