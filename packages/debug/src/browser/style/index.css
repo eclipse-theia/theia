@@ -180,7 +180,6 @@
 }
 
 .theia-debug-console-variable {
-    display: flex;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -218,6 +217,10 @@
 .theia-debug-console-variable .watch-error {
     font-style: italic;
     color: var(--theia-debugConsole-errorForeground);
+}
+
+.theia-debug-watch-expression {
+    display: flex;
 }
 
 /** Editor **/
