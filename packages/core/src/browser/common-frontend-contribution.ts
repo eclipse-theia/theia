@@ -737,7 +737,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: async uris => {
                 if (uris.length) {
                     const lineDelimiter = isWindows ? '\r\n' : '\n';
-                    const text = uris.map(resource => resource.path).join(lineDelimiter);
+                    const text = uris.map(resource => resource.path.fsPath()).join(lineDelimiter);
                     await this.clipboardService.writeText(text);
                 } else {
                     await this.messageService.info('Open a file first to copy its path');

@@ -138,6 +138,7 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
                 spellCheck={false}
                 autoFocus={true}
                 value={input.value}
+                disabled={!input.enabled}
                 onChange={this.setInputValue}
                 ref={this.inputRef}
                 rows={1}

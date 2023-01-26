@@ -97,6 +97,9 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
         this.contentNode.className = 'theia-debug-hover-content';
         this.domNode.appendChild(this.contentNode);
 
+        // for stopping scroll events from contentNode going to the editor
+        this.contentNode.addEventListener('wheel', e => e.stopPropagation());
+
         this.editor.getControl().addContentWidget(this);
         this.source = this.hoverSource;
         this.toDispose.pushAll([

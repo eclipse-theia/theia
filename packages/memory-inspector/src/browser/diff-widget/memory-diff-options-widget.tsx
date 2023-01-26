@@ -63,7 +63,7 @@ export class MemoryDiffOptionsWidget extends MemoryOptionsWidget {
 
         this.columnsDisplayed = {
             beforeAddress: {
-                label: nls.localize('theia/memory-inspector/address', 'Address'),
+                label: nls.localizeByDefault('Address'),
                 doRender: true
             },
             beforeData: {
@@ -71,7 +71,7 @@ export class MemoryDiffOptionsWidget extends MemoryOptionsWidget {
                 doRender: true
             },
             afterAddress: {
-                label: nls.localize('theia/memory-inspector/address', 'Address'),
+                label: nls.localizeByDefault('Address'),
                 doRender: true
             },
             afterData: {

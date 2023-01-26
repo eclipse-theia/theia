@@ -32,6 +32,7 @@ import * as temp from 'temp';
 import { NodeRequestService } from '@theia/request/lib/node-request-service';
 import { DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package/lib/api';
 import { RequestContext } from '@theia/request';
+import { RateLimiter } from 'limiter';
 
 temp.track();
 
@@ -67,6 +68,8 @@ export interface DownloadPluginsOptions {
      */
     parallel?: boolean;
 
+    rateLimit?: number;
+
     proxyUrl?: string;
     proxyAuthorization?: string;
     strictSsl?: boolean;
@@ -86,7 +89,8 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         ignoreErrors = false,
         apiVersion = DEFAULT_SUPPORTED_API_VERSION,
         apiUrl = 'https://open-vsx.org/api',
-        parallel = false,
+        parallel = true,
+        rateLimit = 15,
         proxyUrl,
         proxyAuthorization,
         strictSsl
@@ -120,8 +124,10 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         }
     };
 
+    const rateLimiter = new RateLimiter({ tokensPerInterval: rateLimit, interval: 'second' });
+
     // Downloader wrapper
-    const downloadPlugin = (plugin: PluginDownload): Promise<void> => downloadPluginAsync(failures, plugin.id, plugin.downloadUrl, pluginsDir, packed, plugin.version);
+    const downloadPlugin = (plugin: PluginDownload): Promise<void> => downloadPluginAsync(rateLimiter, failures, plugin.id, plugin.downloadUrl, pluginsDir, packed, plugin.version);
 
     const downloader = async (plugins: PluginDownload[]) => {
         await parallelOrSequence(...plugins.map(plugin => () => downloadPlugin(plugin)));
@@ -148,10 +154,12 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
             const ids = new Set<string>(dependencies.flat());
             await parallelOrSequence(...Array.from(ids, id => async () => {
                 try {
+                    await rateLimiter.removeTokens(1);
                     const extension = await client.getLatestCompatibleExtensionVersion(id);
                     const version = extension?.version;
                     const downloadUrl = extension?.files.download;
                     if (downloadUrl) {
+                        await rateLimiter.removeTokens(1);
                         await downloadPlugin({ id, downloadUrl, version });
                     } else {
                         failures.push(`No download url for extension pack ${id} (${version})`);
@@ -196,7 +204,15 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
  * @param packed whether to decompress or not.
  * @param cachedExtensionPacks the list of cached extension packs already downloaded.
  */
-async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl: string, pluginsDir: string, packed: boolean, version?: string): Promise<void> {
+async function downloadPluginAsync(
+    rateLimiter: RateLimiter,
+    failures: string[],
+    plugin: string,
+    pluginUrl: string,
+    pluginsDir: string,
+    packed: boolean,
+    version?: string
+): Promise<void> {
     if (!plugin) {
         return;
     }
@@ -232,6 +248,7 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
         }
         lastError = undefined;
         try {
+            await rateLimiter.removeTokens(1);
             response = await requestService.request({
                 url: pluginUrl
             });
@@ -240,7 +257,7 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
             continue;
         }
         const status = response.res.statusCode;
-        const retry = status && (status === 439 || status >= 500);
+        const retry = status && (status === 429 || status === 439 || status >= 500);
         if (!retry) {
             break;
         }

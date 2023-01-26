@@ -17,6 +17,7 @@
 import { escapeRegExpCharacters } from '../strings';
 import { UriComponents } from '../uri';
 import { escapeIcons } from './icon-utilities';
+import { isObject, isString } from '../types';
 
 export interface MarkdownString {
     readonly value: string;
@@ -37,8 +38,7 @@ export namespace MarkdownString {
      * @returns whether the candidate satisfies the interface of a markdown string
      */
     export function is(candidate: unknown): candidate is MarkdownString {
-        const maybeMarkdownString = candidate as MarkdownString;
-        return typeof maybeMarkdownString === 'object' && !!maybeMarkdownString && typeof maybeMarkdownString.value === 'string';
+        return isObject<MarkdownString>(candidate) && isString(candidate.value);
     }
 }
 

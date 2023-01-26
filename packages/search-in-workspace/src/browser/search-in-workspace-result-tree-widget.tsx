@@ -630,7 +630,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected updateCurrentEditorDecorations(): void {
-        this.shell.allTabBars.map(tb => {
+        this.shell.allTabBars.forEach(tb => {
             const currentTitle = tb.currentTitle;
             if (currentTitle && currentTitle.owner instanceof EditorWidget) {
                 const widget = currentTitle.owner;
@@ -842,7 +842,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const fileNode = node.parent;
         const rightPositionedNodes = fileNode.children.filter(rl => rl.line === node.line && rl.character > node.character);
         const diff = this._replaceTerm.length - this.searchTerm.length;
-        rightPositionedNodes.map(r => r.character += diff);
+        rightPositionedNodes.forEach(r => r.character += diff);
     }
 
     /**
@@ -1095,7 +1095,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }
 
         const lines = content.split('\n');
-        node.children.map(l => {
+        node.children.forEach(l => {
             const leftPositionedNodes = node.children.filter(rl => rl.line === l.line && rl.character < l.character);
             const diff = (this._replaceTerm.length - this.searchTerm.length) * leftPositionedNodes.length;
             const start = lines[l.line - 1].substr(0, l.character - 1 + diff);
@@ -1122,7 +1122,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     protected createEditorDecorations(resultNode: SearchInWorkspaceFileNode | undefined): EditorDecoration[] {
         const decorations: EditorDecoration[] = [];
         if (resultNode) {
-            resultNode.children.map(res => {
+            resultNode.children.forEach(res => {
                 decorations.push({
                     range: {
                         start: {

@@ -59,7 +59,8 @@ import {
     Localization,
     PluginPackageTranslation,
     Translation,
-    PluginIdentifiers
+    PluginIdentifiers,
+    TerminalProfile
 } from '../../../common/plugin-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -358,7 +359,20 @@ export class TheiaPluginScanner implements PluginScanner {
             console.error(`Could not read '${rawPlugin.name}' contribution 'localizations'.`, rawPlugin.contributes.colors, err);
         }
 
+        try {
+            contributions.terminalProfiles = this.readTerminals(rawPlugin);
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'terminals'.`, rawPlugin.contributes.terminal, err);
+        }
+
         return contributions;
+    }
+
+    protected readTerminals(pck: PluginPackage): TerminalProfile[] | undefined {
+        if (!pck?.contributes?.terminal?.profiles) {
+            return undefined;
+        }
+        return pck.contributes.terminal.profiles.filter(profile => profile.id && profile.title);
     }
 
     protected readLocalizations(pck: PluginPackage): Localization[] | undefined {

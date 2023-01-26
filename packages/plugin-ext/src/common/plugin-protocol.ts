@@ -95,6 +95,17 @@ export interface PluginPackageContribution {
     jsonValidation?: PluginJsonValidationContribution[];
     resourceLabelFormatters?: ResourceLabelFormatter[];
     localizations?: PluginPackageLocalization[];
+    terminal?: PluginPackageTerminal;
+}
+
+export interface PluginPackageTerminalProfile {
+    title: string,
+    id: string,
+    icon?: string
+}
+
+export interface PluginPackageTerminal {
+    profiles: PluginPackageTerminalProfile[]
 }
 
 export interface PluginPackageLocalization {
@@ -555,6 +566,13 @@ export interface PluginContribution {
     problemPatterns?: ProblemPatternContribution[];
     resourceLabelFormatters?: ResourceLabelFormatter[];
     localizations?: Localization[];
+    terminalProfiles?: TerminalProfile[];
+}
+
+export interface TerminalProfile {
+    title: string,
+    id: string,
+    icon?: string
 }
 
 export interface Localization {

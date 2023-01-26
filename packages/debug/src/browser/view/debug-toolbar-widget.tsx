@@ -16,7 +16,8 @@
 
 import * as React from '@theia/core/shared/react';
 import { inject, postConstruct, injectable } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, MenuPath } from '@theia/core';
+import { CommandMenuNode, CommandRegistry, CompoundMenuNode, Disposable, DisposableCollection, MenuModelRegistry, MenuPath } from '@theia/core';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ReactWidget } from '@theia/core/lib/browser/widgets';
 import { DebugViewModel } from './debug-view-model';
 import { DebugState } from '../debug-session';
@@ -28,8 +29,10 @@ export class DebugToolBar extends ReactWidget {
 
     static readonly MENU: MenuPath = ['debug-toolbar-menu'];
 
-    @inject(DebugViewModel)
-    protected readonly model: DebugViewModel;
+    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
+    @inject(MenuModelRegistry) protected readonly menuModelRegistry: MenuModelRegistry;
+    @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
+    @inject(DebugViewModel) protected readonly model: DebugViewModel;
 
     protected readonly onRender = new DisposableCollection();
 
@@ -65,6 +68,7 @@ export class DebugToolBar extends ReactWidget {
     protected render(): React.ReactNode {
         const { state } = this.model;
         return <React.Fragment>
+            {this.renderContributedCommands()}
             {this.renderContinue()}
             <DebugAction enabled={state === DebugState.Stopped} run={this.stepOver} label={nls.localizeByDefault('Step Over')}
                 iconClass='debug-step-over' ref={this.setStepRef} />
@@ -77,6 +81,43 @@ export class DebugToolBar extends ReactWidget {
             {this.renderStart()}
         </React.Fragment>;
     }
+
+    protected renderContributedCommands(): React.ReactNode {
+        const debugActions: React.ReactNode[] = [];
+        // first, search for CompoundMenuNodes:
+        this.menuModelRegistry.getMenu(DebugToolBar.MENU).children.forEach(compoundMenuNode => {
+            if (CompoundMenuNode.is(compoundMenuNode) && this.matchContext(compoundMenuNode.when)) {
+                // second, search for nested CommandMenuNodes:
+                compoundMenuNode.children.forEach(commandMenuNode => {
+                    if (CommandMenuNode.is(commandMenuNode) && this.matchContext(commandMenuNode.when)) {
+                        debugActions.push(this.debugAction(commandMenuNode));
+                    }
+                });
+            }
+        });
+        return debugActions;
+    }
+
+    protected matchContext(when?: string): boolean {
+        return !when || this.contextKeyService.match(when);
+    }
+
+    protected debugAction(commandMenuNode: CommandMenuNode): React.ReactNode {
+        const { command, icon = '', label = '' } = commandMenuNode;
+        if (!label && !icon) {
+            const { when } = commandMenuNode;
+            console.warn(`Neither 'label' nor 'icon' properties were defined for the command menu node. (${JSON.stringify({ command, when })}}. Skipping.`);
+            return;
+        }
+        const run = () => this.commandRegistry.executeCommand(command);
+        return <DebugAction
+            key={command}
+            enabled={true}
+            label={label}
+            iconClass={icon}
+            run={run} />;
+    }
+
     protected renderStart(): React.ReactNode {
         const { state } = this.model;
         if (state === DebugState.Inactive && this.model.sessionCount === 1) {

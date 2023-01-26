@@ -34,6 +34,7 @@ import { FileUploadService, FileUploadResult } from './file-upload-service';
 import { FileService, UserFileOperationEvent } from './file-service';
 import { FileChangesEvent, FileChangeType, FileOperation } from '../common/files';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { nls } from '@theia/core';
 
 export namespace FileSystemCommands {
 
@@ -120,12 +121,19 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(FileSystemCommands.UPLOAD, new FileSelection.CommandHandler(this.selectionService, {
-            multi: false,
-            isEnabled: selection => this.canUpload(selection),
-            isVisible: selection => this.canUpload(selection),
-            execute: selection => this.upload(selection)
-        }));
+        commands.registerCommand(FileSystemCommands.UPLOAD, {
+            isEnabled: (...args: unknown[]) => {
+                const selection = this.getSelection(...args);
+                return !!selection && this.canUpload(selection);
+            },
+            isVisible: () => !environment.electron.is(),
+            execute: (...args: unknown[]) => {
+                const selection = this.getSelection(...args);
+                if (selection) {
+                    return this.upload(selection);
+                }
+            }
+        });
     }
 
     protected canUpload({ fileStat }: FileSelection): boolean {
@@ -145,6 +153,15 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
                 console.error(e);
             }
         }
+    }
+
+    protected getSelection(...args: unknown[]): FileSelection | undefined {
+        const { selection } = this.selectionService;
+        return this.toSelection(args[0]) ?? (Array.isArray(selection) ? selection.find(FileSelection.is) : this.toSelection(selection));
+    };
+
+    protected toSelection(arg: unknown): FileSelection | undefined {
+        return FileSelection.is(arg) ? arg : undefined;
     }
 
     protected pendingOperation = Promise.resolve();
@@ -267,7 +284,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         return targetUri && widget.createMoveToUri(targetUri);
     }
 
-    protected readonly deletedSuffix = ' (deleted)';
+    protected readonly deletedSuffix = `(${nls.localizeByDefault('Deleted')})`;
     protected async updateWidgets(event: FileChangesEvent): Promise<void> {
         if (!event.gotDeleted() && !event.gotAdded()) {
             return;

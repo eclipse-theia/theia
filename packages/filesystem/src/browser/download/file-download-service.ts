@@ -21,6 +21,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FileDownloadData } from '../../common/download/file-download-data';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { addClipboardListener } from '@theia/core/lib/browser/widgets';
+import { nls } from '@theia/core';
 
 @injectable()
 export class FileDownloadService {
@@ -53,9 +54,13 @@ export class FileDownloadService {
         }
         const copyLink = options && options.copyLink ? true : false;
         try {
+            const text: string = copyLink ?
+                nls.localize('theia/filesystem/prepareDownloadLink', 'Preparing download link...') :
+                nls.localize('theia/filesystem/prepareDownload', 'Preparing download...');
             const [progress, result] = await Promise.all([
                 this.messageService.showProgress({
-                    text: `Preparing download${copyLink ? ' link' : ''}...`, options: { cancelable: true }
+                    text: text,
+                    options: { cancelable: true }
                 }, () => { cancel = true; }),
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 new Promise<{ response: Response, jsonResponse: any }>(async resolve => {

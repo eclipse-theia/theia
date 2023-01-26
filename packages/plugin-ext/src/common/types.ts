@@ -19,13 +19,13 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
+import { isObject as isObject0 } from '@theia/core/lib/common';
+
 /**
  * Returns `true` if the parameter has type "object" and not null, an array, a regexp, a date.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isObject(obj: any): boolean {
-    return typeof obj === 'object'
-        && obj !== null // eslint-disable-line @typescript-eslint/no-explicit-any
+export function isObject(obj: unknown): boolean {
+    return isObject0(obj)
         && !Array.isArray(obj)
         && !(obj instanceof RegExp)
         && !(obj instanceof Date);

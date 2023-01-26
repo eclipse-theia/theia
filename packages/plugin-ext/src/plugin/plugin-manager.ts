@@ -89,6 +89,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         'workspaceContains',
         'onView',
         'onUri',
+        'onTerminalProfile',
         'onWebviewPanel',
         'onFileSystem',
         'onCustomEditor',

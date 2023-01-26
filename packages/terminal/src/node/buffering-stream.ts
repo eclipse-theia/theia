@@ -33,27 +33,32 @@ export interface BufferingStreamOptions {
  * every {@link BufferingStreamOptions.emitInterval}. It will also ensure that
  * the emitted chunks never exceed {@link BufferingStreamOptions.maxChunkSize}.
  */
-export class BufferingStream {
-
-    protected buffer?: Buffer;
+export class BufferingStream<T> {
+    protected buffer?: T;
     protected timeout?: NodeJS.Timeout;
     protected maxChunkSize: number;
     protected emitInterval: number;
 
-    protected onDataEmitter = new Emitter<Buffer>();
+    protected onDataEmitter = new Emitter<T>();
+    protected readonly concat: (left: T, right: T) => T;
+    protected readonly slice: (what: T, start?: number, end?: number) => T;
+    protected readonly length: (what: T) => number;
 
-    constructor(options?: BufferingStreamOptions) {
-        this.emitInterval = options?.emitInterval ?? 16; // ms
-        this.maxChunkSize = options?.maxChunkSize ?? (256 * 1024); // bytes
+    constructor(options: BufferingStreamOptions = {}, concat: (left: T, right: T) => T, slice: (what: T, start?: number, end?: number) => T, length: (what: T) => number) {
+        this.emitInterval = options.emitInterval ?? 16; // ms
+        this.maxChunkSize = options.maxChunkSize ?? (256 * 1024); // bytes
+        this.concat = concat;
+        this.slice = slice;
+        this.length = length;
     }
 
-    get onData(): Event<Buffer> {
+    get onData(): Event<T> {
         return this.onDataEmitter.event;
     }
 
-    push(chunk: Buffer): void {
+    push(chunk: T): void {
         if (this.buffer) {
-            this.buffer = Buffer.concat([this.buffer, chunk]);
+            this.buffer = this.concat(this.buffer, chunk);
         } else {
             this.buffer = chunk;
             this.timeout = setTimeout(() => this.emitBufferedChunk(), this.emitInterval);
@@ -67,12 +72,24 @@ export class BufferingStream {
     }
 
     protected emitBufferedChunk(): void {
-        this.onDataEmitter.fire(this.buffer!.slice(0, this.maxChunkSize));
-        if (this.buffer!.byteLength <= this.maxChunkSize) {
+        this.onDataEmitter.fire(this.slice(this.buffer!, 0, this.maxChunkSize));
+        if (this.length(this.buffer!) <= this.maxChunkSize) {
             this.buffer = undefined;
         } else {
-            this.buffer = this.buffer!.slice(this.maxChunkSize);
+            this.buffer = this.slice(this.buffer!, this.maxChunkSize);
             this.timeout = setTimeout(() => this.emitBufferedChunk(), this.emitInterval);
         }
+    }
+}
+
+export class StringBufferingStream extends BufferingStream<string> {
+    constructor(options: BufferingStreamOptions = {}) {
+        super(options, (left, right) => left.concat(right), (what, start, end) => what.slice(start, end), what => what.length);
+    }
+}
+
+export class BufferBufferingStream extends BufferingStream<Buffer> {
+    constructor(options: BufferingStreamOptions = {}) {
+        super(options, (left, right) => Buffer.concat([left, right]), (what, start, end) => what.slice(start, end), what => what.length);
     }
 }

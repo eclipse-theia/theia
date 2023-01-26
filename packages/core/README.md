@@ -104,7 +104,7 @@ export class SomeClass {
     - `express` (from [`express@^4.16.3`](https://www.npmjs.com/package/express))
     - `lodash.debounce` (from [`lodash.debounce@^4.0.8`](https://www.npmjs.com/package/lodash.debounce))
     - `lodash.throttle` (from [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle))
-    - `nsfw` (from [`nsfw@^2.1.2`](https://www.npmjs.com/package/nsfw))
+    - `nsfw` (from [`nsfw@^2.2.4`](https://www.npmjs.com/package/nsfw))
     - `markdown-it` (from [`markdown-it@^12.3.2`](https://www.npmjs.com/package/markdown-it))
     - `react` (from [`react@^18.2.0`](https://www.npmjs.com/package/react))
     - `ws` (from [`ws@^7.1.2`](https://www.npmjs.com/package/ws))

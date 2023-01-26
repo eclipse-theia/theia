@@ -24,6 +24,7 @@ import { Diagnostics } from './diagnostics';
 import { CodeActionKind } from '../types-impl';
 import { CommandRegistryImpl } from '../command-registry';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { isObject } from '@theia/core/lib/common';
 
 export class CodeActionAdapter {
 
@@ -147,16 +148,15 @@ export class CodeActionAdapter {
     }
 
     private static _isCommand(arg: unknown): arg is theia.Command {
-        return !!arg && typeof arg === 'object' && typeof (arg as theia.Command).command === 'string';
+        return isObject<theia.Command>(arg) && typeof arg.command === 'string';
     }
 
-    private static _isSelection(obj: unknown): obj is Selection {
-        const selection = obj as Selection;
-        return !!obj && typeof obj === 'object'
-            && typeof selection.selectionStartLineNumber === 'number'
-            && typeof selection.selectionStartColumn === 'number'
-            && typeof selection.positionLineNumber === 'number'
-            && typeof selection.positionColumn === 'number';
+    private static _isSelection(arg: unknown): arg is Selection {
+        return isObject<Selection>(arg)
+            && typeof arg.selectionStartLineNumber === 'number'
+            && typeof arg.selectionStartColumn === 'number'
+            && typeof arg.positionLineNumber === 'number'
+            && typeof arg.positionColumn === 'number';
     }
 
 }

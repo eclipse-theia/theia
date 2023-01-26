@@ -40,7 +40,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
     properties: {
         'files.watcherExclude': {
             // eslint-disable-next-line max-len
-            description: nls.localizeByDefault('Configure glob patterns of file paths to exclude from file watching. Patterns must match on absolute paths (i.e. prefix with ** or the full path to match properly). Changing this setting requires a restart. When you experience Code consuming lots of CPU time on startup, you can exclude large folders to reduce the initial load.'),
+            description: nls.localizeByDefault('Configure paths or glob patterns to exclude from file watching. Paths or basic glob patterns that are relative (for example `build/output` or `*.js`) will be resolved to an absolute path using the currently opened workspace. Complex glob patterns must match on absolute paths (i.e. prefix with `**/` or the full path and suffix with `/**` to match files within a path) to match properly (for example `**/build/output/**` or `/Users/name/workspaces/project/build/output/**`). When you experience the file watcher process consuming a lot of CPU, make sure to exclude large folders that are of less interest (such as build output folders).'),
             additionalProperties: {
                 type: 'boolean'
             },
@@ -72,9 +72,8 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
         'files.autoGuessEncoding': {
             type: 'boolean',
             default: false,
-            description: nls.localizeByDefault(
-                'When enabled, the editor will attempt to guess the character set encoding when opening files. This setting can also be configured per language.'
-            ),
+            // eslint-disable-next-line max-len
+            description: nls.localizeByDefault('When enabled, the editor will attempt to guess the character set encoding when opening files. This setting can also be configured per language. Note, this setting is not respected by text search. Only `#files.encoding#` is respected.'),
             scope: 'language-overridable',
             included: Object.keys(SUPPORTED_ENCODINGS).length > 1
         },

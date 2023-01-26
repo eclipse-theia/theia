@@ -27,7 +27,7 @@ import { DebugConfiguration } from '../common/debug-common';
 import { DebugError, DebugService } from '../common/debug-service';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugConfigurationManager } from './debug-configuration-manager';
-import { DebugSession, DebugState } from './debug-session';
+import { DebugSession, DebugState, debugStateContextValue } from './debug-session';
 import { DebugSessionContributionRegistry, DebugSessionFactory } from './debug-session-contribution';
 import { DebugCompoundRoot, DebugCompoundSessionOptions, DebugConfigurationSessionOptions, DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
 import { DebugStackFrame } from './model/debug-stack-frame';
@@ -106,7 +106,9 @@ export class DebugSessionManager {
     protected readonly onDidChangeEmitter = new Emitter<DebugSession | undefined>();
     readonly onDidChange: Event<DebugSession | undefined> = this.onDidChangeEmitter.event;
     protected fireDidChange(current: DebugSession | undefined): void {
+        this.debugTypeKey.set(current?.configuration.type);
         this.inDebugModeKey.set(this.inDebugMode);
+        this.debugStateKey.set(debugStateContextValue(this.state));
         this.onDidChangeEmitter.fire(current);
     }
 
@@ -154,11 +156,13 @@ export class DebugSessionManager {
 
     protected debugTypeKey: ContextKey<string>;
     protected inDebugModeKey: ContextKey<boolean>;
+    protected debugStateKey: ContextKey<string>;
 
     @postConstruct()
     protected init(): void {
         this.debugTypeKey = this.contextKeyService.createKey<string>('debugType', undefined);
         this.inDebugModeKey = this.contextKeyService.createKey<boolean>('inDebugMode', this.inDebugMode);
+        this.debugStateKey = this.contextKeyService.createKey<string>('debugState', debugStateContextValue(this.state));
         this.breakpoints.onDidChangeMarkers(uri => this.fireDidChangeBreakpoints({ uri }));
         this.labelProvider.onDidChange(event => {
             for (const uriString of this.breakpoints.getUris()) {

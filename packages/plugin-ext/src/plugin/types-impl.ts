@@ -31,6 +31,7 @@ import { SymbolKind } from '../common/plugin-api-rpc-model';
 import { FileSystemProviderErrorCode, markAsFileSystemProviderError } from '@theia/filesystem/lib/common/files';
 import * as paths from 'path';
 import { es5ClassCompat } from '../common/types';
+import { isObject, isStringArray } from '@theia/core/lib/common';
 
 /**
  * This is an implementation of #theia.Uri based on vscode-uri.
@@ -540,14 +541,13 @@ export class Range {
         return new Range(start, end);
     }
 
-    static isRange(thing: unknown): thing is theia.Range {
-        if (thing instanceof Range) {
+    static isRange(arg: unknown): arg is theia.Range {
+        if (arg instanceof Range) {
             return true;
         }
-        const range = thing as theia.Range;
-        return !!thing && typeof thing === 'object'
-            && Position.isPosition(range.start)
-            && Position.isPosition(range.end);
+        return isObject<theia.Range>(arg)
+            && Position.isPosition(arg.start)
+            && Position.isPosition(arg.end);
     }
 
     toJSON(): unknown {
@@ -730,7 +730,7 @@ export class ThemeIcon {
 
 export namespace ThemeIcon {
     export function is(item: unknown): item is ThemeIcon {
-        return typeof item === 'object' && !!item && 'id' in item;
+        return isObject(item) && 'id' in item;
     }
 }
 
@@ -1279,6 +1279,30 @@ export class NotebookRange implements theia.NotebookRange {
 
 }
 
+export class SnippetTextEdit implements theia.SnippetTextEdit {
+    range: Range;
+    snippet: SnippetString;
+
+    static isSnippetTextEdit(thing: unknown): thing is SnippetTextEdit {
+        return thing instanceof SnippetTextEdit || isObject<SnippetTextEdit>(thing)
+            && Range.isRange((<SnippetTextEdit>thing).range)
+            && SnippetString.isSnippetString((<SnippetTextEdit>thing).snippet);
+    }
+
+    static replace(range: Range, snippet: SnippetString): SnippetTextEdit {
+        return new SnippetTextEdit(range, snippet);
+    }
+
+    static insert(position: Position, snippet: SnippetString): SnippetTextEdit {
+        return SnippetTextEdit.replace(new Range(position, position), snippet);
+    }
+
+    constructor(range: Range, snippet: SnippetString) {
+        this.range = range;
+        this.snippet = snippet;
+    }
+}
+
 @es5ClassCompat
 export class NotebookEdit implements theia.NotebookEdit {
     range: theia.NotebookRange;
@@ -1555,6 +1579,7 @@ export class CodeActionKind {
     public static readonly Refactor = CodeActionKind.Empty.append('refactor');
     public static readonly RefactorExtract = CodeActionKind.Refactor.append('extract');
     public static readonly RefactorInline = CodeActionKind.Refactor.append('inline');
+    public static readonly RefactorMove = CodeActionKind.Refactor.append('move');
     public static readonly RefactorRewrite = CodeActionKind.Refactor.append('rewrite');
     public static readonly Source = CodeActionKind.Empty.append('source');
     public static readonly SourceOrganizeImports = CodeActionKind.Source.append('organizeImports');
@@ -1622,11 +1647,17 @@ export interface WorkspaceEditMetadata {
     } | {
         light: URI;
         dark: URI;
-    };
+    } | ThemeIcon;
+}
+
+export const enum FileEditType {
+    File = 1,
+    Text = 2,
+    Snippet = 6,
 }
 
 export interface FileOperation {
-    _type: 1;
+    _type: FileEditType.File;
     from: URI | undefined;
     to: URI | undefined;
     options?: FileOperationOptions;
@@ -1634,16 +1665,26 @@ export interface FileOperation {
 }
 
 export interface FileTextEdit {
-    _type: 2;
+    _type: FileEditType.Text;
     uri: URI;
     edit: TextEdit;
     metadata?: WorkspaceEditMetadata;
 }
 
+export interface FileSnippetTextEdit {
+    readonly _type: FileEditType.Snippet;
+    readonly uri: URI;
+    readonly range: Range;
+    readonly edit: SnippetTextEdit;
+    readonly metadata?: theia.WorkspaceEditEntryMetadata;
+}
+
+type WorkspaceEditEntry = FileOperation | FileTextEdit | FileSnippetTextEdit | undefined;
+
 @es5ClassCompat
 export class WorkspaceEdit implements theia.WorkspaceEdit {
 
-    private _edits = new Array<FileOperation | FileTextEdit | undefined>();
+    private _edits = new Array<WorkspaceEditEntry>();
 
     renameFile(from: theia.Uri, to: theia.Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }, metadata?: WorkspaceEditMetadata): void {
         this._edits.push({ _type: 1, from, to, options, metadata });
@@ -1678,21 +1719,41 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
         return false;
     }
 
-    set(uri: URI, edits: TextEdit[]): void {
+    set(uri: URI, edits: ReadonlyArray<TextEdit | SnippetTextEdit>): void;
+    set(uri: URI, edits: ReadonlyArray<[TextEdit | SnippetTextEdit, theia.WorkspaceEditEntryMetadata]>): void;
+
+    set(uri: URI, edits: ReadonlyArray<TextEdit | SnippetTextEdit | [TextEdit | SnippetTextEdit, theia.WorkspaceEditEntryMetadata]>): void {
         if (!edits) {
             // remove all text edits for `uri`
             for (let i = 0; i < this._edits.length; i++) {
                 const element = this._edits[i];
-                if (element && element._type === 2 && element.uri.toString() === uri.toString()) {
+                if (element &&
+                    (element._type === FileEditType.Text || element._type === FileEditType.Snippet) &&
+                    element.uri.toString() === uri.toString()) {
                     this._edits[i] = undefined;
                 }
             }
             this._edits = this._edits.filter(e => !!e);
         } else {
             // append edit to the end
-            for (const edit of edits) {
-                if (edit) {
-                    this._edits.push({ _type: 2, uri, edit });
+            for (const editOrTuple of edits) {
+                if (!editOrTuple) {
+                    continue;
+                }
+
+                let edit: TextEdit | SnippetTextEdit;
+                let metadata: theia.WorkspaceEditEntryMetadata | undefined;
+                if (Array.isArray(editOrTuple)) {
+                    edit = editOrTuple[0];
+                    metadata = editOrTuple[1];
+                } else {
+                    edit = editOrTuple;
+                }
+
+                if (SnippetTextEdit.isSnippetTextEdit(edit)) {
+                    this._edits.push({ _type: FileEditType.Snippet, uri, range: edit.range, edit, metadata });
+                } else {
+                    this._edits.push({ _type: FileEditType.Text, uri, edit });
                 }
             }
         }
@@ -1714,7 +1775,7 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
     entries(): [URI, TextEdit[]][] {
         const textEdits = new Map<string, [URI, TextEdit[]]>();
         for (const candidate of this._edits) {
-            if (candidate && candidate._type === 2) {
+            if (candidate && candidate._type === FileEditType.Text) {
                 let textEdit = textEdits.get(candidate.uri.toString());
                 if (!textEdit) {
                     textEdit = [candidate.uri, []];
@@ -1728,13 +1789,13 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
         return result;
     }
 
-    _allEntries(): ([URI, TextEdit[], WorkspaceEditMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] {
-        const res: ([URI, TextEdit[], WorkspaceEditMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] = [];
+    _allEntries(): ([URI, Array<TextEdit | SnippetTextEdit>, theia.WorkspaceEditEntryMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] {
+        const res: ([URI, Array<TextEdit | SnippetTextEdit>, theia.WorkspaceEditEntryMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] = [];
         for (const edit of this._edits) {
             if (!edit) {
                 continue;
             }
-            if (edit._type === 1) {
+            if (edit._type === FileEditType.File) {
                 res.push([edit.from!, edit.to!, edit.options!, edit.metadata!]);
             } else {
                 res.push([edit.uri, [edit.edit], edit.metadata!]);
@@ -1753,6 +1814,55 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
     }
 }
 
+export class DataTransferItem {
+    asString(): Thenable<string> {
+        return Promise.resolve(typeof this.value === 'string' ? this.value : JSON.stringify(this.value));
+    }
+
+    asFile(): theia.DataTransferFile | undefined {
+        return undefined;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    constructor(readonly value: any) {
+    }
+}
+
+/**
+ * A map containing a mapping of the mime type of the corresponding transferred data.
+ *
+ * Drag and drop controllers that implement {@link TreeDragAndDropController.handleDrag `handleDrag`} can add additional mime types to the
+ * data transfer. These additional mime types will only be included in the `handleDrop` when the the drag was initiated from
+ * an element in the same drag and drop controller.
+ */
+@es5ClassCompat
+export class DataTransfer implements Iterable<[mimeType: string, item: DataTransferItem]> {
+    private items = new Map<string, DataTransferItem>();
+    get(mimeType: string): DataTransferItem | undefined {
+        return this.items.get(mimeType);
+    }
+    set(mimeType: string, value: DataTransferItem): void {
+        this.items.set(mimeType, value);
+    }
+
+    has(mimeType: string): boolean {
+        return this.items.has(mimeType);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    forEach(callbackfn: (item: DataTransferItem, mimeType: string, dataTransfer: DataTransfer) => void, thisArg?: any): void {
+        this.items.forEach((item, mimetype) => {
+            callbackfn.call(thisArg, item, mimetype, this);
+        });
+    }
+    [Symbol.iterator](): IterableIterator<[mimeType: string, item: DataTransferItem]> {
+        return this.items[Symbol.iterator]();
+    }
+
+    clear(): void {
+        this.items.clear();
+    }
+}
 @es5ClassCompat
 export class TreeItem {
 
@@ -1906,6 +2016,19 @@ export class TerminalLink {
         this.startIndex = startIndex;
         this.length = length;
         this.tooltip = tooltip;
+    }
+}
+
+export enum TerminalLocation {
+    Panel = 1,
+    Editor = 2
+}
+export class TerminalProfile {
+    /**
+     * Creates a new terminal profile.
+     * @param options The options that the terminal will launch with.
+     */
+    constructor(readonly options: theia.TerminalOptions | theia.ExtensionTerminalOptions) {
     }
 }
 
@@ -3015,7 +3138,7 @@ export class SemanticTokensLegend {
 }
 
 function isStrArrayOrUndefined(arg: unknown): arg is string[] | undefined {
-    return ((typeof arg === 'undefined') || (Array.isArray(arg) && arg.every(e => typeof e === 'string')));
+    return typeof arg === 'undefined' || isStringArray(arg);
 }
 
 @es5ClassCompat

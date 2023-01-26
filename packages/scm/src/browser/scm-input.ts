@@ -36,14 +36,15 @@ export interface ScmInputValidator {
 }
 
 export interface ScmInputOptions {
-    placeholder?: string
-    validator?: ScmInputValidator
-    visible?: boolean
+    placeholder?: string;
+    validator?: ScmInputValidator;
+    visible?: boolean;
+    enabled?: boolean;
 }
 
 export interface ScmInputData {
-    value?: string
-    issue?: ScmInputIssue
+    value?: string;
+    issue?: ScmInputIssue;
 }
 
 export class ScmInput implements Disposable {
@@ -104,6 +105,19 @@ export class ScmInput implements Disposable {
             return;
         }
         this._visible = visible;
+        this.fireDidChange();
+        this.validate();
+    }
+
+    protected _enabled = this.options.enabled ?? true;
+    get enabled(): boolean {
+        return this._enabled;
+    }
+    set enabled(enabled: boolean) {
+        if (this._enabled === enabled) {
+            return;
+        }
+        this._enabled = enabled;
         this.fireDidChange();
         this.validate();
     }

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, Stopwatch } from '../common';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, Stopwatch, isObject } from '../common';
 import { MaybePromise } from '../common/types';
 import { KeybindingRegistry } from './keybinding';
 import { Widget } from './widgets';
@@ -101,7 +101,7 @@ export interface OnWillStopAction<T = unknown> {
 
 export namespace OnWillStopAction {
     export function is(candidate: unknown): candidate is OnWillStopAction {
-        return typeof candidate === 'object' && !!candidate && 'action' in candidate && 'reason' in candidate;
+        return isObject(candidate) && 'action' in candidate && 'reason' in candidate;
     }
 }
 
@@ -224,10 +224,18 @@ export class FrontendApplication {
             document.body.addEventListener('wheel', preventNavigation, { passive: false });
         }
         // Prevent the default browser behavior when dragging and dropping files into the window.
-        window.addEventListener('dragover', event => {
+        document.addEventListener('dragenter', event => {
+            if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = 'none';
+            }
             event.preventDefault();
         }, false);
-        window.addEventListener('drop', event => {
+        document.addEventListener('dragover', event => {
+            if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = 'none';
+            } event.preventDefault();
+        }, false);
+        document.addEventListener('drop', event => {
             event.preventDefault();
         }, false);
 

@@ -3002,9 +3002,33 @@ export module '@theia/plugin' {
         message?: string;
 
         /**
+         * The {@link TerminalLocation} or {@link TerminalEditorLocationOptions} or {@link TerminalSplitLocationOptions} for the terminal.
+         */
+        location?: TerminalLocation | TerminalEditorLocationOptions | TerminalSplitLocationOptions;
+
+        /**
+         * Opt-out of the default terminal persistence on restart and reload.
+         * This will only take effect when `terminal.integrated.enablePersistentSessions` is enabled.
+         */
+        isTransient?: boolean;
+
+        /**
          * Terminal attributes. Can be useful to apply some implementation specific information.
          */
         attributes?: { [key: string]: string | null };
+
+        /**
+         * The icon path or {@link ThemeIcon} for the terminal.
+         */
+        iconPath?: ThemeIcon;
+
+        /**
+         * The icon {@link ThemeColor} for the terminal.
+         * The `terminal.ansi*` theme keys are
+         * recommended for the best contrast and consistency across themes.
+         * @stubbed
+         */
+        color?: ThemeColor;
     }
 
     /**
@@ -3067,6 +3091,30 @@ export module '@theia/plugin' {
          * control it.
          */
         pty: Pseudoterminal;
+
+        /**
+         * The {@link TerminalLocation} or {@link TerminalEditorLocationOptions} or {@link TerminalSplitLocationOptions} for the terminal.
+         */
+        location?: TerminalLocation | TerminalEditorLocationOptions | TerminalSplitLocationOptions;
+
+        /**
+         * Opt-out of the default terminal persistence on restart and reload.
+         * This will only take effect when `terminal.integrated.enablePersistentSessions` is enabled.
+         */
+        isTransient?: boolean;
+
+        /**
+         * The icon path or {@link ThemeIcon} for the terminal.
+         */
+        iconPath?: ThemeIcon;
+
+        /**
+         * The icon {@link ThemeColor} for the terminal.
+         * The standard `terminal.ansi*` theme keys are
+         * recommended for the best contrast and consistency across themes.
+         * @stubbed
+         */
+        color?: ThemeColor;
     }
 
     /**
@@ -3205,6 +3253,79 @@ export module '@theia/plugin' {
          * depending on OS, user settings, and localization.
          */
         constructor(startIndex: number, length: number, tooltip?: string);
+    }
+
+    /**
+     * The location of the {@link Terminal}.
+     */
+    export enum TerminalLocation {
+        /**
+         * In the terminal view
+         */
+        Panel = 1,
+        /**
+         * In the editor area
+         */
+        Editor = 2,
+    }
+
+    /**
+     * Assumes a {@link TerminalLocation} of editor and allows specifying a {@link ViewColumn} and
+     * {@link TerminalEditorLocationOptions.preserveFocus preserveFocus } property
+     */
+    export interface TerminalEditorLocationOptions {
+        /**
+         * A view column in which the {@link Terminal terminal} should be shown in the editor area.
+         * Use {@link ViewColumn.Active active} to open in the active editor group, other values are
+         * adjusted to be `Min(column, columnCount + 1)`, the
+         * {@link ViewColumn.Active active}-column is not adjusted. Use
+         * {@linkcode ViewColumn.Beside} to open the editor to the side of the currently active one.
+         */
+        viewColumn: ViewColumn;
+        /**
+         * An optional flag that when `true` will stop the {@link Terminal} from taking focus.
+         */
+        preserveFocus?: boolean;
+    }
+
+    /**
+     * Uses the parent {@link Terminal}'s location for the terminal
+     */
+    export interface TerminalSplitLocationOptions {
+        /**
+         * The parent terminal to split this terminal beside. This works whether the parent terminal
+         * is in the panel or the editor area.
+         */
+        parentTerminal: Terminal;
+    }
+
+    /*
+     * Provides a terminal profile for the contributed terminal profile when launched via the UI or
+     * command.
+     */
+    export interface TerminalProfileProvider {
+        /**
+         * Provide the terminal profile.
+         * @param token A cancellation token that indicates the result is no longer needed.
+         * @returns The terminal profile.
+         */
+        provideTerminalProfile(token: CancellationToken): ProviderResult<TerminalProfile>;
+    }
+
+    /**
+     * A terminal profile defines how a terminal will be launched.
+     */
+    export class TerminalProfile {
+        /**
+         * The options that the terminal will launch with.
+         */
+        options: TerminalOptions | ExtensionTerminalOptions;
+
+        /**
+         * Creates a new terminal profile.
+         * @param options The options that the terminal will launch with.
+         */
+        constructor(options: TerminalOptions | ExtensionTerminalOptions);
     }
 
     /**
@@ -3779,9 +3900,11 @@ export module '@theia/plugin' {
         /**
          * Controls whether command uris are enabled in webview content or not.
          *
-         * Defaults to false.
+         * Defaults to `false` (command uris are disabled).
+         *
+         * If you pass in an array, only the commands in the array are allowed.
          */
-        readonly enableCommandUris?: boolean;
+        readonly enableCommandUris?: boolean | readonly string[];
 
         /**
          * Root paths from which the webview can load local (filesystem) resources using the `theia-resource:` scheme.
@@ -4934,7 +5057,7 @@ export module '@theia/plugin' {
          *
          * @return New webview panel.
          */
-        export function createWebviewPanel(viewType: string, title: string, showOptions: ViewColumn | WebviewPanelShowOptions,
+        export function createWebviewPanel(viewType: string, title: string, showOptions: ViewColumn | { readonly viewColumn: ViewColumn; readonly preserveFocus?: boolean },
             options?: WebviewPanelOptions & WebviewOptions): WebviewPanel;
 
         /**
@@ -5224,6 +5347,12 @@ export module '@theia/plugin' {
          * @return Disposable that unregisters the provider.
          */
         export function registerTerminalLinkProvider(provider: TerminalLinkProvider): Disposable;
+        /**
+         * Registers a provider for a contributed terminal profile.
+         * @param id The ID of the contributed terminal profile.
+         * @param provider The terminal profile provider.
+         */
+        export function registerTerminalProfileProvider(id: string, provider: TerminalProfileProvider): Disposable;
 
         /**
          * Register a file decoration provider.
@@ -5322,6 +5451,17 @@ export module '@theia/plugin' {
          * If the input value should be hidden. Defaults to false.
          */
         password: boolean;
+
+        /**
+         * Selection range in the input value. Defined as tuple of two number where the
+         * first is the inclusive start index and the second the exclusive end index. When `undefined` the whole
+         * pre-filled value will be selected, when empty (start equals end) only the cursor will be set,
+         * otherwise the defined range will be selected.
+         *
+         * This property does not get updated when the user types or makes a selection,
+         * but it can be updated by the extension.
+         */
+        valueSelection: readonly [number, number] | undefined;
 
         /**
          * An event signaling when the value has changed.
@@ -5527,6 +5667,17 @@ export module '@theia/plugin' {
          * Whether to show collapse all action or not.
          */
         showCollapseAll?: boolean;
+
+        /**
+         * An optional interface to implement drag and drop in the tree view.
+         */
+        dragAndDropController?: TreeDragAndDropController<T>;
+        /**
+         * Whether the tree supports multi-select. When the tree supports multi-select and a command is executed from the tree,
+         * the first argument to the command is the tree item that the command was executed on and the second argument is an
+         * array containing all selected tree items.
+         */
+        canSelectMany?: boolean;
     }
 
     /**
@@ -5563,6 +5714,165 @@ export module '@theia/plugin' {
          */
         readonly visible: boolean;
 
+    }
+
+    /**
+     * A file associated with a {@linkcode DataTransferItem}.
+     */
+    export interface DataTransferFile {
+        /**
+         * The name of the file.
+         */
+        readonly name: string;
+
+        /**
+         * The full file path of the file.
+         *
+         * May be `undefined` on web.
+         */
+        readonly uri?: Uri;
+
+        /**
+         * The full file contents of the file.
+         */
+        data(): Thenable<Uint8Array>;
+    }
+
+    /**
+     * Encapsulates data transferred during drag and drop operations.
+     */
+    export class DataTransferItem {
+        /**
+         * Get a string representation of this item.
+         *
+         * If {@linkcode DataTransferItem.value} is an object, this returns the result of json stringifying {@linkcode DataTransferItem.value} value.
+         */
+        asString(): Thenable<string>;
+
+        /**
+         * Try getting the {@link DataTransferFile file} associated with this data transfer item.
+         *
+         * Note that the file object is only valid for the scope of the drag and drop operation.
+         *
+         * @returns The file for the data transfer or `undefined` if the item is either not a file or the
+         * file data cannot be accessed.
+         */
+        asFile(): DataTransferFile | undefined;
+
+        /**
+         * Custom data stored on this item.
+         *
+         * You can use `value` to share data across operations. The original object can be retrieved so long as the extension that
+         * created the `DataTransferItem` runs in the same extension host.
+         */
+        readonly value: any;
+
+        /**
+         * @param value Custom data stored on this item. Can be retrieved using {@linkcode DataTransferItem.value}.
+         */
+        constructor(value: any);
+    }
+
+    /**
+     * A map containing a mapping of the mime type of the corresponding transferred data.
+     *
+     * Drag and drop controllers that implement {@link TreeDragAndDropController.handleDrag `handleDrag`} can add additional mime types to the
+     * data transfer. These additional mime types will only be included in the `handleDrop` when the the drag was initiated from
+     * an element in the same drag and drop controller.
+     */
+    export class DataTransfer implements Iterable<[mimeType: string, item: DataTransferItem]> {
+        /**
+         * Retrieves the data transfer item for a given mime type.
+         *
+         * @param mimeType The mime type to get the data transfer item for, such as `text/plain` or `image/png`.
+         *
+         * Special mime types:
+         * - `text/uri-list` — A string with `toString()`ed Uris separated by `\r\n`. To specify a cursor position in the file,
+         * set the Uri's fragment to `L3,5`, where 3 is the line number and 5 is the column number.
+         */
+        get(mimeType: string): DataTransferItem | undefined;
+
+        /**
+         * Sets a mime type to data transfer item mapping.
+         * @param mimeType The mime type to set the data for.
+         * @param value The data transfer item for the given mime type.
+         */
+        set(mimeType: string, value: DataTransferItem): void;
+
+        /**
+         * Allows iteration through the data transfer items.
+         *
+         * @param callbackfn Callback for iteration through the data transfer items.
+         * @param thisArg The `this` context used when invoking the handler function.
+         */
+        forEach(callbackfn: (item: DataTransferItem, mimeType: string, dataTransfer: DataTransfer) => void, thisArg?: any): void;
+
+        /**
+         * Get a new iterator with the `[mime, item]` pairs for each element in this data transfer.
+         */
+        [Symbol.iterator](): IterableIterator<[mimeType: string, item: DataTransferItem]>;
+    }
+
+    /**
+     * Provides support for drag and drop in `TreeView`.
+     */
+    export interface TreeDragAndDropController<T> {
+
+        /**
+         * The mime types that the {@link TreeDragAndDropController.handleDrop `handleDrop`} method of this `DragAndDropController` supports.
+         * This could be well-defined, existing, mime types, and also mime types defined by the extension.
+         *
+         * To support drops from trees, you will need to add the mime type of that tree.
+         * This includes drops from within the same tree.
+         * The mime type of a tree is recommended to be of the format `application/vnd.code.tree.<treeidlowercase>`.
+         *
+         * Use the special `files` mime type to support all types of dropped files {@link DataTransferFile files}, regardless of the file's actual mime type.
+         *
+         * To learn the mime type of a dragged item:
+         * 1. Set up your `DragAndDropController`
+         * 2. Use the Developer: Set Log Level... command to set the level to "Debug"
+         * 3. Open the developer tools and drag the item with unknown mime type over your tree. The mime types will be logged to the developer console
+         *
+         * Note that mime types that cannot be sent to the extension will be omitted.
+         */
+        readonly dropMimeTypes: readonly string[];
+
+        /**
+         * The mime types that the {@link TreeDragAndDropController.handleDrag `handleDrag`} method of this `TreeDragAndDropController` may add to the tree data transfer.
+         * This could be well-defined, existing, mime types, and also mime types defined by the extension.
+         *
+         * The recommended mime type of the tree (`application/vnd.code.tree.<treeidlowercase>`) will be automatically added.
+         */
+        readonly dragMimeTypes: readonly string[];
+
+        /**
+         * When the user starts dragging items from this `DragAndDropController`, `handleDrag` will be called.
+         * Extensions can use `handleDrag` to add their {@link DataTransferItem `DataTransferItem`} items to the drag and drop.
+         *
+         * When the items are dropped on **another tree item** in **the same tree**, your `DataTransferItem` objects
+         * will be preserved. Use the recommended mime type for the tree (`application/vnd.code.tree.<treeidlowercase>`) to add
+         * tree objects in a data transfer. See the documentation for `DataTransferItem` for how best to take advantage of this.
+         *
+         * To add a data transfer item that can be dragged into the editor, use the application specific mime type "text/uri-list".
+         * The data for "text/uri-list" should be a string with `toString()`ed Uris separated by newlines. To specify a cursor position in the file,
+         * set the Uri's fragment to `L3,5`, where 3 is the line number and 5 is the column number.
+         *
+         * @param source The source items for the drag and drop operation.
+         * @param dataTransfer The data transfer associated with this drag.
+         * @param token A cancellation token indicating that drag has been cancelled.
+         */
+        handleDrag?(source: readonly T[], dataTransfer: DataTransfer, token: CancellationToken): Thenable<void> | void;
+
+        /**
+         * Called when a drag and drop action results in a drop on the tree that this `DragAndDropController` belongs to.
+         *
+         * Extensions should fire {@link TreeDataProvider.onDidChangeTreeData onDidChangeTreeData} for any elements that need to be refreshed.
+         *
+         * @param dataTransfer The data transfer items of the source of the drag.
+         * @param target The target tree element that the drop is occurring on. When undefined, the target is the root.
+         * @param token A cancellation token indicating that the drop has been cancelled.
+         */
+        handleDrop?(target: T | undefined, dataTransfer: DataTransfer, token: CancellationToken): Thenable<void> | void;
     }
 
     /**
@@ -7461,7 +7771,7 @@ export module '@theia/plugin' {
          * The `activeSignatureHelp` has its [`SignatureHelp.activeSignature`] field updated based on
          * the user arrowing through available signatures.
          */
-        readonly activeSignatureHelp?: SignatureHelp;
+        readonly activeSignatureHelp: SignatureHelp | undefined;
     }
 
     /**
@@ -8769,11 +9079,21 @@ export module '@theia/plugin' {
         source?: string;
 
         /**
-         * A code or identifier for this diagnostics. Will not be surfaced
-         * to the user, but should be used for later processing, e.g. when
-         * providing {@link CodeActionContext code actions}.
+         * A code or identifier for this diagnostic.
+         * Should be used for later processing, e.g. when providing {@link CodeActionContext code actions}.
          */
-        code?: string | number;
+        code?: string | number | {
+            /**
+             * A code or identifier for this diagnostic.
+             * Should be used for later processing, e.g. when providing {@link CodeActionContext code actions}.
+             */
+            value: string | number;
+
+            /**
+             * A target URI to open with more information about the diagnostic error.
+             */
+            target: Uri;
+        };
 
         /**
          * An array of related diagnostic information, e.g. when symbol-names within
@@ -9185,6 +9505,17 @@ export module '@theia/plugin' {
         static readonly RefactorInline: CodeActionKind;
 
         /**
+         * Base kind for refactoring inline actions: `refactor.move`
+         *
+         * Example move actions:
+         *
+         * - Move a function to a new file
+         * - Move a property between classes
+         * - Move method to base class
+         */
+        static readonly RefactorMove: CodeActionKind;
+
+        /**
          * Base kind for refactoring rewrite actions: `refactor.rewrite`
          *
          * Example rewrite actions:
@@ -9377,7 +9708,15 @@ export module '@theia/plugin' {
          * @param uri A resource identifier.
          * @param edits An array of text edits.
          */
-        set(uri: Uri, edits: TextEdit[]): void;
+        set(uri: Uri, edits: ReadonlyArray<TextEdit | SnippetTextEdit>): void;
+
+        /**
+         * Set (and replace) text edits or snippet edits with metadata for a resource.
+         *
+         * @param uri A resource identifier.
+         * @param edits An array of edits.
+         */
+        set(uri: Uri, edits: ReadonlyArray<[TextEdit | SnippetTextEdit, WorkspaceEditEntryMetadata]>): void;
 
         /**
          * Get the text edits for a resource.
@@ -10699,6 +11038,11 @@ export module '@theia/plugin' {
          * Controls whether the input box is visible (default is true).
          */
         visible: boolean;
+
+        /**
+         * Controls whether the input box is enabled (default is `true`).
+         */
+        enabled: boolean;
     }
 
     interface QuickDiffProvider {
@@ -12420,6 +12764,11 @@ export module '@theia/plugin' {
          * Label will be rendered next to authorName if exists.
          */
         label?: string;
+
+        /**
+         * Optional timestamp.
+         */
+        timestamp?: Date;
     }
 
     /**
@@ -14178,6 +14527,54 @@ export module '@theia/plugin' {
          * @stubbed
          */
         readonly selections?: readonly NotebookRange[];
+    }
+
+    /**
+     * A snippet edit represents an interactive edit that is performed by
+     * the editor.
+     *
+     * *Note* that a snippet edit can always be performed as a normal {@link TextEdit text edit}.
+     * This will happen when no matching editor is open or when a {@link WorkspaceEdit workspace edit}
+     * contains snippet edits for multiple files. In that case only those that match the active editor
+     * will be performed as snippet edits and the others as normal text edits.
+     */
+    export class SnippetTextEdit {
+
+        /**
+         * Utility to create a replace snippet edit.
+         *
+         * @param range A range.
+         * @param snippet A snippet string.
+         * @return A new snippet edit object.
+         */
+        static replace(range: Range, snippet: SnippetString): SnippetTextEdit;
+
+        /**
+         * Utility to create an insert snippet edit.
+         *
+         * @param position A position, will become an empty range.
+         * @param snippet A snippet string.
+         * @return A new snippet edit object.
+         */
+        static insert(position: Position, snippet: SnippetString): SnippetTextEdit;
+
+        /**
+         * The range this edit applies to.
+         */
+        range: Range;
+
+        /**
+         * The {@link SnippetString snippet} this edit will perform.
+         */
+        snippet: SnippetString;
+
+        /**
+         * Create a new snippet edit.
+         *
+         * @param range A range.
+         * @param snippet A snippet string.
+         */
+        constructor(range: Range, snippet: SnippetString);
     }
 
     /**

@@ -110,7 +110,7 @@ import type {
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ThemeType } from '@theia/core/lib/common/theme';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
+import { isString, isObject, PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
 import { Severity } from '@theia/core/lib/common/severity';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
 
@@ -269,6 +269,7 @@ export interface CommandRegistryExt {
 }
 
 export interface TerminalServiceExt {
+    $startProfile(providerId: string, cancellationToken: theia.CancellationToken): Promise<string>;
     $terminalCreated(id: string, name: string): void;
     $terminalNameChanged(id: string, name: string): void;
     $terminalOpened(id: string, processId: number, terminalId: number, cols: number, rows: number): void;
@@ -303,7 +304,7 @@ export interface TerminalServiceMain {
      * Create new Terminal with Terminal options.
      * @param options - object with parameters to create new terminal.
      */
-    $createTerminal(id: string, options: theia.TerminalOptions, isPseudoTerminal?: boolean): Promise<string>;
+    $createTerminal(id: string, options: theia.TerminalOptions, parentId?: string, isPseudoTerminal?: boolean): Promise<string>;
 
     /**
      * Send text to the terminal by id.
@@ -719,6 +720,12 @@ export interface DialogsMain {
     $showUploadDialog(options: UploadDialogOptionsMain): Promise<string[] | undefined>;
 }
 
+export interface RegisterTreeDataProviderOptions {
+    canSelectMany?: boolean
+    dragMimeTypes?: string[]
+    dropMimeTypes?: string[]
+}
+
 export interface TreeViewRevealOptions {
     select: boolean
     focus: boolean
@@ -726,7 +733,8 @@ export interface TreeViewRevealOptions {
 }
 
 export interface TreeViewsMain {
-    $registerTreeDataProvider(treeViewId: string): void;
+    $registerTreeDataProvider(treeViewId: string, options?: RegisterTreeDataProviderOptions): void;
+    $readDroppedFile(contentId: string): Promise<BinaryBuffer>;
     $unregisterTreeDataProvider(treeViewId: string): void;
     $refresh(treeViewId: string): Promise<void>;
     $reveal(treeViewId: string, elementParentChain: string[], options: TreeViewRevealOptions): Promise<any>;
@@ -734,8 +742,17 @@ export interface TreeViewsMain {
     $setTitle(treeViewId: string, title: string): void;
     $setDescription(treeViewId: string, description: string): void;
 }
+export class DataTransferFileDTO {
+    constructor(readonly name: string, readonly contentId: string, readonly uri?: UriComponents) { }
+
+    static is(value: string | DataTransferFileDTO): value is DataTransferFileDTO {
+        return !(typeof value === 'string');
+    }
+}
 
 export interface TreeViewsExt {
+    $dragStarted(treeViewId: string, treeItemIds: string[], token: CancellationToken): Promise<UriComponents[] | undefined>;
+    $drop(treeViewId: string, treeItemId: string | undefined, dataTransferItems: [string, string | DataTransferFileDTO][], token: CancellationToken): Promise<void>;
     $getChildren(treeViewId: string, treeItemId: string | undefined): Promise<TreeViewItem[] | undefined>;
     $hasResolveTreeItem(treeViewId: string): Promise<boolean>;
     $resolveTreeItem(treeViewId: string, treeItemId: string, token: CancellationToken): Promise<TreeViewItem | undefined>;
@@ -774,13 +791,13 @@ export interface TreeViewItem {
 
 }
 
-export interface TreeViewSelection {
-    treeViewId: string
-    treeItemId: string
+export interface TreeViewItemReference {
+    viewId: string
+    itemId: string
 }
-export namespace TreeViewSelection {
-    export function is(arg: unknown): arg is TreeViewSelection {
-        return !!arg && typeof arg === 'object' && 'treeViewId' in arg && 'treeItemId' in arg;
+export namespace TreeViewItemReference {
+    export function is(arg: unknown): arg is TreeViewItemReference {
+        return isObject(arg) && isString(arg.viewId) && isString(arg.itemId);
     }
 }
 
@@ -826,7 +843,7 @@ export interface ScmCommandArg {
 }
 export namespace ScmCommandArg {
     export function is(arg: unknown): arg is ScmCommandArg {
-        return !!arg && typeof arg === 'object' && 'sourceControlHandle' in arg;
+        return isObject(arg) && 'sourceControlHandle' in arg;
     }
 }
 
@@ -842,7 +859,7 @@ export interface ScmExt {
 
 export namespace TimelineCommandArg {
     export function is(arg: unknown): arg is TimelineCommandArg {
-        return !!arg && typeof arg === 'object' && 'timelineHandle' in arg;
+        return isObject(arg) && 'timelineHandle' in arg;
     }
 }
 export interface TimelineCommandArg {
@@ -861,7 +878,7 @@ export interface DecorationReply { [id: number]: DecorationData; }
 
 export namespace CommentsCommandArg {
     export function is(arg: unknown): arg is CommentsCommandArg {
-        return !!arg && typeof arg === 'object' && 'commentControlHandle' in arg && 'commentThreadHandle' in arg && 'text' in arg && !('commentUniqueId' in arg);
+        return isObject(arg) && 'commentControlHandle' in arg && 'commentThreadHandle' in arg && 'text' in arg && !('commentUniqueId' in arg);
     }
 }
 export interface CommentsCommandArg {
@@ -872,7 +889,7 @@ export interface CommentsCommandArg {
 
 export namespace CommentsContextCommandArg {
     export function is(arg: unknown): arg is CommentsContextCommandArg {
-        return !!arg && typeof arg === 'object' && 'commentControlHandle' in arg && 'commentThreadHandle' in arg && 'commentUniqueId' in arg && !('text' in arg);
+        return isObject(arg) && 'commentControlHandle' in arg && 'commentThreadHandle' in arg && 'commentUniqueId' in arg && !('text' in arg);
     }
 }
 export interface CommentsContextCommandArg {
@@ -883,7 +900,7 @@ export interface CommentsContextCommandArg {
 
 export namespace CommentsEditCommandArg {
     export function is(arg: unknown): arg is CommentsEditCommandArg {
-        return !!arg && typeof arg === 'object' && 'commentControlHandle' in arg && 'commentThreadHandle' in arg && 'commentUniqueId' in arg && 'text' in arg;
+        return isObject(arg) && 'commentControlHandle' in arg && 'commentThreadHandle' in arg && 'commentUniqueId' in arg && 'text' in arg;
     }
 }
 export interface CommentsEditCommandArg {
@@ -919,6 +936,7 @@ export interface ScmMain {
     $setInputBoxValue(sourceControlHandle: number, value: string): void;
     $setInputBoxPlaceholder(sourceControlHandle: number, placeholder: string): void;
     $setInputBoxVisible(sourceControlHandle: number, visible: boolean): void;
+    $setInputBoxEnabled(sourceControlHandle: number, enabled: boolean): void;
 }
 
 export interface SourceControlProviderFeatures {
@@ -1407,7 +1425,7 @@ export interface WorkspaceEditMetadataDto {
     } | {
         light: UriComponents;
         dark: UriComponents;
-    };
+    } | ThemeIcon;
 }
 
 export interface WorkspaceFileEditDto {
@@ -1420,9 +1438,8 @@ export interface WorkspaceFileEditDto {
 export interface WorkspaceTextEditDto {
     resource: UriComponents;
     modelVersionId?: number;
-    textEdit: TextEdit;
+    textEdit: TextEdit & { insertAsSnippet?: boolean };
     metadata?: WorkspaceEditMetadataDto;
-
 }
 export namespace WorkspaceTextEditDto {
     export function is(arg: WorkspaceTextEditDto | WorkspaceFileEditDto): arg is WorkspaceTextEditDto {
@@ -1800,6 +1817,7 @@ export interface DebugExt {
     $onSessionCustomEvent(sessionId: string, event: string, body?: any): void;
     $breakpointsDidChange(added: Breakpoint[], removed: string[], changed: Breakpoint[]): void;
     $sessionDidCreate(sessionId: string): void;
+    $sessionDidStart(sessionId: string): void;
     $sessionDidDestroy(sessionId: string): void;
     $sessionDidChange(sessionId: string | undefined): void;
     $provideDebugConfigurationsByHandle(handle: number, workspaceFolder: string | undefined): Promise<theia.DebugConfiguration[]>;
@@ -2036,7 +2054,7 @@ export interface TabsExt {
 export interface TabsMain {
     $moveTab(tabId: string, index: number, viewColumn: EditorGroupColumn, preserveFocus?: boolean): void;
     $closeTab(tabIds: string[], preserveFocus?: boolean): Promise<boolean>;
-    $closeGroup(groupIds: number[], preservceFocus?: boolean): Promise<boolean>;
+    $closeGroup(groupIds: number[], preserveFocus?: boolean): Promise<boolean>;
 }
 
 // endregion

@@ -146,6 +146,17 @@
     opacity: 1;
 }
 
+.debug-toolbar .debug-action>div {
+    font-family: var(--theia-ui-font-family);
+    font-size: var(--theia-ui-font-size0);
+    display: flex;
+    align-items: center;
+    align-self: center;
+    justify-content: center;
+    text-align: center;
+    min-height: inherit;
+}
+
 /** Console */
 
 #debug-console .theia-console-info {
@@ -338,7 +349,7 @@
 
 /** Hover */
 .theia-debug-hover {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     border: 1px solid var(--theia-editorHoverWidget-border);
     background: var(--theia-editorHoverWidget-background);

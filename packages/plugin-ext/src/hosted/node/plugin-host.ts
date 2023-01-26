@@ -13,8 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
-// eslint-disable-next-line import/no-extraneous-dependencies
-import 'reflect-metadata';
+import '@theia/core/shared/reflect-metadata';
 import { ConnectionClosedError, RPCProtocolImpl } from '../../common/rpc-protocol';
 import { ProcessTerminatedMessage, ProcessTerminateMessage } from './hosted-plugin-protocol';
 import { PluginHostRPC } from './plugin-host-rpc';

@@ -61,6 +61,7 @@ import {
     CompletionItemKind,
     CompletionList,
     TextEdit,
+    SnippetTextEdit,
     CompletionTriggerKind,
     Diagnostic,
     DiagnosticRelatedInformation,
@@ -92,6 +93,8 @@ import {
     CodeActionTriggerKind,
     TextDocumentSaveReason,
     CodeAction,
+    DataTransferItem,
+    DataTransfer,
     TreeItem,
     TreeItemCollapsibleState,
     DocumentSymbol,
@@ -152,6 +155,8 @@ import {
     TextDocumentChangeReason,
     InputBoxValidationSeverity,
     TerminalLink,
+    TerminalLocation,
+    TerminalProfile,
     InlayHint,
     InlayHintKind,
     InlayHintLabelPart,
@@ -520,7 +525,7 @@ export function createAPIFactory(
             registerTreeDataProvider<T>(viewId: string, treeDataProvider: theia.TreeDataProvider<T>): Disposable {
                 return treeViewsExt.registerTreeDataProvider(plugin, viewId, treeDataProvider);
             },
-            createTreeView<T>(viewId: string, options: { treeDataProvider: theia.TreeDataProvider<T> }): theia.TreeView<T> {
+            createTreeView<T>(viewId: string, options: theia.TreeViewOptions<T>): theia.TreeView<T> {
                 return treeViewsExt.createTreeView(plugin, viewId, options);
             },
             withScmProgress<R>(task: (progress: theia.Progress<number>) => Thenable<R>) {
@@ -545,6 +550,9 @@ export function createAPIFactory(
             },
             registerTerminalLinkProvider(provider: theia.TerminalLinkProvider): theia.Disposable {
                 return terminalExt.registerTerminalLinkProvider(provider);
+            },
+            registerTerminalProfileProvider(id: string, provider: theia.TerminalProfileProvider): theia.Disposable {
+                return terminalExt.registerTerminalProfileProvider(id, provider);
             },
             get activeColorTheme(): theia.ColorTheme {
                 return themingExt.activeColorTheme;
@@ -1088,7 +1096,7 @@ export function createAPIFactory(
                         notebook: theia.NotebookDocument,
                         controller: theia.NotebookController
                     ): (void | Thenable<void>) { },
-                    onDidChangeSelectedNotebooks: () => Disposable.create(() => {}),
+                    onDidChangeSelectedNotebooks: () => Disposable.create(() => { }),
                     updateNotebookAffinity: (notebook: theia.NotebookDocument, affinity: theia.NotebookControllerAffinity) => undefined,
                     dispose: () => undefined,
                 };
@@ -1099,7 +1107,7 @@ export function createAPIFactory(
             ) {
                 return {
                     rendererId,
-                    onDidReceiveMessage: () => Disposable.create(() => {} ),
+                    onDidReceiveMessage: () => Disposable.create(() => { }),
                     postMessage: () => Promise.resolve({}),
                 };
             },
@@ -1169,6 +1177,7 @@ export function createAPIFactory(
             Diagnostic,
             CompletionTriggerKind,
             TextEdit,
+            SnippetTextEdit,
             ProgressLocation,
             ProgressOptions,
             Progress,
@@ -1192,6 +1201,8 @@ export function createAPIFactory(
             CodeActionTriggerKind,
             TextDocumentSaveReason,
             CodeAction,
+            DataTransferItem,
+            DataTransfer,
             TreeItem,
             TreeItemCollapsibleState,
             SymbolKind,
@@ -1249,6 +1260,7 @@ export function createAPIFactory(
             SourceControlInputBoxValidationType,
             FileDecoration,
             TerminalLink,
+            TerminalProfile,
             CancellationError,
             ExtensionMode,
             LinkedEditingRanges,
@@ -1284,6 +1296,7 @@ export function createAPIFactory(
             TabInputNotebookDiff: NotebookDiffEditorTabInput,
             TabInputWebview: WebviewEditorTabInput,
             TabInputTerminal: TerminalEditorTabInput,
+            TerminalLocation
         };
     };
 }

@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { ILogger, RequestHandler } from '@theia/core/lib/common';
+import { ILogger } from '@theia/core/lib/common';
 import { TerminalProcess, ProcessManager } from '@theia/process/lib/node';
 import { terminalsPath } from '../common/terminal-protocol';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
-import { RpcProtocol } from '@theia/core/';
-import { BufferingStream } from './buffering-stream';
+import { StringBufferingStream } from './buffering-stream';
 
 @injectable()
 export class TerminalBackendContribution implements MessagingService.Contribution {
+    protected readonly decoder = new TextDecoder('utf-8');
 
     @inject(ProcessManager)
     protected readonly processManager: ProcessManager;
@@ -39,18 +39,17 @@ export class TerminalBackendContribution implements MessagingService.Contributio
                 const output = termProcess.createOutputStream();
                 // Create a RPC connection to the terminal process
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const requestHandler: RequestHandler = async (method: string, args: any[]) => {
-                    if (method === 'write' && args[0]) {
-                        termProcess.write(args[0]);
-                    } else {
-                        this.logger.warn('Terminal process received a request with an unsupported method or argument', { method, args });
-                    }
-                };
+                channel.onMessage(e => {
+                    termProcess.write(e().readString());
+                });
 
-                const rpc = new RpcProtocol(channel, requestHandler);
-                const buffer = new BufferingStream();
-                buffer.onData(chunk => rpc.sendNotification('onData', [chunk.toString('utf8')]));
-                output.on('data', chunk => buffer.push(Buffer.from(chunk, 'utf8')));
+                const buffer = new StringBufferingStream();
+                buffer.onData(chunk => {
+                    channel.getWriteBuffer().writeString(chunk).commit();
+                });
+                output.on('data', chunk => {
+                    buffer.push(chunk);
+                });
                 channel.onClose(() => {
                     buffer.dispose();
                     output.dispose();

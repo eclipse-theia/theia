@@ -23,6 +23,10 @@ export class URI {
         return new URI(Uri.revive(components));
     }
 
+    public static fromFilePath(path: string): URI {
+        return new URI(Uri.file(path));
+    }
+
     private readonly codeUri: Uri;
     private _path: Path | undefined;
 

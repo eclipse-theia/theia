@@ -22,7 +22,7 @@ import {
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
-import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment } from '../../common';
+import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment, isObject } from '../../common';
 import { animationFrame } from '../browser';
 import { Saveable, SaveableWidget, SaveOptions, SaveableSource } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
@@ -41,6 +41,8 @@ import { Deferred } from '../../common/promise-util';
 import { SaveResourceService } from '../save-resource-service';
 import { nls } from '../../common/nls';
 import { SecondaryWindowHandler } from '../secondary-window-handler';
+import URI from '../../common/uri';
+import { OpenerService } from '../opener-service';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -194,9 +196,13 @@ export class ApplicationShell extends Widget {
 
     private readonly tracker = new FocusTracker<Widget>();
     private dragState?: WidgetDragState;
+    additionalDraggedUris: URI[] | undefined;
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     protected readonly onDidAddWidgetEmitter = new Emitter<Widget>();
     readonly onDidAddWidget = this.onDidAddWidgetEmitter.event;
@@ -508,7 +514,66 @@ export class ApplicationShell extends Widget {
         dockPanel.id = MAIN_AREA_ID;
         dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
+
+        const openUri = async (fileUri: URI) => {
+            try {
+                const opener = await this.openerService.getOpener(fileUri);
+                opener.open(fileUri);
+            } catch (e) {
+                console.info(`no opener found for '${fileUri}'`);
+            }
+        };
+
+        dockPanel.node.addEventListener('drop', event => {
+            if (event.dataTransfer) {
+                const uris = this.additionalDraggedUris || ApplicationShell.getDraggedEditorUris(event.dataTransfer);
+                if (uris.length > 0) {
+                    uris.forEach(openUri);
+                } else if (event.dataTransfer.files?.length > 0) {
+                    // the files were dragged from the outside the workspace
+                    Array.from(event.dataTransfer.files).forEach(file => {
+                        if (file.path) {
+                            const fileUri = URI.fromComponents({
+                                scheme: 'file',
+                                path: file.path,
+                                authority: '',
+                                query: '',
+                                fragment: ''
+                            });
+                            openUri(fileUri);
+                        }
+                    });
+                }
+            }
+        });
+        const handler = (e: DragEvent) => {
+            if (e.dataTransfer) {
+                e.dataTransfer.dropEffect = 'link';
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
+        dockPanel.node.addEventListener('dragover', handler);
+        dockPanel.node.addEventListener('dragenter', handler);
+
         return dockPanel;
+    }
+
+    addAdditionalDraggedEditorUris(uris: URI[]): void {
+        this.additionalDraggedUris = uris;
+    }
+
+    clearAdditionalDraggedEditorUris(): void {
+        this.additionalDraggedUris = undefined;
+    }
+
+    protected static getDraggedEditorUris(dataTransfer: DataTransfer): URI[] {
+        const data = dataTransfer.getData('theia-editor-dnd');
+        return data ? data.split('\n').map(entry => new URI(entry)) : [];
+    }
+
+    static setDraggedEditorUris(dataTransfer: DataTransfer, uris: URI[]): void {
+        dataTransfer.setData('theia-editor-dnd', uris.map(uri => uri.toString()).join('\n'));
     }
 
     /**
@@ -1978,9 +2043,9 @@ export namespace ApplicationShell {
     export const areaLabels: Record<Area, string> = {
         main: nls.localizeByDefault('Main'),
         top: nls.localize('theia/shell-area/top', 'Top'),
-        left: nls.localize('theia/shell-area/left', 'Left'),
-        right: nls.localize('theia/shell-area/right', 'Right'),
-        bottom: nls.localize('theia/shell-area/bottom', 'Bottom'),
+        left: nls.localizeByDefault('Left'),
+        right: nls.localizeByDefault('Right'),
+        bottom: nls.localizeByDefault('Bottom'),
         secondaryWindow: nls.localize('theia/shell-area/secondary', 'Secondary Window'),
     };
 
@@ -2118,7 +2183,7 @@ export namespace ApplicationShell {
 
     export namespace TrackableWidgetProvider {
         export function is(widget: unknown): widget is TrackableWidgetProvider {
-            return !!widget && typeof widget === 'object' && 'getTrackableWidgets' in widget;
+            return isObject(widget) && 'getTrackableWidgets' in widget;
         }
     }
 

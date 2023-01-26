@@ -14,8 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import URI from '../common/uri';
-import { MaybeArray } from '../common/types';
+import { URI, isObject, MaybeArray } from '../common';
 import { Widget, BaseWidget } from './widgets';
 
 /**
@@ -34,7 +33,7 @@ export interface Navigatable {
 
 export namespace Navigatable {
     export function is(arg: unknown): arg is Navigatable {
-        return !!arg && typeof arg === 'object' && 'getResourceUri' in arg && 'createMoveToUri' in arg;
+        return isObject(arg) && 'getResourceUri' in arg && 'createMoveToUri' in arg;
     }
 }
 
@@ -71,12 +70,12 @@ export namespace NavigatableWidget {
 }
 
 export interface NavigatableWidgetOptions {
-    kind: 'navigatable',
-    uri: string,
-    counter?: number,
+    kind: 'navigatable';
+    uri: string;
+    counter?: number;
 }
 export namespace NavigatableWidgetOptions {
     export function is(arg: unknown): arg is NavigatableWidgetOptions {
-        return !!arg && typeof arg === 'object' && 'kind' in arg && (arg as NavigatableWidgetOptions).kind === 'navigatable';
+        return isObject(arg) && arg.kind === 'navigatable';
     }
 }

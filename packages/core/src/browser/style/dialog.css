@@ -61,15 +61,16 @@
     display: flex;
     flex-grow: 2;
     flex-direction: column;
-    justify-content: space-around;
     align-items: stretch;
     position: relative;
     padding: calc(var(--theia-ui-padding)*2);
+    white-space: pre-line;
+    max-height: 70vh;
+    overflow-y: auto;
 }
 
 .p-Widget.dialogOverlay .dialogControl {
     padding: calc(var(--theia-ui-padding)*2);
-    padding-top: 0px;
     display: flex;
     flex-direction: row;
     align-content: right;

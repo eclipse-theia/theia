@@ -17,7 +17,7 @@
 import { Terminal, RendererType } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, RpcProtocol, RequestHandler } from '@theia/core';
+import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, Channel, OS } from '@theia/core';
 import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon, ExtractableWidget } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -25,7 +25,7 @@ import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/s
 import { terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalServer, TerminalProcessInfo } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus } from './base/terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus, TerminalLocationOptions, TerminalLocation } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE, CursorStyle } from './terminal-preferences';
 import URI from '@theia/core/lib/common/uri';
@@ -53,6 +53,7 @@ export interface TerminalContribution {
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget, ExtractableWidget {
     readonly isExtractable: boolean = true;
     secondaryWindow: Window | undefined;
+    location: TerminalLocationOptions;
 
     static LABEL = nls.localizeByDefault('Terminal');
 
@@ -66,7 +67,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected searchBox: TerminalSearchWidget;
     protected restored = false;
     protected closeOnDispose = true;
-    protected waitForConnection: Deferred<RpcProtocol> | undefined;
+    protected waitForConnection: Deferred<Channel> | undefined;
     protected linkHover: HTMLDivElement;
     protected linkHoverButton: HTMLAnchorElement;
     protected lastTouchEnd: TouchEvent | undefined;
@@ -116,7 +117,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @postConstruct()
     protected init(): void {
         this.setTitle(this.options.title || TerminalWidgetImpl.LABEL);
-        this.title.iconClass = codicon('terminal');
+
+        if (this.options.iconClass) {
+            this.title.iconClass = this.options.iconClass;
+        } else {
+            this.title.iconClass = codicon('terminal');
+        }
 
         if (this.options.kind) {
             this.terminalKind = this.options.kind;
@@ -127,6 +133,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 this.term.dispose()
             ));
         }
+
+        this.location = this.options.location || TerminalLocation.Panel;
 
         this.title.closable = true;
         this.addClass('terminal-container');
@@ -404,6 +412,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.options.hideFromUser ?? false;
     }
 
+    get transient(): boolean {
+        // The terminal is transient if session persistence is disabled or it's explicitly marked as transient
+        return !this.preferences['terminal.integrated.enablePersistentSessions'] || !!this.options.isTransient;
+    }
+
     onDispose(onDispose: () => void): void {
         this.toDispose.push(Disposable.create(onDispose));
     }
@@ -418,15 +431,15 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     storeState(): object {
         this.closeOnDispose = false;
-        if (this.options.isPseudoTerminal) {
+        if (this.transient || this.options.isPseudoTerminal) {
             return {};
         }
         return { terminalId: this.terminalId, titleLabel: this.title.label };
     }
 
     restoreState(oldState: object): void {
-        // pseudo terminal can not restore
-        if (this.options.isPseudoTerminal) {
+        // transient terminals and pseudo terminals are not restored
+        if (this.transient || this.options.isPseudoTerminal) {
             this.dispose();
             return;
         }
@@ -479,9 +492,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         const { cols, rows } = this.term;
 
         const terminalId = await this.shellTerminalServer.create({
-            shellPreferences: this.shellPreferences,
-            shell: this.options.shellPath,
-            args: this.options.shellArgs,
+            shell: this.options.shellPath || this.shellPreferences.shell[OS.backend.type()],
+            args: this.options.shellArgs || this.shellPreferences.shellArgs[OS.backend.type()],
             env: this.options.env,
             strictEnv: this.options.strictEnv,
             isPseudo: this.options.isPseudoTerminal,
@@ -563,23 +575,18 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.toDisposeOnConnect.dispose();
         this.toDispose.push(this.toDisposeOnConnect);
-        const waitForConnection = this.waitForConnection = new Deferred<RpcProtocol>();
+        const waitForConnection = this.waitForConnection = new Deferred<Channel>();
         this.webSocketConnectionProvider.listen({
             path: `${terminalsPath}/${this.terminalId}`,
             onConnection: connection => {
-                const requestHandler: RequestHandler = _method => this.logger.warn('Received an unhandled RPC request from the terminal process');
-
-                const rpc = new RpcProtocol(connection, requestHandler);
-                rpc.onNotification(event => {
-                    if (event.method === 'onData') {
-                        this.write(event.args[0]);
-                    }
+                connection.onMessage(e => {
+                    this.write(e().readString());
                 });
 
                 // Excludes the device status code emitted by Xterm.js
                 const sendData = (data?: string) => {
                     if (data && !this.deviceStatusCodes.has(data) && !this.disableEnterWhenAttachCloseListener()) {
-                        return rpc.sendRequest('write', [data]);
+                        connection.getWriteBuffer().writeString(data).commit();
                     }
                 };
 
@@ -590,7 +597,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 connection.onClose(() => disposable.dispose());
 
                 if (waitForConnection) {
-                    waitForConnection.resolve(rpc);
+                    waitForConnection.resolve(connection);
                 }
             }
         }, { reconnecting: false });
@@ -664,7 +671,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     sendText(text: string): void {
         if (this.waitForConnection) {
             this.waitForConnection.promise.then(connection =>
-                connection.sendRequest('write', [text])
+                connection.getWriteBuffer().writeString(text).commit()
             );
         }
     }

@@ -53,6 +53,7 @@ export const SELECT_COMPONENT_CONTAINER = 'select-component-container';
 export class SelectComponent extends React.Component<SelectComponentProps, SelectComponentState> {
     protected dropdownElement: HTMLElement;
     protected fieldRef = React.createRef<HTMLDivElement>();
+    protected dropdownRef = React.createRef<HTMLDivElement>();
     protected mountedListeners: Map<string, EventListenerOrEventListenerObject> = new Map();
     protected optimalWidth = 0;
     protected optimalHeight = 0;
@@ -124,8 +125,10 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
     }
 
     protected attachListeners(): void {
-        const hide = () => {
-            this.hide();
+        const hide = (event: MouseEvent) => {
+            if (!this.dropdownRef.current?.contains(event.target as Node)) {
+                this.hide();
+            }
         };
         this.mountedListeners.set('scroll', hide);
         this.mountedListeners.set('wheel', hide);
@@ -317,8 +320,9 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             bottom: invert ? clientRect.top + clientRect.height - this.state.dimensions.top : 'none',
             left: this.state.dimensions.left,
             width: Math.min(calculatedWidth, maxWidth),
+            maxHeight: clientRect.height - (invert ? clientRect.height - this.state.dimensions.bottom : this.state.dimensions.top) - this.state.dimensions.height,
             position: 'absolute'
-        }}>
+        }} ref={this.dropdownRef}>
             {items}
         </div>;
     }

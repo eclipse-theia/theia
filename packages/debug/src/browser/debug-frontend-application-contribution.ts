@@ -483,8 +483,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                 action: async () => {
                     if (this.manager.currentSession) {
                         const msg = this.manager.sessions.length === 1
-                            ? nls.localize('theia/debug/debugSessionActive', 'There is an active debug session, are you sure you want to stop it?')
-                            : nls.localize('theia/debug/debugSessionActiveMultiple', 'There are active debug sessions, are you sure you want to stop them?');
+                            ? nls.localizeByDefault('There is an active debug session, are you sure you want to stop it?')
+                            : nls.localizeByDefault('There are active debug sessions, are you sure you want to stop them?');
                         const safeToExit = await new ConfirmDialog({
                             title: '',
                             msg,

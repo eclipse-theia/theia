@@ -21,7 +21,10 @@ export class DebugAction extends React.Component<DebugAction.Props> {
 
     override render(): React.ReactNode {
         const { enabled, label, iconClass } = this.props;
-        const classNames = ['debug-action', ...codiconArray(iconClass, true)];
+        const classNames = ['debug-action'];
+        if (iconClass) {
+            classNames.push(...codiconArray(iconClass, true));
+        }
         if (enabled === false) {
             classNames.push(DISABLED_CLASS);
         }
@@ -29,7 +32,9 @@ export class DebugAction extends React.Component<DebugAction.Props> {
             className={classNames.join(' ')}
             title={label}
             onClick={this.props.run}
-            ref={this.setRef} />;
+            ref={this.setRef} >
+            {!iconClass && <div>{label}</div>}
+        </span>;
     }
 
     focus(): void {

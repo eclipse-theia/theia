@@ -39,8 +39,7 @@ export const workspaceTrustPreferenceSchema: PreferenceSchema = {
             defaultValue: true
         },
         [WORKSPACE_TRUST_STARTUP_PROMPT]: {
-            // nls-todo: This string will be available in vscode starting from API version 1.57.0
-            description: nls.localize('theia/workspace/trustPrompt', 'Controls when the startup prompt to trust a workspace is shown.'),
+            description: nls.localizeByDefault('Controls when the startup prompt to trust a workspace is shown.'),
             enum: Object.values(WorkspaceTrustPrompt),
             defaultValue: WorkspaceTrustPrompt.ALWAYS
         },
