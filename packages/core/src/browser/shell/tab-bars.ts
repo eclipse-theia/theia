@@ -546,6 +546,7 @@ export class TabBarRenderer extends TabBar.Renderer {
  * A specialized tab bar for the main and bottom areas.
  */
 export class ScrollableTabBar extends TabBar<Widget> {
+
     protected scrollBar?: PerfectScrollbar;
 
     private scrollBarFactory: () => PerfectScrollbar;

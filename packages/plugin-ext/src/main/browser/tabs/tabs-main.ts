@@ -83,7 +83,7 @@ export class TabsMainImp implements TabsMain, Disposable {
                     this.tabGroupChanged = false;
                     this.createTabsModel();
                 } else {
-                    const tabInfo = this.tabInfoLookup.get(widget.title)!;
+                    const tabInfo = this.getOrRebuildModel(this.tabInfoLookup, widget.title)!;
                     this.onTabClosed(tabInfo, widget.title);
                 }
             }
@@ -108,7 +108,7 @@ export class TabsMainImp implements TabsMain, Disposable {
             newTabGroupModel.values().next().value.isActive = true; // allways needs one active group, so if there is none we just take the first one
         }
         this.tabGroupModel = newTabGroupModel;
-        this.proxy.$acceptEditorTabModel(this.transformModelToArray());
+        this.proxy.$acceptEditorTabModel(Array.from(this.tabGroupModel.values()));
     }
 
     protected createTabDto(tabTitle: Title<Widget>, groupId: number): TabDto {
@@ -143,11 +143,11 @@ export class TabsMainImp implements TabsMain, Disposable {
                 groupIsActive = true;
             }
             return tabDto;
-            });
-            const viewColumn = 1;
-            return {
-                groupId, tabs, isActive: groupIsActive, viewColumn
-            };
+        });
+        const viewColumn = 1;
+        return {
+            groupId, tabs, isActive: groupIsActive, viewColumn
+        };
     }
 
     protected attachListenersToTabBar(tabBar: TabBar<Widget> | undefined): void {
@@ -196,10 +196,6 @@ export class TabsMainImp implements TabsMain, Disposable {
         disposableList.push(Disposable.create(() => signal.disconnect(listener)));
     }
 
-    protected transformModelToArray(): TabGroupDto[] {
-        return Array.from(this.tabGroupModel.values());
-    }
-
     protected tabDtosEqual(a: TabDto, b: TabDto): boolean {
         return a.isActive === b.isActive &&
             a.isDirty === b.isDirty &&
@@ -208,9 +204,19 @@ export class TabsMainImp implements TabsMain, Disposable {
             a.id === b.id;
     }
 
+    protected getOrRebuildModel<T, R>(map: Map<T, R>, key: T): R {
+        // something broke so we rebuild the model
+        let item = map.get(key);
+        if (!item) {
+            this.createTabsModel();
+            item = map.get(key)!;
+        }
+        return item;
+    }
+
     // #region event listeners
     private onTabCreated(tabBar: TabBar<Widget>, args: TabBar.ITabActivateRequestedArgs<Widget>): void {
-        const group = this.tabGroupModel.get(tabBar)!;
+        const group = this.getOrRebuildModel(this.tabGroupModel, tabBar);
         this.connectToSignal(this.disposableTabBarListeners, args.title.changed, this.onTabTitleChanged);
         const tabDto = this.createTabDto(args.title, group.groupId);
         this.tabInfoLookup.set(args.title, { group, tab: tabDto, tabIndex: args.index });
@@ -224,7 +230,7 @@ export class TabsMainImp implements TabsMain, Disposable {
     }
 
     private onTabTitleChanged(title: Title<Widget>): void {
-        const tabInfo = this.tabInfoLookup.get(title);
+        const tabInfo = this.getOrRebuildModel(this.tabInfoLookup, title);
         if (!tabInfo) {
             return;
         }
@@ -259,7 +265,7 @@ export class TabsMainImp implements TabsMain, Disposable {
     }
 
     private onTabMoved(tabBar: TabBar<Widget>, args: TabBar.ITabMovedArgs<Widget>): void {
-        const tabInfo = this.tabInfoLookup.get(args.title)!;
+        const tabInfo = this.getOrRebuildModel(this.tabInfoLookup, args.title)!;
         tabInfo.tabIndex = args.toIndex;
         const tabDto = this.createTabDto(args.title, tabInfo.group.groupId);
         tabInfo.group.tabs.splice(args.fromIndex, 1);
@@ -293,9 +299,11 @@ export class TabsMainImp implements TabsMain, Disposable {
             if (!widget) {
                 continue;
             }
+            if (widget.title === this.applicationShell.mainPanel.currentTitle) {
+                this.applicationShell.activateNextTabInTabBar();
+            }
             widget.dispose();
-            // TODO if this was an active widget/tab we need to activate another widget in the the parent widget/group
-            // after disposing this. If this was the last one the first widget in the first group should be activated.
+
         }
         return true;
     }
