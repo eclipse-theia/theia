@@ -99,7 +99,7 @@
   "theiaPluginsDir": "plugins",
   "theiaPlugins": {
     "vscode.markdown-language-features": "https://open-vsx.org/api/vscode/markdown-language-features/1.64.2/file/vscode.markdown-language-features-1.64.2.vsix",
-    "eclipse-theia.builtin-extension-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.64.2/file/eclipse-theia.builtin-extension-pack-1.64.2.vsix",
+    "eclipse-theia.builtin-extension-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.66.2/file/eclipse-theia.builtin-extension-pack-1.66.2.vsix",
     "EditorConfig.EditorConfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/0.14.4/file/EditorConfig.EditorConfig-0.14.4.vsix",
     "dbaeumer.vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.1.20/file/dbaeumer.vscode-eslint-2.1.20.vsix",
     "ms-vscode.references-view": "https://open-vsx.org/api/ms-vscode/references-view/0.0.89/file/ms-vscode.references-view-0.0.89.vsix"
@@ -111,6 +111,7 @@
     "vscode.git-base",
     "vscode.github",
     "vscode.github-authentication",
+    "vscode.ipynb",
     "vscode.microsoft-authentication"
   ]
 }
