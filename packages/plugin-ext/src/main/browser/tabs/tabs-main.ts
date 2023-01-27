@@ -79,12 +79,11 @@ export class TabsMainImp implements TabsMain, Disposable {
 
         this.connectToSignal(this.toDisposeOnDestroy, this.applicationShell.mainPanel.widgetRemoved, (mainPanel, widget) => {
             if (!(widget instanceof TabBar)) {
+                const tabInfo = this.getOrRebuildModel(this.tabInfoLookup, widget.title)!;
+                this.onTabClosed(tabInfo, widget.title);
                 if (this.tabGroupChanged) {
                     this.tabGroupChanged = false;
                     this.createTabsModel();
-                } else {
-                    const tabInfo = this.getOrRebuildModel(this.tabInfoLookup, widget.title)!;
-                    this.onTabClosed(tabInfo, widget.title);
                 }
             }
         });
