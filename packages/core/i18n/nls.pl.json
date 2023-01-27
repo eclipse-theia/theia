@@ -1,5 +1,6 @@
 {
-  "disassemblyView": "Widok z demontażu",
+  "terminal:new:profile": "Tworzenie nowego zintegrowanego terminalu z profilu",
+  "terminal:profile:default": "Wybierz domyślny profil terminala",
   "theia": {
     "callhierarchy": {
       "noCallers": "Nie wykryto żadnych rozmówców.",
@@ -8,9 +9,9 @@
     "core": {
       "about": {
         "compatibility": "{0} Zgodność",
-        "defaultApi": "Domyślnie {0} API"
+        "defaultApi": "Domyślnie {0} API",
+        "version": "Wersja"
       },
-      "availableLanguages": "Dostępne języki",
       "common": {
         "closeAll": "Zamknij wszystkie karty",
         "closeAllTabMain": "Zamknij wszystkie karty w obszarze głównym",
@@ -32,7 +33,6 @@
         "browse": "Przeglądaj stronę"
       },
       "highlightModifiedTabs": "Określa, czy na zmodyfikowanych (brudnych) zakładkach edytora ma być wyświetlana górna ramka.",
-      "installedLanguages": "Zainstalowane języki",
       "keybindingStatus": "{0} zostało naciśnięte, oczekiwanie na kolejne klawisze",
       "keyboard": {
         "choose": "Wybierz układ klawiatury",
@@ -43,11 +43,8 @@
         "pc": "Klawiatury PC",
         "tryDetect": "Spróbuj wykryć układ klawiatury na podstawie informacji z przeglądarki i wciśniętych klawiszy."
       },
-      "mouseBackForwardToNavigate": "Umożliwia korzystanie z przycisków myszy 4 i 5 dla poleceń \"Idź do tyłu\" i \"Idź do przodu\".",
       "offline": "Offline",
-      "proxySupportFallback": "Włączenie obsługi serwerów proxy dla rozszerzeń, powrót do opcji żądania, jeśli nie znaleziono serwerów proxy.",
       "quitMessage": "Wszelkie niezapisane zmiany nie zostaną zapisane.",
-      "quitTitle": "Czy na pewno chcesz rzucić palenie?",
       "resetWorkbenchLayout": "Resetuj układ stołu warsztatowego",
       "searchbox": {
         "close": "Zamknij (Ucieczka)",
@@ -62,99 +59,30 @@
       "compound-cycle": "Konfiguracja startowa \"{0}\" zawiera cykl z samym sobą",
       "continueAll": "Kontynuuj Wszystko",
       "copyExpressionValue": "Kopiuj wartość wyrażenia",
-      "debugSessionActive": "Jest aktywna sesja debugowania, czy na pewno chcesz ją zatrzymać?",
-      "debugSessionActiveMultiple": "Istnieją aktywne sesje debugowania, czy na pewno chcesz je zatrzymać?",
-      "disassembly-view": {
-        "disassembly": "Demontaż",
-        "show-source-code": "Pokaż kod źródłowy w widoku demontażu."
-      },
+      "debugVariableInput": "Ustaw {0} Wartość",
       "instruction-breakpoint": "Punkt przerwania instrukcji",
-      "instructionAddress": "Adres",
-      "instructionBytes": "Bajty",
-      "instructionNotAvailable": "Demontaż nie jest dostępny.",
-      "instructionText": "Instrukcja",
       "missingConfiguration": "Brak konfiguracji dynamicznej \"{0}:{1}\" lub nie ma ona zastosowania.",
-      "open-disassembly-view": "Otwarty widok demontażu",
       "pauseAll": "Pauza Wszystkie",
       "reveal": "Ujawnij",
       "threads": "Nici",
       "toggleTracing": "Włączanie/wyłączanie śledzenia komunikacji z adapterami debugowania"
     },
-    "disassembly-view": {
-      "disassemblyTableColumnLabel": "instrukcje"
-    },
     "editor": {
       "diffEditor.diffAlgorithm.experimental": "Wykorzystuje eksperymentalny algorytm diffingu.",
       "diffEditor.diffAlgorithm.smart": "Używa domyślnego algorytmu dyfuzji.",
-      "diffEditor.maxFileSize": "Maksymalny rozmiar pliku w MB, dla którego mają być obliczane różnice. Wartość 0 oznacza brak limitu.",
       "diffEditor.renderMarginRevertIcon": "Kiedy jest włączony, edytor dyfuzji pokazuje strzałki na swoim marginesie glifów, aby odwrócić zmiany.",
-      "editor.accessibilityPageSize": "Określa liczbę linii w edytorze, które mogą być odczytywane jednocześnie przez czytnik ekranu. Po wykryciu czytnika ekranu automatycznie ustawiamy wartość domyślną na 500. Uwaga: ma to wpływ na wydajność w przypadku liczb większych niż domyślne.",
-      "editor.bracketPairColorization.enabled": "Określa, czy kolorowanie par nawiasów jest włączone, czy nie. Użyj 'workbench.colorCustomizations', aby zmienić kolory podświetlenia nawiasów.",
-      "editor.bracketPairColorization.independentColorPoolPerBracketType": "Kontroluje, czy każdy typ wspornika ma swoją własną, niezależną pulę kolorów.",
+      "dirtyEncoding": "Plik jest zabrudzony. Proszę zapisać go najpierw przed ponownym otwarciem z innym kodowaniem.",
       "editor.codeActionWidget.showHeaders": "Włączenie/wyłączenie pokazywania nagłówków grup w menu akcji kodu.",
-      "editor.codeLensFontSize": "Kontroluje rozmiar czcionki w pikselach dla CodeLens. Gdy ustawione na `0`, używane jest 90% z `#editor.fontSize#`.",
-      "editor.dropIntoEditor.enabled": "Kontroluje czy możesz przeciągnąć i upuścić plik do edytora tekstu przytrzymując `shift` (zamiast otwierać plik w edytorze).",
-      "editor.experimental.pasteActions.enabled": "Włączanie/wyłączanie działających edycji z rozszerzeń na wklejanie.",
-      "editor.find.seedSearchStringFromSelection0": "Nigdy nie należy wybierać łańcucha wyszukiwania nasion w edytorze.",
-      "editor.find.seedSearchStringFromSelection1": "Zawsze wyszukuje ciąg znaków z zaznaczonego edytora, włączając w to słowo znajdujące się na pozycji kursora.",
-      "editor.find.seedSearchStringFromSelection2": "Wyszukuje tylko ciąg znaków z edytora.",
-      "editor.foldingImportsByDefault": "Określa, czy edytor ma automatycznie zwijać zakresy importu.",
-      "editor.foldingMaximumRegions": "Maksymalna liczba regionów składanych. Zwiększenie tej wartości może spowodować, że edytor będzie gorzej reagował, gdy źródło prądu ma dużą liczbę składanych regionów.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Spowoduje próbę sformatowania tylko modyfikacji (wymaga kontroli źródła). Jeśli kontrola źródła nie może być użyta, sformatowany zostanie cały plik.",
-      "editor.guides.bracketPairs": "Określa, czy prowadnice par wsporników są włączone, czy nie.",
-      "editor.guides.bracketPairs0": "Włącza prowadnice par wsporników.",
-      "editor.guides.bracketPairs1": "Włącza prowadnice pary wsporników tylko dla aktywnej pary wsporników.",
-      "editor.guides.bracketPairs2": "Wyłącza prowadnice par wsporników.",
-      "editor.guides.bracketPairsHorizontal": "Określa, czy prowadnice par wsporników poziomych są włączone, czy nie.",
-      "editor.guides.bracketPairsHorizontal0": "Włącza prowadnice poziome jako dodatek do prowadnic pionowych par wsporników.",
-      "editor.guides.bracketPairsHorizontal1": "Włącza prowadnice poziome tylko dla aktywnej pary wsporników.",
-      "editor.guides.bracketPairsHorizontal2": "Wyłącza prowadnice par wsporników poziomych.",
-      "editor.guides.highlightActiveBracketPair": "Określa, czy edytor ma podświetlać aktywną parę nawiasów.",
-      "editor.guides.highlightActiveIndentation0": "Podświetla aktywną prowadnicę wcięcia.",
-      "editor.guides.highlightActiveIndentation1": "Podświetla aktywną prowadnicę wcięcia, nawet jeśli prowadnice wsporników są podświetlone.",
-      "editor.guides.highlightActiveIndentation2": "Nie podświetlaj aktywnego przewodnika po wcięciach.",
-      "editor.hover.above": "Preferuj wyświetlanie nad linią, jeśli jest na to miejsce.",
-      "editor.inlayHints.enabled": "Włącza podpowiedzi wkładek w edytorze.",
-      "editor.inlayHints.enabled0": "Podpowiedzi dotyczące nakładek są włączone",
       "editor.inlayHints.enabled1": "Podpowiedzi są domyślnie wyświetlane i ukrywają się po przytrzymaniu `Ctrl+Alt`.",
       "editor.inlayHints.enabled2": "Podpowiedzi są domyślnie ukryte i pokazują się po przytrzymaniu `Ctrl+Alt`.",
-      "editor.inlayHints.enabled3": "Podpowiedzi układania są wyłączone",
-      "editor.inlayHints.fontFamily": "Kontroluje rodzinę czcionek podpowiedzi wkładek w edytorze. Jeśli jest ustawione na puste, używana jest `#editor.fontFamily#`.",
-      "editor.inlayHints.fontSize": "Kontroluje rozmiar czcionki podpowiedzi wkładek w edytorze. Domyślnie 90% `#editor.fontSize#` jest używane, gdy skonfigurowana wartość jest mniejsza niż `5` lub większa niż rozmiar czcionki edytora.",
-      "editor.inlayHints.padding": "Włącza padding wokół podpowiedzi inlay w edytorze.",
-      "editor.inlineSuggest.enabled": "Określa, czy w edytorze mają być automatycznie wyświetlane sugestie inline.",
-      "editor.language.colorizedBracketPairs": "Określa pary nawiasów, które są kolorowane według poziomu ich zagnieżdżenia, jeśli kolorowanie par nawiasów jest włączone.",
-      "editor.lineHeight": "Steruje wysokością wiersza.\n - Wartość 0 powoduje automatyczne obliczenie wysokości wiersza na podstawie rozmiaru czcionki.\n - Wartości z przedziału od 0 do 8 zostaną użyte jako mnożnik rozmiaru czcionki.\n - Wartości większe lub równe 8 będą używane jako wartości efektywne.",
       "editor.minimap.autohide": "Kontroluje, czy minimapa jest automatycznie ukrywana.",
       "editor.multiCursorModifier": "Modyfikator, który ma być użyty do dodania wielu kursorów za pomocą myszy. Gesty myszy Przejdź do definicji i Otwórz łącze dostosują się tak, by nie kolidowały z modyfikatorem [wielokursorowy modyfikator](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier).",
       "editor.quickSuggestions": "Kontroluje czy sugestie powinny być automatycznie wyświetlane podczas pisania. Można to kontrolować w przypadku wpisywania komentarzy, ciągów znaków i innego kodu. Szybkie sugestie mogą być skonfigurowane tak, aby pokazywały się jako tekst widma lub z widżetem sugestii. Należy również pamiętać o ustawieniu '#editor.suggestOnTriggerCharacters#', które kontroluje czy sugestie są uruchamiane przez znaki specjalne.",
-      "editor.quickSuggestions0": "Szybkie sugestie wyświetlane wewnątrz widżetu sugestii",
-      "editor.quickSuggestions1": "Szybkie sugestie są wyświetlane jako tekst widmo",
-      "editor.quickSuggestions2": "Szybkie sugestie są wyłączone",
-      "editor.scrollbar.horizontal": "Umożliwia sterowanie widocznością poziomego paska przewijania.",
-      "editor.scrollbar.horizontal0": "Poziomy pasek przewijania będzie widoczny tylko wtedy, gdy będzie to konieczne.",
-      "editor.scrollbar.horizontal1": "Poziomy pasek przewijania będzie zawsze widoczny.",
-      "editor.scrollbar.horizontal2": "Poziomy pasek przewijania będzie zawsze ukryty.",
-      "editor.scrollbar.horizontalScrollbarSize": "Wysokość poziomego paska przewijania.",
-      "editor.scrollbar.scrollByPage": "Określa, czy kliknięcia mają być przewijane według strony, czy przeskakiwać do pozycji kliknięcia.",
-      "editor.scrollbar.vertical": "Umożliwia sterowanie widocznością pionowego paska przewijania.",
-      "editor.scrollbar.vertical0": "Pionowy pasek przewijania będzie widoczny tylko wtedy, gdy będzie to konieczne.",
-      "editor.scrollbar.vertical1": "Pionowy pasek przewijania będzie zawsze widoczny.",
-      "editor.scrollbar.vertical2": "Pionowy pasek przewijania będzie zawsze ukryty.",
-      "editor.scrollbar.verticalScrollbarSize": "Szerokość pionowego paska przewijania.",
       "editor.showFoldingControls1": "Nigdy nie należy pokazywać elementów sterujących składaniem i zmniejszać wielkości rynny.",
       "editor.stickyScroll.enabled": "Pokazuje zagnieżdżone bieżące zakresy podczas przewijania na górze edytora.",
       "editor.stickyScroll.maxLineCount": "Określa maksymalną liczbę lepkich linii do pokazania.",
       "editor.suggest.matchOnWordStartOnly": "Kiedy włączone filtrowanie IntelliSense wymaga, aby pierwszy znak pasował na początku słowa, np. `c` na `Console` lub `WebContext` ale _nie_ na `description`. Kiedy wyłączone IntelliSense pokaże więcej wyników, ale nadal sortuje je według jakości dopasowania.",
-      "editor.suggest.preview": "Określa, czy podgląd wyniku sugestii ma być wyświetlany w edytorze.",
-      "editor.suggest.showDeprecated": "Po włączeniu IntelliSense pokazuje sugestie `deprecated`.",
-      "editor.unicodeHighlight.allowedCharacters": "Określa dozwolone znaki, które nie są podświetlane.",
-      "editor.unicodeHighlight.allowedLocales": "Znaki Unicode, które są powszechne w dozwolonych lokalizacjach, nie są wyróżniane.",
-      "editor.unicodeHighlight.ambiguousCharacters": "Określa, czy podświetlane są znaki, które mogą być mylone z podstawowymi znakami ASCII, z wyjątkiem tych, które są powszechnie używane w bieżących ustawieniach lokalnych użytkownika.",
-      "editor.unicodeHighlight.includeComments": "Określa, czy znaki w komentarzach również powinny być wyróżniane za pomocą znaków unicode.",
-      "editor.unicodeHighlight.includeStrings": "Określa, czy znaki w łańcuchach mają być także wyróżniane w trybie unicode.",
-      "editor.unicodeHighlight.invisibleCharacters": "Określa, czy znaki, które mają tylko rezerwę miejsca lub nie mają żadnej szerokości, są podświetlane.",
-      "editor.unicodeHighlight.nonBasicASCII": "Określa, czy wszystkie niepodstawowe znaki ASCII mają być podświetlane. Za podstawowe ASCII uważa się tylko znaki od U+0020 do U+007E, tabulatory, line-feed i carriage-return.",
       "files.autoSave": "Steruje funkcją [automatycznego zapisywania](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) edytorów, w których nie zapisano zmian.",
       "files.autoSave.afterDelay": "Edytor ze zmianami jest automatycznie zapisywany po upływie skonfigurowanego czasu `#files.autoSaveDelay#`.",
       "files.autoSave.off": "Edytor ze zmianami nigdy nie jest automatycznie zapisywany.",
@@ -162,12 +90,9 @@
       "files.autoSave.onWindowChange": "Edytor ze zmianami jest automatycznie zapisywany po utracie ostrości okna.",
       "formatOnSaveTimeout": "Timeout w milisekundach, po którym formatowanie uruchamiane przy zapisie pliku zostanie anulowane.",
       "persistClosedEditors": "Określa, czy historia zamkniętego edytora ma być zachowywana podczas przeładowywania okna.",
-      "readOnly": "Tylko do odczytu",
       "showAllEditors": "Pokaż wszystkie otwarte edytory",
       "splitHorizontal": "Podziel edytor poziomo",
       "splitVertical": "Podziel edytor pionowo",
-      "status-bar-pin": "Dodaj do paska stanu",
-      "status-bar-unpin": "Usuń z paska stanu",
       "toggleStickyScroll": "Przełącz przewijanie przylepnel"
     },
     "file-search": {
@@ -198,7 +123,10 @@
       "format": "Format:",
       "maxConcurrentUploads": "Maksymalna liczba jednocześnie wysyłanych plików podczas wysyłania wielu plików. 0 oznacza, że wszystkie pliki będą wysyłane jednocześnie.",
       "maxFileSizeMB": "Kontroluje maksymalny rozmiar pliku w MB, który może zostać otwarty.",
+      "prepareDownload": "Przygotowanie do pobrania...",
+      "prepareDownloadLink": "Przygotowywanie linku do pobrania...",
       "processedOutOf": "Przetworzono {0} z {1}.",
+      "replaceTitle": "Wymiana pliku",
       "uploadFiles": "Prześlij pliki...",
       "uploadedOutOf": "Przesłano {0} z {1}."
     },
@@ -254,7 +182,6 @@
       "tabbarDecorationsEnabled": "Pokaż dekoratory problemów (znaczniki diagnostyczne) na paskach kart."
     },
     "memory-inspector": {
-      "address": "Adres",
       "addressTooltip": "Miejsce w pamięci do wyświetlenia, adres lub wyrażenie obliczane na adres",
       "ascii": "ASCII",
       "binary": "Binarne",
@@ -353,8 +280,10 @@
       "hiddenChannels": "Ukryte kanały",
       "hideOutputChannel": "Ukryj kanał wyjściowy...",
       "maxChannelHistory": "Maksymalna liczba wpisów w kanale wyjściowym.",
-      "outputChannels": "Kanały wyjściowe",
       "showOutputChannel": "Pokaż kanał wyjściowy..."
+    },
+    "plugin": {
+      "blockNewTab": "Twoja przeglądarka uniemożliwiła otwarcie nowej karty"
     },
     "plugin-dev": {
       "alreadyRunning": "Hostowana instancja jest już uruchomiona.",
@@ -385,7 +314,6 @@
     },
     "plugin-ext": {
       "plugins": "Wtyczki",
-      "signInAgain": "Rozszerzenie \"{0}\" chce, abyś ponownie zalogował się używając {1}.",
       "webviewTrace": "Kontroluje śledzenie komunikacji z webviews.",
       "webviewWarnIfUnsecure": "Ostrzega użytkowników, że widoki internetowe są obecnie wdrażane w sposób niezabezpieczony."
     },
@@ -398,7 +326,6 @@
       "lastModified": "Ostatnio zmodyfikowany",
       "location": "Lokalizacja",
       "noProperties": "Brak dostępnych obiektów.",
-      "path": "Ścieżka",
       "properties": "Właściwości",
       "size": "Rozmiar",
       "symbolicLink": "Powiązanie symboliczne"
@@ -427,9 +354,6 @@
       "extract-widget": "Przenieś widok do okna podrzędnego"
     },
     "shell-area": {
-      "bottom": "Dół",
-      "left": "Z lewej strony",
-      "right": "Prawo",
       "secondary": "Drugie okno",
       "top": "Top"
     },
@@ -439,21 +363,26 @@
       "openUserTasks": "Otwórz zadania użytkownika"
     },
     "terminal": {
-      "confirmClose": "Steruje, czy potwierdzać zamknięcie okna w przypadku aktywnych sesji terminalowych.",
-      "confirmCloseAlways": "Zawsze należy sprawdzić, czy są zaciski.",
-      "confirmCloseChildren": "Sprawdź, czy są jakieś terminale, które mają procesy potomne.",
-      "confirmCloseNever": "Nigdy nie potwierdzaj.",
+      "defaultProfile": "Domyślny profil używany w {0}",
       "enableCopy": "Włącz ctrl-c (cmd-c na macOS), aby skopiować zaznaczony tekst",
       "enablePaste": "Włącz ctrl-v (cmd-v na macOS), aby wkleić z schowka",
+      "profileArgs": "Argumenty powłoki, których używa ten profil.",
+      "profileColor": "Identyfikator koloru motywu terminala do powiązania z terminalem.",
+      "profileDefault": "Wybierz Profil domyślny...",
+      "profileIcon": "ID codicon do skojarzenia z ikoną terminala.\nterminal-tmux:\"$(terminal-tmux)\"",
+      "profileNew": "Nowy Terminal (z profilem)...",
+      "profilePath": "Ścieżka powłoki, której używa ten profil.",
+      "profileSource": "Źródło profilu, które automatycznie wykryje ścieżki do powłoki. Zauważ, że niestandardowe lokalizacje plików wykonywalnych nie są obsługiwane i muszą być tworzone ręcznie w nowym profilu.",
+      "profiles": "Profile, które mają być prezentowane podczas tworzenia nowego terminala. Ustaw właściwość path ręcznie z opcjonalnymi argumentami.\nUstaw istniejący profil na `null`, aby ukryć profil z listy, na przykład: `\"{0}\": null`.",
+      "rendererType": "Kontroluje sposób renderowania terminala.",
+      "selectProfile": "Wybrać profil dla nowego terminalu",
+      "shell.deprecated": "Jest to przestarzałe, nowym zalecanym sposobem konfiguracji domyślnej powłoki jest utworzenie profilu terminala w 'terminal.integrated.profiles.{0}' i ustawienie jego nazwy jako domyślnej w 'terminal.integrated.defaultProfile.{0}.'",
       "shellArgsLinux": "Argumenty wiersza poleceń do użycia w terminalu Linuksa.",
       "shellArgsOsx": "Argumenty wiersza poleceń do użycia w terminalu macOS.",
       "shellArgsWindows": "Argumenty wiersza poleceń do użycia w terminalu Windows.",
       "shellLinux": "Ścieżka do powłoki, z której korzysta terminal na Linuksie (domyślnie: '{0}'}).",
       "shellOsx": "Ścieżka do powłoki, z której korzysta terminal na macOS (domyślnie: '{0}'}).",
-      "shellWindows": "Ścieżka do powłoki, której terminal używa na Windows. (domyślnie: '{0}').",
-      "terminate": "Koniec",
-      "terminateActive": "Czy chcesz zakończyć aktywną sesję terminala?",
-      "terminateActiveMultiple": "Czy chcesz zakończyć {0} aktywnych sesji terminalowych?"
+      "shellWindows": "Ścieżka do powłoki, której terminal używa na Windows. (domyślnie: '{0}')."
     },
     "toolbar": {
       "addCommand": "Dodaj polecenie do paska narzędzi",
@@ -477,11 +406,9 @@
     },
     "typehierarchy": {
       "subtypeHierarchy": "Hierarchia podtypów",
-      "supertypeHierarchy": "Hierarchia nadtypów",
-      "typeHierarchy": "Hierarchia typów"
+      "supertypeHierarchy": "Hierarchia nadtypów"
     },
     "vsx-registry": {
-      "averageRating": "Średnia ocena: {0} na 5",
       "downloadCount": "Pobierz licz: {0}",
       "errorFetching": "Błąd pobierania rozszerzeń.",
       "failedInstallingVSIX": "Nie udało się zainstalować {0} z VSIX.",
@@ -521,7 +448,6 @@
       "trashTitle": "Przenieś {0} do kosza",
       "trustEmptyWindow": "Określa, czy pusty obszar roboczy jest domyślnie zaufany, czy nie.",
       "trustEnabled": "Określa, czy zaufanie do obszaru roboczego jest włączone, czy nie. Jeśli wyłączone, wszystkie obszary robocze są zaufane.",
-      "trustPrompt": "Określa, kiedy wyświetlany jest monit startowy o zaufaniu przestrzeni roboczej.",
       "trustRequest": "Rozszerzenie prosi o zaufanie do przestrzeni roboczej, ale odpowiednie API nie jest jeszcze w pełni obsługiwane. Czy chcesz zaufać temu obszarowi roboczemu?",
       "untitled-cleanup": "Wygląda na to, że jest wiele plików obszaru roboczego bez tytułu. Proszę sprawdzić {0} i usunąć wszystkie nieużywane pliki.",
       "workspaceFolderAdded": "Utworzono przestrzeń roboczą z wieloma korzeniami. Czy chcesz zapisać konfigurację obszaru roboczego jako plik?",
