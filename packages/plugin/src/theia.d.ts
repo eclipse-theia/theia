@@ -13474,13 +13474,11 @@ export module '@theia/plugin' {
    export class TabInputText {
        /**
         * The uri represented by the tab.
-        * @stubbed
         */
        readonly uri: Uri;
        /**
         * Constructs a text tab input with the given URI.
         * @param uri The URI of the tab.
-        * @stubbed
         */
        constructor(uri: Uri);
    }
@@ -13492,19 +13490,16 @@ export module '@theia/plugin' {
    export class TabInputTextDiff {
        /**
         * The uri of the original text resource.
-        * @stubbed
         */
        readonly original: Uri;
        /**
         * The uri of the modified text resource.
-        * @stubbed
         */
        readonly modified: Uri;
        /**
         * Constructs a new text diff tab input with the given URIs.
         * @param original The uri of the original text resource.
         * @param modified The uri of the modified text resource.
-        * @stubbed
         */
        constructor(original: Uri, modified: Uri);
    }
@@ -13515,19 +13510,16 @@ export module '@theia/plugin' {
    export class TabInputCustom {
        /**
         * The uri that the tab is representing.
-        * @stubbed
         */
        readonly uri: Uri;
        /**
         * The type of custom editor.
-        * @stubbed
         */
        readonly viewType: string;
        /**
         * Constructs a custom editor tab input.
         * @param uri The uri of the tab.
         * @param viewType The viewtype of the custom editor.
-        * @stubbed
         */
        constructor(uri: Uri, viewType: string);
    }
@@ -13538,13 +13530,11 @@ export module '@theia/plugin' {
    export class TabInputWebview {
        /**
         * The type of webview. Maps to WebviewPanel's viewType
-        * @stubbed
         */
        readonly viewType: string;
        /**
         * Constructs a webview tab input with the given view type.
         * @param viewType The type of webview. Maps to WebviewPanel's viewType
-        * @stubbed
         */
        constructor(viewType: string);
    }
@@ -13555,19 +13545,16 @@ export module '@theia/plugin' {
    export class TabInputNotebook {
        /**
         * The uri that the tab is representing.
-        * @stubbed
         */
        readonly uri: Uri;
        /**
         * The type of notebook. Maps to NotebookDocuments's notebookType
-        * @stubbed
         */
        readonly notebookType: string;
        /**
         * Constructs a new tab input for a notebook.
         * @param uri The uri of the notebook.
         * @param notebookType The type of notebook. Maps to NotebookDocuments's notebookType
-        * @stubbed
         */
        constructor(uri: Uri, notebookType: string);
    }
@@ -13578,17 +13565,14 @@ export module '@theia/plugin' {
    export class TabInputNotebookDiff {
        /**
         * The uri of the original notebook.
-        * @stubbed
         */
        readonly original: Uri;
        /**
         * The uri of the modified notebook.
-        * @stubbed
         */
        readonly modified: Uri;
        /**
         * The type of notebook. Maps to NotebookDocuments's notebookType
-        * @stubbed
         */
        readonly notebookType: string;
        /**
@@ -13596,7 +13580,6 @@ export module '@theia/plugin' {
         * @param original The uri of the original unmodified notebook.
         * @param modified The uri of the modified notebook.
         * @param notebookType The type of notebook. Maps to NotebookDocuments's notebookType
-        * @stubbed
         */
        constructor(original: Uri, modified: Uri, notebookType: string);
    }
@@ -13607,7 +13590,6 @@ export module '@theia/plugin' {
    export class TabInputTerminal {
        /**
         * Constructs a terminal tab input.
-        * @stubbed
         */
        constructor();
    }
@@ -13621,45 +13603,38 @@ export module '@theia/plugin' {
 
        /**
         * The text displayed on the tab.
-        * @stubbed
         */
        readonly label: string;
 
        /**
         * The group which the tab belongs to.
-        * @stubbed
         */
        readonly group: TabGroup;
 
        /**
         * Defines the structure of the tab i.e. text, notebook, custom, etc.
         * Resource and other useful properties are defined on the tab kind.
-        * @stubbed
         */
        readonly input: TabInputText | TabInputTextDiff | TabInputCustom | TabInputWebview | TabInputNotebook | TabInputNotebookDiff | TabInputTerminal | unknown;
 
        /**
         * Whether or not the tab is currently active.
         * This is dictated by being the selected tab in the group.
-        * @stubbed
         */
        readonly isActive: boolean;
 
        /**
         * Whether or not the dirty indicator is present on the tab.
-        * @stubbed
         */
        readonly isDirty: boolean;
 
        /**
         * Whether or not the tab is pinned (pin icon is present).
-        * @stubbed
         */
        readonly isPinned: boolean;
 
        /**
         * Whether or not the tab is in preview mode.
-        * @stubbed
         */
        readonly isPreview: boolean;
    }
@@ -13670,18 +13645,15 @@ export module '@theia/plugin' {
    export interface TabChangeEvent {
        /**
         * The tabs that have been opened.
-        * @stubbed
         */
        readonly opened: readonly Tab[];
        /**
         * The tabs that have been closed.
-        * @stubbed
         */
        readonly closed: readonly Tab[];
        /**
         * Tabs that have changed, e.g have changed
         * their {@link Tab.isActive active} state.
-        * @stubbed
         */
        readonly changed: readonly Tab[];
    }
@@ -13692,18 +13664,15 @@ export module '@theia/plugin' {
    export interface TabGroupChangeEvent {
        /**
         * Tab groups that have been opened.
-        * @stubbed
         */
        readonly opened: readonly TabGroup[];
        /**
         * Tab groups that have been closed.
-        * @stubbed
         */
        readonly closed: readonly TabGroup[];
        /**
         * Tab groups that have changed, e.g have changed
         * their {@link TabGroup.isActive active} state.
-        * @stubbed
         */
        readonly changed: readonly TabGroup[];
    }
@@ -13719,13 +13688,11 @@ export module '@theia/plugin' {
         * groups can have an {@link TabGroup.aciveTab active tab}.
         *
         * @see {@link Tab.isActive}
-        * @stubbed
         */
        readonly isActive: boolean;
 
        /**
         * The view column of the group.
-        * @stubbed
         */
        readonly viewColumn: ViewColumn;
 
@@ -13734,14 +13701,12 @@ export module '@theia/plugin' {
         * being rendered.
         *
         * *Note* that there can be one active tab per group but there can only be one {@link TabGroups.activeTabGroup active group}.
-        * @stubbed
         */
        readonly activeTab: Tab | undefined;
 
        /**
         * The list of tabs contained within the group.
         * This can be empty if the group has no tabs open.
-        * @stubbed
         */
        readonly tabs: readonly Tab[];
    }
@@ -13752,25 +13717,21 @@ export module '@theia/plugin' {
    export interface TabGroups {
        /**
         * All the groups within the group container.
-        * @stubbed
         */
        readonly all: readonly TabGroup[];
 
        /**
         * The currently active group.
-        * @stubbed
         */
        readonly activeTabGroup: TabGroup;
 
        /**
         * An {@link Event event} which fires when {@link TabGroup tab groups} have changed.
-        * @stubbed
         */
        readonly onDidChangeTabGroups: Event<TabGroupChangeEvent>;
 
        /**
         * An {@link Event event} which fires when {@link Tab tabs} have changed.
-        * @stubbed
         */
        readonly onDidChangeTabs: Event<TabChangeEvent>;
 
@@ -13782,7 +13743,6 @@ export module '@theia/plugin' {
         * @param tab The tab to close.
         * @param preserveFocus When `true` focus will remain in its current position. If `false` it will jump to the next tab.
         * @returns A promise that resolves to `true` when all tabs have been closed.
-        * @stubbed
         */
        close(tab: Tab | readonly Tab[], preserveFocus?: boolean): Thenable<boolean>;
 
@@ -13933,7 +13893,7 @@ export module '@theia/plugin' {
 
         /**
          * The {@link NotebookDocument notebook} that contains this cell.
-         * @stubbed
+
          */
         readonly notebook: NotebookDocument;
 
@@ -13994,26 +13954,26 @@ export module '@theia/plugin' {
         /**
          * The version number of this notebook (it will strictly increase after each
          * change, including undo/redo).
-         * @stubbed
+
          */
         readonly version: number;
 
         /**
          * `true` if there are unpersisted changes.
-         * @stubbed
+
          */
         readonly isDirty: boolean;
 
         /**
          * Is this notebook representing an untitled file which has not been saved yet.
-         * @stubbed
+
          */
         readonly isUntitled: boolean;
 
         /**
          * `true` if the notebook has been closed. A closed notebook isn't synchronized anymore
          * and won't be re-used when the same resource is opened again.
-         * @stubbed
+
          */
         readonly isClosed: boolean;
 
