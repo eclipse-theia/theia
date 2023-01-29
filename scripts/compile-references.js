@@ -126,7 +126,10 @@ async function configureTypeScriptReferences(targetPackage, expectedReferences) 
     /** @type {string[]} */
     const currentReferences = (tsconfigJson['references'] || []).map(reference => reference.path);
     // Compare both arrays: if an element is not the same we need to rewrite.
-    needRewrite = needRewrite || currentReferences.some((reference, index) => expectedReferences[index] !== reference);
+    needRewrite = needRewrite
+        || currentReferences.some((reference, index) => expectedReferences[index] !== reference)
+        || expectedReferences.some((reference, index) => currentReferences[index] !== reference);
+
     if (needRewrite) {
         tsconfigJson.references = expectedReferences.map(path => ({ path }));
         const content = JSON.stringify(tsconfigJson, undefined, 2);
