@@ -6,5 +6,12 @@
   "include": [
     "rules"
   ],
-  "references": []
+  "references": [
+    {
+      "path": "../../packages/core"
+    },
+    {
+      "path": "../private-re-exports"
+    }
+  ]
 }
