@@ -29,7 +29,6 @@ import { UriComponents } from '../common/uri-components';
 import { isReadonlyArray } from '../common/arrays';
 import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
 import { isObject } from '@theia/core/lib/common';
-import { IDataTransferItem, VSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -1351,7 +1350,7 @@ export namespace InlayHintKind {
 }
 
 export namespace DataTransferItem {
-    export function to(mime: string, item: model.DataTransferItemDTO, resolveFileData: () => Promise<Uint8Array>): theia.DataTransferItem {
+    export function to(mime: string, item: model.DataTransferItemDTO, resolveFileData: (itemId: string) => Promise<Uint8Array>): theia.DataTransferItem {
         const file = item.fileData;
         if (file) {
             return new class extends types.DataTransferItem {
@@ -1359,7 +1358,7 @@ export namespace DataTransferItem {
                     return {
                         name: file.name,
                         uri: URI.revive(file.uri),
-                        data: () => resolveFileData(),
+                        data: () => resolveFileData(file.name),
                     };
                 }
             }('');
@@ -1372,40 +1371,6 @@ export namespace DataTransferItem {
         return new types.DataTransferItem(item.asString);
     }
 
-    export async function from(mime: string, item: theia.DataTransferItem | IDataTransferItem): Promise<model.DataTransferItemDTO> {
-        const stringValue = await item.asString();
-
-        if (mime === 'text/uri-list') {
-            return {
-                asString: '',
-                fileData: undefined,
-                uriListData: serializeUriList(stringValue),
-            };
-        }
-
-        const fileValue = item.asFile();
-        return {
-            asString: stringValue,
-            fileData: fileValue ? { name: fileValue.name, uri: fileValue.uri } : undefined,
-        };
-    }
-
-    function serializeUriList(stringValue: string): ReadonlyArray<string | URI> {
-        return stringValue.split('\r\n').map(part => {
-            if (part.startsWith('#')) {
-                return part;
-            }
-
-            try {
-                return URI.parse(part);
-            } catch {
-                // noop
-            }
-
-            return part;
-        });
-    }
-
     function reviveUriList(parts: ReadonlyArray<string | UriComponents>): string {
         return parts.map(part => typeof part === 'string' ? part : URI.revive(part).toString()).join('\r\n');
     }
@@ -1415,24 +1380,8 @@ export namespace DataTransfer {
     export function toDataTransfer(value: model.DataTransferDTO, resolveFileData: (itemId: string) => Promise<Uint8Array>): theia.DataTransfer {
         const dataTransfer = new types.DataTransfer();
         for (const [mimeType, item] of value.items) {
-            dataTransfer.set(mimeType, DataTransferItem.to(mimeType, item, () => Promise.resolve(new Uint8Array)));
+            dataTransfer.set(mimeType, DataTransferItem.to(mimeType, item, resolveFileData));
         }
         return dataTransfer;
-    }
-
-    export async function toDataTransferDTO(value: theia.DataTransfer | VSDataTransfer): Promise<model.DataTransferDTO> {
-        const newDTO: model.DataTransferDTO = { items: [] };
-
-        const promises: Promise<unknown>[] = [];
-
-        value.forEach((val, key) => {
-            promises.push((async () => {
-                newDTO.items.push([key, await DataTransferItem.from(key, val)]);
-            })());
-        });
-
-        await Promise.all(promises);
-
-        return newDTO;
     }
 }

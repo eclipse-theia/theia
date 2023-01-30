@@ -33,10 +33,22 @@ import { nls } from '@theia/core/lib/common/nls';
 
 export const HTTP_UPLOAD_URL: string = new Endpoint({ path: HTTP_FILE_UPLOAD_PATH }).getRestUrl().toString(true);
 
+export interface CustomDataTransfer {
+    values(): Iterable<CustomDataTransferItem>
+}
+
+export interface CustomDataTransferItem {
+    readonly id: string;
+    asFile(): {
+        readonly name: string;
+        data(): Promise<Uint8Array>;
+    } | undefined
+}
 export interface FileUploadParams {
-    source?: DataTransfer
+    source?: DataTransfer | CustomDataTransfer
     progress?: FileUploadProgressParams
     onDidUpload?: (uri: string) => void;
+    leaveInTemp?: boolean // dont move file out of the initial tmp directory
 }
 export interface FileUploadProgressParams {
     text: string
@@ -114,12 +126,12 @@ export class FileUploadService {
     }
 
     async upload(targetUri: string | URI, params: FileUploadParams = {}): Promise<FileUploadResult> {
-        const { source, onDidUpload } = params;
+        const { source, onDidUpload, leaveInTemp } = params;
         if (source) {
             return this.withProgress(
                 (progress, token) => this.uploadAll(
                     typeof targetUri === 'string' ? new URI(targetUri) : targetUri,
-                    { source, progress, token, onDidUpload }
+                    { source, progress, token, leaveInTemp, onDidUpload }
                 ),
                 params.progress,
             );
@@ -197,7 +209,7 @@ export class FileUploadService {
                     // Don't await here: the semaphore will organize the uploading tasks, not the async indexer.
                     uploads.push(uploadSemaphore.runExclusive(async () => {
                         checkCancelled(params.token);
-                        const { upload, response } = this.uploadFile(item.file, item.uri, params.token, (total, done) => {
+                        const { upload, response } = this.uploadFile(item.file, item.uri, params.token, params.leaveInTemp, (total, done) => {
                             const entry = status.get(item.file);
                             if (entry) {
                                 entry.total = total;
@@ -257,6 +269,7 @@ export class FileUploadService {
         file: File,
         targetUri: URI,
         token: CancellationToken,
+        leaveInTemp: boolean | undefined,
         onProgress: (total: number, done: number) => void
     ): {
         /**
@@ -279,6 +292,9 @@ export class FileUploadService {
         const data = new FormData();
         data.set('uri', targetUri.toString(true));
         data.set('file', file);
+        if (leaveInTemp) {
+            data.set('leaveInTemp', 'true');
+        }
         // TODO: Use Fetch API once it supports upload monitoring.
         const xhr = new XMLHttpRequest();
         token.onCancellationRequested(() => xhr.abort());
@@ -379,8 +395,10 @@ export class FileUploadService {
     protected async index(targetUri: URI, source: FileUploadService.Source, context: FileUploadService.Context): Promise<void> {
         if (source instanceof FormData) {
             await this.indexFormData(targetUri, source, context);
-        } else {
+        } else if (source instanceof DataTransfer) {
             await this.indexDataTransfer(targetUri, source, context);
+        } else {
+            await this.indexCustomDataTransfer(targetUri, source, context);
         }
     }
 
@@ -398,6 +416,15 @@ export class FileUploadService {
             await this.indexDataTransferItemList(targetUri, dataTransfer.items, context);
         } else {
             await this.indexFileList(targetUri, dataTransfer.files, context);
+        }
+    }
+
+    protected async indexCustomDataTransfer(targetUri: URI, dataTransfer: CustomDataTransfer, context: FileUploadService.Context): Promise<void> {
+        for (const item of dataTransfer.values()) {
+            const fileInfo = item.asFile();
+            if (fileInfo) {
+                await this.indexFile(targetUri, new File([await fileInfo.data()], item.id), context);
+            }
         }
     }
 
@@ -488,7 +515,7 @@ export class FileUploadService {
 }
 
 export namespace FileUploadService {
-    export type Source = FormData | DataTransfer;
+    export type Source = FormData | DataTransfer | CustomDataTransfer;
     export interface UploadEntry {
         file: File
         uri: URI
@@ -508,6 +535,7 @@ export namespace FileUploadService {
         source: FileUploadService.Source,
         progress: Progress,
         token: CancellationToken,
-        onDidUpload?: (uri: string) => void
+        onDidUpload?: (uri: string) => void,
+        leaveInTemp?: boolean
     }
 }

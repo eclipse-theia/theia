@@ -20,15 +20,23 @@ import { Position } from '../../common/plugin-api-rpc';
 import * as Converter from '../type-converters';
 import { DocumentsExtImpl } from '../documents';
 import { URI } from '@theia/core/shared/vscode-uri';
-
+import { URI as theiaUri } from '@theia/core';
+import * as os from 'os';
+import * as path from 'path';
 export class DocumentDropEditAdapter {
     constructor(private readonly provider: theia.DocumentDropEditProvider,
         private readonly documents: DocumentsExtImpl) { }
 
-    async provideDocumentDropEdits(resource: URI, position: Position,
-        dataTransfer: DataTransferDTO, token: CancellationToken): Promise<DocumentDropEdit | undefined> {
+    async provideDocumentDropEdits(resource: URI, position: Position, dataTransfer: DataTransferDTO, token: CancellationToken): Promise<DocumentDropEdit | undefined> {
+        return this.provider.provideDocumentDropEdits(
+            this.documents.getDocument(resource),
+            Converter.toPosition(position),
+            Converter.DataTransfer.toDataTransfer(dataTransfer, itemId => this.resolveFileData(itemId)),
+            token) as DocumentDropEdit | undefined;
+    }
 
-        const document = this.documents.getDocument(resource);
-        return this.provider.provideDocumentDropEdits(document, Converter.toPosition(position), await Converter.DataTransfer.toDataTransfer(dataTransfer, () => Promise.resolve(new Uint8Array())), token) as DocumentDropEdit | undefined;
+    private async resolveFileData(itemId: string): Promise<Uint8Array> {
+        const filePath = theiaUri.fromFilePath(path.resolve(os.tmpdir(), 'theia_upload', itemId));
+        return (await this.documents.readFile(filePath)).value.buffer;
     }
 }

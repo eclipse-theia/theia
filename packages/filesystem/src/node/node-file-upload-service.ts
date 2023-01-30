@@ -25,6 +25,7 @@ import { HTTP_FILE_UPLOAD_PATH } from '../common/file-upload';
 
 @injectable()
 export class NodeFileUploadService implements BackendApplicationContribution {
+    private static readonly UPLOAD_DIR = 'theia_upload';
 
     async configure(app: express.Application): Promise<void> {
         const [dest, http_path] = await Promise.all([
@@ -52,7 +53,7 @@ export class NodeFileUploadService implements BackendApplicationContribution {
      * @returns Path to a folder where to temporarily store uploads.
      */
     protected async getTemporaryUploadDest(): Promise<string> {
-        return path.join(os.tmpdir(), 'theia_upload');
+        return path.join(os.tmpdir(), NodeFileUploadService.UPLOAD_DIR);
     }
 
     protected async handleFileUpload(request: express.Request, response: express.Response): Promise<void> {
@@ -63,11 +64,14 @@ export class NodeFileUploadService implements BackendApplicationContribution {
         }
         try {
             const target = FileUri.fsPath(fields.uri);
-            await fs.move(request.file.path, target, { overwrite: true });
+            if (!fields.leaveInTemp) { // if dont move the file, just leave it where it is
+                await fs.move(request.file.path, target, { overwrite: true });
+            }
             response.status(200).send(target); // ok
         } catch (error) {
             console.error(error);
             response.sendStatus(500); // internal server error
         }
     }
+
 }

@@ -44,7 +44,7 @@ import {
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from '@theia/monaco/lib/browser/monaco-languages';
-import CoreURI from '@theia/core/lib/common/uri';
+import CoreURI, { URI } from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ProblemManager } from '@theia/markers/lib/browser';
@@ -81,8 +81,9 @@ import {
 } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { CodeActionTriggerKind, SnippetString } from '../../plugin/types-impl';
-import { DataTransfer } from '../../plugin/type-converters';
+import { DataTransfer } from './data-transfer/data-transfer-type-converters';
 import { VSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
+import { FileUploadService } from '@theia/filesystem/lib/browser/file-upload-service';
 
 /**
  * @monaco-uplift The public API declares these functions as (languageId: string, service).
@@ -110,6 +111,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     @inject(EditorLanguageStatusService)
     protected readonly languageStatusService: EditorLanguageStatusService;
+
+    @inject(FileUploadService)
+    protected readonly fileUploadService: FileUploadService;
 
     private readonly proxy: LanguagesExt;
     private readonly services = new Map<number, Disposable>();
@@ -734,6 +738,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     protected async provideDocumentDropEdits(handle: number, model: ITextModel, position: monaco.IPosition,
         dataTransfer: VSDataTransfer, token: CancellationToken): Promise<DocumentOnDropEdit | undefined> {
+        await this.fileUploadService.upload(new URI(), { source: dataTransfer, leaveInTemp: true });
         return this.proxy.$provideDocumentDropEdits(handle, model.uri, position, await DataTransfer.toDataTransferDTO(dataTransfer), token).then(edit => {
             if (edit) {
                 return {
