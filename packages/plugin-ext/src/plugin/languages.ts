@@ -112,6 +112,8 @@ import { serializeEnterRules, serializeIndentation, serializeRegExp } from './la
 import { InlayHintsAdapter } from './languages/inlay-hints';
 import { InlineCompletionAdapter, InlineCompletionAdapterBase } from './languages/inline-completion';
 import { DocumentDropEditAdapter } from './languages/document-drop-edit';
+import { IDisposable } from '@theia/monaco-editor-core';
+import { FileSystemExtImpl, FsLinkProvider } from './file-system-ext-impl';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -151,15 +153,25 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     private readonly diagnostics: Diagnostics;
 
+    private linkProviderRegistration?: IDisposable;
+
     private callId = 0;
     private adaptersMap = new Map<number, Adapter>();
 
     constructor(
         rpc: RPCProtocol,
         private readonly documents: DocumentsExtImpl,
-        private readonly commands: CommandRegistryImpl) {
+        private readonly commands: CommandRegistryImpl,
+        private readonly filesSystem: FileSystemExtImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN);
         this.diagnostics = new Diagnostics(rpc);
+        filesSystem.onWillRegisterFileSystemProvider(linkProvider => this.registerLinkProviderIfNotYetRegistered(linkProvider));
+    }
+
+    dispose(): void {
+        if (this.linkProviderRegistration) {
+            this.linkProviderRegistration.dispose();
+        }
     }
 
     get onDidChangeDiagnostics(): Event<theia.DiagnosticChangeEvent> {
@@ -260,6 +272,15 @@ export class LanguagesExtImpl implements LanguagesExt {
         }
 
         return undefined;
+    }
+
+    private registerLinkProviderIfNotYetRegistered(linkProvider: FsLinkProvider): void {
+        if (!this.linkProviderRegistration) {
+            this.linkProviderRegistration = this.registerDocumentLinkProvider('*', linkProvider, {
+                id: 'theia.fs-ext-impl',
+                name: 'fs-ext-impl'
+            });
+        }
     }
 
     // ### Completion begin
@@ -474,7 +495,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     registerDocumentDropEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentDropEditProvider): theia.Disposable {
-        const callId = this.addNewAdapter(new DocumentDropEditAdapter(provider, this.documents));
+        const callId = this.addNewAdapter(new DocumentDropEditAdapter(provider, this.documents, this.filesSystem));
         this.proxy.$registerDocumentDropEditProvider(callId, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }

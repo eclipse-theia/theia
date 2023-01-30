@@ -20,12 +20,14 @@ import { Position } from '../../common/plugin-api-rpc';
 import * as Converter from '../type-converters';
 import { DocumentsExtImpl } from '../documents';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { URI as theiaUri } from '@theia/core';
+import { FileSystemExtImpl } from '../file-system-ext-impl';
 import * as os from 'os';
 import * as path from 'path';
+
 export class DocumentDropEditAdapter {
     constructor(private readonly provider: theia.DocumentDropEditProvider,
-        private readonly documents: DocumentsExtImpl) { }
+        private readonly documents: DocumentsExtImpl,
+        private readonly fileSystem: FileSystemExtImpl) { }
 
     async provideDocumentDropEdits(resource: URI, position: Position, dataTransfer: DataTransferDTO, token: CancellationToken): Promise<DocumentDropEdit | undefined> {
         return this.provider.provideDocumentDropEdits(
@@ -36,7 +38,7 @@ export class DocumentDropEditAdapter {
     }
 
     private async resolveFileData(itemId: string): Promise<Uint8Array> {
-        const filePath = theiaUri.fromFilePath(path.resolve(os.tmpdir(), 'theia_upload', itemId));
-        return (await this.documents.readFile(filePath)).value.buffer;
+        const filePath = URI.file(path.resolve(os.tmpdir(), 'theia_upload', itemId));
+        return this.fileSystem.fileSystem.readFile(filePath);
     }
 }

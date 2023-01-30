@@ -1358,7 +1358,7 @@ export namespace DataTransferItem {
                     return {
                         name: file.name,
                         uri: URI.revive(file.uri),
-                        data: () => resolveFileData(file.name),
+                        data: () => resolveFileData(item.id),
                     };
                 }
             }('');

@@ -24,6 +24,7 @@ export namespace DataTransferItem {
 
         if (mime === 'text/uri-list') {
             return {
+                id: item.id,
                 asString: '',
                 fileData: undefined,
                 uriListData: serializeUriList(stringValue),
@@ -32,6 +33,7 @@ export namespace DataTransferItem {
 
         const fileValue = item.asFile();
         return {
+            id: item.id,
             asString: stringValue,
             fileData: fileValue ? { name: fileValue.name, uri: fileValue.uri } : undefined,
         };
