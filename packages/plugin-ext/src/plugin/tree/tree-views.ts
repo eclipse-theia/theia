@@ -355,7 +355,7 @@ class TreeViewExtImpl<T> implements Disposable {
         // note: the front end tree implementation cannot handle reparenting items, hence the id is set to the "path" of individual ids
         let id = typeof item.id === 'string' ? item.id : this.getItemLabel(item);
         if (id) {
-            // we use '' as the id of the root, we don't consider that a valid id 
+            // we use '' as the id of the root, we don't consider that a valid id
             id = TreeViewExtImpl.ID_ITEM + id;
         } else {
             id = TreeViewExtImpl.ID_COMPUTED + this.nextItemId++;
