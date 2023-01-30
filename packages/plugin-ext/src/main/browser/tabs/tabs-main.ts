@@ -30,7 +30,7 @@ interface TabInfo {
     group: TabGroupDto;
 }
 
-export class TabsMainImp implements TabsMain, Disposable {
+export class TabsMainImpl implements TabsMain, Disposable {
 
     private readonly proxy: TabsExt;
     private tabGroupModel = new Map<TabBar<Widget>, TabGroupDto>();
@@ -41,7 +41,7 @@ export class TabsMainImp implements TabsMain, Disposable {
     private disposableTabBarListeners: Disposable[] = [];
     private toDisposeOnDestroy: Disposable[] = [];
 
-    private GroupIdCounter = 0;
+    private groupIdCounter = 0;
     private currentActiveGroup: TabGroupDto;
 
     private tabGroupChanged: boolean = false;
@@ -61,7 +61,7 @@ export class TabsMainImp implements TabsMain, Disposable {
         }
 
         this.toDisposeOnDestroy.push(
-            this.applicationShell.mainPanelRenderer.onTabBarCreated(tabBar => {
+            this.applicationShell.mainPanelRenderer.onDidCreateTabBar(tabBar => {
                 this.attachListenersToTabBar(tabBar);
                 this.onTabGroupCreated(tabBar);
             })
@@ -73,7 +73,15 @@ export class TabsMainImp implements TabsMain, Disposable {
                 this.createTabsModel();
             } else {
                 const tabBar = mainPanel.findTabBar(widget.title)!;
-                this.onTabCreated(tabBar, { index: tabBar.titles.indexOf(widget.title), title: widget.title });
+                const oldTabInfo = this.tabInfoLookup.get(widget.title);
+                const group = this.tabGroupModel.get(tabBar);
+                if (group !== oldTabInfo?.group) {
+                    if (oldTabInfo) {
+                        this.onTabClosed(oldTabInfo, widget.title);
+                    }
+
+                    this.onTabCreated(tabBar, { index: tabBar.titles.indexOf(widget.title), title: widget.title });
+                }
             }
         });
 
@@ -127,7 +135,7 @@ export class TabsMainImp implements TabsMain, Disposable {
 
     protected createTabGroupDto(tabBar: TabBar<Widget>): TabGroupDto {
         const oldDto = this.tabGroupModel.get(tabBar);
-        const groupId = oldDto ? oldDto.groupId : this.GroupIdCounter++;
+        const groupId = oldDto ? oldDto.groupId : this.groupIdCounter++;
         const tabs: TabDto[] = tabBar.titles.map(title => {
             const tabDto = this.createTabDto(title, groupId);
             return tabDto;
@@ -232,6 +240,7 @@ export class TabsMainImp implements TabsMain, Disposable {
         }
         if (!this.tabDtosEqual(oldTabDto, newTabDto)) {
             tabInfo.group.tabs[tabInfo.tabIndex] = newTabDto;
+            tabInfo.tab = newTabDto;
             this.proxy.$acceptTabOperation({
                 kind: TabModelOperationKind.TAB_UPDATE,
                 index: tabInfo.tabIndex,

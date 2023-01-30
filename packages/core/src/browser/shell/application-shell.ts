@@ -89,8 +89,8 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
 
     readonly tabBarClasses: string[] = [];
 
-    private readonly _onTabBarCreated = new Emitter<TabBar<Widget>>();
-    readonly onTabBarCreated = this._onTabBarCreated.event;
+    private readonly _onDidCreateTabBar = new Emitter<TabBar<Widget>>();
+    readonly onDidCreateTabBar = this._onDidCreateTabBar.event;
 
     constructor(
         @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: TabBarRendererFactory,
@@ -118,7 +118,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
         tabBar.disposed.connect(() => renderer.dispose());
         renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
         tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
-        this._onTabBarCreated.fire(tabBar);
+        this._onDidCreateTabBar.fire(tabBar);
         return tabBar;
     }
 
