@@ -58,6 +58,7 @@ describe('TypeScript', function () {
 
     const typescriptPluginId = 'vscode.typescript-language-features';
     const referencesPluginId = 'ms-vscode.references-view';
+    const eslintPluginId = 'dbaeumer.vscode-eslint';
     /** @type Uri.URI */
     const rootUri = workspaceService.tryGetRoots()[0].resource;
     const demoFileUri = rootUri.resolveToAbsolute('../api-tests/test-ts-workspace/demo-file.ts');
@@ -66,7 +67,7 @@ describe('TypeScript', function () {
 
     before(async function () {
         await pluginService.didStart;
-        await Promise.all([typescriptPluginId, referencesPluginId].map(async pluginId => {
+        await Promise.all([typescriptPluginId, referencesPluginId, eslintPluginId].map(async pluginId => {
             if (!pluginService.getPlugin(pluginId)) {
                 throw new Error(pluginId + ' should be started');
             }
@@ -76,12 +77,14 @@ describe('TypeScript', function () {
 
     beforeEach(async function () {
         await editorManager.closeAll({ save: false });
+        await new Promise(resolve => setTimeout(resolve, 500));
     });
 
     const toTearDown = new DisposableCollection();
     afterEach(async () => {
         toTearDown.dispose();
         await editorManager.closeAll({ save: false });
+        await new Promise(resolve => setTimeout(resolve, 500));
     });
 
     after(async () => {
@@ -234,6 +237,13 @@ describe('TypeScript', function () {
                 assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'constructor');
             });
 
+            // Note: this test generate annoying but apparently harmless error traces, during cleanup:
+            // [Error: Error: Cannot update an unmounted root.
+            // at ReactDOMRoot.__webpack_modules__.../../node_modules/react-dom/cjs/react-dom.development.js.ReactDOMHydrationRoot.render.ReactDOMRoot.render (http://127.0.0.1:3000/bundle.js:92757:11)
+            // at BreadcrumbsRenderer.render (http://127.0.0.1:3000/bundle.js:137316:23)
+            // at BreadcrumbsRenderer.update (http://127.0.0.1:3000/bundle.js:108722:14)
+            // at BreadcrumbsRenderer.refresh (http://127.0.0.1:3000/bundle.js:108719:14)
+            // at async ToolbarAwareTabBar.updateBreadcrumbs (http://127.0.0.1:3000/bundle.js:128229:9)]
             it(`from ${from} to another editor`, async function () {
                 await editorManager.open(definitionFileUri, { mode: 'open' });
 
@@ -298,6 +308,13 @@ describe('TypeScript', function () {
                 await closePeek(activeEditor);
             });
 
+            // Note: this test generate annoying but apparently harmless error traces, during cleanup:
+            // [Error: Error: Cannot update an unmounted root.
+            // at ReactDOMRoot.__webpack_modules__.../../node_modules/react-dom/cjs/react-dom.development.js.ReactDOMHydrationRoot.render.ReactDOMRoot.render (http://127.0.0.1:3000/bundle.js:92757:11)
+            // at BreadcrumbsRenderer.render (http://127.0.0.1:3000/bundle.js:137316:23)
+            // at BreadcrumbsRenderer.update (http://127.0.0.1:3000/bundle.js:108722:14)
+            // at BreadcrumbsRenderer.refresh (http://127.0.0.1:3000/bundle.js:108719:14)
+            // at async ToolbarAwareTabBar.updateBreadcrumbs (http://127.0.0.1:3000/bundle.js:128229:9)]
             it(`from ${from} to another editor`, async function () {
                 await editorManager.open(definitionFileUri, { mode: 'open' });
 
@@ -346,7 +363,6 @@ describe('TypeScript', function () {
 
     it('editor.action.triggerSuggest', async function () {
         const editor = await openEditor(demoFileUri);
-        // const demoVariable = demoInstance.[stringField];
         editor.getControl().setPosition({ lineNumber: 26, column: 46 });
         editor.getControl().setSelection(new Selection(26, 46, 26, 35));
         assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'stringField');
@@ -360,8 +376,17 @@ describe('TypeScript', function () {
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isTrue(contextKeyService.match('suggestWidgetVisible'));
 
+        // May need a couple extra "Enter" being sent for the suggest to be accepted
         keybindings.dispatchKeyDown('Enter');
-        await waitForAnimation(() => !contextKeyService.match('suggestWidgetVisible'));
+        await waitForAnimation(() => {
+            const suggestWidgetDismissed = !contextKeyService.match('suggestWidgetVisible');
+            if (!suggestWidgetDismissed) {
+                console.log('Re-try accepting suggest using "Enter" key');
+                keybindings.dispatchKeyDown('Enter');
+                return false;
+            }
+            return true;
+        }, 5000, 'Suggest widget has not been dismissed despite attempts to accept suggestion');
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(contextKeyService.match('suggestWidgetVisible'));
@@ -410,7 +435,17 @@ describe('TypeScript', function () {
         assert.isTrue(contextKeyService.match('suggestWidgetVisible'));
 
         keybindings.dispatchKeyDown('Escape');
-        await waitForAnimation(() => !contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === undefined, 5000);
+        
+        // once in a while, a second "Escape" is needed to dismiss widget
+        await waitForAnimation(() => { 
+            const suggestWidgetDismissed = !contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === undefined;
+            if (!suggestWidgetDismissed) {
+                console.log('Re-try to dismiss suggest using "Escape" key');
+                keybindings.dispatchKeyDown('Escape');
+                return false;
+            }
+            return true;
+        }, 5000, 'Suggest widget not dismissed');
 
         assert.isUndefined(getFocusedLabel());
         assert.isFalse(contextKeyService.match('suggestWidgetVisible'));
@@ -629,7 +664,6 @@ SPAN {
         const editor = await openEditor(demoFileUri);
         const currentChar = () => editor.getControl().getModel().getLineContent(lineNumber).charAt(column - 1);
 
-        // const demoVariable = demoInstance.stringField; --> const demoVariable = demoInstance.stringFiel;
         editor.getControl().getModel().applyEdits([{
             range: {
                 startLineNumber: lineNumber,
@@ -642,7 +676,7 @@ SPAN {
         }]);
         editor.getControl().setPosition({ lineNumber, column });
         editor.getControl().revealPosition({ lineNumber, column });
-        assert.equal(currentChar(), ';');
+        assert.equal(currentChar(), ';', 'Failed at assert 1');
 
         /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codeAction/browser/codeActionCommands').CodeActionController} */
         const codeActionController = editor.getControl().getContribution('editor.contrib.codeActionController');
@@ -656,23 +690,41 @@ SPAN {
             return !!node && node.style.visibility !== 'hidden';
         };
 
-        assert.isFalse(lightBulbVisible());
+        assert.isFalse(lightBulbVisible(), 'Failed at assert 2');
         await waitForAnimation(() => lightBulbVisible());
 
         await commands.executeCommand('editor.action.quickFix');
         const codeActionSelector = '.codeActionWidget';
-        assert.isFalse(!!document.querySelector(codeActionSelector), 'codeActionWidget should not be visible');
-
-        await waitForAnimation(() => !!document.querySelector(codeActionSelector), 5000);
+        assert.isFalse(!!document.querySelector(codeActionSelector), 'Failed at assert 3 - codeActionWidget should not be visible');
+        
+        console.log('Waiting for Quick Fix widget to be visible');
+        await waitForAnimation(() => {
+            const quickFixWidgetVisible = !!document.querySelector(codeActionSelector);
+            if (!quickFixWidgetVisible) {
+                console.log('...');
+                return false;
+            }
+            return true;
+        }, 10000, 'Timed-out waiting for the QuickFix widget to appear');
         await animationFrame();
 
+        assert.isTrue(lightBulbVisible(), 'Failed at assert 4');
         keybindings.dispatchKeyDown('Enter');
+        console.log('Waiting for confirmation that QuickFix has taken effect');
+        await waitForAnimation(() => {
+            const quickFixHasTakenEffect = !lightBulbVisible();
+            if (!quickFixHasTakenEffect) {
+                console.log('...');
+                return false;
+            }
+            return true;
+        }, 5000, 'Quickfix widget has not been dismissed despite attempts to accept suggestion');
 
-        await waitForAnimation(() => currentChar() === 'd', 5000);
-        assert.equal(currentChar(), 'd');
+        await waitForAnimation(() => currentChar() === 'd', 5000, 'Failed to detect expected selected char: "d"');
+        assert.equal(currentChar(), 'd', 'Failed at assert 5');
 
         await waitForAnimation(() => !lightBulbVisible());
-        assert.isFalse(lightBulbVisible());
+        assert.isFalse(lightBulbVisible(), 'Failed at assert 6');
     });
 
     it('editor.action.formatDocument', async function () {
@@ -722,16 +774,12 @@ SPAN {
         it(referenceViewCommand, async function () {
             let steps = 0;
             const editor = await openEditor(demoFileUri);
-            // const demo|Instance = new DemoClass('demo');
             editor.getControl().setPosition({ lineNumber: 24, column: 11 });
             assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'demoInstance');
+            await commands.executeCommand(referenceViewCommand);
             const view = await pluginViewRegistry.openView('references-view.tree', { reveal: true });
-            assert.isDefined(view);
-            assert.isTrue(view.isVisible);
-            await commands.executeCommand('references-view.clear');
             const expectedMessage = referenceViewCommand === 'references-view.find' ? '2 results in 1 file' : '1 result in 1 file';
             const getResultText = () => view.node.getElementsByClassName('theia-TreeViewInfo').item(0)?.textContent;
-            await commands.executeCommand(referenceViewCommand);
             await waitForAnimation(() => getResultText() === expectedMessage, 5000);
             assert.equal(getResultText(), expectedMessage);
         });
@@ -746,7 +794,6 @@ SPAN {
             return lightbulbVisibility !== undefined && lightbulbVisibility !== 'hidden';
         }
         assert.isFalse(isActionAvailable());
-        // import { DefinedInterface } from "./demo-definitions-file";
         assert.strictEqual(editor.getControl().getModel().getLineContent(30), 'import { DefinedInterface } from "./demo-definitions-file";');
         editor.getControl().revealLine(30);
         editor.getControl().setSelection(new Selection(30, 1, 30, 60));
@@ -764,16 +811,24 @@ SPAN {
         console.log(`content: ${editor.getControl().getModel().getLineContent(30)}`);
         await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import * as demoDefinitionsFile from "./demo-definitions-file";', 5000, 'The namespace import did not take effect.');
 
+        // momentarily toggle selection, waiting for code action to become unavailable.
+        // Without doing this, the call to the quickfix command would sometimes fail because of an
+        // unexpected "no code action available" pop-up, which would trip the rest of the testcase
+        editor.getControl().setSelection(new Selection(30, 1, 30, 1));
+        await waitForAnimation(() => !isActionAvailable(), 5000, 'Code action still available with no proper selection.');
+        // re-establish selection
         editor.getControl().setSelection(new Selection(30, 1, 30, 64));
         await waitForAnimation(() => isActionAvailable(), 5000, 'No code action available. (2)');
 
-        // Change it back: https://github.com/eclipse-theia/theia/issues/11059
+        // Change import back: https://github.com/eclipse-theia/theia/issues/11059
         await commands.executeCommand('editor.action.quickFix');
         await waitForAnimation(() => Boolean(document.querySelector('.context-view-pointerBlock')), 5000, 'No context menu appeared. (2)');
         await animationFrame();
 
         keybindings.dispatchKeyDown('Enter');
 
+        assert.isNotNull(editor.getControl());
+        assert.isNotNull(editor.getControl().getModel());
         await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import { DefinedInterface } from "./demo-definitions-file";', 5000, 'The named import did not take effect.');
     });
 });
