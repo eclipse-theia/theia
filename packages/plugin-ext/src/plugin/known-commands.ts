@@ -27,6 +27,8 @@ import {
     isModelCallHierarchyOutgoingCall, toCallHierarchyOutgoingCall, fromTextDocumentShowOptions
 } from './type-converters';
 
+import { URI as TheiaURI } from '@theia/core/lib/common/uri';
+
 // Here is a mapping of VSCode commands to monaco commands with their conversions
 export namespace KnownCommands {
 
@@ -62,6 +64,9 @@ export namespace KnownCommands {
             return createConversionFunction(...argStack)(args);
         }
     };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ID = (args: any[]) => args;
 
     mappings['editor.action.select.all'] = ['editor.action.select.all', CONVERT_VSCODE_TO_MONACO];
     mappings['editor.action.toggleHighContrast'] = ['editor.action.toggleHighContrast', CONVERT_VSCODE_TO_MONACO];
@@ -301,6 +306,17 @@ export namespace KnownCommands {
 
     mappings['vscode.open'] = ['vscode.open', CONVERT_VSCODE_TO_MONACO];
     mappings['vscode.diff'] = ['vscode.diff', CONVERT_VSCODE_TO_MONACO];
+
+    // terminal commands
+    mappings['workbench.action.terminal.new'] = ['terminal:new', ID];
+    mappings['workbench.action.terminal.newWithProfile'] = ['terminal:new:profile', ID];
+    mappings['workbench.action.terminal.selectDefaultShell'] = ['terminal:profile:default', ID];
+    mappings['workbench.action.terminal.newInActiveWorkspace'] = ['terminal:new:active:workspace', ID];
+    mappings['workbench.action.terminal.clear'] = ['terminal:clear', ID];
+    mappings['openInTerminal'] = ['terminal:context', createConversionFunction((uri: URI) => new TheiaURI(uri))];
+    mappings['workbench.action.terminal.split'] = ['terminal:split', ID];
+    mappings['workbench.action.terminal.focusFind'] = ['terminal:find', ID];
+    mappings['workbench.action.terminal.hideFind'] = ['terminal:find:cancel', ID];
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function map<T>(id: string, args: any[] | undefined, toDo: (mappedId: string, mappedArgs: any[] | undefined, mappedResult: ConversionFunction | undefined) => T): T {
