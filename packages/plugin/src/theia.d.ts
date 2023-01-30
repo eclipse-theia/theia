@@ -13893,7 +13893,6 @@ export module '@theia/plugin' {
 
         /**
          * The {@link NotebookDocument notebook} that contains this cell.
-
          */
         readonly notebook: NotebookDocument;
 
@@ -13954,26 +13953,22 @@ export module '@theia/plugin' {
         /**
          * The version number of this notebook (it will strictly increase after each
          * change, including undo/redo).
-
          */
         readonly version: number;
 
         /**
          * `true` if there are unpersisted changes.
-
          */
         readonly isDirty: boolean;
 
         /**
          * Is this notebook representing an untitled file which has not been saved yet.
-
          */
         readonly isUntitled: boolean;
 
         /**
          * `true` if the notebook has been closed. A closed notebook isn't synchronized anymore
          * and won't be re-used when the same resource is opened again.
-
          */
         readonly isClosed: boolean;
 

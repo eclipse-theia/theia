@@ -23,6 +23,7 @@ import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
 import { toUriComponents } from '../hierarchy/hierarchy-types-converters';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { DisposableCollection } from '@theia/core';
 
 interface TabInfo {
     tab: TabDto;
@@ -38,8 +39,8 @@ export class TabsMainImpl implements TabsMain, Disposable {
 
     private applicationShell: ApplicationShell;
 
-    private disposableTabBarListeners: Disposable[] = [];
-    private toDisposeOnDestroy: Disposable[] = [];
+    private disposableTabBarListeners: DisposableCollection = new DisposableCollection();
+    private toDisposeOnDestroy: DisposableCollection = new DisposableCollection();
 
     private groupIdCounter = 0;
     private currentActiveGroup: TabGroupDto;
@@ -100,7 +101,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
     protected createTabsModel(): void {
         const newTabGroupModel = new Map<TabBar<Widget>, TabGroupDto>();
         this.tabInfoLookup.clear();
-        this.disposableTabBarListeners.forEach(disposable => disposable.dispose());
+        this.disposableTabBarListeners.dispose();
         this.applicationShell.mainAreaTabBars.forEach(tabBar => {
             this.attachListenersToTabBar(tabBar);
 
@@ -119,7 +120,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
     protected createTabDto(tabTitle: Title<Widget>, groupId: number): TabDto {
         const widget = tabTitle.owner;
         return {
-            id: this.generateTabId(tabTitle, groupId),
+            id: this.createTabId(tabTitle, groupId),
             label: tabTitle.label,
             input: this.evaluateTabDtoInput(widget),
             isActive: tabTitle.owner.isVisible,
@@ -129,7 +130,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
         };
     }
 
-    protected generateTabId(tabTitle: Title<Widget>, groupId: number): string {
+    protected createTabId(tabTitle: Title<Widget>, groupId: number): string {
         return `${groupId}~${tabTitle.owner.id}`;
     }
 
@@ -187,7 +188,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
         return { kind: TabInputKind.UnknownInput };
     }
 
-    protected connectToSignal<T>(disposableList: Disposable[], signal: { connect(listener: T, context: unknown): void, disconnect(listener: T): void }, listener: T): void {
+    protected connectToSignal<T>(disposableList: DisposableCollection, signal: { connect(listener: T, context: unknown): void, disconnect(listener: T): void }, listener: T): void {
         signal.connect(listener, this);
         disposableList.push(Disposable.create(() => signal.disconnect(listener)));
     }
@@ -309,7 +310,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
     // #endregion
 
     dispose(): void {
-        this.toDisposeOnDestroy.forEach(disposable => disposable.dispose());
-        this.disposableTabBarListeners.forEach(disposable => disposable.dispose());
+        this.toDisposeOnDestroy.dispose();
+        this.disposableTabBarListeners.dispose();
     }
 }
