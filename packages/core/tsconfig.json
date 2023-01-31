@@ -12,6 +12,12 @@
   "references": [
     {
       "path": "../../dev-packages/application-package"
+    },
+    {
+      "path": "../../dev-packages/private-re-exports"
+    },
+    {
+      "path": "../../dev-packages/request"
     }
   ]
 }
