@@ -219,6 +219,12 @@
     font-size: var(--theia-ui-font-size0);
 }
 
+.theia-scm .scmItem .decoration-icon {
+    height: 16px;
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+}
+
 .scm-change-count {
     float: right;
 }

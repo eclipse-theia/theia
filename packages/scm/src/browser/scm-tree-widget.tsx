@@ -17,7 +17,7 @@
 /* eslint-disable no-null/no-null, @typescript-eslint/no-explicit-any */
 
 import * as React from '@theia/core/shared/react';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { isOSX } from '@theia/core/lib/common/os';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
@@ -33,6 +33,10 @@ import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorations-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { ThemeService } from '@theia/core/lib/browser/theming';
+
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 @injectable()
 export class ScmTreeWidget extends TreeWidget {
@@ -56,6 +60,7 @@ export class ScmTreeWidget extends TreeWidget {
     @inject(IconThemeService) protected readonly iconThemeService: IconThemeService;
     @inject(DecorationsService) protected readonly decorationsService: DecorationsService;
     @inject(ColorRegistry) protected readonly colors: ColorRegistry;
+    @inject(ThemeService) protected readonly themeService: ThemeService;
 
     // TODO: Make TreeWidget generic to better type those fields.
     override readonly model: ScmTreeModel;
@@ -68,6 +73,12 @@ export class ScmTreeWidget extends TreeWidget {
         super(props, treeModel, contextMenuRenderer);
         this.id = ScmTreeWidget.ID;
         this.addClass('groups-outer-container');
+    }
+
+    @postConstruct()
+    protected override init(): void {
+        super.init();
+        this.toDispose.push(this.themeService.onDidColorThemeChange(() => this.update()));
     }
 
     set viewMode(id: 'tree' | 'list') {
@@ -154,6 +165,7 @@ export class ScmTreeWidget extends TreeWidget {
                     sourceUri: node.sourceUri,
                     decoration: this.decorationsService.getDecoration(new URI(node.sourceUri), true)[0],
                     colors: this.colors,
+                    isLight: this.isCurrentLightTheme(),
                     renderExpansionToggle: () => this.renderExpansionToggle(node, props),
                 }}
             />;
@@ -437,6 +449,11 @@ export class ScmTreeWidget extends TreeWidget {
         return super.getPaddingLeft(node, props);
     }
 
+    protected isCurrentLightTheme(): boolean {
+        const type = this.themeService.getCurrentTheme().type;
+        return type === 'light' || type === 'hcLight';
+    }
+
     protected override needsExpansionTogglePadding(node: TreeNode): boolean {
         const theme = this.iconThemeService.getDefinition(this.iconThemeService.current);
         if (theme && (theme.hidesExplorerArrows || (theme.hasFileIcons && !theme.hasFolderIcons))) {
@@ -529,12 +546,15 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
 
     override render(): JSX.Element | undefined {
         const { hover } = this.state;
-        const { model, treeNode, colors, parentPath, sourceUri, decoration, labelProvider, commands, menus, contextKeys, caption } = this.props;
+        const { model, treeNode, colors, parentPath, sourceUri, decoration, labelProvider, commands, menus, contextKeys, caption, isLight } = this.props;
         const resourceUri = new URI(sourceUri);
-
+        const [light, dark] = [treeNode.decorations?.icon, treeNode.decorations?.iconDark];
+        const iconTheme = isLight ? light : dark;
+        const cName = ThemeIcon.isThemeIcon(iconTheme) ? ThemeIcon.asClassName(iconTheme) : '';
+        const backgroundImage = iconTheme instanceof URI ? `url(${iconTheme.path})` : '';
         const icon = labelProvider.getIcon(resourceUri);
-        const color = decoration && decoration.colorId ? `var(${colors.toCssVariableName(decoration.colorId)})` : '';
-        const letter = decoration && decoration.letter || '';
+        const color = decoration && decoration.colorId && this.isIcon(iconTheme) ? `var(${colors.toCssVariableName(decoration.colorId)})` : '';
+        const letter = decoration && decoration.letter && this.isIcon(iconTheme) || '';
         const tooltip = decoration && decoration.tooltip || '';
         const textDecoration = treeNode.decorations?.strikeThrough === true ? 'line-through' : 'normal';
         const relativePath = parentPath.relative(resourceUri.parent);
@@ -567,13 +587,16 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
                 model,
                 treeNode
             }}>
-                <div title={tooltip} className='status' style={{ color }}>
+                <div title={tooltip} className={cName + ' decoration-icon status'} style={{ color, backgroundImage }} >
                     {letter}
                 </div>
             </ScmInlineActions>
         </div >;
     }
 
+    protected isIcon(icon: URI | ThemeIcon | undefined): boolean {
+        return ThemeIcon.isThemeIcon(icon) || icon instanceof URI;
+    }
     protected open = () => {
         const resource = this.props.model.getResourceFromNode(this.props.treeNode);
         if (resource) {
@@ -630,6 +653,7 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
         }
     };
 }
+
 export namespace ScmResourceComponent {
     export interface Props extends ScmElement.Props {
         treeNode: ScmFileChangeNode;
@@ -637,6 +661,7 @@ export namespace ScmResourceComponent {
         sourceUri: string;
         decoration: Decoration | undefined;
         colors: ColorRegistry;
+        isLight: boolean
     }
 }
 

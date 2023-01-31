@@ -937,7 +937,7 @@ export interface SourceControlGroupFeatures {
 export interface ScmRawResource {
     handle: number,
     sourceUri: UriComponents,
-    icons: UriComponents[],
+    icons: (UriComponents | ThemeIcon | undefined)[] /* icons: light, dark*/,
     tooltip: string,
     strikeThrough: boolean,
     faded: boolean,
@@ -1133,6 +1133,11 @@ export interface ThemeIcon {
     color?: ThemeColor;
 }
 
+export namespace ThemeIcon {
+    export function isThemeIcon(arg: any): arg is ThemeIcon {
+        return isObject(arg) && 'id' in arg && 'color' in arg;
+    }
+}
 /**
  * Describes the behavior of decorations when typing/editing near their edges.
  */

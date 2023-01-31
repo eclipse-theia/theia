@@ -26,7 +26,7 @@ import {
     SourceControlGroupFeatures,
     ScmMain,
     SourceControlProviderFeatures,
-    ScmRawResourceSplices, ScmRawResourceGroup
+    ScmRawResourceSplices, ScmRawResourceGroup, ThemeIcon
 } from '../../common/plugin-api-rpc';
 import { ScmProvider, ScmResource, ScmResourceDecorations, ScmResourceGroup, ScmCommand } from '@theia/scm/lib/browser/scm-provider';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
@@ -222,13 +222,13 @@ export class PluginScmProvider implements ScmProvider {
                 const { start, deleteCount, rawResources } = groupSlice;
                 const resources = rawResources.map(rawResource => {
                     const { handle, sourceUri, icons, tooltip, strikeThrough, faded, contextValue, command } = rawResource;
-                    const icon = icons[0];
-                    const iconDark = icons[1] || icon;
+                    const icon = ThemeIcon.isThemeIcon(icons[0]) ? icons[0] : new URI(vscodeURI.revive(icons[0]));
+                    const iconDark = ThemeIcon.isThemeIcon(icons[1]) ? icons[1] : new URI(vscodeURI.revive(icons[1])) || icon;
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const colorVariable = (rawResource as any).colorId && this.colors.toCssVariableName((rawResource as any).colorId);
                     const decorations = {
-                        icon: icon ? vscodeURI.revive(icon) : undefined,
-                        iconDark: iconDark ? vscodeURI.revive(iconDark) : undefined,
+                        icon: icon,
+                        iconDark: iconDark,
                         tooltip,
                         strikeThrough,
                         // TODO remove the letter and colorId fields when the FileDecorationProvider is applied, see https://github.com/eclipse-theia/theia/pull/8911

@@ -18,7 +18,9 @@
 
 import { Disposable, Event } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
+/** TODO The monaco reference ^ needs to go. Not sure where to get ThemeIcon from. */
 export interface ScmProvider extends Disposable {
     readonly id: string;
     readonly label: string;
@@ -58,6 +60,8 @@ export interface ScmResource {
 }
 
 export interface ScmResourceDecorations {
+    icon?: URI | ThemeIcon;
+    iconDark?: URI | ThemeIcon;
     tooltip?: string;
     source?: string;
     letter?: string;
