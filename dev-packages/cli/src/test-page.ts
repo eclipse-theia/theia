@@ -113,7 +113,7 @@ export default async function newTestPage(options: TestPageOptions): Promise<pup
                 reporter: 'spec',
                 ui: 'bdd',
                 color: true,
-                retries: 5
+                retries: 0
             });
         });
 
