@@ -229,6 +229,11 @@ describe.only('PreferenceRegistryExtImpl:', () => {
             expect(pythonOverrides).not.to.be.undefined;
             expect(pythonOverrides?.['editor.renderWhitespace']).equal('all');
         });
+        // https://github.com/eclipse-theia/theia/issues/12043
+        it('Allows access preferences without specifying the section', () => {
+            const inspection = preferenceRegistryExtImpl.getConfiguration().inspect('editor.fontSize');
+            expect(inspection?.defaultValue).equal(14);
+        });
     });
 
     describe('Proxy Behavior', () => {
