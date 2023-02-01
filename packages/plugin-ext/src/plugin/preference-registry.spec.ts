@@ -23,7 +23,7 @@ import { URI } from './types-impl';
 const expect = chai.expect;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-describe.only('PreferenceRegistryExtImpl:', () => {
+describe('PreferenceRegistryExtImpl:', () => {
     const workspaceRoot = URI.parse('/workspace-root');
     let preferenceRegistryExtImpl: PreferenceRegistryExtImpl;
     const getProxy = (proxyId: ProxyIdentifier<unknown>) => { };
