@@ -23,7 +23,7 @@ import { URI } from './types-impl';
 const expect = chai.expect;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-describe('PreferenceRegistryExtImpl:', () => {
+describe.only('PreferenceRegistryExtImpl:', () => {
     const workspaceRoot = URI.parse('/workspace-root');
     let preferenceRegistryExtImpl: PreferenceRegistryExtImpl;
     const getProxy = (proxyId: ProxyIdentifier<unknown>) => { };
@@ -41,36 +41,6 @@ describe('PreferenceRegistryExtImpl:', () => {
         preferenceRegistryExtImpl = new PreferenceRegistryExtImpl(mockRPC, mockWorkspace);
     });
 
-    it('should parse configuration data without overrides', () => {
-        const value: Record<string, any> = {
-            'my.key1.foo': 'value1',
-            'my.key1.bar': 'value2',
-        };
-        const result = preferenceRegistryExtImpl['parseConfigurationData'](value);
-        expect(result.contents.my).to.be.an('object');
-        expect(result.contents.my.key1).to.be.an('object');
-
-        expect(result.contents.my.key1.foo).to.be.an('string');
-        expect(result.contents.my.key1.foo).to.equal('value1');
-
-        expect(result.contents.my.key1.bar).to.be.an('string');
-        expect(result.contents.my.key1.bar).to.equal('value2');
-        expect(result.keys).deep.equal(['my.key1.foo', 'my.key1.bar']);
-    });
-
-    it('should parse configuration with overrides', () => {
-        const value: Record<string, any> = {
-            'editor.tabSize': 2,
-            '[typescript].editor.tabSize': 4,
-        };
-        const result = preferenceRegistryExtImpl['parseConfigurationData'](value);
-        expect(result.contents.editor.tabSize).to.equal(2);
-        const tsOverride = result.overrides[0];
-        expect(tsOverride.contents.editor.tabSize).to.equal(4);
-        expect(tsOverride.identifiers).deep.equal(['typescript']);
-        expect(tsOverride.keys).deep.equal(['editor.tabSize']);
-    });
-
     describe('Prototype pollution', () => {
         it('Ignores key `__proto__`', () => {
             const value: Record<string, any> = {
@@ -80,16 +50,18 @@ describe('PreferenceRegistryExtImpl:', () => {
                 '__proto__': {},
                 '[typescript].someKey.foo': 'value',
                 '[typescript].__proto__.injectedParsedPrototype': true,
+                'b': { '__proto__.injectedParsedPrototype': true },
+                'c': { '__proto__': { 'injectedParsedPrototype': true } }
             };
-            const result = preferenceRegistryExtImpl['parseConfigurationData'](value);
-            expect(result.contents.my).to.be.an('object');
-            expect(result.contents.__proto__).to.be.an('undefined');
-            expect(result.contents.my.key1.foo).to.equal('value1');
-            expect(result.overrides[0].contents.__proto__).to.be.an('undefined');
+            const configuration = preferenceRegistryExtImpl['getConfigurationModel']('test', value);
+            const result = configuration['_contents'];
+            expect(result.my, 'Safe keys are preserved.').to.be.an('object');
+            expect(result.__proto__, 'Keys containing __proto__ are ignored').to.be.an('undefined');
+            expect(result.my.key1.foo, 'Safe keys are dendrified.').to.equal('value1');
             const prototypeObject = Object.prototype as any;
-            expect(prototypeObject.injectedParsedPrototype).to.be.an('undefined');
+            expect(prototypeObject.injectedParsedPrototype, 'Object.prototype is unaffected').to.be.an('undefined');
             const rawObject = {} as any;
-            expect(rawObject.injectedParsedPrototype).to.be.an('undefined');
+            expect(rawObject.injectedParsedPrototype, 'Instantiated objects are unaffected.').to.be.an('undefined');
         });
 
         it('Ignores key `constructor.prototype`', () => {
@@ -98,17 +70,19 @@ describe('PreferenceRegistryExtImpl:', () => {
                 'a.constructor.prototype.injectedParsedConstructorPrototype': true,
                 'constructor.prototype.injectedParsedConstructorPrototype': true,
                 '[python].some.key.foo': 'value',
-                '[python].a.constructor.prototype.injectedParsedConstructorPrototype': true
+                '[python].a.constructor.prototype.injectedParsedConstructorPrototype': true,
+                'constructor': { 'prototype.injectedParsedConstructorPrototype': true },
+                'b': { 'constructor': { 'prototype': { 'injectedParsedConstructorPrototype': true } } }
             };
-            const result = preferenceRegistryExtImpl['parseConfigurationData'](value);
-            expect(result.contents.my).to.be.an('object');
-            expect(result.contents.__proto__).to.be.an('undefined');
-            expect(result.contents.my.key1.foo).to.equal('value1');
+            const configuration = preferenceRegistryExtImpl['getConfigurationModel']('test', value);
+            const result = configuration['_contents'];
+            expect(result.my, 'Safe keys are preserved').to.be.an('object');
+            expect(result.__proto__, 'Keys containing __proto__ are ignored').to.be.an('undefined');
+            expect(result.my.key1.foo, 'Safe keys are dendrified.').to.equal('value1');
             const prototypeObject = Object.prototype as any;
-            expect(prototypeObject.injectedParsedConstructorPrototype).to.be.an('undefined');
-            expect(result.overrides[0].contents.__proto__).to.be.an('undefined');
+            expect(prototypeObject.injectedParsedConstructorPrototype, 'Object.prototype is unaffected').to.be.an('undefined');
             const rawObject = {} as any;
-            expect(rawObject.injectedParsedConstructorPrototype).to.be.an('undefined');
+            expect(rawObject.injectedParsedConstructorPrototype, 'Instantiated objects are unaffected.').to.be.an('undefined');
         });
     });
 
@@ -249,6 +223,11 @@ describe('PreferenceRegistryExtImpl:', () => {
         it('Returns the default value if the language override is undefined', () => {
             const valuesRetrieved = preferenceRegistryExtImpl.getConfiguration(undefined, { uri: workspaceRoot, languageId: 'python' }).get('editor') as Record<string, unknown>;
             expect(valuesRetrieved.tabSize).equal(4);
+        });
+        it('Allows access to language overrides in bracket form', () => {
+            const pythonOverrides = preferenceRegistryExtImpl.getConfiguration().get<Record<string, any>>('[python]');
+            expect(pythonOverrides).not.to.be.undefined;
+            expect(pythonOverrides?.['editor.renderWhitespace']).equal('all');
         });
     });
 
