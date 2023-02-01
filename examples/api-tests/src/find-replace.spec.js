@@ -29,7 +29,6 @@ describe('Find and Replace', function () {
     const { ContextKeyService } = require('@theia/core/lib/browser/context-key-service');
     const { FileNavigatorContribution } = require('@theia/navigator/lib/browser/navigator-contribution');
     const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');
-
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
     const workspaceService = container.get(WorkspaceService);
@@ -38,7 +37,6 @@ describe('Find and Replace', function () {
     const contextKeyService = container.get(ContextKeyService);
     const navigatorContribution = container.get(FileNavigatorContribution);
     const shell = container.get(ApplicationShell);
-
     const rootUri = workspaceService.tryGetRoots()[0].resource;
     const fileUri = rootUri.resolve('webpack.config.js');
 
@@ -59,18 +57,27 @@ describe('Find and Replace', function () {
         });
     }
 
+    function pause(ms = 500) {
+        console.debug(`pause test for: ${ms} ms`);
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+
     before(() => {
         shell.leftPanelHandler.collapse();
     });
 
     beforeEach(async function () {
         await navigatorContribution.closeView();
+        await pause();
         await editorManager.closeAll({ save: false });
+        await pause();
     });
 
     afterEach(async () => {
         toTearDown.dispose();
         await navigatorContribution.closeView();
+        await pause();
         await editorManager.closeAll({ save: false });
     });
 
