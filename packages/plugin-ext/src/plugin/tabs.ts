@@ -306,11 +306,13 @@ export class TabsExtImpl implements TabsExt {
         const closed: theia.TabGroup[] = this.tabGroupArr.filter(group => diff.removed.includes(group.groupId)).map(group => group.apiObject);
         const opened: theia.TabGroup[] = [];
         const changed: theia.TabGroup[] = [];
+        const tabsOpened: theia.Tab[] = [];
 
         this.tabGroupArr = tabGroups.map(tabGroup => {
             const group = new TabGroupExt(tabGroup, () => this.activeGroupId);
             if (diff.added.includes(group.groupId)) {
-                opened.push(group.apiObject);
+                opened.push({ activeTab: undefined, isActive: group.apiObject.isActive, tabs: [], viewColumn: group.apiObject.viewColumn });
+                tabsOpened.push(...group.apiObject.tabs);
             } else {
                 changed.push(group.apiObject);
             }
@@ -326,6 +328,8 @@ export class TabsExtImpl implements TabsExt {
             }
         }
         this.onDidChangeTabGroups.fire(Object.freeze({ opened, closed, changed }));
+        this.onDidChangeTabs.fire({ opened: tabsOpened, changed: [], closed: [] });
+
     }
 
     $acceptTabGroupUpdate(groupDto: TabGroupDto): void {

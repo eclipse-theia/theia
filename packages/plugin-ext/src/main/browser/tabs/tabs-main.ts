@@ -72,6 +72,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
             if (this.tabGroupChanged || this.tabGroupModel.size === 0) {
                 this.tabGroupChanged = false;
                 this.createTabsModel();
+                // tab Open event is done in backend
             } else {
                 const tabBar = mainPanel.findTabBar(widget.title)!;
                 const oldTabInfo = this.tabInfoLookup.get(widget.title);
