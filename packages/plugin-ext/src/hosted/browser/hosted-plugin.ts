@@ -778,22 +778,15 @@ export class HostedPluginSupport {
     protected async restoreWebview(webview: WebviewWidget): Promise<void> {
         await this.activateByEvent(`onWebviewPanel:${webview.viewType}`);
         const restore = this.webviewRevivers.get(webview.viewType);
-        if (!restore) {
-            /* eslint-disable max-len */
-            webview.setHTML(this.getDeserializationFailedContents(`
-            <p>The extension providing '${webview.viewType}' view is not capable of restoring it.</p>
-            <p>Want to help fix this? Please inform the extension developer to register a <a href="https://code.visualstudio.com/api/extension-guides/webview#serialization">reviver</a>.</p>
-            `));
-            /* eslint-enable max-len */
-            return;
-        }
-        try {
-            await restore(webview);
-        } catch (e) {
-            webview.setHTML(this.getDeserializationFailedContents(`
-            An error occurred while restoring '${webview.viewType}' view. Please check logs.
-            `));
-            console.error('Failed to restore the webview', e);
+        if (restore) {
+            try {
+                await restore(webview);
+            } catch (e) {
+                webview.setHTML(this.getDeserializationFailedContents(`
+                An error occurred while restoring '${webview.viewType}' view. Please check logs.
+                `));
+                console.error('Failed to restore the webview', e);
+            }
         }
     }
 
