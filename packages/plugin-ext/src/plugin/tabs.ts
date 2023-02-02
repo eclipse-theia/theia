@@ -291,7 +291,6 @@ export class TabsExtImpl implements TabsExt {
                         return this._closeTabs(tabsOrTabGroups as theia.Tab[], preserveFocus);
                     }
                 },
-
             };
             this.apiObject = Object.freeze(obj);
         }
@@ -319,17 +318,15 @@ export class TabsExtImpl implements TabsExt {
             return group;
         });
 
-        const groupId = tabGroups.find(group => group.isActive === true)?.groupId;
         // Set the active tab group id. skip if no tabgroups are open
         if (tabGroups.length > 0) {
-            const activeTabGroupId = assertIsDefined(groupId);
-            if (activeTabGroupId !== undefined && this.activeGroupId !== activeTabGroupId) {
+            const activeTabGroupId = assertIsDefined(tabGroups.find(group => group.isActive === true)?.groupId);
+            if (this.activeGroupId !== activeTabGroupId) {
                 this.activeGroupId = activeTabGroupId;
             }
         }
         this.onDidChangeTabGroups.fire(Object.freeze({ opened, closed, changed }));
         this.onDidChangeTabs.fire({ opened: tabsOpened, changed: [], closed: [] });
-
     }
 
     $acceptTabGroupUpdate(groupDto: TabGroupDto): void {

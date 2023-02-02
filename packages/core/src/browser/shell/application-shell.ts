@@ -90,7 +90,6 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
     readonly tabBarClasses: string[] = [];
 
     private readonly onDidCreateTabBarEmitter = new Emitter<TabBar<Widget>>();
-    readonly onDidCreateTabBar = this.onDidCreateTabBarEmitter.event;
 
     constructor(
         @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: TabBarRendererFactory,
@@ -98,6 +97,10 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
         @inject(TabBarToolbarFactory) protected readonly tabBarToolbarFactory: TabBarToolbarFactory,
         @inject(BreadcrumbsRendererFactory) protected readonly breadcrumbsRendererFactory: BreadcrumbsRendererFactory,
     ) { }
+
+    get onDidCreateTabBar(): CommonEvent<TabBar<Widget>> {
+        return this.onDidCreateTabBarEmitter.event;
+    }
 
     createTabBar(): TabBar<Widget> {
         const renderer = this.tabBarRendererFactory();

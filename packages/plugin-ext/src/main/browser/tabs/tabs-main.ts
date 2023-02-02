@@ -105,7 +105,6 @@ export class TabsMainImpl implements TabsMain, Disposable {
         this.disposableTabBarListeners.dispose();
         this.applicationShell.mainAreaTabBars.forEach(tabBar => {
             this.attachListenersToTabBar(tabBar);
-
             const groupDto = this.createTabGroupDto(tabBar);
             tabBar.titles.forEach((title, index) => this.tabInfoLookup.set(title, { group: groupDto, tab: groupDto.tabs[index], tabIndex: index }));
             newTabGroupModel.set(tabBar, groupDto);
@@ -137,14 +136,13 @@ export class TabsMainImpl implements TabsMain, Disposable {
 
     protected createTabGroupDto(tabBar: TabBar<Widget>): TabGroupDto {
         const oldDto = this.tabGroupModel.get(tabBar);
-        const groupId = oldDto ? oldDto.groupId : this.groupIdCounter++;
-        const tabs: TabDto[] = tabBar.titles.map(title => {
-            const tabDto = this.createTabDto(title, groupId);
-            return tabDto;
-        });
-        const viewColumn = 1;
+        const groupId = oldDto?.groupId ?? this.groupIdCounter++;
+        const tabs = tabBar.titles.map(title => this.createTabDto(title, groupId));
         return {
-            groupId, tabs, isActive: false, viewColumn
+            groupId,
+            tabs,
+            isActive: false,
+            viewColumn: 1
         };
     }
 
@@ -293,17 +291,25 @@ export class TabsMainImpl implements TabsMain, Disposable {
     }
 
     async $closeTab(tabIds: string[], preserveFocus?: boolean): Promise<boolean> {
-        const widgetIds = tabIds.map(tabId => tabId.substring(tabId.indexOf('~') + 1));
-        const widgets = widgetIds.map(e => this.applicationShell.getWidgetById(e)).filter((e): e is Widget => e !== undefined);
+        const widgets: Widget[] = [];
+        for (const tabId of tabIds) {
+            const cleanedId = tabId.substring(tabId.indexOf('~') + 1);
+            const widget = this.applicationShell.getWidgetById(cleanedId);
+            if (widget) {
+                widgets.push(widget);
+            }
+        }
         await this.applicationShell.closeMany(widgets);
         return true;
     }
 
     async $closeGroup(groupIds: number[], preserveFocus?: boolean): Promise<boolean> {
         for (const groupId of groupIds) {
-            const tabBar = Array.from(this.tabGroupModel.entries()).find(([bar, groupDto]) => groupDto.groupId === groupId)?.[0];
-            if (tabBar) {
-                this.applicationShell.closeTabs(tabBar);
+            tabGroupModel: for (const [bar, groupDto] of this.tabGroupModel) {
+                if (groupDto.groupId === groupId) {
+                    this.applicationShell.closeTabs(bar);
+                    break tabGroupModel;
+                }
             }
         }
         return true;
