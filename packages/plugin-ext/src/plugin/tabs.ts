@@ -291,14 +291,6 @@ export class TabsExtImpl implements TabsExt {
                         return this._closeTabs(tabsOrTabGroups as theia.Tab[], preserveFocus);
                     }
                 },
-                // move: async (tab: theia.Tab, viewColumn: ViewColumn, index: number, preserveFocus?: boolean) => {
-                //  const extHostTab = this._findExtHostTabFromApi(tab);
-                //  if (!extHostTab) {
-                //      throw new Error('Invalid tab');
-                //  }
-                //  this._proxy.$moveTab(extHostTab.tabId, index, typeConverters.ViewColumn.from(viewColumn), preserveFocus);
-                //  return;
-                // }
             };
             this.apiObject = Object.freeze(obj);
         }
@@ -306,7 +298,6 @@ export class TabsExtImpl implements TabsExt {
     }
 
     $acceptEditorTabModel(tabGroups: TabGroupDto[]): void {
-
         const groupIdsBefore = new Set(this.tabGroupArr.map(group => group.groupId));
         const groupIdsAfter = new Set(tabGroups.map(dto => dto.groupId));
         const diff = diffSets(groupIdsBefore, groupIdsAfter);
@@ -314,23 +305,28 @@ export class TabsExtImpl implements TabsExt {
         const closed: theia.TabGroup[] = this.tabGroupArr.filter(group => diff.removed.includes(group.groupId)).map(group => group.apiObject);
         const opened: theia.TabGroup[] = [];
         const changed: theia.TabGroup[] = [];
+        const tabsOpened: theia.Tab[] = [];
 
         this.tabGroupArr = tabGroups.map(tabGroup => {
             const group = new TabGroupExt(tabGroup, () => this.activeGroupId);
             if (diff.added.includes(group.groupId)) {
-                opened.push(group.apiObject);
+                opened.push({ activeTab: undefined, isActive: group.apiObject.isActive, tabs: [], viewColumn: group.apiObject.viewColumn });
+                tabsOpened.push(...group.apiObject.tabs);
             } else {
                 changed.push(group.apiObject);
             }
             return group;
         });
 
-        // Set the active tab group id
-        const activeTabGroupId = assertIsDefined(tabGroups.find(group => group.isActive === true)?.groupId);
-        if (activeTabGroupId !== undefined && this.activeGroupId !== activeTabGroupId) {
-            this.activeGroupId = activeTabGroupId;
+        // Set the active tab group id. skip if no tabgroups are open
+        if (tabGroups.length > 0) {
+            const activeTabGroupId = assertIsDefined(tabGroups.find(group => group.isActive === true)?.groupId);
+            if (this.activeGroupId !== activeTabGroupId) {
+                this.activeGroupId = activeTabGroupId;
+            }
         }
         this.onDidChangeTabGroups.fire(Object.freeze({ opened, closed, changed }));
+        this.onDidChangeTabs.fire({ opened: tabsOpened, changed: [], closed: [] });
     }
 
     $acceptTabGroupUpdate(groupDto: TabGroupDto): void {
