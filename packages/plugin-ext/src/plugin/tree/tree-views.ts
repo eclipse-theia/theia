@@ -315,13 +315,9 @@ class TreeViewExtImpl<T> implements Disposable {
             // parent is inconsistent
             return undefined;
         }
-        let possibleIndex = children.length;
-        // find the right element id by searching all possible id names in the cache
-        while (possibleIndex-- > 0) {
-            const candidateId = this.buildTreeItemId(parentId, treeItem);
-            if (this.nodes.has(candidateId)) {
-                return chain.concat(candidateId);
-            }
+        const candidateId = this.buildTreeItemId(parentId, treeItem);
+        if (this.nodes.has(candidateId)) {
+            return chain.concat(candidateId);
         }
         // couldn't calculate consistent parent chain and id
         return undefined;
