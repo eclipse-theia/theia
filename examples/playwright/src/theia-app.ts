@@ -35,47 +35,38 @@ export const DefaultTheiaAppData: TheiaAppData = {
     shellSelector: '.theia-ApplicationShell'
 };
 
+export class TheiaAppMainPageObjects {
+    statusBar: new (page: TheiaApp) => TheiaStatusBar = TheiaStatusBar;
+    quickCommandPalette: new (page: TheiaApp) => TheiaQuickCommandPalette = TheiaQuickCommandPalette;
+    menuBar: new (page: TheiaApp) => TheiaMenuBar = TheiaMenuBar;
+}
+
 export class TheiaApp {
 
-    readonly statusBar = new TheiaStatusBar(this);
-    readonly quickCommandPalette = new TheiaQuickCommandPalette(this);
-    readonly menuBar = new TheiaMenuBar(this);
-    public workspace: TheiaWorkspace;
+    statusBar: TheiaStatusBar;
+    quickCommandPalette: TheiaQuickCommandPalette;
+    menuBar: TheiaMenuBar;
 
-    static async load(page: Page, initialWorkspace?: TheiaWorkspace): Promise<TheiaApp> {
-        return this.loadApp(page, TheiaApp, initialWorkspace);
+    protected appData = DefaultTheiaAppData;
+
+    public constructor(
+        public page: Page,
+        public workspace: TheiaWorkspace,
+        mainPageObjects: TheiaAppMainPageObjects = new TheiaAppMainPageObjects()
+    ) {
+        this.statusBar = new mainPageObjects.statusBar(this);
+        this.quickCommandPalette = new mainPageObjects.quickCommandPalette(this);
+        this.menuBar = new mainPageObjects.menuBar(this);
     }
 
-    static async loadApp<T extends TheiaApp>(page: Page, appFactory: { new(page: Page, initialWorkspace?: TheiaWorkspace): T }, initialWorkspace?: TheiaWorkspace): Promise<T> {
-        const app = new appFactory(page, initialWorkspace);
-        await app.load();
-        return app;
+    async isShellVisible(): Promise<boolean> {
+        return this.page.isVisible(this.appData.shellSelector);
     }
 
-    public constructor(public page: Page, initialWorkspace?: TheiaWorkspace, protected appData = DefaultTheiaAppData) {
-        this.workspace = initialWorkspace ? initialWorkspace : new TheiaWorkspace();
-        this.workspace.initialize();
-    }
-
-    protected async load(): Promise<void> {
-        await this.loadOrReload(this.page, '/#' + this.workspace.urlEncodedPath);
+    async waitForShellAndInitialized(): Promise<void> {
         await this.page.waitForSelector(this.appData.loadingSelector, { state: 'detached' });
         await this.page.waitForSelector(this.appData.shellSelector);
         await this.waitForInitialized();
-    }
-
-    protected async loadOrReload(page: Page, url: string): Promise<void> {
-        if (page.url() === url) {
-            await page.reload();
-        } else {
-            const wasLoadedAlready = await page.isVisible(this.appData.shellSelector);
-            await page.goto(url);
-            if (wasLoadedAlready) {
-                // Theia doesn't refresh on URL change only
-                // So we need to reload if the app was already loaded before
-                await page.reload();
-            }
-        }
     }
 
     async isMainContentPanelVisible(): Promise<boolean> {

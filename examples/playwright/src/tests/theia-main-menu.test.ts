@@ -14,19 +14,27 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect } from '@playwright/test';
-import { OSUtil } from '../util';
+import { expect, test } from '@playwright/test';
 import { TheiaApp } from '../theia-app';
+import { TheiaBrowserAppLoader } from '../theia-app-loader';
 import { TheiaMenuBar } from '../theia-main-menu';
-import test, { page } from './fixtures/theia-fixture';
+import { OSUtil } from '../util';
 
-let menuBar: TheiaMenuBar;
-
+// the tests in this file reuse a page to run faster and thus are executed serially
+test.describe.configure({ mode: 'serial' });
 test.describe('Theia Main Menu', () => {
 
-    test.beforeAll(async () => {
-        const app = await TheiaApp.load(page);
+    let app: TheiaApp;
+    let menuBar: TheiaMenuBar;
+
+    test.beforeAll(async ({ browser }) => {
+        const page = await browser.newPage();
+        app = await TheiaBrowserAppLoader.load(page);
         menuBar = app.menuBar;
+    });
+
+    test.afterAll(async () => {
+        await app.page.close();
     });
 
     test('should show the main menu bar', async () => {

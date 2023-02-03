@@ -14,22 +14,29 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { TheiaBrowserAppLoader } from '../theia-app-loader';
 import { TheiaApp } from '../theia-app';
 import { DOT_FILES_FILTER, TheiaExplorerView } from '../theia-explorer-view';
 import { TheiaWorkspace } from '../theia-workspace';
-import test, { page } from './fixtures/theia-fixture';
 
-let app: TheiaApp;
-let explorer: TheiaExplorerView;
-
+// the tests in this file reuse a page to run faster and thus are executed serially
+test.describe.configure({ mode: 'serial' });
 test.describe('Theia Explorer View', () => {
 
-    test.beforeAll(async () => {
+    let app: TheiaApp;
+    let explorer: TheiaExplorerView;
+
+    test.beforeAll(async ({ browser }) => {
+        const page = await browser.newPage();
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
-        app = await TheiaApp.load(page, ws);
+        app = await TheiaBrowserAppLoader.load(page, ws);
         explorer = await app.openView(TheiaExplorerView);
         await explorer.waitForVisibleFileNodes();
+    });
+
+    test.afterAll(async () => {
+        await app.page.close();
     });
 
     test('should be visible and active after being opened', async () => {

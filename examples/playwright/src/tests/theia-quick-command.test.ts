@@ -14,23 +14,30 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { TheiaBrowserAppLoader } from '../theia-app-loader';
 import { TheiaAboutDialog } from '../theia-about-dialog';
 import { TheiaApp } from '../theia-app';
 import { TheiaExplorerView } from '../theia-explorer-view';
 import { TheiaNotificationIndicator } from '../theia-notification-indicator';
 import { TheiaNotificationOverlay } from '../theia-notification-overlay';
 import { TheiaQuickCommandPalette } from '../theia-quick-command-palette';
-import test, { page } from './fixtures/theia-fixture';
 
-let app: TheiaApp;
-let quickCommand: TheiaQuickCommandPalette;
-
+// the tests in this file reuse a page to run faster and thus are executed serially
+test.describe.configure({ mode: 'serial' });
 test.describe('Theia Quick Command', () => {
 
-    test.beforeAll(async () => {
-        app = await TheiaApp.load(page);
+    let app: TheiaApp;
+    let quickCommand: TheiaQuickCommandPalette;
+
+    test.beforeAll(async ({ browser }) => {
+        const page = await browser.newPage();
+        app = await TheiaBrowserAppLoader.load(page);
         quickCommand = app.quickCommandPalette;
+    });
+
+    test.afterAll(async () => {
+        await app.page.close();
     });
 
     test('should show quick command palette', async () => {
@@ -43,6 +50,7 @@ test.describe('Theia Quick Command', () => {
     });
 
     test('should trigger \'About\' command after typing', async () => {
+        await quickCommand.open();
         await quickCommand.type('About');
         await quickCommand.trigger('About');
         expect(await quickCommand.isOpen()).toBe(false);
@@ -57,6 +65,7 @@ test.describe('Theia Quick Command', () => {
     });
 
     test('should trigger \'Toggle Explorer View\' command after typing', async () => {
+        await quickCommand.open();
         await quickCommand.type('Toggle Explorer');
         await quickCommand.trigger('Toggle Explorer View');
         expect(await quickCommand.isOpen()).toBe(false);

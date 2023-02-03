@@ -14,17 +14,24 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { TheiaApp } from '../theia-app';
+import { TheiaBrowserAppLoader } from '../theia-app-loader';
 import { TheiaProblemsView } from '../theia-problem-view';
-import test, { page } from './fixtures/theia-fixture';
 
-let app: TheiaApp;
-
+// the tests in this file reuse a page to run faster and thus are executed serially
+test.describe.configure({ mode: 'serial' });
 test.describe('Theia Problems View', () => {
 
-    test.beforeAll(async () => {
-        app = await TheiaApp.load(page);
+    let app: TheiaApp;
+
+    test.beforeAll(async ({ browser }) => {
+        const page = await browser.newPage();
+        app = await TheiaBrowserAppLoader.load(page);
+    });
+
+    test.afterAll(async () => {
+        await app.page.close();
     });
 
     test('should be visible and active after being opened', async () => {
