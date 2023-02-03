@@ -197,24 +197,32 @@ export class NsfwWatcher {
     }
 
     /**
+     * @throws with {@link WatcherDisposal} if this instance is disposed.
+     */
+    protected assertNotDisposed(): void {
+        if (this.disposed) {
+            throw WatcherDisposal;
+        }
+    }
+
+    /**
      * When starting a watcher, we'll first check and wait for the path to exists
      * before running an NSFW watcher.
      */
     protected async start(): Promise<void> {
-        while (!this.disposed && await fsp.stat(this.fsPath).then(() => false, () => true)) {
+        while (await fsp.stat(this.fsPath).then(() => false, () => true)) {
             await timeout(500);
+            this.assertNotDisposed();
         }
+        this.assertNotDisposed();
         const watcher = await this.createNsfw();
-        if (this.disposed) {
-            return;
-        }
-
+        this.assertNotDisposed();
         await watcher.start();
         this.debug('STARTED', `disposed=${this.disposed}`);
         // The watcher could be disposed while it was starting, make sure to check for this:
         if (this.disposed) {
             await this.stopNsfw(watcher);
-            return;
+            throw WatcherDisposal;
         }
         this.nsfw = watcher;
     }
