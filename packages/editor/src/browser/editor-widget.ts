@@ -93,9 +93,11 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
     }
 
     protected handleTabBarChange(oldTabBar?: TabBar<Widget>, newTabBar?: TabBar<Widget>): void {
-        const competingEditors = newTabBar?.titles.filter(title => title !== this.title
+        const ownSaveable = Saveable.get(this);
+        const competingEditors = ownSaveable && newTabBar?.titles.filter(title => title !== this.title
             && (title.owner instanceof EditorWidget)
             && title.owner.editor.uri.isEqual(this.editor.uri)
+            && Saveable.get(title.owner) === ownSaveable
         );
         competingEditors?.forEach(title => title.owner.close());
     }
