@@ -75,20 +75,22 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
     protected async trackTerminal(terminal: TerminalWidget): Promise<void> {
         let name = terminal.title.label;
         this.extProxy.$terminalCreated(terminal.id, name);
+
         const updateTitle = () => {
             if (name !== terminal.title.label) {
                 name = terminal.title.label;
                 this.extProxy.$terminalNameChanged(terminal.id, name);
             }
         };
-        terminal.title.changed.connect(updateTitle);
-        this.toDispose.push(Disposable.create(() => terminal.title.changed.disconnect(updateTitle)));
 
         const updateProcessId = () => terminal.processId.then(
             processId => this.extProxy.$terminalOpened(terminal.id, processId, terminal.terminalId, terminal.dimensions.cols, terminal.dimensions.rows),
             () => {/* no-op */ }
         );
+
         updateProcessId();
+        terminal.title.changed.connect(updateTitle);
+        this.toDispose.push(Disposable.create(() => terminal.title.changed.disconnect(updateTitle)));
         this.toDispose.push(terminal.onDidOpen(() => updateProcessId()));
         this.toDispose.push(terminal.onTerminalDidClose(term => this.extProxy.$terminalClosed(term.id, term.exitStatus)));
         this.toDispose.push(terminal.onSizeChanged(({ cols, rows }) => {
