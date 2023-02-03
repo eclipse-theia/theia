@@ -352,6 +352,7 @@ class TreeViewExtImpl<T> implements Disposable {
         let id = typeof item.id === 'string' ? item.id : this.getItemLabel(item);
         if (id) {
             // we use '' as the id of the root, we don't consider that a valid id
+            // since '' is falsy, we'll never get '' in this branch
             id = TreeViewExtImpl.ID_ITEM + id;
         } else {
             id = TreeViewExtImpl.ID_COMPUTED + this.nextItemId++;
