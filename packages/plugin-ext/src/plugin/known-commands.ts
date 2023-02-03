@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Range as R, Position as P, Location as L } from '@theia/core/shared/vscode-languageserver-protocol';
 import * as theia from '@theia/plugin';
+import { Range as R, Position as P, Location as L } from '@theia/core/shared/vscode-languageserver-protocol';
+import { URI as TheiaURI } from '@theia/core/lib/common/uri';
 import { cloneAndChange } from '../common/objects';
 import { Position, Range, Location, CallHierarchyItem, TypeHierarchyItem, URI, TextDocumentShowOptions } from './types-impl';
 import {
@@ -26,8 +27,6 @@ import {
     isModelCallHierarchyIncomingCall, toCallHierarchyIncomingCall,
     isModelCallHierarchyOutgoingCall, toCallHierarchyOutgoingCall, fromTextDocumentShowOptions
 } from './type-converters';
-
-import { URI as TheiaURI } from '@theia/core/lib/common/uri';
 
 // Here is a mapping of VSCode commands to monaco commands with their conversions
 export namespace KnownCommands {
