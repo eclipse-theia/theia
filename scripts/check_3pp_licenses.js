@@ -66,10 +66,10 @@ async function main() {
         fs.renameSync(dashLicensesSummary, `${dashLicensesSummary}.old`);
     }
     info('Running dash-licenses...');
-    const args = ['-jar', dashLicensesJar, 'yarn.lock', '-batch', '50', '-timeout', '240', '-summary', dashLicensesSummary];
+    const args = ['-jar', dashLicensesJar, 'yarn.lock', '-batch', '50', '-timeout', '240', '-project', project, '-summary', dashLicensesSummary];
     if (autoReviewMode && personalAccessToken) {
         info(`Using "review" mode for project: ${project}`);
-        args.push('-review', '-token', personalAccessToken, '-project', project);
+        args.push('-review', '-token', personalAccessToken);
     }
     const dashError = getErrorFromStatus(spawn('java', args, {
         stdio: ['ignore', 'ignore', 'inherit']
