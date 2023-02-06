@@ -345,7 +345,9 @@ export class DebugSession implements CompositeTreeElement {
             }
             this.breakpoints.setExceptionBreakpoints(exceptionBreakpoints);
         }
-        await this.updateBreakpoints({ sourceModified: false });
+        if (!this.options.configuration.noDebug) {
+            await this.updateBreakpoints({ sourceModified: false });
+        }
         if (this.capabilities.supportsConfigurationDoneRequest) {
             await this.sendRequest('configurationDone', {});
         }
