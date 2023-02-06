@@ -44,6 +44,7 @@
     "node-gyp": "^9.0.0",
     "nsfw": "^2.2.4",
     "nyc": "^15.0.0",
+    "mkdirp": "^0.5.0",
     "puppeteer": "^2.0.0",
     "puppeteer-to-istanbul": "^1.2.2",
     "rimraf": "^2.6.1",
