@@ -54,7 +54,8 @@
     text-overflow: ellipsis;
     overflow: hidden;
     display: flex;
-    padding: 2px 5px;
+    padding: 0px 5px;
+    line-height: 22px;
 }
 
 .theia-select-component-dropdown .theia-select-component-description {
@@ -87,8 +88,6 @@
     color: var(--theia-list-activeSelectionForeground);
     cursor: pointer;
     background: var(--theia-list-activeSelectionBackground);
-    outline: var(--theia-focusBorder) solid 1px;
-    outline-offset: -1px;
 }
 
 .theia-select-component-dropdown .theia-select-component-separator {
