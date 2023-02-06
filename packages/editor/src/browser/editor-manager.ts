@@ -17,7 +17,7 @@
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { RecursivePartial, Emitter, Event, MaybePromise } from '@theia/core/lib/common';
-import { WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget } from '@theia/core/lib/browser';
+import { WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget, PreferenceService } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { Range, Position, Location, TextEditor } from './editor';
 import { EditorWidgetFactory } from './editor-widget-factory';
@@ -53,6 +53,8 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
      * Emit when the current editor is changed.
      */
     readonly onCurrentEditorChanged: Event<EditorWidget | undefined> = this.onCurrentEditorChangedEmitter.event;
+
+    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
 
     @postConstruct()
     protected override init(): void {
@@ -203,6 +205,13 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
                             return super.open(uri, { counter: id, ...options });
                         }
                     }
+                }
+            }
+            // If the user has opted to prefer to open an existing editor even if it's on a different tab, check if we have anything about the URI.
+            if (this.preferenceService.get('workbench.editor.revealIfOpen', false)) {
+                const counter = this.getCounterForUri(uri);
+                if (counter !== undefined) {
+                    return super.open(uri, { counter, ...options });
                 }
             }
             // Open a new widget.
