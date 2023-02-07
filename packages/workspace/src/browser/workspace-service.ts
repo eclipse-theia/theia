@@ -717,16 +717,16 @@ export namespace WorkspaceData {
     }
 
     export function buildWorkspaceData(folders: string[] | FileStat[], additionalFields?: Partial<WorkspaceData>): WorkspaceData {
-        let roots: string[] = [];
+        const roots = new Set<string>();
         if (folders.length > 0) {
             if (typeof folders[0] !== 'string') {
-                roots = (<FileStat[]>folders).map(folder => folder.resource.toString());
+                (<FileStat[]>folders).forEach(folder => roots.add(folder.resource.toString()));
             } else {
-                roots = <string[]>folders;
+                (<string[]>folders).forEach(folder => roots.add(folder));
             }
         }
         const data: WorkspaceData = {
-            folders: roots.map(folder => ({ path: folder }))
+            folders: Array.from(roots, folder => ({ path: folder }))
         };
         if (additionalFields) {
             delete additionalFields.folders;
