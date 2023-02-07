@@ -202,3 +202,7 @@
 .dialogContent .theia-ControlPanel > * {
     margin-left: 4px;
 }
+
+.dialogContent .theia-input {
+    margin-top: 10px;
+}
