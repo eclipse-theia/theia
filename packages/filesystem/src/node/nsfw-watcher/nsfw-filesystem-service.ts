@@ -23,7 +23,7 @@ import {
     FileChangeType, FileSystemWatcherService, FileSystemWatcherServiceClient, WatchOptions
 } from '../../common/filesystem-watcher-protocol';
 import { FileChangeCollection } from '../file-change-collection';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
 
 export interface NsfwWatcherOptions {
     ignored: IMinimatch[]
@@ -197,21 +197,33 @@ export class NsfwWatcher {
     }
 
     /**
+     * @throws with {@link WatcherDisposal} if this instance is disposed.
+     */
+    protected assertNotDisposed(): void {
+        if (this.disposed) {
+            throw WatcherDisposal;
+        }
+    }
+
+    /**
      * When starting a watcher, we'll first check and wait for the path to exists
      * before running an NSFW watcher.
      */
     protected async start(): Promise<void> {
-        while (await this.orCancel(fsp.stat(this.fsPath).then(() => false, () => true))) {
-            await this.orCancel(new Promise(resolve => setTimeout(resolve, 500)));
+        while (await fsp.stat(this.fsPath).then(() => false, () => true)) {
+            await timeout(500);
+            this.assertNotDisposed();
         }
-        const watcher = await this.orCancel(this.createNsfw());
-        await this.orCancel(watcher.start().then(() => {
-            this.debug('STARTED', `disposed=${this.disposed}`);
-            // The watcher could be disposed while it was starting, make sure to check for this:
-            if (this.disposed) {
-                this.stopNsfw(watcher);
-            }
-        }));
+        this.assertNotDisposed();
+        const watcher = await this.createNsfw();
+        this.assertNotDisposed();
+        await watcher.start();
+        this.debug('STARTED', `disposed=${this.disposed}`);
+        // The watcher could be disposed while it was starting, make sure to check for this:
+        if (this.disposed) {
+            await this.stopNsfw(watcher);
+            throw WatcherDisposal;
+        }
         this.nsfw = watcher;
     }
 
@@ -297,13 +309,6 @@ export class NsfwWatcher {
             clients: this.getClientIds(),
             uri: this.fsPath,
         });
-    }
-
-    /**
-     * Wrap a promise to reject as soon as this handle gets disposed.
-     */
-    protected async orCancel<T>(promise: Promise<T>): Promise<T> {
-        return Promise.race<T>([this.deferredDisposalDeferred.promise, promise]);
     }
 
     /**
