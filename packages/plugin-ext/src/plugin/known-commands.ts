@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Range as R, Position as P, Location as L } from '@theia/core/shared/vscode-languageserver-protocol';
 import * as theia from '@theia/plugin';
+import { Range as R, Position as P, Location as L } from '@theia/core/shared/vscode-languageserver-protocol';
+import { URI as TheiaURI } from '@theia/core/lib/common/uri';
 import { cloneAndChange } from '../common/objects';
 import { Position, Range, Location, CallHierarchyItem, TypeHierarchyItem, URI, TextDocumentShowOptions } from './types-impl';
 import {
@@ -62,6 +63,9 @@ export namespace KnownCommands {
             return createConversionFunction(...argStack)(args);
         }
     };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const identity = (args: any[]) => args;
 
     mappings['editor.action.select.all'] = ['editor.action.select.all', CONVERT_VSCODE_TO_MONACO];
     mappings['editor.action.toggleHighContrast'] = ['editor.action.toggleHighContrast', CONVERT_VSCODE_TO_MONACO];
@@ -301,6 +305,17 @@ export namespace KnownCommands {
 
     mappings['vscode.open'] = ['vscode.open', CONVERT_VSCODE_TO_MONACO];
     mappings['vscode.diff'] = ['vscode.diff', CONVERT_VSCODE_TO_MONACO];
+
+    // terminal commands
+    mappings['workbench.action.terminal.new'] = ['terminal:new', identity];
+    mappings['workbench.action.terminal.newWithProfile'] = ['terminal:new:profile', identity];
+    mappings['workbench.action.terminal.selectDefaultShell'] = ['terminal:profile:default', identity];
+    mappings['workbench.action.terminal.newInActiveWorkspace'] = ['terminal:new:active:workspace', identity];
+    mappings['workbench.action.terminal.clear'] = ['terminal:clear', identity];
+    mappings['openInTerminal'] = ['terminal:context', createConversionFunction((uri: URI) => new TheiaURI(uri))];
+    mappings['workbench.action.terminal.split'] = ['terminal:split', identity];
+    mappings['workbench.action.terminal.focusFind'] = ['terminal:find', identity];
+    mappings['workbench.action.terminal.hideFind'] = ['terminal:find:cancel', identity];
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function map<T>(id: string, args: any[] | undefined, toDo: (mappedId: string, mappedArgs: any[] | undefined, mappedResult: ConversionFunction | undefined) => T): T {

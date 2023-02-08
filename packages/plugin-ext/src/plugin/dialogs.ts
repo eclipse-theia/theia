@@ -30,8 +30,8 @@ export class DialogsExtImpl {
             title: options.title,
             openLabel: options.openLabel,
             defaultUri: options.defaultUri ? options.defaultUri.path : undefined,
-            canSelectFiles: options.canSelectFiles ? options.canSelectFiles : true,
-            canSelectFolders: options.canSelectFolders ? options.canSelectFolders : false,
+            canSelectFiles: typeof options.canSelectFiles === 'boolean' ? options.canSelectFiles : true,
+            canSelectFolders: typeof options.canSelectFolders === 'boolean' ? options.canSelectFolders : false,
             canSelectMany: options.canSelectMany,
             filters: options.filters
         } as OpenDialogOptionsMain;
