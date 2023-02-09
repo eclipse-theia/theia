@@ -141,7 +141,7 @@ export class RawProcess extends Process {
     }
 
     get pid(): number {
-        if (!this.process) {
+        if (!this.process || !this.process.pid) {
             throw new Error('process did not start correctly');
         }
         return this.process.pid;

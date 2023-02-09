@@ -126,7 +126,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
             await waitForTerminated.promise;
         }
 
-        this.killProcessTree(cp.pid);
+        this.killProcessTree(cp.pid!);
     }
 
     killProcessTree(parentPid: number): void {
@@ -206,7 +206,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
         childProcess.stderr!.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
 
         this.logger.debug(`[${options.serverName}: ${childProcess.pid}] IPC started`);
-        childProcess.once('exit', (code: number, signal: string) => this.onChildProcessExit(options.serverName, childProcess.pid, code, signal));
+        childProcess.once('exit', (code: number, signal: string) => this.onChildProcessExit(options.serverName, childProcess.pid!, code, signal));
         childProcess.on('error', err => this.onChildProcessError(err));
         return childProcess;
     }
