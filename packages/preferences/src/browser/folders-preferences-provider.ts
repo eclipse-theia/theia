@@ -39,21 +39,16 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
     protected readonly providers = new Map<string, FolderPreferenceProvider>();
 
     @postConstruct()
-    protected async init(): Promise<void> {
-        await this.workspaceService.roots;
-
-        this.updateProviders();
-        this.workspaceService.onWorkspaceChanged(() => this.updateProviders());
-
-        const readyPromises: Promise<void>[] = [];
-        for (const provider of this.providers.values()) {
-            readyPromises.push(provider.ready.catch(e => console.error(e)));
-        }
-        Promise.all(readyPromises).then(() => this._ready.resolve());
+    protected init(): void {
+        this.workspaceService.roots.then(roots => {
+            this.updateProviders(roots);
+            this.workspaceService.onWorkspaceChanged(newRoots => this.updateProviders(newRoots));
+            const allReady = Array.from(this.providers.values(), provider => provider.ready);
+            Promise.allSettled(allReady).then(() => this._ready.resolve());
+        });
     }
 
-    protected updateProviders(): void {
-        const roots = this.workspaceService.tryGetRoots();
+    protected updateProviders(roots: FileStat[]): void {
         const toDelete = new Set(this.providers.keys());
         for (const folder of roots) {
             for (const configPath of this.configurations.getPaths()) {
@@ -94,7 +89,6 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
                 return configUri;
             }
         }
-        return undefined;
     }
 
     override getDomain(): string[] {
@@ -232,5 +226,4 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         this.toDispose.push(provider.onDidPreferencesChanged(change => this.onDidPreferencesChangedEmitter.fire(change)));
         return provider;
     }
-
 }

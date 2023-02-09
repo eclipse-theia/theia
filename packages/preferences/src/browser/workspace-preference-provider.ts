@@ -22,6 +22,7 @@ import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { PreferenceScope, PreferenceProvider } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { WorkspaceFilePreferenceProviderFactory, WorkspaceFilePreferenceProvider } from './workspace-file-preference-provider';
+import { FoldersPreferencesProvider } from './folders-preferences-provider';
 
 @injectable()
 export class WorkspacePreferenceProvider extends PreferenceProvider {
@@ -32,7 +33,7 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
     @inject(WorkspaceFilePreferenceProviderFactory)
     protected readonly workspaceFileProviderFactory: WorkspaceFilePreferenceProviderFactory;
 
-    @inject(PreferenceProvider) @named(PreferenceScope.Folder)
+    @inject(FoldersPreferencesProvider) @named(PreferenceScope.Workspace)
     protected readonly folderPreferenceProvider: PreferenceProvider;
 
     protected readonly toDisposeOnEnsureDelegateUpToDate = new DisposableCollection();
@@ -102,33 +103,24 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
     }
 
     override get<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): T | undefined {
-        const delegate = this.delegate;
-        return delegate ? delegate.get<T>(preferenceName, resourceUri) : undefined;
+        return this.delegate?.get<T>(preferenceName, resourceUri);
     }
 
     override resolve<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): { value?: T, configUri?: URI } {
-        const delegate = this.delegate;
-        return delegate ? delegate.resolve<T>(preferenceName, resourceUri) : {};
+        return this.delegate?.resolve<T>(preferenceName, resourceUri) ?? {};
     }
 
     getPreferences(resourceUri: string | undefined = this.ensureResourceUri()): { [p: string]: any } {
-        const delegate = this.delegate;
-        return delegate ? delegate.getPreferences(resourceUri) : {};
+        return this.delegate?.getPreferences(resourceUri) ?? {};
     }
 
     async setPreference(preferenceName: string, value: any, resourceUri: string | undefined = this.ensureResourceUri()): Promise<boolean> {
-        const delegate = this.delegate;
-        if (delegate) {
-            return delegate.setPreference(preferenceName, value, resourceUri);
-        }
-        return false;
+        return this.delegate?.setPreference(preferenceName, value, resourceUri) ?? false;
     }
 
     protected ensureResourceUri(): string | undefined {
         if (this.workspaceService.workspace && !this.workspaceService.isMultiRootWorkspaceOpened) {
             return this.workspaceService.workspace.resource.toString();
         }
-        return undefined;
     }
-
 }
