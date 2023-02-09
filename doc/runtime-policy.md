@@ -45,5 +45,5 @@ with VS Code's Node runtime, which depends on the Electron version that they end
 You should look for this information in the [VS Code repository](https://github.com/microsoft/vscode).
 
 VS Code Extensions being meant to run in VS Code, developers may use any API available in the runtime in which their
-extension runs. So if they expect to run in Node 14, then they may use Node 14 APIs. Running your Theia application
-on Node 12 then means that some plugin features might not work because of missing APIs from the Node runtime.
+extension runs. So if they expect to run in Node 16, then they may use Node 16 APIs. Running your Theia application
+on Node 14 then means that some plugin features might not work because of missing APIs from the Node runtime.

@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.35.0 - 02/23/2023
+
+<a name="breaking_changes_1.35.0">[Breaking Changes:](#breaking_changes_1.35.0)</a>
+
+- [repo] drop support for `Node 14` [#12169](https://github.com/eclipse-theia/theia/pull/12169)
+
 ## v1.34.0 - 01/26/2023
 
 - [application-package] bumped the default supported API version from `1.55.2` to `1.66.2` [#12104](https://github.com/eclipse-theia/theia/pull/12104)
