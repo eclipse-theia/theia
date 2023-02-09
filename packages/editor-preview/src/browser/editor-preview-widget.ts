@@ -14,21 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Message } from '@theia/core/shared/@phosphor/messaging';
-import { DockPanel, TabBar, Widget, PINNED_CLASS } from '@theia/core/lib/browser';
+import { TabBar, Widget, PINNED_CLASS } from '@theia/core/lib/browser';
 import { EditorWidget, TextEditor } from '@theia/editor/lib/browser';
 import { Disposable, DisposableCollection, Emitter, SelectionService, UNTITLED_SCHEME } from '@theia/core/lib/common';
-import { find } from '@theia/core/shared/@phosphor/algorithm';
 
 const PREVIEW_TITLE_CLASS = 'theia-editor-preview-title-unpinned';
 export class EditorPreviewWidget extends EditorWidget {
     protected _isPreview = false;
-    protected lastTabbar: TabBar<Widget> | undefined;
 
     protected readonly onDidChangePreviewStateEmitter = new Emitter<void>();
     readonly onDidChangePreviewState = this.onDidChangePreviewStateEmitter.event;
-
-    protected readonly toDisposeOnLocationChange = new DisposableCollection();
 
     get isPreview(): boolean {
         return this._isPreview;
@@ -40,7 +35,6 @@ export class EditorPreviewWidget extends EditorWidget {
     ) {
         super(editor, selectionService);
         this.toDispose.push(this.onDidChangePreviewStateEmitter);
-        this.toDispose.push(this.toDisposeOnLocationChange);
     }
 
     initializePreview(): void {
@@ -66,34 +60,17 @@ export class EditorPreviewWidget extends EditorWidget {
     convertToNonPreview(): void {
         if (this._isPreview) {
             this._isPreview = false;
-            this.toDisposeOnLocationChange.dispose();
-            this.lastTabbar = undefined;
+            this.currentTabbar = undefined;
             this.title.className = this.title.className.replace(PREVIEW_TITLE_CLASS, '');
             this.onDidChangePreviewStateEmitter.fire();
             this.onDidChangePreviewStateEmitter.dispose();
         }
     }
 
-    protected override onAfterAttach(msg: Message): void {
-        super.onAfterAttach(msg);
+    protected override handleTabBarChange(oldTabBar?: TabBar<Widget> | undefined, newTabBar?: TabBar<Widget> | undefined): void {
+        super.handleTabBarChange(oldTabBar, newTabBar);
         if (this._isPreview) {
-            this.checkForTabbarChange();
-        }
-    }
-
-    protected checkForTabbarChange(): void {
-        const { parent } = this;
-        if (parent instanceof DockPanel) {
-            this.toDisposeOnLocationChange.dispose();
-            const newTabbar = find(parent.tabBars(), tabbar => !!tabbar.titles.find(title => title === this.title));
-            if (this.lastTabbar && this.lastTabbar !== newTabbar) {
-                this.convertToNonPreview();
-            } else {
-                this.lastTabbar = newTabbar;
-                const listener = () => this.checkForTabbarChange();
-                parent.layoutModified.connect(listener);
-                this.toDisposeOnLocationChange.push(Disposable.create(() => parent.layoutModified.disconnect(listener)));
-            }
+            if (oldTabBar && newTabBar) { this.convertToNonPreview(); }
         }
     }
 
