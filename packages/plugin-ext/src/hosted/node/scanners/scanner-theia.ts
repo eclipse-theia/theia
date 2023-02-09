@@ -64,21 +64,15 @@ import {
 } from '../../../common/plugin-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
-import { isObject } from 'util';
+import { isObject, isStringArray, RecursivePartial } from '@theia/core/lib/common/types';
 import { GrammarsReader } from './grammars-reader';
 import { CharacterPair } from '../../../common/plugin-api-rpc';
 import * as jsoncparser from 'jsonc-parser';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { deepClone } from '@theia/core/lib/common/objects';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
-import { RecursivePartial } from '@theia/core/lib/common/types';
-import {
-    ProblemMatcherContribution,
-    ProblemPatternContribution,
-    TaskDefinition
-} from '@theia/task/lib/common/task-protocol';
+import { TaskDefinition } from '@theia/task/lib/common/task-protocol';
 import { ColorDefinition } from '@theia/core/lib/common/color';
-import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
 import { PluginUriFactory } from './plugin-uri-factory';
 
 namespace nls {
@@ -181,42 +175,42 @@ export class TheiaPluginScanner implements PluginScanner {
         contributions.configurationDefaults = PreferenceSchemaProperties.is(configurationDefaults) ? configurationDefaults : undefined;
 
         try {
-            if (rawPlugin.contributes!.languages) {
-                const languages = this.readLanguages(rawPlugin.contributes.languages!, rawPlugin.packagePath);
+            if (rawPlugin.contributes.languages) {
+                const languages = this.readLanguages(rawPlugin.contributes.languages, rawPlugin.packagePath);
                 contributions.languages = languages;
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'languages'.`, rawPlugin.contributes!.languages, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'languages'.`, rawPlugin.contributes.languages, err);
         }
 
         try {
-            if (rawPlugin.contributes!.submenus) {
-                contributions.submenus = this.readSubmenus(rawPlugin.contributes.submenus!, rawPlugin);
+            if (rawPlugin.contributes.submenus) {
+                contributions.submenus = this.readSubmenus(rawPlugin.contributes.submenus, rawPlugin);
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'submenus'.`, rawPlugin.contributes!.submenus, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'submenus'.`, rawPlugin.contributes.submenus, err);
         }
 
         try {
-            if (rawPlugin.contributes!.grammars) {
-                const grammars = this.grammarsReader.readGrammars(rawPlugin.contributes.grammars!, rawPlugin.packagePath);
+            if (rawPlugin.contributes.grammars) {
+                const grammars = this.grammarsReader.readGrammars(rawPlugin.contributes.grammars, rawPlugin.packagePath);
                 contributions.grammars = grammars;
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'grammars'.`, rawPlugin.contributes!.grammars, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'grammars'.`, rawPlugin.contributes.grammars, err);
         }
 
         try {
-            if (rawPlugin.contributes?.customEditors) {
-                const customEditors = this.readCustomEditors(rawPlugin.contributes.customEditors!);
+            if (rawPlugin.contributes.customEditors) {
+                const customEditors = this.readCustomEditors(rawPlugin.contributes.customEditors);
                 contributions.customEditors = customEditors;
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'customEditors'.`, rawPlugin.contributes!.customEditors, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'customEditors'.`, rawPlugin.contributes.customEditors, err);
         }
 
         try {
-            if (rawPlugin.contributes && rawPlugin.contributes.viewsContainers) {
+            if (rawPlugin.contributes.viewsContainers) {
                 const viewsContainers = rawPlugin.contributes.viewsContainers;
                 contributions.viewsContainers = {};
 
@@ -231,28 +225,28 @@ export class TheiaPluginScanner implements PluginScanner {
                 }
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'viewsContainers'.`, rawPlugin.contributes!.viewsContainers, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'viewsContainers'.`, rawPlugin.contributes.viewsContainers, err);
         }
 
         try {
-            if (rawPlugin.contributes!.views) {
+            if (rawPlugin.contributes.views) {
                 contributions.views = {};
 
-                Object.keys(rawPlugin.contributes.views!).forEach(location => {
-                    const views = this.readViews(rawPlugin.contributes!.views![location]);
-                    contributions.views![location] = views;
-                });
+                for (const location of Object.keys(rawPlugin.contributes.views)) {
+                    const views = this.readViews(rawPlugin.contributes.views[location]);
+                    contributions.views[location] = views;
+                }
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'views'.`, rawPlugin.contributes!.views, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'views'.`, rawPlugin.contributes.views, err);
         }
 
         try {
-            if (rawPlugin.contributes!.viewsWelcome) {
-                contributions.viewsWelcome = this.readViewsWelcome(rawPlugin.contributes!.viewsWelcome, rawPlugin.contributes!.views);
+            if (rawPlugin.contributes.viewsWelcome) {
+                contributions.viewsWelcome = this.readViewsWelcome(rawPlugin.contributes!.viewsWelcome, rawPlugin.contributes.views);
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'viewsWelcome'.`, rawPlugin.contributes!.viewsWelcome, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'viewsWelcome'.`, rawPlugin.contributes.viewsWelcome, err);
         }
 
         try {
@@ -266,67 +260,73 @@ export class TheiaPluginScanner implements PluginScanner {
         }
 
         try {
-            if (rawPlugin.contributes!.menus) {
+            if (rawPlugin.contributes.menus) {
                 contributions.menus = {};
 
-                Object.keys(rawPlugin.contributes.menus!).forEach(location => {
-                    const menus = this.readMenus(rawPlugin.contributes!.menus![location]);
-                    contributions.menus![location] = menus;
-                });
+                for (const location of Object.keys(rawPlugin.contributes.menus)) {
+                    const menus = this.readMenus(rawPlugin.contributes.menus[location]);
+                    contributions.menus[location] = menus;
+                }
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'menus'.`, rawPlugin.contributes!.menus, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'menus'.`, rawPlugin.contributes.menus, err);
         }
 
         try {
-            if (rawPlugin.contributes! && rawPlugin.contributes.keybindings) {
+            if (rawPlugin.contributes.keybindings) {
                 const rawKeybindings = Array.isArray(rawPlugin.contributes.keybindings) ? rawPlugin.contributes.keybindings : [rawPlugin.contributes.keybindings];
                 contributions.keybindings = rawKeybindings.map(rawKeybinding => this.readKeybinding(rawKeybinding));
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'keybindings'.`, rawPlugin.contributes!.keybindings, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'keybindings'.`, rawPlugin.contributes.keybindings, err);
         }
 
         try {
-            if (rawPlugin.contributes!.debuggers) {
-                const debuggers = this.readDebuggers(rawPlugin.contributes.debuggers!);
+            if (rawPlugin.contributes.debuggers) {
+                const debuggers = this.readDebuggers(rawPlugin.contributes.debuggers);
                 contributions.debuggers = debuggers;
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'debuggers'.`, rawPlugin.contributes!.debuggers, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'debuggers'.`, rawPlugin.contributes.debuggers, err);
         }
 
         try {
-            if (rawPlugin.contributes!.taskDefinitions) {
-                const definitions = rawPlugin.contributes!.taskDefinitions!;
+            if (rawPlugin.contributes.taskDefinitions) {
+                const definitions = rawPlugin.contributes.taskDefinitions!;
                 contributions.taskDefinitions = definitions.map(definitionContribution => this.readTaskDefinition(rawPlugin.name, definitionContribution));
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'taskDefinitions'.`, rawPlugin.contributes!.taskDefinitions, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'taskDefinitions'.`, rawPlugin.contributes.taskDefinitions, err);
         }
 
         try {
-            if (rawPlugin.contributes!.problemMatchers) {
-                contributions.problemMatchers = rawPlugin.contributes!.problemMatchers as ProblemMatcherContribution[];
-            }
+            contributions.problemMatchers = rawPlugin.contributes.problemMatchers;
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'problemMatchers'.`, rawPlugin.contributes!.problemMatchers, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'problemMatchers'.`, rawPlugin.contributes.problemMatchers, err);
         }
 
         try {
-            if (rawPlugin.contributes!.problemPatterns) {
-                contributions.problemPatterns = rawPlugin.contributes!.problemPatterns as ProblemPatternContribution[];
-            }
+            contributions.problemPatterns = rawPlugin.contributes.problemPatterns;
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'problemPatterns'.`, rawPlugin.contributes!.problemPatterns, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'problemPatterns'.`, rawPlugin.contributes.problemPatterns, err);
         }
 
         try {
-            if (rawPlugin.contributes!.resourceLabelFormatters) {
-                contributions.resourceLabelFormatters = rawPlugin.contributes!.resourceLabelFormatters as ResourceLabelFormatter[];
-            }
+            contributions.resourceLabelFormatters = rawPlugin.contributes.resourceLabelFormatters;
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'resourceLabelFormatters'.`, rawPlugin.contributes!.resourceLabelFormatters, err);
+            console.error(`Could not read '${rawPlugin.name}' contribution 'resourceLabelFormatters'.`, rawPlugin.contributes.resourceLabelFormatters, err);
+        }
+
+        try {
+            contributions.authentication = rawPlugin.contributes.authentication;
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'authentication'.`, rawPlugin.contributes.authentication, err);
+        }
+
+        try {
+            contributions.notebooks = rawPlugin.contributes.notebooks;
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'notebooks'.`, rawPlugin.contributes.authentication, err);
         }
 
         try {
@@ -837,7 +837,6 @@ export class TheiaPluginScanner implements PluginScanner {
         }
 
         let result: AutoClosingPairConditional[] | undefined = undefined;
-        // tslint:disable-next-line:one-variable-per-declaration
         for (let i = 0, len = source.length; i < len; i++) {
             const pair = source[i];
             if (Array.isArray(pair)) {
@@ -861,7 +860,7 @@ export class TheiaPluginScanner implements PluginScanner {
                     continue;
                 }
                 if (typeof pair.notIn !== 'undefined') {
-                    if (!isStringArr(pair.notIn)) {
+                    if (!isStringArray(pair.notIn)) {
                         console.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}].notIn\` to be a string array.`);
                         continue;
                     }
@@ -884,7 +883,6 @@ export class TheiaPluginScanner implements PluginScanner {
         }
 
         let result: AutoClosingPair[] | undefined = undefined;
-        // tslint:disable-next-line:one-variable-per-declaration
         for (let i = 0, len = source.length; i < len; i++) {
             const pair = source[i];
             if (Array.isArray(pair)) {
@@ -918,21 +916,7 @@ export class TheiaPluginScanner implements PluginScanner {
 
 function isCharacterPair(something: CharacterPair): boolean {
     return (
-        isStringArr(something)
+        isStringArray(something)
         && something.length === 2
     );
-}
-
-function isStringArr(something: string[]): boolean {
-    if (!Array.isArray(something)) {
-        return false;
-    }
-    // tslint:disable-next-line:one-variable-per-declaration
-    for (let i = 0, len = something.length; i < len; i++) {
-        if (typeof something[i] !== 'string') {
-            return false;
-        }
-    }
-    return true;
-
 }

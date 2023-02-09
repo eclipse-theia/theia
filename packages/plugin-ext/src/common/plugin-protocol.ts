@@ -72,6 +72,7 @@ export namespace PluginPackage {
  * This interface describes a package.json contribution section object.
  */
 export interface PluginPackageContribution {
+    authentication?: PluginPackageAuthenticationProvider[];
     configuration?: RecursivePartial<PreferenceSchema> | RecursivePartial<PreferenceSchema>[];
     configurationDefaults?: RecursivePartial<PreferenceSchemaProperties>;
     languages?: PluginPackageLanguageContribution[];
@@ -96,16 +97,29 @@ export interface PluginPackageContribution {
     resourceLabelFormatters?: ResourceLabelFormatter[];
     localizations?: PluginPackageLocalization[];
     terminal?: PluginPackageTerminal;
+    notebooks?: PluginPackageNotebook[];
+}
+
+export interface PluginPackageNotebook {
+    type: string;
+    displayName: string;
+    selector?: readonly { filenamePattern?: string; excludeFileNamePattern?: string }[];
+    priority?: string;
+}
+
+export interface PluginPackageAuthenticationProvider {
+    id: string;
+    label: string;
 }
 
 export interface PluginPackageTerminalProfile {
-    title: string,
-    id: string,
-    icon?: string
+    title: string;
+    id: string;
+    icon?: string;
 }
 
 export interface PluginPackageTerminal {
-    profiles: PluginPackageTerminalProfile[]
+    profiles: PluginPackageTerminalProfile[];
 }
 
 export interface PluginPackageLocalization {
@@ -544,6 +558,7 @@ export interface PluginEntryPoint {
  */
 export interface PluginContribution {
     activationEvents?: string[];
+    authentication?: AuthenticationProviderInformation[];
     configuration?: PreferenceSchema[];
     configurationDefaults?: PreferenceSchemaProperties;
     languages?: LanguageContribution[];
@@ -567,6 +582,19 @@ export interface PluginContribution {
     resourceLabelFormatters?: ResourceLabelFormatter[];
     localizations?: Localization[];
     terminalProfiles?: TerminalProfile[];
+    notebooks?: NotebookContribution[];
+}
+
+export interface NotebookContribution {
+    type: string;
+    displayName: string;
+    selector?: readonly { filenamePattern?: string; excludeFileNamePattern?: string }[];
+    priority?: string;
+}
+
+export interface AuthenticationProviderInformation {
+    id: string;
+    label: string;
 }
 
 export interface TerminalProfile {
