@@ -37,6 +37,7 @@ describe('Launch Preferences', function () {
     const { FileResourceResolver } = require('@theia/filesystem/lib/browser/file-resource');
     const { AbstractResourcePreferenceProvider } = require('@theia/preferences/lib/browser/abstract-resource-preference-provider');
     const { waitForEvent } = require('@theia/core/lib/common/promise-util');
+    const { FoldersPreferencesProvider } = require('@theia/preferences/lib/browser/folders-preferences-provider');
 
     const container = window.theia.container;
     /** @type {import('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
@@ -46,7 +47,7 @@ describe('Launch Preferences', function () {
     /** @type {import('@theia/preferences/lib/browser/workspace-preference-provider').WorkspacePreferenceProvider} */
     const workspacePreferences = container.getNamed(PreferenceProvider, PreferenceScope.Workspace);
     /** @type {import('@theia/preferences/lib/browser/folders-preferences-provider').FoldersPreferencesProvider} */
-    const folderPreferences = container.getNamed(PreferenceProvider, PreferenceScope.Folder);
+    const folderPreferences = container.get(FoldersPreferencesProvider);
     const workspaceService = container.get(WorkspaceService);
     const fileService = container.get(FileService);
     const fileResourceResolver = container.get(FileResourceResolver);
