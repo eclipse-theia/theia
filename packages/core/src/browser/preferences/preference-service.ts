@@ -565,7 +565,7 @@ export class PreferenceServiceImpl implements PreferenceService {
         for (const scope of PreferenceScope.getScopes()) {
             if (this.schema.isValidInScope(preferenceName, scope)) {
                 const provider = this.getProvider(scope);
-                if (provider) {
+                if (provider?.canHandleScope(scope)) {
                     const { configUri, value } = provider.resolve<T>(preferenceName, resourceUri);
                     if (value !== undefined) {
                         result.configUri = configUri;

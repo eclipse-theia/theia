@@ -267,4 +267,8 @@ export abstract class PreferenceProvider implements Disposable {
         }
         return preferences;
     }
+
+    canHandleScope(scope: PreferenceScope): boolean {
+        return true;
+    }
 }
