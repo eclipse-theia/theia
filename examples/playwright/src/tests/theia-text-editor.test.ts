@@ -16,7 +16,7 @@
 
 import { expect, test } from '@playwright/test';
 import { TheiaApp } from '../theia-app';
-import { TheiaBrowserAppLoader } from '../theia-app-loader';
+import { TheiaAppLoader } from '../theia-app-loader';
 import { DefaultPreferences, PreferenceIds, TheiaPreferenceView } from '../theia-preference-view';
 import { TheiaTextEditor } from '../theia-text-editor';
 import { TheiaWorkspace } from '../theia-workspace';
@@ -27,10 +27,9 @@ test.describe('Theia Text Editor', () => {
 
     let app: TheiaApp;
 
-    test.beforeAll(async ({ browser }) => {
-        const page = await browser.newPage();
+    test.beforeAll(async ({ playwright, browser }) => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
-        app = await TheiaBrowserAppLoader.load(page, ws);
+        app = await TheiaAppLoader.load({ playwright, browser }, ws);
 
         // set auto-save preference to off
         const preferenceView = await app.openPreferences(TheiaPreferenceView);

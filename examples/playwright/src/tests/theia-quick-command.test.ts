@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect, test } from '@playwright/test';
-import { TheiaBrowserAppLoader } from '../theia-app-loader';
+import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaAboutDialog } from '../theia-about-dialog';
 import { TheiaApp } from '../theia-app';
 import { TheiaExplorerView } from '../theia-explorer-view';
@@ -30,9 +30,8 @@ test.describe('Theia Quick Command', () => {
     let app: TheiaApp;
     let quickCommand: TheiaQuickCommandPalette;
 
-    test.beforeAll(async ({ browser }) => {
-        const page = await browser.newPage();
-        app = await TheiaBrowserAppLoader.load(page);
+    test.beforeAll(async ({ playwright, browser }) => {
+        app = await TheiaAppLoader.load({ playwright, browser });
         quickCommand = app.quickCommandPalette;
     });
 

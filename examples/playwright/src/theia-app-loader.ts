@@ -11,12 +11,15 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { Page, PlaywrightWorkerArgs, _electron as electron } from '@playwright/test';
+import * as path from 'path';
+import * as fs from 'fs';
 import { TheiaApp, TheiaAppMainPageObjects } from './theia-app';
 import { TheiaWorkspace } from './theia-workspace';
+import { OSUtil } from './util';
 
 export interface TheiaAppFactory<T extends TheiaApp> {
     new(page: Page, initialWorkspace?: TheiaWorkspace, mainPageObjects?: TheiaAppMainPageObjects): T;
@@ -32,7 +35,7 @@ function initializeWorkspace(initialWorkspace?: TheiaWorkspace): TheiaWorkspace 
     return workspace;
 }
 
-export class TheiaBrowserAppLoader {
+class TheiaBrowserAppLoader {
 
     static async load<T extends TheiaApp>(
         page: Page,
@@ -71,7 +74,7 @@ export class TheiaBrowserAppLoader {
 
 }
 
-export class TheiaElectronAppLoader {
+class TheiaElectronAppLoader {
 
     static async load<T extends TheiaApp>(
         launchOptions: ElectronLaunchOptions | object,
@@ -108,7 +111,16 @@ export class ElectronLaunchOptions {
     ) { }
 
     playwrightOptions(workspace?: TheiaWorkspace): object {
-        const executablePath = this.electronAppPath + '/node_modules/.bin/electron';
+        let executablePath = path.normalize(path.join(this.electronAppPath, 'node_modules/.bin/electron'));
+        if (OSUtil.isWindows) {
+            executablePath += '.cmd';
+        }
+        if (!fs.existsSync(executablePath)) {
+            const errorMsg = `executablePath: ${executablePath} does not exist`;
+            console.log(errorMsg);
+            throw new Error(errorMsg);
+        }
+
         const args: string[] = [];
         args.push(this.electronAppPath);
         args.push(...this.additionalArgs);
@@ -119,6 +131,8 @@ export class ElectronLaunchOptions {
         if (workspace) {
             args.push(workspace.path);
         }
+        process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS = '1';
+        console.log(`Launching Electron: ${executablePath} ${args.join(' ')}`);
         return { executablePath, args };
     }
 }

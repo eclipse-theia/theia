@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2021 logi.cals GmbH, EclipseSource and others.
+// Copyright (C) 2022 EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -11,17 +11,16 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect, test } from '@playwright/test';
-import { TheiaAppLoader } from '../theia-app-loader';
+import { PlaywrightTestConfig } from '@playwright/test';
+import baseConfig from './playwright.config';
 
-test.describe('Theia Application', () => {
+const ciConfig: PlaywrightTestConfig = {
+    ...baseConfig,
+    workers: 1,
+    retries: 1
+};
 
-    test('should load and should show main content panel', async ({ playwright, browser }) => {
-        const app = await TheiaAppLoader.load({ playwright, browser });
-        expect(await app.isMainContentPanelVisible()).toBe(true);
-    });
-
-});
+export default ciConfig;

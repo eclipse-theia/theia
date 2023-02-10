@@ -21,10 +21,12 @@ import { ipcRenderer, contextBridge } from '@theia/core/electron-shared/electron
 const api: TheiaFilesystemAPI = {
     showOpenDialog: (options: OpenDialogOptions) => ipcRenderer.invoke(CHANNEL_SHOW_OPEN, options),
     showSaveDialog: (options: SaveDialogOptions) => ipcRenderer.invoke(CHANNEL_SHOW_SAVE, options),
+    useNativeDialogs: !('THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS' in process.env && process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS === '1')
 };
 
 export function preload(): void {
     console.log('exposing theia filesystem electron api');
 
     contextBridge.exposeInMainWorld('electronTheiaFilesystem', api);
+
 }

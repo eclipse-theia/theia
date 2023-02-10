@@ -16,7 +16,7 @@
 
 import { expect, test } from '@playwright/test';
 import { TheiaApp } from '../theia-app';
-import { TheiaBrowserAppLoader } from '../theia-app-loader';
+import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaNotificationIndicator } from '../theia-notification-indicator';
 import { TheiaProblemIndicator } from '../theia-problem-indicator';
 import { TheiaStatusBar } from '../theia-status-bar';
@@ -29,9 +29,8 @@ test.describe('Theia Status Bar', () => {
     let app: TheiaApp;
     let statusBar: TheiaStatusBar;
 
-    test.beforeAll(async ({ browser }) => {
-        const page = await browser.newPage();
-        app = await TheiaBrowserAppLoader.load(page);
+    test.beforeAll(async ({ playwright, browser }) => {
+        app = await TheiaAppLoader.load({ playwright, browser });
         statusBar = app.statusBar;
     });
 

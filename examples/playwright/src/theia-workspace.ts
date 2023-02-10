@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import * as fs from 'fs-extra';
+import * as path from 'path';
 import { resolve } from 'path';
 import { OSUtil, urlEncodePath } from './util';
 
@@ -29,7 +30,7 @@ export class TheiaWorkspace {
      * @param {string[]} pathOfFilesToInitialize Path to files or folders that shall be copied to the workspace
      */
     constructor(protected pathOfFilesToInitialize?: string[]) {
-        this.workspacePath = fs.mkdtempSync(`${OSUtil.tmpDir}${OSUtil.fileSeparator}cloud-ws-`);
+        this.workspacePath = fs.mkdtempSync(path.join(OSUtil.tmpDir, 'cloud-ws-'));
     }
 
     /** Performs the file system operations preparing the workspace location synchronously. */
@@ -46,15 +47,7 @@ export class TheiaWorkspace {
     }
 
     get path(): string {
-        let workspacePath = this.workspacePath;
-        if (!OSUtil.osStartsWithFileSeparator(this.workspacePath)) {
-            workspacePath = `${OSUtil.fileSeparator}${workspacePath}`;
-        }
-        if (OSUtil.isWindows) {
-            // Drive letters in windows paths have to be lower case
-            workspacePath = workspacePath.replace(/.:/, matchedChar => matchedChar.toLowerCase());
-        }
-        return workspacePath;
+        return path.normalize(this.workspacePath);
     }
 
     get urlEncodedPath(): string {

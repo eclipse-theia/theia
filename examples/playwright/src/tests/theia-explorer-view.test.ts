@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect, test } from '@playwright/test';
-import { TheiaBrowserAppLoader } from '../theia-app-loader';
+import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaApp } from '../theia-app';
 import { DOT_FILES_FILTER, TheiaExplorerView } from '../theia-explorer-view';
 import { TheiaWorkspace } from '../theia-workspace';
@@ -27,10 +27,9 @@ test.describe('Theia Explorer View', () => {
     let app: TheiaApp;
     let explorer: TheiaExplorerView;
 
-    test.beforeAll(async ({ browser }) => {
-        const page = await browser.newPage();
+    test.beforeAll(async ({ playwright, browser }) => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
-        app = await TheiaBrowserAppLoader.load(page, ws);
+        app = await TheiaAppLoader.load({ playwright, browser }, ws);
         explorer = await app.openView(TheiaExplorerView);
         await explorer.waitForVisibleFileNodes();
     });

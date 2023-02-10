@@ -16,7 +16,7 @@
 
 import { expect, test } from '@playwright/test';
 import { TheiaApp } from '../theia-app';
-import { TheiaBrowserAppLoader } from '../theia-app-loader';
+import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaToolbar } from '../theia-toolbar';
 import { TheiaWorkspace } from '../theia-workspace';
 
@@ -42,9 +42,8 @@ test.describe('Theia Sample Application', () => {
 
     let app: TheiaSampleApp;
 
-    test.beforeAll(async ({ browser }) => {
-        const page = await browser.newPage();
-        app = await TheiaBrowserAppLoader.load(page, new TheiaWorkspace(), TheiaSampleApp);
+    test.beforeAll(async ({ playwright, browser }) => {
+        app = await TheiaAppLoader.load({ playwright, browser }, new TheiaWorkspace(), TheiaSampleApp);
     });
 
     test.afterAll(async () => {

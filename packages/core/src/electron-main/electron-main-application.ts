@@ -212,6 +212,7 @@ export class ElectronMainApplication {
     }
 
     async start(config: FrontendApplicationConfig): Promise<void> {
+        const args = this.processArgv.getProcessArgvWithoutBin(process.argv);
         this.useNativeWindowFrame = this.getTitleBarStyle(config) === 'native';
         this._config = config;
         this.hookApplicationEvents();
@@ -223,12 +224,15 @@ export class ElectronMainApplication {
         await this.startContributions();
         await this.launch({
             secondInstance: false,
-            argv: this.processArgv.getProcessArgvWithoutBin(process.argv),
+            argv: args,
             cwd: process.cwd()
         });
     }
 
     protected getTitleBarStyle(config: FrontendApplicationConfig): 'native' | 'custom' {
+        if ('THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS' in process.env && process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS === '1') {
+            return 'custom';
+        }
         if (isOSX) {
             return 'native';
         }

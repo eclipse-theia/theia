@@ -11,17 +11,28 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect, test } from '@playwright/test';
-import { TheiaAppLoader } from '../theia-app-loader';
+import { PlaywrightTestConfig } from '@playwright/test';
 
-test.describe('Theia Application', () => {
+const config: PlaywrightTestConfig = {
+    testDir: '../lib/tests',
+    testMatch: ['**/*.js'],
+    workers: 2,
+    // Timeout for each test in milliseconds.
+    timeout: 60 * 1000,
+    use: {
+        baseURL: 'http://localhost:3000',
+        browserName: 'chromium',
+        permissions: ['clipboard-read'],
+        screenshot: 'only-on-failure'
+    },
+    preserveOutput: 'failures-only',
+    reporter: [
+        ['list'],
+        ['allure-playwright']
+    ]
+};
 
-    test('should load and should show main content panel', async ({ playwright, browser }) => {
-        const app = await TheiaAppLoader.load({ playwright, browser });
-        expect(await app.isMainContentPanelVisible()).toBe(true);
-    });
-
-});
+export default config;

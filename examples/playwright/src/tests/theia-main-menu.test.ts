@@ -16,7 +16,7 @@
 
 import { expect, test } from '@playwright/test';
 import { TheiaApp } from '../theia-app';
-import { TheiaBrowserAppLoader } from '../theia-app-loader';
+import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaMenuBar } from '../theia-main-menu';
 import { OSUtil } from '../util';
 
@@ -27,9 +27,8 @@ test.describe('Theia Main Menu', () => {
     let app: TheiaApp;
     let menuBar: TheiaMenuBar;
 
-    test.beforeAll(async ({ browser }) => {
-        const page = await browser.newPage();
-        app = await TheiaBrowserAppLoader.load(page);
+    test.beforeAll(async ({ playwright, browser }) => {
+        app = await TheiaAppLoader.load({ playwright, browser });
         menuBar = app.menuBar;
     });
 

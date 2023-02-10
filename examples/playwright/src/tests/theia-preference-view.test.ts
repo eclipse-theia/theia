@@ -16,7 +16,7 @@
 
 import { expect, test } from '@playwright/test';
 import { TheiaApp } from '../theia-app';
-import { TheiaBrowserAppLoader } from '../theia-app-loader';
+import { TheiaAppLoader } from '../theia-app-loader';
 import { DefaultPreferences, PreferenceIds, TheiaPreferenceView } from '../theia-preference-view';
 
 // the tests in this file reuse a page to run faster and thus are executed serially
@@ -25,9 +25,8 @@ test.describe('Preference View', () => {
 
     let app: TheiaApp;
 
-    test.beforeAll(async ({ browser }) => {
-        const page = await browser.newPage();
-        app = await TheiaBrowserAppLoader.load(page);
+    test.beforeAll(async ({ playwright, browser }) => {
+        app = await TheiaAppLoader.load({ playwright, browser });
     });
 
     test.afterAll(async () => {
