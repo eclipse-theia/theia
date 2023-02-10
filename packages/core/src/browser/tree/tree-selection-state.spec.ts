@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 TypeFox and others.
+// Copyright (C) 2018-2023 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -16,10 +16,10 @@
 
 import { expect } from 'chai';
 import { MockTreeModel } from './test/mock-tree-model';
-import { TreeSelectionState } from './tree-selection-state';
 import { createTreeTestContainer } from './test/tree-test-container';
-import { SelectableTreeNode, TreeSelection } from './tree-selection';
 import { TreeModel } from './tree-model';
+import { SelectableTreeNode, TreeSelection } from './tree-selection';
+import { TreeSelectionState } from './tree-selection-state';
 
 namespace TreeSelectionState {
 
@@ -33,6 +33,16 @@ namespace TreeSelectionState {
     }
 
 }
+
+const LARGE_FLAT_MOCK_ROOT = (length = 250000) => {
+    const children = Array.from({ length }, (_, idx) => ({ 'id': (idx + 1).toString() }));
+    return MockTreeModel.Node.toTreeNode({
+        'id': 'ROOT',
+        'children': [
+            ...children
+        ]
+    });
+};
 
 describe('tree-selection-state', () => {
 
@@ -388,6 +398,23 @@ describe('tree-selection-state', () => {
             .nextState('range', '2', {
                 focus: '10',
                 selection: ['2', '3', '4', '5', '6', '7', '8', '9', '10']
+            });
+    });
+
+    it('should be able to handle range selection on large tree', () => {
+        model.root = LARGE_FLAT_MOCK_ROOT();
+        expect(model.selectedNodes).to.be.empty;
+
+        const start = 10;
+        const end = 20;
+        newState()
+            .nextState('toggle', start.toString(), {
+                focus: start.toString(),
+                selection: [start.toString()]
+            })
+            .nextState('range', end.toString(), {
+                focus: start.toString(),
+                selection: Array.from({ length: end - start + 1 }, (_, idx) => (start + idx).toString())
             });
     });
 
