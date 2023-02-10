@@ -429,16 +429,29 @@ export class PreferenceServiceImpl implements PreferenceService {
         return { value, configUri };
     }
 
-    async set(preferenceName: string, value: any, scope: PreferenceScope | undefined, resourceUri?: string): Promise<void> {
-        const resolvedScope = scope ?? (!resourceUri ? PreferenceScope.Workspace : PreferenceScope.Folder);
-        if (resolvedScope === PreferenceScope.Folder && !resourceUri) {
+    async set(preferenceName: string, value: any, scope?: PreferenceScope, resourceUri?: string): Promise<void> {
+        if (scope === PreferenceScope.Folder && !resourceUri) {
             throw new Error('Unable to write to Folder Settings because no resource is provided.');
         }
-        const provider = this.getProvider(resolvedScope);
-        if (provider && await provider.setPreference(preferenceName, value, resourceUri)) {
-            return;
+        let scopes: PreferenceScope[];
+        if (scope === undefined) {
+            // Pick default scopes to query:
+            if (resourceUri) {
+                // If we don't specify an explicit scope, then try both Folder
+                // and Workspace scopes with resourceUri:
+                scopes = [PreferenceScope.Folder, PreferenceScope.Workspace];
+            } else {
+                scopes = [PreferenceScope.Workspace];
+            }
+        } else {
+            scopes = [scope];
         }
-        throw new Error(`Unable to write to ${PreferenceScope[resolvedScope]} Settings.`);
+        for (scope of scopes) {
+            if (await this.getProvider(scope)?.setPreference(preferenceName, value, resourceUri)) {
+                return;
+            }
+        }
+        throw new Error(`Unable to write to ${PreferenceScope[scope!]} Settings.`);
     }
 
     getBoolean(preferenceName: string): boolean | undefined;

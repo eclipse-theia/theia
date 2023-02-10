@@ -19,12 +19,12 @@
 describe('Preferences', function () {
     this.timeout(5_000);
     const { assert } = chai;
-    const { PreferenceProvider } = require('@theia/core/lib/browser/preferences/preference-provider');
     const { PreferenceService, PreferenceScope } = require('@theia/core/lib/browser/preferences/preference-service');
     const { FileService } = require('@theia/filesystem/lib/browser/file-service');
     const { PreferenceLanguageOverrideService } = require('@theia/core/lib/browser/preferences/preference-language-override-service');
     const { MonacoTextModelService } = require('@theia/monaco/lib/browser/monaco-text-model-service');
     const { PreferenceSchemaProvider } = require('@theia/core/lib/browser/preferences/preference-contribution')
+    const { FoldersPreferencesProvider } = require('@theia/preferences/lib/browser/folders-preferences-provider');
     const { container } = window.theia;
     /** @type {import ('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
     const preferenceService = container.get(PreferenceService);
@@ -34,7 +34,7 @@ describe('Preferences', function () {
     /** @type {import ('@theia/core/lib/common/uri').default} */
     const uri = preferenceService.getConfigUri(PreferenceScope.Workspace);
     /** @type {import('@theia/preferences/lib/browser/folders-preferences-provider').FoldersPreferencesProvider} */
-    const folderPreferences = container.getNamed(PreferenceProvider, PreferenceScope.Folder);
+    const folderPreferences = container.get(FoldersPreferencesProvider);
     /** @type PreferenceSchemaProvider */
     const schemaProvider = container.get(PreferenceSchemaProvider);
     const modelService = container.get(MonacoTextModelService);

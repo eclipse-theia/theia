@@ -89,6 +89,11 @@ export class TaskConfigurationManager {
     @postConstruct()
     protected async init(): Promise<void> {
         this.createModels();
+        this.workspacePreferences.onDidPreferencesChanged(e => {
+            if (e['tasks']) {
+                this.updateModels();
+            }
+        });
         this.folderPreferences.onDidPreferencesChanged(e => {
             if (e['tasks']) {
                 this.updateModels();
@@ -117,11 +122,13 @@ export class TaskConfigurationManager {
                 .filter(key => key !== TaskScope.Global && key !== TaskScope.Workspace)
         );
         this.updateWorkspaceModel();
+        const isFolderWorkspace = this.workspaceService.opened && !this.workspaceService.saved;
+        const preferenceProvider = isFolderWorkspace ? this.folderPreferences : this.workspacePreferences;
         for (const rootStat of roots) {
             const key = rootStat.resource.toString();
             toDelete.delete(key);
             if (!this.models.has(key)) {
-                const model = new TaskConfigurationModel(key, this.folderPreferences);
+                const model = new TaskConfigurationModel(key, preferenceProvider);
                 model.onDidChange(() => this.onDidChangeTaskConfigEmitter.fire({ scope: key, type: FileChangeType.UPDATED }));
                 model.onDispose(() => this.models.delete(key));
                 this.models.set(key, model);
@@ -210,7 +217,9 @@ export class TaskConfigurationManager {
             case TaskScope.Workspace:
                 return PreferenceScope.Workspace;
             default:
-                return PreferenceScope.Folder;
+                return this.workspaceService.isMultiRootWorkspaceOpened
+                    ? PreferenceScope.Folder
+                    : PreferenceScope.Workspace;
         }
     }
 
@@ -231,7 +240,6 @@ export class TaskConfigurationManager {
         if (newDelegate !== this.workspaceDelegate) {
             this.workspaceDelegate = newDelegate;
             this.toDisposeOnDelegateChange.dispose();
-
             const workspaceModel = new TaskConfigurationModel(effectiveScope, newDelegate);
             this.toDisposeOnDelegateChange.push(workspaceModel);
             // If the delegate is the folder preference provider, its events will be relayed via the folder scope models.
