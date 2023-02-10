@@ -58,18 +58,13 @@ export namespace DataTransferItem {
 
 export namespace DataTransfer {
     export async function toDataTransferDTO(value: VSDataTransfer): Promise<DataTransferDTO> {
-        const newDTO: DataTransferDTO = { items: [] };
-
-        const promises: Promise<unknown>[] = [];
-
-        value.forEach((val, key) => {
-            promises.push((async () => {
-                newDTO.items.push([key, await DataTransferItem.from(key, val)]);
-            })());
-        });
-
-        await Promise.all(promises);
-
-        return newDTO;
+        return {
+            items: await Promise.all(
+                Array.from(value.entries())
+                    .map(
+                        async ([mime, item]) => [mime, await DataTransferItem.from(mime, item)]
+                    )
+            )
+        };
     }
 }

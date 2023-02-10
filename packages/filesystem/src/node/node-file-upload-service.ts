@@ -64,9 +64,10 @@ export class NodeFileUploadService implements BackendApplicationContribution {
         }
         try {
             const target = FileUri.fsPath(fields.uri);
-            if (!fields.leaveInTemp) { // if dont move the file, just leave it where it is
+            if (!fields.leaveInTemp) {
                 await fs.move(request.file.path, target, { overwrite: true });
             } else {
+                 // leave the file where it is, just rename it to its original name
                 fs.rename(request.file.path, request.file.path.replace(request.file.filename, request.file.originalname));
             }
             response.status(200).send(target); // ok

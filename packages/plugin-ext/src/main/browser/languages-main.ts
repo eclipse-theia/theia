@@ -44,7 +44,7 @@ import {
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from '@theia/monaco/lib/browser/monaco-languages';
-import CoreURI, { URI } from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ProblemManager } from '@theia/markers/lib/browser';
@@ -260,13 +260,13 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     $clearDiagnostics(id: string): void {
         for (const uri of this.problemManager.getUris()) {
-            this.problemManager.setMarkers(new CoreURI(uri), id, []);
+            this.problemManager.setMarkers(new URI(uri), id, []);
         }
     }
 
     $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void {
         for (const [uriString, markers] of delta) {
-            const uri = new CoreURI(uriString);
+            const uri = new URI(uriString);
             this.problemManager.setMarkers(uri, id, markers.map(reviveMarker));
         }
     }
@@ -739,14 +739,13 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
     protected async provideDocumentDropEdits(handle: number, model: ITextModel, position: monaco.IPosition,
         dataTransfer: VSDataTransfer, token: CancellationToken): Promise<DocumentOnDropEdit | undefined> {
         await this.fileUploadService.upload(new URI(), { source: dataTransfer, leaveInTemp: true });
-        return this.proxy.$provideDocumentDropEdits(handle, model.uri, position, await DataTransfer.toDataTransferDTO(dataTransfer), token).then(edit => {
-            if (edit) {
-                return {
-                    insertText: edit.insertText instanceof SnippetString ? { snippet: edit.insertText.value } : edit.insertText,
-                    additionalEdit: toMonacoWorkspaceEdit(edit?.additionalEdit)
-                };
-            }
-        });
+        const edit = await this.proxy.$provideDocumentDropEdits(handle, model.uri, position, await DataTransfer.toDataTransferDTO(dataTransfer), token);
+        if (edit) {
+            return {
+                insertText: edit.insertText instanceof SnippetString ? { snippet: edit.insertText.value } : edit.insertText,
+                additionalEdit: toMonacoWorkspaceEdit(edit?.additionalEdit)
+            };
+        }
     }
 
     $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], eventHandle: number | undefined): void {
