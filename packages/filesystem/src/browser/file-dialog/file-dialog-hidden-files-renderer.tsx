@@ -28,7 +28,7 @@ export interface HiddenFilesToggleRendererFactory {
     (fileDialogTree: FileDialogTree): FileDialogHiddenFilesToggleRenderer;
 }
 export class FileDialogHiddenFilesToggleRenderer extends ReactRenderer {
-    @inject(FileDialogTree) _fileDialogTree: FileDialogTree;
+    @inject(FileDialogTree) fileDialogTree: FileDialogTree;
 
     @postConstruct()
     protected init(): void {
@@ -52,8 +52,7 @@ export class FileDialogHiddenFilesToggleRenderer extends ReactRenderer {
 
     protected onCheckboxChanged(e: React.ChangeEvent<HTMLInputElement>): void {
         const { checked } = e.target;
-        console.log('is checked', checked);
-        // this.fileDialogTree.showHidden = checked;
+        this.fileDialogTree.showHidden = checked;
         e.stopPropagation();
     }
 }
