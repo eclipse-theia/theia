@@ -26,6 +26,7 @@ import { FileDialogTreeFiltersRenderer, FileDialogTreeFilters, FileDialogTreeFil
 import URI from '@theia/core/lib/common/uri';
 import { Panel } from '@theia/core/shared/@phosphor/widgets';
 import * as DOMPurify from '@theia/core/shared/dompurify';
+import { FileDialogHiddenFilesToggleRenderer, HiddenFilesToggleRendererFactory } from './file-dialog-hidden-files-renderer';
 
 export const OpenFileDialogFactory = Symbol('OpenFileDialogFactory');
 export interface OpenFileDialogFactory {
@@ -127,11 +128,13 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
     protected up: HTMLSpanElement;
     protected locationListRenderer: LocationListRenderer;
     protected treeFiltersRenderer: FileDialogTreeFiltersRenderer | undefined;
+    protected hiddenFilesToggleRenderer: FileDialogHiddenFilesToggleRenderer;
     protected treePanel: Panel;
 
     @inject(FileDialogWidget) readonly widget: FileDialogWidget;
     @inject(LocationListRendererFactory) readonly locationListFactory: LocationListRendererFactory;
     @inject(FileDialogTreeFiltersRendererFactory) readonly treeFiltersFactory: FileDialogTreeFiltersRendererFactory;
+    @inject(HiddenFilesToggleRendererFactory) readonly hiddenFilesToggleFactory: HiddenFilesToggleRendererFactory;
 
     constructor(
         @inject(FileDialogProps) override readonly props: FileDialogProps
@@ -173,6 +176,10 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         this.toDispose.push(this.locationListRenderer);
         this.locationListRenderer.host.classList.add(NAVIGATION_LOCATION_LIST_PANEL_CLASS);
         navigationPanel.appendChild(this.locationListRenderer.host);
+
+        this.hiddenFilesToggleRenderer = this.hiddenFilesToggleFactory(this.widget.model.tree);
+        console.log('the renderer', this.hiddenFilesToggleRenderer);
+        this.contentNode.appendChild(this.hiddenFilesToggleRenderer.host);
 
         if (this.props.filters) {
             this.treeFiltersRenderer = this.treeFiltersFactory({ suppliedFilters: this.props.filters, fileDialogTree: this.widget.model.tree });

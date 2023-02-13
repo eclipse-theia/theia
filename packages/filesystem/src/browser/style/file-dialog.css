@@ -22,7 +22,7 @@
     --theia-private-navigation-panel-line-height: 23px;
 }
 
- /*
+/*
   * Open and Save file dialogs
   */
 
@@ -37,6 +37,7 @@
 
 
 @media only screen and (max-height: 700px) {
+
     .dialogContent .theia-FileDialog,
     .dialogContent .theia-SaveFileDialog,
     .dialogContent .theia-ResponsiveFileDialog {
@@ -130,8 +131,7 @@
 }
 
 .dialogContent .theia-LocationList,
-.dialogContent .theia-LocationTextInput
-{
+.dialogContent .theia-LocationTextInput {
     box-sizing: content-box;
     padding: unset;
     position: absolute;
@@ -142,8 +142,7 @@
 }
 
 .dialogContent .theia-LocationList,
-.dialogContent .theia-LocationTextInput
-{
+.dialogContent .theia-LocationTextInput {
     padding-left: var(--theia-private-navigation-panel-icon-size);
     width: calc(100% - var(--theia-private-navigation-panel-icon-size));
 }
@@ -199,6 +198,13 @@
     margin-bottom: 0px;
 }
 
-.dialogContent .theia-ControlPanel > * {
+.dialogContent .theia-ControlPanel>* {
     margin-left: 4px;
+}
+
+.dialogContent .theia-ToggleHiddenInputContainer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding-top: var(--theia-ui-padding);
 }

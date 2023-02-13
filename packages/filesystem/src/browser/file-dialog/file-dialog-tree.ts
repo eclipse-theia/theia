@@ -21,7 +21,6 @@ import { FileStat } from '../../common/files';
 
 @injectable()
 export class FileDialogTree extends FileTree {
-
     /**
      * Extensions for files to be shown
      */
