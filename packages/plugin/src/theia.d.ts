@@ -5654,6 +5654,103 @@ export module '@theia/plugin' {
     }
 
     /**
+     * A file associated with a {@linkcode DataTransferItem}.
+     */
+    export interface DataTransferFile {
+        /**
+         * The name of the file.
+         */
+        readonly name: string;
+
+        /**
+         * The full file path of the file.
+         *
+         * May be `undefined` on web.
+         */
+        readonly uri?: Uri;
+
+        /**
+         * The full file contents of the file.
+         */
+        data(): Thenable<Uint8Array>;
+    }
+
+    /**
+     * Encapsulates data transferred during drag and drop operations.
+     */
+    export class DataTransferItem {
+        /**
+         * Get a string representation of this item.
+         *
+         * If {@linkcode DataTransferItem.value} is an object, this returns the result of json stringifying {@linkcode DataTransferItem.value} value.
+         */
+        asString(): Thenable<string>;
+
+        /**
+         * Try getting the {@link DataTransferFile file} associated with this data transfer item.
+         *
+         * Note that the file object is only valid for the scope of the drag and drop operation.
+         *
+         * @returns The file for the data transfer or `undefined` if the item is either not a file or the
+         * file data cannot be accessed.
+         */
+        asFile(): DataTransferFile | undefined;
+
+        /**
+         * Custom data stored on this item.
+         *
+         * You can use `value` to share data across operations. The original object can be retrieved so long as the extension that
+         * created the `DataTransferItem` runs in the same extension host.
+         */
+        readonly value: any;
+
+        /**
+         * @param value Custom data stored on this item. Can be retrieved using {@linkcode DataTransferItem.value}.
+         */
+        constructor(value: any);
+    }
+
+    /**
+     * A map containing a mapping of the mime type of the corresponding transferred data.
+     *
+     * Drag and drop controllers that implement {@link TreeDragAndDropController.handleDrag `handleDrag`} can add additional mime types to the
+     * data transfer. These additional mime types will only be included in the `handleDrop` when the the drag was initiated from
+     * an element in the same drag and drop controller.
+     */
+    export class DataTransfer implements Iterable<[mimeType: string, item: DataTransferItem]> {
+        /**
+         * Retrieves the data transfer item for a given mime type.
+         *
+         * @param mimeType The mime type to get the data transfer item for, such as `text/plain` or `image/png`.
+         *
+         * Special mime types:
+         * - `text/uri-list` — A string with `toString()`ed Uris separated by `\r\n`. To specify a cursor position in the file,
+         * set the Uri's fragment to `L3,5`, where 3 is the line number and 5 is the column number.
+         */
+        get(mimeType: string): DataTransferItem | undefined;
+
+        /**
+         * Sets a mime type to data transfer item mapping.
+         * @param mimeType The mime type to set the data for.
+         * @param value The data transfer item for the given mime type.
+         */
+        set(mimeType: string, value: DataTransferItem): void;
+
+        /**
+         * Allows iteration through the data transfer items.
+         *
+         * @param callbackfn Callback for iteration through the data transfer items.
+         * @param thisArg The `this` context used when invoking the handler function.
+         */
+        forEach(callbackfn: (item: DataTransferItem, mimeType: string, dataTransfer: DataTransfer) => void, thisArg?: any): void;
+
+        /**
+         * Get a new iterator with the `[mime, item]` pairs for each element in this data transfer.
+         */
+        [Symbol.iterator](): IterableIterator<[mimeType: string, item: DataTransferItem]>;
+    }
+
+    /**
      * Options for creating a {@link TreeView TreeView}
      */
     export interface TreeViewOptions<T> {
@@ -10348,6 +10445,16 @@ export module '@theia/plugin' {
         export function registerDefinitionProvider(selector: DocumentSelector, provider: DefinitionProvider): Disposable;
 
         /**
+         * Registers a new {@link DocumentDropEditProvider}.
+         *
+         * @param selector A selector that defines the documents this provider applies to.
+         * @param provider A drop provider.
+         *
+         * @return A {@link Disposable} that unregisters this provider when disposed of.
+         */
+        export function registerDocumentDropEditProvider(selector: DocumentSelector, provider: DocumentDropEditProvider): Disposable;
+
+        /**
          * Register a declaration provider.
          *
          * Multiple providers can be registered for a language. In that case providers are asked in
@@ -13206,6 +13313,48 @@ export module '@theia/plugin' {
          * @return A list of ranges that can be edited together
          */
         provideLinkedEditingRanges(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<LinkedEditingRanges>;
+    }
+
+    /**
+     * An edit operation applied {@link DocumentDropEditProvider on drop}.
+     */
+    export class DocumentDropEdit {
+        /**
+         * The text or snippet to insert at the drop location.
+         */
+        insertText: string | SnippetString;
+
+        /**
+         * An optional additional edit to apply on drop.
+         */
+        additionalEdit?: WorkspaceEdit;
+
+        /**
+         * @param insertText The text or snippet to insert at the drop location.
+         */
+        constructor(insertText: string | SnippetString);
+    }
+
+    /**
+     * Provider which handles dropping of resources into a text editor.
+     *
+     * This allows users to drag and drop resources (including resources from external apps) into the editor. While dragging
+     * and dropping files, users can hold down `shift` to drop the file into the editor instead of opening it.
+     * Requires `editor.dropIntoEditor.enabled` to be on.
+     */
+    export interface DocumentDropEditProvider {
+        /**
+         * Provide edits which inserts the content being dragged and dropped into the document.
+         *
+         * @param document The document in which the drop occurred.
+         * @param position The position in the document where the drop occurred.
+         * @param dataTransfer A {@link DataTransfer} object that holds data about what is being dragged and dropped.
+         * @param token A cancellation token.
+         *
+         * @return A {@link DocumentDropEdit} or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
+        provideDocumentDropEdits(document: TextDocument, position: Position, dataTransfer: DataTransfer, token: CancellationToken): ProviderResult<DocumentDropEdit>;
     }
 
     /**

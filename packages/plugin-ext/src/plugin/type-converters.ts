@@ -1348,3 +1348,40 @@ export namespace InlayHintKind {
         return kind;
     }
 }
+
+export namespace DataTransferItem {
+    export function to(mime: string, item: model.DataTransferItemDTO, resolveFileData: (itemId: string) => Promise<Uint8Array>): theia.DataTransferItem {
+        const file = item.fileData;
+        if (file) {
+            return new class extends types.DataTransferItem {
+                override asFile(): theia.DataTransferFile {
+                    return {
+                        name: file.name,
+                        uri: URI.revive(file.uri),
+                        data: () => resolveFileData(item.id),
+                    };
+                }
+            }('');
+        }
+
+        if (mime === 'text/uri-list' && item.uriListData) {
+            return new types.DataTransferItem(reviveUriList(item.uriListData));
+        }
+
+        return new types.DataTransferItem(item.asString);
+    }
+
+    function reviveUriList(parts: ReadonlyArray<string | UriComponents>): string {
+        return parts.map(part => typeof part === 'string' ? part : URI.revive(part).toString()).join('\r\n');
+    }
+}
+
+export namespace DataTransfer {
+    export function toDataTransfer(value: model.DataTransferDTO, resolveFileData: (itemId: string) => Promise<Uint8Array>): theia.DataTransfer {
+        const dataTransfer = new types.DataTransfer();
+        for (const [mimeType, item] of value.items) {
+            dataTransfer.set(mimeType, DataTransferItem.to(mimeType, item, resolveFileData));
+        }
+        return dataTransfer;
+    }
+}

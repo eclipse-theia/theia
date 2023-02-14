@@ -1531,6 +1531,17 @@ export class DocumentLink {
 }
 
 @es5ClassCompat
+export class DocumentDropEdit {
+    insertText: string | SnippetString;
+
+    additionalEdit?: WorkspaceEdit;
+
+    constructor(insertText: string | SnippetString) {
+        this.insertText = insertText;
+    }
+}
+
+@es5ClassCompat
 export class CodeLens {
 
     range: Range;

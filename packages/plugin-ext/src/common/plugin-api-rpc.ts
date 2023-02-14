@@ -84,7 +84,9 @@ import {
     TypeHierarchyItem,
     InlineCompletion,
     InlineCompletions,
-    InlineCompletionContext
+    InlineCompletionContext,
+    DocumentDropEdit,
+    DataTransferDTO
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -1557,6 +1559,13 @@ export interface LanguagesExt {
         options: FormattingOptions,
         token: CancellationToken
     ): Promise<TextEdit[] | undefined>;
+    $provideDocumentDropEdits(
+        handle: number,
+        resource: UriComponents,
+        position: Position,
+        dataTransfer: DataTransferDTO,
+        token: CancellationToken
+    ): Promise<DocumentDropEdit | undefined>;
     $provideDocumentLinks(handle: number, resource: UriComponents, token: CancellationToken): Promise<DocumentLink[] | undefined>;
     $resolveDocumentLink(handle: number, link: DocumentLink, token: CancellationToken): Promise<DocumentLink | undefined>;
     $releaseDocumentLinks(handle: number, ids: number[]): void;
@@ -1637,6 +1646,7 @@ export interface LanguagesMain {
     $clearDiagnostics(id: string): void;
     $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void;
     $registerDocumentFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
+    $registerDocumentDropEditProvider(handle: number, selector: SerializedDocumentFilter[]): void
     $registerRangeFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerOnTypeFormattingProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void;
     $registerDocumentLinkProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
