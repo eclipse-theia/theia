@@ -50,6 +50,7 @@ import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/c
 import { BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
 import { ViewColumn } from '../../../plugin/types-impl';
 import { ExtractableWidget } from '@theia/core/lib/browser/widgets/extractable-widget';
+import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 // Style from core
 const TRANSPARENT_OVERLAY_STYLE = 'theia-transparent-overlay';
@@ -105,6 +106,11 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
     // On `mousedown` we put a transparent div over the `iframe` to avoid losing the mouse tacking.
     protected transparentOverlay: HTMLElement;
 
+    protected _activeWebviewPanelId: ContextKey<string | undefined>;
+    get activeWebviewPanelId(): ContextKey<string | undefined> {
+        return this._activeWebviewPanelId;
+    }
+
     @inject(WebviewWidgetIdentifier)
     readonly identifier: WebviewWidgetIdentifier;
 
@@ -143,6 +149,9 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
 
     @inject(WebviewResourceCache)
     protected readonly resourceCache: WebviewResourceCache;
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
 
     viewState: WebviewPanelViewState = {
         visible: false,
@@ -200,6 +209,15 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         this.toDispose.push(this.mouseTracker.onMouseup(() => {
             if (this.element && this.element.style.display !== 'none') {
                 this.transparentOverlay.style.display = 'none';
+            }
+        }));
+
+        this._activeWebviewPanelId = this.contextKeyService.createKey<string | undefined>('activeWebviewPanelId', undefined);
+        this.toDispose.push(this.onDidChangeVisibility(() => {
+            if (this.isVisible) {
+                this.activeWebviewPanelId.set(this.viewType);
+            } else {
+                this.activeWebviewPanelId.set(undefined);
             }
         }));
     }
