@@ -22,8 +22,7 @@ import { LanguageGrammarDefinitionContribution } from './textmate-contribution';
 import { MonacoTextmateService } from './monaco-textmate-service';
 import { MonacoThemeRegistry } from './monaco-theme-registry';
 import { loadWASM, createOnigScanner, OnigScanner, createOnigString, OnigString } from 'vscode-oniguruma';
-import { IOnigLib, parseRawGrammar, Registry } from 'vscode-textmate';
-import { IRawGrammar } from 'vscode-textmate/release/rawGrammar';
+import { IOnigLib, IRawGrammar, parseRawGrammar, Registry } from 'vscode-textmate';
 import { OnigasmPromise, TextmateRegistryFactory, ThemeMix } from './monaco-theme-types';
 
 export class OnigasmLib implements IOnigLib {
