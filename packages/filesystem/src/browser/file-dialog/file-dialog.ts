@@ -178,7 +178,6 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         navigationPanel.appendChild(this.locationListRenderer.host);
 
         this.hiddenFilesToggleRenderer = this.hiddenFilesToggleFactory(this.widget.model.tree);
-        console.log('the renderer', this.hiddenFilesToggleRenderer);
         this.contentNode.appendChild(this.hiddenFilesToggleRenderer.host);
 
         if (this.props.filters) {
