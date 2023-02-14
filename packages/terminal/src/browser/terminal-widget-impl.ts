@@ -23,9 +23,12 @@ import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/shell-terminal-protocol';
 import { terminalsPath } from '../common/terminal-protocol';
-import { IBaseTerminalServer, TerminalProcessInfo } from '../common/base-terminal-protocol';
+import { IBaseTerminalServer, TerminalProcessInfo, TerminalExitReason } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus, TerminalLocationOptions, TerminalLocation } from './base/terminal-widget';
+import {
+    TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus, TerminalLocationOptions,
+    TerminalLocation
+} from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE, CursorStyle } from './terminal-preferences';
 import URI from '@theia/core/lib/common/uri';
@@ -200,14 +203,18 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
             if (terminalId === this.terminalId) {
-                this.exitStatus = { code: undefined };
+                this.exitStatus = { code: undefined, reason: TerminalExitReason.Process };
                 this.dispose();
                 this.logger.error(`The terminal process terminated. Cause: ${error}`);
             }
         }));
-        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId, code }) => {
+        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId, code, reason }) => {
             if (terminalId === this.terminalId) {
-                this.exitStatus = { code };
+                if (reason) {
+                    this.exitStatus = { code, reason };
+                } else {
+                    this.exitStatus = { code, reason: TerminalExitReason.Process };
+                }
                 this.dispose();
             }
         }));
@@ -360,6 +367,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     getSearchBox(): TerminalSearchWidget {
         return this.searchBox;
+    }
+
+    protected override onCloseRequest(msg: Message): void {
+        this.exitStatus = { code: undefined, reason: TerminalExitReason.User };
+        super.onCloseRequest(msg);
     }
 
     get dimensions(): TerminalDimensions {
@@ -721,7 +733,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             // Close the backend terminal only when explicitly closing the terminal
             // a refresh for example won't close it.
             this.shellTerminalServer.close(this.terminalId);
-            this.exitStatus = { code: undefined };
+            // Exit status is set when terminal is closed by user or by process, so most likely an extension closed it.
+            this.exitStatus = { code: undefined, reason: TerminalExitReason.Extension };
         }
         if (this.exitStatus) {
             this.onTermDidClose.fire(this);
