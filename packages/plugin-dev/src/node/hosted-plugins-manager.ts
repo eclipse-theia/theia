@@ -96,7 +96,7 @@ export class HostedPluginsManagerImpl implements HostedPluginsManager {
             throw new Error('Watcher is not running in ' + pluginPath);
         }
 
-        this.killProcessTree(watchProcess.pid);
+        this.killProcessTree(watchProcess.pid!);
         return Promise.resolve();
     }
 

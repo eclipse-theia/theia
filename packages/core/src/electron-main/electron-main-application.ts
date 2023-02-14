@@ -496,7 +496,9 @@ export class ElectronMainApplication {
                         try {
                             // If we forked the process for the clusters, we need to manually terminate it.
                             // See: https://github.com/eclipse-theia/theia/issues/835
-                            process.kill(backendProcess.pid);
+                            if (backendProcess.pid) {
+                                process.kill(backendProcess.pid);
+                            }
                         } catch (error) {
                             // See https://man7.org/linux/man-pages/man2/kill.2.html#ERRORS
                             if (error.code === 'ESRCH') {

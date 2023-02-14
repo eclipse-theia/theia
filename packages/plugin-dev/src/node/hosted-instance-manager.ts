@@ -157,7 +157,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     }
 
     terminate(): void {
-        if (this.isPluginRunning) {
+        if (this.isPluginRunning && !!this.hostedInstanceProcess.pid) {
             this.hostedPluginProcess.killProcessTree(this.hostedInstanceProcess.pid);
             this.hostedPluginSupport.sendLog({ data: 'Hosted instance has been terminated', type: LogType.Info });
             this.isPluginRunning = false;
