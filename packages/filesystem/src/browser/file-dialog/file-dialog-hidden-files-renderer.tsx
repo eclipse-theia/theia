@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { nls } from '@theia/core';
 import { ReactRenderer, } from '@theia/core/lib/browser';
 import { inject, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -40,7 +41,7 @@ export class FileDialogHiddenFilesToggleRenderer extends ReactRenderer {
     protected override doRender(): React.ReactNode {
         return (
             <div className={TOGGLE_HIDDEN_CONTAINER_CLASS}>
-                Show hidden files
+                {nls.localize('theia/fileDialog/showHidden', 'Show hidden files')}
                 <input
                     type='checkbox'
                     className={CHECKBOX_CLASS}
