@@ -82,6 +82,7 @@ import { PluginMenuCommandAdapter } from './menus/plugin-menu-command-adapter';
 import './theme-icon-override';
 import { PluginTerminalRegistry } from './plugin-terminal-registry';
 import { DnDFileContentStore } from './view/dnd-file-content-store';
+import { WebviewContextKeys } from './webview/webview-context-keys';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -177,6 +178,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WebviewWidget).toSelf();
     bind(WebviewWidgetFactory).toDynamicValue(ctx => new WebviewWidgetFactory(ctx.container)).inSingletonScope();
     bind(WidgetFactory).toService(WebviewWidgetFactory);
+    bind(WebviewContextKeys).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(WebviewContextKeys);
 
     bind(CustomEditorContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(CustomEditorContribution);
