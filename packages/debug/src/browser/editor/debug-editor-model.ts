@@ -61,7 +61,7 @@ export class DebugEditorModel implements Disposable {
     protected uri: URI;
 
     protected breakpointDecorations: string[] = [];
-    protected breakpointRanges = new Map<string, monaco.Range>();
+    protected breakpointRanges = new Map<string, [monaco.Range, SourceBreakpoint]>();
 
     protected currentBreakpointDecorations: string[] = [];
 
@@ -248,12 +248,12 @@ export class DebugEditorModel implements Disposable {
         this.renderCurrentBreakpoints();
     }
     protected renderBreakpoints(): void {
-        const decorations = this.createBreakpointDecorations();
-        this.breakpointDecorations = this.deltaDecorations(this.breakpointDecorations, decorations);
-        this.updateBreakpointRanges();
-    }
-    protected createBreakpointDecorations(): monaco.editor.IModelDeltaDecoration[] {
         const breakpoints = this.breakpoints.getBreakpoints(this.uri);
+        const decorations = this.createBreakpointDecorations(breakpoints);
+        this.breakpointDecorations = this.deltaDecorations(this.breakpointDecorations, decorations);
+        this.updateBreakpointRanges(breakpoints);
+    }
+    protected createBreakpointDecorations(breakpoints: SourceBreakpoint[]): monaco.editor.IModelDeltaDecoration[] {
         return breakpoints.map(breakpoint => this.createBreakpointDecoration(breakpoint));
     }
     protected createBreakpointDecoration(breakpoint: SourceBreakpoint): monaco.editor.IModelDeltaDecoration {
@@ -267,11 +267,14 @@ export class DebugEditorModel implements Disposable {
             }
         };
     }
-    protected updateBreakpointRanges(): void {
+
+    protected updateBreakpointRanges(breakpoints: SourceBreakpoint[]): void {
         this.breakpointRanges.clear();
-        for (const decoration of this.breakpointDecorations) {
+        for (let i = 0; i < this.breakpointDecorations.length; i++) {
+            const decoration = this.breakpointDecorations[i];
+            const breakpoint = breakpoints[i];
             const range = this.editor.getControl().getModel()!.getDecorationRange(decoration)!;
-            this.breakpointRanges.set(decoration, range);
+            this.breakpointRanges.set(decoration, [range, breakpoint]);
         }
     }
 
@@ -312,7 +315,7 @@ export class DebugEditorModel implements Disposable {
         }
         for (const decoration of this.breakpointDecorations) {
             const range = this.editor.getControl().getModel()!.getDecorationRange(decoration);
-            const oldRange = this.breakpointRanges.get(decoration)!;
+            const oldRange = this.breakpointRanges.get(decoration)![0];
             if (!range || !range.equalsRange(oldRange)) {
                 return true;
             }
@@ -328,8 +331,7 @@ export class DebugEditorModel implements Disposable {
             if (range && !lines.has(range.startLineNumber)) {
                 const line = range.startLineNumber;
                 const column = range.startColumn;
-                const oldRange = this.breakpointRanges.get(decoration);
-                const oldBreakpoint = oldRange && this.breakpoints.getInlineBreakpoint(uri, oldRange.startLineNumber, oldRange.startColumn);
+                const oldBreakpoint = this.breakpointRanges.get(decoration)?.[1];
                 const breakpoint = SourceBreakpoint.create(uri, { line, column }, oldBreakpoint);
                 breakpoints.push(breakpoint);
                 lines.add(line);

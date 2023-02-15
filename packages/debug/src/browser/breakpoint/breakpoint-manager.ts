@@ -60,7 +60,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
     readonly onDidChangeInstructionBreakpoints = this.onDidChangeInstructionBreakpointsEmitter.event;
 
     override setMarkers(uri: URI, owner: string, newMarkers: SourceBreakpoint[]): Marker<SourceBreakpoint>[] {
-        const result = super.setMarkers(uri, owner, newMarkers);
+        const result = this.findMarkers({ uri, owner });
         const added: SourceBreakpoint[] = [];
         const removed: SourceBreakpoint[] = [];
         const changed: SourceBreakpoint[] = [];
@@ -68,10 +68,20 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         const ids = new Set<string>();
         for (const newMarker of newMarkers) {
             ids.add(newMarker.id);
-            if (oldMarkers.has(newMarker.id)) {
-                changed.push(newMarker);
-            } else {
+            const oldMarker = oldMarkers.get(newMarker.id);
+            if (!oldMarker) {
                 added.push(newMarker);
+                // @ts-ignore
+            } else {
+                const oldRawKeys = Object.keys(oldMarker.raw);
+                const newRawKeys = Object.keys(newMarker.raw);
+                if (
+                    newRawKeys.length !== oldRawKeys.length
+                    || newRawKeys.some((key: keyof SourceBreakpoint['raw']) => newMarker.raw[key] !== oldMarker.raw[key])
+                    || Object.keys(newMarker).some((key: keyof SourceBreakpoint) => key !== 'raw' && newMarker[key] !== oldMarker[key])
+                ) {
+                    changed.push(newMarker);
+                }
             }
         }
         for (const [id, data] of oldMarkers.entries()) {
@@ -79,7 +89,10 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
                 removed.push(data);
             }
         }
-        this.onDidChangeBreakpointsEmitter.fire({ uri, added, removed, changed });
+        if (added.length || removed.length || changed.length) {
+            super.setMarkers(uri, owner, newMarkers);
+            this.onDidChangeBreakpointsEmitter.fire({ uri, added, removed, changed });
+        }
         return result;
     }
 
