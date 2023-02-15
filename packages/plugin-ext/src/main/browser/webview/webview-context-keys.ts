@@ -34,9 +34,9 @@ export class WebviewContextKeys {
     protected contextKeyService: ContextKeyService;
 
     @postConstruct()
-    protected postContruct(): void {
+    protected postConstruct(): void {
         this.activeWebviewPanelId = this.contextKeyService.createKey('activeWebviewPanelId', undefined);
-        this.applicationShell.onDidChangeActiveWidget(this.handleDidChangeActiveWidget, this);
+        this.applicationShell.onDidChangeCurrentWidget(this.handleDidChangeActiveWidget, this);
     }
 
     protected handleDidChangeActiveWidget(change: FocusTracker.IChangedArgs<Widget>): void {
