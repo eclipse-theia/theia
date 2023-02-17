@@ -183,7 +183,8 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
 
     protected renderSeveritySelector(widget: Widget | undefined): React.ReactNode {
         const severityElements: SelectOption[] = Severity.toArray().map(e => ({
-            value: e
+            value: e,
+            label: Severity.toLocaleString(e)
         }));
 
         return <SelectComponent
