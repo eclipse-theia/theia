@@ -42,6 +42,9 @@
       "path": "../../packages/git"
     },
     {
+      "path": "../../packages/hang-backend"
+    },
+    {
       "path": "../../packages/keymaps"
     },
     {

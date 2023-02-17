@@ -26,6 +26,7 @@
     "@theia/filesystem": "1.34.0",
     "@theia/getting-started": "1.34.0",
     "@theia/git": "1.34.0",
+    "@theia/hang-backend": "1.34.0",
     "@theia/keymaps": "1.34.0",
     "@theia/markers": "1.34.0",
     "@theia/memory-inspector": "1.34.0",
