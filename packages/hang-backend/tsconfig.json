@@ -11,9 +11,6 @@
   "references": [
     {
       "path": "../core"
-    },
-    {
-      "path": "../debug"
     }
   ]
 }

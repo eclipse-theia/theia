@@ -14,12 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging';
 import { HANG_BACKEND_BACKEND_SERVICE_PATH } from '../common/types';
 import { HangBackendBackendService } from './hang-backend-backend-service';
 
 export default new ContainerModule(bind => {
+    bind(HangBackendBackendService).toSelf().inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(({ container }) => new JsonRpcConnectionHandler<HangBackendBackendService>(
         HANG_BACKEND_BACKEND_SERVICE_PATH,
         () => container.get<HangBackendBackendService>(HangBackendBackendService),
