@@ -56,6 +56,7 @@ import { IBulkEditService } from '@theia/monaco-editor-core/esm/vs/editor/browse
 import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { IQuickInputService } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
 import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
+import { ConnectionStatusService } from '@theia/core/lib/browser/connection-status-service';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
@@ -87,6 +88,9 @@ export class MonacoEditorProvider {
 
     @inject(MonacoQuickInputImplementation)
     protected readonly quickInputService: MonacoQuickInputImplementation;
+
+    @inject(ConnectionStatusService)
+    protected readonly connectionStatusService: ConnectionStatusService;
 
     protected _current: MonacoEditor | undefined;
     /**
@@ -406,7 +410,7 @@ export class MonacoEditorProvider {
                 uri,
                 readContents: async () => '',
                 dispose: () => { }
-            }, this.m2p, this.p2m);
+            }, this.m2p, this.p2m, this.connectionStatusService);
             toDispose.push(document);
             const model = (await document.load()).textEditorModel;
             return new MonacoEditor(

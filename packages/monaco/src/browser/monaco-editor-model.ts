@@ -16,6 +16,7 @@
 
 import { Position, Range, TextDocumentSaveReason, TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch, EditorPreferences } from '@theia/editor/lib/browser';
+import { ConnectionStatusService } from '@theia/core/lib/browser/connection-status-service';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationTokenSource, CancellationToken } from '@theia/core/lib/common/cancellation';
@@ -90,6 +91,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         protected readonly resource: Resource,
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
+        protected readonly connectionStatusService: ConnectionStatusService,
         protected readonly logger?: ILogger,
         protected readonly editorPreferences?: EditorPreferences
     ) {

@@ -29,6 +29,7 @@ import { ITextModelUpdateOptions } from '@theia/monaco-editor-core/esm/vs/editor
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ITextResourcePropertiesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/textResourceConfiguration';
+import { ConnectionStatusService } from '@theia/core/lib/browser/connection-status-service';
 
 export const MonacoEditorModelFactory = Symbol('MonacoEditorModelFactory');
 export interface MonacoEditorModelFactory {
@@ -78,6 +79,9 @@ export class MonacoTextModelService implements ITextModelService {
     @inject(FileService)
     protected readonly fileService: FileService;
 
+    @inject(ConnectionStatusService)
+    protected readonly connectionStatusService: ConnectionStatusService;
+
     @postConstruct()
     public init(): void {
         const resourcePropertiesService = StandaloneServices.get(ITextResourcePropertiesService);
@@ -122,7 +126,7 @@ export class MonacoTextModelService implements ITextModelService {
 
     protected createModel(resource: Resource): MaybePromise<MonacoEditorModel> {
         const factory = this.factories.getContributions().find(({ scheme }) => resource.uri.scheme === scheme);
-        return factory ? factory.createModel(resource) : new MonacoEditorModel(resource, this.m2p, this.p2m, this.logger, this.editorPreferences);
+        return factory ? factory.createModel(resource) : new MonacoEditorModel(resource, this.m2p, this.p2m, this.connectionStatusService, this.logger, this.editorPreferences);
     }
 
     protected readonly modelOptions: { [name: string]: (keyof ITextModelUpdateOptions | undefined) } = {

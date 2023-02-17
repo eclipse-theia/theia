@@ -21,6 +21,7 @@ import { OutputUri } from '../common/output-uri';
 import { MonacoEditorModelFactory } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoToProtocolConverter } from '@theia/monaco/lib/browser/monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from '@theia/monaco/lib/browser/protocol-to-monaco-converter';
+import { ConnectionStatusService } from '@theia/core/lib/browser/connection-status-service';
 
 @injectable()
 export class OutputEditorModelFactory implements MonacoEditorModelFactory {
@@ -31,12 +32,15 @@ export class OutputEditorModelFactory implements MonacoEditorModelFactory {
     @inject(ProtocolToMonacoConverter)
     protected readonly p2m: ProtocolToMonacoConverter;
 
+    @inject(ConnectionStatusService)
+    protected readonly connectionStatusService: ConnectionStatusService;
+
     readonly scheme: string = OutputUri.SCHEME;
 
     createModel(
         resource: Resource
     ): MonacoEditorModel {
-        return new OutputEditorModel(resource, this.m2p, this.p2m);
+        return new OutputEditorModel(resource, this.m2p, this.p2m, this.connectionStatusService);
     }
 
 }
