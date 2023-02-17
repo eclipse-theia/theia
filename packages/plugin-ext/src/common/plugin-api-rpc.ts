@@ -1246,7 +1246,7 @@ export interface TextEditorsMain {
     $tryRevealRange(id: string, range: Range, revealType: TextEditorRevealType): Promise<void>;
     $trySetSelections(id: string, selections: Selection[]): Promise<void>;
     $tryApplyEdits(id: string, modelVersionId: number, edits: SingleEditOperation[], opts: ApplyEditsOptions): Promise<boolean>;
-    $tryApplyWorkspaceEdit(workspaceEditDto: WorkspaceEditDto): Promise<boolean>;
+    $tryApplyWorkspaceEdit(workspaceEditDto: WorkspaceEditDto, metadata?: WorkspaceEditMetdataDto): Promise<boolean>;
     $tryInsertSnippet(id: string, template: string, selections: Range[], opts: UndoStopOptions): Promise<boolean>;
     $saveAll(includeUntitled?: boolean): Promise<boolean>;
     // $getDiffInformation(id: string): Promise<editorCommon.ILineChange[]>;
@@ -1418,7 +1418,7 @@ export interface CodeActionDto {
     disabled?: string;
 }
 
-export interface WorkspaceEditMetadataDto {
+export interface WorkspaceEditEntryMetadataDto {
     needsConfirmation: boolean;
     label: string;
     description?: string;
@@ -1434,14 +1434,14 @@ export interface WorkspaceFileEditDto {
     oldResource?: UriComponents;
     newResource?: UriComponents;
     options?: FileOperationOptions;
-    metadata?: WorkspaceEditMetadataDto;
+    metadata?: WorkspaceEditEntryMetadataDto;
 }
 
 export interface WorkspaceTextEditDto {
     resource: UriComponents;
     modelVersionId?: number;
     textEdit: TextEdit & { insertAsSnippet?: boolean };
-    metadata?: WorkspaceEditMetadataDto;
+    metadata?: WorkspaceEditEntryMetadataDto;
 }
 export namespace WorkspaceTextEditDto {
     export function is(arg: WorkspaceTextEditDto | WorkspaceFileEditDto): arg is WorkspaceTextEditDto {
@@ -1452,6 +1452,9 @@ export namespace WorkspaceTextEditDto {
             && typeof arg.textEdit === 'object';
     }
 }
+export interface WorkspaceEditMetdataDto {
+    isRefactoring?: boolean;
+} 
 
 export interface WorkspaceEditDto {
     edits: Array<WorkspaceTextEditDto | WorkspaceFileEditDto>;
