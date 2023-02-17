@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Red Hat, Inc. and others.
+// Copyright (C) 2018-2023 Red Hat, Inc. and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -573,7 +573,7 @@ export class DebugSession implements CompositeTreeElement {
 
     getInstructionBreakpoints(): DebugInstructionBreakpoint[] {
         if (this.capabilities.supportsInstructionBreakpoints) {
-            return this.getBreakpoints(BreakpointManager.FUNCTION_URI)
+            return this.getBreakpoints(BreakpointManager.INSTRUCTION_URI)
                 .filter((breakpoint): breakpoint is DebugInstructionBreakpoint => breakpoint instanceof DebugInstructionBreakpoint);
         }
         return this.breakpoints.getInstructionBreakpoints().map(origin => new DebugInstructionBreakpoint(origin, this.asDebugBreakpointOptions()));
