@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { HangBackendService } from '../common/types';
 
@@ -22,14 +22,9 @@ import { HangBackendService } from '../common/types';
 export class HangBackendCommandContribution implements CommandContribution {
     @inject(HangBackendService) protected readonly hangBackendService: HangBackendService;
 
-    @postConstruct()
-    protected init(): void {
-        console.log('SENTINEL HANG BACKEND ALIVE');
-    }
-
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand({ id: 'hangBackend', label: 'Hang Backend' }, {
-            execute: () => this.hangBackendService.hangBackend(180_000),
+            execute: () => this.hangBackendService.hangBackend(120_000),
         });
     }
 }

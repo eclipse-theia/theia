@@ -149,7 +149,9 @@ export class FrontendConnectionStatusService extends AbstractConnectionStatusSer
 
     protected async performPingRequest(): Promise<void> {
         try {
-            await this.pingService.ping();
+            const success = this.pingService.ping();
+            const failure = new Promise((_, reject) => setTimeout(reject, this.options.offlineTimeout * 2));
+            await Promise.race([success, failure]);
             this.updateStatus(true);
         } catch (e) {
             this.updateStatus(false);
