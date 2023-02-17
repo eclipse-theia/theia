@@ -254,9 +254,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
         this.mergePreferencesPromise = this.mergePreferencesPromise.finally(() => this.mergePreferences());
 
+        // extension contributions get read after this point: need to set the default profile if necessary
         this.profileService.onAdded(id => {
-            // extension contributions get read after this point: need to set the default profile if necessary
-            let defaultProfileId;
+            let defaultProfileId = undefined;
             switch (OS.backend.type()) {
                 case OS.Type.Windows: {
                     defaultProfileId = this.terminalPreferences['terminal.integrated.defaultProfile.windows'];
@@ -271,7 +271,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                     break;
                 }
             }
-            this.profileService.setDefaultProfile(defaultProfileId);
+            if (defaultProfileId) {
+                this.profileService.setDefaultProfile(defaultProfileId);
+            }
         });
     }
 
