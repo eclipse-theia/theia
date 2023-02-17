@@ -107,6 +107,10 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         this.resolveModel = this.readContents().then(
             content => this.initialize(content || '')
         );
+        this.toDispose.push(this.connectionStatusService.onStatusChange(() => {
+            this.cancelSave();
+            this.cancelSync();
+        }));
     }
 
     dispose(): void {

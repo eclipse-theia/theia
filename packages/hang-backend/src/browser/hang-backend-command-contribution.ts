@@ -24,7 +24,7 @@ export class HangBackendCommandContribution implements CommandContribution {
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand({ id: 'hangBackend', label: 'Hang Backend' }, {
-            execute: () => this.hangBackendService.hangBackend(120_000),
+            execute: () => this.hangBackendService.hangBackend(30_000),
         });
     }
 }
