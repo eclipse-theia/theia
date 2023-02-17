@@ -126,7 +126,7 @@ const fileContributionSchema: PreferenceSchema['properties'] = {
     'files.refactoring.autoSave': {
         'type': 'boolean',
         'default': true,
-        'markdownDescription': nls.localize('theia/editor/files.refactoring.autoSave', 'Controls if files that were part of a refactoring are saved automaticly.',)
+        'markdownDescription': nls.localize('theia/editor/files.refactoring.autoSave', 'Controls if files that were part of a refactoring are saved automaticly.')
     }
 };
 
