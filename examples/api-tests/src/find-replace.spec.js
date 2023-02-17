@@ -16,7 +16,7 @@
 
 // @ts-check
 describe('Find and Replace', function () {
-
+    this.timeout(5_000);
     const { assert } = chai;
 
     const { animationFrame } = require('@theia/core/lib/browser/browser');
