@@ -59,6 +59,7 @@ import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import { UntitledResourceResolver } from '@theia/core/lib/common/resource';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { TabsMainImpl } from './tabs/tabs-main';
+import { LocalizationMainImpl } from './localization-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -184,4 +185,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const tabsMain = new TabsMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.TABS_MAIN, tabsMain);
+
+    const localizationMain = new LocalizationMainImpl(container);
+    rpc.set(PLUGIN_RPC_CONTEXT.L10N_MAIN, localizationMain);
 }

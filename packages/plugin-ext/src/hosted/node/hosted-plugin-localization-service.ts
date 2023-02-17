@@ -19,12 +19,12 @@ import * as fs from '@theia/core/shared/fs-extra';
 import { LocalizationProvider } from '@theia/core/lib/node/i18n/localization-provider';
 import { Localization } from '@theia/core/lib/common/i18n/localization';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { DeployedPlugin, Localization as PluginLocalization, PluginIdentifiers } from '../../common';
-import { URI } from '@theia/core/shared/vscode-uri';
+import { DeployedPlugin, Localization as PluginLocalization, PluginIdentifiers, Translation } from '../../common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { Disposable, isObject, MaybePromise } from '@theia/core';
+import { Disposable, DisposableCollection, isObject, MaybePromise, nls, URI } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { LanguagePackBundle, LanguagePackService } from '../../common/language-pack-service';
 
 export interface VSCodeNlsConfig {
     locale: string
@@ -41,6 +41,9 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
 
     @inject(LocalizationProvider)
     protected readonly localizationProvider: LocalizationProvider;
+
+    @inject(LanguagePackService)
+    protected readonly languagePackService: LanguagePackService;
 
     @inject(EnvVariablesServer)
     protected readonly envVariables: EnvVariablesServer;
@@ -62,15 +65,24 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
             .then(() => this._ready.resolve());
     }
 
-    deployLocalizations(plugin: DeployedPlugin): void {
+    async deployLocalizations(plugin: DeployedPlugin): Promise<void> {
+        const disposable = new DisposableCollection();
         if (plugin.contributes?.localizations) {
             const localizations = buildLocalizations(plugin.contributes.localizations);
-            const versionedId = PluginIdentifiers.componentsToVersionedId(plugin.metadata.model);
-            this.localizationDisposeMap.set(versionedId, Disposable.create(() => {
+            disposable.push(Disposable.create(() => {
                 this.localizationProvider.removeLocalizations(...localizations);
-                this.localizationDisposeMap.delete(versionedId);
             }));
             this.localizationProvider.addLocalizations(...localizations);
+        }
+        if (plugin.metadata.model.l10n || plugin.contributes?.localizations) {
+            disposable.push(await this.updateLanguagePackBundles(plugin));
+        }
+        if (!disposable.disposed) {
+            const versionedId = PluginIdentifiers.componentsToVersionedId(plugin.metadata.model);
+            disposable.push(Disposable.create(() => {
+                this.localizationDisposeMap.delete(versionedId);
+            }));
+            this.localizationDisposeMap.set(versionedId, disposable);
         }
     }
 
@@ -78,10 +90,52 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
         this.localizationDisposeMap.get(plugin)?.dispose();
     }
 
+    protected async updateLanguagePackBundles(plugin: DeployedPlugin): Promise<Disposable> {
+        const disposable = new DisposableCollection();
+        const pluginId = plugin.metadata.model.id;
+        const packageUri = new URI(plugin.metadata.model.packageUri);
+        if (plugin.contributes?.localizations) {
+            for (const localization of plugin.contributes.localizations) {
+                for (const translation of localization.translations) {
+                    const l10n = getL10nTranslation(translation);
+                    if (l10n) {
+                        const translatedPluginId = translation.id;
+                        const translationUri = packageUri.resolve(translation.path);
+                        const locale = localization.languageId;
+                        // We store a bundle for another extension in here
+                        // Hence we use `translatedPluginId` instead of `pluginId`
+                        this.languagePackService.storeBundle(translatedPluginId, locale, {
+                            contents: processL10nBundle(l10n),
+                            uri: translationUri.toString()
+                        });
+                        disposable.push(Disposable.create(() => {
+                            // Only dispose the deleted locale for the specific plugin
+                            this.languagePackService.deleteBundle(translatedPluginId, locale);
+                        }));
+                    }
+                }
+            }
+        }
+        if (plugin.metadata.model.l10n) {
+            const bundleDirectory = packageUri.resolve(plugin.metadata.model.l10n);
+            const bundles = await loadPluginBundles(bundleDirectory);
+            if (bundles) {
+                for (const [locale, bundle] of Object.entries(bundles)) {
+                    this.languagePackService.storeBundle(pluginId, locale, bundle);
+                }
+                disposable.push(Disposable.create(() => {
+                    // Dispose all bundles contributed by the deleted plugin
+                    this.languagePackService.deleteBundle(pluginId);
+                }));
+            }
+        }
+        return disposable;
+    }
+
     async localizePlugin(plugin: DeployedPlugin): Promise<DeployedPlugin> {
         const currentLanguage = this.localizationProvider.getCurrentLanguage();
         const localization = this.localizationProvider.loadLocalization(currentLanguage);
-        const pluginPath = URI.parse(plugin.metadata.model.packageUri).fsPath;
+        const pluginPath = new URI(plugin.metadata.model.packageUri).path.fsPath();
         const pluginId = plugin.metadata.model.id;
         try {
             const translations = await loadPackageTranslations(pluginPath, currentLanguage);
@@ -98,7 +152,7 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
     getNlsConfig(): VSCodeNlsConfig {
         const locale = this.localizationProvider.getCurrentLanguage();
         const configFile = this.translationConfigFiles.get(locale);
-        if (locale === 'en' || !configFile) {
+        if (locale === nls.defaultLocale || !configFile) {
             return { locale, availableLanguages: {} };
         }
         const cache = path.dirname(configFile);
@@ -118,7 +172,7 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
         const configs = new Map<string, Record<string, string>>();
         for (const plugin of plugins) {
             if (plugin.contributes?.localizations) {
-                const pluginPath = URI.parse(plugin.metadata.model.packageUri).fsPath;
+                const pluginPath = new URI(plugin.metadata.model.packageUri).path.fsPath();
                 for (const localization of plugin.contributes.localizations) {
                     const config = configs.get(localization.languageId) || {};
                     for (const translation of localization.translations) {
@@ -140,11 +194,57 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
     }
 
     protected async getLocalizationCacheDir(): Promise<string> {
-        const configDir = URI.parse(await this.envVariables.getConfigDirUri()).fsPath;
+        const configDir = new URI(await this.envVariables.getConfigDirUri()).path.fsPath();
         const cacheDir = path.join(configDir, 'localization-cache');
         return cacheDir;
     }
 }
+
+// New plugin localization logic using vscode.l10n
+
+function getL10nTranslation(translation: Translation): UnprocessedL10nBundle | undefined {
+    // 'bundle' is a special key that contains all translations for the l10n vscode API
+    // If that doesn't exist, we can assume that the language pack is using the old vscode-nls API
+    return translation.contents.bundle;
+}
+
+async function loadPluginBundles(l10nUri: URI): Promise<Record<string, LanguagePackBundle> | undefined> {
+    try {
+        const directory = l10nUri.path.fsPath();
+        const files = await fs.readdir(directory);
+        const result: Record<string, LanguagePackBundle> = {};
+        await Promise.all(files.map(async fileName => {
+            const match = fileName.match(/^bundle\.l10n\.([\w\-]+)\.json$/);
+            if (match) {
+                const locale = match[1];
+                const contents = await fs.readJSON(path.join(directory, fileName));
+                result[locale] = {
+                    contents,
+                    uri: l10nUri.resolve(fileName).toString()
+                };
+            }
+        }));
+        return result;
+    } catch {
+        // The directory either doesn't exist or its contents cannot be parsed
+        // In any way we should just safely return undefined
+        return undefined;
+    }
+}
+
+type UnprocessedL10nBundle = Record<string, string | { message: string }>;
+
+function processL10nBundle(bundle: UnprocessedL10nBundle): Record<string, string> {
+    const processedBundle: Record<string, string> = {};
+    for (const [name, value] of Object.entries(bundle)) {
+        const stringValue = typeof value === 'string' ? value : value.message;
+        processedBundle[name] = stringValue;
+    }
+    return processedBundle;
+}
+
+// Old plugin localization logic for vscode-nls
+// vscode-nls was used until version 1.73 of VSCode to translate extensions
 
 function buildLocalizations(localizations: PluginLocalization[]): Localization[] {
     const theiaLocalizations: Localization[] = [];
@@ -172,6 +272,10 @@ function buildLocalizations(localizations: PluginLocalization[]): Localization[]
 function buildTranslationKey(pluginId: string, scope: string, key: string): string {
     return `${pluginId}/${Localization.transformKey(scope)}/${key}`;
 }
+
+// Localization logic for `package.json` entries
+// Extensions can use `package.nls.json` files to store translations for values in their package.json
+// This logic has not changed with the introduction of the vscode.l10n API
 
 interface PackageTranslation {
     translation?: Record<string, string>

@@ -36,6 +36,7 @@ import { WorkspaceExtImpl } from '../../../plugin/workspace';
 import { createDebugExtStub } from './debug-stub';
 import { loadManifest } from './plugin-manifest-loader';
 import { WorkerEnvExtImpl } from './worker-env-ext';
+import { LocalizationExtImpl } from '../../../plugin/localization';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -77,6 +78,7 @@ const debugExt = createDebugExtStub(rpc);
 const clipboardExt = new ClipboardExt(rpc);
 const webviewExt = new WebviewsExtImpl(rpc, workspaceExt);
 const secretsExt = new SecretsExtImpl(rpc);
+const localizationExt = new LocalizationExtImpl(rpc);
 const terminalService: TerminalServiceExt = new TerminalServiceExtImpl(rpc);
 
 const pluginManager = new PluginManagerExtImpl({
@@ -171,7 +173,7 @@ const pluginManager = new PluginManagerExtImpl({
             }
         }
     }
-}, envExt, terminalService, storageProxy, secretsExt, preferenceRegistryExt, webviewExt, rpc);
+}, envExt, terminalService, storageProxy, secretsExt, preferenceRegistryExt, webviewExt, localizationExt, rpc);
 
 const apiFactory = createAPIFactory(
     rpc,
@@ -183,7 +185,8 @@ const apiFactory = createAPIFactory(
     workspaceExt,
     messageRegistryExt,
     clipboardExt,
-    webviewExt
+    webviewExt,
+    localizationExt
 );
 let defaultApi: typeof theia;
 

@@ -174,7 +174,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             const { type } = entry;
             const deployed: DeployedPlugin = { metadata, type };
             deployed.contributes = this.reader.readContribution(manifest);
-            this.localizationService.deployLocalizations(deployed);
+            await this.localizationService.deployLocalizations(deployed);
             deployedPlugins.set(id, deployed);
             deployPlugin.debug(`Deployed ${entryPoint} plugin "${id}" from "${metadata.model.entryPoint[entryPoint] || pluginPath}"`);
         } catch (e) {

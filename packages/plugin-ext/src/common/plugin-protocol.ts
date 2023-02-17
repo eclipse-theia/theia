@@ -59,6 +59,7 @@ export interface PluginPackage {
     activationEvents?: string[];
     extensionDependencies?: string[];
     extensionPack?: string[];
+    l10n?: string;
     icon?: string;
     extensionKind?: Array<'ui' | 'workspace'>
 }
@@ -544,6 +545,7 @@ export interface PluginModel {
      */
     packagePath: string;
     iconUrl?: string;
+    l10n?: string;
     readmeUrl?: string;
     licenseUrl?: string;
 }
