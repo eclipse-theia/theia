@@ -256,7 +256,7 @@ export class MonacoWorkspace {
             // for those that were involved in this bulk edit operation.
             const resources = new Set<string>(edits.filter(edit => edit instanceof MonacoResourceTextEdit).map(edit => (edit as MonacoResourceTextEdit).resource.toString()));
             if (options?.respectAutoSaveConfig && this.editorPreferences.get('files.refactoring.autoSave') === true && resources.size > 0) {
-                await this.saveAll(resources);
+                this.saveAll(resources);
             }
 
             const ariaSummary = this.getAriaSummary(totalEdits, totalFiles);
@@ -270,7 +270,7 @@ export class MonacoWorkspace {
         }
     }
 
-    protected saveAll(resources: Set<string>) {
+    protected saveAll(resources: Set<string>): void {
         for (const uri of resources.values()) {
             this.textModelService.get(uri)?.save();
         }
