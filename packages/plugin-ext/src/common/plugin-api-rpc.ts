@@ -1454,7 +1454,7 @@ export namespace WorkspaceTextEditDto {
 }
 export interface WorkspaceEditMetdataDto {
     isRefactoring?: boolean;
-} 
+}
 
 export interface WorkspaceEditDto {
     edits: Array<WorkspaceTextEditDto | WorkspaceFileEditDto>;
