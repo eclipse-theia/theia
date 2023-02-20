@@ -932,14 +932,17 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     }
 
     protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
-        const cwd = await this.selectTerminalCwd();
         let profile = this.profileService.defaultProfile;
 
         if (!profile) {
             throw new Error('There are not profiles registered');
         }
         if (profile instanceof ShellTerminalProfile) {
-            profile = profile.modify({ rootURI: cwd });
+            const cwd = await this.selectTerminalCwd();
+            if (!cwd) {
+                return;
+            }
+            profile = profile.modify({ cwd });
         }
 
         const termWidget = await profile?.start();
@@ -955,7 +958,10 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         let profile = result[1];
         if (profile instanceof ShellTerminalProfile) {
             const cwd = await this.selectTerminalCwd();
-            profile = profile.modify({ rootURI: cwd });
+            if (!cwd) {
+                return;
+            }
+            profile = profile.modify({ cwd });
         }
         const termWidget = await profile.start();
         this.open(termWidget, { widgetOptions: options });

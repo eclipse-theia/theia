@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { IShellTerminalServerOptions } from '../common/shell-terminal-protocol';
+import { URI } from '@theia/core';
 import { TerminalService } from './base/terminal-service';
 import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget';
 import { TerminalProfile } from './terminal-profile-service';
@@ -34,7 +34,7 @@ export class ShellTerminalProfile implements TerminalProfile {
      * @param options the options to override
      * @returns a modified copy of this profile
      */
-    modify(options: IShellTerminalServerOptions): TerminalProfile {
+    modify(options: { cwd?: string | URI }): TerminalProfile {
         return new ShellTerminalProfile(this.terminalService, { ...this.options, ...options });
     }
 }
