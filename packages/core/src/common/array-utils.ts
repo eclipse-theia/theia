@@ -106,33 +106,4 @@ export namespace ArrayUtils {
     export function coalesce<T>(array: ReadonlyArray<T | undefined | null>): T[] {
         return <T[]>array.filter(e => !!e);
     }
-
-    /**
-     * A safe variant to push additional items to an array. By default, the
-     * array push operation in combination with the spread operator is used.
-     * However, if the callstack size is exceeded on large additions we use the
-     * concatenation of arrays instead as it not depend on the callstack
-     * size.
-     *
-     * The original array might be modified.
-     *
-     * @param array An array of elements.
-     * @param items Additional elements to be added to the array.
-     * @returns An array containing the original elements with the additional
-     *   elements appended. This may or may not be the array that was handed in.
-     */
-    export function pushAll<T>(array: T[], items: T[]): T[] {
-        try {
-            // typically faster but might fail depending on the number of items and the callstack size
-            array.push(...items);
-            return array;
-        } catch (error) {
-            if (error instanceof RangeError) {
-                // typically slower but works if we otherwise exceed the callstack size
-                // according to online benchmarks concat is faster than a forEach push
-                return array.concat(items);
-            }
-            throw error;
-        }
-    }
 }

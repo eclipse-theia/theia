@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2017-2023 TypeFox and others.
+// Copyright (C) 2017 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,8 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ArrayUtils } from '../../common';
-import { CompositeTreeNode, TreeNode } from './tree';
+import { TreeNode, CompositeTreeNode } from './tree';
 import { ExpandableTreeNode } from './tree-expansion';
 
 export interface TreeIterator extends Iterator<TreeNode> {
@@ -208,7 +207,7 @@ export namespace Iterators {
         while (stack.length > 0) {
             const top = stack.pop()!;
             yield top;
-            stack = ArrayUtils.pushAll(stack, (children(top) || []).filter(include).reverse());
+            stack = stack.concat((children(top) || []).filter(include).reverse());
         }
     }
 
@@ -221,7 +220,7 @@ export namespace Iterators {
         while (queue.length > 0) {
             const head = queue.shift()!;
             yield head;
-            queue = ArrayUtils.pushAll(queue, (children(head) || []).filter(include));
+            queue = queue.concat((children(head) || []).filter(include));
         }
     }
 
