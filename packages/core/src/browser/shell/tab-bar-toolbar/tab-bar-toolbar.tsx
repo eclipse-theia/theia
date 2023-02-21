@@ -16,6 +16,7 @@
 
 import { inject, injectable } from 'inversify';
 import * as React from 'react';
+import { ContextKeyService } from '../../context-key-service';
 import { CommandRegistry, Disposable, DisposableCollection, MenuCommandExecutor, MenuModelRegistry, MenuPath, nls } from '../../../common';
 import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../../context-menu-renderer';
 import { LabelIcon, LabelParser } from '../../label-parser';
@@ -41,12 +42,15 @@ export class TabBarToolbar extends ReactWidget {
     protected inline = new Map<string, TabBarToolbarItem | ReactTabBarToolbarItem>();
     protected more = new Map<string, TabBarToolbarItem>();
 
+    protected contextKeyListener: Disposable | undefined;
+
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
     @inject(LabelParser) protected readonly labelParser: LabelParser;
     @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
     @inject(MenuCommandExecutor) protected readonly menuCommandExecutor: MenuCommandExecutor;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
     @inject(TabBarToolbarRegistry) protected readonly toolbarRegistry: TabBarToolbarRegistry;
+    @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
 
     constructor() {
         super();
@@ -60,13 +64,22 @@ export class TabBarToolbar extends ReactWidget {
     updateItems(items: Array<TabBarToolbarItem | ReactTabBarToolbarItem>, current: Widget | undefined): void {
         this.inline.clear();
         this.more.clear();
+
+        const contextKeys = new Set<string>();
         for (const item of items.sort(TabBarToolbarItem.PRIORITY_COMPARATOR).reverse()) {
             if ('render' in item || item.group === undefined || item.group === 'navigation') {
                 this.inline.set(item.id, item);
             } else {
                 this.more.set(item.id, item);
             }
+
+            if (item.when) {
+                this.contextKeyService.parseKeys(item.when)?.forEach(key => contextKeys.add(key));
+            }
         }
+
+        this.updateContextKeyListener(contextKeys);
+
         this.setCurrent(current);
         if (!items.length) {
             this.hide();
@@ -97,6 +110,17 @@ export class TabBarToolbar extends ReactWidget {
         }
     }
 
+    protected updateContextKeyListener(contextKeys: Set<string>): void {
+        this.contextKeyListener?.dispose();
+        if (contextKeys.size > 0) {
+            this.contextKeyListener = this.contextKeyService.onDidChange(event => {
+                if (event.affects(contextKeys)) {
+                    this.update();
+                }
+            });
+        }
+    }
+
     protected render(): React.ReactNode {
         return <React.Fragment>
             {this.renderMore()}
@@ -124,7 +148,8 @@ export class TabBarToolbar extends ReactWidget {
             classNames.push(iconClass);
         }
         const tooltip = item.tooltip || (command && command.label);
-        const toolbarItemClassNames = this.getToolbarItemClassNames(command?.id ?? item.command);
+
+        const toolbarItemClassNames = this.getToolbarItemClassNames(item);
         if (item.menuPath && !item.command) { toolbarItemClassNames.push('enabled'); }
         return <div key={item.id}
             ref={this.onRender}
@@ -139,13 +164,13 @@ export class TabBarToolbar extends ReactWidget {
         </div>;
     }
 
-    protected getToolbarItemClassNames(commandId: string | undefined): string[] {
+    protected getToolbarItemClassNames(item: AnyToolbarItem): string[] {
         const classNames = [TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM];
-        if (commandId) {
-            if (this.commandIsEnabled(commandId)) {
+        if (item.command) {
+            if (this.commandIsEnabled(item.command) && this.evaluateWhenClause(item.when)) {
                 classNames.push('enabled');
             }
-            if (this.commandIsToggled(commandId)) {
+            if (this.commandIsToggled(item.command)) {
                 classNames.push('toggled');
             }
         }
@@ -221,11 +246,20 @@ export class TabBarToolbar extends ReactWidget {
         return this.commands.isToggled(command, this.current);
     }
 
+    protected evaluateWhenClause(whenClause: string | undefined): boolean {
+        return whenClause ? this.contextKeyService.match(whenClause) : true;
+    }
+
     protected executeCommand = (e: React.MouseEvent<HTMLElement>) => {
         e.preventDefault();
         e.stopPropagation();
 
         const item: AnyToolbarItem | undefined = this.inline.get(e.currentTarget.id);
+
+        if (!this.evaluateWhenClause(item?.when)) {
+            return;
+        }
+
         if (item?.command && item.menuPath) {
             this.menuCommandExecutor.executeCommand(item.menuPath, item.command, this.current);
         } else if (item?.command) {
@@ -245,7 +279,6 @@ export class TabBarToolbar extends ReactWidget {
     protected onMouseUpEvent = (e: React.MouseEvent<HTMLElement>) => {
         e.currentTarget.classList.remove('active');
     };
-
 }
 
 export namespace TabBarToolbar {
