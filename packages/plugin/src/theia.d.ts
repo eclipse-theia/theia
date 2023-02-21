@@ -13901,7 +13901,6 @@ export module '@theia/plugin' {
          * @param tabGroup The tab group to close.
          * @param preserveFocus When `true` focus will remain in its current position.
          * @returns A promise that resolves to `true` when all tab groups have been closed.
-         * @stubbed
          */
         close(tabGroup: TabGroup | readonly TabGroup[], preserveFocus?: boolean): Thenable<boolean>;
     }
