@@ -256,7 +256,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
         // extension contributions get read after this point: need to set the default profile if necessary
         this.profileService.onAdded(id => {
-            let defaultProfileId = undefined;
+            let defaultProfileId: string | undefined;
             switch (OS.backend.type()) {
                 case OS.Type.Windows: {
                     defaultProfileId = this.terminalPreferences['terminal.integrated.defaultProfile.windows'];
