@@ -265,4 +265,7 @@ export class OpenEditorsWidget extends AbstractNavigatorTreeWidget {
         }
         return this.props.leftPadding;
     }
+
+    override storeState(): object { return {}; }
+    override restoreState(): void { }
 }
