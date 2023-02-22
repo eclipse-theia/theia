@@ -73,7 +73,7 @@ describe('Keybindings', function () {
             when: 'false'
         }));
 
-        const editor = await editorManager.open(workspaceService.tryGetRoots()[0].resource.resolve('package.json'), {
+        const editor = await editorManager.open(workspaceService.tryGetRoots()[0].resource.resolve('webpack.config.js'), {
             mode: 'activate',
             selection: {
                 start: {
@@ -83,7 +83,6 @@ describe('Keybindings', function () {
             }
         });
         toTearDown.push(editor);
-
         const waitForCommand = new Deferred();
         toTearDown.push(commands.onWillExecuteCommand(e => waitForCommand.resolve(e.commandId)));
         keybindings.dispatchKeyDown({

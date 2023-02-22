@@ -300,7 +300,7 @@ describe('Saveable', function () {
         try {
             await fileService.delete(fileUri);
             await waitForDidChangeTitle.promise;
-            assert.isTrue(widget.title.label.endsWith('(deleted)'), 'should be marked as deleted');
+            assert.isTrue(widget.title.label.endsWith('(Deleted)'), 'should be marked as deleted');
             assert.isTrue(Saveable.isDirty(widget), 'should be dirty after delete');
             assert.isFalse(widget.isDisposed, 'model should NOT be disposed after delete');
         } finally {
@@ -474,7 +474,7 @@ describe('Saveable', function () {
         try {
             await fileService.delete(fileUri);
             await waitForDidChangeTitle.promise;
-            assert.isTrue(widget.title.label.endsWith('(deleted)'));
+            assert.isTrue(widget.title.label.endsWith('(Deleted)'));
             assert.isFalse(widget.isDisposed);
         } finally {
             widget.title.changed.disconnect(listener);

@@ -525,6 +525,8 @@ async function theiaCli(): Promise<void> {
                     }),
                     launch: {
                         args: ['--no-sandbox'],
+                        // eslint-disable-next-line no-null/no-null
+                        defaultViewport: null, // view port can take available space instead of 800x600 default
                         devtools: testInspect
                     },
                     files: {
