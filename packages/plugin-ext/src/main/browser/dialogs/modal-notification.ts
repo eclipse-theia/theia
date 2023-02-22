@@ -77,9 +77,13 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
             detailElement.textContent = options.detail;
         }
 
-        actions.forEach((action: MainMessageItem) => {
+        actions.forEach((action, index) => {
             const button = this.createButton(action.title);
             button.classList.add('main');
+            if (index === 0) {
+                // The `acceptButton` automatically gets focus once the modal activates
+                this.acceptButton = button;
+            }
             this.controlPanel.appendChild(button);
             this.addKeyListener(button,
                 Key.ENTER,
