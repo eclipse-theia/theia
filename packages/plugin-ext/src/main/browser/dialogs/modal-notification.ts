@@ -12,6 +12,9 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+//
+// Contributors:
+//      Pavel Nikolaev <pnik@1c.ru> (1C-Soft LLC) - Issue #12203
 // *****************************************************************************
 import { injectable } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
@@ -77,8 +80,13 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
             detailElement.textContent = options.detail;
         }
 
-        actions.forEach((action: MainMessageItem) => {
-            const button = this.createButton(action.title);
+        actions.forEach((action: MainMessageItem, index: number) => {
+            let button;
+            if (index === 0) {
+                button = this.appendAcceptButton(action.title);
+            } else {
+                button = this.createButton(action.title);
+            }
             button.classList.add('main');
             this.controlPanel.appendChild(button);
             this.addKeyListener(button,
