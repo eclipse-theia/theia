@@ -185,7 +185,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "diffEditor.renderMarginRevertIcon": {
         "type": "boolean",
         "default": true,
-        "description": nls.localize("theia/editor/diffEditor.renderMarginRevertIcon", "When enabled, the diff editor shows arrows in its glyph margin to revert changes."),
+        "description": nls.localizeByDefault("When enabled, the diff editor shows arrows in its glyph margin to revert changes."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -241,7 +241,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.acceptSuggestionOnCommitCharacter": {
-        "markdownDescription": nls.localizeByDefault("Controls whether suggestions should be accepted on commit characters. For example, in JavaScript, the semi-colon (`;`) can be a commit character that accepts a suggestion and types that character."),
+        "markdownDescription": nls.localizeByDefault('Controls whether suggestions should be accepted on commit characters. For example, in JavaScript, the semi-colon (`; `) can be a commit character that accepts a suggestion and types that character.'),
         "type": "boolean",
         "default": true,
         "scope": "language-overridable",
@@ -405,7 +405,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.bracketPairColorization.enabled": {
         "type": "boolean",
         "default": true,
-        "markdownDescription": nls.localizeByDefault("Controls whether bracket pair colorization is enabled or not. Use `#workbench.colorCustomizations#` to override the bracket highlight colors."),
+        "markdownDescription": nls.localizeByDefault('Controls whether bracket pair colorization is enabled or not. Use {0} to override the bracket highlight colors.', '`#workbench.colorCustomizations#`'),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1154,7 +1154,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.minimap.autohide": {
         "type": "boolean",
         "default": false,
-        "description": nls.localize("theia/editor/editor.minimap.autohide", "Controls whether the minimap is hidden automatically."),
+        "description": nls.localizeByDefault("Controls whether the minimap is hidden automatically."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1251,7 +1251,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Maps to `Control` on Windows and Linux and to `Command` on macOS."),
             nls.localizeByDefault("Maps to `Alt` on Windows and Linux and to `Option` on macOS.")
         ],
-        "markdownDescription": nls.localize("theia/editor/editor.multiCursorModifier", "The modifier to be used to add multiple cursors with the mouse. The Go to Definition and Open Link mouse gestures will adapt such that they do not conflict with the [multicursor modifier](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier)."),
+        "markdownDescription": nls.localizeByDefault("The modifier to be used to add multiple cursors with the mouse. The Go to Definition and Open Link mouse gestures will adapt such that they do not conflict with the [multicursor modifier](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier)."),
         "type": "string",
         "enum": [
             "ctrlCmd",
@@ -1635,7 +1635,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.showFoldingControls": {
         "enumDescriptions": [
             nls.localizeByDefault("Always show the folding controls."),
-            nls.localize("theia/editor/editor.showFoldingControls1", "Never show the folding controls and reduce the gutter size."),
+            nls.localizeByDefault("Never show the folding controls and reduce the gutter size."),
             nls.localizeByDefault("Only show the folding controls when the mouse is over the gutter.")
         ],
         "description": nls.localizeByDefault("Controls when the folding controls on the gutter are shown."),
@@ -1692,7 +1692,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.stickyScroll.enabled": {
         "type": "boolean",
         "default": false,
-        "description": nls.localize("theia/editor/editor.stickyScroll.enabled", "Shows the nested current scopes during the scroll at the top of the editor."),
+        "description": nls.localizeByDefault("Shows the nested current scopes during the scroll at the top of the editor."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -2008,7 +2008,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.suggestFontSize": {
-        "markdownDescription": nls.localizeByDefault("Font size for the suggest widget. When set to `0`, the value of `#editor.fontSize#` is used."),
+        "markdownDescription": nls.localizeByDefault('Font size for the suggest widget. When set to {0}, the value of {1} is used.', '`0`', '`#editor.fontSize#`'),
         "type": "integer",
         "default": 0,
         "minimum": 0,
@@ -2017,7 +2017,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.suggestLineHeight": {
-        "markdownDescription": nls.localizeByDefault("Line height for the suggest widget. When set to `0`, the value of `#editor.lineHeight#` is used. The minimum value is 8."),
+        "markdownDescription": nls.localizeByDefault('Line height for the suggest widget. When set to {0}, the value of {1} is used. The minimum value is 8.', '`0`', '`#editor.lineHeight#`'),
         "type": "integer",
         "default": 0,
         "minimum": 0,
@@ -2270,14 +2270,14 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.inlayHints.fontSize": {
         "type": "number",
         "default": 0,
-        "markdownDescription": nls.localizeByDefault("Controls font size of inlay hints in the editor. As default the `#editor.fontSize#` is used when the configured value is less than `5` or greater than the editor font size."),
+        "markdownDescription": nls.localizeByDefault('Controls font size of inlay hints in the editor. As default the {0} is used when the configured value is less than {1} or greater than the editor font size.', '`#editor.fontSize#`'),
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.inlayHints.fontFamily": {
         "type": "string",
         "default": "",
-        "markdownDescription": nls.localizeByDefault("Controls font family of inlay hints in the editor. When set to empty, the `#editor.fontFamily#` is used."),
+        "markdownDescription": nls.localizeByDefault('Controls font family of inlay hints in the editor. When set to empty, the {0} is used.', '`#editor.fontFamily#`'),
         "scope": "language-overridable",
         "restricted": false
     },
