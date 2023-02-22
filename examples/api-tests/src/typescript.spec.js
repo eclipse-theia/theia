@@ -73,6 +73,7 @@ describe('TypeScript', function () {
             }
             await pluginService.activatePlugin(pluginId);
         }).concat(preferences.set('files.autoSave', 'off', PreferenceScope.User)));
+        await preferences.set('files.refactoring.autoSave', 'off', PreferenceScope.User);
     });
 
     beforeEach(async function () {
@@ -815,10 +816,22 @@ SPAN {
         // Without doing this, the call to the quickfix command would sometimes fail because of an
         // unexpected "no code action available" pop-up, which would trip the rest of the testcase
         editor.getControl().setSelection(new Selection(30, 1, 30, 1));
-        await waitForAnimation(() => !isActionAvailable(), 5000, 'Code action still available with no proper selection.');
+        console.log('waiting for code action to no longer be available');
+        await waitForAnimation(() => {
+            if (!isActionAvailable()) {
+                return true;
+            }
+            editor.getControl().setSelection(new Selection(30, 1, 30, 1));
+            console.log('...');
+            return !isActionAvailable();
+        }, 5000, 'Code action still available with no proper selection.');
         // re-establish selection
         editor.getControl().setSelection(new Selection(30, 1, 30, 64));
-        await waitForAnimation(() => isActionAvailable(), 5000, 'No code action available. (2)');
+        console.log('waiting for code action to become available again');
+        await waitForAnimation(() => {
+            console.log('...');
+            return isActionAvailable()
+        }, 5000, 'No code action available. (2)');
 
         // Change import back: https://github.com/eclipse-theia/theia/issues/11059
         await commands.executeCommand('editor.action.quickFix');
