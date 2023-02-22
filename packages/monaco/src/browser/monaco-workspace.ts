@@ -21,7 +21,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import URI from '@theia/core/lib/common/uri';
 import { Emitter } from '@theia/core/lib/common/event';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
-import { EditorManager } from '@theia/editor/lib/browser';
+import { EditorManager, EditorPreferences } from '@theia/editor/lib/browser';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { WillSaveMonacoModelEvent, MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
@@ -31,6 +31,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
 import * as monaco from '@theia/monaco-editor-core';
 import {
+    IBulkEditOptions,
     IBulkEditResult, ResourceEdit, ResourceFileEdit as MonacoResourceFileEdit,
     ResourceTextEdit as MonacoResourceTextEdit
 } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
@@ -110,6 +111,9 @@ export class MonacoWorkspace {
 
     @inject(FileSystemPreferences)
     protected readonly filePreferences: FileSystemPreferences;
+
+    @inject(EditorPreferences)
+    protected readonly editorPreferences: EditorPreferences;
 
     @inject(MonacoTextModelService)
     protected readonly textModelService: MonacoTextModelService;
@@ -226,7 +230,7 @@ export class MonacoWorkspace {
         });
     }
 
-    async applyBulkEdit(edits: ResourceEdit[]): Promise<IBulkEditResult & { success: boolean }> {
+    async applyBulkEdit(edits: ResourceEdit[], options?: IBulkEditOptions): Promise<IBulkEditResult & { success: boolean }> {
         try {
             let totalEdits = 0;
             let totalFiles = 0;
@@ -248,6 +252,17 @@ export class MonacoWorkspace {
                 await this.performSnippetEdits(<MonacoResourceTextEdit[]>snippetEdits);
             }
 
+            // when enabled (option AND setting) loop over all dirty working copies and trigger save
+            // for those that were involved in this bulk edit operation.
+            const resources = new Set<string>(
+                edits
+                    .filter((edit): edit is MonacoResourceTextEdit => edit instanceof MonacoResourceTextEdit)
+                    .map(edit => edit.resource.toString())
+            );
+            if (resources.size > 0 && options?.respectAutoSaveConfig && this.editorPreferences.get('files.refactoring.autoSave') === true) {
+                await this.saveAll(resources);
+            }
+
             const ariaSummary = this.getAriaSummary(totalEdits, totalFiles);
             return { ariaSummary, success: true };
         } catch (e) {
@@ -257,6 +272,10 @@ export class MonacoWorkspace {
                 success: false
             };
         }
+    }
+
+    protected async saveAll(resources: Set<string>): Promise<void> {
+        await Promise.all(Array.from(resources.values()).map(uri => this.textModelService.get(uri)?.save()));
     }
 
     protected getAriaSummary(totalEdits: number, totalFiles: number): string {

@@ -670,8 +670,8 @@ export function createAPIFactory(
             saveAll(includeUntitled?: boolean): PromiseLike<boolean> {
                 return editors.saveAll(includeUntitled);
             },
-            applyEdit(edit: theia.WorkspaceEdit): PromiseLike<boolean> {
-                return editors.applyWorkspaceEdit(edit);
+            applyEdit(edit: theia.WorkspaceEdit, metadata?: theia.WorkspaceEditMetadata): PromiseLike<boolean> {
+                return editors.applyWorkspaceEdit(edit, metadata);
             },
             registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider): theia.Disposable {
                 return workspaceExt.registerTextDocumentContentProvider(scheme, provider);

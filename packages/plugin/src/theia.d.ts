@@ -7205,9 +7205,10 @@ export module '@theia/plugin' {
          * not be attempted, when a single edit fails.
          *
          * @param edit A workspace edit.
+         * @param metadata Optional {@link WorkspaceEditMetadata metadata} for the edit.
          * @return A thenable that resolves when the edit could be applied.
          */
-        export function applyEdit(edit: WorkspaceEdit): Thenable<boolean>;
+        export function applyEdit(edit: WorkspaceEdit, metadata?: WorkspaceEditMetadata): Thenable<boolean>;
 
         /**
          * Register a filesystem provider for a given scheme, e.g. `ftp`.
@@ -9747,6 +9748,16 @@ export module '@theia/plugin' {
          * The icon path or {@link ThemeIcon ThemeIcon} for the edit.
          */
         iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+    }
+
+    /**
+     * Additional data about a workspace edit.
+     */
+    export interface WorkspaceEditMetadata {
+        /**
+         * Signal to the editor that this edit is a refactoring.
+         */
+        isRefactoring?: boolean;
     }
 
     /**
