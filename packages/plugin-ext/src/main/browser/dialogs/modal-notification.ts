@@ -12,9 +12,6 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-//
-// Contributors:
-//      Pavel Nikolaev <pnik@1c.ru> (1C-Soft LLC) - Issue #12203
 // *****************************************************************************
 import { injectable } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
