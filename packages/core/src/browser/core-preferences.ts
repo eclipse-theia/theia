@@ -87,7 +87,7 @@ export const corePreferenceSchema: PreferenceSchema = {
                 nls.localizeByDefault('Menu is displayed at the top of the window and only hidden in full screen mode.'),
                 nls.localizeByDefault('Menu is always visible at the top of the window even in full screen mode.'),
                 nls.localizeByDefault('Menu is always hidden.'),
-                nls.localizeByDefault('Menu is displayed as a compact button in the side bar. This value is ignored when `#window.titleBarStyle#` is `native`.')
+                nls.localizeByDefault('Menu is displayed as a compact button in the side bar. This value is ignored when {0} is {1}.', '`#window.titleBarStyle#`', '`native`')
             ],
             default: 'classic',
             scope: 'application',
@@ -106,7 +106,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             type: 'string',
             default: ' - ',
             scope: 'application',
-            markdownDescription: nls.localizeByDefault('Separator used by `window.title`.')
+            markdownDescription: nls.localizeByDefault('Separator used by {0}.', '`#window.title#`')
         },
         'http.proxy': {
             type: 'string',

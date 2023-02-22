@@ -20,8 +20,7 @@ import { AsyncLocalizationProvider, LanguageInfo } from '../../common/i18n/local
 import { QuickInputService, QuickPickItem, QuickPickSeparator } from '../quick-input';
 import { WindowService } from '../window/window-service';
 
-export interface LanguageQuickPickItem extends QuickPickItem {
-    languageId: string
+export interface LanguageQuickPickItem extends QuickPickItem, LanguageInfo {
     execute?(): Promise<void>
 }
 
@@ -32,13 +31,13 @@ export class LanguageQuickPickService {
     @inject(AsyncLocalizationProvider) protected readonly localizationProvider: AsyncLocalizationProvider;
     @inject(WindowService) protected readonly windowService: WindowService;
 
-    async pickDisplayLanguage(): Promise<string | undefined> {
+    async pickDisplayLanguage(): Promise<LanguageInfo | undefined> {
         const quickInput = this.quickInputService.createQuickPick<LanguageQuickPickItem>();
         const installedItems = await this.getInstalledLanguages();
         const quickInputItems: (LanguageQuickPickItem | QuickPickSeparator)[] = [
             {
                 type: 'separator',
-                label: nls.localizeByDefault('Installed languages')
+                label: nls.localizeByDefault('Installed')
             },
             ...installedItems
         ];
@@ -55,7 +54,7 @@ export class LanguageQuickPickService {
             if (availableItems.length > 0) {
                 quickInputItems.push({
                     type: 'separator',
-                    label: nls.localizeByDefault('Available languages')
+                    label: nls.localizeByDefault('Available')
                 });
                 const installed = new Set(installedItems.map(e => e.languageId));
                 for (const available of availableItems) {
@@ -77,7 +76,7 @@ export class LanguageQuickPickService {
                     // Some language quick pick items want to install additional languages
                     // We have to await that before returning the selected locale
                     await selectedItem.execute?.();
-                    resolve(selectedItem.languageId);
+                    resolve(selectedItem);
                 } else {
                     resolve(undefined);
                 }
@@ -122,7 +121,9 @@ export class LanguageQuickPickService {
         return {
             label,
             description,
-            languageId: id
+            languageId: id,
+            languageName: language.languageName,
+            localizedLanguageName: language.localizedLanguageName
         };
     }
 }

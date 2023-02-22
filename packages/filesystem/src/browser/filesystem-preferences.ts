@@ -73,7 +73,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
             type: 'boolean',
             default: false,
             // eslint-disable-next-line max-len
-            description: nls.localizeByDefault('When enabled, the editor will attempt to guess the character set encoding when opening files. This setting can also be configured per language. Note, this setting is not respected by text search. Only `#files.encoding#` is respected.'),
+            description: nls.localizeByDefault('When enabled, the editor will attempt to guess the character set encoding when opening files. This setting can also be configured per language. Note, this setting is not respected by text search. Only {0} is respected.', '`#files.encoding#`'),
             scope: 'language-overridable',
             included: Object.keys(SUPPORTED_ENCODINGS).length > 1
         },

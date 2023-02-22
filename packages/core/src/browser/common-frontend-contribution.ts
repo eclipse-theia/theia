@@ -1152,9 +1152,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected async configureDisplayLanguage(): Promise<void> {
-        const languageId = await this.languageQuickPickService.pickDisplayLanguage();
-        if (languageId && !nls.isSelectedLocale(languageId) && await this.confirmRestart()) {
-            nls.setLocale(languageId);
+        const languageInfo = await this.languageQuickPickService.pickDisplayLanguage();
+        if (languageInfo && !nls.isSelectedLocale(languageInfo.languageId) && await this.confirmRestart(
+            languageInfo.localizedLanguageName ?? languageInfo.languageName ?? languageInfo.languageId
+        )) {
+            nls.setLocale(languageInfo.languageId);
             this.windowService.setSafeToShutDown();
             this.windowService.reload();
         }
@@ -1169,10 +1171,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         return !!this.preferenceService.get('breadcrumbs.enabled');
     }
 
-    protected async confirmRestart(): Promise<boolean> {
+    protected async confirmRestart(languageName: string): Promise<boolean> {
+        const appName = FrontendApplicationConfigProvider.get().applicationName;
         const shouldRestart = await new ConfirmDialog({
-            title: nls.localizeByDefault('A restart is required for the change in display language to take effect.'),
-            msg: nls.localizeByDefault('Press the restart button to restart {0} and change the display language.', FrontendApplicationConfigProvider.get().applicationName),
+            title: nls.localizeByDefault('Press the restart button to restart {0} and set the display language to {1}.', appName, languageName),
+            msg: nls.localizeByDefault('To change the display language, {0} needs to restart', appName),
             ok: nls.localizeByDefault('Restart'),
             cancel: Dialog.CANCEL,
         }).open();
