@@ -254,8 +254,12 @@ export class MonacoWorkspace {
 
             // when enabled (option AND setting) loop over all dirty working copies and trigger save
             // for those that were involved in this bulk edit operation.
-            const resources = new Set<string>(edits.filter(edit => edit instanceof MonacoResourceTextEdit).map(edit => (edit as MonacoResourceTextEdit).resource.toString()));
-            if (options?.respectAutoSaveConfig && this.editorPreferences.get('files.refactoring.autoSave') === true && resources.size > 0) {
+            const resources = new Set<string>(
+                edits
+                    .filter((edit): edit is MonacoResourceTextEdit => edit instanceof MonacoResourceTextEdit)
+                    .map(edit => edit.resource.toString())
+            );
+            if (resources.size > 0 && options?.respectAutoSaveConfig && this.editorPreferences.get('files.refactoring.autoSave') === true) {
                 await this.saveAll(resources);
             }
 
@@ -271,10 +275,7 @@ export class MonacoWorkspace {
     }
 
     protected async saveAll(resources: Set<string>): Promise<void> {
-        for (const uri of resources.values()) {
-            await this.textModelService.get(uri)?.save();
-        }
-
+        await Promise.all(Array.from(resources.values()).map(uri => this.textModelService.get(uri)?.save()));
     }
 
     protected getAriaSummary(totalEdits: number, totalFiles: number): string {
