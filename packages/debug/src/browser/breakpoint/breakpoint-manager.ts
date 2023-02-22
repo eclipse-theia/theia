@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import * as deepEqual from 'fast-deep-equal';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common';
 import { StorageService } from '@theia/core/lib/browser';
@@ -64,24 +65,15 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         const added: SourceBreakpoint[] = [];
         const removed: SourceBreakpoint[] = [];
         const changed: SourceBreakpoint[] = [];
-        const oldMarkers = new Map(result.map(({ data }) => [data.id, data] as [string, SourceBreakpoint]));
+        const oldMarkers = new Map(result.map(({ data }) => [data.id, data]));
         const ids = new Set<string>();
         for (const newMarker of newMarkers) {
             ids.add(newMarker.id);
             const oldMarker = oldMarkers.get(newMarker.id);
             if (!oldMarker) {
                 added.push(newMarker);
-                // @ts-ignore
-            } else {
-                const oldRawKeys = Object.keys(oldMarker.raw);
-                const newRawKeys = Object.keys(newMarker.raw);
-                if (
-                    newRawKeys.length !== oldRawKeys.length
-                    || newRawKeys.some((key: keyof SourceBreakpoint['raw']) => newMarker.raw[key] !== oldMarker.raw[key])
-                    || Object.keys(newMarker).some((key: keyof SourceBreakpoint) => key !== 'raw' && newMarker[key] !== oldMarker[key])
-                ) {
-                    changed.push(newMarker);
-                }
+            } else if (!deepEqual(oldMarker, newMarker)) {
+                changed.push(newMarker);
             }
         }
         for (const [id, data] of oldMarkers.entries()) {
