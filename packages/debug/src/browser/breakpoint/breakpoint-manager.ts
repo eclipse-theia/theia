@@ -67,12 +67,15 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         const changed: SourceBreakpoint[] = [];
         const oldMarkers = new Map(result.map(({ data }) => [data.id, data]));
         const ids = new Set<string>();
+        let didChangeMarkers = false;
         for (const newMarker of newMarkers) {
             ids.add(newMarker.id);
             const oldMarker = oldMarkers.get(newMarker.id);
             if (!oldMarker) {
                 added.push(newMarker);
-            } else if (!deepEqual(oldMarker, newMarker)) {
+            } else {
+                // We emit all existing markers as 'changed', but we only fire an event if something really did change.
+                didChangeMarkers ||= !!added.length || !deepEqual(oldMarker, newMarker);
                 changed.push(newMarker);
             }
         }
@@ -81,7 +84,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
                 removed.push(data);
             }
         }
-        if (added.length || removed.length || changed.length) {
+        if (added.length || removed.length || didChangeMarkers) {
             super.setMarkers(uri, owner, newMarkers);
             this.onDidChangeBreakpointsEmitter.fire({ uri, added, removed, changed });
         }
