@@ -57,7 +57,7 @@ describe('TypeScript', function () {
     const pluginViewRegistry = container.get(PluginViewRegistry);
 
     const typescriptPluginId = 'vscode.typescript-language-features';
-    const referencesPluginId = 'ms-vscode.references-view';
+    const referencesPluginId = 'vscode.references-view';
     const eslintPluginId = 'dbaeumer.vscode-eslint';
     /** @type Uri.URI */
     const rootUri = workspaceService.tryGetRoots()[0].resource;
@@ -199,8 +199,17 @@ describe('TypeScript', function () {
     async function closePeek(editor) {
         await assertPeekOpened(editor);
 
+        console.log('closePeek() - Attempt to close by sending "Escape"');
         keybindings.dispatchKeyDown('Escape');
-        await waitForAnimation(() => !contextKeyService.match('listFocus'));
+        await waitForAnimation(() => {
+            const isClosed = !contextKeyService.match('listFocus');
+            if (!isClosed) {
+                console.log('...');
+                keybindings.dispatchKeyDown('Escape');
+                return false;
+            }
+            return true;
+        });
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(contextKeyService.match('referenceSearchVisible'));
         assert.isFalse(contextKeyService.match('listFocus'));
