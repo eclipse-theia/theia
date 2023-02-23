@@ -235,9 +235,6 @@ export abstract class PreferenceProvider implements Disposable {
                 if (JSONExt.isObject(source[key]) && JSONExt.isObject(value)) {
                     this.merge(source[key], value);
                     continue;
-                } else if (JSONExt.isArray(source[key]) && JSONExt.isArray(value)) {
-                    source[key] = [...JSONExt.deepCopy(source[key] as any), ...JSONExt.deepCopy(value)];
-                    continue;
                 }
             }
             source[key] = JSONExt.deepCopy(value);
