@@ -70,17 +70,12 @@
     "editor": {
       "diffEditor.diffAlgorithm.experimental": "Utiliza um algoritmo de difusão experimental.",
       "diffEditor.diffAlgorithm.smart": "Utiliza o algoritmo de difusão padrão.",
-      "diffEditor.renderMarginRevertIcon": "Quando activado, o editor dif mostra setas na sua margem de glifos para reverter as alterações.",
       "dirtyEncoding": "O ficheiro está sujo. Por favor guardá-lo primeiro antes de o reabrir com outra codificação.",
       "editor.codeActionWidget.showHeaders": "Activar/desactivar mostrar os cabeçalhos de grupo no menu de acção de código.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tentará apenas formatar modificações (requer controlo da fonte). Se o controlo da fonte não puder ser utilizado, então o ficheiro inteiro será formatado.",
       "editor.inlayHints.enabled1": "Dicas de Inlay estão a mostrar por defeito e escondem-se quando se segura \"Ctrl+Alt\".",
       "editor.inlayHints.enabled2": "Dicas de Inlay são ocultadas por defeito e mostram quando se mantém 'Ctrl+Alt'.",
-      "editor.minimap.autohide": "Controla se o minimapa é escondido automaticamente.",
-      "editor.multiCursorModifier": "O modificador a ser utilizado para adicionar vários cursores com o rato. Os gestos do rato Go to Definition e Open Link serão adaptados de modo a não entrarem em conflito com o [modificador multicursor](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier).",
       "editor.quickSuggestions": "Controla se as sugestões devem aparecer automaticamente durante a dactilografia. Isto pode ser controlado para digitação de comentários, strings, e outros códigos. A sugestão rápida pode ser configurada para aparecer como texto fantasma ou com o widget de sugestão. Esteja também ciente do '#editor.suggestOnTriggerCharacters#'-setting que controla se as sugestões são accionadas por caracteres especiais.",
-      "editor.showFoldingControls1": "Nunca mostrar os controlos dobráveis e reduzir o tamanho da sarjeta.",
-      "editor.stickyScroll.enabled": "Mostra os âmbitos actuais aninhados durante o pergaminho na parte superior do editor.",
       "editor.stickyScroll.maxLineCount": "Define o número máximo de linhas pegajosas a mostrar.",
       "editor.suggest.matchOnWordStartOnly": "Quando activada, a filtragem IntelliSense requer que o primeiro caractere corresponda num início de palavra, por exemplo `c` em `Console` ou `Contexto Web` mas _não_ em `descrição`. Quando desactivado, o IntelliSense mostrará mais resultados, mas ainda os classifica pela qualidade da correspondência.",
       "files.autoSave": "Controla [auto guardar](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) de editores que tenham alterações não guardadas.",
@@ -97,6 +92,9 @@
     },
     "file-search": {
       "toggleIgnoredFiles": " (Prima {0} para mostrar/ocultar ficheiros ignorados)"
+    },
+    "fileDialog": {
+      "showHidden": "Mostrar ficheiros ocultos"
     },
     "fileSystem": {
       "fileResource": {

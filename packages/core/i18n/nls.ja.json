@@ -70,17 +70,12 @@
     "editor": {
       "diffEditor.diffAlgorithm.experimental": "実験的な差分アルゴリズムを使用。",
       "diffEditor.diffAlgorithm.smart": "デフォルトの diffing アルゴリズムを使用します。",
-      "diffEditor.renderMarginRevertIcon": "有効にすると、diff エディタのグリフマージンに矢印が表示され、変更を元に戻すことができます。",
       "dirtyEncoding": "ファイルが汚れています。別のエンコーディングで開き直す前に、まず保存してください。",
       "editor.codeActionWidget.showHeaders": "コードアクションメニューにグループヘッダを表示するかどうかを設定します。",
       "editor.formatOnSaveMode.modificationsIfAvailable": "変更点のみをフォーマットしようとします(ソースコントロールが必要です)。ソースコントロールが使用できない場合は、ファイル全体がフォーマットされます。",
       "editor.inlayHints.enabled1": "インレイのヒントはデフォルトで表示され、`Ctrl+Alt`を押すと隠れます。",
       "editor.inlayHints.enabled2": "インレイのヒントはデフォルトでは非表示で、`Ctrl+Alt`を押したときに表示されます。",
-      "editor.minimap.autohide": "ミニマップを自動的に隠すかどうかを制御します。",
-      "editor.multiCursorModifier": "マウスで複数のカーソルを追加するときに使用するモディファイアです。定義へ移動およびリンクを開くマウスジェスチャは、[multicursor modifier](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier)と競合しないように適応されます。",
       "editor.quickSuggestions": "入力中に自動的にサジェストを表示するかどうかを制御します。コメント、文字列、その他のコードを入力する際に制御できます。クイックサジェストは、ゴーストテキストとして表示するか、サジェストウィジェットで表示するかを設定できます。また、'#editor.suggestOnTriggerCharacters#'設定は、特殊な文字でサジェストが発生するかどうかを制御します。",
-      "editor.showFoldingControls1": "決して折りたたみ操作を見せず、ガターサイズを小さくする。",
-      "editor.stickyScroll.enabled": "エディタ上部のスクロール中に、ネストされた現在のスコープを表示します。",
       "editor.stickyScroll.maxLineCount": "表示する付箋の最大数を定義します。",
       "editor.suggest.matchOnWordStartOnly": "インテリセンスのフィルタリングを有効にすると、最初の文字が単語の先頭にマッチする必要があります。例えば、`Console` や `WebContext` では `c` ですが、`description` では _not_ です。無効化すると、インテリセンスはより多くの結果を表示しますが、マッチの質でソートされます。",
       "files.autoSave": "未保存の変更があるエディターの[自動保存](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save)を制御します。",
@@ -97,6 +92,9 @@
     },
     "file-search": {
       "toggleIgnoredFiles": "({0}を押すと、無視されたファイルの表示/非表示を切り替えることができます。"
+    },
+    "fileDialog": {
+      "showHidden": "隠しファイルを表示する"
     },
     "fileSystem": {
       "fileResource": {

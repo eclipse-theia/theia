@@ -70,17 +70,12 @@
     "editor": {
       "diffEditor.diffAlgorithm.experimental": "Uses an experimental diffing algorithm.",
       "diffEditor.diffAlgorithm.smart": "Uses the default diffing algorithm.",
-      "diffEditor.renderMarginRevertIcon": "When enabled, the diff editor shows arrows in its glyph margin to revert changes.",
       "dirtyEncoding": "The file is dirty. Please save it first before reopening it with another encoding.",
       "editor.codeActionWidget.showHeaders": "Enable/disable showing group headers in the code action menu.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Will attempt to format modifications only (requires source control). If source control can't be used, then the whole file will be formatted.",
       "editor.inlayHints.enabled1": "Inlay hints are showing by default and hide when holding Ctrl+Alt",
       "editor.inlayHints.enabled2": "Inlay hints are hidden by default and show when holding Ctrl+Alt",
-      "editor.minimap.autohide": "Controls whether the minimap is hidden automatically.",
-      "editor.multiCursorModifier": "The modifier to be used to add multiple cursors with the mouse. The Go to Definition and Open Link mouse gestures will adapt such that they do not conflict with the [multicursor modifier](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier).",
       "editor.quickSuggestions": "Controls whether suggestions should automatically show up while typing. This can be controlled for typing in comments, strings, and other code. Quick suggestion can be configured to show as ghost text or with the suggest widget. Also be aware of the '#editor.suggestOnTriggerCharacters#'-setting which controls if suggestions are triggered by special characters.",
-      "editor.showFoldingControls1": "Never show the folding controls and reduce the gutter size.",
-      "editor.stickyScroll.enabled": "Shows the nested current scopes during the scroll at the top of the editor.",
       "editor.stickyScroll.maxLineCount": "Defines the maximum number of sticky lines to show.",
       "editor.suggest.matchOnWordStartOnly": "When enabled IntelliSense filtering requires that the first character matches on a word start, e.g `c` on `Console` or `WebContext` but _not_ on `description`. When disabled IntelliSense will show more results but still sorts them by match quality.",
       "files.autoSave": "Controls [auto save](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) of editors that have unsaved changes.",
@@ -97,6 +92,9 @@
     },
     "file-search": {
       "toggleIgnoredFiles": " (Press {0} to show/hide ignored files)"
+    },
+    "fileDialog": {
+      "showHidden": "Show hidden files"
     },
     "fileSystem": {
       "fileResource": {
