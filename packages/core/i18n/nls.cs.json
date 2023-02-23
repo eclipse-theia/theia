@@ -70,17 +70,12 @@
     "editor": {
       "diffEditor.diffAlgorithm.experimental": "Používá experimentální algoritmus diffing.",
       "diffEditor.diffAlgorithm.smart": "Používá výchozí algoritmus porovnávání.",
-      "diffEditor.renderMarginRevertIcon": "Pokud je tato funkce povolena, zobrazuje editor rozdílů na okraji glyfů šipky pro vrácení změn.",
       "dirtyEncoding": "Soubor je znečištěný. Než jej znovu otevřete v jiném kódování, nejprve jej uložte.",
       "editor.codeActionWidget.showHeaders": "Povolení/zakázání zobrazování záhlaví skupin v nabídce akcí kódu.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Pokusí se formátovat pouze změny (vyžaduje kontrolu zdrojů). Pokud nelze použít kontrolu zdrojů, bude formátován celý soubor.",
       "editor.inlayHints.enabled1": "Vložené nápovědy se zobrazují ve výchozím nastavení a skrývají se při podržení `Ctrl+Alt`",
       "editor.inlayHints.enabled2": "Vložené nápovědy jsou ve výchozím nastavení skryté a zobrazí se při podržení `Ctrl+Alt`.",
-      "editor.minimap.autohide": "Ovládá, zda se má minimapa automaticky skrýt.",
-      "editor.multiCursorModifier": "Modifikátor, který se použije pro přidání více kurzorů myši. Gesta myši Přejít na definici a Otevřít odkaz se přizpůsobí tak, aby nebyla v konfliktu s modifikátorem [více kurzorů](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier).",
       "editor.quickSuggestions": "Ovládá, zda se mají při psaní automaticky zobrazovat návrhy. To lze ovládat při psaní komentářů, řetězců a dalšího kódu. Rychlé návrhy lze nakonfigurovat tak, aby se zobrazovaly jako text ducha nebo s widgetem návrhu. Mějte také na paměti nastavení '#editor.suggestOnTriggerCharacters#', které řídí, zda se návrhy spouštějí pomocí speciálních znaků.",
-      "editor.showFoldingControls1": "Nikdy nezobrazujte skládací ovládací prvky a zmenšujte velikost žlabu.",
-      "editor.stickyScroll.enabled": "Zobrazí vnořené aktuální obory během posouvání v horní části editoru.",
       "editor.stickyScroll.maxLineCount": "Definuje maximální počet lepicích řádků, které se mají zobrazit.",
       "editor.suggest.matchOnWordStartOnly": "Je-li zapnuto filtrování IntelliSense, vyžaduje, aby první znak odpovídal začátku slova, např. `c` u `Console` nebo `WebContext`, ale _ne_ u `description`. Když je funkce IntelliSense vypnutá, zobrazí více výsledků, ale stále je třídí podle kvality shody.",
       "files.autoSave": "Ovládá [automatické ukládání](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) editorů, které mají neuložené změny.",
@@ -97,6 +92,9 @@
     },
     "file-search": {
       "toggleIgnoredFiles": " (Stisknutím {0} zobrazíte/skryjete ignorované soubory)"
+    },
+    "fileDialog": {
+      "showHidden": "Zobrazit skryté soubory"
     },
     "fileSystem": {
       "fileResource": {
