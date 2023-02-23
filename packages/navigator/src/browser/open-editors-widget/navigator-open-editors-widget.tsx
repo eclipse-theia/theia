@@ -265,4 +265,8 @@ export class OpenEditorsWidget extends AbstractNavigatorTreeWidget {
         }
         return this.props.leftPadding;
     }
+
+    // The state of this widget is derived from external factors. No need to store or restore it.
+    override storeState(): object { return {}; }
+    override restoreState(): void { }
 }
