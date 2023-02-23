@@ -26,6 +26,8 @@ import downloadPlugins from './download-plugins';
 import runTest from './run-test';
 import { LocalizationManager, extract } from '@theia/localization-manager';
 
+const { executablePath } = require('puppeteer');
+
 process.on('unhandledRejection', (reason, promise) => {
     throw reason;
 });
@@ -527,7 +529,8 @@ async function theiaCli(): Promise<void> {
                         args: ['--no-sandbox'],
                         // eslint-disable-next-line no-null/no-null
                         defaultViewport: null, // view port can take available space instead of 800x600 default
-                        devtools: testInspect
+                        devtools: testInspect,
+                        executablePath: executablePath()
                     },
                     files: {
                         extension: testExtension,

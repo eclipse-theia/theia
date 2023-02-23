@@ -17,12 +17,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as net from 'net';
-import * as puppeteer from 'puppeteer';
+import * as puppeteer from 'puppeteer-core';
 import newTestPage, { TestFileOptions } from './test-page';
 
 export interface TestOptions {
     start: () => Promise<net.AddressInfo>
-    launch?: puppeteer.LaunchOptions
+    launch?: puppeteer.PuppeteerLaunchOptions
     files?: Partial<TestFileOptions>
     coverage?: boolean
 }
@@ -50,8 +50,14 @@ export default async function runTest(options: TestOptions): Promise<void> {
             // the app has focus, to avoid failures of tests that query the UI's state.
             if (launch && launch.devtools) {
                 promises.push(testPage.waitForSelector('#theia-app-shell.p-Widget.theia-ApplicationShell')
-                    .then(e => e.click()));
+                    .then(e => {
+                        // eslint-disable-next-line no-null/no-null
+                        if (e !== null) {
+                            e.click();
+                        }
+                    }));
             }
+
             // Clear application's local storage to avoid reusing previous state
             promises.push(testPage.evaluate(() => localStorage.clear()));
             await Promise.all(promises);

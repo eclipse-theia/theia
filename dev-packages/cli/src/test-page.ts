@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as puppeteer from 'puppeteer';
+import * as puppeteer from 'puppeteer-core';
 const collectFiles: (options: TestFileOptions) => string[] = require('mocha/lib/cli/collect-files');
 
 export interface TestFileOptions {
