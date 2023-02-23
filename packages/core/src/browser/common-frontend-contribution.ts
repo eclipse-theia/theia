@@ -56,7 +56,7 @@ import { QuickInputService, QuickPickItem, QuickPickItemOrSeparator } from './qu
 import { AsyncLocalizationProvider } from '../common/i18n/localization';
 import { nls } from '../common/nls';
 import { CurrentWidgetCommandAdapter } from './shell/current-widget-command-adapter';
-import { ConfirmDialog, confirmExit, Dialog } from './dialogs';
+import { ConfirmDialog, confirmExitWithOrWithoutSaving, Dialog } from './dialogs';
 import { WindowService } from './window/window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { DecorationStyle } from './decoration-style';
@@ -1144,13 +1144,19 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     onWillStop(): OnWillStopAction | undefined {
         try {
             if (this.shouldPreventClose || this.shell.canSaveAll()) {
-                return { reason: 'Dirty editors present', action: () => confirmExit() };
+                const captionsToSave = this.unsavedTabsCaptions();
+
+                return { reason: 'Dirty editors present', action: async () => confirmExitWithOrWithoutSaving(captionsToSave, async () => this.shell.saveAll()) };
             }
         } finally {
             this.shouldPreventClose = false;
         }
     }
-
+    protected unsavedTabsCaptions(): string[] {
+        return this.shell.widgets
+            .filter(widget => this.saveResourceService.canSave(widget))
+            .map(widget => widget.title.label);
+    }
     protected async configureDisplayLanguage(): Promise<void> {
         const languageInfo = await this.languageQuickPickService.pickDisplayLanguage();
         if (languageInfo && !nls.isSelectedLocale(languageInfo.languageId) && await this.confirmRestart(
