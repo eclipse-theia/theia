@@ -181,6 +181,10 @@ export class DebugExtImpl implements DebugExt {
             parentSessionId: options.parentSession?.id,
             compact: options.compact,
             consoleMode: options.consoleMode,
+            suppressSaveBeforeStart: options.suppressSaveBeforeStart,
+            suppressDebugToolbar: options.suppressDebugToolbar,
+            suppressDebugStatusbar: options.suppressDebugStatusbar,
+            suppressDebugView: options.suppressDebugView,
             lifecycleManagedByParent: options.lifecycleManagedByParent,
             noDebug: options.noDebug
         });

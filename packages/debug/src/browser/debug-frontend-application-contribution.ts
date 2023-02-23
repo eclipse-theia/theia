@@ -449,14 +449,16 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     activate: false,
                 });
             }
-            if (!noDebug && (openDebug === 'openOnSessionStart' || (openDebug === 'openOnFirstSessionStart' && this.firstSessionStart))) {
+            const shouldOpenDebug = openDebug === 'openOnSessionStart' || (openDebug === 'openOnFirstSessionStart' && this.firstSessionStart);
+            // Do not open debug view when suppressed via configuration
+            if (!noDebug && !this.shouldViewBeSuppressed(session) && shouldOpenDebug) {
                 this.openSession(session);
             }
             this.firstSessionStart = false;
         });
         this.manager.onDidStopDebugSession(session => {
             const { openDebug } = session.configuration;
-            if (openDebug === 'openOnDebugBreak') {
+            if (!this.shouldViewBeSuppressed(session) && openDebug === 'openOnDebugBreak') {
                 this.openSession(session);
             }
         });
@@ -1494,10 +1496,36 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         }
 
         const session = this.manager.currentSession;
-        if (session && session.configuration.noDebug) {
-            return false;
+        if (session) {
+            if (session.configuration.noDebug) {
+                return false;
+            }
+            if (this.getOption(session, 'suppressDebugStatusbar')) {
+                return false;
+            }
         }
 
         return true;
+    }
+
+    protected getOption(session: DebugSession, option: 'suppressDebugView'  | 'suppressDebugToolbar' | 'suppressDebugStatusbar'): boolean | undefined {
+        // If configuration is not set explicitly take the configuration from the nearest parent.
+        // This avoid having the configuration being overwritten by undefined values.
+        let result = session.configuration[option];
+        let currentSession = session;
+        while (result === undefined) {
+            if (currentSession.parentSession) {
+                currentSession = currentSession.parentSession;
+                result = currentSession.configuration[option];
+            } else {
+                break;
+            }
+        }
+        return result;
+    }
+
+    protected shouldViewBeSuppressed(session: DebugSession): boolean | undefined {
+            // Only suppress the view if both the debug view and the toolbar are suppressed, as the toolbar is always docked.
+            return this.getOption(session, 'suppressDebugView') && this.getOption(session, 'suppressDebugToolbar');
     }
 }
