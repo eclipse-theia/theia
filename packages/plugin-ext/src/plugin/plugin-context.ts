@@ -234,7 +234,7 @@ import { PluginPackage } from '../common';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FilePermission } from '@theia/filesystem/lib/common/files';
 import { TabsExtImpl } from './tabs';
-import { LocalizationExtImpl } from './localization';
+import { LocalizationExtImpl } from './localization-ext';
 
 export function createAPIFactory(
     rpc: RPCProtocol,

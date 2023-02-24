@@ -68,6 +68,8 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
     async deployLocalizations(plugin: DeployedPlugin): Promise<void> {
         const disposable = new DisposableCollection();
         if (plugin.contributes?.localizations) {
+            // Indicator that this plugin is a vscode language pack
+            // Language packs translate Theia and some builtin vscode extensions
             const localizations = buildLocalizations(plugin.contributes.localizations);
             disposable.push(Disposable.create(() => {
                 this.localizationProvider.removeLocalizations(...localizations);
@@ -75,6 +77,9 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
             this.localizationProvider.addLocalizations(...localizations);
         }
         if (plugin.metadata.model.l10n || plugin.contributes?.localizations) {
+            // Indicator that this plugin is a vscode language pack or has its own localization bundles
+            // These bundles are purely used for translating plugins
+            // The branch above builds localizations for Theia's own strings
             disposable.push(await this.updateLanguagePackBundles(plugin));
         }
         if (!disposable.disposed) {
@@ -116,6 +121,8 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
                 }
             }
         }
+        // The `l10n` field of the plugin model points to a relative directory path within the plugin
+        // It is supposed to contain localization bundles that contain translations of the plugin strings into different languages
         if (plugin.metadata.model.l10n) {
             const bundleDirectory = packageUri.resolve(plugin.metadata.model.l10n);
             const bundles = await loadPluginBundles(bundleDirectory);
@@ -132,6 +139,15 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
         return disposable;
     }
 
+    /**
+     * Performs localization of the plugin model. Translates entries such as command names, view names and other items.
+     *
+     * Translatable items are indicated with a `%id%` value.
+     * The `id` is the translation key that gets replaced with the localized value for the currently selected language.
+     *
+     * Returns a copy of the plugin argument and does not modify the argument.
+     * This is done to preserve the original `%id%` values for subsequent invocations of this method.
+     */
     async localizePlugin(plugin: DeployedPlugin): Promise<DeployedPlugin> {
         const currentLanguage = this.localizationProvider.getCurrentLanguage();
         const localization = this.localizationProvider.loadLocalization(currentLanguage);
@@ -225,8 +241,9 @@ async function loadPluginBundles(l10nUri: URI): Promise<Record<string, LanguageP
             }
         }));
         return result;
-    } catch {
+    } catch (err) {
         // The directory either doesn't exist or its contents cannot be parsed
+        console.error(`Failed to load plugin localization bundles from ${l10nUri}.`, err);
         // In any way we should just safely return undefined
         return undefined;
     }

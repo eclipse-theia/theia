@@ -35,7 +35,7 @@ import { TerminalServiceExtImpl } from '../../plugin/terminal-ext';
 import { SecretsExtImpl } from '../../plugin/secrets-ext';
 import { BackendInitializationFn } from '../../common';
 import { connectProxyResolver } from './plugin-host-proxy';
-import { LocalizationExtImpl } from '../../plugin/localization';
+import { LocalizationExtImpl } from '../../plugin/localization-ext';
 
 /**
  * Handle the RPC calls.

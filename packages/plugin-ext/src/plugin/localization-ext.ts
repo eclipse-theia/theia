@@ -31,7 +31,7 @@ export class LocalizationExtImpl implements LocalizationExt {
     private readonly bundleCache = new Map<string, LanguagePackBundle | undefined>();
 
     constructor(rpc: RPCProtocol) {
-        this._proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.L10N_MAIN);
+        this._proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.LOCALIZATION_MAIN);
     }
 
     getMessage(pluginId: string, details: StringDetails): string {

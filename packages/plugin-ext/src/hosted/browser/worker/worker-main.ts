@@ -36,7 +36,7 @@ import { WorkspaceExtImpl } from '../../../plugin/workspace';
 import { createDebugExtStub } from './debug-stub';
 import { loadManifest } from './plugin-manifest-loader';
 import { WorkerEnvExtImpl } from './worker-env-ext';
-import { LocalizationExtImpl } from '../../../plugin/localization';
+import { LocalizationExtImpl } from '../../../plugin/localization-ext';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;

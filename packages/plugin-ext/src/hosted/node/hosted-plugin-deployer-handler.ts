@@ -133,7 +133,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             if (await this.deployPlugin(plugin, 'backend')) { successes++; }
         }
         // rebuild translation config after deployment
-        this.localizationService.buildTranslationConfig([...this.deployedBackendPlugins.values()]);
+        await this.localizationService.buildTranslationConfig([...this.deployedBackendPlugins.values()]);
         // resolve on first deploy
         this.backendPluginsMetadataDeferred.resolve(undefined);
         return successes;

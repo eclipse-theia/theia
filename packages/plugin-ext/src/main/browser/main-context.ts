@@ -187,5 +187,5 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     rpc.set(PLUGIN_RPC_CONTEXT.TABS_MAIN, tabsMain);
 
     const localizationMain = new LocalizationMainImpl(container);
-    rpc.set(PLUGIN_RPC_CONTEXT.L10N_MAIN, localizationMain);
+    rpc.set(PLUGIN_RPC_CONTEXT.LOCALIZATION_MAIN, localizationMain);
 }
