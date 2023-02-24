@@ -91,7 +91,7 @@ export class PluginHostRPC {
 
     initContext(contextPath: string, plugin: Plugin): void {
         const { name, version } = plugin.rawModel;
-        console.log('PLUGIN_HOST(' + process.pid + '): initializing(' + name + '@' + version + ' with ' + contextPath + ')');
+        console.debug('PLUGIN_HOST(' + process.pid + '): initializing(' + name + '@' + version + ' with ' + contextPath + ')');
         try {
             const backendInit = dynamicRequire<{ doInitialization: BackendInitializationFn }>(contextPath);
             backendInit.doInitialization(this.apiFactory, plugin);
@@ -111,7 +111,7 @@ export class PluginHostRPC {
         const pluginManager = new PluginManagerExtImpl({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             loadPlugin(plugin: Plugin): any {
-                console.log('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/loadPlugin(' + plugin.pluginPath + ')');
+                console.debug('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/loadPlugin(' + plugin.pluginPath + ')');
                 // cleaning the cache for all files of that plug-in.
                 Object.keys(require.cache).forEach(function (key): void {
                     const mod: NodeJS.Module = require.cache[key]!;
