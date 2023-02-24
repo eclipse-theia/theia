@@ -21,7 +21,7 @@ import { TextmateRegistry, getEncodedLanguageId, MonacoTextmateService, GrammarD
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginViewRegistry } from './view/plugin-view-registry';
 import { PluginCustomEditorRegistry } from './custom-editors/plugin-custom-editor-registry';
-import { PluginContribution, IndentationRules, FoldingRules, ScopeMap, DeployedPlugin, GrammarsContribution, EnterAction, OnEnterRule } from '../../common';
+import { PluginContribution, IndentationRules, FoldingRules, ScopeMap, DeployedPlugin, GrammarsContribution, EnterAction, OnEnterRule, OnEnterRuleRegExp } from '../../common';
 import {
     DefaultUriLabelProviderContribution,
     LabelProviderContribution,
@@ -488,11 +488,14 @@ export class PluginContributionHandler {
         return Disposable.NULL;
     }
 
-    private createRegex(value: string | undefined): RegExp | undefined {
+    private createRegex(value: string | OnEnterRuleRegExp | undefined): RegExp | undefined {
         if (typeof value === 'string') {
             return new RegExp(value, '');
         }
-        return undefined;
+        if (typeof value == 'undefined') {
+            return undefined;
+        }
+        return new RegExp(value.pattern, value.flags);
     }
 
     private convertIndentationRules(rules?: IndentationRules): monaco.languages.IndentationRule | undefined {

@@ -726,10 +726,15 @@ export interface FoldingRules {
     markers?: FoldingMarkers;
 }
 
+export interface OnEnterRuleRegExp {
+    pattern: string;
+    flags?: string;
+}
+
 export interface OnEnterRule {
-    beforeText: string;
-    afterText?: string;
-    previousLineText?: string;
+    beforeText: string | OnEnterRuleRegExp;
+    afterText?: string | OnEnterRuleRegExp;
+    previousLineText?: string | OnEnterRuleRegExp;
     action: EnterAction;
 }
 
