@@ -1084,9 +1084,9 @@ export function createAPIFactory(
                     // We have either rest args which are Array<string | number | boolean> or an array with a single Record<string, any>.
                     // This ensures we get a Record<string | number, any> which will be formatted correctly.
                     const argsFormatted = !params || typeof params[0] !== 'object' ? params : params[0];
-                    return localizationExt.getMessage(plugin.model.id, { message: key, args: argsFormatted as Record<string | number, any> | undefined });
+                    return localizationExt.translateMessage(plugin.model.id, { message: key, args: argsFormatted as Record<string | number, any> | undefined });
                 }
-                return localizationExt.getMessage(plugin.model.id, params[0]);
+                return localizationExt.translateMessage(plugin.model.id, params[0]);
             },
             get bundle() {
                 return localizationExt.getBundle(plugin.model.id);

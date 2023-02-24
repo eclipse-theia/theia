@@ -34,7 +34,7 @@ export class LocalizationExtImpl implements LocalizationExt {
         this._proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.LOCALIZATION_MAIN);
     }
 
-    getMessage(pluginId: string, details: StringDetails): string {
+    translateMessage(pluginId: string, details: StringDetails): string {
         const { message, args, comment } = details;
         if (this.isDefaultLanguage) {
             return Localization.format(message, (args ?? {}));

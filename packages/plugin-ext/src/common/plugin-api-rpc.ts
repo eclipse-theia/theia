@@ -2221,7 +2221,7 @@ export interface IdentifiableInlineCompletion extends InlineCompletion {
 }
 
 export interface LocalizationExt {
-    getMessage(pluginId: string, details: StringDetails): string;
+    translateMessage(pluginId: string, details: StringDetails): string;
     getBundle(pluginId: string): Record<string, string> | undefined;
     getBundleUri(pluginId: string): theia.Uri | undefined;
     initializeLocalizedMessages(plugin: Plugin, currentLanguage: string): Promise<void>;
