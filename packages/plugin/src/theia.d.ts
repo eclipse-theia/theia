@@ -2702,6 +2702,9 @@ export module '@theia/plugin' {
 
     /**
      * An output channel is a container for readonly textual information.
+     *
+     * To get an instance of an `OutputChannel` use
+     * {@link window.createOutputChannel createOutputChannel}.
      */
     export interface OutputChannel {
 
@@ -2763,6 +2766,106 @@ export module '@theia/plugin' {
          * Dispose and free associated resources.
          */
         dispose(): void;
+    }
+
+    /**
+     * Log levels
+     */
+    export enum LogLevel {
+
+        /**
+         * No messages are logged with this level.
+         */
+        Off = 0,
+
+        /**
+         * All messages are logged with this level.
+         */
+        Trace = 1,
+
+        /**
+         * Messages with debug and higher log level are logged with this level.
+         */
+        Debug = 2,
+
+        /**
+         * Messages with info and higher log level are logged with this level.
+         */
+        Info = 3,
+
+        /**
+         * Messages with warning and higher log level are logged with this level.
+         */
+        Warning = 4,
+
+        /**
+         * Only error messages are logged with this level.
+         */
+        Error = 5
+    }
+
+    /**
+     * A channel for containing log output.
+     *
+     * To get an instance of a `LogOutputChannel` use
+     * {@link window.createOutputChannel createOutputChannel}.
+     */
+    export interface LogOutputChannel extends OutputChannel {
+
+        /**
+         * The current log level of the channel. Defaults to {@link env.logLevel editor log level}.
+         */
+        readonly logLevel: LogLevel;
+
+        /**
+         * An {@link Event} which fires when the log level of the channel changes.
+         */
+        readonly onDidChangeLogLevel: Event<LogLevel>;
+
+        /**
+         * Outputs the given trace message to the channel. Use this method to log verbose information.
+         *
+         * The message is only loggeed if the channel is configured to display {@link LogLevel.Trace trace} log level.
+         *
+         * @param message trace message to log
+         */
+        trace(message: string, ...args: any[]): void;
+
+        /**
+         * Outputs the given debug message to the channel.
+         *
+         * The message is only loggeed if the channel is configured to display {@link LogLevel.Debug debug} log level or lower.
+         *
+         * @param message debug message to log
+         */
+        debug(message: string, ...args: any[]): void;
+
+        /**
+         * Outputs the given information message to the channel.
+         *
+         * The message is only loggeed if the channel is configured to display {@link LogLevel.Info info} log level or lower.
+         *
+         * @param message info message to log
+         */
+        info(message: string, ...args: any[]): void;
+
+        /**
+         * Outputs the given warning message to the channel.
+         *
+         * The message is only loggeed if the channel is configured to display {@link LogLevel.Warning warning} log level or lower.
+         *
+         * @param message warning message to log
+         */
+        warn(message: string, ...args: any[]): void;
+
+        /**
+         * Outputs the given error or error message to the channel.
+         *
+         * The message is only loggeed if the channel is configured to display {@link LogLevel.Error error} log level or lower.
+         *
+         * @param error Error or error message to log
+         */
+        error(error: string | Error, ...args: any[]): void;
     }
 
     /**
@@ -5251,6 +5354,15 @@ export module '@theia/plugin' {
         export function createOutputChannel(name: string): OutputChannel;
 
         /**
+         * Creates a new {@link OutputChannel output channel} with the given name.
+         * If options are given, creates a new {@link OutputChannel output channel} with the given name.
+         *
+         * @param name Human-readable string which will be used to represent the channel in the UI.
+         * @param options optional; Options for the log output channel.
+         */
+        export function createOutputChannel(name: string, options?: { log: true }): LogOutputChannel;
+
+        /**
          * Create new terminal.
          * @param name - terminal name to display on the UI.
          * @param shellPath - path to the executable shell. For example "/bin/bash", "bash", "sh".
@@ -7527,6 +7639,15 @@ export module '@theia/plugin' {
          */
         export function asExternalUri(target: Uri): Thenable<Uri>;
 
+        /**
+         * The current log level of the editor.
+         */
+        export const logLevel: LogLevel;
+
+        /**
+         * An {@link Event} which fires when the log level of the editor changes.
+         */
+        export const onDidChangeLogLevel: Event<LogLevel>;
     }
 
     /**

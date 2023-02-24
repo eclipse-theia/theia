@@ -29,6 +29,7 @@ import { UriComponents } from '../common/uri-components';
 import { isReadonlyArray } from '../common/arrays';
 import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
 import { isObject } from '@theia/core/lib/common';
+import { LogLevel as MonacoLogLevel } from '@theia/monaco-editor-core/esm/vs/platform/log/common/log';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -1383,5 +1384,18 @@ export namespace DataTransfer {
             dataTransfer.set(mimeType, DataTransferItem.to(mimeType, item, resolveFileData));
         }
         return dataTransfer;
+    }
+}
+
+export function toLogLevel(logLevel: MonacoLogLevel): theia.LogLevel {
+    switch (logLevel) {
+        case MonacoLogLevel.Trace: return types.LogLevel.Trace;
+        case MonacoLogLevel.Debug: return types.LogLevel.Debug;
+        case MonacoLogLevel.Info: return types.LogLevel.Info;
+        case MonacoLogLevel.Warning: return types.LogLevel.Warning;
+        case MonacoLogLevel.Error: return types.LogLevel.Error;
+        case MonacoLogLevel.Critical: return types.LogLevel.Error /* the plugin API's max LogLevel is Error */;
+        case MonacoLogLevel.Off: return types.LogLevel.Off;
+        default: throw new Error(`Invalid log level ${logLevel}`);
     }
 }

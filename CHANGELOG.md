@@ -3,7 +3,10 @@
 ## History
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
-## v1.37.0 0 -
+
+## v1.37.0 -
+
+- [plugin] implemented the VS Code `LogOutputChannel` API [#12017](https://github.com/eclipse-theia/theia/pull/12429)
 
 <a name="breaking_changes_1.37.0">[Breaking Changes:](#breaking_changes_1.37.0)</a>
 - [core] Inject core preference into `DockPanelRenderer` constructor [12360](https://github.com/eclipse-theia/theia/pull/12360)

@@ -2734,13 +2734,12 @@ export namespace DebugAdapterInlineImplementation {
 export type DebugAdapterDescriptor = DebugAdapterExecutable | DebugAdapterServer | DebugAdapterNamedPipeServer | DebugAdapterInlineImplementation;
 
 export enum LogLevel {
+    Off = 0,
     Trace = 1,
     Debug = 2,
     Info = 3,
     Warning = 4,
-    Error = 5,
-    Critical = 6,
-    Off = 7
+    Error = 5
 }
 
 /**
