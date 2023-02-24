@@ -323,7 +323,7 @@ class TreeViewExtImpl<T> implements Disposable {
         return undefined;
     }
 
-    private getLabelString(treeItem: TreeItem): string | undefined {
+    private getTreeItemLabel(treeItem: TreeItem): string | undefined {
         const treeItemLabel: string | TreeItemLabel | undefined = treeItem.label;
         return typeof treeItemLabel === 'object' ? treeItemLabel.label : treeItemLabel;
     }
@@ -334,7 +334,7 @@ class TreeViewExtImpl<T> implements Disposable {
     }
 
     private getItemLabel(treeItem: TreeItem): string | undefined {
-        let idLabel = this.getLabelString(treeItem);
+        let idLabel = this.getTreeItemLabel(treeItem);
         // Use resource URI if label is not set
         if (idLabel === undefined && treeItem.resourceUri) {
             idLabel = treeItem.resourceUri.path.toString();
