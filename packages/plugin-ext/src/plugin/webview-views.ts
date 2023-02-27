@@ -167,8 +167,8 @@ export class WebviewViewExtImpl implements theia.WebviewView {
 
     set title(value: string | undefined) {
         this.assertNotDisposed();
-        if (this.title !== value) {
-            this.title = value;
+        if (this._title !== value) {
+            this._title = value;
             this.proxy.$setWebviewViewTitle(this.handle, value);
         }
     }
