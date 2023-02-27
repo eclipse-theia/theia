@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.34.2
+
+<a name="breaking_changes_1.34.2">[Breaking Changes:](#breaking_changes_1.34.2)</a>
+
+- [plugin] renamed `TreeViewExtImpl#toTreeItem()` to `TreeViewExtImpl#toTreeElement()`
+
 ## v1.34.0 - 01/26/2023
 
 - [application-package] bumped the default supported API version from `1.55.2` to `1.66.2` [#12104](https://github.com/eclipse-theia/theia/pull/12104)
