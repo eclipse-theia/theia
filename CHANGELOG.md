@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.36.0
+
+<a name="breaking_changes_1.36.0">[Breaking Changes:](#breaking_changes_1.36.0)</a>
+
+- [plugin] renamed `TreeViewExtImpl#toTreeItem()` to `TreeViewExtImpl#toTreeElement()`
+
 ## v1.35.0 - 02/23/2023
 
 - [application-package] updated default supported VS Code API to `1.70.1` [#12200](https://github.com/eclipse-theia/theia/pull/12200)
