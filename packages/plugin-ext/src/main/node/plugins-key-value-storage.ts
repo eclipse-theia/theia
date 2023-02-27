@@ -25,6 +25,9 @@ import { PluginPathsService } from '../common/plugin-paths-protocol';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 import { PluginStorageKind } from '../../common';
 
+const { Sema } = require('async-sema');
+const lock = new Sema(1, { capacity: 5 });
+
 @injectable()
 export class PluginsKeyValueStorage {
 
@@ -54,39 +57,54 @@ export class PluginsKeyValueStorage {
     }
 
     async set(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean> {
-        const dataPath = await this.getDataPath(kind);
-        if (!dataPath) {
-            console.warn('Cannot save data: no opened workspace');
-            return false;
-        }
+        try {
+            await lock.acquire();
+            const dataPath = await this.getDataPath(kind);
+            if (!dataPath) {
+                console.warn('Cannot save data: no opened workspace');
+                return false;
+            }
 
-        const data = await this.readFromFile(dataPath);
+            const data = await this.readFromFile(dataPath);
 
-        if (value === undefined) {
-            delete data[key];
-        } else {
-            data[key] = value;
-        }
+            if (value === undefined) {
+                delete data[key];
+            } else {
+                data[key] = value;
+            }
 
-        await this.writeToFile(dataPath, data);
-        return true;
+            await this.writeToFile(dataPath, data);
+            return true;
+        } finally {
+            lock.release();
+        };
     }
 
     async get(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues> {
-        const dataPath = await this.getDataPath(kind);
-        if (!dataPath) {
-            return {};
-        }
-        const data = await this.readFromFile(dataPath);
-        return data[key];
+        try {
+            await lock.acquire();
+            const dataPath = await this.getDataPath(kind);
+            if (!dataPath) {
+                return {};
+            }
+            const data = await this.readFromFile(dataPath);
+            return data[key];
+        } finally {
+            lock.release();
+        };
     }
 
     async getAll(kind: PluginStorageKind): Promise<KeysToKeysToAnyValue> {
-        const dataPath = await this.getDataPath(kind);
-        if (!dataPath) {
-            return {};
+        try {
+            await lock.acquire();
+            const dataPath = await this.getDataPath(kind);
+            if (!dataPath) {
+                return {};
+            }
+            return this.readFromFile(dataPath);
+        } finally {
+            lock.release();
         }
-        return this.readFromFile(dataPath);
     }
 
     private async getDataPath(kind: PluginStorageKind): Promise<string | undefined> {
