@@ -669,6 +669,11 @@ export interface LanguageContribution {
     configuration?: LanguageConfiguration;
 }
 
+export interface RegExpOptions {
+    pattern: string;
+    flags?: string;
+}
+
 export interface LanguageConfiguration {
     brackets?: CharacterPair[];
     indentationRules?: IndentationRules;
@@ -676,7 +681,7 @@ export interface LanguageConfiguration {
     autoClosingPairs?: AutoClosingPairConditional[];
     comments?: CommentRule;
     folding?: FoldingRules;
-    wordPattern?: string;
+    wordPattern?: string | RegExpOptions;
     onEnterRules?: OnEnterRule[];
 }
 
@@ -702,10 +707,10 @@ export interface DebuggerContribution extends PlatformSpecificAdapterContributio
 }
 
 export interface IndentationRules {
-    increaseIndentPattern: string;
-    decreaseIndentPattern: string;
-    unIndentedLinePattern?: string;
-    indentNextLinePattern?: string;
+    increaseIndentPattern: string | RegExpOptions;
+    decreaseIndentPattern: string | RegExpOptions;
+    unIndentedLinePattern?: string | RegExpOptions;
+    indentNextLinePattern?: string | RegExpOptions;
 }
 export interface AutoClosingPair {
     close: string;
@@ -717,8 +722,8 @@ export interface AutoClosingPairConditional extends AutoClosingPair {
 }
 
 export interface FoldingMarkers {
-    start: string;
-    end: string;
+    start: string | RegExpOptions;
+    end: string | RegExpOptions;
 }
 
 export interface FoldingRules {
@@ -727,9 +732,9 @@ export interface FoldingRules {
 }
 
 export interface OnEnterRule {
-    beforeText: string;
-    afterText?: string;
-    previousLineText?: string;
+    beforeText: string | RegExpOptions;
+    afterText?: string | RegExpOptions;
+    previousLineText?: string | RegExpOptions;
     action: EnterAction;
 }
 
