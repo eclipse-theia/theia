@@ -32,6 +32,7 @@
     "@theia/workspace": "1.34.0",
     "@types/mime": "^2.0.1",
     "@vscode/debugprotocol": "^1.51.0",
+    "async-sema" : "^3.1.1",
     "decompress": "^4.2.1",
     "escape-html": "^1.0.3",
     "filenamify": "^4.1.0",
