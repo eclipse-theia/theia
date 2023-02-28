@@ -63,7 +63,8 @@ export class DebugWatchExpression extends ExpressionItem {
     async open(): Promise<void> {
         const input = new SingleTextInputDialog({
             title: nls.localizeByDefault('Edit Expression'),
-            initialValue: this.expression
+            initialValue: this.expression,
+            placeholder: nls.localizeByDefault('Expression to watch')
         });
         const newValue = await input.open();
         if (newValue !== undefined) {
