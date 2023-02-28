@@ -66,6 +66,7 @@
   border-style: solid;
   border-width: var(--theia-border-width);
   border-color: var(--theia-input-background);
+  border-radius: 2px;
 }
 
 .t-siw-search-container .searchHeader .search-field-container.focused {

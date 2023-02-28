@@ -1826,8 +1826,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 id: 'menubar.selectionBackground', defaults: {
-                    dark: Color.transparent('#ffffff', 0.1),
-                    light: Color.transparent('#000000', 0.1)
+                    dark: 'toolbar.hoverBackground',
+                    light: 'toolbar.hoverBackground'
                 }, description: 'Background color of the selected menu item in the menubar.'
             },
             {
