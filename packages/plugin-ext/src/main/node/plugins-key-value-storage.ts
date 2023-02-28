@@ -110,11 +110,11 @@ export class PluginsKeyValueStorage {
      * @returns A process-global `Mutex` to guard accesses across the process
      * to the `dataPath` file.
      */
-    protected getGlobalStateFileLock(filePath: string): Mutex {
+    protected getGlobalStateFileLock(dataPath: string): Mutex {
         const locks = this.getGlobalStateFileLocks();
-        let lock = locks.get(filePath);
+        let lock = locks.get(dataPath);
         if (!lock) {
-            locks.set(filePath, lock = new Mutex());
+            locks.set(dataPath, lock = new Mutex());
         }
         return lock;
     }
