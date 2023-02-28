@@ -35,6 +35,7 @@ import { CommandRegistry, Command, CommandHandler } from '@theia/core/lib/common
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter } from '@theia/core/lib/common/event';
 import { TaskDefinitionRegistry, ProblemMatcherRegistry, ProblemPatternRegistry } from '@theia/task/lib/browser';
+import { NotebookTypeRegistry } from '@theia/notebook/lib/browser';
 import { PluginDebugService } from './debug/plugin-debug-service';
 import { DebugSchemaUpdater } from '@theia/debug/lib/browser/debug-schema-updater';
 import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-service';
@@ -119,6 +120,9 @@ export class PluginContributionHandler {
 
     @inject(ContributedTerminalProfileStore)
     protected readonly contributedProfileStore: TerminalProfileStore;
+
+    @inject(NotebookTypeRegistry)
+    protected readonly notebookTypeRegistry: NotebookTypeRegistry;
 
     @inject(ContributionProvider) @named(LabelProviderContribution)
     protected readonly contributionProvider: ContributionProvider<LabelProviderContribution>;
@@ -392,6 +396,12 @@ export class PluginContributionHandler {
                         this.contributedProfileStore.unregisterTerminalProfile(profile.id);
                     });
                 });
+            }
+        }
+
+        if (contributions.notebooks) {
+            for (const notebook of contributions.notebooks) {
+                pushContribution(`notebook.${notebook.type}`, () => this.notebookTypeRegistry.registerNotebookType(notebook));
             }
         }
 

@@ -19,6 +19,7 @@
     "@theia/monaco": "1.39.0",
     "@theia/monaco-editor-core": "1.72.3",
     "@theia/navigator": "1.39.0",
+    "@theia/notebook": "1.39.0",
     "@theia/output": "1.39.0",
     "@theia/plugin": "1.39.0",
     "@theia/preferences": "1.39.0",

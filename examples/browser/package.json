@@ -34,6 +34,7 @@
     "@theia/mini-browser": "1.39.0",
     "@theia/monaco": "1.39.0",
     "@theia/navigator": "1.39.0",
+    "@theia/notebook": "1.39.0",
     "@theia/outline-view": "1.39.0",
     "@theia/output": "1.39.0",
     "@theia/plugin-dev": "1.39.0",
