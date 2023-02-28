@@ -39,20 +39,11 @@ export class PluginsKeyValueStorage {
     protected readonly envServer: EnvVariablesServer;
 
     @postConstruct()
-    protected async init(): Promise<void> {
-        try {
-            const configDirUri = await this.envServer.getConfigDirUri();
-            const globalStorageFsPath = path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR);
-            const exists = await fs.pathExists(globalStorageFsPath);
-            if (!exists) {
-                await fs.mkdirs(globalStorageFsPath);
-            }
-            const globalDataFsPath = path.join(globalStorageFsPath, 'global-state.json');
-            this.deferredGlobalDataPath.resolve(globalDataFsPath);
-        } catch (e) {
-            console.error('Failed to initialize global state path: ', e);
-            this.deferredGlobalDataPath.resolve(undefined);
-        }
+    protected init(): void {
+        this.deferredGlobalDataPath.resolve(this.getGlobalDataPath().catch(error => {
+            console.error('Failed to initialize global state path:', error);
+            return undefined;
+        }));
     }
 
     async set(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean> {
@@ -92,6 +83,16 @@ export class PluginsKeyValueStorage {
         return this.globalStateFileLock.runExclusive(
             () => this.readFromFile(dataPath)
         );
+    }
+
+    private async getGlobalDataPath(): Promise<string> {
+        const configDirUri = await this.envServer.getConfigDirUri();
+        const globalStorageFsPath = path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR);
+        const exists = await fs.pathExists(globalStorageFsPath);
+        if (!exists) {
+            await fs.mkdirs(globalStorageFsPath);
+        }
+        return path.join(globalStorageFsPath, 'global-state.json');
     }
 
     private async getDataPath(kind: PluginStorageKind): Promise<string | undefined> {
