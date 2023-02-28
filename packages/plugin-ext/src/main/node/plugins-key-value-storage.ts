@@ -45,19 +45,13 @@ export class PluginsKeyValueStorage {
         }));
     }
 
-    protected get globalStateFileLock(): Mutex {
-        const kGlobalDataPathMutex = Symbol.for('PluginsKeyValueStorage.GlobalDataPathMutex');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (globalThis as any)[kGlobalDataPathMutex] ??= new Mutex();
-    }
-
     async set(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean> {
         const dataPath = await this.getDataPath(kind);
         if (!dataPath) {
             console.warn('Cannot save data: no opened workspace');
             return false;
         }
-        return this.globalStateFileLock
+        return this.getGlobalStateFileLock(dataPath)
             .runExclusive(async () => {
                 const data = await this.readFromFile(dataPath);
                 if (value === undefined || value === {}) {
@@ -75,7 +69,7 @@ export class PluginsKeyValueStorage {
         if (!dataPath) {
             return {};
         }
-        return this.globalStateFileLock
+        return this.getGlobalStateFileLock(dataPath)
             .runExclusive(async () => {
                 const data = await this.readFromFile(dataPath);
                 return data[key];
@@ -87,21 +81,49 @@ export class PluginsKeyValueStorage {
         if (!dataPath) {
             return {};
         }
-        return this.globalStateFileLock
+        return this.getGlobalStateFileLock(dataPath)
             .runExclusive(() => this.readFromFile(dataPath));
     }
 
+    /**
+     * @returns A process-global map of `dataFile` paths to its unique `Mutex`.
+     */
+    protected getGlobalStateFileLocks(): Map<string, Mutex> {
+        const kGlobalDataPathMutex = Symbol.for('PluginsKeyValueStorage.GlobalDataPathLocks');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let locks = (globalThis as any)[kGlobalDataPathMutex];
+        if (!locks) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (globalThis as any)[kGlobalDataPathMutex] = locks = this.initializeGlobalStateFileLocks();
+        }
+        return locks;
+    }
+
+    protected initializeGlobalStateFileLocks(): Map<string, Mutex> {
+        // note: Consider setting up a background cleanup task for any unlocked
+        // mutexes in this map in case we shurn through lots of dataPaths.
+        // Right now the amount of entries seems manageable without cleanup.
+        return new Map();
+    }
+
+    /**
+     * @returns A process-global `Mutex` to guard accesses across the process
+     * to the `dataPath` file.
+     */
+    protected getGlobalStateFileLock(filePath: string): Mutex {
+        const locks = this.getGlobalStateFileLocks();
+        let lock = locks.get(filePath);
+        if (!lock) {
+            locks.set(filePath, lock = new Mutex());
+        }
+        return lock;
+    }
+
     private async getGlobalDataPath(): Promise<string> {
-        return this.globalStateFileLock
-            .runExclusive(async () => {
-                const configDirUri = await this.envServer.getConfigDirUri();
-                const globalStorageFsPath = path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR);
-                const exists = await fs.pathExists(globalStorageFsPath);
-                if (!exists) {
-                    await fs.mkdirs(globalStorageFsPath);
-                }
-                return path.join(globalStorageFsPath, 'global-state.json');
-            });
+        const configDirUri = await this.envServer.getConfigDirUri();
+        const globalStorageFsPath = path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR);
+        await fs.ensureDir(globalStorageFsPath);
+        return path.join(globalStorageFsPath, 'global-state.json');
     }
 
     private async getDataPath(kind: PluginStorageKind): Promise<string | undefined> {
