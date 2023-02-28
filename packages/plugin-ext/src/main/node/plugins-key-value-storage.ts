@@ -16,6 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import * as fs from '@theia/core/shared/fs-extra';
+import { Mutex } from 'async-mutex';
 import * as path from 'path';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -25,13 +26,11 @@ import { PluginPathsService } from '../common/plugin-paths-protocol';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 import { PluginStorageKind } from '../../common';
 
-const { Sema } = require('async-sema');
-const lock = new Sema(1, { capacity: 5});
-
 @injectable()
 export class PluginsKeyValueStorage {
 
     private readonly deferredGlobalDataPath = new Deferred<string | undefined>();
+    protected globalStateFileLock = new Mutex();
 
     @inject(PluginPathsService)
     private readonly pluginPathsService: PluginPathsService;
@@ -57,54 +56,42 @@ export class PluginsKeyValueStorage {
     }
 
     async set(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean> {
-        try {
-            await lock.acquire();
-            const dataPath = await this.getDataPath(kind);
-            if (!dataPath) {
-                console.warn('Cannot save data: no opened workspace');
-                return false;
-            }
-
+        const dataPath = await this.getDataPath(kind);
+        if (!dataPath) {
+            console.warn('Cannot save data: no opened workspace');
+            return false;
+        }
+        return this.globalStateFileLock.runExclusive(async () => {
             const data = await this.readFromFile(dataPath);
-
             if (value === undefined || value === {}) {
                 delete data[key];
             } else {
                 data[key] = value;
             }
-
             await this.writeToFile(dataPath, data);
             return true;
-        } finally {
-            lock.release();
-        };
+        });
     }
 
     async get(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues> {
-        try {
-            await lock.acquire();
-            const dataPath = await this.getDataPath(kind);
-            if (!dataPath) {
-                return {};
-            }
+        const dataPath = await this.getDataPath(kind);
+        if (!dataPath) {
+            return {};
+        }
+        return this.globalStateFileLock.runExclusive(async () => {
             const data = await this.readFromFile(dataPath);
             return data[key];
-        } finally {
-            lock.release();
-        };
+        });
     }
 
     async getAll(kind: PluginStorageKind): Promise<KeysToKeysToAnyValue> {
-        try {
-            await lock.acquire();
-            const dataPath = await this.getDataPath(kind);
-            if (!dataPath) {
-                return {};
-            }
-            return this.readFromFile(dataPath);
-        } finally {
-            lock.release();
+        const dataPath = await this.getDataPath(kind);
+        if (!dataPath) {
+            return {};
         }
+        return this.globalStateFileLock.runExclusive(
+            () => this.readFromFile(dataPath)
+        );
     }
 
     private async getDataPath(kind: PluginStorageKind): Promise<string | undefined> {
@@ -112,7 +99,9 @@ export class PluginsKeyValueStorage {
             return this.deferredGlobalDataPath.promise;
         }
         const storagePath = await this.pluginPathsService.getHostStoragePath(kind.workspace, kind.roots);
-        return storagePath ? path.join(storagePath, 'workspace-state.json') : undefined;
+        if (storagePath) {
+            return path.join(storagePath, 'workspace-state.json');
+        }
     }
 
     private async readFromFile(pathToFile: string): Promise<KeysToKeysToAnyValue> {
@@ -131,5 +120,4 @@ export class PluginsKeyValueStorage {
         await fs.ensureDir(path.dirname(pathToFile));
         await fs.writeJSON(pathToFile, data);
     }
-
 }
