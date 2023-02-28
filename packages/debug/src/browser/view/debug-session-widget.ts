@@ -111,7 +111,7 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
     }
 
     getTrackableWidgets(): Widget[] {
-        return this.viewContainer.getTrackableWidgets();
+        return [this.viewContainer];
     }
 
     storeState(): object {
