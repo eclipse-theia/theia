@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 TypeFox and others.
+// Copyright (C) 2023 Red Hat, Inc. and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,20 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { OpenHandler } from '@theia/core/lib/browser';
-import { NotebookOpenHandler } from './notebookOpenHandler';
-import { NotebookWidget } from './notebookWidget';
-import { bindContributionProvider } from '@theia/core';
-import { NotebookTypeRegistry } from './notebookTypeRegistry';
+export interface NotebookType {
+    readonly type: string;
+    readonly displayName: string;
+    readonly priority?: string | undefined;
+    readonly selector?: readonly NotebookFileSelector[];
+}
 
-export default new ContainerModule(bind => {
-    bindContributionProvider(bind, Symbol('notebooks'));
-
-    bind(NotebookOpenHandler).toSelf().inSingletonScope();
-    bind(OpenHandler).toService(NotebookOpenHandler);
-
-    bind(NotebookTypeRegistry).toSelf().inSingletonScope();
-
-    bind(NotebookWidget).toSelf();
-});
+export interface NotebookFileSelector {
+    readonly filenamePattern?: string;
+    readonly excludeFileNamePattern?: string;
+}
