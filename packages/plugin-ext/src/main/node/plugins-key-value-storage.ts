@@ -101,7 +101,7 @@ export class PluginsKeyValueStorage {
 
     protected initializeGlobalStateFileLocks(): Map<string, Mutex> {
         // note: Consider setting up a background cleanup task for any unlocked
-        // mutexes in this map in case we shurn through lots of dataPaths.
+        // mutexes in this map in case we churn through lots of dataPaths.
         // Right now the amount of entries seems manageable without cleanup.
         return new Map();
     }
