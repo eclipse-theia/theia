@@ -30,7 +30,6 @@ import { PluginStorageKind } from '../../common';
 export class PluginsKeyValueStorage {
 
     private readonly deferredGlobalDataPath = new Deferred<string | undefined>();
-    protected globalStateFileLock = new Mutex();
 
     @inject(PluginPathsService)
     private readonly pluginPathsService: PluginPathsService;
@@ -46,22 +45,29 @@ export class PluginsKeyValueStorage {
         }));
     }
 
+    protected get globalStateFileLock(): Mutex {
+        const kGlobalDataPathMutex = Symbol.for('PluginsKeyValueStorage.GlobalDataPathMutex');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (globalThis as any)[kGlobalDataPathMutex] ??= new Mutex();
+    }
+
     async set(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean> {
         const dataPath = await this.getDataPath(kind);
         if (!dataPath) {
             console.warn('Cannot save data: no opened workspace');
             return false;
         }
-        return this.globalStateFileLock.runExclusive(async () => {
-            const data = await this.readFromFile(dataPath);
-            if (value === undefined) {
-                delete data[key];
-            } else {
-                data[key] = value;
-            }
-            await this.writeToFile(dataPath, data);
-            return true;
-        });
+        return this.globalStateFileLock
+            .runExclusive(async () => {
+                const data = await this.readFromFile(dataPath);
+                if (value === undefined || value === {}) {
+                    delete data[key];
+                } else {
+                    data[key] = value;
+                }
+                await this.writeToFile(dataPath, data);
+                return true;
+            });
     }
 
     async get(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues> {
@@ -69,10 +75,11 @@ export class PluginsKeyValueStorage {
         if (!dataPath) {
             return {};
         }
-        return this.globalStateFileLock.runExclusive(async () => {
-            const data = await this.readFromFile(dataPath);
-            return data[key];
-        });
+        return this.globalStateFileLock
+            .runExclusive(async () => {
+                const data = await this.readFromFile(dataPath);
+                return data[key];
+            });
     }
 
     async getAll(kind: PluginStorageKind): Promise<KeysToKeysToAnyValue> {
@@ -80,19 +87,21 @@ export class PluginsKeyValueStorage {
         if (!dataPath) {
             return {};
         }
-        return this.globalStateFileLock.runExclusive(
-            () => this.readFromFile(dataPath)
-        );
+        return this.globalStateFileLock
+            .runExclusive(() => this.readFromFile(dataPath));
     }
 
     private async getGlobalDataPath(): Promise<string> {
-        const configDirUri = await this.envServer.getConfigDirUri();
-        const globalStorageFsPath = path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR);
-        const exists = await fs.pathExists(globalStorageFsPath);
-        if (!exists) {
-            await fs.mkdirs(globalStorageFsPath);
-        }
-        return path.join(globalStorageFsPath, 'global-state.json');
+        return this.globalStateFileLock
+            .runExclusive(async () => {
+                const configDirUri = await this.envServer.getConfigDirUri();
+                const globalStorageFsPath = path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR);
+                const exists = await fs.pathExists(globalStorageFsPath);
+                if (!exists) {
+                    await fs.mkdirs(globalStorageFsPath);
+                }
+                return path.join(globalStorageFsPath, 'global-state.json');
+            });
     }
 
     private async getDataPath(kind: PluginStorageKind): Promise<string | undefined> {
