@@ -477,6 +477,7 @@ export async function confirmExitWithOrWithoutSaving(captionsToSave: string[], p
 export class SingleTextInputDialogProps extends DialogProps {
     readonly confirmButtonLabel?: string;
     readonly initialValue?: string;
+    readonly placeholder?: string;
     readonly initialSelectionRange?: {
         start: number
         end: number
@@ -499,6 +500,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         this.inputField.className = 'theia-input';
         this.inputField.spellcheck = false;
         this.inputField.setAttribute('style', 'flex: 0;');
+        this.inputField.placeholder = props.placeholder || '';
         this.inputField.value = props.initialValue || '';
         if (props.initialSelectionRange) {
             this.inputField.setSelectionRange(

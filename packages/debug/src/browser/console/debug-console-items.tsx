@@ -239,7 +239,8 @@ export class DebugVariable extends ExpressionContainer {
         }
         const input = new SingleTextInputDialog({
             title: nls.localize('theia/debug/debugVariableInput', 'Set {0} Value', this.name),
-            initialValue: this.value
+            initialValue: this.value,
+            placeholder: nls.localizeByDefault('Value')
         });
         const newValue = await input.open();
         if (newValue) {

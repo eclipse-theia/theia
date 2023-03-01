@@ -237,6 +237,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         title: nls.localizeByDefault('New File'),
                         parentUri: parentUri,
                         initialValue: vacantChildUri.path.base,
+                        placeholder: nls.localize('theia/workspace/newFilePlaceholder', 'File Name'),
                         validate: name => this.validateFileName(name, parent, true)
                     }, this.labelProvider);
 
@@ -261,6 +262,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         title: nls.localizeByDefault('New Folder'),
                         parentUri: parentUri,
                         initialValue: vacantChildUri.path.base,
+                        placeholder: nls.localize('theia/workspace/newFolderPlaceholder', 'Folder Name'),
                         validate: name => this.validateFileName(name, parent, true)
                     }, this.labelProvider);
                     dialog.open().then(async name => {
