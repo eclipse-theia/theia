@@ -12,7 +12,6 @@
   },
   "homepage": "https://github.com/eclipse-theia/theia",
   "scripts": {
-    "prepare": "yarn clean && yarn build",
     "clean": "rimraf lib *.tsbuildinfo",
     "build": "tsc --incremental && npx playwright install chromium",
     "theia:start": "rimraf .tmp.cfg && THEIA_CONFIG_DIR=$PWD/.tmp.cfg yarn --cwd ../browser start",

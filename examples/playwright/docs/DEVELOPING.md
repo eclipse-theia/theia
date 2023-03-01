@@ -3,6 +3,7 @@
 ## Building
 
 Run `yarn` in the root directory of the repository.
+In order to build Playwright and install dependencies (ex: chromium) run `yarn --cwd examples/playwright` at the root of the repository.
 
 ## Executing the tests
 
