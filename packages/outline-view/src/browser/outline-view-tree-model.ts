@@ -49,4 +49,29 @@ export class OutlineViewTreeModel extends TreeModelImpl {
             this.onOpenNodeEmitter.fire(node);
         }
     }
+
+    expandAll(raw?: TreeNode): void {
+        if (CompositeTreeNode.is(raw)) {
+            for (const child of raw.children) {
+                if (ExpandableTreeNode.is(child)) {
+                    this.expandAll(child);
+                }
+            }
+        }
+        if (ExpandableTreeNode.is(raw)) {
+            this.expandNode(raw);
+        }
+    }
+
+    areNodesCollapsed(): boolean {
+        if (CompositeTreeNode.is(this.root)) {
+            for (const child of this.root.children) {
+                if (!ExpandableTreeNode.isCollapsed(child)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
 }
