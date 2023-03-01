@@ -13,13 +13,16 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
-import { Disposable } from '@theia/core';
+import { Disposable, Emitter } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { NotebookType } from '../common/notebook-protocol';
 
 @injectable()
 export class NotebookTypeRegistry {
     readonly notebookTypes: NotebookType[] = [];
+
+    private readonly willOpenNotebookEmitter = new Emitter<string>();
+    readonly onWillOpenNotebook = this.willOpenNotebookEmitter.event;
 
     registerNotebookType(type: NotebookType): Disposable {
         this.notebookTypes.push(type);

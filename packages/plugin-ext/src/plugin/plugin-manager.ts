@@ -96,7 +96,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         'onFileSystem',
         'onCustomEditor',
         'onStartupFinished',
-        'onAuthenticationRequest'
+        'onAuthenticationRequest',
+        'onNotebook'
     ]);
 
     private configStorage: ConfigStorage | undefined;
