@@ -119,7 +119,7 @@
   .monaco-icon-label-container
   > .monaco-icon-name-container {
   display: flex !important;
-  overflow: hidden;
+  align-items: baseline;
 }
 
 .quick-input-list .monaco-list-row.focused {
@@ -164,12 +164,18 @@
   color: var(--theia-pickerGroup-foreground) !important;
 }
 
-.monaco-icon-label > .monaco-icon-label-container {
-  flex: 1 !important;
-  line-height: 22px;
+.quick-input-list
+  .quick-input-list-entry
+  .quick-input-list-rows
+  .quick-input-list-row
+  .monaco-icon-label
+  .monaco-icon-label-container
+  .monaco-icon-name-container {
+    flex: unset;
 }
 
-.quick-input-list-rows
+.quick-input-list-entry
+  .quick-input-list-rows
   .quick-input-list-row
   .monaco-icon-label
   .monaco-icon-description-container
@@ -177,7 +183,7 @@
     font-family: var(--theia-ui-font-family);
     font-size: calc(var(--theia-ui-font-size1) * 0.95) !important;
     color: var(--theia-foreground) !important;
-    display: block;
+    opacity: 0.6;
 }
 
 .quick-input-list-rows
@@ -189,8 +195,6 @@
     font-family: var(--theia-ui-font-family);
     font-size: var(--theia-ui-font-size1) !important;
     color: var(--theia-foreground) !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .quick-input-list .monaco-icon-label::before {
@@ -198,7 +202,10 @@
 }
 
 .quick-input-list .monaco-icon-label.codicon::before {
-  padding-top: 3px;
+  position: relative;
+  top: 3px;
+  left: 1px;
+  padding-right: 12px;
 }
 
 .quick-input-list .monaco-icon-label.theia-file-icons-js {
