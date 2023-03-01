@@ -172,6 +172,17 @@
   .monaco-icon-label-container
   .monaco-icon-name-container {
     flex: unset;
+    padding-bottom: 2px;
+}
+
+.quick-input-list-entry
+  .quick-input-list-rows
+  .quick-input-list-row
+  .monaco-icon-label
+  .monaco-icon-description-container {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-bottom: 2px;
 }
 
 .quick-input-list-entry
@@ -195,10 +206,6 @@
     font-family: var(--theia-ui-font-family);
     font-size: var(--theia-ui-font-size1) !important;
     color: var(--theia-foreground) !important;
-}
-
-.quick-input-list .monaco-icon-label::before {
-  transform: scale(0.8);
 }
 
 .quick-input-list .monaco-icon-label.codicon::before {
