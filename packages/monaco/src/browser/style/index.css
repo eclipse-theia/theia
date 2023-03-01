@@ -195,6 +195,7 @@
     font-size: calc(var(--theia-ui-font-size1) * 0.95) !important;
     color: var(--theia-foreground) !important;
     opacity: 0.6;
+    white-space: inherit;
 }
 
 .quick-input-list-rows
