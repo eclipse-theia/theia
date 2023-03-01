@@ -15,3 +15,4 @@
 // *****************************************************************************
 
 export * from './notebookTypeRegistry';
+export * from './notebookWidget';

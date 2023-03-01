@@ -69,6 +69,7 @@ import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
 import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
+import { NotebookTypeRegistry, NotebookWidget } from '@theia/notebook/lib/browser';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
@@ -131,6 +132,9 @@ export class HostedPluginSupport {
 
     @inject(FrontendApplicationStateService)
     protected readonly appState: FrontendApplicationStateService;
+
+    @inject(NotebookTypeRegistry)
+    protected readonly notebookTypeRegistry: NotebookTypeRegistry;
 
     @inject(PluginViewRegistry)
     protected readonly viewRegistry: PluginViewRegistry;
@@ -237,6 +241,8 @@ export class HostedPluginSupport {
                         widget.dispose();
                     }
                 };
+            } else if (widget instanceof NotebookWidget) {
+                this.activateByNotebook(widget.notebookType);
             }
         });
     }
@@ -621,6 +627,10 @@ export class HostedPluginSupport {
 
     async activateByCustomEditor(viewType: string): Promise<void> {
         await this.activateByEvent(`onCustomEditor:${viewType}`);
+    }
+
+    async activateByNotebook(viewType: string): Promise<void> {
+        await this.activateByEvent(`onNotebook:${viewType}`);
     }
 
     activateByFileSystem(event: FileSystemProviderActivationEvent): Promise<void> {

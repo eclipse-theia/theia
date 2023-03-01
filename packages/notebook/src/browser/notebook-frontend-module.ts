@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { OpenHandler } from '@theia/core/lib/browser';
+import { NavigatableWidgetOptions, OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
 import { NotebookOpenHandler } from './notebookOpenHandler';
 import { NotebookWidget } from './notebookWidget';
-import { bindContributionProvider } from '@theia/core';
+import { bindContributionProvider, URI } from '@theia/core';
 import { NotebookTypeRegistry } from './notebookTypeRegistry';
 
 export default new ContainerModule(bind => {
@@ -29,5 +29,8 @@ export default new ContainerModule(bind => {
 
     bind(NotebookTypeRegistry).toSelf().inSingletonScope();
 
-    bind(NotebookWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: NotebookWidget.ID,
+        createWidget: (options: NavigatableWidgetOptions & { notebookType: string }): NotebookWidget => new NotebookWidget(new URI(options.uri), options.notebookType),
+    }));
 });
