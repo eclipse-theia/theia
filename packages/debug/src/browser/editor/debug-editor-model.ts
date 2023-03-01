@@ -25,7 +25,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection, MenuPath, isOSX } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { MonacoConfigurationService } from '@theia/monaco/lib/browser/monaco-frontend-module';
-import { BreakpointManager } from '../breakpoint/breakpoint-manager';
+import { BreakpointManager, SourceBreakpointsChangeEvent } from '../breakpoint/breakpoint-manager';
 import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { DebugSessionManager } from '../debug-session-manager';
 import { SourceBreakpoint } from '../breakpoint/breakpoint-marker';
@@ -97,6 +97,9 @@ export class DebugEditorModel implements Disposable {
     @inject(MonacoConfigurationService)
     readonly configurationService: IConfigurationService;
 
+    @inject(DebugSessionManager)
+    protected readonly sessionManager: DebugSessionManager;
+
     @postConstruct()
     protected init(): void {
         this.uri = new URI(this.editor.getControl().getModel()!.uri.toString());
@@ -112,7 +115,13 @@ export class DebugEditorModel implements Disposable {
             this.editor.getControl().getModel()!.onDidChangeDecorations(() => this.updateBreakpoints()),
             this.editor.onDidResize(e => this.breakpointWidget.inputSize = e),
             this.sessions.onDidChange(() => this.update()),
-            this.toDisposeOnUpdate
+            this.toDisposeOnUpdate,
+            this.sessionManager.onDidChangeBreakpoints(({ session, uri }) => {
+                if ((!session || session === this.sessionManager.currentSession) && uri.isEqual(this.uri)) {
+                    this.render();
+                }
+            }),
+            this.breakpoints.onDidChangeBreakpoints(event => this.closeBreakpointIfAffected(event)),
         ]);
         this.update();
         this.render();
@@ -243,7 +252,7 @@ export class DebugEditorModel implements Disposable {
         });
     }
 
-    render(): void {
+    protected render(): void {
         this.renderBreakpoints();
         this.renderCurrentBreakpoints();
     }
@@ -444,6 +453,22 @@ export class DebugEditorModel implements Disposable {
         return [];
     }
 
+    protected closeBreakpointIfAffected({ uri, removed }: SourceBreakpointsChangeEvent): void {
+        if (!uri.isEqual(this.uri)) {
+            return;
+        }
+        const position = this.breakpointWidget.position;
+        if (!position) {
+            return;
+        }
+        for (const breakpoint of removed) {
+            if (breakpoint.raw.line === position.lineNumber) {
+                this.breakpointWidget.hide();
+                break;
+            }
+        }
+    }
+
     protected showHover(mouseEvent: monaco.editor.IEditorMouseEvent): void {
         const targetType = mouseEvent.target.type;
         const stopKey = isOSX ? 'metaKey' : 'ctrlKey';
@@ -472,7 +497,7 @@ export class DebugEditorModel implements Disposable {
     protected deltaDecorations(oldDecorations: string[], newDecorations: monaco.editor.IModelDeltaDecoration[]): string[] {
         this.updatingDecorations = true;
         try {
-            return this.editor.getControl().getModel()!.deltaDecorations(oldDecorations, newDecorations);
+            return this.editor.getControl().deltaDecorations(oldDecorations, newDecorations);
         } finally {
             this.updatingDecorations = false;
         }
