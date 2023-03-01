@@ -177,6 +177,7 @@
     font-family: var(--theia-ui-font-family);
     font-size: calc(var(--theia-ui-font-size1) * 0.95) !important;
     color: var(--theia-foreground) !important;
+    display: block;
 }
 
 .quick-input-list-rows
