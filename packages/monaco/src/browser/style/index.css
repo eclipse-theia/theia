@@ -118,8 +118,7 @@
   .monaco-icon-label
   .monaco-icon-label-container
   > .monaco-icon-name-container {
-  display: flex !important;
-  align-items: baseline;
+    display: flex !important;
 }
 
 .quick-input-list .monaco-list-row.focused {
@@ -172,7 +171,14 @@
   .monaco-icon-label-container
   .monaco-icon-name-container {
     flex: unset;
-    padding-bottom: 2px;
+}
+
+.monaco-icon-label > .monaco-icon-label-container {
+  flex: 1 !important;
+  line-height: 22px;
+  height: 22px;
+  font-size: 13px;
+  font-family: var(--theia-ui-font-family);
 }
 
 .quick-input-list-entry
@@ -182,7 +188,6 @@
   .monaco-icon-description-container {
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-bottom: 2px;
 }
 
 .quick-input-list-entry
@@ -207,13 +212,25 @@
     font-family: var(--theia-ui-font-family);
     font-size: var(--theia-ui-font-size1) !important;
     color: var(--theia-foreground) !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
+.codicon-file.default-file-icon.file-icon {
+  min-width: var(--theia-icon-size);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-left: 2px;
+  padding-right: 4px;
+  line-height: inherit;
+  height: 22px;
+  text-align: inherit;
+ }
+
 .quick-input-list .monaco-icon-label.codicon::before {
-  position: relative;
-  top: 3px;
-  left: 1px;
-  padding-right: 12px;
+  font-size: var(--theia-content-font-size);
+  margin-right: 4px;
 }
 
 .quick-input-list .monaco-icon-label.theia-file-icons-js {
