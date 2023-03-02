@@ -16,6 +16,7 @@
 
 import { Marker } from './marker';
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
+import { isObject } from '@theia/core/lib/common';
 
 export const PROBLEM_KIND = 'problem';
 
@@ -24,7 +25,7 @@ export interface ProblemMarker extends Marker<Diagnostic> {
 }
 
 export namespace ProblemMarker {
-    export function is(node: Marker<object>): node is ProblemMarker {
-        return 'kind' in node && node.kind === PROBLEM_KIND;
+    export function is(node: unknown): node is ProblemMarker {
+        return isObject<Marker<object>>(node) && node.kind === PROBLEM_KIND;
     }
 }
