@@ -62,6 +62,7 @@ import { TabsMainImpl } from './tabs/tabs-main';
 import { NotebooksMainImpl } from './notebooks/notebooks-main';
 import { NotebookService } from '@theia/notebook/lib/browser';
 import { LocalizationMainImpl } from './localization-main';
+import { NotebookRenderersMainImpl } from './notebooks/notebook-renderers-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -98,6 +99,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const notebookService = container.get(NotebookService);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, new NotebooksMainImpl(rpc, notebookService));
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_MAIN, new NotebookRenderersMainImpl(rpc));
 
     const bulkEditService = container.get(MonacoBulkEditService);
     const monacoEditorService = container.get(MonacoEditorService);
