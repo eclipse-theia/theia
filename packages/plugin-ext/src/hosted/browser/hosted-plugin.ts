@@ -375,6 +375,7 @@ export class HostedPluginSupport {
         const loadPluginsMeasurement = this.measure('loadPlugins');
 
         const hostContributions = new Map<PluginHost, PluginContributions[]>();
+        console.log(`[${this.clientId}] Loading plugin contributions`);
         for (const contributions of this.contributions.values()) {
             const plugin = contributions.plugin.metadata;
             const pluginId = plugin.model.id;
@@ -384,7 +385,7 @@ export class HostedPluginSupport {
                 contributions.push(Disposable.create(() => console.log(`[${pluginId}]: Unloaded plugin.`)));
                 contributions.push(this.contributionHandler.handleContributions(this.clientId, contributions.plugin));
                 contributions.state = PluginContributions.State.LOADED;
-                console.log(`[${this.clientId}][${pluginId}]: Loaded contributions.`);
+                console.debug(`[${this.clientId}][${pluginId}]: Loaded contributions.`);
                 loaded++;
             }
 
@@ -396,7 +397,7 @@ export class HostedPluginSupport {
                 hostContributions.set(host, dynamicContributions);
                 toDisconnect.push(Disposable.create(() => {
                     contributions!.state = PluginContributions.State.LOADED;
-                    console.log(`[${this.clientId}][${pluginId}]: Disconnected.`);
+                    console.debug(`[${this.clientId}][${pluginId}]: Disconnected.`);
                 }));
             }
         }
@@ -446,14 +447,15 @@ export class HostedPluginSupport {
                     if (toDisconnect.disposed) {
                         return;
                     }
+                    console.log(`[${this.clientId}] Starting plugins.`);
                     for (const contributions of hostContributions) {
                         started++;
                         const plugin = contributions.plugin;
                         const id = plugin.metadata.model.id;
                         contributions.state = PluginContributions.State.STARTED;
-                        console.log(`[${this.clientId}][${id}]: Started plugin.`);
+                        console.debug(`[${this.clientId}][${id}]: Started plugin.`);
                         toDisconnect.push(contributions.push(Disposable.create(() => {
-                            console.log(`[${this.clientId}][${id}]: Stopped plugin.`);
+                            console.debug(`[${this.clientId}][${id}]: Stopped plugin.`);
                             manager.$stop(id);
                         })));
 
