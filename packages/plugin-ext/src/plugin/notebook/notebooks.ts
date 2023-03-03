@@ -29,7 +29,8 @@ import { CommandsConverter } from '../command-registry';
 import { URI } from '../types-impl';
 import * as typeConverters from '../type-converters';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { NotebookDocument } from './notebookDocument';
+import { NotebookDocument } from './notebook-document';
+import { NotebookEditorExtImpl } from './notebook-editor';
 
 export class NotebooksExtImpl implements NotebooksExt {
 
@@ -48,6 +49,7 @@ export class NotebooksExtImpl implements NotebooksExt {
     onDidChangeVisibleNotebookEditors = this.DidChangeVisibleNotebookEditorsEmitter.event;
 
     private readonly documents = new Map<URI, NotebookDocument>();
+    private readonly editors = new Map<string, NotebookEditorExtImpl>();
     private statusBarCache = new Cache<Disposable>('NotebookCellStatusBarCache');
 
     private notebookProxy: NotebooksMain;
@@ -130,6 +132,34 @@ export class NotebooksExtImpl implements NotebooksExt {
         }
         const bytes = await serializer.serializeNotebook(typeConverters.NotebookData.to(data), token);
         return BinaryBuffer.wrap(bytes);
+    }
+
+    registerNotebookCellStatusBarItemProvider(notebookType: string, provider: theia.NotebookCellStatusBarItemProvider): theia.Disposable {
+
+        const handle = this._handlePool++;
+        const eventHandle = typeof provider.onDidChangeCellStatusBarItems === 'function' ? this._handlePool++ : undefined;
+
+        this.notebookStatusBarItemProviders.set(handle, provider);
+        this.notebookProxy.$registerNotebookCellStatusBarItemProvider(handle, eventHandle, notebookType);
+
+        let subscription: theia.Disposable | undefined;
+        if (eventHandle !== undefined) {
+            subscription = provider.onDidChangeCellStatusBarItems!(_ => this.notebookProxy.$emitCellStatusBarEvent(eventHandle));
+        }
+
+        return Disposable.create(() => {
+            this.notebookStatusBarItemProviders.delete(handle);
+            this.notebookProxy.$unregisterNotebookCellStatusBarItemProvider(handle, eventHandle);
+            subscription?.dispose();
+        });
+    }
+
+    getEditorById(editorId: string): NotebookEditorExtImpl {
+        const editor = this.editors.get(editorId);
+        if (!editor) {
+            throw new Error(`unknown text editor: ${editorId}. known editors: ${[...this.editors.keys()]} `);
+        }
+        return editor;
     }
 
     $acceptDocumentAndEditorsDelta(delta: NotebookDocumentsAndEditorsDelta): void {

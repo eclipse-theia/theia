@@ -244,6 +244,7 @@ import { TabsExtImpl } from './tabs';
 import { LocalizationExtImpl } from './localization-ext';
 import { NotebooksExtImpl } from './notebook/notebooks';
 import { TelemetryExtImpl } from './telemetry-ext';
+import { NotebookRenderersExtImpl } from './notebook/notebook-renderers';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -268,6 +269,7 @@ export function createAPIFactory(
     const editors = rpc.set(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, new TextEditorsExtImpl(rpc, editorsAndDocumentsExt));
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocumentsExt));
     const notebooksExt = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT, new NotebooksExtImpl(rpc));
+    const notebookRenderers = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT, new NotebookRenderersExtImpl(rpc, notebooksExt));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = rpc.set(MAIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_EXT, new OutputChannelRegistryExtImpl(rpc));
@@ -1188,24 +1190,14 @@ export function createAPIFactory(
                 };
 
             },
-            createRendererMessaging(
-                rendererId
-            ) {
-                return {
-                    rendererId,
-                    onDidReceiveMessage: () => Disposable.create(() => { }),
-                    postMessage: () => Promise.resolve({}),
-                };
+            createRendererMessaging(rendererId) {
+                return notebookRenderers.createRendererMessaging(rendererId);
             },
             registerNotebookCellStatusBarItemProvider(
                 notebookType,
                 provider
             ) {
-                return {
-                    notebookType,
-                    provider,
-                    dispose: () => undefined,
-                };
+                return notebooksExt.registerNotebookCellStatusBarItemProvider(notebookType, provider);
             }
         };
 

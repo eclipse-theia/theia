@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Disposable, DisposableCollection, Emitter } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { NotebookData, NotebookExtensionDescription, TransientOptions } from '../common';
 
