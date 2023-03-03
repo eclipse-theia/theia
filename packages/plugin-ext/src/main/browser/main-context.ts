@@ -59,6 +59,8 @@ import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import { UntitledResourceResolver } from '@theia/core/lib/common/resource';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { TabsMainImpl } from './tabs/tabs-main';
+import { NotebooksMainImpl } from './notebooks/notebooks-main';
+import { NotebookService } from '@theia/notebook/lib/browser';
 import { LocalizationMainImpl } from './localization-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
@@ -93,6 +95,9 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const languageService = container.get(MonacoLanguages);
     const documentsMain = new DocumentsMainImpl(editorsAndDocuments, modelService, rpc, editorManager, openerService, shell, untitledResourceResolver, languageService);
     rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, documentsMain);
+
+    const notebookService = container.get(NotebookService);
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, new NotebooksMainImpl(rpc, notebookService));
 
     const bulkEditService = container.get(MonacoBulkEditService);
     const monacoEditorService = container.get(MonacoEditorService);

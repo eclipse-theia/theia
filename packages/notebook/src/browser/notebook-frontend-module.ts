@@ -20,6 +20,7 @@ import { NotebookOpenHandler } from './notebookOpenHandler';
 import { NotebookWidget } from './notebookWidget';
 import { bindContributionProvider, URI } from '@theia/core';
 import { NotebookTypeRegistry } from './notebookTypeRegistry';
+import { NotebookService } from './notebook-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Symbol('notebooks'));
@@ -33,4 +34,6 @@ export default new ContainerModule(bind => {
         id: NotebookWidget.ID,
         createWidget: (options: NavigatableWidgetOptions & { notebookType: string }): NotebookWidget => new NotebookWidget(new URI(options.uri), options.notebookType),
     }));
+
+    bind(NotebookService).toSelf().inSingletonScope();
 });

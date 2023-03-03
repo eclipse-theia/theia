@@ -28,7 +28,10 @@ import * as types from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { isReadonlyArray } from '../common/arrays';
 import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
-import { isObject } from '@theia/core/lib/common';
+import { DisposableCollection, isEmptyObject, isObject } from '@theia/core/lib/common';
+import * as notebooks from '@theia/notebook/lib/common';
+import { CommandsConverter } from './command-registry';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -1387,3 +1390,145 @@ export namespace DataTransfer {
         return dataTransfer;
     }
 }
+
+export namespace NotebookDocumentContentOptions {
+    export function from(options: theia.NotebookDocumentContentOptions | undefined): notebooks.TransientOptions {
+        return {
+            transientOutputs: options?.transientOutputs ?? false,
+            transientCellMetadata: options?.transientCellMetadata ?? {},
+            transientDocumentMetadata: options?.transientDocumentMetadata ?? {},
+        };
+    }
+}
+
+export namespace NotebookStatusBarItem {
+    export function from(item: theia.NotebookCellStatusBarItem, commandsConverter: CommandsConverter, disposables: DisposableCollection): notebooks.NotebookCellStatusBarItem {
+        const command = typeof item.command === 'string' ? { title: '', command: item.command } : item.command;
+        return {
+            alignment: item.alignment === types.NotebookCellStatusBarAlignment.Left ? notebooks.CellStatusbarAlignment.Left : notebooks.CellStatusbarAlignment.Right,
+            command: commandsConverter.toSafeCommand(command, disposables),
+            text: item.text,
+            tooltip: item.tooltip,
+            priority: item.priority
+        };
+    }
+}
+
+export namespace NotebookData {
+
+    export function from(data: theia.NotebookData): rpc.NotebookDataDto {
+        const res: rpc.NotebookDataDto = {
+            metadata: data.metadata ?? Object.create(null),
+            cells: [],
+        };
+        for (const cell of data.cells) {
+            // types.NotebookCellData.validate(cell);
+            res.cells.push(NotebookCellData.from(cell));
+        }
+        return res;
+    }
+
+    export function to(data: rpc.NotebookDataDto): theia.NotebookData {
+        const res = new types.NotebookData(
+            data.cells.map(NotebookCellData.to),
+        );
+        if (!isEmptyObject(data.metadata)) {
+            res.metadata = data.metadata;
+        }
+        return res;
+    }
+}
+
+export namespace NotebookCellData {
+
+    export function from(data: theia.NotebookCellData): rpc.NotebookCellDataDto {
+        return {
+            cellKind: NotebookCellKind.from(data.kind),
+            language: data.languageId,
+            source: data.value,
+            // metadata: data.metadata,
+            // internalMetadata: NotebookCellExecutionSummary.from(data.executionSummary ?? {}),
+            outputs: data.outputs ? data.outputs.map(NotebookCellOutput.from) : []
+        };
+    }
+
+    export function to(data: rpc.NotebookCellDataDto): theia.NotebookCellData {
+        return new types.NotebookCellData(
+            NotebookCellKind.to(data.cellKind),
+            data.source,
+            data.language,
+            // data.outputs ? data.outputs.map(NotebookCellOutput.to) : undefined,
+            // data.metadata,
+            // data.internalMetadata ? NotebookCellExecutionSummary.to(data.internalMetadata) : undefined
+        );
+    }
+}
+
+export namespace NotebookCellKind {
+    export function from(data: theia.NotebookCellKind): notebooks.CellKind {
+        switch (data) {
+            case types.NotebookCellKind.Markup:
+                return notebooks.CellKind.Markup;
+            case types.NotebookCellKind.Code:
+            default:
+                return notebooks.CellKind.Code;
+        }
+    }
+
+    export function to(data: notebooks.CellKind): theia.NotebookCellKind {
+        switch (data) {
+            case notebooks.CellKind.Markup:
+                return types.NotebookCellKind.Markup;
+            case notebooks.CellKind.Code:
+            default:
+                return types.NotebookCellKind.Code;
+        }
+    }
+}
+
+export namespace NotebookCellOutputItem {
+    export function from(item: types.NotebookCellOutputItem): rpc.NotebookOutputItemDto {
+        return {
+            mime: item.mime,
+            valueBytes: BinaryBuffer.wrap(item.data),
+        };
+    }
+
+    export function to(item: rpc.NotebookOutputItemDto): types.NotebookCellOutputItem {
+        return new types.NotebookCellOutputItem(item.valueBytes.buffer, item.mime);
+    }
+}
+
+export namespace NotebookCellOutput {
+    export function from(output: types.NotebookCellOutput): rpc.NotebookOutputDto {
+        return {
+            items: output.items.map(NotebookCellOutputItem.from),
+            metadata: output.metadata
+        };
+    }
+
+    export function to(output: rpc.NotebookOutputDto): types.NotebookCellOutput {
+        const items = output.items.map(NotebookCellOutputItem.to);
+        return new types.NotebookCellOutput(items, output.metadata);
+    }
+}
+
+export namespace NotebookCellExecutionSummary {
+    export function to(data: notebooks.NotebookCellInternalMetadata): theia.NotebookCellExecutionSummary {
+        return {
+            timing: typeof data.runStartTime === 'number' && typeof data.runEndTime === 'number' ? { startTime: data.runStartTime, endTime: data.runEndTime } : undefined,
+            executionOrder: data.executionOrder,
+            success: data.lastRunSuccess
+        };
+    }
+
+    export function from(data: theia.NotebookCellExecutionSummary): Partial<notebooks.NotebookCellInternalMetadata> {
+        return {
+            lastRunSuccess: data.success,
+            runStartTime: data.timing?.startTime,
+            runEndTime: data.timing?.endTime,
+            executionOrder: data.executionOrder
+        };
+    }
+}
+
