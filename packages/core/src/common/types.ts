@@ -56,6 +56,25 @@ export function isFunction<T extends (...args: unknown[]) => unknown>(value: unk
     return typeof value === 'function';
 }
 
+const hasOwnProperty = Object.prototype.hasOwnProperty;
+
+/**
+ * @returns whether the provided parameter is an empty JavaScript Object or not.
+ */
+export function isEmptyObject(obj: unknown): obj is object {
+    if (!isObject(obj)) {
+        return false;
+    }
+
+    for (const key in obj) {
+        if (hasOwnProperty.call(obj, key)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 export function isObject<T extends object>(value: unknown): value is UnknownObject<T> {
     // eslint-disable-next-line no-null/no-null
     return typeof value === 'object' && value !== null;

@@ -116,6 +116,8 @@ import { Disposable } from '@theia/core/lib/common/disposable';
 import { isString, isObject, PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
 import { Severity } from '@theia/core/lib/common/severity';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
+import * as notebookCommon from '@theia/notebook/lib/common';
+import { CellRange } from '@theia/notebook/lib/common';
 import { LanguagePackBundle } from './language-pack-service';
 
 export interface PreferenceData {
@@ -2098,6 +2100,7 @@ export const PLUGIN_RPC_CONTEXT = {
     MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<MessageRegistryMain>>createProxyIdentifier<MessageRegistryMain>('MessageRegistryMain'),
     TEXT_EDITORS_MAIN: createProxyIdentifier<TextEditorsMain>('TextEditorsMain'),
     DOCUMENTS_MAIN: createProxyIdentifier<DocumentsMain>('DocumentsMain'),
+    NOTEBOOKS_MAIN: createProxyIdentifier<NotebooksMain>('NotebooksMain'),
     STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain'),
     ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain'),
     NOTIFICATION_MAIN: createProxyIdentifier<NotificationMain>('NotificationMain'),
@@ -2139,6 +2142,7 @@ export const MAIN_RPC_CONTEXT = {
     TEXT_EDITORS_EXT: createProxyIdentifier<TextEditorsExt>('TextEditorsExt'),
     EDITORS_AND_DOCUMENTS_EXT: createProxyIdentifier<EditorsAndDocumentsExt>('EditorsAndDocumentsExt'),
     DOCUMENTS_EXT: createProxyIdentifier<DocumentsExt>('DocumentsExt'),
+    NOTEBOOKS_EXT: createProxyIdentifier<NotebooksExt>('NotebooksExt'),
     TERMINAL_EXT: createProxyIdentifier<TerminalServiceExt>('TerminalServiceExt'),
     OUTPUT_CHANNEL_REGISTRY_EXT: createProxyIdentifier<OutputChannelRegistryExt>('OutputChannelRegistryExt'),
     TREE_VIEWS_EXT: createProxyIdentifier<TreeViewsExt>('TreeViewsExt'),
@@ -2197,6 +2201,102 @@ export interface AuthenticationMain {
     $onDidChangeSessions(providerId: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent): void;
     $getSession(providerId: string, scopes: readonly string[], extensionId: string, extensionName: string,
         options: theia.AuthenticationGetSessionOptions): Promise<theia.AuthenticationSession | undefined>;
+}
+
+export interface NotebookOutputItemDto {
+    readonly mime: string;
+    readonly valueBytes: BinaryBuffer;
+}
+
+export interface NotebookOutputDto {
+    items: NotebookOutputItemDto[];
+    metadata?: Record<string, any>;
+}
+
+export interface NotebookCellDataDto {
+    source: string;
+    language: string;
+    cellKind: notebookCommon.CellKind;
+    outputs: NotebookOutputDto[];
+    metadata?: notebookCommon.NotebookCellMetadata;
+    internalMetadata?: notebookCommon.NotebookCellInternalMetadata;
+}
+
+export interface NotebookDataDto {
+    readonly cells: NotebookCellDataDto[];
+    readonly metadata: notebookCommon.NotebookDocumentMetadata;
+}
+
+export interface NotebookCellDto {
+    handle: number;
+    uri: UriComponents;
+    eol: string;
+    source: string[];
+    language: string;
+    mime?: string;
+    cellKind: notebookCommon.CellKind;
+    outputs: NotebookOutputDto[];
+    metadata?: notebookCommon.NotebookCellMetadata;
+    internalMetadata?: notebookCommon.NotebookCellInternalMetadata;
+}
+
+export interface NotebookModelAddedData {
+    uri: UriComponents;
+    versionId: number;
+    cells: NotebookCellDto[];
+    viewType: string;
+    metadata?: notebookCommon.NotebookDocumentMetadata;
+}
+
+export interface NotebookEditorAddData {
+    id: string;
+    documentUri: UriComponents;
+    selections: CellRange[];
+    visibleRanges: CellRange[];
+    viewColumn?: number;
+}
+
+export interface NotebookDocumentsAndEditorsDelta {
+    removedDocuments?: UriComponents[];
+    addedDocuments?: NotebookModelAddedData[];
+    removedEditors?: string[];
+    addedEditors?: NotebookEditorAddData[];
+    newActiveEditor?: string | null;
+    visibleEditors?: string[];
+}
+
+export type NotebookCellStatusBarEntryDto = notebookCommon.NotebookCellStatusBarItem;
+
+export interface NotebookCellStatusBarListDto {
+    items: NotebookCellStatusBarEntryDto[];
+    cacheId: number;
+}
+
+export interface NotebooksExt extends NotebookDocumentsAndEditorsExt {
+    $provideNotebookCellStatusBarItems(handle: number, uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarListDto | undefined>;
+    $releaseNotebookCellStatusBarItems(id: number): void;
+
+    $dataToNotebook(handle: number, data: BinaryBuffer, token: CancellationToken): Promise<NotebookDataDto>;
+    $notebookToData(handle: number, data: NotebookDataDto, token: CancellationToken): Promise<BinaryBuffer>;
+}
+
+export interface NotebooksMain extends Disposable {
+    $registerNotebookSerializer(handle: number, extension: notebookCommon.NotebookExtensionDescription, viewType: string, options: notebookCommon.TransientOptions): void;
+    $unregisterNotebookSerializer(handle: number): void;
+
+    $registerNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined, viewType: string): Promise<void>;
+    $unregisterNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined): Promise<void>;
+    $emitCellStatusBarEvent(eventHandle: number): void;
+}
+
+export interface NotebookDocumentsMain extends Disposable {
+    $tryCreateNotebook(options: { viewType: string; content?: NotebookDataDto }): Promise<UriComponents>;
+    $tryOpenNotebook(uriComponents: UriComponents): Promise<UriComponents>;
+    $trySaveNotebook(uri: UriComponents): Promise<boolean>;
+}
+
+export interface NotebookDocumentsAndEditorsExt {
+    $acceptDocumentAndEditorsDelta(delta: NotebookDocumentsAndEditorsDelta): void;
 }
 
 export interface RawColorInfo {
