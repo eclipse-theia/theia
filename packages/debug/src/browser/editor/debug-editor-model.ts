@@ -252,7 +252,7 @@ export class DebugEditorModel implements Disposable {
         });
     }
 
-    protected render(): void {
+    render(): void {
         this.renderBreakpoints();
         this.renderCurrentBreakpoints();
     }
