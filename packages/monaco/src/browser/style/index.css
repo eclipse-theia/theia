@@ -233,6 +233,10 @@
   margin-right: 4px;
 }
 
+.quick-input-list .monaco-icon-label.codicon.codicon-check::before {
+  display: none;
+}
+
 .quick-input-list .monaco-icon-label.theia-file-icons-js {
   line-height: inherit;
 }
