@@ -546,6 +546,8 @@ export class Range {
             return true;
         }
         return isObject<theia.Range>(arg)
+            && isObject(arg.start)
+            && isObject(arg.end)
             && Position.isPosition(arg.start)
             && Position.isPosition(arg.end);
     }
