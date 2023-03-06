@@ -408,6 +408,9 @@ export class Position {
         if (!other) {
             return false;
         }
+        if (typeof other !== 'object' || Array.isArray(other)) {
+            return false;
+        }
         if (other instanceof Position) {
             return true;
         }
