@@ -404,7 +404,7 @@ export class Position {
         return result!;
     }
 
-    static isPosition(other: {}): other is Position {
+    static isPosition(other: unknown): other is Position {
         if (!other) {
             return false;
         }
@@ -546,8 +546,6 @@ export class Range {
             return true;
         }
         return isObject<theia.Range>(arg)
-            && isObject(arg.start)
-            && isObject(arg.end)
             && Position.isPosition(arg.start)
             && Position.isPosition(arg.end);
     }
