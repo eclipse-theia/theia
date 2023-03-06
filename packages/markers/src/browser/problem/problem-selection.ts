@@ -25,7 +25,7 @@ export interface ProblemSelection {
 }
 export namespace ProblemSelection {
     export function is(arg: unknown): arg is ProblemSelection {
-        return isObject<ProblemSelection>(arg) && Marker.is(arg.marker) && ProblemMarker.is(arg.marker);
+        return isObject<ProblemSelection>(arg) && ProblemMarker.is(arg.marker);
     }
 
     export class CommandHandler extends SelectionCommandHandler<ProblemSelection> {
