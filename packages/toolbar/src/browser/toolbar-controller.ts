@@ -126,11 +126,10 @@ export class ToolbarController {
         newPosition: ToolbarItemPosition,
         direction: 'location-left' | 'location-right',
     ): Promise<boolean> {
-        await this.openOrCreateJSONFile(false);
-        this.toolbarProviderBusyEmitter.fire(true);
-        const success = this.storageProvider.swapValues(oldPosition, newPosition, direction);
-        this.toolbarProviderBusyEmitter.fire(false);
-        return success;
+        return this.withBusy<boolean>(async () => {
+            await this.openOrCreateJSONFile(false);
+            return this.storageProvider.swapValues(oldPosition, newPosition, direction);
+        });
     }
 
     async clearAll(): Promise<boolean> {
