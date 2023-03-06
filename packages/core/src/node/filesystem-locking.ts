@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Mutex } from 'async-mutex';
-import type { interfaces } from 'inversify';
+import { injectable, interfaces } from 'inversify';
 import type { URI } from '../common';
 import { FileUri } from './file-uri';
 import path = require('path');
@@ -39,6 +39,7 @@ export interface FileSystemLocking {
     isPathLocked(lockPath: string | URI): boolean;
 }
 
+@injectable()
 export class FileSystemLockingImpl implements FileSystemLocking {
 
     lockPath<T>(lockPath: string | URI, transaction: (lockPath: string) => T | Promise<T>, thisArg?: unknown): Promise<T> {
