@@ -32,7 +32,6 @@
     "@theia/workspace": "1.37.0",
     "@types/mime": "^2.0.1",
     "@vscode/debugprotocol": "^1.51.0",
-    "async-mutex": "^0.4.0",
     "decompress": "^4.2.1",
     "escape-html": "^1.0.3",
     "filenamify": "^4.1.0",

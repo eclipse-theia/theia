@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { FileSystemLocking } from '@theia/core/lib/node';
 import * as fs from '@theia/core/shared/fs-extra';
-import { Mutex } from 'async-mutex';
 import * as path from 'path';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -37,6 +37,9 @@ export class PluginsKeyValueStorage {
     @inject(EnvVariablesServer)
     protected readonly envServer: EnvVariablesServer;
 
+    @inject(FileSystemLocking)
+    protected fsLocking: FileSystemLocking;
+
     @postConstruct()
     protected init(): void {
         this.deferredGlobalDataPath.resolve(this.getGlobalDataPath().catch(error => {
@@ -51,17 +54,16 @@ export class PluginsKeyValueStorage {
             console.warn('Cannot save data: no opened workspace');
             return false;
         }
-        return this.getGlobalStateFileLock(dataPath)
-            .runExclusive(async () => {
-                const data = await this.readFromFile(dataPath);
-                if (value === undefined || value === {}) {
-                    delete data[key];
-                } else {
-                    data[key] = value;
-                }
-                await this.writeToFile(dataPath, data);
-                return true;
-            });
+        return this.fsLocking.lockPath(dataPath, async () => {
+            const data = await this.readFromFile(dataPath);
+            if (value === undefined || value === {}) {
+                delete data[key];
+            } else {
+                data[key] = value;
+            }
+            await this.writeToFile(dataPath, data);
+            return true;
+        });
     }
 
     async get(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues> {
@@ -69,11 +71,10 @@ export class PluginsKeyValueStorage {
         if (!dataPath) {
             return {};
         }
-        return this.getGlobalStateFileLock(dataPath)
-            .runExclusive(async () => {
-                const data = await this.readFromFile(dataPath);
-                return data[key];
-            });
+        return this.fsLocking.lockPath(dataPath, async () => {
+            const data = await this.readFromFile(dataPath);
+            return data[key];
+        });
     }
 
     async getAll(kind: PluginStorageKind): Promise<KeysToKeysToAnyValue> {
@@ -81,42 +82,7 @@ export class PluginsKeyValueStorage {
         if (!dataPath) {
             return {};
         }
-        return this.getGlobalStateFileLock(dataPath)
-            .runExclusive(() => this.readFromFile(dataPath));
-    }
-
-    /**
-     * @returns A process-global map of `dataFile` paths to its unique `Mutex`.
-     */
-    protected getGlobalStateFileLocks(): Map<string, Mutex> {
-        const kGlobalDataPathMutex = Symbol.for('PluginsKeyValueStorage.GlobalDataPathLocks');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let locks = (globalThis as any)[kGlobalDataPathMutex];
-        if (!locks) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (globalThis as any)[kGlobalDataPathMutex] = locks = this.initializeGlobalStateFileLocks();
-        }
-        return locks;
-    }
-
-    protected initializeGlobalStateFileLocks(): Map<string, Mutex> {
-        // note: Consider setting up a background cleanup task for any unlocked
-        // mutexes in this map in case we churn through lots of dataPaths.
-        // Right now the amount of entries seems manageable without cleanup.
-        return new Map();
-    }
-
-    /**
-     * @returns A process-global `Mutex` to guard accesses across the process
-     * to the `dataPath` file.
-     */
-    protected getGlobalStateFileLock(dataPath: string): Mutex {
-        const locks = this.getGlobalStateFileLocks();
-        let lock = locks.get(dataPath);
-        if (!lock) {
-            locks.set(dataPath, lock = new Mutex());
-        }
-        return lock;
+        return this.fsLocking.lockPath(dataPath, () => this.readFromFile(dataPath));
     }
 
     private async getGlobalDataPath(): Promise<string> {

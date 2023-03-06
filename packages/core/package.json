@@ -34,6 +34,7 @@
     "@types/yargs": "^15",
     "@vscode/codicons": "*",
     "ajv": "^6.5.3",
+    "async-mutex": "^0.4.0",
     "body-parser": "^1.17.2",
     "cookie": "^0.4.0",
     "dompurify": "^2.2.9",
