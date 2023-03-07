@@ -31,6 +31,7 @@ import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { SearchInWorkspaceService } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
+import { RequestService } from '@theia/core/shared/@theia/request';
 
 export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
@@ -50,6 +51,8 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
     private pluginServer: PluginServer;
 
+    private requestService: RequestService;
+
     private workspaceService: WorkspaceService;
 
     private workspaceTrustService: WorkspaceTrustService;
@@ -68,6 +71,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         this.searchInWorkspaceService = container.get(SearchInWorkspaceService);
         this.resourceResolver = container.get(TextContentResourceResolver);
         this.pluginServer = container.get(PluginServer);
+        this.requestService = container.get(RequestService);
         this.workspaceService = container.get(WorkspaceService);
         this.workspaceTrustService = container.get(WorkspaceTrustService);
         this.fsPreferences = container.get(FileSystemPreferences);
@@ -85,6 +89,10 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    $resolveProxy(url: string): Promise<string | undefined> {
+        return this.requestService.resolveProxy(url);
     }
 
     protected async processWorkspaceFoldersChanged(roots: string[]): Promise<void> {

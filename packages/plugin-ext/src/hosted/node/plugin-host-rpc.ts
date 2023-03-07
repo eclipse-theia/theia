@@ -82,7 +82,7 @@ export class PluginHostRPC {
             clipboardExt,
             webviewExt
         );
-        connectProxyResolver(preferenceRegistryExt);
+        connectProxyResolver(workspaceExt, preferenceRegistryExt);
     }
 
     async terminate(): Promise<void> {

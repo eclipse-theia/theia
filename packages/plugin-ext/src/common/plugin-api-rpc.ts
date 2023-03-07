@@ -642,6 +642,7 @@ export interface WorkspaceMain {
     $updateWorkspaceFolders(start: number, deleteCount?: number, ...rootsToAdd: string[]): Promise<void>;
     $getWorkspace(): Promise<files.FileStat | undefined>;
     $requestWorkspaceTrust(options?: theia.WorkspaceTrustRequestOptions): Promise<boolean | undefined>;
+    $resolveProxy(url: string): Promise<string | undefined>;
 }
 
 export interface WorkspaceExt {
