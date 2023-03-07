@@ -20,10 +20,11 @@ import * as tls from 'tls';
 
 import { createHttpPatch, createProxyResolver, createTlsPatch, ProxySupportSetting } from 'vscode-proxy-agent';
 import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry';
+import { WorkspaceExtImpl } from '../../plugin/workspace';
 
-export function connectProxyResolver(configProvider: PreferenceRegistryExtImpl): void {
+export function connectProxyResolver(workspaceExt: WorkspaceExtImpl, configProvider: PreferenceRegistryExtImpl): void {
     const resolveProxy = createProxyResolver({
-        resolveProxy: async url => url,
+        resolveProxy: async url => workspaceExt.resolveProxy(url),
         getHttpProxySetting: () => configProvider.getConfiguration('http').get('proxy'),
         log: () => { },
         getLogLevel: () => 0,
@@ -43,7 +44,7 @@ interface PatchedModules {
 
 function createPatchedModules(configProvider: PreferenceRegistryExtImpl, resolveProxy: ReturnType<typeof createProxyResolver>): PatchedModules {
     const proxySetting = {
-        config: 'off' as ProxySupportSetting
+        config: configProvider.getConfiguration('http')?.get<ProxySupportSetting>('proxySupport') || 'off' as ProxySupportSetting
     };
     const certSetting = {
         config: false
