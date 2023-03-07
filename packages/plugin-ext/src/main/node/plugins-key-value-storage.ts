@@ -30,9 +30,9 @@ import { PluginStorageKind } from '../../common';
 @injectable()
 export class PluginsKeyValueStorage {
 
-    protected stores: Record<string, KeysToKeysToAnyValue> = Object.create(null);
-    protected storesToSync = new Map<string, KeysToKeysToAnyValue>();
-    protected syncStoresTimeout: NodeJS.Timeout;
+    private stores: Record<string, KeysToKeysToAnyValue> = Object.create(null);
+    private storesToSync = new Map<string, KeysToKeysToAnyValue>();
+    private syncStoresTimeout: NodeJS.Timeout;
 
     private deferredGlobalDataPath = new Deferred<string | undefined>();
 
@@ -40,10 +40,10 @@ export class PluginsKeyValueStorage {
     private pluginPathsService: PluginPathsService;
 
     @inject(EnvVariablesServer)
-    protected envServer: EnvVariablesServer;
+    private envServer: EnvVariablesServer;
 
     @inject(FileSystemLocking)
-    protected fsLocking: FileSystemLocking;
+    private fsLocking: FileSystemLocking;
 
     @postConstruct()
     protected init(): void {
