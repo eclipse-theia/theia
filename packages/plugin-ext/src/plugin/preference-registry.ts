@@ -93,12 +93,16 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
     }
 
     init(data: PreferenceData): void {
-        this._preferences = this.parse(data);
+        this.preferencesChanged(data);
     }
 
     $acceptConfigurationChanged(data: PreferenceData, eventData: PreferenceChangeExt[]): void {
-        this.init(data);
-        this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(eventData));
+        this.preferencesChanged(data, eventData);
+    }
+
+    private preferencesChanged(data: PreferenceData, eventData?: PreferenceChangeExt[]): void {
+        this._preferences = this.parse(data);
+        this._onDidChangeConfiguration.fire(this.toConfigurationChangeEvent(eventData ?? []));
     }
 
     getConfiguration(rawSection?: string, rawScope?: theia.ConfigurationScope | null, extensionId?: string): theia.WorkspaceConfiguration {

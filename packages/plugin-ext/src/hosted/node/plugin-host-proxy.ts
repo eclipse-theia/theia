@@ -43,15 +43,16 @@ interface PatchedModules {
 }
 
 function createPatchedModules(configProvider: PreferenceRegistryExtImpl, resolveProxy: ReturnType<typeof createProxyResolver>): PatchedModules {
+    const defaultConfig = 'override' as ProxySupportSetting;
     const proxySetting = {
-        config: configProvider.getConfiguration('http')?.get<ProxySupportSetting>('proxySupport') || 'off' as ProxySupportSetting
+        config: defaultConfig
     };
     const certSetting = {
         config: false
     };
     configProvider.onDidChangeConfiguration(() => {
         const httpConfig = configProvider.getConfiguration('http');
-        proxySetting.config = httpConfig?.get<ProxySupportSetting>('proxySupport') || 'off';
+        proxySetting.config = httpConfig?.get<ProxySupportSetting>('proxySupport') || defaultConfig;
         certSetting.config = !!httpConfig?.get<boolean>('systemCertificates');
     });
 
