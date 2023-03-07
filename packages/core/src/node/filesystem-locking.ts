@@ -16,6 +16,7 @@
 
 import { Mutex } from 'async-mutex';
 import { injectable, interfaces } from 'inversify';
+import { lock } from 'proper-lockfile';
 import type { URI } from '../common';
 import { FileUri } from './file-uri';
 import path = require('path');
@@ -32,11 +33,6 @@ export interface FileSystemLocking {
      * @param thisArg `this` argument used when calling `transaction`.
      */
     lockPath<T>(lockPath: string | URI, transaction: (lockPath: string) => T | Promise<T>, thisArg?: unknown): Promise<T>;
-    /**
-     * Check if someone already has exclusive access to a file.
-     * @param lockPath The path to test if access is restricted.
-     */
-    isPathLocked(lockPath: string | URI): boolean;
 }
 
 @injectable()
@@ -44,12 +40,14 @@ export class FileSystemLockingImpl implements FileSystemLocking {
 
     lockPath<T>(lockPath: string | URI, transaction: (lockPath: string) => T | Promise<T>, thisArg?: unknown): Promise<T> {
         const resolvedLockPath = this.resolveLockPath(lockPath);
-        return this.getLock(resolvedLockPath).runExclusive(() => transaction.call(thisArg, resolvedLockPath));
-    }
-
-    isPathLocked(lockPath: string | URI): boolean {
-        const resolvedLockPath = this.resolveLockPath(lockPath);
-        return this.getLock(resolvedLockPath).isLocked();
+        return this.getLock(resolvedLockPath).runExclusive(async () => {
+            const releaseLockfile = await lock(resolvedLockPath);
+            try {
+                return await transaction.call(thisArg, resolvedLockPath);
+            } finally {
+                releaseLockfile();
+            }
+        });
     }
 
     protected resolveLockPath(lockPath: string | URI): string {
