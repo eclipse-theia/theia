@@ -20,10 +20,11 @@ import { PluginsKeyValueStorage } from './plugins-key-value-storage';
 import { PluginPathsService } from '../common/plugin-paths-protocol';
 import { PluginPathsServiceImpl } from './paths/plugin-paths-service';
 import { PluginCliContribution } from './plugin-cli-contribution';
-import { ILogger} from '@theia/core/lib/common/logger';
+import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-env-variables-server';
-import { FileUri } from '@theia/core/lib/node';
+import { FileSystemLocking, FileUri } from '@theia/core/lib/node';
+import { FileSystemLockingImpl } from '@theia/core/lib/node/filesystem-locking';
 import * as temp from 'temp';
 
 const GlobalStorageKind = undefined;
@@ -34,6 +35,7 @@ describe('Plugins Key Value Storage', () => {
         container = new Container();
         container.bind(PluginsKeyValueStorage).toSelf().inSingletonScope();
         container.bind(PluginCliContribution).toSelf().inSingletonScope();
+        container.bind(FileSystemLocking).to(FileSystemLockingImpl).inSingletonScope();
         container.bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(FileUri.create(temp.track().mkdirSync())));
         container.bind(PluginPathsService).to(PluginPathsServiceImpl).inSingletonScope();
         container.bind(ILogger).toConstantValue(MockLogger);
@@ -44,7 +46,7 @@ describe('Plugins Key Value Storage', () => {
     it('Should be able to set and overwrite a storage entry', async () => {
         const aKey = 'akey';
         const aValue = { 'this is a test': 'abc' };
-        const anotherValue = {'this is an updated value': 'def'};
+        const anotherValue = { 'this is an updated value': 'def' };
         const storage = container.get(PluginsKeyValueStorage);
         await storage.set(aKey, aValue, GlobalStorageKind);
         expect(await getNumEntries(storage), 'Expected 1 storage entry').to.be.equal(1);
@@ -90,7 +92,7 @@ const checkStorageContent = async (storage: PluginsKeyValueStorage, keyPrefix: s
     const all = await storage.getAll(GlobalStorageKind);
     for (let i = 0; i < num; i++) {
         expectedValue[valuePropName] = i;
-        expect(all[keyPrefix + i], 'Expected storage entry ' + i + ' to have kept previously set value' )
+        expect(all[keyPrefix + i], 'Expected storage entry ' + i + ' to have kept previously set value')
             .to.be.deep.equal(expectedValue);
     }
 };
