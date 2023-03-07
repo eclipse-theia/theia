@@ -16,7 +16,7 @@
 
 import { Mutex } from 'async-mutex';
 import { injectable, interfaces } from 'inversify';
-import { lock } from 'proper-lockfile';
+import lockfile = require('proper-lockfile');
 import type { URI } from '../common';
 import { FileUri } from './file-uri';
 import path = require('path');
@@ -41,11 +41,11 @@ export class FileSystemLockingImpl implements FileSystemLocking {
     lockPath<T>(lockPath: string | URI, transaction: (lockPath: string) => T | Promise<T>, thisArg?: unknown): Promise<T> {
         const resolvedLockPath = this.resolveLockPath(lockPath);
         return this.getLock(resolvedLockPath).runExclusive(async () => {
-            const releaseLockfile = await lock(resolvedLockPath);
+            const releaseFilelock = await lockfile.lock(resolvedLockPath);
             try {
                 return await transaction.call(thisArg, resolvedLockPath);
             } finally {
-                releaseLockfile();
+                releaseFilelock();
             }
         });
     }
