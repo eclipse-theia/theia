@@ -285,8 +285,8 @@ describe('Launch Preferences', function () {
         },
         expectation: {
             'version': '0.2.0',
-            'configurations': [validConfiguration, bogusConfiguration],
-            'compounds': [bogusCompound, bogusCompound2]
+            'configurations': [validConfiguration2, validConfiguration, bogusConfiguration],
+            'compounds': [validCompound, bogusCompound, bogusCompound2]
         }
     });
 
@@ -306,7 +306,7 @@ describe('Launch Preferences', function () {
         expectation: {
             'version': '0.2.0',
             'configurations': [validConfiguration2],
-            'compounds': [bogusCompound, bogusCompound2]
+            'compounds': [validCompound, bogusCompound, bogusCompound2]
         },
         inspectExpectation: {
             preferenceName: 'launch',
@@ -314,7 +314,7 @@ describe('Launch Preferences', function () {
             workspaceValue: {
                 'version': '0.2.0',
                 'configurations': [validConfiguration2],
-                'compounds': [bogusCompound, bogusCompound2]
+                'compounds': [validCompound, bogusCompound, bogusCompound2]
             }
         }
     });
@@ -461,6 +461,53 @@ describe('Launch Preferences', function () {
         ]);
     }
 
+
+    function mergeLaunchConfigurations(config1, config2) {
+        if (config1 === undefined && config2 === undefined) {
+            return undefined;
+        }
+        if (config2 === undefined) {
+            return config1;
+        }
+
+        let result;
+        // skip invalid configs
+        if (typeof config1 === 'object' && !Array.isArray(config1)) {
+            result = { ...config1 };
+        }
+        if (typeof config2 === 'object' && !Array.isArray(config2)) {
+            result = { ...(result ?? {}), ...config2 }
+        }
+        //merge configurations and compounds arrays
+        const mergedConfigurations = mergeArrays(config1?.configurations, config2?.configurations);
+        if (mergedConfigurations) {
+            result.configurations = mergedConfigurations
+        }
+        const mergedCompounds = mergeArrays(config1?.compounds, config2?.compounds);
+        if (mergedCompounds) {
+            result.compounds = mergedCompounds;
+        }
+        return result;
+    }
+
+    function mergeArrays(array1, array2) {
+        if (array1 === undefined && array2 === undefined) {
+            return undefined;
+        }
+        if (!Array.isArray(array1) && !Array.isArray(array2)) {
+            return undefined;
+        }
+        let result = [];
+        if (Array.isArray(array1)) {
+            result = [...array1];
+        }
+        if (Array.isArray(array2)) {
+            result = [...result, ...array2];
+        }
+        return result;
+    }
+
+
     const originalShouldOverwrite = fileResourceResolver['shouldOverwrite'];
 
     before(async () => {
@@ -560,8 +607,8 @@ describe('Launch Preferences', function () {
                         preferenceName: 'launch',
                         defaultValue: defaultLaunch
                     };
-                    const workspaceValue = launch || settingsLaunch;
-                    if (workspaceValue !== undefined) {
+                    const workspaceValue = mergeLaunchConfigurations(settingsLaunch, launch);
+                    if (workspaceValue !== undefined && JSON.stringify(workspaceValue) !== '{}') {
                         Object.assign(expected, { workspaceValue });
                     }
                 }
@@ -582,8 +629,8 @@ describe('Launch Preferences', function () {
                         workspaceFolderValue: inspectExpectation.workspaceValue
                     });
                 } else {
-                    const value = launch || settingsLaunch;
-                    if (value !== undefined) {
+                    const value = mergeLaunchConfigurations(settingsLaunch, launch);
+                    if (value !== undefined && JSON.stringify(value) !== '{}') {
                         Object.assign(expected, {
                             workspaceValue: value,
                             workspaceFolderValue: value
@@ -599,7 +646,7 @@ describe('Launch Preferences', function () {
 
                 const inspect = preferences.inspect('launch');
                 const actual = inspect && inspect.workspaceValue;
-                const expected = settingsLaunch && !Array.isArray(settingsLaunch) ? { ...settingsLaunch, ...validLaunch } : validLaunch;
+                const expected = mergeLaunchConfigurations(settingsLaunch, validLaunch);
                 assert.deepStrictEqual(actual, expected);
             });
 
@@ -608,7 +655,7 @@ describe('Launch Preferences', function () {
 
                 const inspect = preferences.inspect('launch');
                 const actual = inspect && inspect.workspaceValue;
-                const expected = settingsLaunch && !Array.isArray(settingsLaunch) ? { ...settingsLaunch, ...validLaunch } : validLaunch;
+                const expected = mergeLaunchConfigurations(settingsLaunch, validLaunch);
                 assert.deepStrictEqual(actual, expected);
             });
 
@@ -626,7 +673,7 @@ describe('Launch Preferences', function () {
 
                 const inspect = preferences.inspect('launch');
                 const actual = inspect && inspect.workspaceValue;
-                const expected = settingsLaunch && !Array.isArray(settingsLaunch) ? { ...settingsLaunch, ...validLaunch } : validLaunch;
+                const expected = mergeLaunchConfigurations(settingsLaunch, validLaunch);
                 assert.deepStrictEqual(actual, expected);
             });
 
@@ -636,7 +683,11 @@ describe('Launch Preferences', function () {
 
                     const inspect = preferences.inspect('launch');
                     const actual = inspect && inspect.workspaceValue && inspect.workspaceValue.configurations;
-                    assert.deepStrictEqual(actual, [validConfiguration, validConfiguration2]);
+                    let expect = [validConfiguration, validConfiguration2];
+                    if (Array.isArray(settingsLaunch?.configurations)) {
+                        expect = [...(settingsLaunch.configurations), ...expect]
+                    }
+                    assert.deepStrictEqual(actual, expect);
                 });
             }
 
@@ -650,11 +701,8 @@ describe('Launch Preferences', function () {
                     if (Array.isArray(expected)) {
                         expected = { ...expected };
                     }
-                    if (expected && !expected.configurations && settingsLaunch && settingsLaunch.configurations !== undefined) {
-                        expected.configurations = settingsLaunch.configurations;
-                    }
                 }
-                expected = expected || settingsLaunch;
+                expected = mergeLaunchConfigurations(settingsLaunch, expected);
                 assert.deepStrictEqual(actual && actual.workspaceValue, expected);
             });
 
@@ -665,31 +713,14 @@ describe('Launch Preferences', function () {
                     const actual = preferences.inspect('launch');
                     const actualWorkspaceValue = actual && actual.workspaceValue;
 
-                    let expected = undefined;
+                    let expected = { ...launch };
                     if (launch) {
-                        expected = { ...launch };
                         delete expected['configurations'];
                     }
-                    if (settings) {
-                        let _settingsLaunch = undefined;
-                        if (typeof settingsLaunch === 'object' && !Array.isArray(settings['launch']) && settings['launch'] !== null) {
-                            _settingsLaunch = settingsLaunch;
-                        } else {
-                            _settingsLaunch = expectation;
-                        }
-                        if (expected) {
-                            if (_settingsLaunch.configurations !== undefined) {
-                                expected.configurations = _settingsLaunch.configurations;
-                            }
-                        } else {
-                            expected = _settingsLaunch;
-                        }
-                    }
-
+                    expected = mergeLaunchConfigurations(settingsLaunch, expected);
                     assert.deepStrictEqual(actualWorkspaceValue, expected);
                 });
             }
-
         });
 
     }
