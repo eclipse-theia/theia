@@ -134,7 +134,7 @@ export const corePreferenceSchema: PreferenceSchema = {
                 nls.localizeByDefault('Enable proxy support for extensions, fall back to request options, when no proxy found.'),
                 nls.localizeByDefault('Enable proxy support for extensions, override request options.'),
             ],
-            default: 'override',
+            default: environment.electron.is() ? 'override' : 'off',
             description: nls.localizeByDefault('Use the proxy support for extensions.'),
             scope: 'application'
         },
