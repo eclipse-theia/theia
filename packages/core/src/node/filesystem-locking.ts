@@ -16,10 +16,8 @@
 
 import { Mutex } from 'async-mutex';
 import { injectable, interfaces } from 'inversify';
-import lockfile = require('proper-lockfile');
-import type { URI } from '../common';
-import { FileUri } from './file-uri';
-import path = require('path');
+import * as fs from 'fs';
+import * as path from 'path';
 
 export const FileSystemLocking = Symbol('FileSystemLocking') as symbol & interfaces.Abstract<FileSystemLocking>;
 /**
@@ -32,27 +30,25 @@ export interface FileSystemLocking {
      * @param transaction The job to do while having exclusive access.
      * @param thisArg `this` argument used when calling `transaction`.
      */
-    lockPath<T>(lockPath: string | URI, transaction: (lockPath: string) => T | Promise<T>, thisArg?: unknown): Promise<T>;
+    lockPath<T>(lockPath: string, transaction: (lockPath: string) => T | Promise<T>, thisArg?: unknown): Promise<T>;
 }
 
 @injectable()
 export class FileSystemLockingImpl implements FileSystemLocking {
 
-    lockPath<T>(lockPath: string | URI, transaction: (lockPath: string) => T | Promise<T>, thisArg?: unknown): Promise<T> {
+    lockPath<T>(lockPath: string, transaction: (lockPath: string) => T | Promise<T>, thisArg?: unknown): Promise<T> {
         const resolvedLockPath = this.resolveLockPath(lockPath);
-        return this.getLock(resolvedLockPath).runExclusive(async () => {
-            const releaseFilelock = await lockfile.lock(resolvedLockPath);
-            try {
-                return await transaction.call(thisArg, resolvedLockPath);
-            } finally {
-                releaseFilelock();
-            }
-        });
+        return this.getLock(resolvedLockPath).runExclusive(async () => transaction.call(thisArg, resolvedLockPath));
     }
 
-    protected resolveLockPath(lockPath: string | URI): string {
+    protected resolveLockPath(lockPath: string): string {
         // try to normalize the path to avoid two paths pointing to the same file
-        return path.resolve(FileUri.fsPath(lockPath));
+        return path.resolve(lockPath);
+    }
+
+    protected async touchFile(filePath: string): Promise<void> {
+        const file = await fs.promises.open(filePath, fs.constants.O_CREAT);
+        await file.close();
     }
 
     protected getLocks(): Map<string, Mutex> {

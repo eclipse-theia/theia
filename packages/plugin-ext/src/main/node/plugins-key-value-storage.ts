@@ -32,7 +32,7 @@ export class PluginsKeyValueStorage {
 
     private stores: Record<string, KeysToKeysToAnyValue> = Object.create(null);
     private storesToSync = new Map<string, KeysToKeysToAnyValue>();
-    private syncStoresTimeout: NodeJS.Timeout;
+    private syncStoresTimeout?: NodeJS.Timeout;
 
     private deferredGlobalDataPath = new Deferred<string | undefined>();
 
@@ -51,7 +51,7 @@ export class PluginsKeyValueStorage {
             console.error('Failed to initialize global state path:', error);
             return undefined;
         }));
-        process.once('beforeExit', () => clearTimeout(this.syncStoresTimeout));
+        process.once('beforeExit', () => this.dispose());
         this.syncStores();
     }
 
@@ -106,16 +106,18 @@ export class PluginsKeyValueStorage {
 
     private syncStores(): void {
         this.syncStoresTimeout = setTimeout(async () => {
-            await Promise.all(Array.from(this.storesToSync, async ([dataPath, store]) => {
-                await this.fsLocking.lockPath(dataPath, async resolved => {
-                    const storeOnDisk = await this.readFromFile(dataPath);
+            await Promise.all(Array.from(this.storesToSync, async ([storePath, store]) => {
+                await this.fsLocking.lockPath(storePath, async resolved => {
+                    const storeOnDisk = await this.readFromFile(storePath);
                     const updatedStore = deepmerge(storeOnDisk, store);
-                    this.stores[dataPath] = updatedStore;
+                    this.stores[storePath] = updatedStore;
                     await this.writeToFile(resolved, updatedStore);
                 });
             }));
             this.storesToSync.clear();
-            this.syncStores();
+            if (this.syncStoresTimeout) {
+                this.syncStores();
+            }
         }, 60_000);
     }
 
@@ -144,5 +146,10 @@ export class PluginsKeyValueStorage {
     private async writeToFile(pathToFile: string, data: KeysToKeysToAnyValue): Promise<void> {
         await fs.ensureDir(path.dirname(pathToFile));
         await fs.writeJSON(pathToFile, data);
+    }
+
+    private dispose(): void {
+        clearTimeout(this.syncStoresTimeout);
+        this.syncStoresTimeout = undefined;
     }
 }

@@ -13,6 +13,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+
+import 'reflect-metadata';
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -30,7 +32,9 @@ import * as temp from 'temp';
 const GlobalStorageKind = undefined;
 
 describe('Plugins Key Value Storage', () => {
+
     let container: Container;
+
     beforeEach(async () => {
         container = new Container();
         container.bind(PluginsKeyValueStorage).toSelf().inSingletonScope();
@@ -41,6 +45,10 @@ describe('Plugins Key Value Storage', () => {
         container.bind(ILogger).toConstantValue(MockLogger);
         const storage = container.get(PluginsKeyValueStorage);
         expect(await getNumEntries(storage), 'Expected that storage should initially be empty').to.equal(0);
+    });
+
+    afterEach(() => {
+        container.get(PluginsKeyValueStorage)['dispose']();
     });
 
     it('Should be able to set and overwrite a storage entry', async () => {
