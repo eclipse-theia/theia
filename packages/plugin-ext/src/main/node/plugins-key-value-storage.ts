@@ -27,11 +27,16 @@ import { PluginPathsService } from '../common/plugin-paths-protocol';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 import { PluginStorageKind } from '../../common';
 
+export interface Store {
+    fsPath: string
+    values: KeysToKeysToAnyValue
+}
+
 @injectable()
 export class PluginsKeyValueStorage {
 
-    private stores: Record<string, KeysToKeysToAnyValue> = Object.create(null);
-    private storesToSync = new Map<string, KeysToKeysToAnyValue>();
+    private stores: Record<string, Store> = Object.create(null);
+    private storesToSync = new Set<Store>();
     private syncStoresTimeout?: NodeJS.Timeout;
 
     private deferredGlobalDataPath = new Deferred<string | undefined>();
@@ -56,28 +61,28 @@ export class PluginsKeyValueStorage {
     }
 
     async set(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean> {
-        const [dataPath, store] = await this.getStoreWithPath(kind) ?? [];
+        const store = await this.getStore(kind);
         if (!store) {
             console.warn('Cannot save data: no opened workspace');
             return false;
         }
         if (value === undefined || Object.keys(value).length === 0) {
-            delete store[key];
+            delete store.values[key];
         } else {
-            store[key] = value;
+            store.values[key] = value;
         }
-        this.storesToSync.set(dataPath!, store);
+        this.storesToSync.add(store);
         return true;
     }
 
     async get(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues> {
         const store = await this.getStore(kind);
-        return store?.[key] ?? {};
+        return store?.values[key] ?? {};
     }
 
     async getAll(kind: PluginStorageKind): Promise<KeysToKeysToAnyValue> {
         const store = await this.getStore(kind);
-        return store ?? {};
+        return store?.values ?? {};
     }
 
     private async getGlobalDataPath(): Promise<string> {
@@ -87,38 +92,42 @@ export class PluginsKeyValueStorage {
         return path.join(globalStorageFsPath, 'global-state.json');
     }
 
-    private async initializeStore(dataPath: string): Promise<KeysToKeysToAnyValue> {
-        return this.fsLocking.lockPath(dataPath, resolved => this.readFromFile(resolved));
+    private async initializeStore(storePath: string): Promise<Store> {
+        return this.fsLocking.lockPath(storePath, async resolved => {
+            const values = await this.readFromFile(resolved);
+            return {
+                values,
+                fsPath: storePath
+            };
+        });
     }
 
-    private async getStore(kind: PluginStorageKind): Promise<KeysToKeysToAnyValue | undefined> {
-        const [, store] = await this.getStoreWithPath(kind) ?? [];
-        return store;
-    }
-
-    private async getStoreWithPath(kind: PluginStorageKind): Promise<[string, KeysToKeysToAnyValue] | undefined> {
+    private async getStore(kind: PluginStorageKind): Promise<Store | undefined> {
         const dataPath = await this.getDataPath(kind);
         if (dataPath) {
-            const store = this.stores[dataPath] ??= await this.initializeStore(dataPath);
-            return [dataPath, store];
+            return this.stores[dataPath] ??= await this.initializeStore(dataPath);
         }
     }
 
     private syncStores(): void {
         this.syncStoresTimeout = setTimeout(async () => {
-            await Promise.all(Array.from(this.storesToSync, async ([storePath, store]) => {
-                await this.fsLocking.lockPath(storePath, async resolved => {
-                    const storeOnDisk = await this.readFromFile(storePath);
-                    const updatedStore = deepmerge(storeOnDisk, store);
-                    this.stores[storePath] = updatedStore;
-                    await this.writeToFile(resolved, updatedStore);
+            await Promise.all(Array.from(this.storesToSync, async store => {
+                await this.fsLocking.lockPath(store.fsPath, async storePath => {
+                    const valuesOnDisk = await this.readFromFile(storePath);
+                    store.values = deepmerge(valuesOnDisk, store.values);
+                    await this.writeToFile(storePath, store.values);
                 });
             }));
             this.storesToSync.clear();
             if (this.syncStoresTimeout) {
                 this.syncStores();
             }
-        }, 60_000);
+        }, this.getSyncStoreTimeout());
+    }
+
+    private getSyncStoreTimeout(): number {
+        // 0-10s + 1min
+        return 10_000 * Math.random() + 60_000;
     }
 
     private async getDataPath(kind: PluginStorageKind): Promise<string | undefined> {
