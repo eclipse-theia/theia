@@ -216,7 +216,8 @@
     text-overflow: ellipsis;
 }
 
-.codicon-file.default-file-icon.file-icon {
+.quick-input-list .codicon-file.default-file-icon.file-icon,
+.quick-input-list .codicon.codicon-check {
   min-width: var(--theia-icon-size);
   display: flex;
   justify-content: center;
@@ -231,10 +232,6 @@
 .quick-input-list .monaco-icon-label.codicon::before {
   font-size: var(--theia-content-font-size);
   margin-right: 4px;
-}
-
-.quick-input-list .monaco-icon-label.codicon.codicon-check::before {
-  display: none;
 }
 
 .quick-input-list .monaco-icon-label.theia-file-icons-js {
