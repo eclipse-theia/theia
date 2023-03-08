@@ -16,7 +16,6 @@
 
 import { Mutex } from 'async-mutex';
 import { injectable, interfaces } from 'inversify';
-import * as fs from 'fs';
 import * as path from 'path';
 
 export const FileSystemLocking = Symbol('FileSystemLocking') as symbol & interfaces.Abstract<FileSystemLocking>;
@@ -44,11 +43,6 @@ export class FileSystemLockingImpl implements FileSystemLocking {
     protected resolveLockPath(lockPath: string): string {
         // try to normalize the path to avoid two paths pointing to the same file
         return path.resolve(lockPath);
-    }
-
-    protected async touchFile(filePath: string): Promise<void> {
-        const file = await fs.promises.open(filePath, fs.constants.O_CREAT);
-        await file.close();
     }
 
     protected getLocks(): Map<string, Mutex> {
