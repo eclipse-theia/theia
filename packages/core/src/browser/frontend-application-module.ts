@@ -136,6 +136,8 @@ import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from 
 import { StylingParticipant, StylingService } from './styling-service';
 import { bindCommonStylingParticipants } from './common-styling-participants';
 import { HoverService } from './hover-service';
+import { ReferenceCounter } from '../common/rc';
+import { ReferenceCounterImpl } from '../common/rc-impl';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -442,4 +444,6 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(FrontendApplicationContribution).toService(StylingService);
 
     bind(SecondaryWindowHandler).toSelf().inSingletonScope();
+
+    bind(ReferenceCounter).toConstantValue(new ReferenceCounterImpl());
 });

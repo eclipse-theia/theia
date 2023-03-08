@@ -19,7 +19,7 @@ import { ApplicationPackage } from '@theia/application-package';
 import { REQUEST_SERVICE_PATH } from '@theia/request';
 import {
     bindContributionProvider, MessageService, MessageClient, ConnectionHandler, JsonRpcConnectionHandler,
-    CommandService, commandServicePath, messageServicePath
+    CommandService, commandServicePath, messageServicePath, ReferenceCounter
 } from '../common';
 import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution, BackendApplicationServer } from './backend-application';
 import { CliManager, CliContribution } from './cli';
@@ -40,6 +40,7 @@ import { ProxyCliContribution } from './request/proxy-cli-contribution';
 import { bindNodeStopwatch, bindBackendStopwatchServer } from './performance';
 import { OSBackendApplicationContribution } from './os-backend-application-contribution';
 import { BackendRequestFacade } from './request/backend-request-facade';
+import { ReferenceCounterImpl } from '../common/rc-impl';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -128,4 +129,6 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bindNodeStopwatch(bind);
     bindBackendStopwatchServer(bind);
+
+    bind(ReferenceCounter).toConstantValue(new ReferenceCounterImpl());
 });
