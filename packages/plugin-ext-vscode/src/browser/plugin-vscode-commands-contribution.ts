@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, MessageService } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
@@ -178,6 +178,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly textModelService: MonacoTextModelService;
     @inject(WindowService)
     protected readonly windowService: WindowService;
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     private async openWith(commandId: string, resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions, openerId?: string): Promise<boolean> {
         if (!resource) {
@@ -228,9 +230,13 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand(VscodeCommands.OPEN, {
             isVisible: () => false,
             execute: async (resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions) => {
-                const result = await this.openWith(VscodeCommands.OPEN.id, resource, columnOrOptions);
-                if (!result) {
-                    throw new Error(`Could not find an editor for ${resource}`);
+                try {
+                    await this.openWith(VscodeCommands.OPEN.id, resource, columnOrOptions);
+                } catch (error) {
+                    const message = nls.localizeByDefault("Unable to open '{0}'", resource.path);
+                    const reason = nls.localizeByDefault('Error: {0}', error.message);
+                    this.messageService.error(`${message}\n${reason}`);
+                    console.warn(error);
                 }
             }
         });
