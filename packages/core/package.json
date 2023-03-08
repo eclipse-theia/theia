@@ -6,6 +6,7 @@
   "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@babel/runtime": "^7.10.0",
+    "@napi-rs/keyring": "^1.1.1",
     "@phosphor/algorithm": "1",
     "@phosphor/commands": "1",
     "@phosphor/coreutils": "1",
@@ -50,7 +51,6 @@
     "iconv-lite": "^0.6.0",
     "inversify": "^5.1.1",
     "jschardet": "^2.1.1",
-    "keytar": "7.2.0",
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
     "markdown-it": "^12.3.2",

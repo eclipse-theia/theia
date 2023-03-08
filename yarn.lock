@@ -1142,6 +1142,78 @@
   resolved "https://registry.yarnpkg.com/@msgpackr-extract/msgpackr-extract-win32-x64/-/msgpackr-extract-win32-x64-3.0.0.tgz#03c6bfcd3acb179ea69546c20d50895b9d623ada"
   integrity sha512-Wg0+9615kHKlr9iLVcG5I+/CHnf6w3x5UADRv8Ad16yA0Bu5l9eVOROjV7aHPG6uC8ZPFIVVaoSjDChD+Y0pzg==
 
+"@napi-rs/keyring-darwin-arm64@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@napi-rs/keyring-darwin-arm64/-/keyring-darwin-arm64-1.1.1.tgz#2ea6e8890b1a366f2dd9e62aa10a60560ebd18c1"
+  integrity sha512-3qovVWJB2hdAe676KKpuv/OYrv+56LeTUD+0Wo++w69lxZB/YupVgpdxiKhlaiQjEOwYnGPq1CoL+rxBcAgXJQ==
+
+"@napi-rs/keyring-darwin-x64@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@napi-rs/keyring-darwin-x64/-/keyring-darwin-x64-1.1.1.tgz#a314683e209e3c6928865dd0ddfb58a6e810567c"
+  integrity sha512-uebtEdkDM9Z+W4RXvCwYeF0i47MUSo6o0Nw9Tpqb+CTEkSXoojm2y2HEl2i+TOdSljxN8qtpdY5Sum8DYfn0Dg==
+
+"@napi-rs/keyring-freebsd-x64@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@napi-rs/keyring-freebsd-x64/-/keyring-freebsd-x64-1.1.1.tgz#a945a0adb75a4cafa93d3b4f368fa11d7165f89c"
+  integrity sha512-CyPwV3O9RNSQBQPEKPY7lZ7rFvHdCYejWIKWyh3bRqE+muvbofHTwcQ2xUCJTYKB9yVu+K+vKHip5NuW4yPCwg==
+
+"@napi-rs/keyring-linux-arm-gnueabihf@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@napi-rs/keyring-linux-arm-gnueabihf/-/keyring-linux-arm-gnueabihf-1.1.1.tgz#dd2ab173a159bd8852d8cb880f643b3d37ae0bd7"
+  integrity sha512-eBaJdos/nSeesKBVLFn009dLIUKIUmPfVzWaYU6nSfoPXLvKjsbrCQmWSuIOdyCHq4qKqAnmLEHi32hYXScA7A==
+
+"@napi-rs/keyring-linux-arm64-gnu@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@napi-rs/keyring-linux-arm64-gnu/-/keyring-linux-arm64-gnu-1.1.1.tgz#cc06e8c8e24a7f53350b319f2df02d7f47febf86"
+  integrity sha512-DfWrYhC/GJfkt0JOoRexmEwnCjVqxKf4VGjHGifjcdTjo5FTX1zZHx5N8o/9xgl0ZIN3XYnqYfBrz8VP0IRjOA==
+
+"@napi-rs/keyring-linux-arm64-musl@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@napi-rs/keyring-linux-arm64-musl/-/keyring-linux-arm64-musl-1.1.1.tgz#58a15c8c8a5b1c25f0cda10e07906605c722b944"
+  integrity sha512-am9Gz90qIVKS9TN2x64C4bh/2LYGw2vCx6f3bjnLuFIsMSyUPhbtNmbGzg7LmtbeZp6dpFM0+UeLM2BvWWetkw==
+
+"@napi-rs/keyring-linux-x64-gnu@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@napi-rs/keyring-linux-x64-gnu/-/keyring-linux-x64-gnu-1.1.1.tgz#6815f75f043da8cc91f7861eb25dc54ba657b47d"
+  integrity sha512-y0Z0QBMF75glRdyiYoWcv3SP2izCluN3sOQ+6luQvkKmmSe1zJ0kseWa8Blu7o5x3T+HDNb9InDcktzqbd1n6Q==
+
+"@napi-rs/keyring-linux-x64-musl@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@napi-rs/keyring-linux-x64-musl/-/keyring-linux-x64-musl-1.1.1.tgz#4906712f1eec5f0ecdb83654ca42465df6771cb9"
+  integrity sha512-PyEBnletr1jzoGhkgs6mIrF5tKqi5jEfBbhM8WVHBsnsdq8Si4W75OBF/RR2q4zkkh9SKL4nks+uUui7b8Xybw==
+
+"@napi-rs/keyring-win32-arm64-msvc@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@napi-rs/keyring-win32-arm64-msvc/-/keyring-win32-arm64-msvc-1.1.1.tgz#c13e549a7d55d4927ef549c23e1596c6f8554271"
+  integrity sha512-VEBV6k7am1SUeCk+ED+URkIU7J9TCR2Zz+GAmUTJur9O05hzhuP+SVh5ve/vjckLOKWuBVzFy34T0T9WwsSpZQ==
+
+"@napi-rs/keyring-win32-ia32-msvc@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@napi-rs/keyring-win32-ia32-msvc/-/keyring-win32-ia32-msvc-1.1.1.tgz#60f7aee54f90c5e662cb79c64e50fe4fe3efdcb4"
+  integrity sha512-ZOpknsi3okYbBUqUZUMI1ANzITEXM8c6F2F43pMbiNm0QSo/CJ9uew5K2sw1t4tH5fLzvzQ3dhLxwU3JqQl+Tw==
+
+"@napi-rs/keyring-win32-x64-msvc@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@napi-rs/keyring-win32-x64-msvc/-/keyring-win32-x64-msvc-1.1.1.tgz#c463251b4afbad1f8b2ff957b1fec86de8fa5e94"
+  integrity sha512-zorRLu2QyAeB02ZxlLzxBrSP9ksm4M+gzDw79bDjzLnx/LKB/PH/dhMTgVdLjRwymSkasd5Yjrn5h5VFqHGfrw==
+
+"@napi-rs/keyring@^1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@napi-rs/keyring/-/keyring-1.1.1.tgz#9ff865187f70d972c541205443b0a739acf64097"
+  integrity sha512-tQVFYpdzFSRoews7iIkmXIe2b9v/tuQQCvIXcUaQ+IAyFTrs458PkCcM6CJiBJz0nnkmdal9+CQ/8D/BEuLUPQ==
+  optionalDependencies:
+    "@napi-rs/keyring-darwin-arm64" "1.1.1"
+    "@napi-rs/keyring-darwin-x64" "1.1.1"
+    "@napi-rs/keyring-freebsd-x64" "1.1.1"
+    "@napi-rs/keyring-linux-arm-gnueabihf" "1.1.1"
+    "@napi-rs/keyring-linux-arm64-gnu" "1.1.1"
+    "@napi-rs/keyring-linux-arm64-musl" "1.1.1"
+    "@napi-rs/keyring-linux-x64-gnu" "1.1.1"
+    "@napi-rs/keyring-linux-x64-musl" "1.1.1"
+    "@napi-rs/keyring-win32-arm64-msvc" "1.1.1"
+    "@napi-rs/keyring-win32-ia32-msvc" "1.1.1"
+    "@napi-rs/keyring-win32-x64-msvc" "1.1.1"
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -7031,14 +7103,6 @@ just-performance@4.3.0:
   resolved "https://registry.yarnpkg.com/just-performance/-/just-performance-4.3.0.tgz#cc2bc8c9227f09e97b6b1df4cd0de2df7ae16db1"
   integrity sha512-L7RjvtJsL0QO8xFs5wEoDDzzJwoiowRw6Rn/GnvldlchS2JQr9wFYPiwZcDfrbbujEKqKN0tvENdbjXdYhDp5Q==
 
-keytar@7.2.0:
-  version "7.2.0"
-  resolved "https://registry.yarnpkg.com/keytar/-/keytar-7.2.0.tgz#4db2bec4f9700743ffd9eda22eebb658965c8440"
-  integrity sha512-ECSaWvoLKI5SI0pGpZQeUV1/lpBYfkaxvoSp3zkiPOz05VavwSfLi8DdEaa9N2ekQZv3Chy+o7aP6n9mairBgw==
-  dependencies:
-    node-addon-api "^3.0.0"
-    prebuild-install "^6.0.0"
-
 keyv@^3.0.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/keyv/-/keyv-3.1.0.tgz#ecc228486f69991e49e9476485a5be1e8fc5c4d9"
@@ -8030,14 +8094,14 @@ node-abi@*, node-abi@^3.0.0:
   dependencies:
     semver "^7.3.5"
 
-node-abi@^2.21.0, node-abi@^2.7.0:
+node-abi@^2.7.0:
   version "2.30.1"
   resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-2.30.1.tgz#c437d4b1fe0e285aaf290d45b45d4d7afedac4cf"
   integrity sha512-/2D0wOQPgaUWzVSVgRMx+trKJRC2UG4SUc4oCJoXx9Uxjtp0Vy3/kt7zcbxHF8+Z/pK3UloLWzBISg72brfy1w==
   dependencies:
     semver "^5.4.1"
 
-node-addon-api@^3.0.0, node-addon-api@^3.0.2, node-addon-api@^3.1.0, node-addon-api@^3.2.1:
+node-addon-api@^3.0.2, node-addon-api@^3.1.0, node-addon-api@^3.2.1:
   version "3.2.1"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-3.2.1.tgz#81325e0a2117789c0128dab65e7e38f07ceba161"
   integrity sha512-mmcei9JghVNDYydghQmeDX8KoAm0FAiYyIcUt/N4nhyAipB17pllZQDOJD2fotxABnt4Mdz+dKTO7eftLg4d0A==
@@ -9096,25 +9160,6 @@ prebuild-install@^5.2.4:
     tar-fs "^2.0.0"
     tunnel-agent "^0.6.0"
     which-pm-runs "^1.0.0"
-
-prebuild-install@^6.0.0:
-  version "6.1.4"
-  resolved "https://registry.yarnpkg.com/prebuild-install/-/prebuild-install-6.1.4.tgz#ae3c0142ad611d58570b89af4986088a4937e00f"
-  integrity sha512-Z4vpywnK1lBg+zdPCVCsKq0xO66eEV9rWo2zrROGGiRS4JtueBOdlB1FnY8lcy7JsUud/Q3ijUxyWN26Ika0vQ==
-  dependencies:
-    detect-libc "^1.0.3"
-    expand-template "^2.0.3"
-    github-from-package "0.0.0"
-    minimist "^1.2.3"
-    mkdirp-classic "^0.5.3"
-    napi-build-utils "^1.0.1"
-    node-abi "^2.21.0"
-    npmlog "^4.0.1"
-    pump "^3.0.0"
-    rc "^1.2.7"
-    simple-get "^3.0.3"
-    tar-fs "^2.0.0"
-    tunnel-agent "^0.6.0"
 
 prelude-ls@^1.2.1:
   version "1.2.1"

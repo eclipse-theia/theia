@@ -23,7 +23,7 @@
 import { KeytarService } from '../common/keytar-protocol';
 import { injectable } from 'inversify';
 import { isWindows } from '../common';
-import * as keytar from 'keytar';
+import * as keytar from '@napi-rs/keyring/keytar';
 
 @injectable()
 export class KeytarServiceImpl implements KeytarService {
