@@ -398,15 +398,16 @@ export class MonacoEditorProvider {
         return MonacoDiffNavigatorFactory.nullNavigator;
     }
 
-    async createInline(uri: URI, node: HTMLElement, options?: MonacoEditor.IOptions): Promise<MonacoEditor> {
+    async createInline(uri: URI, node: HTMLElement, options?: MonacoEditor.IOptions, resolveModel = false): Promise<MonacoEditor> {
         return this.doCreateEditor(uri, async (override, toDispose) => {
             const overrides = override ? Array.from(override) : [];
             overrides.push([IContextMenuService, { showContextMenu: () => {/** no op! */ } }]);
-            const document = new MonacoEditorModel({
-                uri,
-                readContents: async () => '',
-                dispose: () => { }
-            }, this.m2p, this.p2m);
+            const document = resolveModel ? await this.getModel(uri, toDispose) :
+                new MonacoEditorModel({
+                    uri,
+                    readContents: async () => '',
+                    dispose: () => { }
+                }, this.m2p, this.p2m);
             toDispose.push(document);
             const model = (await document.load()).textEditorModel;
             return new MonacoEditor(

@@ -16,18 +16,18 @@
 // *****************************************************************************
 
 import { DisposableCollection } from '@theia/core';
-import { MAIN_RPC_CONTEXT, NotebookRenderersExt, NotebookRenderersMain } from '../../../common';
+import { NotebookRenderersMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 
 export class NotebookRenderersMainImpl implements NotebookRenderersMain {
-    private readonly proxy: NotebookRenderersExt;
+    // private readonly proxy: NotebookRenderersExt;
 
     private readonly disposables = new DisposableCollection();
 
     constructor(
         rpc: RPCProtocol,
     ) {
-        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT);
+        // this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT);
         //     this._register(messaging.onShouldPostMessage(e => {
         //         this.proxy.$postRendererMessage(e.editorId, e.rendererId, e.message);
         //     }));

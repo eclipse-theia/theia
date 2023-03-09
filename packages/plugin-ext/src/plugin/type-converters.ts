@@ -32,6 +32,7 @@ import { DisposableCollection, isEmptyObject, isObject } from '@theia/core/lib/c
 import * as notebooks from '@theia/notebook/lib/common';
 import { CommandsConverter } from './command-registry';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { CellRange } from '@theia/notebook/lib/common';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -1532,3 +1533,13 @@ export namespace NotebookCellExecutionSummary {
     }
 }
 
+export namespace NotebookRange {
+
+    export function from(range: theia.NotebookRange): CellRange {
+        return { start: range.start, end: range.end };
+    }
+
+    export function to(range: CellRange): types.NotebookRange {
+        return new types.NotebookRange(range.start, range.end);
+    }
+}

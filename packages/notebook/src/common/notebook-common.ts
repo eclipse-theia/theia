@@ -166,3 +166,142 @@ export interface NotebookCellOutputsSplice {
 export interface CellInternalMetadataChangedEvent {
     readonly lastRunSuccessChanged?: boolean;
 }
+
+export type NotebookCellTextModelSplice<T> = [
+    start: number,
+    deleteCount: number,
+    newItems: T[]
+];
+
+export enum NotebookCellsChangeType {
+    ModelChange = 1,
+    Move = 2,
+    ChangeCellLanguage = 5,
+    Initialize = 6,
+    ChangeCellMetadata = 7,
+    Output = 8,
+    OutputItem = 9,
+    ChangeCellContent = 10,
+    ChangeDocumentMetadata = 11,
+    ChangeCellInternalMetadata = 12,
+    // ChangeCellMime = 13,
+    Unknown = 100
+}
+
+export interface NotebookCellsChangeLanguageEvent {
+    readonly kind: NotebookCellsChangeType.ChangeCellLanguage;
+    readonly index: number;
+    readonly language: string;
+}
+
+// export interface NotebookCellsChangeMimeEvent {
+//     readonly kind: NotebookCellsChangeType.ChangeCellMime;
+//     readonly index: number;
+//     readonly mime: string | undefined;
+// }
+
+export interface NotebookCellsChangeMetadataEvent {
+    readonly kind: NotebookCellsChangeType.ChangeCellMetadata;
+    readonly index: number;
+    readonly metadata: NotebookCellMetadata;
+}
+
+export interface NotebookCellsChangeInternalMetadataEvent {
+    readonly kind: NotebookCellsChangeType.ChangeCellInternalMetadata;
+    readonly index: number;
+    readonly internalMetadata: NotebookCellInternalMetadata;
+}
+
+export interface NotebookDocumentChangeMetadataEvent {
+    readonly kind: NotebookCellsChangeType.ChangeDocumentMetadata;
+    readonly metadata: NotebookDocumentMetadata;
+}
+
+export interface NotebookDocumentUnknownChangeEvent {
+    readonly kind: NotebookCellsChangeType.Unknown;
+}
+
+export interface NotebookCellContentChangeEvent {
+    readonly kind: NotebookCellsChangeType.ChangeCellContent;
+    readonly index: number;
+}
+
+export namespace CellUri {
+
+    export const scheme = 'vscode-notebook-cell';
+
+    const _lengths = ['W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f'];
+    const _padRegexp = new RegExp(`^[${_lengths.join('')}]+`);
+    const _radix = 7;
+
+    export function generate(notebook: URI, handle: number): URI {
+
+        const s = handle.toString(_radix);
+        const p = s.length < _lengths.length ? _lengths[s.length - 1] : 'z';
+
+        const fragment = `${p}${s}s${Buffer.from(BinaryBuffer.fromString(notebook.scheme).buffer).toString('base64')} `;
+        return notebook.withScheme(scheme).withFragment(fragment);
+    }
+
+    export function parse(cell: URI): { notebook: URI; handle: number } | undefined {
+        if (cell.scheme !== scheme) {
+            return undefined;
+        }
+
+        const idx = cell.fragment.indexOf('s');
+        if (idx < 0) {
+            return undefined;
+        }
+
+        const handle = parseInt(cell.fragment.substring(0, idx).replace(_padRegexp, ''), _radix);
+        const parsedScheme = Buffer.from(cell.fragment.substring(idx + 1), 'base64').toString();
+
+        if (isNaN(handle)) {
+            return undefined;
+        }
+        return {
+            handle,
+            notebook: cell.withScheme(parsedScheme).withoutFragment()
+        };
+    }
+
+    // export function generateCellOutputUri(notebook: URI, outputId?: string) {
+    //     return notebook.with({
+    //         scheme: NOTEBOOK_CELL_URI_SCHEME,
+    //         fragment: `op${outputId ?? ''},${notebook.scheme !== Schemas.file ? notebook.scheme : ''} `
+    //     });
+    // }
+
+    // export function parseCellOutputUri(uri: URI): { notebook: URI; outputId?: string } | undefined {
+    //     if (uri.scheme !== NOTEBOOK_CELL_URI_SCHEME) {
+    //         return;
+    //     }
+
+    //     const match = /^op([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?\,(.*)$/i.exec(uri.fragment);
+    //     if (!match) {
+    //         return undefined;
+    //     }
+
+    //     const outputId = (match[1] && match[1] !== '') ? match[1] : undefined;
+    //     const scheme = match[2];
+    //     return {
+    //         outputId,
+    //         notebook: uri.with({
+    //             scheme: scheme || Schemas.file,
+    //             fragment: null
+    //         })
+    //     };
+    // }
+
+    export function generateCellPropertyUri(notebook: URI, handle: number, cellScheme: string): URI {
+        return CellUri.generate(notebook, handle).withScheme(cellScheme);
+    }
+
+    export function parseCellPropertyUri(uri: URI, propertyScheme: string): { notebook: URI; handle: number } | undefined {
+        if (uri.scheme !== propertyScheme) {
+            return undefined;
+        }
+
+        return CellUri.parse(uri.withScheme(scheme));
+    }
+}

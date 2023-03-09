@@ -1,0 +1,38 @@
+.theia-notebook-cell-list {
+    list-style: none;
+    padding-left: 0px;
+}
+
+.theia-notebook-cell {
+    display: flex;
+    margin: 10px 0px;
+}
+
+.theia-notebook-cell-marker {
+    background-color: gray;
+    width: 4px;
+    margin: 0px 8px 0px 4px;
+    border-radius: 4px;
+}
+
+.theia-notebook-cell-marker:hover {
+    width: 8px;
+    margin: 0px 4px 0px 4px;
+}
+
+.theia-notebook-cell-toolbar {
+}
+
+.theia-notebook-cell-content {
+    flex: 1;
+    width: 100%;
+}
+
+.theia-notebook-cell-editor {
+    flex: 1;
+    max-height: 500px;
+    margin: 0px 10px;
+    padding: 10px;
+    border: 1px solid grey;
+    border-radius: 5px;
+}
