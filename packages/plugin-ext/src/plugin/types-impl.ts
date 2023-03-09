@@ -404,8 +404,11 @@ export class Position {
         return result!;
     }
 
-    static isPosition(other: {}): other is Position {
+    static isPosition(other: unknown): other is Position {
         if (!other) {
+            return false;
+        }
+        if (typeof other !== 'object' || Array.isArray(other)) {
             return false;
         }
         if (other instanceof Position) {
