@@ -13,14 +13,17 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { NavigatableWidgetOptions, OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
-import { NotebookOpenHandler } from './notebookOpenHandler';
-import { NotebookWidget } from './notebookWidget';
-import { bindContributionProvider, URI } from '@theia/core';
-import { NotebookTypeRegistry } from './notebookTypeRegistry';
-import { NotebookService } from './notebook-service';
+import { OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
+import { NotebookOpenHandler } from './notebook-open-handler';
+import { bindContributionProvider, ResourceResolver, } from '@theia/core';
+import { NotebookTypeRegistry } from './notebook-type-registry';
+import { NotebookService } from './service/notebook-service';
+import { NotebookEditorWidgetFactory } from './notebook-editor-widget-factory';
+import { NotebookCellResourceResolver } from './notebook-cell-resource-resolver';
+import { NotebookModelResolverService } from './service/notebook-model-resolver-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Symbol('notebooks'));
@@ -30,10 +33,11 @@ export default new ContainerModule(bind => {
 
     bind(NotebookTypeRegistry).toSelf().inSingletonScope();
 
-    bind(WidgetFactory).toDynamicValue(({ container }) => ({
-        id: NotebookWidget.ID,
-        createWidget: (options: NavigatableWidgetOptions & { notebookType: string }): NotebookWidget => new NotebookWidget(new URI(options.uri), options.notebookType),
-    }));
+    bind(WidgetFactory).to(NotebookEditorWidgetFactory).inSingletonScope();
 
     bind(NotebookService).toSelf().inSingletonScope();
+
+    bind(NotebookCellResourceResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toService(NotebookCellResourceResolver);
+    bind(NotebookModelResolverService).toSelf().inSingletonScope();
 });

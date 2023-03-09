@@ -14,10 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, DisposableCollection, Emitter } from '@theia/core';
+import { Disposable, DisposableCollection, Emitter, URI } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { NotebookData, NotebookExtensionDescription, TransientOptions } from '../common';
+import { NotebookData, NotebookExtensionDescription, TransientOptions } from '../../common';
+import { NotebookModel } from '../view-model/notebook-model';
+
+export const NotebookProvider = Symbol('notebook provider');
 
 export interface SimpleNotebookProviderInfo {
     readonly viewType: string,
@@ -34,15 +37,32 @@ export interface NotebookSerializer {
 @injectable()
 export class NotebookService implements Disposable {
 
+    private notebookSerializerEmitter = new Emitter<string>();
+    onNotebookSerialzer = this.notebookSerializerEmitter.event;
+
     private readonly disposables = new DisposableCollection();
 
     private readonly notebookProviders = new Map<string, SimpleNotebookProviderInfo>();
+    private readonly notebookModels = new Map<string, NotebookModel>();
 
     private readonly addViewTypeEmitter = new Emitter<string>();
     readonly onAddViewType = this.addViewTypeEmitter.event;
 
     private readonly willRemoveViewTypeEmitter = new Emitter<string>();
     readonly onWillRemoveViewType = this.willRemoveViewTypeEmitter.event;
+
+    private readonly willOpenNotebookTypeEmitter = new Emitter<string>();
+    readonly onWillOpenNotebook = this.willOpenNotebookTypeEmitter.event;
+
+    // readonly onDidChangeOutputRenderers: Event<void>;
+    private readonly willAddNotebookDocumentEmitter = new Emitter<NotebookModel>();
+    readonly onWillAddNotebookDocument = this.willAddNotebookDocumentEmitter.event;
+    private readonly didAddNotebookDocumentEmitter = new Emitter<NotebookModel>();
+    readonly onDidAddNotebookDocument = this.didAddNotebookDocumentEmitter.event;
+    private readonly willRemoveNotebookDocumentEmitter = new Emitter<NotebookModel>();
+    readonly onWillRemoveNotebookDocument = this.willRemoveNotebookDocumentEmitter.event;
+    private readonly didRemoveNotebookDocumentEmitter = new Emitter<NotebookModel>();
+    readonly onDidRemoveNotebookDocument = this.didRemoveNotebookDocumentEmitter.event;
 
     constructor() { }
 
@@ -64,27 +84,25 @@ export class NotebookService implements Disposable {
         });
     }
 
-    async canResolve(viewType: string): Promise<boolean> {
-        // if (this.notebookProviders.has(viewType)) {
-        //     return true;
-        // }
-
-        // await this._extensionService.whenInstalledExtensionsRegistered();
-        // await this._extensionService.activateByEvent(`onNotebookSerializer:${viewType}`);
-
-        return this.notebookProviders.has(viewType);
+    createNotebookModel(data: NotebookData, viewType: string, uri: URI): NotebookModel {
+        const model = new NotebookModel(data, uri, viewType);
+        this.willAddNotebookDocumentEmitter.fire(model);
+        this.notebookModels.set(uri.toString(), model);
+        this.didAddNotebookDocumentEmitter.fire(model);
+        return model;
     }
 
-    async withNotebookDataProvider(viewType: string): Promise<SimpleNotebookProviderInfo> {
-        // const selected = this.notebookProviderInfoStore.get(viewType);
-        // if (!selected) {
-        //     throw new Error(`UNKNOWN notebook type '${viewType}'`);
-        // }
-        await this.canResolve(viewType);
+    async getNotebookDataProvider(viewType: string): Promise<SimpleNotebookProviderInfo> {
+        this.notebookSerializerEmitter.fire(`onNotebookSerializer:${viewType}`);
+
         const result = this.notebookProviders.get(viewType);
         if (!result) {
             throw new Error(`NO provider registered for view type: '${viewType}'`);
         }
         return result;
+    }
+
+    getNotebookEditorModel(uri: URI): NotebookModel | undefined {
+        return this.notebookModels.get(uri.toString());
     }
 }

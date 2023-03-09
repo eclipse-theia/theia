@@ -15,13 +15,14 @@
 // *****************************************************************************
 import { URI, MaybePromise } from '@theia/core';
 import { NavigatableWidgetOpenHandler, NavigatableWidgetOptions, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { inject } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { NotebookFileSelector, NotebookType } from '../common/notebook-protocol';
-import { NotebookTypeRegistry } from './notebookTypeRegistry';
-import { NotebookWidget } from './notebookWidget';
+import { NotebookTypeRegistry } from './notebook-type-registry';
+import { NotebookEditorWidget } from './notebook-editor-widget';
 import { match } from '@theia/core/lib/common/glob';
 
-export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookWidget> {
+@injectable()
+export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEditorWidget> {
     id: string = 'notebook';
 
     // chache is mostly important because we need the contribution again in createWidgetOptions.

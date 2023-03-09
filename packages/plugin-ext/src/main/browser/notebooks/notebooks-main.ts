@@ -23,6 +23,7 @@ import { MAIN_RPC_CONTEXT, NotebooksExt, NotebooksMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { NotebookDto } from './notebookDto';
 import { UriComponents } from '@theia/core/lib/common/uri';
+import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 
 export class NotebooksMainImpl implements NotebooksMain {
 
@@ -34,9 +35,11 @@ export class NotebooksMainImpl implements NotebooksMain {
 
     constructor(
         rpc: RPCProtocol,
-        private notebookService: NotebookService
+        private notebookService: NotebookService,
+        plugins: HostedPluginSupport
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT);
+        notebookService.onNotebookSerialzer(event => plugins.activateByEvent(event));
     }
 
     dispose(): void {

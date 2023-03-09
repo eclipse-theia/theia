@@ -14,22 +14,25 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI } from '@theia/core';
-import { BaseWidget, Navigatable } from '@theia/core/lib/browser';
+import { Disposable, URI } from '@theia/core';
+import { CellDto, NotebookData } from '../../common';
 
-export class NotebookWidget extends BaseWidget implements Navigatable {
-    static readonly ID = 'notebook';
+export class NotebookModel implements Disposable {
 
-    constructor(private uri: URI, public readonly notebookType: string) {
-        super();
-        this.id = 'notebook:' + uri.toString();
+    cells: CellDto[];
+
+    dirty: boolean;
+
+    constructor(data: NotebookData, public uri: URI, public viewType: string) {
+        this.cells = data.cells;
+        this.dirty = false;
     }
 
-    getResourceUri(): URI | undefined {
-        return this.uri;
-    }
-    createMoveToUri(resourceUri: URI): URI | undefined {
-        throw new Error('Method not implemented.');
+    dispose(): void {
+
     }
 
+    save(): Promise<boolean> {
+        return Promise.resolve(true);
+    }
 }

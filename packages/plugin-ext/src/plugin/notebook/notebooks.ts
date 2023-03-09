@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CancellationToken, Disposable, DisposableCollection, Emitter, Event } from '@theia/core';
+import { CancellationToken, Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
 import * as theia from '@theia/plugin';
 import { NotebookCellStatusBarListDto, NotebookDataDto, NotebookDocumentsAndEditorsDelta, NotebooksExt, NotebooksMain, Plugin, PLUGIN_RPC_CONTEXT } from '../../common';
 import { Cache } from '../../common/cache';
@@ -26,7 +26,6 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
 import { CommandsConverter } from '../command-registry';
 // import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
-import { URI } from '../types-impl';
 import * as typeConverters from '../type-converters';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { NotebookDocument } from './notebook-document';
@@ -63,7 +62,7 @@ export class NotebooksExtImpl implements NotebooksExt {
 
     async $provideNotebookCellStatusBarItems(handle: number, uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarListDto | undefined> {
         const provider = this.notebookStatusBarItemProviders.get(handle);
-        const revivedUri = URI.revive(uri);
+        const revivedUri = URI.fromComponents(uri);
         const document = this.documents.get(revivedUri);
         if (!document || !provider) {
             return;
@@ -275,4 +274,15 @@ export class NotebooksExtImpl implements NotebooksExt {
         //     this.DidChangeActiveNotebookEditorEmitter.fire(this._activeNotebookEditor?.apiEditor);
         // }
     }
+
+    getNotebookDocument(uri: URI, relaxed: true): NotebookDocument | undefined;
+    getNotebookDocument(uri: URI): NotebookDocument;
+    getNotebookDocument(uri: URI, relaxed?: true): NotebookDocument | undefined {
+        const result = this.documents.get(uri);
+        if (!result && !relaxed) {
+            throw new Error(`NO notebook document for '${uri}'`);
+        }
+        return result;
+    }
+
 }

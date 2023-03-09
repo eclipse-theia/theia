@@ -7,10 +7,18 @@
   },
   "include": [
     "src"
-  ],
+,
+"src/browser/notebook-cell-resource-resolver.ts"
+],
   "references": [
     {
       "path": "../core"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
+      "path": "../monaco"
     }
   ]
 }

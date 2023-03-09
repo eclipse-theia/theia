@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 Red Hat, Inc. and others.
+// Copyright (C) 2023 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,8 +13,22 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+import * as React from '@theia/core/shared/react';
+import { CellDto, CellKind } from '../../common';
 
-export * from './notebook-type-registry';
-export * from './notebook-editor-widget';
-export * from './service/notebook-service';
-export * from './service/notebook-model-resolver-service';
+export interface Cellrenderer {
+    render(cell: CellDto, index: number): React.ReactNode
+}
+
+export class NotebookCellListView {
+
+    constructor(private renderers: Map<CellKind, Cellrenderer>, private cells: CellDto[]) {
+    }
+
+    render(): React.ReactNode {
+        return <ul className='theia-notebook-cell-list'>
+            {this.cells.map((cell, index) => this.renderers.get(cell.cellKind)?.render(cell, index))}
+        </ul >;
+    }
+
+}

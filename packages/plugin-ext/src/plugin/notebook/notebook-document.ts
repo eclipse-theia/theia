@@ -23,8 +23,43 @@ import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
 import * as notebookCommon from '@theia/notebook/lib/common';
 import { URI } from '@theia/core';
 import * as typeConverters from '../type-converters';
+import { ModelAddedData, NotebookCellDto, NotebookCellsChangedEventDto, NotebookOutputDto } from '../../common';
+import { NotebookRange } from '../types-impl';
+import { UriComponents } from '../../common/uri-components';
+
+class RawContentChangeEvent {
+
+    constructor(
+        readonly start: number,
+        readonly deletedCount: number,
+        readonly deletedItems: theia.NotebookCell[],
+        readonly items: Cell[]
+    ) { }
+
+    asApiEvent(): theia.NotebookDocumentContentChange {
+        return {
+            range: new NotebookRange(this.start, this.start + this.deletedCount),
+            addedCells: this.items.map(cell => cell.apiCell),
+            removedCells: this.deletedItems,
+        };
+    }
+}
 
 export class Cell {
+
+    static asModelAddData(notebook: theia.NotebookDocument, cell: NotebookCellDto): ModelAddedData & { notebook: theia.NotebookDocument } {
+        return {
+            EOL: cell.eol,
+            lines: cell.source,
+            // languageId: cell.language,
+            uri: cell.uri,
+            isDirty: false,
+            versionId: 1,
+            notebook,
+            modeId: ''
+        };
+    }
+
     private cell: theia.NotebookCell | undefined;
 
     readonly handle: number;
@@ -72,6 +107,56 @@ export class Cell {
         return this.cell;
     }
 
+    setOutputs(newOutputs: NotebookOutputDto[]): void {
+        this.outputs = newOutputs.map(typeConverters.NotebookCellOutput.to);
+    }
+
+    // setOutputItems(outputId: string, append: boolean, newOutputItems: NotebookOutputItemDto[]): void {
+    //     const newItems = newOutputItems.map(typeConverters.NotebookCellOutputItem.to);
+    //     const output = this.outputs.find(op => op.id === outputId);
+    //     if (output) {
+    //         if (!append) {
+    //             output.items.length = 0;
+    //         }
+    //         output.items.push(...newItems);
+
+    //         // if (output.items.length > 1 && output.items.every(item => notebookCommon.isTextStreamMime(item.mime))) {
+    //         //     // Look for the mimes in the items, and keep track of their order.
+    //         //     // Merge the streams into one output item, per mime type.
+    //         //     const mimeOutputs = new Map<string, Uint8Array[]>();
+    //         //     const mimeTypes: string[] = [];
+    //         //     output.items.forEach(item => {
+    //         //         let items: Uint8Array[];
+    //         //         if (mimeOutputs.has(item.mime)) {
+    //         //             items = mimeOutputs.get(item.mime)!;
+    //         //         } else {
+    //         //             items = [];
+    //         //             mimeOutputs.set(item.mime, items);
+    //         //             mimeTypes.push(item.mime);
+    //         //         }
+    //         //         items.push(item.data);
+    //         //     });
+    //         //     output.items.length = 0;
+    //         //     mimeTypes.forEach(mime => {
+    //         //         const compressed = notebookCommon.compressOutputItemStreams(mimeOutputs.get(mime)!);
+    //         //         output.items.push({
+    //         //             mime,
+    //         //             data: compressed.buffer
+    //         //         });
+    //         //     });
+    //         // }
+    //     }
+    // }
+
+    setMetadata(newMetadata: notebookCommon.NotebookCellMetadata): void {
+        this.metadata = Object.freeze(newMetadata);
+    }
+
+    // setInternalMetadata(newInternalMetadata: notebookCommon.NotebookCellInternalMetadata): void {
+    //     this.internalMetadata = newInternalMetadata;
+    //     this.previousResult = Object.freeze(typeConverters.NotebookCellExecutionSummary.to(newInternalMetadata));
+    // }
+
 }
 
 export class NotebookDocument {
@@ -88,8 +173,8 @@ export class NotebookDocument {
 
     constructor(
         private readonly proxy: rpc.NotebookDocumentsMain,
-        // private readonly editorsAndDocuments: EditorsAndDocumentsExtImpl,
-        // private readonly cellData: rpc.NotebookCellDto,
+        private readonly editorsAndDocuments: EditorsAndDocumentsExtImpl,
+        // private readonly textDocuments: DocumentsExt,
         readonly uri: theia.Uri
     ) {
 
@@ -170,4 +255,170 @@ export class NotebookDocument {
         }
         return this.proxy.$trySaveNotebook(this.uri);
     }
+
+    acceptDirty(isDirty: boolean): void {
+        this.isDirty = isDirty;
+    }
+
+    acceptModelChanged(event: NotebookCellsChangedEventDto, isDirty: boolean, newMetadata: notebookCommon.NotebookDocumentMetadata | undefined): theia.NotebookDocumentChangeEvent {
+        this.versionId = event.versionId;
+        this.isDirty = isDirty;
+        // this.acceptDocumentPropertiesChanged({ metadata: newMetadata });
+
+        const result = {
+            notebook: this.apiNotebook,
+            metadata: newMetadata,
+            cellChanges: <theia.NotebookDocumentCellChange[]>[],
+            contentChanges: <theia.NotebookDocumentContentChange[]>[],
+        };
+
+        type RelaxedCellChange = Partial<theia.NotebookDocumentCellChange> & { cell: theia.NotebookCell };
+        const relaxedCellChanges: RelaxedCellChange[] = [];
+
+        // -- apply change and populate content changes
+
+        for (const rawEvent of event.rawEvents) {
+            if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ModelChange) {
+                this._spliceNotebookCells(rawEvent.changes, false, result.contentChanges);
+
+            } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.Move) {
+                this._moveCells(rawEvent.index, rawEvent.length, rawEvent.newIdx, result.contentChanges);
+            } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.Output) {
+                this.setCellOutputs(rawEvent.index, rawEvent.outputs);
+                relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, outputs: this.cells[rawEvent.index].apiCell.outputs });
+
+                // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.OutputItem) {
+                //     this._setCellOutputItems(rawEvent.index, rawEvent.outputId, rawEvent.append, rawEvent.outputItems);
+                //     relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, outputs: this.cells[rawEvent.index].apiCell.outputs });
+                // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellLanguage) {
+                //     this.changeCellLanguage(rawEvent.index, rawEvent.language);
+                //     relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, document: this.cells[rawEvent.index].apiCell.document });
+            } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellContent) {
+                relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, document: this.cells[rawEvent.index].apiCell.document });
+
+                // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellMime) {
+                //     this._changeCellMime(rawEvent.index, rawEvent.mime);
+            } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellMetadata) {
+                this.changeCellMetadata(rawEvent.index, rawEvent.metadata);
+                relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, metadata: this.cells[rawEvent.index].apiCell.metadata });
+
+            }
+            // else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellInternalMetadata) {
+            //     this.changeCellInternalMetadata(rawEvent.index, rawEvent.internalMetadata);
+            //     relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, executionSummary: this.cells[rawEvent.index].apiCell.executionSummary });
+            // }
+        }
+
+        // -- compact cellChanges
+
+        const map = new Map<theia.NotebookCell, number>();
+        for (let i = 0; i < relaxedCellChanges.length; i++) {
+            const relaxedCellChange = relaxedCellChanges[i];
+            const existing = map.get(relaxedCellChange.cell);
+            if (existing === undefined) {
+                const newLen = result.cellChanges.push({
+                    document: undefined,
+                    executionSummary: undefined,
+                    metadata: undefined,
+                    outputs: undefined,
+                    ...relaxedCellChange,
+                });
+                map.set(relaxedCellChange.cell, newLen - 1);
+            } else {
+                result.cellChanges[existing] = {
+                    ...result.cellChanges[existing],
+                    ...relaxedCellChange
+                };
+            }
+        }
+
+        // Freeze event properties so handlers cannot accidentally modify them
+        Object.freeze(result);
+        Object.freeze(result.cellChanges);
+        Object.freeze(result.contentChanges);
+
+        return result;
+    }
+
+    private _spliceNotebookCells(splices: notebookCommon.NotebookCellTextModelSplice<NotebookCellDto>[], initialization: boolean,
+        bucket: theia.NotebookDocumentContentChange[] | undefined): void {
+        if (this.disposed) {
+            return;
+        }
+
+        const contentChangeEvents: RawContentChangeEvent[] = [];
+        const addedCellDocuments: ModelAddedData[] = [];
+        const removedCellDocuments: UriComponents[] = [];
+
+        splices.reverse().forEach(splice => {
+            const cellDtos = splice[2];
+            const newCells = cellDtos.map(cell => {
+
+                const extCell = new Cell(this, this.editorsAndDocuments, cell);
+                if (!initialization) {
+                    addedCellDocuments.push(Cell.asModelAddData(this.apiNotebook, cell));
+                }
+                return extCell;
+            });
+
+            const changeEvent = new RawContentChangeEvent(splice[0], splice[1], [], newCells);
+            const deletedItems = this.cells.splice(splice[0], splice[1], ...newCells);
+            for (const cell of deletedItems) {
+                removedCellDocuments.push(cell.uri.toComponents());
+                changeEvent.deletedItems.push(cell.apiCell);
+            }
+            contentChangeEvents.push(changeEvent);
+        });
+
+        this.editorsAndDocuments.$acceptEditorsAndDocumentsDelta({
+            addedDocuments: addedCellDocuments,
+            removedDocuments: removedCellDocuments
+        });
+
+        if (bucket) {
+            for (const changeEvent of contentChangeEvents) {
+                bucket.push(changeEvent.asApiEvent());
+            }
+        }
+    }
+
+    private _moveCells(index: number, length: number, newIdx: number, bucket: theia.NotebookDocumentContentChange[]): void {
+        const cells = this.cells.splice(index, length);
+        this.cells.splice(newIdx, 0, ...cells);
+        const changes = [
+            new RawContentChangeEvent(index, length, cells.map(c => c.apiCell), []),
+            new RawContentChangeEvent(newIdx, 0, [], cells)
+        ];
+        for (const change of changes) {
+            bucket.push(change.asApiEvent());
+        }
+    }
+
+    private setCellOutputs(index: number, outputs: NotebookOutputDto[]): void {
+        const cell = this.cells[index];
+        cell.setOutputs(outputs);
+    }
+
+    // private _setCellOutputItems(index: number, outputId: string, append: boolean, outputItems: NotebookOutputItemDto[]): void {
+    //     const cell = this.cells[index];
+    //     cell.setOutputItems(outputId, append, outputItems);
+    // }
+
+    // private changeCellLanguage(index: number, newLanguageId: string): void {
+    //     const cell = this.cells[index];
+    //     if (cell.apiCell.document.languageId !== newLanguageId) {
+    //         this.textDocuments.$acceptModelLanguageChanged(cell.uri, newLanguageId);
+    //     }
+    // }
+
+    private changeCellMetadata(index: number, newMetadata: notebookCommon.NotebookCellMetadata): void {
+        const cell = this.cells[index];
+        cell.setMetadata(newMetadata);
+    }
+
+    // private changeCellInternalMetadata(index: number, newInternalMetadata: notebookCommon.NotebookCellInternalMetadata): void {
+    //     const cell = this.cells[index];
+    //     cell.setInternalMetadata(newInternalMetadata);
+    // }
+
 }

@@ -13,7 +13,44 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+
+import * as theia from '@theia/plugin';
+import { Emitter, URI } from '@theia/core';
+import { UriComponents } from '../../common/uri-components';
+import { NotebookCellsChangedEventDto, NotebookDocumentsExt } from '../../common';
+import { NotebooksExtImpl } from './notebooks';
+import { NotebookDocumentMetadata } from '@theia/notebook/lib/common';
+
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+export class NotebookDocumentsExtImpl implements NotebookDocumentsExt {
+
+    private readonly didSaveNotebookDocumentEmitter = new Emitter<theia.NotebookDocument>();
+    readonly onDidSaveNotebookDocument = this.didSaveNotebookDocumentEmitter.event;
+
+    private readonly didChangeNotebookDocumentEmitter = new Emitter<theia.NotebookDocumentChangeEvent>();
+    readonly onDidChangeNotebookDocument = this.didChangeNotebookDocumentEmitter.event;
+
+    constructor(
+        private readonly notebooksAndEditors: NotebooksExtImpl,
+    ) { }
+
+    $acceptModelChanged(uri: UriComponents, event: NotebookCellsChangedEventDto,
+        isDirty: boolean, newMetadata?: NotebookDocumentMetadata): void {
+        const document = this.notebooksAndEditors.getNotebookDocument(URI.fromComponents(uri));
+        const e = document.acceptModelChanged(event, isDirty, newMetadata);
+        this.didChangeNotebookDocumentEmitter.fire(e);
+    }
+
+    $acceptDirtyStateChanged(uri: UriComponents, isDirty: boolean): void {
+        const document = this.notebooksAndEditors.getNotebookDocument(URI.fromComponents(uri));
+        document.acceptDirty(isDirty);
+    }
+
+    $acceptModelSaved(uri: UriComponents): void {
+        const document = this.notebooksAndEditors.getNotebookDocument(URI.fromComponents(uri));
+        this.didSaveNotebookDocumentEmitter.fire(document.apiNotebook);
+    }
+}
