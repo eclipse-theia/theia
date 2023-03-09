@@ -278,12 +278,12 @@ export class ShellLayoutRestorer implements CommandContribution {
                     });
                 }
                 return widgets;
-            } else if (isObject<Record<string, WidgetDescription>>(value) && !Array.isArray(value)) {
+            } else if (isObject(value) && !Array.isArray(value)) {
                 const copy: Record<string, unknown> = {};
                 for (const p in value) {
                     if (this.isWidgetProperty(p)) {
                         parseContext.push(async context => {
-                            copy[p] = await this.convertToWidget(value[p], context);
+                            copy[p] = await this.convertToWidget(value[p] as WidgetDescription, context);
                         });
                     } else {
                         copy[p] = value[p];
