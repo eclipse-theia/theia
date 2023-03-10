@@ -150,7 +150,7 @@ jobs:
         run: |
           yarn docs
         env:
-          NODE_OPTIONS: --max_old_space_size=8196
+          NODE_OPTIONS: --max_old_space_size=9216
 
       - name: Publish GH Pages
         uses: peaceiris/actions-gh-pages@v3
