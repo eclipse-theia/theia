@@ -37,13 +37,13 @@ export class MainFileSystemEventService {
         const proxy = rpc.getProxy(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService);
         const fileService = container.get(FileService);
 
-        // file system events - (changes the editor and other make)
-        const events: FileSystemEvents = {
-            created: [],
-            changed: [],
-            deleted: []
-        };
         this.toDispose.push(fileService.onDidFilesChange(event => {
+            // file system events - (changes the editor and others make)
+            const events: FileSystemEvents = {
+                created: [],
+                changed: [],
+                deleted: []
+            };
             for (const change of event.changes) {
                 switch (change.type) {
                     case FileChangeType.ADDED:
@@ -59,9 +59,6 @@ export class MainFileSystemEventService {
             }
 
             proxy.$onFileEvent(events);
-            events.created.length = 0;
-            events.changed.length = 0;
-            events.deleted.length = 0;
         }));
 
         // BEFORE file operation
