@@ -39,6 +39,7 @@ class NotebookCellResource implements Resource {
     readContents(options?: ResourceReadOptions | undefined): Promise<string> {
         return Promise.resolve(this.cell.source);
     }
+
     dispose(): void {
         throw new Error('Method not implemented.');
     }

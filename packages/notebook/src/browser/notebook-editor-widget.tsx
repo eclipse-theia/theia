@@ -46,7 +46,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable {
         return this.uri;
     }
     createMoveToUri(resourceUri: URI): URI | undefined {
-        throw new Error('Method not implemented.');
+        return this.uri;
     }
 
     createCellList(): void {

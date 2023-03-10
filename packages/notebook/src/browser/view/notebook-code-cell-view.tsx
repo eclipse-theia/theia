@@ -27,7 +27,7 @@ export class NotebookCodeCellRenderer extends BaseNotebookCellView {
     renderCell(cell: CellDto, handle: number): React.ReactNode {
         return <div>
             <Editor editorProvider={this.editorProvider} uri={this.createCellUri(cell, handle)} cell={cell}></Editor>
-            {cell.outputs && cell.outputs.map(value => value.outputs.map(item => new TextDecoder().decode(item.data.buffer)))}
+            {cell.outputs && cell.outputs.flatMap(output => output.outputs.map(item => <div>{new TextDecoder().decode(item.data.buffer)}</div>))}
         </div >;
     }
 
@@ -46,9 +46,10 @@ function Editor({ editorProvider, uri, cell }: EditorProps): JSX.Element {
     React.useEffect(() => {
         (async () => {
             const editorNode = document.getElementById(uri.toString())!;
-            const editor = await editorProvider.createInline(uri, editorNode, { language: cell.language, maxHeight: 500, autoSizing: true }, true);
+            const editor = await editorProvider.createInline(uri, editorNode, { minHeight: -1, maxHeight: -1, autoSizing: true }, true);
+            editor.setLanguage(cell.language);
             editor.getControl().onDidContentSizeChange(() => {
-                editorNode.style.height = editor.getControl().getContentHeight() + 20 + 'px';
+                editorNode.style.height = editor.getControl().getContentHeight() + 7 + 'px';
                 editor.resizeToFit();
             });
         })();
