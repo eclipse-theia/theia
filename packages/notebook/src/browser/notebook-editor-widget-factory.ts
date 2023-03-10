@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { URI } from '@theia/core';
-import { WidgetFactory, NavigatableWidgetOptions } from '@theia/core/lib/browser';
+import { WidgetFactory, NavigatableWidgetOptions, LabelProvider } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { NotebookEditorWidget } from './notebook-editor-widget';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -43,14 +43,29 @@ export class NotebookEditorWidgetFactory implements WidgetFactory {
     @inject(NotebookModelResolverService)
     protected notebookModelResolver: NotebookModelResolverService;
 
+    @inject(LabelProvider)
+    protected labelProvider: LabelProvider;
+
     async createWidget(options?: NavigatableWidgetOptions & { notebookType: string }): Promise<NotebookEditorWidget> {
         if (!options) {
             throw new Error('no options found for widget. Need at least uri and notebookType');
         }
+        const uri = new URI(options.uri);
 
-        return new NotebookEditorWidget(new URI(options.uri),
-            options.notebookType,
-            await this.notebookModelResolver.resolve(new URI(options.uri), options.notebookType),
+        const editor = await this.createEditor(uri, options.notebookType);
+
+        const icon = this.labelProvider.getIcon(uri);
+        editor.title.label = this.labelProvider.getName(uri);
+        editor.title.iconClass = icon + ' file-icon';
+
+        return editor;
+    }
+
+    private async createEditor(uri: URI, notebookType: string): Promise<NotebookEditorWidget> {
+
+        return new NotebookEditorWidget(uri,
+            notebookType,
+            await this.notebookModelResolver.resolve(uri, notebookType),
             this.markdownRenderer,
             this.editorProvider
         );
