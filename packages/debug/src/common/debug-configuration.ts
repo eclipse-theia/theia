@@ -79,9 +79,6 @@ export interface DebugConfiguration {
      */
     suppressSaveBeforeStart?: boolean;
 
-    /** When true, the debug toolbar will not be shown for this session. */
-    suppressDebugToolbar?: boolean;
-
     /** When true, the window statusbar color will not be changed for this session. */
     suppressDebugStatusbar?: boolean;
 
@@ -101,7 +98,6 @@ export interface DebugSessionOptions {
     noDebug?: boolean;
     compact?: boolean;
     suppressSaveBeforeStart?: boolean;
-    suppressDebugToolbar?: boolean;
     suppressDebugStatusbar?: boolean;
     suppressDebugView?: boolean;
 }

@@ -182,7 +182,6 @@ export class DebugExtImpl implements DebugExt {
             compact: options.compact,
             consoleMode: options.consoleMode,
             suppressSaveBeforeStart: options.suppressSaveBeforeStart,
-            suppressDebugToolbar: options.suppressDebugToolbar,
             suppressDebugStatusbar: options.suppressDebugStatusbar,
             suppressDebugView: options.suppressDebugView,
             lifecycleManagedByParent: options.lifecycleManagedByParent,

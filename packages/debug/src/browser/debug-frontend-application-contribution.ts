@@ -54,6 +54,7 @@ import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import { DebugBreakpoint } from './model/debug-breakpoint';
 import { nls } from '@theia/core/lib/common/nls';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
+import { DebugConfiguration } from '../common/debug-configuration';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -451,14 +452,14 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             }
             const shouldOpenDebug = openDebug === 'openOnSessionStart' || (openDebug === 'openOnFirstSessionStart' && this.firstSessionStart);
             // Do not open debug view when suppressed via configuration
-            if (!noDebug && !this.shouldViewBeSuppressed(session) && shouldOpenDebug) {
+            if (!noDebug && !this.getOption(session, 'suppressDebugView') && shouldOpenDebug) {
                 this.openSession(session);
             }
             this.firstSessionStart = false;
         });
         this.manager.onDidStopDebugSession(session => {
             const { openDebug } = session.configuration;
-            if (!this.shouldViewBeSuppressed(session) && openDebug === 'openOnDebugBreak') {
+            if (!this.getOption(session, 'suppressDebugView') && openDebug === 'openOnDebugBreak') {
                 this.openSession(session);
             }
         });
@@ -1508,24 +1509,18 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         return true;
     }
 
-    protected getOption(session: DebugSession, option: 'suppressDebugView'  | 'suppressDebugToolbar' | 'suppressDebugStatusbar'): boolean | undefined {
-        // If configuration is not set explicitly take the configuration from the nearest parent.
-        // This avoid having the configuration being overwritten by undefined values.
-        let result = session.configuration[option];
-        let currentSession = session;
-        while (result === undefined) {
-            if (currentSession.parentSession) {
-                currentSession = currentSession.parentSession;
-                result = currentSession.configuration[option];
-            } else {
-                break;
-            }
+    protected getOption(session: DebugSession | undefined, option: keyof {
+        [Property in keyof DebugConfiguration]: boolean;
+    }): boolean | undefined {
+        // If session is undefined there will be no option
+        if (!session) {
+            return false;
         }
-        return result;
-    }
+        // If undefined take the value of the parent
+        if (option in session.configuration && session.configuration[option] !== undefined) {
+            return session.configuration[option];
+        }
 
-    protected shouldViewBeSuppressed(session: DebugSession): boolean | undefined {
-            // Only suppress the view if both the debug view and the toolbar are suppressed, as the toolbar is always docked.
-            return this.getOption(session, 'suppressDebugView') && this.getOption(session, 'suppressDebugToolbar');
+        return this.getOption(session.parentSession, option);
     }
 }
