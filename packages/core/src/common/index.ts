@@ -47,3 +47,4 @@ export * from './types';
 export { default as URI } from './uri';
 export * from './view-column';
 export { Rc, ReferenceCounter } from './rc';
+export { Deferred, delay, isThenable, retry, timeout, timeoutReject, wait, waitForEvent } from './promise-util';

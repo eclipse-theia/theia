@@ -14,82 +14,73 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { JsonRpcServer } from '@theia/core';
+import { interfaces } from '@theia/core/shared/inversify';
 import { FileChangeType } from './files';
 export { FileChangeType };
 
-export const FileSystemWatcherService = Symbol('FileSystemWatcherServer2');
-/**
- * Singleton implementation of the watch server.
- *
- * Since multiple clients all make requests to this service, we need to track those individually via a `clientId`.
- */
-export interface FileSystemWatcherService extends JsonRpcServer<FileSystemWatcherServiceClient> {
+export type WatcherId = number;
+export type EventWatcherId = number;
+
+export interface WatcherLogger {
+    info(message: string, ...args: unknown[]): void
+    error(message: string, ...args: unknown[]): void
+}
+
+export interface WatchOptions {
+    ignored?: readonly string[];
+}
+
+export const FileSystemWatcherService = Symbol('FileSystemWatcherService') as symbol & interfaces.Abstract<FileSystemWatcherService>;
+export interface FileSystemWatcherService {
     /**
-     * @param clientId arbitrary id used to identify a client.
-     * @param uri the path to watch.
-     * @param options optional parameters.
-     * @returns promise to a unique `number` handle for this request.
+     * @param client The object to receive requests.
      */
-    watchFileChanges(clientId: number, uri: string, options?: WatchOptions): Promise<number>;
-    /**
-     * @param watcherId handle mapping to a previous `watchFileChanges` request.
-     */
-    unwatchFileChanges(watcherId: number): Promise<void>;
-}
-
-export interface FileSystemWatcherServiceClient {
-    /** Listen for change events emitted by the watcher. */
-    onDidFilesChanged(event: DidFilesChangedParams): void;
-    /** The watcher can crash in certain conditions. */
-    onError(event: FileSystemWatcherErrorParams): void;
-}
-
-export interface DidFilesChangedParams {
-    /** Clients to route the events to. */
-    clients?: number[];
-    /** FileSystem changes that occurred. */
-    changes: FileChange[];
-}
-
-export interface FileSystemWatcherErrorParams {
-    /** Clients to route the events to. */
-    clients: number[];
-    /** The uri that originated the error. */
-    uri: string;
-}
-
-export const FileSystemWatcherServer = Symbol('FileSystemWatcherServer');
-export interface FileSystemWatcherServer extends JsonRpcServer<FileSystemWatcherClient> {
+    setClient(client?: FileSystemWatcherClient): void;
     /**
      * Start file watching for the given param.
      * Resolve when watching is started.
      * Return a watcher id.
      */
-    watchFileChanges(uri: string, options?: WatchOptions): Promise<number>;
-
+    watchFileChanges(uri: string, options?: WatchOptions): Promise<[WatcherId, EventWatcherId]>;
     /**
      * Stop file watching for the given id.
      * Resolve when watching is stopped.
      */
-    unwatchFileChanges(watcherId: number): Promise<void>;
+    unwatchFileChanges(watcherId: WatcherId): Promise<void>;
 }
 
 export interface FileSystemWatcherClient {
     /**
-     * Notify when files under watched uris are changed.
+     * Listen for change events emitted by the watcher.
      */
     onDidFilesChanged(event: DidFilesChangedParams): void;
-
     /**
-     * Notify when unable to watch files because of Linux handle limit.
+     * The watcher can crash in certain conditions.
      */
-    onError(): void;
+    onError(event: FileSystemWatcherErrorParams): void;
 }
 
-export interface WatchOptions {
-    ignored: string[];
+export interface WatcherEvent {
+    /**
+     * Id of the watcher handle that originated the event.
+     */
+    eventId: EventWatcherId;
 }
+
+export interface DidFilesChangedParams extends WatcherEvent {
+    /**
+     * FileSystem changes that occurred.
+     */
+    changes: readonly FileChange[];
+}
+
+export interface FileSystemWatcherErrorParams extends WatcherEvent {
+    /**
+     * The uri that originated the error.
+     */
+    uri: string;
+}
+
 export interface FileChange {
     uri: string;
     type: FileChangeType;

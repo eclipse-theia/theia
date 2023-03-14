@@ -14,127 +14,71 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as path from 'path';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from '@theia/core/lib/common';
-import { FileSystemWatcherServer, FileSystemWatcherService } from '../common/filesystem-watcher-protocol';
-import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
-import { NsfwFileSystemWatcherService, NsfwFileSystemWatcherServerOptions } from './nsfw-watcher/nsfw-filesystem-service';
+import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common';
+import { FileSystemWatcherService } from '../common/filesystem-watcher-protocol';
 import { NodeFileUploadService } from './node-file-upload-service';
-import { NsfwOptions } from './nsfw-watcher/nsfw-options';
 import { DiskFileSystemProvider } from './disk-file-system-provider';
 import {
     remoteFileSystemPath, RemoteFileSystemServer, RemoteFileSystemClient, FileSystemProviderServer, RemoteFileSystemProxyFactory
 } from '../common/remote-file-system-provider';
 import { FileSystemProvider } from '../common/files';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
-import { BackendApplicationContribution, IPCConnectionProvider } from '@theia/core/lib/node';
-import { JsonRpcProxyFactory, ConnectionErrorHandler } from '@theia/core';
-import { FileSystemWatcherServiceDispatcher } from './filesystem-watcher-dispatcher';
-
-export const NSFW_SINGLE_THREADED = process.argv.includes('--no-cluster');
-export const NSFW_WATCHER_VERBOSE = process.argv.includes('--nsfw-watcher-verbose');
-
-export const NsfwFileSystemWatcherServiceProcessOptions = Symbol('NsfwFileSystemWatcherServiceProcessOptions');
-/**
- * Options to control the way the `NsfwFileSystemWatcherService` process is spawned.
- */
-export interface NsfwFileSystemWatcherServiceProcessOptions {
-    /**
-     * Path to the script that will run the `NsfwFileSystemWatcherService` in a new process.
-     */
-    entryPoint: string;
-}
+import { BackendApplicationContribution, CliContribution } from '@theia/core/lib/node';
+import { FileSystemWatcherServiceCache } from './filesystem-watcher-cache';
+import { FileSystemWatcherCli } from './filesystem-watcher-cli';
+import { NsfwFileSystemWatcherFactory } from './filesystem-watcher-factory';
+import { DisposableFileSystemWatcherServiceFactory, FileSystemWatcherClientRegistry } from './disposable-watcher-service';
+import { NsfwFileSystemWatcherService } from './nsfw-watcher/nsfw-filesystem-watcher-service';
 
 export default new ContainerModule(bind => {
-    bind(EncodingService).toSelf().inSingletonScope();
     bindFileSystemWatcherServer(bind);
-    bind(DiskFileSystemProvider).toSelf();
+    // Services
+    bind(CliContribution).toService(FileSystemWatcherCli);
     bind(FileSystemProvider).toService(DiskFileSystemProvider);
-    bind(FileSystemProviderServer).toSelf();
     bind(RemoteFileSystemServer).toService(FileSystemProviderServer);
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<RemoteFileSystemClient>(remoteFileSystemPath, client => {
+    bind(BackendApplicationContribution).toService(NodeFileUploadService);
+    // Transients
+    bind(DiskFileSystemProvider).toSelf();
+    bind(FileSystemProviderServer).toSelf();
+    // Singletons
+    bind(EncodingService).toSelf().inSingletonScope();
+    bind(FileSystemWatcherCli).toSelf().inSingletonScope();
+    bind(NodeFileUploadService).toSelf().inSingletonScope();
+    bind(ConnectionHandler)
+        .toDynamicValue(ctx => new JsonRpcConnectionHandler<RemoteFileSystemClient>(remoteFileSystemPath, client => {
             const server = ctx.container.get<RemoteFileSystemServer>(RemoteFileSystemServer);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;
-        }, RemoteFileSystemProxyFactory)
-    ).inSingletonScope();
-    bind(NodeFileUploadService).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toService(NodeFileUploadService);
+        }, RemoteFileSystemProxyFactory))
+        .inSingletonScope();
 });
 
 export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
-    bind<NsfwOptions>(NsfwOptions).toConstantValue({});
-
-    bind(FileSystemWatcherServiceDispatcher).toSelf().inSingletonScope();
-
-    bind(FileSystemWatcherServerClient).toSelf();
-    bind(FileSystemWatcherServer).toService(FileSystemWatcherServerClient);
-
-    bind<NsfwFileSystemWatcherServiceProcessOptions>(NsfwFileSystemWatcherServiceProcessOptions).toDynamicValue(ctx => ({
-        entryPoint: path.join(__dirname, 'nsfw-watcher'),
-    })).inSingletonScope();
-    bind<NsfwFileSystemWatcherServerOptions>(NsfwFileSystemWatcherServerOptions).toDynamicValue(ctx => {
-        const logger = ctx.container.get<ILogger>(ILogger);
-        const nsfwOptions = ctx.container.get<NsfwOptions>(NsfwOptions);
-        return {
-            nsfwOptions,
-            verbose: NSFW_WATCHER_VERBOSE,
-            info: (message, ...args) => logger.info(message, ...args),
-            error: (message, ...args) => logger.error(message, ...args),
-        };
-    }).inSingletonScope();
-
-    bind<FileSystemWatcherService>(FileSystemWatcherService).toDynamicValue(
-        ctx => NSFW_SINGLE_THREADED
-            ? createNsfwFileSystemWatcherService(ctx)
-            : spawnNsfwFileSystemWatcherServiceProcess(ctx)
-    ).inSingletonScope();
-}
-
-/**
- * Run the watch server in the current process.
- */
-export function createNsfwFileSystemWatcherService(ctx: interfaces.Context): FileSystemWatcherService {
-    const options = ctx.container.get<NsfwFileSystemWatcherServerOptions>(NsfwFileSystemWatcherServerOptions);
-    const dispatcher = ctx.container.get<FileSystemWatcherServiceDispatcher>(FileSystemWatcherServiceDispatcher);
-    const server = new NsfwFileSystemWatcherService(options);
-    server.setClient(dispatcher);
-    return server;
-}
-
-/**
- * Run the watch server in a child process.
- * Return a proxy forwarding calls to the child process.
- */
-export function spawnNsfwFileSystemWatcherServiceProcess(ctx: interfaces.Context): FileSystemWatcherService {
-    const options = ctx.container.get<NsfwFileSystemWatcherServiceProcessOptions>(NsfwFileSystemWatcherServiceProcessOptions);
-    const dispatcher = ctx.container.get<FileSystemWatcherServiceDispatcher>(FileSystemWatcherServiceDispatcher);
-    const serverName = 'nsfw-watcher';
-    const logger = ctx.container.get<ILogger>(ILogger);
-    const nsfwOptions = ctx.container.get<NsfwOptions>(NsfwOptions);
-    const ipcConnectionProvider = ctx.container.get<IPCConnectionProvider>(IPCConnectionProvider);
-    const proxyFactory = new JsonRpcProxyFactory<FileSystemWatcherService>();
-    const serverProxy = proxyFactory.createProxy();
-    // We need to call `.setClient` before listening, else the JSON-RPC calls won't go through.
-    serverProxy.setClient(dispatcher);
-    const args: string[] = [
-        `--nsfwOptions=${JSON.stringify(nsfwOptions)}`
-    ];
-    if (NSFW_WATCHER_VERBOSE) {
-        args.push('--verbose');
-    }
-    ipcConnectionProvider.listen({
-        serverName,
-        entryPoint: options.entryPoint,
-        errorHandler: new ConnectionErrorHandler({
-            serverName,
-            logger,
-        }),
-        env: process.env,
-        args,
-    }, connection => proxyFactory.listen(connection));
-    return serverProxy;
+    // Transients
+    bind(FileSystemWatcherClientRegistry).toSelf();
+    bind(FileSystemWatcherService)
+        .toDynamicValue(ctx => ctx.container.get(DisposableFileSystemWatcherServiceFactory).createDisposableFileSystemWatcherService());
+    // Singletons
+    bind(NsfwFileSystemWatcherFactory)
+        .toSelf().inSingletonScope();
+    bind(DisposableFileSystemWatcherServiceFactory)
+        .toSelf().inSingletonScope()
+        .onActivation((ctx, factory) => {
+            const cache = ctx.container.get(FileSystemWatcherServiceCache);
+            factory.setService(cache);
+            cache.setClient(factory);
+            return factory;
+        });
+    bind(FileSystemWatcherServiceCache)
+        .toSelf().inSingletonScope()
+        .onActivation((ctx, cache) => {
+            const server = ctx.container.get(NsfwFileSystemWatcherService);
+            cache.setService(server);
+            return cache;
+        });
+    bind(NsfwFileSystemWatcherService)
+        .toDynamicValue(ctx => ctx.container.get(NsfwFileSystemWatcherFactory).getFileSystemWatcherServer())
+        .inSingletonScope();
 }

@@ -56,7 +56,7 @@ import {
     WatchOptions,
     FileUpdateOptions, FileUpdateResult, FileReadStreamOptions
 } from '../common/files';
-import { FileSystemWatcherServer } from '../common/filesystem-watcher-protocol';
+import { FileSystemWatcherService } from '../common/filesystem-watcher-protocol';
 import trash = require('trash');
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -65,6 +65,8 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ReadableStreamEvents, newWriteableStream } from '@theia/core/lib/common/stream';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { readFileIntoStream } from '../common/io';
+
+const BUFFER_SIZE = 64 * 1024;
 
 export namespace DiskFileSystemProvider {
     export interface StatAndLink {
@@ -90,39 +92,46 @@ export class DiskFileSystemProvider implements Disposable,
     FileSystemProviderWithOpenReadWriteCloseCapability,
     FileSystemProviderWithFileFolderCopyCapability {
 
-    private readonly BUFFER_SIZE = 64 * 1024;
+    protected toDispose = new DisposableCollection();
 
-    private readonly onDidChangeFileEmitter = new Emitter<readonly FileChange[]>();
-    readonly onDidChangeFile = this.onDidChangeFileEmitter.event;
+    private onDidChangeFileEmitter = this.toDispose.pushThru(new Emitter<readonly FileChange[]>());
+    private onFileWatchErrorEmitter = this.toDispose.pushThru(new Emitter<void>());
 
-    private readonly onFileWatchErrorEmitter = new Emitter<void>();
-    readonly onFileWatchError = this.onFileWatchErrorEmitter.event;
-
-    protected readonly toDispose = new DisposableCollection(
-        this.onDidChangeFileEmitter
-    );
-
-    @inject(FileSystemWatcherServer)
-    protected readonly watcher: FileSystemWatcherServer;
+    @inject(FileSystemWatcherService)
+    protected readonly watcher: FileSystemWatcherService;
 
     @inject(EncodingService)
     protected readonly encodingService: EncodingService;
 
     @postConstruct()
     protected init(): void {
-        this.toDispose.push(this.watcher);
+        if (Disposable.is(this.watcher)) {
+            this.toDispose.push(this.watcher);
+        }
         this.watcher.setClient({
-            onDidFilesChanged: params => this.onDidChangeFileEmitter.fire(params.changes.map(({ uri, type }) => ({
-                resource: new URI(uri),
-                type
-            }))),
-            onError: () => this.onFileWatchErrorEmitter.fire()
+            onDidFilesChanged: params => {
+                this.onDidChangeFileEmitter.fire(params.changes.map(({ uri, type }) => ({
+                    resource: new URI(uri),
+                    type
+                })));
+            },
+            onError: () => {
+                this.onFileWatchErrorEmitter.fire();
+            }
         });
     }
 
     // #region File Capabilities
 
     readonly onDidChangeCapabilities = Event.None;
+
+    get onDidChangeFile(): Event<readonly FileChange[]> {
+        return this.onDidChangeFileEmitter.event;
+    }
+
+    get onFileWatchError(): Event<void> {
+        return this.onFileWatchErrorEmitter.event;
+    }
 
     protected _capabilities: FileSystemProviderCapabilities | undefined;
     get capabilities(): FileSystemProviderCapabilities {
@@ -270,7 +279,7 @@ export class DiskFileSystemProvider implements Disposable,
 
         readFileIntoStream(this, resource, stream, data => data.buffer, {
             ...opts,
-            bufferSize: this.BUFFER_SIZE
+            bufferSize: BUFFER_SIZE
         }, token);
 
         return stream;
@@ -821,16 +830,14 @@ export class DiskFileSystemProvider implements Disposable,
                 this.disposed = true;
             },
         };
-        watcherService.watchFileChanges(resource.toString(), {
-            // Convert from `files.WatchOptions` to internal `watcher-protocol.WatchOptions`:
-            ignored: opts.excludes
-        }).then(watcherId => {
-            if (handle.disposed) {
-                watcherService.unwatchFileChanges(watcherId);
-            } else {
-                handle.watcherId = watcherId;
-            }
-        });
+        watcherService.watchFileChanges(resource.toString(), { ignored: opts.excludes })
+            .then(([watcherId]) => {
+                if (handle.disposed) {
+                    watcherService.unwatchFileChanges(watcherId);
+                } else {
+                    handle.watcherId = watcherId;
+                }
+            });
         this.toDispose.push(handle);
         return handle;
     }

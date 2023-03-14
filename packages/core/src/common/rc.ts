@@ -22,7 +22,7 @@ export type Owned<T extends Disposable> = Omit<T, 'dispose'>;
 /**
  * Handle to a reference counting mechanism wrapping `value: T`.
  */
-export interface Rc<T extends Disposable> extends Disposable {
+export interface Rc<T extends Disposable = Disposable> extends Disposable {
     readonly count: number
     readonly value: Owned<T>
     clone(): Rc<T>
@@ -50,4 +50,8 @@ export interface ReferenceCounter {
      * @returns `true` if {@link value} has a valid `Rc<T>` referencing it.
      */
     hasRc(value: Disposable): boolean
+    /**
+     * Destroy the current reference count for {@link value}.
+     */
+    killRcs(value: Disposable): void
 }

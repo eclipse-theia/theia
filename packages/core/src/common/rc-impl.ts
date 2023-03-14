@@ -20,11 +20,15 @@ import type { Owned, Rc, ReferenceCounter } from './rc';
 export class ReferenceCounterImpl implements ReferenceCounter {
 
     getRc<T extends Disposable>(value: T): Rc<T> {
-        return new RcImpl(this.getRcState(value));
+        return new RcImpl(this.getOrCreateRcState(value));
     }
 
     hasRc(value: Disposable): boolean {
         return this.getRcStates().has(value);
+    }
+
+    killRcs(value: Disposable): void {
+        this.getRcStates().get(value)?.dispose();
     }
 
     protected getRcStates(): WeakMap<Disposable, RcStateImpl> {
@@ -33,7 +37,7 @@ export class ReferenceCounterImpl implements ReferenceCounter {
         return (globalThis as any)[kRcStates] ??= new WeakMap();
     }
 
-    protected getRcState<T extends Disposable>(value: T): RcStateImpl {
+    protected getOrCreateRcState<T extends Disposable>(value: T): RcStateImpl {
         const states = this.getRcStates();
         let state = states.get(value);
         if (!state) {
@@ -82,17 +86,12 @@ export class RcStateImpl {
         this.#ensureValid();
         this.count -= 1;
         if (this.count === 0) {
-            this.#dispose();
+            this.dispose();
         }
     }
 
-    #ensureValid(): void {
-        if (this.#value === undefined) {
-            throw new Error('the underlying value is already disposed!');
-        }
-    }
-
-    #dispose(): void {
+    dispose(): void {
+        this.count = 0;
         try {
             this.#value!.dispose();
         } catch (error) {
@@ -106,6 +105,12 @@ export class RcStateImpl {
             console.error(error);
         } finally {
             this.#onDispose = undefined;
+        }
+    }
+
+    #ensureValid(): void {
+        if (this.#value === undefined) {
+            throw new Error('the underlying value is already disposed!');
         }
     }
 }

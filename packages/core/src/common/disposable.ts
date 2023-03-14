@@ -117,6 +117,10 @@ export class DisposableCollection implements Disposable {
         );
     }
 
+    pushThru<T extends Disposable>(disposable: T): T {
+        this.push(disposable);
+        return disposable;
+    }
 }
 
 export type DisposableGroup = { push(disposable: Disposable): void } | { add(disposable: Disposable): void };

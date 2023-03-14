@@ -21,8 +21,9 @@ import * as fs from '@theia/core/shared/fs-extra';
 import * as assert from 'assert';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
-import { NsfwFileSystemWatcherService } from './nsfw-filesystem-service';
+import { NsfwFileSystemWatcherService } from './nsfw-filesystem-watcher-service';
 import { DidFilesChangedParams, FileChange, FileChangeType } from '../../common/filesystem-watcher-protocol';
+import { timeout } from '@theia/core';
 
 const expect = chai.expect;
 const track = temp.track();
@@ -47,8 +48,8 @@ describe('nsfw-filesystem-watcher', function (): void {
         }
         root = FileUri.create(fs.realpathSync(tempPath));
         watcherService = createNsfwFileSystemWatcherService();
-        watcherId = await watcherService.watchFileChanges(0, root.toString());
-        await sleep(2000);
+        [watcherId] = await watcherService.watchFileChanges(root.toString());
+        await timeout(2000);
     });
 
     afterEach(async () => {
@@ -76,15 +77,15 @@ describe('nsfw-filesystem-watcher', function (): void {
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo'))).isDirectory()).to.be.true;
-        await sleep(2000);
+        await timeout(2000);
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo').resolve('bar')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo').resolve('bar'))).isDirectory()).to.be.true;
-        await sleep(2000);
+        await timeout(2000);
 
         fs.writeFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'baz');
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
-        await sleep(2000);
+        await timeout(2000);
 
         assert.deepStrictEqual([...actualUris], expectedUris);
     });
@@ -106,15 +107,15 @@ describe('nsfw-filesystem-watcher', function (): void {
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo'))).isDirectory()).to.be.true;
-        await sleep(2000);
+        await timeout(2000);
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo').resolve('bar')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo').resolve('bar'))).isDirectory()).to.be.true;
-        await sleep(2000);
+        await timeout(2000);
 
         fs.writeFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'baz');
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
-        await sleep(2000);
+        await timeout(2000);
 
         assert.deepStrictEqual(actualUris.size, 0);
     });
@@ -131,12 +132,12 @@ describe('nsfw-filesystem-watcher', function (): void {
             FileUri.fsPath(file_txt),
             'random content\n'
         );
-        await sleep(1000);
+        await timeout(1000);
         await fs.promises.rename(
             FileUri.fsPath(file_txt),
             FileUri.fsPath(FILE_txt)
         );
-        await sleep(1000);
+        await timeout(1000);
         try {
             expect(changes).deep.eq([
                 // initial file creation change event:
@@ -169,11 +170,6 @@ describe('nsfw-filesystem-watcher', function (): void {
             verbose: true
         });
     }
-
-    function sleep(time: number): Promise<unknown> {
-        return new Promise(resolve => setTimeout(resolve, time));
-    }
-
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
