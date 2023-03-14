@@ -15,8 +15,6 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { FileFilter, OpenDialogOptions, SaveDialogOptions } from '@theia/core/electron-shared/electron';
-import * as electronRemote from '@theia/core/electron-shared/@electron/remote';
 import URI from '@theia/core/lib/common/uri';
 import { isOSX, OS } from '@theia/core/lib/common/os';
 import { MaybeArray } from '@theia/core/lib/common/types';
@@ -24,12 +22,6 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileStat } from '../../common/files';
 import { FileAccess } from '../../common/filesystem';
 import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } from '../../browser/file-dialog';
-
-// See https://github.com/electron/electron/blob/v9.0.2/docs/api/dialog.md
-// These properties get extended with newer versions of Electron
-type DialogProperties = 'openFile' | 'openDirectory' | 'multiSelections' | 'showHiddenFiles' |
-    'createDirectory' | 'promptToCreate' | 'noResolveAliases' | 'treatPackageAsDirectory' | 'dontAddToRecent';
-
 //
 // We are OK to use this here because the electron backend and frontend are on the same host.
 // If required, we can move this single service (and its module) to a dedicated Theia extension,
@@ -38,6 +30,7 @@ type DialogProperties = 'openFile' | 'openDirectory' | 'multiSelections' | 'show
 //
 // eslint-disable-next-line @theia/runtime-import-check
 import { FileUri } from '@theia/core/lib/node/file-uri';
+import { OpenDialogOptions, SaveDialogOptions } from '../../electron-common/electron-api';
 
 @injectable()
 export class ElectronFileDialogService extends DefaultFileDialogService {
@@ -49,10 +42,8 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     override async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<URI> | undefined> {
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
-            const { filePaths } = props.modal !== false ?
-                await electronRemote.dialog.showOpenDialog(electronRemote.getCurrentWindow(), this.toOpenDialogOptions(rootNode.uri, props)) :
-                await electronRemote.dialog.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props));
-            if (filePaths.length === 0) {
+            const filePaths = await window.electronTheiaFilesystem.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props));
+            if (!filePaths || filePaths.length === 0) {
                 return undefined;
             }
 
@@ -67,9 +58,8 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     override async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
-            const { filePath } = props.modal !== false ?
-                await electronRemote.dialog.showSaveDialog(electronRemote.getCurrentWindow(), this.toSaveDialogOptions(rootNode.uri, props)) :
-                await electronRemote.dialog.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props));
+            const filePath = await window.electronTheiaFilesystem.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props));
+
             if (!filePath) {
                 return undefined;
             }
@@ -110,120 +100,69 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
         return unreadableResourcePaths.length === 0;
     }
 
-    protected toDialogOptions(uri: URI, props: SaveFileDialogProps | OpenFileDialogProps, dialogTitle: string): electron.FileDialogProps {
-        type Mutable<T> = { -readonly [K in keyof T]: T[K] };
-        const electronProps: Mutable<electron.FileDialogProps> = {
-            title: props.title || dialogTitle,
-            defaultPath: FileUri.fsPath(uri),
-        };
-        const {
-            canSelectFiles = true,
-            canSelectFolders = false,
-        } = props as OpenFileDialogProps;
-        if (!isOSX && canSelectFiles && canSelectFolders) {
-            console.warn('canSelectFiles === true && canSelectFolders === true is only supported on OSX!');
+    protected toOpenDialogOptions(uri: URI, props: OpenFileDialogProps): OpenDialogOptions {
+        if (!isOSX && props.canSelectFiles !== false && props.canSelectFolders === true) {
+            console.warn(`Cannot have 'canSelectFiles' and 'canSelectFolders' at the same time. Fallback to 'folder' dialog. \nProps was: ${JSON.stringify(props)}.`);
+
+            // Given that both props are set, fallback to using a `folder` dialog.
+            props.canSelectFiles = false;
+            props.canSelectFolders = true;
         }
-        if ((isOSX && canSelectFiles) || !canSelectFolders) {
-            electronProps.filters = props.filters ? Object.entries(props.filters).map(([name, extensions]) => ({ name, extensions })) : [];
-            if (this.shouldAddAllFilesFilter(electronProps)) {
-                electronProps.filters.push({ name: 'All Files', extensions: ['*'] });
+
+        const result: OpenDialogOptions = {
+            path: FileUri.fsPath(uri)
+        };
+
+        result.title = props.title;
+        result.buttonLabel = props.openLabel;
+        result.maxWidth = props.maxWidth;
+        result.modal = props.modal;
+        result.openFiles = props.canSelectFiles;
+        result.openFolders = props.canSelectFolders;
+        result.selectMany = props.canSelectMany;
+
+        if (props.filters) {
+            result.filters = [];
+            const filters = Object.entries(props.filters);
+            for (const [label, extensions] of filters) {
+                result.filters.push({ name: label, extensions: extensions });
+            }
+
+            // On Linux, the _All Files_ filter [hides](https://github.com/eclipse-theia/theia/issues/11321) files without an extension.
+            // The bug is resolved in Electron >=18.
+            if (props.canSelectFiles) {
+                if (OS.type() !== OS.Type.Linux || filters.length > 0) {
+                    result.filters.push({ name: 'All Files', extensions: ['*'] });
+                }
             }
         }
-        return electronProps;
-    }
 
-    /**
-     * Specifies whether an _All Files_ filter should be added to the dialog.
-     *
-     * On Linux, the _All Files_ filter [hides](https://github.com/eclipse-theia/theia/issues/11321) files without an extension.
-     * The bug is resolved in Electron >=18.
-     */
-    protected shouldAddAllFilesFilter(electronProps: electron.FileDialogProps): boolean {
-        const foundFilters = !!electronProps.filters && electronProps.filters.length > 0;
-        const isNotLinux = OS.type() !== OS.Type.Linux;
-        return isNotLinux || foundFilters;
-    }
-
-    protected toOpenDialogOptions(uri: URI, props: OpenFileDialogProps): OpenDialogOptions {
-        const properties = electron.dialog.toDialogProperties(props);
-        const buttonLabel = props.openLabel;
-        return { ...this.toDialogOptions(uri, props, 'Open'), properties, buttonLabel };
+        return result;
     }
 
     protected toSaveDialogOptions(uri: URI, props: SaveFileDialogProps): SaveDialogOptions {
-        const buttonLabel = props.saveLabel;
         if (props.inputValue) {
             uri = uri.resolve(props.inputValue);
         }
-        const defaultPath = FileUri.fsPath(uri);
-        return { ...this.toDialogOptions(uri, props, 'Save'), buttonLabel, defaultPath };
-    }
 
-}
+        const result: SaveDialogOptions = {
+            path: FileUri.fsPath(uri)
+        };
 
-export namespace electron {
+        result.title = props.title;
+        result.buttonLabel = props.saveLabel;
+        result.maxWidth = props.maxWidth;
+        result.modal = props.modal;
 
-    /**
-     * Common "super" interface of the `electron.SaveDialogOptions` and `electron.OpenDialogOptions` types.
-     */
-    export interface FileDialogProps {
-
-        /**
-         * The dialog title.
-         */
-        readonly title?: string;
-
-        /**
-         * The default path, where the dialog opens. Requires an FS path.
-         */
-        readonly defaultPath?: string;
-
-        /**
-         * Resource filter.
-         */
-        readonly filters?: FileFilter[];
-
-    }
-
-    export namespace dialog {
-
-        /**
-         * Converts the Theia specific `OpenFileDialogProps` into an electron specific array.
-         *
-         * Note: On Windows and Linux an open dialog can not be both a file selector and a directory selector,
-         * so if you set properties to ['openFile', 'openDirectory'] on these platforms, a directory selector will be shown.
-         *
-         * See: https://github.com/electron/electron/issues/10252#issuecomment-322012159
-         */
-        export function toDialogProperties(props: OpenFileDialogProps): Array<DialogProperties> {
-            if (!isOSX && props.canSelectFiles !== false && props.canSelectFolders === true) {
-                console.warn(`Cannot have 'canSelectFiles' and 'canSelectFolders' at the same time. Fallback to 'folder' dialog. \nProps was: ${JSON.stringify(props)}.`);
-
-                // Given that both props are set, fallback to using a `folder` dialog.
-                props.canSelectFiles = false;
-                props.canSelectFolders = true;
+        if (props.filters) {
+            result.filters = [];
+            const filters = Object.entries(props.filters);
+            for (const [label, extensions] of filters) {
+                result.filters.push({ name: label, extensions: extensions });
             }
-            const properties: Array<DialogProperties> = [];
-            if (!isOSX) {
-                if (props.canSelectFiles !== false && props.canSelectFolders !== true) {
-                    properties.push('openFile');
-                }
-                if (props.canSelectFolders === true && props.canSelectFiles === false) {
-                    properties.push('openDirectory');
-                }
-            } else {
-                if (props.canSelectFiles !== false) {
-                    properties.push('openFile');
-                }
-                if (props.canSelectFolders === true) {
-                    properties.push('openDirectory');
-                    properties.push('createDirectory');
-                }
-            }
-            if (props.canSelectMany === true) {
-                properties.push('multiSelections');
-            }
-            return properties;
         }
+
+        return result;
     }
+
 }

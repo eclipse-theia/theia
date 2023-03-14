@@ -130,6 +130,9 @@
   },
   "theiaExtensions": [
     {
+      "preload": "lib/electron-browser/preload"
+    },
+    {
       "frontend": "lib/browser/i18n/i18n-frontend-module",
       "backend": "lib/node/i18n/i18n-backend-module"
     },

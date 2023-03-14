@@ -15,8 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import * as electronRemoteMain from '../../electron-shared/@electron/remote/main';
-import { screen, ipcMain, app, BrowserWindow, Event as ElectronEvent, BrowserWindowConstructorOptions, nativeImage } from '../../electron-shared/electron';
+import { screen, app, BrowserWindow, WebContents, Event as ElectronEvent, BrowserWindowConstructorOptions, nativeImage } from '../../electron-shared/electron';
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
@@ -32,16 +31,12 @@ import { ElectronSecurityTokenService } from './electron-security-token-service'
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
 import { Disposable, DisposableCollection, isOSX, isWindows } from '../common';
-import {
-    RequestTitleBarStyle,
-    Restart, StopReason,
-    TitleBarStyleAtStartup,
-    TitleBarStyleChanged
-} from '../electron-common/messaging/electron-messages';
 import { DEFAULT_WINDOW_HASH } from '../common/window';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
 import { createDisposableListener } from './event-utils';
+import { TheiaRendererAPI } from './electron-api-main';
+import { StopReason } from '../common/frontend-application-state';
 
 export { ElectronMainApplicationGlobals };
 
@@ -156,7 +151,6 @@ export namespace ElectronMainProcessArgv {
 
 @injectable()
 export class ElectronMainApplication {
-
     @inject(ContributionProvider)
     @named(ElectronMainApplicationContribution)
     protected readonly contributions: ContributionProvider<ElectronMainApplicationContribution>;
@@ -229,6 +223,24 @@ export class ElectronMainApplication {
         return isWindows ? 'custom' : 'native';
     }
 
+    public setTitleBarStyle(webContents: WebContents, style: string): void {
+        this.useNativeWindowFrame = isOSX || style === 'native';
+        const browserWindow = BrowserWindow.fromWebContents(webContents);
+        if (browserWindow) {
+            this.saveWindowState(browserWindow);
+        } else {
+            console.warn(`no BrowserWindow with id: ${webContents.id}`);
+        }
+    }
+
+    /**
+     * @param id the id of the WebContents of the BrowserWindow in question
+     * @returns 'native' or 'custom'
+     */
+    getTitleBarStyleAtStartup(webContents: WebContents): 'native' | 'custom' {
+        return this.didUseNativeWindowFrameOnStart.get(webContents.id) ? 'native' : 'custom';
+    }
+
     protected async launch(params: ElectronMainExecutionParams): Promise<void> {
         createYargs(params.argv, params.cwd)
             .command('$0 [file]', false,
@@ -247,11 +259,13 @@ export class ElectronMainApplication {
         let options = await asyncOptions;
         options = this.avoidOverlap(options);
         const electronWindow = this.windowFactory(options, this.config);
-        const { window: { id } } = electronWindow;
+        const id = electronWindow.window.webContents.id;
         this.windows.set(id, electronWindow);
         electronWindow.onDidClose(() => this.windows.delete(id));
+        electronWindow.window.on('maximize', () => TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'maximize'));
+        electronWindow.window.on('unmaximize', () => TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'unmaximize'));
+        electronWindow.window.on('focus', () => TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'focus'));
         this.attachSaveWindowState(electronWindow.window);
-        electronRemoteMain.enable(electronWindow.window.webContents);
         this.configureNativeSecondaryWindowCreation(electronWindow.window);
         return electronWindow.window;
     }
@@ -292,12 +306,14 @@ export class ElectronMainApplication {
             minHeight: 120,
             webPreferences: {
                 // `global` is undefined when `true`.
-                contextIsolation: false,
+                contextIsolation: true,
+                sandbox: false,
                 // https://github.com/eclipse-theia/theia/issues/2018
-                nodeIntegration: true,
+                nodeIntegration: false,
                 // Setting the following option to `true` causes some features to break, somehow.
                 // Issue: https://github.com/eclipse-theia/theia/issues/8577
                 nodeIntegrationInWorker: false,
+                preload: path.resolve(this.globals.THEIA_APP_PROJECT_PATH, 'lib/preload.js').toString()
             },
             ...this.config.electron?.windowOptions || {},
         };
@@ -418,8 +434,8 @@ export class ElectronMainApplication {
         }, windowStateListeners);
         createDisposableListener(electronWindow, 'resize', saveWindowStateDelayed, windowStateListeners);
         createDisposableListener(electronWindow, 'move', saveWindowStateDelayed, windowStateListeners);
-        windowStateListeners.push(Disposable.create(() => { try { this.didUseNativeWindowFrameOnStart.delete(electronWindow.id); } catch { } }));
-        this.didUseNativeWindowFrameOnStart.set(electronWindow.id, this.useNativeWindowFrame);
+        windowStateListeners.push(Disposable.create(() => { try { this.didUseNativeWindowFrameOnStart.delete(electronWindow.webContents.id); } catch { } }));
+        this.didUseNativeWindowFrameOnStart.set(electronWindow.webContents.id, this.useNativeWindowFrame);
         electronWindow.once('closed', () => windowStateListeners.dispose());
     }
 
@@ -532,24 +548,6 @@ export class ElectronMainApplication {
         app.on('will-quit', this.onWillQuit.bind(this));
         app.on('second-instance', this.onSecondInstance.bind(this));
         app.on('window-all-closed', this.onWindowAllClosed.bind(this));
-
-        ipcMain.on(TitleBarStyleChanged, ({ sender }, titleBarStyle: string) => {
-            this.useNativeWindowFrame = isOSX || titleBarStyle === 'native';
-            const browserWindow = BrowserWindow.fromId(sender.id);
-            if (browserWindow) {
-                this.saveWindowState(browserWindow);
-            } else {
-                console.warn(`no BrowserWindow with id: ${sender.id}`);
-            }
-        });
-
-        ipcMain.on(Restart, ({ sender }) => {
-            this.restart(sender.id);
-        });
-
-        ipcMain.on(RequestTitleBarStyle, ({ sender }) => {
-            sender.send(TitleBarStyleAtStartup, this.didUseNativeWindowFrameOnStart.get(sender.id) ? 'native' : 'custom');
-        });
     }
 
     protected onWillQuit(event: ElectronEvent): void {
@@ -573,10 +571,9 @@ export class ElectronMainApplication {
         }
     }
 
-    protected async restart(id: number): Promise<void> {
+    public async restart(webContents: WebContents): Promise<void> {
         this.restarting = true;
-        const window = BrowserWindow.fromId(id);
-        const wrapper = this.windows.get(window?.id as number); // If it's not a number, we won't get anything.
+        const wrapper = this.windows.get(webContents.id);
         if (wrapper) {
             const listener = wrapper.onDidClose(async () => {
                 listener.dispose();

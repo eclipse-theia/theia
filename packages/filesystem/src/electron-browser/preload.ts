@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2019 RedHat and others.
+// Copyright (C) 2023 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -12,21 +12,20 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-// *****************************************************************************
+//
+import { CHANNEL_SHOW_OPEN, CHANNEL_SHOW_SAVE, OpenDialogOptions, SaveDialogOptions, TheiaFilesystemAPI } from '../electron-common/electron-api';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
-import { injectable } from 'inversify';
-import { ClipboardService } from '../browser/clipboard-service';
+const { ipcRenderer, contextBridge } = require('electron');
 
-@injectable()
-export class ElectronClipboardService implements ClipboardService {
+const api: TheiaFilesystemAPI = {
+    showOpenDialog: (options: OpenDialogOptions) => ipcRenderer.invoke(CHANNEL_SHOW_OPEN, options),
+    showSaveDialog: (options: SaveDialogOptions) => ipcRenderer.invoke(CHANNEL_SHOW_SAVE, options),
 
-    readText(): string {
-        return window.electronTheiaCore.readClipboard();
-    }
+};
 
-    writeText(value: string): void {
-        window.electronTheiaCore.writeClipboard(value);
-    }
+export function preload(): void {
+    console.log('exposing theia filesystem electron api');
 
+    contextBridge.exposeInMainWorld('electronTheiaFilesystem', api);
 }

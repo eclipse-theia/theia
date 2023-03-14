@@ -15,10 +15,12 @@
 // *****************************************************************************
 
 import { Endpoint } from '@theia/core/lib/browser';
+
 import { ElectronSecurityToken } from '@theia/core/lib/electron-common/electron-token';
-import * as electronRemote from '@theia/core/electron-shared/@electron/remote';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MiniBrowserEnvironment } from '../../browser/environment/mini-browser-environment';
+
+import { } from '@theia/core/lib/electron-common/electron-api';
 
 @injectable()
 export class ElectronMiniBrowserEnvironment extends MiniBrowserEnvironment {
@@ -28,13 +30,8 @@ export class ElectronMiniBrowserEnvironment extends MiniBrowserEnvironment {
 
     override getEndpoint(uuid: string, hostname?: string): Endpoint {
         const endpoint = super.getEndpoint(uuid, hostname);
-        // Note: This call is async, but clients expect sync logic.
-        electronRemote.session.defaultSession.cookies.set({
-            url: endpoint.getRestUrl().toString(true),
-            name: ElectronSecurityToken,
-            value: JSON.stringify(this.electronSecurityToken),
-            httpOnly: true,
-        });
+
+        window.electronTheiaCore.attachSecurityToken(endpoint.getRestUrl().toString(true));
         return endpoint;
     }
 
