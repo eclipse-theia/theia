@@ -70,7 +70,8 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             url: endpoint,
             name: ElectronSecurityToken,
             value: JSON.stringify(this.electronSecurityToken),
-            httpOnly: true
+            httpOnly: true,
+            sameSite: 'no_restriction'
         }));
 
         // application menu
