@@ -21,6 +21,9 @@ import { MaybePromise } from '../../common/types';
 import { TreeImpl, CompositeTreeNode, TreeNode, SelectableTreeNode, ExpandableTreeNode } from '../tree';
 import { TreeElement, CompositeTreeElement, TreeSource } from './tree-source';
 
+export const SOURCE_NODE_ID_PREFIX = '__source__';
+export const SOURCE_NODE_ID_SEPARATOR = ':';
+
 @injectable()
 export class SourceTree extends TreeImpl {
 
@@ -44,7 +47,7 @@ export class SourceTree extends TreeImpl {
     }
 
     protected toNode(element: TreeElement, index: number, parent: TreeElementNodeParent): TreeElementNode {
-        const id = element.id ? String(element.id) : (parent.id + ':' + index);
+        const id = element.id ? String(element.id) : (parent.id + SOURCE_NODE_ID_SEPARATOR + index);
         const name = id;
         const existing = this.getNode(id);
         const updated = existing && <TreeElementNode>Object.assign(existing, { element, parent });
@@ -132,7 +135,7 @@ export namespace TreeSourceNode {
         if (!source) {
             return source;
         }
-        const id = source.id || '__source__';
+        const id = source.id || SOURCE_NODE_ID_PREFIX;
         return {
             id,
             name: id,
