@@ -131,7 +131,8 @@ export class MonacoEditorMenuContribution implements MenuContribution {
 
     protected buildMenuAction(commandId: string, item: IMenuItem): MenuAction {
         const title = typeof item.command.title === 'string' ? item.command.title : item.command.title.value;
-        const label = this.removeMnemonic(title);
+        const labelText = this.removeMnemonic(title);
+        const label = nls.localizeByDefault(labelText, labelText);
         const order = item.order ? String(item.order) : '';
         return { commandId, order, label };
     }
