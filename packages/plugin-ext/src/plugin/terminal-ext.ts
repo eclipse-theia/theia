@@ -20,7 +20,7 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as theia from '@theia/plugin';
-import { Disposable, EnvironmentVariableMutatorType, ThemeIcon } from './types-impl';
+import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIcon } from './types-impl';
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ProvidedTerminalLink } from '../common/plugin-api-rpc-model';
 import { ThemeIcon as MonacoThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
@@ -198,7 +198,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
     $terminalClosed(id: string, exitStatus: theia.TerminalExitStatus | undefined): void {
         const terminal = this._terminals.get(id);
         if (terminal) {
-            terminal.exitStatus = exitStatus ?? { code: undefined };
+            terminal.exitStatus = exitStatus ?? { code: undefined, reason: TerminalExitReason.Unknown };
             this.onDidCloseTerminalEmitter.fire(terminal);
             this._terminals.delete(id);
         }
