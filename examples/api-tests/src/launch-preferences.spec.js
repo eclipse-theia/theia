@@ -478,7 +478,7 @@ describe('Launch Preferences', function () {
         if (typeof config2 === 'object' && !Array.isArray(config2)) {
             result = { ...(result ?? {}), ...config2 }
         }
-        //merge configurations and compounds arrays
+        // merge configurations and compounds arrays
         const mergedConfigurations = mergeArrays(config1?.configurations, config2?.configurations);
         if (mergedConfigurations) {
             result.configurations = mergedConfigurations
