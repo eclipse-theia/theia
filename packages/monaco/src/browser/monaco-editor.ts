@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import debounce = require('@theia/core/shared/lodash.debounce');
 import { injectable, inject, unmanaged } from '@theia/core/shared/inversify';
 import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
 import URI from '@theia/core/lib/common/uri';
@@ -49,6 +50,7 @@ import { IInstantiationService, ServiceIdentifier } from '@theia/monaco-editor-c
 import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
 import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
 import { IStandaloneEditorConstructionOptions, StandaloneEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { CodeActionWidget } from '@theia/monaco-editor-core/esm/vs/editor/contrib/codeAction/browser/codeActionWidget';
 
 export type ServicePair<T> = [ServiceIdentifier<T>, T];
 
@@ -65,6 +67,9 @@ export class MonacoEditorServices {
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
 
     constructor(@unmanaged() services: MonacoEditorServices) {
         Object.assign(this, services);
@@ -198,6 +203,52 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         this.toDispose.push(codeEditor.onDidScrollChange(e => {
             this.onScrollChangedEmitter.fire(undefined);
         }));
+
+        // HACK: Focus on mouse move - permits making an editor focused by
+        // moving the mouse cursor over it
+
+        const doFocus = debounce(() => {
+            const current = this.editorManager.currentEditor;
+            if (current && current.editor === this) {
+                console.log('+++ already current editor - not setting focus');
+            } else {
+                // inhibit setting focus when suggest widget or code action widget is visible
+                if (!(this.isSuggestFindOrRenameVisibleInAnyEditor() || this.isCodeActionWidgetVisible())) {
+                    console.log('*** setting focus');
+                    this.focus();
+                } else {
+                    console.log('*** focus inhibited');
+                }
+            }
+        }, 200);
+
+        this.toDispose.push(codeEditor.onMouseMove(() => {
+            if (!this.isFocused()) {
+                doFocus();
+            }
+        }));
+
+        // I can switch focus without mouse click!!!
+        // haha !
+
+    }
+
+    private isCodeActionWidgetVisible(): boolean {
+        return CodeActionWidget.INSTANCE?.isVisible || false;
+    }
+
+    private isSuggestFindOrRenameVisibleInAnyEditor(): boolean {
+        console.log('ENTER: isSuggestFindOrRenameVisibleInAnyEditor()');
+        const editors = MonacoEditor.getAll(this.editorManager);
+        for (const editor of editors) {
+            console.log('considering one more editor');
+            if (editor.isSuggestWidgetVisible() || editor.isFindWidgetVisible() || editor.isRenameInputVisible()) {
+                console.log('suggest, find or rename widget is visible!');
+                return true;
+            }
+        }
+        console.log('NONE of the suggest, find or rename widget is visible!');
+        return false;
     }
 
     getVisibleRanges(): Range[] {

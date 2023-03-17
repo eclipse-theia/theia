@@ -39,6 +39,7 @@ import { TerminalThemeService } from './terminal-theme-service';
 import { CommandLineOptions, ShellCommandBuilder } from '@theia/process/lib/common/shell-command-builder';
 import { Key } from '@theia/core/lib/browser/keys';
 import { nls } from '@theia/core/lib/common/nls';
+import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -78,6 +79,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected isAttachedCloseListener: boolean = false;
     protected shown = false;
     override lastCwd = new URI();
+    protected quickInputActive = false;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
@@ -93,6 +95,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(TerminalCopyOnSelectionHandler) protected readonly copyOnSelectionHandler: TerminalCopyOnSelectionHandler;
     @inject(TerminalThemeService) protected readonly themeService: TerminalThemeService;
     @inject(ShellCommandBuilder) protected readonly shellCommandBuilder: ShellCommandBuilder;
+    @inject(MonacoQuickInputService) protected readonly monacoQuickInputService: MonacoQuickInputService;
 
     protected readonly onDidOpenEmitter = new Emitter<void>();
     readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;
@@ -114,6 +117,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     protected readonly onMouseLeaveLinkHoverEmitter = new Emitter<MouseEvent>();
     readonly onMouseLeaveLinkHover: Event<MouseEvent> = this.onMouseLeaveLinkHoverEmitter.event;
+
+    protected readonly onMouseMoveEmitter = new Emitter<MouseEvent>();
+    readonly onMouseMove: Event<MouseEvent> = this.onMouseMoveEmitter.event;
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
@@ -161,6 +167,31 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.fitAddon = new FitAddon();
         this.term.loadAddon(this.fitAddon);
+
+        // HACK: Focus on mouse move - permits making a terminal widget focused by
+        // moving the mouse cursor over it
+
+        // listen for the Quick Input being opened/closed
+        // so we can inhibit setting focus when it's active
+        this.monacoQuickInputService.onShow(() => {
+            console.log('*** Quick Input shown: ');
+            this.quickInputActive = true;
+        });
+        this.monacoQuickInputService.onHide(() => {
+            console.log('*** Quick Input hidden: ');
+            this.quickInputActive = false;
+        });
+
+        const onMouseMove = (mouseEvent: MouseEvent) => {
+            if (!this.quickInputActive) {
+                this.term.focus();
+            }
+        };
+        this.node.addEventListener('mousemove', onMouseMove);
+        this.onDispose(() => {
+            this.node.removeEventListener('mousemove', onMouseMove);
+        } );
+        //
 
         this.initializeLinkHover();
 
