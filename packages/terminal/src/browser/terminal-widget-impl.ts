@@ -16,6 +16,7 @@
 
 import { Terminal, RendererType } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
+import debounce = require('p-debounce');
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, Channel, OS } from '@theia/core';
 import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon, ExtractableWidget } from '@theia/core/lib/browser';
@@ -742,12 +743,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         super.dispose();
     }
 
-    protected resizeTerminal(): void {
+    protected resizeTerminal = debounce((): void => {
         const geo = this.fitAddon.proposeDimensions();
         const cols = geo.cols;
         const rows = geo.rows - 1; // subtract one row for margin
         this.term.resize(cols, rows);
-    }
+    }, 0);
 
     protected resizeTerminalProcess(): void {
         if (this.options.isPseudoTerminal) {
