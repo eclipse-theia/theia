@@ -513,7 +513,13 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
 
         commands.registerCommand(TerminalCommands.PROFILE_NEW, {
-            execute: () => this.openTerminalFromProfile()
+            execute: async () => {
+                const profile = await this.selectTerminalProfile(nls.localize('theia/terminal/selectProfile', 'Select a profile for the new terminal'));
+                if (!profile) {
+                    return;
+                }
+                this.openTerminal(undefined, profile[1]);
+            }
         });
 
         commands.registerCommand(TerminalCommands.PROFILE_DEFAULT, {
@@ -933,40 +939,29 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         return ref instanceof TerminalWidget ? ref : undefined;
     }
 
-    protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
-        let profile = this.profileService.defaultProfile;
-
-        if (!profile) {
-            throw new Error('There are not profiles registered');
-        }
-        if (profile instanceof ShellTerminalProfile) {
-            const cwd = await this.selectTerminalCwd();
-            if (!cwd) {
-                return;
+    protected async openTerminal(options?: ApplicationShell.WidgetOptions, terminalProfile?: TerminalProfile): Promise<void> {
+        let profile = terminalProfile;
+        if (!terminalProfile) {
+            profile = this.profileService.defaultProfile;
+            if (!profile) {
+                throw new Error('There are not profiles registered');
             }
-            profile = profile.modify({ cwd });
+        }
+
+        if (profile instanceof ShellTerminalProfile) {
+            if (this.workspaceService.workspace) {
+                const cwd = await this.selectTerminalCwd();
+                if (!cwd) {
+                    return;
+                }
+                profile = profile.modify({ cwd });
+            }
         }
 
         const termWidget = await profile?.start();
-
-        this.open(termWidget, { widgetOptions: options });
-    }
-
-    protected async openTerminalFromProfile(options?: ApplicationShell.WidgetOptions): Promise<void> {
-        const result = await this.selectTerminalProfile(nls.localize('theia/terminal/selectProfile', 'Select a profile for the new terminal'));
-        if (!result) {
-            return;
+        if (!!termWidget) {
+            this.open(termWidget, { widgetOptions: options });
         }
-        let profile = result[1];
-        if (profile instanceof ShellTerminalProfile) {
-            const cwd = await this.selectTerminalCwd();
-            if (!cwd) {
-                return;
-            }
-            profile = profile.modify({ cwd });
-        }
-        const termWidget = await profile.start();
-        this.open(termWidget, { widgetOptions: options });
     }
 
     protected async chooseDefaultProfile(): Promise<void> {
