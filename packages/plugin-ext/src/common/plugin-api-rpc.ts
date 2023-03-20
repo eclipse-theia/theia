@@ -84,7 +84,9 @@ import {
     TypeHierarchyItem,
     InlineCompletion,
     InlineCompletions,
-    InlineCompletionContext
+    InlineCompletionContext,
+    DocumentDropEdit,
+    DataTransferDTO
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -1244,7 +1246,7 @@ export interface TextEditorsMain {
     $tryRevealRange(id: string, range: Range, revealType: TextEditorRevealType): Promise<void>;
     $trySetSelections(id: string, selections: Selection[]): Promise<void>;
     $tryApplyEdits(id: string, modelVersionId: number, edits: SingleEditOperation[], opts: ApplyEditsOptions): Promise<boolean>;
-    $tryApplyWorkspaceEdit(workspaceEditDto: WorkspaceEditDto): Promise<boolean>;
+    $tryApplyWorkspaceEdit(workspaceEditDto: WorkspaceEditDto, metadata?: WorkspaceEditMetadataDto): Promise<boolean>;
     $tryInsertSnippet(id: string, template: string, selections: Range[], opts: UndoStopOptions): Promise<boolean>;
     $saveAll(includeUntitled?: boolean): Promise<boolean>;
     // $getDiffInformation(id: string): Promise<editorCommon.ILineChange[]>;
@@ -1416,7 +1418,7 @@ export interface CodeActionDto {
     disabled?: string;
 }
 
-export interface WorkspaceEditMetadataDto {
+export interface WorkspaceEditEntryMetadataDto {
     needsConfirmation: boolean;
     label: string;
     description?: string;
@@ -1432,14 +1434,14 @@ export interface WorkspaceFileEditDto {
     oldResource?: UriComponents;
     newResource?: UriComponents;
     options?: FileOperationOptions;
-    metadata?: WorkspaceEditMetadataDto;
+    metadata?: WorkspaceEditEntryMetadataDto;
 }
 
 export interface WorkspaceTextEditDto {
     resource: UriComponents;
     modelVersionId?: number;
     textEdit: TextEdit & { insertAsSnippet?: boolean };
-    metadata?: WorkspaceEditMetadataDto;
+    metadata?: WorkspaceEditEntryMetadataDto;
 }
 export namespace WorkspaceTextEditDto {
     export function is(arg: WorkspaceTextEditDto | WorkspaceFileEditDto): arg is WorkspaceTextEditDto {
@@ -1449,6 +1451,9 @@ export namespace WorkspaceTextEditDto {
             && arg.textEdit !== null
             && typeof arg.textEdit === 'object';
     }
+}
+export interface WorkspaceEditMetadataDto {
+    isRefactoring?: boolean;
 }
 
 export interface WorkspaceEditDto {
@@ -1557,6 +1562,13 @@ export interface LanguagesExt {
         options: FormattingOptions,
         token: CancellationToken
     ): Promise<TextEdit[] | undefined>;
+    $provideDocumentDropEdits(
+        handle: number,
+        resource: UriComponents,
+        position: Position,
+        dataTransfer: DataTransferDTO,
+        token: CancellationToken
+    ): Promise<DocumentDropEdit | undefined>;
     $provideDocumentLinks(handle: number, resource: UriComponents, token: CancellationToken): Promise<DocumentLink[] | undefined>;
     $resolveDocumentLink(handle: number, link: DocumentLink, token: CancellationToken): Promise<DocumentLink | undefined>;
     $releaseDocumentLinks(handle: number, ids: number[]): void;
@@ -1637,6 +1649,7 @@ export interface LanguagesMain {
     $clearDiagnostics(id: string): void;
     $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void;
     $registerDocumentFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
+    $registerDocumentDropEditProvider(handle: number, selector: SerializedDocumentFilter[]): void
     $registerRangeFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerOnTypeFormattingProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void;
     $registerDocumentLinkProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;

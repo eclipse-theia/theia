@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import {
     TreeWidget,
     TreeNode,
@@ -29,7 +29,7 @@ import {
 } from '@theia/core/lib/browser';
 import { OutlineViewTreeModel } from './outline-view-tree-model';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
-import { Emitter, isObject, Mutable, UriSelection } from '@theia/core';
+import { Emitter, Event, isObject, Mutable, UriSelection } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
@@ -78,6 +78,9 @@ export class OutlineViewWidget extends TreeWidget {
 
     readonly onDidChangeOpenStateEmitter = new Emitter<boolean>();
 
+    protected readonly onDidUpdateEmitter = new Emitter<void>();
+    readonly onDidUpdate: Event<void> = this.onDidUpdateEmitter.event;
+
     constructor(
         @inject(TreeProps) treeProps: TreeProps,
         @inject(OutlineViewTreeModel) override readonly model: OutlineViewTreeModel,
@@ -91,6 +94,12 @@ export class OutlineViewWidget extends TreeWidget {
         this.title.closable = true;
         this.title.iconClass = codicon('symbol-class');
         this.addClass('theia-outline-view');
+    }
+
+    @postConstruct()
+    protected override init(): void {
+        super.init();
+        this.toDispose.push(this.model.onExpansionChanged(() => this.onDidUpdateEmitter.fire()));
     }
 
     /**

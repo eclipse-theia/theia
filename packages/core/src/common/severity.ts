@@ -20,6 +20,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { DiagnosticSeverity } from 'vscode-languageserver-protocol';
+import { nls } from './nls';
 
 export enum Severity {
     Ignore = 0,
@@ -29,13 +30,13 @@ export enum Severity {
     Log = 4
 }
 
-export namespace Severity {
-    const error = 'Errors';
-    const warning = 'Warnings';
-    const info = 'Info';
-    const log = 'Log';
-    const ignore = 'All';
+const error = 'Errors';
+const warning = 'Warnings';
+const info = 'Info';
+const log = 'Log';
+const ignore = 'All';
 
+export namespace Severity {
     export function fromValue(value: string | undefined): Severity {
         value = value && value.toLowerCase();
 
@@ -87,6 +88,20 @@ export namespace Severity {
                 return log;
             default:
                 return ignore;
+        }
+    }
+
+    export function toLocaleString(severity: string | Severity): string {
+        if (severity === Severity.Error || severity === error) {
+            return nls.localize('theia/core/severity/errors', 'Errors');
+        } else if (severity === Severity.Warning || severity === warning) {
+            return nls.localize('theia/core/severity/warnings', 'Warnings');
+        } else if (severity === Severity.Info || severity === info) {
+            return nls.localizeByDefault('Info');
+        } else if (severity === Severity.Log || severity === log) {
+            return nls.localize('theia/core/severity/log', 'Log');
+        } else {
+            return nls.localize('theia/core/severity/all', 'All');
         }
     }
 

@@ -77,8 +77,10 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
             detailElement.textContent = options.detail;
         }
 
-        actions.forEach((action: MainMessageItem) => {
-            const button = this.createButton(action.title);
+        actions.forEach((action: MainMessageItem, index: number) => {
+            const button = index === 0
+                ? this.appendAcceptButton(action.title)
+                : this.createButton(action.title);
             button.classList.add('main');
             this.controlPanel.appendChild(button);
             this.addKeyListener(button,

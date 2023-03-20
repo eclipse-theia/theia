@@ -70,17 +70,12 @@
     "editor": {
       "diffEditor.diffAlgorithm.experimental": "Verwendet einen experimentellen Diffing-Algorithmus.",
       "diffEditor.diffAlgorithm.smart": "Verwendet den Standard-Diffing-Algorithmus.",
-      "diffEditor.renderMarginRevertIcon": "Wenn diese Funktion aktiviert ist, zeigt der Diff-Editor Pfeile am Glyphenrand an, um Änderungen rückgängig zu machen.",
       "dirtyEncoding": "Die Datei ist verschmutzt. Bitte speichern Sie sie zuerst, bevor Sie sie mit einer anderen Kodierung erneut öffnen.",
       "editor.codeActionWidget.showHeaders": "Aktivieren/deaktivieren Sie die Anzeige von Gruppenkopfzeilen im Code-Aktionsmenü.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Es wird versucht, nur Änderungen zu formatieren (erfordert Quellensicherung). Wenn die Versionskontrolle nicht verwendet werden kann, wird die gesamte Datei formatiert.",
       "editor.inlayHints.enabled1": "Inlay-Hinweise werden standardmäßig angezeigt und bei gedrückter Tastenkombination \"Strg+Alt\" ausgeblendet",
       "editor.inlayHints.enabled2": "Inlay-Hinweise sind standardmäßig ausgeblendet und werden angezeigt, wenn die Tastenkombination \"Strg+Alt\" gedrückt wird.",
-      "editor.minimap.autohide": "Steuert, ob die Minimap automatisch ausgeblendet wird.",
-      "editor.multiCursorModifier": "Der Modifikator, der verwendet wird, um mehrere Cursor mit der Maus hinzuzufügen. Die Mausgesten \"Gehe zu Definition\" und \"Link öffnen\" werden so angepasst, dass sie nicht mit dem [Multicursor-Modifikator](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier) in Konflikt geraten.",
       "editor.quickSuggestions": "Legt fest, ob während der Eingabe automatisch Vorschläge angezeigt werden sollen. Dies kann für die Eingabe von Kommentaren, Strings und anderem Code gesteuert werden. Schnellvorschläge können so konfiguriert werden, dass sie als Ghosttext oder mit dem Suggest-Widget angezeigt werden. Beachten Sie auch die '#editor.suggestOnTriggerCharacters#'-Einstellung, die steuert, ob Vorschläge durch Sonderzeichen ausgelöst werden.",
-      "editor.showFoldingControls1": "Zeigen Sie niemals die Klappsteuerung und verkleinern Sie die Rinne.",
-      "editor.stickyScroll.enabled": "Zeigt die verschachtelten aktuellen Bereiche während des Scrollens am oberen Rand des Editors an.",
       "editor.stickyScroll.maxLineCount": "Legt die maximale Anzahl der anzuzeigenden Sticky Lines fest.",
       "editor.suggest.matchOnWordStartOnly": "Wenn die IntelliSense-Filterung aktiviert ist, muss das erste Zeichen am Wortanfang übereinstimmen, z. B. \"c\" bei \"Konsole\" oder \"Webkontext\", aber _nicht_ bei \"Beschreibung\". Wenn IntelliSense deaktiviert ist, werden mehr Ergebnisse angezeigt, aber immer noch nach der Qualität der Übereinstimmung sortiert.",
       "files.autoSave": "Steuert das [automatische Speichern](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) von Editoren, die ungespeicherte Änderungen haben.",
@@ -97,6 +92,9 @@
     },
     "file-search": {
       "toggleIgnoredFiles": " (Drücken Sie {0}, um ignorierte Dateien anzuzeigen/auszublenden)"
+    },
+    "fileDialog": {
+      "showHidden": "Versteckte Dateien anzeigen"
     },
     "fileSystem": {
       "fileResource": {

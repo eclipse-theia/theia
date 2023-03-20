@@ -20,8 +20,8 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { isOSX, isWindows } from '@theia/core/lib/common/os';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { ResourceMap } from '@theia/monaco-editor-core/esm/vs/base/common/map';
-import { IConfigurationOverrides, IOverrides } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
-import { Configuration, ConfigurationModel } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationModels';
+import { IConfigurationOverrides } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
+import { Configuration, ConfigurationModel, ConfigurationModelParser } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationModels';
 import { Workspace, WorkspaceFolder } from '@theia/monaco-editor-core/esm/vs/platform/workspace/common/workspace';
 import * as theia from '@theia/plugin';
 import { v4 } from 'uuid';
@@ -234,12 +234,12 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
     }
 
     private parse(data: PreferenceData): Configuration {
-        const defaultConfiguration = this.getConfigurationModel(data[PreferenceScope.Default]);
-        const userConfiguration = this.getConfigurationModel(data[PreferenceScope.User]);
-        const workspaceConfiguration = this.getConfigurationModel(data[PreferenceScope.Workspace]);
+        const defaultConfiguration = this.getConfigurationModel('Default', data[PreferenceScope.Default]);
+        const userConfiguration = this.getConfigurationModel('User', data[PreferenceScope.User]);
+        const workspaceConfiguration = this.getConfigurationModel('Workspace', data[PreferenceScope.Workspace]);
         const folderConfigurations = new ResourceMap<ConfigurationModel>();
         Object.keys(data[PreferenceScope.Folder]).forEach(resource => {
-            folderConfigurations.set(URI.parse(resource), this.getConfigurationModel(data[PreferenceScope.Folder][resource]));
+            folderConfigurations.set(URI.parse(resource), this.getConfigurationModel(`Folder: ${resource}`, data[PreferenceScope.Folder][resource]));
         });
         return new Configuration(
             defaultConfiguration,
@@ -252,52 +252,40 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         );
     }
 
-    private getConfigurationModel(data: { [key: string]: any }): ConfigurationModel {
-        if (!data) {
-            return new ConfigurationModel();
-        }
-        const configData = this.parseConfigurationData(data);
-        return new ConfigurationModel(configData.contents, configData.keys, configData.overrides);
+    private getConfigurationModel(label: string, data: { [key: string]: any }): ConfigurationModel {
+        const parser = new ConfigurationModelParser(label);
+        const sanitized = this.sanitize(data);
+        parser.parseRaw(sanitized);
+        return parser.configurationModel;
     }
 
-    private readonly OVERRIDE_PROPERTY = '^\\[(.*)\\]$';
-    private readonly OVERRIDE_PROPERTY_PATTERN = new RegExp(this.OVERRIDE_PROPERTY);
-    private readonly OVERRIDE_KEY_TEST = /^\[([^\]]+)\]\./;
-
-    private parseConfigurationData(data: { [key: string]: any }): Omit<IOverrides, 'identifiers'> & { overrides: IOverrides[] } {
-        const keys = new Array<string>();
-        const overrides: Record<string, IOverrides> = Object.create(null);
-        const contents = Object.keys(data).reduce((result: any, key: string) => {
-            if (injectionRe.test(key)) {
-                return result;
-            }
-            const parts = key.split('.');
-            let branch = result;
-            const isOverride = this.OVERRIDE_KEY_TEST.test(key);
-            if (!isOverride) {
-                keys.push(key);
-            }
-            for (let i = 0; i < parts.length; i++) {
-                if (i === 0 && isOverride) {
-                    const identifier = this.OVERRIDE_PROPERTY_PATTERN.exec(parts[i])![1];
-                    if (!overrides[identifier]) {
-                        overrides[identifier] = { keys: [], identifiers: [identifier], contents: Object.create(null) };
+    /**
+     * Creates a new object and assigns those keys of raw to it that are not likely to cause prototype polution.
+     * Also preprocesses override identifiers so that they take the form [identifier]: {...contents}.
+     */
+    private sanitize<T = unknown>(raw: T): T {
+        if (!isObject(raw)) { return raw; }
+        const asObject = raw as Record<string, unknown>;
+        const sanitized = Object.create(null);
+        for (const key of Object.keys(asObject)) {
+            if (!injectionRe.test(key)) {
+                const override = this.OVERRIDE_KEY_TEST.exec(key);
+                if (override) {
+                    const overrideKey = `[${override[1]}]`;
+                    const remainder = key.slice(override[0].length);
+                    if (!isObject(sanitized[overrideKey])) {
+                        sanitized[overrideKey] = Object.create(null);
                     }
-                    branch = overrides[identifier].contents;
-                    overrides[identifier].keys.push(key.slice(parts[i].length + 1));
-                } else if (i === parts.length - 1) {
-                    branch[parts[i]] = data[key];
+                    sanitized[overrideKey][remainder] = this.sanitize(asObject[key]);
                 } else {
-                    if (!branch[parts[i]]) {
-                        branch[parts[i]] = Object.create(null);
-                    }
-                    branch = branch[parts[i]];
+                    sanitized[key] = this.sanitize(asObject[key]);
                 }
             }
-            return result;
-        }, Object.create(null));
-        return { contents, keys, overrides: Object.values(overrides) };
+        }
+        return sanitized;
     }
+
+    private readonly OVERRIDE_KEY_TEST = /^\[([^\]]+)\]\./;
 
     private toConfigurationChangeEvent(eventData: PreferenceChangeExt[]): theia.ConfigurationChangeEvent {
         return Object.freeze({

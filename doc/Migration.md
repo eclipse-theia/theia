@@ -20,6 +20,13 @@ For example:
 }
 ```
 
+### v1.35.0
+
+#### Drop support for `Node 14`
+
+The framework no longer supports `Node 14` in order to better support plugins targeting the default supported VS Code API of `1.68.1`.
+It is always possible to build using the `yarn --ignore-engines` workaround, but we advise against it.
+
 ### v1.32.0
 
 #### Removal of `CircularDependencyPlugin`

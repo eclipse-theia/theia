@@ -14,21 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { INITIAL, StateStack, IGrammar } from 'vscode-textmate';
+import { INITIAL, IGrammar, StackElement } from 'vscode-textmate';
 import * as monaco from '@theia/monaco-editor-core';
 
 export class TokenizerState implements monaco.languages.IState {
 
     constructor(
-        public readonly ruleStack: StateStack
+        public readonly stackElement: StackElement
     ) { }
 
     clone(): monaco.languages.IState {
-        return new TokenizerState(this.ruleStack);
+        return new TokenizerState(this.stackElement);
     }
 
     equals(other: monaco.languages.IState): boolean {
-        return other instanceof TokenizerState && (other === this || other.ruleStack === this.ruleStack);
+        return other instanceof TokenizerState && (other === this || other.stackElement === this.stackElement);
     }
 
 }
@@ -58,9 +58,9 @@ export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOpt
         tokenizeEncoded(line: string, state: TokenizerState): monaco.languages.IEncodedLineTokens {
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
                 // Skip tokenizing the line if it exceeds the line limit.
-                return { endState: state.ruleStack, tokens: new Uint32Array() };
+                return { endState: state.stackElement, tokens: new Uint32Array() };
             }
-            const result = grammar.tokenizeLine2(line, state.ruleStack, 500);
+            const result = grammar.tokenizeLine2(line, state.stackElement, 500);
             return {
                 endState: new TokenizerState(result.ruleStack),
                 tokens: result.tokens
@@ -69,9 +69,9 @@ export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOpt
         tokenize(line: string, state: TokenizerState): monaco.languages.ILineTokens {
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
                 // Skip tokenizing the line if it exceeds the line limit.
-                return { endState: state.ruleStack, tokens: [] };
+                return { endState: state.stackElement, tokens: [] };
             }
-            const result = grammar.tokenizeLine(line, state.ruleStack, 500);
+            const result = grammar.tokenizeLine(line, state.stackElement, 500);
             return {
                 endState: new TokenizerState(result.ruleStack),
                 tokens: result.tokens.map(t => ({

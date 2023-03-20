@@ -289,7 +289,7 @@ export class ToolbarStorageProvider implements Disposable {
                         forceMoveMarkers: false,
                     });
                 }
-                await this.monacoWorkspace.applyBackgroundEdit(this.model, editOperations);
+                await this.monacoWorkspace.applyBackgroundEdit(this.model, editOperations, false);
                 await this.model.save();
                 return true;
             } catch (e) {

@@ -318,6 +318,7 @@
     margin-left: 14px;
     text-transform: uppercase;
     font-size: var(--theia-ui-font-size0);
+    min-width: 1rem;
 }
 
 .theia-sidepanel-toolbar .p-TabBar-toolbar .item {

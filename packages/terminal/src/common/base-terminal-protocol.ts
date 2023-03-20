@@ -63,9 +63,18 @@ export namespace IBaseTerminalServer {
 export interface IBaseTerminalExitEvent {
     terminalId: number;
 
-    // Exactly one of code and signal will be set.
+    // Either code and reason will be set or signal.
     code?: number;
+    reason?: TerminalExitReason;
     signal?: string;
+}
+
+export enum TerminalExitReason {
+    Unknown = 0,
+    Shutdown = 1,
+    Process = 2,
+    User = 3,
+    Extension = 4,
 }
 
 export interface IBaseTerminalErrorEvent {

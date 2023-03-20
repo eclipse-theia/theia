@@ -4,18 +4,17 @@
   "version": "0.0.0",
   "engines": {
     "yarn": ">=1.7.0 <2",
-    "node": ">=14.18.0"
+    "node": ">=16.14.0 <17"
   },
   "resolutions": {
-    "**/@types/node": "14"
+    "**/@types/node": "16"
   },
   "devDependencies": {
     "@types/chai": "4.3.0",
     "@types/chai-spies": "1.0.3",
     "@types/chai-string": "^1.4.0",
     "@types/jsdom": "^11.0.4",
-    "@types/node": "14",
-    "@types/puppeteer": "^2.0.0",
+    "@types/node": "16",
     "@types/sinon": "^10.0.6",
     "@types/temp": "^0.8.29",
     "@types/uuid": "^7.0.3",
@@ -31,7 +30,7 @@
     "electron-mocha": "^11.0.2",
     "eslint": "7",
     "eslint-plugin-deprecation": "~1.2.1",
-    "eslint-plugin-import": "latest",
+    "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-no-null": "latest",
     "eslint-plugin-no-unsanitized": "latest",
     "eslint-plugin-react": "^7.31.10",
@@ -41,11 +40,13 @@
     "improved-yarn-audit": "^3.0.0",
     "jsdom": "^11.5.1",
     "lerna": "^6.0.1",
+    "mkdirp": "^0.5.0",
     "node-gyp": "^9.0.0",
     "nsfw": "^2.2.4",
     "nyc": "^15.0.0",
-    "puppeteer": "^2.0.0",
-    "puppeteer-to-istanbul": "^1.2.2",
+    "puppeteer": "^19.7.2",
+    "puppeteer-core": "^19.7.2",
+    "puppeteer-to-istanbul": "^1.4.0",
     "rimraf": "^2.6.1",
     "sinon": "^12.0.0",
     "temp": "^0.8.3",
@@ -98,30 +99,20 @@
   ],
   "theiaPluginsDir": "plugins",
   "theiaPlugins": {
-    "eclipse-theia.builtin-extension-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.50.1/file/eclipse-theia.builtin-extension-pack-1.50.1.vsix",
-    "vscode.theme-abyss": "https://open-vsx.org/api/vscode/theme-abyss/1.62.3/file/vscode.theme-abyss-1.62.3.vsix",
-    "vscode.theme-defaults": "https://open-vsx.org/api/vscode/theme-defaults/1.62.3/file/vscode.theme-defaults-1.62.3.vsix",
-    "vscode.theme-kimbie-dark": "https://open-vsx.org/api/vscode/theme-kimbie-dark/1.62.3/file/vscode.theme-kimbie-dark-1.62.3.vsix",
-    "vscode.theme-monokai": "https://open-vsx.org/api/vscode/theme-monokai/1.62.3/file/vscode.theme-monokai-1.62.3.vsix",
-    "vscode.theme-monokai-dimmed": "https://open-vsx.org/api/vscode/theme-monokai-dimmed/1.62.3/file/vscode.theme-monokai-dimmed-1.62.3.vsix",
-    "vscode.theme-quietlight": "https://open-vsx.org/api/vscode/theme-quietlight/1.62.3/file/vscode.theme-quietlight-1.62.3.vsix",
-    "vscode.theme-red": "https://open-vsx.org/api/vscode/theme-red/1.62.3/file/vscode.theme-red-1.62.3.vsix",
-    "vscode.theme-solarized-dark": "https://open-vsx.org/api/vscode/theme-solarized-dark/1.62.3/file/vscode.theme-solarized-dark-1.62.3.vsix",
-    "vscode.theme-solarized-light": "https://open-vsx.org/api/vscode/theme-solarized-light/1.62.3/file/vscode.theme-solarized-light-1.62.3.vsix",
-    "vscode.theme-tomorrow-night-blue": "https://open-vsx.org/api/vscode/theme-tomorrow-night-blue/1.62.3/file/vscode.theme-tomorrow-night-blue-1.62.3.vsix",
-    "vscode.typescript": "https://open-vsx.org/api/vscode/typescript/1.62.3/file/vscode.typescript-1.62.3.vsix",
-    "vscode.typescript-language-features": "https://open-vsx.org/api/vscode/typescript-language-features/1.62.3/file/vscode.typescript-language-features-1.62.3.vsix",
+    "vscode.markdown-language-features": "https://open-vsx.org/api/vscode/markdown-language-features/1.64.2/file/vscode.markdown-language-features-1.64.2.vsix",
+    "eclipse-theia.builtin-extension-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.70.2/file/eclipse-theia.builtin-extension-pack-1.70.2.vsix",
     "EditorConfig.EditorConfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/0.14.4/file/EditorConfig.EditorConfig-0.14.4.vsix",
-    "dbaeumer.vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.1.20/file/dbaeumer.vscode-eslint-2.1.20.vsix",
-    "ms-vscode.references-view": "https://open-vsx.org/api/ms-vscode/references-view/0.0.89/file/ms-vscode.references-view-0.0.89.vsix"
+    "dbaeumer.vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.1.20/file/dbaeumer.vscode-eslint-2.1.20.vsix"
   },
   "theiaPluginsExcludeIds": [
     "ms-vscode.js-debug-companion",
     "vscode.extension-editing",
     "vscode.git",
-    "vscode.git-ui",
+    "vscode.git-base",
     "vscode.github",
     "vscode.github-authentication",
-    "vscode.microsoft-authentication"
+    "vscode.ipynb",
+    "vscode.microsoft-authentication",
+    "ms-vscode.references-view"
   ]
 }

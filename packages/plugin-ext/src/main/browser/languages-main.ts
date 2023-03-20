@@ -44,7 +44,7 @@ import {
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from '@theia/monaco/lib/browser/monaco-languages';
-import CoreURI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ProblemManager } from '@theia/markers/lib/browser';
@@ -71,6 +71,8 @@ import { EditorLanguageStatusService, LanguageStatus as EditorLanguageStatus } f
 import { LanguageSelector, RelativePattern } from '@theia/editor/lib/common/language-selector';
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
 import {
+    DocumentOnDropEdit,
+    DocumentOnDropEditProvider,
     EvaluatableExpression,
     EvaluatableExpressionProvider,
     InlineValue,
@@ -78,7 +80,10 @@ import {
     InlineValuesProvider
 } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
-import { CodeActionTriggerKind } from '../../plugin/types-impl';
+import { CodeActionTriggerKind, SnippetString } from '../../plugin/types-impl';
+import { DataTransfer } from './data-transfer/data-transfer-type-converters';
+import { VSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
+import { FileUploadService } from '@theia/filesystem/lib/browser/file-upload-service';
 
 /**
  * @monaco-uplift The public API declares these functions as (languageId: string, service).
@@ -106,6 +111,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     @inject(EditorLanguageStatusService)
     protected readonly languageStatusService: EditorLanguageStatusService;
+
+    @inject(FileUploadService)
+    protected readonly fileUploadService: FileUploadService;
 
     private readonly proxy: LanguagesExt;
     private readonly services = new Map<number, Disposable>();
@@ -252,13 +260,13 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     $clearDiagnostics(id: string): void {
         for (const uri of this.problemManager.getUris()) {
-            this.problemManager.setMarkers(new CoreURI(uri), id, []);
+            this.problemManager.setMarkers(new URI(uri), id, []);
         }
     }
 
     $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void {
         for (const [uriString, markers] of delta) {
-            const uri = new CoreURI(uriString);
+            const uri = new URI(uriString);
             this.problemManager.setMarkers(uri, id, markers.map(reviveMarker));
         }
     }
@@ -716,6 +724,28 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
     protected provideOnTypeFormattingEdits(handle: number, model: monaco.editor.ITextModel, position: monaco.Position,
         ch: string, options: monaco.languages.FormattingOptions, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.TextEdit[]> {
         return this.proxy.$provideOnTypeFormattingEdits(handle, model.uri, position, ch, options, token);
+    }
+
+    $registerDocumentDropEditProvider(handle: number, selector: SerializedDocumentFilter[]): void {
+        this.register(handle, (StandaloneServices.get(ILanguageFeaturesService).documentOnDropEditProvider.register(selector, this.createDocumentDropEditProvider(handle))));
+    }
+
+    createDocumentDropEditProvider(handle: number): DocumentOnDropEditProvider {
+        return {
+            provideDocumentOnDropEdits: async (model, position, dataTransfer, token) => this.provideDocumentDropEdits(handle, model, position, dataTransfer, token)
+        };
+    }
+
+    protected async provideDocumentDropEdits(handle: number, model: ITextModel, position: monaco.IPosition,
+        dataTransfer: VSDataTransfer, token: CancellationToken): Promise<DocumentOnDropEdit | undefined> {
+        await this.fileUploadService.upload(new URI(), { source: dataTransfer, leaveInTemp: true });
+        const edit = await this.proxy.$provideDocumentDropEdits(handle, model.uri, position, await DataTransfer.toDataTransferDTO(dataTransfer), token);
+        if (edit) {
+            return {
+                insertText: edit.insertText instanceof SnippetString ? { snippet: edit.insertText.value } : edit.insertText,
+                additionalEdit: toMonacoWorkspaceEdit(edit?.additionalEdit)
+            };
+        }
     }
 
     $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], eventHandle: number | undefined): void {

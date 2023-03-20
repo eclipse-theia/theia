@@ -17,12 +17,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as net from 'net';
-import * as puppeteer from 'puppeteer';
+import * as puppeteer from 'puppeteer-core';
 import newTestPage, { TestFileOptions } from './test-page';
 
 export interface TestOptions {
     start: () => Promise<net.AddressInfo>
-    launch?: puppeteer.LaunchOptions
+    launch?: puppeteer.PuppeteerLaunchOptions
     files?: Partial<TestFileOptions>
     coverage?: boolean
 }
@@ -36,15 +36,31 @@ export default async function runTest(options: TestOptions): Promise<void> {
         matchAppUrl: () => true, // all urls are application urls
         newPage: async () => {
             const browser = await puppeteer.launch(launch);
-            return browser.newPage();
+            // re-use empty tab
+            const [tab] = await browser.pages();
+            return tab;
         },
         onWillRun: async () => {
+            const promises = [];
             if (options.coverage) {
-                await Promise.all([
-                    testPage.coverage.startJSCoverage(),
-                    testPage.coverage.startCSSCoverage()
-                ]);
+                promises.push(testPage.coverage.startJSCoverage());
+                promises.push(testPage.coverage.startCSSCoverage());
             }
+            // When launching in non-headless mode (with a UI and dev-tools open), make sure
+            // the app has focus, to avoid failures of tests that query the UI's state.
+            if (launch && launch.devtools) {
+                promises.push(testPage.waitForSelector('#theia-app-shell.p-Widget.theia-ApplicationShell')
+                    .then(e => {
+                        // eslint-disable-next-line no-null/no-null
+                        if (e !== null) {
+                            e.click();
+                        }
+                    }));
+            }
+
+            // Clear application's local storage to avoid reusing previous state
+            promises.push(testPage.evaluate(() => localStorage.clear()));
+            await Promise.all(promises);
         },
         onDidRun: async failures => {
             if (options.coverage) {
@@ -56,6 +72,8 @@ export default async function runTest(options: TestOptions): Promise<void> {
                 require('puppeteer-to-istanbul').write([...jsCoverage, ...cssCoverage]);
             }
             if (exit) {
+                // allow a bit of time to finish printing-out test results
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 await testPage.close();
                 process.exit(failures > 0 ? 1 : 0);
             }

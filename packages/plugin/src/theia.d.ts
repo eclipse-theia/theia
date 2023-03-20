@@ -3058,6 +3058,41 @@ export module '@theia/plugin' {
          *   without providing an exit code.
          */
         readonly code: number | undefined;
+
+        /**
+         * The reason that triggered the exit of a terminal.
+         */
+        readonly reason: TerminalExitReason;
+    }
+
+    /**
+     * Terminal exit reason kind.
+     */
+    export enum TerminalExitReason {
+        /**
+         * Unknown reason.
+         */
+        Unknown = 0,
+
+        /**
+         * The window closed/reloaded.
+         */
+        Shutdown = 1,
+
+        /**
+         * The shell process exited.
+         */
+        Process = 2,
+
+        /**
+         * The user closed the terminal.
+         */
+        User = 3,
+
+        /**
+         * An extension disposed the terminal.
+         */
+        Extension = 4
     }
 
     /**
@@ -5654,6 +5689,103 @@ export module '@theia/plugin' {
     }
 
     /**
+     * A file associated with a {@linkcode DataTransferItem}.
+     */
+    export interface DataTransferFile {
+        /**
+         * The name of the file.
+         */
+        readonly name: string;
+
+        /**
+         * The full file path of the file.
+         *
+         * May be `undefined` on web.
+         */
+        readonly uri?: Uri;
+
+        /**
+         * The full file contents of the file.
+         */
+        data(): Thenable<Uint8Array>;
+    }
+
+    /**
+     * Encapsulates data transferred during drag and drop operations.
+     */
+    export class DataTransferItem {
+        /**
+         * Get a string representation of this item.
+         *
+         * If {@linkcode DataTransferItem.value} is an object, this returns the result of json stringifying {@linkcode DataTransferItem.value} value.
+         */
+        asString(): Thenable<string>;
+
+        /**
+         * Try getting the {@link DataTransferFile file} associated with this data transfer item.
+         *
+         * Note that the file object is only valid for the scope of the drag and drop operation.
+         *
+         * @returns The file for the data transfer or `undefined` if the item is either not a file or the
+         * file data cannot be accessed.
+         */
+        asFile(): DataTransferFile | undefined;
+
+        /**
+         * Custom data stored on this item.
+         *
+         * You can use `value` to share data across operations. The original object can be retrieved so long as the extension that
+         * created the `DataTransferItem` runs in the same extension host.
+         */
+        readonly value: any;
+
+        /**
+         * @param value Custom data stored on this item. Can be retrieved using {@linkcode DataTransferItem.value}.
+         */
+        constructor(value: any);
+    }
+
+    /**
+     * A map containing a mapping of the mime type of the corresponding transferred data.
+     *
+     * Drag and drop controllers that implement {@link TreeDragAndDropController.handleDrag `handleDrag`} can add additional mime types to the
+     * data transfer. These additional mime types will only be included in the `handleDrop` when the the drag was initiated from
+     * an element in the same drag and drop controller.
+     */
+    export class DataTransfer implements Iterable<[mimeType: string, item: DataTransferItem]> {
+        /**
+         * Retrieves the data transfer item for a given mime type.
+         *
+         * @param mimeType The mime type to get the data transfer item for, such as `text/plain` or `image/png`.
+         *
+         * Special mime types:
+         * - `text/uri-list` — A string with `toString()`ed Uris separated by `\r\n`. To specify a cursor position in the file,
+         * set the Uri's fragment to `L3,5`, where 3 is the line number and 5 is the column number.
+         */
+        get(mimeType: string): DataTransferItem | undefined;
+
+        /**
+         * Sets a mime type to data transfer item mapping.
+         * @param mimeType The mime type to set the data for.
+         * @param value The data transfer item for the given mime type.
+         */
+        set(mimeType: string, value: DataTransferItem): void;
+
+        /**
+         * Allows iteration through the data transfer items.
+         *
+         * @param callbackfn Callback for iteration through the data transfer items.
+         * @param thisArg The `this` context used when invoking the handler function.
+         */
+        forEach(callbackfn: (item: DataTransferItem, mimeType: string, dataTransfer: DataTransfer) => void, thisArg?: any): void;
+
+        /**
+         * Get a new iterator with the `[mime, item]` pairs for each element in this data transfer.
+         */
+        [Symbol.iterator](): IterableIterator<[mimeType: string, item: DataTransferItem]>;
+    }
+
+    /**
      * Options for creating a {@link TreeView TreeView}
      */
     export interface TreeViewOptions<T> {
@@ -7108,9 +7240,10 @@ export module '@theia/plugin' {
          * not be attempted, when a single edit fails.
          *
          * @param edit A workspace edit.
+         * @param metadata Optional {@link WorkspaceEditMetadata metadata} for the edit.
          * @return A thenable that resolves when the edit could be applied.
          */
-        export function applyEdit(edit: WorkspaceEdit): Thenable<boolean>;
+        export function applyEdit(edit: WorkspaceEdit, metadata?: WorkspaceEditMetadata): Thenable<boolean>;
 
         /**
          * Register a filesystem provider for a given scheme, e.g. `ftp`.
@@ -9653,6 +9786,16 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Additional data about a workspace edit.
+     */
+    export interface WorkspaceEditMetadata {
+        /**
+         * Signal to the editor that this edit is a refactoring.
+         */
+        isRefactoring?: boolean;
+    }
+
+    /**
      * A workspace edit is a collection of textual and files changes for
      * multiple resources and documents.
      *
@@ -10346,6 +10489,16 @@ export module '@theia/plugin' {
          * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
         export function registerDefinitionProvider(selector: DocumentSelector, provider: DefinitionProvider): Disposable;
+
+        /**
+         * Registers a new {@link DocumentDropEditProvider}.
+         *
+         * @param selector A selector that defines the documents this provider applies to.
+         * @param provider A drop provider.
+         *
+         * @return A {@link Disposable} that unregisters this provider when disposed of.
+         */
+        export function registerDocumentDropEditProvider(selector: DocumentSelector, provider: DocumentDropEditProvider): Disposable;
 
         /**
          * Register a declaration provider.
@@ -11432,6 +11585,27 @@ export module '@theia/plugin' {
          * If compact is true, debug sessions with a single child are hidden in the CALL STACK view to make the tree more compact.
          */
         compact?: boolean;
+
+        /**
+         * When true, a save will not be triggered for open editors when starting a debug session,
+         * regardless of the value of the `debug.saveBeforeStart` setting.
+         */
+        suppressSaveBeforeStart?: boolean;
+
+        /**
+         * When true, the debug toolbar will not be shown for this session.
+         */
+        suppressDebugToolbar?: boolean;
+
+        /**
+         * When true, the window statusbar color will not be changed for this session.
+         */
+        suppressDebugStatusbar?: boolean;
+
+        /**
+         * When true, the debug viewlet will not be automatically revealed for this session.
+         */
+        suppressDebugView?: boolean;
     }
 
     /**
@@ -13209,6 +13383,48 @@ export module '@theia/plugin' {
     }
 
     /**
+     * An edit operation applied {@link DocumentDropEditProvider on drop}.
+     */
+    export class DocumentDropEdit {
+        /**
+         * The text or snippet to insert at the drop location.
+         */
+        insertText: string | SnippetString;
+
+        /**
+         * An optional additional edit to apply on drop.
+         */
+        additionalEdit?: WorkspaceEdit;
+
+        /**
+         * @param insertText The text or snippet to insert at the drop location.
+         */
+        constructor(insertText: string | SnippetString);
+    }
+
+    /**
+     * Provider which handles dropping of resources into a text editor.
+     *
+     * This allows users to drag and drop resources (including resources from external apps) into the editor. While dragging
+     * and dropping files, users can hold down `shift` to drop the file into the editor instead of opening it.
+     * Requires `editor.dropIntoEditor.enabled` to be on.
+     */
+    export interface DocumentDropEditProvider {
+        /**
+         * Provide edits which inserts the content being dragged and dropped into the document.
+         *
+         * @param document The document in which the drop occurred.
+         * @param position The position in the document where the drop occurred.
+         * @param dataTransfer A {@link DataTransfer} object that holds data about what is being dragged and dropped.
+         * @param token A cancellation token.
+         *
+         * @return A {@link DocumentDropEdit} or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
+        provideDocumentDropEdits(document: TextDocument, position: Position, dataTransfer: DataTransfer, token: CancellationToken): ProviderResult<DocumentDropEdit>;
+    }
+
+    /**
      * Represents a session of a currently logged in user.
      */
     export interface AuthenticationSession {
@@ -13471,291 +13687,290 @@ export module '@theia/plugin' {
     /**
      * The tab represents a single text based resource.
      */
-   export class TabInputText {
-       /**
-        * The uri represented by the tab.
-        */
-       readonly uri: Uri;
-       /**
-        * Constructs a text tab input with the given URI.
-        * @param uri The URI of the tab.
-        */
-       constructor(uri: Uri);
-   }
+    export class TabInputText {
+        /**
+         * The uri represented by the tab.
+         */
+        readonly uri: Uri;
+        /**
+         * Constructs a text tab input with the given URI.
+         * @param uri The URI of the tab.
+         */
+        constructor(uri: Uri);
+    }
 
-   /**
-    * The tab represents two text based resources
-    * being rendered as a diff.
-    */
-   export class TabInputTextDiff {
-       /**
-        * The uri of the original text resource.
-        */
-       readonly original: Uri;
-       /**
-        * The uri of the modified text resource.
-        */
-       readonly modified: Uri;
-       /**
-        * Constructs a new text diff tab input with the given URIs.
-        * @param original The uri of the original text resource.
-        * @param modified The uri of the modified text resource.
-        */
-       constructor(original: Uri, modified: Uri);
-   }
+    /**
+     * The tab represents two text based resources
+     * being rendered as a diff.
+     */
+    export class TabInputTextDiff {
+        /**
+         * The uri of the original text resource.
+         */
+        readonly original: Uri;
+        /**
+         * The uri of the modified text resource.
+         */
+        readonly modified: Uri;
+        /**
+         * Constructs a new text diff tab input with the given URIs.
+         * @param original The uri of the original text resource.
+         * @param modified The uri of the modified text resource.
+         */
+        constructor(original: Uri, modified: Uri);
+    }
 
-   /**
-    * The tab represents a custom editor.
-    */
-   export class TabInputCustom {
-       /**
-        * The uri that the tab is representing.
-        */
-       readonly uri: Uri;
-       /**
-        * The type of custom editor.
-        */
-       readonly viewType: string;
-       /**
-        * Constructs a custom editor tab input.
-        * @param uri The uri of the tab.
-        * @param viewType The viewtype of the custom editor.
-        */
-       constructor(uri: Uri, viewType: string);
-   }
+    /**
+     * The tab represents a custom editor.
+     */
+    export class TabInputCustom {
+        /**
+         * The uri that the tab is representing.
+         */
+        readonly uri: Uri;
+        /**
+         * The type of custom editor.
+         */
+        readonly viewType: string;
+        /**
+         * Constructs a custom editor tab input.
+         * @param uri The uri of the tab.
+         * @param viewType The viewtype of the custom editor.
+         */
+        constructor(uri: Uri, viewType: string);
+    }
 
-   /**
-    * The tab represents a webview.
-    */
-   export class TabInputWebview {
-       /**
-        * The type of webview. Maps to WebviewPanel's viewType
-        */
-       readonly viewType: string;
-       /**
-        * Constructs a webview tab input with the given view type.
-        * @param viewType The type of webview. Maps to WebviewPanel's viewType
-        */
-       constructor(viewType: string);
-   }
+    /**
+     * The tab represents a webview.
+     */
+    export class TabInputWebview {
+        /**
+         * The type of webview. Maps to WebviewPanel's viewType
+         */
+        readonly viewType: string;
+        /**
+         * Constructs a webview tab input with the given view type.
+         * @param viewType The type of webview. Maps to WebviewPanel's viewType
+         */
+        constructor(viewType: string);
+    }
 
-   /**
-    * The tab represents a notebook.
-    */
-   export class TabInputNotebook {
-       /**
-        * The uri that the tab is representing.
-        */
-       readonly uri: Uri;
-       /**
-        * The type of notebook. Maps to NotebookDocuments's notebookType
-        */
-       readonly notebookType: string;
-       /**
-        * Constructs a new tab input for a notebook.
-        * @param uri The uri of the notebook.
-        * @param notebookType The type of notebook. Maps to NotebookDocuments's notebookType
-        */
-       constructor(uri: Uri, notebookType: string);
-   }
+    /**
+     * The tab represents a notebook.
+     */
+    export class TabInputNotebook {
+        /**
+         * The uri that the tab is representing.
+         */
+        readonly uri: Uri;
+        /**
+         * The type of notebook. Maps to NotebookDocuments's notebookType
+         */
+        readonly notebookType: string;
+        /**
+         * Constructs a new tab input for a notebook.
+         * @param uri The uri of the notebook.
+         * @param notebookType The type of notebook. Maps to NotebookDocuments's notebookType
+         */
+        constructor(uri: Uri, notebookType: string);
+    }
 
-   /**
-    * The tabs represents two notebooks in a diff configuration.
-    */
-   export class TabInputNotebookDiff {
-       /**
-        * The uri of the original notebook.
-        */
-       readonly original: Uri;
-       /**
-        * The uri of the modified notebook.
-        */
-       readonly modified: Uri;
-       /**
-        * The type of notebook. Maps to NotebookDocuments's notebookType
-        */
-       readonly notebookType: string;
-       /**
-        * Constructs a notebook diff tab input.
-        * @param original The uri of the original unmodified notebook.
-        * @param modified The uri of the modified notebook.
-        * @param notebookType The type of notebook. Maps to NotebookDocuments's notebookType
-        */
-       constructor(original: Uri, modified: Uri, notebookType: string);
-   }
+    /**
+     * The tabs represents two notebooks in a diff configuration.
+     */
+    export class TabInputNotebookDiff {
+        /**
+         * The uri of the original notebook.
+         */
+        readonly original: Uri;
+        /**
+         * The uri of the modified notebook.
+         */
+        readonly modified: Uri;
+        /**
+         * The type of notebook. Maps to NotebookDocuments's notebookType
+         */
+        readonly notebookType: string;
+        /**
+         * Constructs a notebook diff tab input.
+         * @param original The uri of the original unmodified notebook.
+         * @param modified The uri of the modified notebook.
+         * @param notebookType The type of notebook. Maps to NotebookDocuments's notebookType
+         */
+        constructor(original: Uri, modified: Uri, notebookType: string);
+    }
 
-   /**
-    * The tab represents a terminal in the editor area.
-    */
-   export class TabInputTerminal {
-       /**
-        * Constructs a terminal tab input.
-        */
-       constructor();
-   }
+    /**
+     * The tab represents a terminal in the editor area.
+     */
+    export class TabInputTerminal {
+        /**
+         * Constructs a terminal tab input.
+         */
+        constructor();
+    }
 
-   /**
-    * Represents a tab within a {@link TabGroup group of tabs}.
-    * Tabs are merely the graphical representation within the editor area.
-    * A backing editor is not a guarantee.
-    */
-   export interface Tab {
+    /**
+     * Represents a tab within a {@link TabGroup group of tabs}.
+     * Tabs are merely the graphical representation within the editor area.
+     * A backing editor is not a guarantee.
+     */
+    export interface Tab {
 
-       /**
-        * The text displayed on the tab.
-        */
-       readonly label: string;
+        /**
+         * The text displayed on the tab.
+         */
+        readonly label: string;
 
-       /**
-        * The group which the tab belongs to.
-        */
-       readonly group: TabGroup;
+        /**
+         * The group which the tab belongs to.
+         */
+        readonly group: TabGroup;
 
-       /**
-        * Defines the structure of the tab i.e. text, notebook, custom, etc.
-        * Resource and other useful properties are defined on the tab kind.
-        */
-       readonly input: TabInputText | TabInputTextDiff | TabInputCustom | TabInputWebview | TabInputNotebook | TabInputNotebookDiff | TabInputTerminal | unknown;
+        /**
+         * Defines the structure of the tab i.e. text, notebook, custom, etc.
+         * Resource and other useful properties are defined on the tab kind.
+         */
+        readonly input: TabInputText | TabInputTextDiff | TabInputCustom | TabInputWebview | TabInputNotebook | TabInputNotebookDiff | TabInputTerminal | unknown;
 
-       /**
-        * Whether or not the tab is currently active.
-        * This is dictated by being the selected tab in the group.
-        */
-       readonly isActive: boolean;
+        /**
+         * Whether or not the tab is currently active.
+         * This is dictated by being the selected tab in the group.
+         */
+        readonly isActive: boolean;
 
-       /**
-        * Whether or not the dirty indicator is present on the tab.
-        */
-       readonly isDirty: boolean;
+        /**
+         * Whether or not the dirty indicator is present on the tab.
+         */
+        readonly isDirty: boolean;
 
-       /**
-        * Whether or not the tab is pinned (pin icon is present).
-        */
-       readonly isPinned: boolean;
+        /**
+         * Whether or not the tab is pinned (pin icon is present).
+         */
+        readonly isPinned: boolean;
 
-       /**
-        * Whether or not the tab is in preview mode.
-        */
-       readonly isPreview: boolean;
-   }
+        /**
+         * Whether or not the tab is in preview mode.
+         */
+        readonly isPreview: boolean;
+    }
 
-   /**
-    * An event describing change to tabs.
-    */
-   export interface TabChangeEvent {
-       /**
-        * The tabs that have been opened.
-        */
-       readonly opened: readonly Tab[];
-       /**
-        * The tabs that have been closed.
-        */
-       readonly closed: readonly Tab[];
-       /**
-        * Tabs that have changed, e.g have changed
-        * their {@link Tab.isActive active} state.
-        */
-       readonly changed: readonly Tab[];
-   }
+    /**
+     * An event describing change to tabs.
+     */
+    export interface TabChangeEvent {
+        /**
+         * The tabs that have been opened.
+         */
+        readonly opened: readonly Tab[];
+        /**
+         * The tabs that have been closed.
+         */
+        readonly closed: readonly Tab[];
+        /**
+         * Tabs that have changed, e.g have changed
+         * their {@link Tab.isActive active} state.
+         */
+        readonly changed: readonly Tab[];
+    }
 
-   /**
-    * An event describing changes to tab groups.
-    */
-   export interface TabGroupChangeEvent {
-       /**
-        * Tab groups that have been opened.
-        */
-       readonly opened: readonly TabGroup[];
-       /**
-        * Tab groups that have been closed.
-        */
-       readonly closed: readonly TabGroup[];
-       /**
-        * Tab groups that have changed, e.g have changed
-        * their {@link TabGroup.isActive active} state.
-        */
-       readonly changed: readonly TabGroup[];
-   }
+    /**
+     * An event describing changes to tab groups.
+     */
+    export interface TabGroupChangeEvent {
+        /**
+         * Tab groups that have been opened.
+         */
+        readonly opened: readonly TabGroup[];
+        /**
+         * Tab groups that have been closed.
+         */
+        readonly closed: readonly TabGroup[];
+        /**
+         * Tab groups that have changed, e.g have changed
+         * their {@link TabGroup.isActive active} state.
+         */
+        readonly changed: readonly TabGroup[];
+    }
 
-   /**
-    * Represents a group of tabs. A tab group itself consists of multiple tabs.
-    */
-   export interface TabGroup {
-       /**
-        * Whether or not the group is currently active.
-        *
-        * *Note* that only one tab group is active at a time, but that multiple tab
-        * groups can have an {@link TabGroup.aciveTab active tab}.
-        *
-        * @see {@link Tab.isActive}
-        */
-       readonly isActive: boolean;
+    /**
+     * Represents a group of tabs. A tab group itself consists of multiple tabs.
+     */
+    export interface TabGroup {
+        /**
+         * Whether or not the group is currently active.
+         *
+         * *Note* that only one tab group is active at a time, but that multiple tab
+         * groups can have an {@link TabGroup.aciveTab active tab}.
+         *
+         * @see {@link Tab.isActive}
+         */
+        readonly isActive: boolean;
 
-       /**
-        * The view column of the group.
-        */
-       readonly viewColumn: ViewColumn;
+        /**
+         * The view column of the group.
+         */
+        readonly viewColumn: ViewColumn;
 
-       /**
-        * The active {@link Tab tab} in the group. This is the tab whose contents are currently
-        * being rendered.
-        *
-        * *Note* that there can be one active tab per group but there can only be one {@link TabGroups.activeTabGroup active group}.
-        */
-       readonly activeTab: Tab | undefined;
+        /**
+         * The active {@link Tab tab} in the group. This is the tab whose contents are currently
+         * being rendered.
+         *
+         * *Note* that there can be one active tab per group but there can only be one {@link TabGroups.activeTabGroup active group}.
+         */
+        readonly activeTab: Tab | undefined;
 
-       /**
-        * The list of tabs contained within the group.
-        * This can be empty if the group has no tabs open.
-        */
-       readonly tabs: readonly Tab[];
-   }
+        /**
+         * The list of tabs contained within the group.
+         * This can be empty if the group has no tabs open.
+         */
+        readonly tabs: readonly Tab[];
+    }
 
-   /**
-    * Represents the main editor area which consists of multple groups which contain tabs.
-    */
-   export interface TabGroups {
-       /**
-        * All the groups within the group container.
-        */
-       readonly all: readonly TabGroup[];
+    /**
+     * Represents the main editor area which consists of multple groups which contain tabs.
+     */
+    export interface TabGroups {
+        /**
+         * All the groups within the group container.
+         */
+        readonly all: readonly TabGroup[];
 
-       /**
-        * The currently active group.
-        */
-       readonly activeTabGroup: TabGroup;
+        /**
+         * The currently active group.
+         */
+        readonly activeTabGroup: TabGroup;
 
-       /**
-        * An {@link Event event} which fires when {@link TabGroup tab groups} have changed.
-        */
-       readonly onDidChangeTabGroups: Event<TabGroupChangeEvent>;
+        /**
+         * An {@link Event event} which fires when {@link TabGroup tab groups} have changed.
+         */
+        readonly onDidChangeTabGroups: Event<TabGroupChangeEvent>;
 
-       /**
-        * An {@link Event event} which fires when {@link Tab tabs} have changed.
-        */
-       readonly onDidChangeTabs: Event<TabChangeEvent>;
+        /**
+         * An {@link Event event} which fires when {@link Tab tabs} have changed.
+         */
+        readonly onDidChangeTabs: Event<TabChangeEvent>;
 
-       /**
-        * Closes the tab. This makes the tab object invalid and the tab
-        * should no longer be used for further actions.
-        * Note: In the case of a dirty tab, a confirmation dialog will be shown which may be cancelled. If cancelled the tab is still valid
-        *
-        * @param tab The tab to close.
-        * @param preserveFocus When `true` focus will remain in its current position. If `false` it will jump to the next tab.
-        * @returns A promise that resolves to `true` when all tabs have been closed.
-        */
-       close(tab: Tab | readonly Tab[], preserveFocus?: boolean): Thenable<boolean>;
+        /**
+         * Closes the tab. This makes the tab object invalid and the tab
+         * should no longer be used for further actions.
+         * Note: In the case of a dirty tab, a confirmation dialog will be shown which may be cancelled. If cancelled the tab is still valid
+         *
+         * @param tab The tab to close.
+         * @param preserveFocus When `true` focus will remain in its current position. If `false` it will jump to the next tab.
+         * @returns A promise that resolves to `true` when all tabs have been closed.
+         */
+        close(tab: Tab | readonly Tab[], preserveFocus?: boolean): Thenable<boolean>;
 
-       /**
-        * Closes the tab group. This makes the tab group object invalid and the tab group
-        * should no longer be used for further actions.
-        * @param tabGroup The tab group to close.
-        * @param preserveFocus When `true` focus will remain in its current position.
-        * @returns A promise that resolves to `true` when all tab groups have been closed.
-        * @stubbed
-        */
-       close(tabGroup: TabGroup | readonly TabGroup[], preserveFocus?: boolean): Thenable<boolean>;
-   }
+        /**
+         * Closes the tab group. This makes the tab group object invalid and the tab group
+         * should no longer be used for further actions.
+         * @param tabGroup The tab group to close.
+         * @param preserveFocus When `true` focus will remain in its current position.
+         * @returns A promise that resolves to `true` when all tab groups have been closed.
+         */
+        close(tabGroup: TabGroup | readonly TabGroup[], preserveFocus?: boolean): Thenable<boolean>;
+    }
 
     /**
      * Represents a notebook editor that is attached to a {@link NotebookDocument notebook}.

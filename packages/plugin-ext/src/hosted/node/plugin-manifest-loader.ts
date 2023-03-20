@@ -16,10 +16,10 @@
 
 import * as path from 'path';
 import * as fs from '@theia/core/shared/fs-extra';
-import { PluginIdentifiers } from '../../common';
+import { PluginIdentifiers, PluginPackage } from '../../common';
+import { updateActivationEvents } from './plugin-activation-events';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function loadManifest(pluginPath: string): Promise<any> {
+export async function loadManifest(pluginPath: string): Promise<PluginPackage> {
     const manifest = await fs.readJson(path.join(pluginPath, 'package.json'));
     // translate vscode builtins, as they are published with a prefix. See https://github.com/theia-ide/vscode-builtin-extensions/blob/master/src/republish.js#L50
     const built_prefix = '@theia/vscode-builtin-';
@@ -27,5 +27,6 @@ export async function loadManifest(pluginPath: string): Promise<any> {
         manifest.name = manifest.name.substr(built_prefix.length);
     }
     manifest.publisher ??= PluginIdentifiers.UNPUBLISHED;
+    updateActivationEvents(manifest);
     return manifest;
 }

@@ -77,13 +77,20 @@ export class ToolbarImpl extends TabBarToolbar {
     protected updateInlineItems(): void {
         this.inline.clear();
         const { items } = this.model.toolbarItems;
+
+        const contextKeys = new Set<string>();
         for (const column of Object.keys(items)) {
             for (const group of items[column as ToolbarAlignment]) {
                 for (const item of group) {
                     this.inline.set(item.id, item);
+
+                    if (item.when) {
+                        this.contextKeyService.parseKeys(item.when)?.forEach(key => contextKeys.add(key));
+                    }
                 }
             }
         }
+        this.updateContextKeyListener(contextKeys);
     }
 
     protected handleContextMenu = (e: React.MouseEvent<HTMLDivElement>): ContextMenuAccess => this.doHandleContextMenu(e);
@@ -214,6 +221,7 @@ export class ToolbarImpl extends TabBarToolbar {
                 data-column={`${alignment}`}
                 data-center-position={position}
                 onDrop={this.handleOnDrop}
+                onDragOver={this.handleOnDragEnter}
                 onDragEnter={this.handleOnDragEnter}
                 onDragLeave={this.handleOnDragLeave}
                 key={`column-space-${alignment}-${position}`}
@@ -225,8 +233,12 @@ export class ToolbarImpl extends TabBarToolbar {
         const stringifiedPosition = JSON.stringify(position);
         let toolbarItemClassNames = '';
         let renderBody: React.ReactNode;
+
         if (TabBarToolbarItem.is(item)) {
-            toolbarItemClassNames = [TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM, 'enabled'].join(' ');
+            toolbarItemClassNames = TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM;
+            if (this.evaluateWhenClause(item.when)) {
+                toolbarItemClassNames += ' enabled';
+            }
             renderBody = this.renderItem(item);
         } else {
             const contribution = this.model.getContributionByID(item.id);

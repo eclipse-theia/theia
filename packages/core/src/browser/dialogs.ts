@@ -401,10 +401,83 @@ export async function confirmExit(): Promise<boolean> {
     return safeToExit === true;
 }
 
+export class ConfirmSaveDialogProps extends ConfirmDialogProps {
+    readonly save: string;
+    performSave: () => Promise<void>;
+}
+
+export class ConfirmSaveDialog extends ConfirmDialog {
+
+    protected saveButton: HTMLButtonElement | undefined;
+    constructor(
+        @inject(ConfirmSaveDialogProps) protected override readonly props: ConfirmSaveDialogProps
+    ) {
+        super(props);
+        this.contentNode.appendChild(this.createMessageNode(this.props.msg));
+        // reorder buttons
+        this.controlPanel.childNodes.forEach(child => this.controlPanel.removeChild(child));
+        [this.acceptButton, this.closeButton].forEach(child => {
+            if (typeof child !== 'undefined') {
+                this.controlPanel.appendChild(child);
+            }
+        });
+        this.appendSaveButton(props.save).addEventListener('click', async () => {
+            await props.performSave();
+            this.acceptButton?.click();
+        });
+    }
+
+    protected appendSaveButton(text: string = Dialog.OK): HTMLButtonElement {
+        this.saveButton = this.createButton(text);
+        this.controlPanel.appendChild(this.saveButton);
+        this.saveButton.classList.add('main');
+        return this.saveButton;
+    }
+
+    protected override onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        if (this.saveButton) {
+            this.saveButton.focus();
+        }
+    }
+
+}
+
+export async function confirmExitWithOrWithoutSaving(captionsToSave: string[], performSave: () => Promise<void>): Promise<boolean> {
+    const div: HTMLElement = document.createElement('div');
+    div.innerText = nls.localizeByDefault("Your changes will be lost if you don't save them.");
+
+    if (captionsToSave.length > 0) {
+        const span = document.createElement('span');
+        span.appendChild(document.createElement('br'));
+        captionsToSave.forEach(cap => {
+            const b = document.createElement('b');
+            b.innerText = cap;
+            span.appendChild(b);
+            span.appendChild(document.createElement('br'));
+        });
+        span.appendChild(document.createElement('br'));
+        div.appendChild(span);
+        const safeToExit = await new ConfirmSaveDialog({
+            title: nls.localizeByDefault('Do you want to save the changes to the following {0} files?', captionsToSave.length),
+            msg: div,
+            ok: nls.localizeByDefault("Don't Save"),
+            save: nls.localizeByDefault('Save All'),
+            cancel: Dialog.CANCEL,
+            performSave: performSave
+        }).open();
+        return safeToExit === true;
+    } else {
+        // fallback if not passed with an empty caption-list.
+        return confirmExit();
+    }
+
+}
 @injectable()
 export class SingleTextInputDialogProps extends DialogProps {
     readonly confirmButtonLabel?: string;
     readonly initialValue?: string;
+    readonly placeholder?: string;
     readonly initialSelectionRange?: {
         start: number
         end: number
@@ -427,6 +500,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         this.inputField.className = 'theia-input';
         this.inputField.spellcheck = false;
         this.inputField.setAttribute('style', 'flex: 0;');
+        this.inputField.placeholder = props.placeholder || '';
         this.inputField.value = props.initialValue || '';
         if (props.initialSelectionRange) {
             this.inputField.setSelectionRange(

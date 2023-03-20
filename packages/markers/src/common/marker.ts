@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { isObject, isString } from '@theia/core/lib/common/types';
+
 /*
 * A marker represents meta information for a given uri
 */
@@ -36,4 +38,16 @@ export interface Marker<T> {
      * marker kind specific data
      */
     data: T;
+}
+export namespace Marker {
+    export function is(value: unknown): value is Marker<object>;
+    export function is<T>(value: unknown, subTypeCheck: (value: unknown) => value is T): value is Marker<T>;
+    export function is(value: unknown, subTypeCheck?: (value: unknown) => boolean): boolean {
+        subTypeCheck ??= isObject;
+        return isObject<Marker<object>>(value)
+            && !Array.isArray(value)
+            && subTypeCheck(value.data)
+            && isString(value.uri)
+            && isString(value.owner);
+    }
 }

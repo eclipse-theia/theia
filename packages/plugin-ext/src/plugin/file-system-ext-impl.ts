@@ -35,16 +35,16 @@ import { PLUGIN_RPC_CONTEXT, FileSystemExt, FileSystemMain, IFileChangeDto } fro
 import * as vscode from '@theia/plugin';
 import * as files from '@theia/filesystem/lib/common/files';
 import * as typeConverter from './type-converters';
-import { LanguagesExtImpl } from './languages';
 import { Schemes as Schemas } from '../common/uri-components';
 import { State, StateMachine, LinkComputer, Edge } from '../common/link-computer';
 import { commonPrefixLength } from '@theia/core/lib/common/strings';
 import { CharCode } from '@theia/core/lib/common/char-code';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 
 type IDisposable = vscode.Disposable;
 
-class FsLinkProvider {
+export class FsLinkProvider {
 
     private _schemes: string[] = [];
     private _stateMachine?: StateMachine;
@@ -204,12 +204,14 @@ export class FileSystemExtImpl implements FileSystemExt {
     private readonly _usedSchemes = new Set<string>();
     private readonly _watches = new Map<number, IDisposable>();
 
-    private _linkProviderRegistration?: IDisposable;
+    private readonly onWillRegisterFileSystemProviderEmitter = new Emitter<FsLinkProvider>();
+    readonly onWillRegisterFileSystemProvider = this.onWillRegisterFileSystemProviderEmitter.event;
+
     private _handlePool: number = 0;
 
     readonly fileSystem: vscode.FileSystem;
 
-    constructor(rpc: RPCProtocol, private _extHostLanguageFeatures: LanguagesExtImpl) {
+    constructor(rpc: RPCProtocol) {
         this._proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.FILE_SYSTEM_MAIN);
         this.fileSystem = new ConsumerFileSystem(this._proxy, this._capabilities);
 
@@ -218,18 +220,7 @@ export class FileSystemExtImpl implements FileSystemExt {
     }
 
     dispose(): void {
-        if (this._linkProviderRegistration) {
-            this._linkProviderRegistration.dispose();
-        }
-    }
-
-    private _registerLinkProviderIfNotYetRegistered(): void {
-        if (!this._linkProviderRegistration) {
-            this._linkProviderRegistration = this._extHostLanguageFeatures.registerDocumentLinkProvider('*', this._linkProvider, {
-                id: 'theia.fs-ext-impl',
-                name: 'fs-ext-impl'
-            });
-        }
+        this.onWillRegisterFileSystemProviderEmitter.dispose();
     }
 
     registerFileSystemProvider(scheme: string, provider: vscode.FileSystemProvider, options: { isCaseSensitive?: boolean, isReadonly?: boolean } = {}) {
@@ -238,8 +229,7 @@ export class FileSystemExtImpl implements FileSystemExt {
             throw new Error(`a provider for the scheme '${scheme}' is already registered`);
         }
 
-        //
-        this._registerLinkProviderIfNotYetRegistered();
+        this.onWillRegisterFileSystemProviderEmitter.fire(this._linkProvider);
 
         const handle = this._handlePool++;
         this._linkProvider.add(scheme);

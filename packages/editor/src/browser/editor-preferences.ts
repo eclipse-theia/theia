@@ -123,6 +123,11 @@ const fileContributionSchema: PreferenceSchema['properties'] = {
         'minimum': 0,
         'markdownDescription': nls.localizeByDefault('Controls the delay in milliseconds after which an editor with unsaved changes is saved automatically. Only applies when `#files.autoSave#` is set to `{0}`.', 'afterDelay')
     },
+    'files.refactoring.autoSave': {
+        'type': 'boolean',
+        'default': true,
+        'description': nls.localizeByDefault('Controls if files that were part of a refactoring are saved automatically')
+    }
 };
 
 interface FileContributionEditorPreferences {
@@ -131,6 +136,7 @@ interface FileContributionEditorPreferences {
     'files.eol': '\n' | '\r\n' | 'auto';
     'files.autoSave': 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
     'files.autoSaveDelay': number;
+    'files.refactoring.autoSave': boolean
 }
 // #endregion
 

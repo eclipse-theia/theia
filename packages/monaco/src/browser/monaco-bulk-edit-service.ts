@@ -38,7 +38,7 @@ export class MonacoBulkEditService implements IBulkEditService {
             editsIn = await this._previewHandler(edits, options);
             return { ariaSummary: '', success: true };
         } else {
-            return this.workspace.applyBulkEdit(edits);
+            return this.workspace.applyBulkEdit(edits, options);
         }
     }
 

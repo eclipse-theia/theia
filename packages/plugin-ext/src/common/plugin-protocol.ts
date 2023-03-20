@@ -72,6 +72,7 @@ export namespace PluginPackage {
  * This interface describes a package.json contribution section object.
  */
 export interface PluginPackageContribution {
+    authentication?: PluginPackageAuthenticationProvider[];
     configuration?: RecursivePartial<PreferenceSchema> | RecursivePartial<PreferenceSchema>[];
     configurationDefaults?: RecursivePartial<PreferenceSchemaProperties>;
     languages?: PluginPackageLanguageContribution[];
@@ -96,16 +97,29 @@ export interface PluginPackageContribution {
     resourceLabelFormatters?: ResourceLabelFormatter[];
     localizations?: PluginPackageLocalization[];
     terminal?: PluginPackageTerminal;
+    notebooks?: PluginPackageNotebook[];
+}
+
+export interface PluginPackageNotebook {
+    type: string;
+    displayName: string;
+    selector?: readonly { filenamePattern?: string; excludeFileNamePattern?: string }[];
+    priority?: string;
+}
+
+export interface PluginPackageAuthenticationProvider {
+    id: string;
+    label: string;
 }
 
 export interface PluginPackageTerminalProfile {
-    title: string,
-    id: string,
-    icon?: string
+    title: string;
+    id: string;
+    icon?: string;
 }
 
 export interface PluginPackageTerminal {
-    profiles: PluginPackageTerminalProfile[]
+    profiles: PluginPackageTerminalProfile[];
 }
 
 export interface PluginPackageLocalization {
@@ -544,6 +558,7 @@ export interface PluginEntryPoint {
  */
 export interface PluginContribution {
     activationEvents?: string[];
+    authentication?: AuthenticationProviderInformation[];
     configuration?: PreferenceSchema[];
     configurationDefaults?: PreferenceSchemaProperties;
     languages?: LanguageContribution[];
@@ -567,6 +582,19 @@ export interface PluginContribution {
     resourceLabelFormatters?: ResourceLabelFormatter[];
     localizations?: Localization[];
     terminalProfiles?: TerminalProfile[];
+    notebooks?: NotebookContribution[];
+}
+
+export interface NotebookContribution {
+    type: string;
+    displayName: string;
+    selector?: readonly { filenamePattern?: string; excludeFileNamePattern?: string }[];
+    priority?: string;
+}
+
+export interface AuthenticationProviderInformation {
+    id: string;
+    label: string;
 }
 
 export interface TerminalProfile {
@@ -641,6 +669,11 @@ export interface LanguageContribution {
     configuration?: LanguageConfiguration;
 }
 
+export interface RegExpOptions {
+    pattern: string;
+    flags?: string;
+}
+
 export interface LanguageConfiguration {
     brackets?: CharacterPair[];
     indentationRules?: IndentationRules;
@@ -648,7 +681,7 @@ export interface LanguageConfiguration {
     autoClosingPairs?: AutoClosingPairConditional[];
     comments?: CommentRule;
     folding?: FoldingRules;
-    wordPattern?: string;
+    wordPattern?: string | RegExpOptions;
     onEnterRules?: OnEnterRule[];
 }
 
@@ -674,10 +707,10 @@ export interface DebuggerContribution extends PlatformSpecificAdapterContributio
 }
 
 export interface IndentationRules {
-    increaseIndentPattern: string;
-    decreaseIndentPattern: string;
-    unIndentedLinePattern?: string;
-    indentNextLinePattern?: string;
+    increaseIndentPattern: string | RegExpOptions;
+    decreaseIndentPattern: string | RegExpOptions;
+    unIndentedLinePattern?: string | RegExpOptions;
+    indentNextLinePattern?: string | RegExpOptions;
 }
 export interface AutoClosingPair {
     close: string;
@@ -689,8 +722,8 @@ export interface AutoClosingPairConditional extends AutoClosingPair {
 }
 
 export interface FoldingMarkers {
-    start: string;
-    end: string;
+    start: string | RegExpOptions;
+    end: string | RegExpOptions;
 }
 
 export interface FoldingRules {
@@ -699,9 +732,9 @@ export interface FoldingRules {
 }
 
 export interface OnEnterRule {
-    beforeText: string;
-    afterText?: string;
-    previousLineText?: string;
+    beforeText: string | RegExpOptions;
+    afterText?: string | RegExpOptions;
+    previousLineText?: string | RegExpOptions;
     action: EnterAction;
 }
 

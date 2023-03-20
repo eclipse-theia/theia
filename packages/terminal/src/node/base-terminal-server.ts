@@ -28,7 +28,8 @@ import {
     ExtensionOwnedEnvironmentVariableMutator,
     EnvironmentVariableMutatorType,
     EnvironmentVariableCollectionWithPersistence,
-    SerializableExtensionEnvironmentVariableCollection
+    SerializableExtensionEnvironmentVariableCollection,
+    TerminalExitReason
 } from '../common/base-terminal-protocol';
 import { TerminalProcess, ProcessManager, TaskTerminalProcess } from '@theia/process/lib/node';
 import { ShellProcess } from './shell-process';
@@ -160,6 +161,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
                 this.client.onTerminalExitChanged({
                     'terminalId': term.id,
                     'code': event.code,
+                    'reason': TerminalExitReason.Process,
                     'signal': event.signal
                 });
             }

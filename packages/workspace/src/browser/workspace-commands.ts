@@ -237,6 +237,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         title: nls.localizeByDefault('New File'),
                         parentUri: parentUri,
                         initialValue: vacantChildUri.path.base,
+                        placeholder: nls.localize('theia/workspace/newFilePlaceholder', 'File Name'),
                         validate: name => this.validateFileName(name, parent, true)
                     }, this.labelProvider);
 
@@ -261,6 +262,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         title: nls.localizeByDefault('New Folder'),
                         parentUri: parentUri,
                         initialValue: vacantChildUri.path.base,
+                        placeholder: nls.localize('theia/workspace/newFolderPlaceholder', 'Folder Name'),
                         validate: name => this.validateFileName(name, parent, true)
                     }, this.labelProvider);
                     dialog.open().then(async name => {
@@ -324,34 +326,32 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 await this.clipboardService.writeText(text);
             }
         }));
-        this.preferences.ready.then(() => {
-            registry.registerCommand(WorkspaceCommands.ADD_FOLDER, {
-                isEnabled: () => this.workspaceService.opened,
-                isVisible: () => this.workspaceService.opened,
-                execute: async () => {
-                    const selection = await this.fileDialogService.showOpenDialog({
-                        title: WorkspaceCommands.ADD_FOLDER.label!,
-                        canSelectFiles: false,
-                        canSelectFolders: true,
-                        canSelectMany: true,
-                    });
-                    if (!selection) {
-                        return;
-                    }
-                    const uris = Array.isArray(selection) ? selection : [selection];
-                    const workspaceSavedBeforeAdding = this.workspaceService.saved;
-                    await this.addFolderToWorkspace(...uris);
-                    if (!workspaceSavedBeforeAdding) {
-                        this.saveWorkspaceWithPrompt(registry);
-                    }
+        registry.registerCommand(WorkspaceCommands.ADD_FOLDER, {
+            isEnabled: () => this.workspaceService.opened,
+            isVisible: () => this.workspaceService.opened,
+            execute: async () => {
+                const selection = await this.fileDialogService.showOpenDialog({
+                    title: WorkspaceCommands.ADD_FOLDER.label!,
+                    canSelectFiles: false,
+                    canSelectFolders: true,
+                    canSelectMany: true,
+                });
+                if (!selection) {
+                    return;
                 }
-            });
-            registry.registerCommand(WorkspaceCommands.REMOVE_FOLDER, this.newMultiUriAwareCommandHandler({
-                execute: uris => this.removeFolderFromWorkspace(uris),
-                isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
-                isVisible: uris => this.areWorkspaceRoots(uris) && this.workspaceService.saved
-            }));
+                const uris = Array.isArray(selection) ? selection : [selection];
+                const workspaceSavedBeforeAdding = this.workspaceService.saved;
+                await this.addFolderToWorkspace(...uris);
+                if (!workspaceSavedBeforeAdding) {
+                    this.saveWorkspaceWithPrompt(registry);
+                }
+            }
         });
+        registry.registerCommand(WorkspaceCommands.REMOVE_FOLDER, this.newMultiUriAwareCommandHandler({
+            execute: uris => this.removeFolderFromWorkspace(uris),
+            isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
+            isVisible: uris => this.areWorkspaceRoots(uris) && this.workspaceService.saved
+        }));
     }
 
     openers: OpenHandler[];

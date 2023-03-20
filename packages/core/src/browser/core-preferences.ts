@@ -23,6 +23,7 @@ import { isOSX } from '../common/os';
 import { nls } from '../common/nls';
 import { DefaultTheme } from '@theia/application-package/lib/application-props';
 
+/* eslint-disable max-len */
 const windowTitleDescription = [
     'Controls the window title based on the active editor. Variables are substituted based on the context:',
     '`${activeEditorShort}`: the file name (e.g. myFile.txt).',
@@ -52,7 +53,6 @@ export const corePreferenceSchema: PreferenceSchema = {
                 'always',
             ],
             default: 'ifRequired',
-            // eslint-disable-next-line max-len
             description: nls.localizeByDefault('Controls whether to show a confirmation dialog before closing the browser tab or window. Note that even if enabled, browsers may still decide to close a tab or window without confirmation and that this setting is only a hint that may not work in all cases.'),
         },
         'breadcrumbs.enabled': {
@@ -87,11 +87,10 @@ export const corePreferenceSchema: PreferenceSchema = {
                 nls.localizeByDefault('Menu is displayed at the top of the window and only hidden in full screen mode.'),
                 nls.localizeByDefault('Menu is always visible at the top of the window even in full screen mode.'),
                 nls.localizeByDefault('Menu is always hidden.'),
-                nls.localizeByDefault('Menu is displayed as a compact button in the side bar. This value is ignored when `#window.titleBarStyle#` is `native`.')
+                nls.localizeByDefault('Menu is displayed as a compact button in the side bar. This value is ignored when {0} is {1}.', '`#window.titleBarStyle#`', '`native`')
             ],
             default: 'classic',
             scope: 'application',
-            // eslint-disable-next-line max-len
             markdownDescription: nls.localizeByDefault("Control the visibility of the menu bar. A setting of 'toggle' means that the menu bar is hidden and a single press of the Alt key will show it. A setting of 'compact' will move the menu into the side bar."),
             included: !(isOSX && environment.electron.is())
         },
@@ -107,12 +106,11 @@ export const corePreferenceSchema: PreferenceSchema = {
             type: 'string',
             default: ' - ',
             scope: 'application',
-            markdownDescription: nls.localizeByDefault('Separator used by `window.title`.')
+            markdownDescription: nls.localizeByDefault('Separator used by {0}.', '`#window.title#`')
         },
         'http.proxy': {
             type: 'string',
             pattern: '^https?://([^:]*(:[^@]*)?@)?([^:]+|\\[[:0-9a-fA-F]+\\])(:\\d+)?/?$|^$',
-            // eslint-disable-next-line max-len
             markdownDescription: nls.localizeByDefault('The proxy setting to use. If not set, will be inherited from the `http_proxy` and `https_proxy` environment variables.'),
             scope: 'application'
         },
@@ -143,7 +141,6 @@ export const corePreferenceSchema: PreferenceSchema = {
         'http.systemCertificates': {
             type: 'boolean',
             default: true,
-            // eslint-disable-next-line max-len
             description: nls.localizeByDefault('Controls whether CA certificates should be loaded from the OS. (On Windows and macOS, a reload of the window is required after turning this off.)'),
             scope: 'application'
         },
@@ -154,18 +151,15 @@ export const corePreferenceSchema: PreferenceSchema = {
                 'doubleClick'
             ],
             default: 'singleClick',
-            // eslint-disable-next-line max-len
             description: nls.localizeByDefault('Controls how to open items in trees and lists using the mouse (if supported). Note that some trees and lists might choose to ignore this setting if it is not applicable.')
         },
         'workbench.editor.highlightModifiedTabs': {
             'type': 'boolean',
-            // eslint-disable-next-line max-len
             'markdownDescription': nls.localize('theia/core/highlightModifiedTabs', 'Controls whether a top border is drawn on modified (dirty) editor tabs or not.'),
             'default': false
         },
         'workbench.editor.closeOnFileDelete': {
             'type': 'boolean',
-            // eslint-disable-next-line max-len
             'description': nls.localizeByDefault('Controls whether editors showing a file that was opened during the session should close automatically when getting deleted or renamed by some other process. Disabling this will keep the editor open  on such an event. Note that deleting from within the application will always close the editor and that editors with unsaved changes will never close to preserve your data.'),
             'default': false
         },
@@ -174,11 +168,15 @@ export const corePreferenceSchema: PreferenceSchema = {
             'description': nls.localizeByDefault("Enables the use of mouse buttons four and five for commands 'Go Back' and 'Go Forward'."),
             'default': true
         },
+        'workbench.editor.revealIfOpen': {
+            'type': 'boolean',
+            'description': nls.localizeByDefault('Controls whether an editor is revealed in any of the visible groups if opened. If disabled, an editor will prefer to open in the currently active editor group. If enabled, an already opened editor will be revealed instead of opened again in the currently active editor group. Note that there are some cases where this setting is ignored, e.g. when forcing an editor to open in a specific group or to the side of the currently active group.'),
+            'default': false
+        },
         'workbench.commandPalette.history': {
             type: 'number',
             default: 50,
             minimum: 0,
-            // eslint-disable-next-line max-len
             description: nls.localizeByDefault('Controls the number of recently used commands to keep in history for the command palette. Set to 0 to disable command history.')
         },
         'workbench.colorTheme': {
@@ -228,7 +226,6 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: 4,
             minimum: 1,
             maximum: 20,
-            // eslint-disable-next-line max-len
             description: nls.localizeByDefault('Controls the feedback area size in pixels of the dragging area in between views/editors. Set it to a larger value if you feel it\'s hard to resize views using the mouse.')
         },
         'workbench.tab.maximize': {
@@ -252,6 +249,7 @@ export interface CoreConfiguration {
     'workbench.editor.highlightModifiedTabs': boolean;
     'workbench.editor.mouseBackForwardToNavigate': boolean;
     'workbench.editor.closeOnFileDelete': boolean;
+    'workbench.editor.revealIfOpen': boolean;
     'workbench.colorTheme': string;
     'workbench.iconTheme': string;
     'workbench.silentNotifications': boolean;

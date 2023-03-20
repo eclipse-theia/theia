@@ -176,7 +176,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             deployed.contributes = this.reader.readContribution(manifest);
             this.localizationService.deployLocalizations(deployed);
             deployedPlugins.set(id, deployed);
-            deployPlugin.log(`Deployed ${entryPoint} plugin "${id}" from "${metadata.model.entryPoint[entryPoint] || pluginPath}"`);
+            deployPlugin.debug(`Deployed ${entryPoint} plugin "${id}" from "${metadata.model.entryPoint[entryPoint] || pluginPath}"`);
         } catch (e) {
             deployPlugin.error(`Failed to deploy ${entryPoint} plugin from '${pluginPath}' path`, e);
             return success = false;

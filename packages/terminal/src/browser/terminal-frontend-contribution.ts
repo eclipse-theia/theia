@@ -254,9 +254,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
         this.mergePreferencesPromise = this.mergePreferencesPromise.finally(() => this.mergePreferences());
 
+        // extension contributions get read after this point: need to set the default profile if necessary
         this.profileService.onAdded(id => {
-            // extension contributions get read after this point: need to set the default profile if necessary
-            let defaultProfileId;
+            let defaultProfileId: string | undefined;
             switch (OS.backend.type()) {
                 case OS.Type.Windows: {
                     defaultProfileId = this.terminalPreferences['terminal.integrated.defaultProfile.windows'];
@@ -271,7 +271,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                     break;
                 }
             }
-            this.profileService.setDefaultProfile(defaultProfileId);
+            if (defaultProfileId) {
+                this.profileService.setDefaultProfile(defaultProfileId);
+            }
         });
     }
 
@@ -828,7 +830,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     async newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget> {
         const widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(TERMINAL_WIDGET_FACTORY_ID, <TerminalWidgetFactoryOptions>{
-            created: new Date().toString(),
+            created: new Date().toISOString(),
             ...options
         });
         return widget;
@@ -932,14 +934,17 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     }
 
     protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
-        const cwd = await this.selectTerminalCwd();
         let profile = this.profileService.defaultProfile;
 
         if (!profile) {
             throw new Error('There are not profiles registered');
         }
         if (profile instanceof ShellTerminalProfile) {
-            profile = profile.modify({ rootURI: cwd });
+            const cwd = await this.selectTerminalCwd();
+            if (!cwd) {
+                return;
+            }
+            profile = profile.modify({ cwd });
         }
 
         const termWidget = await profile?.start();
@@ -955,7 +960,10 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         let profile = result[1];
         if (profile instanceof ShellTerminalProfile) {
             const cwd = await this.selectTerminalCwd();
-            profile = profile.modify({ rootURI: cwd });
+            if (!cwd) {
+                return;
+            }
+            profile = profile.modify({ cwd });
         }
         const termWidget = await profile.start();
         this.open(termWidget, { widgetOptions: options });

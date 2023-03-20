@@ -30,6 +30,7 @@ import {
     DecorationOptions,
     WorkspaceEditDto,
     DocumentsMain,
+    WorkspaceEditMetadataDto,
 } from '../../common/plugin-api-rpc';
 import { Range, TextDocumentShowOptions } from '../../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
@@ -126,11 +127,11 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         return Promise.resolve(this.editorsAndDocuments.getEditor(id)!.applyEdits(modelVersionId, edits, opts));
     }
 
-    async $tryApplyWorkspaceEdit(dto: WorkspaceEditDto): Promise<boolean> {
+    async $tryApplyWorkspaceEdit(dto: WorkspaceEditDto, metadata?: WorkspaceEditMetadataDto): Promise<boolean> {
         const workspaceEdit = toMonacoWorkspaceEdit(dto);
         try {
             const edits = ResourceEdit.convert(workspaceEdit);
-            const { success } = await this.bulkEditService.apply(edits);
+            const { success } = await this.bulkEditService.apply(edits, { respectAutoSaveConfig: metadata?.isRefactoring });
             return success;
         } catch {
             return false;

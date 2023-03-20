@@ -70,17 +70,12 @@
     "editor": {
       "diffEditor.diffAlgorithm.experimental": "Kísérleti diffing algoritmust használ.",
       "diffEditor.diffAlgorithm.smart": "Az alapértelmezett diffing algoritmust használja.",
-      "diffEditor.renderMarginRevertIcon": "Ha engedélyezve van, a diff-szerkesztő nyilakat jelenít meg a glifák margóján a változtatások visszaállításához.",
       "dirtyEncoding": "A fájl piszkos. Kérjük, először mentse el, mielőtt más kódolással újra megnyitná.",
       "editor.codeActionWidget.showHeaders": "A csoportfejlécek megjelenítésének engedélyezése/letiltása a kódművelet menüben.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Csak a módosítások formázására tesz kísérletet (forrásellenőrzés szükséges). Ha a forrásellenőrzés nem használható, akkor a teljes fájl lesz formázva.",
       "editor.inlayHints.enabled1": "Az inlay tippek alapértelmezés szerint megjelennek, és elrejtődnek, ha a \"Ctrl+Alt\" billentyűkombinációt nyomva tartjuk.",
       "editor.inlayHints.enabled2": "Az inlay tippek alapértelmezés szerint el vannak rejtve, és a \"Ctrl+Alt\" billentyűkombináció lenyomásakor jelennek meg.",
-      "editor.minimap.autohide": "Szabályozza, hogy a minimap automatikusan el legyen-e rejtve.",
-      "editor.multiCursorModifier": "A módosító, amellyel több kurzort adhatunk hozzá az egérrel. A Go to Definition és a Open Link egérmozdulatok úgy alkalmazkodnak, hogy ne ütközzenek a [több kurzor módosítóval](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier).",
       "editor.quickSuggestions": "Szabályozza, hogy a javaslatok automatikusan megjelenjenek-e gépelés közben. Ezt a megjegyzések, karakterláncok és más kódok beírása esetén lehet szabályozni. A gyors javaslatok beállíthatók úgy, hogy szellemszövegként vagy a javaslat widget segítségével jelenjenek meg. Figyeljen a '#editor.suggestOnTriggerCharacters#'-beállításra is, amely azt szabályozza, hogy a javaslatok speciális karakterek hatására aktiválódjanak-e.",
-      "editor.showFoldingControls1": "Soha ne mutassa az összecsukható vezérlőket, és csökkentse az ereszcsatorna méretét.",
-      "editor.stickyScroll.enabled": "Megjeleníti a beágyazott aktuális hatóköröket a szerkesztő tetején történő görgetés során.",
       "editor.stickyScroll.maxLineCount": "Meghatározza a megjelenítendő ragadós sorok maximális számát.",
       "editor.suggest.matchOnWordStartOnly": "Ha engedélyezve van, az IntelliSense szűrés megköveteli, hogy az első karakter egyezzen a szó elején, pl. \"c\" a \"Konzol\" vagy a \"WebContext\" esetében, de _nem_ a \"leírás\" esetében. Ha kikapcsoljuk, az IntelliSense több eredményt mutat, de továbbra is az egyezés minősége szerint rendezi őket.",
       "files.autoSave": "Az [automatikus mentés](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) vezérli a mentetlen módosításokkal rendelkező szerkesztőket.",
@@ -97,6 +92,9 @@
     },
     "file-search": {
       "toggleIgnoredFiles": " (Nyomja meg a {0} gombot a figyelmen kívül hagyott fájlok megjelenítéséhez/elrejtéséhez)"
+    },
+    "fileDialog": {
+      "showHidden": "Rejtett fájlok megjelenítése"
     },
     "fileSystem": {
       "fileResource": {

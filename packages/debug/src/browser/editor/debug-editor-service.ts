@@ -16,7 +16,6 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
-import URI from '@theia/core/lib/common/uri';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
@@ -50,12 +49,6 @@ export class DebugEditorService {
     protected init(): void {
         this.editors.all.forEach(widget => this.push(widget));
         this.editors.onCreated(widget => this.push(widget));
-        this.sessionManager.onDidChangeBreakpoints(({ session, uri }) => {
-            if (!session || session === this.sessionManager.currentSession) {
-                this.render(uri);
-            }
-        });
-        this.breakpoints.onDidChangeBreakpoints(event => this.closeBreakpointIfAffected(event));
     }
 
     protected push(widget: EditorWidget): void {
@@ -70,13 +63,6 @@ export class DebugEditorService {
             debugModel.dispose();
             this.models.delete(uri);
         });
-    }
-
-    protected render(uri: URI): void {
-        const model = this.models.get(uri.toString());
-        if (model) {
-            model.render();
-        }
     }
 
     get model(): DebugEditorModel | undefined {

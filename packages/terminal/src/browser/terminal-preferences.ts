@@ -83,7 +83,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
         },
         'terminal.integrated.fontFamily': {
             type: 'string',
-            markdownDescription: nls.localizeByDefault("Controls the font family of the terminal, this defaults to `#editor.fontFamily#`'s value."),
+            markdownDescription: nls.localizeByDefault("Controls the font family of the terminal, this defaults to {0}'s value.", '`#editor.fontFamily#`'),
             default: editorGeneratedPreferenceProperties['editor.fontFamily'].default,
         },
         'terminal.integrated.fontSize': {
@@ -152,7 +152,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
             default: 'block'
         },
         'terminal.integrated.cursorWidth': {
-            markdownDescription: nls.localizeByDefault('Controls the width of the cursor when `#terminal.integrated.cursorStyle#` is set to `line`.'),
+            markdownDescription: nls.localizeByDefault('Controls the width of the cursor when {0} is set to {1}.', '`#terminal.integrated.cursorStyle#`', '`line`'),
             type: 'number',
             default: 1
         },
@@ -208,7 +208,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
         },
         'terminal.integrated.enablePersistentSessions': {
             type: 'boolean',
-            description: nls.localizeByDefault('Persist terminal sessions for the workspace across window reloads.'),
+            description: nls.localizeByDefault('Persist terminal sessions/history for the workspace across window reloads.'),
             default: true
         },
         'terminal.integrated.defaultProfile.windows': {

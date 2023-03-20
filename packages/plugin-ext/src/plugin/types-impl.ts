@@ -404,8 +404,11 @@ export class Position {
         return result!;
     }
 
-    static isPosition(other: {}): other is Position {
+    static isPosition(other: unknown): other is Position {
         if (!other) {
+            return false;
+        }
+        if (typeof other !== 'object' || Array.isArray(other)) {
             return false;
         }
         if (other instanceof Position) {
@@ -1531,6 +1534,17 @@ export class DocumentLink {
 }
 
 @es5ClassCompat
+export class DocumentDropEdit {
+    insertText: string | SnippetString;
+
+    additionalEdit?: WorkspaceEdit;
+
+    constructor(insertText: string | SnippetString) {
+        this.insertText = insertText;
+    }
+}
+
+@es5ClassCompat
 export class CodeLens {
 
     range: Range;
@@ -2030,6 +2044,14 @@ export class TerminalProfile {
      */
     constructor(readonly options: theia.TerminalOptions | theia.ExtensionTerminalOptions) {
     }
+}
+
+export enum TerminalExitReason {
+    Unknown = 0,
+    Shutdown = 1,
+    Process = 2,
+    User = 3,
+    Extension = 4,
 }
 
 @es5ClassCompat
