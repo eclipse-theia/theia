@@ -20,6 +20,7 @@
 
 import { Event, Emitter } from './event';
 import { isBoolean, isObject } from './types';
+import { Disposable } from './disposable';
 
 export interface CancellationToken {
     readonly isCancellationRequested: boolean;
@@ -93,11 +94,23 @@ class MutableToken implements CancellationToken {
         }
         return this._emitter.event;
     }
+
+    public dispose(): void {
+        if (this._emitter) {
+            this._emitter.dispose();
+            this._emitter = undefined;
+        }
+    }
 }
 
 export class CancellationTokenSource {
 
     private _token: CancellationToken;
+    private _parentListener?: Disposable = undefined;
+
+    constructor(parent?: CancellationToken) {
+        this._parentListener = parent && parent.onCancellationRequested(this.cancel, this);
+    }
 
     get token(): CancellationToken {
         if (!this._token) {
@@ -121,6 +134,15 @@ export class CancellationTokenSource {
 
     dispose(): void {
         this.cancel();
+        this._parentListener?.dispose();
+        if (!this._token) {
+            // ensure to initialize with an empty token if we had none
+            this._token = CancellationToken.None;
+
+        } else if (this._token instanceof MutableToken) {
+            // actually dispose
+            this._token.dispose();
+        }
     }
 }
 
