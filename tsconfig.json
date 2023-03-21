@@ -157,6 +157,9 @@
       "path": "packages/terminal"
     },
     {
+      "path": "packages/testing"
+    },
+    {
       "path": "packages/timeline"
     },
     {

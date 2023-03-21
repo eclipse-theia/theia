@@ -58,6 +58,38 @@ export namespace Event {
     });
 
     /**
+     * Given an event, returns another event which only fires once.
+     */
+    export function once<T>(event: Event<T>): Event<T> {
+        return (listener, thisArgs = undefined, disposables?) => {
+            // we need this, in case the event fires during the listener call
+            let didFire = false;
+            let result: Disposable | undefined = undefined;
+            result = event(e => {
+                if (didFire) {
+                    return;
+                } else if (result) {
+                    result.dispose();
+                } else {
+                    didFire = true;
+                }
+
+                return listener.call(thisArgs, e);
+            }, undefined, disposables);
+
+            if (didFire) {
+                result.dispose();
+            }
+
+            return result;
+        };
+    }
+
+    export function toPromise<T>(event: Event<T>): Promise<T> {
+        return new Promise(resolve => once(event)(resolve));
+    }
+
+    /**
      * Given an event and a `map` function, returns another event which maps each element
      * through the mapping function.
      */

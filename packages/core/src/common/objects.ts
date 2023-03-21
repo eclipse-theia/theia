@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { isObject } from './types';
+import { isObject, isUndefinedOrNull } from './types';
 
 export function deepClone<T>(obj: T): T {
     if (!isObject(obj)) {
@@ -69,4 +69,55 @@ export function notEmpty<T>(arg: T | undefined | null): arg is T {
  */
 export function isEmpty(arg: Object): boolean {
     return Object.keys(arg).length === 0 && arg.constructor === Object;
+}
+
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation and others. All rights reserved.
+ *  Licensed under the MIT License. See https://github.com/Microsoft/vscode/blob/master/LICENSE.txt for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+// Copied from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/base/common/objects.ts
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function cloneAndChange(obj: any, changer: (orig: any) => any): any {
+    return _cloneAndChange(obj, changer, new Set());
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function _cloneAndChange(obj: any, changer: (orig: any) => any, seen: Set<any>): any {
+    if (isUndefinedOrNull(obj)) {
+        return obj;
+    }
+
+    const changed = changer(obj);
+    if (typeof changed !== 'undefined') {
+        return changed;
+    }
+
+    if (Array.isArray(obj)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const r1: any[] = [];
+        for (const e of obj) {
+            r1.push(_cloneAndChange(e, changer, seen));
+        }
+        return r1;
+    }
+
+    if (isObject(obj)) {
+        if (seen.has(obj)) {
+            throw new Error('Cannot clone recursive data-structure');
+        }
+        seen.add(obj);
+        const r2 = {};
+        for (const i2 in obj) {
+            if (_hasOwnProperty.call(obj, i2)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (r2 as any)[i2] = _cloneAndChange(obj[i2], changer, seen);
+            }
+        }
+        seen.delete(obj);
+        return r2;
+    }
+
+    return obj;
 }

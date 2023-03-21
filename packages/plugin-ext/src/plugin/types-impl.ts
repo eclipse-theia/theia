@@ -32,6 +32,7 @@ import { FileSystemProviderErrorCode, markAsFileSystemProviderError } from '@the
 import * as paths from 'path';
 import { es5ClassCompat } from '../common/types';
 import { isObject, isStringArray } from '@theia/core/lib/common';
+import { Event as EventGeneric } from '@theia/core/lib/common/event';
 
 /**
  * This is an implementation of #theia.Uri based on vscode-uri.
@@ -3094,6 +3095,16 @@ export class LinkedEditingRanges {
     }
 }
 
+// Copied from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/workbench/api/common/extHostTypes.ts
+export enum TestResultState {
+    Queued = 1,
+    Running = 2,
+    Passed = 3,
+    Failed = 4,
+    Skipped = 5,
+    Errored = 6
+}
+
 export enum TestRunProfileKind {
     Run = 1,
     Debug = 2,
@@ -3423,4 +3434,110 @@ export class InteractiveWindowInput {
     constructor(readonly uri: URI, readonly inputBoxUri: URI) { }
 }
 
+// #endregion
+
+// #region Tests APÌ
+// Copied from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/workbench/api/common/extHostTypes.ts
+@es5ClassCompat
+export class CoveredCount {
+    covered: number;
+    total: number;
+    constructor(covered: number, total: number) { }
+}
+
+@es5ClassCompat
+export class FileCoverage {
+
+    readonly uri: theia.Uri;
+    statementCoverage: theia.CoveredCount;
+    branchCoverage?: theia.CoveredCount;
+    functionCoverage?: theia.CoveredCount;
+    detailedCoverage?: theia.DetailedCoverage[];
+
+    public static fromDetails(uri: theia.Uri, details: theia.DetailedCoverage[]): theia.FileCoverage {
+        const statements = new CoveredCount(0, 0);
+        const branches = new CoveredCount(0, 0);
+        const fn = new CoveredCount(0, 0);
+
+        for (const detail of details) {
+            if ('branches' in detail) {
+                statements.total += 1;
+                statements.covered += detail.executionCount > 0 ? 1 : 0;
+
+                for (const branch of detail.branches) {
+                    branches.total += 1;
+                    branches.covered += branch.executionCount > 0 ? 1 : 0;
+                }
+            } else {
+                fn.total += 1;
+                fn.covered += detail.executionCount > 0 ? 1 : 0;
+            }
+        }
+
+        const coverage = new FileCoverage(
+            uri,
+            statements,
+            branches.total > 0 ? branches : undefined,
+            fn.total > 0 ? fn : undefined,
+        );
+
+        coverage.detailedCoverage = details;
+
+        return coverage;
+    }
+
+    constructor(
+        uri: theia.Uri,
+        statementCoverage: theia.CoveredCount,
+        branchCoverage?: theia.CoveredCount,
+        functionCoverage?: theia.CoveredCount,
+    ) { }
+}
+
+@es5ClassCompat
+export class StatementCoverage {
+
+    executionCount: number;
+    location: Position | Range;
+    branches: theia.BranchCoverage[];
+
+    constructor(
+        executionCount: number,
+        location: Position | Range,
+        branches: theia.BranchCoverage[] = [],
+    ) { }
+}
+
+@es5ClassCompat
+export class BranchCoverage {
+    executionCount: number;
+    location?: Position | Range;
+
+    constructor(
+        executionCount: number,
+        location: Position | Range,
+    ) { }
+}
+
+@es5ClassCompat
+export class FunctionCoverage {
+    executionCount: number;
+    location: Position | Range;
+
+    constructor(
+        executionCount: number,
+        location: Position | Range,
+    ) { }
+}
+export interface TestsChangeEvent {
+    readonly added: ReadonlyArray<theia.TestItem>;
+    readonly updated: ReadonlyArray<theia.TestItem>;
+    readonly removed: ReadonlyArray<theia.TestItem>;
+}
+
+export interface TestObserver {
+    readonly tests: ReadonlyArray<theia.TestItem>;
+    readonly onDidChangeTest: EventGeneric<TestsChangeEvent>;
+    dispose(): void;
+}
 // #endregion
