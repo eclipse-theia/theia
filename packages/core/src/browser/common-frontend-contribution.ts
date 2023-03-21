@@ -670,7 +670,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         registry.registerMenuAction(CommonMenus.HELP, {
             commandId: CommonCommands.ABOUT_COMMAND.id,
             label: CommonCommands.ABOUT_COMMAND.label,
-            order: '9'
+            order: '9',
+            when: 'textCompareEditorVisible'
         });
 
         registry.registerMenuAction(CommonMenus.VIEW_PRIMARY, {

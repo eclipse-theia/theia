@@ -19,7 +19,7 @@ import { TextEditor } from './editor';
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import {
-    FrontendApplicationContribution, DiffUris, DockLayout,
+    FrontendApplicationContribution, DockLayout,
     QuickInputService, KeybindingRegistry, KeybindingContribution, SHELL_TABBAR_CONTEXT_SPLIT, ApplicationShell
 } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -47,28 +47,8 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
     protected readonly quickInputService: QuickInputService;
 
     onStart(): void {
-        this.initEditorContextKeys();
-
         this.updateStatusBar();
         this.editorManager.onCurrentEditorChanged(() => this.updateStatusBar());
-    }
-
-    protected initEditorContextKeys(): void {
-        const editorIsOpen = this.contextKeyService.createKey<boolean>('editorIsOpen', false);
-        const textCompareEditorVisible = this.contextKeyService.createKey<boolean>('textCompareEditorVisible', false);
-        const updateContextKeys = () => {
-            const widgets = this.editorManager.all;
-            editorIsOpen.set(!!widgets.length);
-            textCompareEditorVisible.set(widgets.some(widget => DiffUris.isDiffUri(widget.editor.uri)));
-        };
-        updateContextKeys();
-        for (const widget of this.editorManager.all) {
-            widget.disposed.connect(updateContextKeys);
-        }
-        this.editorManager.onCreated(widget => {
-            updateContextKeys();
-            widget.disposed.connect(updateContextKeys);
-        });
     }
 
     protected readonly toDisposeOnCurrentEditorChanged = new DisposableCollection();
