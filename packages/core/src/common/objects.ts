@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { isObject, isUndefined } from './types';
+import { isObject, isUndefined, isUndefinedOrNull } from './types';
 
 export function deepClone<T>(obj: T): T {
     if (!isObject(obj)) {
@@ -71,17 +71,21 @@ export function isEmpty(arg: Object): boolean {
     return Object.keys(arg).length === 0 && arg.constructor === Object;
 }
 
-// copied and modified from https://github.com/microsoft/vscode/blob/1.76.0/src/vs/base/common/objects.ts#L45-L83
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *  Copyright (c) Microsoft Corporation and others. All rights reserved.
+ *  Licensed under the MIT License. See https://github.com/Microsoft/vscode/blob/master/LICENSE.txt for license information.
  *--------------------------------------------------------------------------------------------*/
 
+// Copied from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/base/common/objects.ts
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function cloneAndChange(obj: any, changer: (orig: any) => any, seen: Set<any>): any {
-    // impossible to clone an undefined or null object
-    // eslint-disable-next-line no-null/no-null
-    if (isUndefined(obj) || obj === null) {
+export function cloneAndChange(obj: any, changer: (orig: any) => any): any {
+    return _cloneAndChange(obj, changer, new Set());
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function _cloneAndChange(obj: any, changer: (orig: any) => any, seen: Set<any>): any {
+    if (isUndefinedOrNull(obj)) {
         return obj;
     }
 
@@ -94,7 +98,7 @@ export function cloneAndChange(obj: any, changer: (orig: any) => any, seen: Set<
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const r1: any[] = [];
         for (const e of obj) {
-            r1.push(cloneAndChange(e, changer, seen));
+            r1.push(_cloneAndChange(e, changer, seen));
         }
         return r1;
     }
@@ -108,7 +112,7 @@ export function cloneAndChange(obj: any, changer: (orig: any) => any, seen: Set<
         for (const i2 in obj) {
             if (_hasOwnProperty.call(obj, i2)) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (r2 as any)[i2] = cloneAndChange(obj[i2], changer, seen);
+                (r2 as any)[i2] = _cloneAndChange(obj[i2], changer, seen);
             }
         }
         seen.delete(obj);
