@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-and-test-performance:
-    name: ubuntu-latest, Node.js 16.x
+    name: Performance Tests
     
     runs-on: ubuntu-latest
     timeout-minutes: 30
