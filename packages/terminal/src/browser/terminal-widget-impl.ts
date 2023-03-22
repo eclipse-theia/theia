@@ -743,12 +743,15 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         super.dispose();
     }
 
-    protected resizeTerminal = debounce((): void => {
+    protected resizeTerminal = debounce(() => this.doResizeTerminal(), 0);
+
+    protected doResizeTerminal(): void {
         const geo = this.fitAddon.proposeDimensions();
         const cols = geo.cols;
         const rows = geo.rows - 1; // subtract one row for margin
         this.term.resize(cols, rows);
-    }, 0);
+    }
+
 
     protected resizeTerminalProcess(): void {
         if (this.options.isPseudoTerminal) {
