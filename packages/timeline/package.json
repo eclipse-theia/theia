@@ -1,10 +1,10 @@
 {
   "name": "@theia/timeline",
-  "version": "1.34.2",
+  "version": "1.34.3",
   "description": "Theia - Timeline Extension",
   "dependencies": {
-    "@theia/core": "1.34.2",
-    "@theia/navigator": "1.34.2"
+    "@theia/core": "1.34.3",
+    "@theia/navigator": "1.34.3"
   },
   "publishConfig": {
     "access": "public"
@@ -39,7 +39,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.34.2"
+    "@theia/ext-scripts": "1.34.3"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
