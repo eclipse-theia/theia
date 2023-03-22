@@ -80,6 +80,11 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: 'code',
             markdownDescription: nls.localizeByDefault('Controls the dispatching logic for key presses to use either `code` (recommended) or `keyCode`.')
         },
+        'window.extendedTabBarPreview': {
+            type: 'boolean',
+            default: false,
+            description: 'Controls whether more information about the tab should be displayed in horizontal tab bars.'
+        },
         'window.menuBarVisibility': {
             type: 'string',
             enum: ['classic', 'visible', 'hidden', 'compact'],
@@ -258,6 +263,7 @@ export interface CoreConfiguration {
     'breadcrumbs.enabled': boolean;
     'files.encoding': string;
     'keyboard.dispatch': 'code' | 'keyCode';
+    'window.extendedTabBarPreview': boolean;
     'window.menuBarVisibility': 'classic' | 'visible' | 'hidden' | 'compact';
     'window.title': string;
     'window.titleSeparator': string;

@@ -419,3 +419,19 @@
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tab.p-mod-current .theia-tab-icon-label {
   overflow: hidden;
 }
+
+.theia-horizontal-tabBar-hover-div {
+  margin: 0px 4px;
+}
+
+.theia-horizontal-tabBar-hover-title {
+  font-weight: bolder;
+  font-size: medium;
+  margin: 0px 0px;
+}
+
+.theia-horizontal-tabBar-hover-caption {
+  font-size: small;
+  margin: 0px 0px;
+  margin-top: 4px;
+}

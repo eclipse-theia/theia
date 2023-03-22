@@ -57,6 +57,11 @@ export interface HoverRequest {
      * if the specified content does not fit in the window next to the target element
      */
     position: HoverPosition
+    /**
+     * Additional css classes that should be added to the hover box.
+     * Used to style certain boxes different e.g. for the extended tab preview.
+     */
+    cssClasses?: string []
 }
 
 @injectable()
@@ -101,7 +106,10 @@ export class HoverService {
 
     protected async renderHover(request: HoverRequest): Promise<void> {
         const host = this.hoverHost;
-        const { target, content, position } = request;
+        const { target, content, position, cssClasses } = request;
+        if (cssClasses) {
+            host.classList.add(...cssClasses);
+        }
         this.hoverTarget = target;
         if (content instanceof HTMLElement) {
             host.appendChild(content);
