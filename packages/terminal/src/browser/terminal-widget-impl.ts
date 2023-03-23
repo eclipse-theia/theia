@@ -752,7 +752,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.resize(cols, rows);
     }
 
-
     protected resizeTerminalProcess(): void {
         if (this.options.isPseudoTerminal) {
             return;
