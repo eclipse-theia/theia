@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import {
     PreferenceService, ContextMenuRenderer, PreferenceInspection,
-    PreferenceScope, PreferenceProvider, codicon, OpenerService, open
+    PreferenceScope, PreferenceProvider, codicon, OpenerService, open, PreferenceDataProperty
 } from '@theia/core/lib/browser';
 import { Preference, PreferenceMenus } from '../../util/preference-types';
 import { PreferenceTreeLabelProvider } from '../../util/preference-tree-label-provider';
@@ -39,6 +39,7 @@ export const SUBHEADER_CLASS = 'settings-section-subcategory-title';
 export interface GeneralPreferenceNodeRenderer extends Disposable {
     node: HTMLElement;
     id: string;
+    schema?: PreferenceDataProperty;
     group: string;
     nodeId: string;
     visible: boolean;
@@ -169,6 +170,10 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     protected inspection: PreferenceInspection<ValueType> | undefined;
     protected isModifiedFromDefault = false;
     protected markdownRenderer: markdownit;
+
+    get schema(): PreferenceDataProperty {
+        return this.preferenceNode.preference.data;
+    }
 
     @postConstruct()
     protected override init(): void {
