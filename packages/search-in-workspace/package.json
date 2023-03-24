@@ -1,14 +1,14 @@
 {
   "name": "@theia/search-in-workspace",
-  "version": "1.34.3",
+  "version": "1.34.4",
   "description": "Theia - Search in workspace",
   "dependencies": {
-    "@theia/core": "1.34.3",
-    "@theia/editor": "1.34.3",
-    "@theia/filesystem": "1.34.3",
-    "@theia/navigator": "1.34.3",
-    "@theia/process": "1.34.3",
-    "@theia/workspace": "1.34.3",
+    "@theia/core": "1.34.4",
+    "@theia/editor": "1.34.4",
+    "@theia/filesystem": "1.34.4",
+    "@theia/navigator": "1.34.4",
+    "@theia/process": "1.34.4",
+    "@theia/workspace": "1.34.4",
     "@vscode/ripgrep": "^1.14.2",
     "minimatch": "^5.1.0"
   },
@@ -46,6 +46,6 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.34.3"
+    "@theia/ext-scripts": "1.34.4"
   }
 }
