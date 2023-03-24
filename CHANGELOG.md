@@ -13,6 +13,7 @@
     - Interface ScmInlineAction removes 'commands: CommandRegistry'
     - Interface ScmInlineActions removes 'commands: CommandRegistry'
     - Interface ScmTreeWidget.Props removes 'commands: CommandRegistry'
+- [terminal] removed `openTerminalFromProfile` method from `TerminalFrontendContribution` [#12322](https://github.com/eclipse-theia/theia/pull/12322)
 
 ## v1.35.0 - 02/23/2023
 

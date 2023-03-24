@@ -18,7 +18,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { PreferenceProvider, PreferenceResolveResult } from '@theia/core/lib/browser/preferences/preference-provider';
+import { PreferenceProvider, PreferenceResolveResult, PreferenceScope } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { FolderPreferenceProvider, FolderPreferenceProviderFactory } from './folder-preference-provider';
@@ -187,6 +187,10 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         }
 
         return false;
+    }
+
+    override canHandleScope(scope: PreferenceScope): boolean {
+        return this.workspaceService.isMultiRootWorkspaceOpened && scope === PreferenceScope.Folder || scope === PreferenceScope.Workspace;
     }
 
     protected groupProvidersByConfigName(resourceUri?: string): Map<string, FolderPreferenceProvider[]> {
