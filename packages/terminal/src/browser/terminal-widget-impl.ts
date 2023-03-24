@@ -18,7 +18,9 @@ import { Terminal, RendererType } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, Channel, OS } from '@theia/core';
-import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon, ExtractableWidget } from '@theia/core/lib/browser';
+import {
+    Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon, ExtractableWidget, ContextMenuRenderer
+} from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/shell-terminal-protocol';
@@ -39,6 +41,7 @@ import { TerminalThemeService } from './terminal-theme-service';
 import { CommandLineOptions, ShellCommandBuilder } from '@theia/process/lib/common/shell-command-builder';
 import { Key } from '@theia/core/lib/browser/keys';
 import { nls } from '@theia/core/lib/common/nls';
+import { TerminalMenus } from './terminal-frontend-contribution';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -93,6 +96,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(TerminalCopyOnSelectionHandler) protected readonly copyOnSelectionHandler: TerminalCopyOnSelectionHandler;
     @inject(TerminalThemeService) protected readonly themeService: TerminalThemeService;
     @inject(ShellCommandBuilder) protected readonly shellCommandBuilder: ShellCommandBuilder;
+    @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
 
     protected readonly onDidOpenEmitter = new Emitter<void>();
     readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;
@@ -250,6 +254,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.onDispose(() => {
             this.node.removeEventListener('mousemove', mouseListener);
         });
+
+        const contextMenuListener = (event: MouseEvent) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.contextMenuRenderer.render({ menuPath: TerminalMenus.TERMINAL_CONTEXT_MENU, anchor: event });
+        };
+        this.node.addEventListener('contextmenu', contextMenuListener);
+        this.onDispose(() => this.node.removeEventListener('contextmenu', contextMenuListener));
 
         this.toDispose.push(this.term.onSelectionChange(() => {
             if (this.copyOnSelection) {
@@ -435,6 +447,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     clearOutput(): void {
         this.term.clear();
+    }
+
+    selectAll(): void {
+        this.term.selectAll();
     }
 
     async hasChildProcesses(): Promise<boolean> {
