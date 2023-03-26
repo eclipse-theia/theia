@@ -42,6 +42,10 @@ export interface SearchInWorkspaceOptions {
      */
     useRegExp?: boolean;
     /**
+     * Use multiline search if true.
+     */
+    multiline?: boolean;
+    /**
      * Include all .gitignored and hidden files.
      */
     includeIgnored?: boolean;

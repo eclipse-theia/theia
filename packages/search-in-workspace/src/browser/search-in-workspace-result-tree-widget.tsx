@@ -873,19 +873,34 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             // Open the file only if the function is called to replace all matches under a specific node.
             const widget: EditorWidget = replaceOne ? await this.doOpen(toReplace[0]) : await this.doGetWidget(toReplace[0]);
             const source: string = widget.editor.document.getText();
-            const replaceOperations = toReplace.map(resultLineNode => ({
-                text: replacementText,
-                range: {
-                    start: {
-                        line: resultLineNode.line - 1,
-                        character: resultLineNode.character - 1
-                    },
-                    end: {
-                        line: resultLineNode.line - 1,
-                        character: resultLineNode.character - 1 + resultLineNode.length
+
+            const replaceOperations = toReplace.map(resultLineNode => {
+                const lineText = typeof resultLineNode.lineText === 'string' ? resultLineNode.lineText : resultLineNode.lineText.text;
+                const lines = lineText.split('\n');
+                let endCharacter = resultLineNode.character - 1 + resultLineNode.length;
+                if (lines.length > 1) {
+                    endCharacter = resultLineNode.length - lines[0].length + resultLineNode.character - lines.length;
+                    if (lines.length > 2) {
+                        for (const lineNum of Array(lines.length - 2).keys()) {
+                            endCharacter -= lines[lineNum + 1].length;
+                        }
                     }
                 }
-            }));
+                return {
+                    text: replacementText,
+                    range: {
+                        start: {
+                            line: resultLineNode.line - 1,
+                            character: resultLineNode.character - 1
+                        },
+                        end: {
+                            line: resultLineNode.line + lines.length - 2,
+                            character: endCharacter
+                        }
+                    }
+                };
+            });
+
             // Replace the text.
             await widget.editor.replaceText({
                 source,
@@ -1018,6 +1033,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }
 
         const before = lineText.slice(start, character - 1).trimLeft();
+        const multiline = lineText.includes('\n');
 
         return <div className={`resultLine noWrapInfo noselect ${node.selected ? 'selected' : ''}`} title={lineText.trim()}>
             {this.searchInWorkspacePreferences['search.lineNumbers'] && <span className='theia-siw-lineNumber'>{node.line}</span>}
@@ -1025,21 +1041,24 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 {before}
             </span>
             {this.renderMatchLinePart(node)}
-            <span>
+            {multiline || <span>
                 {lineText.slice(node.character + node.length - 1, 250 - before.length + node.length)}
-            </span>
+            </span>}
         </div>;
     }
 
     protected renderMatchLinePart(node: SearchInWorkspaceResultLineNode): React.ReactNode {
-        const replaceTerm = this.isReplacing ? <span className='replace-term'>{this._replaceTerm}</span> : '';
+        const replaceTermLines = this._replaceTerm.split('\n');
+        const replaceTerm = this.isReplacing ? <span className='replace-term'>{replaceTermLines[0]}</span> : '';
         const className = `match${this.isReplacing ? ' strike-through' : ''}`;
-        const match = typeof node.lineText === 'string' ?
-            node.lineText.substring(node.character - 1, node.length + node.character - 1)
-            : node.lineText.text.substring(node.lineText.character - 1, node.length + node.lineText.character - 1);
+        const text = typeof node.lineText === 'string' ? node.lineText : node.lineText.text;
+        const match = text.substr(node.character - 1, node.length + node.character - 1);
+        const matchLines = match.split('\n');
+        const matchLineNum = matchLines.length > 1 ? <span className='match-line-num'>+{matchLines.length + node.character - 1}</span> : '';
         return <React.Fragment>
-            <span className={className}>{match}</span>
+            <span className={className}>{matchLines[0]}</span>
             {replaceTerm}
+            {matchLineNum}
         </React.Fragment>;
     }
 
@@ -1065,6 +1084,19 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             fileUri = new URI(node.fileUri);
         }
 
+        const lineText = typeof node.lineText === 'string' ? node.lineText : node.lineText.text;
+        const lines = lineText.split('\n');
+
+        let endCharacter = node.character - 1 + node.length;
+        if (lines.length > 1) {
+            endCharacter = node.length - lines[0].length + node.character - lines.length;
+            if (lines.length > 2) {
+                for (const lineNum of Array(lines.length - 2).keys()) {
+                    endCharacter -= lines[lineNum + 1].length;
+                }
+            }
+        }
+
         const opts: EditorOpenerOptions = {
             selection: {
                 start: {
@@ -1072,8 +1104,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     character: node.character - 1
                 },
                 end: {
-                    line: node.line - 1,
-                    character: node.character - 1 + node.length
+                    line: node.line + lines.length - 2,
+                    character: endCharacter
                 }
             },
             mode: preview ? 'reveal' : 'activate',
@@ -1100,16 +1132,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             content = await resource.readContents();
         }
 
-        const lines = content.split('\n');
-        node.children.forEach(l => {
-            const leftPositionedNodes = node.children.filter(rl => rl.line === l.line && rl.character < l.character);
-            const diff = (this._replaceTerm.length - this.searchTerm.length) * leftPositionedNodes.length;
-            const start = lines[l.line - 1].substring(0, l.character - 1 + diff);
-            const end = lines[l.line - 1].substring(l.character - 1 + diff + l.length);
-            lines[l.line - 1] = start + this._replaceTerm + end;
-        });
-
-        return fileUri.withScheme(MEMORY_TEXT).withQuery(lines.join('\n'));
+        const searchTermRegExp = new RegExp(this.searchTerm, 'g');
+        return fileUri.withScheme(MEMORY_TEXT).withQuery(content.replace(searchTermRegExp, this._replaceTerm));
     }
 
     protected decorateEditor(node: SearchInWorkspaceFileNode | undefined, editorWidget: EditorWidget): void {
