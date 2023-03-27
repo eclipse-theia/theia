@@ -31,8 +31,8 @@ import {
 } from '@theia/core/lib/common';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager, PreferenceService,
-    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService,
-    QuickInputService, codicon, CommonCommands, FrontendApplicationContribution, OnWillStopAction, Dialog, ConfirmDialog, FrontendApplication, PreferenceScope
+    KeybindingRegistry, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService,
+    codicon, CommonCommands, FrontendApplicationContribution, OnWillStopAction, Dialog, ConfirmDialog, FrontendApplication, PreferenceScope
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl } from './terminal-widget-impl';
@@ -70,6 +70,8 @@ export namespace TerminalMenus {
     export const TERMINAL_TASKS_CONFIG = [...TERMINAL_TASKS, '4_terminal'];
     export const TERMINAL_NAVIGATOR_CONTEXT_MENU = ['navigator-context-menu', 'navigation'];
     export const TERMINAL_OPEN_EDITORS_CONTEXT_MENU = ['open-editors-context-menu', 'navigation'];
+
+    export const TERMINAL_CONTEXT_MENU = ['terminal-context-menu'];
 }
 
 export namespace TerminalCommands {
@@ -150,6 +152,16 @@ export namespace TerminalCommands {
         category: TERMINAL_CATEGORY,
         label: 'Toggle Terminal'
     });
+    export const KILL_TERMINAL = Command.toDefaultLocalizedCommand({
+        id: 'terminal:kill',
+        category: TERMINAL_CATEGORY,
+        label: 'Kill Terminal'
+    });
+    export const SELECT_ALL: Command = {
+        id: 'terminal:select:all',
+        label: CommonCommands.SELECT_ALL.label,
+        category: TERMINAL_CATEGORY,
+    };
 
     /**
      * Command that displays all terminals that are currently opened
@@ -530,9 +542,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             execute: () => this.openActiveWorkspaceTerminal()
         });
         commands.registerCommand(TerminalCommands.SPLIT, {
-            execute: widget => this.splitTerminal(widget),
-            isEnabled: widget => !!this.getTerminalRef(widget),
-            isVisible: widget => !!this.getTerminalRef(widget)
+            execute: () => this.splitTerminal()
         });
         commands.registerCommand(TerminalCommands.TERMINAL_CLEAR);
         commands.registerHandler(TerminalCommands.TERMINAL_CLEAR.id, {
@@ -606,6 +616,14 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
         commands.registerCommand(TerminalCommands.TOGGLE_TERMINAL, {
             execute: () => this.toggleTerminal()
+        });
+        commands.registerCommand(TerminalCommands.KILL_TERMINAL, {
+            isEnabled: () => !!this.currentTerminal,
+            execute: () => this.currentTerminal?.close()
+        });
+        commands.registerCommand(TerminalCommands.SELECT_ALL, {
+            isEnabled: () => !!this.currentTerminal,
+            execute: () => this.currentTerminal?.selectAll()
         });
     }
 
@@ -685,6 +703,29 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             commandId: TerminalCommands.TERMINAL_CONTEXT.id,
             order: 'z'
         });
+
+        menus.registerMenuAction([...TerminalMenus.TERMINAL_CONTEXT_MENU, '_1'], {
+            commandId: TerminalCommands.NEW_ACTIVE_WORKSPACE.id,
+            label: nls.localizeByDefault('New Terminal')
+        });
+        menus.registerMenuAction([...TerminalMenus.TERMINAL_CONTEXT_MENU, '_1'], {
+            commandId: TerminalCommands.SPLIT.id
+        });
+        menus.registerMenuAction([...TerminalMenus.TERMINAL_CONTEXT_MENU, '_2'], {
+            commandId: CommonCommands.COPY.id
+        });
+        menus.registerMenuAction([...TerminalMenus.TERMINAL_CONTEXT_MENU, '_2'], {
+            commandId: CommonCommands.PASTE.id
+        });
+        menus.registerMenuAction([...TerminalMenus.TERMINAL_CONTEXT_MENU, '_2'], {
+            commandId: TerminalCommands.SELECT_ALL.id
+        });
+        menus.registerMenuAction([...TerminalMenus.TERMINAL_CONTEXT_MENU, '_3'], {
+            commandId: TerminalCommands.TERMINAL_CLEAR.id
+        });
+        menus.registerMenuAction([...TerminalMenus.TERMINAL_CONTEXT_MENU, '_4'], {
+            commandId: TerminalCommands.KILL_TERMINAL.id
+        });
     }
 
     registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
@@ -707,7 +748,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: KeyCode.createKeyCode({ key: k, ctrl: true }).toString(),
-                context: TerminalKeybindingContexts.terminalActive,
+                when: 'terminalFocus',
             });
         };
 
@@ -717,7 +758,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: KeyCode.createKeyCode({ key: k, alt: true }).toString(),
-                context: TerminalKeybindingContexts.terminalActive
+                when: 'terminalFocus'
             });
         };
 
@@ -776,7 +817,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: 'ctrlcmd+a',
-                context: TerminalKeybindingContexts.terminalActive
+                when: 'terminalFocus'
             });
         }
 
@@ -791,12 +832,12 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         keybindings.registerKeybinding({
             command: TerminalCommands.TERMINAL_CLEAR.id,
             keybinding: 'ctrlcmd+k',
-            context: TerminalKeybindingContexts.terminalActive
+            when: 'terminalFocus'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.TERMINAL_FIND_TEXT.id,
             keybinding: 'ctrlcmd+f',
-            context: TerminalKeybindingContexts.terminalActive
+            when: 'terminalFocus'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.TERMINAL_FIND_TEXT_CANCEL.id,
@@ -806,31 +847,36 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         keybindings.registerKeybinding({
             command: TerminalCommands.SCROLL_LINE_UP.id,
             keybinding: 'ctrl+shift+up',
-            context: TerminalKeybindingContexts.terminalActive
+            when: 'terminalFocus'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.SCROLL_LINE_DOWN.id,
             keybinding: 'ctrl+shift+down',
-            context: TerminalKeybindingContexts.terminalActive
+            when: 'terminalFocus'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.SCROLL_TO_TOP.id,
             keybinding: 'shift-home',
-            context: TerminalKeybindingContexts.terminalActive
+            when: 'terminalFocus'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.SCROLL_PAGE_UP.id,
             keybinding: 'shift-pageUp',
-            context: TerminalKeybindingContexts.terminalActive
+            when: 'terminalFocus'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.SCROLL_PAGE_DOWN.id,
             keybinding: 'shift-pageDown',
-            context: TerminalKeybindingContexts.terminalActive
+            when: 'terminalFocus'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.TOGGLE_TERMINAL.id,
             keybinding: 'ctrl+`',
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.SELECT_ALL.id,
+            keybinding: 'ctrlcmd+a',
+            when: 'terminalFocus'
         });
     }
 
@@ -927,16 +973,11 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
     }
 
-    protected async splitTerminal(widget?: Widget): Promise<void> {
-        const ref = this.getTerminalRef(widget);
-        if (ref) {
+    protected async splitTerminal(referenceTerminal?: TerminalWidget): Promise<void> {
+        if (referenceTerminal || this.currentTerminal) {
+            const ref = referenceTerminal ?? this.currentTerminal;
             await this.openTerminal({ ref, mode: 'split-right' });
         }
-    }
-
-    protected getTerminalRef(widget?: Widget): TerminalWidget | undefined {
-        const ref = widget ? widget : this.shell.currentWidget;
-        return ref instanceof TerminalWidget ? ref : undefined;
     }
 
     protected async openTerminal(options?: ApplicationShell.WidgetOptions, terminalProfile?: TerminalProfile): Promise<void> {
