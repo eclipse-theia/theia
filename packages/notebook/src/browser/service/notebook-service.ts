@@ -38,7 +38,7 @@ export interface NotebookSerializer {
 export class NotebookService implements Disposable {
 
     private notebookSerializerEmitter = new Emitter<string>();
-    onNotebookSerialzer = this.notebookSerializerEmitter.event;
+    readonly onNotebookSerialzer = this.notebookSerializerEmitter.event;
 
     private readonly disposables = new DisposableCollection();
 
@@ -104,5 +104,9 @@ export class NotebookService implements Disposable {
 
     getNotebookEditorModel(uri: URI): NotebookModel | undefined {
         return this.notebookModels.get(uri.toString());
+    }
+
+    async willOpenNotebook(type: string): Promise<void> {
+        return this.willOpenNotebookTypeEmitter.sequence(async listener => listener(type));
     }
 }

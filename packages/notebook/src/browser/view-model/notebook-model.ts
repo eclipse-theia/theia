@@ -35,4 +35,8 @@ export class NotebookModel implements Disposable {
     save(): Promise<boolean> {
         return Promise.resolve(true);
     }
+
+    isDirty(): boolean {
+        return false;
+    }
 }

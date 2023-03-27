@@ -105,7 +105,7 @@ function updateLanguageContributions(languages: PluginPackageLanguageContributio
 function updateNotebookContributions(notebooks: PluginPackageNotebook[], activationEvents: Set<string>): void {
     for (const notebook of notebooks) {
         if (isObject(notebook) && typeof notebook.type === 'string') {
-            activationEvents.add(`onNotebookSerializer:${notebook.type}`);
+            activationEvents.add(`onNotebook:${notebook.type}`);
         }
     }
 }

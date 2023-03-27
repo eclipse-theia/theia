@@ -52,6 +52,8 @@ export class NotebookEditorWidgetFactory implements WidgetFactory {
         }
         const uri = new URI(options.uri);
 
+        await this.notebookService.willOpenNotebook(options.notebookType);
+
         const editor = await this.createEditor(uri, options.notebookType);
 
         const icon = this.labelProvider.getIcon(uri);

@@ -30,13 +30,14 @@ export class MainThreadNotebookDocuments implements NotebookDocumentsMain {
 
     constructor(
         rpc: RPCProtocol,
-        private readonly notebookModelResolverService: NotebookModelResolverService
+        private readonly notebookModelResolverService: NotebookModelResolverService,
+        // private readonly notebookService: NotebookService
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT);
 
         // forward dirty and save events
-        // this.disposables.push(this.notebookEditorModelResolverService.onDidChangeDirty(model => this.proxy.$acceptDirtyStateChanged(model.resource, model.isDirty())));
-        // this.disposables.push(this.notebookEditorModelResolverService.onDidSaveNotebook(e => this.proxy.$acceptModelSaved(e)));
+        this.disposables.push(this.notebookModelResolverService.onDidChangeDirty(model => this.proxy.$acceptDirtyStateChanged(model.uri.toComponents(), model.isDirty())));
+        this.disposables.push(this.notebookModelResolverService.onDidSaveNotebook(e => this.proxy.$acceptModelSaved(e)));
 
     }
 

@@ -16,6 +16,8 @@
 
 import { URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
+import { UriComponents } from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NotebookData } from '../../common';
 import { NotebookModel } from '../view-model/notebook-model';
@@ -29,6 +31,11 @@ export class NotebookModelResolverService {
 
     @inject(NotebookService)
     protected notebookService: NotebookService;
+
+    private onDidChangeDirtyEmitter = new Emitter<NotebookModel>();
+    readonly onDidChangeDirty = this.onDidChangeDirtyEmitter.event;
+    private onDidSaveNotebookEmitter = new Emitter<UriComponents>();
+    readonly onDidSaveNotebook = this.onDidSaveNotebookEmitter.event;
 
     async resolve(resource: URI, viewType?: string): Promise<NotebookModel>;
     async resolve(resource: { untitledResource: URI | undefined; }, viewType: string): Promise<NotebookModel>;
