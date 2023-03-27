@@ -15,13 +15,21 @@
 // *****************************************************************************
 
 import { Disposable, URI } from '@theia/core';
+import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 import { CellDto, NotebookData } from '../../common';
 
 export class NotebookModel implements Disposable {
 
+    private readonly dirtyChangedEmitter = new Emitter<boolean>();
+    readonly onDidChangeDirty = this.dirtyChangedEmitter.event;
+
+    private readonly saveEmitter = new Emitter<void>();
+    readonly onDidSaveNotebook = this.dirtyChangedEmitter.event;
+
     cells: CellDto[];
 
     dirty: boolean;
+    private dirtyCells: CellDto[];
 
     constructor(data: NotebookData, public uri: URI, public viewType: string) {
         this.cells = data.cells;
@@ -33,10 +41,27 @@ export class NotebookModel implements Disposable {
     }
 
     save(): Promise<boolean> {
+        this.dirtyCells = [];
+        this.saveEmitter.fire();
         return Promise.resolve(true);
     }
 
     isDirty(): boolean {
-        return false;
+        return this.dirty;
     }
+
+    cellDirtyChanged(cell: CellDto, dirtyState: boolean): void {
+        if (dirtyState) {
+            this.dirtyCells.push(cell);
+        } else {
+            this.dirtyCells.splice(this.dirtyCells.indexOf(cell), 1);
+        }
+
+        const oldDirtyState = this.dirty;
+        this.dirty = this.dirtyCells.length > 0;
+        if (this.dirty !== oldDirtyState) {
+            this.dirtyChangedEmitter.fire(this.dirty);
+        }
+    }
+
 }

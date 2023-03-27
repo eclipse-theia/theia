@@ -15,19 +15,20 @@
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
 import { CellDto, CellKind } from '../../common';
+import { NotebookModel } from '../view-model/notebook-model';
 
 export interface Cellrenderer {
-    render(cell: CellDto, index: number): React.ReactNode
+    render(notebookData: NotebookModel, cell: CellDto, index: number): React.ReactNode
 }
 
 export class NotebookCellListView {
 
-    constructor(private renderers: Map<CellKind, Cellrenderer>, private cells: CellDto[]) {
+    constructor(private renderers: Map<CellKind, Cellrenderer>, private notebookData: NotebookModel) {
     }
 
     render(): React.ReactNode {
         return <ul className='theia-notebook-cell-list'>
-            {this.cells.map((cell, index) => this.renderers.get(cell.cellKind)?.render(cell, index))}
+            {this.notebookData.cells.map((cell, index) => this.renderers.get(cell.cellKind)?.render(this.notebookData, cell, index))}
         </ul >;
     }
 

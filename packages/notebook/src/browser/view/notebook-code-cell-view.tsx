@@ -18,15 +18,16 @@ import { URI } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { CellDto, CellUri } from '../../common';
+import { NotebookModel } from '../view-model/notebook-model';
 import { BaseNotebookCellView } from './base-notebook-cell-view';
 
 export class NotebookCodeCellRenderer extends BaseNotebookCellView {
 
     constructor(private editorProvider: MonacoEditorProvider, private notebookUri: URI) { super(); }
 
-    renderCell(cell: CellDto, handle: number): React.ReactNode {
+    protected renderCell(notebookModel: NotebookModel, cell: CellDto, handle: number): React.ReactNode {
         return <div>
-            <Editor editorProvider={this.editorProvider} uri={this.createCellUri(cell, handle)} cell={cell}></Editor>
+            <Editor notebookModel={notebookModel} editorProvider={this.editorProvider} uri={this.createCellUri(cell, handle)} cell={cell}></Editor>
             {cell.outputs && cell.outputs.flatMap(output => output.outputs.map(item => <div>{new TextDecoder().decode(item.data.buffer)}</div>))}
         </div >;
     }
@@ -37,12 +38,13 @@ export class NotebookCodeCellRenderer extends BaseNotebookCellView {
 }
 
 interface EditorProps {
+    notebookModel: NotebookModel,
     editorProvider: MonacoEditorProvider,
     uri: URI,
     cell: CellDto
 }
 
-function Editor({ editorProvider, uri, cell }: EditorProps): JSX.Element {
+function Editor({ notebookModel, editorProvider, uri, cell }: EditorProps): JSX.Element {
     React.useEffect(() => {
         (async () => {
             const editorNode = document.getElementById(uri.toString())!;
@@ -52,6 +54,8 @@ function Editor({ editorProvider, uri, cell }: EditorProps): JSX.Element {
                 editorNode.style.height = editor.getControl().getContentHeight() + 7 + 'px';
                 editor.resizeToFit();
             });
+            editor.document.onDirtyChanged(() => notebookModel.cellDirtyChanged(cell, editor.document.dirty));
+            editor.onDocumentContentChanged(e => cell.source = e.document.getText());
         })();
     });
     return <div className='theia-notebook-cell-editor' id={uri.toString()}></div>;
