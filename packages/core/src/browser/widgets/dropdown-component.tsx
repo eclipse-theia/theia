@@ -1,3 +1,19 @@
+/********************************************************************************
+ * Copyright (C) 2017, 2018 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import '../../../src/browser/style/dropdown-component.css';
@@ -16,14 +32,13 @@ export interface DropdownComponentProps {
     onFocus?: () => void
 }
 
-
 export const DROPDOWN_COMPONENT_CONTAINER = 'dropdown-component-container';
 
-export const DropdownComponent: React.FC<DropdownComponentProps> = (props) => {
+export const DropdownComponent: React.FC<DropdownComponentProps> = props => {
     const { children: dropdownTrigger, options } = props;
     let dropdownElement: HTMLElement;
-    const fieldRef = React.useRef<HTMLDivElement>(null);
-    const dropdownRef = React.useRef<HTMLDivElement>(null);
+    const fieldRef = React.useRef<HTMLDivElement>();
+    const dropdownRef = React.useRef<HTMLDivElement>();
 
     const [dimensions, setDimensions] = React.useState<DOMRect>();
     const [dropdownItems, setDropdownItems] = React.useState<{ [key: string]: DropdownOption[] }>({});
@@ -42,18 +57,21 @@ export const DropdownComponent: React.FC<DropdownComponentProps> = (props) => {
         const items: { [key: string]: DropdownOption[] } = {};
         options.forEach(option => {
             const { group = 'default' } = option;
-            (items[group] ? items[group].push(option) : items[group] = [option]);
-        })
+            if (items[group]) {
+                items[group].push(option);
+            } else {
+                items[group] = [option];
+            }
+        });
 
         setDropdownItems(items);
     }, [options]);
-
 
     const handleClickEvent = (event: React.MouseEvent<HTMLElement>): void => {
         toggleVisibility();
         event.stopPropagation();
         event.nativeEvent.stopImmediatePropagation();
-    }
+    };
 
     const toggleVisibility = () => {
         if (!fieldRef.current) {
@@ -66,21 +84,22 @@ export const DropdownComponent: React.FC<DropdownComponentProps> = (props) => {
         } else {
             hide();
         }
-    }
+    };
+
     const hide = () => {
         if (dropdownRef.current) {
             setDimensions(undefined);
         }
-    }
+    };
 
-    const renderOptions = (): React.ReactNode => {
-        return Object.entries(dropdownItems).map(([key, items]) => {
-            return <React.Fragment key={key}>
-                {items.map(item => {
-                    return <div
+    const renderOptions = (): React.ReactNode => (
+        Object.entries(dropdownItems).map(([key, items]) => (
+            <React.Fragment key={key}>
+                {items.map(item => (
+                    <div
                         key={item.value}
                         className="theia-dropdown-component-dropdown-item"
-                        onMouseDown={(e) => {
+                        onMouseDown={e => {
                             item.onClick?.(e);
                             hide();
                             e.stopPropagation();
@@ -88,12 +107,11 @@ export const DropdownComponent: React.FC<DropdownComponentProps> = (props) => {
                     >
                         {item.label}
                     </div>
-                })
-                }
+                ))}
                 <div className="theia-dropdown-component-dropdown-line" key={key + '_line'}></div>
             </React.Fragment >
-        })
-    }
+        ))
+    );
 
     const renderDropdown = (): React.ReactNode => {
         if (!dimensions) {
@@ -101,7 +119,7 @@ export const DropdownComponent: React.FC<DropdownComponentProps> = (props) => {
         }
 
         return <div
-            ref={dropdownRef}
+            ref={dropdownRef as React.MutableRefObject<HTMLDivElement>}
             key="dropdown"
             className="theia-dropdown-component-dropdown"
             style={{
@@ -111,14 +129,14 @@ export const DropdownComponent: React.FC<DropdownComponentProps> = (props) => {
             }}
         >
             {renderOptions()}
-        </div>
-    }
+        </div>;
+    };
 
     return <>
         <div
             tabIndex={0}
             key="dropdown-component"
-            ref={fieldRef}
+            ref={fieldRef as React.MutableRefObject<HTMLDivElement>}
             className="theia-dropdown-component"
             onClick={e => handleClickEvent(e)}
             onBlur={() => {
@@ -131,5 +149,5 @@ export const DropdownComponent: React.FC<DropdownComponentProps> = (props) => {
             {dropdownTrigger}
         </div>
         {ReactDOM.createPortal(renderDropdown(), dropdownElement)}
-    </>
-}
+    </>;
+};
