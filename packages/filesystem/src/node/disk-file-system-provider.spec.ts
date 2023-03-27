@@ -14,10 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import {
-    Disposable,
-    DisposableCollection,
-} from '@theia/core/lib/common/disposable';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
@@ -29,7 +26,7 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import * as temp from 'temp';
 import { v4 } from 'uuid';
-import { FilePermission } from '../common/files';
+import { FilePermission, FileSystemProviderError, FileSystemProviderErrorCode } from '../common/files';
 import { DiskFileSystemProvider } from './disk-file-system-provider';
 import { bindFileSystemWatcherServer } from './filesystem-backend-module';
 
@@ -81,15 +78,11 @@ describe('disk-file-system-provider', () => {
             await fs.chmod(tempFilePath, '444'); // read-only for owner/group/world
 
             try {
-                await fs.writeFile(tempFilePath, 'should not happen', {
-                    encoding: 'utf8',
-                });
+                await fsProvider.writeFile(FileUri.create(tempFilePath), new Uint8Array(), { create: false, overwrite: true });
                 fail('Expected an EACCES error for readonly (chmod 444) files');
             } catch (err) {
-                equal(err instanceof Error, true);
-                equal('code' in err, true);
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                equal((err as any).code, 'EACCES');
+                equal(err instanceof FileSystemProviderError, true);
+                equal((<FileSystemProviderError>err).code, FileSystemProviderErrorCode.NoPermissions);
             }
 
             const content = await fs.readFile(tempFilePath, { encoding: 'utf8' });
