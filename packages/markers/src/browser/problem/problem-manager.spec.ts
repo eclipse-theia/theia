@@ -288,11 +288,10 @@ describe('problem-manager', () => {
 
     });
 
-
     describe('#setFilters', () => {
         it('should successfully set new filters', () => {
             expect(manager.getToolbarFilters()).to.equal(undefined);
-            manager.setFilters({ text: 'a', showErrors: false, showWarnings: true, showInfos: false, showHints: true, activeFile: true, useFilesExclude: false })
+            manager.setFilters({ text: 'a', showErrors: false, showWarnings: true, showInfos: false, showHints: true, activeFile: true, useFilesExclude: false });
             expect(manager.getToolbarFilters()?.text).to.equal('a');
             expect(manager.getToolbarFilters()?.showErrors).to.equal(false);
             expect(manager.getToolbarFilters()?.showWarnings).to.equal(true);
@@ -301,5 +300,5 @@ describe('problem-manager', () => {
             expect(manager.getToolbarFilters()?.activeFile).to.equal(true);
             expect(manager.getToolbarFilters()?.useFilesExclude).to.equal(false);
         });
-    })
+    });
 });
