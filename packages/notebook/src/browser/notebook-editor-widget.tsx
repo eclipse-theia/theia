@@ -55,7 +55,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable {
             [CellKind.Code, new NotebookCodeCellRenderer(this.editorProvider, this.uri)]
         ]);
 
-        this.cellList = new NotebookCellListView(renderers, this.notebookData.cells);
+        this.cellList = new NotebookCellListView(renderers, this.notebookData);
     }
 
     protected render(): ReactNode {

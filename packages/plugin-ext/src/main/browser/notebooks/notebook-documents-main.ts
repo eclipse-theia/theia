@@ -17,7 +17,7 @@
 import { DisposableCollection } from '@theia/core';
 import { URI, UriComponents } from '@theia/core/lib/common/uri';
 import { ResourceMap } from '@theia/monaco-editor-core/esm/vs/base/common/map';
-import { NotebookModelResolverService } from '@theia/notebook/lib/browser';
+import { NotebookModelResolverService, NotebookService } from '@theia/notebook/lib/browser';
 import { MAIN_RPC_CONTEXT, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 

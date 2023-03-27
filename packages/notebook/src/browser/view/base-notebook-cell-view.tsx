@@ -17,18 +17,19 @@
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { CellDto } from '../../common';
+import { NotebookModel } from '../view-model/notebook-model';
 import { Cellrenderer } from './notebook-cell-list-view';
 
 export abstract class BaseNotebookCellView implements Cellrenderer {
 
-    abstract renderCell(cell: CellDto, handle: number): ReactNode;
+    protected abstract renderCell(notebookModel: NotebookModel, cell: CellDto, handle: number): ReactNode;
 
-    render(cell: CellDto, handle: number): ReactNode {
+    render(notebookModel: NotebookModel, cell: CellDto, handle: number): ReactNode {
         return <li className='theia-notebook-cell' key={'cell-' + handle}>
             <div className='theia-notebook-cell-marker'></div>
             <div className='theia-notebook-cell-toolbar'></div>
             <div className='theia-notebook-cell-content'>
-                {this.renderCell(cell, handle)}
+                {this.renderCell(notebookModel, cell, handle)}
             </div>
         </li>;
     }
