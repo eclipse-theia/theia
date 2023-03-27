@@ -102,7 +102,7 @@ describe('disk-file-system-provider', () => {
 
     function createContainer(): Container {
         const container = new Container({ defaultScope: 'Singleton' });
-        const module = new ContainerModule((bind) => {
+        const module = new ContainerModule(bind => {
             bind(DiskFileSystemProvider).toSelf().inSingletonScope();
             bind(EncodingService).toSelf().inSingletonScope();
             bindFileSystemWatcherServer(bind);
