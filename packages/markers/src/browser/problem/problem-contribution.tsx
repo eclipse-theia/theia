@@ -16,7 +16,7 @@
 
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode, Widget, codicon } from '@theia/core/lib/browser';
+import { FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode, Widget, codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { PROBLEM_KIND, ProblemMarker } from '../../common/problem-marker';
@@ -28,6 +28,8 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { ProblemSelection } from './problem-selection';
 import { nls } from '@theia/core/lib/common/nls';
+import * as React from '@theia/core/shared/react';
+import { Filters, ProblemFilter } from './problem-filter';
 
 export const PROBLEMS_CONTEXT_MENU: MenuPath = [PROBLEM_KIND];
 
@@ -64,7 +66,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
     @inject(ProblemManager) protected readonly problemManager: ProblemManager;
     @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(SelectionService) protected readonly selectionService: SelectionService;
-
+    @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer;
     constructor() {
         super({
             widgetId: PROBLEMS_WIDGET_ID,
@@ -180,6 +182,11 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
 
     async registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): Promise<void> {
         toolbarRegistry.registerItem({
+            id: 'filter',
+            render: () => this.renderFilter(),
+            isVisible: widget => widget instanceof ProblemWidget,
+        });
+        toolbarRegistry.registerItem({
             id: ProblemsCommands.COLLAPSE_ALL_TOOLBAR.id,
             command: ProblemsCommands.COLLAPSE_ALL_TOOLBAR.id,
             tooltip: nls.localizeByDefault('Collapse All'),
@@ -244,4 +251,22 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         }
         return false;
     }
+
+    protected renderFilter(): React.ReactNode {
+        return <ProblemFilter
+            key='problem-filter'
+            onChange={this.setFilters}
+            getProblemStat={this.getProblemStat}
+            onDidChangeMarkersEvent={this.problemManager.onDidChangeMarkers}
+        ></ProblemFilter>;
+    }
+
+    protected setFilters = (filters: Filters) => {
+        this.problemManager.setFilters(filters);
+    };
+
+    protected getProblemStat = (enableToolbarFilters: boolean) => {
+        const markers = this.problemManager.findMarkers({}, enableToolbarFilters);
+        return markers.length;
+    };
 }

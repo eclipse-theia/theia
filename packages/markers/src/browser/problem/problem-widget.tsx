@@ -184,7 +184,7 @@ export class ProblemWidget extends TreeWidget {
                 <div>
                     <i className={`${severityClass} ${TREE_NODE_INFO_CLASS}`}></i>
                 </div>
-                <div className='message'>{problemMarker.data.message}
+                <div className='message'>{this.matchMessage(problemMarker.data.message)}
                     {(!!problemMarker.data.source || !!problemMarker.data.code) &&
                         <span className={'owner ' + TREE_NODE_INFO_CLASS}>
                             {problemMarker.data.source || ''}
@@ -223,6 +223,22 @@ export class ProblemWidget extends TreeWidget {
                 <span className='notification-count'>{node.numberOfMarkers.toString()}</span>
             </div>
         </div>;
+    }
+
+    protected matchMessage(message: string): React.ReactNode {
+        const filters = this.problemManager.getToolbarFilters();
+        if (filters && filters.text) {
+            const match = filters.text.replace(/^!/, '');
+            const index = message.toLowerCase().indexOf(match.toLowerCase());
+            if (index > -1) {
+                return <span className='match-wrap'>
+                    {message.substring(0, index)}
+                    <span className="match">{message.substring(index, index + match.length)}</span>
+                    {message.substring(index + match.length)}
+                </span>;
+            }
+        }
+        return message;
     }
 
 }

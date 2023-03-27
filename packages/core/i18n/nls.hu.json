@@ -177,7 +177,16 @@
     "markers": {
       "clearAll": "Mindent törölni",
       "noProblems": "A munkaterületen eddig nem észleltek problémákat.",
-      "tabbarDecorationsEnabled": "Problémadíszítők (diagnosztikai jelölők) megjelenítése a laprudakon."
+      "tabbarDecorationsEnabled": "Problémadíszítők (diagnosztikai jelölők) megjelenítése a laprudakon.",
+      "showErrors": "Hibák megjelenítése",
+      "showWarnings": "Figyelmeztetések megjelenítése",
+      "showInfos": "Információk megjelenítése",
+      "showHints": "Tippek megjelenítése",
+      "activeFile": "Csak az aktív fájl megjelenítése",
+      "useFilesExclude": "Kizárt fájlok elrejtése",
+      "moreFilters": "További szűrők...",
+      "showingFilteredProblems": "{1}/{0} megjelenítése",
+      "filterPlaceholder": "Szűrő (pl. szöveg, **/*.ts, !**/node_modules/**)"
     },
     "memory-inspector": {
       "addressTooltip": "Megjelenítendő memóriahely, cím vagy címre kiértékelő kifejezés",

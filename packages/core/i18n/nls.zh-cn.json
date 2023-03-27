@@ -177,7 +177,16 @@
     "markers": {
       "clearAll": "清除所有",
       "noProblems": "到目前为止,在工作区还没有发现任何问题。",
-      "tabbarDecorationsEnabled": "在标签栏中显示问题装饰器(诊断标记)。"
+      "tabbarDecorationsEnabled": "在标签栏中显示问题装饰器(诊断标记)。",
+      "showErrors": "显示错误",
+      "showWarnings": "显示警告",
+      "showInfos": "显示信息",
+      "showHints": "显示提示",
+      "activeFile": "只看当前活动的文件",
+      "useFilesExclude": "隐藏排除的文件",
+      "moreFilters": "更多筛选器...",
+      "showingFilteredProblems": "正在显示 {0} of {1}",
+      "filterPlaceholder": "筛选器 (例如 text、**/*.ts、!**/node_modules/**)"
     },
     "memory-inspector": {
       "addressTooltip": "要显示的内存位置,一个地址或对一个地址进行评估的表达式",

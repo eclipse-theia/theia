@@ -32,6 +32,7 @@ import { PROBLEM_OPTIONS } from './problem-container';
 import { ProblemManager } from './problem-manager';
 import { ProblemTree } from './problem-tree-model';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 
 disableJSDOM();
 
@@ -40,14 +41,15 @@ let problemTree: ProblemTree;
 before(() => {
     disableJSDOM = enableJSDOM();
     const testContainer = new Container();
-
     testContainer.bind(MarkerManager).toSelf().inSingletonScope();
     testContainer.bind(ProblemManager).toSelf();
     testContainer.bind(MarkerOptions).toConstantValue(PROBLEM_OPTIONS);
     testContainer.bind(FileService).toConstantValue(<FileService>{
         onDidFilesChange: Event.None
     });
-
+    testContainer.bind(EditorManager).toConstantValue(<EditorManager>{
+        onCurrentEditorChanged: Event.None
+    });
     testContainer.bind(ProblemTree).toSelf().inSingletonScope();
     problemTree = testContainer.get<ProblemTree>(ProblemTree);
 });

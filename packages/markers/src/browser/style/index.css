@@ -79,6 +79,19 @@
     text-overflow: ellipsis;
 }
 
+
+.theia-marker-container .markerNode .message .match-wrap {
+    white-space: pre;
+}
+
+.theia-marker-container .markerNode .message .match {
+    display: inline-block;
+    line-height: normal;
+    white-space: pre;
+    background: var(--theia-editor-findMatchHighlightBackground);
+    border: 1px solid var(--theia-editor-findMatchHighlightBorder);
+}
+
 .theia-marker-container .row-button-container {
     display: none;
 }
@@ -89,4 +102,56 @@
     flex: 1;
     align-items: center;
     align-self: center;
+}
+
+.theia-marker-filter-container {
+    position: relative;
+}
+
+.theia-marker-filter-container .filter-input {
+    width: 360px;
+    padding-right: 26px;
+    border: var(--theia-dropdown-border) solid 1px;
+}
+
+.theia-marker-filter-container .filter-control {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 2px;
+    bottom: 0;
+    right: 6px;
+    height: 18px;
+    width: 18px;
+    border-radius: 2px;
+    padding-top: 2px;
+    border: var(--theia-border-width) solid transparent;
+}
+
+.theia-marker-filter-container .filter-control:hover,
+.theia-marker-filter-container .filter-control.valid {
+    border: var(--theia-border-width) var(--theia-inputOption-activeBorder) solid;
+    background-color: var(--theia-inputOption-activeBackground);
+}
+
+.theia-marker-filter-container .filter-stat-tag {
+    position: absolute;
+    right: 30px;
+    top: 2px;
+    line-height: 20px;
+    background-color: var(--theia-input-background);
+}
+
+.theia-marker-filter-container .filter-stat-tag.hidden {
+    display: none;
+}
+
+.theia-marker-filter-container .filter-stat-tag-content {
+    background-color: var(--theia-inputOption-activeBackground);
+    border: var(--theia-border-width) var(--theia-inputOption-activeBorder) solid;
+    padding: 0 6px;
+    border-radius: 2px;
+    cursor: pointer;
 }

@@ -20,7 +20,6 @@ const disableJSDOM = enableJSDOM();
 
 import * as chai from 'chai';
 import URI from '@theia/core/lib/common/uri';
-
 import { Container } from '@theia/core/shared/inversify';
 import { ProblemManager } from './problem-manager';
 import { Event } from '@theia/core/lib/common/event';
@@ -29,6 +28,8 @@ import { DiagnosticSeverity, Range } from '@theia/core/shared/vscode-languageser
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
+import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
+import { MarkerManager } from '../marker-manager';
 
 disableJSDOM();
 
@@ -36,14 +37,12 @@ const expect = chai.expect;
 
 let manager: ProblemManager;
 let container: Container;
-
 /**
  * The default range for test purposes.
  */
 const range: Range = { start: { line: 0, character: 10 }, end: { line: 0, character: 10 } };
 
 describe('problem-manager', () => {
-
     beforeEach(() => {
         container = new Container();
         container.bind(ILogger).to(MockLogger);
@@ -52,6 +51,13 @@ describe('problem-manager', () => {
         container.bind(FileService).toConstantValue(<FileService>{
             onDidFilesChange: Event.None
         });
+        container.bind(EditorManager).toConstantValue(<EditorManager>{
+            onCurrentEditorChanged: Event.None,
+            currentEditor: {
+                getResourceUri: () => new URI('a')
+            }
+        });
+        container.bind(MarkerManager).toSelf().inSingletonScope();
         container.bind(ProblemManager).toSelf();
         manager = container.get(ProblemManager);
     });
@@ -164,6 +170,75 @@ describe('problem-manager', () => {
 
         });
 
+        describe('toolbarFilter', () => {
+            const defaultValue = { text: '', showErrors: true, showWarnings: true, showInfos: true, showHints: true, activeFile: false, useFilesExclude: false };
+            it('should find markers that toolbar filter for `text`', () => {
+                manager.setMarkers(new URI('xx'), 'a', [{ message: 'a1243', range, severity: DiagnosticSeverity.Error }]);
+                manager.setMarkers(new URI('xx'), 'A', [{ message: 'A', range, severity: DiagnosticSeverity.Error }]);
+                manager.setMarkers(new URI('a'), 'dd', [{ message: 'dd', range, severity: DiagnosticSeverity.Error }]);
+                manager.setMarkers(new URI('xx'), 'b', [{ message: 'b', range, severity: DiagnosticSeverity.Error }]);
+                manager.setFilters({ ...defaultValue, text: 'a' });
+                expect(manager.findMarkers({}, true).length).equal(3);
+                manager.setFilters({ ...defaultValue, text: 'b' });
+                expect(manager.findMarkers({}, true).length).equal(1);
+                manager.setFilters({ ...defaultValue, text: 'c' });
+                expect(manager.findMarkers({}, true).length).equal(0);
+            });
+
+            it('should find markers that toolbar filter for `showErrors`', () => {
+                manager.setMarkers(new URI('xx'), 'a', [{ message: 'a1243', range, severity: DiagnosticSeverity.Error }]);
+                manager.setMarkers(new URI('xx'), 'A', [{ message: 'A', range, severity: DiagnosticSeverity.Warning }]);
+                manager.setMarkers(new URI('a'), 'dd', [{ message: 'dd', range, severity: DiagnosticSeverity.Warning }]);
+                manager.setMarkers(new URI('xx'), 'b', [{ message: 'b', range, severity: DiagnosticSeverity.Information }]);
+                manager.setFilters({ ...defaultValue, showErrors: false });
+                expect(manager.findMarkers({}, true).length).equal(3);
+            });
+
+            it('should find markers that toolbar filter for `showWarnings`', () => {
+                manager.setMarkers(new URI('xx'), 'a', [{ message: 'a1243', range, severity: DiagnosticSeverity.Error }]);
+                manager.setMarkers(new URI('xx'), 'A', [{ message: 'A', range, severity: DiagnosticSeverity.Warning }]);
+                manager.setMarkers(new URI('a'), 'dd', [{ message: 'dd', range, severity: DiagnosticSeverity.Warning }]);
+                manager.setMarkers(new URI('xx'), 'b', [{ message: 'b', range, severity: DiagnosticSeverity.Information }]);
+                manager.setFilters({ ...defaultValue, showWarnings: false });
+                expect(manager.findMarkers({}, true).length).equal(2);
+            });
+
+            it('should find markers that toolbar filter for `showInfos`', () => {
+                manager.setMarkers(new URI('xx'), 'a', [{ message: 'a1243', range, severity: DiagnosticSeverity.Error }]);
+                manager.setMarkers(new URI('xx'), 'A', [{ message: 'A', range, severity: DiagnosticSeverity.Warning }]);
+                manager.setMarkers(new URI('a'), 'dd', [{ message: 'dd', range, severity: DiagnosticSeverity.Warning }]);
+                manager.setMarkers(new URI('xx'), 'b', [{ message: 'b', range, severity: DiagnosticSeverity.Information }]);
+                manager.setFilters({ ...defaultValue, showInfos: false });
+                expect(manager.findMarkers({}, true).length).equal(3);
+            });
+
+            it('should find markers that toolbar filter for `showHints`', () => {
+                manager.setMarkers(new URI('xx'), 'a', [{ message: 'a1243', range, severity: DiagnosticSeverity.Error }]);
+                manager.setMarkers(new URI('xx'), 'A', [{ message: 'A', range, severity: DiagnosticSeverity.Warning }]);
+                manager.setMarkers(new URI('a'), 'dd', [{ message: 'dd', range, severity: DiagnosticSeverity.Hint }]);
+                manager.setMarkers(new URI('xx'), 'b', [{ message: 'b', range, severity: DiagnosticSeverity.Hint }]);
+                manager.setFilters({ ...defaultValue, showHints: false });
+                expect(manager.findMarkers({}, true).length).equal(2);
+            });
+
+            it('should find markers that toolbar filter for `activeFile`', () => {
+                manager.setMarkers(new URI('xx'), 'a', [{ message: 'a1243', range, severity: DiagnosticSeverity.Error }]);
+                manager.setMarkers(new URI('xx'), 'A', [{ message: 'A', range, severity: DiagnosticSeverity.Warning }]);
+                manager.setMarkers(new URI('a'), 'dd', [{ message: 'dd', range, severity: DiagnosticSeverity.Hint }]);
+                manager.setMarkers(new URI('xx'), 'b', [{ message: 'b', range, severity: DiagnosticSeverity.Hint }]);
+                manager.setFilters({ ...defaultValue, activeFile: true });
+                expect(manager.findMarkers({}, true).length).equal(1);
+            });
+
+            it('should find markers that toolbar filter for `useFilesExclude`', () => {
+                manager.setMarkers(new URI('xx'), 'a', [{ message: 'a1243', range, severity: DiagnosticSeverity.Error }]);
+                manager.setMarkers(new URI('xx'), 'A', [{ message: 'A', range, severity: DiagnosticSeverity.Warning }]);
+                manager.setMarkers(new URI('a'), 'dd', [{ message: 'dd', range, severity: DiagnosticSeverity.Hint }]);
+                manager.setMarkers(new URI('xx'), 'b', [{ message: 'b', range, severity: DiagnosticSeverity.Hint }]);
+                manager.setFilters({ ...defaultValue, text: 'a', useFilesExclude: true });
+                expect(manager.findMarkers({}, true).length).equal(1);
+            });
+        });
     });
 
     describe('#getUris', () => {
@@ -213,4 +288,18 @@ describe('problem-manager', () => {
 
     });
 
+
+    describe('#setFilters', () => {
+        it('should successfully set new filters', () => {
+            expect(manager.getToolbarFilters()).to.equal(undefined);
+            manager.setFilters({ text: 'a', showErrors: false, showWarnings: true, showInfos: false, showHints: true, activeFile: true, useFilesExclude: false })
+            expect(manager.getToolbarFilters()?.text).to.equal('a');
+            expect(manager.getToolbarFilters()?.showErrors).to.equal(false);
+            expect(manager.getToolbarFilters()?.showWarnings).to.equal(true);
+            expect(manager.getToolbarFilters()?.showInfos).to.equal(false);
+            expect(manager.getToolbarFilters()?.showHints).to.equal(true);
+            expect(manager.getToolbarFilters()?.activeFile).to.equal(true);
+            expect(manager.getToolbarFilters()?.useFilesExclude).to.equal(false);
+        });
+    })
 });

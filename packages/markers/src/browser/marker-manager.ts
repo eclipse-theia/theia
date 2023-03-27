@@ -20,7 +20,10 @@ import URI from '@theia/core/lib/common/uri';
 import { Marker } from '../common/marker';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
-
+import { Filters } from './problem/problem-filter';
+import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
+import { EditorManager } from '@theia/editor/lib/browser';
+import { match } from '@theia/core/lib/common/glob';
 /*
  * argument to the `findMarkers` method.
  */
@@ -110,20 +113,29 @@ export interface Owner2MarkerEntry {
 
 @injectable()
 export abstract class MarkerManager<D extends object> {
-
     public abstract getKind(): string;
-
+    protected toolbarFilters: Filters;
+    protected toolbarFilterFn: (data: D, collection: MarkerCollection<D>) => boolean = () => true;
     protected readonly uri2MarkerCollection = new Map<string, MarkerCollection<D>>();
     protected readonly onDidChangeMarkersEmitter = new Emitter<URI>();
 
     @inject(FileService)
     protected readonly fileService: FileService;
 
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
+
     @postConstruct()
     protected init(): void {
         this.fileService.onDidFilesChange(event => {
             if (event.gotDeleted()) {
                 this.cleanMarkers(event);
+            }
+        });
+
+        this.editorManager.onCurrentEditorChanged(() => {
+            if (this.toolbarFilters && this.toolbarFilters.activeFile) {
+                this.setFilters(this.toolbarFilters);
             }
         });
     }
@@ -164,14 +176,21 @@ export abstract class MarkerManager<D extends object> {
     /*
      * returns all markers that satisfy the given filter.
      */
-    findMarkers(filter: SearchFilter<D> = {}): Marker<D>[] {
+    findMarkers(filter: SearchFilter<D> = {}, enableToolbarFilters = true): Marker<D>[] {
+        const dataFilter = (data: D, collection: MarkerCollection<D>) => {
+            if (!enableToolbarFilters) {
+                return filter.dataFilter ? filter.dataFilter(data) : true;
+            }
+            return filter.dataFilter ? filter.dataFilter(data) && this.toolbarFilterFn(data, collection) : this.toolbarFilterFn(data, collection);
+        };
         if (filter.uri) {
             const collection = this.uri2MarkerCollection.get(filter.uri.toString());
-            return collection ? collection.findMarkers(filter) : [];
+            return collection ? collection.findMarkers({ ...filter, dataFilter: (data: D) => dataFilter(data, collection) }) : [];
         }
         const result: Marker<D>[] = [];
         for (const uri of this.getUris()) {
-            result.push(...this.uri2MarkerCollection.get(uri)!.findMarkers(filter));
+            const collection = this.uri2MarkerCollection.get(uri)!;
+            result.push(...collection.findMarkers({ ...filter, dataFilter: (data: D) => dataFilter(data, collection) }));
         }
         return result;
     }
@@ -202,4 +221,61 @@ export abstract class MarkerManager<D extends object> {
         }
     }
 
+    getToolbarFilters(): Filters | undefined {
+        return this.toolbarFilters;
+    }
+
+    setFilters(filters: Filters): void {
+        const { text, showErrors, showWarnings, showInfos, showHints, activeFile, useFilesExclude } = filters;
+        this.toolbarFilters = filters;
+        const markfilterFns: Array<(data: D, collection?: MarkerCollection<D>) => boolean> = [];
+
+        if (!showErrors) {
+            markfilterFns.push((data: D): boolean => (data as Diagnostic).severity !== DiagnosticSeverity.Error);
+        }
+        if (!showWarnings) {
+            markfilterFns.push((data: D) => (data as Diagnostic).severity !== DiagnosticSeverity.Warning);
+        }
+        if (!showInfos) {
+            markfilterFns.push((data: D) => (data as Diagnostic).severity !== DiagnosticSeverity.Information);
+        }
+
+        if (!showHints) {
+            markfilterFns.push((data: D) => (data as Diagnostic).severity !== DiagnosticSeverity.Hint);
+        }
+
+        if (activeFile) {
+            markfilterFns.push((data: D, collection: MarkerCollection<D>) => {
+                const editor = this.editorManager.currentEditor;
+                if (editor) {
+                    const uri = editor.getResourceUri();
+                    return collection.uri.path.toString() === uri?.path.toString();
+                }
+                return true;
+            });
+        }
+
+        if (text) {
+            const startWithExclude = text.startsWith('!');
+            let filterText = text.replace(/^!/, '').replace(/\/$/, '');
+            if (filterText[0] === '.') {
+                filterText = '*' + filterText; // convert ".js" to "*.js"
+            }
+
+            if (startWithExclude !== useFilesExclude) {
+                markfilterFns.push((data: D, collection: MarkerCollection<D>) => !((data as Diagnostic).message.toLowerCase().includes(text.replace(/^!/, '').toLowerCase()) ||
+                    [`**/${filterText}`, `**/${filterText}/**`].some((t: string) => match(t, collection.uri.path.toString()))));
+            } else {
+
+                markfilterFns.push((data: D, collection: MarkerCollection<D>) => (data as Diagnostic).message.toLowerCase().includes(text.replace(/^!/, '').toLowerCase()) ||
+                    [`**/${filterText}`, `**/${filterText}/**`].some((t: string) => match(t, collection.uri.path.toString())));
+            }
+        }
+
+        this.toolbarFilterFn = (data: D, collection: MarkerCollection<D>) => markfilterFns.every(filter => filter(data, collection));
+
+        for (const uriString of this.getUris()) {
+            this.fireOnDidChangeMarkers(new URI(uriString));
+        }
+    }
 }

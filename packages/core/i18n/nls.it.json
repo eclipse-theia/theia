@@ -177,7 +177,16 @@
     "markers": {
       "clearAll": "Cancella tutto",
       "noProblems": "Finora non sono stati rilevati problemi nell'area di lavoro.",
-      "tabbarDecorationsEnabled": "Mostra i decoratori di problemi (marcatori diagnostici) nelle barre delle schede."
+      "tabbarDecorationsEnabled": "Mostra i decoratori di problemi (marcatori diagnostici) nelle barre delle schede.",
+      "showErrors": "Mostra errori",
+      "showWarnings": "Mostra avvisi",
+      "showInfos": "Mostra informazioni",
+      "showHints": "Mostra suggerimenti",
+      "activeFile": "Mostra solo file attivo",
+      "useFilesExclude": "Nascondi file esclusi",
+      "moreFilters": "Altri filtri...",
+      "showingFilteredProblems": "Visualizzazione di {0} di {1}",
+      "filterPlaceholder": "Filtro (ad es. testo, **/*.ts, !**/node_modules/**)"
     },
     "memory-inspector": {
       "addressTooltip": "Posizione di memoria da visualizzare, un indirizzo o un'espressione che valuta un indirizzo",

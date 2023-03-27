@@ -177,7 +177,16 @@
     "markers": {
       "clearAll": "Clear All",
       "noProblems": "No problems have been detected in the workspace so far.",
-      "tabbarDecorationsEnabled": "Show problem decorators (diagnostic markers) in the tab bars."
+      "tabbarDecorationsEnabled": "Show problem decorators (diagnostic markers) in the tab bars.",
+      "showErrors": "Show Errors",
+      "showWarnings": "Show Warnings",
+      "showInfos": "Show Infos",
+      "showHints": "Show Hints",
+      "activeFile": "Show Active File Only",
+      "useFilesExclude": "Hide Excluded Files",
+      "moreFilters": "More Filters...",
+      "showingFilteredProblems": "Showing {0} of {1}",
+      "filterPlaceholder": "Filter (e.g. text, **/*.ts, !**/node_modules/**)"
     },
     "memory-inspector": {
       "addressTooltip": "Memory location to display, an address or expression evaluating to an address",
