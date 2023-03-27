@@ -89,6 +89,7 @@ export class NotebookService implements Disposable {
         this.willAddNotebookDocumentEmitter.fire(model);
         this.notebookModels.set(uri.toString(), model);
         this.didAddNotebookDocumentEmitter.fire(model);
+        this.
         return model;
     }
 

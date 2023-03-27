@@ -47,8 +47,12 @@ export class NotebookModelResolverService {
 
         const notebookData = await this.resolveExistingNotebookData(arg as URI, viewType!);
 
-        return this.notebookService.createNotebookModel(notebookData, viewType, arg as URI);
+        const notebookModel = this.notebookService.createNotebookModel(notebookData, viewType, arg as URI);
 
+        notebookModel.onDidChangeDirty(dirty => this.onDidChangeDirtyEmitter.fire(notebookModel));
+        notebookModel.onDidSaveNotebook(() => this.onDidSaveNotebookEmitter.fire(notebookModel.uri.toComponents()));
+
+        return notebookModel;
     }
 
     private async resolveExistingNotebookData(resource: URI, viewType: string): Promise<NotebookData> {
