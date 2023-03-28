@@ -15,10 +15,11 @@
 // *****************************************************************************
 
 import { Disposable, DisposableCollection, Emitter, URI } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { NotebookData, NotebookExtensionDescription, TransientOptions } from '../../common';
 import { NotebookModel } from '../view-model/notebook-model';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export const NotebookProvider = Symbol('notebook provider');
 
@@ -37,13 +38,16 @@ export interface NotebookSerializer {
 @injectable()
 export class NotebookService implements Disposable {
 
+    @inject(FileService)
+    protected fileService: FileService;
+
     private notebookSerializerEmitter = new Emitter<string>();
     readonly onNotebookSerialzer = this.notebookSerializerEmitter.event;
 
-    private readonly disposables = new DisposableCollection();
+    protected readonly disposables = new DisposableCollection();
 
-    private readonly notebookProviders = new Map<string, SimpleNotebookProviderInfo>();
-    private readonly notebookModels = new Map<string, NotebookModel>();
+    protected readonly notebookProviders = new Map<string, SimpleNotebookProviderInfo>();
+    protected readonly notebookModels = new Map<string, NotebookModel>();
 
     private readonly addViewTypeEmitter = new Emitter<string>();
     readonly onAddViewType = this.addViewTypeEmitter.event;
@@ -85,11 +89,15 @@ export class NotebookService implements Disposable {
     }
 
     createNotebookModel(data: NotebookData, viewType: string, uri: URI): NotebookModel {
-        const model = new NotebookModel(data, uri, viewType);
+        const seralizer = this.notebookProviders.get(viewType)?.serializer;
+        if (!seralizer) {
+            throw new Error('no notebook serializer for ' + viewType);
+        }
+
+        const model = new NotebookModel(data, uri, viewType, seralizer, this.fileService);
         this.willAddNotebookDocumentEmitter.fire(model);
         this.notebookModels.set(uri.toString(), model);
         this.didAddNotebookDocumentEmitter.fire(model);
-        this.
         return model;
     }
 

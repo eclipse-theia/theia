@@ -33,7 +33,7 @@ class NotebookCellResource implements Resource {
     private cell: CellDto;
 
     constructor(public uri: URI, notebookModel: NotebookModel, cellIndex: number) {
-        this.cell = notebookModel.cells[cellIndex];
+        this.cell = notebookModel.data.cells[cellIndex];
     }
 
     readContents(options?: ResourceReadOptions | undefined): Promise<string> {

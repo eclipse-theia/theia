@@ -123,35 +123,3 @@ export class NotebooksMainImpl implements NotebooksMain {
     }
 }
 
-// CommandsRegistry.registerCommand('_executeDataToNotebook', async (accessor, ...args) => {
-
-//     const [notebookType, bytes] = args;
-//     assertType(typeof notebookType === 'string', 'string');
-//     assertType(bytes instanceof BinaryBuffer, 'BinaryBuffer');
-
-//     const notebookService = accessor.get(INotebookService);
-//     const info = await notebookService.withNotebookDataProvider(notebookType);
-//     if (!(info instanceof SimpleNotebookProviderInfo)) {
-//         return;
-//     }
-
-//     const dto = await info.serializer.dataToNotebook(bytes);
-//     return new SerializableObjectWithBuffers(NotebookDto.toNotebookDataDto(dto));
-// });
-
-// CommandsRegistry.registerCommand('_executeNotebookToData', async (accessor, ...args) => {
-
-//     const [notebookType, dto] = args;
-//     assertType(typeof notebookType === 'string', 'string');
-//     assertType(typeof dto === 'object');
-
-//     const notebookService = accessor.get(INotebookService);
-//     const info = await notebookService.withNotebookDataProvider(notebookType);
-//     if (!(info instanceof SimpleNotebookProviderInfo)) {
-//         return;
-//     }
-
-//     const data = NotebookDto.fromNotebookDataDto(dto.value);
-//     const bytes = await info.serializer.notebookToData(data);
-//     return bytes;
-// });

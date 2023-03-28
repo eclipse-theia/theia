@@ -49,7 +49,7 @@ export class NotebookModelResolverService {
 
         const notebookModel = this.notebookService.createNotebookModel(notebookData, viewType, arg as URI);
 
-        notebookModel.onDidChangeDirty(dirty => this.onDidChangeDirtyEmitter.fire(notebookModel));
+        notebookModel.onDirtyChanged(() => this.onDidChangeDirtyEmitter.fire(notebookModel));
         notebookModel.onDidSaveNotebook(() => this.onDidSaveNotebookEmitter.fire(notebookModel.uri.toComponents()));
 
         return notebookModel;

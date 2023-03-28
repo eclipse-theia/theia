@@ -23,12 +23,12 @@ export interface Cellrenderer {
 
 export class NotebookCellListView {
 
-    constructor(private renderers: Map<CellKind, Cellrenderer>, private notebookData: NotebookModel) {
+    constructor(private renderers: Map<CellKind, Cellrenderer>, private notebookModel: NotebookModel) {
     }
 
     render(): React.ReactNode {
         return <ul className='theia-notebook-cell-list'>
-            {this.notebookData.cells.map((cell, index) => this.renderers.get(cell.cellKind)?.render(this.notebookData, cell, index))}
+            {this.notebookModel.data.cells.map((cell, index) => this.renderers.get(cell.cellKind)?.render(this.notebookModel, cell, index))}
         </ul >;
     }
 
