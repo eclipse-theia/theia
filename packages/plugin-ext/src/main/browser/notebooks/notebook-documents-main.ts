@@ -17,7 +17,7 @@
 import { DisposableCollection } from '@theia/core';
 import { URI, UriComponents } from '@theia/core/lib/common/uri';
 import { ResourceMap } from '@theia/monaco-editor-core/esm/vs/base/common/map';
-import { NotebookModelResolverService, NotebookService } from '@theia/notebook/lib/browser';
+import { NotebookModelResolverService } from '@theia/notebook/lib/browser';
 import { MAIN_RPC_CONTEXT, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 
@@ -156,8 +156,8 @@ export class MainThreadNotebookDocuments implements NotebookDocumentsMain {
         const uri = URI.fromComponents(uriComponents);
 
         const ref = await this.notebookModelResolverService.resolve(uri);
-        const saveResult = await ref.save();
+        await ref.save({});
         ref.dispose();
-        return saveResult;
+        return true;
     }
 }

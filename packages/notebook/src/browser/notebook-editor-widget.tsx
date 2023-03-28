@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { URI } from '@theia/core';
-import { ReactWidget, Navigatable } from '@theia/core/lib/browser';
+import { ReactWidget, Navigatable, SaveableSource, Saveable } from '@theia/core/lib/browser';
 import { ReactNode } from '@theia/core/shared/react';
 import { CellKind } from '../common';
 import { Cellrenderer as CellRenderer, NotebookCellListView } from './view/notebook-cell-list-view';
@@ -26,15 +26,18 @@ import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/mar
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { NotebookModel } from './view-model/notebook-model';
 
-export class NotebookEditorWidget extends ReactWidget implements Navigatable {
+export class NotebookEditorWidget extends ReactWidget implements Navigatable, SaveableSource {
     static readonly ID = 'notebook';
 
     cellList: NotebookCellListView;
+
+    readonly saveable: Saveable;
 
     constructor(private uri: URI, public readonly notebookType: string, private notebookData: NotebookModel,
         private markdownRenderer: MarkdownRenderer,
         private editorProvider: MonacoEditorProvider) {
         super();
+        this.saveable = notebookData;
         this.id = 'notebook:' + uri.toString();
 
         this.createCellList();
