@@ -67,6 +67,10 @@ export interface SideBarRenderData extends TabBar.IRenderData<Widget> {
     paddingBottom?: number;
 }
 
+export interface ScrollableRenderData extends TabBar.IRenderData<Widget> {
+    tabWidth?: number;
+}
+
 /**
  * A tab bar renderer that offers a context menu. In addition, this renderer is able to
  * set an explicit position and size on the icon and label of each tab in a side bar.
@@ -204,11 +208,12 @@ export class TabBarRenderer extends TabBar.Renderer {
      * If size information is available for the label and icon, set an explicit height on the tab.
      * The height value also considers padding, which should be derived from CSS settings.
      */
-    override createTabStyle(data: SideBarRenderData): ElementInlineStyle {
+    override createTabStyle(data: SideBarRenderData & ScrollableRenderData): ElementInlineStyle {
         const zIndex = `${data.zIndex}`;
         const labelSize = data.labelSize;
         const iconSize = data.iconSize;
         let height: string | undefined;
+        let width: string | undefined;
         if (labelSize || iconSize) {
             const labelHeight = labelSize ? (this.tabBar && this.tabBar.orientation === 'horizontal' ? labelSize.height : labelSize.width) : 0;
             const iconHeight = iconSize ? iconSize.height : 0;
@@ -220,7 +225,12 @@ export class TabBarRenderer extends TabBar.Renderer {
             const paddingBottom = data.paddingBottom || 0;
             height = `${labelHeight + iconHeight + paddingTop + paddingBottom}px`;
         }
-        return { zIndex, height };
+        if (data.tabWidth) {
+            width = `${data.tabWidth}px`;
+        } else {
+            width = '';
+        }
+        return { zIndex, height, width };
     }
 
     /**
@@ -542,6 +552,13 @@ export class TabBarRenderer extends TabBar.Renderer {
 
 }
 
+export namespace ScrollableTabBar {
+    export interface Options {
+        minimumTabSize: number;
+        defaultTabSize: number;
+    }
+}
+
 /**
  * A specialized tab bar for the main and bottom areas.
  */
@@ -551,12 +568,24 @@ export class ScrollableTabBar extends TabBar<Widget> {
 
     private scrollBarFactory: () => PerfectScrollbar;
     private pendingReveal?: Promise<void>;
+    private isMouseOver = false;
+    private _dynamicTabOptions?: ScrollableTabBar.Options;
 
     protected readonly toDispose = new DisposableCollection();
 
-    constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
+    constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options, dynamicTabOptions?: ScrollableTabBar.Options) {
         super(options);
         this.scrollBarFactory = () => new PerfectScrollbar(this.scrollbarHost, options);
+        this._dynamicTabOptions = dynamicTabOptions;
+    }
+
+    set dynamicTabOptions(options: ScrollableTabBar.Options | undefined) {
+        this._dynamicTabOptions = options;
+        this.updateTabs();
+    }
+
+    get dynamicTabOptions(): ScrollableTabBar.Options | undefined {
+        return this._dynamicTabOptions;
     }
 
     override dispose(): void {
@@ -571,6 +600,14 @@ export class ScrollableTabBar extends TabBar<Widget> {
         if (!this.scrollBar) {
             this.scrollBar = this.scrollBarFactory();
         }
+        this.node.addEventListener('mouseenter', () => { this.isMouseOver = true; });
+        this.node.addEventListener('mouseleave', () => {
+            this.isMouseOver = false;
+            if (this.needsRecompute) {
+                this.updateTabs();
+            }
+        });
+
         super.onAfterAttach(msg);
     }
 
@@ -582,8 +619,37 @@ export class ScrollableTabBar extends TabBar<Widget> {
         }
     }
 
+    needsRecompute = false;
+    tabSize = 0;
+
     protected override onUpdateRequest(msg: Message): void {
-        super.onUpdateRequest(msg);
+        this.updateTabs();
+    }
+
+    protected updateTabs(): void {
+        const content = [];
+        if (this.dynamicTabOptions) {
+            if (this.isMouseOver) {
+                this.needsRecompute = true;
+            } else {
+                this.needsRecompute = false;
+                if (this.orientation === 'horizontal') {
+                    this.tabSize = Math.max(Math.min(this.scrollbarHost.clientWidth / this.titles.length,
+                        this.dynamicTabOptions.defaultTabSize), this.dynamicTabOptions.minimumTabSize);
+                }
+            }
+        }
+        for (let i = 0, n = this.titles.length; i < n; ++i) {
+            const title = this.titles[i];
+            const current = title === this.currentTitle;
+            const zIndex = current ? n : n - i - 1;
+            const renderData: ScrollableRenderData = { title: title, current: current, zIndex: zIndex };
+            if (this.dynamicTabOptions && this.orientation === 'horizontal') {
+                renderData.tabWidth = this.tabSize;
+            }
+            content[i] = this.renderer.renderTab(renderData);
+        }
+        VirtualDOM.render(content, this.contentNode);
         if (this.scrollBar) {
             this.scrollBar.update();
         }
@@ -591,6 +657,9 @@ export class ScrollableTabBar extends TabBar<Widget> {
 
     protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
+        if (this.dynamicTabOptions) {
+            this.updateTabs();
+        }
         if (this.scrollBar) {
             if (this.currentIndex >= 0) {
                 this.revealTab(this.currentIndex);
@@ -680,9 +749,10 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
         protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
         protected readonly tabBarToolbarFactory: () => TabBarToolbar,
         protected readonly breadcrumbsRendererFactory: BreadcrumbsRendererFactory,
-        protected readonly options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options,
+        options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options,
+        dynamicTabOptions?: ScrollableTabBar.Options
     ) {
-        super(options);
+        super(options, dynamicTabOptions);
         this.breadcrumbsRenderer = this.breadcrumbsRendererFactory();
         this.rewireDOM();
         this.toDispose.push(this.tabBarToolbarRegistry.onDidChange(() => this.update()));
@@ -746,8 +816,8 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
     }
 
     protected override onUpdateRequest(msg: Message): void {
-        super.onUpdateRequest(msg);
         this.updateToolbar();
+        super.onUpdateRequest(msg);
     }
 
     protected updateToolbar(): void {
@@ -756,6 +826,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
         }
         const widget = this.currentTitle?.owner ?? undefined;
         this.toolbar.updateTarget(widget);
+        this.updateTabs();
     }
 
     override handleEvent(event: Event): void {
@@ -859,7 +930,7 @@ export class SideTabBar extends ScrollableTabBar {
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        this.renderTabBar();
+        this.updateTabs();
         this.node.addEventListener('p-dragenter', this);
         this.node.addEventListener('p-dragover', this);
         this.node.addEventListener('p-dragleave', this);
@@ -875,7 +946,7 @@ export class SideTabBar extends ScrollableTabBar {
     }
 
     protected override onUpdateRequest(msg: Message): void {
-        this.renderTabBar();
+        this.updateTabs();
         if (this.scrollBar) {
             this.scrollBar.update();
         }
@@ -885,7 +956,7 @@ export class SideTabBar extends ScrollableTabBar {
      * Render the tab bar in the _hidden content node_ (see `hiddenContentNode` for explanation),
      * then gather size information for labels and render it again in the proper content node.
      */
-    protected renderTabBar(): void {
+    protected override updateTabs(): void {
         if (this.isAttached) {
             // Render into the invisible node
             this.renderTabs(this.hiddenContentNode);
