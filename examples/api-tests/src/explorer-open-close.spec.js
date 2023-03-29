@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2020 TypeFox and others.
+// Copyright (C) 2023 Ericsson and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,18 +15,13 @@
 // *****************************************************************************
 
 // @ts-check
-describe('Find and Replace', function () {
-    this.timeout(20_000);
+describe('Explorer and Editor - open and close', function () {
+    this.timeout(90_000);
     const { assert } = chai;
 
-    const { animationFrame } = require('@theia/core/lib/browser/browser');
     const { DisposableCollection } = require('@theia/core/lib/common/disposable');
-    const { CommonCommands } = require('@theia/core/lib/browser/common-frontend-contribution');
     const { EditorManager } = require('@theia/editor/lib/browser/editor-manager');
     const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
-    const { CommandRegistry } = require('@theia/core/lib/common/command');
-    const { KeybindingRegistry } = require('@theia/core/lib/browser/keybinding');
-    const { ContextKeyService } = require('@theia/core/lib/browser/context-key-service');
     const { FileNavigatorContribution } = require('@theia/navigator/lib/browser/navigator-contribution');
     const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');
     const { HostedPluginSupport } = require('@theia/plugin-ext/lib/hosted/browser/hosted-plugin');
@@ -36,16 +31,14 @@ describe('Find and Replace', function () {
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
     const workspaceService = container.get(WorkspaceService);
-    const commands = container.get(CommandRegistry);
-    const keybindings = container.get(KeybindingRegistry);
-    const contextKeyService = container.get(ContextKeyService);
     const navigatorContribution = container.get(FileNavigatorContribution);
     const shell = container.get(ApplicationShell);
     const rootUri = workspaceService.tryGetRoots()[0].resource;
     const pluginService = container.get(HostedPluginSupport);
     const progressStatusBarItem = container.get(ProgressStatusBarItem);
-    const fileUri = rootUri.resolve('../api-tests/test-ts-workspace/demo-file.ts');
 
+
+    const fileUri = rootUri.resolve('webpack.config.js');
     const toTearDown = new DisposableCollection();
 
     function pause(ms = 500) {
@@ -53,92 +46,79 @@ describe('Find and Replace', function () {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    /**
-     * @template T
-     * @param {() => Promise<T> | T} condition
-     * @returns {Promise<T>}
-     */
-    function waitForAnimation(condition) {
-        return new Promise(async (resolve, dispose) => {
-            toTearDown.push({ dispose });
-            do {
-                await animationFrame();
-            } while (!condition());
-            resolve();
-        });
-    }
-
     before(async () => {
         await pluginService.didStart;
-        await shell.leftPanelHandler.collapse();
         await editorManager.closeAll({ save: false });
-    });
-
-    beforeEach(async function () {
-        await navigatorContribution.closeView();
     });
 
     afterEach(async () => {
         await editorManager.closeAll({ save: false });
+        await navigatorContribution.closeView();
     });
 
     after(async () => {
-        await shell.leftPanelHandler.collapse();
         toTearDown.dispose();
     });
 
-    /**
-     * @param {import('@theia/core/lib/common/command').Command} command
-     */
-    async function assertEditorFindReplace(command) {
-        assert.isFalse(contextKeyService.match('findWidgetVisible'));
-        assert.isFalse(contextKeyService.match('findInputFocussed'));
-        assert.isFalse(contextKeyService.match('replaceInputFocussed'));
+    for (var i = 0; i < 5; i++) {
+        let ordering = 0;
+        it('Open/Close explorer and editor - ordering: ' + ordering++ + ', iteration #' + i, async function () {
+            await openExplorer();
+            await openEditor();
+            await closeEditor();
+            await closeExplorer();
+        });
 
-        keybindings.dispatchCommand(command.id);
-        await waitForAnimation(() => contextKeyService.match('findInputFocussed'));
+        it('Open/Close explorer and editor - ordering: ' + ordering++ + ', iteration  #' + i, async function () {
+            await openExplorer();
+            await openEditor();
+            await closeExplorer();
+            await closeEditor();
+        });
 
-        assert.isTrue(contextKeyService.match('findWidgetVisible'));
-        assert.isTrue(contextKeyService.match('findInputFocussed'));
-        assert.isFalse(contextKeyService.match('replaceInputFocussed'));
+        it('Open/Close editor, explorer - ordering: ' + ordering++ + ', iteration  - #' + i, async function () {
+            await openEditor();
+            await openExplorer();
+            await closeEditor();
+            await closeExplorer();
+        });
 
-        keybindings.dispatchKeyDown('Tab');
-        await waitForAnimation(() => !contextKeyService.match('findInputFocussed'));
-        assert.isTrue(contextKeyService.match('findWidgetVisible'));
-        assert.isFalse(contextKeyService.match('findInputFocussed'));
-        assert.equal(contextKeyService.match('replaceInputFocussed'), command === CommonCommands.REPLACE);
+        it('Open/Close editor, explorer - ordering: ' + ordering++ + ', iteration  - #' + i, async function () {
+            await openEditor();
+            await openExplorer();
+            await closeExplorer();
+            await closeEditor();
+        });
+
+        it('Open/Close explorer #' + i, async function () {
+            await openExplorer();
+            await closeExplorer();
+        });
     }
 
-    for (const command of [CommonCommands.FIND, CommonCommands.REPLACE]) {
-        it(command.label + ' in the active editor', async function () {
+    it('open/close explorer in quick succession', async function () {
+        for (let i = 0; i < 20; i++) {
             await openExplorer();
+            await closeExplorer();
+        }
+    });
 
+    it('open/close editor in quick succession', async function () {
+        await openExplorer();
+        for (let i = 0; i < 20; i++) {
             await openEditor();
-
-            await assertEditorFindReplace(command);
-        });
-
-        it(command.label + ' in the active explorer without the current editor', async function () {
-            await openExplorer();
-
-            // should not throw
-            await commands.executeCommand(command.id);
-        });
-
-        it(command.label + ' in the active explorer with the current editor', async function () {
-            await openEditor();
-
-            await openExplorer();
-
-            await assertEditorFindReplace(command);
-        });
-
-    }
+            await closeEditor();
+        }
+    });
 
     async function openExplorer() {
         await navigatorContribution.openView({ activate: true });
         const widget = await shell.revealWidget(EXPLORER_VIEW_CONTAINER_ID);
         assert.isDefined(widget, 'Explorer widget should exist');
+    }
+    async function closeExplorer() {
+        await navigatorContribution.closeView();
+        assert.isUndefined(await shell.revealWidget(EXPLORER_VIEW_CONTAINER_ID), 'Explorer widget should not exist');
     }
 
     async function openEditor() {
@@ -146,8 +126,13 @@ describe('Find and Replace', function () {
         await waitLanguageServerReady();
         const activeEditor = /** @type {MonacoEditor} */ MonacoEditor.get(editorManager.activeEditor);
         assert.isDefined(activeEditor);
-        // @ts-ignore
         assert.equal(activeEditor.uri.resolveToAbsolute().toString(), fileUri.resolveToAbsolute().toString());
+    }
+
+    async function closeEditor() {
+        await editorManager.closeAll({ save: false });
+        const activeEditor = /** @type {MonacoEditor} */ MonacoEditor.get(editorManager.activeEditor);
+        assert.isUndefined(activeEditor);
     }
 
     async function waitLanguageServerReady() {
@@ -162,7 +147,7 @@ describe('Find and Replace', function () {
             } else {
                 n--;
             }
-            if (n < 5) {
+            if (n < MAX_N) {
                 console.debug('n = ' + n);
             }
         }

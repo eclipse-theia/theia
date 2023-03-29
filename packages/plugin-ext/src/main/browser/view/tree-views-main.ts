@@ -30,6 +30,7 @@ import { TreeViewWidget, TreeViewNode, PluginTreeModel, TreeViewWidgetOptions } 
 import { PluginViewWidget } from './plugin-view-widget';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { DnDFileContentStore } from './dnd-file-content-store';
+import { ViewBadge } from '@theia/plugin';
 
 export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
 
@@ -170,6 +171,14 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
         const viewPanel = await this.viewRegistry.getView(treeViewId);
         if (viewPanel) {
             viewPanel.description = description;
+        }
+    }
+
+    async $setBadge(treeViewId: string, badge: ViewBadge | undefined): Promise<void> {
+        const viewPanel = await this.viewRegistry.getView(treeViewId);
+        if (viewPanel) {
+            viewPanel.badge = badge?.value;
+            viewPanel.badgeTooltip = badge?.tooltip;
         }
     }
 

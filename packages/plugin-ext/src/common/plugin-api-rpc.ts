@@ -690,6 +690,7 @@ export interface WorkspaceMain {
     $updateWorkspaceFolders(start: number, deleteCount?: number, ...rootsToAdd: string[]): Promise<void>;
     $getWorkspace(): Promise<files.FileStat | undefined>;
     $requestWorkspaceTrust(options?: theia.WorkspaceTrustRequestOptions): Promise<boolean | undefined>;
+    $resolveProxy(url: string): Promise<string | undefined>;
 }
 
 export interface WorkspaceExt {
@@ -743,6 +744,7 @@ export interface TreeViewsMain {
     $setMessage(treeViewId: string, message: string): void;
     $setTitle(treeViewId: string, title: string): void;
     $setDescription(treeViewId: string, description: string): void;
+    $setBadge(treeViewId: string, badge: theia.ViewBadge | undefined): void;
 }
 export class DataTransferFileDTO {
     constructor(readonly name: string, readonly contentId: string, readonly uri?: UriComponents) { }
@@ -1709,6 +1711,7 @@ export interface WebviewsMain {
     $reveal(handle: string, showOptions: theia.WebviewPanelShowOptions): void;
     $setTitle(handle: string, value: string): void;
     $setIconPath(handle: string, value: IconUrl | undefined): void;
+    $setBadge(handle: string, badge: theia.ViewBadge | undefined): void;
     $setHtml(handle: string, value: string): void;
     $setOptions(handle: string, options: theia.WebviewOptions): void;
     $postMessage(handle: string, value: any): Thenable<boolean>;
@@ -1734,6 +1737,7 @@ export interface WebviewViewsMain extends Disposable {
 
     $setWebviewViewTitle(handle: string, value: string | undefined): void;
     $setWebviewViewDescription(handle: string, value: string | undefined): void;
+    $setBadge(handle: string, badge: theia.ViewBadge | undefined): void;
 
     $show(handle: string, preserveFocus: boolean): void;
 }
