@@ -83,7 +83,7 @@ export const corePreferenceSchema: PreferenceSchema = {
         'window.extendedTabBarPreview': {
             type: 'boolean',
             default: false,
-            description: 'Controls whether more information about the tab should be displayed in horizontal tab bars.'
+            description: nls.localize('theia/core/extendedTabBarPreview', 'Controls whether more information about the tab should be displayed in horizontal tab bars.')
         },
         'window.menuBarVisibility': {
             type: 'string',

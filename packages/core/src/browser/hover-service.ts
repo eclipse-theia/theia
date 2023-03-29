@@ -132,6 +132,7 @@ export class HoverService {
             dispose: () => {
                 this.lastHidHover = Date.now();
                 host.classList.remove(updatedPosition);
+                host.classList.remove(...cssClasses ?? []);
             }
         });
 
