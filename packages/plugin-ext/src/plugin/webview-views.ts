@@ -133,6 +133,7 @@ export class WebviewViewExtImpl implements theia.WebviewView {
     _isVisible: boolean;
     _title: string | undefined;
     _description: string | undefined;
+    _badge: theia.ViewBadge | undefined;
 
     constructor(
         handle: string,
@@ -140,7 +141,7 @@ export class WebviewViewExtImpl implements theia.WebviewView {
         viewType: string,
         title: string | undefined,
         webview: WebviewImpl,
-        isVisible: boolean,
+        isVisible: boolean
     ) {
         this._viewType = viewType;
         this._title = title;
@@ -183,6 +184,19 @@ export class WebviewViewExtImpl implements theia.WebviewView {
         if (this._description !== value) {
             this._description = value;
             this.proxy.$setWebviewViewDescription(this.handle, value);
+        }
+    }
+
+    get badge(): theia.ViewBadge | undefined {
+        this.assertNotDisposed();
+        return this._badge;
+    }
+
+    set badge(badge: theia.ViewBadge | undefined) {
+        this.assertNotDisposed();
+        if (this._badge !== badge) {
+            this._badge = badge;
+            this.proxy.$setBadge(this.handle, badge ? { value: badge.value, tooltip: badge.tooltip } : undefined);
         }
     }
 

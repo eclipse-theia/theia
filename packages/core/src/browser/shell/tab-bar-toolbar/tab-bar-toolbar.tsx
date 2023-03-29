@@ -247,7 +247,7 @@ export class TabBarToolbar extends ReactWidget {
     }
 
     protected evaluateWhenClause(whenClause: string | undefined): boolean {
-        return whenClause ? this.contextKeyService.match(whenClause) : true;
+        return whenClause ? this.contextKeyService.match(whenClause, this.current?.node) : true;
     }
 
     protected executeCommand = (e: React.MouseEvent<HTMLElement>) => {

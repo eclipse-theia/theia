@@ -33,7 +33,7 @@ import { IconUrl } from '../../../common/plugin-protocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WebviewEnvironment } from './webview-environment';
 import URI from '@theia/core/lib/common/uri';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { Schemes } from '../../../common/uri-components';
@@ -50,6 +50,7 @@ import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/c
 import { BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
 import { ViewColumn } from '../../../plugin/types-impl';
 import { ExtractableWidget } from '@theia/core/lib/browser/widgets/extractable-widget';
+import { BadgeWidget } from '@theia/core/lib/browser/view-container';
 
 // Style from core
 const TRANSPARENT_OVERLAY_STYLE = 'theia-transparent-overlay';
@@ -87,7 +88,7 @@ export class WebviewWidgetIdentifier {
 export const WebviewWidgetExternalEndpoint = Symbol('WebviewWidgetExternalEndpoint');
 
 @injectable()
-export class WebviewWidget extends BaseWidget implements StatefulWidget, ExtractableWidget {
+export class WebviewWidget extends BaseWidget implements StatefulWidget, ExtractableWidget, BadgeWidget {
 
     private static readonly standardSupportedLinkSchemes = new Set([
         Schemes.http,
@@ -178,6 +179,11 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
     isExtractable: boolean = true;
     secondaryWindow: Window | undefined = undefined;
 
+    protected _badge?: number | undefined;
+    protected _badgeTooltip?: string | undefined;
+    protected onDidChangeBadgeEmitter = new Emitter<void>();
+    protected onDidChangeBadgeTooltipEmitter = new Emitter<void>();
+
     @postConstruct()
     protected init(): void {
         this.node.tabIndex = 0;
@@ -186,6 +192,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         this.addClass(WebviewWidget.Styles.WEBVIEW);
 
         this.toDispose.push(this.onMessageEmitter);
+        this.toDispose.push(this.onDidChangeBadgeEmitter);
+        this.toDispose.push(this.onDidChangeBadgeTooltipEmitter);
 
         this.transparentOverlay = document.createElement('div');
         this.transparentOverlay.classList.add(TRANSPARENT_OVERLAY_STYLE);
@@ -202,6 +210,32 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
                 this.transparentOverlay.style.display = 'none';
             }
         }));
+    }
+
+    get onDidChangeBadge(): Event<void> {
+        return this.onDidChangeBadgeEmitter.event;
+    }
+
+    get onDidChangeBadgeTooltip(): Event<void> {
+        return this.onDidChangeBadgeTooltipEmitter.event;
+    }
+
+    get badge(): number | undefined {
+        return this._badge;
+    }
+
+    set badge(badge: number | undefined) {
+        this._badge = badge;
+        this.onDidChangeBadgeEmitter.fire();
+    }
+
+    get badgeTooltip(): string | undefined {
+        return this._badgeTooltip;
+    }
+
+    set badgeTooltip(badgeTooltip: string | undefined) {
+        this._badgeTooltip = badgeTooltip;
+        this.onDidChangeBadgeTooltipEmitter.fire();
     }
 
     protected override onBeforeAttach(msg: Message): void {
