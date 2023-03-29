@@ -198,9 +198,11 @@ export class IconThemeService {
         const preference = this.schemaProvider.getSchemaProperty(ICON_THEME_PREFERENCE_KEY);
         if (preference) {
             const sortedThemes = Array.from(this.definitions).sort((a, b) => a.label.localeCompare(b.label));
-            preference.enum = sortedThemes.map(e => e.id);
-            preference.enumItemLabels = sortedThemes.map(e => e.label);
-            this.schemaProvider.updateSchemaProperty(ICON_THEME_PREFERENCE_KEY, preference);
+            this.schemaProvider.updateSchemaProperty(ICON_THEME_PREFERENCE_KEY, {
+                ...preference,
+                enum: sortedThemes.map(e => e.id),
+                enumItemLabels: sortedThemes.map(e => e.label)
+            });
         }
     }
 

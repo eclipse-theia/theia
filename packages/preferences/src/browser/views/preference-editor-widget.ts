@@ -17,6 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { postConstruct, injectable, inject } from '@theia/core/shared/inversify';
 import throttle = require('@theia/core/shared/lodash.throttle');
+import * as deepEqual from 'fast-deep-equal';
 import {
     PreferenceService,
     CompositeTreeNode,
@@ -35,7 +36,6 @@ import { Preference } from '../util/preference-types';
 import { COMMONLY_USED_SECTION_PREFIX } from '../util/preference-tree-generator';
 import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget';
 import { PreferenceNodeRendererCreatorRegistry } from './components/preference-node-renderer-creator';
-import stableJsonStringify = require('fast-json-stable-stringify');
 
 export interface PreferencesEditorState {
     firstVisibleChildID: string,
@@ -127,7 +127,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     protected handleSchemaChange(isFiltered: boolean): void {
         for (const [id, renderer, collection] of this.allRenderers()) {
             const node = this.model.getNode(renderer.nodeId);
-            if (!node || (Preference.LeafNode.is(node) && this.hasSchemaChanged(node))) {
+            if (!node || (Preference.LeafNode.is(node) && this.hasSchemaChanged(renderer, node))) {
                 renderer.dispose();
                 collection.delete(id);
             }
@@ -142,9 +142,6 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
                     if (!renderer.node.parentElement) { // If it hasn't been attached yet, it hasn't been checked for the current search.
                         this.hideIfFailsFilters(renderer, isFiltered);
                         collection.set(id, renderer);
-                    }
-                    if (!this.preferenceDataKeys.has(node.id) && Preference.LeafNode.is(node)) {
-                        this.setSchemaPropertyKey(node);
                     }
                     if (nextNode !== renderer.node) {
                         if (nextNode) {
@@ -169,21 +166,8 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         }
     }
 
-    protected hasSchemaChanged(leafNode: Preference.LeafNode): boolean {
-        const oldKey = this.preferenceDataKeys.get(leafNode.id);
-        const newKey = this.setSchemaPropertyKey(leafNode);
-        return oldKey !== newKey;
-    }
-
-    protected setSchemaPropertyKey(leafNode: Preference.LeafNode): string | undefined {
-        const schemaProperty = this.schemaProvider.getSchemaProperty(leafNode.preferenceId);
-        if (schemaProperty) {
-            const key = stableJsonStringify(schemaProperty);
-            this.preferenceDataKeys.set(leafNode.id, key);
-            return key;
-        } else {
-            return undefined;
-        }
+    protected hasSchemaChanged(renderer: GeneralPreferenceNodeRenderer, node: Preference.LeafNode): boolean {
+        return !deepEqual(renderer.schema, node.preference.data);
     }
 
     protected handleSearchChange(isFiltered: boolean, leavesAreVisible: boolean): void {
