@@ -4629,6 +4629,12 @@ export module '@theia/plugin' {
         readonly visible: boolean;
 
         /**
+         * The badge to display for this webview view.
+         * To remove the badge, set to undefined.
+         */
+        badge?: ViewBadge | undefined;
+
+        /**
          * Event fired when the visibility of the view changes.
          *
          * Actions that trigger a visibility change:
@@ -6008,6 +6014,22 @@ export module '@theia/plugin' {
     }
 
     /**
+     * A badge presenting a value for a view
+     */
+    export interface ViewBadge {
+
+        /**
+         * A label to present in tooltip for the badge.
+         */
+        readonly tooltip: string;
+
+        /**
+         * The value to present in the badge.
+         */
+        readonly value: number;
+    }
+
+    /**
      * Represents a Tree view
      */
     export interface TreeView<T> extends Disposable {
@@ -6059,6 +6081,12 @@ export module '@theia/plugin' {
          * Setting the description to null, undefined, or empty string will remove the message from the view.
          */
         description?: string;
+
+        /**
+         * The badge to display for this TreeView.
+         * To remove the badge, set to undefined.
+         */
+        badge: ViewBadge | undefined;
 
         /**
          * Reveal an element. By default revealed element is selected.

@@ -52,6 +52,9 @@ export class VSXExtensionsWidget extends SourceTreeWidget implements BadgeWidget
     protected _badge?: number;
     protected onDidChangeBadgeEmitter = new Emitter<void>();
 
+    protected _badgeTooltip?: string;
+    protected onDidChangeBadgeTooltipEmitter = new Emitter<void>();
+
     @inject(VSXExtensionsWidgetOptions)
     protected readonly options: VSXExtensionsWidgetOptions;
 
@@ -88,6 +91,19 @@ export class VSXExtensionsWidget extends SourceTreeWidget implements BadgeWidget
     set badge(count: number | undefined) {
         this._badge = count;
         this.onDidChangeBadgeEmitter.fire();
+    }
+
+    get onDidChangeBadgeTooltip(): Event<void> {
+        return this.onDidChangeBadgeTooltipEmitter.event;
+    }
+
+    get badgeTooltip(): string | undefined {
+        return this._badgeTooltip;
+    }
+
+    set badgeTooltip(tooltip: string | undefined) {
+        this._badgeTooltip = tooltip;
+        this.onDidChangeBadgeTooltipEmitter.fire();
     }
 
     protected computeTitle(): string {
