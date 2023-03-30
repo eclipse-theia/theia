@@ -437,6 +437,8 @@
       "duplicate": "Duplizieren",
       "failApply": "Änderungen konnten nicht auf neue Datei angewendet werden",
       "failSaveAs": "Kann \"{0}\" für das aktuelle Widget nicht ausführen.",
+      "newFilePlaceholder": "File Name",
+      "newFolderPlaceholder": "Folder Name",
       "noErasure": "Hinweis: Es wird nichts von der Festplatte gelöscht.",
       "openRecentPlaceholder": "Geben Sie den Namen des Arbeitsbereichs ein, den Sie öffnen möchten",
       "openRecentWorkspace": "Aktuellen Arbeitsbereich öffnen...",
