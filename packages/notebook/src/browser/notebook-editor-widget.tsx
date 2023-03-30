@@ -25,22 +25,25 @@ import { NotebookMarkdownCellRenderer } from './view/notebook-markdown-cell-view
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { NotebookModel } from './view-model/notebook-model';
+import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
 
 export class NotebookEditorWidget extends ReactWidget implements Navigatable, SaveableSource {
     static readonly ID = 'notebook';
 
-    cellList: NotebookCellListView;
-
     readonly saveable: Saveable;
+
+    private readonly renderers = new Map<CellKind, CellRenderer>([
+        [CellKind.Markup, new NotebookMarkdownCellRenderer(this.markdownRenderer)],
+        [CellKind.Code, new NotebookCodeCellRenderer(this.editorProvider, this.uri)]
+    ]);
 
     constructor(private uri: URI, public readonly notebookType: string, private notebookData: NotebookModel,
         private markdownRenderer: MarkdownRenderer,
-        private editorProvider: MonacoEditorProvider) {
+        private editorProvider: MonacoEditorProvider,
+        private toolbarFactory: NotebookCellToolbarFactory) {
         super();
         this.saveable = notebookData;
         this.id = 'notebook:' + uri.toString();
-
-        this.createCellList();
 
         this.update();
     }
@@ -52,18 +55,9 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         return this.uri;
     }
 
-    createCellList(): void {
-        const renderers = new Map<CellKind, CellRenderer>([
-            [CellKind.Markup, new NotebookMarkdownCellRenderer(this.markdownRenderer)],
-            [CellKind.Code, new NotebookCodeCellRenderer(this.editorProvider, this.uri)]
-        ]);
-
-        this.cellList = new NotebookCellListView(renderers, this.notebookData);
-    }
-
     protected render(): ReactNode {
         return <div>
-            {this.cellList.render()}
+            <NotebookCellListView renderers={this.renderers} notebookModel={this.notebookData} toolbarRenderer={this.toolbarFactory} />
         </div>;
     }
 }

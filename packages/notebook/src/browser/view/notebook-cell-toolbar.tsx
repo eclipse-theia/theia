@@ -13,25 +13,26 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
-
 import * as React from '@theia/core/shared/react';
-import { ReactNode } from '@theia/core/shared/react';
-import { CellDto } from '../../common';
-import { NotebookModel } from '../view-model/notebook-model';
-import { Cellrenderer } from './notebook-cell-list-view';
+import { NotebookCellToolbarItem } from './notebook-cell-toolbar-factory';
 
-export abstract class BaseNotebookCellView implements Cellrenderer {
+export interface NotebookCellToolbarProps {
+    inlineItems: NotebookCellToolbarItem[]
+}
 
-    protected abstract renderCell(notebookModel: NotebookModel, cell: CellDto, handle: number): ReactNode;
+export class NotebookCellToolbar extends React.Component<NotebookCellToolbarProps> {
 
-    render(notebookModel: NotebookModel, cell: CellDto, handle: number): ReactNode {
-        return <li className='theia-notebook-cell' key={'cell-' + handle}>
-            <div className='theia-notebook-cell-marker'></div>
-            <div className='theia-notebook-cell-toolbar'></div>
-            <div className='theia-notebook-cell-content'>
-                {this.renderCell(notebookModel, cell, handle)}
-            </div>
-        </li>;
+    constructor(props: NotebookCellToolbarProps) {
+        super(props);
     }
 
+    override render(): React.ReactNode {
+        return <div className='theia-notebook-cell-toolbar'>
+            {this.props.inlineItems.map(item => this.renderItem(item))}
+        </div>;
+    }
+
+    renderItem(item: NotebookCellToolbarItem): React.ReactNode {
+        return <div key={item.label} onClick={item.onClick} className={item.icon + ' theia-notebook-cell-toolbar-item'} />;
+    }
 }

@@ -16,20 +16,44 @@
 import * as React from '@theia/core/shared/react';
 import { CellDto, CellKind } from '../../common';
 import { NotebookModel } from '../view-model/notebook-model';
+import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
 
 export interface Cellrenderer {
     render(notebookData: NotebookModel, cell: CellDto, index: number): React.ReactNode
 }
 
-export class NotebookCellListView {
+interface CellListProps {
+    renderers: Map<CellKind, Cellrenderer>;
+    notebookModel: NotebookModel;
+    toolbarRenderer: NotebookCellToolbarFactory;
+}
 
-    constructor(private renderers: Map<CellKind, Cellrenderer>, private notebookModel: NotebookModel) {
+export class NotebookCellListView extends React.Component<CellListProps, { selectedCell?: CellDto }> {
+
+    constructor(props: CellListProps) {
+        super(props);
+        this.state = { selectedCell: undefined };
     }
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         return <ul className='theia-notebook-cell-list'>
-            {this.notebookModel.data.cells.map((cell, index) => this.renderers.get(cell.cellKind)?.render(this.notebookModel, cell, index))}
+            {this.props.notebookModel.data.cells
+                .map((cell, index) =>
+                    <li className='theia-notebook-cell' key={'cell-' + index} onClick={() => this.setState({ selectedCell: cell })}>
+                        <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
+                        <div className='theia-notebook-cell-statusbar'></div>
+                        <div className='theia-notebook-cell-content'>
+                            {this.renderCellContent(cell, index)}
+                        </div>
+                        {this.state.selectedCell === cell && this.props.toolbarRenderer.renderToolbar(cell)}
+                    </li>
+                )
+            }
         </ul >;
+    }
+
+    renderCellContent(cell: CellDto, index: number): React.ReactNode {
+        return this.props.renderers.get(cell.cellKind)?.render(this.props.notebookModel, cell, index);
     }
 
 }

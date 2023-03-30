@@ -4,6 +4,7 @@
 }
 
 .theia-notebook-cell {
+    cursor: grab;
     display: flex;
     margin: 10px 0px;
 }
@@ -15,12 +16,16 @@
     border-radius: 4px;
 }
 
+.theia-notebook-cell-marker-selected {
+    background-color: var(--theia-focusBorder);
+}
+
 .theia-notebook-cell-marker:hover {
     width: 8px;
     margin: 0px 4px 0px 4px;
 }
 
-.theia-notebook-cell-toolbar {
+.theia-notebook-cell-statusbar {
 }
 
 .theia-notebook-cell-content {
@@ -35,4 +40,31 @@
     padding: 10px;
     border: 1px solid grey;
     border-radius: 5px;
+}
+
+.theia-notebook-cell-toolbar {
+    border: 1px solid gray;
+    display: flex;
+    position: absolute;
+    right: 0;
+    margin: 10px;
+    padding: 2px;
+    background-color: var(--theia-editor-background);
+}
+
+.theia-notebook-cell-toolbar-item {
+    height: 18px;
+    width: 18px;
+    background-repeat: no-repeat;
+    padding: 2px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.theia-notebook-cell-toolbar-item:hover {
+    background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-notebook-cell-toolbar-item:active {
+    background-color: var(--theia-toolbar-active);
 }
