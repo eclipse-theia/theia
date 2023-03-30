@@ -4,7 +4,8 @@
     "../+(dev-packages|examples|typings|scripts)/**",
     "../packages/*/lib/**",
     "**/node_modules/**",
-    "**/*spec.ts"
+    "**/*spec.ts",
+    "../plugins/*"
   ],
   "excludeExternals": true,
   "external-modulemap": ".*\/packages\/([\\w\\-_]+)\/",

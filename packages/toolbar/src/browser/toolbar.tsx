@@ -221,6 +221,7 @@ export class ToolbarImpl extends TabBarToolbar {
                 data-column={`${alignment}`}
                 data-center-position={position}
                 onDrop={this.handleOnDrop}
+                onDragOver={this.handleOnDragEnter}
                 onDragEnter={this.handleOnDragEnter}
                 onDragLeave={this.handleOnDragLeave}
                 key={`column-space-${alignment}-${position}`}

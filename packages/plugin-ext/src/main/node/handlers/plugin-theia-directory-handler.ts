@@ -34,7 +34,7 @@ export class PluginTheiaDirectoryHandler implements PluginDeployerDirectoryHandl
 
     accept(resolvedPlugin: PluginDeployerEntry): boolean {
 
-        console.log('PluginTheiaDirectoryHandler: accepting plugin with path', resolvedPlugin.path());
+        console.debug('PluginTheiaDirectoryHandler: accepting plugin with path', resolvedPlugin.path());
 
         // handle only directories
         if (resolvedPlugin.isFile()) {

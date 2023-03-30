@@ -100,7 +100,7 @@ export class WindowTitleService {
         if (developmentHost) {
             this._title = developmentHost + this.separator + this._title;
         }
-        document.title = this._title;
+        document.title = this._title || FrontendApplicationConfigProvider.get().applicationName;
         this.onDidChangeTitleEmitter.fire(this._title);
     }
 

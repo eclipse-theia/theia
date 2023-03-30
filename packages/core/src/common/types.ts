@@ -17,6 +17,8 @@
 export { ArrayUtils } from './array-utils';
 export { Prioritizeable } from './prioritizeable';
 
+type UnknownObject<T extends object> = Record<string | number | symbol, unknown> & { [K in keyof T]: unknown };
+
 export type Deferred<T> = { [P in keyof T]: Promise<T[P]> };
 export type MaybeArray<T> = T | T[];
 export type MaybeNull<T> = { [P in keyof T]: T[P] | null };
@@ -54,7 +56,7 @@ export function isFunction<T extends (...args: unknown[]) => unknown>(value: unk
     return typeof value === 'function';
 }
 
-export function isObject<T = Record<string | number | symbol, unknown>>(value: unknown): value is T {
+export function isObject<T extends object>(value: unknown): value is UnknownObject<T> {
     // eslint-disable-next-line no-null/no-null
     return typeof value === 'object' && value !== null;
 }

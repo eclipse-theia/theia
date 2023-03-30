@@ -157,6 +157,7 @@ import {
     InputBoxValidationSeverity,
     TerminalLink,
     TerminalLocation,
+    TerminalExitReason,
     TerminalProfile,
     InlayHint,
     InlayHintKind,
@@ -753,7 +754,8 @@ export function createAPIFactory(
 
         const extensions: typeof theia.extensions = Object.freeze({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            getExtension<T = any>(extensionId: string): theia.Extension<T> | undefined {
+            getExtension<T = any>(extensionId: string, includeFromDifferentExtensionHosts: boolean = false): theia.Extension<T> | undefined {
+                includeFromDifferentExtensionHosts = false;
                 const plg = pluginManager.getPluginById(extensionId.toLowerCase());
                 if (plg) {
                     return new PluginExt(pluginManager, plg);
@@ -763,6 +765,10 @@ export function createAPIFactory(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             get all(): readonly theia.Extension<any>[] {
                 return pluginManager.getAllPlugins().map(plg => new PluginExt(pluginManager, plg));
+            },
+            get allAcrossExtensionHosts(): readonly theia.Extension<any>[] {
+                // we only support one extension host ATM so equivalent to calling "all()"
+                return this.all;
             },
             get onDidChange(): theia.Event<void> {
                 return pluginManager.onDidChange;
@@ -1301,7 +1307,8 @@ export function createAPIFactory(
             TabInputNotebookDiff: NotebookDiffEditorTabInput,
             TabInputWebview: WebviewEditorTabInput,
             TabInputTerminal: TerminalEditorTabInput,
-            TerminalLocation
+            TerminalLocation,
+            TerminalExitReason
         };
     };
 }
@@ -1369,13 +1376,15 @@ export class PluginExt<T> extends Plugin<T> implements ExtensionPlugin<T> {
     extensionPath: string;
     extensionUri: theia.Uri;
     extensionKind: ExtensionKind;
+    isFromDifferentExtensionHost: boolean;
 
-    constructor(protected override readonly pluginManager: PluginManager, plugin: InternalPlugin) {
+    constructor(protected override readonly pluginManager: PluginManager, plugin: InternalPlugin, isFromDifferentExtensionHost = false) {
         super(pluginManager, plugin);
 
         this.extensionPath = this.pluginPath;
         this.extensionUri = this.pluginUri;
         this.extensionKind = ExtensionKind.UI; // stub as a local extension (not running on a remote workspace)
+        this.isFromDifferentExtensionHost = isFromDifferentExtensionHost;
     }
 
     override get isActive(): boolean {

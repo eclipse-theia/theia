@@ -91,9 +91,11 @@ export class ThemeService {
         const preference = this.schemaProvider.getSchemaProperty(COLOR_THEME_PREFERENCE_KEY);
         if (preference) {
             const sortedThemes = this.getThemes().sort((a, b) => a.label.localeCompare(b.label));
-            preference.enum = sortedThemes.map(e => e.id);
-            preference.enumItemLabels = sortedThemes.map(e => e.label);
-            this.schemaProvider.updateSchemaProperty(COLOR_THEME_PREFERENCE_KEY, preference);
+            this.schemaProvider.updateSchemaProperty(COLOR_THEME_PREFERENCE_KEY, {
+                ...preference,
+                enum: sortedThemes.map(e => e.id),
+                enumItemLabels: sortedThemes.map(e => e.label)
+            });
         }
     }
 

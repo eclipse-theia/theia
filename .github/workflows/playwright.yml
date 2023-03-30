@@ -13,7 +13,7 @@ on:
 
 jobs:
   build-and-test-playwright:
-    name: ubuntu-latest,  Node.js 16.x
+    name: Playwright Tests (ubuntu-latest,  Node.js 16.x)
 
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Build
+      - name: Build Browser
         shell: bash
         run: |
           yarn --skip-integrity-check --network-timeout 100000
@@ -41,6 +41,11 @@ jobs:
         env:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+
+      - name: Build Playwright
+        shell: bash
+        run: |
+          yarn --cwd examples/playwright build
 
       - name: Test (playwright)
         uses: GabrielBB/xvfb-action@v1
