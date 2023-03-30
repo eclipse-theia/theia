@@ -29,6 +29,7 @@ test.describe('Theia Explorer View', () => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
         app = await TheiaApp.load(page, ws);
         explorer = await app.openView(TheiaExplorerView);
+        await explorer.waitForVisibleFileNodes();
     });
 
     test('should be visible and active after being opened', async () => {
