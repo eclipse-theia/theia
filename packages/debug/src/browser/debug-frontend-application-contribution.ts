@@ -54,6 +54,7 @@ import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import { DebugBreakpoint } from './model/debug-breakpoint';
 import { nls } from '@theia/core/lib/common/nls';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
+import { DebugConfiguration } from '../common/debug-configuration';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -449,14 +450,16 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     activate: false,
                 });
             }
-            if (!noDebug && (openDebug === 'openOnSessionStart' || (openDebug === 'openOnFirstSessionStart' && this.firstSessionStart))) {
+            const shouldOpenDebug = openDebug === 'openOnSessionStart' || (openDebug === 'openOnFirstSessionStart' && this.firstSessionStart);
+            // Do not open debug view when suppressed via configuration
+            if (!noDebug && !this.getOption(session, 'suppressDebugView') && shouldOpenDebug) {
                 this.openSession(session);
             }
             this.firstSessionStart = false;
         });
         this.manager.onDidStopDebugSession(session => {
             const { openDebug } = session.configuration;
-            if (openDebug === 'openOnDebugBreak') {
+            if (!this.getOption(session, 'suppressDebugView') && openDebug === 'openOnDebugBreak') {
                 this.openSession(session);
             }
         });
@@ -1494,10 +1497,30 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         }
 
         const session = this.manager.currentSession;
-        if (session && session.configuration.noDebug) {
-            return false;
+        if (session) {
+            if (session.configuration.noDebug) {
+                return false;
+            }
+            if (this.getOption(session, 'suppressDebugStatusbar')) {
+                return false;
+            }
         }
 
         return true;
+    }
+
+    protected getOption(session: DebugSession | undefined, option: keyof {
+        [Property in keyof DebugConfiguration]: boolean;
+    }): boolean | undefined {
+        // If session is undefined there will be no option
+        if (!session) {
+            return false;
+        }
+        // If undefined take the value of the parent
+        if (option in session.configuration && session.configuration[option] !== undefined) {
+            return session.configuration[option];
+        }
+
+        return this.getOption(session.parentSession, option);
     }
 }

@@ -210,7 +210,8 @@ export class DebugSessionManager {
     protected async startConfiguration(options: DebugConfigurationSessionOptions): Promise<DebugSession | undefined> {
         return this.progressService.withProgress('Start...', 'debug', async () => {
             try {
-                if (!await this.saveAll()) {
+                // If a parent session is available saving should be handled by the parent
+                if (!options.configuration.parentSessionId && !options.configuration.suppressSaveBeforeStart && !await this.saveAll()) {
                     return undefined;
                 }
                 await this.fireWillStartDebugSession();

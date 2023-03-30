@@ -360,6 +360,10 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         return this.combinedSchema.properties[key];
     }
 
+    /**
+     * {@link property} will be assigned to field {@link key} in the schema.
+     * Pass a new object to invalidate old schema.
+     */
     updateSchemaProperty(key: string, property: PreferenceDataProperty): void {
         this.updateSchemaProps(key, property);
         this.fireDidPreferenceSchemaChanged();

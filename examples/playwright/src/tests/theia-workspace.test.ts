@@ -33,19 +33,20 @@ test.describe('Theia Workspace', () => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
         const app = await TheiaApp.load(page, ws);
         const explorer = await app.openView(TheiaExplorerView);
-        const fileStatElements = await explorer.visibleFileStatNodes(DOT_FILES_FILTER);
         // resources/sample-files1 contains one folder and one file
-        expect(fileStatElements.length).toBe(2);
+        expect(await explorer.existsDirectoryNode('sampleFolder')).toBe(true);
+        expect(await explorer.existsFileNode('sample.txt')).toBe(true);
     });
 
     test('should be initialized with the contents of multiple file locations', async () => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1', 'src/tests/resources/sample-files2']);
         const app = await TheiaApp.load(page, ws);
         const explorer = await app.openView(TheiaExplorerView);
-        const fileStatElements = await explorer.visibleFileStatNodes(DOT_FILES_FILTER);
         // resources/sample-files1 contains one folder and one file
+        expect(await explorer.existsDirectoryNode('sampleFolder')).toBe(true);
+        expect(await explorer.existsFileNode('sample.txt')).toBe(true);
         // resources/sample-files2 contains one file
-        expect(fileStatElements.length).toBe(3);
+        expect(await explorer.existsFileNode('another-sample.txt')).toBe(true);
     });
 
 });

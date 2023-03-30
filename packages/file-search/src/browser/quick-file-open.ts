@@ -278,7 +278,10 @@ export class QuickFileOpenService implements QuickAccessProvider {
                     widget.editor.restoreViewState(closedEditor.viewState);
                 }
             })
-            .catch(error => this.messageService.error(error));
+            .catch(error => {
+                console.warn(error);
+                this.messageService.error(nls.localizeByDefault("Unable to open '{0}'", uri.path.toString()));
+            });
     }
 
     protected buildOpenerOptions(): EditorOpenerOptions {

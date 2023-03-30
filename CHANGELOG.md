@@ -8,7 +8,13 @@
 
 <a name="breaking_changes_1.36.0">[Breaking Changes:](#breaking_changes_1.36.0)</a>
 
+- [core] changed default icon theme from `none` to `theia-file-icons` [#11028](https://github.com/eclipse-theia/theia/pull/12346)
 - [plugin] renamed `TreeViewExtImpl#toTreeItem()` to `TreeViewExtImpl#toTreeElement()`
+- [scm] Fixing 'scm' inline commands, introduces the following breaking changes: [#12295](https://github.com/eclipse-theia/theia/pull/12295)
+    - Interface ScmInlineAction removes 'commands: CommandRegistry'
+    - Interface ScmInlineActions removes 'commands: CommandRegistry'
+    - Interface ScmTreeWidget.Props removes 'commands: CommandRegistry'
+- [terminal] removed `openTerminalFromProfile` method from `TerminalFrontendContribution` [#12322](https://github.com/eclipse-theia/theia/pull/12322)
 
 ## v1.35.0 - 02/23/2023
 

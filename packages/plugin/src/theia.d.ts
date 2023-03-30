@@ -3058,6 +3058,41 @@ export module '@theia/plugin' {
          *   without providing an exit code.
          */
         readonly code: number | undefined;
+
+        /**
+         * The reason that triggered the exit of a terminal.
+         */
+        readonly reason: TerminalExitReason;
+    }
+
+    /**
+     * Terminal exit reason kind.
+     */
+    export enum TerminalExitReason {
+        /**
+         * Unknown reason.
+         */
+        Unknown = 0,
+
+        /**
+         * The window closed/reloaded.
+         */
+        Shutdown = 1,
+
+        /**
+         * The shell process exited.
+         */
+        Process = 2,
+
+        /**
+         * The user closed the terminal.
+         */
+        User = 3,
+
+        /**
+         * An extension disposed the terminal.
+         */
+        Extension = 4
     }
 
     /**
@@ -4594,6 +4629,12 @@ export module '@theia/plugin' {
         readonly visible: boolean;
 
         /**
+         * The badge to display for this webview view.
+         * To remove the badge, set to undefined.
+         */
+        badge?: ViewBadge | undefined;
+
+        /**
          * Event fired when the visibility of the view changes.
          *
          * Actions that trigger a visibility change:
@@ -5973,6 +6014,22 @@ export module '@theia/plugin' {
     }
 
     /**
+     * A badge presenting a value for a view
+     */
+    export interface ViewBadge {
+
+        /**
+         * A label to present in tooltip for the badge.
+         */
+        readonly tooltip: string;
+
+        /**
+         * The value to present in the badge.
+         */
+        readonly value: number;
+    }
+
+    /**
      * Represents a Tree view
      */
     export interface TreeView<T> extends Disposable {
@@ -6024,6 +6081,12 @@ export module '@theia/plugin' {
          * Setting the description to null, undefined, or empty string will remove the message from the view.
          */
         description?: string;
+
+        /**
+         * The badge to display for this TreeView.
+         * To remove the badge, set to undefined.
+         */
+        badge: ViewBadge | undefined;
 
         /**
          * Reveal an element. By default revealed element is selected.
@@ -11550,6 +11613,27 @@ export module '@theia/plugin' {
          * If compact is true, debug sessions with a single child are hidden in the CALL STACK view to make the tree more compact.
          */
         compact?: boolean;
+
+        /**
+         * When true, a save will not be triggered for open editors when starting a debug session,
+         * regardless of the value of the `debug.saveBeforeStart` setting.
+         */
+        suppressSaveBeforeStart?: boolean;
+
+        /**
+         * When true, the debug toolbar will not be shown for this session.
+         */
+        suppressDebugToolbar?: boolean;
+
+        /**
+         * When true, the window statusbar color will not be changed for this session.
+         */
+        suppressDebugStatusbar?: boolean;
+
+        /**
+         * When true, the debug viewlet will not be automatically revealed for this session.
+         */
+        suppressDebugView?: boolean;
     }
 
     /**

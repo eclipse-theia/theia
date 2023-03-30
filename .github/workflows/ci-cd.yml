@@ -47,7 +47,7 @@ jobs:
           yarn lint
 
   build:
-    name: Build (${{ matrix.os }}, node-${{ matrix.node }}
+    name: Build and Test (${{ matrix.os }}, node-${{ matrix.node }})
 
     strategy:
       fail-fast: false
@@ -114,6 +114,7 @@ jobs:
           xvfb-run -a yarn electron test
 
   publish:
+    name: Publish to NPM and GitHub pages
     needs: build
     if: github.ref == 'refs/heads/master' && github.event_name != 'schedule' # We still publish the manually dispatched workflows: 'workflow_dispatch'.
     runs-on: ubuntu-latest
