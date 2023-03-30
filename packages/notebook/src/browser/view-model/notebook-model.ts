@@ -32,6 +32,7 @@ export class NotebookModel implements Saveable, Disposable {
     readonly autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
     dirty: boolean;
+    selectedCell?: CellDto;
     private dirtyCells: CellDto[] = [];
 
     constructor(public data: NotebookData,
@@ -71,6 +72,10 @@ export class NotebookModel implements Saveable, Disposable {
         if (this.dirty !== oldDirtyState) {
             this.dirtyChangedEmitter.fire();
         }
+    }
+
+    setSelectedCell(cell: CellDto): void {
+        this.selectedCell = cell;
     }
 
 }

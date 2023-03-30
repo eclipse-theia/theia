@@ -18,12 +18,14 @@ import '../../src/browser/style/index.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
 import { NotebookOpenHandler } from './notebook-open-handler';
-import { bindContributionProvider, ResourceResolver, } from '@theia/core';
+import { bindContributionProvider, CommandContribution, MenuContribution, ResourceResolver, } from '@theia/core';
 import { NotebookTypeRegistry } from './notebook-type-registry';
 import { NotebookService } from './service/notebook-service';
 import { NotebookEditorWidgetFactory } from './notebook-editor-widget-factory';
 import { NotebookCellResourceResolver } from './notebook-cell-resource-resolver';
 import { NotebookModelResolverService } from './service/notebook-model-resolver-service';
+import { NotebookCellActionContribution } from './contributions/notebook-cell-actions-contribution';
+import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Symbol('notebooks'));
@@ -34,10 +36,15 @@ export default new ContainerModule(bind => {
     bind(NotebookTypeRegistry).toSelf().inSingletonScope();
 
     bind(WidgetFactory).to(NotebookEditorWidgetFactory).inSingletonScope();
+    bind(NotebookCellToolbarFactory).toSelf().inSingletonScope();
 
     bind(NotebookService).toSelf().inSingletonScope();
 
     bind(NotebookCellResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(NotebookCellResourceResolver);
     bind(NotebookModelResolverService).toSelf().inSingletonScope();
+
+    bind(NotebookCellActionContribution).toSelf().inSingletonScope();
+    bind(MenuContribution).toService(NotebookCellActionContribution);
+    bind(CommandContribution).toService(NotebookCellActionContribution);
 });

@@ -23,6 +23,7 @@ import { NotebookService } from './service/notebook-service';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { NotebookModelResolverService } from './service/notebook-model-resolver-service';
+import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
 
 @injectable()
 export class NotebookEditorWidgetFactory implements WidgetFactory {
@@ -45,6 +46,9 @@ export class NotebookEditorWidgetFactory implements WidgetFactory {
 
     @inject(LabelProvider)
     protected labelProvider: LabelProvider;
+
+    @inject(NotebookCellToolbarFactory)
+    protected toolbarFactory: NotebookCellToolbarFactory;
 
     async createWidget(options?: NavigatableWidgetOptions & { notebookType: string }): Promise<NotebookEditorWidget> {
         if (!options) {
@@ -69,7 +73,8 @@ export class NotebookEditorWidgetFactory implements WidgetFactory {
             notebookType,
             await this.notebookModelResolver.resolve(uri, notebookType),
             this.markdownRenderer,
-            this.editorProvider
+            this.editorProvider,
+            this.toolbarFactory
         );
     }
 

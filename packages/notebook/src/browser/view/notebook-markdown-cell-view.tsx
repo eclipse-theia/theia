@@ -18,14 +18,14 @@ import * as React from '@theia/core/shared/react';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { CellDto } from '../../common';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
-import { BaseNotebookCellView } from './base-notebook-cell-view';
 import { NotebookModel } from '../view-model/notebook-model';
+import { Cellrenderer } from './notebook-cell-list-view';
 
-export class NotebookMarkdownCellRenderer extends BaseNotebookCellView {
+export class NotebookMarkdownCellRenderer implements Cellrenderer {
 
-    constructor(private markdownRenderer: MarkdownRenderer) { super(); }
+    constructor(private markdownRenderer: MarkdownRenderer) { }
 
-    protected renderCell(notebookModel: NotebookModel, cell: CellDto): React.ReactNode {
+    render(notebookModel: NotebookModel, cell: CellDto): React.ReactNode {
         const markdownNode = this.markdownRenderer.render(new MarkdownStringImpl(cell.source)).element;
         return <div
             // allready sanitized by markdown renderer

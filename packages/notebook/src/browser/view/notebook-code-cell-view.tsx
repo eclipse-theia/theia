@@ -19,13 +19,13 @@ import * as React from '@theia/core/shared/react';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { CellDto, CellUri } from '../../common';
 import { NotebookModel } from '../view-model/notebook-model';
-import { BaseNotebookCellView } from './base-notebook-cell-view';
+import { Cellrenderer } from './notebook-cell-list-view';
 
-export class NotebookCodeCellRenderer extends BaseNotebookCellView {
+export class NotebookCodeCellRenderer implements Cellrenderer {
 
-    constructor(private editorProvider: MonacoEditorProvider, private notebookUri: URI) { super(); }
+    constructor(private editorProvider: MonacoEditorProvider, private notebookUri: URI) { }
 
-    protected renderCell(notebookModel: NotebookModel, cell: CellDto, handle: number): React.ReactNode {
+    render(notebookModel: NotebookModel, cell: CellDto, handle: number): React.ReactNode {
         return <div>
             <Editor notebookModel={notebookModel} editorProvider={this.editorProvider} uri={this.createCellUri(cell, handle)} cell={cell}></Editor>
             {cell.outputs && cell.outputs.flatMap(output => output.outputs.map(item => <div>{new TextDecoder().decode(item.data.buffer)}</div>))}
@@ -57,7 +57,7 @@ function Editor({ notebookModel, editorProvider, uri, cell }: EditorProps): JSX.
             editor.document.onDirtyChanged(() => notebookModel.cellDirtyChanged(cell, editor.document.dirty));
             editor.onDocumentContentChanged(e => cell.source = e.document.getText());
         })();
-    });
+    }, []);
     return <div className='theia-notebook-cell-editor' id={uri.toString()}></div>;
 
 }

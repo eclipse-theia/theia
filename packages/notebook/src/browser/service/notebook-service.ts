@@ -106,7 +106,7 @@ export class NotebookService implements Disposable {
 
         const result = this.notebookProviders.get(viewType);
         if (!result) {
-            throw new Error(`NO provider registered for view type: '${viewType}'`);
+            throw new Error(`No provider registered for view type: '${viewType}'`);
         }
         return result;
     }
