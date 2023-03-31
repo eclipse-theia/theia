@@ -17,9 +17,11 @@
 import { Disposable, URI } from '@theia/core';
 import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 import { Saveable, SaveOptions } from '@theia/core/lib/browser';
-import { CellDto, NotebookData } from '../../common';
+import { Cell, CellUri, NotebookCellsChangeType, NotebookCellTextModelSplice, NotebookData, NotebookModelWillAddRemoveEvent } from '../../common';
 import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { NotebookCellModel } from './notebook-cell-model';
+import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 
 export class NotebookModel implements Saveable, Disposable {
 
@@ -27,24 +29,55 @@ export class NotebookModel implements Saveable, Disposable {
     readonly onDirtyChanged = this.dirtyChangedEmitter.event;
 
     private readonly saveEmitter = new Emitter<void>();
-    readonly onDidSaveNotebook = this.dirtyChangedEmitter.event;
+    readonly onDidSaveNotebook = this.saveEmitter.event;
+
+    private readonly didAddRemoveCellEmitter = new Emitter<NotebookModelWillAddRemoveEvent>();
+    readonly onDidAddOrRemoveCell = this.didAddRemoveCellEmitter.event;
 
     readonly autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
     dirty: boolean;
-    selectedCell?: CellDto;
-    private dirtyCells: CellDto[] = [];
+    selectedCell?: NotebookCellModel;
+    private dirtyCells: NotebookCellModel[] = [];
+
+    cells: NotebookCellModel[];
 
     constructor(public data: NotebookData,
         public uri: URI,
         public viewType: string,
         private serializer: NotebookSerializer,
-        private fileService: FileService) {
+        private fileService: FileService,
+        modelService: MonacoTextModelService) {
         this.dirty = false;
+
+        this.cells = data.cells.map((cell, index) => new NotebookCellModel(CellUri.generate(uri, index),
+            index,
+            cell.source,
+            cell.language,
+            cell.cellKind,
+            cell.outputs,
+            cell.metadata,
+            cell.internalMetadata,
+            cell.collapseState));
+
+        modelService.onDidCreate(editorModel => {
+            const modelUri = new URI(editorModel.uri);
+            if (modelUri.scheme === CellUri.scheme) {
+                const cellUri = CellUri.parse(modelUri);
+                if (cellUri && cellUri.notebook.isEqual(this.uri)) {
+                    const cell = this.cells.find(c => c.handle === cellUri.handle);
+                    if (cell) {
+                        cell.textModel = editorModel;
+                    }
+                }
+            }
+        });
     }
 
     dispose(): void {
-
+        this.dirtyChangedEmitter.dispose();
+        this.saveEmitter.dispose();
+        this.didAddRemoveCellEmitter.dispose();
     }
 
     async save(options: SaveOptions): Promise<void> {
@@ -60,7 +93,7 @@ export class NotebookModel implements Saveable, Disposable {
         return this.dirty;
     }
 
-    cellDirtyChanged(cell: CellDto, dirtyState: boolean): void {
+    cellDirtyChanged(cell: NotebookCellModel, dirtyState: boolean): void {
         if (dirtyState) {
             this.dirtyCells.push(cell);
         } else {
@@ -74,8 +107,20 @@ export class NotebookModel implements Saveable, Disposable {
         }
     }
 
-    setSelectedCell(cell: CellDto): void {
+    setSelectedCell(cell: NotebookCellModel): void {
         this.selectedCell = cell;
     }
 
+    insertNewCell(index: number, cells: NotebookCellModel[]): void {
+        const changes: NotebookCellTextModelSplice<Cell>[] = [[index, 0, cells]];
+        this.cells.splice(index, 0, ...cells);
+        this.didAddRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes } });
+        return;
+    }
+
+    removeCell(index: number, count: number): void {
+        const changes: NotebookCellTextModelSplice<Cell>[] = [[index, count, []]];
+        this.cells.splice(index, count);
+        this.didAddRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes } });
+    }
 }

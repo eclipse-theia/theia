@@ -14,6 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export function runDeleteAction(editor: , cell: ) {
+import { NotebookCellModel } from '../view-model/notebook-cell-model';
+import { NotebookModel } from '../view-model/notebook-model';
 
+export function runDeleteAction(notebookModel: NotebookModel, cell: NotebookCellModel): void {
+    notebookModel.removeCell(notebookModel.cells.indexOf(cell), 1);
+}
+
+export function requestCellEdit(notebookModel: NotebookModel, cell: NotebookCellModel): void {
+    cell.requestEdit();
 }
