@@ -41,7 +41,8 @@
   },
   "devDependencies": {
     "@theia/ext-scripts": "1.35.0",
-    "@theia/filesystem": "1.35.0"
+    "@theia/filesystem": "1.35.0",
+    "@theia/monaco": "1.35.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

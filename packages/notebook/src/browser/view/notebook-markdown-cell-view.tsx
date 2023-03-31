@@ -16,22 +16,47 @@
 
 import * as React from '@theia/core/shared/react';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
-import { CellDto } from '../../common';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { NotebookModel } from '../view-model/notebook-model';
 import { Cellrenderer } from './notebook-cell-list-view';
+import { NotebookCellModel } from '../view-model/notebook-cell-model';
+import { Editor } from './notebook-cell-editor';
+import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 
 export class NotebookMarkdownCellRenderer implements Cellrenderer {
 
-    constructor(private markdownRenderer: MarkdownRenderer) { }
+    constructor(private markdownRenderer: MarkdownRenderer, private editorProvider: MonacoEditorProvider) { }
 
-    render(notebookModel: NotebookModel, cell: CellDto): React.ReactNode {
-        const markdownNode = this.markdownRenderer.render(new MarkdownStringImpl(cell.source)).element;
-        return <div
-            // allready sanitized by markdown renderer
-            dangerouslySetInnerHTML={{ __html: markdownNode.innerHTML }} // eslint-disable-line react/no-danger
-        >
-        </div>;
+    render(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
+        return <MarkdownCell markdownRenderer={this.markdownRenderer} editorProvider={this.editorProvider} cell={cell} notebookModel={notebookModel} />;
     }
 
+}
+
+interface MarkdownCellProps {
+    markdownRenderer: MarkdownRenderer,
+    editorProvider: MonacoEditorProvider,
+
+    cell: NotebookCellModel,
+    notebookModel: NotebookModel
+}
+
+function MarkdownCell({ markdownRenderer, editorProvider, cell, notebookModel }: MarkdownCellProps): JSX.Element {
+    const markdownNode = markdownRenderer.render(new MarkdownStringImpl(cell.source)).element;
+
+    const [editMode, setEditMode] = React.useState(false);
+
+    React.useEffect(() => {
+        const listener = cell.onRequestCellEdit(() => setEditMode(true));
+        return () => listener.dispose();
+    }, [editMode]);
+
+    return <div>
+        {editMode ?
+            <Editor cell={cell} editorProvider={editorProvider} notebookModel={notebookModel} /> :
+            <div
+                // allready sanitized by markdown renderer
+                dangerouslySetInnerHTML={{ __html: markdownNode.innerHTML }} // eslint-disable-line react/no-danger
+            />}
+    </div>;
 }

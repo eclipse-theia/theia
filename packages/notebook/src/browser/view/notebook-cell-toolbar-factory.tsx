@@ -18,10 +18,10 @@ import * as React from '@theia/core/shared/react';
 import { CommandRegistry, CompoundMenuNodeRole, MenuModelRegistry } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { CellDto } from '../../common';
 import { NotebookCellToolbar } from './notebook-cell-toolbar';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
+import { NotebookCellModel } from '../view-model/notebook-cell-model';
 
 export interface NotebookCellToolbarItem {
     icon?: string;
@@ -44,7 +44,7 @@ export class NotebookCellToolbarFactory {
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
-    renderToolbar(notebookModel: NotebookModel, cell: CellDto): React.ReactNode {
+    renderToolbar(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
         const inlineItems: NotebookCellToolbarItem[] = [];
 
         const toolbarMenuId = 'notbook-cell-acions-menu';
@@ -55,7 +55,7 @@ export class NotebookCellToolbarFactory {
                 label: menuNode.label,
                 onClick: menuNode.role === CompoundMenuNodeRole.Submenu ?
                     e => this.openContextMenu(e, [toolbarMenuId, menuNode.id]) :
-                    () => this.commandRegistry.executeCommand(menuNode.command!, cell)
+                    () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell)
             });
         }
         return <NotebookCellToolbar inlineItems={inlineItems} />;

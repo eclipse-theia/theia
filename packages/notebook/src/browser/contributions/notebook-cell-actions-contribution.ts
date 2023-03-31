@@ -17,6 +17,7 @@
 import { Command, CommandContribution, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
+import { requestCellEdit, runDeleteAction } from './cellOperations';
 
 export namespace NotebookCellCommands {
     export const EDIT_COMMAND = Command.toDefaultLocalizedCommand({
@@ -52,8 +53,8 @@ export class NotebookCellActionContribution implements MenuContribution, Command
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND);
-        commands.registerCommand(NotebookCellCommands.DELETE_COMMAND);
+        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, { execute: requestCellEdit });
+        commands.registerCommand(NotebookCellCommands.DELETE_COMMAND, { execute: runDeleteAction });
         commands.registerCommand(NotebookCellCommands.SPLIT_CELL_COMMAND);
     }
 

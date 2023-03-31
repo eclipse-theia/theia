@@ -33,8 +33,8 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     readonly saveable: Saveable;
 
     private readonly renderers = new Map<CellKind, CellRenderer>([
-        [CellKind.Markup, new NotebookMarkdownCellRenderer(this.markdownRenderer)],
-        [CellKind.Code, new NotebookCodeCellRenderer(this.editorProvider, this.uri)]
+        [CellKind.Markup, new NotebookMarkdownCellRenderer(this.markdownRenderer, this.editorProvider)],
+        [CellKind.Code, new NotebookCodeCellRenderer(this.editorProvider)]
     ]);
 
     constructor(private uri: URI, public readonly notebookType: string, private notebookData: NotebookModel,

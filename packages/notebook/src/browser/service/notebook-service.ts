@@ -20,6 +20,7 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { NotebookData, NotebookExtensionDescription, TransientOptions } from '../../common';
 import { NotebookModel } from '../view-model/notebook-model';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 
 export const NotebookProvider = Symbol('notebook provider');
 
@@ -40,6 +41,9 @@ export class NotebookService implements Disposable {
 
     @inject(FileService)
     protected fileService: FileService;
+
+    @inject(MonacoTextModelService)
+    protected modelService: MonacoTextModelService;
 
     private notebookSerializerEmitter = new Emitter<string>();
     readonly onNotebookSerialzer = this.notebookSerializerEmitter.event;
@@ -94,7 +98,7 @@ export class NotebookService implements Disposable {
             throw new Error('no notebook serializer for ' + viewType);
         }
 
-        const model = new NotebookModel(data, uri, viewType, seralizer, this.fileService);
+        const model = new NotebookModel(data, uri, viewType, seralizer, this.fileService, this.modelService);
         this.willAddNotebookDocumentEmitter.fire(model);
         this.notebookModels.set(uri.toString(), model);
         this.didAddNotebookDocumentEmitter.fire(model);
