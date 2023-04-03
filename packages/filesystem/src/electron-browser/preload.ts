@@ -16,7 +16,7 @@
 import { CHANNEL_SHOW_OPEN, CHANNEL_SHOW_SAVE, OpenDialogOptions, SaveDialogOptions, TheiaFilesystemAPI } from '../electron-common/electron-api';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
-const { ipcRenderer, contextBridge } = require('electron');
+import { ipcRenderer, contextBridge } from '@theia/core/electron-shared/electron';
 
 const api: TheiaFilesystemAPI = {
     showOpenDialog: (options: OpenDialogOptions) => ipcRenderer.invoke(CHANNEL_SHOW_OPEN, options),

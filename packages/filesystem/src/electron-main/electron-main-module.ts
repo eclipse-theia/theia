@@ -18,5 +18,6 @@ import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-ma
 import { ElectronApi } from './electron-api-main';
 
 export default new ContainerModule(bind => {
-    bind(ElectronMainApplicationContribution).to(ElectronApi).inSingletonScope();
+    bind(ElectronApi).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(ElectronApi);
 });

@@ -308,7 +308,6 @@ export class ElectronMainApplication {
                 // `global` is undefined when `true`.
                 contextIsolation: true,
                 sandbox: false,
-                // https://github.com/eclipse-theia/theia/issues/2018
                 nodeIntegration: false,
                 // Setting the following option to `true` causes some features to break, somehow.
                 // Issue: https://github.com/eclipse-theia/theia/issues/8577

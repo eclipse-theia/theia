@@ -44,7 +44,8 @@ export default new ContainerModule(bind => {
     bindContributionProvider(bind, ElectronMainApplicationContribution);
 
     bind(ElectronMainApplicationContribution).toService(ElectronMessagingContribution);
-    bind(ElectronMainApplicationContribution).to(TheiaMainApi).inSingletonScope();
+    bind(TheiaMainApi).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(TheiaMainApi);
 
     bind(ElectronMainWindowService).to(ElectronMainWindowServiceImpl).inSingletonScope();
     bind(ElectronConnectionHandler).toDynamicValue(context =>

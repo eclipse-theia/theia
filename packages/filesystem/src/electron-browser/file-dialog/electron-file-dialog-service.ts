@@ -16,7 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { isOSX, OS } from '@theia/core/lib/common/os';
+import { isOSX } from '@theia/core/lib/common/os';
 import { MaybeArray } from '@theia/core/lib/common/types';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileStat } from '../../common/files';
@@ -128,10 +128,8 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
                 result.filters.push({ name: label, extensions: extensions });
             }
 
-            // On Linux, the _All Files_ filter [hides](https://github.com/eclipse-theia/theia/issues/11321) files without an extension.
-            // The bug is resolved in Electron >=18.
             if (props.canSelectFiles) {
-                if (OS.type() !== OS.Type.Linux || filters.length > 0) {
+                if (filters.length > 0) {
                     result.filters.push({ name: 'All Files', extensions: ['*'] });
                 }
             }
