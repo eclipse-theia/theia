@@ -54,12 +54,10 @@
 }
 
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tab .theia-tab-icon-label,
-.p-TabBar-tab.p-mod-drag-image .theia-tab-icon-label {
-  flex: 1 1 0px;
-  display: flex;
-  line-height: var(--theia-content-line-height);
-  align-items: center;
-  overflow: hidden;
+.p-TabBar-tab.p-mod-drag-image .theia-tab-icon-label  {
+    display: flex;
+    line-height: var(--theia-content-line-height);
+    align-items: center;
 }
 
 
@@ -114,14 +112,10 @@
   display: inline-block;
 }
 
-.p-TabBar.theia-app-centers .p-TabBar-tabLabel {
-  flex: 1 1 0;
-}
-
 .p-TabBar.theia-app-centers .p-TabBar-tabLabelDetails {
   margin-left: 5px;
   color: var(--theia-descriptionForeground);
-  flex: 1 1 0;
+  flex: 1 1 auto;
   overflow: hidden;
   white-space: nowrap;
 }
@@ -219,7 +213,6 @@
   user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
-  flex-shrink: 0;
 }
 
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon:hover {
@@ -337,7 +330,6 @@
 .p-TabBar-toolbar {
   z-index: var(--theia-tabbar-toolbar-z-index); /* Due to the scrollbar (`z-index: 1000;`) it has a greater `z-index`. */
   display: flex;
-  flex: 0 0 auto;
   flex-direction: row-reverse;
   padding: 4px;
   padding-left: 0px;
@@ -414,8 +406,15 @@
 }
 
 .theia-tabBar-tab-row {
-  flex: 1 1;
   display: flex;
   flex-flow: row nowrap;
   min-width: 100%;
+}
+
+.p-TabBar-tab .theia-tab-icon-label {
+  flex: 1;
+}
+
+.p-TabBar-tab.p-mod-closable:hover .theia-tab-icon-label {
+  overflow: hidden;
 }

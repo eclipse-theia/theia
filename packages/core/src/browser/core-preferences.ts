@@ -233,22 +233,22 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: false,
             description: nls.localize('theia/core/tabMaximize', 'Controls whether to maximize tabs on double click.')
         },
-        'workbench.tab.dynamicTabs': {
+        'workbench.tab.shrinkToFit.enabled': {
             type: 'boolean',
-            default: 'false',
-            description: nls.localize('theis/core/tabDynamic', 'Resize tabs dynamically')
+            default: false,
+            description: nls.localize('theia/core/tabShrinkToFit', 'Shrink tabs to fit available space')
         },
-        'workbench.tab.minimumSize': {
+        'workbench.tab.shrinkToFit.minimumSize': {
             type: 'number',
             default: 50,
             minimum: 10,
-            description: nls.localize('theia/core/tabMinimumSize', 'Minimum size for dynamic tabs')
+            description: nls.localize('theia/core/tabMinimumSize', 'Minimum size for tabs')
         },
-        'workbench.tab.defaultSize': {
+        'workbench.tab.shrinkToFit.defaultSize': {
             type: 'number',
             default: 200,
             minimum: 10,
-            description: nls.localize('theia/core/tabDefaultSize', 'Default size for dynamic tabs')
+            description: nls.localize('theia/core/tabDefaultSize', 'Default size for tabs')
         }
     }
 };
@@ -276,9 +276,9 @@ export interface CoreConfiguration {
     'workbench.sash.hoverDelay': number;
     'workbench.sash.size': number;
     'workbench.tab.maximize': boolean;
-    'workbench.tab.dynamicTabs': boolean;
-    'workbench.tab.minimumSize': number;
-    'workbench.tab.defaultSize': number;
+    'workbench.tab.shrinkToFit.enabled': boolean;
+    'workbench.tab.shrinkToFit.minimumSize': number;
+    'workbench.tab.shrinkToFit.defaultSize': number;
 }
 
 export const CorePreferenceContribution = Symbol('CorePreferenceContribution');

@@ -105,10 +105,10 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
 
     createTabBar(): TabBar<Widget> {
         const getDynamicTabOptions: () => ScrollableTabBar.Options | undefined = () => {
-            if (this.corePreferences.get('workbench.tab.dynamicTabs')) {
+            if (this.corePreferences.get('workbench.tab.shrinkToFit.enabled')) {
                 return {
-                    minimumTabSize: this.corePreferences.get('workbench.tab.minimumSize'),
-                    defaultTabSize: this.corePreferences.get('workbench.tab.defaultSize')
+                    minimumTabSize: this.corePreferences.get('workbench.tab.shrinkToFit.minimumSize'),
+                    defaultTabSize: this.corePreferences.get('workbench.tab.shrinkToFit.defaultSize')
                 };
             } else {
                 return undefined;
@@ -135,9 +135,9 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
         renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
         tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
         this.corePreferences.onPreferenceChanged(change => {
-            if (change.preferenceName === 'workbench.tab.dynamicTabs' ||
-                change.preferenceName === 'workbench.tab.minimumSize' ||
-                change.preferenceName === 'workbench.tab.defaultSize') {
+            if (change.preferenceName === 'workbench.tab.shrinkToFit.enabled' ||
+                change.preferenceName === 'workbench.tab.shrinkToFit.minimumSize' ||
+                change.preferenceName === 'workbench.tab.shrinkToFit.defaultSize') {
                 tabBar.dynamicTabOptions = getDynamicTabOptions();
             }
         });

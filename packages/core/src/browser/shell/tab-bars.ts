@@ -569,6 +569,8 @@ export class ScrollableTabBar extends TabBar<Widget> {
     private scrollBarFactory: () => PerfectScrollbar;
     private pendingReveal?: Promise<void>;
     private isMouseOver = false;
+    protected needsRecompute = false;
+    protected tabSize = 0;
     private _dynamicTabOptions?: ScrollableTabBar.Options;
 
     protected readonly toDispose = new DisposableCollection();
@@ -619,14 +621,12 @@ export class ScrollableTabBar extends TabBar<Widget> {
         }
     }
 
-    needsRecompute = false;
-    tabSize = 0;
-
     protected override onUpdateRequest(msg: Message): void {
         this.updateTabs();
     }
 
     protected updateTabs(): void {
+
         const content = [];
         if (this.dynamicTabOptions) {
             if (this.isMouseOver) {
@@ -816,8 +816,8 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
     }
 
     protected override onUpdateRequest(msg: Message): void {
-        this.updateToolbar();
         super.onUpdateRequest(msg);
+        this.updateToolbar();
     }
 
     protected updateToolbar(): void {
