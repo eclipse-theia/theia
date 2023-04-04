@@ -100,7 +100,7 @@ export class DefaultJsonSchemaContribution implements JsonSchemaContribution {
     protected readonly requestService: RequestService;
 
     async registerSchemas(context: JsonSchemaRegisterContext): Promise<void> {
-        const url = `${new Endpoint().httpScheme}//schemastore.azurewebsites.net/api/json/catalog.json`;
+        const url = `${new Endpoint().httpScheme}//schemastore.org/api/json/catalog.json`;
         const response = await this.requestService.request({ url });
         const schemas = RequestContext.asJson<{ schemas: DefaultJsonSchemaContribution.SchemaData[] }>(response).schemas;
         for (const s of schemas) {
