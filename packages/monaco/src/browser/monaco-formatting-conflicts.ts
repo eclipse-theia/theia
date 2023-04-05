@@ -104,7 +104,7 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
                 }))
                 .sort((a, b) => a.label!.localeCompare(b.label!));
 
-            const selectedFormatter = await this.monacoQuickInputService.showQuickPick(items, { placeholder: nls.localizeByDefault('Format Selection With...') });
+            const selectedFormatter = await this.monacoQuickInputService.showQuickPick(items, { placeholder: nls.localizeByDefault('Format Document With...') });
             if (selectedFormatter) {
                 this.setDefaultFormatter(languageId, selectedFormatter.detail ? selectedFormatter.detail : '');
                 resolve(selectedFormatter.value);
