@@ -22,6 +22,7 @@ import * as monaco from '@theia/monaco-editor-core';
 import { FormattingConflicts, FormattingMode } from '@theia/monaco-editor-core/esm/vs/editor/contrib/format/browser/format';
 import { DocumentFormattingEditProvider, DocumentRangeFormattingEditProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { nls } from '@theia/core/lib/common/nls';
 
 type FormattingEditProvider = DocumentFormattingEditProvider | DocumentRangeFormattingEditProvider;
 
@@ -103,7 +104,7 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
                 }))
                 .sort((a, b) => a.label!.localeCompare(b.label!));
 
-            const selectedFormatter = await this.monacoQuickInputService.showQuickPick(items, { placeholder: 'Select formatter for the current document' });
+            const selectedFormatter = await this.monacoQuickInputService.showQuickPick(items, { placeholder: nls.localizeByDefault('Format Selection With...') });
             if (selectedFormatter) {
                 this.setDefaultFormatter(languageId, selectedFormatter.detail ? selectedFormatter.detail : '');
                 resolve(selectedFormatter.value);
