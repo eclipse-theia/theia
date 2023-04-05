@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2021 logi.cals GmbH, EclipseSource and others.
+// Copyright (C) 2021-2023 logi.cals GmbH, EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -31,7 +31,8 @@ export default defineConfig({
         baseURL: 'http://localhost:3000',
         browserName: 'chromium',
         screenshot: 'only-on-failure',
-        viewport: { width: 1920, height: 1080 }
+        permissions: ['clipboard-read'],
+        viewport: { width: 1920, height: 1080 },
     },
     snapshotDir: './src/tests/snapshots',
     expect: {
