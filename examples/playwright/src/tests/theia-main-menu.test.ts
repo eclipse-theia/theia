@@ -74,10 +74,10 @@ test.describe('Theia Main Menu', () => {
 
     test('should be able to show menu item in submenu by path', async () => {
         const mainMenu = await menuBar.openMenu('File');
-        const openPreferencesItem = await mainMenu.menuItemByNamePath('Preferences', 'Open Settings (UI)');
+        const openPreferencesItem = await mainMenu.menuItemByNamePath('Preferences', 'Settings');
 
         const label = await openPreferencesItem?.label();
-        expect(label).toBe('Open Settings (UI)');
+        expect(label).toBe('Settings');
     });
 
     test('should close main menu', async () => {
