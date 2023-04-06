@@ -161,7 +161,7 @@ export class TabBarRenderer extends TabBar.Renderer {
             ? nls.localizeByDefault('Unpin')
             : nls.localizeByDefault('Close');
 
-        const hover = this.tabBar && (this.tabBar.orientation === 'horizontal' && !this.corePreferences?.['window.extendedTabBarPreview']) ? { title: title.caption } : {
+        const hover = this.tabBar && (this.tabBar.orientation === 'horizontal' && !this.corePreferences?.['window.tabbar.enhancedPreview']) ? { title: title.caption } : {
             onmouseenter: this.handleMouseEnterEvent
         };
 
@@ -482,7 +482,7 @@ export class TabBarRenderer extends TabBar.Renderer {
         return h.div({ className: baseClassName, style }, data.title.iconLabel);
     }
 
-    protected renderExtendedTabBarPreview = (title: Title<Widget>) => {
+    protected renderEnhancedPreview = (title: Title<Widget>) => {
         const hoverBox = document.createElement('div');
         hoverBox.classList.add('theia-horizontal-tabBar-hover-div');
         const labelElement = document.createElement('p');
@@ -505,7 +505,7 @@ export class TabBarRenderer extends TabBar.Renderer {
             if (title) {
                 if (this.tabBar.orientation === 'horizontal') {
                     this.hoverService.requestHover({
-                        content: this.renderExtendedTabBarPreview(title),
+                        content: this.renderEnhancedPreview(title),
                         target: event.currentTarget,
                         position: 'bottom',
                         cssClasses: ['extended-tab-preview']
