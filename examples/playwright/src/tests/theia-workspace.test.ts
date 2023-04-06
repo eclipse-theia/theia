@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { expect } from '@playwright/test';
 import { TheiaApp } from '../theia-app';
 import { DOT_FILES_FILTER, TheiaExplorerView } from '../theia-explorer-view';
 import { TheiaWorkspace } from '../theia-workspace';
-import { expect } from '@playwright/test';
 import test, { page } from './fixtures/theia-fixture';
 
 test.describe('Theia Workspace', () => {
@@ -33,8 +33,9 @@ test.describe('Theia Workspace', () => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
         const app = await TheiaApp.load(page, ws);
         const explorer = await app.openView(TheiaExplorerView);
-        // resources/sample-files1 contains one folder and one file
+        // resources/sample-files1 contains two folders and one file
         expect(await explorer.existsDirectoryNode('sampleFolder')).toBe(true);
+        expect(await explorer.existsDirectoryNode('sampleFolderCompact')).toBe(true);
         expect(await explorer.existsFileNode('sample.txt')).toBe(true);
     });
 
@@ -42,8 +43,9 @@ test.describe('Theia Workspace', () => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1', 'src/tests/resources/sample-files2']);
         const app = await TheiaApp.load(page, ws);
         const explorer = await app.openView(TheiaExplorerView);
-        // resources/sample-files1 contains one folder and one file
+        // resources/sample-files1 contains two folders and one file
         expect(await explorer.existsDirectoryNode('sampleFolder')).toBe(true);
+        expect(await explorer.existsDirectoryNode('sampleFolderCompact')).toBe(true);
         expect(await explorer.existsFileNode('sample.txt')).toBe(true);
         // resources/sample-files2 contains one file
         expect(await explorer.existsFileNode('another-sample.txt')).toBe(true);

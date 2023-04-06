@@ -1622,13 +1622,15 @@
     "@phosphor/signaling" "^1.3.1"
     "@phosphor/virtualdom" "^1.2.0"
 
-"@playwright/test@^1.30.0":
-  version "1.30.0"
-  resolved "https://registry.yarnpkg.com/@playwright/test/-/test-1.30.0.tgz#8c0c4930ff2c7be7b3ec3fd434b2a3b4465ed7cb"
-  integrity sha512-SVxkQw1xvn/Wk/EvBnqWIq6NLo1AppwbYOjNLmyU0R1RoQ3rLEBtmjTnElcnz8VEtn11fptj1ECxK0tgURhajw==
+"@playwright/test@^1.32.1":
+  version "1.32.1"
+  resolved "https://registry.yarnpkg.com/@playwright/test/-/test-1.32.1.tgz#749c9791adb048c266277a39ba0f7e33fe593ffe"
+  integrity sha512-FTwjCuhlm1qHUGf4hWjfr64UMJD/z0hXYbk+O387Ioe6WdyZQ+0TBDAc6P+pHjx2xCv1VYNgrKbYrNixFWy4Dg==
   dependencies:
     "@types/node" "*"
-    playwright-core "1.30.0"
+    playwright-core "1.32.1"
+  optionalDependencies:
+    fsevents "2.3.2"
 
 "@sindresorhus/df@^1.0.1":
   version "1.0.1"
@@ -2738,25 +2740,25 @@ ajv@^8.0.0, ajv@^8.0.1, ajv@^8.6.3, ajv@^8.8.0:
     require-from-string "^2.0.2"
     uri-js "^4.2.2"
 
-allure-commandline@^2.13.8:
+allure-commandline@^2.21.0:
   version "2.21.0"
   resolved "https://registry.yarnpkg.com/allure-commandline/-/allure-commandline-2.21.0.tgz#57433c32ac7dec10786a388542a27a1307d1443a"
   integrity sha512-1MMFkEhMScOFRkisuZwp52KrQVpPuhpK4SgIys9GPLqwczt9NcsI2G11XY2TSWydP5gBaPoSakevFHpqKVHaZw==
 
-allure-js-commons@2.0.0-beta.26:
-  version "2.0.0-beta.26"
-  resolved "https://registry.yarnpkg.com/allure-js-commons/-/allure-js-commons-2.0.0-beta.26.tgz#e049943cc8f5b91d1b62bc51805e1131ff2708a5"
-  integrity sha512-rGb3RT6hX3QDP08LlkBktRP9nstvX5VASoow87YOx7mynBv3UoIjNuwt9rmkWQ93tqTSZYIpJxgDVtkUdVLYsw==
+allure-js-commons@2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/allure-js-commons/-/allure-js-commons-2.1.0.tgz#cafc3ac445db1fc4d047aa1fa75a5584a06e0629"
+  integrity sha512-EPtyzVXjpWhIGpZd1jBQ9+Ymt+H0fhywkcBSN9eSXOjpmJV8TWGrQximQV5q9XKuNyMmz0PlwvbIn42NC/u2/A==
   dependencies:
     properties "^1.2.1"
     uuid "^8.3.0"
 
-allure-playwright@^2.0.0-beta.14:
-  version "2.0.0-beta.26"
-  resolved "https://registry.yarnpkg.com/allure-playwright/-/allure-playwright-2.0.0-beta.26.tgz#354e6d5b39d653b87dd80db1483b7e1ab8e65a00"
-  integrity sha512-HcsehXzb8+M3nP3gboxgPEt5SExIsl211LZ3eJ5hOf+2329xecMRAysJVNsZW6IzJMP47jGupBilVhJ3TQ9Ovw==
+allure-playwright@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/allure-playwright/-/allure-playwright-2.1.0.tgz#d93d6afa3dfd31702f70032f95e63a6dcb2bf447"
+  integrity sha512-0dt4Re8Mg5kLDevPuZOJHgYaG7+BKsdHodl8/GRJW5JiU1Vd1xHoyxj4WBb8r7F/AOi6ASjRBbZHofXRF43Tnw==
   dependencies:
-    allure-js-commons "2.0.0-beta.26"
+    allure-js-commons "2.1.0"
 
 anser@^2.0.1:
   version "2.1.1"
@@ -5605,7 +5607,7 @@ fs.realpath@^1.0.0:
   resolved "https://registry.yarnpkg.com/fs.realpath/-/fs.realpath-1.0.0.tgz#1504ad2523158caa40db4a2787cb01411994ea4f"
   integrity sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==
 
-fsevents@~2.3.2:
+fsevents@2.3.2, fsevents@~2.3.2:
   version "2.3.2"
   resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.3.2.tgz#8a526f78b8fdf4623b709e0b975c52c24c02fd1a"
   integrity sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==
@@ -8986,10 +8988,10 @@ pkg-up@^3.1.0:
   dependencies:
     find-up "^3.0.0"
 
-playwright-core@1.30.0:
-  version "1.30.0"
-  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.30.0.tgz#de987cea2e86669e3b85732d230c277771873285"
-  integrity sha512-7AnRmTCf+GVYhHbLJsGUtskWTE33SwMZkybJ0v6rqR1boxq2x36U7p1vDRV7HO2IwTZgmycracLxPEJI49wu4g==
+playwright-core@1.32.1:
+  version "1.32.1"
+  resolved "https://registry.yarnpkg.com/playwright-core/-/playwright-core-1.32.1.tgz#5a10c32403323b07d75ea428ebeed866a80b76a1"
+  integrity sha512-KZYUQC10mXD2Am1rGlidaalNGYk3LU1vZqqNk0gT4XPty1jOqgup8KDP8l2CUlqoNKhXM5IfGjWgW37xvGllBA==
 
 pn@^1.1.0:
   version "1.1.0"

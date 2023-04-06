@@ -18,6 +18,8 @@ import { expect } from '@playwright/test';
 import { TheiaAboutDialog } from '../theia-about-dialog';
 import { TheiaApp } from '../theia-app';
 import { TheiaExplorerView } from '../theia-explorer-view';
+import { TheiaNotificationIndicator } from '../theia-notification-indicator';
+import { TheiaNotificationOverlay } from '../theia-notification-overlay';
 import { TheiaQuickCommandPalette } from '../theia-quick-command-palette';
 import test, { page } from './fixtures/theia-fixture';
 
@@ -32,6 +34,10 @@ test.describe('Theia Quick Command', () => {
     });
 
     test('should show quick command palette', async () => {
+        await quickCommand.open();
+        expect(await quickCommand.isOpen()).toBe(true);
+        await quickCommand.hide();
+        expect(await quickCommand.isOpen()).toBe(false);
         await quickCommand.open();
         expect(await quickCommand.isOpen()).toBe(true);
     });
@@ -56,6 +62,15 @@ test.describe('Theia Quick Command', () => {
         expect(await quickCommand.isOpen()).toBe(false);
         const explorerView = new TheiaExplorerView(app);
         expect(await explorerView.isDisplayed()).toBe(true);
+    });
+
+    test('should trigger \'Quick Input: Test Positive Integer\' command by confirming via Enter', async () => {
+        await quickCommand.type('Test Positive', true);
+        expect(await quickCommand.isOpen()).toBe(true);
+        await quickCommand.type('6', true);
+        const notificationIndicator = new TheiaNotificationIndicator(app);
+        const notification = new TheiaNotificationOverlay(app, notificationIndicator);
+        expect(await notification.isEntryVisible('Positive Integer: 6')).toBe(true);
     });
 
 });

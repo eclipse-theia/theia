@@ -54,24 +54,29 @@ test.describe('Theia Explorer View', () => {
         expect(await explorer.isActive()).toBe(true);
     });
 
-    test('should show one folder named "sampleFolder" and one file named "sample.txt"', async () => {
+    test('should show one folder named "sampleFolder", one named "sampleFolderCompact" and one file named "sample.txt"', async () => {
         await explorer.selectTreeNode('sampleFolder');
         expect(await explorer.isTreeNodeSelected('sampleFolder')).toBe(true);
         const fileStatElements = await explorer.visibleFileStatNodes(DOT_FILES_FILTER);
-        expect(fileStatElements.length).toBe(2);
+        expect(fileStatElements.length).toBe(3);
 
-        let file; let folder;
+        let file; let folder; let compactFolder;
         if (await fileStatElements[0].isFolder()) {
             folder = fileStatElements[0];
-            file = fileStatElements[1];
+            compactFolder = fileStatElements[1];
+            file = fileStatElements[2];
         } else {
-            folder = fileStatElements[1];
+            folder = fileStatElements[2];
+            compactFolder = fileStatElements[1];
             file = fileStatElements[0];
         }
 
         expect(await folder.label()).toBe('sampleFolder');
         expect(await folder.isFile()).toBe(false);
         expect(await folder.isFolder()).toBe(true);
+        expect(await compactFolder.label()).toBe('sampleFolderCompact');
+        expect(await compactFolder.isFile()).toBe(false);
+        expect(await compactFolder.isFolder()).toBe(true);
         expect(await file.label()).toBe('sample.txt');
         expect(await file.isFolder()).toBe(false);
         expect(await file.isFile()).toBe(true);
@@ -84,7 +89,7 @@ test.describe('Theia Explorer View', () => {
         expect(await file.isFile()).toBe(true);
     });
 
-    test('should provide file stat nodes that can define whether they are collapsed or not and that can be expanded', async () => {
+    test('should provide file stat nodes that can define whether they are collapsed or not and that can be expanded and collapsed', async () => {
         const file = await explorer.getFileStatNodeByLabel('sample.txt');
         expect(await file.isCollapsed()).toBe(false);
 
@@ -93,12 +98,26 @@ test.describe('Theia Explorer View', () => {
 
         await folder.expand();
         expect(await folder.isCollapsed()).toBe(false);
+
+        await folder.collapse();
+        expect(await folder.isCollapsed()).toBe(true);
     });
 
     test('should provide file stat node by path "sampleFolder/sampleFolder1/sampleFolder1-1/sampleFile1-1-1.txt"', async () => {
         const file = await explorer.fileStatNode('sampleFolder/sampleFolder1/sampleFolder1-1/sampleFile1-1-1.txt');
         if (!file) { throw Error('File stat node could not be retrieved by path'); }
         expect(await file.label()).toBe('sampleFile1-1-1.txt');
+    });
+
+    test('should be able to check if compact folder "sampleFolderCompact/nestedFolder1/nestedFolder2" exists', async () => {
+        // default setting `explorer.compactFolders=true` renders folders in a compact form - single child folders will be compressed in a combined tree element
+        expect(await explorer.existsDirectoryNode('sampleFolderCompact/nestedFolder1/nestedFolder2', true /* compact */)).toBe(true);
+    });
+
+    test('should provide file stat node by path of compact folder "sampleFolderCompact/nestedFolder1/nestedFolder2/sampleFile1-1.txt"', async () => {
+        const file = await explorer.fileStatNode('sampleFolderCompact/nestedFolder1/nestedFolder2/sampleFile1-1.txt', true /* compact */);
+        if (!file) { throw Error('File stat node could not be retrieved by path'); }
+        expect(await file.label()).toBe('sampleFile1-1.txt');
     });
 
     test('should open context menu on "sample.txt"', async () => {

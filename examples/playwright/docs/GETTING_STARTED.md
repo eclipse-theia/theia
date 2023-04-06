@@ -12,7 +12,7 @@ The most important files in the theia-playwright-template are:
 
 * Example test in `tests/theia-app.test.ts`
 * Example page object in `test/page-objects/theia-app.ts`
-* Configuration files in `configs`, including the base playwright configuration at `configs/playwright.config.ts`
+* The base Playwright configuration file at `playwright.config.ts`
 * `package.json` with all required dependencies and scripts for running and debugging the tests
 
 Now, let's run the tests:
@@ -90,7 +90,7 @@ test("should undo and redo text changes and correctly update the dirty state", a
 });
 ```
 
-Below you can see this example test in action by stepping through the code with the VSCode debug tools.
+Below you can see this example test in action by stepping through the code with the VS Code debug tools.
 
 <div style='margin:0 auto;width:100%;'>
 
@@ -120,13 +120,35 @@ This keeps your tests independent of the underlying browser automation framework
 
 ## Executing tests
 
+## Building
+
+Run `yarn` in the root directory of the repository to build the Theia application.
+
+In order to build Playwright library, the tests and install all dependencies (ex: chromium) run the build script:
+
+```bash
+cd examples/playwright
+yarn build
+```
+
+### Starting the Theia Application under test
+
 Before running your tests, the Theia application under test needs to be running.
 This repository already provides an example Theia application, however, you might want to test your custom Theia-based application instead.
 
-To run the application provided in this repository, run `yarn browser start` in the root of this repository after building everything with `yarn`.
-You may also use the `Launch Browser Backend` launch configuration in VS Code.
+The Playwright configuration however is aware of that and starts the backend (`yarn theia:start`) on port 3000 if not already running.
+This is valid for executing tests with the VS Code Playwright extension or from your command line.
 
-### Running the tests headless
+### Running the tests in VS Code via the Playwright extension
+
+For quick and easy execution of tests in VS Code, we recommend to use the [VS Code Playwright extension (`ms-playwright.playwright`)](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright).
+
+Once you have installed the VS Code Playwright test extension, open the *Test* view and click the `Run Tests` button on the top toolbar or the `Run Test` button for a particular test.
+It uses the default configuration with chromium as test profile by default.
+
+To run the tests headful, simply enable the checkbox `Show browser` in the Playwright section of the *Test* view.
+
+### Running the tests headless via CLI
 
 To start the tests run `yarn ui-tests` in the folder `playwright`.
 This will start the tests in a headless state.
@@ -134,24 +156,26 @@ This will start the tests in a headless state.
 To only run a single test file, the path of a test file can be set with `yarn ui-tests <path-to-file>` or `yarn ui-tests -g "<partial test file name>"`.
 See the [Playwright Test command line documentation](https://playwright.dev/docs/intro#command-line).
 
-### Running the tests headfull
+### Running the tests headful via CLI
 
 If you want to observe the execution of the tests in a browser, use `yarn ui-tests-headful` for all tests or `yarn ui-tests-headful <path-to-file>` to only run a specific test.
 
-### Debugging the tests
+### Debugging the tests via the VS Code Playwright extension
 
-To debug a test, open the test file in the code editor and run the `Run Playwright Test` configuration inside VS Code.
-This will start the Playwright inspector and debug the currently opened test file.
-Using this approach, you will be able to observe the tests in the browser and set breakpoints in VSCode.
-
-_Note that the tests need to be started in the playwright inspector again, as playwright pauses once the test reaches the `page.goto()` call._
-
-The Playwright inspector contains an editor that shows the currently executed code and offers debugging capabilities, which can be used instead of attaching the VS code debugger.
-
-The launched browser instance contains some additional features that are useful to debugging playwright tests. The browsers console contains a playwright object, which can be used to test the playwright API.
-For example the result of a given selector can be inspected. Additionally, this browser instance offers some quality of life improvements, such as preventing to resize the web application when the developer tools are opened, etc.
+To debug Playwright tests, open the *Test* view in VS Code and click the `Debug Tests` button on the top toolbar or the `Debug Test` for a particular test.
+It uses the default configuration with chromium as test profile by default.
 
 For more information on debugging, please refer to the [Playwright documentation](https://playwright.dev/docs/debug).
+
+### UI Mode - Watch and Trace Mode
+
+For an advanced test development experience, Playwright provides the so-called *UI Mode*. To enable this, simply add the flag `--ui` to the CLI command.
+
+```bash
+yarn ui-tests --ui
+```
+
+For more information on the UI mode,  please refer to the [Playwright announcement of the UI mode](https://playwright.dev/docs/release-notes#introducing-ui-mode-preview).
 
 ## Advanced Topics
 
