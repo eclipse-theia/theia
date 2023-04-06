@@ -12,14 +12,15 @@
   },
   "homepage": "https://github.com/eclipse-theia/theia",
   "scripts": {
-    "clean": "rimraf lib *.tsbuildinfo",
-    "build": "tsc --incremental && npx playwright install chromium",
+    "clean": "rimraf lib *.tsbuildinfo .eslintcache",
+    "build": "yarn && yarn clean && tsc --incremental && yarn lint && yarn playwright:install",
+    "watch": "tsc -w --incremental",
     "theia:start": "rimraf .tmp.cfg && THEIA_CONFIG_DIR=$PWD/.tmp.cfg yarn --cwd ../browser start",
     "lint": "eslint -c ./.eslintrc.js --ext .ts ./src",
     "lint:fix": "eslint -c ./.eslintrc.js --ext .ts ./src --fix",
-    "ui-tests": "yarn && playwright test --config=./configs/playwright.config.ts",
-    "ui-tests-ci": "yarn && playwright test --config=./configs/playwright.ci.config.ts",
-    "ui-tests-headful": "yarn && playwright test --config=./configs/playwright.headful.config.ts",
+    "playwright:install": "playwright install chromium",
+    "ui-tests": "yarn build && playwright test",
+    "ui-tests-headful": "yarn build && playwright test --headed",
     "ui-tests-report-generate": "allure generate ./allure-results --clean -o allure-results/allure-report",
     "ui-tests-report": "yarn ui-tests-report-generate && allure open allure-results/allure-report"
   },
@@ -28,13 +29,15 @@
     "src"
   ],
   "dependencies": {
-    "@playwright/test": "^1.30.0",
+    "@playwright/test": "^1.32.1",
     "fs-extra": "^9.0.8"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.8",
-    "allure-commandline": "^2.13.8",
-    "allure-playwright": "^2.0.0-beta.14"
+    "allure-commandline": "^2.21.0",
+    "allure-playwright": "^2.1.0",
+    "rimraf": "^2.6.1",
+    "typescript": "~4.5.5"
   },
   "publishConfig": {
     "access": "public"

@@ -14,29 +14,37 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PlaywrightTestConfig } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
 
-const config: PlaywrightTestConfig = {
-    testDir: '../lib/tests',
-    testMatch: ['**/*.js'],
-    workers: 2,
+// Note: process.env.CI is always set to true for GitHub Actions
+
+export default defineConfig({
+    testDir: './lib/tests',
+    testMatch: ['**/*.test.js'],
+    workers: process.env.CI ? 1 : 2,
+    retries: process.env.CI ? 1 : 0,
+    // The number of times to repeat each test, useful for debugging flaky tests
+    repeatEach: 1,
     // Timeout for each test in milliseconds.
-    timeout: 60 * 1000,
+    timeout: 30 * 1000,
     use: {
         baseURL: 'http://localhost:3000',
         browserName: 'chromium',
         screenshot: 'only-on-failure',
         viewport: { width: 1920, height: 1080 }
     },
-    snapshotDir: '../src/tests/snapshots',
+    snapshotDir: './src/tests/snapshots',
     expect: {
-        toMatchSnapshot: { threshold: 0.15 }
+        toMatchSnapshot: { threshold: 0.01 }
     },
     preserveOutput: 'failures-only',
-    reporter: [
-        ['list'],
-        ['allure-playwright']
-    ]
-};
-
-export default config;
+    reporter: process.env.CI
+        ? [['list'], ['allure-playwright'], ['github']]
+        : [['list'], ['allure-playwright']],
+    // Reuse Theia backend on port 3000 or start instance before executing the tests
+    webServer: {
+        command: 'yarn theia:start',
+        port: 3000,
+        reuseExistingServer: true
+    }
+});

@@ -45,12 +45,21 @@ export class TheiaTreeNode {
     }
 
     async expand(): Promise<void> {
-        if (! await this.isCollapsed()) {
+        if (!await this.isCollapsed()) {
             return;
         }
         const expansionToggle = await this.elementHandle.waitForSelector(this.expansionToggleCssClass);
         await expansionToggle.click();
         await this.elementHandle.waitForSelector(`${this.expansionToggleCssClass}:not(${this.collapsedCssClass})`);
+    }
+
+    async collapse(): Promise<void> {
+        if (await this.isCollapsed()) {
+            return;
+        }
+        const expansionToggle = await this.elementHandle.waitForSelector(this.expansionToggleCssClass);
+        await expansionToggle.click();
+        await this.elementHandle.waitForSelector(`${this.expansionToggleCssClass}${this.collapsedCssClass}`);
     }
 
     async openContextMenu(): Promise<TheiaMenu> {
