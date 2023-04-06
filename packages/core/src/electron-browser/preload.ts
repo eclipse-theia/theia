@@ -131,7 +131,7 @@ const api: TheiaCoreAPI = {
             } catch (e) {
                 console.warn('exception in close handler ', e);
             }
-            event.sender.send(confirmChannel);
+            event.sender.send(cancelChannel);
         });
     },
 

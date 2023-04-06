@@ -20,7 +20,7 @@ import { ElectronSecurityToken } from '@theia/core/lib/electron-common/electron-
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MiniBrowserEnvironment } from '../../browser/environment/mini-browser-environment';
 
-import { } from '@theia/core/lib/electron-common/electron-api';
+import '@theia/core/lib/electron-common/electron-api';
 
 @injectable()
 export class ElectronMiniBrowserEnvironment extends MiniBrowserEnvironment {

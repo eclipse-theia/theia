@@ -12,7 +12,7 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-//
+// *****************************************************************************
 import { CHANNEL_SHOW_OPEN, CHANNEL_SHOW_SAVE, OpenDialogOptions, SaveDialogOptions, TheiaFilesystemAPI } from '../electron-common/electron-api';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -21,7 +21,6 @@ import { ipcRenderer, contextBridge } from '@theia/core/electron-shared/electron
 const api: TheiaFilesystemAPI = {
     showOpenDialog: (options: OpenDialogOptions) => ipcRenderer.invoke(CHANNEL_SHOW_OPEN, options),
     showSaveDialog: (options: SaveDialogOptions) => ipcRenderer.invoke(CHANNEL_SHOW_SAVE, options),
-
 };
 
 export function preload(): void {

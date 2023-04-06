@@ -12,7 +12,7 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-//
+// *****************************************************************************
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
 import { ElectronApi } from './electron-api-main';

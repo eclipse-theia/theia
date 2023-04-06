@@ -18,7 +18,7 @@ import { WebviewWidgetFactory } from '../../browser/webview/webview-widget-facto
 import { WebviewWidgetIdentifier, WebviewWidget } from '../../browser/webview/webview';
 import { CustomEditorWidgetFactory } from '../../browser/custom-editors/custom-editor-widget-factory';
 import { CustomEditorWidget } from '../../browser/custom-editors/custom-editor-widget';
-import { } from '@theia/core/lib/electron-common/electron-api';
+import '@theia/core/lib/electron-common/electron-api';
 
 export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
 

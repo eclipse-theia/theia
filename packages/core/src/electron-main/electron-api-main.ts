@@ -49,8 +49,7 @@ import {
     InternalMenuDto,
     CHANNEL_SET_MENU_BAR_VISIBLE,
     CHANNEL_TOGGLE_FULL_SCREEN
-}
-    from '../electron-common/electron-api';
+} from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
 import { Disposable, DisposableCollection, isOSX, MaybePromise } from '../common';
 import { createDisposableListener } from './event-utils';
@@ -247,7 +246,7 @@ export namespace TheiaRendererAPI {
     export function requestClose(wc: WebContents, stopReason: StopReason): Promise<boolean> {
         const channelNr = nextReplyChannel++;
         const confirmChannel = `confirm-${channelNr}`;
-        const cancelChannel = `confirm-${channelNr}`;
+        const cancelChannel = `cancel-${channelNr}`;
         const disposables = new DisposableCollection();
 
         return new Promise<boolean>(resolve => {
@@ -266,7 +265,7 @@ export namespace TheiaRendererAPI {
     }
 
     export function onApplicationStateChanged(wc: WebContents, handler: (state: FrontendApplicationState) => void): Disposable {
-        return createWindowListener(wc, CHANNEL_APP_STATE_CHANGED, (event, state) => handler(state as FrontendApplicationState));
+        return createWindowListener(wc, CHANNEL_APP_STATE_CHANGED, state => handler(state as FrontendApplicationState));
     }
 
     export function onIpcData(handler: (sender: WebContents, data: Uint8Array) => void): Disposable {
@@ -278,9 +277,9 @@ export namespace TheiaRendererAPI {
     }
 
     function createWindowListener(wc: WebContents, channel: string, handler: (...args: unknown[]) => unknown): Disposable {
-        return createDisposableListener<IpcMainEvent>(ipcMain, channel, event => {
+        return createDisposableListener<IpcMainEvent>(ipcMain, channel, (event, ...args) => {
             if (wc.id === event.sender.id) {
-                handler();
+                handler(...args);
             }
         });
     }

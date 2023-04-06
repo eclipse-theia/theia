@@ -12,7 +12,7 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-//
+// *****************************************************************************
 
 import { NativeKeyboardLayout } from '../common/keyboard/keyboard-layout-provider';
 import { Disposable } from '../common';
@@ -104,7 +104,7 @@ export const CHANNEL_SHOW_SAVE = 'ShowSaveDialog';
 export const CHANNEL_SHOW_ITEM_IN_FOLDER = 'ShowItemInFolder';
 export const CHANNEL_ATTACH_SECURITY_TOKEN = 'AttachSecurityToken';
 
-export const CHANNEL_GET_TITLE_STYLE_AT_STARTUP = 'GetTitleStyleAtAtStartup';
+export const CHANNEL_GET_TITLE_STYLE_AT_STARTUP = 'GetTitleStyleAtStartup';
 export const CHANNEL_SET_TITLE_STYLE = 'SetTitleStyle';
 export const CHANNEL_CLOSE = 'Close';
 export const CHANNEL_MINIMIZE = 'Minimize';

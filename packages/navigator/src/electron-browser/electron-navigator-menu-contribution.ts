@@ -24,7 +24,7 @@ import { NavigatorContextMenu, SHELL_TABBAR_CONTEXT_REVEAL } from '../browser/na
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import { } from '@theia/core/lib/electron-common/electron-api';
+import '@theia/core/lib/electron-common/electron-api';
 
 export const OPEN_CONTAINING_FOLDER = Command.toDefaultLocalizedCommand({
     id: 'revealFileInOS',
