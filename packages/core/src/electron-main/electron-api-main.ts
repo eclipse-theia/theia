@@ -48,7 +48,8 @@ import {
     CHANNEL_IS_FULL_SCREEN,
     InternalMenuDto,
     CHANNEL_SET_MENU_BAR_VISIBLE,
-    CHANNEL_TOGGLE_FULL_SCREEN
+    CHANNEL_TOGGLE_FULL_SCREEN,
+    CHANNEL_IS_MAXIMIZED
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
 import { Disposable, DisposableCollection, isOSX, MaybePromise } from '../common';
@@ -150,6 +151,10 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
 
         ipcMain.on(CHANNEL_MINIMIZE, event => {
             BrowserWindow.fromWebContents(event.sender)?.minimize();
+        });
+
+        ipcMain.on(CHANNEL_IS_MAXIMIZED, event => {
+            event.returnValue = BrowserWindow.fromWebContents(event.sender)?.isMaximized();
         });
 
         ipcMain.on(CHANNEL_MAXIMIZE, event => {

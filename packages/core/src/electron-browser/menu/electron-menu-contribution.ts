@@ -232,13 +232,17 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     }
 
     protected handleWindowControls(): void {
-        window.electronTheiaCore.onWindowEvent('maximize', () => {
-            document.body.classList.add('maximized');
-        });
+        toggleControlButtons();
+        window.electronTheiaCore.onWindowEvent('maximize', toggleControlButtons);
+        window.electronTheiaCore.onWindowEvent('unmaximize', toggleControlButtons);
 
-        window.electronTheiaCore.onWindowEvent('unmaximize', () => {
-            document.body.classList.remove('maximized');
-        });
+        function toggleControlButtons(): void {
+            if (window.electronTheiaCore.isMaximized()) {
+                document.body.classList.add('maximized');
+            } else {
+                document.body.classList.remove('maximized');
+            }
+        }
     }
 
     protected createControlButton(id: string, handler: () => void): HTMLElement {

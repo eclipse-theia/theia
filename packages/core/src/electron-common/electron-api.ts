@@ -57,6 +57,7 @@ export interface TheiaCoreAPI {
     getTitleBarStyleAtStartup(): Promise<string>;
     setTitleBarStyle(style: string): void;
     minimize(): void;
+    isMaximized(): boolean; // TODO: this should really be async, since it blocks the renderer process
     maximize(): void;
     unMaximize(): void;
     close(): void;
@@ -109,6 +110,8 @@ export const CHANNEL_SET_TITLE_STYLE = 'SetTitleStyle';
 export const CHANNEL_CLOSE = 'Close';
 export const CHANNEL_MINIMIZE = 'Minimize';
 export const CHANNEL_MAXIMIZE = 'Maximize';
+export const CHANNEL_IS_MAXIMIZED = 'IsMaximized';
+
 export const CHANNEL_UNMAXIMIZE = 'UnMaximize';
 export const CHANNEL_ON_WINDOW_EVENT = 'OnWindowEvent';
 export const CHANNEL_TOGGLE_DEVTOOLS = 'ToggleDevtools';
