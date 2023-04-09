@@ -303,12 +303,16 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
         const matches: SearchMatch[] = [];
         results.forEach(r => {
-            const lineText: string = widget.editor.document.getLineContent(r.range.start.line);
+            const numberOfLines = searchTerm.split('\n').length;
+            const lineTexts = [];
+            for (let i = 0; i < numberOfLines; i++) {
+                lineTexts.push(widget.editor.document.getLineContent(r.range.start.line + i));
+            }
             matches.push({
                 line: r.range.start.line,
                 character: r.range.start.character,
-                length: r.range.end.character - r.range.start.character,
-                lineText
+                length: searchTerm.length,
+                lineText: lineTexts.join('\n')
             });
         });
 
