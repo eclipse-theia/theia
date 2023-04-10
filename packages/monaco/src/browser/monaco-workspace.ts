@@ -41,7 +41,7 @@ import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/commo
 import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
 import { TextEdit } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { SnippetController2 } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetController2';
-import { isObject, MaybePromise } from '@theia/core/lib/common';
+import { isObject, MaybePromise, nls } from '@theia/core/lib/common';
 
 export namespace WorkspaceFileEdit {
     export function is(arg: Edit): arg is monaco.languages.IWorkspaceFileEdit {
@@ -280,12 +280,12 @@ export class MonacoWorkspace {
 
     protected getAriaSummary(totalEdits: number, totalFiles: number): string {
         if (totalEdits === 0) {
-            return 'Made no edits';
+            return nls.localizeByDefault('Made no edits');
         }
         if (totalEdits > 1 && totalFiles > 1) {
-            return `Made ${totalEdits} text edits in ${totalFiles} files`;
+            return nls.localizeByDefault('Made {0} text edits in {1} files', totalEdits, totalFiles);
         }
-        return `Made ${totalEdits} text edits in one file`;
+        return nls.localizeByDefault('Made {0} text edits in one file', totalEdits);
     }
 
     protected async performTextEdits(edits: MonacoResourceTextEdit[]): Promise<{

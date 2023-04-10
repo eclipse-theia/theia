@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, named, optional } from '@theia/core/shared/inversify';
-import { MenuModelRegistry, CommandRegistry } from '@theia/core';
+import { MenuModelRegistry, CommandRegistry, nls } from '@theia/core';
 import {
     CommonMenus,
     AbstractViewContribution,
@@ -143,12 +143,12 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     override registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_OPEN, {
             commandId: CommonCommands.OPEN_PREFERENCES.id,
-            label: CommonCommands.OPEN_PREFERENCES.label,
+            label: nls.localizeByDefault('Settings'),
             order: 'a10',
         });
         menus.registerMenuAction(CommonMenus.SETTINGS_OPEN, {
             commandId: CommonCommands.OPEN_PREFERENCES.id,
-            label: CommonCommands.OPEN_PREFERENCES.label,
+            label: nls.localizeByDefault('Settings'),
             order: 'a10',
         });
         menus.registerMenuAction(PreferenceMenus.PREFERENCE_EDITOR_CONTEXT_MENU, {

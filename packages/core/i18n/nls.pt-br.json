@@ -437,6 +437,8 @@
       "duplicate": "Duplicata",
       "failApply": "Não foi possível aplicar alterações ao novo arquivo",
       "failSaveAs": "Não é possível executar \"{0}\" para o widget atual.",
+      "newFilePlaceholder": "Nome do arquivo",
+      "newFolderPlaceholder": "Nome da pasta",
       "noErasure": "Nota: Nada será apagado do disco",
       "openRecentPlaceholder": "Digite o nome do espaço de trabalho que você deseja abrir",
       "openRecentWorkspace": "Espaço de Trabalho Recente Aberto...",

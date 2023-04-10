@@ -278,33 +278,32 @@ export class WorkspaceCommandContribution implements CommandContribution {
         registry.registerCommand(WorkspaceCommands.FILE_RENAME, this.newMultiUriAwareCommandHandler({
             isEnabled: uris => uris.some(uri => !this.isWorkspaceRoot(uri)) && uris.length === 1,
             isVisible: uris => uris.some(uri => !this.isWorkspaceRoot(uri)) && uris.length === 1,
-            execute: (uris): void => {
-                uris.forEach(async uri => {
-                    const parent = await this.getParent(uri);
-                    if (parent) {
-                        const oldName = uri.path.base;
-                        const dialog = new SingleTextInputDialog({
-                            title: nls.localizeByDefault('Rename'),
-                            initialValue: oldName,
-                            initialSelectionRange: {
-                                start: 0,
-                                end: uri.path.name.length
-                            },
-                            validate: async (newName, mode) => {
-                                if (oldName === newName && mode === 'preview') {
-                                    return false;
-                                }
-                                return this.validateFileRename(oldName, newName, parent);
+            execute: async uris => {
+                const uri = uris[0]; /* Since there is only one item in the array. */
+                const parent = await this.getParent(uri);
+                if (parent) {
+                    const oldName = uri.path.base;
+                    const dialog = new SingleTextInputDialog({
+                        title: nls.localizeByDefault('Rename'),
+                        initialValue: oldName,
+                        initialSelectionRange: {
+                            start: 0,
+                            end: uri.path.name.length
+                        },
+                        validate: async (newName, mode) => {
+                            if (oldName === newName && mode === 'preview') {
+                                return false;
                             }
-                        });
-                        const fileName = await dialog.open();
-                        if (fileName) {
-                            const oldUri = uri;
-                            const newUri = uri.parent.resolve(fileName);
-                            this.fileService.move(oldUri, newUri);
+                            return this.validateFileRename(oldName, newName, parent);
                         }
+                    });
+                    const fileName = await dialog.open();
+                    if (fileName) {
+                        const oldUri = uri;
+                        const newUri = uri.parent.resolve(fileName);
+                        return this.fileService.move(oldUri, newUri);
                     }
-                });
+                }
             }
         }));
         registry.registerCommand(WorkspaceCommands.FILE_DUPLICATE, this.newMultiUriAwareCommandHandler(this.duplicateHandler));

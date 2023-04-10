@@ -148,6 +148,10 @@ export class TheiaExplorerView extends TheiaView {
             await treeNode.focus();
         } else {
             await treeNode.click({ modifiers: ['Control'] });
+            // make sure the click has been acted-upon before returning
+            while (!await this.isTreeNodeSelected(filePath)) {
+                console.debug('Waiting for clicked tree node to be selected: ' + filePath);
+            }
         }
     }
 
@@ -229,6 +233,20 @@ export class TheiaExplorerView extends TheiaView {
         confirm ? await renameDialog.confirm() : await renameDialog.close();
         await renameDialog.waitForClosed();
         await this.refresh();
+    }
+
+    override async waitForVisible(): Promise<void> {
+        await super.waitForVisible();
+        await this.page.waitForSelector(this.tabSelector, { state: 'visible' });
+    }
+
+    /**
+     * Waits until some non-dot file nodes are visible
+     */
+    async waitForVisibleFileNodes(): Promise<void> {
+        while ((await this.visibleFileStatNodes(DOT_FILES_FILTER)).length === 0) {
+            console.debug('Awaiting for tree nodes to appear');
+        }
     }
 
 }
