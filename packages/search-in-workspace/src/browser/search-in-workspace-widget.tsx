@@ -652,8 +652,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         </div>;
     }
 
-    protected handleFocusIncludesInputBox = () => this.contextKeyService.setPatternExcludesInputBoxFocus(true);
-    protected handleBlurIncludesInputBox = () => this.contextKeyService.setPatternExcludesInputBoxFocus(false);
+    protected handleFocusIncludesInputBox = () => this.contextKeyService.setPatternIncludesInputBoxFocus(true);
+    protected handleBlurIncludesInputBox = () => this.contextKeyService.setPatternIncludesInputBoxFocus(false);
 
     protected handleFocusExcludesInputBox = () => this.contextKeyService.setPatternExcludesInputBoxFocus(true);
     protected handleBlurExcludesInputBox = () => this.contextKeyService.setPatternExcludesInputBoxFocus(false);
