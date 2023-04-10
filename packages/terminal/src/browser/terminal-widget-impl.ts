@@ -743,7 +743,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         super.dispose();
     }
 
-    protected resizeTerminal = debounce(() => this.doResizeTerminal(), 0);
+    protected resizeTerminal = debounce(() => this.doResizeTerminal(), 50);
 
     protected doResizeTerminal(): void {
         const geo = this.fitAddon.proposeDimensions();
