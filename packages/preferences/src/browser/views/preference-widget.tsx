@@ -39,7 +39,7 @@ export class PreferencesWidget extends Panel implements StatefulWidget {
     /**
      * The widget `label` which is used for display purposes.
      */
-    static readonly LABEL = nls.localizeByDefault('Preferences');
+    static readonly LABEL = nls.localizeByDefault('Settings');
 
     @inject(PreferencesEditorWidget) protected readonly editorWidget: PreferencesEditorWidget;
     @inject(PreferencesTreeWidget) protected readonly treeWidget: PreferencesTreeWidget;
