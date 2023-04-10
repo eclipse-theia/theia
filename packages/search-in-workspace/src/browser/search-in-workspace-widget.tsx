@@ -619,6 +619,10 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 defaultValue={value}
                 autoComplete='off'
                 id={kind + '-glob-field'}
+                placeholder={kind === 'include'
+                    ? nls.localizeByDefault('e.g. *.ts, src/**/include')
+                    : nls.localizeByDefault('e.g. *.ts, src/**/exclude')
+                }
                 onKeyUp={e => {
                     if (e.target) {
                         const targetValue = (e.target as HTMLInputElement).value || '';
