@@ -18,6 +18,7 @@ import { Disposable, Emitter, Event, URI } from '@theia/core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import {
     Cell,
+    CellDto,
     CellInternalMetadataChangedEvent, CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata, NotebookCellMetadata, NotebookCellOutputsSplice, OutputDto
 } from '../../common';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
@@ -84,5 +85,17 @@ export class NotebookCellModel implements Disposable, Cell {
 
     requestEdit(): void {
         this.requestCellEditEmitter.fire();
+    }
+
+    toDto(): CellDto {
+        return {
+            cellKind: this.cellKind,
+            language: this.language,
+            outputs: this.outputs.map(output => output.toDto()),
+            source: this.textBuffer,
+            collapseState: this.collapseState,
+            internalMetadata: this.internalMetadata,
+            metadata: this.metadata
+        };
     }
 }
