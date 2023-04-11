@@ -46,4 +46,11 @@ export class NotebookCellOutputModel implements Disposable, CellOutput {
         this.didChangeDataEmitter.dispose();
     }
 
+    toDto(): OutputDto {
+        return {
+            outputs: this.outputs,
+            metadata: this.metadata
+        };
+    }
+
 }

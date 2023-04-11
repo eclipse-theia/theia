@@ -83,7 +83,10 @@ export class NotebookModel implements Saveable, Disposable {
     async save(options: SaveOptions): Promise<void> {
         this.dirtyCells = [];
 
-        const serializedNotebook = await this.serializer.notebookToData(this.data);
+        const serializedNotebook = await this.serializer.notebookToData({
+            cells: this.cells.map(cell => cell.toDto()),
+            metadata: this.data.metadata
+        });
         this.fileService.writeFile(this.uri, serializedNotebook);
 
         this.saveEmitter.fire();
