@@ -437,6 +437,8 @@
       "duplicate": "Duplicate",
       "failApply": "Could not apply changes to new file",
       "failSaveAs": "Cannot run \"{0}\" for the current widget.",
+      "newFilePlaceholder": "File Name",
+      "newFolderPlaceholder": "Folder Name",
       "noErasure": "Note: Nothing will be erased from disk",
       "openRecentPlaceholder": "Type the name of the workspace you want to open",
       "openRecentWorkspace": "Open Recent Workspace...",

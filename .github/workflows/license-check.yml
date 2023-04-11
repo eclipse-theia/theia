@@ -14,7 +14,7 @@ on:
 jobs:
 
   License-check:
-    name: ${{ matrix.os }}, Node.js v${{ matrix.node }}
+    name: 3PP License Check
 
     strategy:
       fail-fast: false

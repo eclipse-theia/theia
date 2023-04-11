@@ -28,6 +28,7 @@ import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { WebviewsMainImpl } from '../webviews-main';
 import { Widget, WidgetManager } from '@theia/core/lib/browser';
 import { PluginViewRegistry } from '../view/plugin-view-registry';
+import { ViewBadge } from '@theia/plugin';
 
 export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
 
@@ -124,6 +125,14 @@ export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
     $setWebviewViewDescription(handle: string, value: string | undefined): void {
         const webviewView = this.getWebviewView(handle);
         webviewView.description = value;
+    }
+
+    async $setBadge(handle: string, badge: ViewBadge | undefined): Promise<void> {
+        const webviewView = this.getWebviewView(handle);
+        if (webviewView) {
+            webviewView.badge = badge?.value;
+            webviewView.badgeTooltip = badge?.tooltip;
+        }
     }
 
     $show(handle: string, preserveFocus: boolean): void {

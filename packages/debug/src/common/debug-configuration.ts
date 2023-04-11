@@ -72,6 +72,18 @@ export interface DebugConfiguration {
 
     /** Task to run after debug session ends */
     postDebugTask?: string | TaskIdentifier;
+
+    /**
+     * When true, a save will not be triggered for open editors when starting a debug session,
+     * regardless of the value of the `debug.saveBeforeStart` setting.
+     */
+    suppressSaveBeforeStart?: boolean;
+
+    /** When true, the window statusbar color will not be changed for this session. */
+    suppressDebugStatusbar?: boolean;
+
+    /** When true, the debug viewlet will not be automatically revealed for this session. */
+    suppressDebugView?: boolean;
 }
 export namespace DebugConfiguration {
     export function is(arg: unknown): arg is DebugConfiguration {
@@ -85,6 +97,9 @@ export interface DebugSessionOptions {
     consoleMode?: DebugConsoleMode;
     noDebug?: boolean;
     compact?: boolean;
+    suppressSaveBeforeStart?: boolean;
+    suppressDebugStatusbar?: boolean;
+    suppressDebugView?: boolean;
 }
 
 export enum DebugConsoleMode {

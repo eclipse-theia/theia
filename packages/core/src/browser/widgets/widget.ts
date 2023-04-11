@@ -333,7 +333,7 @@ export function waitForRevealed(widget: Widget): Promise<void> {
  * Resolves when the given widget is hidden regardless of attachment.
  */
 export function waitForHidden(widget: Widget): Promise<void> {
-    return waitForVisible(widget, true);
+    return waitForVisible(widget, false);
 }
 
 function waitForVisible(widget: Widget, visible: boolean, attached?: boolean): Promise<void> {

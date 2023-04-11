@@ -137,6 +137,11 @@ export abstract class TerminalWidget extends BaseWidget {
      */
     abstract clearOutput(): void;
 
+    /**
+     * Select entire content in the terminal.
+     */
+    abstract selectAll(): void;
+
     abstract writeLine(line: string): void;
 
     abstract write(data: string): void;
