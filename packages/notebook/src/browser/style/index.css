@@ -68,3 +68,34 @@
 .theia-notebook-cell-toolbar-item:active {
     background-color: var(--theia-toolbar-active);
 }
+
+.theia-notebook-cell-divider {
+    height: 20px;
+    width: 100%;
+}
+
+.theia-notebook-add-cell-buttons {
+    justify-content: center;
+    display: flex;
+}
+
+.theia-notebook-add-cell-button {
+    border: 1px solid gray;
+    background-color: var(--theia-editor-background);
+    color: var(--theia-foreground);
+    vertical-align: middle;
+    text-align: center;
+}
+
+.theia-notebook-add-cell-button:hover {
+    background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-notebook-add-cell-button:active {
+    background-color: var(--theia-toolbar-active);
+}
+
+.theia-notebook-add-cell-button-icon {
+    vertical-align: middle;
+}
+
