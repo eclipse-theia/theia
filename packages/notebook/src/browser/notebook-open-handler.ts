@@ -23,6 +23,12 @@ import { match } from '@theia/core/lib/common/glob';
 
 @injectable()
 export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEditorWidget> {
+    /**
+     * flag for activating notebook support
+     * TODO remove when notbook support is functional
+     */
+    private static readonly EXPERIMENTAL_NOTEBOOK_SUPPORT_ACTIVE = false;
+
     id: string = 'notebook';
 
     // chache is mostly important because we need the contribution again in createWidgetOptions.
@@ -34,6 +40,10 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
     }
 
     canHandle(uri: URI, options?: WidgetOpenerOptions | undefined): MaybePromise<number> {
+        if (!NotebookOpenHandler.EXPERIMENTAL_NOTEBOOK_SUPPORT_ACTIVE) {
+            return -1;
+        }
+
         const cachedNotebookType = this.matchedNotebookTypes.get(uri.toString());
         if (cachedNotebookType) {
             return this.calcPriority(cachedNotebookType);
