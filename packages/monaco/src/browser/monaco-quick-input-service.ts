@@ -557,15 +557,7 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
     }
 
     set items(itemList: readonly (T | QuickPickSeparator)[]) {
-        // We need to store and apply the currently selected active items.
-        // Since monaco compares these items by reference equality, creating new wrapped items will unmark any active items.
-        // Assigning the `activeItems` again will restore all active items even after the items array has changed.
-        // See also the `findMonacoItemReferences` method.
-        const active = this.activeItems;
         this.wrapped.items = itemList.map(item => QuickPickSeparator.is(item) ? item : new MonacoQuickPickItem<T>(item, this.keybindingRegistry));
-        if (active.length !== 0) {
-            this.activeItems = active; // If this is done with an empty activeItems array, then it will undo first item focus on quick menus.
-        }
     }
 
     set activeItems(itemList: readonly T[]) {
