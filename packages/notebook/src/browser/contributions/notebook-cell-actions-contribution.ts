@@ -18,7 +18,6 @@ import { Command, CommandContribution, CommandRegistry, CompoundMenuNodeRole, Me
 import { codicon } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
 import { requestCellEdit, runDeleteAction } from './cellOperations';
-import { NOTEBOOK_CELL_TYPE } from './notebook-context-keys';
 
 export namespace NotebookCellCommands {
     export const EDIT_COMMAND = Command.toDefaultLocalizedCommand({
@@ -44,7 +43,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         menus.registerMenuAction([menuId], {
             commandId: NotebookCellCommands.EDIT_COMMAND.id,
             icon: NotebookCellCommands.EDIT_COMMAND.iconClass,
-            when: `${NOTEBOOK_CELL_TYPE} == 'markdown'`
+            // when: `${NOTEBOOK_CELL_TYPE} == 'markdown'`
         });
         menus.registerMenuAction([menuId], {
             commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,

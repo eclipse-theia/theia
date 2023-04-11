@@ -45,6 +45,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this.saveable = notebookData;
         this.id = 'notebook:' + uri.toString();
 
+        this.title.closable = true;
         this.update();
     }
 
