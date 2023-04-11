@@ -47,16 +47,18 @@ export class NotebookCellToolbarFactory {
     renderToolbar(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
         const inlineItems: NotebookCellToolbarItem[] = [];
 
-        const toolbarMenuId = 'notbook-cell-acions-menu';
+        const toolbarMenuId = 'notebook-cell-acions-menu';
 
         for (const menuNode of this.menuRegistry.getMenu([toolbarMenuId]).children) {
-            inlineItems.push({
-                icon: menuNode.icon,
-                label: menuNode.label,
-                onClick: menuNode.role === CompoundMenuNodeRole.Submenu ?
-                    e => this.openContextMenu(e, [toolbarMenuId, menuNode.id]) :
-                    () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell)
-            });
+            if (!menuNode.when || this.contextKeyService.match(menuNode.when)) {
+                inlineItems.push({
+                    icon: menuNode.icon,
+                    label: menuNode.label,
+                    onClick: menuNode.role === CompoundMenuNodeRole.Submenu ?
+                        e => this.openContextMenu(e, [toolbarMenuId, menuNode.id]) :
+                        () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell)
+                });
+            }
         }
         return <NotebookCellToolbar inlineItems={inlineItems} />;
     }

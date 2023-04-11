@@ -18,6 +18,7 @@ import { Command, CommandContribution, CommandRegistry, CompoundMenuNodeRole, Me
 import { codicon } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
 import { requestCellEdit, runDeleteAction } from './cellOperations';
+import { NOTEBOOK_CELL_TYPE } from './notebook-context-keys';
 
 export namespace NotebookCellCommands {
     export const EDIT_COMMAND = Command.toDefaultLocalizedCommand({
@@ -30,7 +31,7 @@ export namespace NotebookCellCommands {
     });
     export const SPLIT_CELL_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.split-cell',
-        iconClass: codicon('split-vertical')
+        iconClass: codicon('split-vertical'),
     });
 }
 
@@ -38,11 +39,21 @@ export namespace NotebookCellCommands {
 export class NotebookCellActionContribution implements MenuContribution, CommandContribution {
 
     registerMenus(menus: MenuModelRegistry): void {
-        const menuId = 'notbook-cell-acions-menu';
+        const menuId = 'notebook-cell-acions-menu';
         menus.registerIndependentSubmenu(menuId, '');
-        menus.registerMenuAction([menuId], { commandId: NotebookCellCommands.EDIT_COMMAND.id, icon: NotebookCellCommands.EDIT_COMMAND.iconClass });
-        menus.registerMenuAction([menuId], { commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id, icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass });
-        menus.registerMenuAction([menuId], { commandId: NotebookCellCommands.DELETE_COMMAND.id, icon: NotebookCellCommands.DELETE_COMMAND.iconClass });
+        menus.registerMenuAction([menuId], {
+            commandId: NotebookCellCommands.EDIT_COMMAND.id,
+            icon: NotebookCellCommands.EDIT_COMMAND.iconClass,
+            when: `${NOTEBOOK_CELL_TYPE} == 'markdown'`
+        });
+        menus.registerMenuAction([menuId], {
+            commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
+            icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass
+        });
+        menus.registerMenuAction([menuId], {
+            commandId: NotebookCellCommands.DELETE_COMMAND.id,
+            icon: NotebookCellCommands.DELETE_COMMAND.iconClass
+        });
 
         const moreMenuPath = [menuId, 'more'];
         menus.registerSubmenu(moreMenuPath, 'more', { icon: codicon('ellipsis'), role: CompoundMenuNodeRole.Submenu });
