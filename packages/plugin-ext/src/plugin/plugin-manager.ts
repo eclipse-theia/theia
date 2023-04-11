@@ -87,6 +87,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         'onDebugResolve',
         'onDebugAdapterProtocolTracker',
         'onDebugDynamicConfigurations',
+        'onTaskType',
         'workspaceContains',
         'onView',
         'onUri',
