@@ -312,11 +312,15 @@ export class MonacoQuickInputService implements QuickInputService {
     ): Promise<(O extends { canPickMany: true; } ? T[] : T) | undefined> {
         type M = T & { buttons?: NormalizedQuickInputButton[] };
         type R = (O extends { canPickMany: true; } ? T[] : T);
-        const monacoPicks = (await picks).map(pick => {
-            if (pick.type !== 'separator') {
-                pick.buttons &&= pick.buttons.map(QuickInputButton.normalize);
-            }
-            return pick as M;
+
+        const monacoPicks: Promise<QuickPickInput<IQuickPickItem>[]> = new Promise(async resolve => {
+            const updatedPicks = (await picks).map(pick => {
+                if (pick.type !== 'separator') {
+                    pick.buttons &&= pick.buttons.map(QuickInputButton.normalize);
+                }
+                return pick as M;
+            });
+            resolve(updatedPicks);
         });
         const monacoOptions = options as IPickOptions<M>;
         const picked = await this.monacoService.pick(monacoPicks, monacoOptions, token);
