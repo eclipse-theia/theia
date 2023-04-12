@@ -437,6 +437,8 @@
       "duplicate": "Duplikátum",
       "failApply": "Nem tudta alkalmazni a változtatásokat az új fájlra",
       "failSaveAs": "Nem lehet futtatni a \"{0}\"-t az aktuális widgethez.",
+      "newFilePlaceholder": "Fájlnév",
+      "newFolderPlaceholder": "Mappa neve",
       "noErasure": "Megjegyzés: Semmi sem törlődik a lemezről",
       "openRecentPlaceholder": "Írja be a megnyitni kívánt munkaterület nevét.",
       "openRecentWorkspace": "Legutóbbi munkaterület megnyitása...",

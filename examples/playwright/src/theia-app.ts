@@ -109,6 +109,7 @@ export class TheiaApp {
             throw Error('TheiaExplorerView could not be opened.');
         }
         if (expectFileNodes) {
+            await explorer.waitForVisibleFileNodes();
             const fileStatElements = await explorer.visibleFileStatNodes(DOT_FILES_FILTER);
             if (fileStatElements.length < 1) {
                 throw Error('TheiaExplorerView is empty.');

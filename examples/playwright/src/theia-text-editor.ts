@@ -20,8 +20,11 @@ import { join } from 'path';
 import { TheiaApp } from './theia-app';
 import { TheiaEditor } from './theia-editor';
 import { normalizeId, OSUtil, urlEncodePath } from './util';
+import { TheiaMonacoEditor } from './theia-monaco-editor';
 
 export class TheiaTextEditor extends TheiaEditor {
+
+    protected monacoEditor: TheiaMonacoEditor;
 
     constructor(filePath: string, app: TheiaApp) {
         // shell-tab-code-editor-opener:file:///c%3A/Users/user/AppData/Local/Temp/cloud-ws-JBUhb6/sample.txt:1
@@ -30,19 +33,16 @@ export class TheiaTextEditor extends TheiaEditor {
             tabSelector: normalizeId(`#shell-tab-code-editor-opener:file://${urlEncodePath(join(app.workspace.escapedPath, OSUtil.fileSeparator, filePath))}:1`),
             viewSelector: normalizeId(`#code-editor-opener:file://${urlEncodePath(join(app.workspace.escapedPath, OSUtil.fileSeparator, filePath))}:1`) + '.theia-editor'
         }, app);
+        this.monacoEditor = new TheiaMonacoEditor(this.viewSelector, app);
     }
 
     async numberOfLines(): Promise<number | undefined> {
         await this.activate();
-        const viewElement = await this.viewElement();
-        const lineElements = await viewElement?.$$('.view-lines .view-line');
-        return lineElements?.length;
+        return this.monacoEditor.numberOfLines();
     }
 
     async textContentOfLineByLineNumber(lineNumber: number): Promise<string | undefined> {
-        const lineElement = await this.lineByLineNumber(lineNumber);
-        const content = await lineElement?.textContent();
-        return content ? this.replaceEditorSymbolsWithSpace(content) : undefined;
+        return this.monacoEditor.textContentOfLineByLineNumber(lineNumber);
     }
 
     async replaceLineWithLineNumber(text: string, lineNumber: number): Promise<void> {
@@ -57,14 +57,14 @@ export class TheiaTextEditor extends TheiaEditor {
 
     async selectLineWithLineNumber(lineNumber: number): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
         await this.activate();
-        const lineElement = await this.lineByLineNumber(lineNumber);
+        const lineElement = await this.monacoEditor.lineByLineNumber(lineNumber);
         await this.selectLine(lineElement);
         return lineElement;
     }
 
     async placeCursorInLineWithLineNumber(lineNumber: number): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
         await this.activate();
-        const lineElement = await this.lineByLineNumber(lineNumber);
+        const lineElement = await this.monacoEditor.lineByLineNumber(lineNumber);
         await this.placeCursorInLine(lineElement);
         return lineElement;
     }
@@ -74,28 +74,9 @@ export class TheiaTextEditor extends TheiaEditor {
         await this.page.keyboard.press('Backspace');
     }
 
-    protected async lineByLineNumber(lineNumber: number): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
-        await this.activate();
-        const viewElement = await this.viewElement();
-        const lines = await viewElement?.$$('.view-lines .view-line');
-        if (!lines) {
-            throw new Error(`Couldn't retrieve lines of text editor ${this.tabSelector}`);
-        }
-
-        const linesWithXCoordinates = [];
-        for (const lineElement of lines) {
-            const box = await lineElement.boundingBox();
-            linesWithXCoordinates.push({ x: box ? box.x : Number.MAX_VALUE, lineElement });
-        }
-        linesWithXCoordinates.sort((a, b) => a.x.toString().localeCompare(b.x.toString()));
-        return linesWithXCoordinates[lineNumber - 1].lineElement;
-    }
-
     async textContentOfLineContainingText(text: string): Promise<string | undefined> {
         await this.activate();
-        const lineElement = await this.lineContainingText(text);
-        const content = await lineElement?.textContent();
-        return content ? this.replaceEditorSymbolsWithSpace(content) : undefined;
+        return this.monacoEditor.textContentOfLineContainingText(text);
     }
 
     async replaceLineContainingText(newText: string, oldText: string): Promise<void> {
@@ -105,14 +86,14 @@ export class TheiaTextEditor extends TheiaEditor {
 
     async selectLineContainingText(text: string): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
         await this.activate();
-        const lineElement = await this.lineContainingText(text);
+        const lineElement = await this.monacoEditor.lineContainingText(text);
         await this.selectLine(lineElement);
         return lineElement;
     }
 
     async placeCursorInLineContainingText(text: string): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
         await this.activate();
-        const lineElement = await this.lineContainingText(text);
+        const lineElement = await this.monacoEditor.lineContainingText(text);
         await this.placeCursorInLine(lineElement);
         return lineElement;
     }
@@ -123,7 +104,7 @@ export class TheiaTextEditor extends TheiaEditor {
     }
 
     async addTextToNewLineAfterLineContainingText(textContainedByExistingLine: string, newText: string): Promise<void> {
-        const existingLine = await this.lineContainingText(textContainedByExistingLine);
+        const existingLine = await this.monacoEditor.lineContainingText(textContainedByExistingLine);
         await this.placeCursorInLine(existingLine);
         await this.page.keyboard.press('End');
         await this.page.keyboard.press('Enter');
@@ -131,16 +112,11 @@ export class TheiaTextEditor extends TheiaEditor {
     }
 
     async addTextToNewLineAfterLineByLineNumber(lineNumber: number, newText: string): Promise<void> {
-        const existingLine = await this.lineByLineNumber(lineNumber);
+        const existingLine = await this.monacoEditor.lineByLineNumber(lineNumber);
         await this.placeCursorInLine(existingLine);
         await this.page.keyboard.press('End');
         await this.page.keyboard.press('Enter');
         await this.page.keyboard.type(newText);
-    }
-
-    protected async lineContainingText(text: string): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
-        const viewElement = await this.viewElement();
-        return viewElement?.waitForSelector(`.view-lines .view-line:has-text("${text}")`);
     }
 
     protected async selectLine(lineElement: ElementHandle<SVGElement | HTMLElement> | undefined): Promise<void> {
@@ -149,13 +125,6 @@ export class TheiaTextEditor extends TheiaEditor {
 
     protected async placeCursorInLine(lineElement: ElementHandle<SVGElement | HTMLElement> | undefined): Promise<void> {
         await lineElement?.click();
-    }
-
-    protected replaceEditorSymbolsWithSpace(content: string): string | Promise<string | undefined> {
-        // [ ] &nbsp; => \u00a0 -- NO-BREAK SPACE
-        // [·] &middot; => \u00b7 -- MIDDLE DOT
-        // [] &zwnj; => \u200c -- ZERO WIDTH NON-JOINER
-        return content.replace(/[\u00a0\u00b7]/g, ' ').replace(/[\u200c]/g, '');
     }
 
     protected async selectedSuggestion(): Promise<ElementHandle<SVGElement | HTMLElement>> {

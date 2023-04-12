@@ -619,6 +619,10 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 defaultValue={value}
                 autoComplete='off'
                 id={kind + '-glob-field'}
+                placeholder={kind === 'include'
+                    ? nls.localizeByDefault('e.g. *.ts, src/**/include')
+                    : nls.localizeByDefault('e.g. *.ts, src/**/exclude')
+                }
                 onKeyUp={e => {
                     if (e.target) {
                         const targetValue = (e.target as HTMLInputElement).value || '';
@@ -652,8 +656,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         </div>;
     }
 
-    protected handleFocusIncludesInputBox = () => this.contextKeyService.setPatternExcludesInputBoxFocus(true);
-    protected handleBlurIncludesInputBox = () => this.contextKeyService.setPatternExcludesInputBoxFocus(false);
+    protected handleFocusIncludesInputBox = () => this.contextKeyService.setPatternIncludesInputBoxFocus(true);
+    protected handleBlurIncludesInputBox = () => this.contextKeyService.setPatternIncludesInputBoxFocus(false);
 
     protected handleFocusExcludesInputBox = () => this.contextKeyService.setPatternExcludesInputBoxFocus(true);
     protected handleBlurExcludesInputBox = () => this.contextKeyService.setPatternExcludesInputBoxFocus(false);

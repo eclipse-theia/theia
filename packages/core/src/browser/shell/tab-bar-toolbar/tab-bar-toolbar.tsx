@@ -56,10 +56,7 @@ export class TabBarToolbar extends ReactWidget {
         super();
         this.addClass(TabBarToolbar.Styles.TAB_BAR_TOOLBAR);
         this.hide();
-        this.onRender = this.onRender.bind(this);
     }
-
-    protected onRender = () => this.show();
 
     updateItems(items: Array<TabBarToolbarItem | ReactTabBarToolbarItem>, current: Widget | undefined): void {
         this.inline.clear();
@@ -81,7 +78,9 @@ export class TabBarToolbar extends ReactWidget {
         this.updateContextKeyListener(contextKeys);
 
         this.setCurrent(current);
-        if (!items.length) {
+        if (items.length) {
+            this.show();
+        } else {
             this.hide();
         }
         this.update();
@@ -152,7 +151,6 @@ export class TabBarToolbar extends ReactWidget {
         const toolbarItemClassNames = this.getToolbarItemClassNames(item);
         if (item.menuPath && !item.command) { toolbarItemClassNames.push('enabled'); }
         return <div key={item.id}
-            ref={this.onRender}
             className={toolbarItemClassNames.join(' ')}
             onMouseDown={this.onMouseDownEvent}
             onMouseUp={this.onMouseUpEvent}
@@ -247,7 +245,7 @@ export class TabBarToolbar extends ReactWidget {
     }
 
     protected evaluateWhenClause(whenClause: string | undefined): boolean {
-        return whenClause ? this.contextKeyService.match(whenClause) : true;
+        return whenClause ? this.contextKeyService.match(whenClause, this.current?.node) : true;
     }
 
     protected executeCommand = (e: React.MouseEvent<HTMLElement>) => {

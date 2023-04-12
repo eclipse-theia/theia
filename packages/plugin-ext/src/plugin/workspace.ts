@@ -90,6 +90,10 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return undefined;
     }
 
+    resolveProxy(url: string): Promise<string | undefined> {
+        return this.proxy.$resolveProxy(url);
+    }
+
     $onWorkspaceFoldersChanged(event: WorkspaceRootsChangeEvent): void {
         const newRoots = event.roots || [];
         const newFolders = newRoots.map((root, index) => this.toWorkspaceFolder(root, index));

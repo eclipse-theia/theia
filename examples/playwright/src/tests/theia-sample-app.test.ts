@@ -14,44 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TheiaApp } from '../theia-app';
-
 import { expect } from '@playwright/test';
+import { TheiaApp } from '../theia-app';
+import { TheiaToolbar } from '../theia-toolbar';
 import test, { page } from './fixtures/theia-fixture';
-import { TheiaPageObject } from '../theia-page-object';
-
-class TheiaSampleToolbar extends TheiaPageObject {
-    protected selector = '#main-toolbar';
-
-    async show(): Promise<void> {
-        if (!await this.isShown()) {
-            await this.toggle();
-        }
-    }
-
-    async toggle(): Promise<void> {
-        const isShown = await this.isShown();
-        const viewMenu = await this.app.menuBar.openMenu('View');
-        await viewMenu.clickMenuItem('Toggle Toolbar');
-        isShown ? await this.waitUntilHidden() : await this.waitUntilShown();
-    }
-
-    async waitUntilHidden(): Promise<void> {
-        await this.page.waitForSelector(this.selector, { state: 'hidden' });
-    }
-
-    async waitUntilShown(): Promise<void> {
-        await this.page.waitForSelector(this.selector, { state: 'visible' });
-    }
-
-    async isShown(): Promise<boolean> {
-        const toolbar = await this.page.$(this.selector);
-        return !!toolbar && toolbar.isVisible();
-    }
-}
 
 class TheiaSampleApp extends TheiaApp {
-    protected toolbar = new TheiaSampleToolbar(this);
+    protected toolbar = new TheiaToolbar(this);
 
     override async waitForInitialized(): Promise<void> {
         await this.toolbar.show();

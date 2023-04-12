@@ -189,6 +189,10 @@
     font-size: var(--theia-ui-font-size0);
 }
 
+.t-siw-search-container .searchHeader .glob-field-container .glob-field .theia-input:not(:focus)::placeholder {
+    color: transparent;
+}
+
 .t-siw-search-container .resultContainer {
     height: 100%;
     margin-left: 13px;

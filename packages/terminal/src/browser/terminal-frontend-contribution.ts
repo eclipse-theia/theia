@@ -542,7 +542,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             execute: () => this.openActiveWorkspaceTerminal()
         });
         commands.registerCommand(TerminalCommands.SPLIT, {
-            execute: () => this.splitTerminal()
+            execute: () => this.splitTerminal(),
+            isEnabled: () => this.shell.currentWidget instanceof TerminalWidget,
+            isVisible: () => this.shell.currentWidget instanceof TerminalWidget,
         });
         commands.registerCommand(TerminalCommands.TERMINAL_CLEAR);
         commands.registerHandler(TerminalCommands.TERMINAL_CLEAR.id, {
