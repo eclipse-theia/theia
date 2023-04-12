@@ -415,7 +415,7 @@
   flex: 1;
 }
 
-.p-TabBar-tab.p-mod-closable:hover .theia-tab-icon-label,
-.p-TabBar-tab.p-mod-current .theia-tab-icon-label {
+.p-TabBar[data-orientation='horizontal'] .p-TabBar-tab.p-mod-closable:hover .theia-tab-icon-label,
+.p-TabBar[data-orientation='horizontal'] .p-TabBar-tab.p-mod-current .theia-tab-icon-label {
   overflow: hidden;
 }
