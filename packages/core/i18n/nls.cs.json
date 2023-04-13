@@ -438,6 +438,8 @@
       "duplicate": "Duplikát",
       "failApply": "Nelze použít změny v novém souboru",
       "failSaveAs": "Nelze spustit \"{0}\" pro aktuální widget.",
+      "newFilePlaceholder": "Název souboru",
+      "newFolderPlaceholder": "Název složky",
       "noErasure": "Poznámka: Z disku se nic nevymaže",
       "openRecentPlaceholder": "Zadejte název pracovního prostoru, který chcete otevřít.",
       "openRecentWorkspace": "Otevřít nedávný pracovní prostor...",

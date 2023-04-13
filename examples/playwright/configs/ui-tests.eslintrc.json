@@ -1,7 +1,0 @@
-{
-  // override existing rules for ui-tests package
-  "rules": {
-    "no-undef": "off", // disabled due to 'browser', '$', '$$'
-    "no-unused-expressions": "off"
-  }
-}

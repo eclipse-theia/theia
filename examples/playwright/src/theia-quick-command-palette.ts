@@ -27,6 +27,11 @@ export class TheiaQuickCommandPalette extends TheiaPageObject {
         await this.page.waitForSelector(this.selector);
     }
 
+    async hide(): Promise<void> {
+        await this.page.keyboard.press('Escape');
+        await this.page.waitForSelector(this.selector, { state: 'hidden' });
+    }
+
     async isOpen(): Promise<boolean> {
         try {
             await this.page.waitForSelector(this.selector, { timeout: 5000 });
@@ -54,14 +59,17 @@ export class TheiaQuickCommandPalette extends TheiaPageObject {
         await this.page.keyboard.press('Enter');
     }
 
-    async type(command: string): Promise<void> {
+    async type(value: string, confirm = false): Promise<void> {
         if (!await this.isOpen()) {
             this.open();
         }
         const input = await this.page.waitForSelector(`${this.selector} .monaco-inputbox .input`);
         if (input != null) {
             await input.focus();
-            await input.type(command, { delay: USER_KEY_TYPING_DELAY });
+            await input.type(value, { delay: USER_KEY_TYPING_DELAY });
+            if (confirm) {
+                await this.page.keyboard.press('Enter');
+            }
         }
     }
 

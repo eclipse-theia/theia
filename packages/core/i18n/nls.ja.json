@@ -438,6 +438,8 @@
       "duplicate": "デュプリケート",
       "failApply": "新しいファイルに変更を適用できなかった",
       "failSaveAs": "現在のウィジェットでは\"{0}\"を実行できません。",
+      "newFilePlaceholder": "ファイル名",
+      "newFolderPlaceholder": "フォルダー名",
       "noErasure": "注:ディスクからは何も消去されません",
       "openRecentPlaceholder": "開きたいワークスペースの名前を入力する",
       "openRecentWorkspace": "最近のワークスペースを開く...",

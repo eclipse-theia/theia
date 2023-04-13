@@ -80,18 +80,14 @@
 
 #theia-main-content-panel .p-TabBar .p-TabBar-tab {
     border-right: 1px solid var(--theia-tab-border);
+    border-top: 1px solid transparent;
+    border-bottom: 1px solid transparent;
     background: var(--theia-tab-inactiveBackground);
     color: var(--theia-tab-inactiveForeground);
 }
 
 #theia-main-content-panel .p-TabBar:not(.theia-tabBar-active) .p-TabBar-tab {
     color: var(--theia-tab-unfocusedInactiveForeground);
-}
-
-#theia-main-content-panel .p-TabBar:not(.theia-tabBar-active) .p-TabBar-tab.p-mod-current {
-    background: var(--theia-tab-unfocusedActiveBackground);
-    color: var(--theia-tab-unfocusedActiveForeground);
-    box-shadow: 0 1px 0 var(--theia-tab-unfocusedActiveBorderTop) inset, 0 -1px 0 var(--theia-tab-unfocusedActiveBorder) inset;
 }
 
 .p-TabBar.theia-app-centers {

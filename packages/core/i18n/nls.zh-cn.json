@@ -438,6 +438,8 @@
       "duplicate": "复制",
       "failApply": "无法将更改应用于新文件",
       "failSaveAs": "无法为当前的小组件运行\"{0}\"。",
+      "newFilePlaceholder": "文件名称",
+      "newFolderPlaceholder": "文件夹名称",
       "noErasure": "注意:没有任何东西会从磁盘上被删除",
       "openRecentPlaceholder": "输入你要打开的工作区的名称",
       "openRecentWorkspace": "打开最近的工作区...",

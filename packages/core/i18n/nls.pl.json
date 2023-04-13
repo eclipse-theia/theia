@@ -438,6 +438,8 @@
       "duplicate": "Duplikat",
       "failApply": "Nie można zastosować zmian do nowego pliku",
       "failSaveAs": "Nie można uruchomić \"{0}\" dla bieżącego widżetu.",
+      "newFilePlaceholder": "Nazwa pliku",
+      "newFolderPlaceholder": "Nazwa folderu",
       "noErasure": "Uwaga: Nic nie zostanie usunięte z dysku.",
       "openRecentPlaceholder": "Wpisz nazwę obszaru roboczego, który chcesz otworzyć",
       "openRecentWorkspace": "Otwórz ostatni obszar roboczy...",
