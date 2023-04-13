@@ -161,9 +161,7 @@ export class TabBarRenderer extends TabBar.Renderer {
             ? nls.localizeByDefault('Unpin')
             : nls.localizeByDefault('Close');
 
-        const hover = this.tabBar && this.tabBar.orientation === 'horizontal' ? {
-            title: title.caption
-        } : {
+        const hover = this.tabBar && (this.tabBar.orientation === 'horizontal' && !this.corePreferences?.['window.tabbar.enhancedPreview']) ? { title: title.caption } : {
             onmouseenter: this.handleMouseEnterEvent
         };
 
@@ -484,16 +482,41 @@ export class TabBarRenderer extends TabBar.Renderer {
         return h.div({ className: baseClassName, style }, data.title.iconLabel);
     }
 
+    protected renderEnhancedPreview = (title: Title<Widget>) => {
+        const hoverBox = document.createElement('div');
+        hoverBox.classList.add('theia-horizontal-tabBar-hover-div');
+        const labelElement = document.createElement('p');
+        labelElement.classList.add('theia-horizontal-tabBar-hover-title');
+        labelElement.textContent = title.label;
+        hoverBox.append(labelElement);
+        if (title.caption) {
+            const captionElement = document.createElement('p');
+            captionElement.classList.add('theia-horizontal-tabBar-hover-caption');
+            captionElement.textContent = title.caption;
+            hoverBox.appendChild(captionElement);
+        }
+        return hoverBox;
+    };
+
     protected handleMouseEnterEvent = (event: MouseEvent) => {
         if (this.tabBar && this.hoverService && event.currentTarget instanceof HTMLElement) {
             const id = event.currentTarget.id;
             const title = this.tabBar.titles.find(t => this.createTabId(t) === id);
             if (title) {
-                this.hoverService.requestHover({
-                    content: title.caption,
-                    target: event.currentTarget,
-                    position: 'right'
-                });
+                if (this.tabBar.orientation === 'horizontal') {
+                    this.hoverService.requestHover({
+                        content: this.renderEnhancedPreview(title),
+                        target: event.currentTarget,
+                        position: 'bottom',
+                        cssClasses: ['extended-tab-preview']
+                    });
+                } else {
+                    this.hoverService.requestHover({
+                        content: title.caption,
+                        target: event.currentTarget,
+                        position: 'right'
+                    });
+                }
             }
         }
     };
