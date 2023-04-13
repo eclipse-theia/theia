@@ -21,6 +21,7 @@ import { ProblemManager } from './problem-manager';
 import { ProblemUtils } from './problem-utils';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { CancellationToken, Emitter, Event, nls } from '@theia/core';
+import debounce = require('lodash.debounce');
 
 @injectable()
 export class ProblemDecorationsProvider implements DecorationsProvider {
@@ -35,12 +36,14 @@ export class ProblemDecorationsProvider implements DecorationsProvider {
 
     @postConstruct()
     protected init(): void {
-        this.problemManager.onDidChangeMarkers(() => {
-            const newUris = Array.from(this.problemManager.getUris(), stringified => new URI(stringified));
-            this.onDidChangeEmitter.fire(newUris.concat(this.currentUris));
-            this.currentUris = newUris;
-        });
+        this.problemManager.onDidChangeMarkers(() => this.fireDidDecorationsChanged());
     }
+
+    private fireDidDecorationsChanged = debounce(() => {
+        const newUris = Array.from(this.problemManager.getUris(), stringified => new URI(stringified));
+        this.onDidChangeEmitter.fire(newUris.concat(this.currentUris));
+        this.currentUris = newUris;
+    }, 10);
 
     provideDecorations(uri: URI, token: CancellationToken): Decoration | Promise<Decoration | undefined> | undefined {
         const markers = this.problemManager.findMarkers({ uri }).filter(ProblemUtils.filterMarker).sort(ProblemUtils.severityCompareMarker);

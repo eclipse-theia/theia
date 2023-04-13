@@ -17,16 +17,18 @@
 import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemManager } from './problem-manager';
 import { ProblemCompositeTreeNode } from './problem-composite-tree-node';
-import { MarkerNode, MarkerTree, MarkerOptions, MarkerInfoNode } from '../marker-tree';
+import { MarkerNode, MarkerTree, MarkerOptions, MarkerInfoNode, MarkerRootNode } from '../marker-tree';
 import { MarkerTreeModel } from '../marker-tree-model';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { OpenerOptions, TreeNode } from '@theia/core/lib/browser';
 import { Marker } from '../../common/marker';
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ProblemUtils } from './problem-utils';
+import debounce = require('lodash.debounce');
 
 @injectable()
 export class ProblemTree extends MarkerTree<Diagnostic> {
+    private _markers = new Map<string, { node: MarkerInfoNode, markers: Marker<Diagnostic>[] }>();
 
     constructor(
         @inject(ProblemManager) markerManager: ProblemManager,
@@ -77,12 +79,21 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
     }
 
     protected override insertNodeWithMarkers(node: MarkerInfoNode, markers: Marker<Diagnostic>[]): void {
-        ProblemCompositeTreeNode.addChild(node.parent, node, markers);
-        const children = this.getMarkerNodes(node, markers);
-        node.numberOfMarkers = markers.length;
-        this.setChildren(node, children);
+        this._markers.set(node.id, { node, markers });
+        this.doInsertNodesWithMarkers();
     }
 
+    private doInsertNodesWithMarkers = debounce(() => {
+        ProblemCompositeTreeNode.addChildren(this.root as MarkerRootNode, this._markers);
+
+        for (const { node, markers } of this._markers.values()) {
+            const children = this.getMarkerNodes(node, markers);
+            node.numberOfMarkers = markers.length;
+            this.setChildren(node, children);
+        }
+
+        this._markers.clear();
+    }, 10);
 }
 
 @injectable()
