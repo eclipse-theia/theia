@@ -56,7 +56,7 @@ describe('problem-manager', () => {
             currentWidget: {
                 getResourceUri: () => new URI('a'),
                 createMoveToUri: () => undefined
-            } as any
+            } as unknown
         });
         container.bind(MarkerManager).toSelf().inSingletonScope();
         container.bind(ProblemManager).toSelf();

@@ -68,7 +68,7 @@ export const ProblemFilter: React.FC<ProblemFilterProps> = (props: ProblemFilter
         setFilters(newFilter);
     };
 
-    const isControlDefaultValue = () => Object.keys(defaultValue).every((key: FilterKeys) => filters[key] === defaultValue[key]);
+    const isControlDefaultValue = () => Object.keys(defaultValue).filter(key => key !== 'text').every((key: FilterKeys) => filters[key] === defaultValue[key]);
 
     const udpateProblemStat = () => {
         const { getProblemStat } = props;

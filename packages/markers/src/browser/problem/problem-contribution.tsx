@@ -16,7 +16,7 @@
 
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode, Widget, codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode, Widget, codicon } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { PROBLEM_KIND, ProblemMarker } from '../../common/problem-marker';
@@ -62,11 +62,9 @@ export namespace ProblemsCommands {
 
 @injectable()
 export class ProblemContribution extends AbstractViewContribution<ProblemWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
-
     @inject(ProblemManager) protected readonly problemManager: ProblemManager;
     @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(SelectionService) protected readonly selectionService: SelectionService;
-    @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer;
     constructor() {
         super({
             widgetId: PROBLEMS_WIDGET_ID,
