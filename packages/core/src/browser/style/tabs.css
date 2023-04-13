@@ -410,3 +410,12 @@
   flex-flow: row nowrap;
   min-width: 100%;
 }
+
+.p-TabBar-tab .theia-tab-icon-label {
+  flex: 1;
+}
+
+.p-TabBar[data-orientation='horizontal'] .p-TabBar-tab.p-mod-closable:hover .theia-tab-icon-label,
+.p-TabBar[data-orientation='horizontal'] .p-TabBar-tab.p-mod-current .theia-tab-icon-label {
+  overflow: hidden;
+}
