@@ -203,7 +203,6 @@ function resolveDownloadUrlPlaceholders(url: string): string {
     for (const placeholder of Object.entries(placeholders)) {
         url = url.replace(new RegExp(escapeStringRegexp(`\${${placeholder[0]}}`), 'g'), placeholder[1]);
     }
-    console.log('new url ' + url);
     return url;
 }
 
