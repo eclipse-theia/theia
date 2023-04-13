@@ -363,9 +363,11 @@ for (const [entryPointName, entryPointPath] of Object.entries({
     };
 }
 
-const ignoredResources = new Set([
-    '@vscode/windows-ca-certs'
-]);
+const ignoredResources = new Set();
+
+if (process.platform !== 'win32') {
+    ignoredResources.add('@vscode/windows-ca-certs');
+}
 
 const nativePlugin = new NativeWebpackPlugin({
     out: 'native',
