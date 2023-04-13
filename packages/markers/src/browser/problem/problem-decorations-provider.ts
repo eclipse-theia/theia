@@ -21,7 +21,7 @@ import { ProblemManager } from './problem-manager';
 import { ProblemUtils } from './problem-utils';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { CancellationToken, Emitter, Event, nls } from '@theia/core';
-import debounce = require('lodash.debounce');
+import debounce = require('@theia/core/shared/lodash.debounce');
 
 @injectable()
 export class ProblemDecorationsProvider implements DecorationsProvider {

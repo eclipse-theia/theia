@@ -24,7 +24,7 @@ import { OpenerOptions, TreeNode } from '@theia/core/lib/browser';
 import { Marker } from '../../common/marker';
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ProblemUtils } from './problem-utils';
-import debounce = require('lodash.debounce');
+import debounce = require('@theia/core/shared/lodash.debounce');
 
 @injectable()
 export class ProblemTree extends MarkerTree<Diagnostic> {
