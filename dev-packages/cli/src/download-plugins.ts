@@ -33,6 +33,7 @@ import { NodeRequestService } from '@theia/request/lib/node-request-service';
 import { DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package/lib/api';
 import { RequestContext } from '@theia/request';
 import { RateLimiter } from 'limiter';
+import escapeStringRegexp = require('escape-string-regexp');
 
 temp.track();
 
@@ -195,13 +196,14 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
     }
 }
 
-const placeholders: { name: string, replaceValue: string }[] = [
-    { name: 'targetPlatform', replaceValue: process.platform + '-' + process.arch }
-];
+const placeholders: Record<string, string> = {
+    targetPlatform: `${process.platform}-${process.arch}`
+};
 function resolveDownloadUrlPlaceholders(url: string): string {
-    for (const placeholder of placeholders) {
-        url = url.replace(new RegExp(`\\\$\\{${placeholder.name}\\}`, 'g'), placeholder.replaceValue);
+    for (const placeholder of Object.entries(placeholders)) {
+        url = url.replace(new RegExp(escapeStringRegexp(`\${${placeholder[0]}}`), 'g'), placeholder[1]);
     }
+    console.log('new url ' + url);
     return url;
 }
 
