@@ -18,7 +18,7 @@ import * as http from 'http';
 import * as https from 'https';
 import * as tls from 'tls';
 
-import { createHttpPatch, createProxyResolver, createTlsPatch, ProxySupportSetting } from 'vscode-proxy-agent';
+import { createHttpPatch, createProxyResolver, createTlsPatch, ProxySupportSetting } from '@vscode/proxy-agent';
 import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry';
 import { WorkspaceExtImpl } from '../../plugin/workspace';
 

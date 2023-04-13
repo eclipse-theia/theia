@@ -364,12 +364,13 @@ for (const [entryPointName, entryPointPath] of Object.entries({
 }
 
 const ignoredResources = new Set([
-    'vscode-windows-ca-certs'
+    '@vscode/windows-ca-certs'
 ]);
 
 const nativePlugin = new NativeWebpackPlugin({
     out: 'native',
     ripgrep: ${this.ifPackage('@theia/search-in-workspace', 'true', 'false')},
+    pty: ${this.ifPackage('@theia/process', 'true', 'false')},
     nativeBindings: {
         drivelist: 'drivelist/build/Release/drivelist.node'
     }
@@ -401,7 +402,7 @@ const config = {
         'plugin-host': require.resolve('@theia/plugin-ext/lib/hosted/node/plugin-host'),`)}
         ${this.ifPackage('@theia/process', () => `// Make sure the node-pty thread worker can be executed:
         'worker/conoutSocketWorker': require.resolve('node-pty/lib/worker/conoutSocketWorker'),`)}
-        ${this.ifPackage('@theia/process', () => `// Ensure the git locator process can the started
+        ${this.ifPackage('@theia/git', () => `// Ensure the git locator process can the started
         'git-locator-host': require.resolve('@theia/git/lib/node/git-locator/git-locator-host'),`)}
         ${this.ifElectron("'electron-main': require.resolve('./src-gen/frontend/electron-main'),")}
         ...commonJsLibraries

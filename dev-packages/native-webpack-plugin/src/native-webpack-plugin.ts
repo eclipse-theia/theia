@@ -27,6 +27,7 @@ const REQUIRE_KEYMAPPING = './build/Release/keymapping';
 export interface NativeWebpackPluginOptions {
     out: string;
     ripgrep: boolean;
+    pty: boolean;
     replacements?: Record<string, string>;
     nativeBindings?: Record<string, string>;
 }
@@ -51,6 +52,9 @@ export class NativeWebpackPlugin {
     apply(compiler: Compiler): void {
         if (this.options.ripgrep) {
             compiler.hooks.afterEmit.tapAsync(NativeWebpackPlugin.name, () => this.copyRipgrep(compiler));
+        }
+        if (this.options.pty) {
+            compiler.hooks.afterEmit.tapAsync(NativeWebpackPlugin.name, () => this.copyNodePtySpawnHelper(compiler));
         }
         const bindingsFile = buildFile('bindings.js', bindingsReplacement(Array.from(this.bindings.entries())));
         const ripgrepFile = buildFile('ripgrep.js', ripgrepReplacement(this.options.out));
@@ -87,10 +91,22 @@ export class NativeWebpackPlugin {
         const suffix = process.platform === 'win32' ? '.exe' : '';
         const sourceFile = require.resolve(`@vscode/ripgrep/bin/rg${suffix}`);
         const targetFile = path.join(compiler.outputPath, this.options.out, `rg${suffix}`);
-        const targetDirectory = path.dirname(targetFile);
+        await this.copyExecutable(sourceFile, targetFile);
+    }
+
+    protected async copyNodePtySpawnHelper(compiler: Compiler): Promise<void> {
+        if (process.platform !== 'win32') {
+            const sourceFile = require.resolve('node-pty/build/Release/spawn-helper');
+            const targetFile = path.resolve(compiler.outputPath, '..', 'build', 'Release', 'spawn-helper');
+            await this.copyExecutable(sourceFile, targetFile);
+        }
+    }
+
+    protected async copyExecutable(source: string, target: string): Promise<void> {
+        const targetDirectory = path.dirname(target);
         await fs.promises.mkdir(targetDirectory, { recursive: true });
-        await fs.promises.copyFile(sourceFile, targetFile);
-        await fs.promises.chmod(targetFile, 0o777);
+        await fs.promises.copyFile(source, target);
+        await fs.promises.chmod(target, 0o777);
     }
 }
 

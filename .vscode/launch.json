@@ -41,8 +41,8 @@
       },
       "sourceMaps": true,
       "outFiles": [
-        "${workspaceFolder}/examples/electron/src-gen/frontend/electron-main.js",
-        "${workspaceFolder}/examples/electron/src-gen/backend/main.js",
+        "${workspaceFolder}/examples/electron/lib/backend/electron-main.js",
+        "${workspaceFolder}/examples/electron/lib/backend/main.js",
         "${workspaceFolder}/examples/electron/lib/**/*.js",
         "${workspaceFolder}/packages/*/lib/**/*.js",
         "${workspaceFolder}/dev-packages/*/lib/**/*.js"
@@ -55,7 +55,7 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Browser Backend",
-      "program": "${workspaceFolder}/examples/browser/src-gen/backend/main.js",
+      "program": "${workspaceFolder}/examples/browser/lib/backend/main.js",
       "args": [
         "--hostname=0.0.0.0",
         "--port=3000",
@@ -69,7 +69,7 @@
       },
       "sourceMaps": true,
       "outFiles": [
-        "${workspaceFolder}/examples/browser/src-gen/backend/*.js",
+        "${workspaceFolder}/examples/browser/lib/backend/*.js",
         "${workspaceFolder}/examples/browser/lib/**/*.js",
         "${workspaceFolder}/packages/*/lib/**/*.js",
         "${workspaceFolder}/dev-packages/*/lib/**/*.js"
@@ -92,32 +92,6 @@
         "${workspaceFolder}/packages/plugin-ext/lib/**/*.js",
         "${workspaceFolder}/plugins/**/*.js"
       ]
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Launch Browser Backend (eclipse.jdt.ls)",
-      "program": "${workspaceFolder}/examples/browser/src-gen/backend/main.js",
-      "args": [
-        "--log-level=debug",
-        "--root-dir=${workspaceFolder}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core",
-        "--port=3000",
-        "--no-cluster",
-        "--no-app-auto-install"
-      ],
-      "env": {
-        "NODE_ENV": "development"
-      },
-      "sourceMaps": true,
-      "outFiles": [
-        "${workspaceFolder}/examples/browser/src-gen/backend/*.js",
-        "${workspaceFolder}/examples/browser/lib/**/*.js",
-        "${workspaceFolder}/packages/*/lib/**/*.js",
-        "${workspaceFolder}/dev-packages/*/lib/**/*.js"
-      ],
-      "smartStep": true,
-      "internalConsoleOptions": "openOnSessionStart",
-      "outputCapture": "std"
     },
     {
       "type": "node",
@@ -159,7 +133,7 @@
       "type": "node",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/examples/browser/src-gen/backend/main.js",
+        "${workspaceFolder}/examples/browser/lib/backend/main.js",
         "${workspaceFolder}/plugins/vscode-api-tests/testWorkspace",
         "--port",
         "3030",
