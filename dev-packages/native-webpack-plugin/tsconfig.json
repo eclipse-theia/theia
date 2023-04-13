@@ -8,15 +8,5 @@
   "include": [
     "src"
   ],
-  "references": [
-    {
-      "path": "../application-package"
-    },
-    {
-      "path": "../ffmpeg"
-    },
-    {
-      "path": "../native-webpack-plugin"
-    }
-  ]
+  "references": []
 }

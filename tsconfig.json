@@ -22,6 +22,9 @@
       "path": "dev-packages/localization-manager"
     },
     {
+      "path": "dev-packages/native-webpack-plugin"
+    },
+    {
       "path": "dev-packages/ovsx-client"
     },
     {

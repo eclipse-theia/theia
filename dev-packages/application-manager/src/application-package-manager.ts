@@ -127,7 +127,12 @@ export class ApplicationPackageManager {
         let appPath = this.pck.projectPath;
 
         if (!this.pck.pck.main) {
-            appPath = this.pck.frontend('electron-main.js');
+            // Try the bundled electron app first
+            appPath = this.pck.lib('backend', 'electron-main.js');
+            if (!fs.existsSync(appPath)) {
+                // Fallback to the generated electron app in src-gen
+                appPath = this.pck.frontend('electron-main.js');
+            }
 
             console.warn(
                 `WARNING: ${this.pck.packagePath} does not have a "main" entry.\n` +
@@ -146,7 +151,13 @@ export class ApplicationPackageManager {
         // The backend must be a process group leader on UNIX in order to kill the tree later.
         // See https://nodejs.org/api/child_process.html#child_process_options_detached
         options.detached = process.platform !== 'win32';
-        return this.__process.fork(this.pck.backend('main.js'), mainArgs, options);
+        // Try the bundled backend app first
+        let mainPath = this.pck.lib('backend', 'main.js');
+        if (!fs.existsSync(mainPath)) {
+            // Fallback to the generated backend file in src-gen
+            mainPath = this.pck.srcGen('backend', 'main.js');
+        }
+        return this.__process.fork(mainPath, mainArgs, options);
     }
 
     /**

@@ -2,6 +2,7 @@
 node_modules
 build
 lib
+tmp
 *.log
 .idea
 .metadata
@@ -13,6 +14,7 @@ coverage
 errorShots
 examples/*/src-gen
 examples/*/gen-webpack.config.js
+examples/*/gen-webpack.node.config.js
 examples/*/.theia
 examples/*/.vscode
 examples/*/.test
