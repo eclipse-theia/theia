@@ -325,7 +325,7 @@ The property `theiaPlugins` describes the list of plugins to download, for examp
 }
 ```
 As seen in the `rust-analyzer` entry we can use placeholders in the URLs. Supported placeholders are: 
-- The `${targetPlatform}` Placeholder, which resolves to a string like `win32-x64` describing the local system and architecutre. This is useful adding for non-universal plugins. 
+- The `${targetPlatform}` Placeholder, which resolves to a string like `win32-x64` describing the local system and architecture. This is useful for adding non-universal plugins. 
 
 Please note that in order to use `extensionPacks` properly you should use `namespace.name` as the `id` you give extensions so that when resolving the pack we do not re-download an existing plugin under a different name.
 
