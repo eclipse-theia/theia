@@ -145,7 +145,7 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         // This will include both "normal" plugins as well as "extension packs".
         const pluginsToDownload = Object.entries(pck.theiaPlugins)
             .filter((entry: [string, unknown]): entry is [string, string] => typeof entry[1] === 'string')
-            .map(([pluginId, url]) => ({ id: pluginId, downloadUrl: url }));
+            .map(([pluginId, url]) => ({ id: pluginId, downloadUrl: resolveDownloadUrlPlaceholders(url) }));
         await downloader(pluginsToDownload);
 
         const handleDependencyList = async (dependencies: Array<string | string[]>) => {
@@ -193,6 +193,16 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
     if (!ignoreErrors && failures.length > 0) {
         throw new Error('Errors downloading some plugins. To make these errors non fatal, re-run with --ignore-errors');
     }
+}
+
+const placeholders: { name: string, replaceValue: string }[] = [
+    { name: 'targetPlatform', replaceValue: process.platform + '-' + process.arch }
+];
+function resolveDownloadUrlPlaceholders(url: string): string {
+    for (const placeholder of placeholders) {
+        url = url.replace(new RegExp(`\\\$\\{${placeholder.name}\\}`, 'g'), placeholder.replaceValue);
+    }
+    return url;
 }
 
 /**
