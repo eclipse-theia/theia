@@ -28,8 +28,8 @@ import { DiagnosticSeverity, Range } from '@theia/core/shared/vscode-languageser
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
-import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { MarkerManager } from '../marker-manager';
+import { ApplicationShell } from '@theia/core/lib/browser';
 
 disableJSDOM();
 
@@ -51,11 +51,12 @@ describe('problem-manager', () => {
         container.bind(FileService).toConstantValue(<FileService>{
             onDidFilesChange: Event.None
         });
-        container.bind(EditorManager).toConstantValue(<EditorManager>{
-            onCurrentEditorChanged: Event.None,
-            currentEditor: {
-                getResourceUri: () => new URI('a')
-            }
+        container.bind(ApplicationShell).toConstantValue(<ApplicationShell>{
+            onDidChangeCurrentWidget: Event.None,
+            currentWidget: {
+                getResourceUri: () => new URI('a'),
+                createMoveToUri: () => undefined
+            } as any
         });
         container.bind(MarkerManager).toSelf().inSingletonScope();
         container.bind(ProblemManager).toSelf();

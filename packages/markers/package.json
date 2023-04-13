@@ -4,7 +4,6 @@
   "description": "Theia - Markers Extension",
   "dependencies": {
     "@theia/core": "1.35.0",
-    "@theia/editor": "1.35.0",
     "@theia/filesystem": "1.35.0",
     "@theia/workspace": "1.35.0"
   },

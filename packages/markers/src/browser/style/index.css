@@ -108,10 +108,17 @@
     position: relative;
 }
 
-.theia-marker-filter-container .filter-input {
-    width: 360px;
-    padding-right: 26px;
+.theia-light #theia-bottom-content-panel .theia-marker-filter-container .filter-input {
     border: var(--theia-dropdown-border) solid 1px;
+}
+
+.theia-marker-filter-container .filter-input {
+    width: 380px;
+    padding-right: 26px;
+
+    /* broder-color: var(--theia-input-border); */
+    border-color: var(--theia-input-background);
+    border-radius: 2px;
 }
 
 .theia-marker-filter-container .filter-control {
@@ -122,26 +129,29 @@
     position: absolute;
     top: 2px;
     bottom: 0;
-    right: 6px;
-    height: 18px;
-    width: 18px;
-    border-radius: 2px;
+    right: 4px;
+    height: 20px;
+    width: 20px;
+    border-radius: 4px;
     padding-top: 2px;
-    border: var(--theia-border-width) solid transparent;
 }
 
-.theia-marker-filter-container .filter-control:hover,
+.theia-marker-filter-container .filter-control:hover {
+    background-color: var(--theia-toolbar-hoverBackground);
+}
+
 .theia-marker-filter-container .filter-control.valid {
-    border: var(--theia-border-width) var(--theia-inputOption-activeBorder) solid;
     background-color: var(--theia-inputOption-activeBackground);
 }
 
 .theia-marker-filter-container .filter-stat-tag {
     position: absolute;
-    right: 30px;
-    top: 2px;
-    line-height: 20px;
-    background-color: var(--theia-input-background);
+    right: 24px;
+    top: 4px;
+    line-height: 18px;
+    border-radius: 2px;
+    background-color: var(--theia-badge-background);
+    cursor: pointer;
 }
 
 .theia-marker-filter-container .filter-stat-tag.hidden {
@@ -149,9 +159,5 @@
 }
 
 .theia-marker-filter-container .filter-stat-tag-content {
-    background-color: var(--theia-inputOption-activeBackground);
-    border: var(--theia-border-width) var(--theia-inputOption-activeBorder) solid;
-    padding: 0 6px;
-    border-radius: 2px;
-    cursor: pointer;
+    padding: 0 8px;
 }

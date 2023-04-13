@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2017 TypeFox and others.
+// Copyright (C) 2023 Hundsun and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -115,7 +115,7 @@ export const ProblemFilter: React.FC<ProblemFilterProps> = (props: ProblemFilter
 
         return opts.map(({ key, label, group }) => ({
             value: key,
-            label: creatLabel(nls.localize(`theia/markers/${key}`, label), filters[key as FilterKeys]),
+            label: creatLabel(key === 'showHints' ? nls.localize('theia/markers/showHints', label) : nls.localizeByDefault(label), filters[key as FilterKeys]),
             group,
             onClick: () => clickHandler(key as FilterKeys)
         }));

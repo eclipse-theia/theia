@@ -178,15 +178,7 @@
       "clearAll": "Limpar tudo",
       "noProblems": "Até agora não foram detectados problemas no espaço de trabalho.",
       "tabbarDecorationsEnabled": "Mostrar decoradores de problemas (marcadores de diagnóstico) nas barras de tabulação.",
-      "showErrors": "Mostrar erros",
-      "showWarnings": "Mostrar avisos",
-      "showInfos": "Mostrar informações",
-      "showHints": "Mostrar as dicas",
-      "activeFile": "Mostrar apenas o arquivo ativo",
-      "useFilesExclude": "Ocultar arquivos excluídos",
-      "moreFilters": "Mais filtros...",
-      "showingFilteredProblems": "Mostrando {0} de {1}",
-      "filterPlaceholder": "Filtro (por exemplo, texto, **/*.ts, !**/node_modules/**)"
+      "showHints": "Mostrar as dicas"
     },
     "memory-inspector": {
       "addressTooltip": "Localização da memória a exibir, um endereço ou expressão a avaliar para um endereço",

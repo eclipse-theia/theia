@@ -178,15 +178,7 @@
       "clearAll": "Vymazat vše",
       "noProblems": "V pracovním prostoru zatím nebyly zjištěny žádné problémy.",
       "tabbarDecorationsEnabled": "Zobrazení dekorátorů problémů (diagnostických značek) na pásech karet.",
-      "showErrors": "Zobrazit chyby",
-      "showWarnings": "Zobrazit varování",
-      "showInfos": "Zobrazit informace",
-      "showHints": "Zobrazit tipy",
-      "activeFile": "Zobrazit pouze aktivní soubor",
-      "useFilesExclude": "Skrýt vyloučené soubory",
-      "moreFilters": "Další filtry...",
-      "showingFilteredProblems": "Zobrazeno {0} z {1}",
-      "filterPlaceholder": "Filtr (např. text, **/*.ts, !**/node_modules/**)"
+      "showHints": "Zobrazit tipy"
     },
     "memory-inspector": {
       "addressTooltip": "Místo v paměti, které se má zobrazit, adresa nebo výraz vyhodnocující adresu.",

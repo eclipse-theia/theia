@@ -182,7 +182,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
 
     async registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): Promise<void> {
         toolbarRegistry.registerItem({
-            id: 'filter',
+            id: 'problem-filter-toolbar',
             render: () => this.renderFilter(),
             isVisible: widget => widget instanceof ProblemWidget,
         });

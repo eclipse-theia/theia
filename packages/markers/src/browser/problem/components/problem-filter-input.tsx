@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2021 Ericsson and others.
+// Copyright (C) 2023 Hundsun and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -35,7 +35,7 @@ export const ProblemFilterInput: React.FC<ProblemFilterInputProps> = (props: Pro
 
     const resetPlaceholder = (showHistory: boolean) => {
         if (showHistory) {
-            setPlaceholder(FILTER_PLACEHOLDER + ' or \u21C5 for history');
+            setPlaceholder(FILTER_PLACEHOLDER + ' or \u21C5 ' + nls.localizeByDefault('for history'));
         } else {
             setPlaceholder(FILTER_PLACEHOLDER);
         }

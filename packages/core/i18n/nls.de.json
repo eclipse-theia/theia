@@ -178,15 +178,7 @@
       "clearAll": "Alle löschen",
       "noProblems": "Bisher wurden im Arbeitsbereich keine Probleme festgestellt.",
       "tabbarDecorationsEnabled": "Problemdekorationen (Diagnosemarkierungen) in den Registerkartenleisten anzeigen.",
-      "showErrors": "Fehler anzeigen",
-      "showWarnings": "Warnungen anzeigen",
-      "showInfos": "Informationen anzeigen",
-      "showHints": "Zeige Hinweise",
-      "activeFile": "Nur aktive Datei anzeigen",
-      "useFilesExclude": "Ausgeschlossene Dateien ausblenden",
-      "moreFilters": "Weitere Filter...",
-      "showingFilteredProblems": "{0} von {1} werden angezeigt",
-      "filterPlaceholder": "Filter (z. B. Text, **/*.ts, !**/node_modules/**)"
+      "showHints": "Zeige Hinweise"
     },
     "memory-inspector": {
       "addressTooltip": "Speicherplatz, der angezeigt werden soll, eine Adresse oder ein Ausdruck, der zu einer Adresse ausgewertet wird",

@@ -22,8 +22,8 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { Filters } from './problem/problem-filter';
 import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
-import { EditorManager } from '@theia/editor/lib/browser';
 import { match } from '@theia/core/lib/common/glob';
+import { ApplicationShell, Navigatable } from '@theia/core/lib/browser';
 /*
  * argument to the `findMarkers` method.
  */
@@ -114,16 +114,16 @@ export interface Owner2MarkerEntry {
 @injectable()
 export abstract class MarkerManager<D extends object> {
     public abstract getKind(): string;
-    protected toolbarFilters: Filters;
-    protected toolbarFilterFn: (data: D, collection: MarkerCollection<D>) => boolean = () => true;
+    protected markerFilters: Filters;
+    protected markerMatcher: (data: D, collection: MarkerCollection<D>) => boolean = () => true;
     protected readonly uri2MarkerCollection = new Map<string, MarkerCollection<D>>();
     protected readonly onDidChangeMarkersEmitter = new Emitter<URI>();
 
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
 
     @postConstruct()
     protected init(): void {
@@ -133,9 +133,9 @@ export abstract class MarkerManager<D extends object> {
             }
         });
 
-        this.editorManager.onCurrentEditorChanged(() => {
-            if (this.toolbarFilters && this.toolbarFilters.activeFile) {
-                this.setFilters(this.toolbarFilters);
+        this.shell.onDidChangeCurrentWidget(() => {
+            if (this.markerFilters && this.markerFilters.activeFile) {
+                this.setFilters(this.markerFilters);
             }
         });
     }
@@ -181,7 +181,7 @@ export abstract class MarkerManager<D extends object> {
             if (!enableToolbarFilters) {
                 return filter.dataFilter ? filter.dataFilter(data) : true;
             }
-            return filter.dataFilter ? filter.dataFilter(data) && this.toolbarFilterFn(data, collection) : this.toolbarFilterFn(data, collection);
+            return filter.dataFilter ? filter.dataFilter(data) && this.markerMatcher(data, collection) : this.markerMatcher(data, collection);
         };
         if (filter.uri) {
             const collection = this.uri2MarkerCollection.get(filter.uri.toString());
@@ -222,12 +222,12 @@ export abstract class MarkerManager<D extends object> {
     }
 
     getToolbarFilters(): Filters | undefined {
-        return this.toolbarFilters;
+        return this.markerFilters;
     }
 
     setFilters(filters: Filters): void {
         const { text, showErrors, showWarnings, showInfos, showHints, activeFile, useFilesExclude } = filters;
-        this.toolbarFilters = filters;
+        this.markerFilters = filters;
         const markfilterFns: Array<(data: D, collection?: MarkerCollection<D>) => boolean> = [];
 
         if (!showErrors) {
@@ -246,9 +246,9 @@ export abstract class MarkerManager<D extends object> {
 
         if (activeFile) {
             markfilterFns.push((data: D, collection: MarkerCollection<D>) => {
-                const editor = this.editorManager.currentEditor;
-                if (editor) {
-                    const uri = editor.getResourceUri();
+                const widget = this.shell.currentWidget;
+                if (widget && Navigatable.is(widget)) {
+                    const uri = widget.getResourceUri();
                     return collection.uri.path.toString() === uri?.path.toString();
                 }
                 return true;
@@ -266,13 +266,12 @@ export abstract class MarkerManager<D extends object> {
                 markfilterFns.push((data: D, collection: MarkerCollection<D>) => !((data as Diagnostic).message.toLowerCase().includes(text.replace(/^!/, '').toLowerCase()) ||
                     [`**/${filterText}`, `**/${filterText}/**`].some((t: string) => match(t, collection.uri.path.toString()))));
             } else {
-
                 markfilterFns.push((data: D, collection: MarkerCollection<D>) => (data as Diagnostic).message.toLowerCase().includes(text.replace(/^!/, '').toLowerCase()) ||
                     [`**/${filterText}`, `**/${filterText}/**`].some((t: string) => match(t, collection.uri.path.toString())));
             }
         }
 
-        this.toolbarFilterFn = (data: D, collection: MarkerCollection<D>) => markfilterFns.every(filter => filter(data, collection));
+        this.markerMatcher = (data: D, collection: MarkerCollection<D>) => markfilterFns.every(filter => filter(data, collection));
 
         for (const uriString of this.getUris()) {
             this.fireOnDidChangeMarkers(new URI(uriString));

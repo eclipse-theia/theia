@@ -178,15 +178,7 @@
       "clearAll": "クリアオール",
       "noProblems": "これまでのところ、ワークスペースに問題は検出されていません。",
       "tabbarDecorationsEnabled": "タブバーに問題のデコレーター(診断マーカー)を表示する。",
-      "showErrors": "エラーを表示",
-      "showWarnings": "警告を表示",
-      "showInfos": "情報を表示",
-      "showHints": "ヒントを表示",
-      "activeFile": "アクティブなファイルのみを表示",
-      "useFilesExclude": "除外ファイルを非表示",
-      "moreFilters": "その他のフィルター...",
-      "showingFilteredProblems": "{0}/{1} を表示",
-      "filterPlaceholder": "フィルター (例: text、**/*.ts、!**/node_modules/**)"
+      "showHints": "ヒントを表示"
     },
     "memory-inspector": {
       "addressTooltip": "表示するメモリ位置、アドレス、またはアドレスに評価される式",
