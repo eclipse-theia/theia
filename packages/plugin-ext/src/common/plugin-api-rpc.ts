@@ -756,6 +756,7 @@ export class DataTransferFileDTO {
 
 export interface TreeViewsExt {
     $dragStarted(treeViewId: string, treeItemIds: string[], token: CancellationToken): Promise<UriComponents[] | undefined>;
+    $dragEnd(treeViewId: string): Promise<void>;
     $drop(treeViewId: string, treeItemId: string | undefined, dataTransferItems: [string, string | DataTransferFileDTO][], token: CancellationToken): Promise<void>;
     $getChildren(treeViewId: string, treeItemId: string | undefined): Promise<TreeViewItem[] | undefined>;
     $hasResolveTreeItem(treeViewId: string): Promise<boolean>;
