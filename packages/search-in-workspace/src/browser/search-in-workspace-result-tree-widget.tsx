@@ -737,7 +737,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected doReplace(node: TreeNode, e: React.MouseEvent<HTMLElement>): void {
-        this.replace(node);
+        const selection = SelectableTreeNode.isSelected(node) ? (this.selectionService.selection as SelectableTreeNode[]) : [node];
+        selection.forEach(n => this.replace(n));
         e.stopPropagation();
     }
 
@@ -899,7 +900,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected readonly remove = (node: TreeNode, e: React.MouseEvent<HTMLElement>) => this.doRemove(node, e);
     protected doRemove(node: TreeNode, e: React.MouseEvent<HTMLElement>): void {
-        this.removeNode(node);
+        const selection = SelectableTreeNode.isSelected(node) ? (this.selectionService.selection as SelectableTreeNode[]) : [node];
+        selection.forEach(n => this.removeNode(n));
         e.stopPropagation();
     }
 

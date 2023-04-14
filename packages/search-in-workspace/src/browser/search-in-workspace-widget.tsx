@@ -507,7 +507,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         if (e.target) {
             this.replaceTerm = (e.target as HTMLInputElement).value;
             this.resultTreeWidget.replaceTerm = this.replaceTerm;
-            this.performSearch();
+            if (KeyCode.createKeyCode(e.nativeEvent).key?.keyCode === Key.ENTER.keyCode) { this.performSearch(); }
             this.update();
         }
     }
