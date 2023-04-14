@@ -93,3 +93,7 @@
     border-top: 5px solid transparent;
     border-bottom: 5px solid transparent;
 }
+
+.theia-hover.extended-tab-preview {
+    border-radius: 10px;
+}

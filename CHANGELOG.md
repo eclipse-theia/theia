@@ -3,6 +3,11 @@
 ## History
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
+## v1.37.0 0 -
+
+<a name="breaking_changes_1.37.0">[Breaking Changes:](#breaking_changes_1.37.0)</a>
+- [core] Inject core preference into `DockPanelRenderer` constructor [12360](https://github.com/eclipse-theia/theia/pull/12360)
+- [core] Introduced `ScrollableTabBar.updateTabs()` to fully render tabs [12360](https://github.com/eclipse-theia/theia/pull/12360)
 
 ## v1.36.0 0 - 03/30/2023
 
