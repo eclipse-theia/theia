@@ -50,12 +50,6 @@ export class NativeWebpackPlugin {
     }
 
     apply(compiler: Compiler): void {
-        if (this.options.ripgrep) {
-            compiler.hooks.afterEmit.tapAsync(NativeWebpackPlugin.name, () => this.copyRipgrep(compiler));
-        }
-        if (this.options.pty) {
-            compiler.hooks.afterEmit.tapAsync(NativeWebpackPlugin.name, () => this.copyNodePtySpawnHelper(compiler));
-        }
         const bindingsFile = buildFile('bindings.js', bindingsReplacement(Array.from(this.bindings.entries())));
         const ripgrepFile = buildFile('ripgrep.js', ripgrepReplacement(this.options.out));
         const keymappingFile = './build/Release/keymapping.node';
@@ -85,6 +79,14 @@ export class NativeWebpackPlugin {
                 });
             }
         );
+        compiler.hooks.afterEmit.tapAsync(NativeWebpackPlugin.name, async () => {
+            if (this.options.ripgrep) {
+                await this.copyRipgrep(compiler);
+            }
+            if (this.options.pty) {
+                await this.copyNodePtySpawnHelper(compiler);
+            }
+        });
     }
 
     protected async copyRipgrep(compiler: Compiler): Promise<void> {
