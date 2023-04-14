@@ -550,7 +550,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         }
 
         const contentLength = this.model.getValueLength();
-        const content = this.model.createSnapshot() || this.model.getValue();
+        const content = this.model.getValue();
         try {
             const encoding = this.getEncoding();
             const version = this.resourceVersion;
@@ -656,7 +656,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
     }
 
     createSnapshot(preserveBOM?: boolean): ITextSnapshot {
-        return this.model.createSnapshot(preserveBOM);
+        return { read: () => this.model.getValue(undefined, preserveBOM) };
     }
 
     applySnapshot(snapshot: Saveable.Snapshot): void {
