@@ -13,6 +13,7 @@
 
 <a name="breaking_changes_1.40.0">[Breaking Changes:](#breaking_changes_1.40.0)</a>
 
+- [workspace] split `CommonWorkspaceUtils` into `WorkspaceFileService` and `UntitledWorkspaceService` [#12420](https://github.com/eclipse-theia/theia/pull/12420)
 
 ## v1.39.0 - 06/29/2023
 

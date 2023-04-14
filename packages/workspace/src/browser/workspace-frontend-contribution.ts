@@ -24,7 +24,7 @@ import {
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { WorkspaceService } from './workspace-service';
-import { THEIA_EXT, VSCODE_EXT } from '../common';
+import { WorkspaceFileService, THEIA_EXT, VSCODE_EXT } from '../common';
 import { WorkspaceCommands } from './workspace-commands';
 import { QuickOpenWorkspace } from './quick-open-workspace';
 import URI from '@theia/core/lib/common/uri';
@@ -39,6 +39,8 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { UntitledWorkspaceExitDialog } from './untitled-workspace-exit-dialog';
 import { FilesystemSaveResourceService } from '@theia/filesystem/lib/browser/filesystem-save-resource-service';
 import { StopReason } from '@theia/core/lib/common/frontend-application-state';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import * as monaco from '@theia/monaco-editor-core';
 
 export enum WorkspaceStates {
     /**
@@ -73,10 +75,21 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     @inject(EncodingRegistry) protected readonly encodingRegistry: EncodingRegistry;
     @inject(PreferenceConfigurations) protected readonly preferenceConfigurations: PreferenceConfigurations;
     @inject(FilesystemSaveResourceService) protected readonly saveService: FilesystemSaveResourceService;
+    @inject(WorkspaceFileService) protected readonly workspaceFileService: WorkspaceFileService;
 
     configure(): void {
-        this.encodingRegistry.registerOverride({ encoding: UTF8, extension: THEIA_EXT });
-        this.encodingRegistry.registerOverride({ encoding: UTF8, extension: VSCODE_EXT });
+        const workspaceExtensions = this.workspaceFileService.getWorkspaceFileExtensions();
+        monaco.languages.register({
+            id: 'jsonc',
+            'aliases': [
+                'JSON with Comments'
+            ],
+            'extensions': workspaceExtensions.map(ext => `.${ext}`)
+        });
+        for (const extension of workspaceExtensions) {
+            this.encodingRegistry.registerOverride({ encoding: UTF8, extension });
+        }
+
         this.updateEncodingOverrides();
 
         const workspaceFolderCountKey = this.contextKeyService.createKey<number>('workspaceFolderCount', 0);
@@ -394,12 +407,13 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         do {
             selected = await this.fileDialogService.showSaveDialog({
                 title: WorkspaceCommands.SAVE_WORKSPACE_AS.label!,
-                filters: WorkspaceFrontendContribution.DEFAULT_FILE_FILTER
+                filters: this.getWorkspaceDialogFileFilters()
             });
             if (selected) {
                 const displayName = selected.displayName;
-                if (!displayName.endsWith(`.${THEIA_EXT}`) && !displayName.endsWith(`.${VSCODE_EXT}`)) {
-                    selected = selected.parent.resolve(`${displayName}.${THEIA_EXT}`);
+                const extensions = this.workspaceFileService.getWorkspaceFileExtensions(true);
+                if (!extensions.some(ext => displayName.endsWith(ext))) {
+                    selected = selected.parent.resolve(`${displayName}${extensions[0]}`);
                 }
                 exist = await this.fileService.exists(selected);
                 if (exist) {
@@ -440,6 +454,14 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             return this.workspaceService.isMultiRootWorkspaceOpened ? 'workspace' : 'folder';
         }
         return 'empty';
+    }
+
+    protected getWorkspaceDialogFileFilters(): FileDialogTreeFilters {
+        const filters: FileDialogTreeFilters = {};
+        for (const fileType of this.workspaceFileService.getWorkspaceFileTypes()) {
+            filters[`${nls.localizeByDefault('{0} workspace', fileType.name)} (*.${fileType.extension})`] = [fileType.extension];
+        }
+        return filters;
     }
 
     private isElectron(): boolean {
@@ -487,6 +509,8 @@ export namespace WorkspaceFrontendContribution {
 
     /**
      * File filter for all Theia and VS Code workspace file types.
+     *
+     * @deprecated Since 1.38.0 Use `WorkspaceFrontendContribution#getWorkspaceDialogFileFilters` instead.
      */
     export const DEFAULT_FILE_FILTER: FileDialogTreeFilters = {
         'Theia Workspace (*.theia-workspace)': [THEIA_EXT],

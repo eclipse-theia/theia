@@ -15,4 +15,5 @@
 // *****************************************************************************
 
 export * from './workspace-protocol';
-export * from './utils';
+export * from './workspace-file-service';
+export * from './untitled-workspace-service';

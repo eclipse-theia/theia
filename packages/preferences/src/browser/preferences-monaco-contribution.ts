@@ -23,8 +23,5 @@ monaco.languages.register({
     ],
     'filenames': [
         'settings.json'
-    ],
-    'extensions': [
-        '.theia-workspace'
     ]
 });

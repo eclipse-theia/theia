@@ -14,49 +14,29 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-// TODO get rid of util files, replace with methods in a responsible class
-
 import URI from '@theia/core/lib/common/uri';
-import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { injectable } from '@theia/core/shared/inversify';
-import { FileStat } from '@theia/filesystem/lib/common/files';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { MaybePromise } from '@theia/core';
-
-export const THEIA_EXT = 'theia-workspace';
-export const VSCODE_EXT = 'code-workspace';
-
-/**
- * @deprecated since 1.4.0 - because of https://github.com/eclipse-theia/theia/tree/master/doc/coding-guidelines.md#di-function-export,
- * use `WorkspaceService.getUntitledWorkspace` instead
- */
-export async function getTemporaryWorkspaceFileUri(envVariableServer: EnvVariablesServer): Promise<URI> {
-    const configDirUri = await envVariableServer.getConfigDirUri();
-    return new URI(configDirUri).resolve(`Untitled.${THEIA_EXT}`);
-}
+import { WorkspaceFileService } from './workspace-file-service';
 
 @injectable()
-export class CommonWorkspaceUtils {
-    /**
-     * Check if the file should be considered as a workspace file.
-     *
-     * Example: We should not try to read the contents of an .exe file.
-     */
-    isWorkspaceFile(candidate: FileStat | URI): boolean {
-        const uri = FileStat.is(candidate) ? candidate.resource : candidate;
-        return uri.path.ext === `.${THEIA_EXT}` || uri.path.ext === `.${VSCODE_EXT}`;
-    }
+export class UntitledWorkspaceService {
+
+    @inject(WorkspaceFileService)
+    protected readonly workspaceFileService: WorkspaceFileService;
 
     isUntitledWorkspace(candidate?: URI): boolean {
-        return !!candidate && this.isWorkspaceFile(candidate) && candidate.path.base.startsWith('Untitled');
+        return !!candidate && this.workspaceFileService.isWorkspaceFile(candidate) && candidate.path.base.startsWith('Untitled');
     }
 
     async getUntitledWorkspaceUri(configDirUri: URI, isAcceptable: (candidate: URI) => MaybePromise<boolean>, warnOnHits?: () => unknown): Promise<URI> {
         const parentDir = configDirUri.resolve('workspaces');
+        const workspaceExtension = this.workspaceFileService.getWorkspaceFileExtensions()[0];
         let uri;
         let attempts = 0;
         do {
             attempts++;
-            uri = parentDir.resolve(`Untitled-${Math.round(Math.random() * 1000)}.${THEIA_EXT}`);
+            uri = parentDir.resolve(`Untitled-${Math.round(Math.random() * 1000)}.${workspaceExtension}`);
             if (attempts === 10) {
                 warnOnHits?.();
             }
