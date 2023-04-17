@@ -50,7 +50,7 @@ export abstract class Stopwatch {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    protected constructor(protected readonly defaultLogOptions: LogOptions) {
+    constructor(protected readonly defaultLogOptions: LogOptions) {
         if (!defaultLogOptions.defaultLogLevel) {
             defaultLogOptions.defaultLogLevel = DEFAULT_LOG_LEVEL;
         }
