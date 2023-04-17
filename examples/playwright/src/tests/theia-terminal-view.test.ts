@@ -55,6 +55,7 @@ test.describe('Theia Terminal View', () => {
 
         // close all terminals
         for (const terminal of allTerminals) {
+            await terminal.activate(); // close box is not visible when not active
             await terminal.close();
         }
 
