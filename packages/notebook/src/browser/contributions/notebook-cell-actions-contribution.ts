@@ -17,7 +17,8 @@
 import { Command, CommandContribution, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
-import { requestCellEdit, runDeleteAction } from './cellOperations';
+import { NotebookModel } from '../view-model/notebook-model';
+import { NotebookCellModel } from '../view-model/notebook-cell-model';
 
 export namespace NotebookCellCommands {
     export const EDIT_COMMAND = Command.toDefaultLocalizedCommand({
@@ -36,6 +37,14 @@ export namespace NotebookCellCommands {
 
 @injectable()
 export class NotebookCellActionContribution implements MenuContribution, CommandContribution {
+
+    protected runDeleteAction(notebookModel: NotebookModel, cell: NotebookCellModel): void {
+        notebookModel.removeCell(notebookModel.cells.indexOf(cell), 1);
+    }
+
+    protected requestCellEdit(notebookModel: NotebookModel, cell: NotebookCellModel): void {
+        cell.requestEdit();
+    }
 
     registerMenus(menus: MenuModelRegistry): void {
         const menuId = 'notebook-cell-acions-menu';
@@ -63,8 +72,8 @@ export class NotebookCellActionContribution implements MenuContribution, Command
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, { execute: requestCellEdit });
-        commands.registerCommand(NotebookCellCommands.DELETE_COMMAND, { execute: runDeleteAction });
+        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, { execute: this.requestCellEdit });
+        commands.registerCommand(NotebookCellCommands.DELETE_COMMAND, { execute: this.runDeleteAction });
         commands.registerCommand(NotebookCellCommands.SPLIT_CELL_COMMAND);
     }
 

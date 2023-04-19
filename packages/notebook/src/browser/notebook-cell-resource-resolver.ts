@@ -21,9 +21,9 @@ import { CellDto, CellUri } from '../common';
 import { NotebookService } from './service/notebook-service';
 import { NotebookModel } from './view-model/notebook-model';
 
-class NotebookCellResource implements Resource {
+export class NotebookCellResource implements Resource {
 
-    private readonly didChangeContentsEmitter = new Emitter<void>();
+    protected readonly didChangeContentsEmitter = new Emitter<void>();
     readonly onDidChangeContents = this.didChangeContentsEmitter.event;
 
     version?: ResourceVersion | undefined;
@@ -50,22 +50,22 @@ class NotebookCellResource implements Resource {
 export class NotebookCellResourceResolver implements ResourceResolver {
 
     @inject(NotebookService)
-    protected notebookService: NotebookService;
+    protected readonly notebookService: NotebookService;
 
     async resolve(uri: URI): Promise<Resource> {
         if (uri.scheme !== CellUri.scheme) {
-            throw new Error('can\'t resolve uri');
+            throw new Error(`Cannot resolve cell uri with scheme '${uri.scheme}'`);
         }
 
         const parsedUri = CellUri.parse(uri);
         if (!parsedUri) {
-            throw new Error('cant parse uri ' + uri.toString());
+            throw new Error(`cant parse uri ${uri.toString()}`);
         }
 
         const notebookModel = this.notebookService.getNotebookEditorModel(parsedUri.notebook);
 
         if (!notebookModel) {
-            throw new Error('no notebook found for uri ' + parsedUri.notebook);
+            throw new Error(`no notebook found for uri ${parsedUri.notebook}`);
         }
 
         return new NotebookCellResource(uri, notebookModel, parsedUri.handle);

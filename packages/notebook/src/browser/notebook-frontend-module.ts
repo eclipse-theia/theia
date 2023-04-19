@@ -26,6 +26,7 @@ import { NotebookCellResourceResolver } from './notebook-cell-resource-resolver'
 import { NotebookModelResolverService } from './service/notebook-model-resolver-service';
 import { NotebookCellActionContribution } from './contributions/notebook-cell-actions-contribution';
 import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
+import { NotebookContextKeyService } from './contributions/notebook-context-keys';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Symbol('notebooks'));
@@ -47,4 +48,5 @@ export default new ContainerModule(bind => {
     bind(NotebookCellActionContribution).toSelf().inSingletonScope();
     bind(MenuContribution).toService(NotebookCellActionContribution);
     bind(CommandContribution).toService(NotebookCellActionContribution);
+    bind(NotebookContextKeyService).toSelf().inSingletonScope();
 });

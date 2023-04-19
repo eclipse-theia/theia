@@ -25,32 +25,36 @@ import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-pr
 import { NotebookModelResolverService } from './service/notebook-model-resolver-service';
 import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
 
+export interface NotebookEditorWidgetOptions extends NavigatableWidgetOptions {
+    notebookType: string;
+}
+
 @injectable()
 export class NotebookEditorWidgetFactory implements WidgetFactory {
     readonly id: string = NotebookEditorWidget.ID;
 
     @inject(FileService)
-    protected fileService: FileService;
+    protected readonly fileService: FileService;
 
     @inject(NotebookService)
-    protected notebookService: NotebookService;
+    protected readonly notebookService: NotebookService;
 
     @inject(MarkdownRenderer)
-    protected markdownRenderer: MarkdownRenderer;
+    protected readonly markdownRenderer: MarkdownRenderer;
 
     @inject(MonacoEditorProvider)
-    protected editorProvider: MonacoEditorProvider;
+    protected readonly editorProvider: MonacoEditorProvider;
 
     @inject(NotebookModelResolverService)
-    protected notebookModelResolver: NotebookModelResolverService;
+    protected readonly notebookModelResolver: NotebookModelResolverService;
 
     @inject(LabelProvider)
-    protected labelProvider: LabelProvider;
+    protected readonly labelProvider: LabelProvider;
 
     @inject(NotebookCellToolbarFactory)
-    protected toolbarFactory: NotebookCellToolbarFactory;
+    protected readonly toolbarFactory: NotebookCellToolbarFactory;
 
-    async createWidget(options?: NavigatableWidgetOptions & { notebookType: string }): Promise<NotebookEditorWidget> {
+    async createWidget(options?: NotebookEditorWidgetOptions): Promise<NotebookEditorWidget> {
         if (!options) {
             throw new Error('no options found for widget. Need at least uri and notebookType');
         }

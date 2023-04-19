@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 Red Hat, Inc. and others.
+// Copyright (C) 2023 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -39,7 +39,7 @@ export class NotebooksMainImpl implements NotebooksMain {
         plugins: HostedPluginSupport
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT);
-        notebookService.onNotebookSerialzer(event => plugins.activateByEvent(event));
+        notebookService.onNotebookSerializer(event => plugins.activateByEvent(event));
     }
 
     dispose(): void {
@@ -109,11 +109,11 @@ export class NotebooksMainImpl implements NotebooksMain {
 
     async $unregisterNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/no-shadow
-        const unregisterThing = (handle: number) => {
-            const entry = this.notebookCellStatusBarRegistrations.get(handle);
+        const unregisterThing = (statusBarHandle: number) => {
+            const entry = this.notebookCellStatusBarRegistrations.get(statusBarHandle);
             if (entry) {
-                this.notebookCellStatusBarRegistrations.get(handle)?.dispose();
-                this.notebookCellStatusBarRegistrations.delete(handle);
+                this.notebookCellStatusBarRegistrations.get(statusBarHandle)?.dispose();
+                this.notebookCellStatusBarRegistrations.delete(statusBarHandle);
             }
         };
         unregisterThing(handle);
