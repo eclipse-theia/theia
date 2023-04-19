@@ -33,18 +33,18 @@ export namespace ProblemCompositeTreeNode {
         parent.severity = maxSeverity;
     };
 
-    export function addChildren(parent: CompositeTreeNode, insertChildren: Map<string, { node: MarkerInfoNode, markers: Marker<Diagnostic>[] }>): void {
-        for (const { node, markers } of insertChildren.values()) {
+    export function addChildren(parent: CompositeTreeNode, insertChildren: { node: MarkerInfoNode, markers: Marker<Diagnostic>[] }[]): void {
+        for (const { node, markers } of insertChildren) {
             ProblemCompositeTreeNode.setSeverity(node, markers);
         }
 
-        const sortedInsertChildren = new Map([...insertChildren.entries()].sort(
-            ([, a], [, b]) => (ProblemUtils.severityCompare(a.node.severity, b.node.severity) || compareURI(a.node.uri, b.node.uri))
-        ));
+        const sortedInsertChildren = insertChildren.sort(
+            (a, b) => (ProblemUtils.severityCompare(a.node.severity, b.node.severity) || compareURI(a.node.uri, b.node.uri))
+        );
 
         let startIndex = 0;
         const children = parent.children as MarkerInfoNode[];
-        for (const { node } of sortedInsertChildren.values()) {
+        for (const { node } of sortedInsertChildren) {
             const index = children.findIndex(value => value.id === node.id);
             if (index !== -1) {
                 CompositeTreeNode.removeChild(parent, node);

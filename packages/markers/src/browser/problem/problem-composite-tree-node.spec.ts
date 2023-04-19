@@ -75,16 +75,16 @@ describe('problem-composite-tree-node', () => {
                 const lowMarkerNode = createMarkerInfo('2', new URI('b'), [lowNode]);
 
                 const highFirstRoot = getRootNode('highFirstRoot');
-                ProblemCompositeTreeNode.addChildren(highFirstRoot, new Map([
-                    [highMarkerNode.id, { node: highMarkerNode, markers: [highMarker] }],
-                    [lowMarkerNode.id, { node: lowMarkerNode, markers: [lowMarker] }],
-                ]));
+                ProblemCompositeTreeNode.addChildren(highFirstRoot, [
+                    { node: highMarkerNode, markers: [highMarker] },
+                    { node: lowMarkerNode, markers: [lowMarker] },
+                ]);
                 expectCorrectOrdering(highFirstRoot);
                 const lowFirstRoot = getRootNode('lowFirstRoot');
-                ProblemCompositeTreeNode.addChildren(lowFirstRoot, new Map([
-                    [lowMarkerNode.id, { node: lowMarkerNode, markers: [lowMarker] }],
-                    [highMarkerNode.id, { node: highMarkerNode, markers: [highMarker] }],
-                ]));
+                ProblemCompositeTreeNode.addChildren(lowFirstRoot, [
+                    { node: lowMarkerNode, markers: [lowMarker] },
+                    { node: highMarkerNode, markers: [highMarker] },
+                ]);
                 expectCorrectOrdering(lowFirstRoot);
 
                 function expectCorrectOrdering(root: MarkerRootNode): void {
@@ -128,10 +128,10 @@ describe('problem-composite-tree-node', () => {
             const nodeB = createMockMarkerNode(markerB);
             const markerInfoNodeA = createMarkerInfo('1', new URI('a'), [nodeA]);
             const markerInfoNodeB = createMarkerInfo('2', new URI('b'), [nodeB]);
-            ProblemCompositeTreeNode.addChildren(rootNode, new Map([
-                [markerInfoNodeA.id, { node: markerInfoNodeA, markers: [markerA] }],
-                [markerInfoNodeB.id, { node: markerInfoNodeB, markers: [markerB] }],
-            ]));
+            ProblemCompositeTreeNode.addChildren(rootNode, [
+                { node: markerInfoNodeA, markers: [markerA] },
+                { node: markerInfoNodeB, markers: [markerB] },
+            ]);
 
             expect(rootNode.children.length).to.equal(2);
             expect(rootNode.children[0]).to.equal(markerInfoNodeA);
@@ -144,14 +144,14 @@ describe('problem-composite-tree-node', () => {
             const markerA = createMockMarker({ start: { line: 0, character: 10 }, end: { line: 0, character: 10 } }, DiagnosticSeverity.Error);
             const nodeA = createMockMarkerNode(markerA);
             const markerInfoNodeA = createMarkerInfo('1', new URI('a'), [nodeA]);
-            ProblemCompositeTreeNode.addChildren(rootNode, new Map([
-                [markerInfoNodeA.id, { node: markerInfoNodeA, markers: [markerA] }]
-            ]));
+            ProblemCompositeTreeNode.addChildren(rootNode, [
+                { node: markerInfoNodeA, markers: [markerA] }
+            ]);
 
             markerA.data.severity = DiagnosticSeverity.Hint;
-            ProblemCompositeTreeNode.addChildren(rootNode, new Map([
-                [markerInfoNodeA.id, { node: markerInfoNodeA, markers: [markerA] }]
-            ]));
+            ProblemCompositeTreeNode.addChildren(rootNode, [
+                { node: markerInfoNodeA, markers: [markerA] }
+            ]);
 
             expect(rootNode.children.length).to.equal(1);
             expect(rootNode.children[0]).to.equal(markerInfoNodeA);
@@ -161,21 +161,21 @@ describe('problem-composite-tree-node', () => {
             const markerA = createMockMarker({ start: { line: 0, character: 10 }, end: { line: 0, character: 10 } }, DiagnosticSeverity.Error);
             const nodeA = createMockMarkerNode(markerA);
             const markerInfoNodeA = createMarkerInfo('1', new URI('a'), [nodeA]);
-            ProblemCompositeTreeNode.addChildren(rootNode, new Map([
-                [markerInfoNodeA.id, { node: markerInfoNodeA, markers: [markerA] }]
-            ]));
+            ProblemCompositeTreeNode.addChildren(rootNode, [
+                { node: markerInfoNodeA, markers: [markerA] }
+            ]);
 
             const markerB = createMockMarker({ start: { line: 0, character: 10 }, end: { line: 0, character: 10 } }, DiagnosticSeverity.Error);
             const nodeB = createMockMarkerNode(markerB);
             const markerInfoNodeB = createMarkerInfo('2', new URI('b'), [nodeB]);
-            ProblemCompositeTreeNode.addChildren(rootNode, new Map([
-                [markerInfoNodeB.id, { node: markerInfoNodeB, markers: [markerB] }]
-            ]));
+            ProblemCompositeTreeNode.addChildren(rootNode, [
+                { node: markerInfoNodeB, markers: [markerB] }
+            ]);
 
             markerA.data.severity = DiagnosticSeverity.Hint;
-            ProblemCompositeTreeNode.addChildren(rootNode, new Map([
-                [markerInfoNodeA.id, { node: markerInfoNodeA, markers: [markerA] }]
-            ]));
+            ProblemCompositeTreeNode.addChildren(rootNode, [
+                { node: markerInfoNodeA, markers: [markerA] }
+            ]);
 
             expect(rootNode.children.length).to.equal(2);
             expect(rootNode.children[0]).to.equal(markerInfoNodeB);
@@ -188,21 +188,21 @@ describe('problem-composite-tree-node', () => {
             const markerA = createMockMarker({ start: { line: 0, character: 10 }, end: { line: 0, character: 10 } }, DiagnosticSeverity.Hint);
             const nodeA = createMockMarkerNode(markerA);
             const markerInfoNodeA = createMarkerInfo('1', new URI('a'), [nodeA]);
-            ProblemCompositeTreeNode.addChildren(rootNode, new Map([
-                [markerInfoNodeA.id, { node: markerInfoNodeA, markers: [markerA] }]
-            ]));
+            ProblemCompositeTreeNode.addChildren(rootNode, [
+                { node: markerInfoNodeA, markers: [markerA] }
+            ]);
 
             const markerB = createMockMarker({ start: { line: 0, character: 10 }, end: { line: 0, character: 10 } }, DiagnosticSeverity.Error);
             const nodeB = createMockMarkerNode(markerB);
             const markerInfoNodeB = createMarkerInfo('2', new URI('b'), [nodeB]);
-            ProblemCompositeTreeNode.addChildren(rootNode, new Map([
-                [markerInfoNodeB.id, { node: markerInfoNodeB, markers: [markerB] }]
-            ]));
+            ProblemCompositeTreeNode.addChildren(rootNode, [
+                { node: markerInfoNodeB, markers: [markerB] }
+            ]);
 
             markerA.data.severity = DiagnosticSeverity.Error;
-            ProblemCompositeTreeNode.addChildren(rootNode, new Map([
-                [markerInfoNodeA.id, { node: markerInfoNodeA, markers: [markerA] }]
-            ]));
+            ProblemCompositeTreeNode.addChildren(rootNode, [
+                { node: markerInfoNodeA, markers: [markerA] }
+            ]);
 
             expect(rootNode.children.length).to.equal(2);
             expect(rootNode.children[0]).to.equal(markerInfoNodeA);

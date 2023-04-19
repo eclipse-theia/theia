@@ -39,11 +39,13 @@ export class ProblemDecorationsProvider implements DecorationsProvider {
         this.problemManager.onDidChangeMarkers(() => this.fireDidDecorationsChanged());
     }
 
-    private fireDidDecorationsChanged = debounce(() => {
+    protected fireDidDecorationsChanged = debounce(() => this.doFireDidDecorationsChanged(), 50);
+
+    protected doFireDidDecorationsChanged(): void {
         const newUris = Array.from(this.problemManager.getUris(), stringified => new URI(stringified));
         this.onDidChangeEmitter.fire(newUris.concat(this.currentUris));
         this.currentUris = newUris;
-    }, 10);
+    }
 
     provideDecorations(uri: URI, token: CancellationToken): Decoration | Promise<Decoration | undefined> | undefined {
         const markers = this.problemManager.findMarkers({ uri }).filter(ProblemUtils.filterMarker).sort(ProblemUtils.severityCompareMarker);

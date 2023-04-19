@@ -28,7 +28,7 @@ import debounce = require('@theia/core/shared/lodash.debounce');
 
 @injectable()
 export class ProblemTree extends MarkerTree<Diagnostic> {
-    private _markers = new Map<string, { node: MarkerInfoNode, markers: Marker<Diagnostic>[] }>();
+    protected markers: { node: MarkerInfoNode, markers: Marker<Diagnostic>[] }[] = [];
 
     constructor(
         @inject(ProblemManager) markerManager: ProblemManager,
@@ -79,21 +79,21 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
     }
 
     protected override insertNodeWithMarkers(node: MarkerInfoNode, markers: Marker<Diagnostic>[]): void {
-        this._markers.set(node.id, { node, markers });
+        this.markers.push({ node, markers });
         this.doInsertNodesWithMarkers();
     }
 
-    private doInsertNodesWithMarkers = debounce(() => {
-        ProblemCompositeTreeNode.addChildren(this.root as MarkerRootNode, this._markers);
+    protected doInsertNodesWithMarkers = debounce(() => {
+        ProblemCompositeTreeNode.addChildren(this.root as MarkerRootNode, this.markers);
 
-        for (const { node, markers } of this._markers.values()) {
+        for (const { node, markers } of this.markers) {
             const children = this.getMarkerNodes(node, markers);
             node.numberOfMarkers = markers.length;
             this.setChildren(node, children);
         }
 
-        this._markers.clear();
-    }, 10);
+        this.markers.length = 0;
+    }, 50);
 }
 
 @injectable()
