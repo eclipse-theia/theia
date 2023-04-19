@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2020 Ericsson and others.
+// Copyright (C) 2023 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,10 +13,18 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+import { CHANNEL_SHOW_OPEN, CHANNEL_SHOW_SAVE, OpenDialogOptions, SaveDialogOptions, TheiaFilesystemAPI } from '../electron-common/electron-api';
 
-import { ContainerModule } from 'inversify';
-import { ElectronSecurityToken } from '../../electron-common/electron-token';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { ipcRenderer, contextBridge } from '@theia/core/electron-shared/electron';
 
-export default new ContainerModule(bind => {
-    bind(ElectronSecurityToken).toConstantValue(window.electronTheiaCore.getSecurityToken());
-});
+const api: TheiaFilesystemAPI = {
+    showOpenDialog: (options: OpenDialogOptions) => ipcRenderer.invoke(CHANNEL_SHOW_OPEN, options),
+    showSaveDialog: (options: SaveDialogOptions) => ipcRenderer.invoke(CHANNEL_SHOW_SAVE, options),
+};
+
+export function preload(): void {
+    console.log('exposing theia filesystem electron api');
+
+    contextBridge.exposeInMainWorld('electronTheiaFilesystem', api);
+}

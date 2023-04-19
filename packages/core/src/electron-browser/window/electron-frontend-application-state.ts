@@ -14,15 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ipcRenderer } from '../../../electron-shared/electron';
 import { injectable } from 'inversify';
-import { APPLICATION_STATE_CHANGE_SIGNAL } from '../../electron-common/messaging/electron-messages';
 import { FrontendApplicationState, FrontendApplicationStateService } from '../../browser/frontend-application-state';
 
 @injectable()
 export class ElectronFrontendApplicationStateService extends FrontendApplicationStateService {
     protected override doSetState(state: FrontendApplicationState): void {
         super.doSetState(state);
-        ipcRenderer.send(APPLICATION_STATE_CHANGE_SIGNAL, state);
+        window.electronTheiaCore.applicationStateChanged(state);
     }
 }

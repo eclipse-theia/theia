@@ -69,10 +69,8 @@ export class SomeClass {
 ## Re-Exports
 
 - `@theia/core/electron-shared/...`
-    - `@electron/remote` (from [`@electron/remote@^2.0.1 <2.0.4 || >2.0.4`](https://www.npmjs.com/package/@electron/remote))
-    - `@electron/remote/main` (from [`@electron/remote@^2.0.1 <2.0.4 || >2.0.4`](https://www.npmjs.com/package/@electron/remote))
     - `native-keymap` (from [`native-keymap@^2.2.1`](https://www.npmjs.com/package/native-keymap))
-    - `electron` (from [`electron@^15.3.5`](https://www.npmjs.com/package/electron))
+    - `electron` (from [`electron@^22.3.2`](https://www.npmjs.com/package/electron))
     - `electron-store` (from [`electron-store@^8.0.0`](https://www.npmjs.com/package/electron-store))
     - `fix-path` (from [`fix-path@^3.0.0`](https://www.npmjs.com/package/fix-path))
 - `@theia/core/shared/...`

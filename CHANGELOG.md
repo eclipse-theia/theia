@@ -56,6 +56,7 @@
     - Interface `ScmInlineActions` removes `commands: CommandRegistry`
     - Interface `ScmTreeWidget.Props` removes `commands: CommandRegistry`
 - [terminal] removed `openTerminalFromProfile` method from `TerminalFrontendContribution` [#12322](https://github.com/eclipse-theia/theia/pull/12322)
+- [electron] enabled context isolation and disabled node integration in Electron renderer (https://github.com/eclipse-theia/theia/issues/2018)
 
 ## v1.35.0 - 02/23/2023
 
