@@ -12985,6 +12985,11 @@ export module '@theia/plugin' {
         label?: string;
 
         /**
+         * The optional state of a comment thread, which may affect how the comment is displayed.
+         */
+        state?: CommentThreadState;
+
+        /**
          * Dispose this comment thread.
          *
          * Once disposed, this comment thread will be removed from visible editors and Comment Panel when appropriate.
@@ -12995,6 +13000,14 @@ export module '@theia/plugin' {
          * Whether the thread supports reply. Defaults to true.
          */
         canReply: boolean;
+    }
+
+    /**
+     * The state of a comment thread.
+     */
+    export enum CommentThreadState {
+        Unresolved = 0,
+        Resolved = 1
     }
 
     /**

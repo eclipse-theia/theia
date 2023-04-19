@@ -686,6 +686,11 @@ export interface Comment {
     readonly timestamp?: string;
 }
 
+export enum CommentThreadState {
+    Unresolved = 0,
+    Resolved = 1
+}
+
 export enum CommentThreadCollapsibleState {
     /**
      * Determines an item is collapsed
@@ -714,10 +719,12 @@ export interface CommentThread {
     comments: Comment[] | undefined;
     onDidChangeComments: TheiaEvent<Comment[] | undefined>;
     collapsibleState?: CommentThreadCollapsibleState;
+    state?: CommentThreadState;
     input?: CommentInput;
     onDidChangeInput: TheiaEvent<CommentInput | undefined>;
     onDidChangeRange: TheiaEvent<Range>;
     onDidChangeLabel: TheiaEvent<string | undefined>;
+    onDidChangeState: TheiaEvent<CommentThreadState | undefined>;
     onDidChangeCollapsibleState: TheiaEvent<CommentThreadCollapsibleState | undefined>;
     isDisposed: boolean;
     canReply: boolean;
