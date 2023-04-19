@@ -20,9 +20,30 @@ import { Saveable, SaveOptions } from '@theia/core/lib/browser';
 import { Cell, CellUri, NotebookCellsChangeType, NotebookCellTextModelSplice, NotebookData, NotebookModelWillAddRemoveEvent } from '../../common';
 import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { NotebookCellModel } from './notebook-cell-model';
+import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from './notebook-cell-model';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 
+export const NotebookModelFactory = Symbol('NotebookModelFactory');
+
+export function createNotebookModelContainer(parent: interfaces.Container, props: NotebookModelProps): interfaces.Container {
+    const child = parent.createChild();
+
+    child.bind(NotebookModelProps).toConstantValue(props);
+    child.bind(NotebookModel).toSelf();
+
+    return child;
+}
+
+const NotebookModelProps = Symbol('NotebookModelProps');
+export interface NotebookModelProps {
+    data: NotebookData,
+    uri: URI,
+    viewType: string,
+    serializer: NotebookSerializer,
+}
+
+@injectable()
 export class NotebookModel implements Saveable, Disposable {
 
     private readonly dirtyChangedEmitter = new Emitter<void>();
@@ -34,6 +55,9 @@ export class NotebookModel implements Saveable, Disposable {
     private readonly didAddRemoveCellEmitter = new Emitter<NotebookModelWillAddRemoveEvent>();
     readonly onDidAddOrRemoveCell = this.didAddRemoveCellEmitter.event;
 
+    @inject(FileService)
+    private readonly fileService: FileService;
+
     readonly autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
     dirty: boolean;
@@ -42,23 +66,34 @@ export class NotebookModel implements Saveable, Disposable {
 
     cells: NotebookCellModel[];
 
-    constructor(public data: NotebookData,
-        public uri: URI,
-        public viewType: string,
-        private serializer: NotebookSerializer,
-        private fileService: FileService,
-        modelService: MonacoTextModelService) {
+    get data(): NotebookData {
+        return this.props.data;
+    }
+
+    get uri(): URI {
+        return this.props.uri;
+    }
+
+    get viewType(): string {
+        return this.props.viewType;
+    }
+
+    constructor(@inject(NotebookModelProps) private props: NotebookModelProps,
+        @inject(MonacoTextModelService) modelService: MonacoTextModelService,
+        @inject(NotebookCellModelFactory) cellModelFactory: (props: NotebookCellModelProps) => NotebookCellModel) {
         this.dirty = false;
 
-        this.cells = data.cells.map((cell, index) => new NotebookCellModel(CellUri.generate(uri, index),
-            index,
-            cell.source,
-            cell.language,
-            cell.cellKind,
-            cell.outputs,
-            cell.metadata,
-            cell.internalMetadata,
-            cell.collapseState));
+        this.cells = props.data.cells.map((cell, index) => cellModelFactory({
+            uri: CellUri.generate(props.uri, index),
+            handle: index,
+            source: cell.source,
+            language: cell.language,
+            cellKind: cell.cellKind,
+            outputs: cell.outputs,
+            metadata: cell.metadata,
+            internalMetadata: cell.internalMetadata,
+            collapseState: cell.collapseState
+        }));
 
         modelService.onDidCreate(editorModel => {
             const modelUri = new URI(editorModel.uri);
@@ -83,7 +118,7 @@ export class NotebookModel implements Saveable, Disposable {
     async save(options: SaveOptions): Promise<void> {
         this.dirtyCells = [];
 
-        const serializedNotebook = await this.serializer.notebookToData({
+        const serializedNotebook = await this.props.serializer.notebookToData({
             cells: this.cells.map(cell => cell.toDto()),
             metadata: this.data.metadata
         });

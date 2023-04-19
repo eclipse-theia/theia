@@ -18,7 +18,7 @@ import { Disposable, DisposableCollection, Emitter, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { NotebookData, NotebookExtensionDescription, TransientOptions } from '../../common';
-import { NotebookModel } from '../view-model/notebook-model';
+import { NotebookModel, NotebookModelFactory, NotebookModelProps } from '../view-model/notebook-model';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 
@@ -44,6 +44,9 @@ export class NotebookService implements Disposable {
 
     @inject(MonacoTextModelService)
     protected modelService: MonacoTextModelService;
+
+    @inject(NotebookModelFactory)
+    protected notebookModelFactory: (props: NotebookModelProps) => NotebookModel;
 
     private notebookSerializerEmitter = new Emitter<string>();
     readonly onNotebookSerializer = this.notebookSerializerEmitter.event;
@@ -91,12 +94,12 @@ export class NotebookService implements Disposable {
     }
 
     createNotebookModel(data: NotebookData, viewType: string, uri: URI): NotebookModel {
-        const seralizer = this.notebookProviders.get(viewType)?.serializer;
-        if (!seralizer) {
+        const serializer = this.notebookProviders.get(viewType)?.serializer;
+        if (!serializer) {
             throw new Error('no notebook serializer for ' + viewType);
         }
 
-        const model = new NotebookModel(data, uri, viewType, seralizer, this.fileService, this.modelService);
+        const model = this.notebookModelFactory({ data, uri, viewType, serializer });
         this.willAddNotebookDocumentEmitter.fire(model);
         this.notebookModels.set(uri.toString(), model);
         this.didAddNotebookDocumentEmitter.fire(model);

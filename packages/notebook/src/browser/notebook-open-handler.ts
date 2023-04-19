@@ -28,7 +28,7 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
      * flag for activating notebook support
      * TODO remove when notbook support is functional
      */
-    private static readonly EXPERIMENTAL_NOTEBOOK_SUPPORT_ACTIVE = false;
+    private static readonly EXPERIMENTAL_NOTEBOOK_SUPPORT_ACTIVE = true;
 
     id: string = 'notebook';
 

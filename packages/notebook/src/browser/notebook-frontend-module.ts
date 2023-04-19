@@ -27,6 +27,8 @@ import { NotebookModelResolverService } from './service/notebook-model-resolver-
 import { NotebookCellActionContribution } from './contributions/notebook-cell-actions-contribution';
 import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
 import { NotebookContextKeyService } from './contributions/notebook-context-keys';
+import { createNotebookModelContainer, NotebookModel, NotebookModelFactory, NotebookModelProps } from './view-model/notebook-model';
+import { createNotebookCellModelContainer, NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from './view-model/notebook-cell-model';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Symbol('notebooks'));
@@ -49,4 +51,11 @@ export default new ContainerModule(bind => {
     bind(MenuContribution).toService(NotebookCellActionContribution);
     bind(CommandContribution).toService(NotebookCellActionContribution);
     bind(NotebookContextKeyService).toSelf().inSingletonScope();
+
+    bind(NotebookModelFactory).toFactory(ctx => (props: NotebookModelProps) =>
+        createNotebookModelContainer(ctx.container, props).get(NotebookModel)
+    );
+    bind(NotebookCellModelFactory).toFactory(ctx => (props: NotebookCellModelProps) =>
+        createNotebookCellModelContainer(ctx.container, props).get(NotebookCellModel)
+    );
 });

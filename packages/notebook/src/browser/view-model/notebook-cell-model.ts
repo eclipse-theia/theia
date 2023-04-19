@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { Disposable, Emitter, Event, URI } from '@theia/core';
+import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import {
     Cell,
@@ -23,6 +24,32 @@ import {
 } from '../../common';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
 
+export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
+
+export function createNotebookCellModelContainer(parent: interfaces.Container, props: NotebookCellModelProps): interfaces.Container {
+    const child = parent.createChild();
+
+    child.bind(NotebookCellModelProps).toConstantValue(props);
+    child.bind(NotebookCellModel).toSelf();
+
+    return child;
+}
+
+const NotebookCellModelProps = Symbol('NotebookModelProps');
+export interface NotebookCellModelProps {
+    readonly uri: URI,
+    readonly handle: number,
+    source: string,
+    language: string,
+    readonly cellKind: CellKind,
+    outputs: OutputDto[],
+    metadata: NotebookCellMetadata | undefined,
+    internalMetadata: NotebookCellInternalMetadata | undefined,
+    readonly collapseState: NotebookCellCollapseState | undefined,
+
+}
+
+@injectable()
 export class NotebookCellModel implements Disposable, Cell {
 
     private readonly ChangeOutputsEmitter = new Emitter<NotebookCellOutputsSplice>();
@@ -58,20 +85,29 @@ export class NotebookCellModel implements Disposable, Cell {
         return this.textModel ? this.textModel.getText() : this.source;
     }
 
-    constructor(
-        readonly uri: URI,
-        public readonly handle: number,
-        public source: string,
-        public language: string,
-        public readonly cellKind: CellKind,
-        outputs: OutputDto[],
-        metadata: NotebookCellMetadata | undefined,
-        internalMetadata: NotebookCellInternalMetadata | undefined,
-        public readonly collapseState: NotebookCellCollapseState | undefined,
-    ) {
-        this.outputs = outputs.map(op => new NotebookCellOutputModel(op));
-        this.metadata = metadata ?? {};
-        this.internalMetadata = internalMetadata ?? {};
+    get source(): string {
+        return this.props.source;
+    }
+    set source(source: string) {
+        this.props.source = source;
+    }
+    get language(): string {
+        return this.props.language;
+    }
+    get uri(): URI {
+        return this.props.uri;
+    }
+    get handle(): number {
+        return this.props.handle;
+    }
+    get cellKind(): CellKind {
+        return this.props.cellKind;
+    }
+
+    constructor(@inject(NotebookCellModelProps) private props: NotebookCellModelProps) {
+        this.outputs = props.outputs.map(op => new NotebookCellOutputModel(op));
+        this.metadata = props.metadata ?? {};
+        this.internalMetadata = props.internalMetadata ?? {};
     }
 
     dispose(): void {
@@ -93,7 +129,7 @@ export class NotebookCellModel implements Disposable, Cell {
             language: this.language,
             outputs: this.outputs.map(output => output.toDto()),
             source: this.textBuffer,
-            collapseState: this.collapseState,
+            collapseState: this.props.collapseState,
             internalMetadata: this.internalMetadata,
             metadata: this.metadata
         };
