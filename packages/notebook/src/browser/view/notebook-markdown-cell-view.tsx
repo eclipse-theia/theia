@@ -22,10 +22,15 @@ import { Cellrenderer } from './notebook-cell-list-view';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { Editor } from './notebook-cell-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
+import { inject, injectable } from '@theia/core/shared/inversify';
 
+@injectable()
 export class NotebookMarkdownCellRenderer implements Cellrenderer {
 
-    constructor(private markdownRenderer: MarkdownRenderer, private editorProvider: MonacoEditorProvider) { }
+    @inject(MarkdownRenderer)
+    private readonly markdownRenderer: MarkdownRenderer;
+    @inject(MonacoEditorProvider)
+    private readonly editorProvider: MonacoEditorProvider;
 
     render(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
         return <MarkdownCell markdownRenderer={this.markdownRenderer} editorProvider={this.editorProvider} cell={cell} notebookModel={notebookModel} />;

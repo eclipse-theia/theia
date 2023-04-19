@@ -17,13 +17,9 @@
 import { URI } from '@theia/core';
 import { WidgetFactory, NavigatableWidgetOptions, LabelProvider } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { NotebookEditorWidget } from './notebook-editor-widget';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { NotebookEditorWidget, NotebookEditorContainerFactory, NotebookEditorProps } from './notebook-editor-widget';
 import { NotebookService } from './service/notebook-service';
-import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
-import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { NotebookModelResolverService } from './service/notebook-model-resolver-service';
-import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
 
 export interface NotebookEditorWidgetOptions extends NavigatableWidgetOptions {
     notebookType: string;
@@ -33,17 +29,8 @@ export interface NotebookEditorWidgetOptions extends NavigatableWidgetOptions {
 export class NotebookEditorWidgetFactory implements WidgetFactory {
     readonly id: string = NotebookEditorWidget.ID;
 
-    @inject(FileService)
-    protected readonly fileService: FileService;
-
     @inject(NotebookService)
     protected readonly notebookService: NotebookService;
-
-    @inject(MarkdownRenderer)
-    protected readonly markdownRenderer: MarkdownRenderer;
-
-    @inject(MonacoEditorProvider)
-    protected readonly editorProvider: MonacoEditorProvider;
 
     @inject(NotebookModelResolverService)
     protected readonly notebookModelResolver: NotebookModelResolverService;
@@ -51,8 +38,8 @@ export class NotebookEditorWidgetFactory implements WidgetFactory {
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
-    @inject(NotebookCellToolbarFactory)
-    protected readonly toolbarFactory: NotebookCellToolbarFactory;
+    @inject(NotebookEditorContainerFactory)
+    protected readonly createNotebookEditorWidget: (props: NotebookEditorProps) => NotebookEditorWidget;
 
     async createWidget(options?: NotebookEditorWidgetOptions): Promise<NotebookEditorWidget> {
         if (!options) {
@@ -73,13 +60,11 @@ export class NotebookEditorWidgetFactory implements WidgetFactory {
 
     private async createEditor(uri: URI, notebookType: string): Promise<NotebookEditorWidget> {
 
-        return new NotebookEditorWidget(uri,
+        return this.createNotebookEditorWidget({
+            uri,
             notebookType,
-            await this.notebookModelResolver.resolve(uri, notebookType),
-            this.markdownRenderer,
-            this.editorProvider,
-            this.toolbarFactory
-        );
+            notebookData: await this.notebookModelResolver.resolve(uri, notebookType),
+        });
     }
 
 }
