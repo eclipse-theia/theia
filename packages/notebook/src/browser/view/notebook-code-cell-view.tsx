@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { inject, injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
@@ -21,9 +22,11 @@ import { NotebookModel } from '../view-model/notebook-model';
 import { Editor } from './notebook-cell-editor';
 import { Cellrenderer } from './notebook-cell-list-view';
 
+@injectable()
 export class NotebookCodeCellRenderer implements Cellrenderer {
 
-    constructor(private editorProvider: MonacoEditorProvider) { }
+    @inject(MonacoEditorProvider)
+    private editorProvider: MonacoEditorProvider;
 
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>

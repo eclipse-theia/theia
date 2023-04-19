@@ -22,43 +22,68 @@ import { CellKind } from '../common';
 import { Cellrenderer as CellRenderer, NotebookCellListView } from './view/notebook-cell-list-view';
 import { NotebookCodeCellRenderer } from './view/notebook-code-cell-view';
 import { NotebookMarkdownCellRenderer } from './view/notebook-markdown-cell-view';
-import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
-import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { NotebookModel } from './view-model/notebook-model';
 import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
+import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 
+export const NotebookEditorContainerFactory = Symbol('NotebookModelFactory');
+
+export function createNotebookEditorWidgetContainer(parent: interfaces.Container, props: NotebookEditorProps): interfaces.Container {
+    const child = parent.createChild();
+
+    child.bind(NotebookEditorProps).toConstantValue(props);
+    child.bind(NotebookEditorWidget).toSelf();
+
+    return child;
+}
+
+const NotebookEditorProps = Symbol('NotebookEditorProps');
+
+export interface NotebookEditorProps {
+    uri: URI,
+    readonly notebookType: string,
+    notebookData: NotebookModel
+}
+
+@injectable()
 export class NotebookEditorWidget extends ReactWidget implements Navigatable, SaveableSource {
     static readonly ID = 'notebook';
 
     readonly saveable: Saveable;
 
-    private readonly renderers = new Map<CellKind, CellRenderer>([
-        [CellKind.Markup, new NotebookMarkdownCellRenderer(this.markdownRenderer, this.editorProvider)],
-        [CellKind.Code, new NotebookCodeCellRenderer(this.editorProvider)]
-    ]);
+    @inject(NotebookCellToolbarFactory)
+    private readonly toolbarFactory: NotebookCellToolbarFactory;
 
-    constructor(private uri: URI, public readonly notebookType: string, private notebookData: NotebookModel,
-        private markdownRenderer: MarkdownRenderer,
-        private editorProvider: MonacoEditorProvider,
-        private toolbarFactory: NotebookCellToolbarFactory) {
+    private readonly renderers = new Map<CellKind, CellRenderer>();
+
+    get notebookType(): string {
+        return this.props.notebookType;
+    }
+
+    constructor(@inject(NotebookEditorProps) private props: NotebookEditorProps,
+        @inject(NotebookMarkdownCellRenderer) private readonly markdownCellRenderer: NotebookMarkdownCellRenderer,
+        @inject(NotebookCodeCellRenderer) private readonly codeCellRenderer: NotebookCodeCellRenderer) {
         super();
-        this.saveable = notebookData;
-        this.id = 'notebook:' + uri.toString();
+        this.saveable = props.notebookData;
+        this.id = 'notebook:' + props.uri.toString();
 
         this.title.closable = true;
         this.update();
+
+        this.renderers.set(CellKind.Markup, this.markdownCellRenderer);
+        this.renderers.set(CellKind.Code, this.codeCellRenderer);
     }
 
     getResourceUri(): URI | undefined {
-        return this.uri;
+        return this.props.uri;
     }
     createMoveToUri(resourceUri: URI): URI | undefined {
-        return this.uri;
+        return this.props.uri;
     }
 
     protected render(): ReactNode {
         return <div>
-            <NotebookCellListView renderers={this.renderers} notebookModel={this.notebookData} toolbarRenderer={this.toolbarFactory} />
+            <NotebookCellListView renderers={this.renderers} notebookModel={this.props.notebookData} toolbarRenderer={this.toolbarFactory} />
         </div>;
     }
 }

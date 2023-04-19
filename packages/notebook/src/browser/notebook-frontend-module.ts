@@ -29,6 +29,9 @@ import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory
 import { NotebookContextKeyService } from './contributions/notebook-context-keys';
 import { createNotebookModelContainer, NotebookModel, NotebookModelFactory, NotebookModelProps } from './view-model/notebook-model';
 import { createNotebookCellModelContainer, NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from './view-model/notebook-cell-model';
+import { createNotebookEditorWidgetContainer, NotebookEditorContainerFactory, NotebookEditorProps, NotebookEditorWidget } from './notebook-editor-widget';
+import { NotebookCodeCellRenderer } from './view/notebook-code-cell-view';
+import { NotebookMarkdownCellRenderer } from './view/notebook-markdown-cell-view';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Symbol('notebooks'));
@@ -52,6 +55,12 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).toService(NotebookCellActionContribution);
     bind(NotebookContextKeyService).toSelf().inSingletonScope();
 
+    bind(NotebookCodeCellRenderer).toSelf().inSingletonScope();
+    bind(NotebookMarkdownCellRenderer).toSelf().inSingletonScope();
+
+    bind(NotebookEditorContainerFactory).toFactory(ctx => (props: NotebookEditorProps) =>
+        createNotebookEditorWidgetContainer(ctx.container, props).get(NotebookEditorWidget)
+    );
     bind(NotebookModelFactory).toFactory(ctx => (props: NotebookModelProps) =>
         createNotebookModelContainer(ctx.container, props).get(NotebookModel)
     );
