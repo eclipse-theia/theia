@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 Red Hat, Inc. and others.
+// Copyright (C) 2023 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -12,7 +12,9 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
+import { OS } from '@theia/core';
 import * as notebookCommon from '@theia/notebook/lib/common';
 import * as rpc from '../../../common';
 
@@ -83,11 +85,12 @@ export namespace NotebookDto {
     }
 
     export function toNotebookCellDto(cell: notebookCommon.Cell): rpc.NotebookCellDto {
+        const eol = OS.backend.isWindows ? '\r\n' : '\n';
         return {
             handle: cell.handle,
             uri: cell.uri.toComponents(),
-            source: cell.textBuffer.split('\n'),
-            eol: '\n',
+            source: cell.textBuffer.split(eol),
+            eol,
             language: cell.language,
             cellKind: cell.cellKind,
             outputs: cell.outputs.map(toNotebookOutputDto),

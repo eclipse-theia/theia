@@ -402,8 +402,9 @@ export class MonacoEditorProvider {
         return this.doCreateEditor(uri, async (override, toDispose) => {
             const overrides = override ? Array.from(override) : [];
             overrides.push([IContextMenuService, { showContextMenu: () => {/** no op! */ } }]);
-            const document = resolveModel ? await this.getModel(uri, toDispose) :
-                new MonacoEditorModel({
+            const document = resolveModel
+                ? await this.getModel(uri, toDispose)
+                : new MonacoEditorModel({
                     uri,
                     readContents: async () => '',
                     dispose: () => { }

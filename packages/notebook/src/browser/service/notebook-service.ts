@@ -46,7 +46,7 @@ export class NotebookService implements Disposable {
     protected modelService: MonacoTextModelService;
 
     private notebookSerializerEmitter = new Emitter<string>();
-    readonly onNotebookSerialzer = this.notebookSerializerEmitter.event;
+    readonly onNotebookSerializer = this.notebookSerializerEmitter.event;
 
     protected readonly disposables = new DisposableCollection();
 
@@ -71,8 +71,6 @@ export class NotebookService implements Disposable {
     readonly onWillRemoveNotebookDocument = this.willRemoveNotebookDocumentEmitter.event;
     private readonly didRemoveNotebookDocumentEmitter = new Emitter<NotebookModel>();
     readonly onDidRemoveNotebookDocument = this.didRemoveNotebookDocumentEmitter.event;
-
-    constructor() { }
 
     dispose(): void {
         this.disposables.dispose();

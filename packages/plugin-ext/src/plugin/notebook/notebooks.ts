@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 Red Hat, Inc. and others.
+// Copyright (C) 2023 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,10 +13,6 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
 
 import { CancellationToken, Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
 import * as theia from '@theia/plugin';
@@ -118,7 +114,7 @@ export class NotebooksExtImpl implements NotebooksExt {
     async $dataToNotebook(handle: number, bytes: BinaryBuffer, token: CancellationToken): Promise<NotebookDataDto> {
         const serializer = this._notebookSerializer.get(handle);
         if (!serializer) {
-            throw new Error('NO serializer found');
+            throw new Error('No serializer found');
         }
         const data = await serializer.deserializeNotebook(bytes.buffer, token);
         return typeConverters.NotebookData.from(data);
@@ -127,7 +123,7 @@ export class NotebooksExtImpl implements NotebooksExt {
     async $notebookToData(handle: number, data: NotebookDataDto, token: CancellationToken): Promise<BinaryBuffer> {
         const serializer = this._notebookSerializer.get(handle);
         if (!serializer) {
-            throw new Error('NO serializer found');
+            throw new Error('No serializer found');
         }
         const bytes = await serializer.serializeNotebook(typeConverters.NotebookData.to(data), token);
         return BinaryBuffer.wrap(bytes);

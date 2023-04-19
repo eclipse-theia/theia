@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { injectable } from '@theia/core/shared/inversify';
 
 export type NotebookCellExecutionStateContext = 'idle' | 'pending' | 'executing' | 'succeeded' | 'failed';
 
@@ -51,47 +52,50 @@ export const NOTEBOOK_INTERRUPTIBLE_KERNEL = 'notebookInterruptibleKernel';
 export const NOTEBOOK_MISSING_KERNEL_EXTENSION = 'notebookMissingKernelExtension';
 export const NOTEBOOK_HAS_OUTPUTS = 'notebookHasOutputs';
 
-export function createContextKeys(service: ContextKeyService): void {
-    service.createKey(HAS_OPENED_NOTEBOOK, false);
-    service.createKey(KEYBINDING_CONTEXT_NOTEBOOK_FIND_WIDGET_FOCUSED, false);
+@injectable()
+export class NotebookContextKeyService {
+    createContextKeys(service: ContextKeyService): void {
+        service.createKey(HAS_OPENED_NOTEBOOK, false);
+        service.createKey(KEYBINDING_CONTEXT_NOTEBOOK_FIND_WIDGET_FOCUSED, false);
 
-    // // Is Notebook
-    // export const NOTEBOOK_IS_ACTIVE_EDITOR = ContextKeyExpr.equals('activeEditor', NOTEBOOK_EDITOR_ID);
-    // export const INTERACTIVE_WINDOW_IS_ACTIVE_EDITOR = ContextKeyExpr.equals('activeEditor', INTERACTIVE_WINDOW_EDITOR_ID);
+        // // Is Notebook
+        // export const NOTEBOOK_IS_ACTIVE_EDITOR = ContextKeyExpr.equals('activeEditor', NOTEBOOK_EDITOR_ID);
+        // export const INTERACTIVE_WINDOW_IS_ACTIVE_EDITOR = ContextKeyExpr.equals('activeEditor', INTERACTIVE_WINDOW_EDITOR_ID);
 
-    // Editor keys
-    service.createKey(NOTEBOOK_EDITOR_FOCUSED, false);
-    service.createKey(NOTEBOOK_CELL_LIST_FOCUSED, false);
-    service.createKey(NOTEBOOK_OUTPUT_FOCUSED, false);
-    service.createKey(NOTEBOOK_EDITOR_EDITABLE, true);
-    service.createKey(NOTEBOOK_HAS_RUNNING_CELL, false);
-    service.createKey(NOTEBOOK_USE_CONSOLIDATED_OUTPUT_BUTTON, false);
-    service.createKey(NOTEBOOK_BREAKPOINT_MARGIN_ACTIVE, false);
-    service.createKey(NOTEBOOK_CELL_TOOLBAR_LOCATION, 'left');
-    service.createKey(NOTEBOOK_CURSOR_NAVIGATION_MODE, false);
-    service.createKey(NOTEBOOK_LAST_CELL_FAILED, false);
+        // Editor keys
+        service.createKey(NOTEBOOK_EDITOR_FOCUSED, false);
+        service.createKey(NOTEBOOK_CELL_LIST_FOCUSED, false);
+        service.createKey(NOTEBOOK_OUTPUT_FOCUSED, false);
+        service.createKey(NOTEBOOK_EDITOR_EDITABLE, true);
+        service.createKey(NOTEBOOK_HAS_RUNNING_CELL, false);
+        service.createKey(NOTEBOOK_USE_CONSOLIDATED_OUTPUT_BUTTON, false);
+        service.createKey(NOTEBOOK_BREAKPOINT_MARGIN_ACTIVE, false);
+        service.createKey(NOTEBOOK_CELL_TOOLBAR_LOCATION, 'left');
+        service.createKey(NOTEBOOK_CURSOR_NAVIGATION_MODE, false);
+        service.createKey(NOTEBOOK_LAST_CELL_FAILED, false);
 
-    // Cell keys
-    service.createKey(NOTEBOOK_VIEW_TYPE, undefined);
-    service.createKey(NOTEBOOK_CELL_TYPE, undefined);
-    service.createKey(NOTEBOOK_CELL_EDITABLE, false);
-    service.createKey(NOTEBOOK_CELL_FOCUSED, false);
-    service.createKey(NOTEBOOK_CELL_EDITOR_FOCUSED, false);
-    service.createKey(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, false);
-    service.createKey(NOTEBOOK_CELL_LINE_NUMBERS, 'inherit');
-    service.createKey(NOTEBOOK_CELL_EXECUTION_STATE, undefined);
-    service.createKey(NOTEBOOK_CELL_EXECUTING, false); // This only exists to simplify a context key expression, see #129625
-    service.createKey(NOTEBOOK_CELL_HAS_OUTPUTS, false);
-    service.createKey(NOTEBOOK_CELL_INPUT_COLLAPSED, false);
-    service.createKey(NOTEBOOK_CELL_OUTPUT_COLLAPSED, false);
-    service.createKey(NOTEBOOK_CELL_RESOURCE, '');
+        // Cell keys
+        service.createKey(NOTEBOOK_VIEW_TYPE, undefined);
+        service.createKey(NOTEBOOK_CELL_TYPE, undefined);
+        service.createKey(NOTEBOOK_CELL_EDITABLE, false);
+        service.createKey(NOTEBOOK_CELL_FOCUSED, false);
+        service.createKey(NOTEBOOK_CELL_EDITOR_FOCUSED, false);
+        service.createKey(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, false);
+        service.createKey(NOTEBOOK_CELL_LINE_NUMBERS, 'inherit');
+        service.createKey(NOTEBOOK_CELL_EXECUTION_STATE, undefined);
+        service.createKey(NOTEBOOK_CELL_EXECUTING, false); // This only exists to simplify a context key expression, see #129625
+        service.createKey(NOTEBOOK_CELL_HAS_OUTPUTS, false);
+        service.createKey(NOTEBOOK_CELL_INPUT_COLLAPSED, false);
+        service.createKey(NOTEBOOK_CELL_OUTPUT_COLLAPSED, false);
+        service.createKey(NOTEBOOK_CELL_RESOURCE, '');
 
-    // Kernels
-    service.createKey(NOTEBOOK_KERNEL, undefined);
-    service.createKey(NOTEBOOK_KERNEL_COUNT, 0);
-    service.createKey(NOTEBOOK_KERNEL_SOURCE_COUNT, 0);
-    service.createKey(NOTEBOOK_KERNEL_SELECTED, false);
-    service.createKey(NOTEBOOK_INTERRUPTIBLE_KERNEL, false);
-    service.createKey(NOTEBOOK_MISSING_KERNEL_EXTENSION, false);
-    service.createKey(NOTEBOOK_HAS_OUTPUTS, false);
+        // Kernels
+        service.createKey(NOTEBOOK_KERNEL, undefined);
+        service.createKey(NOTEBOOK_KERNEL_COUNT, 0);
+        service.createKey(NOTEBOOK_KERNEL_SOURCE_COUNT, 0);
+        service.createKey(NOTEBOOK_KERNEL_SELECTED, false);
+        service.createKey(NOTEBOOK_INTERRUPTIBLE_KERNEL, false);
+        service.createKey(NOTEBOOK_MISSING_KERNEL_EXTENSION, false);
+        service.createKey(NOTEBOOK_HAS_OUTPUTS, false);
+    }
 }

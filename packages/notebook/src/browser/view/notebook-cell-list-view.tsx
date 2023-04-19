@@ -19,6 +19,7 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
 import { codicon } from '@theia/core/lib/browser';
+import { nls } from '@theia/core';
 
 export interface Cellrenderer {
     render(notebookData: NotebookModel, cell: NotebookCellModel, index: number): React.ReactNode
@@ -77,11 +78,11 @@ function NotebookCellDivider({ notebookModel, index }: { notebookModel: Notebook
         {hover && <div className='theia-notebook-add-cell-buttons'>
             <button className='theia-notebook-add-cell-button' onClick={insertNewCell}>
                 <div className={codicon('add') + ' theia-notebook-add-cell-button-icon'} />
-                code
+                {nls.localize('theia/notebook/markdown', 'markdown')}
             </button>
             <button className='theia-notebook-add-cell-button' onClick={insertNewCell}>
                 <div className={codicon('add') + ' theia-notebook-add-cell-button-icon'} />
-                markdown
+                {nls.localize('theia/notebook/code', 'code')}
             </button>
         </div>}
     </li>;
