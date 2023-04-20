@@ -292,9 +292,9 @@ export class TabsMainImpl implements TabsMain, Disposable {
         return;
     }
 
-    updateTabIndices(tabInfo: TabInfo, beginnIndex: number): void {
+    updateTabIndices(tabInfo: TabInfo, beginIndex: number): void {
         for (const tab of this.tabInfoLookup.values()) {
-            if (tab.group === tabInfo.group && tab.tabIndex >= beginnIndex) {
+            if (tab.group === tabInfo.group && tab.tabIndex >= beginIndex) {
                 tab.tabIndex = tab.group.tabs.indexOf(tab.tab);
             }
         }
