@@ -253,7 +253,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
     private onTabClosed(tabInfo: TabInfo, title: Title<Widget>): void {
         tabInfo.group.tabs.splice(tabInfo.tabIndex, 1);
         this.tabInfoLookup.delete(title);
-        this.updateTabIndices(this.applicationShell.getTabBarFor(title.owner));
+        this.updateTabIndices(tabInfo, tabInfo.tabIndex);
         this.proxy.$acceptTabOperation({
             kind: TabModelOperationKind.TAB_CLOSE,
             index: tabInfo.tabIndex,
@@ -268,7 +268,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
         const tabDto = this.createTabDto(args.title, tabInfo.group.groupId);
         tabInfo.group.tabs.splice(args.fromIndex, 1);
         tabInfo.group.tabs.splice(args.toIndex, 0, tabDto);
-        this.updateTabIndices(tabBar);
+        this.updateTabIndices(tabInfo, args.fromIndex);
         this.proxy.$acceptTabOperation({
             kind: TabModelOperationKind.TAB_MOVE,
             index: args.toIndex,
@@ -292,14 +292,11 @@ export class TabsMainImpl implements TabsMain, Disposable {
         return;
     }
 
-    updateTabIndices(tabBar?: TabBar<Widget>): void {
-        if (tabBar) {
-            tabBar.titles.forEach((title, index) => {
-                const tabInfo = this.tabInfoLookup.get(title);
-                if (tabInfo) {
-                    tabInfo.tabIndex = index;
-                }
-            });
+    updateTabIndices(tabInfo: TabInfo, beginnIndex: number): void {
+        for (const tab of this.tabInfoLookup.values()) {
+            if (tab.group === tabInfo.group && tab.tabIndex >= beginnIndex) {
+                tab.tabIndex = tab.group.tabs.indexOf(tab.tab);
+            }
         }
     }
 
