@@ -107,7 +107,7 @@ export class NotebookService implements Disposable {
     }
 
     async getNotebookDataProvider(viewType: string): Promise<SimpleNotebookProviderInfo> {
-        this.notebookSerializerEmitter.fire(`onNotebookSerializer:${viewType}`);
+        await this.notebookSerializerEmitter.sequence(async listener => listener(`onNotebookSerializer:${viewType}`));
 
         const result = this.notebookProviders.get(viewType);
         if (!result) {
