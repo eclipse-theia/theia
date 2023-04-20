@@ -710,8 +710,10 @@ export class ScrollableTabBar extends TabBar<Widget> {
                     }
                 }
             }
+            this.node.classList.add('dynamic-tabs');
         } else {
             this.openTabsContainer.classList.add('p-mod-hidden');
+            this.node.classList.remove('dynamic-tabs');
         }
         for (let i = 0, n = this.titles.length; i < n; ++i) {
             const title = this.titles[i];

@@ -195,6 +195,7 @@
     height: inherit;
 }
 
+
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon,
 .p-TabBar.theia-app-centers .p-TabBar-tab.theia-mod-pinned > .p-TabBar-tabCloseIcon {
   padding: 2px;
@@ -203,7 +204,7 @@
   height: var(--theia-icon-size);
   width: var(--theia-icon-size);
   font: normal normal normal 16px/1 codicon;
-  display: none;
+  display: inline-block;
   text-decoration: none;
   text-rendering: auto;
   text-align: center;
@@ -212,6 +213,12 @@
   user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
+}
+
+.p-TabBar.theia-app-centers.dynamic-tabs .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon,
+.p-TabBar.theia-app-centers.dynamic-tabs .p-TabBar-tab.theia-mod-pinned > .p-TabBar-tabCloseIcon {
+  /* hide close icon for dynamic tabs strategy*/
+  display: none;
 }
 
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-current > .p-TabBar-tabCloseIcon,
@@ -440,7 +447,8 @@
   flex-direction: column;
 }
 
-.p-TabBar.theia-app-centers[data-orientation='horizontal'] .p-TabBar-tabLabel {
+.p-TabBar.theia-app-centers[data-orientation='horizontal'].dynamic-tabs .p-TabBar-tabLabel {
+  /* fade out text with dynamic tabs strategy*/
   mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 1) 15px);
   -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 1) 15px);
   flex: 1;
