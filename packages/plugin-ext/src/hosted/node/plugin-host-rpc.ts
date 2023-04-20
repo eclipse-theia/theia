@@ -16,7 +16,7 @@
 
 import { dynamicRequire } from '@theia/core/lib/node/dynamic-require';
 import { PluginManagerExtImpl } from '../../plugin/plugin-manager';
-import { MAIN_RPC_CONTEXT, Plugin, PluginAPIFactory } from '../../common/plugin-api-rpc';
+import { LocalizationExt, MAIN_RPC_CONTEXT, Plugin, PluginAPIFactory } from '../../common/plugin-api-rpc';
 import { PluginMetadata } from '../../common/plugin-protocol';
 import { createAPIFactory } from '../../plugin/plugin-context';
 import { EnvExtImpl } from '../../plugin/env';
@@ -35,6 +35,7 @@ import { TerminalServiceExtImpl } from '../../plugin/terminal-ext';
 import { SecretsExtImpl } from '../../plugin/secrets-ext';
 import { BackendInitializationFn } from '../../common';
 import { connectProxyResolver } from './plugin-host-proxy';
+import { LocalizationExtImpl } from '../../plugin/localization-ext';
 
 /**
  * Handle the RPC calls.
@@ -61,7 +62,8 @@ export class PluginHostRPC {
         const webviewExt = new WebviewsExtImpl(this.rpc, workspaceExt);
         const terminalService = new TerminalServiceExtImpl(this.rpc);
         const secretsExt = new SecretsExtImpl(this.rpc);
-        this.pluginManager = this.createPluginManager(envExt, terminalService, storageProxy, preferenceRegistryExt, webviewExt, secretsExt, this.rpc);
+        const localizationExt = new LocalizationExtImpl(this.rpc);
+        this.pluginManager = this.createPluginManager(envExt, terminalService, storageProxy, preferenceRegistryExt, webviewExt, secretsExt, localizationExt, this.rpc);
         this.rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, this.pluginManager);
         this.rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, editorsAndDocumentsExt);
         this.rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt);
@@ -80,7 +82,8 @@ export class PluginHostRPC {
             workspaceExt,
             messageRegistryExt,
             clipboardExt,
-            webviewExt
+            webviewExt,
+            localizationExt
         );
         connectProxyResolver(workspaceExt, preferenceRegistryExt);
     }
@@ -102,7 +105,7 @@ export class PluginHostRPC {
 
     createPluginManager(
         envExt: EnvExtImpl, terminalService: TerminalServiceExtImpl, storageProxy: KeyValueStorageProxy,
-        preferencesManager: PreferenceRegistryExtImpl, webview: WebviewsExtImpl, secretsExt: SecretsExtImpl,
+        preferencesManager: PreferenceRegistryExtImpl, webview: WebviewsExtImpl, secretsExt: SecretsExtImpl, localization: LocalizationExt,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         rpc: any
     ): PluginManagerExtImpl {
@@ -239,7 +242,7 @@ export class PluginHostRPC {
                     `Path ${extensionTestsPath} does not point to a valid extension test runner.`
                 );
             } : undefined
-        }, envExt, terminalService, storageProxy, secretsExt, preferencesManager, webview, rpc);
+        }, envExt, terminalService, storageProxy, secretsExt, preferencesManager, webview, localization, rpc);
         return pluginManager;
     }
 }

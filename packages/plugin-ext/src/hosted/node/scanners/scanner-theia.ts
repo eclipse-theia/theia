@@ -116,6 +116,7 @@ export class TheiaPluginScanner implements PluginScanner {
             version: plugin.version,
             displayName: plugin.displayName,
             description: plugin.description,
+            l10n: plugin.l10n,
             engine: {
                 type: this._apiType,
                 version: plugin.engines[this._apiType]

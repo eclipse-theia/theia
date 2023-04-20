@@ -26,7 +26,8 @@ import {
     ConfigStorage,
     PluginManagerInitializeParams,
     PluginManagerStartParams,
-    TerminalServiceExt
+    TerminalServiceExt,
+    LocalizationExt
 } from '../common/plugin-api-rpc';
 import { PluginMetadata, PluginJsonValidationContribution } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
@@ -122,6 +123,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         private readonly secrets: SecretsExtImpl,
         private readonly preferencesManager: PreferenceRegistryExtImpl,
         private readonly webview: WebviewsExtImpl,
+        private readonly localization: LocalizationExt,
         private readonly rpc: RPCProtocol
     ) {
         this.messageRegistryProxy = this.rpc.getProxy(PLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN);
@@ -398,6 +400,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         }
         const id = plugin.model.displayName || plugin.model.id;
         if (typeof pluginMain[plugin.lifecycle.startMethod] === 'function') {
+            await this.localization.initializeLocalizedMessages(plugin, this.envExt.language);
             const pluginExport = await pluginMain[plugin.lifecycle.startMethod].apply(getGlobal(), [pluginContext]);
             this.activatedPlugins.set(plugin.model.id, new ActivatedPlugin(pluginContext, pluginExport, stopFn));
         } else {
