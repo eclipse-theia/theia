@@ -39,7 +39,7 @@ export class NotebooksMainImpl implements NotebooksMain {
         plugins: HostedPluginSupport
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT);
-        notebookService.onNotebookSerializer(event => plugins.activateByEvent(event));
+        notebookService.onNotebookSerializer(async event => plugins.activateByEvent(event));
     }
 
     dispose(): void {
