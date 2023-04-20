@@ -14,6 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { MessagePortHandlerId } from '../electron-message-port';
+
+export const ElectronConnectionHandlerId = MessagePortHandlerId<[]>('electron-main-connection');
+
 /**
  * Electron-IPC-specific connection handler.
  * Use this if you want to establish communication between the frontend and the electron-main process.

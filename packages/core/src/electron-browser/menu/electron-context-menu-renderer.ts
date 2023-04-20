@@ -24,14 +24,7 @@ import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { ContextMenuContext } from '../../browser/menu/context-menu-context';
 import { MenuPath, MenuContribution, MenuModelRegistry } from '../../common';
 import { BrowserContextMenuRenderer } from '../../browser/menu/browser-context-menu-renderer';
-
-export class ElectronContextMenuAccess extends ContextMenuAccess {
-    constructor(readonly menuHandle: Promise<number>) {
-        super({
-            dispose: () => menuHandle.then(handle => window.electronTheiaCore.closePopup(handle))
-        });
-    }
-}
+import { ElectronWindows } from '../../electron-common';
 
 export namespace ElectronTextInputContextMenu {
     export const MENU_PATH: MenuPath = ['electron_text_input'];
@@ -71,7 +64,6 @@ export class ElectronTextInputContextMenuContribution implements FrontendApplica
         registry.registerMenuAction(ElectronTextInputContextMenu.EDIT_GROUP, { commandId: CommonCommands.PASTE.id });
         registry.registerMenuAction(ElectronTextInputContextMenu.SELECT_GROUP, { commandId: CommonCommands.SELECT_ALL.id });
     }
-
 }
 
 @injectable()
@@ -83,6 +75,9 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(ElectronWindows)
+    protected electronWindows: ElectronWindows;
+
     protected useNativeStyle: boolean = true;
 
     constructor(@inject(ElectronMainMenuFactory) private electronMenuFactory: ElectronMainMenuFactory) {
@@ -90,8 +85,10 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
-        this.useNativeStyle = await window.electronTheiaCore.getTitleBarStyleAtStartup() === 'native';
+    protected init(): void {
+        this.electronWindows.currentWindow.getTitleBarStyle().then(style => {
+            this.useNativeStyle = style === 'native';
+        });
     }
 
     protected override doRender(options: RenderContextMenuOptions): ContextMenuAccess {
@@ -99,18 +96,19 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
             const { menuPath, anchor, args, onHide, context, contextKeyService } = options;
             const menu = this.electronMenuFactory.createElectronContextMenu(menuPath, args, context, contextKeyService);
             const { x, y } = coordinateFromAnchor(anchor);
-
-            const menuHandle = window.electronTheiaCore.popup(menu, x, y, () => {
-                if (onHide) {
-                    onHide();
-                }
+            const handlePromise = this.electronWindows.currentWindow.popup(menu, x, y, () => {
+                onHide?.();
             });
             // native context menu stops the event loop, so there is no keyboard events
             this.context.resetAltPressed();
-            return new ElectronContextMenuAccess(menuHandle);
-        } else {
-            return super.doRender(options);
+            return new ElectronContextMenuAccess({
+                dispose: () => {
+                    handlePromise.then(handle => this.electronWindows.currentWindow.closePopup(handle));
+                }
+            });
         }
+        return super.doRender(options);
     }
-
 }
+
+export class ElectronContextMenuAccess extends ContextMenuAccess { }

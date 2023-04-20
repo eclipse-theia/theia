@@ -18,7 +18,7 @@ import { ContainerModule } from 'inversify';
 import { WindowService } from '../../browser/window/window-service';
 import { ElectronWindowService } from './electron-window-service';
 import { FrontendApplicationContribution } from '../../browser/frontend-application';
-import { ElectronClipboardService } from '../electron-clipboard-service';
+import { ElectronClipboardService } from '../../electron-common';
 import { ClipboardService } from '../../browser/clipboard-service';
 import { ElectronMainWindowService, electronMainWindowServicePath } from '../../electron-common/electron-main-window-service';
 import { ElectronIpcConnectionProvider } from '../messaging/electron-ipc-connection-provider';
@@ -29,13 +29,13 @@ import { ElectronSecondaryWindowService } from './electron-secondary-window-serv
 import { SecondaryWindowService } from '../../browser/window/secondary-window-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bind(ElectronMainWindowService).toDynamicValue(context =>
-        ElectronIpcConnectionProvider.createProxy(context.container, electronMainWindowServicePath)
-    ).inSingletonScope();
+    bind(ElectronMainWindowService)
+        .toDynamicValue(ctx => ElectronIpcConnectionProvider.createProxy(ctx.container, electronMainWindowServicePath))
+        .inSingletonScope();
     bindWindowPreferences(bind);
     bind(WindowService).to(ElectronWindowService).inSingletonScope();
     bind(FrontendApplicationContribution).toService(WindowService);
-    bind(ClipboardService).to(ElectronClipboardService).inSingletonScope();
+    bind(ClipboardService).toService(ElectronClipboardService);
     rebind(FrontendApplicationStateService).to(ElectronFrontendApplicationStateService).inSingletonScope();
     bind(SecondaryWindowService).to(ElectronSecondaryWindowService).inSingletonScope();
 });

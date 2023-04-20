@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2019 RedHat and others.
+// Copyright (C) 2023 Ericsson and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,19 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { injectable } from 'inversify';
-import { ClipboardService } from '../browser/clipboard-service';
+import { inject, injectable } from 'inversify';
+import { ElectronClipboardService, ELECTRON_CLIPBOARD_IPC as ipc, proxy, proxyable, TheiaIpcRenderer } from '../../electron-common';
 
-@injectable()
-export class ElectronClipboardService implements ClipboardService {
+@injectable() @proxyable()
+export class ElectronClipboardServiceImpl implements ElectronClipboardService {
 
-    readText(): string {
-        return window.electronTheiaCore.readClipboard();
+    @inject(TheiaIpcRenderer)
+    protected ipcRenderer: TheiaIpcRenderer;
+
+    @proxy() async readText(): Promise<string> {
+        return this.ipcRenderer.invoke(ipc.readClipboard);
     }
 
-    writeText(value: string): void {
-        window.electronTheiaCore.writeClipboard(value);
+    @proxy() async writeText(value: string): Promise<void> {
+        await this.ipcRenderer.invoke(ipc.writeClipboard, value);
     }
-
 }

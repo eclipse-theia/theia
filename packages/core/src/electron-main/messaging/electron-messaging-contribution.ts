@@ -14,17 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { WebContents } from '@theia/electron/shared/electron';
+import { MessagePortMain, WebContents } from '@theia/electron/shared/electron';
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { MessagingContribution } from '../../node/messaging/messaging-contribution';
-import { ElectronConnectionHandler } from '../../electron-common/messaging/electron-connection-handler';
+import { ElectronConnectionHandler, ElectronConnectionHandlerId } from '../../electron-common/messaging/electron-connection-handler';
 import { ElectronMainApplicationContribution } from '../electron-main-application';
 import { ElectronMessagingService } from './electron-messaging-service';
-import { AbstractChannel, Channel, ChannelMultiplexer, MessageProvider } from '../../common/message-rpc/channel';
-import { ConnectionHandler, Emitter, WriteBuffer } from '../../common';
+import { AbstractChannel, Channel, ChannelMultiplexer } from '../../common/message-rpc/channel';
+import { ConnectionHandler, WriteBuffer } from '../../common';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
-import { TheiaRendererAPI } from '../electron-api-main';
+import { MessagePortServer, TheiaIpcMainEvent } from '../../electron-common';
 
 /**
  * This component replicates the role filled by `MessagingContribution` but for Electron.
@@ -36,6 +36,9 @@ import { TheiaRendererAPI } from '../electron-api-main';
 
 @injectable()
 export class ElectronMessagingContribution implements ElectronMainApplicationContribution, ElectronMessagingService {
+
+    @inject(MessagePortServer)
+    protected messagePortServer: MessagePortServer;
 
     @inject(ContributionProvider) @named(ElectronMessagingService.Contribution)
     protected readonly messagingContributions: ContributionProvider<ElectronMessagingService.Contribution>;
@@ -51,22 +54,22 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
 
     @postConstruct()
     protected init(): void {
-        TheiaRendererAPI.onIpcData((sender, data) => this.handleIpcEvent(sender, data));
+        this.messagePortServer.handle(ElectronConnectionHandlerId, this.handleConnection, this);
     }
 
-    protected handleIpcEvent(sender: WebContents, data: Uint8Array): void {
-        // Get the multiplexer for a given window id
-        try {
-            const windowChannelData = this.windowChannelMultiplexer.get(sender.id) ?? this.createWindowChannelData(sender);
-            windowChannelData!.channel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(data));
-        } catch (error) {
-            console.error('IPC: Failed to handle message', { error, data });
+    protected handleConnection(event: TheiaIpcMainEvent): void {
+        const { sender, ports: [port] } = event;
+        if (this.windowChannelMultiplexer.has(sender.id)) {
+            throw new Error('already connected');
         }
+        this.createWindowChannelData(sender, port);
     }
 
-    // Creates a new multiplexer for a given sender/window
-    protected createWindowChannelData(sender: Electron.WebContents): { channel: ElectronWebContentChannel, multiplexer: ChannelMultiplexer } {
-        const mainChannel = this.createWindowMainChannel(sender);
+    /**
+     * Creates a new multiplexer for a given sender/window.
+     */
+    protected createWindowChannelData(sender: WebContents, port: MessagePortMain): { channel: ElectronWebContentChannel, multiplexer: ChannelMultiplexer } {
+        const mainChannel = this.createWindowMainChannel(port);
         const multiplexer = new ChannelMultiplexer(mainChannel);
         multiplexer.onDidOpenChannel(openEvent => {
             const { channel, id } = openEvent;
@@ -75,7 +78,6 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
                 channel.onClose(() => console.debug(`Closing channel on service path '${id}'.`));
             }
         });
-
         sender.once('did-navigate', () => this.disposeMultiplexer(sender.id, multiplexer, 'Window was refreshed')); // When refreshing the browser window.
         sender.once('destroyed', () => this.disposeMultiplexer(sender.id, multiplexer, 'Window was closed')); // When closing the browser window.
         const data = { channel: mainChannel, multiplexer };
@@ -85,10 +87,9 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
 
     /**
      * Creates the main channel to a window.
-     * @param sender The window that the channel should be established to.
      */
-    protected createWindowMainChannel(sender: WebContents): ElectronWebContentChannel {
-        return new ElectronWebContentChannel(sender);
+    protected createWindowMainChannel(port: MessagePortMain): ElectronWebContentChannel {
+        return new ElectronWebContentChannel(port);
     }
 
     protected disposeMultiplexer(windowId: number, multiplexer: ChannelMultiplexer, reason: string): void {
@@ -119,23 +120,22 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
  */
 export class ElectronWebContentChannel extends AbstractChannel {
 
-    // Make the message emitter public so that we can easily forward messages received from the ipcMain.
-    override readonly onMessageEmitter: Emitter<MessageProvider> = new Emitter();
+    protected messagePort?: MessagePortMain;
 
-    constructor(protected readonly sender: Electron.WebContents) {
+    constructor(messagePort: MessagePortMain) {
         super();
+        this.messagePort = messagePort;
+        this.messagePort.addListener('message', event => this.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(event.data)));
+        this.messagePort.addListener('close', () => {
+            this.onCloseEmitter.fire({ reason: 'message port closed' });
+            this.messagePort = undefined;
+        });
+        this.messagePort.start();
     }
 
     getWriteBuffer(): WriteBuffer {
         const writer = new Uint8ArrayWriteBuffer();
-
-        writer.onCommit(buffer => {
-            if (!this.sender.isDestroyed()) {
-                TheiaRendererAPI.sendData(this.sender, buffer);
-            }
-        });
-
+        writer.onCommit(buffer => this.messagePort?.postMessage(buffer));
         return writer;
     }
-
 }

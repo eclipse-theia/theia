@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 STMicroelectronics and others.
+// Copyright (C) 2023 Ericsson and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,6 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { createIpcNamespace, preloadServiceIdentifier } from '@theia/core/lib/electron-common';
+
+export const ELECTRON_FILE_DIALOG_IPC = createIpcNamespace('theia-electron-file-dialog', channel => ({
+    showOpenDialog: channel<(cwd: string, options?: OpenDialogOptions) => Promise<string[] | undefined>>(),
+    showSaveDialog: channel<(cwd: string, options?: SaveDialogOptions) => Promise<string | undefined>>()
+}));
+
+export const ElectronFileDialog = preloadServiceIdentifier<ElectronFileDialog>('ElectronFileDialog');
+export interface ElectronFileDialog {
+    showOpenDialog(cwd: string, options?: OpenDialogOptions): Promise<string[] | undefined>;
+    showSaveDialog(cwd: string, options?: SaveDialogOptions): Promise<string | undefined>;
+}
+
 export interface FileFilter {
     name: string;
     extensions: string[];
@@ -22,7 +35,6 @@ export interface FileFilter {
 export interface OpenDialogOptions {
     title?: string,
     maxWidth?: number,
-    path: string,
     buttonLabel?: string,
     modal?: boolean,
     openFiles?: boolean,
@@ -34,22 +46,7 @@ export interface OpenDialogOptions {
 export interface SaveDialogOptions {
     title?: string,
     maxWidth?: number,
-    path: string,
     buttonLabel?: string,
     modal?: boolean,
     filters?: FileFilter[];
 }
-
-export interface TheiaFilesystemAPI {
-    showOpenDialog(options: OpenDialogOptions): Promise<string[] | undefined>;
-    showSaveDialog(options: SaveDialogOptions): Promise<string | undefined>;
-}
-
-declare global {
-    interface Window {
-        electronTheiaFilesystem: TheiaFilesystemAPI
-    }
-}
-
-export const CHANNEL_SHOW_OPEN = 'ShowOpenDialog';
-export const CHANNEL_SHOW_SAVE = 'ShowSaveDialog';

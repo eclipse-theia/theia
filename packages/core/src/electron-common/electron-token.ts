@@ -14,6 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { preloadServiceIdentifier } from './electron-preload';
+import { createIpcNamespace } from './electron-ipc';
+import { interfaces } from 'inversify';
+
 /**
  * This token is unique to the current running instance. It is used by the backend
  * to make sure it is an electron browser window that is connecting to its services.
@@ -21,7 +25,18 @@
  * The identifier is a string, which makes it usable as a key for cookies, environments, etc.
  */
 // Note that it needs to be uppercase for it to work properly in Windows environments.
-export const ElectronSecurityToken: string = 'THEIA_ELECTRON_TOKEN';
+export const ElectronSecurityToken = 'THEIA_ELECTRON_TOKEN' as string & interfaces.Abstract<ElectronSecurityToken>;
 export interface ElectronSecurityToken {
     value: string;
 };
+
+export const ELECTRON_SECURITY_TOKEN_IPC = createIpcNamespace('theia-electron-security-token', channel => ({
+    getSecurityToken: channel<() => string>(),
+    attachSecurityToken: channel<(endpoint: string) => Promise<void>>()
+}));
+
+export const ElectronSecurityTokenService = preloadServiceIdentifier<ElectronSecurityTokenService>('ElectronSecurityTokenService');
+export interface ElectronSecurityTokenService {
+    getSecurityToken(): ElectronSecurityToken
+    attachSecurityToken(endpoint: string): Promise<void>
+}

@@ -19,6 +19,11 @@ export { Prioritizeable } from './prioritizeable';
 
 type UnknownObject<T extends object> = Record<string | number | symbol, unknown> & { [K in keyof T]: unknown };
 
+export interface Prototype {
+    [property: string | number | symbol]: unknown
+    constructor: Function
+}
+
 export type Deferred<T> = { [P in keyof T]: Promise<T[P]> };
 export type MaybeArray<T> = T | T[];
 export type MaybeNull<T> = { [P in keyof T]: T[P] | null };
@@ -77,6 +82,39 @@ export function isArray<T>(value: unknown, every?: (value: unknown) => unknown, 
 
 export function isStringArray(value: unknown): value is string[] {
     return isArray(value, isString);
+}
+
+export function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+    return isObject<PromiseLike<unknown>>(value) && typeof value.then === 'function';
+}
+
+/**
+ * note: `null` is not considered a valid prototype even if it can be returned
+ * by {@link Object.getPrototypeOf} in some cases.
+ */
+export function isPrototype(value: unknown): value is Prototype {
+    return isObject(value) &&
+        Object.prototype.hasOwnProperty.call(value, 'constructor') &&
+        typeof value.constructor === 'function' &&
+        value.constructor.prototype === value;
+}
+
+/**
+ * Typed wrapper around {@link Object.getPrototypeOf}.
+ */
+export function getPrototypeOf(value: unknown): Prototype | null {
+    return Object.getPrototypeOf(value);
+}
+
+/**
+ * @returns all prototypes except `value` nor `null` at the end of the chain.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function* iterPrototypes(value: any): Iterable<object> {
+    // eslint-disable-next-line no-null/no-null, curly
+    if (value !== undefined && value !== null) while (value = Object.getPrototypeOf(value)) {
+        yield value;
+    }
 }
 
 /**

@@ -14,11 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, interfaces } from 'inversify';
-import { JsonRpcProxy } from '../../common/messaging';
-import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
+import { inject, injectable, interfaces } from 'inversify';
 import { AbstractChannel, Channel, WriteBuffer } from '../../common';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
+import { JsonRpcProxy } from '../../common/messaging';
+import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
+import { MessagePortClient } from '../../electron-common';
+import { ElectronConnectionHandlerId } from '../../electron-common/messaging/electron-connection-handler';
 
 export interface ElectronIpcOptions {
 }
@@ -33,29 +35,41 @@ export class ElectronIpcConnectionProvider extends AbstractConnectionProvider<El
         return container.get(ElectronIpcConnectionProvider).createProxy<T>(path, arg);
     }
 
-    constructor() {
+    constructor(
+        @inject(MessagePortClient) protected messagePortClient: MessagePortClient
+    ) {
         super();
         this.initializeMultiplexer();
     }
 
     protected createMainChannel(): Channel {
-        return new ElectronIpcRendererChannel();
+        return new ElectronIpcRendererChannel(this.messagePortClient.connectSync(ElectronConnectionHandlerId));
     }
 
 }
 
 export class ElectronIpcRendererChannel extends AbstractChannel {
 
-    constructor() {
-        super();
-        this.toDispose.push(window.electronTheiaCore.onData(data => this.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(data))));
+    protected messagePort?: MessagePort;
 
+    constructor(messagePort: MessagePort) {
+        super();
+        this.messagePort = messagePort;
+        const listener = (event: MessageEvent) => this.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(event.data));
+        this.messagePort.addEventListener('message', listener);
+        this.toDispose.push({
+            dispose: () => {
+                this.messagePort!.removeEventListener('message', listener);
+                this.messagePort!.close();
+                this.messagePort = undefined;
+            }
+        });
+        this.messagePort.start();
     }
 
     getWriteBuffer(): WriteBuffer {
         const writer = new Uint8ArrayWriteBuffer();
-        writer.onCommit(buffer => window.electronTheiaCore.sendData(buffer));
+        writer.onCommit(buffer => this.messagePort?.postMessage(buffer));
         return writer;
     }
-
 }

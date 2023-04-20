@@ -30,19 +30,21 @@ import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } fr
 //
 // eslint-disable-next-line @theia/runtime-import-check
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { OpenDialogOptions, SaveDialogOptions } from '../../electron-common/electron-api';
+import { ElectronFileDialog, OpenDialogOptions, SaveDialogOptions } from '../../electron-common';
 
 @injectable()
 export class ElectronFileDialogService extends DefaultFileDialogService {
 
     @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(ElectronFileDialog) protected fileDialog: ElectronFileDialog;
 
     override async showOpenDialog(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<URI> | undefined>;
     override async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<URI | undefined>;
     override async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<URI> | undefined> {
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
-            const filePaths = await window.electronTheiaFilesystem.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props));
+            const cwd = FileUri.fsPath(this.resolveSaveDialogCwd(rootNode.uri, props));
+            const filePaths = await this.fileDialog.showOpenDialog(cwd, this.toSaveDialogOptions(props));
             if (!filePaths || filePaths.length === 0) {
                 return undefined;
             }
@@ -58,7 +60,8 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     override async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
-            const filePath = await window.electronTheiaFilesystem.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props));
+            const cwd = FileUri.fsPath(this.resolveSaveDialogCwd(rootNode.uri, props));
+            const filePath = await this.fileDialog.showSaveDialog(cwd, this.toSaveDialogOptions(props));
 
             if (!filePath) {
                 return undefined;
@@ -100,67 +103,57 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
         return unreadableResourcePaths.length === 0;
     }
 
-    protected toOpenDialogOptions(uri: URI, props: OpenFileDialogProps): OpenDialogOptions {
+    protected toOpenDialogOptions(props: OpenFileDialogProps): OpenDialogOptions {
         if (!isOSX && props.canSelectFiles !== false && props.canSelectFolders === true) {
             console.warn(`Cannot have 'canSelectFiles' and 'canSelectFolders' at the same time. Fallback to 'folder' dialog. \nProps was: ${JSON.stringify(props)}.`);
-
             // Given that both props are set, fallback to using a `folder` dialog.
             props.canSelectFiles = false;
             props.canSelectFolders = true;
         }
-
-        const result: OpenDialogOptions = {
-            path: FileUri.fsPath(uri)
+        const options: OpenDialogOptions = {
+            title: props.title,
+            buttonLabel: props.openLabel,
+            maxWidth: props.maxWidth,
+            modal: props.modal,
+            openFiles: props.canSelectFiles,
+            openFolders: props.canSelectFolders,
+            selectMany: props.canSelectMany,
         };
-
-        result.title = props.title;
-        result.buttonLabel = props.openLabel;
-        result.maxWidth = props.maxWidth;
-        result.modal = props.modal;
-        result.openFiles = props.canSelectFiles;
-        result.openFolders = props.canSelectFolders;
-        result.selectMany = props.canSelectMany;
-
         if (props.filters) {
-            result.filters = [];
+            options.filters = [];
             const filters = Object.entries(props.filters);
             for (const [label, extensions] of filters) {
-                result.filters.push({ name: label, extensions: extensions });
+                options.filters.push({ name: label, extensions: extensions });
             }
-
-            if (props.canSelectFiles) {
-                if (filters.length > 0) {
-                    result.filters.push({ name: 'All Files', extensions: ['*'] });
-                }
+            if (props.canSelectFiles && filters.length > 0) {
+                options.filters.push({ name: 'All Files', extensions: ['*'] });
             }
         }
-
-        return result;
+        return options;
     }
 
-    protected toSaveDialogOptions(uri: URI, props: SaveFileDialogProps): SaveDialogOptions {
+    protected resolveSaveDialogCwd(cwd: URI, props: SaveFileDialogProps): URI {
         if (props.inputValue) {
-            uri = uri.resolve(props.inputValue);
+            cwd = cwd.resolve(props.inputValue);
         }
+        return cwd;
+    }
 
-        const result: SaveDialogOptions = {
-            path: FileUri.fsPath(uri)
+    protected toSaveDialogOptions(props: SaveFileDialogProps): SaveDialogOptions {
+        const options: SaveDialogOptions = {
+            title: props.title,
+            buttonLabel: props.saveLabel,
+            maxWidth: props.maxWidth,
+            modal: props.modal,
         };
-
-        result.title = props.title;
-        result.buttonLabel = props.saveLabel;
-        result.maxWidth = props.maxWidth;
-        result.modal = props.modal;
-
         if (props.filters) {
-            result.filters = [];
+            options.filters = [];
             const filters = Object.entries(props.filters);
             for (const [label, extensions] of filters) {
-                result.filters.push({ name: label, extensions: extensions });
+                options.filters.push({ name: label, extensions: extensions });
             }
         }
-
-        return result;
+        return options;
     }
 
 }

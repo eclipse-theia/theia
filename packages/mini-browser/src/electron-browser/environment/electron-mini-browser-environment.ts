@@ -15,23 +15,19 @@
 // *****************************************************************************
 
 import { Endpoint } from '@theia/core/lib/browser';
-
-import { ElectronSecurityToken } from '@theia/core/lib/electron-common/electron-token';
+import { ElectronSecurityTokenService } from '@theia/core/lib/electron-common/electron-token';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MiniBrowserEnvironment } from '../../browser/environment/mini-browser-environment';
-
-import '@theia/core/lib/electron-common/electron-api';
 
 @injectable()
 export class ElectronMiniBrowserEnvironment extends MiniBrowserEnvironment {
 
-    @inject(ElectronSecurityToken)
-    protected readonly electronSecurityToken: ElectronSecurityToken;
+    @inject(ElectronSecurityTokenService)
+    protected electronSecurityTokenService: ElectronSecurityTokenService;
 
     override getEndpoint(uuid: string, hostname?: string): Endpoint {
         const endpoint = super.getEndpoint(uuid, hostname);
-
-        window.electronTheiaCore.attachSecurityToken(endpoint.getRestUrl().toString(true));
+        this.electronSecurityTokenService.attachSecurityToken(endpoint.getRestUrl().toString(true));
         return endpoint;
     }
 

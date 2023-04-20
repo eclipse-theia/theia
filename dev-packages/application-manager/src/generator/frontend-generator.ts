@@ -102,7 +102,8 @@ module.exports = preloader.preload().then(() => {
     const { messagingFrontendModule } = require('@theia/core/lib/${this.pck.isBrowser()
                 ? 'browser/messaging/messaging-frontend-module'
                 : 'electron-browser/messaging/electron-messaging-frontend-module'}');
-    const { loggerFrontendModule } = require('@theia/core/lib/browser/logger-frontend-module');
+    const { loggerFrontendModule } = require('@theia/core/lib/browser/logger-frontend-module');${this.pck.ifElectron(`
+    const { TheiaPreloadApiLoader } = require('@theia/core/lib/electron-browser');`)}
 
     const container = new Container();
     container.load(frontendApplicationModule);
@@ -110,10 +111,10 @@ module.exports = preloader.preload().then(() => {
     container.load(loggerFrontendModule);
 
     return Promise.resolve()${compiledModuleImports}
-        .then(start).catch(reason => {
+        .then(start, error => {
             console.error('Failed to start the frontend application.');
-            if (reason) {
-                console.error(reason);
+            if (error) {
+                console.error(error);
             }
         });
 
@@ -123,7 +124,8 @@ module.exports = preloader.preload().then(() => {
     }
 
     function start() {
-        (window['theia'] = window['theia'] || {}).container = container;
+        (window['theia'] = window['theia'] || {}).container = container;${this.ifElectron(`
+        container.get(TheiaPreloadApiLoader).loadAndBind(exposedTheiaPreloadContext, container);`)}
         return container.get(FrontendApplication).start();
     }
 });
@@ -177,9 +179,9 @@ container.bind(ElectronMainApplicationGlobals).toConstantValue({
 });
 
 function load(raw) {
-    return Promise.resolve(raw.default).then(module =>
-        container.load(module)
-    );
+    return Promise.resolve(raw.default).then(containerModule => {
+        container.load(containerModule);
+    });
 }
 
 async function start() {
@@ -188,10 +190,10 @@ async function start() {
 }
 
 module.exports = Promise.resolve()${this.compileElectronMainModuleImports(electronMainModules)}
-    .then(start).catch(reason => {
+    .then(start, error => {
         console.error('Failed to start the electron application.');
-        if (reason) {
-            console.error(reason);
+        if (error) {
+            console.error(error);
         }
     });
 `;
@@ -270,13 +272,22 @@ module.exports = Promise.resolve().then(() => {
     }
 
     compilePreloadJs(): string {
-        const lines = Array.from(this.pck.preloadModules)
-            .map(([moduleName, path]) => `require('${path}').preload();`);
-        const imports = '\n' + lines.join('\n');
-
-        return `\
+        return `
 // @ts-check
-${imports}
+require('reflect-metadata');
+const { Container } = require('inversify');
+const { TheiaContextBridge, TheiaPreloadContext, ElectronPreloadContribution } = require('@theia/core/lib/electron-common');
+
+function load(container, importedModule) {
+    if (importedModule.default) {
+        container.load(importedModule.default);
+    }
+}
+
+const container = new Container();
+${Array.from(this.pck.preloadModules.values()).map(preloadModule => `load(container, require('${preloadModule}'));`).join('\n')}
+container.getAll(ElectronPreloadContribution).forEach(contribution => contribution.preload());
+container.get(TheiaContextBridge).exposeInMainWorld('exposedTheiaPreloadContext', container.get(TheiaPreloadContext));
 `;
     }
 }

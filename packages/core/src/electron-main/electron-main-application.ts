@@ -35,8 +35,8 @@ import { DEFAULT_WINDOW_HASH } from '../common/window';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
 import { createDisposableListener } from './event-utils';
-import { TheiaRendererAPI } from './electron-api-main';
 import { StopReason } from '../common/frontend-application-state';
+import { TheiaIpcMain, ELECTRON_CURRENT_WINDOW_IPC } from '../electron-common';
 
 export { ElectronMainApplicationGlobals };
 
@@ -75,16 +75,15 @@ export interface ElectronMainExecutionParams {
  *
  * From an `electron-main` module:
  *
- *     bind(ElectronConnectionHandler).toDynamicValue(context =>
- *          new JsonRpcConnectionHandler(electronMainWindowServicePath,
- *          () => context.container.get(ElectronMainWindowService))
- *     ).inSingletonScope();
+ *     bind(ElectronConnectionHandler)
+ *         .toDynamicValue(ctx => new JsonRpcConnectionHandler(electronMainWindowServicePath, () => ctx.container.get(ElectronMainWindowService)))
+ *         .inSingletonScope();
  *
  * And from the `electron-browser` module:
  *
- *     bind(ElectronMainWindowService).toDynamicValue(context =>
- *          ElectronIpcConnectionProvider.createProxy(context.container, electronMainWindowServicePath)
- *     ).inSingletonScope();
+ *     bind(ElectronMainWindowService)
+ *          .toDynamicValue(ctx => ElectronIpcConnectionProvider.createProxy(ctx.container, electronMainWindowServicePath))
+ *          .inSingletonScope();
  */
 export const ElectronMainApplicationContribution = Symbol('ElectronMainApplicationContribution');
 export interface ElectronMainApplicationContribution {
@@ -170,6 +169,9 @@ export class ElectronMainApplication {
     @inject(TheiaElectronWindowFactory)
     protected readonly windowFactory: TheiaElectronWindowFactory;
 
+    @inject(TheiaIpcMain)
+    protected ipcMain: TheiaIpcMain;
+
     protected readonly electronStore = new Storage<{
         windowstate?: TheiaBrowserWindowOptions
     }>();
@@ -204,6 +206,14 @@ export class ElectronMainApplication {
             argv: this.processArgv.getProcessArgvWithoutBin(process.argv),
             cwd: process.cwd()
         });
+    }
+
+    getTheiaElectronWindow(webContentsId: number): TheiaElectronWindow | undefined {
+        const theiaWindow = this.windows.get(webContentsId);
+        if (theiaWindow) {
+            return theiaWindow;
+        }
+        console.warn(`no theia window found for id: ${webContentsId}`);
     }
 
     protected getTitleBarStyle(config: FrontendApplicationConfig): 'native' | 'custom' {
@@ -262,9 +272,9 @@ export class ElectronMainApplication {
         const id = electronWindow.window.webContents.id;
         this.windows.set(id, electronWindow);
         electronWindow.onDidClose(() => this.windows.delete(id));
-        electronWindow.window.on('maximize', () => TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'maximize'));
-        electronWindow.window.on('unmaximize', () => TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'unmaximize'));
-        electronWindow.window.on('focus', () => TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'focus'));
+        electronWindow.window.on('maximize', () => this.ipcMain.sendTo(electronWindow.window.webContents, ELECTRON_CURRENT_WINDOW_IPC.onMaximize));
+        electronWindow.window.on('unmaximize', () => this.ipcMain.sendTo(electronWindow.window.webContents, ELECTRON_CURRENT_WINDOW_IPC.onUnmaximize));
+        electronWindow.window.on('focus', () => this.ipcMain.sendTo(electronWindow.window.webContents, ELECTRON_CURRENT_WINDOW_IPC.onFocus));
         this.attachSaveWindowState(electronWindow.window);
         this.configureNativeSecondaryWindowCreation(electronWindow.window);
         return electronWindow.window;

@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 STMicroelectronics and others.
+// Copyright (C) 2023 Ericsson and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,11 +13,15 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
-import { ElectronApi } from './electron-api-main';
 
-export default new ContainerModule(bind => {
-    bind(ElectronApi).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronApi);
-});
+import { createIpcNamespace } from './electron-ipc';
+import { preloadServiceIdentifier } from './electron-preload';
+
+export const ELECTRON_SHELL_IPC = createIpcNamespace('theia-electron-shell', channel => ({
+    showItemInFolder: channel<(fsPath: string) => void>()
+}));
+
+export const ElectronShell = preloadServiceIdentifier<ElectronShell>('PreloadShell');
+export interface ElectronShell {
+    showItemInFolder(fsPath: string): void
+}

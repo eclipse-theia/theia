@@ -23,7 +23,7 @@ import { DisposableCollection, Emitter, Event } from '../common';
 import { createDisposableListener } from './event-utils';
 import { URI } from '../common/uri';
 import { FileUri } from '../node/file-uri';
-import { TheiaRendererAPI } from './electron-api-main';
+import { ElectronFrontendApplicationMain } from './electron-frontend-application-main';
 
 /**
  * Theia tracks the maximized state of Electron Browser Windows.
@@ -46,9 +46,6 @@ export type WindowApplicationConfig = FrontendApplicationConfig;
 
 @injectable()
 export class TheiaElectronWindow {
-    @inject(TheiaBrowserWindowOptions) protected readonly options: TheiaBrowserWindowOptions;
-    @inject(WindowApplicationConfig) protected readonly config: WindowApplicationConfig;
-    @inject(ElectronMainApplicationGlobals) protected readonly globals: ElectronMainApplicationGlobals;
 
     protected onDidCloseEmitter = new Emitter<void>();
 
@@ -64,7 +61,19 @@ export class TheiaElectronWindow {
     }
 
     protected closeIsConfirmed = false;
-    protected applicationState: FrontendApplicationState = 'init';
+    applicationState: FrontendApplicationState = 'init';
+
+    @inject(ElectronFrontendApplicationMain)
+    protected electronFrontendApplication: ElectronFrontendApplicationMain;
+
+    @inject(TheiaBrowserWindowOptions)
+    protected options: TheiaBrowserWindowOptions;
+
+    @inject(WindowApplicationConfig)
+    protected config: WindowApplicationConfig;
+
+    @inject(ElectronMainApplicationGlobals)
+    protected globals: ElectronMainApplicationGlobals;
 
     @postConstruct()
     protected init(): void {
@@ -73,8 +82,6 @@ export class TheiaElectronWindow {
         this.attachReadyToShow();
         this.restoreMaximizedState();
         this.attachCloseListeners();
-        this.trackApplicationState();
-        this.attachReloadListener();
     }
 
     /**
@@ -108,7 +115,7 @@ export class TheiaElectronWindow {
         return this.handleStopRequest(() => this.doCloseWindow(), reason);
     }
 
-    protected reload(): void {
+    reload(): void {
         this.handleStopRequest(() => {
             this.applicationState = 'init';
             this._window.reload();
@@ -138,7 +145,7 @@ export class TheiaElectronWindow {
     }
 
     protected checkSafeToStop(reason: StopReason): Promise<boolean> {
-        return TheiaRendererAPI.requestClose(this.window.webContents, reason);
+        return this.electronFrontendApplication.canClose(this.window.webContents, reason);
     }
 
     protected restoreMaximizedState(): void {
@@ -147,16 +154,6 @@ export class TheiaElectronWindow {
         } else {
             this._window.unmaximize();
         }
-    }
-
-    protected trackApplicationState(): void {
-        this.toDispose.push(TheiaRendererAPI.onApplicationStateChanged(this.window.webContents, state => {
-            this.applicationState = state;
-        }));
-    }
-
-    protected attachReloadListener(): void {
-        this.toDispose.push(TheiaRendererAPI.onRequestReload(this.window.webContents, () => this.reload()));
     }
 
     dispose(): void {

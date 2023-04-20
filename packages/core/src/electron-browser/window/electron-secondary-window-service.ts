@@ -14,20 +14,25 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
+import { ElectronWindows } from '../../electron-common';
 import { DefaultSecondaryWindowService } from '../../browser/window/default-secondary-window-service';
 
 @injectable()
 export class ElectronSecondaryWindowService extends DefaultSecondaryWindowService {
+
+    @inject(ElectronWindows)
+    protected electronWindows: ElectronWindows;
+
     override focus(win: Window): void {
-        window.electronTheiaCore.focusWindow(win.name);
+        this.electronWindows.focusWindow(win.name);
     }
 
     protected override doCreateSecondaryWindow(onClose?: (closedWin: Window) => void): Window | undefined {
-        const w = super.doCreateSecondaryWindow(onClose);
-        if (w) {
-            window.electronTheiaCore.setMenuBarVisible(false, w.name);
+        const secondaryWindow = super.doCreateSecondaryWindow(onClose);
+        if (secondaryWindow) {
+            this.electronWindows.setMenuBarVisible(false, secondaryWindow.name);
         }
-        return w;
+        return secondaryWindow;
     }
 }

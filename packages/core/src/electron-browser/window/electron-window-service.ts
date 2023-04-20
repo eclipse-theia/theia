@@ -19,6 +19,7 @@ import { NewWindowOptions } from '../../common/window';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
 import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
 import { ElectronWindowPreferences } from './electron-window-preferences';
+import { ElectronFrontendApplication, ElectronWindows } from '../../electron-common';
 
 @injectable()
 export class ElectronWindowService extends DefaultWindowService {
@@ -38,6 +39,12 @@ export class ElectronWindowService extends DefaultWindowService {
 
     @inject(ElectronWindowPreferences)
     protected readonly electronWindowPreferences: ElectronWindowPreferences;
+
+    @inject(ElectronWindows)
+    protected electronWindows: ElectronWindows;
+
+    @inject(ElectronFrontendApplication)
+    protected electronFrontendApplication: ElectronFrontendApplication;
 
     override openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
         this.delegate.openNewWindow(url, { external });
@@ -59,7 +66,7 @@ export class ElectronWindowService extends DefaultWindowService {
     }
 
     protected override registerUnloadListeners(): void {
-        window.electronTheiaCore.setCloseRequestHandler(reason => this.isSafeToShutDown(reason));
+        this.electronFrontendApplication.handleCanClose(reason => this.isSafeToShutDown(reason));
         window.addEventListener('unload', () => {
             this.onUnloadEmitter.fire();
         });
@@ -70,12 +77,12 @@ export class ElectronWindowService extends DefaultWindowService {
      */
     protected async updateWindowZoomLevel(): Promise<void> {
         const preferredZoomLevel = this.electronWindowPreferences['window.zoomLevel'];
-        if (await window.electronTheiaCore.getZoomLevel() !== preferredZoomLevel) {
-            window.electronTheiaCore.setZoomLevel(preferredZoomLevel);
+        if (await this.electronWindows.currentWindow.getZoomLevel() !== preferredZoomLevel) {
+            this.electronWindows.currentWindow.setZoomLevel(preferredZoomLevel);
         }
     }
 
     override reload(): void {
-        window.electronTheiaCore.requestReload();
+        this.electronWindows.currentWindow.reload();
     }
 }
