@@ -117,6 +117,8 @@ export class NotebookModel implements Saveable, Disposable {
 
     async save(options: SaveOptions): Promise<void> {
         this.dirtyCells = [];
+        this.dirty = false;
+        this.dirtyChangedEmitter.fire();
 
         const serializedNotebook = await this.props.serializer.notebookToData({
             cells: this.cells.map(cell => cell.toDto()),
