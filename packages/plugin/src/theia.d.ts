@@ -5354,13 +5354,12 @@ export module '@theia/plugin' {
         export function createOutputChannel(name: string): OutputChannel;
 
         /**
-         * Creates a new {@link OutputChannel output channel} with the given name.
-         * If options are given, creates a new {@link OutputChannel output channel} with the given name.
+         * Creates a new {@link LogOutputChannel log output channel} with the given name.
          *
          * @param name Human-readable string which will be used to represent the channel in the UI.
-         * @param options optional; Options for the log output channel.
+         * @param options Options for the log output channel.
          */
-        export function createOutputChannel(name: string, options?: { log: true }): LogOutputChannel;
+        export function createOutputChannel(name: string, options: { log: true }): LogOutputChannel;
 
         /**
          * Create new terminal.

@@ -17,7 +17,8 @@
 import * as theia from '@theia/plugin';
 import { PLUGIN_RPC_CONTEXT as Ext, OutputChannelRegistryExt, OutputChannelRegistryMain, PluginInfo } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { LogOutputChannelImpl } from './output-channel/logoutput-channel';
+import { isObject } from '../common/types';
+import { LogOutputChannelImpl } from './output-channel/log-output-channel';
 import { OutputChannelImpl } from './output-channel/output-channel-item';
 
 export class OutputChannelRegistryExtImpl implements OutputChannelRegistryExt {
@@ -29,13 +30,13 @@ export class OutputChannelRegistryExtImpl implements OutputChannelRegistryExt {
     }
 
     createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel;
-    createOutputChannel(name: string, pluginInfo: PluginInfo, options?: { log: true; }): theia.LogOutputChannel;
+    createOutputChannel(name: string, pluginInfo: PluginInfo, options: { log: true; }): theia.LogOutputChannel;
     createOutputChannel(name: string, pluginInfo: PluginInfo, options?: { log: true; }): theia.OutputChannel | theia.LogOutputChannel {
         name = name.trim();
         if (!name) {
             throw new Error('illegal argument \'name\'. must not be falsy');
         }
-        const isLogOutput = options && typeof options === 'object' && options.log;
+        const isLogOutput = options && isObject(options);
         return isLogOutput
             ? this.doCreateLogOutputChannel(name, pluginInfo)
             : this.doCreateOutputChannel(name, pluginInfo);

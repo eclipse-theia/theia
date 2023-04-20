@@ -11,6 +11,7 @@
 <a name="breaking_changes_1.37.0">[Breaking Changes:](#breaking_changes_1.37.0)</a>
 - [core] Inject core preference into `DockPanelRenderer` constructor [12360](https://github.com/eclipse-theia/theia/pull/12360)
 - [core] Introduced `ScrollableTabBar.updateTabs()` to fully render tabs [12360](https://github.com/eclipse-theia/theia/pull/12360)
+- [plugin] removed enum `LogLevel` and namespace `env` from `plugin/src/theia-proposed.d.ts` [#12017](https://github.com/eclipse-theia/theia/pull/12429)
 
 ## v1.36.0 0 - 03/30/2023
 

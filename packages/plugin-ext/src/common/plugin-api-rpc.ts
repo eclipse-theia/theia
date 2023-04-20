@@ -288,7 +288,7 @@ export interface TerminalServiceExt {
 }
 export interface OutputChannelRegistryExt {
     createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel,
-    createOutputChannel(name: string, pluginInfo: PluginInfo, options?: { log: true }): theia.LogOutputChannel
+    createOutputChannel(name: string, pluginInfo: PluginInfo, options: { log: true }): theia.LogOutputChannel
 }
 
 export interface ConnectionMain {

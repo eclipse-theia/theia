@@ -484,7 +484,9 @@ export function createAPIFactory(
                 return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority, id);
             },
             createOutputChannel(name: string, options?: { log: true }): any {
-                return outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin), options);
+                return !options
+                    ? outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin))
+                    : outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin), options);
             },
             createWebviewPanel(viewType: string,
                 title: string,
