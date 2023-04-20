@@ -20,6 +20,8 @@ export namespace nls {
 
     export let localization: Localization | undefined;
 
+    export const defaultLocale = 'en';
+
     export const localeId = 'localeId';
 
     export const locale = typeof window === 'object' && window && window.localStorage.getItem(localeId) || undefined;
@@ -57,7 +59,7 @@ export namespace nls {
     }
 
     export function isSelectedLocale(id: string): boolean {
-        if (locale === undefined && id === 'en') {
+        if (locale === undefined && id === defaultLocale) {
             return true;
         }
         return locale === id;

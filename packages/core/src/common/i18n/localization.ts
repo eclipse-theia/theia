@@ -39,22 +39,12 @@ export type FormatType = string | number | boolean | undefined;
 
 export namespace Localization {
 
-    export function format(message: string, args: FormatType[]): string {
-        let result = message;
-        if (args.length > 0) {
-            result = message.replace(/\{(\d+)\}/g, (match, rest) => {
-                const index = rest[0];
-                const arg = args[index];
-                let replacement = match;
-                if (typeof arg === 'string') {
-                    replacement = arg;
-                } else if (typeof arg === 'number' || typeof arg === 'boolean' || !arg) {
-                    replacement = String(arg);
-                }
-                return replacement;
-            });
-        }
-        return result;
+    const formatRegexp = /{([^}]+)}/g;
+
+    export function format(message: string, args: FormatType[]): string;
+    export function format(message: string, args: Record<string | number, FormatType>): string;
+    export function format(message: string, args: Record<string | number, FormatType> | FormatType[]): string {
+        return message.replace(formatRegexp, (match, group) => (args[group] ?? match) as string);
     }
 
     export function localize(localization: Localization | undefined, key: string, defaultValue: string, ...args: FormatType[]): string {
