@@ -158,10 +158,16 @@ export interface IpcHandleConverter {
 }
 
 /**
- * Internal keys used to configure how objects are proxied.
+ * Internal set of keys used to define metadata on objects.
  */
 export enum IpcReflectKeys {
+    /**
+     * Metadata should be {@link ProxyableOptions} and should be attached to construtors.
+     */
     Proxyable = 'theia-electron-ipc:proxyable',
+    /**
+     * Metadata should be {@link ProxyOptions} and should be attached to prototypes.
+     */
     Proxy = 'theia-electron-ipc:proxy'
 }
 
