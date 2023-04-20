@@ -33,6 +33,7 @@ import { NodeRequestService } from '@theia/request/lib/node-request-service';
 import { DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package/lib/api';
 import { RequestContext } from '@theia/request';
 import { RateLimiter } from 'limiter';
+import escapeStringRegexp = require('escape-string-regexp');
 
 temp.track();
 
@@ -145,7 +146,7 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         // This will include both "normal" plugins as well as "extension packs".
         const pluginsToDownload = Object.entries(pck.theiaPlugins)
             .filter((entry: [string, unknown]): entry is [string, string] => typeof entry[1] === 'string')
-            .map(([pluginId, url]) => ({ id: pluginId, downloadUrl: url }));
+            .map(([pluginId, url]) => ({ id: pluginId, downloadUrl: resolveDownloadUrlPlaceholders(url) }));
         await downloader(pluginsToDownload);
 
         const handleDependencyList = async (dependencies: Array<string | string[]>) => {
@@ -193,6 +194,16 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
     if (!ignoreErrors && failures.length > 0) {
         throw new Error('Errors downloading some plugins. To make these errors non fatal, re-run with --ignore-errors');
     }
+}
+
+const placeholders: Record<string, string> = {
+    targetPlatform: `${process.platform}-${process.arch}`
+};
+function resolveDownloadUrlPlaceholders(url: string): string {
+    for (const [name, value] of Object.entries(placeholders)) {
+        url = url.replace(new RegExp(escapeStringRegexp(`\${${name}}`), 'g'), value);
+    }
+    return url;
 }
 
 /**

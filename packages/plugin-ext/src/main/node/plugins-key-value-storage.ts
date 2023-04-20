@@ -62,7 +62,7 @@ export class PluginsKeyValueStorage {
 
         const data = await this.readFromFile(dataPath);
 
-        if (value === undefined || value === {}) {
+        if (value === undefined) {
             delete data[key];
         } else {
             data[key] = value;

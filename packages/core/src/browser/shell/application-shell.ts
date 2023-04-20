@@ -286,6 +286,14 @@ export class ApplicationShell extends Widget {
                 }
             });
         }
+
+        this.corePreferences.onPreferenceChanged(preference => {
+            if (preference.preferenceName === 'window.tabbar.enhancedPreview') {
+                this.allTabBars.forEach(tabBar => {
+                    tabBar.update();
+                });
+            }
+        });
     }
 
     protected initializeShell(): void {

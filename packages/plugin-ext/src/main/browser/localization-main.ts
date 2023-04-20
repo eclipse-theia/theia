@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2020 Ericsson and others.
+// Copyright (C) 2023 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,9 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from 'inversify';
-import { ElectronSecurityToken } from '../../electron-common/electron-token';
+import { nls } from '@theia/core';
+import { interfaces } from '@theia/core/shared/inversify';
+import { LocalizationMain } from '../../common/plugin-api-rpc';
+import { LanguagePackBundle, LanguagePackService } from '../../common/language-pack-service';
 
-export default new ContainerModule(bind => {
-    bind(ElectronSecurityToken).toConstantValue(window.electronTheiaCore.getSecurityToken());
-});
+export class LocalizationMainImpl implements LocalizationMain {
+
+    private readonly languagePackService: LanguagePackService;
+
+    constructor(container: interfaces.Container) {
+        this.languagePackService = container.get(LanguagePackService);
+    }
+
+    async $fetchBundle(id: string): Promise<LanguagePackBundle | undefined> {
+        const bundle = await this.languagePackService.getBundle(id, nls.locale ?? nls.defaultLocale);
+        return bundle;
+    }
+}

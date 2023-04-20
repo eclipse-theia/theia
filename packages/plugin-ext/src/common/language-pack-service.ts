@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2020 Ericsson and others.
+// Copyright (C) 2023 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,9 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from 'inversify';
-import { ElectronSecurityToken } from '../../electron-common/electron-token';
+/**
+ * Starting with vscode 1.73.0, language pack bundles have changed their shape to accomodate the new `l10n` API.
+ * They are now a record of { [englishValue]: translation }
+ */
+export interface LanguagePackBundle {
+    contents: Record<string, string>
+    uri: string
+}
 
-export default new ContainerModule(bind => {
-    bind(ElectronSecurityToken).toConstantValue(window.electronTheiaCore.getSecurityToken());
-});
+export const languagePackServicePath = '/services/languagePackService';
+
+export const LanguagePackService = Symbol('LanguagePackService');
+
+export interface LanguagePackService {
+    storeBundle(pluginId: string, locale: string, bundle: LanguagePackBundle): void;
+    deleteBundle(pluginId: string, locale?: string): void;
+    getBundle(pluginId: string, locale: string): Promise<LanguagePackBundle | undefined>;
+}

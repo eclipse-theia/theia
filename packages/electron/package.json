@@ -3,7 +3,6 @@
   "version": "1.36.0",
   "description": "Theia - Electron utility package",
   "dependencies": {
-    "@electron/remote": "^2.0.1 <2.0.4 || >2.0.4",
     "electron-store": "^8.0.0",
     "fix-path": "^3.0.0",
     "native-keymap": "^2.2.1"
@@ -13,13 +12,11 @@
     "@theia/re-exports": "1.36.0"
   },
   "peerDependencies": {
-    "electron": "^15.3.5"
+    "electron": "^22.3.2"
   },
   "theiaReExports": {
     "shared": {
       "export *": [
-        "@electron/remote",
-        "@electron/remote/main",
         "native-keymap"
       ],
       "export =": [

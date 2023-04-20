@@ -15,9 +15,10 @@
 // *****************************************************************************
 
 import { injectable, ContainerModule } from '@theia/core/shared/inversify';
-import { CompoundMenuNode, MenuNode } from '@theia/core/lib/common/menu';
+import { MenuNode } from '@theia/core/lib/common/menu';
 import { ElectronMainMenuFactory, ElectronMenuOptions } from '@theia/core/lib/electron-browser/menu/electron-main-menu-factory';
 import { PlaceholderMenuNode } from '../../browser/menu/sample-menu-contribution';
+import { MenuDto } from '@theia/core/lib/electron-common/electron-api';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(ElectronMainMenuFactory).to(SampleElectronMainMenuFactory).inSingletonScope();
@@ -25,13 +26,15 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
 @injectable()
 class SampleElectronMainMenuFactory extends ElectronMainMenuFactory {
-    protected override fillMenuTemplate(
-        parentItems: Electron.MenuItemConstructorOptions[], menuModel: MenuNode & CompoundMenuNode, args: unknown[] = [], options: ElectronMenuOptions
-    ): Electron.MenuItemConstructorOptions[] {
-        if (menuModel instanceof PlaceholderMenuNode) {
-            parentItems.push({ label: menuModel.label, enabled: false, visible: true });
+    protected override fillMenuTemplate(parentItems: MenuDto[],
+        menu: MenuNode,
+        args: unknown[] = [],
+        options: ElectronMenuOptions
+    ): MenuDto[] {
+        if (menu instanceof PlaceholderMenuNode) {
+            parentItems.push({ label: menu.label, enabled: false, visible: true });
         } else {
-            super.fillMenuTemplate(parentItems, menuModel, args, options);
+            super.fillMenuTemplate(parentItems, menu, args, options);
         }
         return parentItems;
     }

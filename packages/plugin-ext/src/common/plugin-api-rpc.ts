@@ -115,6 +115,7 @@ import { Disposable } from '@theia/core/lib/common/disposable';
 import { isString, isObject, PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
 import { Severity } from '@theia/core/lib/common/severity';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
+import { LanguagePackBundle } from './language-pack-service';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -2110,7 +2111,8 @@ export const PLUGIN_RPC_CONTEXT = {
     TIMELINE_MAIN: <ProxyIdentifier<TimelineMain>>createProxyIdentifier<TimelineMain>('TimelineMain'),
     THEMING_MAIN: <ProxyIdentifier<ThemingMain>>createProxyIdentifier<ThemingMain>('ThemingMain'),
     COMMENTS_MAIN: <ProxyIdentifier<CommentsMain>>createProxyIdentifier<CommentsMain>('CommentsMain'),
-    TABS_MAIN: <ProxyIdentifier<TabsMain>>createProxyIdentifier<TabsMain>('TabsMain')
+    TABS_MAIN: <ProxyIdentifier<TabsMain>>createProxyIdentifier<TabsMain>('TabsMain'),
+    LOCALIZATION_MAIN: <ProxyIdentifier<LocalizationMain>>createProxyIdentifier<LocalizationMain>('LocalizationMain'),
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -2216,4 +2218,21 @@ export interface IdentifiableInlineCompletions extends InlineCompletions<Identif
 
 export interface IdentifiableInlineCompletion extends InlineCompletion {
     idx: number;
+}
+
+export interface LocalizationExt {
+    translateMessage(pluginId: string, details: StringDetails): string;
+    getBundle(pluginId: string): Record<string, string> | undefined;
+    getBundleUri(pluginId: string): theia.Uri | undefined;
+    initializeLocalizedMessages(plugin: Plugin, currentLanguage: string): Promise<void>;
+}
+
+export interface StringDetails {
+    message: string;
+    args?: Record<string | number, any>;
+    comment?: string | string[];
+}
+
+export interface LocalizationMain {
+    $fetchBundle(id: string): Promise<LanguagePackBundle | undefined>;
 }
