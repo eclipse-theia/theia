@@ -158,11 +158,11 @@ describe('IpcHandleConverterImpl', () => {
                 });
                 keys.forEach(property => {
                     if (typeof handle[property] === 'function') {
-                        it(property, () => {
+                        it(`handle.${property}() === instance.${property}()`, () => {
                             assert.deepStrictEqual(handle[property](), instance[property]());
                         });
                     } else {
-                        it(property, () => {
+                        it(`handle.${property} === instance.${property}`, () => {
                             assert.deepStrictEqual(handle[property], instance[property]);
                         });
                     }
@@ -204,5 +204,15 @@ describe('IpcHandleConverterImpl', () => {
             'publicFieldA',
             'publicMethodA'
         ]);
+
+        it('recursive object', () => {
+            const ipcHandleConverter = createIpcHandleConverter();
+            const instance: any = {};
+            instance.self = instance;
+            instance.method = () => 2;
+            const handle = ipcHandleConverter.getIpcHandle(instance);
+            assert.strictEqual(handle, handle.self);
+            assert.strictEqual(handle.self.method(), 2);
+        });
     });
 });

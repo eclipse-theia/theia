@@ -57,7 +57,7 @@ export class ElectronIpcHandleConverterImpl implements IpcHandleConverter {
             console.error('invalid value: not a proxyable instance');
             return null;
         }
-        // We don't need to walk the prototype chain if the prototype is already Object's or null
+        // We don't need to walk the prototype chain if the prototype is already Object or null
         const prototype = getPrototypeOf(value);
         if (prototype === null || prototype === Object.prototype) {
             return value;
