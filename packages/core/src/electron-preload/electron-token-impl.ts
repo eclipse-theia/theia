@@ -14,18 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { interfaces } from 'inversify';
-import { proxy, proxyable, TheiaPreloadApi, TheiaPreloadContext } from '../../electron-common';
+import { inject, injectable } from 'inversify';
+import { ElectronSecurityToken, ElectronSecurityTokenService, ELECTRON_SECURITY_TOKEN_IPC as ipc, proxy, proxyable, TheiaIpcRenderer } from '../electron-common';
 
-@proxyable()
-export class TheiaPreloadContextImpl implements TheiaPreloadContext {
+@injectable() @proxyable()
+export class ElectronSecurityTokenServiceImpl implements ElectronSecurityTokenService {
 
-    constructor(
-        protected container: interfaces.Container
-    ) { }
+    @inject(TheiaIpcRenderer)
+    protected ipcRenderer: TheiaIpcRenderer;
 
-    @proxy() getAllPreloadApis(): [string, object][] {
-        return this.container.getAll(TheiaPreloadApi)
-            .map(serviceIdentifier => [serviceIdentifier, this.container.get(serviceIdentifier)]);
+    @proxy() getSecurityToken(): ElectronSecurityToken {
+        const value = this.ipcRenderer.sendSync(ipc.getSecurityToken);
+        return { value };
+    }
+
+    @proxy() async attachSecurityToken(endpoint: string): Promise<void> {
+        await this.ipcRenderer.invoke(ipc.attachSecurityToken, endpoint);
     }
 }

@@ -14,20 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
-import { ElectronClipboardService, ELECTRON_CLIPBOARD_IPC as ipc, proxy, proxyable, TheiaIpcRenderer } from '../../electron-common';
+import { interfaces } from 'inversify';
+import { proxy, proxyable, TheiaPreloadApi, TheiaPreloadContext } from '../electron-common';
 
-@injectable() @proxyable()
-export class ElectronClipboardServiceImpl implements ElectronClipboardService {
+@proxyable()
+export class TheiaPreloadContextImpl implements TheiaPreloadContext {
 
-    @inject(TheiaIpcRenderer)
-    protected ipcRenderer: TheiaIpcRenderer;
+    constructor(
+        protected container: interfaces.Container
+    ) { }
 
-    @proxy() async readText(): Promise<string> {
-        return this.ipcRenderer.invoke(ipc.readClipboard);
-    }
-
-    @proxy() async writeText(value: string): Promise<void> {
-        await this.ipcRenderer.invoke(ipc.writeClipboard, value);
+    @proxy() getAllPreloadApis(): [string, object][] {
+        return this.container.getAll(TheiaPreloadApi)
+            .map(serviceIdentifier => [serviceIdentifier, this.container.get(serviceIdentifier)]);
     }
 }

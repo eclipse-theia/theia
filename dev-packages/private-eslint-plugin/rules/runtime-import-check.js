@@ -30,6 +30,7 @@ const folders = {
     electronBrowser: 'electron-browser',
     electronNode: 'electron-node',
     electronMain: 'electron-main',
+    electronPreload: 'electron-preload'
 };
 
 /**
@@ -58,9 +59,10 @@ const importRuleMapping = [
     allow(folders.browser, [folders.common]),
     allow(folders.node, [folders.common]),
     allow(folders.electronCommon, [folders.common]),
-    allow(folders.electronBrowser, [folders.electronCommon, folders.browser, folders.common]),
+    allow(folders.electronBrowser, [folders.electronPreload, folders.electronCommon, folders.browser, folders.common]),
     allow(folders.electronNode, [folders.electronCommon, folders.node, folders.common]),
     allow(folders.electronMain, [folders.electronCommon, folders.node, folders.common]),
+    allow(folders.electronPreload, [folders.electronBrowser, folders.electronCommon, folders.browser, folders.common])
 ];
 
 /** @type {import('eslint').Rule.RuleModule} */

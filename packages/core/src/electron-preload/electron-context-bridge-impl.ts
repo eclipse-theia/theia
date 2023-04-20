@@ -14,21 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { contextBridge } from '@theia/electron/shared/electron';
 import { inject, injectable } from 'inversify';
-import { ElectronSecurityToken, ElectronSecurityTokenService, ELECTRON_SECURITY_TOKEN_IPC as ipc, proxy, proxyable, TheiaIpcRenderer } from '../../electron-common';
+import { IpcHandleConverter, TheiaContextBridge } from '../electron-common';
 
-@injectable() @proxyable()
-export class ElectronSecurityTokenServiceImpl implements ElectronSecurityTokenService {
+@injectable()
+export class TheiaContextBridgeImpl implements TheiaContextBridge {
 
-    @inject(TheiaIpcRenderer)
-    protected ipcRenderer: TheiaIpcRenderer;
+    @inject(IpcHandleConverter)
+    protected ipcHandleConverter: IpcHandleConverter;
 
-    @proxy() getSecurityToken(): ElectronSecurityToken {
-        const value = this.ipcRenderer.sendSync(ipc.getSecurityToken);
-        return { value };
-    }
-
-    @proxy() async attachSecurityToken(endpoint: string): Promise<void> {
-        await this.ipcRenderer.invoke(ipc.attachSecurityToken, endpoint);
+    exposeInMainWorld(globalName: string, value: object): void {
+        contextBridge.exposeInMainWorld(globalName, this.ipcHandleConverter.getIpcHandle(value));
     }
 }

@@ -14,25 +14,31 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+// import * as uuid from 'uuid';
 import { inject, injectable } from 'inversify';
-import { FrontendApplicationState, StopReason } from '../../common/frontend-application-state';
-import { ElectronFrontendApplication, ELECTRON_FRONTEND_APPLICATION_IPC as ipc, proxy, proxyable, TheiaIpcRenderer } from '../../electron-common';
+import { ElectronPreloadContribution, ELECTRON_MESSAGE_PORT_IPC as ipc, TheiaIpcRenderer, TheiaIpcRendererEvent, TheiaIpcWindow } from '../electron-common';
 
-@injectable() @proxyable()
-export class ElectronFrontendApplicationImpl implements ElectronFrontendApplication {
+@injectable()
+export class ElectronMessagePortBroker implements ElectronPreloadContribution {
+
+    protected pending = new Set<string>();
 
     @inject(TheiaIpcRenderer)
     protected ipcRenderer: TheiaIpcRenderer;
 
-    @proxy() handleCanClose(handler: (reason: StopReason) => Promise<boolean>): void {
-        this.ipcRenderer.handle(ipc.canClose, (event, reason) => handler(reason));
+    @inject(TheiaIpcWindow)
+    protected ipcWindow: TheiaIpcWindow;
+
+    preload(): void {
+        this.ipcWindow.on(ipc.connectionRequest, this._onConnectionRequest, this);
+        this.ipcRenderer.on(ipc.connectionResponse, this._onConnectionResponse, this);
     }
 
-    @proxy() updateApplicationState(state: FrontendApplicationState): void {
-        this.ipcRenderer.send(ipc.updateApplicationState, state);
+    protected _onConnectionRequest(event: MessageEvent, message: unknown): void {
+        this.ipcRenderer.postMessage(ipc.connectionRequest, message, event.ports);
     }
 
-    @proxy() restart(): void {
-        this.ipcRenderer.send(ipc.restart);
+    protected _onConnectionResponse(event: TheiaIpcRendererEvent, message: unknown): void {
+        this.ipcWindow.postMessage(origin, ipc.connectionResponse, message);
     }
 }

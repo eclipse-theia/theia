@@ -17,9 +17,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, no-null/no-null */
 
 import { inject, injectable } from 'inversify';
-import { getPrototypeOf, isPromiseLike, isPrototype, Prototype } from '../../common';
-import { FunctionUtils, IpcHandleConverter, ProxyableOptions, ProxyOptions } from '../../electron-common';
-import { IpcReflectKeys } from '../../electron-common/electron-ipc';
+import { getPrototypeOf, isPromiseLike, isPrototype, Prototype } from '../common';
+import { IpcReflectKeys, FunctionUtils, IpcHandleConverter, ProxyableOptions, ProxyOptions } from '../electron-common';
 
 @injectable()
 export class ElectronIpcHandleConverterImpl implements IpcHandleConverter {

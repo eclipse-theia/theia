@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { InternalMenuDto, MenuDto } from '../../electron-common/electron-menu';
-import { ELECTRON_CURRENT_WINDOW_IPC as ipc, ElectronCurrentWindow, TheiaIpcRenderer, proxy, proxyable, IpcEvent } from '../../electron-common';
+import { ElectronCurrentWindow, ELECTRON_CURRENT_WINDOW_IPC as ipc, IpcEvent, MenuDto, proxy, proxyable, TheiaIpcRenderer } from '../electron-common';
+import { InternalMenuDto } from '../electron-common/electron-menu';
 
 type MenuId = number;
 type HandlerId = number;

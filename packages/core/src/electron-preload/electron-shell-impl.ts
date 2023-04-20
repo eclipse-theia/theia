@@ -14,17 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { contextBridge } from '@theia/electron/shared/electron';
 import { inject, injectable } from 'inversify';
-import { IpcHandleConverter, TheiaContextBridge } from '../../electron-common';
+import { ElectronShell, ELECTRON_SHELL_IPC as ipc, proxy, proxyable, TheiaIpcRenderer } from '../electron-common';
 
-@injectable()
-export class TheiaContextBridgeImpl implements TheiaContextBridge {
+@injectable() @proxyable()
+export class ElectronShellImpl implements ElectronShell {
 
-    @inject(IpcHandleConverter)
-    protected ipcHandleConverter: IpcHandleConverter;
+    @inject(TheiaIpcRenderer)
+    protected ipcRenderer: TheiaIpcRenderer;
 
-    exposeInMainWorld(globalName: string, value: object): void {
-        contextBridge.exposeInMainWorld(globalName, this.ipcHandleConverter.getIpcHandle(value));
+    @proxy() showItemInFolder(fsPath: string): void {
+        this.ipcRenderer.send(ipc.showItemInFolder, fsPath);
     }
 }

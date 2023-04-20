@@ -18,8 +18,8 @@
 
 import { ipcRenderer, IpcRendererEvent } from '@theia/electron/shared/electron';
 import { inject, injectable, postConstruct } from 'inversify';
-import { Disposable, Emitter } from '../../common';
-import { AnyFunction, FunctionUtils, IpcChannel, TheiaIpcRenderer, ELECTRON_INVOKE_IPC as ipc, IpcEvent, TheiaIpcRendererEvent } from '../../electron-common';
+import { Disposable, Emitter } from '../common';
+import { AnyFunction, FunctionUtils, IpcChannel, TheiaIpcRenderer, ELECTRON_INVOKE_IPC as ipc, IpcEvent, TheiaIpcRendererEvent } from '../electron-common';
 
 @injectable()
 export class TheiaIpcRendererImpl implements TheiaIpcRenderer {

@@ -20,7 +20,7 @@ export { ElectronClipboardService, ELECTRON_CLIPBOARD_IPC } from './electron-cli
 export { ElectronCurrentWindow, ELECTRON_CURRENT_WINDOW_IPC } from './electron-current-window';
 export { ElectronFrontendApplication, ELECTRON_FRONTEND_APPLICATION_IPC } from './electron-frontend-application';
 export { ELECTRON_INVOKE_IPC } from './electron-invoke';
-export { createIpcChannel, createIpcNamespace, IpcChannel, IpcEvent, IpcHandleConverter, IpcListener, proxy, proxyable, ProxyableOptions, ProxyOptions, TheiaIpcMain, TheiaIpcMainEvent, TheiaIpcMainInvokeEvent, TheiaIpcRenderer, TheiaIpcRendererEvent, TheiaIpcRendererInvokeEvent, TheiaIpcWindow } from './electron-ipc';
+export { createIpcChannel, createIpcNamespace, IpcChannel, IpcEvent, IpcHandleConverter, IpcListener, IpcReflectKeys, proxy, proxyable, ProxyableOptions, ProxyOptions, TheiaIpcMain, TheiaIpcMainEvent, TheiaIpcMainInvokeEvent, TheiaIpcRenderer, TheiaIpcRendererEvent, TheiaIpcRendererInvokeEvent, TheiaIpcWindow } from './electron-ipc';
 export { ElectronKeyboardLayout, ELECTRON_KEYBOARD_LAYOUT_IPC, NativeKeyboardLayout } from './electron-keyboard-layout';
 export { MenuDto, MenuRole } from './electron-menu';
 export { ConnectionRequest, ConnectionResponse, ELECTRON_MESSAGE_PORT_IPC, MessagePortClient, MessagePortHandler, MessagePortHandlerId, MessagePortServer } from './electron-message-port';

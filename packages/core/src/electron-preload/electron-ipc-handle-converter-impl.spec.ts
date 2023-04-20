@@ -18,7 +18,7 @@
 
 import { assert } from 'chai';
 import { Container } from 'inversify';
-import { FunctionUtils, IpcHandleConverter, proxy, proxyable } from '../../electron-common';
+import { FunctionUtils, IpcHandleConverter, proxy, proxyable } from '../electron-common';
 import { ElectronIpcHandleConverterImpl } from './electron-ipc-handle-converter-impl';
 
 describe('IpcHandleConverterImpl', () => {

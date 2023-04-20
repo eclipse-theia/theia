@@ -15,22 +15,19 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { ElectronCurrentWindow, ElectronWindows, ELECTRON_WINDOWS_IPC as ipc, proxy, proxyable, TheiaIpcRenderer } from '../../electron-common';
+import { ElectronClipboardService, ELECTRON_CLIPBOARD_IPC as ipc, proxy, proxyable, TheiaIpcRenderer } from '../electron-common';
 
 @injectable() @proxyable()
-export class ElectronWindowsImpl implements ElectronWindows {
-
-    @proxy() @inject(ElectronCurrentWindow)
-    currentWindow: ElectronCurrentWindow;
+export class ElectronClipboardServiceImpl implements ElectronClipboardService {
 
     @inject(TheiaIpcRenderer)
     protected ipcRenderer: TheiaIpcRenderer;
 
-    @proxy() setMenuBarVisible(visible: boolean, windowName?: string): void {
-        this.ipcRenderer.send(ipc.setMenuBarVisible, visible, windowName);
+    @proxy() async readText(): Promise<string> {
+        return this.ipcRenderer.invoke(ipc.readClipboard);
     }
 
-    @proxy() focusWindow(windowName: string): void {
-        this.ipcRenderer.send(ipc.focusWindow, windowName);
+    @proxy() async writeText(value: string): Promise<void> {
+        await this.ipcRenderer.invoke(ipc.writeClipboard, value);
     }
 }

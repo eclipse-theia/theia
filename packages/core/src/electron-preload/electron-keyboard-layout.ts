@@ -14,11 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { bindPreloadApi } from '@theia/core/lib/electron-common';
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { ElectronFileDialog } from '../../electron-common';
-import { ElectronFileDialogImpl } from './electron-file-dialog-impl';
+import { inject, injectable, postConstruct } from 'inversify';
+import { ElectronKeyboardLayout, ELECTRON_KEYBOARD_LAYOUT_IPC as ipc, NativeKeyboardLayout, TheiaIpcRenderer, IpcEvent, proxyable, proxy } from '../electron-common';
 
-export default new ContainerModule(bind => {
-    bindPreloadApi(bind, ElectronFileDialog).to(ElectronFileDialogImpl).inSingletonScope();
-});
+@injectable() @proxyable()
+export class ElectronKeyboardLayoutImpl implements ElectronKeyboardLayout {
+
+    @proxy() onKeyboardLayoutChanged: IpcEvent<NativeKeyboardLayout>;
+
+    @inject(TheiaIpcRenderer)
+    protected ipcRenderer: TheiaIpcRenderer;
+
+    @postConstruct()
+    protected _postConstruct(): void {
+        this.onKeyboardLayoutChanged = this.ipcRenderer.createEvent(ipc.onKeyboardLayoutChanged);
+    }
+}

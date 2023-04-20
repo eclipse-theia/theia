@@ -14,16 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
-import { ElectronShell, ELECTRON_SHELL_IPC as ipc, proxy, proxyable, TheiaIpcRenderer } from '../../electron-common';
+import { proxy, proxyable, TheiaIpcRenderer } from '@theia/core/lib/electron-common';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { ElectronFileDialog, ELECTRON_FILE_DIALOG_IPC as ipc, OpenDialogOptions, SaveDialogOptions } from '../electron-common';
 
 @injectable() @proxyable()
-export class ElectronShellImpl implements ElectronShell {
+export class ElectronFileDialogImpl implements ElectronFileDialog {
 
     @inject(TheiaIpcRenderer)
     protected ipcRenderer: TheiaIpcRenderer;
 
-    @proxy() showItemInFolder(fsPath: string): void {
-        this.ipcRenderer.send(ipc.showItemInFolder, fsPath);
+    @proxy() showOpenDialog(cwd: string, options?: OpenDialogOptions): Promise<string[] | undefined> {
+        return this.ipcRenderer.invoke(ipc.showOpenDialog, cwd, options);
+    }
+
+    @proxy() showSaveDialog(cwd: string, options?: SaveDialogOptions): Promise<string | undefined> {
+        return this.ipcRenderer.invoke(ipc.showSaveDialog, cwd, options);
     }
 }

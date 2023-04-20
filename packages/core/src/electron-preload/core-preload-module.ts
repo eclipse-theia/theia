@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import * as common from '../../electron-common';
-import { TheiaIpcWindowImpl } from '../electron-ipc-window-impl';
+import * as common from '../electron-common';
+import { TheiaIpcWindowImpl } from '../electron-browser/electron-ipc-window-impl';
 import { ElectronClipboardServiceImpl } from './electron-clipboard-impl';
 import { TheiaContextBridgeImpl } from './electron-context-bridge-impl';
 import { ElectronCurrentWindowImpl } from './electron-current-window-impl';
