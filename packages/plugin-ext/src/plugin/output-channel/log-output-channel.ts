@@ -29,7 +29,7 @@ export class LogOutputChannelImpl extends OutputChannelImpl implements theia.Log
     readonly onDidChangeLogLevel: theia.Event<theia.LogLevel> = this.onDidChangeLogLevelEmitter.event;
     public logLevel: theia.LogLevel;
 
-    constructor(override readonly name: string, protected override readonly proxy: OutputChannelRegistryMain, protected override readonly pluginInfo: PluginInfo) {
+    constructor(name: string, proxy: OutputChannelRegistryMain, pluginInfo: PluginInfo) {
         super(name, proxy, pluginInfo);
         this.setLogLevel(LogLevel.Info);
     }
