@@ -6,6 +6,8 @@
 
 ## v1.39.0 - 06/29/2023
 
+- [debug] added support for conditional exception breakpoints [#12445](https://github.com/eclipse-theia/theia/pull/12445)
+
 <a name="breaking_changes_1.39.0">[Breaking Changes:](#breaking_changes_1.39.0)</a>
 
 - [repo] with the upgrade to Inversify 6.0, a few initialization methods were adjusted. See also [this migration guide entry](https://github.com/eclipse-theia/theia/blob/master/doc/Migration.md#inversify-60). Additionally, other changes include: [#12425](https://github.com/eclipse-theia/theia/pull/12425)
