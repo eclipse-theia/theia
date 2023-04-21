@@ -21,6 +21,7 @@ import * as theia from '@theia/plugin';
 import { OutputChannelRegistryMain, PluginInfo } from '../../common/plugin-api-rpc';
 import { OutputChannelImpl } from './output-channel-item';
 import { LogLevel } from '../types-impl';
+import { isArray, isObject } from '@theia/core';
 
 export class LogOutputChannelImpl extends OutputChannelImpl implements theia.LogOutputChannel {
 
@@ -45,18 +46,13 @@ export class LogOutputChannelImpl extends OutputChannelImpl implements theia.Log
     }
 
     override append(value: string): void {
+        super.validate();
         this.info(value);
     }
 
     override appendLine(value: string): void {
+        super.validate();
         this.append(value + '\n');
-    }
-
-    protected log(level: theia.LogLevel, message: string): void {
-        const now = new Date();
-        const eol = message.endsWith('\n') ? '' : '\n';
-        const logMessage = `${now.toISOString()} [${LogLevel[level]}] ${message}${eol}`;
-        this.proxy.$append(this.name, logMessage, this.pluginInfo);
     }
 
     override dispose(): void {
@@ -64,69 +60,49 @@ export class LogOutputChannelImpl extends OutputChannelImpl implements theia.Log
         this.onDidChangeLogLevelEmitter.dispose();
     }
 
-    // begin
-    // copied from vscode: https://github.com/Microsoft/vscode/blob/main/src/vs/platform/log/common/log.ts
-    /*---------------------------------------------------------------------------------------------
-     *  Copyright (c) Microsoft Corporation. All rights reserved.
-     *  Licensed under the MIT License. See License.txt in the project root for license information.
-     *--------------------------------------------------------------------------------------------*/
+    protected log(level: theia.LogLevel, message: string): void {
+        super.validate();
+        if (this.checkLogLevel(level)) {
+            const now = new Date();
+            const eol = message.endsWith('\n') ? '' : '\n';
+            const logMessage = `${now.toISOString()} [${LogLevel[level]}] ${message}${eol}`;
+            this.proxy.$append(this.name, logMessage, this.pluginInfo);
+        }
+    }
+
     private checkLogLevel(level: theia.LogLevel): boolean {
         return this.logLevel <= level;
     }
 
     trace(message: string, ...args: any[]): void {
-        if (this.checkLogLevel(LogLevel.Trace)) {
-            this.log(LogLevel.Trace, this.format([message, ...args]));
-        }
+        this.log(LogLevel.Trace, this.format(message, args));
     }
 
     debug(message: string, ...args: any[]): void {
-        if (this.checkLogLevel(LogLevel.Debug)) {
-            this.log(LogLevel.Debug, this.format([message, ...args]));
-        }
+        this.log(LogLevel.Debug, this.format(message, args));
     }
 
     info(message: string, ...args: any[]): void {
-        if (this.checkLogLevel(LogLevel.Info)) {
-            this.log(LogLevel.Info, this.format([message, ...args]));
-        }
+        this.log(LogLevel.Info, this.format(message, args));
     }
 
     warn(message: string, ...args: any[]): void {
-        if (this.checkLogLevel(LogLevel.Warning)) {
-            this.log(LogLevel.Warning, this.format([message, ...args]));
+        this.log(LogLevel.Warning, this.format(message, args));
+    }
+
+    error(errorMsg: string | Error, ...args: any[]): void {
+        if (errorMsg instanceof Error) {
+            this.log(LogLevel.Error, this.format(errorMsg.stack || errorMsg.message, args));
+        } else {
+            this.log(LogLevel.Error, this.format(errorMsg, args));
         }
     }
 
-    error(message: string | Error, ...args: any[]): void {
-        if (this.checkLogLevel(LogLevel.Error)) {
-            if (message instanceof Error) {
-                const array = Array.prototype.slice.call(arguments) as unknown[];
-                array[0] = message.stack;
-                this.log(LogLevel.Error, this.format(array));
-            } else {
-                this.log(LogLevel.Error, this.format([message, ...args]));
-            }
+    private format(message: string, args: any[]): string {
+        if (args.length > 0) {
+            return `${message} ${args.map((arg: any) => isObject(arg) || isArray(arg) ? JSON.stringify(arg) : arg).join(' ')}`;
         }
+        return message;
     }
-
-    private format(args: any): string {
-        let result = '';
-
-        for (let i = 0; i < args.length; i++) {
-            let a = args[i];
-
-            if (typeof a === 'object') {
-                try {
-                    a = JSON.stringify(a);
-                } catch (e) { }
-            }
-
-            result += (i > 0 ? ' ' : '') + a;
-        }
-
-        return result;
-    }
-    // end
 
 }

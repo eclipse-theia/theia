@@ -23,7 +23,7 @@ import { OutputChannelImpl } from './output-channel/output-channel-item';
 
 export class OutputChannelRegistryExtImpl implements OutputChannelRegistryExt {
 
-    private proxy: OutputChannelRegistryMain;
+    proxy: OutputChannelRegistryMain;
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(Ext.OUTPUT_CHANNEL_REGISTRY_MAIN);

@@ -65,7 +65,7 @@ export class OutputChannelImpl implements theia.OutputChannel {
         this.proxy.$close(this.name);
     }
 
-    private validate(): void {
+    protected validate(): void {
         if (this.disposed) {
             throw new Error('Channel has been closed');
         }
