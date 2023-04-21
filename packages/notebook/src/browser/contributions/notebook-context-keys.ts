@@ -83,7 +83,7 @@ export class NotebookContextKeyService {
         service.createKey(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, false);
         service.createKey(NOTEBOOK_CELL_LINE_NUMBERS, 'inherit');
         service.createKey(NOTEBOOK_CELL_EXECUTION_STATE, undefined);
-        service.createKey(NOTEBOOK_CELL_EXECUTING, false); // This only exists to simplify a context key expression, see #129625
+        service.createKey(NOTEBOOK_CELL_EXECUTING, false);
         service.createKey(NOTEBOOK_CELL_HAS_OUTPUTS, false);
         service.createKey(NOTEBOOK_CELL_INPUT_COLLAPSED, false);
         service.createKey(NOTEBOOK_CELL_OUTPUT_COLLAPSED, false);
