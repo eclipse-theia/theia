@@ -55,6 +55,7 @@ import { DebugBreakpoint } from './model/debug-breakpoint';
 import { nls } from '@theia/core/lib/common/nls';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
 import { DebugConfiguration } from '../common/debug-configuration';
+import { DebugExceptionBreakpoint } from './view/debug-exception-breakpoint';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -211,6 +212,11 @@ export namespace DebugCommands {
         category: DEBUG_CATEGORY,
         originalLabel: 'Edit Logpoint...',
         label: nlsEditBreakpoint('Logpoint')
+    }, '', DEBUG_CATEGORY_KEY);
+    export const EDIT_BREAKPOINT_CONDITION = Command.toLocalizedCommand({
+        id: 'debug.breakpoint.editCondition',
+        category: DEBUG_CATEGORY,
+        label: 'Edit Condition...'
     }, '', DEBUG_CATEGORY_KEY);
     export const REMOVE_BREAKPOINT = Command.toLocalizedCommand({
         id: 'debug.breakpoint.remove',
@@ -596,7 +602,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         registerMenuActions(DebugBreakpointsWidget.EDIT_MENU,
             DebugCommands.EDIT_BREAKPOINT,
-            DebugCommands.EDIT_LOGPOINT
+            DebugCommands.EDIT_LOGPOINT,
+            DebugCommands.EDIT_BREAKPOINT_CONDITION
         );
         registerMenuActions(DebugBreakpointsWidget.REMOVE_MENU,
             DebugCommands.REMOVE_BREAKPOINT,
@@ -786,6 +793,16 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             },
             isEnabled: () => !!this.selectedLogpoint,
             isVisible: () => !!this.selectedLogpoint
+        });
+        registry.registerCommand(DebugCommands.EDIT_BREAKPOINT_CONDITION, {
+            execute: async () => {
+                const { selectedExceptionBreakpoint } = this;
+                if (selectedExceptionBreakpoint) {
+                    await selectedExceptionBreakpoint.editCondition();
+                }
+            },
+            isEnabled: () => !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition,
+            isVisible: () => !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition
         });
         registry.registerCommand(DebugCommands.REMOVE_BREAKPOINT, {
             execute: () => {
@@ -1215,6 +1232,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         if (this.selectedAnyBreakpoint instanceof DebugInstructionBreakpoint) {
             return this.selectedAnyBreakpoint;
         }
+    }
+    get selectedExceptionBreakpoint(): DebugExceptionBreakpoint | undefined {
+        const { breakpoints } = this;
+        const selectedElement = breakpoints && breakpoints.selectedElement;
+        return selectedElement instanceof DebugExceptionBreakpoint ? selectedElement : undefined;
     }
 
     get selectedSettableBreakpoint(): DebugFunctionBreakpoint | DebugInstructionBreakpoint | DebugSourceBreakpoint | undefined {

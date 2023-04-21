@@ -55,12 +55,14 @@ export namespace BreakpointMarker {
 
 export interface ExceptionBreakpoint {
     enabled: boolean;
+    condition?: string;
     raw: DebugProtocol.ExceptionBreakpointsFilter;
 }
 export namespace ExceptionBreakpoint {
     export function create(data: DebugProtocol.ExceptionBreakpointsFilter, origin?: ExceptionBreakpoint): ExceptionBreakpoint {
         return {
             enabled: origin ? origin.enabled : false,
+            condition: origin ? origin.condition : undefined,
             raw: {
                 ...(origin && origin.raw),
                 ...data

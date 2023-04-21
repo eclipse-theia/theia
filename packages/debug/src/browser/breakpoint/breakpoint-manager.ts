@@ -201,6 +201,14 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         }
     }
 
+    updateExceptionBreakpoint(filter: string, options: Partial<Pick<ExceptionBreakpoint, 'condition' | 'enabled'>>): void {
+        const breakpoint = this.getExceptionBreakpoint(filter);
+        if (breakpoint) {
+            Object.assign(breakpoint, options);
+            this.fireOnDidChangeMarkers(BreakpointManager.EXCEPTION_URI);
+        }
+    }
+
     protected functionBreakpoints: FunctionBreakpoint[] = [];
 
     getFunctionBreakpoints(): FunctionBreakpoint[] {
