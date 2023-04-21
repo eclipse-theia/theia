@@ -287,7 +287,8 @@ export interface TerminalServiceExt {
     getEnvironmentVariableCollection(extensionIdentifier: string): theia.EnvironmentVariableCollection;
 }
 export interface OutputChannelRegistryExt {
-    createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel
+    createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel,
+    createOutputChannel(name: string, pluginInfo: PluginInfo, options: { log: true }): theia.LogOutputChannel
 }
 
 export interface ConnectionMain {

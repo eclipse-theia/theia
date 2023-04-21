@@ -20,7 +20,7 @@ export class OutputChannelImpl implements theia.OutputChannel {
 
     private disposed: boolean;
 
-    constructor(readonly name: string, private proxy: OutputChannelRegistryMain, private readonly pluginInfo: PluginInfo) {
+    constructor(readonly name: string, protected readonly proxy: OutputChannelRegistryMain, protected readonly pluginInfo: PluginInfo) {
     }
 
     dispose(): void {
@@ -65,7 +65,7 @@ export class OutputChannelImpl implements theia.OutputChannel {
         this.proxy.$close(this.name);
     }
 
-    private validate(): void {
+    protected validate(): void {
         if (this.disposed) {
             throw new Error('Channel has been closed');
         }
