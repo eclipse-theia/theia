@@ -126,11 +126,6 @@ export interface NotebookCellStatusBarItemProvider {
     provideCellStatusBarItems(uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarItemList | undefined>;
 }
 
-export interface OutputItemDto {
-    readonly mime: string;
-    readonly data: BinaryBuffer;
-}
-
 export interface CellOutput {
     outputs: OutputItemDto[];
     metadata?: Record<string, unknown>;
