@@ -30,6 +30,7 @@ import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { IQuickAccessController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
 import { QuickAccessController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickAccess';
 import { ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import { IContextKey } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { IListOptions, List } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/list/listWidget';
 import * as monaco from '@theia/monaco-editor-core';
 import { ResolvedKeybinding } from '@theia/monaco-editor-core/esm/vs/base/common/keybindings';
@@ -80,6 +81,8 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     protected container: HTMLElement;
     private quickInputList: List<unknown>;
 
+    protected inQuickOpen: IContextKey<boolean>;
+
     get backButton(): IQuickInputButton { return this.controller.backButton; }
     get onShow(): monaco.IEvent<void> { return this.controller.onShow; }
     get onHide(): monaco.IEvent<void> { return this.controller.onHide; }
@@ -89,9 +92,13 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         this.initContainer();
         this.initController();
         this.quickAccess = new QuickAccessController(this, StandaloneServices.get(IInstantiationService));
+        this.inQuickOpen = this.contextKeyService.createKey<boolean>('inQuickOpen', false);
         this.controller.onShow(() => {
             this.container.style.top = this.shell.mainPanel.node.getBoundingClientRect().top + 'px';
+            this.inQuickOpen.set(true);
         });
+        this.controller.onHide(() => this.inQuickOpen.set(false));
+
         this.themeService.initialized.then(() => this.controller.applyStyles(this.getStyles()));
         // Hook into the theming service of Monaco to ensure that the updates are ready.
         StandaloneServices.get(IStandaloneThemeService).onDidColorThemeChange(() => this.controller.applyStyles(this.getStyles()));

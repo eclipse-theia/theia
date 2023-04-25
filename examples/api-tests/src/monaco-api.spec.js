@@ -32,7 +32,8 @@ describe('Monaco API', async function () {
     const { TokenizationRegistry } = require('@theia/monaco-editor-core/esm/vs/editor/common/languages');
     const { MonacoContextKeyService } = require('@theia/monaco/lib/browser/monaco-context-key-service');
     const { URI } = require('@theia/monaco-editor-core/esm/vs/base/common/uri');
-
+    const { animationFrame } = require('@theia/core/lib/browser/browser');
+    
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
     const workspaceService = container.get(WorkspaceService);
@@ -183,6 +184,22 @@ describe('Monaco API', async function () {
         assert.isTrue(contextKeys.match(`${key} == ${firstValue}`));
         await commands.executeCommand(setContext, key, secondValue);
         assert.isTrue(contextKeys.match(`${key} == ${secondValue}`));
+    });
+
+    it('Supports context key: inQuickOpen', async () => {
+        const inQuickOpenContextKey = 'inQuickOpen';
+        const quickOpenCommands = ['file-search.openFile', 'workbench.action.showCommands'];
+        const CommandThatChangesFocus = 'workbench.files.action.focusFilesExplorer';
+
+        for (const cmd of quickOpenCommands) {
+            assert.isFalse(contextKeys.match(inQuickOpenContextKey));
+            await commands.executeCommand(cmd);
+            assert.isTrue(contextKeys.match(inQuickOpenContextKey));
+
+            await commands.executeCommand(CommandThatChangesFocus);
+            await animationFrame();
+            assert.isFalse(contextKeys.match(inQuickOpenContextKey));
+        }
     });
 
 });
