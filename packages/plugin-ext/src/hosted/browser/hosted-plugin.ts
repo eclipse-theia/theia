@@ -510,7 +510,7 @@ export class HostedPluginSupport {
                 workspaceState,
                 env: {
                     queryParams: getQueryParameters(),
-                    language: nls.locale || 'en',
+                    language: nls.locale || nls.defaultLocale,
                     shell: defaultShell,
                     uiKind: isElectron ? UIKind.Desktop : UIKind.Web,
                     appName: FrontendApplicationConfigProvider.get().applicationName,

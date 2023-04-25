@@ -16,6 +16,7 @@
 
 import * as express from 'express';
 import { inject, injectable } from 'inversify';
+import { nls } from '../../common/nls';
 import { Deferred } from '../../common/promise-util';
 import { BackendApplicationContribution } from '../backend-application';
 import { LocalizationRegistry } from './localization-contribution';
@@ -44,7 +45,7 @@ export class LocalizationBackendContribution implements BackendApplicationContri
         app.get('/i18n/:locale', async (req, res) => {
             await this.waitForInitialization();
             let locale = req.params.locale;
-            locale = this.localizationProvider.getAvailableLanguages().some(e => e.languageId === locale) ? locale : 'en';
+            locale = this.localizationProvider.getAvailableLanguages().some(e => e.languageId === locale) ? locale : nls.defaultLocale;
             this.localizationProvider.setCurrentLanguage(locale);
             res.send(this.localizationProvider.loadLocalization(locale));
         });

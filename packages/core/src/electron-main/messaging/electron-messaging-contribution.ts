@@ -14,16 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { IpcMainEvent, ipcMain, WebContents } from '@theia/electron/shared/electron';
+import { WebContents } from '@theia/electron/shared/electron';
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { MessagingContribution } from '../../node/messaging/messaging-contribution';
-import { ElectronConnectionHandler, THEIA_ELECTRON_IPC_CHANNEL_NAME } from '../../electron-common/messaging/electron-connection-handler';
+import { ElectronConnectionHandler } from '../../electron-common/messaging/electron-connection-handler';
 import { ElectronMainApplicationContribution } from '../electron-main-application';
 import { ElectronMessagingService } from './electron-messaging-service';
 import { AbstractChannel, Channel, ChannelMultiplexer, MessageProvider } from '../../common/message-rpc/channel';
-import { Emitter, WriteBuffer } from '../../common';
+import { ConnectionHandler, Emitter, WriteBuffer } from '../../common';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
+import { TheiaRendererAPI } from '../electron-api-main';
 
 /**
  * This component replicates the role filled by `MessagingContribution` but for Electron.
@@ -40,7 +41,7 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
     protected readonly messagingContributions: ContributionProvider<ElectronMessagingService.Contribution>;
 
     @inject(ContributionProvider) @named(ElectronConnectionHandler)
-    protected readonly connectionHandlers: ContributionProvider<ElectronConnectionHandler>;
+    protected readonly connectionHandlers: ContributionProvider<ConnectionHandler>;
 
     protected readonly channelHandlers = new MessagingContribution.ConnectionHandlers<Channel>();
     /**
@@ -50,13 +51,10 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
 
     @postConstruct()
     protected init(): void {
-        ipcMain.on(THEIA_ELECTRON_IPC_CHANNEL_NAME, (event: IpcMainEvent, data: Uint8Array) => {
-            this.handleIpcEvent(event, data);
-        });
+        TheiaRendererAPI.onIpcData((sender, data) => this.handleIpcEvent(sender, data));
     }
 
-    protected handleIpcEvent(event: IpcMainEvent, data: Uint8Array): void {
-        const sender = event.sender;
+    protected handleIpcEvent(sender: WebContents, data: Uint8Array): void {
         // Get the multiplexer for a given window id
         try {
             const windowChannelData = this.windowChannelMultiplexer.get(sender.id) ?? this.createWindowChannelData(sender);
@@ -133,7 +131,7 @@ export class ElectronWebContentChannel extends AbstractChannel {
 
         writer.onCommit(buffer => {
             if (!this.sender.isDestroyed()) {
-                this.sender.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, buffer);
+                TheiaRendererAPI.sendData(this.sender, buffer);
             }
         });
 

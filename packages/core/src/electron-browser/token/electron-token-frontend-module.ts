@@ -14,10 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as electronRemote from '../../../electron-shared/@electron/remote';
 import { ContainerModule } from 'inversify';
 import { ElectronSecurityToken } from '../../electron-common/electron-token';
 
 export default new ContainerModule(bind => {
-    bind(ElectronSecurityToken).toConstantValue(electronRemote.getGlobal(ElectronSecurityToken));
+    bind(ElectronSecurityToken).toConstantValue(window.electronTheiaCore.getSecurityToken());
 });

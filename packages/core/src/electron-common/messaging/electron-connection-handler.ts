@@ -14,17 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ConnectionHandler } from '../../common/messaging/handler';
-
-/**
- * Name of the channel used with `ipcMain.on/emit`.
- */
-export const THEIA_ELECTRON_IPC_CHANNEL_NAME = 'theia-electron-ipc';
-
 /**
  * Electron-IPC-specific connection handler.
  * Use this if you want to establish communication between the frontend and the electron-main process.
  */
 export const ElectronConnectionHandler = Symbol('ElectronConnectionHandler');
-export interface ElectronConnectionHandler extends ConnectionHandler {
-}

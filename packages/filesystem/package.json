@@ -25,6 +25,10 @@
   },
   "theiaExtensions": [
     {
+      "preload": "lib/electron-browser/preload",
+      "electronMain": "lib/electron-main/electron-main-module"
+    },
+    {
       "frontend": "lib/browser/filesystem-frontend-module",
       "backend": "lib/node/filesystem-backend-module"
     },

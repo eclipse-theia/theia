@@ -234,6 +234,7 @@ import { PluginPackage } from '../common';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FilePermission } from '@theia/filesystem/lib/common/files';
 import { TabsExtImpl } from './tabs';
+import { LocalizationExtImpl } from './localization-ext';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -245,7 +246,8 @@ export function createAPIFactory(
     workspaceExt: WorkspaceExtImpl,
     messageRegistryExt: MessageRegistryExt,
     clipboard: ClipboardExt,
-    webviewExt: WebviewsExtImpl
+    webviewExt: WebviewsExtImpl,
+    localizationExt: LocalizationExtImpl
 ): PluginAPIFactory {
 
     const authenticationExt = rpc.set(MAIN_RPC_CONTEXT.AUTHENTICATION_EXT, new AuthenticationExtImpl(rpc));
@@ -481,8 +483,10 @@ export function createAPIFactory(
 
                 return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority, id);
             },
-            createOutputChannel(name: string): theia.OutputChannel {
-                return outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin));
+            createOutputChannel(name: string, options?: { log: true }): any {
+                return !options
+                    ? outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin))
+                    : outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin), options);
             },
             createWebviewPanel(viewType: string,
                 title: string,
@@ -1073,6 +1077,27 @@ export function createAPIFactory(
             }
         };
 
+        const l10n: typeof theia.l10n = {
+            // eslint-disable-next-line max-len
+            t(...params: [message: string, ...args: Array<string | number | boolean>] | [message: string, args: Record<string, any>] | [{ message: string; args?: Array<string | number | boolean> | Record<string, any>; comment: string | string[] }]): string {
+                if (typeof params[0] === 'string') {
+                    const key = params.shift() as string;
+
+                    // We have either rest args which are Array<string | number | boolean> or an array with a single Record<string, any>.
+                    // This ensures we get a Record<string | number, any> which will be formatted correctly.
+                    const argsFormatted = !params || typeof params[0] !== 'object' ? params : params[0];
+                    return localizationExt.translateMessage(plugin.model.id, { message: key, args: argsFormatted as Record<string | number, any> | undefined });
+                }
+                return localizationExt.translateMessage(plugin.model.id, params[0]);
+            },
+            get bundle() {
+                return localizationExt.getBundle(plugin.model.id);
+            },
+            get uri() {
+                return localizationExt.getBundleUri(plugin.model.id);
+            }
+        };
+
         // notebooks API (@stubbed)
         // The following implementation is temporarily `@stubbed` and marked as such under `theia.d.ts`
         const notebooks: typeof theia.notebooks = {
@@ -1148,6 +1173,7 @@ export function createAPIFactory(
             tasks,
             scm,
             notebooks,
+            l10n,
             tests,
             // Types
             StatusBarAlignment: StatusBarAlignment,

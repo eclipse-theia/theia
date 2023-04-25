@@ -41,7 +41,6 @@
     "macaddress": "^0.2.9",
     "mime": "^2.4.4",
     "ps-tree": "^1.2.0",
-    "request": "^2.82.0",
     "semver": "^5.4.1",
     "uuid": "^8.0.0",
     "vhost": "^3.0.2",
@@ -90,8 +89,7 @@
     "@types/decompress": "^4.2.2",
     "@types/escape-html": "^0.0.20",
     "@types/lodash.clonedeep": "^4.5.3",
-    "@types/ps-tree": "^1.1.0",
-    "@types/request": "^2.0.3"
+    "@types/ps-tree": "^1.1.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
