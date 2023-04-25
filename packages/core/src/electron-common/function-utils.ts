@@ -62,6 +62,8 @@ export class FunctionUtils {
     }
 
     mapfn<T extends AnyFunction, U extends AnyFunction>(callbackfn: T, mapfn: (callbackfn: T) => U): U {
+        // We need to preserve the callback's identity based on the
+        // (callbackfn, mapfn) pair.
         let mappedfns = this.mappedfnCache.get(callbackfn);
         if (!mappedfns) {
             this.mappedfnCache.set(callbackfn, mappedfns = new WeakMap());

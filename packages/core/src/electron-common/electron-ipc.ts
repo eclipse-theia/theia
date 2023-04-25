@@ -155,6 +155,13 @@ export interface IpcHandleConverter {
      * in a way that Electron understands.
      */
     getIpcHandle<T>(value: T): T
+    /**
+     * Replace `value` with `replacement` when creating proxies.
+     *
+     * Note that `replacement` won't be processed and will be used as-is when
+     * sent using the Electron APIs.
+     */
+    replaceWith(value: object, replacement: unknown): void
 }
 
 /**

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { createIpcNamespace } from './electron-ipc';
-import { preloadServiceIdentifier } from './electron-preload';
+import { preloadServiceIdentifier } from './preload';
 import { ElectronCurrentWindow } from './electron-current-window';
 
 export const ELECTRON_WINDOWS_IPC = createIpcNamespace('theia-electron-windows', channel => ({

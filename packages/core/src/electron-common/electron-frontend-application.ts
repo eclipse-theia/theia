@@ -16,7 +16,7 @@
 
 import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
 import { createIpcNamespace } from './electron-ipc';
-import { preloadServiceIdentifier } from './electron-preload';
+import { preloadServiceIdentifier } from './preload';
 
 export const ELECTRON_FRONTEND_APPLICATION_IPC = createIpcNamespace('theia-electron-frontend-application', channel => ({
     updateApplicationState: channel<(state: FrontendApplicationState) => void>(),

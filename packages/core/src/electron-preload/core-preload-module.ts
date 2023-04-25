@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import * as common from '../electron-common';
 import { TheiaIpcWindowImpl } from '../electron-browser/electron-ipc-window-impl';
+import * as common from '../electron-common';
 import { ElectronClipboardServiceImpl } from './electron-clipboard-impl';
 import { TheiaContextBridgeImpl } from './electron-context-bridge-impl';
 import { ElectronCurrentWindowImpl } from './electron-current-window-impl';
@@ -29,6 +29,7 @@ import { TheiaPreloadContextImpl } from './electron-preload-context-impl';
 import { ElectronShellImpl } from './electron-shell-impl';
 import { ElectronSecurityTokenServiceImpl } from './electron-token-impl';
 import { ElectronWindowsImpl } from './electron-windows-impl';
+import { IpcExclusionsContribution } from './ipc-exclusions-contribution';
 
 export default new ContainerModule(bind => {
     bind(common.FunctionUtils).toSelf().inSingletonScope();
@@ -37,7 +38,10 @@ export default new ContainerModule(bind => {
     bind(common.TheiaIpcRenderer).to(TheiaIpcRendererImpl).inSingletonScope();
     bind(common.TheiaContextBridge).to(TheiaContextBridgeImpl).inSingletonScope();
     bind(common.IpcHandleConverter).to(ElectronIpcHandleConverterImpl).inSingletonScope();
-    bind(common.ElectronPreloadContribution).to(ElectronMessagePortBroker).inSingletonScope();
+    bind(ElectronMessagePortBroker).toSelf().inSingletonScope();
+    bind(common.ElectronPreloadContribution).toService(ElectronMessagePortBroker);
+    bind(IpcExclusionsContribution).toSelf().inSingletonScope();
+    bind(common.ElectronPreloadContribution).toService(IpcExclusionsContribution);
     const { bindPreloadApi } = common;
     bindPreloadApi(bind, common.ElectronClipboardService).to(ElectronClipboardServiceImpl).inSingletonScope();
     bindPreloadApi(bind, common.ElectronCurrentWindow).to(ElectronCurrentWindowImpl).inSingletonScope();

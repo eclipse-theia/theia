@@ -26,6 +26,8 @@ import { createIpcNamespace, TheiaIpcMainEvent } from './electron-ipc';
 export type ConnectionRequest = [requestId: number, handlerId: string, handlerParams: any[]];
 /**
  * @internal
+ *
+ * No error means the connection was accepted.
  */
 export type ConnectionResponse = [requestId: number, error?: any];
 
@@ -77,11 +79,17 @@ export interface MessagePortClient {
      *
      * Don't forget to call {@link MessagePort.start}.
      */
-    connect<T extends any[]>(handlerId: string | MessagePortHandlerId<T>, ...params: T): Promise<MessagePort>
+    connect<T extends any[]>(handlerId: string | MessagePortHandlerId<T>, ...params: T): ConnectResult
+}
+
+export interface ConnectResult {
     /**
-     * Open a connection with a handler located in Electron's main context.
-     *
-     * Don't forget to call {@link MessagePort.start}.
+     * The uninitialized port that will be used for communication.
      */
-    connectSync<T extends any[]>(handlerId: string | MessagePortHandlerId<T>, ...params: T): MessagePort
+    port: MessagePort
+    /**
+     * Promise that will resolve once the connection request is accepted, and
+     * will reject if refused.
+     */
+    promise: Promise<MessagePort>
 }

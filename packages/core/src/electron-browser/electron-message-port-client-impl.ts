@@ -16,8 +16,13 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import { Deferred } from '../common/promise-util';
-import { ConnectionResponse, ELECTRON_MESSAGE_PORT_IPC as ipc, MessagePortClient, TheiaIpcWindow } from '../electron-common';
+import { ConnectionResponse, ConnectResult, ELECTRON_MESSAGE_PORT_IPC as ipc, MessagePortClient, TheiaIpcWindow } from '../electron-common';
 
+/**
+ * This component expects to be communicating with the
+ * {@link ElectronMessagePortBroker} living in the Electron preload context
+ * which ultimately will relay the messages to the Electron main context.
+ */
 @injectable()
 export class MessagePortClientImpl implements MessagePortClient {
 
@@ -32,19 +37,13 @@ export class MessagePortClientImpl implements MessagePortClient {
         this.ipcWindow.on(ipc.connectionResponse, this.onConnectionResponse, this);
     }
 
-    async connect(handlerId: string, ...handlerParams: unknown[]): Promise<MessagePort> {
+    connect(handlerId: string, ...handlerParams: unknown[]): ConnectResult {
         const [request, port] = this.createConnectionRequest(handlerId, handlerParams);
-        await request.promise;
-        return port;
-    }
-
-    connectSync(handlerId: string, ...handlerParams: unknown[]): MessagePort {
-        const [request, port] = this.createConnectionRequest(handlerId, handlerParams);
-        request.promise.catch(error => {
-            console.error(error);
+        const promise = request.promise.then(() => port, error => {
             port.close();
+            throw error;
         });
-        return port;
+        return { port, promise };
     }
 
     protected createConnectionRequest(handlerId: string, handlerParams: unknown[]): [Deferred, MessagePort] {

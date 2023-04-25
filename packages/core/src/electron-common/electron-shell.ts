@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { createIpcNamespace } from './electron-ipc';
-import { preloadServiceIdentifier } from './electron-preload';
+import { preloadServiceIdentifier } from './preload';
 
 export const ELECTRON_SHELL_IPC = createIpcNamespace('theia-electron-shell', channel => ({
     showItemInFolder: channel<(fsPath: string) => void>()

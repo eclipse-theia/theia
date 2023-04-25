@@ -24,7 +24,7 @@ import { IpcReflectKeys, FunctionUtils, IpcHandleConverter, ProxyableOptions, Pr
 export class ElectronIpcHandleConverterImpl implements IpcHandleConverter {
 
     /** original => handle */
-    protected handleCache = new WeakMap<object, object>();
+    protected handleCache = new WeakMap<object, unknown>();
     /** prototype => properties */
     protected propertiesCache = new WeakMap<Prototype, ReadonlySet<string>>();
 
@@ -33,6 +33,10 @@ export class ElectronIpcHandleConverterImpl implements IpcHandleConverter {
 
     getIpcHandle(value: any): any {
         return this.recursiveIpcHandle(value);
+    }
+
+    replaceWith(value: object, replacement: unknown): void {
+        this.handleCache.set(value, replacement);
     }
 
     /**
@@ -52,25 +56,20 @@ export class ElectronIpcHandleConverterImpl implements IpcHandleConverter {
         if (typeof value !== 'object' || value === null) {
             return value;
         }
+        if (this.handleCache.has(value)) {
+            return this.handleCache.get(value);
+        }
         if (isPrototype(value)) {
             console.error('invalid value: not a proxyable instance');
             return null;
-        }
-        // We don't need to walk the prototype chain if the prototype is already Object or null
-        const prototype = getPrototypeOf(value);
-        if (prototype === null || prototype === Object.prototype) {
-            return value;
         }
         if (Array.isArray(value)) {
             return value.map(element => this.recursiveIpcHandle(element));
         }
         if (isPromiseLike(value)) {
-            return this.cacheMapping(value, val => val.then(resolved => this.recursiveIpcHandle(resolved)));
+            return this.cacheMapping(value, promise => promise.then(resolved => this.recursiveIpcHandle(resolved)));
         }
-        if (this.isProxyable(value)) {
-            return this.cacheMapping(value, val => this.createProxyHandle(val));
-        }
-        return value;
+        return this.cacheMapping(value, object => this.createProxyHandle(object));
     }
 
     protected cacheMapping<T extends object, U extends object>(value: T, map: (value: T) => U): U {
@@ -83,6 +82,8 @@ export class ElectronIpcHandleConverterImpl implements IpcHandleConverter {
 
     protected createProxyHandle(value: object): object {
         const handle = Object.create(null);
+        // We need to store the unfinished object now to break circular loops:
+        this.handleCache.set(value, handle);
         this.collectProperties(value).forEach(property => {
             handle[property] = this.recursiveIpcHandle((value as any)[property], value);
         });
@@ -90,25 +91,29 @@ export class ElectronIpcHandleConverterImpl implements IpcHandleConverter {
     }
 
     protected collectProperties(value: object | null): ReadonlySet<string> {
-        // Recursion stop condition
-        if (value === null || value === Object.prototype || value === Function.prototype) {
+        if (value === null) {
             return new Set();
         }
+        const proxyable = this.getProxyableOptions(value);
         if (isPrototype(value)) {
+            if (value === Object.prototype || value === Function.prototype as object) {
+                return new Set();
+            }
             const cached = this.propertiesCache.get(value);
             if (cached) {
                 return cached;
             }
             const properties = new Set(this.collectProperties(getPrototypeOf(value)));
-            this.getProxyableOptions(value)?.fields?.forEach(property => properties.add(property));
+            proxyable?.fields?.forEach(property => properties.add(property));
             this.collectOwnProperties(value, properties);
             this.propertiesCache.set(value, properties);
             return properties;
-        } else {
+        } else if (proxyable) {
             const properties = new Set(this.collectProperties(getPrototypeOf(value)));
             this.collectOwnProperties(value, properties);
             return properties;
         }
+        return new Set(Object.keys(value));
     }
 
     protected collectOwnProperties(value: object, properties: Set<string>): void {
@@ -118,20 +123,18 @@ export class ElectronIpcHandleConverterImpl implements IpcHandleConverter {
             }
             const options = this.getProxyOptions(value, property);
             if (options?.expose === true) {
-                properties!.add(property);
+                properties.add(property);
             } else if (options?.expose === false) {
-                properties!.delete(property);
+                properties.delete(property);
             }
         });
     }
 
-    protected isProxyable(value: object): boolean {
-        const prototype = getPrototypeOf(value)!;
-        return this.propertiesCache.has(prototype) || this.getProxyableOptions(value) !== undefined;
-    }
-
     protected getProxyableOptions(target: object): ProxyableOptions | undefined {
-        return Reflect.getMetadata(IpcReflectKeys.Proxyable, target.constructor);
+        // null prototype objects don't have a constructor field:
+        if (typeof target.constructor === 'function') {
+            return Reflect.getMetadata(IpcReflectKeys.Proxyable, target.constructor);
+        }
     }
 
     protected getProxyOptions(target: object, property: string): ProxyOptions | undefined {

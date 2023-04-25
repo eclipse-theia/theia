@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { preloadServiceIdentifier } from './electron-preload';
+import { preloadServiceIdentifier } from './preload';
 import { createIpcNamespace } from './electron-ipc';
 import { interfaces } from 'inversify';
 

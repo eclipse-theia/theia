@@ -43,9 +43,10 @@ export class ElectronIpcConnectionProvider extends AbstractConnectionProvider<El
     }
 
     protected createMainChannel(): Channel {
-        return new ElectronIpcRendererChannel(this.messagePortClient.connectSync(ElectronConnectionHandlerId));
+        const { port, promise } = this.messagePortClient.connect(ElectronConnectionHandlerId);
+        promise.catch(console.error);
+        return new ElectronIpcRendererChannel(port);
     }
-
 }
 
 export class ElectronIpcRendererChannel extends AbstractChannel {

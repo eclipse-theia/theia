@@ -46,7 +46,6 @@ export default new ContainerModule(bind => {
     bind(FunctionUtils).toSelf().inSingletonScope();
     bind(TheiaIpcMain).to(TheiaIpcMainImpl).inSingletonScope();
     bind(ElectronMainApplication).toSelf().inSingletonScope();
-    bind(ElectronMessagingContribution).toSelf().inSingletonScope();
     bind(ElectronSecurityToken).toConstantValue(electronSecurityToken);
     bind(ElectronSecurityTokenService).toSelf().inSingletonScope();
 
@@ -54,20 +53,26 @@ export default new ContainerModule(bind => {
     bindContributionProvider(bind, ElectronMessagingService.Contribution);
     bindContributionProvider(bind, ElectronMainApplicationContribution);
 
-    bind(ElectronFrontendApplicationMain).toSelf().inSingletonScope();
-    bind(ElectronMessagePortServerMain).toSelf().inSingletonScope();
-
     bind(MessagePortServer).toService(ElectronMessagePortServerMain);
 
+    bind(ElectronMessagePortServerMain).toSelf().inSingletonScope();
     bind(ElectronMainApplicationContribution).toService(ElectronMessagePortServerMain);
+    bind(ElectronMessagingContribution).toSelf().inSingletonScope();
     bind(ElectronMainApplicationContribution).toService(ElectronMessagingContribution);
-    bind(ElectronMainApplicationContribution).to(ElectronSecurityTokenServiceMain).inSingletonScope();
-    bind(ElectronMainApplicationContribution).to(ElectronCurrentWindowMain).inSingletonScope();
-    bind(ElectronMainApplicationContribution).to(ElectronClipboardMain).inSingletonScope();
+    bind(ElectronSecurityTokenServiceMain).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(ElectronSecurityTokenServiceMain);
+    bind(ElectronCurrentWindowMain).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(ElectronCurrentWindowMain);
+    bind(ElectronClipboardMain).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(ElectronClipboardMain);
+    bind(ElectronFrontendApplicationMain).toSelf().inSingletonScope();
     bind(ElectronMainApplicationContribution).toService(ElectronFrontendApplicationMain);
-    bind(ElectronMainApplicationContribution).to(ElectronWindowsMain).inSingletonScope();
-    bind(ElectronMainApplicationContribution).to(ElectronShellMain).inSingletonScope();
-    bind(ElectronMainApplicationContribution).to(ElectronKeyboardLayoutMain).inSingletonScope();
+    bind(ElectronWindowsMain).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(ElectronWindowsMain);
+    bind(ElectronShellMain).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(ElectronShellMain);
+    bind(ElectronKeyboardLayoutMain).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(ElectronKeyboardLayoutMain);
 
     bind(ElectronMainWindowService).to(ElectronMainWindowServiceImpl).inSingletonScope();
     bind(ElectronConnectionHandler)

@@ -18,6 +18,11 @@
 import { inject, injectable } from 'inversify';
 import { ElectronPreloadContribution, ELECTRON_MESSAGE_PORT_IPC as ipc, TheiaIpcRenderer, TheiaIpcRendererEvent, TheiaIpcWindow } from '../electron-common';
 
+/**
+ * This component allows sending {@link MessagePort} from the browser context
+ * to the Electron main context by sitting in the Electron preload context
+ * and passing over messages from one context to the other.
+ */
 @injectable()
 export class ElectronMessagePortBroker implements ElectronPreloadContribution {
 

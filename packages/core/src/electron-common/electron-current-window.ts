@@ -16,7 +16,7 @@
 
 import { MenuDto } from './electron-menu';
 import { createIpcNamespace, IpcEvent } from './electron-ipc';
-import { preloadServiceIdentifier } from './electron-preload';
+import { preloadServiceIdentifier } from './preload';
 
 export const ELECTRON_CURRENT_WINDOW_IPC = createIpcNamespace('theia-electron-current-window', channel => ({
     onFocus: channel<() => void>(),

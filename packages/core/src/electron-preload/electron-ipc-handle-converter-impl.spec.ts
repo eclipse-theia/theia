@@ -23,6 +23,10 @@ import { ElectronIpcHandleConverterImpl } from './electron-ipc-handle-converter-
 
 describe('IpcHandleConverterImpl', () => {
 
+    function randomObject(): object {
+        return { value: Math.random() };
+    }
+
     function createIpcHandleConverter(): IpcHandleConverter {
         const container = new Container();
         container.bind(FunctionUtils).toSelf().inSingletonScope();
@@ -30,10 +34,12 @@ describe('IpcHandleConverterImpl', () => {
         return container.get(IpcHandleConverter);
     }
 
-    describe('pass-through values', () => {
+    describe('simple values', () => {
+
         const regularObject = {} as any;
         regularObject.nestedObject = {} as any;
         regularObject.nestedObject.someField = 'some value';
+
         const nullObject = Object.create(null);
         nullObject.nestedNullObject = Object.create(null);
         nullObject.nestedNullObject.otherField = 'other value';
@@ -44,7 +50,7 @@ describe('IpcHandleConverterImpl', () => {
         });
 
         function test(message: string, value: unknown): void {
-            it(message, () => assert.deepStrictEqual(value, ipcHandleConverter.getIpcHandle(value)));
+            it(message, () => assert.deepStrictEqual(ipcHandleConverter.getIpcHandle(value), value));
         }
 
         test('regular object', regularObject);
@@ -56,11 +62,78 @@ describe('IpcHandleConverterImpl', () => {
         test('undefined', undefined);
     });
 
-    describe('complex objects', () => {
+    describe('complex values', () => {
 
-        function randomObject(): object {
-            return { value: Math.random() };
-        }
+        let ipcHandleConverter: IpcHandleConverter;
+        beforeEach(() => {
+            ipcHandleConverter = createIpcHandleConverter();
+        });
+
+        it('recursive object', () => {
+            const instance: any = {};
+            instance.self = instance;
+            instance.method = () => 2;
+            const handle = ipcHandleConverter.getIpcHandle(instance);
+            assert.strictEqual(handle, handle.self);
+            assert.strictEqual(handle.self.method(), 2);
+        });
+
+        it('object replacement', () => {
+            const target = randomObject();
+            ipcHandleConverter.replaceWith(target, -1);
+            const object = {
+                someField: 'some value',
+                shouldBeReplaced: target as unknown,
+                someNestedField: {
+                    shouldAlsoBeReplaced: target as unknown
+                }
+            };
+            const handle = ipcHandleConverter.getIpcHandle(object);
+            assert.deepStrictEqual(handle, {
+                someField: 'some value',
+                shouldBeReplaced: -1,
+                someNestedField: {
+                    shouldAlsoBeReplaced: -1
+                }
+            });
+        });
+
+        it('function wrapping', () => {
+            const target = randomObject();
+            ipcHandleConverter.replaceWith(target, -1);
+            function someFunction(): object {
+                return {
+                    shouldBeReplaced: target as unknown
+                };
+            }
+            const handle = ipcHandleConverter.getIpcHandle(someFunction);
+            assert.deepStrictEqual(handle(), {
+                shouldBeReplaced: -1
+            });
+        });
+
+        it('promise wrapping', async () => {
+            const target = randomObject();
+            ipcHandleConverter.replaceWith(target, -1);
+            const promise = Promise.resolve({
+                shouldBeReplaced: target as unknown
+            });
+            const handle = ipcHandleConverter.getIpcHandle(promise);
+            assert.deepStrictEqual(await handle, {
+                shouldBeReplaced: -1
+            });
+        });
+
+        it('array wrapping', () => {
+            const target = randomObject();
+            ipcHandleConverter.replaceWith(target, -1);
+            const array = [0, 1, { shouldBeReplaced: target }, target];
+            const handle = ipcHandleConverter.getIpcHandle(array);
+            assert.sameDeepOrderedMembers(handle, [0, 1, { shouldBeReplaced: -1 }, -1]);
+        });
+    });
+
+    describe('objects with prototypes', () => {
 
         class NonProxyableBase {
 
@@ -204,15 +277,5 @@ describe('IpcHandleConverterImpl', () => {
             'publicFieldA',
             'publicMethodA'
         ]);
-
-        it('recursive object', () => {
-            const ipcHandleConverter = createIpcHandleConverter();
-            const instance: any = {};
-            instance.self = instance;
-            instance.method = () => 2;
-            const handle = ipcHandleConverter.getIpcHandle(instance);
-            assert.strictEqual(handle, handle.self);
-            assert.strictEqual(handle.self.method(), 2);
-        });
     });
 });

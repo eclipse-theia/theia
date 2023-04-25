@@ -16,7 +16,7 @@
 
 import { NativeKeyboardLayout } from '../common/keyboard/keyboard-layout-provider';
 import { createIpcNamespace, IpcEvent } from './electron-ipc';
-import { preloadServiceIdentifier } from './electron-preload';
+import { preloadServiceIdentifier } from './preload';
 
 export { NativeKeyboardLayout };
 

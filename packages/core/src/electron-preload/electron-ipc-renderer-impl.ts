@@ -106,20 +106,25 @@ export class TheiaIpcRendererImpl implements TheiaIpcRenderer {
         this.electronIpcRenderer.sendToHost(channel.channel, ...args);
     }
 
-    protected async onInvokeRequest(event: IpcRendererEvent, invokeChannel: string, invokeId: number, args: any[]): Promise<void> {
+    protected onInvokeRequest(event: IpcRendererEvent, invokeChannel: string, invokeId: number, args: any[]): void {
         const handle = this.handleListeners.get(invokeChannel);
         if (!handle) {
-            event.sender.send(ipc.invokeResponse.channel, invokeChannel, invokeId, new Error('no handler'));
-        } else {
-            try {
-                event.sender.send(ipc.invokeResponse.channel, invokeChannel, invokeId, undefined, await handle.handler(...args));
-            } catch (error) {
-                event.sender.send(ipc.invokeResponse.channel, invokeChannel, invokeId, error);
-            } finally {
-                if (handle.once) {
-                    this.handleListeners.delete(invokeChannel);
-                }
-            }
+            const error = new Error(`no handler for: "${invokeChannel}"`);
+            console.error(error);
+            event.sender.send(ipc.invokeResponse.channel, invokeChannel, invokeId, error);
+            return;
         }
+        if (handle.once) {
+            this.handleListeners.delete(invokeChannel);
+        }
+        Promise.resolve(handle.handler(...args)).then(
+            response => {
+                event.sender.send(ipc.invokeResponse.channel, invokeChannel, invokeId, undefined, response);
+            },
+            error => {
+                console.error(error);
+                event.sender.send(ipc.invokeResponse.channel, invokeChannel, invokeId, error);
+            }
+        );
     }
 }

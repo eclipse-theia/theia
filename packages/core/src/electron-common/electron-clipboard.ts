@@ -17,7 +17,7 @@
 // Only importing a type, it should be defined in common anyway:
 // eslint-disable-next-line @theia/runtime-import-check
 import type { ClipboardService } from '../browser/clipboard-service';
-import { preloadServiceIdentifier } from './electron-preload';
+import { preloadServiceIdentifier } from './preload';
 import { createIpcNamespace } from './electron-ipc';
 
 export const ELECTRON_CLIPBOARD_IPC = createIpcNamespace('theia-electron-clipboard', channel => ({
