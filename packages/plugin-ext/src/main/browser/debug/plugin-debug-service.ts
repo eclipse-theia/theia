@@ -142,7 +142,7 @@ export class PluginDebugService implements DebugService {
         return results;
     }
 
-    async fetchDynamicDebugConfiguration(name: string, providerType: string): Promise<DebugConfiguration | undefined> {
+    async fetchDynamicDebugConfiguration(name: string, providerType: string, folder?: string): Promise<DebugConfiguration | undefined> {
         const pluginProviders =
             Array.from(this.configurationProviders.values()).filter(p => (
                 p.triggerKind === DebugConfigurationProviderTriggerKind.Dynamic &&
@@ -151,7 +151,7 @@ export class PluginDebugService implements DebugService {
             ));
 
         for (const provider of pluginProviders) {
-            const configurations = await provider.provideDebugConfigurations(undefined);
+            const configurations = await provider.provideDebugConfigurations(folder);
             for (const configuration of configurations) {
                 if (configuration.name === name) {
                     return configuration;
@@ -160,7 +160,7 @@ export class PluginDebugService implements DebugService {
         }
     }
 
-    async provideDynamicDebugConfigurations(): Promise<Record<string, DebugConfiguration[]>> {
+    async provideDynamicDebugConfigurations(folder?: string): Promise<Record<string, DebugConfiguration[]>> {
         const pluginProviders =
             Array.from(this.configurationProviders.values()).filter(p => (
                 p.triggerKind === DebugConfigurationProviderTriggerKind.Dynamic &&
@@ -170,7 +170,7 @@ export class PluginDebugService implements DebugService {
         const configurationsRecord: Record<string, DebugConfiguration[]> = {};
 
         await Promise.all(pluginProviders.map(async provider => {
-            const configurations = await provider.provideDebugConfigurations(undefined);
+            const configurations = await provider.provideDebugConfigurations(folder);
             let configurationsPerType = configurationsRecord[provider.type];
             configurationsPerType = configurationsPerType ? configurationsPerType.concat(configurations) : configurations;
 
