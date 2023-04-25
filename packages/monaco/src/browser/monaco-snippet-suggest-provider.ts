@@ -158,9 +158,9 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
     fromJSON(snippets: JsonSerializedSnippets | undefined, { language, source }: SnippetLoadOptions): Disposable {
         const toDispose = new DisposableCollection();
         this.parseSnippets(snippets, (name, snippet) => {
-            const { prefix, body, description } = snippet;
+            const { isFileTemplate, prefix, body, description } = snippet;
             const parsedBody = Array.isArray(body) ? body.join('\n') : body;
-            const parsedPrefixes = Array.isArray(prefix) ? prefix : [prefix];
+            const parsedPrefixes = !prefix ? [''] : Array.isArray(prefix) ? prefix : [prefix];
 
             if (typeof parsedBody !== 'string') {
                 return;
@@ -181,6 +181,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
                 }
             }
             parsedPrefixes.forEach(parsedPrefix => toDispose.push(this.push({
+                isFileTemplate: Boolean(isFileTemplate),
                 scopes,
                 name,
                 prefix: parsedPrefix,
@@ -196,7 +197,10 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
             if (JsonSerializedSnippet.is(scopeOrTemplate)) {
                 accept(name, scopeOrTemplate);
             } else {
-                this.parseSnippets(scopeOrTemplate, accept);
+                // eslint-disable-next-line @typescript-eslint/no-shadow
+                for (const [name, template] of Object.entries(scopeOrTemplate)) {
+                    accept(name, template);
+                }
             }
         }
     }
@@ -240,18 +244,20 @@ export interface JsonSerializedSnippets {
     [name: string]: JsonSerializedSnippet | { [name: string]: JsonSerializedSnippet };
 }
 export interface JsonSerializedSnippet {
+    isFileTemplate?: boolean;
     body: string | string[];
-    scope: string;
-    prefix: string | string[];
+    scope?: string;
+    prefix: string | string[] | undefined;
     description: string;
 }
 export namespace JsonSerializedSnippet {
     export function is(obj: unknown): obj is JsonSerializedSnippet {
-        return isObject(obj) && 'body' in obj && 'prefix' in obj;
+        return isObject(obj) && 'body' in obj;
     }
 }
 
 export interface Snippet {
+    readonly isFileTemplate: boolean
     readonly scopes: string[]
     readonly name: string
     readonly prefix: string
