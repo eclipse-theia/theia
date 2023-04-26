@@ -492,6 +492,10 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     protected async prepareView(widget: PluginViewWidget, webviewId?: string): Promise<void> {
         const data = this.views.get(widget.options.viewId);
         if (!data) {
+            const defaultWidget = await this.createViewDataWidget(widget.options.viewId, webviewId);
+            if (defaultWidget) {
+                widget.addWidget(defaultWidget);
+            }
             return;
         }
         const [, view] = data;
@@ -786,13 +790,18 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             const webviewWidget = this.widgetManager.getWidget(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: webviewId });
             return webviewWidget;
         }
-        const provider = this.viewDataProviders.get(viewId);
-        if (!view || !provider) {
+        if (!view) {
             return undefined;
         }
-        const [, viewInfo] = view;
-        const state = this.viewDataState.get(viewId);
-        const widget = await provider({ state, viewInfo });
+        let widget;
+        const provider = this.viewDataProviders.get(viewId);
+        if (!provider) {
+            widget = await this.widgetManager.getOrCreateWidget<TreeViewWidget>(PLUGIN_VIEW_DATA_FACTORY_ID, { id: viewId });
+        } else {
+            const [, viewInfo] = view;
+            const state = this.viewDataState.get(viewId);
+            widget = await provider({ state, viewInfo });
+        }
         widget.handleViewWelcomeContentChange(this.getViewWelcomes(viewId));
         if (StatefulWidget.is(widget)) {
             this.storeViewDataStateOnDispose(viewId, widget);
