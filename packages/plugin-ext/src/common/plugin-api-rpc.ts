@@ -72,6 +72,7 @@ import {
     CallHierarchyOutgoingCall,
     Comment,
     CommentOptions,
+    CommentThreadState,
     CommentThreadCollapsibleState,
     CommentThread,
     CommentThreadChangedEvent,
@@ -1943,6 +1944,7 @@ export type CommentThreadChanges = Partial<{
     contextValue: string,
     comments: Comment[],
     collapseState: CommentThreadCollapsibleState;
+    state: CommentThreadState;
     canReply: boolean;
 }>;
 

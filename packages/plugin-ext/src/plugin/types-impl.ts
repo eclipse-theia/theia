@@ -1995,6 +1995,11 @@ export class DocumentSymbol {
     }
 }
 
+export enum CommentThreadState {
+    Unresolved = 0,
+    Resolved = 1
+}
+
 export enum CommentThreadCollapsibleState {
     Collapsed = 0,
     Expanded = 1

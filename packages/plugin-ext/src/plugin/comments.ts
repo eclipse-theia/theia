@@ -18,10 +18,11 @@ import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { CommandRegistryImpl } from './command-registry';
 import { UriComponents } from '../common/uri-components';
-import { CommentThreadCollapsibleState, URI } from './types-impl';
+import { CommentThreadCollapsibleState, CommentThreadState, URI } from './types-impl';
 import {
     Range,
     Comment,
+    CommentThreadState as CommentThreadStateModel,
     CommentThreadCollapsibleState as CommentThreadCollapsibleStateModel,
     CommentOptions
 } from '../common/plugin-api-rpc-model';
@@ -185,6 +186,7 @@ type CommentThreadModification = Partial<{
     contextValue: string | undefined,
     comments: theia.Comment[],
     collapsibleState: theia.CommentThreadCollapsibleState
+    state: theia.CommentThreadState
     canReply: boolean;
 }>;
 
@@ -276,6 +278,20 @@ export class ExtHostCommentThread implements theia.CommentThread, theia.Disposab
         this._onDidUpdateCommentThread.fire();
     }
 
+    private _state?: theia.CommentThreadState;
+
+    get state(): theia.CommentThreadState {
+        return this._state!;
+    }
+
+    set state(newState: theia.CommentThreadState) {
+        if (this._state !== newState) {
+            this._state = newState;
+            this.modifications.state = newState;
+            this._onDidUpdateCommentThread.fire();
+        }
+    }
+
     private localDisposables: Disposable[];
 
     private _isDisposed: boolean;
@@ -356,6 +372,9 @@ export class ExtHostCommentThread implements theia.CommentThread, theia.Disposab
         }
         if (modified('collapsibleState')) {
             formattedModifications.collapseState = convertToCollapsibleState(this.collapseState);
+        }
+        if (modified('state')) {
+            formattedModifications.state = convertToState(this._state);
         }
         if (modified('canReply')) {
             formattedModifications.canReply = this.canReply;
@@ -515,4 +534,16 @@ function convertToCollapsibleState(kind: theia.CommentThreadCollapsibleState | u
         }
     }
     return CommentThreadCollapsibleStateModel.Collapsed;
+}
+
+function convertToState(kind: theia.CommentThreadState | undefined): CommentThreadStateModel {
+    if (kind !== undefined) {
+        switch (kind) {
+            case CommentThreadState.Resolved:
+                return CommentThreadStateModel.Resolved;
+            case CommentThreadState.Unresolved:
+                return CommentThreadStateModel.Unresolved;
+        }
+    }
+    return CommentThreadStateModel.Unresolved;
 }
