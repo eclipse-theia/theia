@@ -2825,7 +2825,7 @@ export module '@theia/plugin' {
         /**
          * Outputs the given trace message to the channel. Use this method to log verbose information.
          *
-         * The message is only loggeed if the channel is configured to display {@link LogLevel.Trace trace} log level.
+         * The message is only logged if the channel is configured to display {@link LogLevel.Trace trace} log level.
          *
          * @param message trace message to log
          */
@@ -2834,7 +2834,7 @@ export module '@theia/plugin' {
         /**
          * Outputs the given debug message to the channel.
          *
-         * The message is only loggeed if the channel is configured to display {@link LogLevel.Debug debug} log level or lower.
+         * The message is only logged if the channel is configured to display {@link LogLevel.Debug debug} log level or lower.
          *
          * @param message debug message to log
          */
@@ -2843,7 +2843,7 @@ export module '@theia/plugin' {
         /**
          * Outputs the given information message to the channel.
          *
-         * The message is only loggeed if the channel is configured to display {@link LogLevel.Info info} log level or lower.
+         * The message is only logged if the channel is configured to display {@link LogLevel.Info info} log level or lower.
          *
          * @param message info message to log
          */
@@ -2852,7 +2852,7 @@ export module '@theia/plugin' {
         /**
          * Outputs the given warning message to the channel.
          *
-         * The message is only loggeed if the channel is configured to display {@link LogLevel.Warning warning} log level or lower.
+         * The message is only logged if the channel is configured to display {@link LogLevel.Warning warning} log level or lower.
          *
          * @param message warning message to log
          */
@@ -2861,7 +2861,7 @@ export module '@theia/plugin' {
         /**
          * Outputs the given error or error message to the channel.
          *
-         * The message is only loggeed if the channel is configured to display {@link LogLevel.Error error} log level or lower.
+         * The message is only logged if the channel is configured to display {@link LogLevel.Error error} log level or lower.
          *
          * @param error Error or error message to log
          */
@@ -14138,7 +14138,7 @@ export module '@theia/plugin' {
          * Whether or not the group is currently active.
          *
          * *Note* that only one tab group is active at a time, but that multiple tab
-         * groups can have an {@link TabGroup.aciveTab active tab}.
+         * groups can have an {@link TabGroup.isActive active tab}.
          *
          * @see {@link Tab.isActive}
          */
@@ -14165,7 +14165,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Represents the main editor area which consists of multple groups which contain tabs.
+     * Represents the main editor area which consists of multiple groups which contain tabs.
      */
     export interface TabGroups {
         /**

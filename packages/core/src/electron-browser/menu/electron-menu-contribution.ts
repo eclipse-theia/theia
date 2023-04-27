@@ -291,9 +291,9 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
 
         registry.registerCommand(ElectronCommands.ZOOM_IN, {
             execute: async () => {
-                const curentLevel = await window.electronTheiaCore.getZoomLevel();
+                const currentLevel = await window.electronTheiaCore.getZoomLevel();
                 // When starting at a level that is not a multiple of 0.5, increment by at most 0.5 to reach the next highest multiple of 0.5.
-                let zoomLevel = (Math.floor(curentLevel / ZoomLevel.VARIATION) * ZoomLevel.VARIATION) + ZoomLevel.VARIATION;
+                let zoomLevel = (Math.floor(currentLevel / ZoomLevel.VARIATION) * ZoomLevel.VARIATION) + ZoomLevel.VARIATION;
                 if (zoomLevel > ZoomLevel.MAX) {
                     zoomLevel = ZoomLevel.MAX;
                     return;
@@ -303,9 +303,9 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         });
         registry.registerCommand(ElectronCommands.ZOOM_OUT, {
             execute: async () => {
-                const curentLevel = await window.electronTheiaCore.getZoomLevel();
+                const currentLevel = await window.electronTheiaCore.getZoomLevel();
                 // When starting at a level that is not a multiple of 0.5, decrement by at most 0.5 to reach the next lowest multiple of 0.5.
-                let zoomLevel = (Math.ceil(curentLevel / ZoomLevel.VARIATION) * ZoomLevel.VARIATION) - ZoomLevel.VARIATION;
+                let zoomLevel = (Math.ceil(currentLevel / ZoomLevel.VARIATION) * ZoomLevel.VARIATION) - ZoomLevel.VARIATION;
                 if (zoomLevel < ZoomLevel.MIN) {
                     zoomLevel = ZoomLevel.MIN;
                     return;
