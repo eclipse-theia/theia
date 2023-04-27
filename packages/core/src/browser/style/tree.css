@@ -177,6 +177,7 @@
     position: absolute;
     height: var(--theia-content-line-height);
     border-right: var(--theia-border-width) solid transparent;
+    pointer-events: none;
 }
 
 .theia-tree-node-indent.always,
