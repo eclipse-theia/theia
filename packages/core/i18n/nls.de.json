@@ -29,6 +29,7 @@
         "showPreviousTabInGroup": "Zur vorherigen Registerkarte in der Gruppe wechseln",
         "toggleMaximized": "Maximiert umschalten"
       },
+      "enhancedPreview": "Steuert, ob weitere Informationen über die Registerkarte in horizontalen Registerkartenleisten angezeigt werden sollen.",
       "file": {
         "browse": "Durchsuchen"
       },
@@ -52,7 +53,10 @@
         "previous": "Zurück (Oben)"
       },
       "silentNotifications": "Legt fest, ob Benachrichtigungs-Popups unterdrückt werden sollen.",
-      "tabMaximize": "Steuert, ob die Registerkarten bei einem Doppelklick maximiert werden sollen."
+      "tabDefaultSize": "Gibt die Standardgröße für Registerkarten an.",
+      "tabMaximize": "Steuert, ob die Registerkarten bei einem Doppelklick maximiert werden sollen.",
+      "tabMinimumSize": "Gibt die Mindestgröße für Tabulatoren an.",
+      "tabShrinkToFit": "Schrumpfen Sie die Registerkarten auf den verfügbaren Platz."
     },
     "debug": {
       "addConfigurationPlaceholder": "Wählen Sie das Stammverzeichnis des Arbeitsbereichs, dem Sie die Konfiguration hinzufügen möchten",
@@ -358,6 +362,7 @@
     "task": {
       "attachTask": "Aufgabe anhängen...",
       "clearHistory": "Geschichte löschen",
+      "noTaskToRun": "Keine Aufgabe zur Ausführung gefunden. Aufgaben konfigurieren...",
       "openUserTasks": "Nutzertasks öffnen"
     },
     "terminal": {
