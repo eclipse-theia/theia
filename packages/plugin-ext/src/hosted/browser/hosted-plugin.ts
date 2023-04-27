@@ -303,6 +303,9 @@ export class HostedPluginSupport {
         }
         await this.startPlugins(contributionsByHost, toDisconnect);
 
+        // check data provider after start plugin to show welcom view
+        this.viewRegistry.checkViewDataProvider();
+
         this.deferredDidStart.resolve();
 
         this.restoreWebviews();

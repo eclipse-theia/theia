@@ -780,19 +780,48 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return toDispose;
     }
 
+    checkViewDataProvider(): void {
+        for (const viewId of this.views.keys()) {
+            if (!this.viewDataProviders.has(viewId)) {
+                this.getView(viewId).then(async view => {
+                    if (view) {
+                        if (view.isVisible) {
+                            await this.prepareView(view);
+                        } else {
+                            const toDisposeOnDidExpandView = new DisposableCollection(this.onDidExpandView(async id => {
+                                if (id === viewId) {
+                                    unsubscribe();
+                                    await this.prepareView(view);
+                                }
+                            }));
+                            const unsubscribe = () => toDisposeOnDidExpandView.dispose();
+                            view.disposed.connect(unsubscribe);
+                            toDisposeOnDidExpandView.push(Disposable.create(() => view.disposed.disconnect(unsubscribe)));
+                        }
+                    }
+                });
+            }
+        }
+    }
+
     protected async createViewDataWidget(viewId: string, webviewId?: string): Promise<Widget | undefined> {
         const view = this.views.get(viewId);
         if (view?.[1]?.type === PluginViewType.Webview) {
             const webviewWidget = this.widgetManager.getWidget(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: webviewId });
             return webviewWidget;
         }
-        const provider = this.viewDataProviders.get(viewId);
-        if (!view || !provider) {
+        if (!view) {
             return undefined;
         }
-        const [, viewInfo] = view;
-        const state = this.viewDataState.get(viewId);
-        const widget = await provider({ state, viewInfo });
+        let widget;
+        const provider = this.viewDataProviders.get(viewId);
+        if (!provider) {
+            widget = await this.widgetManager.getOrCreateWidget<TreeViewWidget>(PLUGIN_VIEW_DATA_FACTORY_ID, { id: viewId });
+        } else {
+            const [, viewInfo] = view;
+            const state = this.viewDataState.get(viewId);
+            widget = await provider({ state, viewInfo });
+        }
         widget.handleViewWelcomeContentChange(this.getViewWelcomes(viewId));
         if (StatefulWidget.is(widget)) {
             this.storeViewDataStateOnDispose(viewId, widget);
