@@ -29,6 +29,7 @@
         "showPreviousTabInGroup": "Mudar para o separador Anterior em Grupo",
         "toggleMaximized": "Alternar Maximizado"
       },
+      "enhancedPreview": "Controla se devem ser apresentadas mais informações sobre o separador nas barras de separadores horizontais.",
       "file": {
         "browse": "Navegar"
       },
@@ -52,7 +53,10 @@
         "previous": "Anterior (Para cima)"
       },
       "silentNotifications": "Controla se deve suprimir popups de notificação.",
-      "tabMaximize": "Controla se pretende maximizar os separadores com um duplo clique."
+      "tabDefaultSize": "Especifica o tamanho predefinido dos separadores.",
+      "tabMaximize": "Controla se pretende maximizar os separadores com um duplo clique.",
+      "tabMinimumSize": "Especifica o tamanho mínimo dos separadores.",
+      "tabShrinkToFit": "Encolher os separadores de acordo com o espaço disponível."
     },
     "debug": {
       "addConfigurationPlaceholder": "Seleccione a raiz do espaço de trabalho para adicionar configuração a",
@@ -358,6 +362,7 @@
     "task": {
       "attachTask": "Anexar Tarefa...",
       "clearHistory": "História clara",
+      "noTaskToRun": "Não foi encontrada nenhuma tarefa para executar. Configurar tarefas...",
       "openUserTasks": "Tarefas de utilizador aberto"
     },
     "terminal": {

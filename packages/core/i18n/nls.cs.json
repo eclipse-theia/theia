@@ -29,6 +29,7 @@
         "showPreviousTabInGroup": "Přepnutí na předchozí kartu ve skupině",
         "toggleMaximized": "Přepínání Maximalizováno"
       },
+      "enhancedPreview": "Určuje, zda se mají na vodorovných pásech karet zobrazovat další informace o kartě.",
       "file": {
         "browse": "Procházet"
       },
@@ -52,7 +53,10 @@
         "previous": "Předchozí (Nahoru)"
       },
       "silentNotifications": "Řídí, zda se mají potlačit vyskakovací okna s oznámeními.",
-      "tabMaximize": "Ovládá, zda se mají karty maximalizovat při dvojím kliknutí."
+      "tabDefaultSize": "Určuje výchozí velikost karet s ouškem.",
+      "tabMaximize": "Ovládá, zda se mají karty maximalizovat při dvojím kliknutí.",
+      "tabMinimumSize": "Určuje minimální velikost oušek.",
+      "tabShrinkToFit": "Zmenšete karty tak, aby se vešly do dostupného prostoru."
     },
     "debug": {
       "addConfigurationPlaceholder": "Vyberte kořenový pracovní prostor, do kterého chcete přidat konfiguraci",
@@ -358,6 +362,7 @@
     "task": {
       "attachTask": "Připojte úkol...",
       "clearHistory": "Vymazat historii",
+      "noTaskToRun": "Nebyla nalezena žádná úloha ke spuštění. Konfigurace úloh...",
       "openUserTasks": "Otevřené uživatelské úlohy"
     },
     "terminal": {

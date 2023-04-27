@@ -29,6 +29,7 @@
         "showPreviousTabInGroup": "Passer à l'onglet précédent dans le groupe",
         "toggleMaximized": "Toggle Maximisé"
       },
+      "enhancedPreview": "Contrôle si des informations supplémentaires sur l'onglet doivent être affichées dans les barres d'onglets horizontales.",
       "file": {
         "browse": "Parcourir"
       },
@@ -52,7 +53,10 @@
         "previous": "Précédent (en haut)"
       },
       "silentNotifications": "Contrôle la suppression des popups de notification.",
-      "tabMaximize": "Contrôle si les onglets doivent être maximisés lors d'un double-clic."
+      "tabDefaultSize": "Spécifie la taille par défaut des onglets.",
+      "tabMaximize": "Contrôle si les onglets doivent être maximisés lors d'un double-clic.",
+      "tabMinimumSize": "Spécifie la taille minimale des onglets.",
+      "tabShrinkToFit": "Réduire les onglets pour les adapter à l'espace disponible."
     },
     "debug": {
       "addConfigurationPlaceholder": "Sélectionnez la racine de l'espace de travail pour y ajouter la configuration",
@@ -358,6 +362,7 @@
     "task": {
       "attachTask": "Attacher la tâche...",
       "clearHistory": "Histoire claire",
+      "noTaskToRun": "Aucune tâche à exécuter n'a été trouvée. Configurer les tâches...",
       "openUserTasks": "Tâches d'utilisateur ouvertes"
     },
     "terminal": {

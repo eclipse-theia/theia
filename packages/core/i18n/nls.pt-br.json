@@ -29,6 +29,7 @@
         "showPreviousTabInGroup": "Mudar para a guia Anterior em Grupo",
         "toggleMaximized": "Alternar ao máximo"
       },
+      "enhancedPreview": "Controla se mais informações sobre a guia devem ser exibidas nas barras horizontais da guia.",
       "file": {
         "browse": "Navegue"
       },
@@ -52,7 +53,10 @@
         "previous": "Anterior (Para cima)"
       },
       "silentNotifications": "Controla se devem ser suprimidas as popups de notificação.",
-      "tabMaximize": "Controla se é necessário maximizar as abas com duplo clique."
+      "tabDefaultSize": "Especifica o tamanho padrão das guias.",
+      "tabMaximize": "Controla se é necessário maximizar as abas com duplo clique.",
+      "tabMinimumSize": "Especifica o tamanho mínimo das guias.",
+      "tabShrinkToFit": "Reduzir as guias para que se ajustem ao espaço disponível."
     },
     "debug": {
       "addConfigurationPlaceholder": "Selecione a raiz do espaço de trabalho para adicionar configuração a",
@@ -358,6 +362,7 @@
     "task": {
       "attachTask": "Anexar Tarefa...",
       "clearHistory": "Histórico claro",
+      "noTaskToRun": "Nenhuma tarefa a ser executada foi encontrada. Configurar tarefas...",
       "openUserTasks": "Tarefas abertas para o usuário"
     },
     "terminal": {
