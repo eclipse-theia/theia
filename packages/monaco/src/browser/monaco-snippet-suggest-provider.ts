@@ -247,7 +247,7 @@ export interface JsonSerializedSnippet {
     isFileTemplate?: boolean;
     body: string | string[];
     scope?: string;
-    prefix: string | string[] | undefined;
+    prefix?: string | string[];
     description: string;
 }
 export namespace JsonSerializedSnippet {
