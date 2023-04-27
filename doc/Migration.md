@@ -21,20 +21,21 @@ For example:
 ```
 
 
-### v1.36.0
+### v1.37.0
 
 #### Disabled node integration and added context isolation flag in Electron renderer
 
 This also means that `electron-remote` can no longer be used in components in `electron-frontend` or `electron-common`. In order to use electron-related functionality from the browser, you need to expose an API via a preload script (see  https://www.electronjs.org/docs/latest/tutorial/context-isolation). to achieve this from a Theia extension, you need to follow these steps:
+
 1. Define the API interface and declare an api variable on the global `window` variable. See `packages/filesystem/electron-common/electron-api.ts` for an example
 2. Write a preload script module that implements the API on the renderer ("browser") side and exposes the API via `exposeInMainWorld`. You'll need to expose the API in an exported function called `preload()`. See `packages/filesystem/electron-browser/preload.ts` for an example.
-3. Declare a `theiaExtensions` entry pointing to the preload script like so: 
-``` 
+3. Declare a `theiaExtensions` entry pointing to the preload script like so:
+```
 "theiaExtensions": [
     {
       "preload": "lib/electron-browser/preload",
-``` 
-See `/packages/filesystem/package.json` for an example 
+```
+See `/packages/filesystem/package.json` for an example
 
 4. Implement the API on the electron-main side by contributing a `ElectronMainApplicationContribution`. See `packages/filesystem/electron-main/electron-api-main.ts` for an example. If you don't have a module contributing to the electron-main application, you may have to declare it in your package.json.
 ```
@@ -45,8 +46,9 @@ See `/packages/filesystem/package.json` for an example
   }
 ```
 
-If you are using nodejs API in your electron browser-side code you will also have to move the code outside of the renderer process, for exmaple
-by setting up an API like described above, or, for example, by using a back-end service. 
+If you are using nodejs API in your electron browser-side code you will also have to move the code outside of the renderer process, for example
+by setting up an API like described above, or, for example, by using a back-end service.
+
 ### v1.35.0
 
 #### Drop support for `Node 14`
