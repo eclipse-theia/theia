@@ -83,7 +83,7 @@ export class DebugWidget extends BaseWidget implements StatefulWidget, Applicati
     }
 
     getTrackableWidgets(): Widget[] {
-        return this.sessionWidget.getTrackableWidgets();
+        return [this.sessionWidget];
     }
 
     storeState(): object {

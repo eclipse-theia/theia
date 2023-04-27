@@ -835,10 +835,12 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     if ('detail' in task) {
         taskDto.detail = task.detail;
     }
-    if (typeof task.scope === 'object') {
-        taskDto.scope = task.scope.uri.toString();
-    } else if (typeof task.scope === 'number') {
+    if (typeof task.scope === 'number') {
         taskDto.scope = task.scope;
+    } else if (task.scope !== undefined) {
+        taskDto.scope = task.scope.uri.toString();
+    } else {
+        taskDto.scope = types.TaskScope.Workspace;
     }
 
     if (task.presentationOptions) {

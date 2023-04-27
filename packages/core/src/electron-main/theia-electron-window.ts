@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import { FrontendApplicationConfig } from '@theia/application-package';
-import { FrontendApplicationState } from '../common/frontend-application-state';
-import { APPLICATION_STATE_CHANGE_SIGNAL, CLOSE_REQUESTED_SIGNAL, RELOAD_REQUESTED_SIGNAL, StopReason } from '../electron-common/messaging/electron-messages';
-import { BrowserWindow, BrowserWindowConstructorOptions, ipcMain, IpcMainEvent } from '../../electron-shared/electron';
+import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
+import { BrowserWindow, BrowserWindowConstructorOptions } from '../../electron-shared/electron';
 import { inject, injectable, postConstruct } from '../../shared/inversify';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
 import { DisposableCollection, Emitter, Event } from '../common';
 import { createDisposableListener } from './event-utils';
 import { URI } from '../common/uri';
 import { FileUri } from '../node/file-uri';
+import { TheiaRendererAPI } from './electron-api-main';
 
 /**
  * Theia tracks the maximized state of Electron Browser Windows.
@@ -138,22 +138,7 @@ export class TheiaElectronWindow {
     }
 
     protected checkSafeToStop(reason: StopReason): Promise<boolean> {
-        const confirmChannel = `safe-to-close-${this._window.id}`;
-        const cancelChannel = `notSafeToClose-${this._window.id}`;
-        const temporaryDisposables = new DisposableCollection();
-        return new Promise<boolean>(resolve => {
-            this._window.webContents.send(CLOSE_REQUESTED_SIGNAL, { confirmChannel, cancelChannel, reason });
-            createDisposableListener(ipcMain, confirmChannel, (e: IpcMainEvent) => {
-                if (this.isSender(e)) {
-                    resolve(true);
-                }
-            }, temporaryDisposables);
-            createDisposableListener(ipcMain, cancelChannel, (e: IpcMainEvent) => {
-                if (this.isSender(e)) {
-                    resolve(false);
-                }
-            }, temporaryDisposables);
-        }).finally(() => temporaryDisposables.dispose());
+        return TheiaRendererAPI.requestClose(this.window.webContents, reason);
     }
 
     protected restoreMaximizedState(): void {
@@ -165,23 +150,13 @@ export class TheiaElectronWindow {
     }
 
     protected trackApplicationState(): void {
-        createDisposableListener(ipcMain, APPLICATION_STATE_CHANGE_SIGNAL, (e: IpcMainEvent, state: FrontendApplicationState) => {
-            if (this.isSender(e)) {
-                this.applicationState = state;
-            }
-        }, this.toDispose);
+        this.toDispose.push(TheiaRendererAPI.onApplicationStateChanged(this.window.webContents, state => {
+            this.applicationState = state;
+        }));
     }
 
     protected attachReloadListener(): void {
-        createDisposableListener(ipcMain, RELOAD_REQUESTED_SIGNAL, (e: IpcMainEvent) => {
-            if (this.isSender(e)) {
-                this.reload();
-            }
-        }, this.toDispose);
-    }
-
-    protected isSender(e: IpcMainEvent): boolean {
-        return BrowserWindow.fromId(e.sender.id) === this._window;
+        this.toDispose.push(TheiaRendererAPI.onRequestReload(this.window.webContents, () => this.reload()));
     }
 
     dispose(): void {

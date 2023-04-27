@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ipcRenderer } from '@theia/electron/shared/electron';
 import { postConstruct, injectable } from 'inversify';
 import { KeyboardLayoutChangeNotifier, NativeKeyboardLayout } from '../../common/keyboard/keyboard-layout-provider';
 import { Emitter, Event } from '../../common/event';
@@ -34,7 +33,7 @@ export class ElectronKeyboardLayoutChangeNotifier implements KeyboardLayoutChang
 
     @postConstruct()
     protected initialize(): void {
-        ipcRenderer.on('keyboardLayoutChanged', (event: Electron.IpcRendererEvent, newLayout: NativeKeyboardLayout) => this.nativeLayoutChanged.fire(newLayout));
+        window.electronTheiaCore.onKeyboardLayoutChanged((newLayout: NativeKeyboardLayout) => this.nativeLayoutChanged.fire(newLayout));
     }
 
 }

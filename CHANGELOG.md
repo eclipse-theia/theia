@@ -4,6 +4,16 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.37.0 -
+
+- [plugin] implemented the VS Code `LogOutputChannel` API [#12017](https://github.com/eclipse-theia/theia/pull/12429) - Contributed on behalf of STMicroelectronics
+
+<a name="breaking_changes_1.37.0">[Breaking Changes:](#breaking_changes_1.37.0)</a>
+- [core] Inject core preference into `DockPanelRenderer` constructor [12360](https://github.com/eclipse-theia/theia/pull/12360)
+- [core] Introduced `ScrollableTabBar.updateTabs()` to fully render tabs [12360](https://github.com/eclipse-theia/theia/pull/12360)
+- [plugin] `plugin/src/theia-proposed.d.ts`: removed enum `LogLevel` and namespace `env` [#12017](https://github.com/eclipse-theia/theia/pull/12429)
+- [plugin-ext] `output-channel-item.ts`: changed visibility from `private` to `protected` for member `proxy` and function `validate()` [#12017](https://github.com/eclipse-theia/theia/pull/12429)
+
 ## v1.36.0 0 - 03/30/2023
 
 - [application-manager] upgraded `webpack` to `5.76.0` [#12316](https://github.com/eclipse-theia/theia/pull/12316)
@@ -51,6 +61,7 @@
     - Interface `ScmInlineActions` removes `commands: CommandRegistry`
     - Interface `ScmTreeWidget.Props` removes `commands: CommandRegistry`
 - [terminal] removed `openTerminalFromProfile` method from `TerminalFrontendContribution` [#12322](https://github.com/eclipse-theia/theia/pull/12322)
+- [electron] enabled context isolation and disabled node integration in Electron renderer (https://github.com/eclipse-theia/theia/issues/2018)
 
 ## v1.35.0 - 02/23/2023
 
