@@ -157,14 +157,11 @@
       "gitDecorationsColors": "Используйте цветовое оформление в навигаторе.",
       "mergeQuickPickPlaceholder": "Выберите ветвь для слияния с активной в данный момент ветвью {0}:",
       "missingUserInfo": "Убедитесь, что вы настроили 'user.name' и 'user.email' в git.",
-      "noHistoryForError": "Невозмножно получить историю для {0}",
       "noPreviousCommit": "Нет предыдущего обязательства по внесению изменений",
       "noRepositoriesSelected": "Ни одно хранилище не было выбрано.",
       "repositoryNotInitialized": "Хранилище {0} еще не инициализировано.",
       "stashChanges": "Изменение тайника. Нажмите 'Enter' для подтверждения или 'Escape' для отмены.",
       "stashChangesWithMessage": "Изменение тайника с сообщением: {0}. Нажмите 'Enter' для подтверждения или 'Escape' для отмены.",
-      "tabTitleIndex": "{0} (Индекс)",
-      "tabTitleWorkingTree": "{0} (Рабочее дерево)",
       "toggleBlameAnnotations": "Переключить аннотации вины"
     },
     "keybinding-schema-updater": {
@@ -275,8 +272,6 @@
     },
     "navigator": {
       "autoReveal": "Автоматическое раскрытие",
-      "clipboardWarn": "Доступ к буферу обмена запрещен. Проверьте настройки вашего браузера.",
-      "clipboardWarnFirefox": "Буфер обмена недоступен. Его можно включить в настройках браузера, откройте вкладку 'about:config' и включите свойство 'dom.events.testing.asyncClipboard'. Затем перезагрузите страницу. Обратите внимание, что это позволит FireFox получить полный доступ к системному буферу обмена.",
       "refresh": "Обновить в Проводнике",
       "reveal": "Раскрытие в Проводнике",
       "toggleHiddenFiles": "Переключение скрытых файлов"

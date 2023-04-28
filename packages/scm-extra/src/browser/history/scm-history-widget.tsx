@@ -307,7 +307,9 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                     const repo = this.scmService.findRepository(new URI(this.options.uri));
                     const repoName = repo ? `${this.labelProvider.getName(new URI(repo.provider.rootUri))}` : '';
 
-                    const relPathAndRepo = [relPath, repoName].filter(Boolean).join(' in ');
+                    const relPathAndRepo = [relPath, repoName].filter(Boolean).join(
+                        nls.localize('theia/core/git/prepositionIn', 'in')
+                    );
                     path = `${relPathAndRepo}`;
                 }
                 content = <AlertMessage
