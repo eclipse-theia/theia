@@ -19,6 +19,7 @@ import { isFirefox } from './browser';
 import { ClipboardService } from './clipboard-service';
 import { ILogger } from '../common/logger';
 import { MessageService } from '../common/message-service';
+import { nls } from 'src/common';
 
 export interface NavigatorClipboard {
     readText(): Promise<string>;
@@ -52,16 +53,20 @@ export class BrowserClipboardService implements ClipboardService {
             } catch (e2) {
                 this.logger.error('Failed reading clipboard content.', e2);
                 if (isFirefox) {
-                    this.messageService.warn(`Clipboard API is not available.
-                    It can be enabled by 'dom.events.testing.asyncClipboard' preference on 'about:config' page. Then reload Theia.
-                    Note, it will allow FireFox getting full access to the system clipboard.`);
+                    this.messageService.warn(nls.localize(
+                        'theia/core/navigator/clipboardWarnFirefox',
+                        "Clipboard API is not available. It can be enabled by 'dom.events.testing.asyncClipboard' preference on 'about:config' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard."
+                    ));
                 }
                 return '';
             }
         }
         if (permission.state === 'denied') {
             // most likely, the user intentionally denied the access
-            this.messageService.warn("Access to the clipboard is denied. Check your browser's permission.");
+            this.messageService.warn(nls.localize(
+                'theia/core/navigator/clipboardWarn',
+                "Access to the clipboard is denied. Check your browser's permission."
+            ));
             return '';
         }
         return this.getClipboardAPI().readText();
@@ -80,16 +85,20 @@ export class BrowserClipboardService implements ClipboardService {
             } catch (e2) {
                 this.logger.error('Failed writing to the clipboard.', e2);
                 if (isFirefox) {
-                    this.messageService.warn(`Clipboard API is not available.
-                    It can be enabled by 'dom.events.testing.asyncClipboard' preference on 'about:config' page. Then reload Theia.
-                    Note, it will allow FireFox getting full access to the system clipboard.`);
+                    this.messageService.warn(nls.localize(
+                        'theia/core/navigator/clipboardWarnFirefox',
+                        "Clipboard API is not available. It can be enabled by 'dom.events.testing.asyncClipboard' preference on 'about:config' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard."
+                    ));
                 }
                 return;
             }
         }
         if (permission.state === 'denied') {
             // most likely, the user intentionally denied the access
-            this.messageService.warn("Access to the clipboard is denied. Check your browser's permission.");
+            this.messageService.warn(nls.localize(
+                'theia/core/navigator/clipboardWarn',
+                "Access to the clipboard is denied. Check your browser's permission."
+            ));
             return;
         }
         return this.getClipboardAPI().writeText(value);

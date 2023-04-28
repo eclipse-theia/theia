@@ -241,13 +241,21 @@ export class GitScmProvider implements ScmProvider {
                 return DiffUris.encode(
                     fromFileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
                     changeUri.withScheme(GIT_RESOURCE_SCHEME),
-                    this.labelProvider.getName(changeUri) + ' (Index)');
+                    nls.localize(
+                        'theia/core/git/tabTitleIndex',
+                        '{0} (Index)',
+                        this.labelProvider.getName(changeUri)
+                    ));
             }
             if (this.stagedChanges.find(c => c.uri === change.uri)) {
                 return DiffUris.encode(
                     fromFileUri.withScheme(GIT_RESOURCE_SCHEME),
                     changeUri,
-                    this.labelProvider.getName(changeUri) + ' (Working tree)');
+                    nls.localize(
+                        'theia/core/git/tabTitleWorkingTree',
+                        '{0} (Working tree)',
+                        this.labelProvider.getName(changeUri)
+                    ));
             }
             if (this.mergeChanges.find(c => c.uri === change.uri)) {
                 return changeUri;
@@ -255,7 +263,11 @@ export class GitScmProvider implements ScmProvider {
             return DiffUris.encode(
                 fromFileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
                 changeUri,
-                this.labelProvider.getName(changeUri) + ' (Working tree)');
+                nls.localize(
+                    'theia/core/git/tabTitleWorkingTree',
+                    '{0} (Working tree)',
+                    this.labelProvider.getName(changeUri)
+                ));
         }
         if (change.staged) {
             return changeUri.withScheme(GIT_RESOURCE_SCHEME);
@@ -264,7 +276,11 @@ export class GitScmProvider implements ScmProvider {
             return DiffUris.encode(
                 changeUri.withScheme(GIT_RESOURCE_SCHEME),
                 changeUri,
-                this.labelProvider.getName(changeUri) + ' (Working tree)');
+                nls.localize(
+                    'theia/core/git/tabTitleWorkingTree',
+                    '{0} (Working tree)',
+                    this.labelProvider.getName(changeUri)
+                ));
         }
         return changeUri;
     }
