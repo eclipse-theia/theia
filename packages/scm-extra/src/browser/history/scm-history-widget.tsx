@@ -312,7 +312,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                 }
                 content = <AlertMessage
                     type='WARNING'
-                    header={nls.localize('theia/core/git/noHistoryForError', 'There is no history available for {0}', path)}>
+                    header={nls.localize('theia/core/git/noHistoryForError', 'There is no history available for {0}', `${path}`)}>
                     {reason}
                 </AlertMessage>;
                 break;
