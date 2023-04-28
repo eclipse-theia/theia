@@ -19,7 +19,7 @@ import { isFirefox } from './browser';
 import { ClipboardService } from './clipboard-service';
 import { ILogger } from '../common/logger';
 import { MessageService } from '../common/message-service';
-import { nls } from 'src/common';
+import { nls } from '@theia/core/lib/common/nls';
 
 export interface NavigatorClipboard {
     readText(): Promise<string>;
