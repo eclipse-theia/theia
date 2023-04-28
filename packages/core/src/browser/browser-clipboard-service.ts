@@ -55,7 +55,7 @@ export class BrowserClipboardService implements ClipboardService {
                 if (isFirefox) {
                     this.messageService.warn(nls.localize(
                         'theia/navigator/clipboardWarnFirefox',
-                        // tslint:disable-next-line: max-len
+                        // eslint:disable-next-line: max-len
                         "Clipboard API is not available. It can be enabled by 'dom.events.testing.asyncClipboard' preference on 'about:config' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard."
                     ));
                 }
@@ -88,7 +88,7 @@ export class BrowserClipboardService implements ClipboardService {
                 if (isFirefox) {
                     this.messageService.warn(nls.localize(
                         'theia/core/navigator/clipboardWarnFirefox',
-                        // tslint:disable-next-line: max-len
+                        // eslint:disable-next-line: max-len
                         "Clipboard API is not available. It can be enabled by 'dom.events.testing.asyncClipboard' preference on 'about:config' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard."
                     ));
                 }
