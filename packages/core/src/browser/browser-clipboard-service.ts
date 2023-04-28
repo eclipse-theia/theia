@@ -54,7 +54,7 @@ export class BrowserClipboardService implements ClipboardService {
                 this.logger.error('Failed reading clipboard content.', e2);
                 if (isFirefox) {
                     this.messageService.warn(nls.localize(
-                        'theia/core/navigator/clipboardWarnFirefox',
+                        'theia/navigator/clipboardWarnFirefox',
                         // tslint:disable-next-line: max-len
                         "Clipboard API is not available. It can be enabled by 'dom.events.testing.asyncClipboard' preference on 'about:config' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard."
                     ));
@@ -65,7 +65,7 @@ export class BrowserClipboardService implements ClipboardService {
         if (permission.state === 'denied') {
             // most likely, the user intentionally denied the access
             this.messageService.warn(nls.localize(
-                'theia/core/navigator/clipboardWarn',
+                'theia/navigator/clipboardWarn',
                 "Access to the clipboard is denied. Check your browser's permission."
             ));
             return '';

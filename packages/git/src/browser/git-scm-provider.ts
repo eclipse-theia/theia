@@ -242,7 +242,7 @@ export class GitScmProvider implements ScmProvider {
                     fromFileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
                     changeUri.withScheme(GIT_RESOURCE_SCHEME),
                     nls.localize(
-                        'theia/core/git/tabTitleIndex',
+                        'theia/git/tabTitleIndex',
                         '{0} (Index)',
                         this.labelProvider.getName(changeUri)
                     ));
@@ -252,7 +252,7 @@ export class GitScmProvider implements ScmProvider {
                     fromFileUri.withScheme(GIT_RESOURCE_SCHEME),
                     changeUri,
                     nls.localize(
-                        'theia/core/git/tabTitleWorkingTree',
+                        'theia/git/tabTitleWorkingTree',
                         '{0} (Working tree)',
                         this.labelProvider.getName(changeUri)
                     ));
@@ -264,7 +264,7 @@ export class GitScmProvider implements ScmProvider {
                 fromFileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
                 changeUri,
                 nls.localize(
-                    'theia/core/git/tabTitleWorkingTree',
+                    'theia/git/tabTitleWorkingTree',
                     '{0} (Working tree)',
                     this.labelProvider.getName(changeUri)
                 ));
@@ -277,7 +277,7 @@ export class GitScmProvider implements ScmProvider {
                 changeUri.withScheme(GIT_RESOURCE_SCHEME),
                 changeUri,
                 nls.localize(
-                    'theia/core/git/tabTitleWorkingTree',
+                    'theia/git/tabTitleWorkingTree',
                     '{0} (Working tree)',
                     this.labelProvider.getName(changeUri)
                 ));
