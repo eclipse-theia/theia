@@ -71,7 +71,11 @@ export abstract class Transaction<Arguments extends unknown[], Result = unknown,
     protected inUse = false;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const release = await this.queue.acquire();
         try {
             const status = await this.setUp();
@@ -189,9 +193,9 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
     @inject(EditorManager) protected readonly editorManager: EditorManager;
 
     @postConstruct()
-    protected override init(): Promise<void> {
+    protected override init(): void {
         this.waitFor(this.prelude);
-        return super.init();
+        super.init();
     }
 
     protected async setUp(): Promise<boolean> {

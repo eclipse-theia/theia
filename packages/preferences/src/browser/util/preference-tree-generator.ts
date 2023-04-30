@@ -78,7 +78,11 @@ export class PreferenceTreeGenerator {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         await this.schemaProvider.ready;
         this.schemaProvider.onDidPreferenceSchemaChanged(() => this.handleChangedSchema());
         this.handleChangedSchema();

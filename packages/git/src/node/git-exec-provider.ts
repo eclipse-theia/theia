@@ -31,7 +31,11 @@ import { IGitExecutionOptions } from 'dugite-extra/lib/core/git';
  *     protected deferred = new Deferred<any>();
  *
  *     @postConstruct()
- *     protected async init(): Promise<void> {
+ *     protected init(): void {
+ *         this.doInit();
+ *     }
+ *
+ *     protected async doInit(): Promise<void> {
  *         const connection = await new SSH().connect({
  *             host: 'your-host',
  *             username: 'your-username',

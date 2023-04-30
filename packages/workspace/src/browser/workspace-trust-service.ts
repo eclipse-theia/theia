@@ -52,7 +52,11 @@ export class WorkspaceTrustService {
     protected workspaceTrust = new Deferred<boolean>();
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         await this.workspaceService.ready;
         await this.resolveWorkspaceTrust();
         this.preferences.onPreferenceChanged(change => this.handlePreferenceChange(change));

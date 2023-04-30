@@ -87,7 +87,7 @@ export class TaskConfigurationManager {
     protected workspaceDelegate: PreferenceProvider;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
         this.createModels();
         this.folderPreferences.onDidPreferencesChanged(e => {
             if (e['tasks']) {

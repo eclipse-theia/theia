@@ -92,7 +92,11 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         electron.ipcRenderer.on(TitleBarStyleAtStartup, (_event, style: string) => {
             this.useNativeStyle = style === 'native';
         });

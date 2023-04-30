@@ -98,7 +98,11 @@ export class GettingStartedWidget extends ReactWidget {
     protected readonly workspaceService: WorkspaceService;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.id = GettingStartedWidget.ID;
         this.title.label = GettingStartedWidget.LABEL;
         this.title.caption = GettingStartedWidget.LABEL;

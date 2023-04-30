@@ -40,7 +40,11 @@ export class GitRepositoryTracker {
     ) { }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.updateStatus();
         this.repositoryProvider.onDidChangeRepository(() => this.updateStatus());
     }

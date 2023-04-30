@@ -93,7 +93,11 @@ export class DebugBreakpointWidget implements Disposable {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.toDispose.push(this.zone = new MonacoEditorZoneWidget(this.editor.getControl()));
         this.zone.containerNode.classList.add('theia-debug-breakpoint-widget');
 

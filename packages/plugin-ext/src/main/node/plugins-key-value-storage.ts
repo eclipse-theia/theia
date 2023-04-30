@@ -37,7 +37,11 @@ export class PluginsKeyValueStorage {
     protected readonly envServer: EnvVariablesServer;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         try {
             const configDirUri = await this.envServer.getConfigDirUri();
             const globalStorageFsPath = path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR);

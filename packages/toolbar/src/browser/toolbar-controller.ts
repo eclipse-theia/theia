@@ -93,7 +93,11 @@ export class ToolbarController {
     }
 
     @postConstruct()
-    async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         await this.appState.reachedState('ready');
         await this.storageProvider.ready;
         this.toolbarItems = await this.resolveToolbarItems();

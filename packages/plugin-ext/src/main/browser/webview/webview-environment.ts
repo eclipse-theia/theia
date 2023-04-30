@@ -33,7 +33,11 @@ export class WebviewEnvironment {
     protected readonly environments: EnvVariablesServer;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this._hostPatternPromise = this.getHostPattern();
         try {
             const endpointPattern = await this.hostPatternPromise;

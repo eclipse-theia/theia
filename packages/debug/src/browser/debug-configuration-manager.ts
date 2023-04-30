@@ -98,7 +98,11 @@ export class DebugConfigurationManager {
     protected recentDynamicOptionsTracker: DynamicDebugConfigurationSessionOptions[] = [];
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.debugConfigurationTypeKey = this.contextKeyService.createKey<string>('debugConfigurationType', undefined);
         this.initialized = this.preferences.ready.then(() => {
             this.preferences.onPreferenceChanged(e => {

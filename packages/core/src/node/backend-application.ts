@@ -196,6 +196,10 @@ export class BackendApplication {
     }
 
     @postConstruct()
+    protected init(): void {
+        this.configure();
+    }
+
     protected async configure(): Promise<void> {
         // Do not await the initialization because contributions are expected to handle
         // concurrent initialize/configure in undefined order if they provide both

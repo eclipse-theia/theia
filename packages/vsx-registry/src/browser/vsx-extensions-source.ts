@@ -38,7 +38,7 @@ export class VSXExtensionsSource extends TreeSource {
     protected readonly model: VSXExtensionsModel;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
         this.fireDidChange();
         this.toDispose.push(this.model.onDidChange(() => this.scheduleFireDidChange()));
     }

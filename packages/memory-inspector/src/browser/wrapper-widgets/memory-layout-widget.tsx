@@ -48,7 +48,11 @@ export class MemoryLayoutWidget extends Panel implements Disposable, Application
     protected hasGeneratedWidgetAutomatically = false;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.id = MemoryLayoutWidget.ID;
         this.addClass(MemoryLayoutWidget.ID);
         this.title.label = MemoryLayoutWidget.LABEL;

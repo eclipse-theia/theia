@@ -53,7 +53,11 @@ export class GitRepositoryProvider {
     protected readonly fileService: FileService;
 
     @postConstruct()
-    protected async initialize(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const [selectedRepository, allRepositories] = await Promise.all([
             this.storageService.getData<Repository | undefined>(this.selectedRepoStorageKey),
             this.storageService.getData<Repository[]>(this.allRepoStorageKey)

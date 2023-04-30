@@ -54,7 +54,11 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     @inject(PreferenceConfigurations) protected readonly configurations: PreferenceConfigurations;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const uri = this.getUri();
         this.toDispose.push(Disposable.create(() => this.loading.reject(new Error(`Preference provider for '${uri}' was disposed.`))));
         await this.readPreferencesFromFile();

@@ -16,7 +16,7 @@
 
 import { Key, KeyCode } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { injectable, postConstruct } from '@theia/core/shared/inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import * as Long from 'long';
 import { DebugProtocol } from '@vscode/debugprotocol';
@@ -45,10 +45,9 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
     protected doShowMoreMemoryBefore = false;
     protected doShowMoreMemoryAfter = false;
 
-    @postConstruct()
-    protected override async init(): Promise<void> {
+    protected override async doInit(): Promise<void> {
         this.memoryEditsCompleted.resolve();
-        await super.init();
+        await super.doInit();
         this.addClass('editable');
     }
 

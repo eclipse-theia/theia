@@ -62,7 +62,11 @@ export class VSXExtensionsModel {
     protected readonly initialized = new Deferred<void>();
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         await Promise.all([
             this.initInstalled(),
             this.initSearchResult(),

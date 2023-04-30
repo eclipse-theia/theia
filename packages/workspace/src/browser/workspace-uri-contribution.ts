@@ -28,7 +28,7 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     @postConstruct()
-    override async init(): Promise<void> {
+    override init(): void {
         // no-op, backward compatibility
     }
 

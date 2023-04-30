@@ -72,7 +72,11 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     @inject(PreferencesScopeTabBar) protected readonly tabbar: PreferencesScopeTabBar;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
 
         this.id = PreferencesEditorWidget.ID;
         this.title.label = PreferencesEditorWidget.LABEL;

@@ -39,7 +39,11 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
     protected readonly providers = new Map<string, FolderPreferenceProvider>();
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         await this.workspaceService.roots;
 
         this.updateProviders();

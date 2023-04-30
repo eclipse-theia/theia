@@ -167,7 +167,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     protected readonly workspaceService: WorkspaceService;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
         this.taskWatcher.onTaskCreated(() => this.updateRunningTasksItem());
         this.taskWatcher.onTaskExit(() => this.updateRunningTasksItem());
     }

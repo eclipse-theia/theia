@@ -50,13 +50,12 @@ export class RegisterFilterServiceImpl implements RegisterFilterService {
     }
 
     @postConstruct()
-    protected init(): Promise<void> {
+    protected init(): void {
         this.filters.set(AllOrCustom.All, undefined);
         this.filters.set(AllOrCustom.Custom, new Set());
         for (const [key, values] of Object.entries(this.options)) {
             this.filters.set(key, new Set(values));
         }
-        return Promise.resolve();
     }
 
     setFilter(filterLabel: string): void {
