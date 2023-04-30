@@ -24,8 +24,8 @@ export interface MixStandaloneTheme extends IStandaloneTheme {
     themeData: ThemeMix
 }
 
-export const OnigasmPromise = Symbol('OnigasmPromise');
-export type OnigasmPromise = Promise<IOnigLib>;
+export const OnigasmProvider = Symbol('OnigasmProvider');
+export type OnigasmProvider = () => Promise<IOnigLib>;
 export const TextmateRegistryFactory = Symbol('TextmateRegistryFactory');
 export type TextmateRegistryFactory = (currentTheme?: ThemeMix) => Registry;
 

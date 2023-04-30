@@ -59,7 +59,11 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
     }
 
     @postConstruct()
-    protected async initialize(): Promise<void> {
+    protected initialize(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         await this.loadState();
         const keyboard = (navigator as NavigatorExtension).keyboard;
         if (keyboard && keyboard.addEventListener) {
