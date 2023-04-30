@@ -35,7 +35,8 @@ export class OnigasmLib implements IOnigLib {
 }
 
 export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
-    bind(OnigasmProvider).toDynamicValue(() => dynamicOnigasmLib).inSingletonScope();
+    const onigLib = createOnigasmLib();
+    bind(OnigasmProvider).toConstantValue(() => onigLib);
     bind(MonacoTextmateService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MonacoTextmateService);
     bindContributionProvider(bind, LanguageGrammarDefinitionContribution);
@@ -71,15 +72,6 @@ export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: inter
         });
     });
 };
-
-let dynamicOnigasmLibCache: Promise<IOnigLib> | undefined;
-
-export async function dynamicOnigasmLib(): Promise<IOnigLib> {
-    if (!dynamicOnigasmLibCache) {
-        dynamicOnigasmLibCache = createOnigasmLib();
-    }
-    return dynamicOnigasmLibCache;
-}
 
 export async function createOnigasmLib(): Promise<IOnigLib> {
     if (!isBasicWasmSupported) {
