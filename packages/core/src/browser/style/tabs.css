@@ -358,7 +358,7 @@
 }
 
 .p-TabBar-content-container {
-  display: block;
+  display: flex;
   flex: 1;
   position: relative; /* This is necessary for perfect-scrollbar */
 }

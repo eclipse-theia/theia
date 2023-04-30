@@ -913,9 +913,17 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
     }
 
     override handleEvent(event: Event): void {
-        if (event.target instanceof Element && this.tabBarContainer.contains(event.target)) {
-            super.handleEvent(event);
+        if (event instanceof MouseEvent) {
+            if (this.toolbar && this.toolbar.shouldHandleMouseEvent(event) || this.isOver(event, this.openTabsContainer)) {
+                // if the mouse event is over the toolbar part don't handle it.
+                return;
+            }
         }
+        super.handleEvent(event);
+    }
+
+    private isOver(event: Event, element: Element): boolean {
+        return element && event.target instanceof Element && element.contains(event.target);
     }
 
     /**
