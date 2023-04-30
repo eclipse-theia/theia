@@ -264,7 +264,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
     }
 
     /**
-     * Creates a new object and assigns those keys of raw to it that are not likely to cause prototype polution.
+     * Creates a new object and assigns those keys of raw to it that are not likely to cause prototype pollution.
      * Also preprocesses override identifiers so that they take the form [identifier]: {...contents}.
      */
     private sanitize<T = unknown>(raw: T): T {

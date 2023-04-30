@@ -58,6 +58,10 @@ export class TreeViewsExtImpl implements TreeViewsExt {
         return this.getTreeView(treeViewId).onDragStarted(treeItemIds, token);
     }
 
+    $dragEnd(treeViewId: string): Promise<void> {
+        return this.getTreeView(treeViewId).dragEnd();
+    }
+
     $drop(treeViewId: string, treeItemId: string | undefined, dataTransferItems: [string, string | DataTransferFileDTO][], token: CancellationToken): Promise<void> {
         return this.getTreeView(treeViewId).handleDrop!(treeItemId, dataTransferItems, token);
     }
@@ -604,6 +608,10 @@ class TreeViewExtImpl<T> implements Disposable {
             }
         }
         return undefined;
+    }
+
+    async dragEnd(): Promise<void> {
+        this.localDataTransfer.clear();
     }
 
     async handleDrop(treeItemId: string | undefined, dataTransferItems: [string, string | DataTransferFileDTO][], token: CancellationToken): Promise<void> {

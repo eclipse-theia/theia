@@ -27,12 +27,14 @@ export const createRunProfile = (
         token: CancellationToken
     ) => Thenable<void> | void,
     isDefault?: boolean,
-    tag?: theia.TestTag
+    tag?: theia.TestTag,
+    supportsContinuousRun?: boolean
 ) => ({
     label,
     kind,
     isDefault: isDefault ?? false,
     tag,
+    supportsContinuousRun: supportsContinuousRun ?? false,
     runHandler,
     configureHandler: undefined,
     dispose: () => undefined,

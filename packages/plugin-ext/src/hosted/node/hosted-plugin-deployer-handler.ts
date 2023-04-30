@@ -133,7 +133,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             if (await this.deployPlugin(plugin, 'backend')) { successes++; }
         }
         // rebuild translation config after deployment
-        this.localizationService.buildTranslationConfig([...this.deployedBackendPlugins.values()]);
+        await this.localizationService.buildTranslationConfig([...this.deployedBackendPlugins.values()]);
         // resolve on first deploy
         this.backendPluginsMetadataDeferred.resolve(undefined);
         return successes;
@@ -174,7 +174,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             const { type } = entry;
             const deployed: DeployedPlugin = { metadata, type };
             deployed.contributes = this.reader.readContribution(manifest);
-            this.localizationService.deployLocalizations(deployed);
+            await this.localizationService.deployLocalizations(deployed);
             deployedPlugins.set(id, deployed);
             deployPlugin.debug(`Deployed ${entryPoint} plugin "${id}" from "${metadata.model.entryPoint[entryPoint] || pluginPath}"`);
         } catch (e) {

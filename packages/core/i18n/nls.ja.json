@@ -29,6 +29,7 @@
         "showPreviousTabInGroup": "グループ内の前のタブに切り替える",
         "toggleMaximized": "トグル・マキシマイズ"
       },
+      "enhancedPreview": "水平タブバーにタブに関する詳細情報を表示するかどうかを制御します。",
       "file": {
         "browse": "ブラウズ"
       },
@@ -52,7 +53,10 @@
         "previous": "前へ (上)"
       },
       "silentNotifications": "通知のポップアップを抑制するかどうかを制御します。",
-      "tabMaximize": "ダブルクリック時にタブを最大化するかどうかを制御します。"
+      "tabDefaultSize": "タブのデフォルトサイズを指定します。",
+      "tabMaximize": "ダブルクリック時にタブを最大化するかどうかを制御します。",
+      "tabMinimumSize": "タブの最小サイズを指定します。",
+      "tabShrinkToFit": "タブを縮小して、空きスペースに合わせる。"
     },
     "debug": {
       "addConfigurationPlaceholder": "設定を追加するワークスペース・ルートを選択します。",
@@ -358,6 +362,7 @@
     "task": {
       "attachTask": "タスクの添付...",
       "clearHistory": "明確な歴史",
+      "noTaskToRun": "実行するタスクが見つかりません。タスクの設定...",
       "openUserTasks": "ユーザータスクを開く"
     },
     "terminal": {

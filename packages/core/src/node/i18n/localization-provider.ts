@@ -15,13 +15,14 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
+import { nls } from '../../common/nls';
 import { LanguageInfo, Localization } from '../../common/i18n/localization';
 
 @injectable()
 export class LocalizationProvider {
 
     protected localizations: Localization[] = [];
-    protected currentLanguage = 'en';
+    protected currentLanguage = nls.defaultLocale;
 
     addLocalizations(...localizations: Localization[]): void {
         this.localizations.push(...localizations);

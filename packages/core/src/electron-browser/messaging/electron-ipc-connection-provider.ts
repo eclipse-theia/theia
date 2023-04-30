@@ -14,12 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event as ElectronEvent, ipcRenderer } from '@theia/electron/shared/electron';
 import { injectable, interfaces } from 'inversify';
 import { JsonRpcProxy } from '../../common/messaging';
 import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
-import { THEIA_ELECTRON_IPC_CHANNEL_NAME } from '../../electron-common/messaging/electron-connection-handler';
-import { AbstractChannel, Channel, Disposable, WriteBuffer } from '../../common';
+import { AbstractChannel, Channel, WriteBuffer } from '../../common';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
 
 export interface ElectronIpcOptions {
@@ -50,16 +48,13 @@ export class ElectronIpcRendererChannel extends AbstractChannel {
 
     constructor() {
         super();
-        const ipcMessageHandler = (_event: ElectronEvent, data: Uint8Array) => this.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(data));
-        ipcRenderer.on(THEIA_ELECTRON_IPC_CHANNEL_NAME, ipcMessageHandler);
-        this.toDispose.push(Disposable.create(() => ipcRenderer.removeListener(THEIA_ELECTRON_IPC_CHANNEL_NAME, ipcMessageHandler)));
+        this.toDispose.push(window.electronTheiaCore.onData(data => this.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(data))));
+
     }
 
     getWriteBuffer(): WriteBuffer {
         const writer = new Uint8ArrayWriteBuffer();
-        writer.onCommit(buffer =>
-            ipcRenderer.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, buffer)
-        );
+        writer.onCommit(buffer => window.electronTheiaCore.sendData(buffer));
         return writer;
     }
 

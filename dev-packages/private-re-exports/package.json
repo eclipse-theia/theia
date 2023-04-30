@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@theia/re-exports",
-  "version": "1.36.0",
+  "version": "1.37.0",
   "description": "Theia re-export helper functions and scripts.",
   "main": "lib/index.js",
   "engines": {

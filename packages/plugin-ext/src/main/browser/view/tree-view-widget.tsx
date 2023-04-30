@@ -632,13 +632,23 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
 
     handleDragEnd(node: TreeViewNode, event: React.DragEvent<HTMLElement>): void {
         this.applicationShell.clearAdditionalDraggedEditorUris();
+        this.model.proxy!.$dragEnd(this.id);
     }
 
     handleDragOver(event: React.DragEvent<HTMLElement>): void {
+        const hasFiles = (items: DataTransferItemList) => {
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].kind === 'file') {
+                    return true;
+                }
+            }
+            return false;
+        };
+
         if (event.dataTransfer) {
             const canDrop = event.dataTransfer.types.some(type => this.options.dropMimeTypes!.includes(type)) ||
                 event.dataTransfer.types.includes(this.treeDragType) ||
-                this.options.dropMimeTypes!.includes('files') && event.dataTransfer.files.length > 0;
+                this.options.dropMimeTypes!.includes('files') && hasFiles(event.dataTransfer.items);
             if (canDrop) {
                 event.preventDefault();
                 event.dataTransfer.dropEffect = 'move';

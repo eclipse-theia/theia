@@ -26,6 +26,7 @@ export interface Extension {
     backend?: string;
     backendElectron?: string;
     electronMain?: string;
+    preload?: string;
 }
 
 export interface ExtensionPackageOptions {

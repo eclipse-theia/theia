@@ -29,6 +29,7 @@
         "showPreviousTabInGroup": "Passa alla scheda precedente nel gruppo",
         "toggleMaximized": "Toggle Massimizzato"
       },
+      "enhancedPreview": "Controlla se visualizzare ulteriori informazioni sulla scheda nelle barre orizzontali delle schede.",
       "file": {
         "browse": "Sfogliare"
       },
@@ -52,7 +53,10 @@
         "previous": "Precedente (Up)"
       },
       "silentNotifications": "Controlla se sopprimere i popup di notifica.",
-      "tabMaximize": "Controlla se massimizzare le schede al doppio clic."
+      "tabDefaultSize": "Specifica la dimensione predefinita delle schede.",
+      "tabMaximize": "Controlla se massimizzare le schede al doppio clic.",
+      "tabMinimumSize": "Specifica la dimensione minima delle schede.",
+      "tabShrinkToFit": "Restringere le schede per adattarle allo spazio disponibile."
     },
     "debug": {
       "addConfigurationPlaceholder": "Selezionare lo spazio di lavoro principale a cui aggiungere la configurazione",
@@ -358,6 +362,7 @@
     "task": {
       "attachTask": "Allegare il compito...",
       "clearHistory": "Storia chiara",
+      "noTaskToRun": "Non è stata trovata alcuna attività da eseguire. Configura attività...",
       "openUserTasks": "Aprire le attività dell'utente"
     },
     "terminal": {

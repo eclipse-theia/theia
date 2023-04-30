@@ -14,12 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as electronRemote from '@theia/core/electron-shared/@electron/remote';
-import { ElectronSecurityToken } from '@theia/core/lib/electron-common/electron-token';
 import { WebviewWidgetFactory } from '../../browser/webview/webview-widget-factory';
 import { WebviewWidgetIdentifier, WebviewWidget } from '../../browser/webview/webview';
 import { CustomEditorWidgetFactory } from '../../browser/custom-editors/custom-editor-widget-factory';
 import { CustomEditorWidget } from '../../browser/custom-editors/custom-editor-widget';
+import '@theia/core/lib/electron-common/electron-api';
 
 export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
 
@@ -34,13 +33,8 @@ export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
      *
      * @param endpoint cookie's target url
      */
-    protected async attachElectronSecurityCookie(endpoint: string): Promise<void> {
-        await electronRemote.session.defaultSession.cookies.set({
-            url: endpoint,
-            name: ElectronSecurityToken,
-            value: JSON.stringify(this.container.get(ElectronSecurityToken)),
-            httpOnly: true
-        });
+    protected attachElectronSecurityCookie(endpoint: string): Promise<void> {
+        return window.electronTheiaCore.attachSecurityToken(endpoint);
     }
 
 }
@@ -59,12 +53,7 @@ export class ElectronCustomEditorWidgetFactory extends CustomEditorWidgetFactory
      * @param endpoint cookie's target url
      */
     protected async attachElectronSecurityCookie(endpoint: string): Promise<void> {
-        await electronRemote.session.defaultSession.cookies.set({
-            url: endpoint,
-            name: ElectronSecurityToken,
-            value: JSON.stringify(this.container.get(ElectronSecurityToken)),
-            httpOnly: true
-        });
+        return window.electronTheiaCore.attachSecurityToken(endpoint);
     }
 
 }

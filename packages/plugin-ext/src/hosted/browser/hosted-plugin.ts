@@ -49,7 +49,8 @@ import { WaitUntilEvent } from '@theia/core/lib/common/event';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { PluginViewRegistry } from '../../main/browser/view/plugin-view-registry';
-import { TaskProviderRegistry, TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
+import { WillResolveTaskProvider, TaskProviderRegistry, TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
+import { TaskDefinitionRegistry } from '@theia/task/lib/browser/task-definition-registry';
 import { WebviewEnvironment } from '../../main/browser/webview/webview-environment';
 import { WebviewWidget } from '../../main/browser/webview/webview';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
@@ -73,6 +74,7 @@ export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
 
 export const PluginProgressLocation = 'plugin';
+export const ALL_ACTIVATION_EVENT = '*';
 
 @injectable()
 export class HostedPluginSupport {
@@ -138,6 +140,9 @@ export class HostedPluginSupport {
 
     @inject(TaskResolverRegistry)
     protected readonly taskResolverRegistry: TaskResolverRegistry;
+
+    @inject(TaskDefinitionRegistry)
+    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
     @inject(ProgressService)
     protected readonly progressService: ProgressService;
@@ -205,7 +210,7 @@ export class HostedPluginSupport {
         this.debugSessionManager.onWillResolveDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugResolve', event.debugType));
         this.debugConfigurationManager.onWillProvideDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugInitialConfigurations'));
         // Activate all providers of dynamic configurations, i.e. Let the user pick a configuration from all the available ones.
-        this.debugConfigurationManager.onWillProvideDynamicDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugDynamicConfigurations', '*'));
+        this.debugConfigurationManager.onWillProvideDynamicDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugDynamicConfigurations', ALL_ACTIVATION_EVENT));
         this.viewRegistry.onDidExpandView(id => this.activateByView(id));
         this.taskProviderRegistry.onWillProvideTaskProvider(event => this.ensureTaskActivation(event));
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
@@ -510,7 +515,7 @@ export class HostedPluginSupport {
                 workspaceState,
                 env: {
                     queryParams: getQueryParameters(),
-                    language: nls.locale || 'en',
+                    language: nls.locale || nls.defaultLocale,
                     shell: defaultShell,
                     uiKind: isElectron ? UIKind.Desktop : UIKind.Web,
                     appName: FrontendApplicationConfigProvider.get().applicationName,
@@ -610,6 +615,10 @@ export class HostedPluginSupport {
         await this.activateByEvent(`onCommand:${commandId}`);
     }
 
+    async activateByTaskType(taskType: string): Promise<void> {
+        await this.activateByEvent(`onTaskType:${taskType}`);
+    }
+
     async activateByCustomEditor(viewType: string): Promise<void> {
         await this.activateByEvent(`onCustomEditor:${viewType}`);
     }
@@ -648,8 +657,20 @@ export class HostedPluginSupport {
         event.waitUntil(p);
     }
 
-    protected ensureTaskActivation(event: WaitUntilEvent): void {
-        event.waitUntil(this.activateByCommand('workbench.action.tasks.runTask'));
+    protected ensureTaskActivation(event: WillResolveTaskProvider): void {
+        const promises = [this.activateByCommand('workbench.action.tasks.runTask')];
+        const taskType = event.taskType;
+        if (taskType) {
+            if (taskType === ALL_ACTIVATION_EVENT) {
+                for (const taskDefinition of this.taskDefinitionRegistry.getAll()) {
+                    promises.push(this.activateByTaskType(taskDefinition.taskType));
+                }
+            } else {
+                promises.push(this.activateByTaskType(taskType));
+            }
+        }
+
+        event.waitUntil(Promise.all(promises));
     }
 
     protected ensureDebugActivation(event: WaitUntilEvent, activationEvent?: DebugActivationEvent, debugType?: string): void {
@@ -678,7 +699,7 @@ export class HostedPluginSupport {
         for (const activationEvent of activationEvents) {
             if (/^workspaceContains:/.test(activationEvent)) {
                 const fileNameOrGlob = activationEvent.substr('workspaceContains:'.length);
-                if (fileNameOrGlob.indexOf('*') >= 0 || fileNameOrGlob.indexOf('?') >= 0) {
+                if (fileNameOrGlob.indexOf(ALL_ACTIVATION_EVENT) >= 0 || fileNameOrGlob.indexOf('?') >= 0) {
                     includePatterns.push(fileNameOrGlob);
                 } else {
                     paths.push(fileNameOrGlob);

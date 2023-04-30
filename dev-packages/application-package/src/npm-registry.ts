@@ -15,8 +15,9 @@
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as request from 'request';
 import * as nano from 'nano';
+import { RequestContext } from '@theia/request';
+import { NodeRequestService } from '@theia/request/lib/node-request-service';
 import { NpmRegistryProps } from './application-props';
 
 export interface IChangeStream {
@@ -96,12 +97,15 @@ export class NpmRegistry {
     protected changes?: nano.ChangesReaderScope;
     protected readonly index = new Map<string, Promise<ViewResult>>();
 
+    protected request: NodeRequestService;
+
     constructor(options?: Partial<NpmRegistryOptions>) {
         this.options = {
             watchChanges: false,
             ...options
         };
         this.resetIndex();
+        this.request = new NodeRequestService();
     }
 
     updateProps(props?: Partial<NpmRegistryProps>): void {
@@ -140,30 +144,18 @@ export class NpmRegistry {
         return result;
     }
 
-    protected doView(name: string): Promise<ViewResult> {
+    protected async doView(name: string): Promise<ViewResult> {
         let url = this.props.registry;
         if (name[0] === '@') {
             url += '@' + encodeURIComponent(name.substr(1));
         } else {
             url += encodeURIComponent(name);
         }
-        const headers: {
-            [header: string]: string
-        } = {};
-        return new Promise((resolve, reject) => {
-            request({
-                url, headers
-            }, (err, response, body) => {
-                if (err) {
-                    reject(err);
-                } else if (response.statusCode !== 200) {
-                    reject(new Error(`${response.statusCode}: ${response.statusMessage} for ${url}`));
-                } else {
-                    const data = JSON.parse(body);
-                    resolve(data);
-                }
-            });
-        });
+        const response = await this.request.request({ url });
+        if (response.res.statusCode !== 200) {
+            throw new Error(`HTTP ${response.res.statusCode}: for ${url}`);
+        }
+        return RequestContext.asJson<ViewResult>(response);
     }
 
 }
