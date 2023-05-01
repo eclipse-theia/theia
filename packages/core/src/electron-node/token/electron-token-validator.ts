@@ -31,7 +31,7 @@ export class ElectronTokenValidator implements WsRequestValidatorContribution {
     protected electronSecurityToken: ElectronSecurityToken;
 
     @postConstruct()
-    protected postConstruct(): void {
+    protected init(): void {
         this.electronSecurityToken = this.getToken();
     }
 

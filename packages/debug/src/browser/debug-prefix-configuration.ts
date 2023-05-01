@@ -68,7 +68,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     });
 
     @postConstruct()
-    protected initialize(): void {
+    protected init(): void {
         this.handleDebugStatusBarVisibility();
         this.preference.onPreferenceChanged(e => {
             if (e.preferenceName === 'debug.showInStatusBar') {

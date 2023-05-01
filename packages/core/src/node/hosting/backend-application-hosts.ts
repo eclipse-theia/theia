@@ -39,7 +39,7 @@ export class BackendApplicationHosts {
     }
 
     @postConstruct()
-    protected postConstruct(): void {
+    protected init(): void {
         const theiaHostsEnv = process.env['THEIA_HOSTS'];
         if (theiaHostsEnv) {
             theiaHostsEnv.split(',').forEach(host => {

@@ -65,7 +65,7 @@ class SampleFileWatchingContribution implements FrontendApplicationContribution 
     protected readonly fileWatchingPreferences: FileWatchingPreferences;
 
     @postConstruct()
-    protected postConstruct(): void {
+    protected init(): void {
         this.verbose = this.fileWatchingPreferences['sample.file-watching.verbose'];
         this.fileWatchingPreferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'sample.file-watching.verbose') {

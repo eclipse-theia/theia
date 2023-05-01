@@ -79,7 +79,7 @@ export class MonacoTextModelService implements ITextModelService {
     protected readonly fileService: FileService;
 
     @postConstruct()
-    public init(): void {
+    protected init(): void {
         const resourcePropertiesService = StandaloneServices.get(ITextResourcePropertiesService);
 
         if (resourcePropertiesService) {

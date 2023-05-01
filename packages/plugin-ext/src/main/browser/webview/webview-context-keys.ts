@@ -34,7 +34,7 @@ export class WebviewContextKeys {
     protected contextKeyService: ContextKeyService;
 
     @postConstruct()
-    protected postConstruct(): void {
+    protected init(): void {
         this.activeWebviewPanelId = this.contextKeyService.createKey('activeWebviewPanelId', '');
         this.applicationShell.onDidChangeCurrentWidget(this.handleDidChangeCurrentWidget, this);
     }

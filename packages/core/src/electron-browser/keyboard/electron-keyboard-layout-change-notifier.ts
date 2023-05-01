@@ -32,7 +32,7 @@ export class ElectronKeyboardLayoutChangeNotifier implements KeyboardLayoutChang
     }
 
     @postConstruct()
-    protected initialize(): void {
+    protected init(): void {
         window.electronTheiaCore.onKeyboardLayoutChanged((newLayout: NativeKeyboardLayout) => this.nativeLayoutChanged.fire(newLayout));
     }
 

@@ -59,7 +59,7 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
     }
 
     @postConstruct()
-    protected initialize(): void {
+    protected init(): void {
         this.doInit();
     }
 

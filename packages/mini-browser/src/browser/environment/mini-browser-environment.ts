@@ -35,7 +35,7 @@ export class MiniBrowserEnvironment implements FrontendApplicationContribution {
     protected environment: EnvVariablesServer;
 
     @postConstruct()
-    protected postConstruct(): void {
+    protected init(): void {
         this._hostPatternPromise = this.getHostPattern()
             .then(pattern => this._hostPattern = pattern);
     }
