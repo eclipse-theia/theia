@@ -195,7 +195,6 @@
     height: inherit;
 }
 
-
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon,
 .p-TabBar.theia-app-centers .p-TabBar-tab.theia-mod-pinned > .p-TabBar-tabCloseIcon {
   padding: 2px;
@@ -438,7 +437,6 @@
   height: 100%;
 }
 
-
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-content {
   flex-direction: row;
 }
@@ -448,7 +446,7 @@
 }
 
 .p-TabBar.theia-app-centers[data-orientation='horizontal'].dynamic-tabs .p-TabBar-tabLabel {
-  /* fade out text with dynamic tabs strategy*/
+  /* fade out text with dynamic tabs strategy */
   mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 1) 15px);
   -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 1) 15px);
   flex: 1;

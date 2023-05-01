@@ -679,7 +679,6 @@ export class ScrollableTabBar extends TabBar<Widget> {
     }
 
     protected updateTabs(): void {
-
         const content = [];
         if (this.dynamicTabOptions) {
 
@@ -696,18 +695,19 @@ export class ScrollableTabBar extends TabBar<Widget> {
             } else {
                 this.needsRecompute = false;
                 if (this.orientation === 'horizontal') {
-                    this.tabSize = Math.max(Math.min(this.scrollbarHost.clientWidth / this.titles.length,
-                        this.dynamicTabOptions.defaultTabSize), this.dynamicTabOptions.minimumTabSize);
-
                     let availableWidth = this.scrollbarHost.clientWidth;
+                    let effectiveWidth = availableWidth;
                     if (!this.openTabsContainer.classList.contains('p-mod-hidden')) {
                         availableWidth += this.openTabsContainer.getBoundingClientRect().width;
                     }
                     if (this.dynamicTabOptions.minimumTabSize * this.titles.length <= availableWidth) {
+                        effectiveWidth += this.openTabsContainer.getBoundingClientRect().width;
                         this.openTabsContainer.classList.add('p-mod-hidden');
                     } else {
                         this.openTabsContainer.classList.remove('p-mod-hidden');
                     }
+                    this.tabSize = Math.max(Math.min(effectiveWidth / this.titles.length,
+                        this.dynamicTabOptions.defaultTabSize), this.dynamicTabOptions.minimumTabSize);
                 }
             }
             this.node.classList.add('dynamic-tabs');
@@ -726,7 +726,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
             content[i] = this.renderer.renderTab(renderData);
         }
         VirtualDOM.render(content, this.contentNode);
-        if (this.scrollBar) {
+        if (this.dynamicTabOptions && !this.isMouseOver && this.scrollBar) {
             this.scrollBar.update();
         }
     }
