@@ -16,7 +16,8 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
-import { EOL } from 'os';
+import * as os from 'os';
+import * as temp from 'temp';
 
 import type { Compiler } from 'webpack';
 
@@ -36,10 +37,11 @@ export class NativeWebpackPlugin {
 
     private bindings = new Map<string, string>();
     private options: NativeWebpackPluginOptions;
+    private tracker: typeof temp;
 
     constructor(options: NativeWebpackPluginOptions) {
         this.options = options;
-        cleanTmp();
+        this.tracker = temp.track();
         for (const [name, value] of Object.entries(options.nativeBindings ?? {})) {
             this.nativeBinding(name, value);
         }
@@ -50,15 +52,21 @@ export class NativeWebpackPlugin {
     }
 
     apply(compiler: Compiler): void {
-        const bindingsFile = buildFile('bindings.js', bindingsReplacement(Array.from(this.bindings.entries())));
-        const ripgrepFile = buildFile('ripgrep.js', ripgrepReplacement(this.options.out));
-        const keymappingFile = './build/Release/keymapping.node';
-        const replacements = {
-            ...(this.options.replacements ?? {}),
-            [REQUIRE_RIPGREP]: ripgrepFile,
-            [REQUIRE_BINDINGS]: bindingsFile,
-            [REQUIRE_KEYMAPPING]: keymappingFile
-        };
+        let replacements: Record<string, string> = {};
+        compiler.hooks.initialize.tap(NativeWebpackPlugin.name, () => {
+            const directory = this.tracker.mkdirSync({
+                dir: path.resolve(compiler.outputPath, 'native-webpack-plugin')
+            });
+            const bindingsFile = buildFile(directory, 'bindings.js', bindingsReplacement(Array.from(this.bindings.entries())));
+            const ripgrepFile = buildFile(directory, 'ripgrep.js', ripgrepReplacement(this.options.out));
+            const keymappingFile = './build/Release/keymapping.node';
+            replacements = {
+                ...(this.options.replacements ?? {}),
+                [REQUIRE_RIPGREP]: ripgrepFile,
+                [REQUIRE_BINDINGS]: bindingsFile,
+                [REQUIRE_KEYMAPPING]: keymappingFile
+            };
+        });
         compiler.hooks.normalModuleFactory.tap(
             NativeWebpackPlugin.name,
             nmf => {
@@ -86,6 +94,10 @@ export class NativeWebpackPlugin {
             if (this.options.pty) {
                 await this.copyNodePtySpawnHelper(compiler);
             }
+            this.tracker.cleanupSync();
+        });
+        compiler.hooks.failed.tap(NativeWebpackPlugin.name, async () => {
+            this.tracker.cleanupSync();
         });
     }
 
@@ -112,15 +124,8 @@ export class NativeWebpackPlugin {
     }
 }
 
-function cleanTmp(): void {
-    const tmp = tmpDir();
-    if (fs.existsSync(tmp)) {
-        fs.rmSync(tmp, { recursive: true, force: true });
-    }
-}
-
-function buildFile(name: string, content: string): string {
-    const tmpFile = tmpDir(name);
+function buildFile(root: string, name: string, content: string): string {
+    const tmpFile = path.join(root, name);
     fs.writeFileSync(tmpFile, content);
     return tmpFile;
 }
@@ -141,17 +146,8 @@ const bindingsReplacement = (entries: [string, string][]): string => {
     return `
 module.exports = function (jsModule) {
     switch (jsModule) {
-${cases.join(EOL)}
+${cases.join(os.EOL)}
     }
     throw new Error(\`unhandled module: "\${jsModule}"\`);
 }`.trim();
 };
-
-function tmpDir(...segments: string[]): string {
-    const dir = path.resolve(__dirname, '..', 'tmp');
-    const file = path.resolve(dir, ...segments);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
-    }
-    return file;
-}
