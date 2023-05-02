@@ -726,8 +726,10 @@ export class ScrollableTabBar extends TabBar<Widget> {
             content[i] = this.renderer.renderTab(renderData);
         }
         VirtualDOM.render(content, this.contentNode);
-        if (this.dynamicTabOptions && !this.isMouseOver && this.scrollBar) {
-            this.scrollBar.update();
+        if (this.scrollBar) {
+            if (!(this.dynamicTabOptions && this.isMouseOver)) {
+                this.scrollBar.update();
+            }
         }
     }
 
