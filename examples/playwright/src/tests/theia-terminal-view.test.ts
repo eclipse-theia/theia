@@ -55,6 +55,7 @@ test.describe('Theia Terminal View', () => {
 
         // close all terminals
         for (const terminal of allTerminals) {
+            await terminal.activate();
             await terminal.close();
         }
 

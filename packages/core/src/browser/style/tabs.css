@@ -22,8 +22,6 @@
 }
 
 .p-TabBar[data-orientation='horizontal'] {
-  overflow-x: hidden;
-  overflow-y: hidden;
   min-height: var(--theia-horizontal-toolbar-height);
 }
 
@@ -38,6 +36,7 @@
   line-height: var(--theia-private-horizontal-tab-height);
   padding: 0px 8px;
   align-items: center;
+  overflow: hidden;
 }
 
 .p-TabBar[data-orientation='vertical'] .p-TabBar-tab {
@@ -215,7 +214,19 @@
   -ms-user-select: none;
 }
 
-.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon:hover {
+.p-TabBar.theia-app-centers.dynamic-tabs .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon,
+.p-TabBar.theia-app-centers.dynamic-tabs .p-TabBar-tab.theia-mod-pinned > .p-TabBar-tabCloseIcon {
+  /* hide close icon for dynamic tabs strategy*/
+  display: none;
+}
+
+.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-current > .p-TabBar-tabCloseIcon,
+.p-TabBar.theia-app-centers .p-TabBar-tab:hover.p-mod-closable > .p-TabBar-tabCloseIcon,
+.p-TabBar.theia-app-centers .p-TabBar-tab:hover.theia-mod-pinned > .p-TabBar-tabCloseIcon {
+  display: inline-block;
+}
+
+.p-TabBar.theia-app-centers .p-TabBar-tab:hover.p-mod-closable > .p-TabBar-tabCloseIcon {
   border-radius: 5px;
   background-color: rgba(50%, 50%, 50%, 0.2);
 }
@@ -303,6 +314,15 @@
   bottom: calc((var(--theia-private-horizontal-tab-scrollbar-rail-height) - var(--theia-private-horizontal-tab-scrollbar-height)) / 2);
 }
 
+.p-TabBar[data-orientation='vertical'] .p-TabBar-content-container > .ps__rail-y {
+  width: var(--theia-private-horizontal-tab-scrollbar-rail-height);
+  z-index: 1000;
+}
+
+.p-TabBar[data-orientation='vertical'] .p-TabBar-content-container > .ps__rail-y  > .ps__thumb-y {
+  width: var(--theia-private-horizontal-tab-scrollbar-height) !important;
+  right: calc((var(--theia-private-horizontal-tab-scrollbar-rail-height) - var(--theia-private-horizontal-tab-scrollbar-height)) / 2);
+}
 
 /*-----------------------------------------------------------------------------
 | Dragged tabs
@@ -405,18 +425,36 @@
   flex-direction: column;
 }
 
-.theia-tabBar-tab-row {
+.p-TabBar[data-orientation='horizontal'] .theia-tabBar-tab-row {
   display: flex;
   flex-flow: row nowrap;
   min-width: 100%;
 }
 
-.p-TabBar-tab .theia-tab-icon-label {
+.p-TabBar[data-orientation='vertical'] .theia-tabBar-tab-row {
+  display: flex;
+  flex-flow: column nowrap;
+  height: 100%;
+}
+
+.p-TabBar[data-orientation='horizontal'] .p-TabBar-content {
+  flex-direction: row;
+}
+
+.p-TabBar[data-orientation='vertical'] .p-TabBar-content {
+  flex-direction: column;
+}
+
+.p-TabBar.theia-app-centers[data-orientation='horizontal'].dynamic-tabs .p-TabBar-tabLabel {
+  /* fade out text with dynamic tabs strategy */
+  mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 1) 15px);
+  -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 1) 15px);
   flex: 1;
 }
 
-.p-TabBar[data-orientation='horizontal'] .p-TabBar-tab.p-mod-closable:hover .theia-tab-icon-label,
-.p-TabBar[data-orientation='horizontal'] .p-TabBar-tab.p-mod-current .theia-tab-icon-label {
+
+.p-TabBar[data-orientation='horizontal'] .p-TabBar-tab .theia-tab-icon-label {
+  flex: 1;
   overflow: hidden;
 }
 
@@ -434,4 +472,26 @@
   font-size: small;
   margin: 0px 0px;
   margin-top: 4px;
+}
+
+/*-----------------------------------------------------------------------------
+| Open tabs dropdown
+|----------------------------------------------------------------------------*/
+.theia-tabBar-open-tabs>.theia-select-component .theia-select-component-label {
+  display: none;
+}
+
+.theia-tabBar-open-tabs>.theia-select-component {
+  min-width: auto;
+  height: 100%;
+}
+
+.theia-tabBar-open-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+.theia-tabBar-open-tabs.p-mod-hidden {
+  display: none
 }
