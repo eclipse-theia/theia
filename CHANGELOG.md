@@ -4,6 +4,13 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+
+## v1.38.0 - 04/27/2023
+
+<a name="breaking_changes_1.38.0">[Breaking Changes:](#breaking_changes_1.38.0)</a>
+
+- [core] moved `ToolbarAwareTabBar.Styles` to `ScrollableTabBar.Styles` [12411](https://github.com/eclipse-theia/theia/pull/12411/)
+
 ## v1.37.0 - 04/27/2023
 
 - [application-package] bumped the default supported VS Code API from `1.72.2` to `1.74.2` [#12468](https://github.com/eclipse-theia/theia/pull/12468)
