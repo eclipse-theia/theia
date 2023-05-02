@@ -59,6 +59,13 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         });
     }
 
+    override componentDidUpdate(): void {
+        // synchronize the currentValue with the selectComponent value
+        if (this.selectRef.current?.value !== this.currentValue) {
+            this.refreshDebugConfigurations();
+        }
+    }
+
     override componentDidMount(): void {
         this.refreshDebugConfigurations();
     }
