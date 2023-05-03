@@ -115,6 +115,10 @@ export class BaseWidget extends Widget {
     protected scrollBar?: PerfectScrollbar;
     protected scrollOptions?: PerfectScrollbar.Options;
 
+    constructor(options?: Widget.IOptions) {
+        super(options);
+    }
+
     override dispose(): void {
         if (this.isDisposed) {
             return;

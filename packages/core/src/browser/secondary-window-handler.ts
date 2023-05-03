@@ -23,6 +23,7 @@ import { Emitter } from '../common/event';
 import { SecondaryWindowService } from './window/secondary-window-service';
 import { KeybindingRegistry } from './keybinding';
 import { ColorApplicationContribution } from './color-application-contribution';
+import { StylingService } from './styling-service';
 
 /** Widget to be contained directly in a secondary window. */
 class SecondaryWindowRootWidget extends Widget {
@@ -50,8 +51,6 @@ class SecondaryWindowRootWidget extends Widget {
  */
 @injectable()
 export class SecondaryWindowHandler {
-    /** List of currently open secondary windows. Window references should be removed once the window is closed. */
-    protected readonly secondaryWindows: Window[] = [];
     /** List of widgets in secondary windows. */
     protected readonly _widgets: ExtractableWidget[] = [];
 
@@ -62,6 +61,9 @@ export class SecondaryWindowHandler {
 
     @inject(ColorApplicationContribution)
     protected colorAppContribution: ColorApplicationContribution;
+
+    @inject(StylingService)
+    protected stylingService: StylingService;
 
     protected readonly onDidAddWidgetEmitter = new Emitter<Widget>();
     /** Subscribe to get notified when a widget is added to this handler, i.e. the widget was moved to an secondary window . */
@@ -95,33 +97,6 @@ export class SecondaryWindowHandler {
             return;
         }
         this.applicationShell = shell;
-
-        // Set up messaging with secondary windows
-        window.addEventListener('message', (event: MessageEvent) => {
-            console.trace('Message on main window', event);
-            if (event.data.fromSecondary) {
-                console.trace('Message comes from secondary window');
-                return;
-            }
-            if (event.data.fromMain) {
-                console.trace('Message has mainWindow marker, therefore ignore it');
-                return;
-            }
-
-            // Filter setImmediate messages. Do not forward because these come in with very high frequency.
-            // They are not needed in secondary windows because these messages are just a work around
-            // to make setImmediate work in the main window: https://developer.mozilla.org/en-US/docs/Web/API/Window/setImmediate
-            if (typeof event.data === 'string' && event.data.startsWith('setImmediate')) {
-                return;
-            }
-
-            console.trace('Delegate main window message to secondary windows', event);
-            this.secondaryWindows.forEach(secondaryWindow => {
-                if (!secondaryWindow.window.closed) {
-                    secondaryWindow.window.postMessage({ ...event.data, fromMain: true }, '*');
-                }
-            });
-        });
     }
 
     /**
@@ -139,20 +114,12 @@ export class SecondaryWindowHandler {
             return;
         }
 
-        const newWindow = this.secondaryWindowService.createSecondaryWindow(closed => {
-            this.applicationShell.closeWidget(widget.id);
-            const extIndex = this.secondaryWindows.indexOf(closed);
-            if (extIndex > -1) {
-                this.secondaryWindows.splice(extIndex, 1);
-            }
-        });
+        const newWindow = this.secondaryWindowService.createSecondaryWindow(widget, this.applicationShell);
 
         if (!newWindow) {
             this.messageService.error('The widget could not be moved to a secondary window because the window creation failed. Please make sure to allow popups.');
             return;
         }
-
-        this.secondaryWindows.push(newWindow);
 
         const mainWindowTitle = document.title;
         newWindow.onload = () => {
@@ -168,6 +135,7 @@ export class SecondaryWindowHandler {
                 return;
             }
             const unregisterWithColorContribution = this.colorAppContribution.registerWindow(newWindow);
+            const unregisterWithStylingService = this.stylingService.registerWindow(newWindow);
 
             widget.secondaryWindow = newWindow;
             const rootWidget = new SecondaryWindowRootWidget();
@@ -182,6 +150,7 @@ export class SecondaryWindowHandler {
             // Close the window if the widget is disposed, e.g. by a command closing all widgets.
             widget.disposed.connect(() => {
                 unregisterWithColorContribution.dispose();
+                unregisterWithStylingService.dispose();
                 this.removeWidget(widget);
                 if (!newWindow.closed) {
                     newWindow.close();
