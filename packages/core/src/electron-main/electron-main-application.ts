@@ -37,6 +37,7 @@ import { ElectronMainApplicationGlobals } from './electron-main-constants';
 import { createDisposableListener } from './event-utils';
 import { TheiaRendererAPI } from './electron-api-main';
 import { StopReason } from '../common/frontend-application-state';
+import { dynamicRequire } from '../node/dynamic-require';
 
 export { ElectronMainApplicationGlobals };
 
@@ -488,7 +489,9 @@ export class ElectronMainApplication {
         if (noBackendFork) {
             process.env[ElectronSecurityToken] = JSON.stringify(this.electronSecurityToken);
             // The backend server main file is supposed to export a promise resolving with the port used by the http(s) server.
-            const address: AddressInfo = await require(this.globals.THEIA_BACKEND_MAIN_PATH);
+            dynamicRequire(this.globals.THEIA_BACKEND_MAIN_PATH);
+            // @ts-expect-error
+            const address: AddressInfo = await globalThis.serverAddress;
             return address.port;
         } else {
             const backendProcess = fork(
