@@ -8,6 +8,7 @@
 
 <a name="breaking_changes_1.38.0">[Breaking Changes:](#breaking_changes_1.38.0)</a>
 
+- [core] moved `ToolbarAwareTabBar.Styles` to `ScrollableTabBar.Styles` [12411](https://github.com/eclipse-theia/theia/pull/12411/)
 - [repo] with the upgrade to Inversify 6.0, a few initialization methods were adjusted. See also [this migration guide entry](https://github.com/eclipse-theia/theia/blob/master/doc/Migration.md#inversify-60). Additionally, other changes include: [#12425](https://github.com/eclipse-theia/theia/pull/12425)
   - The type expected by the `PreferenceProxySchema` symbol has been changed from `PromiseLike<PreferenceSchema>` to `() => PromiseLike<PreferenceSchema>`
   - The symbol `OnigasmPromise` has been changed to `OnigasmProvider` and injects a function of type `() => Promise<IOnigLib>`

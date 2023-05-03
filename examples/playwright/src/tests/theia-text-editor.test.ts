@@ -73,6 +73,7 @@ test.describe('Theia Text Editor', () => {
 
         // close all editors
         for (const editor of allEditors) {
+            await editor.activate();
             await editor.close();
         }
 
