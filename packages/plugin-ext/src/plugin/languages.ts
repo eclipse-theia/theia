@@ -999,6 +999,16 @@ export class LanguagesExtImpl implements LanguagesExt {
         return result;
     }
     // #endregion
+
+    // region DocumentPaste
+
+    /** @stubbed */
+    registerDocumentPasteEditProvider(
+        extension: Plugin, selector: theia.DocumentSelector, provider: theia.DocumentPasteEditProvider, metadata: theia.DocumentPasteProviderMetadata
+    ): theia.Disposable {
+        return Disposable.NULL;
+    }
+    // #endregion
 }
 
 function getPluginLabel(pluginInfo: PluginInfo): string {
