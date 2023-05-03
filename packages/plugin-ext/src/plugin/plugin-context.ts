@@ -192,7 +192,8 @@ import {
     TerminalEditorTabInput,
     TextDiffTabInput,
     TextMergeTabInput,
-    WebviewEditorTabInput
+    WebviewEditorTabInput,
+    DocumentPasteEdit
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -924,6 +925,11 @@ export function createAPIFactory(
             },
             createLanguageStatusItem(id: string, selector: theia.DocumentSelector): theia.LanguageStatusItem {
                 return languagesExt.createLanguageStatusItem(plugin, id, selector);
+            },
+            registerDocumentPasteEditProvider(
+                selector: theia.DocumentSelector, provider: theia.DocumentPasteEditProvider, metadata: theia.DocumentPasteProviderMetadata
+            ): theia.Disposable {
+                return languagesExt.registerDocumentPasteEditProvider(plugin, selector, provider, metadata);
             }
         };
 
@@ -1343,7 +1349,8 @@ export function createAPIFactory(
             TabInputWebview: WebviewEditorTabInput,
             TabInputTerminal: TerminalEditorTabInput,
             TerminalLocation,
-            TerminalExitReason
+            TerminalExitReason,
+            DocumentPasteEdit
         };
     };
 }
