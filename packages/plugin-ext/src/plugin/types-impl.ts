@@ -3429,3 +3429,14 @@ export class InteractiveWindowInput {
 }
 
 // #endregion
+
+// #region DocumentPaste
+@es5ClassCompat
+export class DocumentPasteEdit {
+    constructor(insertText: string | SnippetString) {
+        this.insertText = insertText;
+    }
+    insertText: string | SnippetString;
+    additionalEdit?: WorkspaceEdit;
+}
+// #endregion
