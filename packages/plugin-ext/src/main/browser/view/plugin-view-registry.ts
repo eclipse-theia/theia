@@ -746,12 +746,14 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }
     }
 
-    registerViewDataProvider(viewId: string, provider: ViewDataProvider): Disposable {
+    registerViewDataProvider(viewId: string, provider?: ViewDataProvider): Disposable {
         if (this.viewDataProviders.has(viewId)) {
             console.error(`data provider for '${viewId}' view is already registered`);
             return Disposable.NULL;
         }
-        this.viewDataProviders.set(viewId, provider);
+        if (provider) {
+            this.viewDataProviders.set(viewId, provider);
+        }
         const toDispose = new DisposableCollection(Disposable.create(() => {
             this.viewDataProviders.delete(viewId);
             this.viewDataState.delete(viewId);
@@ -781,25 +783,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     checkViewDataProvider(): void {
-        for (const viewId of this.views.keys()) {
+        for (const viewId of this.viewsWelcome.keys()) {
             if (!this.viewDataProviders.has(viewId)) {
-                this.getView(viewId).then(async view => {
-                    if (view) {
-                        if (view.isVisible) {
-                            await this.prepareView(view);
-                        } else {
-                            const toDisposeOnDidExpandView = new DisposableCollection(this.onDidExpandView(async id => {
-                                if (id === viewId) {
-                                    unsubscribe();
-                                    await this.prepareView(view);
-                                }
-                            }));
-                            const unsubscribe = () => toDisposeOnDidExpandView.dispose();
-                            view.disposed.connect(unsubscribe);
-                            toDisposeOnDidExpandView.push(Disposable.create(() => view.disposed.disconnect(unsubscribe)));
-                        }
-                    }
-                });
+                this.registerViewDataProvider(viewId);
             }
         }
     }
