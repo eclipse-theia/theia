@@ -278,7 +278,7 @@ module.exports = [{
         warnings: true,
         children: true
     }
-}, {
+}${this.ifElectron(`, {
     mode,
     devtool: 'source-map',
     entry: {
@@ -296,7 +296,7 @@ module.exports = [{
         warnings: true,
         children: true
     }
-}];`;
+}`)}];`;
     }
 
     protected compileUserWebpackConfig(): string {
