@@ -247,11 +247,14 @@ class TreeViewExtImpl<T> implements Disposable {
 
     async reveal(element: T, options?: Partial<TreeViewRevealOptions>): Promise<void> {
         await this.pendingRefresh;
+        const select = !(options?.select === false); // default to true
+        const focus = !!options?.focus;
+        const expand = typeof options?.expand === 'undefined' ? false : options!.expand!;
 
         const elementParentChain = await this.calculateRevealParentChain(element);
         if (elementParentChain) {
             return this.proxy.$reveal(this.treeViewId, elementParentChain, {
-                select: true, focus: false, expand: false, ...options
+                select: select, focus: focus, expand: expand, ...options
             });
         }
     }
@@ -308,37 +311,16 @@ class TreeViewExtImpl<T> implements Disposable {
      *
      * @param element element to reveal
      */
-    private async calculateRevealParentChain(element: T | undefined): Promise<string[] | undefined> {
+    private async calculateRevealParentChain(element: T | undefined): Promise<string[]> {
         if (!element) {
             // root
             return [];
         }
         const parent = await this.options.treeDataProvider.getParent?.(element) ?? undefined;
         const chain = await this.calculateRevealParentChain(parent);
-        if (!chain) {
-            // parents are inconsistent
-            return undefined;
-        }
         const parentId = chain.length ? chain[chain.length - 1] : '';
         const treeItem = await this.options.treeDataProvider.getTreeItem(element);
-        if (treeItem.id) {
-            return chain.concat(treeItem.id);
-        }
-        const cachedParentNode = this.nodes.get(parentId);
-        // first try to get children length from cache since getChildren disposes old nodes, which can cause a race
-        // condition if command is executed together with reveal.
-        // If not in cache, getChildren fills this.nodes and generate ids for them which are needed later
-        const children = cachedParentNode?.children || await this.getChildren(parentId);
-        if (!children) {
-            // parent is inconsistent
-            return undefined;
-        }
-        const candidateId = this.buildTreeItemId(parentId, treeItem, false);
-        if (this.nodes.has(candidateId)) {
-            return chain.concat(candidateId);
-        }
-        // couldn't calculate consistent parent chain and id
-        return undefined;
+        return chain.concat(this.buildTreeItemId(parentId, treeItem, false));
     }
 
     private getTreeItemLabel(treeItem: TreeItem): string | undefined {
