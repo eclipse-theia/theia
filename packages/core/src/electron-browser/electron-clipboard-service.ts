@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 // eslint-disable-next-line import/no-extraneous-dependencies
-import { clipboard } from 'electron';
 import { injectable } from 'inversify';
 import { ClipboardService } from '../browser/clipboard-service';
 
@@ -23,11 +22,11 @@ import { ClipboardService } from '../browser/clipboard-service';
 export class ElectronClipboardService implements ClipboardService {
 
     readText(): string {
-        return clipboard.readText();
+        return window.electronTheiaCore.readClipboard();
     }
 
     writeText(value: string): void {
-        clipboard.writeText(value);
+        window.electronTheiaCore.writeClipboard(value);
     }
 
 }

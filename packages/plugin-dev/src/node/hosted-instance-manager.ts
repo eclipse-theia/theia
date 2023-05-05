@@ -14,13 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as cp from 'child_process';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as net from 'net';
 import * as path from 'path';
-import * as request from 'request';
-
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
@@ -101,7 +100,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     protected isPluginRunning: boolean = false;
     protected instanceUri: URI;
     protected pluginUri: URI;
-    protected instanceOptions: object;
+    protected instanceOptions: Omit<RequestOptions, 'url'>;
 
     @inject(HostedPluginSupport)
     protected readonly hostedPluginSupport: HostedPluginSupport;
@@ -111,6 +110,9 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
 
     @inject(HostedPluginProcess)
     protected readonly hostedPluginProcess: HostedPluginProcess;
+
+    @inject(RequestService)
+    protected readonly request: RequestService;
 
     isRunning(): boolean {
         return this.isPluginRunning;
@@ -148,7 +150,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         this.pluginUri = pluginUri;
         // disable redirect to grab the release
         this.instanceOptions = {
-            followRedirect: false
+            followRedirects: 0
         };
         this.instanceOptions = await this.postProcessInstanceOptions(this.instanceOptions);
         await this.checkInstanceUriReady();
@@ -212,15 +214,14 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
      * Ping the plugin URI (checking status of the head)
      */
     private async ping(): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
+        try {
             const url = this.instanceUri.toString();
-            request.head(url, this.instanceOptions).on('response', res => {
-                // Wait that the status is OK
-                resolve(res.statusCode === 200);
-            }).on('error', error => {
-                resolve(false);
-            });
-        });
+            // Wait that the status is OK
+            const response = await this.request.request({ url, type: 'HEAD', ...this.instanceOptions });
+            return response.res.statusCode === 200;
+        } catch {
+            return false;
+        }
     }
 
     isPluginValid(uri: URI): boolean {
@@ -274,7 +275,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         return uri;
     }
 
-    protected async postProcessInstanceOptions(options: object): Promise<object> {
+    protected async postProcessInstanceOptions(options: Omit<RequestOptions, 'url'>): Promise<Omit<RequestOptions, 'url'>> {
         return options;
     }
 

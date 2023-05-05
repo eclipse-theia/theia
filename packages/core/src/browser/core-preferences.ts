@@ -80,6 +80,11 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: 'code',
             markdownDescription: nls.localizeByDefault('Controls the dispatching logic for key presses to use either `code` (recommended) or `keyCode`.')
         },
+        'window.tabbar.enhancedPreview': {
+            type: 'boolean',
+            default: false,
+            description: nls.localize('theia/core/enhancedPreview', 'Controls whether more information about the tab should be displayed in horizontal tab bars.')
+        },
         'window.menuBarVisibility': {
             type: 'string',
             enum: ['classic', 'visible', 'hidden', 'compact'],
@@ -232,6 +237,23 @@ export const corePreferenceSchema: PreferenceSchema = {
             type: 'boolean',
             default: false,
             description: nls.localize('theia/core/tabMaximize', 'Controls whether to maximize tabs on double click.')
+        },
+        'workbench.tab.shrinkToFit.enabled': {
+            type: 'boolean',
+            default: false,
+            description: nls.localize('theia/core/tabShrinkToFit', 'Shrink tabs to fit available space.')
+        },
+        'workbench.tab.shrinkToFit.minimumSize': {
+            type: 'number',
+            default: 50,
+            minimum: 10,
+            description: nls.localize('theia/core/tabMinimumSize', 'Specifies the minimum size for tabs.')
+        },
+        'workbench.tab.shrinkToFit.defaultSize': {
+            type: 'number',
+            default: 200,
+            minimum: 10,
+            description: nls.localize('theia/core/tabDefaultSize', 'Specifies the default size for tabs.')
         }
     }
 };
@@ -241,6 +263,7 @@ export interface CoreConfiguration {
     'breadcrumbs.enabled': boolean;
     'files.encoding': string;
     'keyboard.dispatch': 'code' | 'keyCode';
+    'window.tabbar.enhancedPreview': boolean;
     'window.menuBarVisibility': 'classic' | 'visible' | 'hidden' | 'compact';
     'window.title': string;
     'window.titleSeparator': string;
@@ -259,6 +282,9 @@ export interface CoreConfiguration {
     'workbench.sash.hoverDelay': number;
     'workbench.sash.size': number;
     'workbench.tab.maximize': boolean;
+    'workbench.tab.shrinkToFit.enabled': boolean;
+    'workbench.tab.shrinkToFit.minimumSize': number;
+    'workbench.tab.shrinkToFit.defaultSize': number;
 }
 
 export const CorePreferenceContribution = Symbol('CorePreferenceContribution');

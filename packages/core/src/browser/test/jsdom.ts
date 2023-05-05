@@ -47,7 +47,7 @@ export function enableJSDOM(): () => void {
 
     const toCleanup: string[] = [];
     Object.getOwnPropertyNames((dom.window as any)).forEach(property => {
-        if (typeof (global as any)[property] === 'undefined') {
+        if (!(property in global)) {
             (global as any)[property] = (dom.window as any)[property];
             toCleanup.push(property);
         }

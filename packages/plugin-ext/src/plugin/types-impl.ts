@@ -1995,6 +1995,11 @@ export class DocumentSymbol {
     }
 }
 
+export enum CommentThreadState {
+    Unresolved = 0,
+    Resolved = 1
+}
+
 export enum CommentThreadCollapsibleState {
     Collapsed = 0,
     Expanded = 1
@@ -2734,13 +2739,12 @@ export namespace DebugAdapterInlineImplementation {
 export type DebugAdapterDescriptor = DebugAdapterExecutable | DebugAdapterServer | DebugAdapterNamedPipeServer | DebugAdapterInlineImplementation;
 
 export enum LogLevel {
+    Off = 0,
     Trace = 1,
     Debug = 2,
     Info = 3,
     Warning = 4,
-    Error = 5,
-    Critical = 6,
-    Off = 7
+    Error = 5
 }
 
 /**
@@ -3111,6 +3115,7 @@ export class TestRunRequest implements theia.TestRunRequest {
         public readonly include: theia.TestItem[] | undefined = undefined,
         public readonly exclude: theia.TestItem[] | undefined = undefined,
         public readonly profile: theia.TestRunProfile | undefined = undefined,
+        public readonly continuous: boolean | undefined = undefined,
     ) { }
 }
 

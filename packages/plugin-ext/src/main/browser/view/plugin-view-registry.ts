@@ -158,7 +158,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
         });
         this.doRegisterViewContainer('test', 'left', {
-            label: 'Test',
+            label: nls.localizeByDefault('Test'),
             iconClass: codicon('beaker'),
             closeable: true
         });

@@ -23,7 +23,7 @@ import {
     CommentThreadChangedEvent
 } from '../../../common/plugin-api-rpc-model';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { CommentThreadCollapsibleState } from '../../../plugin/types-impl';
+import { CommentThreadCollapsibleState, CommentThreadState } from '../../../plugin/types-impl';
 import {
     CommentProviderFeatures,
     CommentsExt,
@@ -124,6 +124,21 @@ export class CommentThreadImpl implements CommentThread, Disposable {
     private readonly onDidChangeCollapsibleStateEmitter = new Emitter<CommentThreadCollapsibleState | undefined>();
     readonly onDidChangeCollapsibleState = this.onDidChangeCollapsibleStateEmitter.event;
 
+    private _state: CommentThreadState | undefined;
+    get state(): CommentThreadState | undefined {
+        return this._state;
+    }
+
+    set state(newState: CommentThreadState | undefined) {
+        if (this._state !== newState) {
+            this._state = newState;
+            this.onDidChangeStateEmitter.fire(this._state);
+        }
+    }
+
+    private readonly onDidChangeStateEmitter = new Emitter<CommentThreadState | undefined>();
+    readonly onDidChangeState = this.onDidChangeStateEmitter.event;
+
     private readonly onDidChangeCanReplyEmitter = new Emitter<boolean>();
     readonly onDidChangeCanReply = this.onDidChangeCanReplyEmitter.event;
 
@@ -163,12 +178,14 @@ export class CommentThreadImpl implements CommentThread, Disposable {
         if (modified('contextValue')) { this._contextValue = changes.contextValue; }
         if (modified('comments')) { this._comments = changes.comments; }
         if (modified('collapseState')) { this._collapsibleState = changes.collapseState; }
+        if (modified('state')) { this._state = changes.state; }
         if (modified('canReply')) { this._canReply = changes.canReply!; }
     }
 
     dispose(): void {
         this._isDisposed = true;
         this.onDidChangeCollapsibleStateEmitter.dispose();
+        this.onDidChangeStateEmitter.dispose();
         this.onDidChangeCommentsEmitter.dispose();
         this.onDidChangeInputEmitter.dispose();
         this.onDidChangeLabelEmitter.dispose();

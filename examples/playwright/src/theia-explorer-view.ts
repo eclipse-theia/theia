@@ -112,11 +112,11 @@ export class TheiaExplorerView extends TheiaView {
         return file;
     }
 
-    async fileStatNode(filePath: string): Promise<TheiaExplorerFileStatNode | undefined> {
-        return this.fileStatNodeBySegments(...filePath.split('/'));
+    async fileStatNode(filePath: string, compact = false): Promise<TheiaExplorerFileStatNode | undefined> {
+        return compact ? this.compactFileStatNode(filePath) : this.fileStatNodeBySegments(...filePath.split('/'));
     }
 
-    async fileStatNodeBySegments(...pathFragments: string[]): Promise<TheiaExplorerFileStatNode | undefined> {
+    protected async fileStatNodeBySegments(...pathFragments: string[]): Promise<TheiaExplorerFileStatNode | undefined> {
         await super.activate();
         const viewElement = await this.viewElement();
 
@@ -139,6 +139,35 @@ export class TheiaExplorerView extends TheiaView {
         }
 
         return currentTreeNode;
+    }
+
+    protected async compactFileStatNode(path: string): Promise<TheiaExplorerFileStatNode | undefined> {
+        // default setting `explorer.compactFolders=true` renders folders in a compact form - single child folders will be compressed in a combined tree element
+        await super.activate();
+        const viewElement = await this.viewElement();
+
+        // check if first segment folder needs to be expanded first (if folder has never been expanded, it will not show the compact folder structure)
+        await this.waitForVisibleFileNodes();
+        const firstSegment = path.split('/')[0];
+        const selector = this.treeNodeSelector(firstSegment);
+        const folderElement = await viewElement?.$(selector);
+        if (folderElement && await folderElement.isVisible()) {
+            const folderNode = await viewElement?.waitForSelector(selector, { state: 'visible' });
+            if (!folderNode) {
+                throw new Error(`Tree node '${selector}' not found in explorer`);
+            }
+            const folderFileStatNode = new TheiaExplorerFileStatNode(folderNode, this);
+            if (await folderFileStatNode.isCollapsed()) {
+                await folderFileStatNode.expand();
+            }
+        }
+        // now get tree node via the full path
+        const fullPathSelector = this.treeNodeSelector(path);
+        const treeNode = await viewElement?.waitForSelector(fullPathSelector, { state: 'visible' });
+        if (!treeNode) {
+            throw new Error(`Tree node '${fullPathSelector}' not found in explorer`);
+        }
+        return new TheiaExplorerFileStatNode(treeNode, this);
     }
 
     async selectTreeNode(filePath: string): Promise<void> {
@@ -181,8 +210,8 @@ export class TheiaExplorerView extends TheiaView {
         await menuItem.click();
     }
 
-    protected async existsNode(path: string, isDirectory: boolean): Promise<boolean> {
-        const fileStatNode = await this.fileStatNode(path);
+    protected async existsNode(path: string, isDirectory: boolean, compact = false): Promise<boolean> {
+        const fileStatNode = await this.fileStatNode(path, compact);
         if (!fileStatNode) {
             return false;
         }
@@ -202,8 +231,14 @@ export class TheiaExplorerView extends TheiaView {
         return this.existsNode(path, false);
     }
 
-    async existsDirectoryNode(path: string): Promise<boolean> {
-        return this.existsNode(path, true);
+    async existsDirectoryNode(path: string, compact = false): Promise<boolean> {
+        return this.existsNode(path, true, compact);
+    }
+
+    async waitForTreeNodeVisible(path: string): Promise<void> {
+        // wait for tree node to be visible, e.g. after triggering create
+        const viewElement = await this.viewElement();
+        await viewElement?.waitForSelector(this.treeNodeSelector(path), { state: 'visible' });
     }
 
     async getNumberOfVisibleNodes(): Promise<number> {

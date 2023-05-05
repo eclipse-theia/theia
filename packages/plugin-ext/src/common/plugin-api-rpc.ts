@@ -72,6 +72,7 @@ import {
     CallHierarchyOutgoingCall,
     Comment,
     CommentOptions,
+    CommentThreadState,
     CommentThreadCollapsibleState,
     CommentThread,
     CommentThreadChangedEvent,
@@ -115,6 +116,7 @@ import { Disposable } from '@theia/core/lib/common/disposable';
 import { isString, isObject, PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
 import { Severity } from '@theia/core/lib/common/severity';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
+import { LanguagePackBundle } from './language-pack-service';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -286,7 +288,8 @@ export interface TerminalServiceExt {
     getEnvironmentVariableCollection(extensionIdentifier: string): theia.EnvironmentVariableCollection;
 }
 export interface OutputChannelRegistryExt {
-    createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel
+    createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel,
+    createOutputChannel(name: string, pluginInfo: PluginInfo, options: { log: true }): theia.LogOutputChannel
 }
 
 export interface ConnectionMain {
@@ -756,6 +759,7 @@ export class DataTransferFileDTO {
 
 export interface TreeViewsExt {
     $dragStarted(treeViewId: string, treeItemIds: string[], token: CancellationToken): Promise<UriComponents[] | undefined>;
+    $dragEnd(treeViewId: string): Promise<void>;
     $drop(treeViewId: string, treeItemId: string | undefined, dataTransferItems: [string, string | DataTransferFileDTO][], token: CancellationToken): Promise<void>;
     $getChildren(treeViewId: string, treeItemId: string | undefined): Promise<TreeViewItem[] | undefined>;
     $hasResolveTreeItem(treeViewId: string): Promise<boolean>;
@@ -1941,6 +1945,7 @@ export type CommentThreadChanges = Partial<{
     contextValue: string,
     comments: Comment[],
     collapseState: CommentThreadCollapsibleState;
+    state: CommentThreadState;
     canReply: boolean;
 }>;
 
@@ -2110,7 +2115,8 @@ export const PLUGIN_RPC_CONTEXT = {
     TIMELINE_MAIN: <ProxyIdentifier<TimelineMain>>createProxyIdentifier<TimelineMain>('TimelineMain'),
     THEMING_MAIN: <ProxyIdentifier<ThemingMain>>createProxyIdentifier<ThemingMain>('ThemingMain'),
     COMMENTS_MAIN: <ProxyIdentifier<CommentsMain>>createProxyIdentifier<CommentsMain>('CommentsMain'),
-    TABS_MAIN: <ProxyIdentifier<TabsMain>>createProxyIdentifier<TabsMain>('TabsMain')
+    TABS_MAIN: <ProxyIdentifier<TabsMain>>createProxyIdentifier<TabsMain>('TabsMain'),
+    LOCALIZATION_MAIN: <ProxyIdentifier<LocalizationMain>>createProxyIdentifier<LocalizationMain>('LocalizationMain'),
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -2216,4 +2222,21 @@ export interface IdentifiableInlineCompletions extends InlineCompletions<Identif
 
 export interface IdentifiableInlineCompletion extends InlineCompletion {
     idx: number;
+}
+
+export interface LocalizationExt {
+    translateMessage(pluginId: string, details: StringDetails): string;
+    getBundle(pluginId: string): Record<string, string> | undefined;
+    getBundleUri(pluginId: string): theia.Uri | undefined;
+    initializeLocalizedMessages(plugin: Plugin, currentLanguage: string): Promise<void>;
+}
+
+export interface StringDetails {
+    message: string;
+    args?: Record<string | number, any>;
+    comment?: string | string[];
+}
+
+export interface LocalizationMain {
+    $fetchBundle(id: string): Promise<LanguagePackBundle | undefined>;
 }

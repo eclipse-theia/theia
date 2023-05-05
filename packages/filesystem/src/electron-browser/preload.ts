@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2021 logi.cals GmbH, EclipseSource and others.
+// Copyright (C) 2023 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,15 +13,18 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+import { CHANNEL_SHOW_OPEN, CHANNEL_SHOW_SAVE, OpenDialogOptions, SaveDialogOptions, TheiaFilesystemAPI } from '../electron-common/electron-api';
 
-import { PlaywrightTestConfig } from '@playwright/test';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { ipcRenderer, contextBridge } from '@theia/core/electron-shared/electron';
 
-import baseConfig from './playwright.config';
-
-const debugConfig: PlaywrightTestConfig = {
-    ...baseConfig,
-    workers: 1,
-    timeout: 15000000
+const api: TheiaFilesystemAPI = {
+    showOpenDialog: (options: OpenDialogOptions) => ipcRenderer.invoke(CHANNEL_SHOW_OPEN, options),
+    showSaveDialog: (options: SaveDialogOptions) => ipcRenderer.invoke(CHANNEL_SHOW_SAVE, options),
 };
 
-export default debugConfig;
+export function preload(): void {
+    console.log('exposing theia filesystem electron api');
+
+    contextBridge.exposeInMainWorld('electronTheiaFilesystem', api);
+}

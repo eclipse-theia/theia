@@ -29,6 +29,7 @@
         "showPreviousTabInGroup": "Pasar a la pestaña anterior del grupo",
         "toggleMaximized": "Alternar maximizado"
       },
+      "enhancedPreview": "Controla si se debe mostrar más información sobre la pestaña en las barras de pestañas horizontales.",
       "file": {
         "browse": "Visite"
       },
@@ -52,7 +53,10 @@
         "previous": "Anterior (Arriba)"
       },
       "silentNotifications": "Controla si se suprimen las ventanas emergentes de notificación.",
-      "tabMaximize": "Controla si se maximizan las pestañas al hacer doble clic."
+      "tabDefaultSize": "Especifica el tamaño por defecto de las pestañas.",
+      "tabMaximize": "Controla si se maximizan las pestañas al hacer doble clic.",
+      "tabMinimumSize": "Especifica el tamaño mínimo de las pestañas.",
+      "tabShrinkToFit": "Reduzca las pestañas para adaptarlas al espacio disponible."
     },
     "debug": {
       "addConfigurationPlaceholder": "Seleccione la raíz del espacio de trabajo para añadir la configuración",
@@ -358,6 +362,7 @@
     "task": {
       "attachTask": "Adjuntar tarea...",
       "clearHistory": "Historia clara",
+      "noTaskToRun": "No se ha encontrado ninguna tarea que ejecutar. Configurar tareas...",
       "openUserTasks": "Abrir las tareas del usuario"
     },
     "terminal": {

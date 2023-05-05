@@ -29,6 +29,7 @@
         "showPreviousTabInGroup": "切换到组中的上一个标签页",
         "toggleMaximized": "切换最大化面板"
       },
+      "enhancedPreview": "控制是否应在水平标签栏中显示关于标签的更多信息。",
       "file": {
         "browse": "浏览"
       },
@@ -52,7 +53,10 @@
         "previous": "上一页 (向上)"
       },
       "silentNotifications": "控制是否抑制弹出通知。",
-      "tabMaximize": "控制是否在双击时最大化标签。"
+      "tabDefaultSize": "指定标签的默认尺寸。",
+      "tabMaximize": "控制是否在双击时最大化标签。",
+      "tabMinimumSize": "指定标签的最小尺寸。",
+      "tabShrinkToFit": "收缩标签以适应可用空间。"
     },
     "debug": {
       "addConfigurationPlaceholder": "选择要添加配置的工作区根",
@@ -358,6 +362,7 @@
     "task": {
       "attachTask": "附加任务...",
       "clearHistory": "清除历史",
+      "noTaskToRun": "没有发现要运行的任务。配置任务...",
       "openUserTasks": "打开用户的任务"
     },
     "terminal": {

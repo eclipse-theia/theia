@@ -2702,6 +2702,9 @@ export module '@theia/plugin' {
 
     /**
      * An output channel is a container for readonly textual information.
+     *
+     * To get an instance of an `OutputChannel` use
+     * {@link window.createOutputChannel createOutputChannel}.
      */
     export interface OutputChannel {
 
@@ -2763,6 +2766,106 @@ export module '@theia/plugin' {
          * Dispose and free associated resources.
          */
         dispose(): void;
+    }
+
+    /**
+     * Log levels
+     */
+    export enum LogLevel {
+
+        /**
+         * No messages are logged with this level.
+         */
+        Off = 0,
+
+        /**
+         * All messages are logged with this level.
+         */
+        Trace = 1,
+
+        /**
+         * Messages with debug and higher log level are logged with this level.
+         */
+        Debug = 2,
+
+        /**
+         * Messages with info and higher log level are logged with this level.
+         */
+        Info = 3,
+
+        /**
+         * Messages with warning and higher log level are logged with this level.
+         */
+        Warning = 4,
+
+        /**
+         * Only error messages are logged with this level.
+         */
+        Error = 5
+    }
+
+    /**
+     * A channel for containing log output.
+     *
+     * To get an instance of a `LogOutputChannel` use
+     * {@link window.createOutputChannel createOutputChannel}.
+     */
+    export interface LogOutputChannel extends OutputChannel {
+
+        /**
+         * The current log level of the channel. Defaults to {@link env.logLevel editor log level}.
+         */
+        readonly logLevel: LogLevel;
+
+        /**
+         * An {@link Event} which fires when the log level of the channel changes.
+         */
+        readonly onDidChangeLogLevel: Event<LogLevel>;
+
+        /**
+         * Outputs the given trace message to the channel. Use this method to log verbose information.
+         *
+         * The message is only logged if the channel is configured to display {@link LogLevel.Trace trace} log level.
+         *
+         * @param message trace message to log
+         */
+        trace(message: string, ...args: any[]): void;
+
+        /**
+         * Outputs the given debug message to the channel.
+         *
+         * The message is only logged if the channel is configured to display {@link LogLevel.Debug debug} log level or lower.
+         *
+         * @param message debug message to log
+         */
+        debug(message: string, ...args: any[]): void;
+
+        /**
+         * Outputs the given information message to the channel.
+         *
+         * The message is only logged if the channel is configured to display {@link LogLevel.Info info} log level or lower.
+         *
+         * @param message info message to log
+         */
+        info(message: string, ...args: any[]): void;
+
+        /**
+         * Outputs the given warning message to the channel.
+         *
+         * The message is only logged if the channel is configured to display {@link LogLevel.Warning warning} log level or lower.
+         *
+         * @param message warning message to log
+         */
+        warn(message: string, ...args: any[]): void;
+
+        /**
+         * Outputs the given error or error message to the channel.
+         *
+         * The message is only logged if the channel is configured to display {@link LogLevel.Error error} log level or lower.
+         *
+         * @param error Error or error message to log
+         */
+        error(error: string | Error, ...args: any[]): void;
     }
 
     /**
@@ -5251,6 +5354,14 @@ export module '@theia/plugin' {
         export function createOutputChannel(name: string): OutputChannel;
 
         /**
+         * Creates a new {@link LogOutputChannel log output channel} with the given name.
+         *
+         * @param name Human-readable string which will be used to represent the channel in the UI.
+         * @param options Options for the log output channel.
+         */
+        export function createOutputChannel(name: string, options: { log: true }): LogOutputChannel;
+
+        /**
          * Create new terminal.
          * @param name - terminal name to display on the UI.
          * @param shellPath - path to the executable shell. For example "/bin/bash", "bash", "sh".
@@ -7527,6 +7638,15 @@ export module '@theia/plugin' {
          */
         export function asExternalUri(target: Uri): Thenable<Uri>;
 
+        /**
+         * The current log level of the editor.
+         */
+        export const logLevel: LogLevel;
+
+        /**
+         * An {@link Event} which fires when the log level of the editor changes.
+         */
+        export const onDidChangeLogLevel: Event<LogLevel>;
     }
 
     /**
@@ -12865,6 +12985,11 @@ export module '@theia/plugin' {
         label?: string;
 
         /**
+         * The optional state of a comment thread, which may affect how the comment is displayed.
+         */
+        state?: CommentThreadState;
+
+        /**
          * Dispose this comment thread.
          *
          * Once disposed, this comment thread will be removed from visible editors and Comment Panel when appropriate.
@@ -12875,6 +13000,14 @@ export module '@theia/plugin' {
          * Whether the thread supports reply. Defaults to true.
          */
         canReply: boolean;
+    }
+
+    /**
+     * The state of a comment thread.
+     */
+    export enum CommentThreadState {
+        Unresolved = 0,
+        Resolved = 1
     }
 
     /**
@@ -13713,6 +13846,82 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Namespace for localization-related functionality in the extension API. To use this properly,
+     * you must have `l10n` defined in your extension manifest and have bundle.l10n.<language>.json files.
+     * For more information on how to generate bundle.l10n.<language>.json files, check out the
+     * [vscode-l10n repo](https://github.com/microsoft/vscode-l10n).
+     *
+     * Note: Built-in extensions (for example, Git, TypeScript Language Features, GitHub Authentication)
+     * are excluded from the `l10n` property requirement. In other words, they do not need to specify
+     * a `l10n` in the extension manifest because their translated strings come from Language Packs.
+     */
+    export namespace l10n {
+        /**
+         * Marks a string for localization. If a localized bundle is available for the language specified by
+         * {@link env.language} and the bundle has a localized value for this message, then that localized
+         * value will be returned (with injected {@link args} values for any templated values).
+         * @param message - The message to localize. Supports index templating where strings like `{0}` and `{1}` are
+         * replaced by the item at that index in the {@link args} array.
+         * @param args - The arguments to be used in the localized string. The index of the argument is used to
+         * match the template placeholder in the localized string.
+         * @returns localized string with injected arguments.
+         * @example `l10n.t('Hello {0}!', 'World');`
+         */
+        export function t(message: string, ...args: Array<string | number | boolean>): string;
+
+        /**
+         * Marks a string for localization. If a localized bundle is available for the language specified by
+         * {@link env.language} and the bundle has a localized value for this message, then that localized
+         * value will be returned (with injected {@link args} values for any templated values).
+         * @param message The message to localize. Supports named templating where strings like `{foo}` and `{bar}` are
+         * replaced by the value in the Record for that key (foo, bar, etc).
+         * @param args The arguments to be used in the localized string. The name of the key in the record is used to
+         * match the template placeholder in the localized string.
+         * @returns localized string with injected arguments.
+         * @example `l10n.t('Hello {name}', { name: 'Erich' });`
+         */
+        export function t(message: string, args: Record<string, any>): string;
+        /**
+         * Marks a string for localization. If a localized bundle is available for the language specified by
+         * {@link env.language} and the bundle has a localized value for this message, then that localized
+         * value will be returned (with injected args values for any templated values).
+         * @param options The options to use when localizing the message.
+         * @returns localized string with injected arguments.
+         */
+        export function t(options: {
+            /**
+             * The message to localize. If {@link args} is an array, this message supports index templating where strings like
+             * `{0}` and `{1}` are replaced by the item at that index in the {@link args} array. If `args` is a `Record<string, any>`,
+             * this supports named templating where strings like `{foo}` and `{bar}` are replaced by the value in
+             * the Record for that key (foo, bar, etc).
+             */
+            message: string;
+            /**
+             * The arguments to be used in the localized string. As an array, the index of the argument is used to
+             * match the template placeholder in the localized string. As a Record, the key is used to match the template
+             * placeholder in the localized string.
+             */
+            args?: Array<string | number | boolean> | Record<string, any>;
+            /**
+             * A comment to help translators understand the context of the message.
+             */
+            comment: string | string[];
+        }): string;
+        /**
+         * The bundle of localized strings that have been loaded for the extension.
+         * It's undefined if no bundle has been loaded. The bundle is typically not loaded if
+         * there was no bundle found or when we are running with the default language.
+         */
+        export const bundle: { [key: string]: string } | undefined;
+        /**
+         * The URI of the localization bundle that has been loaded for the extension.
+         * It's undefined if no bundle has been loaded. The bundle is typically not loaded if
+         * there was no bundle found or when we are running with the default language.
+         */
+        export const uri: Uri | undefined;
+    }
+
+    /**
      * The tab represents a single text based resource.
      */
     export class TabInputText {
@@ -13929,7 +14138,7 @@ export module '@theia/plugin' {
          * Whether or not the group is currently active.
          *
          * *Note* that only one tab group is active at a time, but that multiple tab
-         * groups can have an {@link TabGroup.aciveTab active tab}.
+         * groups can have an {@link TabGroup.isActive active tab}.
          *
          * @see {@link Tab.isActive}
          */
@@ -13956,7 +14165,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Represents the main editor area which consists of multple groups which contain tabs.
+     * Represents the main editor area which consists of multiple groups which contain tabs.
      */
     export interface TabGroups {
         /**
@@ -15364,6 +15573,14 @@ export interface TestRunProfile {
     isDefault: boolean;
 
     /**
+     * Whether this profile supports continuous running of requests. If so,
+     * then {@link TestRunRequest.continuous} may be set to `true`. Defaults
+     * to false.
+     * @stubbed
+     */
+    supportsContinuousRun: boolean;
+
+    /**
      * Associated tag for the profile. If this is set, only {@link TestItem}
      * instances with the same tag will be eligible to execute in this profile.
      * @stubbed
@@ -15384,6 +15601,11 @@ export interface TestRunProfile {
      * {@link TestController.createTestRun} at least once, and all test runs
      * associated with the request should be created before the function returns
      * or the returned promise is resolved.
+     *
+     * If {@link supportsContinuousRun} is set, then {@link TestRunRequest.continuous}
+     * may be `true`. In this case, the profile should observe changes to
+     * source code and create new test runs by calling {@link TestController.createTestRun},
+     * until the cancellation is requested on the `token`.
      *
      * @param request Request information for the test run.
      * @param cancellationToken Token that signals the used asked to abort the
@@ -15444,11 +15666,12 @@ export interface TestController {
      * @param runHandler Function called to start a test run.
      * @param isDefault Whether this is the default action for its kind.
      * @param tag Profile test tag.
+     * @param supportsContinuousRun Whether the profile supports continuous running.
      * @returns An instance of a {@link TestRunProfile}, which is automatically
      * associated with this controller.
      * @stubbed
      */
-    createRunProfile(label: string, kind: TestRunProfileKind, runHandler: (request: TestRunRequest, token: CancellationToken) => Thenable<void> | void, isDefault?: boolean, tag?: TestTag): TestRunProfile;
+    createRunProfile(label: string, kind: TestRunProfileKind, runHandler: (request: TestRunRequest, token: CancellationToken) => Thenable<void> | void, isDefault?: boolean, tag?: TestTag, supportsContinuousRun?: boolean): TestRunProfile;
 
     /**
      * A function provided by the extension that the editor may call to request
@@ -15569,11 +15792,18 @@ export class TestRunRequest {
     readonly profile: TestRunProfile | undefined;
 
     /**
+     * Whether the profile should run continuously as source code changes. Only
+     * relevant for profiles that set {@link TestRunProfile.supportsContinuousRun}.
+     */
+    readonly continuous?: boolean;
+
+    /**
      * @param include Array of specific tests to run, or undefined to run all tests
      * @param exclude An array of tests to exclude from the run.
      * @param profile The run profile used for this request.
+     * @param continuous Whether to run tests continuously as source changes.
      */
-    constructor(include?: readonly TestItem[], exclude?: readonly TestItem[], profile?: TestRunProfile);
+    constructor(include?: readonly TestItem[], exclude?: readonly TestItem[], profile?: TestRunProfile, continuous?: boolean);
 }
 
 /**

@@ -29,6 +29,7 @@
         "showPreviousTabInGroup": "Przełączanie do poprzedniej karty w grupie",
         "toggleMaximized": "Przełącz maksymalny"
       },
+      "enhancedPreview": "Kontroluje, czy więcej informacji o zakładce ma być wyświetlanych w poziomych paskach zakładek.",
       "file": {
         "browse": "Przeglądaj stronę"
       },
@@ -52,7 +53,10 @@
         "previous": "Poprzedni (Up)"
       },
       "silentNotifications": "Określa, czy wyłączyć wyskakujące okienka powiadomień.",
-      "tabMaximize": "Określa, czy karty mają być maksymalizowane po dwukrotnym kliknięciu."
+      "tabDefaultSize": "Określa domyślny rozmiar dla zakładek.",
+      "tabMaximize": "Określa, czy karty mają być maksymalizowane po dwukrotnym kliknięciu.",
+      "tabMinimumSize": "Określa minimalny rozmiar dla zakładek.",
+      "tabShrinkToFit": "Zmniejszanie zakładek w celu dopasowania do dostępnej przestrzeni."
     },
     "debug": {
       "addConfigurationPlaceholder": "Wybierz główny obszar roboczy, do którego chcesz dodać konfigurację",
@@ -358,6 +362,7 @@
     "task": {
       "attachTask": "Dołącz zadanie...",
       "clearHistory": "Czysta historia",
+      "noTaskToRun": "Nie znaleziono zadania do uruchomienia. Skonfiguruj zadania...",
       "openUserTasks": "Otwórz zadania użytkownika"
     },
     "terminal": {

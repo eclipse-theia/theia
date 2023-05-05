@@ -29,6 +29,7 @@
         "showPreviousTabInGroup": "Váltás a csoport előző lapjára",
         "toggleMaximized": "Maximált kapcsoló"
       },
+      "enhancedPreview": "Szabályozza, hogy a vízszintes lapszalagokban megjelenjen-e több információ a lapról.",
       "file": {
         "browse": "Böngésszen a oldalon."
       },
@@ -52,7 +53,10 @@
         "previous": "Előző (fel)"
       },
       "silentNotifications": "Beállítja, hogy az értesítések felugró ablakai el legyenek-e nyomva.",
-      "tabMaximize": "Szabályozza, hogy a lapok dupla kattintásra maximalizálódjanak-e."
+      "tabDefaultSize": "Megadja a lapok alapértelmezett méretét.",
+      "tabMaximize": "Szabályozza, hogy a lapok dupla kattintásra maximalizálódjanak-e.",
+      "tabMinimumSize": "Megadja a lapok minimális méretét.",
+      "tabShrinkToFit": "Zsugorítsa a lapokat a rendelkezésre álló helyhez."
     },
     "debug": {
       "addConfigurationPlaceholder": "Válassza ki a munkaterület gyökerét a konfiguráció hozzáadásához",
@@ -358,6 +362,7 @@
     "task": {
       "attachTask": "Feladat csatolása...",
       "clearHistory": "Történelem törlése",
+      "noTaskToRun": "Nem találtunk futtatandó feladatot. Feladatok konfigurálása...",
       "openUserTasks": "Felhasználói feladatok megnyitása"
     },
     "terminal": {

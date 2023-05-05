@@ -96,6 +96,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
         @inject(TabBarToolbarRegistry) protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
         @inject(TabBarToolbarFactory) protected readonly tabBarToolbarFactory: TabBarToolbarFactory,
         @inject(BreadcrumbsRendererFactory) protected readonly breadcrumbsRendererFactory: BreadcrumbsRendererFactory,
+        @inject(CorePreferences) protected readonly corePreferences: CorePreferences
     ) { }
 
     get onDidCreateTabBar(): CommonEvent<TabBar<Widget>> {
@@ -103,6 +104,17 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
     }
 
     createTabBar(): TabBar<Widget> {
+        const getDynamicTabOptions: () => ScrollableTabBar.Options | undefined = () => {
+            if (this.corePreferences.get('workbench.tab.shrinkToFit.enabled')) {
+                return {
+                    minimumTabSize: this.corePreferences.get('workbench.tab.shrinkToFit.minimumSize'),
+                    defaultTabSize: this.corePreferences.get('workbench.tab.shrinkToFit.defaultSize')
+                };
+            } else {
+                return undefined;
+            }
+        };
+
         const renderer = this.tabBarRendererFactory();
         const tabBar = new ToolbarAwareTabBar(
             this.tabBarToolbarRegistry,
@@ -115,12 +127,20 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
                 useBothWheelAxes: true,
                 scrollXMarginOffset: 4,
                 suppressScrollY: true
-            });
+            },
+            getDynamicTabOptions());
         this.tabBarClasses.forEach(c => tabBar.addClass(c));
         renderer.tabBar = tabBar;
         tabBar.disposed.connect(() => renderer.dispose());
         renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
         tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
+        this.corePreferences.onPreferenceChanged(change => {
+            if (change.preferenceName === 'workbench.tab.shrinkToFit.enabled' ||
+                change.preferenceName === 'workbench.tab.shrinkToFit.minimumSize' ||
+                change.preferenceName === 'workbench.tab.shrinkToFit.defaultSize') {
+                tabBar.dynamicTabOptions = getDynamicTabOptions();
+            }
+        });
         this.onDidCreateTabBarEmitter.fire(tabBar);
         return tabBar;
     }
@@ -266,6 +286,14 @@ export class ApplicationShell extends Widget {
                 }
             });
         }
+
+        this.corePreferences.onPreferenceChanged(preference => {
+            if (preference.preferenceName === 'window.tabbar.enhancedPreview') {
+                this.allTabBars.forEach(tabBar => {
+                    tabBar.update();
+                });
+            }
+        });
     }
 
     protected initializeShell(): void {

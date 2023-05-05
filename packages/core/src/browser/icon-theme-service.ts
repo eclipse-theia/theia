@@ -168,9 +168,9 @@ export class IconThemeService {
      */
     setCurrent(newCurrent: IconTheme, persistSetting = true): void {
         if (newCurrent !== this.getCurrent()) {
+            this.activeTheme = newCurrent;
             this.toDeactivate.dispose();
             this.toDeactivate.push(newCurrent.activate());
-            this.activeTheme = newCurrent;
             this.onDidChangeCurrentEmitter.fire(newCurrent.id);
         }
         if (persistSetting) {

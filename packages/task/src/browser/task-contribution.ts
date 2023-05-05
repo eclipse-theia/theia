@@ -81,6 +81,10 @@ export interface TaskProvider {
     provideTasks(): Promise<TaskConfiguration[]>;
 }
 
+export interface WillResolveTaskProvider extends WaitUntilEvent {
+    taskType?: string
+}
+
 /**
  * The {@link TaskResolverRegistry} is the common component for registration and provision of
  * {@link TaskResolver}s. Theia will collect all {@link TaskContribution}s and invoke {@link TaskContribution#registerResolvers}
@@ -89,7 +93,7 @@ export interface TaskProvider {
 @injectable()
 export class TaskResolverRegistry {
 
-    protected readonly onWillProvideTaskResolverEmitter = new Emitter<WaitUntilEvent>();
+    protected readonly onWillProvideTaskResolverEmitter = new Emitter<WillResolveTaskProvider>();
     /**
      * Emit when the registry provides a registered resolver. i.e. when the {@link TaskResolverRegistry#getResolver}
      * function is called.
@@ -156,7 +160,7 @@ export class TaskResolverRegistry {
      * @returns a promise of the registered `TaskResolver` or `undefined` if no resolver is registered for the given type.
      */
     async getTaskResolver(type: string): Promise<TaskResolver | undefined> {
-        await WaitUntilEvent.fire(this.onWillProvideTaskResolverEmitter, {});
+        await WaitUntilEvent.fire(this.onWillProvideTaskResolverEmitter, { taskType: type });
         return this.taskResolvers.get(type);
     }
 
@@ -200,7 +204,7 @@ export class TaskResolverRegistry {
 @injectable()
 export class TaskProviderRegistry {
 
-    protected readonly onWillProvideTaskProviderEmitter = new Emitter<WaitUntilEvent>();
+    protected readonly onWillProvideTaskProviderEmitter = new Emitter<WillResolveTaskProvider>();
     /**
      * Emit when the registry provides a registered task provider. i.e. when the {@link TaskProviderRegistry#getProvider}
      * function is called.
@@ -230,6 +234,14 @@ export class TaskProviderRegistry {
     }
 
     /**
+     * Initiates activation of a TaskProvider with the given type
+     * @param type the task configuration type, '*' indicates, all providers.
+     */
+    async activateProvider(type: string): Promise<void> {
+        await WaitUntilEvent.fire(this.onWillProvideTaskProviderEmitter, { taskType: type });
+    }
+
+    /**
      * Retrieves the {@link TaskProvider} registered for the given type task configuration type.
      * If there is already a `TaskProvider` registered for the specified type the registration will
      * be overwritten with the new value.
@@ -238,17 +250,17 @@ export class TaskProviderRegistry {
      * @returns a promise of the registered `TaskProvider`` or `undefined` if no provider is registered for the given type.
      */
     async getProvider(type: string): Promise<TaskProvider | undefined> {
-        await WaitUntilEvent.fire(this.onWillProvideTaskProviderEmitter, {});
+        await this.activateProvider(type);
         return this.providers.get(type);
     }
 
     /**
      * Retrieve all registered {@link TaskProvider}s.
      *
+     * Use {@link activateProvider} to control registration of providers as needed.
      * @returns a promise of all registered {@link TaskProvider}s.
      */
     async getProviders(): Promise<TaskProvider[]> {
-        await WaitUntilEvent.fire(this.onWillProvideTaskProviderEmitter, {});
         return [...this.providers.values()];
     }
 }

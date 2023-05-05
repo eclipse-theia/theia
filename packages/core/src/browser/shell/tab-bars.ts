@@ -34,6 +34,9 @@ import { IDragEvent } from '@phosphor/dragdrop';
 import { LOCKED_CLASS, PINNED_CLASS } from '../widgets/widget';
 import { CorePreferences } from '../core-preferences';
 import { HoverService } from '../hover-service';
+import { Root, createRoot } from 'react-dom/client';
+import { SelectComponent } from '../widgets/select-component';
+import { createElement } from 'react';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -65,6 +68,10 @@ export interface SideBarRenderData extends TabBar.IRenderData<Widget> {
     iconSize?: SizeData;
     paddingTop?: number;
     paddingBottom?: number;
+}
+
+export interface ScrollableRenderData extends TabBar.IRenderData<Widget> {
+    tabWidth?: number;
 }
 
 /**
@@ -157,9 +164,7 @@ export class TabBarRenderer extends TabBar.Renderer {
             ? nls.localizeByDefault('Unpin')
             : nls.localizeByDefault('Close');
 
-        const hover = this.tabBar && this.tabBar.orientation === 'horizontal' ? {
-            title: title.caption
-        } : {
+        const hover = this.tabBar && (this.tabBar.orientation === 'horizontal' && !this.corePreferences?.['window.tabbar.enhancedPreview']) ? { title: title.caption } : {
             onmouseenter: this.handleMouseEnterEvent
         };
 
@@ -204,11 +209,12 @@ export class TabBarRenderer extends TabBar.Renderer {
      * If size information is available for the label and icon, set an explicit height on the tab.
      * The height value also considers padding, which should be derived from CSS settings.
      */
-    override createTabStyle(data: SideBarRenderData): ElementInlineStyle {
+    override createTabStyle(data: SideBarRenderData & ScrollableRenderData): ElementInlineStyle {
         const zIndex = `${data.zIndex}`;
         const labelSize = data.labelSize;
         const iconSize = data.iconSize;
         let height: string | undefined;
+        let width: string | undefined;
         if (labelSize || iconSize) {
             const labelHeight = labelSize ? (this.tabBar && this.tabBar.orientation === 'horizontal' ? labelSize.height : labelSize.width) : 0;
             const iconHeight = iconSize ? iconSize.height : 0;
@@ -220,7 +226,12 @@ export class TabBarRenderer extends TabBar.Renderer {
             const paddingBottom = data.paddingBottom || 0;
             height = `${labelHeight + iconHeight + paddingTop + paddingBottom}px`;
         }
-        return { zIndex, height };
+        if (data.tabWidth) {
+            width = `${data.tabWidth}px`;
+        } else {
+            width = '';
+        }
+        return { zIndex, height, minWidth: width, maxWidth: width };
     }
 
     /**
@@ -474,16 +485,41 @@ export class TabBarRenderer extends TabBar.Renderer {
         return h.div({ className: baseClassName, style }, data.title.iconLabel);
     }
 
+    protected renderEnhancedPreview = (title: Title<Widget>) => {
+        const hoverBox = document.createElement('div');
+        hoverBox.classList.add('theia-horizontal-tabBar-hover-div');
+        const labelElement = document.createElement('p');
+        labelElement.classList.add('theia-horizontal-tabBar-hover-title');
+        labelElement.textContent = title.label;
+        hoverBox.append(labelElement);
+        if (title.caption) {
+            const captionElement = document.createElement('p');
+            captionElement.classList.add('theia-horizontal-tabBar-hover-caption');
+            captionElement.textContent = title.caption;
+            hoverBox.appendChild(captionElement);
+        }
+        return hoverBox;
+    };
+
     protected handleMouseEnterEvent = (event: MouseEvent) => {
         if (this.tabBar && this.hoverService && event.currentTarget instanceof HTMLElement) {
             const id = event.currentTarget.id;
             const title = this.tabBar.titles.find(t => this.createTabId(t) === id);
             if (title) {
-                this.hoverService.requestHover({
-                    content: title.caption,
-                    target: event.currentTarget,
-                    position: 'right'
-                });
+                if (this.tabBar.orientation === 'horizontal') {
+                    this.hoverService.requestHover({
+                        content: this.renderEnhancedPreview(title),
+                        target: event.currentTarget,
+                        position: 'bottom',
+                        cssClasses: ['extended-tab-preview']
+                    });
+                } else {
+                    this.hoverService.requestHover({
+                        content: title.caption,
+                        target: event.currentTarget,
+                        position: 'right'
+                    });
+                }
             }
         }
     };
@@ -551,12 +587,31 @@ export class ScrollableTabBar extends TabBar<Widget> {
 
     private scrollBarFactory: () => PerfectScrollbar;
     private pendingReveal?: Promise<void>;
+    private isMouseOver = false;
+    protected needsRecompute = false;
+    protected tabSize = 0;
+    private _dynamicTabOptions?: ScrollableTabBar.Options;
+    protected contentContainer: HTMLElement;
+    protected topRow: HTMLElement;
 
     protected readonly toDispose = new DisposableCollection();
+    protected openTabsContainer: HTMLDivElement;
+    protected openTabsRoot: Root;
 
-    constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
+    constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options, dynamicTabOptions?: ScrollableTabBar.Options) {
         super(options);
         this.scrollBarFactory = () => new PerfectScrollbar(this.scrollbarHost, options);
+        this._dynamicTabOptions = dynamicTabOptions;
+        this.rewireDOM();
+    }
+
+    set dynamicTabOptions(options: ScrollableTabBar.Options | undefined) {
+        this._dynamicTabOptions = options;
+        this.updateTabs();
+    }
+
+    get dynamicTabOptions(): ScrollableTabBar.Options | undefined {
+        return this._dynamicTabOptions;
     }
 
     override dispose(): void {
@@ -567,10 +622,47 @@ export class ScrollableTabBar extends TabBar<Widget> {
         this.toDispose.dispose();
     }
 
+    /**
+     * Restructures the DOM defined in PhosphorJS.
+     *
+     * By default the tabs (`li`) are contained in the `this.contentNode` (`ul`) which is wrapped in a `div` (`this.node`).
+     * Instead of this structure, we add a container for the `this.contentNode` and for the toolbar.
+     * The scrollbar will only work for the `ul` part but it does not affect the toolbar, so it can be on the right hand-side.
+     */
+    private rewireDOM(): void {
+        const contentNode = this.node.getElementsByClassName(ScrollableTabBar.Styles.TAB_BAR_CONTENT)[0];
+        if (!contentNode) {
+            throw new Error("'this.node' does not have the content as a direct child with class name 'p-TabBar-content'.");
+        }
+        this.node.removeChild(contentNode);
+        this.contentContainer = document.createElement('div');
+        this.contentContainer.classList.add(ScrollableTabBar.Styles.TAB_BAR_CONTENT_CONTAINER);
+        this.contentContainer.appendChild(contentNode);
+
+        this.topRow = document.createElement('div');
+        this.topRow.classList.add('theia-tabBar-tab-row');
+        this.topRow.appendChild(this.contentContainer);
+
+        this.openTabsContainer = document.createElement('div');
+        this.openTabsContainer.classList.add('theia-tabBar-open-tabs');
+        this.openTabsRoot = createRoot(this.openTabsContainer);
+        this.topRow.appendChild(this.openTabsContainer);
+
+        this.node.appendChild(this.topRow);
+    }
+
     protected override onAfterAttach(msg: Message): void {
         if (!this.scrollBar) {
             this.scrollBar = this.scrollBarFactory();
         }
+        this.node.addEventListener('mouseenter', () => { this.isMouseOver = true; });
+        this.node.addEventListener('mouseleave', () => {
+            this.isMouseOver = false;
+            if (this.needsRecompute) {
+                this.updateTabs();
+            }
+        });
+
         super.onAfterAttach(msg);
     }
 
@@ -583,14 +675,69 @@ export class ScrollableTabBar extends TabBar<Widget> {
     }
 
     protected override onUpdateRequest(msg: Message): void {
-        super.onUpdateRequest(msg);
+        this.updateTabs();
+    }
+
+    protected updateTabs(): void {
+        const content = [];
+        if (this.dynamicTabOptions) {
+
+            this.openTabsRoot.render(createElement(SelectComponent, {
+                options: this.titles,
+                onChange: (option, index) => {
+                    this.currentIndex = index;
+                },
+                alignment: 'right'
+            }));
+
+            if (this.isMouseOver) {
+                this.needsRecompute = true;
+            } else {
+                this.needsRecompute = false;
+                if (this.orientation === 'horizontal') {
+                    let availableWidth = this.scrollbarHost.clientWidth;
+                    let effectiveWidth = availableWidth;
+                    if (!this.openTabsContainer.classList.contains('p-mod-hidden')) {
+                        availableWidth += this.openTabsContainer.getBoundingClientRect().width;
+                    }
+                    if (this.dynamicTabOptions.minimumTabSize * this.titles.length <= availableWidth) {
+                        effectiveWidth += this.openTabsContainer.getBoundingClientRect().width;
+                        this.openTabsContainer.classList.add('p-mod-hidden');
+                    } else {
+                        this.openTabsContainer.classList.remove('p-mod-hidden');
+                    }
+                    this.tabSize = Math.max(Math.min(effectiveWidth / this.titles.length,
+                        this.dynamicTabOptions.defaultTabSize), this.dynamicTabOptions.minimumTabSize);
+                }
+            }
+            this.node.classList.add('dynamic-tabs');
+        } else {
+            this.openTabsContainer.classList.add('p-mod-hidden');
+            this.node.classList.remove('dynamic-tabs');
+        }
+        for (let i = 0, n = this.titles.length; i < n; ++i) {
+            const title = this.titles[i];
+            const current = title === this.currentTitle;
+            const zIndex = current ? n : n - i - 1;
+            const renderData: ScrollableRenderData = { title: title, current: current, zIndex: zIndex };
+            if (this.dynamicTabOptions && this.orientation === 'horizontal') {
+                renderData.tabWidth = this.tabSize;
+            }
+            content[i] = this.renderer.renderTab(renderData);
+        }
+        VirtualDOM.render(content, this.contentNode);
         if (this.scrollBar) {
-            this.scrollBar.update();
+            if (!(this.dynamicTabOptions && this.isMouseOver)) {
+                this.scrollBar.update();
+            }
         }
     }
 
     protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
+        if (this.dynamicTabOptions) {
+            this.updateTabs();
+        }
         if (this.scrollBar) {
             if (this.currentIndex >= 0) {
                 this.revealTab(this.currentIndex);
@@ -647,10 +794,38 @@ export class ScrollableTabBar extends TabBar<Widget> {
         return result;
     }
 
-    protected get scrollbarHost(): HTMLElement {
-        return this.node;
+    /**
+     * Overrides the `contentNode` property getter in PhosphorJS' TabBar.
+     */
+    // @ts-expect-error TS2611 `TabBar<T>.contentNode` is declared as `readonly contentNode` but is implemented as a getter.
+    get contentNode(): HTMLUListElement {
+        return this.tabBarContainer.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT)[0] as HTMLUListElement;
     }
 
+    /**
+     * Overrides the scrollable host from the parent class.
+     */
+    protected get scrollbarHost(): HTMLElement {
+        return this.tabBarContainer;
+    }
+
+    protected get tabBarContainer(): HTMLElement {
+        return this.node.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT_CONTAINER)[0] as HTMLElement;
+    }
+}
+
+export namespace ScrollableTabBar {
+
+    export interface Options {
+        minimumTabSize: number;
+        defaultTabSize: number;
+    }
+    export namespace Styles {
+
+        export const TAB_BAR_CONTENT = 'p-TabBar-content';
+        export const TAB_BAR_CONTENT_CONTAINER = 'p-TabBar-content-container';
+
+    }
 }
 
 /**
@@ -669,22 +844,21 @@ export class ScrollableTabBar extends TabBar<Widget> {
  *
  */
 export class ToolbarAwareTabBar extends ScrollableTabBar {
-
-    protected contentContainer: HTMLElement;
     protected toolbar: TabBarToolbar | undefined;
     protected breadcrumbsContainer: HTMLElement;
     protected readonly breadcrumbsRenderer: BreadcrumbsRenderer;
-    protected topRow: HTMLElement;
 
     constructor(
         protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
         protected readonly tabBarToolbarFactory: () => TabBarToolbar,
         protected readonly breadcrumbsRendererFactory: BreadcrumbsRendererFactory,
-        protected readonly options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options,
+        options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options,
+        dynamicTabOptions?: ScrollableTabBar.Options
     ) {
-        super(options);
+        super(options, dynamicTabOptions);
         this.breadcrumbsRenderer = this.breadcrumbsRendererFactory();
-        this.rewireDOM();
+        this.addBreadcrumbs();
+        this.toolbar = this.tabBarToolbarFactory();
         this.toDispose.push(this.tabBarToolbarRegistry.onDidChange(() => this.update()));
         this.toDispose.push(this.breadcrumbsRenderer);
         this.toDispose.push(this.breadcrumbsRenderer.onDidChangeActiveState(active => {
@@ -697,25 +871,6 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
         const handler = () => this.updateBreadcrumbs();
         this.currentChanged.connect(handler);
         this.toDispose.push(Disposable.create(() => this.currentChanged.disconnect(handler)));
-    }
-
-    /**
-     * Overrides the `contentNode` property getter in PhosphorJS' TabBar.
-     */
-    // @ts-expect-error TS2611 `TabBar<T>.contentNode` is declared as `readonly contentNode` but is implemented as a getter.
-    get contentNode(): HTMLUListElement {
-        return this.tabBarContainer.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT)[0] as HTMLUListElement;
-    }
-
-    /**
-     * Overrides the scrollable host from the parent class.
-     */
-    protected override get scrollbarHost(): HTMLElement {
-        return this.tabBarContainer;
-    }
-
-    protected get tabBarContainer(): HTMLElement {
-        return this.node.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT_CONTAINER)[0] as HTMLElement;
     }
 
     protected async updateBreadcrumbs(): Promise<void> {
@@ -756,14 +911,21 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
         }
         const widget = this.currentTitle?.owner ?? undefined;
         this.toolbar.updateTarget(widget);
+        this.updateTabs();
     }
 
     override handleEvent(event: Event): void {
-        if (this.toolbar && event instanceof MouseEvent && this.toolbar.shouldHandleMouseEvent(event)) {
-            // if the mouse event is over the toolbar part don't handle it.
-            return;
+        if (event instanceof MouseEvent) {
+            if (this.toolbar && this.toolbar.shouldHandleMouseEvent(event) || this.isOver(event, this.openTabsContainer)) {
+                // if the mouse event is over the toolbar part don't handle it.
+                return;
+            }
         }
         super.handleEvent(event);
+    }
+
+    private isOver(event: Event, element: Element): boolean {
+        return element && event.target instanceof Element && element.contains(event.target);
     }
 
     /**
@@ -773,36 +935,12 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
      * Instead of this structure, we add a container for the `this.contentNode` and for the toolbar.
      * The scrollbar will only work for the `ul` part but it does not affect the toolbar, so it can be on the right hand-side.
      */
-    protected rewireDOM(): void {
-        const contentNode = this.node.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT)[0];
-        if (!contentNode) {
-            throw new Error("'this.node' does not have the content as a direct child with class name 'p-TabBar-content'.");
-        }
-        this.node.removeChild(contentNode);
-        this.topRow = document.createElement('div');
-        this.topRow.classList.add('theia-tabBar-tab-row');
-        this.contentContainer = document.createElement('div');
-        this.contentContainer.classList.add(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT_CONTAINER);
-        this.contentContainer.appendChild(contentNode);
-        this.topRow.appendChild(this.contentContainer);
-        this.node.appendChild(this.topRow);
-        this.toolbar = this.tabBarToolbarFactory();
+    private addBreadcrumbs(): void {
         this.breadcrumbsContainer = document.createElement('div');
         this.breadcrumbsContainer.classList.add('theia-tabBar-breadcrumb-row');
         this.breadcrumbsContainer.appendChild(this.breadcrumbsRenderer.host);
         this.node.appendChild(this.breadcrumbsContainer);
     }
-}
-
-export namespace ToolbarAwareTabBar {
-
-    export namespace Styles {
-
-        export const TAB_BAR_CONTENT = 'p-TabBar-content';
-        export const TAB_BAR_CONTENT_CONTAINER = 'p-TabBar-content-container';
-
-    }
-
 }
 
 /**
@@ -859,7 +997,7 @@ export class SideTabBar extends ScrollableTabBar {
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        this.renderTabBar();
+        this.updateTabs();
         this.node.addEventListener('p-dragenter', this);
         this.node.addEventListener('p-dragover', this);
         this.node.addEventListener('p-dragleave', this);
@@ -875,7 +1013,7 @@ export class SideTabBar extends ScrollableTabBar {
     }
 
     protected override onUpdateRequest(msg: Message): void {
-        this.renderTabBar();
+        this.updateTabs();
         if (this.scrollBar) {
             this.scrollBar.update();
         }
@@ -885,7 +1023,7 @@ export class SideTabBar extends ScrollableTabBar {
      * Render the tab bar in the _hidden content node_ (see `hiddenContentNode` for explanation),
      * then gather size information for labels and render it again in the proper content node.
      */
-    protected renderTabBar(): void {
+    protected override updateTabs(): void {
         if (this.isAttached) {
             // Render into the invisible node
             this.renderTabs(this.hiddenContentNode);

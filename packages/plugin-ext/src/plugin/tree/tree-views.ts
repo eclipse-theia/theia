@@ -23,6 +23,7 @@ import {
 // TODO: extract `@theia/util` for event, disposable, cancellation and common types
 // don't use @theia/core directly from plugin host
 import { Emitter } from '@theia/core/lib/common/event';
+import { basename } from '@theia/core/lib/common/paths';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { DataTransfer, DataTransferItem, Disposable as PluginDisposable, ThemeIcon } from '../types-impl';
 import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem, TreeViewRevealOptions, DataTransferFileDTO } from '../../common/plugin-api-rpc';
@@ -55,6 +56,10 @@ export class TreeViewsExtImpl implements TreeViewsExt {
     }
     $dragStarted(treeViewId: string, treeItemIds: string[], token: CancellationToken): Promise<UriComponents[] | undefined> {
         return this.getTreeView(treeViewId).onDragStarted(treeItemIds, token);
+    }
+
+    $dragEnd(treeViewId: string): Promise<void> {
+        return this.getTreeView(treeViewId).dragEnd();
     }
 
     $drop(treeViewId: string, treeItemId: string | undefined, dataTransferItems: [string, string | DataTransferFileDTO][], token: CancellationToken): Promise<void> {
@@ -194,8 +199,6 @@ class TreeViewExtImpl<T> implements Disposable {
     private static readonly ID_COMPUTED = 'c';
     private static readonly ID_ITEM = 'i';
 
-    private nextItemId: 0;
-
     private readonly onDidExpandElementEmitter = new Emitter<TreeViewExpansionEvent<T>>();
     readonly onDidExpandElement = this.onDidExpandElementEmitter.event;
 
@@ -330,7 +333,7 @@ class TreeViewExtImpl<T> implements Disposable {
             // parent is inconsistent
             return undefined;
         }
-        const candidateId = this.buildTreeItemId(parentId, treeItem);
+        const candidateId = this.buildTreeItemId(parentId, treeItem, false);
         if (this.nodes.has(candidateId)) {
             return chain.concat(candidateId);
         }
@@ -361,22 +364,36 @@ class TreeViewExtImpl<T> implements Disposable {
         return idLabel;
     }
 
-    private buildTreeItemId(parentId: string, item: TreeItem): string {
-        // build tree id according to https://code.visualstudio.com/api/references/vscode-api#TreeItem
-        // note: the front end tree implementation cannot handle reparenting items, hence the id is set to the "path" of individual ids
-        let id = typeof item.id === 'string' ? item.id : this.getItemLabel(item);
-        if (id) {
-            // we use '' as the id of the root, we don't consider that a valid id
-            // since '' is falsy, we'll never get '' in this branch
-            id = TreeViewExtImpl.ID_ITEM + id;
-        } else {
-            id = TreeViewExtImpl.ID_COMPUTED + this.nextItemId++;
+    // Modeled on https://github.com/microsoft/vscode/blob/main/src/vs/workbench/api/common/extHostTreeViews.ts#L822
+    private buildTreeItemId(parentId: string, item: TreeItem, mustReturnNew: boolean): string {
+        if (item.id) {
+            return `${TreeViewExtImpl.ID_ITEM}-@-${parentId}-@-${item.id}`;
         }
-        return `${parentId}/${id}`;
+
+        const treeItemLabel = this.getItemLabel(item);
+        const prefix: string = `${TreeViewExtImpl.ID_COMPUTED}-@-${parentId || ''}-@-`;
+        let elementId = treeItemLabel ? treeItemLabel : item.resourceUri ? basename(item.resourceUri.fsPath) : '';
+        elementId = elementId.indexOf('/') !== -1 ? elementId.replace('/', '//') : elementId;
+        const childrenNodes = (this.nodes.get(parentId)?.children || []);
+
+        let id: string;
+        let counter = 0;
+        do {
+            id = `${prefix}/${counter}:${elementId}`;
+            if (!mustReturnNew || !this.nodes.has(id) || this.nodes.get(id) === item) {
+                // Return first if asked for or
+                // Return if handle does not exist or
+                // Return if handle is being reused
+                break;
+            }
+            counter++;
+        } while (counter <= childrenNodes.length);
+
+        return id;
     }
 
     async getChildren(parentId: string): Promise<TreeViewItem[] | undefined> {
-        const parentNode = this.nodes.get(parentId);
+        let parentNode = this.nodes.get(parentId);
         const parent = parentNode?.value;
         if (parentId && !parent) {
             console.error(`No tree item with id '${parentId}' found.`);
@@ -385,9 +402,10 @@ class TreeViewExtImpl<T> implements Disposable {
         this.clearChildren(parentNode);
 
         // place root in the cache
-        if (parentId === '') {
+        if (parentId === '' && !parentNode) {
             const rootNodeDisposables = new DisposableCollection();
-            this.nodes.set(parentId, { id: '', disposables: rootNodeDisposables, dispose: () => { rootNodeDisposables.dispose(); } });
+            parentNode = { id: '', disposables: rootNodeDisposables, dispose: () => { rootNodeDisposables.dispose(); } };
+            this.nodes.set(parentId, parentNode);
         }
         // ask data provider for children for cached element
         const result = await this.options.treeDataProvider.getChildren(parent);
@@ -404,7 +422,7 @@ class TreeViewExtImpl<T> implements Disposable {
 
                 // Generate the ID
                 // ID is used for caching the element
-                const id = this.buildTreeItemId(parentId, treeItem);
+                const id = this.buildTreeItemId(parentId, treeItem, true);
 
                 const toDisposeElement = new DisposableCollection();
                 const node: TreeExtNode<T> = {
@@ -590,6 +608,10 @@ class TreeViewExtImpl<T> implements Disposable {
             }
         }
         return undefined;
+    }
+
+    async dragEnd(): Promise<void> {
+        this.localDataTransfer.clear();
     }
 
     async handleDrop(treeItemId: string | undefined, dataTransferItems: [string, string | DataTransferFileDTO][], token: CancellationToken): Promise<void> {

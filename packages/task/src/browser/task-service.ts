@@ -403,11 +403,14 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     /**
-     * Returns an array of the task configurations which are provided by the extensions.
+     * Returns an array that contains the task configurations provided by the task providers for the specified task type.
      * @param token  The cache token for the user interaction in progress
+     * @param type The task type (filter) associated to the returning TaskConfigurations
+     *
+     * '*' indicates all tasks regardless of the type
      */
-    getProvidedTasks(token: number): Promise<TaskConfiguration[]> {
-        return this.providedTaskConfigurations.getTasks(token);
+    getProvidedTasks(token: number, type?: string): Promise<TaskConfiguration[]> {
+        return this.providedTaskConfigurations.getTasks(token, type);
     }
 
     addRecentTasks(tasks: TaskConfiguration | TaskConfiguration[]): void {

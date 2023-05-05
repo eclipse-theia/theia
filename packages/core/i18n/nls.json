@@ -29,6 +29,7 @@
         "showPreviousTabInGroup": "Switch to Previous Tab in Group",
         "toggleMaximized": "Toggle Maximized"
       },
+      "enhancedPreview": "Controls whether more information about the tab should be displayed in horizontal tab bars.",
       "file": {
         "browse": "Browse"
       },
@@ -52,7 +53,10 @@
         "previous": "Previous (Up)"
       },
       "silentNotifications": "Controls whether to suppress notification popups.",
-      "tabMaximize": "Controls whether to maximize tabs on double click."
+      "tabDefaultSize": "Specifies the default size for tabs.",
+      "tabMaximize": "Controls whether to maximize tabs on double click.",
+      "tabMinimumSize": "Specifies the minimum size for tabs.",
+      "tabShrinkToFit": "Shrink tabs to fit available space."
     },
     "debug": {
       "addConfigurationPlaceholder": "Select workspace root to add configuration to",
@@ -358,6 +362,7 @@
     "task": {
       "attachTask": "Attach Task...",
       "clearHistory": "Clear History",
+      "noTaskToRun": "No task to run found. Configure Tasks...",
       "openUserTasks": "Open User Tasks"
     },
     "terminal": {
