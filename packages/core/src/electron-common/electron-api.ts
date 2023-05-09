@@ -35,7 +35,7 @@ export interface MenuDto {
 
 export type InternalMenuDto = Omit<MenuDto, 'execute' | 'submenu'> & {
     submenu?: InternalMenuDto[],
-    handlerId?: number
+    menuNodeId?: string
 };
 
 export type WindowEvent = 'maximize' | 'unmaximize' | 'focus';

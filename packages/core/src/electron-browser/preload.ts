@@ -30,22 +30,27 @@ import {
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { ipcRenderer, contextBridge } = require('electron');
 
-// a map of menuId => map<handler id => handler>
-const commandHandlers = new Map<number, Map<number, () => void>>();
-let nextHandlerId = 0;
+type MenuHandlers = Map<string, () => void>;
+// a map of menuId => map<menuNodeId => handler> where the menuNodeId is the technical ID of the menu node
+const commandHandlers = new Map<number, MenuHandlers>();
 const mainMenuId = 0;
 let nextMenuId = mainMenuId + 1;
 
-function convertMenu(menu: MenuDto[] | undefined, handlerMap: Map<number, () => void>): InternalMenuDto[] | undefined {
+function convertMenu(menu: MenuDto[] | undefined, handlerMap: MenuHandlers): InternalMenuDto[] | undefined {
     if (!menu) {
         return undefined;
     }
 
     return menu.map(item => {
-        let handlerId = undefined;
+        let menuNodeId = undefined;
         if (item.execute) {
-            handlerId = nextHandlerId++;
-            handlerMap.set(handlerId, item.execute);
+            if (!item.id) {
+                throw new Error(
+                    "Menu items having the 'execute' property must have an 'id' too."
+                );
+            }
+            menuNodeId = item.id;
+            handlerMap.set(menuNodeId, item.execute);
         }
 
         return {
@@ -53,7 +58,7 @@ function convertMenu(menu: MenuDto[] | undefined, handlerMap: Map<number, () => 
             submenu: convertMenu(item.submenu, handlerMap),
             accelerator: item.accelerator,
             label: item.label,
-            handlerId: handlerId,
+            menuNodeId,
             checked: item.checked,
             enabled: item.enabled,
             role: item.role,
@@ -67,7 +72,7 @@ const api: TheiaCoreAPI = {
     setMenuBarVisible: (visible: boolean, windowName?: string) => ipcRenderer.send(CHANNEL_SET_MENU_BAR_VISIBLE, visible, windowName),
     setMenu: (menu: MenuDto[] | undefined) => {
         commandHandlers.delete(mainMenuId);
-        const handlers = new Map<number, () => void>();
+        const handlers = new Map<string, () => void>();
         commandHandlers.set(mainMenuId, handlers);
         ipcRenderer.send(CHANNEL_SET_MENU, mainMenuId, convertMenu(menu, handlers));
     },
@@ -80,7 +85,7 @@ const api: TheiaCoreAPI = {
 
     popup: async function (menu: MenuDto[], x: number, y: number, onClosed: () => void): Promise<number> {
         const menuId = nextMenuId++;
-        const handlers = new Map<number, () => void>();
+        const handlers = new Map<string, () => void>();
         commandHandlers.set(menuId, handlers);
         const handle = await ipcRenderer.invoke(CHANNEL_OPEN_POPUP, menuId, convertMenu(menu, handlers), x, y);
         const closeListener = () => {
@@ -194,10 +199,10 @@ function createDisposableListener(channel: string, handler: (event: any, ...args
 
 export function preload(): void {
     console.log('exposing theia core electron api');
-    ipcRenderer.on(CHANNEL_INVOKE_MENU, (_, menuId: number, handlerId: number) => {
+    ipcRenderer.on(CHANNEL_INVOKE_MENU, (_, menuId: number, menuNodeId: string) => {
         const map = commandHandlers.get(menuId);
         if (map) {
-            const handler = map.get(handlerId);
+            const handler = map.get(menuNodeId);
             if (handler) {
                 handler();
             }

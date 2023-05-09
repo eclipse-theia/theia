@@ -18,12 +18,11 @@ import {
     ipcMain, BrowserWindow, Menu, MenuItemConstructorOptions, webContents, WebContents, session, shell, clipboard, IpcMainEvent
 } from '@theia/electron/shared/electron';
 import * as nativeKeymap from '@theia/electron/shared/native-keymap';
-
 import { inject, injectable } from 'inversify';
 import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import {
-    CHANNEL_GET_SECURITY_TOKEN, CHANNEL_SET_MENU, MenuDto, CHANNEL_INVOKE_MENU, CHANNEL_FOCUS_WINDOW,
+    CHANNEL_GET_SECURITY_TOKEN, CHANNEL_SET_MENU, CHANNEL_INVOKE_MENU, CHANNEL_FOCUS_WINDOW,
     CHANNEL_ATTACH_SECURITY_TOKEN, CHANNEL_OPEN_POPUP, CHANNEL_ON_CLOSE_POPUP, CHANNEL_CLOSE_POPUP,
     CHANNEL_GET_TITLE_STYLE_AT_STARTUP,
     CHANNEL_MINIMIZE,
@@ -75,7 +74,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         }));
 
         // application menu
-        ipcMain.on(CHANNEL_SET_MENU, (event, menuId: number, menu: MenuDto[]) => {
+        ipcMain.on(CHANNEL_SET_MENU, (event, menuId: number, menu: InternalMenuDto[] | undefined) => {
             let electronMenu: Menu | null;
             if (menu) {
                 electronMenu = Menu.buildFromTemplate(this.fromMenuDto(event.sender, menuId, menu));
@@ -215,7 +214,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         });
     }
 
-    fromMenuDto(sender: WebContents, menuId: number, menuDto: InternalMenuDto[]): MenuItemConstructorOptions[] {
+    protected fromMenuDto(sender: WebContents, menuId: number, menuDto: InternalMenuDto[]): MenuItemConstructorOptions[] {
         return menuDto.map(dto => {
 
             const result: MenuItemConstructorOptions = {
@@ -231,9 +230,9 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             if (dto.submenu) {
                 result.submenu = this.fromMenuDto(sender, menuId, dto.submenu);
             }
-            if (dto.handlerId) {
+            if (dto.menuNodeId) {
                 result.click = () => {
-                    sender.send(CHANNEL_INVOKE_MENU, menuId, dto.handlerId);
+                    sender.send(CHANNEL_INVOKE_MENU, menuId, dto.menuNodeId);
                 };
             }
             return result;
