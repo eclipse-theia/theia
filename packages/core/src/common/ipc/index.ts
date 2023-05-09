@@ -14,20 +14,4 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { interfaces } from 'inversify';
-
-export type ProxyId<T = unknown> = string | string & interfaces.Abstract<T>;
-export function ProxyId<T>(id: string): string & interfaces.Abstract<T> {
-    return `theia-proxy-id:${id}` as string & interfaces.Abstract<T>;
-}
-
-/**
- * Generic abstraction to get proxies for a given `id`.
- *
- * In practice, specific proxy providers will be bound for different remote
- * target contexts.
- */
-export const ProxyProvider = Symbol('ProxyProvider') as symbol & interfaces.Abstract<ProxyProvider>;
-export interface ProxyProvider {
-    getProxy<T extends object>(id: ProxyId<T>): T
-}
+export { ElectronMainContext, ElectronPreloadContext, FrontendContext } from './contexts';

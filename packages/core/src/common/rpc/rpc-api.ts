@@ -14,6 +14,22 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export const FrontendContext = Symbol('FrontendContext');
-export const ElectronMain = Symbol('ElectronMainContext');
-export const ElectronPreloadContext = Symbol('ElectronPreloadContext');
+import type { CancellationToken } from '../cancellation';
+
+/**
+ * Send RPC messages.
+ */
+export interface RpcClient {
+    sendNotification?(method: string, params?: unknown[]): void
+    sendRequest?(method: string, params?: unknown[], cancel?: CancellationToken): Promise<unknown>
+    sendRequestSync?(method: string, params?: unknown[]): unknown
+}
+
+/**
+ * Handle RPC messages.
+ */
+export interface RpcHandler {
+    handleNotification?(handler: (method: string, params?: unknown[]) => void): void
+    handleRequest?(handler: (method: string, params: unknown[] | undefined, cancel: CancellationToken) => unknown): void
+    handleRequestSync?(handler: (method: string, params?: unknown[]) => unknown): void
+}

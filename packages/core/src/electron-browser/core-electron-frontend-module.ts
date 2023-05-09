@@ -15,14 +15,33 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { FunctionUtils, MessagePortClient, TheiaIpcWindow } from '../electron-common';
+import { ElectronMainContext, Emitter, ProxyProvider, RpcEvent, RpcProxyProvider } from '../common';
+import { ElectronCurrentWindow, FunctionUtils, MessagePortClient, TheiaIpcWindow } from '../electron-common';
 import { TheiaIpcWindowImpl } from './electron-ipc-window-impl';
 import { MessagePortClientImpl } from './electron-message-port-client-impl';
-import { TheiaPreloadApiLoader } from './electron-preload-api-loader';
 
 export default new ContainerModule(bind => {
+    // Transients
+    bind(RpcEvent).toDynamicValue(() => {
+        const emitter = new Emitter();
+        return Object.assign(emitter.event, {
+            emit: (e: unknown) => emitter.fire(e),
+            dispose: () => emitter.dispose()
+        });
+    });
+    // Singletons
     bind(FunctionUtils).toSelf().inSingletonScope();
-    bind(TheiaPreloadApiLoader).toSelf().inSingletonScope();
     bind(TheiaIpcWindow).to(TheiaIpcWindowImpl).inSingletonScope();
     bind(MessagePortClient).to(MessagePortClientImpl).inSingletonScope();
+    bind(ProxyProvider)
+        .toDynamicValue(ctx => {
+            const electronMainRpc = ctx.container.get('electronMainRpc');
+            return new RpcProxyProvider(electronMainRpc, electronMainRpc);
+        })
+        .inSingletonScope()
+        .whenTargetNamed(ElectronMainContext);
+    // Proxies
+    bind(ElectronCurrentWindow)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, ElectronMainContext).getProxy(ElectronCurrentWindow))
+        .inSingletonScope();
 });

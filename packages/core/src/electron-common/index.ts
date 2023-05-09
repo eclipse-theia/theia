@@ -17,7 +17,7 @@
 /* eslint-disable max-len */
 
 export { ElectronClipboardService, ELECTRON_CLIPBOARD_IPC } from './electron-clipboard';
-export { ElectronCurrentWindow, ELECTRON_CURRENT_WINDOW_IPC } from './electron-current-window';
+export { ElectronCurrentWindow } from './electron-current-window';
 export { ElectronFrontendApplication, ELECTRON_FRONTEND_APPLICATION_IPC } from './electron-frontend-application';
 export { ELECTRON_INVOKE_IPC } from './electron-invoke';
 export { createIpcChannel, createIpcNamespace, IpcChannel, IpcEvent, IpcHandleConverter, IpcListener, IpcReflectKeys, proxy, proxyable, ProxyableOptions, ProxyOptions, TheiaIpcMain, TheiaIpcMainEvent, TheiaIpcMainInvokeEvent, TheiaIpcRenderer, TheiaIpcRendererEvent, TheiaIpcRendererInvokeEvent, TheiaIpcWindow } from './electron-ipc';

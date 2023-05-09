@@ -14,18 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, interfaces } from 'inversify';
-import { TheiaPreloadContext } from '../electron-common';
-
-@injectable()
-export class TheiaPreloadApiLoader {
-
-    loadAndBind(theiaPreloadContext: TheiaPreloadContext, container: interfaces.Container): void {
-        theiaPreloadContext.getAllPreloadApis()
-            .forEach(([serviceIdentifier, service]) => {
-                if (!container.isBound(serviceIdentifier)) {
-                    container.bind(serviceIdentifier).toConstantValue(service);
-                }
-            });
-    }
-}
+export const FrontendContext = Symbol('FrontendContext');
+export const ElectronMainContext = Symbol('ElectronMainContext');
+export const ElectronPreloadContext = Symbol('ElectronPreloadContext');

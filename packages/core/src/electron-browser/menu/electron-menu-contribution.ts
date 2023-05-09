@@ -200,7 +200,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         }
     }
 
-    protected setMenu(app: FrontendApplication, electronMenu: MenuDto[] | undefined = this.factory.createElectronMenuBar()): void {
+    protected setMenu(app: FrontendApplication, electronMenu?: MenuDto[]): void {
         if (!isOSX) {
             this.hideTopPanel(app);
             if (this.titleBarStyle === 'custom' && !this.menuBar) {
@@ -208,6 +208,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
                 return;
             }
         }
+        electronMenu ??= this.factory.createElectronMenuBar();
         this.electronWindows.currentWindow.setMenu(electronMenu);
     }
 
@@ -237,7 +238,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     }
 
     protected handleWindowControls(): void {
-        if (this.electronWindows.currentWindow.isMaximized()) {
+        if (this.electronWindows.currentWindow.isMaximizedSync()) {
             document.body.classList.add('maximized');
         }
         this.electronWindows.currentWindow.onMaximize(() => {
@@ -321,8 +322,8 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         });
 
         registry.registerCommand(ElectronCommands.TOGGLE_FULL_SCREEN, {
-            isEnabled: () => this.electronWindows.currentWindow.isFullScreenable(),
-            isVisible: () => this.electronWindows.currentWindow.isFullScreenable(),
+            isEnabled: () => this.electronWindows.currentWindow.isFullScreenableSync(),
+            isVisible: () => this.electronWindows.currentWindow.isFullScreenableSync(),
             execute: () => this.toggleFullScreen()
         });
     }
@@ -407,7 +408,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     }
 
     protected handleFullScreen(menuBarVisibility: string): void {
-        const shouldShowTop = !this.electronWindows.currentWindow.isFullScreen() || menuBarVisibility === 'visible';
+        const shouldShowTop = !this.electronWindows.currentWindow.isFullScreenSync() || menuBarVisibility === 'visible';
         if (this.titleBarStyle === 'native') {
             this.electronWindows.setMenuBarVisible(shouldShowTop);
         } else if (shouldShowTop) {

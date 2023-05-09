@@ -16,51 +16,37 @@
 
 import { BrowserWindow, Menu, MenuItemConstructorOptions, WebContents } from '@theia/electron/shared/electron';
 import { inject, injectable } from 'inversify';
-import { isOSX } from '../common';
-import { ELECTRON_CURRENT_WINDOW_IPC as ipc, TheiaIpcMain, TheiaIpcMainEvent, TheiaIpcMainInvokeEvent } from '../electron-common';
+import { isOSX, RpcContext, RpcEvent, RpcServer } from '../common';
+import { ElectronCurrentWindow } from '../electron-common';
 import { InternalMenuDto, MenuDto } from '../electron-common/electron-menu';
-import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
+import { ElectronMainApplication } from './electron-main-application';
+import { SenderWebContents } from './electron-main-rpc-context';
 
 type MenuId = number;
 
 @injectable()
-export class ElectronCurrentWindowMain implements ElectronMainApplicationContribution {
+export class ElectronCurrentWindowMain implements RpcServer<ElectronCurrentWindow> {
 
-    protected application: ElectronMainApplication;
+    protected menuId = 1;
     protected openPopups = new Map<MenuId, Menu>();
 
-    @inject(TheiaIpcMain)
-    protected ipcMain: TheiaIpcMain;
+    @inject(RpcEvent) $onFocus: RpcEvent<void>;
+    @inject(RpcEvent) $onMaximize: RpcEvent<void>;
+    @inject(RpcEvent) $onUnmaximize: RpcEvent<void>;
+    @inject(RpcEvent) $onMenuClosed: RpcEvent<{ menuId: number }>;
+    @inject(RpcEvent) $onMenuClicked: RpcEvent<{ menuId: number, handlerId: number }>;
 
-    onStart(application: ElectronMainApplication): void {
-        this.application = application;
-        this.ipcMain.on(ipc.isMaximized, this.onIsMaximized, this);
-        this.ipcMain.on(ipc.setMenu, this.onSetMenu, this);
-        this.ipcMain.handle(ipc.openPopup, this.onOpenPopup, this);
-        this.ipcMain.handle(ipc.closePopup, this.handleClosePopup, this);
-        this.ipcMain.on(ipc.minimize, this.onMinimize, this);
-        this.ipcMain.on(ipc.maximize, this.onMaximize, this);
-        this.ipcMain.on(ipc.unmaximize, this.onUnmaxize, this);
-        this.ipcMain.on(ipc.close, this.onClose, this);
-        this.ipcMain.on(ipc.toggleDevTools, this.onToggleDevTools, this);
-        this.ipcMain.handle(ipc.getZoomLevel, this.handleGetZoomLevel, this);
-        this.ipcMain.on(ipc.setZoomLevel, this.onSetZoomLevel, this);
-        this.ipcMain.on(ipc.isFullScreenable, this.onIsFullScreenable, this);
-        this.ipcMain.on(ipc.isFullScreen, this.onIsFullScreen, this);
-        this.ipcMain.on(ipc.toggleFullScreen, this.onToggleFullScreen, this);
-        this.ipcMain.on(ipc.reload, this.onReload, this);
-        this.ipcMain.handle(ipc.getTitleBarStyle, this.handleGetTitleBarStyle, this);
-        this.ipcMain.handle(ipc.setTitleBarStyle, this.handleSetTitleBarStyle, this);
+    @inject(ElectronMainApplication)
+    protected application: ElectronMainApplication;
+
+    $isMaximizedSync(ctx: RpcContext): boolean {
+        return this.getBrowserWindow(ctx).isMaximized();
     }
 
-    protected onIsMaximized(event: TheiaIpcMainEvent): boolean {
-        return BrowserWindow.fromWebContents(event.sender)!.isMaximized();
-    }
-
-    protected onSetMenu(event: TheiaIpcMainEvent, menuId: MenuId, menu?: MenuDto[]): void {
+    $setMenu(ctx: RpcContext, menu?: MenuDto[]): void {
         let electronMenu: Menu | null;
         if (menu) {
-            electronMenu = Menu.buildFromTemplate(this.fromMenuDto(event.sender, menuId, menu));
+            electronMenu = Menu.buildFromTemplate(this.fromMenuDto(ctx, this.menuId++, menu));
         } else {
             // eslint-disable-next-line no-null/no-null
             electronMenu = null;
@@ -68,87 +54,88 @@ export class ElectronCurrentWindowMain implements ElectronMainApplicationContrib
         if (isOSX) {
             Menu.setApplicationMenu(electronMenu);
         } else {
-            BrowserWindow.fromWebContents(event.sender)!.setMenu(electronMenu);
+            this.getBrowserWindow(ctx).setMenu(electronMenu);
         }
     }
 
-    protected async onOpenPopup(event: TheiaIpcMainEvent, menuId: MenuId, menu: MenuDto[], x: number, y: number): Promise<number> {
-        const zoom = event.sender.getZoomFactor();
+    async $popup(ctx: RpcContext, menu: MenuDto[], x: number, y: number): Promise<void> {
+        const menuId = this.menuId++;
+        const zoom = this.getWebContents(ctx).getZoomFactor();
         // TODO: Remove the offset once Electron fixes https://github.com/electron/electron/issues/31641
         const offset = process.platform === 'win32' ? 0 : 2;
         // x and y values must be Ints or else there is a conversion error
         x = Math.round(x * zoom) + offset;
         y = Math.round(y * zoom) + offset;
-        const popup = Menu.buildFromTemplate(this.fromMenuDto(event.sender, menuId, menu));
+        const popup = Menu.buildFromTemplate(this.fromMenuDto(ctx, menuId, menu));
         this.openPopups.set(menuId, popup);
-        popup.popup({
-            callback: () => {
-                this.openPopups.delete(menuId);
-                this.ipcMain.sendTo(event.sender, ipc.onPopupClosed, menuId);
-            }
+        return new Promise(resolve => {
+            popup.popup({
+                callback: () => {
+                    this.openPopups.delete(menuId);
+                    resolve();
+                }
+            });
         });
-        return -1;
     }
 
-    protected handleClosePopup(event: TheiaIpcMainInvokeEvent, menuId: MenuId): void {
+    $closePopup(ctx: RpcContext, menuId: MenuId): void {
         this.openPopups.get(menuId)?.closePopup();
     }
 
-    protected onMinimize(event: TheiaIpcMainEvent): void {
-        BrowserWindow.fromWebContents(event.sender)?.minimize();
+    $minimize(ctx: RpcContext): void {
+        this.getBrowserWindow(ctx).minimize();
     }
 
-    protected onMaximize(event: TheiaIpcMainEvent): void {
-        BrowserWindow.fromWebContents(event.sender)!.maximize();
+    $maximize(ctx: RpcContext): void {
+        this.getBrowserWindow(ctx).maximize();
     }
 
-    protected onUnmaxize(event: TheiaIpcMainEvent): void {
-        BrowserWindow.fromWebContents(event.sender)!.unmaximize();
+    $unMaximize(ctx: RpcContext): void {
+        this.getBrowserWindow(ctx).unmaximize();
     }
 
-    protected onClose(event: TheiaIpcMainEvent): void {
-        BrowserWindow.fromWebContents(event.sender)!.close();
+    $close(ctx: RpcContext): void {
+        this.getBrowserWindow(ctx).close();
     }
 
-    protected onToggleDevTools(event: TheiaIpcMainEvent): void {
-        event.sender.toggleDevTools();
+    $toggleDevTools(ctx: RpcContext): void {
+        this.getWebContents(ctx).toggleDevTools();
     }
 
-    protected async handleGetZoomLevel(event: TheiaIpcMainInvokeEvent): Promise<number> {
-        return event.sender.getZoomLevel();
+    async $getZoomLevel(ctx: RpcContext): Promise<number> {
+        return this.getWebContents(ctx).getZoomLevel();
     }
 
-    protected onSetZoomLevel(event: TheiaIpcMainEvent, desired: number): void {
-        event.sender.setZoomLevel(desired);
+    $setZoomLevel(ctx: RpcContext, desired: number): void {
+        this.getWebContents(ctx).setZoomLevel(desired);
     }
 
-    protected onIsFullScreenable(event: TheiaIpcMainEvent): boolean {
-        return BrowserWindow.fromWebContents(event.sender)!.isFullScreenable();
+    $isFullScreenableSync(ctx: RpcContext): boolean {
+        return this.getBrowserWindow(ctx).isFullScreenable();
     }
 
-    protected onIsFullScreen(event: TheiaIpcMainEvent): boolean {
-        return BrowserWindow.fromWebContents(event.sender)!.isFullScreen();
+    $isFullScreenSync(ctx: RpcContext): boolean {
+        return this.getBrowserWindow(ctx).isFullScreen();
     }
 
-    protected onToggleFullScreen(event: TheiaIpcMainEvent): void {
-        const browserWindow = BrowserWindow.fromWebContents(event.sender)!;
-        // browserWindow.fullScreen = !browserWindow.fullScreen; // ?
-        browserWindow.setFullScreen(!browserWindow.isFullScreen());
+    $toggleFullScreen(ctx: RpcContext): void {
+        const browserWindow = this.getBrowserWindow(ctx);
+        browserWindow.fullScreen = !browserWindow.fullScreen;
     }
 
-    protected onReload(event: TheiaIpcMainEvent): void {
-        this.application.getTheiaElectronWindow(event.sender.id)?.reload();
+    $reload(ctx: RpcContext): void {
+        this.application.getTheiaElectronWindow(this.getWebContents(ctx).id)?.reload();
     }
 
-    protected async handleGetTitleBarStyle(event: TheiaIpcMainInvokeEvent): Promise<string> {
-        return this.application.getTitleBarStyleAtStartup(event.sender);
+    async $getTitleBarStyle(ctx: RpcContext): Promise<string> {
+        return this.application.getTitleBarStyleAtStartup(this.getWebContents(ctx));
     }
 
-    protected async handleSetTitleBarStyle(event: TheiaIpcMainInvokeEvent, style: string): Promise<void> {
-        this.application.setTitleBarStyle(event.sender, style);
+    async $setTitleBarStyle(ctx: RpcContext, style: string): Promise<void> {
+        this.application.setTitleBarStyle(this.getWebContents(ctx), style);
     }
 
-    protected fromMenuDto(sender: WebContents, menuId: MenuId, menuDto: InternalMenuDto[]): MenuItemConstructorOptions[] {
+    protected fromMenuDto(ctx: RpcContext, menuId: MenuId, menuDto: InternalMenuDto[]): MenuItemConstructorOptions[] {
         return menuDto.map(dto => {
             const result: MenuItemConstructorOptions = {
                 id: dto.id,
@@ -161,14 +148,27 @@ export class ElectronCurrentWindowMain implements ElectronMainApplicationContrib
                 accelerator: dto.accelerator
             };
             if (dto.submenu) {
-                result.submenu = this.fromMenuDto(sender, menuId, dto.submenu);
+                result.submenu = this.fromMenuDto(ctx, menuId, dto.submenu);
             }
             if (dto.handlerId) {
                 result.click = () => {
-                    this.ipcMain.sendTo(sender, ipc.onInvokeMenu, menuId, dto.handlerId);
+                    this.$onMenuClicked.emit(ctx.toSender({ menuId, handlerId: dto.handlerId! }));
                 };
             }
             return result;
         });
+    }
+
+    protected getWebContents(ctx: RpcContext): WebContents {
+        return ctx.require(SenderWebContents);
+    }
+
+    protected getBrowserWindow(ctx: RpcContext): BrowserWindow {
+        const webContents = this.getWebContents(ctx);
+        const browserWindow = BrowserWindow.fromWebContents(webContents);
+        if (!browserWindow) {
+            throw new Error(`No browser window found for webContents: ${webContents.id}`);
+        }
+        return browserWindow;
     }
 }

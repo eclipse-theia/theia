@@ -14,42 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Event, Proxyable, ProxyId } from '../common';
 import { MenuDto } from './electron-menu';
-import { createIpcNamespace, IpcEvent } from './electron-ipc';
-import { preloadServiceIdentifier } from './preload';
 
-export const ELECTRON_CURRENT_WINDOW_IPC = createIpcNamespace('theia-electron-current-window', channel => ({
-    onFocus: channel<() => void>(),
-    onMaximize: channel<() => void>(),
-    onUnmaximize: channel<() => void>(),
-    isMaximized: channel<() => boolean>(),
-    minimize: channel<() => void>(),
-    maximize: channel<() => void>(),
-    unmaximize: channel<() => void>(),
-    close: channel<() => void>(),
-    setMenuBarVisible: channel<(visible: boolean, windowName?: string) => void>(),
-    setMenu: channel<(menuId: number, menu?: MenuDto[]) => void>(),
-    onInvokeMenu: channel<(menuId: number, handlerId?: number) => void>(),
-    toggleDevTools: channel<() => void>(),
-    getZoomLevel: channel<() => Promise<number>>(),
-    setZoomLevel: channel<(desired: number) => void>(),
-    isFullScreenable: channel<() => boolean>(),
-    isFullScreen: channel<() => boolean>(),
-    toggleFullScreen: channel<() => void>(),
-    openPopup: channel<(menuId: number, menu: MenuDto[], x: number, y: number) => Promise<number>>(),
-    closePopup: channel<(handle: number) => void>(),
-    onPopupClosed: channel<(menuId: number) => void>(),
-    reload: channel<() => void>(),
-    getTitleBarStyle: channel<() => Promise<string>>(),
-    setTitleBarStyle: channel<(style: string) => Promise<void>>()
-}));
-
-export const ElectronCurrentWindow = preloadServiceIdentifier<ElectronCurrentWindow>('ElectronCurrentWindow');
-export interface ElectronCurrentWindow {
-    onFocus: IpcEvent<void>
-    onMaximize: IpcEvent<void>
-    onUnmaximize: IpcEvent<void>
-    isMaximized(): boolean
+export const ElectronCurrentWindow = ProxyId<ElectronCurrentWindow>('ElectronCurrentWindow');
+export type ElectronCurrentWindow = Proxyable<{
+    onFocus: Event<void>
+    onMaximize: Event<void>
+    onUnmaximize: Event<void>
+    onMenuClosed: Event<{ menuId: number }>
+    onMenuClicked: Event<{ menuId: number, handlerId: number }>
+    isMaximizedSync(): boolean
     minimize(): void
     maximize(): void
     unMaximize(): void
@@ -58,12 +33,12 @@ export interface ElectronCurrentWindow {
     toggleDevTools(): void
     getZoomLevel(): Promise<number>
     setZoomLevel(desired: number): void
-    isFullScreenable(): boolean // TODO: this should really be async, since it blocks the renderer process
-    isFullScreen(): boolean // TODO: this should really be async, since it blocks the renderer process
+    isFullScreenableSync(): boolean // TODO: this should really be async, since it blocks the renderer process
+    isFullScreenSync(): boolean // TODO: this should really be async, since it blocks the renderer process
     toggleFullScreen(): void
-    popup(menu: MenuDto[], x: number, y: number, onClosed: () => void): Promise<number>
-    closePopup(handle: number): void
+    popup(menu: MenuDto[], x: number, y: number): Promise<void>
+    closePopup(menuId: number): void
     reload(): void
     getTitleBarStyle(): Promise<string>
     setTitleBarStyle(style: string): Promise<void>
-}
+}>;

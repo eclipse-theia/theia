@@ -44,7 +44,7 @@ export class ElectronCurrentWindowImpl implements ElectronCurrentWindow {
         this.onUnmaximize = this.ipcRenderer.createEvent(ipc.onUnmaximize);
     }
 
-    @proxy() isMaximized(): boolean {
+    @proxy() isMaximizedSync(): boolean {
         return this.ipcRenderer.sendSync(ipc.isMaximized);
     }
 
@@ -86,11 +86,11 @@ export class ElectronCurrentWindowImpl implements ElectronCurrentWindow {
         this.ipcRenderer.send(ipc.setZoomLevel, desired);
     }
 
-    @proxy() isFullScreenable(): boolean {
+    @proxy() isFullScreenableSync(): boolean {
         return this.ipcRenderer.sendSync(ipc.isFullScreenable);
     }
 
-    @proxy() isFullScreen(): boolean {
+    @proxy() isFullScreenSync(): boolean {
         return this.ipcRenderer.sendSync(ipc.isFullScreen);
     }
 
