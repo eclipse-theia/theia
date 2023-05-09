@@ -28,6 +28,7 @@ import { NavigationLocation, RecentlyClosedEditor } from './navigation/navigatio
 import { NavigationLocationService } from './navigation/navigation-location-service';
 import { PreferenceService, PreferenceScope, addEventListener } from '@theia/core/lib/browser';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
+import { nls } from '@theia/core';
 
 @injectable()
 export class EditorNavigationContribution implements Disposable, FrontendApplicationContribution {
@@ -85,13 +86,13 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
         });
         this.commandRegistry.registerHandler(EditorCommands.CLEAR_EDITOR_HISTORY.id, {
             execute: async () => {
-                const confirmed = await new ConfirmDialog({
-                    title: 'Clear Editor History',
-                    msg: 'Are you sure you want to clear the history of recently opened editors?',
+                const shouldClear = await new ConfirmDialog({
+                    title: nls.localizeByDefault('Clear Editor History'),
+                    msg: nls.localizeByDefault('Do you want to clear the history of recently opened editors?'),
                     ok: Dialog.YES,
                     cancel: Dialog.NO
                 }).open();
-                if (confirmed) {
+                if (shouldClear) {
                     this.locationStack.clearHistory();
                 }
             },
