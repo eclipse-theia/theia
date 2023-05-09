@@ -7,7 +7,6 @@
 
 <div id="badges" align="center">
 
-
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/help%20wanted)
   [![Discourse status](https://img.shields.io/discourse/status?label=Chat&server=https%3A%2F%2Fcommunity.theia-ide.org%2F)](https://community.theia-ide.org/)
   [![Build Status](https://github.com/eclipse-theia/theia/workflows/Build/badge.svg?branch=master)](https://github.com/eclipse-theia/theia/actions?query=branch%3Amaster+event%3Apush+event%3Aschedule)
@@ -31,13 +30,11 @@ Eclipse Theia is an extensible framework to develop full-fledged multi-language 
 - [**License**](#license)
 - [**Trademark**](#trademark)
 
-
 <div style='margin:0 auto;width:60%;'>
 
 ![Theia](https://raw.githubusercontent.com/eclipse-theia/theia/master/doc/images/theia-screenshot.png)
 
 </div>
-
 
 ## Website
 
@@ -51,6 +48,7 @@ Eclipse Theia is an extensible framework to develop full-fledged multi-language 
 - [Visit the release website](https://theia-ide.org/releases/) for more information.
 
 ## Scope
+
 - Support building browser-based and desktop IDEs and tools
 - Provide a highly flexible architecture for adopters
 - Support VS Code Extension protocol
@@ -63,7 +61,9 @@ Eclipse Theia is an extensible framework to develop full-fledged multi-language 
 See [our roadmap](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Roadmap) for an overview about the current project goals and the upcoming releases.
 
 ## Getting Started
+
 Here you can find guides and examples for common scenarios to adopt Theia:
+
 - [Get an overview of how to get started](https://theia-ide.org/#gettingstarted) on the Theia website
 - [Develop a Theia application - your own IDE/Tool](https://www.theia-ide.org/doc/Composing_Applications.html)
 - [Learn about Theia's extension mechanisms](https://theia-ide.org/docs/extensions/)
@@ -75,6 +75,7 @@ Here you can find guides and examples for common scenarios to adopt Theia:
 ## Contributing
 
 Read below to learn how to take part in improving Theia:
+
 - Fork the repository and [run the examples from source](doc/Developing.md#quick-start)
 - Get familiar with [the development workflow](doc/Developing.md), [Coding Guidelines](doc/coding-guidelines.md), [Code of Conduct](CODE_OF_CONDUCT.md) and [sign the Eclipse contributor agreement](CONTRIBUTING.md#eclipse-contributor-agreement)
 - Find an issue to work on and submit a pull request
@@ -86,6 +87,7 @@ Read below to learn how to take part in improving Theia:
 ## Feedback
 
 Read below how to engage with Theia community:
+
 - Join the discussion on [Discourse](https://community.theia-ide.org/).
 - Ask a question, request a new feature and file a bug with [GitHub issues](https://github.com/eclipse-theia/theia/issues/new/choose).
 - Star the repository to show your support.
@@ -111,8 +113,7 @@ Read below how to engage with Theia community:
 - [Eclipse Public License 2.0](LICENSE-EPL)
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](LICENSE-GPL)
 
-
 ## Trademark
-"Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
 
+"Theia" is a trademark of the Eclipse Foundation
+<https://www.eclipse.org/theia>
