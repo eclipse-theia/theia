@@ -22,6 +22,7 @@ import URI from '@theia/core/lib/common/uri';
 import { LabelProvider, QuickAccessProvider, QuickAccessRegistry, QuickInputService, QuickPick, PreferenceService } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { ALL_TASK_TYPES } from './provided-task-configurations';
 import { TaskNameResolver } from './task-name-resolver';
 import { TaskSourceResolver } from './task-source-resolver';
 import { TaskConfigurationManager } from './task-configuration-manager';
@@ -44,7 +45,9 @@ export namespace TaskEntry {
 }
 
 export const CHOOSE_TASK = nls.localizeByDefault('Select the task to run');
+export const CONFIGURE_A_TASK = nls.localizeByDefault('Configure a Task');
 export const NO_TASK_TO_RUN = nls.localize('theia/task/noTaskToRun', 'No task to run found. Configure Tasks...');
+export const SHOW_ALL = nls.localizeByDefault('Show All Tasks...');
 
 @injectable()
 export class QuickOpenTask implements QuickAccessProvider {
@@ -96,7 +99,10 @@ export class QuickOpenTask implements QuickAccessProvider {
         this.items = [];
 
         const filteredRecentTasksItems = this.getItems(filteredRecentTasks, 'recently used tasks', token, isMulti);
-        const filteredConfiguredTasksItems = this.getItems(filteredConfiguredTasks, 'configured tasks', token, isMulti);
+        const filteredConfiguredTasksItems = this.getItems(filteredConfiguredTasks, 'configured tasks', token, isMulti, {
+            label: `$(plus) ${CONFIGURE_A_TASK}`,
+            execute: () => this.configure()
+        });
         const providedTypeItems = this.createProvidedTypeItems(providedTypes);
 
         this.items.push(
@@ -117,33 +123,43 @@ export class QuickOpenTask implements QuickAccessProvider {
         const result: TaskEntry[] = [];
         result.push({ type: 'separator', label: nls.localizeByDefault('contributed') });
 
+        providedTypes.sort((t1, t2) =>
+            t1.taskType.localeCompare(t2.taskType)
+        );
+
         for (const definition of providedTypes) {
             const type = definition.taskType;
-            result.push({
-                label: `$(folder) ${type}`,
-                value: type,
-                /**
-                 * This function is used in the context of a QuickAccessProvider (triggered from the command palette: '?task').
-                 * It triggers a call to QuickOpenTask#getPicks,
-                 * the 'execute' function below is called when the user selects an entry for a task type which triggers the display of
-                 * the second level quick pick.
-                 *
-                 * Due to the asynchronous resolution of second-level tasks, there may be a delay in showing the quick input widget.
-                 *
-                 * NOTE: The widget is not delayed in other contexts e.g. by commands (Run Tasks), see the implementation at QuickOpenTask#open
-                 *
-                 * To improve the performance, we may consider using a `PickerQuickAccessProvider` instead of a `QuickAccessProvider`,
-                 * and support providing 'FastAndSlowPicks'.
-                 *
-                 * TODO: Consider the introduction and exposure of monaco `PickerQuickAccessProvider` and the corresponding refactoring for this and other
-                 * users of QuickAccessProvider.
-                 */
-                execute: () => {
-                    this.doSecondLevel(type);
-                }
-            });
+            result.push(this.toProvidedTaskTypeEntry(type, `$(folder) ${type}`));
         }
+
+        result.push(this.toProvidedTaskTypeEntry(SHOW_ALL, SHOW_ALL));
         return result;
+    }
+
+    protected toProvidedTaskTypeEntry(type: string, label: string): TaskEntry {
+        return {
+            label,
+            value: type,
+            /**
+             * This function is used in the context of a QuickAccessProvider (triggered from the command palette: '?task').
+             * It triggers a call to QuickOpenTask#getPicks,
+             * the 'execute' function below is called when the user selects an entry for a task type which triggers the display of
+             * the second level quick pick.
+             *
+             * Due to the asynchronous resolution of second-level tasks, there may be a delay in showing the quick input widget.
+             *
+             * NOTE: The widget is not delayed in other contexts e.g. by commands (Run Tasks), see the implementation at QuickOpenTask#open
+             *
+             * To improve the performance, we may consider using a `PickerQuickAccessProvider` instead of a `QuickAccessProvider`,
+             * and support providing 'FastAndSlowPicks'.
+             *
+             * TODO: Consider the introduction and exposure of monaco `PickerQuickAccessProvider` and the corresponding refactoring for this and other
+             * users of QuickAccessProvider.
+             */
+            execute: () => {
+                this.doSecondLevel(type);
+            }
+        };
     }
 
     protected onDidTriggerGearIcon(item: QuickPickItem): void {
@@ -157,8 +173,10 @@ export class QuickOpenTask implements QuickAccessProvider {
         this.showMultiLevelQuickPick();
     }
 
-    async showMultiLevelQuickPick(): Promise<void> {
-        await this.init();
+    async showMultiLevelQuickPick(skipInit?: boolean): Promise<void> {
+        if (!skipInit) {
+            await this.init();
+        }
         const picker: QuickPick<TaskEntry> = this.quickInputService.createQuickPick();
         picker.placeholder = CHOOSE_TASK;
         picker.matchOnDescription = true;
@@ -191,15 +209,21 @@ export class QuickOpenTask implements QuickAccessProvider {
         // Resolve Second level tasks based on selected TaskType
         const isMulti = this.workspaceService.isMultiRootWorkspaceOpened;
         const token = this.taskService.startUserAction();
-        const providedTasks = await this.taskService.getProvidedTasks(token, taskType);
+
+        const providedTasks = taskType === SHOW_ALL ?
+            await this.taskService.getProvidedTasks(token, ALL_TASK_TYPES) :
+            await this.taskService.getProvidedTasks(token, taskType);
+
         const providedTasksItems = this.getItems(providedTasks, taskType + ' tasks', token, isMulti);
 
-        if (!providedTasksItems.length) {
-            providedTasksItems.push(({
-                label: NO_TASK_TO_RUN,
-                execute: () => this.configure()
-            }));
-        }
+        const label = providedTasksItems.length ?
+            nls.localizeByDefault('Go back ↩') :
+            nls.localizeByDefault('No {0} tasks found. Go back ↩', taskType);
+
+        providedTasksItems.push(({
+            label,
+            execute: () => this.showMultiLevelQuickPick(true)
+        }));
 
         this.quickInputService?.showQuickPick(providedTasksItems, { placeholder: CHOOSE_TASK });
     }
@@ -253,7 +277,7 @@ export class QuickOpenTask implements QuickAccessProvider {
         const token: number = this.taskService.startUserAction();
 
         const configuredTasks = await this.taskService.getConfiguredTasks(token);
-        const providedTasks = await this.taskService.getProvidedTasks(token, '*');
+        const providedTasks = await this.taskService.getProvidedTasks(token, ALL_TASK_TYPES);
 
         // check if tasks.json exists. If not, display "Create tasks.json file from template"
         // If tasks.json exists and empty, display 'Open tasks.json file'
@@ -261,20 +285,11 @@ export class QuickOpenTask implements QuickAccessProvider {
         const groupedTasks = this.getGroupedTasksByWorkspaceFolder([...filteredConfiguredTasks, ...filteredProvidedTasks]);
         if (groupedTasks.has(TaskScope.Global.toString())) {
             const configs = groupedTasks.get(TaskScope.Global.toString())!;
-            items.push(
-                ...configs.map(taskConfig => {
-                    const item = new TaskConfigureQuickOpenItem(
-                        token,
-                        taskConfig,
-                        this.taskService,
-                        this.taskNameResolver,
-                        this.workspaceService,
-                        isMulti
-                    );
-                    item['taskDefinitionRegistry'] = this.taskDefinitionRegistry;
-                    return item;
-                })
-            );
+            this.addConfigurationItems(items, configs, token, isMulti);
+        }
+        if (groupedTasks.has(TaskScope.Workspace.toString())) {
+            const configs = groupedTasks.get(TaskScope.Workspace.toString())!;
+            this.addConfigurationItems(items, configs, token, isMulti);
         }
 
         const rootUris = (await this.workspaceService.roots).map(rootStat => rootStat.resource.toString());
@@ -282,21 +297,7 @@ export class QuickOpenTask implements QuickAccessProvider {
             const folderName = new URI(rootFolder).displayName;
             if (groupedTasks.has(rootFolder)) {
                 const configs = groupedTasks.get(rootFolder.toString())!;
-                items.push(
-                    ...configs.map((taskConfig, index) => {
-                        const item = new TaskConfigureQuickOpenItem(
-                            token,
-                            taskConfig,
-                            this.taskService,
-                            this.taskNameResolver,
-                            this.workspaceService,
-                            isMulti,
-
-                        );
-                        item['taskDefinitionRegistry'] = this.taskDefinitionRegistry;
-                        return item;
-                    })
-                );
+                this.addConfigurationItems(items, configs, token, isMulti);
             } else {
                 const { configUri } = this.preferences.resolve('tasks', [], rootFolder);
                 const existTaskConfigFile = !!configUri;
@@ -322,6 +323,25 @@ export class QuickOpenTask implements QuickAccessProvider {
         }
 
         return items;
+    }
+
+    private addConfigurationItems(items: QuickPickInput<QuickPickItemOrSeparator>[], configs: TaskConfiguration[], token: number, isMulti: boolean): void {
+        items.push(
+            ...configs.map(taskConfig => {
+                const item = new TaskConfigureQuickOpenItem(
+                    token,
+                    taskConfig,
+                    this.taskService,
+                    this.taskNameResolver,
+                    this.workspaceService,
+                    isMulti
+                );
+                item['taskDefinitionRegistry'] = this.taskDefinitionRegistry;
+                return item;
+            }).sort((t1, t2) =>
+                t1.label.localeCompare(t2.label)
+            )
+        );
     }
 
     protected getTaskItems(): QuickPickItem[] {
@@ -412,7 +432,7 @@ export class QuickOpenTask implements QuickAccessProvider {
         return `Task id: ${task.taskId}, label: ${task.config.label}`;
     }
 
-    private getItems(tasks: TaskConfiguration[], groupLabel: string, token: number, isMulti: boolean):
+    private getItems(tasks: TaskConfiguration[], groupLabel: string, token: number, isMulti: boolean, defaultTask?: TaskEntry):
         TaskEntry[] {
         const items: TaskEntry[] = tasks.map(task =>
             new TaskRunQuickOpenItem(token, task, this.taskService, isMulti, this.taskDefinitionRegistry, this.taskNameResolver,
@@ -420,7 +440,17 @@ export class QuickOpenTask implements QuickAccessProvider {
                     iconClass: 'codicon-gear',
                     tooltip: 'Configure Task',
                 }])
-        );
+        ).sort((t1, t2) => {
+            let result = (t1.description ?? '').localeCompare(t2.description ?? '');
+            if (result === 0) {
+                result = t1.label.localeCompare(t2.label);
+            }
+            return result;
+        });
+
+        if (items.length === 0 && defaultTask) {
+            items.push(defaultTask);
+        }
 
         if (items.length > 0) {
             items.unshift({ type: 'separator', label: groupLabel });
