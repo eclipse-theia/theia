@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Emitter, Event } from '@theia/core/lib/common/event';
 import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { EnvMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
@@ -31,16 +30,12 @@ export abstract class EnvExtImpl {
     private envMachineId: string;
     private envSessionId: string;
     private host: string;
-    private _isTelemetryEnabled: boolean;
     private _remoteName: string | undefined;
-    private onDidChangeTelemetryEnabledEmitter = new Emitter<boolean>();
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.ENV_MAIN);
         this.envSessionId = v4();
         this.envMachineId = v4();
-        // we don't support telemetry at the moment
-        this._isTelemetryEnabled = false;
         this._remoteName = undefined;
     }
 
@@ -99,14 +94,6 @@ export abstract class EnvExtImpl {
 
     get appHost(): string {
         return this.host;
-    }
-
-    get isTelemetryEnabled(): boolean {
-        return this._isTelemetryEnabled;
-    }
-
-    get onDidChangeTelemetryEnabled(): Event<boolean> {
-        return this.onDidChangeTelemetryEnabledEmitter.event;
     }
 
     get remoteName(): string | undefined {
