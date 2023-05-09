@@ -163,6 +163,7 @@ import {
     InlayHint,
     InlayHintKind,
     InlayHintLabelPart,
+    TelemetryTrustedValue,
     NotebookCell,
     NotebookCellKind,
     NotebookCellStatusBarAlignment,
@@ -236,6 +237,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FilePermission } from '@theia/filesystem/lib/common/files';
 import { TabsExtImpl } from './tabs';
 import { LocalizationExtImpl } from './localization-ext';
+import { TelemetryExtImpl } from './telemetry-ext';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -277,6 +279,7 @@ export function createAPIFactory(
     const tabsExt = rpc.set(MAIN_RPC_CONTEXT.TABS_EXT, new TabsExtImpl(rpc));
     const customEditorExt = rpc.set(MAIN_RPC_CONTEXT.CUSTOM_EDITORS_EXT, new CustomEditorsExtImpl(rpc, documents, webviewExt, workspaceExt));
     const webviewViewsExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEW_VIEWS_EXT, new WebviewViewsExtImpl(rpc, webviewExt));
+    const telemetryExt = rpc.set(MAIN_RPC_CONTEXT.TELEMETRY_EXT, new TelemetryExtImpl());
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -724,9 +727,12 @@ export function createAPIFactory(
             get appHost(): string { return envExt.appHost; },
             get language(): string { return envExt.language; },
             get isNewAppInstall(): boolean { return envExt.isNewAppInstall; },
-            get isTelemetryEnabled(): boolean { return envExt.isTelemetryEnabled; },
+            get isTelemetryEnabled(): boolean { return telemetryExt.isTelemetryEnabled; },
             get onDidChangeTelemetryEnabled(): theia.Event<boolean> {
-                return envExt.onDidChangeTelemetryEnabled;
+                return telemetryExt.onDidChangeTelemetryEnabled;
+            },
+            createTelemetryLogger(sender: theia.TelemetrySender, options?: theia.TelemetryLoggerOptions): theia.TelemetryLogger {
+                return telemetryExt.createTelemetryLogger(sender, options);
             },
             get remoteName(): string | undefined { return envExt.remoteName; },
             get machineId(): string { return envExt.machineId; },
@@ -1307,6 +1313,7 @@ export function createAPIFactory(
             InlayHint,
             InlayHintKind,
             InlayHintLabelPart,
+            TelemetryTrustedValue,
             NotebookCellData,
             NotebookCellKind,
             NotebookCellOutput,
