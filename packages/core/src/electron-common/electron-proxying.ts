@@ -16,38 +16,40 @@
 
 import { createIpcNamespace } from './electron-ipc';
 
-export interface Notification {
+export interface Create {
     proxyId: string
+    requestId: number
+    params?: unknown[]
+}
+
+export interface Notification {
     method: string
     params: unknown[]
 }
 
 export interface Request {
-    proxyId: string
     requestId: number
     method: string
     params: unknown[]
 }
 
 export interface RequestSync {
-    proxyId: string
     method: string
     params: unknown[]
 }
 
 export interface Response {
-    proxyId: string
     requestId: number
     error?: Error
     result?: unknown
 }
 
 export interface Cancel {
-    proxyId: string
     requestId: number
 }
 
 export const ELECTRON_PROXYING_IPC = createIpcNamespace('theia-electron-proxying', channel => ({
+    create: channel<(message: Create) => void>(),
     notification: channel<(message: Notification) => void>(),
     request: channel<(message: Request) => void>(),
     requestSync: channel<(message: RequestSync) => void>(),
