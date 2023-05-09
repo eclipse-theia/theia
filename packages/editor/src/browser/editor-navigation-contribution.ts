@@ -27,6 +27,7 @@ import { TextEditor, Position, Range, TextDocumentChangeEvent } from './editor';
 import { NavigationLocation, RecentlyClosedEditor } from './navigation/navigation-location';
 import { NavigationLocationService } from './navigation/navigation-location-service';
 import { PreferenceService, PreferenceScope, addEventListener } from '@theia/core/lib/browser';
+import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
 
 @injectable()
 export class EditorNavigationContribution implements Disposable, FrontendApplicationContribution {
@@ -83,7 +84,17 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
             isEnabled: () => !!this.locationStack.lastEditLocation()
         });
         this.commandRegistry.registerHandler(EditorCommands.CLEAR_EDITOR_HISTORY.id, {
-            execute: () => this.locationStack.clearHistory(),
+            execute: async () => {
+                const confirmed = await new ConfirmDialog({
+                    title: 'Clear Editor History',
+                    msg: 'Are you sure you want to clear the history of recently opened editors?',
+                    ok: Dialog.YES,
+                    cancel: Dialog.NO
+                }).open();
+                if (confirmed) {
+                    this.locationStack.clearHistory();
+                }
+            },
             isEnabled: () => this.locationStack.locations().length > 0
         });
         this.commandRegistry.registerHandler(EditorCommands.TOGGLE_MINIMAP.id, {
