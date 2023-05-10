@@ -34,7 +34,7 @@ import { Path } from '@theia/core/lib/common/path';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { WorkspaceRootsChangeEvent, SearchInWorkspaceResult, Range } from '../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
-import { URI } from './types-impl';
+import { Disposable, URI } from './types-impl';
 import { normalize } from '@theia/core/lib/common/paths';
 import { relative } from '../common/paths-util';
 import { Schemes } from '../common/uri-components';
@@ -447,6 +447,11 @@ export class WorkspaceExtImpl implements WorkspaceExt {
             this._trusted = trust;
             this.didGrantWorkspaceTrustEmitter.fire();
         }
+    }
+
+    /** @stubbed */
+    $registerEditSessionIdentityProvider(scheme: string, provider: theia.EditSessionIdentityProvider): theia.Disposable {
+        return Disposable.NULL;
     }
 
 }
