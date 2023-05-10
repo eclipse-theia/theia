@@ -21,7 +21,7 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { TreeViewWidget } from './tree-view-widget';
-import { BadgeWidget, DescriptionWidget } from '@theia/core/lib/browser/view-container';
+import { BadgeWidget, DescriptionWidget, DynamicWidget } from '@theia/core/lib/browser/view-container';
 import { DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
@@ -32,7 +32,7 @@ export class PluginViewWidgetIdentifier {
 }
 
 @injectable()
-export class PluginViewWidget extends Panel implements StatefulWidget, DescriptionWidget, BadgeWidget {
+export class PluginViewWidget extends Panel implements StatefulWidget, DescriptionWidget, BadgeWidget, DynamicWidget {
 
     currentViewContainerId?: string;
 
@@ -46,6 +46,11 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
     protected onDidChangeBadgeEmitter = new Emitter<void>();
     protected onDidChangeBadgeTooltipEmitter = new Emitter<void>();
     protected toDispose = new DisposableCollection(this.onDidChangeDescriptionEmitter, this.onDidChangeBadgeEmitter, this.onDidChangeBadgeTooltipEmitter);
+    protected readonly onChangedEmitter = new Emitter<void>();
+
+    get onChanged(): Event<void> {
+        return this.onChangedEmitter.event;
+    }
 
     @inject(MenuModelRegistry)
     protected readonly menus: MenuModelRegistry;
@@ -192,11 +197,13 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
             widget.onDidChangeBadgeTooltip(() => this.onDidChangeBadgeTooltipEmitter.fire());
         }
         this.updateWidgetMessage();
+        this.onChangedEmitter.fire();
     }
 
     override insertWidget(index: number, widget: Widget): void {
         super.insertWidget(index, widget);
         this.updateWidgetMessage();
+        this.onChangedEmitter.fire();
     }
 
     override dispose(): void {

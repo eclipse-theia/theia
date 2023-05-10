@@ -84,6 +84,7 @@ import { PluginTerminalRegistry } from './plugin-terminal-registry';
 import { DnDFileContentStore } from './view/dnd-file-content-store';
 import { WebviewContextKeys } from './webview/webview-context-keys';
 import { LanguagePackService, languagePackServicePath } from '../../common/language-pack-service';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -110,6 +111,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(OpenUriCommandHandler).toSelf().inSingletonScope();
     bind(PluginApiFrontendContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(PluginApiFrontendContribution);
+    bind(TabBarToolbarContribution).toService(PluginApiFrontendContribution);
 
     bind(EditorModelService).toSelf().inSingletonScope();
 
