@@ -90,7 +90,7 @@ Read below how to engage with Theia community:
 
 - Join the discussion on [Discourse](https://community.theia-ide.org/).
 - Ask a question, request a new feature and file a bug with [GitHub issues](https://github.com/eclipse-theia/theia/issues/new/choose).
-- Vote on existing Github issues by reacting with a 👍. We regularily check issues with votes!
+- Vote on existing GitHub issues by reacting with a 👍. We regularly check issues with votes!
 - Star the repository to show your support.
 - Follow Theia on [Twitter](https://twitter.com/theia_ide).
 - Join the [weekly developer call](https://github.com/eclipse-theia/theia/wiki/Dev-Meetings)
