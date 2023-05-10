@@ -449,7 +449,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         }
     }
 
-    // stub
+    /** @stubbed */
     $registerEditSessionIdentityProvider(scheme: string, provider: theia.EditSessionIdentityProvider): theia.Disposable {
         return Disposable.NULL;
     }
