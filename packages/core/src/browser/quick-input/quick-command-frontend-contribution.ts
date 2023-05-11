@@ -19,6 +19,7 @@ import { KeybindingRegistry, KeybindingContribution } from '../keybinding';
 import { CommonMenus } from '../common-frontend-contribution';
 import { CLEAR_COMMAND_HISTORY, quickCommand, QuickCommandService } from './quick-command-service';
 import { QuickInputService } from './quick-input-service';
+import { ConfirmDialog, Dialog } from '../dialogs';
 
 @injectable()
 export class QuickCommandFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution {
@@ -36,7 +37,17 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
             }
         });
         commands.registerCommand(CLEAR_COMMAND_HISTORY, {
-            execute: () => commands.clearCommandHistory(),
+            execute: async () => {
+                const shouldClear = await new ConfirmDialog({
+                    title: nls.localizeByDefault('Clear Command History'),
+                    msg: nls.localizeByDefault('Do you want to clear the history of recently used commands?'),
+                    ok: nls.localizeByDefault('Clear'),
+                    cancel: Dialog.CANCEL,
+                }).open();
+                if (shouldClear) {
+                    commands.clearCommandHistory();
+                }
+            }
         });
     }
 
