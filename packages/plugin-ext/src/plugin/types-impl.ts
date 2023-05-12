@@ -229,6 +229,13 @@ export enum SourceControlInputBoxValidationType {
     Information = 2
 }
 
+export enum ExternalUriOpenerPriority {
+    None = 0,
+    Option = 1,
+    Default = 2,
+    Preferred = 3,
+}
+
 @es5ClassCompat
 export class ColorTheme implements theia.ColorTheme {
     constructor(public readonly kind: ColorThemeKind) { }
