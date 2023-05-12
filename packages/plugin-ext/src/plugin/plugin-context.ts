@@ -195,7 +195,8 @@ import {
     TextMergeTabInput,
     WebviewEditorTabInput,
     DocumentPasteEdit,
-    ExternalUriOpenerPriority
+    ExternalUriOpenerPriority,
+    EditSessionIdentityMatch
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -735,7 +736,13 @@ export function createAPIFactory(
             },
             registerEditSessionIdentityProvider(scheme: string, provider: theia.EditSessionIdentityProvider) {
                 return workspaceExt.$registerEditSessionIdentityProvider(scheme, provider);
-            }
+            },
+            /**
+             * @stubbed
+             * This is a stub implementation, that should minimally satisfy vscode built-in extensions 
+             * that currently use this proposed API.
+             */
+            onWillCreateEditSessionIdentity: () => Disposable.NULL,
         };
 
         const onDidChangeLogLevel = new Emitter<theia.LogLevel>();
@@ -1369,7 +1376,8 @@ export function createAPIFactory(
             TerminalExitReason,
             DocumentPasteEdit,
             ExternalUriOpenerPriority,
-            TerminalQuickFixType
+            TerminalQuickFixType,
+            EditSessionIdentityMatch
         };
     };
 }

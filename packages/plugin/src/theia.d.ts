@@ -23,6 +23,7 @@
 import './theia-extra';
 import './theia-proposed';
 import './theia.proposed.externalUriOpener';
+import './vscode.proposed.editSessionIdentityProvider';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable max-len */
