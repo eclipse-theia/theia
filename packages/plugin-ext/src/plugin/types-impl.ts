@@ -3500,3 +3500,11 @@ export class DocumentPasteEdit {
     additionalEdit?: WorkspaceEdit;
 }
 // #endregion
+
+// #region DocumentPaste
+export enum EditSessionIdentityMatch {
+    Complete = 100,
+    Partial = 50,
+    None = 0
+}
+// #endregion
