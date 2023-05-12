@@ -193,7 +193,8 @@ import {
     TextDiffTabInput,
     TextMergeTabInput,
     WebviewEditorTabInput,
-    DocumentPasteEdit
+    DocumentPasteEdit,
+    ExternalUriOpenerPriority
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -573,6 +574,11 @@ export function createAPIFactory(
             },
             get tabGroups(): theia.TabGroups {
                 return tabsExt.tabGroups;
+            },
+
+            // ExternalUriOpener @stubbed
+            registerExternalUriOpener(id: string, opener: theia.ExternalUriOpener, metadata: theia.ExternalUriOpenerMetadata): theia.Disposable {
+                return Disposable.NULL;
             }
         };
 
@@ -1353,7 +1359,8 @@ export function createAPIFactory(
             TabInputTerminal: TerminalEditorTabInput,
             TerminalLocation,
             TerminalExitReason,
-            DocumentPasteEdit
+            DocumentPasteEdit,
+            ExternalUriOpenerPriority
         };
     };
 }
