@@ -9,6 +9,30 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ### General
 
+_msgpackr_:
+
+If you're experiencing [`maximum callstack exceeded`](https://github.com/eclipse-theia/theia/issues/12499) errors you may need to downgrade the version of `msgpackr` pulled using a [yarn resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/).
+
+```
+rpc-message-encoder.ts:151 Uncaught (in promise) Error: Error during encoding: 'Maximum call stack size exceeded'
+    at MsgPackMessageEncoder.encode (rpc-message-encoder.ts:151:23)
+    at MsgPackMessageEncoder.request (rpc-message-encoder.ts:137:14)
+    at RpcProtocol.sendRequest (rpc-protocol.ts:161:22)
+    at proxy-handler.ts:74:45
+```
+
+For the best results follow the version used and tested by the framework.
+
+For example:
+
+```json
+"resolutions": {
+    "**/msgpackr": "1.8.3"
+}
+```
+
+_socket.io-parser_:
+
 Prior to [`v1.31.1`](https://github.com/eclipse-theia/theia/releases/tag/v1.31.1), a [resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/) might be necessary to work-around a recently discovered [critical vulnerability](https://security.snyk.io/vuln/SNYK-JS-SOCKETIOPARSER-3091012) in one of our runtime dependencies [socket.io-parser](https://github.com/socketio/socket.io-parser).
 
 For example:
