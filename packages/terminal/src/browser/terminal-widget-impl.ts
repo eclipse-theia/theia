@@ -200,7 +200,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.attachCustomKeyEventHandler();
         const titleChangeListenerDispose = this.term.onTitleChange((title: string) => {
             if (this.options.useServerTitle) {
-                this.title.label = title;
+                if (title.trim()) {
+                    this.title.label = title;
+                } else {
+                    this.title.label = this.options.title || TerminalWidgetImpl.LABEL;
+                }
             }
         });
         this.toDispose.push(titleChangeListenerDispose);
