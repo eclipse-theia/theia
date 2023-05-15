@@ -49,9 +49,9 @@ For example:
 
 #### Disabled node integration and added context isolation flag in Electron renderer
 
-This also means that `electron-remote` can no longer be used in components in `electron-frontend` or `electron-common`. In order to use electron-related functionality from the browser, you need to expose an API via a preload script (see  https://www.electronjs.org/docs/latest/tutorial/context-isolation). to achieve this from a Theia extension, you need to follow these steps:
+This also means that `electron-remote` can no longer be used in components in `electron-frontend` or `electron-common`. In order to use electron-related functionality from the browser, you need to expose an API via a preload script (see https://www.electronjs.org/docs/latest/tutorial/context-isolation). To achieve this from a Theia extension, you need to follow these steps:
 
-1. Define the API interface and declare an api variable on the global `window` variable. See `packages/filesystem/electron-common/electron-api.ts` for an example
+1. Define the API interface and declare an API variable on the global `window` variable. See `packages/filesystem/electron-common/electron-api.ts` for an example
 2. Write a preload script module that implements the API on the renderer ("browser") side and exposes the API via `exposeInMainWorld`. You'll need to expose the API in an exported function called `preload()`. See `packages/filesystem/electron-browser/preload.ts` for an example.
 3. Declare a `theiaExtensions` entry pointing to the preload script like so:
 ```
@@ -70,7 +70,7 @@ See `/packages/filesystem/package.json` for an example
   }
 ```
 
-If you are using nodejs API in your electron browser-side code you will also have to move the code outside of the renderer process, for example
+If you are using NodeJS API in your electron browser-side code you will also have to move the code outside of the renderer process, for example
 by setting up an API like described above, or, for example, by using a back-end service.
 
 ### v1.35.0
@@ -186,7 +186,7 @@ For more details, see the socket.io documentation about [using multiple nodes](h
 
 #### Resolutions
 
-Due to a [colors.js](https://github.com/Marak/colors.js) issue, a [resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/) may be necessary for your application in order to workaround the problem:
+Due to a [colors.js](https://github.com/Marak/colors.js) issue, a [resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/) may be necessary for your application in order to work around the problem:
 
 For example:
 
@@ -267,7 +267,7 @@ You can delete this whole block and replace it by the following:
 
 #### Keytar
 
-- [`keytar`](https://github.com/atom/node-keytar) was added as a dependency for the secrets API. and may require `libsecret` in your particular distribution to be functional:
+- [`keytar`](https://github.com/atom/node-keytar) was added as a dependency for the secrets API. It may require `libsecret` in your particular distribution to be functional:
   - Debian/Ubuntu: `sudo apt-get install libsecret-1-dev`
   - Red Hat-based: `sudo yum install libsecret-devel`
   - Arch Linux: `sudo pacman -S libsecret`
