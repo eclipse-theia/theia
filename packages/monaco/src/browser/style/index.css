@@ -255,6 +255,10 @@
   background-color: var(--theia-input-background) !important;
 }
 
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused>.contents>.main .monaco-highlighted-label .highlight {
+    color: var(--vscode-editorSuggestWidget-focusHighlightForeground) !important;
+}
+
 .symbol-icon-center {
   align-self: center;
   margin-right: 4px;
