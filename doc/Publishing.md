@@ -20,8 +20,8 @@ Before a release (Monday of the same week), it is a good time to perform a `yarn
 Updating the `yarn.lock` helps identify potential problems with our dependency version ranges, and is more representative of what downstream adopters may pull when building their own applications.
 
 To successfully complete a `yarn upgrade`, one must:
-- perform `yarn upgrade` at the root of the repository.
-- fix any compilation errors, typing issues, and failing tests that may be introduced.
+- Perform `yarn upgrade` at the root of the repository.
+- Fix any compilation errors, typing issues, and failing tests that may be introduced.
 
 ## Announce Release
 
@@ -51,7 +51,7 @@ Here is an [example](https://community.theia-ide.org/t/0-11-0-release/373).
 
 ## Pre-Publishing Steps
 
-Before publishing it's important to make sure that a functional Theia application can be made from the latest `next` version of the platform. Else we will have problems with "latest" after publishing.
+Before publishing, it's important to make sure that a functional Theia application can be made from the latest `next` version of the platform. Else we will have problems with "latest" after publishing.
 
 - Update the forum release post to ask committers to hold-off merging any PR while the release is ongoing.
 
@@ -95,11 +95,11 @@ The next step is to create a new [**Release**](https://github.com/eclipse-theia/
 This will create a new `tag`, `release` with the appropriate assets (`.zip`, `tar.gz`) and notify subscribers.
 
 In order to create a new release, one must:
-- navigate to the releases [page](https://github.com/eclipse-theia/theia/releases).
-- select the _"Draft a new release"_ button.
-- input the appropriate release `tag` version (ex: `v1.2.0`).
-- input the appropriate release `name` (ex: `Eclipse Theia v1.2.0`).
-- include a release `description` to include a reference to the `changelog` at the respective `sha` and release version:
+- Navigate to the releases [page](https://github.com/eclipse-theia/theia/releases).
+- Select the _"Draft a new release"_ button.
+- Input the appropriate release `tag` version (ex: `v1.2.0`).
+- Input the appropriate release `name` (ex: `Eclipse Theia v1.2.0`).
+- Include a release `description` to include a reference to the `changelog` at the respective `sha` and release version:
 
    ```md
    [Release Changelog](https://github.com/eclipse-theia/theia/blob/${sha}/CHANGELOG.md#${changelog-version-header})
@@ -111,13 +111,13 @@ In order to create a new release, one must:
    [Release Changelog](https://github.com/eclipse-theia/theia/blob/2aa2fa1ab091ec36ef851c4e364b322301cddb40/CHANGELOG.md#v120)
    ```
 
-- include a reference to the migration guide in the release description:
+- Include a reference to the migration guide in the release description:
 
    ```md
    [Migration Guide](https://github.com/eclipse-theia/theia/blob/master/doc/Migration.md)
    ```
 
-- select _"Publish Release"_ bottom at the bottom of the page.
+- Select _"Publish Release"_ bottom at the bottom of the page.
 
 For additional information, please consult the official GitHub documentation regarding [creating releases](https://help.github.com/en/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release).
 
@@ -133,7 +133,7 @@ Login to [Eclipse Foundation Theia project page]( https://projects.eclipse.org/p
 
     Select the edit tab
     - In "The Basic" section
-        - Select the  "Type A" in the IP Due Diligence type.
+        - Select the "Type A" in the IP Due Diligence type.
     - In the "Project Plan"
         - Deliverables section
             - Paste the content of the changelog.md.

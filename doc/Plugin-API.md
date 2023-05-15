@@ -25,8 +25,8 @@ The report can be found here:
 
 - [plugin](https://github.com/eclipse-theia/theia/tree/master/packages/plugin): Contains the API declaration of the theia plugin namespace
 - [plugin-ext](https://github.com/eclipse-theia/theia/tree/master/packages/plugin-ext): Contains both the mechanisms for running plugins and providing them with an API namespace and the implementation of the ‘theia’ plugin API
-- [plugin-ext-vscode](https://github.com/eclipse-theia/theia/tree/master/packages/plugin-ext-vscode): Contains an implementation of the vscode plugin API.
-Since vscode and Theia API’s are largely compatible, the initialization passes on the Theia plugin API and overrides a few members in the api object to be compatible to vscode extensions (see [plugin-ext-vscode/src/node/plugin-vscode-init.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext-vscode/src/node/plugin-vscode-init.ts))
+- [plugin-ext-vscode](https://github.com/eclipse-theia/theia/tree/master/packages/plugin-ext-vscode): Contains an implementation of the VS Code plugin API.
+Since VS Code and Theia APIs are largely compatible, the initialization passes on the Theia plugin API and overrides a few members in the API object to be compatible to VS Code extensions (see [plugin-ext-vscode/src/node/plugin-vscode-init.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext-vscode/src/node/plugin-vscode-init.ts))
 
 ## API definition and exposure
 
@@ -167,19 +167,19 @@ Another example to browse are the [TaskExtImpl](https://github.com/eclipse-theia
 ### Adding new types
 
 New classes and other types such as enums are usually implemented in [plugin-ext/src/plugin/types-impl.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/plugin/types-impl.ts).
-They can be added here and the added to the api object created in the API factory.
+They can be added here and the added to the API object created in the API factory.
 
 ## Additional Links
 
 Talk by Thomas Maeder on writing plugin API: <https://www.youtube.com/watch?v=Z_65jy8_9SM>
 
-Adding a new plugin api namespace outside of theia plugin api: [how-to-add-new-plugin-namespace.md](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/doc/how-to-add-new-plugin-namespace.md)
+Adding a new plugin API namespace outside of theia plugin API: [how-to-add-new-plugin-namespace.md](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/doc/how-to-add-new-plugin-namespace.md)
 
 Theia Plugin Implementation wiki page: <https://github.com/eclipse-theia/theia/wiki/Theia-Plugin-Implementation>
 
 Writing Plugin API wiki page in the che wiki: <https://github.com/eclipse/che/wiki/Writing-Theia-plugin-API>
 
-Theia vs VS Code API Comparator: <https://github.com/eclipse-theia/vscode-theia-comparator>
+Theia versus VS Code API Comparator: <https://github.com/eclipse-theia/vscode-theia-comparator>
 
 Theia's extension mechanisms: VS Code extensions, Theia extensions, and Theia plugins: <https://theia-ide.org/docs/extensions>
 

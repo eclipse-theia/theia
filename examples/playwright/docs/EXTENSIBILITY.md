@@ -45,7 +45,7 @@ await app.toolbar.clickItem1();
 
 Many custom Theia applications add dedicated views, editors, or status indicators.
 To support these custom user interface elements in the testing framework, you can add dedicated page objects for them.
-Typically these dedicated page objects for your custom user interface elements are subclasses of the generic classes, `TheiaView`, `TheiaEditor`, etc.
+Typically, these dedicated page objects for your custom user interface elements are subclasses of the generic classes, `TheiaView`, `TheiaEditor`, etc.
 Consequently, they inherit the generic behavior of views or editors, such as activating or closing them, querying the title, check whether editors are dirty, etc.
 
 Let's take a custom view as an example. This custom view has a button that we want to be able to click.
@@ -77,7 +77,7 @@ We have to specify the selectors for the tab and for the view container element 
 Optionally we can specify a view name, which corresponds to the label in Theia's view menu.
 This information is enough to open, close, find and interact with the view.
 
-Additionally we can add further custom methods for the specific actions and queries we want to use for our custom view.
+Additionally, we can add further custom methods for the specific actions and queries we want to use for our custom view.
 As an example, `MyView` above introduces a method that allows to click a button.
 
 To use this custom page object in a test, we pass our custom page object as a parameter when opening the view with `app.openView`.

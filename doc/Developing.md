@@ -371,7 +371,7 @@ You should be able to see message of `[${server-name}: ${server-PID}]: IPC start
 ### Debug the plugin host
 
   - Pass `--hosted-plugin-inspect=9339` arg to the backend server from the command line.
-    - Instead you can run `Launch Browser Backend` launch configuration which is already pre-configured.
+    - Instead, you can run `Launch Browser Backend` launch configuration which is already pre-configured.
   - Open the debug view and run the `Attach to Plugin Host` launch configuration.
     - It connects to the plugin host if at least one extension is detected, otherwise it timeouts after 60s.
     - If you want to debug the activation then enable `stopOnEntry` flag.
@@ -382,7 +382,7 @@ You should be able to see message of `[${server-name}: ${server-PID}]: IPC start
 
 [click for base article](https://github.com/eclipse-theia/theia/issues/3251#issuecomment-468166533)
 
-The following launch configuration is meant to be used when the Theia project is opened as the main project in vscode, the following launch configuration is added inside .vscode/launch.json.
+The following launch configuration is meant to be used when the Theia project is opened as the main project in VS Code, the following launch configuration is added inside .vscode/launch.json.
 - The source repository of your plugin is expected under your `${workspaceFolder}/plugins` folder
 - You can start the frontend from URL: http://localhost:3030
 - It's suggested to update your frontend launch configuration URL to open your favorite target project in a second launch
@@ -566,10 +566,10 @@ errors while building, testing or running the application then;
  try to disable (or uninstall) your anti-malware software.
  See [here](https://github.com/npm/npm/issues/13461#issuecomment-282556281).
  - Still having issues on Windows? File a [bug]. We are working on Linux or OS X
- operating systems. Hence we are more than happy to receive any Windows-related
+ operating systems. Hence, we are more than happy to receive any Windows-related
  feedbacks, [bug](https://github.com/eclipse-theia/theia/issues) reports.
 
-If you're still struggling with the build but you use Windows 10, the you can enable the `Windows Subsystem for Linux` and you can get a Linux distro for free.
+If you're still struggling with the build, but you use Windows 10, then you can enable the `Windows Subsystem for Linux` and you can get a Linux distro for free.
 
 ### macOS
 
