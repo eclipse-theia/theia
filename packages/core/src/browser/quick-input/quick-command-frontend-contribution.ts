@@ -17,7 +17,7 @@ import { injectable, inject, optional } from 'inversify';
 import { CommandRegistry, CommandContribution, MenuContribution, MenuModelRegistry, nls } from '../../common';
 import { KeybindingRegistry, KeybindingContribution } from '../keybinding';
 import { CommonMenus } from '../common-frontend-contribution';
-import { CLEAR_COMMAND_HISTORY, quickCommand, QuickCommandService } from './quick-command-service';
+import { CLOSE_QUICK_OPEN, CLEAR_COMMAND_HISTORY, quickCommand, QuickCommandService } from './quick-command-service';
 import { QuickInputService } from './quick-input-service';
 import { ConfirmDialog, Dialog } from '../dialogs';
 
@@ -49,6 +49,9 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
                 }
             }
         });
+        commands.registerCommand(CLOSE_QUICK_OPEN, {
+            execute: () => this.quickInputService?.hide()
+        });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -66,6 +69,16 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
         keybindings.registerKeybinding({
             command: quickCommand.id,
             keybinding: 'ctrlcmd+shift+p'
+        });
+        keybindings.registerKeybinding({
+            command: CLOSE_QUICK_OPEN.id,
+            keybinding: 'esc',
+            when: 'inQuickOpen'
+        });
+        keybindings.registerKeybinding({
+            command: CLOSE_QUICK_OPEN.id,
+            keybinding: 'shift+esc',
+            when: 'inQuickOpen'
         });
     }
 }

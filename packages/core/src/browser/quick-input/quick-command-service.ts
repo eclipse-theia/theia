@@ -33,6 +33,10 @@ export const CLEAR_COMMAND_HISTORY = Command.toDefaultLocalizedCommand({
     label: 'Clear Command History'
 });
 
+export const CLOSE_QUICK_OPEN: Command = {
+    id: 'workbench.action.closeQuickOpen'
+};
+
 @injectable()
 export class QuickCommandService implements QuickAccessContribution, QuickAccessProvider {
     static PREFIX = '>';
