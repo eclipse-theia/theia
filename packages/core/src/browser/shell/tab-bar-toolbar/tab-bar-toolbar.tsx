@@ -172,7 +172,11 @@ export class TabBarToolbar extends ReactWidget {
     }
 
     protected isEnabled(item: AnyToolbarItem): boolean {
-        return (!!item.command && this.commandIsEnabled(item.command) && this.evaluateWhenClause(item.when)) || (!!item.menuPath && !item.command);
+        if (!!item.command) {
+            return this.commandIsEnabled(item.command) && this.evaluateWhenClause(item.when);
+        } else {
+            return !!item.menuPath;
+        }
     }
 
     protected getToolbarItemClassNames(item: AnyToolbarItem): string[] {
