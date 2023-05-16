@@ -47,6 +47,7 @@ import { ContributedTerminalProfileStore, TerminalProfileStore } from '@theia/te
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { PluginTerminalRegistry } from './plugin-terminal-registry';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 @injectable()
 export class PluginContributionHandler {
@@ -121,6 +122,9 @@ export class PluginContributionHandler {
 
     @inject(ContributionProvider) @named(LabelProviderContribution)
     protected readonly contributionProvider: ContributionProvider<LabelProviderContribution>;
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
 
     protected readonly commandHandlers = new Map<string, CommandHandler['execute'] | undefined>();
 
@@ -399,7 +403,7 @@ export class PluginContributionHandler {
             return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
-        for (const { iconUrl, themeIcon, command, category, title, originalTitle } of contribution.commands) {
+        for (const { iconUrl, themeIcon, command, category, title, originalTitle, enablement } of contribution.commands) {
             const reference = iconUrl && this.style.toIconClass(iconUrl);
             const icon = themeIcon && ThemeIcon.fromString(themeIcon);
             let iconClass;
@@ -409,12 +413,12 @@ export class PluginContributionHandler {
             } else if (icon) {
                 iconClass = ThemeIcon.asClassName(icon);
             }
-            toDispose.push(this.registerCommand({ id: command, category, label: title, originalLabel: originalTitle, iconClass }));
+            toDispose.push(this.registerCommand({ id: command, category, label: title, originalLabel: originalTitle, iconClass }, enablement));
         }
         return toDispose;
     }
 
-    registerCommand(command: Command): Disposable {
+    registerCommand(command: Command, enablement?: string): Disposable {
         if (this.hasCommand(command.id)) {
             console.warn(`command '${command.id}' already registered`);
             return Disposable.NULL;
@@ -429,10 +433,26 @@ export class PluginContributionHandler {
                 return handler(...args);
             },
             // Always enabled - a command can be executed programmatically or via the commands palette.
-            isEnabled(): boolean { return true; },
+            isEnabled: () => {
+                if (enablement) {
+                    return this.contextKeyService.match(enablement);
+                }
+                return true;
+            },
             // Visibility rules are defined via the `menus` contribution point.
             isVisible(): boolean { return true; }
         };
+
+        if (enablement) {
+            const contextKeys = this.contextKeyService.parseKeys(enablement);
+            if (contextKeys && contextKeys.size > 0) {
+                commandHandler.onDidChangeEnabled = (listener: () => void) => this.contextKeyService.onDidChange(e => {
+                    if (e.affects(contextKeys)) {
+                        listener();
+                    }
+                });
+            }
+        }
 
         const toDispose = new DisposableCollection();
         if (this.commands.getCommand(command.id)) {
@@ -608,5 +628,4 @@ export class PluginContributionHandler {
         }
         return { indentAction, appendText: action.appendText, removeText: action.removeText };
     }
-
 }

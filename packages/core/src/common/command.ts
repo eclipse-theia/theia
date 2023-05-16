@@ -122,6 +122,7 @@ export interface CommandHandler {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isEnabled?(...args: any[]): boolean;
+    onDidChangeEnabled?: Event<void>;
     /**
      * Test whether menu items for this handler should be visible.
      */
