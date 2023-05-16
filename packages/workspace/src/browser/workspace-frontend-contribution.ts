@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, MessageService, isWindows, MaybeArray } from '@theia/core/lib/common';
-import { isOSX, environment, OS } from '@theia/core';
+import { isOSX, environment } from '@theia/core';
 import {
     open, OpenerService, CommonMenus, KeybindingRegistry, KeybindingContribution,
     FrontendApplicationContribution, SHELL_TABBAR_CONTEXT_COPY, OnWillStopAction, Navigatable, SaveableSource, Widget
@@ -362,49 +362,24 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     /**
      * Opens a workspace after raising the `Open Workspace` dialog. Resolves to the URI of the recently opened workspace,
      * if it was successful. Otherwise, resolves to `undefined`.
-     *
-     * **Caveat**: this behaves differently on different platforms
-     * and `electron`/`browser` version has impact too. See [here](https://github.com/eclipse-theia/theia/pull/3202#issuecomment-430884195) for more details.
-     *
-     * Legend:
-     *  - Folders only: => `F`
-     *  - Workspace files only: => `W`
-     *  - Folders and workspace files: => `FW`
-     *
-     * -----
-     *
-     * |---------|-----------|-----------|------------|------------|
-     * |         | browser Y | browser N | electron Y | electron N |
-     * |---------|-----------|-----------|------------|------------|
-     * | Linux   |     FW    |     F     |     W      |     F      |
-     * | Windows |     FW    |     F     |     W      |     F      |
-     * | OS X    |     FW    |     F     |     FW     |     FW     |
-     * |---------|-----------|-----------|------------|------------|
-     *
      */
     protected async doOpenWorkspace(): Promise<URI | undefined> {
-        const props = await this.openWorkspaceOpenFileDialogProps();
+        const props = {
+            title: WorkspaceCommands.OPEN_WORKSPACE.dialogLabel,
+            canSelectFiles: true,
+            canSelectFolders: false,
+            filters: WorkspaceFrontendContribution.DEFAULT_FILE_FILTER
+        };
         const [rootStat] = await this.workspaceService.roots;
-        const workspaceFolderOrWorkspaceFileUri = await this.fileDialogService.showOpenDialog(props, rootStat);
-        if (workspaceFolderOrWorkspaceFileUri &&
-            this.getCurrentWorkspaceUri()?.toString() !== workspaceFolderOrWorkspaceFileUri.toString()) {
-            const destinationFolder = await this.fileService.exists(workspaceFolderOrWorkspaceFileUri);
-            if (destinationFolder) {
-                this.workspaceService.open(workspaceFolderOrWorkspaceFileUri);
-                return workspaceFolderOrWorkspaceFileUri;
+        const workspaceFileUri = await this.fileDialogService.showOpenDialog(props, rootStat);
+        if (workspaceFileUri &&
+            this.getCurrentWorkspaceUri()?.toString() !== workspaceFileUri.toString()) {
+            if (await this.fileService.exists(workspaceFileUri)) {
+                this.workspaceService.open(workspaceFileUri);
+                return workspaceFileUri;
             }
         }
         return undefined;
-    }
-
-    protected async openWorkspaceOpenFileDialogProps(): Promise<OpenFileDialogProps> {
-        await this.preferences.ready;
-        const type = OS.type();
-        const electron = this.isElectron();
-        return WorkspaceFrontendContribution.createOpenWorkspaceOpenFileDialogProps({
-            type,
-            electron,
-        });
     }
 
     protected async closeWorkspace(): Promise<void> {
@@ -519,40 +494,4 @@ export namespace WorkspaceFrontendContribution {
         'Theia Workspace (*.theia-workspace)': [THEIA_EXT],
         'VS Code Workspace (*.code-workspace)': [VSCODE_EXT]
     };
-
-    /**
-     * Returns with an `OpenFileDialogProps` for opening the `Open Workspace` dialog.
-     */
-    export function createOpenWorkspaceOpenFileDialogProps(options: Readonly<{ type: OS.Type, electron: boolean }>): OpenFileDialogProps {
-        const { electron, type } = options;
-        const title = WorkspaceCommands.OPEN_WORKSPACE.dialogLabel;
-        // If browser
-        if (!electron) {
-            return {
-                title,
-                canSelectFiles: true,
-                canSelectFolders: true,
-                filters: DEFAULT_FILE_FILTER
-            };
-        }
-
-        // If electron
-        if (OS.Type.OSX === type) {
-            // `Finder` can select folders and files at the same time. We allow folders and workspace files.
-            return {
-                title,
-                canSelectFiles: true,
-                canSelectFolders: true,
-                filters: DEFAULT_FILE_FILTER
-            };
-        }
-
-        return {
-            title,
-            canSelectFiles: true,
-            canSelectFolders: false,
-            filters: DEFAULT_FILE_FILTER
-        };
-    }
-
 }

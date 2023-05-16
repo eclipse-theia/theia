@@ -8,9 +8,9 @@
 ## v1.38.0 - 05/25/2023
 
 <a name="breaking_changes_1.38.0">[Breaking Changes:](#breaking_changes_1.38.0)</a>
-
-- [core] moved `ToolbarAwareTabBar.Styles` to `ScrollableTabBar.Styles` [12411](https://github.com/eclipse-theia/theia/pull/12411/)
-- [debug] Change the return type of (method) `DebugConfigurationManager.provideDynamicDebugConfigurations()` to <br>
+- [workspace] Removed `WorkspaceFrontentContribution.createOpenWorkspaceOpenFileDialogProps(...)`
+- [core] Moved `ToolbarAwareTabBar.Styles` to `ScrollableTabBar.Styles` [12411](https://github.com/eclipse-theia/theia/pull/12411/)
+- [debug] Changed the return type of (method) `DebugConfigurationManager.provideDynamicDebugConfigurations()` to <br>
 `Promise<Record<string, DynamicDebugConfigurationSessionOptions[]>>` [#12482](https://github.com/eclipse-theia/theia/pull/12482)
 
 ## v1.37.0 - 04/27/2023
