@@ -247,14 +247,14 @@ class TreeViewExtImpl<T> implements Disposable {
 
     async reveal(element: T, options?: Partial<TreeViewRevealOptions>): Promise<void> {
         await this.pendingRefresh;
-        const select = !(options?.select === false); // default to true
+        const select = options?.select !== false; // default to true
         const focus = !!options?.focus;
-        const expand = typeof options?.expand === 'undefined' ? false : options!.expand!;
+        const expand = typeof options?.expand === 'undefined' ? false : options!.expand;
 
         const elementParentChain = await this.calculateRevealParentChain(element);
         if (elementParentChain) {
             return this.proxy.$reveal(this.treeViewId, elementParentChain, {
-                select: select, focus: focus, expand: expand, ...options
+                select, focus, expand, ...options
             });
         }
     }
