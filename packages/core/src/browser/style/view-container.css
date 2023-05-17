@@ -96,7 +96,7 @@
 }
 
 .theia-view-container-part-header .label {
-    flex: 0;
+    overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
@@ -152,6 +152,7 @@
 }
 
 .p-TabBar-toolbar.theia-view-container-part-title {
+    flex: none;
     padding: 0px;
     padding-right: calc(var(--theia-ui-padding)*2/3);
 }
