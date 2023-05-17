@@ -361,7 +361,7 @@ export class ScmInputBoxImpl implements theia.SourceControlInputBox {
     }
 }
 
-class SsmResourceGroupImpl implements theia.SourceControlResourceGroup {
+class ScmResourceGroupImpl implements theia.SourceControlResourceGroup {
 
     private static handlePool: number = 0;
     private resourceHandlePool: number = 0;
@@ -409,7 +409,7 @@ class SsmResourceGroupImpl implements theia.SourceControlResourceGroup {
         this.onDidUpdateResourceStatesEmitter.fire();
     }
 
-    readonly handle = SsmResourceGroupImpl.handlePool++;
+    readonly handle = ScmResourceGroupImpl.handlePool++;
 
     constructor(
         private proxy: ScmMain,
@@ -520,7 +520,7 @@ class SsmResourceGroupImpl implements theia.SourceControlResourceGroup {
 class SourceControlImpl implements theia.SourceControl {
 
     private static handlePool: number = 0;
-    private groups: Map<GroupHandle, SsmResourceGroupImpl> = new Map<GroupHandle, SsmResourceGroupImpl>();
+    private groups: Map<GroupHandle, ScmResourceGroupImpl> = new Map<GroupHandle, ScmResourceGroupImpl>();
 
     get id(): string {
         return this._id;
@@ -637,11 +637,11 @@ class SourceControlImpl implements theia.SourceControl {
         this.proxy.$registerSourceControl(this.handle, _id, _label, _rootUri);
     }
 
-    private createdResourceGroups = new Map<SsmResourceGroupImpl, Disposable>();
-    private updatedResourceGroups = new Set<SsmResourceGroupImpl>();
+    private createdResourceGroups = new Map<ScmResourceGroupImpl, Disposable>();
+    private updatedResourceGroups = new Set<ScmResourceGroupImpl>();
 
-    createResourceGroup(id: string, label: string): SsmResourceGroupImpl {
-        const group = new SsmResourceGroupImpl(this.proxy, this.commands, this.handle, id, label);
+    createResourceGroup(id: string, label: string): ScmResourceGroupImpl {
+        const group = new ScmResourceGroupImpl(this.proxy, this.commands, this.handle, id, label);
         const disposable = group.onDidDispose(() => this.createdResourceGroups.delete(group));
         this.createdResourceGroups.set(group, disposable);
         this.eventuallyAddResourceGroups();
@@ -703,7 +703,7 @@ class SourceControlImpl implements theia.SourceControl {
         this.updatedResourceGroups.clear();
     }
 
-    getResourceGroup(handle: GroupHandle): SsmResourceGroupImpl | undefined {
+    getResourceGroup(handle: GroupHandle): ScmResourceGroupImpl | undefined {
         return this.groups.get(handle);
     }
 
