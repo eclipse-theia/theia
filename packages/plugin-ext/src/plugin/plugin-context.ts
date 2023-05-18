@@ -575,9 +575,12 @@ export function createAPIFactory(
             get tabGroups(): theia.TabGroups {
                 return tabsExt.tabGroups;
             },
-
-            // ExternalUriOpener @stubbed
+            /** @stubbed ExternalUriOpener */
             registerExternalUriOpener(id: string, opener: theia.ExternalUriOpener, metadata: theia.ExternalUriOpenerMetadata): theia.Disposable {
+                return Disposable.NULL;
+            },
+            /** @stubbed ProfileContentHandler */
+            registerProfileContentHandler(id: string, profileContentHandler: theia.ProfileContentHandler): theia.Disposable {
                 return Disposable.NULL;
             }
         };

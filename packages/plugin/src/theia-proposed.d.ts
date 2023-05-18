@@ -706,6 +706,20 @@ export module '@theia/plugin' {
     }
 
     // #endregion
+
+    // #region ProfileContentHandler
+
+    export interface ProfileContentHandler {
+        readonly name: string;
+        saveProfile(name: string, content: string, token: CancellationToken): Thenable<Uri | null>;
+        readProfile(uri: Uri, token: CancellationToken): Thenable<string | null>;
+    }
+
+    export namespace window {
+        export function registerProfileContentHandler(id: string, profileContentHandler: ProfileContentHandler): Disposable;
+    }
+
+    // #endregion ProfileContentHandler
 }
 
 /**
