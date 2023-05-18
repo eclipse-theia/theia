@@ -160,6 +160,7 @@ import {
     TerminalLocation,
     TerminalExitReason,
     TerminalProfile,
+    TerminalQuickFixType,
     InlayHint,
     InlayHintKind,
     InlayHintLabelPart,
@@ -582,6 +583,10 @@ export function createAPIFactory(
             /** @stubbed ProfileContentHandler */
             registerProfileContentHandler(id: string, profileContentHandler: theia.ProfileContentHandler): theia.Disposable {
                 return Disposable.NULL;
+            },
+            /** @stubbed TerminalQuickFixProvider */
+            registerTerminalQuickFixProvider(id: string, provider: theia.TerminalQuickFixProvider): theia.Disposable {
+                return terminalExt.registerTerminalQuickFixProvider(id, provider);
             }
         };
 
@@ -1363,7 +1368,8 @@ export function createAPIFactory(
             TerminalLocation,
             TerminalExitReason,
             DocumentPasteEdit,
-            ExternalUriOpenerPriority
+            ExternalUriOpenerPriority,
+            TerminalQuickFixType
         };
     };
 }

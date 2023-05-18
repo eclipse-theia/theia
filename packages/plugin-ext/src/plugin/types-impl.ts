@@ -2066,6 +2066,11 @@ export enum TerminalExitReason {
     Extension = 4,
 }
 
+export enum TerminalQuickFixType {
+    command = 'command',
+    opener = 'opener'
+}
+
 @es5ClassCompat
 export class FileDecoration {
 

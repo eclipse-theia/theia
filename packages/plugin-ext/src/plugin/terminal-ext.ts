@@ -246,6 +246,11 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         });
     }
 
+    /** @stubbed */
+    registerTerminalQuickFixProvider(id: string, provider: theia.TerminalQuickFixProvider): theia.Disposable {
+        return Disposable.NULL;
+    }
+
     protected isExtensionTerminalOptions(options: theia.TerminalOptions | theia.ExtensionTerminalOptions): options is theia.ExtensionTerminalOptions {
         return 'pty' in options;
     }
