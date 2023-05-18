@@ -909,7 +909,8 @@ export class DebugSession implements CompositeTreeElement {
         if (reason === 'started') {
             this.scheduleUpdateThreads();
         } else if (reason === 'exited') {
-            this.clearThread(threadId);
+            this._threads.delete(threadId);
+            this.updateCurrentThread();
         }
     };
 
