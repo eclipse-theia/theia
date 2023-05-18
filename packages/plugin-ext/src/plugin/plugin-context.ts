@@ -739,7 +739,7 @@ export function createAPIFactory(
             },
             /**
              * @stubbed
-             * This is a stub implementation, that should minimally satisfy vscode built-in extensions 
+             * This is a stub implementation, that should minimally satisfy vscode built-in extensions
              * that currently use this proposed API.
              */
             onWillCreateEditSessionIdentity: () => Disposable.NULL,
