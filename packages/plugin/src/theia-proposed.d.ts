@@ -720,6 +720,46 @@ export module '@theia/plugin' {
     }
 
     // #endregion ProfileContentHandler
+
+    // #region TerminalQuickFixProvider
+
+    export namespace window {
+        /**
+         * @param provider A terminal quick fix provider
+         * @return A {@link Disposable} that un-registers the provider when being disposed
+         */
+        export function registerTerminalQuickFixProvider(id: string, provider: TerminalQuickFixProvider): Disposable;
+    }
+
+    export interface TerminalQuickFixProvider {
+        /**
+         * Provides terminal quick fixes
+         * @param commandMatchResult The command match result for which to provide quick fixes
+         * @param token A cancellation token indicating the result is no longer needed
+         * @return Terminal quick fix(es) if any
+         */
+        provideTerminalQuickFixes(commandMatchResult: TerminalCommandMatchResult, token: CancellationToken): TerminalQuickFix[] | TerminalQuickFix | undefined;
+    }
+
+    export interface TerminalCommandMatchResult {
+        commandLine: string;
+        commandLineMatch: RegExpMatchArray;
+        outputMatch?: {
+            regexMatch: RegExpMatchArray;
+            outputLines?: string[];
+        };
+    }
+
+    interface TerminalQuickFix {
+        type: TerminalQuickFixType;
+    }
+
+    enum TerminalQuickFixType {
+        command = 'command',
+        opener = 'opener'
+    }
+
+    // #endRegion TerminalQuickFixProvider
 }
 
 /**
