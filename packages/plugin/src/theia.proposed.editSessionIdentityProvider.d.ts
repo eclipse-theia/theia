@@ -14,13 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-// Copied from: https://github.com/microsoft/vscode/blob/1.77.0/src/vscode-dts/vscode.proposed.editSessionIdentityProvider.d.ts
-// and slightly adapted to work in Theia
-
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+// code copied and modified from https://github.com/microsoft/vscode/blob/1.77.0/src/vscode-dts/vscode.proposed.editSessionIdentityProvider.d.ts
 
 export module '@theia/plugin' {
 

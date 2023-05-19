@@ -196,7 +196,8 @@ import {
     WebviewEditorTabInput,
     DocumentPasteEdit,
     ExternalUriOpenerPriority,
-    EditSessionIdentityMatch
+    EditSessionIdentityMatch,
+    TerminalOutputAnchor
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -1376,6 +1377,7 @@ export function createAPIFactory(
             TabInputWebview: WebviewEditorTabInput,
             TabInputTerminal: TerminalEditorTabInput,
             TerminalLocation,
+            TerminalOutputAnchor,
             TerminalExitReason,
             DocumentPasteEdit,
             ExternalUriOpenerPriority,
