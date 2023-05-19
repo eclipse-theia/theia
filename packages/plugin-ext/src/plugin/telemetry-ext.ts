@@ -225,7 +225,7 @@ function anonymizeFilePaths(stack: string, cleanupPatterns: RegExp[]): string {
         }
     }
     if (lastIndex < stack.length) {
-        updatedStack += stack.substr(lastIndex);
+        updatedStack += stack.substring(lastIndex);
     }
 
     return updatedStack;
@@ -296,4 +296,3 @@ export function cleanData(data: Record<string, any>, cleanUpPatterns: RegExp[]):
         return undefined;
     }, new Set());
 }
-

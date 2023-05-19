@@ -171,7 +171,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             const lastSeparator = change.preferenceName.lastIndexOf('.');
             if (lastSeparator > 0) {
-                let preferenceName = change.preferenceName.substr(lastSeparator + 1);
+                let preferenceName = change.preferenceName.substring(lastSeparator + 1);
                 let preferenceValue = change.newValue;
 
                 if (preferenceName === 'rendererType') {

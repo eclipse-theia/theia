@@ -55,7 +55,7 @@ export function basename(path: string): string {
     } else if (~idx === path.length - 1) {
         return basename(path.substring(0, path.length - 1));
     } else {
-        return path.substr(~idx + 1);
+        return path.substring(~idx + 1);
     }
 }
 

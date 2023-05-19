@@ -198,7 +198,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
         const inspectArgPrefix = `--${options.serverName}-inspect`;
         const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));
         if (inspectArg !== undefined) {
-            forkOptions.execArgv = ['--nolazy', `--inspect${inspectArg.substr(inspectArgPrefix.length)}`];
+            forkOptions.execArgv = ['--nolazy', `--inspect${inspectArg.substring(inspectArgPrefix.length)}`];
         }
 
         const childProcess = cp.fork(this.configuration.path, options.args, forkOptions);

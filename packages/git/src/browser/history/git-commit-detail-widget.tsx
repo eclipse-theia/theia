@@ -51,7 +51,7 @@ export class GitCommitDetailWidget extends BaseWidget implements StatefulWidget 
     ) {
         super();
         this.id = 'commit' + options.commitSha;
-        this.title.label = options.commitSha.substr(0, 8);
+        this.title.label = options.commitSha.substring(0, 8);
         this.title.closable = true;
         this.title.iconClass = codicon('git-commit');
 

@@ -228,12 +228,12 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
                 if (p.startsWith(prefix)) {
                     const idx = p.indexOf('.', prefix.length);
                     if (idx !== -1 && isDeep) {
-                        const pre = p.substr(prefix.length, idx - prefix.length);
+                        const pre = p.substring(prefix.length, idx);
                         if (properties.indexOf(pre) === -1) {
                             properties.push(pre);
                         }
                     }
-                    const prop = p.substr(prefix.length);
+                    const prop = p.substring(prefix.length);
                     if (isFlat || prop.indexOf('.') === -1) {
                         properties.push(prop);
                     }

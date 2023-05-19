@@ -142,7 +142,7 @@ export class FileLocationMapper implements LocationMapper {
         }
         let rawLocation = uri.path.toString();
         if (rawLocation.charAt(0) === '/') {
-            rawLocation = rawLocation.substr(1);
+            rawLocation = rawLocation.substring(1);
         }
         return this.miniBrowserEnvironment.getRandomEndpoint().getRestUrl().resolve(rawLocation).toString();
     }

@@ -362,7 +362,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
     protected fileNameIcon(fileName: string): string[] {
         fileName = fileName.toLowerCase();
         const extIndex = fileName.indexOf('.');
-        const icons = extIndex !== -1 ? this.fileExtensionIcon(fileName.substr(extIndex + 1)) : [];
+        const icons = extIndex !== -1 ? this.fileExtensionIcon(fileName.substring(extIndex + 1)) : [];
         icons.unshift('theia-plugin-' + this.escapeCSS(fileName) + '-file-name-icon');
         return icons;
     }

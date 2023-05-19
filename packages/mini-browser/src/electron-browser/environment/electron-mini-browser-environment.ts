@@ -37,7 +37,7 @@ export class ElectronMiniBrowserEnvironment extends MiniBrowserEnvironment {
 
     protected override getDefaultHostname(): string {
         const query = self.location.search
-            .substr(1) // remove leading `?`
+            .substring(1) // remove leading `?`
             .split('&')
             .map(entry => entry
                 .split('=', 2)

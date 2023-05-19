@@ -698,7 +698,7 @@ export class HostedPluginSupport {
         // should be aligned with https://github.com/microsoft/vscode/blob/da5fb7d5b865aa522abc7e82c10b746834b98639/src/vs/workbench/api/node/extHostExtensionService.ts#L460-L469
         for (const activationEvent of activationEvents) {
             if (/^workspaceContains:/.test(activationEvent)) {
-                const fileNameOrGlob = activationEvent.substr('workspaceContains:'.length);
+                const fileNameOrGlob = activationEvent.substring('workspaceContains:'.length);
                 if (fileNameOrGlob.indexOf(ALL_ACTIVATION_EVENT) >= 0 || fileNameOrGlob.indexOf('?') >= 0) {
                     includePatterns.push(fileNameOrGlob);
                 } else {

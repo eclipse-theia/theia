@@ -50,7 +50,7 @@ export class EnvMainImpl implements EnvMain {
 export function getQueryParameters(): QueryParameters {
     const queryParameters: QueryParameters = {};
     if (window.location.search !== '') {
-        const queryParametersString = window.location.search.substr(1); // remove question mark
+        const queryParametersString = window.location.search.substring(1); // remove question mark
         const params = queryParametersString.split('&');
         for (const pair of params) {
             if (pair === '') {

@@ -347,7 +347,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
                 const startColumn = Number.isFinite(column) && column > 0 ? column - 1 : 0;
                 const position = Position.create(lineNumber, startColumn);
 
-                filter = expression.substr(0, patternMatch.index);
+                filter = expression.substring(0, patternMatch.index);
                 range = Range.create(position, position);
             }
         }
