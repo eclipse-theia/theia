@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export interface NotebookType {
+export interface NotebookTypeDescriptor {
     readonly type: string;
     readonly displayName: string;
     readonly priority?: string | undefined;

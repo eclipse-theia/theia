@@ -13,6 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 
 import * as theia from '@theia/plugin';
 import { NotebookDocument } from './notebook-document';
@@ -24,8 +28,6 @@ export class NotebookEditorExtImpl {
     private selections: theia.NotebookRange[] = [];
     private visibleRanges: theia.NotebookRange[] = [];
     private viewColumn?: theia.ViewColumn;
-
-    private _visible: boolean = false;
 
     private editor?: theia.NotebookEditor;
 
@@ -85,14 +87,6 @@ export class NotebookEditorExtImpl {
         return this.editor;
     }
 
-    get visible(): boolean {
-        return this._visible;
-    }
-
-    acceptVisibility(value: boolean): void {
-        this._visible = value;
-    }
-
     acceptVisibleRanges(value: theia.NotebookRange[]): void {
         this.visibleRanges = value;
     }
@@ -102,6 +96,7 @@ export class NotebookEditorExtImpl {
     }
 
     private trySetSelections(value: theia.NotebookRange[]): void {
+        // NB Unimplemented: implement "selections"
         // this._proxy.$trySetSelections(this.id, value.map(extHostConverter.NotebookRange.from));
     }
 

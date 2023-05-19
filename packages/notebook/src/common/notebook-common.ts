@@ -77,13 +77,13 @@ export interface NotebookExtensionDescription {
     readonly location: string | undefined;
 }
 
-export interface OutputItemDto {
+export interface CellOutputItem {
     readonly mime: string;
     readonly data: BinaryBuffer;
 }
 
-export interface OutputDto {
-    outputs: OutputItemDto[];
+export interface CellOutput {
+    outputs: CellOutputItem[];
     metadata?: Record<string, unknown>;
 }
 
@@ -92,18 +92,18 @@ export interface NotebookCellCollapseState {
     outputCollapsed?: boolean;
 }
 
-export interface CellDto {
+export interface CellData {
     source: string;
     language: string;
     cellKind: CellKind;
-    outputs: OutputDto[];
+    outputs: CellOutput[];
     metadata?: NotebookCellMetadata;
     internalMetadata?: NotebookCellInternalMetadata;
     collapseState?: NotebookCellCollapseState;
 }
 
 export interface NotebookData {
-    readonly cells: CellDto[];
+    readonly cells: CellData[];
     readonly metadata: NotebookDocumentMetadata;
 }
 
@@ -124,31 +124,6 @@ export interface NotebookCellStatusBarItemProvider {
     viewType: string;
     onDidChangeStatusBarItems?: Event<void>;
     provideCellStatusBarItems(uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarItemList | undefined>;
-}
-
-export interface CellOutput {
-    outputs: OutputItemDto[];
-    metadata?: Record<string, unknown>;
-    onDidChangeData: Event<void>;
-    replaceData(items: OutputDto): void;
-    appendData(items: OutputItemDto[]): void;
-}
-
-export interface Cell {
-    readonly uri: URI;
-    handle: number;
-    language: string;
-    cellKind: CellKind;
-    outputs: CellOutput[];
-    metadata: NotebookCellMetadata;
-    internalMetadata: NotebookCellInternalMetadata;
-    // getHashValue(): number;
-    textBuffer: string;
-    onDidChangeOutputs?: Event<NotebookCellOutputsSplice>;
-    onDidChangeOutputItems?: Event<void>;
-    onDidChangeLanguage: Event<string>;
-    onDidChangeMetadata: Event<void>;
-    onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent>;
 }
 
 export interface NotebookCellOutputsSplice {
@@ -209,7 +184,7 @@ export interface NotebookCellsModelMoveEvent<T> {
 export interface NotebookOutputChangedEvent {
     readonly kind: NotebookCellsChangeType.Output;
     readonly index: number;
-    readonly outputs: OutputDto[];
+    readonly outputs: CellOutput[];
     readonly append: boolean;
 }
 
@@ -217,7 +192,7 @@ export interface NotebookOutputItemChangedEvent {
     readonly kind: NotebookCellsChangeType.OutputItem;
     readonly index: number;
     readonly outputId: string;
-    readonly outputItems: OutputItemDto[];
+    readonly outputItems: CellOutputItem[];
     readonly append: boolean;
 }
 export interface NotebookCellsChangeMetadataEvent {
@@ -246,8 +221,8 @@ export interface NotebookCellContentChangeEvent {
     readonly index: number;
 }
 
-export type NotebookRawContentEvent = (NotebookCellsInitializeEvent<Cell> | NotebookDocumentChangeMetadataEvent | NotebookCellContentChangeEvent |
-    NotebookCellsModelChangedEvent<Cell> | NotebookCellsModelMoveEvent<Cell> | NotebookOutputChangedEvent | NotebookOutputItemChangedEvent |
+export type NotebookRawContentEvent = (NotebookCellsInitializeEvent<CellData> | NotebookDocumentChangeMetadataEvent | NotebookCellContentChangeEvent |
+    NotebookCellsModelChangedEvent<CellData> | NotebookCellsModelMoveEvent<CellData> | NotebookOutputChangedEvent | NotebookOutputItemChangedEvent |
     NotebookCellsChangeLanguageEvent | NotebookCellsChangeMetadataEvent |
     NotebookCellsChangeInternalMetadataEvent | NotebookDocumentUnknownChangeEvent) & { transient: boolean };
 
@@ -259,7 +234,7 @@ export interface NotebookModelChangedEvent {
 };
 
 export interface NotebookModelWillAddRemoveEvent {
-    readonly rawEvent: NotebookCellsModelChangedEvent<Cell>;
+    readonly rawEvent: NotebookCellsModelChangedEvent<CellData>;
 };
 
 export namespace CellUri {

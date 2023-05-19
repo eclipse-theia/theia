@@ -55,15 +55,11 @@ export class NotebookCellToolbarFactory {
                     icon: menuNode.icon,
                     label: menuNode.label,
                     onClick: menuNode.role === CompoundMenuNodeRole.Submenu ?
-                        e => this.openContextMenu(e, [toolbarMenuId, menuNode.id]) :
+                        e => this.contextMenuRenderer.render({ anchor: e.nativeEvent, menuPath: [toolbarMenuId, menuNode.id] }) :
                         () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell)
                 });
             }
         }
         return <NotebookCellToolbar inlineItems={inlineItems} />;
-    }
-
-    private openContextMenu(e: React.MouseEvent, menuPath: string[]): void {
-        this.contextMenuRenderer.render({ anchor: e.nativeEvent, menuPath: menuPath });
     }
 }

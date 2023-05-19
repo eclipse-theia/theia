@@ -25,7 +25,7 @@ interface EditorProps {
     cell: NotebookCellModel
 }
 
-export function Editor({ notebookModel, editorProvider, cell }: EditorProps): JSX.Element {
+export function CellEditor({ notebookModel, editorProvider, cell }: EditorProps): JSX.Element {
     const uri = cell.uri;
     React.useEffect(() => {
         (async () => {

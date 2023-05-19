@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import { Disposable, Emitter } from '@theia/core';
-import { CellOutput, OutputDto, OutputItemDto } from '../../common';
+import { CellOutput, CellOutputItem } from '../../common';
 
-export class NotebookCellOutputModel implements Disposable, CellOutput {
+export class NotebookCellOutputModel implements Disposable {
 
     private didChangeDataEmitter = new Emitter<void>();
     onDidChangeData = this.didChangeDataEmitter.event;
 
-    get outputs(): OutputItemDto[] {
+    get outputs(): CellOutputItem[] {
         return this.rawOutput.outputs || [];
     }
 
@@ -30,14 +30,14 @@ export class NotebookCellOutputModel implements Disposable, CellOutput {
         return this.rawOutput.metadata;
     }
 
-    constructor(private rawOutput: OutputDto) { }
+    constructor(private rawOutput: CellOutput) { }
 
-    replaceData(rawData: OutputDto): void {
+    replaceData(rawData: CellOutput): void {
         this.rawOutput = rawData;
         this.didChangeDataEmitter.fire();
     }
 
-    appendData(items: OutputItemDto[]): void {
+    appendData(items: CellOutputItem[]): void {
         this.rawOutput.outputs.push(...items);
         this.didChangeDataEmitter.fire();
     }
@@ -46,7 +46,7 @@ export class NotebookCellOutputModel implements Disposable, CellOutput {
         this.didChangeDataEmitter.dispose();
     }
 
-    toDto(): OutputDto {
+    toDto(): CellOutput {
         return {
             outputs: this.outputs,
             metadata: this.metadata

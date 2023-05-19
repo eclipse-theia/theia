@@ -16,7 +16,7 @@
 import { URI, MaybePromise } from '@theia/core';
 import { NavigatableWidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { NotebookFileSelector, NotebookType } from '../common/notebook-protocol';
+import { NotebookFileSelector, NotebookTypeDescriptor } from '../common/notebook-protocol';
 import { NotebookTypeRegistry } from './notebook-type-registry';
 import { NotebookEditorWidget } from './notebook-editor-widget';
 import { match } from '@theia/core/lib/common/glob';
@@ -34,7 +34,7 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
 
     // chache is mostly important because we need the contribution again in createWidgetOptions.
     // This way we don't have to go through all selectors again.
-    private readonly matchedNotebookTypes: Map<string, NotebookType> = new Map();
+    private readonly matchedNotebookTypes: Map<string, NotebookTypeDescriptor> = new Map();
 
     constructor(@inject(NotebookTypeRegistry) private notebookTypeRegistry: NotebookTypeRegistry) {
         super();
@@ -52,7 +52,7 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
 
         const [notebookType, priority] = this.notebookTypeRegistry.notebookTypes.
             filter(notebook => notebook.selector && this.matches(notebook.selector, uri))
-            .map(notebook => [notebook, this.calculatePriority(notebook)] as [NotebookType, number])
+            .map(notebook => [notebook, this.calculatePriority(notebook)] as [NotebookTypeDescriptor, number])
             .reduce((notebook, current) => current[1] > notebook[1] ? current : notebook);
         if (priority >= 0) {
             this.matchedNotebookTypes.set(uri.toString(), notebookType);
@@ -60,7 +60,7 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
         return priority;
     }
 
-    protected calculatePriority(notebookType: NotebookType | undefined): number {
+    protected calculatePriority(notebookType: NotebookTypeDescriptor | undefined): number {
         if (!notebookType) {
             return -1;
         }

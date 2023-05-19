@@ -25,7 +25,7 @@ import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-mo
 export const NotebookProvider = Symbol('notebook provider');
 
 export interface SimpleNotebookProviderInfo {
-    readonly viewType: string,
+    readonly notebookType: string,
     readonly serializer: NotebookSerializer,
     readonly extensionData: NotebookExtensionDescription
 }
@@ -56,17 +56,16 @@ export class NotebookService implements Disposable {
     protected readonly notebookProviders = new Map<string, SimpleNotebookProviderInfo>();
     protected readonly notebookModels = new Map<string, NotebookModel>();
 
-    private readonly addViewTypeEmitter = new Emitter<string>();
-    readonly onAddViewType = this.addViewTypeEmitter.event;
+    private readonly didAddViewTypeEmitter = new Emitter<string>();
+    readonly onAddViewType = this.didAddViewTypeEmitter.event;
 
-    private readonly willRemoveViewTypeEmitter = new Emitter<string>();
-    readonly onWillRemoveViewType = this.willRemoveViewTypeEmitter.event;
+    private readonly didRemoveViewTypeEmitter = new Emitter<string>();
+    readonly onDidRemoveViewType = this.didRemoveViewTypeEmitter.event;
 
     private readonly willOpenNotebookTypeEmitter = new Emitter<string>();
     readonly onWillOpenNotebook = this.willOpenNotebookTypeEmitter.event;
 
-    // readonly onDidChangeOutputRenderers: Event<void>;
-    private readonly willAddNotebookDocumentEmitter = new Emitter<NotebookModel>();
+    private readonly willAddNotebookDocumentEmitter = new Emitter<URI>();
     readonly onWillAddNotebookDocument = this.willAddNotebookDocumentEmitter.event;
     private readonly didAddNotebookDocumentEmitter = new Emitter<NotebookModel>();
     readonly onDidAddNotebookDocument = this.didAddNotebookDocumentEmitter.event;
@@ -79,17 +78,17 @@ export class NotebookService implements Disposable {
         this.disposables.dispose();
     }
 
-    registerNotebookSerializer(viewType: string, extensionData: NotebookExtensionDescription, serializer: NotebookSerializer): Disposable {
-        if (this.notebookProviders.has(viewType)) {
-            throw new Error(`notebook provider for viewtype '${viewType}' already exists`);
+    registerNotebookSerializer(notebookType: string, extensionData: NotebookExtensionDescription, serializer: NotebookSerializer): Disposable {
+        if (this.notebookProviders.has(notebookType)) {
+            throw new Error(`notebook provider for viewtype '${notebookType}' already exists`);
         }
 
-        this.notebookProviders.set(viewType, { viewType, serializer, extensionData });
-        this.addViewTypeEmitter.fire(viewType);
+        this.notebookProviders.set(notebookType, { notebookType: notebookType, serializer, extensionData });
+        this.didAddViewTypeEmitter.fire(notebookType);
 
         return Disposable.create(() => {
-            this.notebookProviders.delete(viewType);
-            this.willRemoveViewTypeEmitter.fire(viewType);
+            this.notebookProviders.delete(notebookType);
+            this.didRemoveViewTypeEmitter.fire(notebookType);
         });
     }
 
@@ -99,8 +98,8 @@ export class NotebookService implements Disposable {
             throw new Error('no notebook serializer for ' + viewType);
         }
 
+        this.willAddNotebookDocumentEmitter.fire(uri);
         const model = this.notebookModelFactory({ data, uri, viewType, serializer });
-        this.willAddNotebookDocumentEmitter.fire(model);
         this.notebookModels.set(uri.toString(), model);
         this.didAddNotebookDocumentEmitter.fire(model);
         return model;
