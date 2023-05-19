@@ -13,6 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 
 import { CancellationToken, Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
 import * as theia from '@theia/plugin';
@@ -45,7 +49,7 @@ export class NotebooksExtImpl implements NotebooksExt {
 
     private readonly documents = new Map<URI, NotebookDocument>();
     private readonly editors = new Map<string, NotebookEditorExtImpl>();
-    private statusBarCache = new Cache<Disposable>('NotebookCellStatusBarCache');
+    private statusBarRegistry = new Cache<Disposable>('NotebookCellStatusBarCache');
 
     private notebookProxy: NotebooksMain;
 
@@ -75,7 +79,7 @@ export class NotebooksExtImpl implements NotebooksExt {
         }
 
         const disposables = new DisposableCollection();
-        const cacheId = this.statusBarCache.add([disposables]);
+        const cacheId = this.statusBarRegistry.add([disposables]);
         const resultArr = Array.isArray(result) ? result : [result];
         const items = resultArr.map(item => typeConverters.NotebookStatusBarItem.from(item, this.commandsConverter, disposables));
         return {
@@ -85,21 +89,21 @@ export class NotebooksExtImpl implements NotebooksExt {
     }
 
     $releaseNotebookCellStatusBarItems(cacheId: number): void {
-        this.statusBarCache.delete(cacheId);
+        this.statusBarRegistry.delete(cacheId);
     }
 
     // --- serialize/deserialize
 
-    private _handlePool = 0;
-    private readonly _notebookSerializer = new Map<number, theia.NotebookSerializer>();
+    private currentSerializerHandle = 0;
+    private readonly notebookSerializer = new Map<number, theia.NotebookSerializer>();
 
     registerNotebookSerializer(plugin: Plugin, viewType: string, serializer: theia.NotebookSerializer,
         options?: theia.NotebookDocumentContentOptions): theia.Disposable {
         if (!viewType || !viewType.trim()) {
             throw new Error('viewType cannot be empty or just whitespace');
         }
-        const handle = this._handlePool++;
-        this._notebookSerializer.set(handle, serializer);
+        const handle = this.currentSerializerHandle++;
+        this.notebookSerializer.set(handle, serializer);
         this.notebookProxy.$registerNotebookSerializer(
             handle,
             { id: plugin.model.id, location: plugin.pluginUri },
@@ -112,7 +116,7 @@ export class NotebooksExtImpl implements NotebooksExt {
     }
 
     async $dataToNotebook(handle: number, bytes: BinaryBuffer, token: CancellationToken): Promise<NotebookDataDto> {
-        const serializer = this._notebookSerializer.get(handle);
+        const serializer = this.notebookSerializer.get(handle);
         if (!serializer) {
             throw new Error('No serializer found');
         }
@@ -121,7 +125,7 @@ export class NotebooksExtImpl implements NotebooksExt {
     }
 
     async $notebookToData(handle: number, data: NotebookDataDto, token: CancellationToken): Promise<BinaryBuffer> {
-        const serializer = this._notebookSerializer.get(handle);
+        const serializer = this.notebookSerializer.get(handle);
         if (!serializer) {
             throw new Error('No serializer found');
         }
@@ -131,8 +135,8 @@ export class NotebooksExtImpl implements NotebooksExt {
 
     registerNotebookCellStatusBarItemProvider(notebookType: string, provider: theia.NotebookCellStatusBarItemProvider): theia.Disposable {
 
-        const handle = this._handlePool++;
-        const eventHandle = typeof provider.onDidChangeCellStatusBarItems === 'function' ? this._handlePool++ : undefined;
+        const handle = this.currentSerializerHandle++;
+        const eventHandle = typeof provider.onDidChangeCellStatusBarItems === 'function' ? this.currentSerializerHandle++ : undefined;
 
         this.notebookStatusBarItemProviders.set(handle, provider);
         this.notebookProxy.$registerNotebookCellStatusBarItemProvider(handle, eventHandle, notebookType);

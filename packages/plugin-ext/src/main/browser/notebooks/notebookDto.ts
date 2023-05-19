@@ -16,25 +16,26 @@
 
 import { OS } from '@theia/core';
 import * as notebookCommon from '@theia/notebook/lib/common';
+import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import * as rpc from '../../../common';
 
 export namespace NotebookDto {
 
-    export function toNotebookOutputItemDto(item: notebookCommon.OutputItemDto): rpc.NotebookOutputItemDto {
+    export function toNotebookOutputItemDto(item: notebookCommon.CellOutputItem): rpc.NotebookOutputItemDto {
         return {
             mime: item.mime,
             valueBytes: item.data
         };
     }
 
-    export function toNotebookOutputDto(output: notebookCommon.OutputDto): rpc.NotebookOutputDto {
+    export function toNotebookOutputDto(output: notebookCommon.CellOutput): rpc.NotebookOutputDto {
         return {
             metadata: output.metadata,
             items: output.outputs.map(toNotebookOutputItemDto)
         };
     }
 
-    export function toNotebookCellDataDto(cell: notebookCommon.CellDto): rpc.NotebookCellDataDto {
+    export function toNotebookCellDataDto(cell: notebookCommon.CellData): rpc.NotebookCellDataDto {
         return {
             cellKind: cell.cellKind,
             language: cell.language,
@@ -52,21 +53,21 @@ export namespace NotebookDto {
         };
     }
 
-    export function fromNotebookOutputItemDto(item: rpc.NotebookOutputItemDto): notebookCommon.OutputItemDto {
+    export function fromNotebookOutputItemDto(item: rpc.NotebookOutputItemDto): notebookCommon.CellOutputItem {
         return {
             mime: item.mime,
             data: item.valueBytes
         };
     }
 
-    export function fromNotebookOutputDto(output: rpc.NotebookOutputDto): notebookCommon.OutputDto {
+    export function fromNotebookOutputDto(output: rpc.NotebookOutputDto): notebookCommon.CellOutput {
         return {
             metadata: output.metadata,
             outputs: output.items.map(fromNotebookOutputItemDto)
         };
     }
 
-    export function fromNotebookCellDataDto(cell: rpc.NotebookCellDataDto): notebookCommon.CellDto {
+    export function fromNotebookCellDataDto(cell: rpc.NotebookCellDataDto): notebookCommon.CellData {
         return {
             cellKind: cell.cellKind,
             language: cell.language,
@@ -84,7 +85,7 @@ export namespace NotebookDto {
         };
     }
 
-    export function toNotebookCellDto(cell: notebookCommon.Cell): rpc.NotebookCellDto {
+    export function toNotebookCellDto(cell: NotebookCellModel): rpc.NotebookCellDto {
         const eol = OS.backend.isWindows ? '\r\n' : '\n';
         return {
             handle: cell.handle,

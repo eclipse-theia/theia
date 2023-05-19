@@ -20,7 +20,7 @@ import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/ma
 import { NotebookModel } from '../view-model/notebook-model';
 import { Cellrenderer } from './notebook-cell-list-view';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
-import { Editor } from './notebook-cell-editor';
+import { CellEditor } from './notebook-cell-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { inject, injectable } from '@theia/core/shared/inversify';
 
@@ -58,9 +58,11 @@ function MarkdownCell({ markdownRenderer, editorProvider, cell, notebookModel }:
 
     return <div>
         {editMode ?
-            <Editor cell={cell} editorProvider={editorProvider} notebookModel={notebookModel} /> :
+            <CellEditor cell={cell} editorProvider={editorProvider} notebookModel={notebookModel} /> :
             <div
-                // allready sanitized by markdown renderer
+                // This sets the non React HTML node from the markdownrenders output as a child node to this react component
+                // This is currently sadly the best way we have to combine React (Virtual Nodes) and normal dom nodes
+                // the HTML is allready sanitized by the markdown renderer, so we don't need to sanitize it again
                 dangerouslySetInnerHTML={{ __html: markdownNode.innerHTML }} // eslint-disable-line react/no-danger
             />}
     </div>;

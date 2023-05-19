@@ -54,24 +54,28 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     @inject(NotebookCellToolbarFactory)
     private readonly toolbarFactory: NotebookCellToolbarFactory;
 
+    @inject(NotebookEditorProps)
+    private readonly props: NotebookEditorProps;
+
     private readonly renderers = new Map<CellKind, CellRenderer>();
 
     get notebookType(): string {
         return this.props.notebookType;
     }
 
-    constructor(@inject(NotebookEditorProps) private props: NotebookEditorProps,
-        @inject(NotebookMarkdownCellRenderer) private readonly markdownCellRenderer: NotebookMarkdownCellRenderer,
-        @inject(NotebookCodeCellRenderer) private readonly codeCellRenderer: NotebookCodeCellRenderer) {
+    constructor(
+        @inject(NotebookCodeCellRenderer) codeCellRenderer: NotebookCodeCellRenderer,
+        @inject(NotebookMarkdownCellRenderer) markdownCellRenderer: NotebookMarkdownCellRenderer
+        ) {
         super();
-        this.saveable = props.notebookData;
-        this.id = 'notebook:' + props.uri.toString();
+        this.saveable = this.props.notebookData;
+        this.id = 'notebook:' + this.props.uri.toString();
 
         this.title.closable = true;
         this.update();
 
-        this.renderers.set(CellKind.Markup, this.markdownCellRenderer);
-        this.renderers.set(CellKind.Code, this.codeCellRenderer);
+        this.renderers.set(CellKind.Markup, markdownCellRenderer);
+        this.renderers.set(CellKind.Code, codeCellRenderer);
     }
 
     getResourceUri(): URI | undefined {

@@ -14,12 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Resource, ResourceReadOptions, ResourceResolver, ResourceVersion, URI } from '@theia/core';
+import { Emitter, Resource, ResourceReadOptions, ResourceResolver, ResourceVersion, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
-import { CellDto, CellUri } from '../common';
+import { CellData, CellUri } from '../common';
 import { NotebookService } from './service/notebook-service';
-import { NotebookModel } from './view-model/notebook-model';
 
 export class NotebookCellResource implements Resource {
 
@@ -30,10 +28,10 @@ export class NotebookCellResource implements Resource {
     encoding?: string | undefined;
     isReadonly?: boolean | undefined;
 
-    private cell: CellDto;
+    private cell: CellData;
 
-    constructor(public uri: URI, notebookModel: NotebookModel, cellIndex: number) {
-        this.cell = notebookModel.data.cells[cellIndex];
+    constructor(public uri: URI, cell: CellData) {
+        this.cell = cell;
     }
 
     readContents(options?: ResourceReadOptions | undefined): Promise<string> {
@@ -68,7 +66,13 @@ export class NotebookCellResourceResolver implements ResourceResolver {
             throw new Error(`no notebook found for uri ${parsedUri.notebook}`);
         }
 
-        return new NotebookCellResource(uri, notebookModel, parsedUri.handle);
+        const notebookCellModel = notebookModel.cells.find(cell => cell.handle === parsedUri.handle);
+
+        if (!notebookCellModel) {
+            throw new Error(`no cell found with hanlde ${parsedUri.handle} in ${parsedUri.notebook}`);
+        }
+
+        return new NotebookCellResource(uri, notebookCellModel);
     }
 
 }

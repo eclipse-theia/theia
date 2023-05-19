@@ -62,7 +62,11 @@ export class NotebookCellListView extends React.Component<CellListProps, { selec
     }
 
     renderCellContent(cell: NotebookCellModel, index: number): React.ReactNode {
-        return this.props.renderers.get(cell.cellKind)?.render(this.props.notebookModel, cell, index);
+        const renderer = this.props.renderers.get(cell.cellKind);
+        if (!renderer) {
+            throw new Error(`No renderer found for cell type ${cell.cellKind}`);
+        }
+        return renderer.render(this.props.notebookModel, cell, index);
     }
 
 }

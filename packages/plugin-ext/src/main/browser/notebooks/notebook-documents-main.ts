@@ -21,7 +21,7 @@ import { NotebookModelResolverService } from '@theia/notebook/lib/browser';
 import { MAIN_RPC_CONTEXT, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 
-export class MainThreadNotebookDocuments implements NotebookDocumentsMain {
+export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
 
     private readonly disposables = new DisposableCollection();
 
@@ -128,8 +128,8 @@ export class MainThreadNotebookDocuments implements NotebookDocumentsMain {
     async $tryCreateNotebook(options: { viewType: string; content?: NotebookDataDto }): Promise<UriComponents> {
         const ref = await this.notebookModelResolverService.resolve({ untitledResource: undefined }, options.viewType);
 
-        // // untitled notebooks are disposed when they get saved. we should not hold a reference
-        // // to such a disposed notebook and therefore dispose the reference as well
+        // untitled notebooks are disposed when they get saved. we should not hold a reference
+        // to such a disposed notebook and therefore dispose the reference as well
         // ref.onWillDispose(() => {
         //     ref.dispose();
         // });
@@ -147,8 +147,6 @@ export class MainThreadNotebookDocuments implements NotebookDocumentsMain {
 
     async $tryOpenNotebook(uriComponents: UriComponents): Promise<UriComponents> {
         const uri = URI.fromComponents(uriComponents);
-        // const ref = await this.notebookModelResolverService.resolve(uri);
-        // this.modelReferenceCollection.add(uri, ref);
         return uri.toComponents();
     }
 

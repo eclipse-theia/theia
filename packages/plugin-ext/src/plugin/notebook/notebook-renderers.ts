@@ -18,11 +18,11 @@ import { NotebookRenderersExt, NotebookRenderersMain, PLUGIN_RPC_CONTEXT } from 
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { NotebooksExtImpl } from './notebooks';
 import * as theia from '@theia/plugin';
-import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 import { NotebookEditorExtImpl } from './notebook-editor';
+import { Emitter } from '@theia/core';
 
 export class NotebookRenderersExtImpl implements NotebookRenderersExt {
-    private readonly _rendererMessageEmitters = new Map<string /* rendererId */, Emitter<{ editor: theia.NotebookEditor; message: unknown }>>();
+    private readonly rendererMessageEmitters = new Map<string /* rendererId */, Emitter<{ editor: theia.NotebookEditor; message: unknown }>>();
     private readonly proxy: NotebookRenderersMain;
 
     constructor(rpc: RPCProtocol, private readonly notebooksExt: NotebooksExtImpl) {
@@ -31,7 +31,7 @@ export class NotebookRenderersExtImpl implements NotebookRenderersExt {
 
     public $postRendererMessage(editorId: string, rendererId: string, message: unknown): void {
         const editor = this.notebooksExt.getEditorById(editorId);
-        this._rendererMessageEmitters.get(rendererId)?.fire({ editor: editor.apiEditor, message });
+        this.rendererMessageEmitters.get(rendererId)?.fire({ editor: editor.apiEditor, message });
     }
 
     public createRendererMessaging(rendererId: string): theia.NotebookRendererMessaging {
@@ -52,7 +52,7 @@ export class NotebookRenderersExtImpl implements NotebookRenderersExt {
     }
 
     private getOrCreateEmitterFor(rendererId: string): Emitter<{ editor: theia.NotebookEditor, message: unknown }> {
-        let emitter = this._rendererMessageEmitters.get(rendererId);
+        let emitter = this.rendererMessageEmitters.get(rendererId);
         if (emitter) {
             return emitter;
         }
@@ -60,11 +60,11 @@ export class NotebookRenderersExtImpl implements NotebookRenderersExt {
         emitter = new Emitter({
             onLastListenerRemove: () => {
                 emitter?.dispose();
-                this._rendererMessageEmitters.delete(rendererId);
+                this.rendererMessageEmitters.delete(rendererId);
             }
         });
 
-        this._rendererMessageEmitters.set(rendererId, emitter);
+        this.rendererMessageEmitters.set(rendererId, emitter);
 
         return emitter;
     }

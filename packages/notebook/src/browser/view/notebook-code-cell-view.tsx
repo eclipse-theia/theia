@@ -19,7 +19,7 @@ import * as React from '@theia/core/shared/react';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
-import { Editor } from './notebook-cell-editor';
+import { CellEditor } from './notebook-cell-editor';
 import { Cellrenderer } from './notebook-cell-list-view';
 
 @injectable()
@@ -30,7 +30,7 @@ export class NotebookCodeCellRenderer implements Cellrenderer {
 
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
-            <Editor notebookModel={notebookModel} editorProvider={this.editorProvider} cell={cell} />
+            <CellEditor notebookModel={notebookModel} editorProvider={this.editorProvider} cell={cell} />
             {/* {cell.outputs && cell.outputs.flatMap(output => output.outputs.map(item => <div>{new TextDecoder().decode(item.data.buffer)}</div>))} */}
         </div >;
     }

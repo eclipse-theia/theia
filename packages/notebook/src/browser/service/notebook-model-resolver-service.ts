@@ -41,7 +41,7 @@ export class NotebookModelResolverService {
     async resolve(resource: { untitledResource: URI | undefined; }, viewType: string): Promise<NotebookModel>;
     async resolve(arg: URI | { untitledResource: URI | undefined; }, viewType: string): Promise<NotebookModel> {
         if (arg.hasOwnProperty('untitledResource')) {
-            // create new notebook
+            // NB Unimplemented: implement "new untitled notebook"
             // return ;
         }
 
