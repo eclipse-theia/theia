@@ -80,13 +80,13 @@ export namespace BadgeWidget {
  * A widget that may change it's internal structure dynamically. Current use is for
  * updating the toolbar when a contributed view is contructed "lazily"
  */
-export interface DynamicWidget {
-    onChanged: CommonEvent<void>;
+export interface DynamicToolbarWidget {
+    onDidChangeToolbarItems: CommonEvent<void>;
 }
 
-export namespace DynamicWidget {
-    export function is(arg: unknown): arg is DynamicWidget {
-        return isObject(arg) && 'onChanged' in arg;
+export namespace DynamicToolbarWidget {
+    export function is(arg: unknown): arg is DynamicToolbarWidget {
+        return isObject(arg) && 'onDidChangeToolbarItems' in arg;
     }
 }
 
@@ -984,8 +984,11 @@ export class ViewContainerPart extends BaseWidget {
             this.wrapped.onDidChangeBadgeTooltip(() => this.onDidChangeBadgeTooltipEmitter.fire(), undefined, this.toDispose);
         }
 
-        if (DynamicWidget.is(this.wrapped)) {
-            this.wrapped.onChanged(() => this.toolbar.updateTarget(this.wrapped));
+        if (DynamicToolbarWidget.is(this.wrapped)) {
+            this.wrapped.onDidChangeToolbarItems(() => {
+                this.toolbar.updateTarget(this.wrapped);
+                this.viewContainer?.update();
+            });
         }
 
         const { header, body, disposable } = this.createContent();

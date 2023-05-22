@@ -31,7 +31,8 @@ export class PluginApiFrontendContribution implements CommandContribution, TabBa
 
     static readonly COLLAPSE_ALL_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'treeviews.collapseAll',
-        iconClass: codicon('collapse-all')
+        iconClass: codicon('collapse-all'),
+        label: 'Collapse All'
     });
 
     registerCommands(commands: CommandRegistry): void {
@@ -58,7 +59,6 @@ export class PluginApiFrontendContribution implements CommandContribution, TabBa
     }
 
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
-
         registry.registerItem({
             id: PluginApiFrontendContribution.COLLAPSE_ALL_COMMAND.id,
             command: PluginApiFrontendContribution.COLLAPSE_ALL_COMMAND.id,
