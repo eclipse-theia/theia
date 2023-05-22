@@ -27,7 +27,6 @@ import { WorkspaceService } from './workspace-service';
 import { THEIA_EXT, VSCODE_EXT } from '../common';
 import { WorkspaceCommands } from './workspace-commands';
 import { QuickOpenWorkspace } from './quick-open-workspace';
-import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
@@ -70,7 +69,6 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(QuickOpenWorkspace) protected readonly quickOpenWorkspace: QuickOpenWorkspace;
     @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
-    @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
     @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
     @inject(EncodingRegistry) protected readonly encodingRegistry: EncodingRegistry;
     @inject(PreferenceConfigurations) protected readonly preferenceConfigurations: PreferenceConfigurations;
