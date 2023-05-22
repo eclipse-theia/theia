@@ -34,7 +34,7 @@ export const debugPreferencesSchema: PreferenceSchema = {
         'debug.internalConsoleOptions': {
             enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart'],
             default: 'openOnFirstSessionStart',
-            description: nls.localizeByDefault('Controls when the internal debug console should open.')
+            description: nls.localizeByDefault('Controls when the internal Debug Console should open.')
         },
         'debug.inlineValues': {
             type: 'boolean',
@@ -44,11 +44,11 @@ export const debugPreferencesSchema: PreferenceSchema = {
         'debug.showInStatusBar': {
             enum: ['never', 'always', 'onFirstSessionStart'],
             enumDescriptions: [
-                nls.localizeByDefault('Never show debug in status bar'),
-                nls.localizeByDefault('Always show debug in status bar'),
-                nls.localizeByDefault('Show debug in status bar only after debug was started for the first time')
+                nls.localizeByDefault('Never show debug in Status bar'),
+                nls.localizeByDefault('Always show debug in Status bar'),
+                nls.localizeByDefault('Show debug in Status bar only after debug was started for the first time')
             ],
-            description: nls.localizeByDefault('Controls when the debug status bar should be visible.'),
+            description: nls.localizeByDefault('Controls when the debug Status bar should be visible.'),
             default: 'onFirstSessionStart'
         },
         'debug.confirmOnExit': {
