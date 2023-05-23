@@ -188,7 +188,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                 label: node.label,
                 type: this.commandRegistry.getToggledHandler(commandId, ...args) ? 'checkbox' : 'normal',
                 checked: this.commandRegistry.isToggled(commandId, ...args),
-                enabled: !honorDisabled || this.commandRegistry.isEnabled(commandId, args), // see https://github.com/eclipse-theia/theia/issues/446
+                enabled: !honorDisabled || this.commandRegistry.isEnabled(commandId, ...args), // see https://github.com/eclipse-theia/theia/issues/446
                 visible: true,
                 accelerator,
                 execute: () => this.execute(commandId, args, options.rootMenuPath)
