@@ -164,6 +164,7 @@ export namespace CompositeTreeViewNode {
 @injectable()
 export class TreeViewWidgetOptions {
     id: string;
+    showCollapseAll: boolean | undefined;
     multiSelect: boolean | undefined;
     dragMimeTypes: string[] | undefined;
     dropMimeTypes: string[] | undefined;
@@ -441,6 +442,10 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         this.toDispose.push(this.onDidChangeVisibilityEmitter);
         this.toDispose.push(this.contextKeyService.onDidChange(() => this.update()));
         this.treeDragType = `application/vnd.code.tree.${this.id.toLowerCase()}`;
+    }
+
+    get showCollapseAll(): boolean {
+        return this.options.showCollapseAll || false;
     }
 
     protected override renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
