@@ -234,7 +234,7 @@ class TreeViewExtImpl<T> implements Disposable {
         // make copies of optionally provided MIME types:
         const dragMimeTypes = options.dragAndDropController?.dragMimeTypes?.slice();
         const dropMimeTypes = options.dragAndDropController?.dropMimeTypes?.slice();
-        proxy.$registerTreeDataProvider(treeViewId, { canSelectMany: options.canSelectMany, dragMimeTypes, dropMimeTypes });
+        proxy.$registerTreeDataProvider(treeViewId, { showCollapseAll: options.showCollapseAll, canSelectMany: options.canSelectMany, dragMimeTypes, dropMimeTypes });
         this.toDispose.push(Disposable.create(() => this.proxy.$unregisterTreeDataProvider(treeViewId)));
         options.treeDataProvider.onDidChangeTreeData?.(() => {
             this.pendingRefresh = proxy.$refresh(treeViewId);

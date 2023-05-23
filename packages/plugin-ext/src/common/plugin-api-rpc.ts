@@ -728,6 +728,7 @@ export interface DialogsMain {
 }
 
 export interface RegisterTreeDataProviderOptions {
+    showCollapseAll?: boolean
     canSelectMany?: boolean
     dragMimeTypes?: string[]
     dropMimeTypes?: string[]
