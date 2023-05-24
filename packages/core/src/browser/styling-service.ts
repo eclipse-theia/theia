@@ -65,9 +65,7 @@ export class StylingService implements FrontendApplicationContribution {
     }
 
     protected applyStylingToWindows(theme: Theme): void {
-        this.cssElements.forEach((cssElement, win) => {
-            this.applyStyling(theme, cssElement);
-        });
+        this.cssElements.forEach(cssElement => this.applyStyling(theme, cssElement));
     }
 
     protected applyStyling(theme: Theme, cssElement: HTMLStyleElement): void {
