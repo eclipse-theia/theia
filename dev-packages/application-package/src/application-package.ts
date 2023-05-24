@@ -227,6 +227,10 @@ export class ApplicationPackage {
         return this.srcGen('backend', ...segments);
     }
 
+    bundledBackend(...segments: string[]): string {
+        return this.path('backend', 'bundle', ...segments);
+    }
+
     frontend(...segments: string[]): string {
         return this.srcGen('frontend', ...segments);
     }

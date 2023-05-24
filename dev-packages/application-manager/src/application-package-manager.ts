@@ -128,7 +128,7 @@ export class ApplicationPackageManager {
 
         if (!this.pck.pck.main) {
             // Try the bundled electron app first
-            appPath = this.pck.lib('backend', 'electron-main.js');
+            appPath = this.pck.bundledBackend('electron-main.js');
             if (!fs.existsSync(appPath)) {
                 // Fallback to the generated electron app in src-gen
                 appPath = this.pck.frontend('electron-main.js');
@@ -152,7 +152,7 @@ export class ApplicationPackageManager {
         // See https://nodejs.org/api/child_process.html#child_process_options_detached
         options.detached = process.platform !== 'win32';
         // Try the bundled backend app first
-        let mainPath = this.pck.lib('backend', 'main.js');
+        let mainPath = this.pck.bundledBackend('main.js');
         if (!fs.existsSync(mainPath)) {
             // Fallback to the generated backend file in src-gen
             mainPath = this.pck.srcGen('backend', 'main.js');

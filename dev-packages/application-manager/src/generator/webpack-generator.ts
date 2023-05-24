@@ -370,7 +370,7 @@ if (process.platform !== 'win32') {
 }
 
 const nativePlugin = new NativeWebpackPlugin({
-    out: 'native',
+    out: '../native',
     ripgrep: ${this.ifPackage('@theia/search-in-workspace', 'true', 'false')},
     pty: ${this.ifPackage('@theia/process', 'true', 'false')},
     nativeBindings: {
@@ -390,10 +390,10 @@ const config = {
     },
     output: {
         filename: '[name].js',
-        path: path.resolve(__dirname, 'lib', 'backend'),
+        path: path.resolve(__dirname, 'backend', 'bundle'),
         devtoolModuleFilenameTemplate: 'webpack:///[absolute-resource-path]?[loaders]',
-    },
-    ${this.ifElectron(`externals: {
+    },${this.ifElectron(`
+    externals: {
         electron: 'require("electron")'
     },`)}
     entry: {
@@ -417,7 +417,7 @@ const config = {
                 test: /\\.node$/,
                 loader: 'node-loader',
                 options: {
-                    name: 'native/[name].[ext]'
+                    name: '../native/[name].[ext]'
                 }
             },
             {
