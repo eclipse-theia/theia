@@ -110,7 +110,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         if (!value) {
             return false;
         } else if (value === DebugConfigurationSelect.ADD_CONFIGURATION) {
-            this.manager.addConfiguration();
+            setTimeout(() => this.manager.addConfiguration());
         } else if (value.startsWith(DebugConfigurationSelect.PICK)) {
             const providerType = this.parsePickValue(value);
             this.selectDynamicConfigFromQuickPick(providerType);
