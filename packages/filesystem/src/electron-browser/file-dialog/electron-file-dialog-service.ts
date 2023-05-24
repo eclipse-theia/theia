@@ -16,7 +16,6 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { isOSX } from '@theia/core/lib/common/os';
 import { MaybeArray } from '@theia/core/lib/common/types';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileStat } from '../../common/files';
@@ -101,14 +100,6 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     }
 
     protected toOpenDialogOptions(uri: URI, props: OpenFileDialogProps): OpenDialogOptions {
-        if (!isOSX && props.canSelectFiles !== false && props.canSelectFolders === true) {
-            console.warn(`Cannot have 'canSelectFiles' and 'canSelectFolders' at the same time. Fallback to 'folder' dialog. \nProps was: ${JSON.stringify(props)}.`);
-
-            // Given that both props are set, fallback to using a `folder` dialog.
-            props.canSelectFiles = false;
-            props.canSelectFolders = true;
-        }
-
         const result: OpenDialogOptions = {
             path: FileUri.fsPath(uri)
         };

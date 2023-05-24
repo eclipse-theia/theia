@@ -74,9 +74,9 @@ export namespace WorkspaceCommands {
         ...Command.toDefaultLocalizedCommand({
             id: 'workspace:openWorkspace',
             category: CommonCommands.FILE_CATEGORY,
-            label: 'Open Workspace...',
+            label: 'Open Workspace from File...',
         }),
-        dialogLabel: nls.localizeByDefault('Open Workspace')
+        dialogLabel: nls.localizeByDefault('Open Workspace from File')
     };
     export const OPEN_RECENT_WORKSPACE = Command.toLocalizedCommand({
         id: 'workspace:openRecent',
