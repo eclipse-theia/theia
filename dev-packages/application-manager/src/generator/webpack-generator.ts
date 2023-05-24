@@ -61,6 +61,7 @@ export class WebpackGenerator extends AbstractGenerator {
 const path = require('path');
 const webpack = require('webpack');
 const yargs = require('yargs');
+const resolvePackagePath = require('resolve-package-path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const CompressionPlugin = require('compression-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
@@ -79,10 +80,17 @@ const development = mode === 'development';
 
 const plugins = [
     new CopyWebpackPlugin({
-        patterns: [{
-            // copy secondary window html file to lib folder
-            from: path.resolve(__dirname, 'src-gen/frontend/secondary-window.html')
-        }]
+        patterns: [
+            {
+                // copy secondary window html file to lib folder
+                from: path.resolve(__dirname, 'src-gen/frontend/secondary-window.html')
+            }${this.ifPackage('@theia/plugin-ext', `,
+            {
+                // copy webview files to lib folder
+                from: path.join(resolvePackagePath('@theia/plugin-ext', __dirname), '..', 'src', 'main', 'browser', 'webview', 'pre'),
+                to: path.resolve(__dirname, 'lib', 'webview', 'pre')
+            }`)}
+        ]
     }),
     new webpack.ProvidePlugin({
         // the Buffer class doesn't exist in the browser but some dependencies rely on it
