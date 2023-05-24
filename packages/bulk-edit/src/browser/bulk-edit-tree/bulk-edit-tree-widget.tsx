@@ -121,8 +121,7 @@ export class BulkEditTreeWidget extends TreeWidget {
                     const startColumn = +bulkEdit.textEdit.range.startColumn;
                     const endColumn = +bulkEdit.textEdit.range.endColumn;
                     const lineText = lines[startLineNum - 1];
-                    const tempLineText = lineText.substring(0, startColumn - 1);
-                    const beforeMatch = (startColumn > 26 ? '... ' : '') + tempLineText.substring(tempLineText.length - 25);
+                    const beforeMatch = (startColumn > 26 ? '... ' : '') + lineText.substring(0, startColumn - 1).slice(-25);
                     const replacedText = lineText.substring(startColumn - 1, endColumn - 1);
                     const afterMatch = lineText.substring(startColumn - 1 + replacedText.length, startColumn - 1 + replacedText.length + 75);
 
