@@ -416,11 +416,13 @@ export class ConfirmSaveDialog extends ConfirmDialog {
         this.contentNode.appendChild(this.createMessageNode(this.props.msg));
         // reorder buttons
         this.controlPanel.childNodes.forEach(child => this.controlPanel.removeChild(child));
-        [this.acceptButton, this.closeButton].forEach(child => {
+        [this.closeButton, this.acceptButton].forEach(child => {
             if (typeof child !== 'undefined') {
                 this.controlPanel.appendChild(child);
             }
         });
+        this.acceptButton?.classList.remove('main');
+        this.acceptButton?.classList.add('secondary');
         this.appendSaveButton(props.save).addEventListener('click', async () => {
             await props.performSave();
             this.acceptButton?.click();
