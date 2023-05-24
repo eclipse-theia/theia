@@ -182,12 +182,19 @@ export class TabbarStylingParticipant implements StylingParticipant {
 
         if (highContrast && focusBorder) {
             collector.addRule(`
+                #theia-bottom-content-panel .p-TabBar .p-TabBar-tab,
                 #theia-main-content-panel .p-TabBar .p-TabBar-tab {
                     outline-offset: -4px;
                 }
+                #theia-bottom-content-panel .p-TabBar .p-TabBar-tab.p-mod-current,
                 #theia-main-content-panel .p-TabBar .p-TabBar-tab.p-mod-current {
                     outline: 1px solid ${focusBorder};
                 }
+                #theia-bottom-content-panel .p-TabBar:not(.theia-tabBar-active) .p-TabBar-tab.p-mod-current,
+                #theia-main-content-panel .p-TabBar:not(.theia-tabBar-active) .p-TabBar-tab.p-mod-current {
+                    outline: 1px dotted ${focusBorder};
+                }
+                #theia-bottom-content-panel .p-TabBar .p-TabBar-tab:not(.p-mod-current):hover,
                 #theia-main-content-panel .p-TabBar .p-TabBar-tab:not(.p-mod-current):hover {
                     outline: 1px dashed ${focusBorder};
                 }
@@ -237,6 +244,19 @@ export class TabbarStylingParticipant implements StylingParticipant {
             `);
         }
 
+        // Activity Bar Active Border
+        const activityBarActiveBorder = theme.getColor('activityBar.activeBorder') || 'var(--theia-activityBar-foreground)';
+        collector.addRule(`
+            .p-TabBar.theia-app-left .p-TabBar-tab.p-mod-current {
+                border-top-color: transparent;
+                box-shadow: 2px 0 0 ${activityBarActiveBorder} inset;
+            }
+          
+            .p-TabBar.theia-app-right .p-TabBar-tab.p-mod-current {
+                border-top-color: transparent;
+                box-shadow: -2px 0 0 ${activityBarActiveBorder} inset;
+            }
+        `);
         // Hover Background
         const tabHoverBackground = theme.getColor('tab.hoverBackground');
         if (tabHoverBackground) {
