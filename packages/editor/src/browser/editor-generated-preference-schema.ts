@@ -30,21 +30,21 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "type": "number",
         "default": 4,
         "minimum": 1,
-        "markdownDescription": nls.localizeByDefault("The number of spaces a tab is equal to. This setting is overridden based on the file contents when `#editor.detectIndentation#` is on."),
+        "markdownDescription": nls.localizeByDefault('The number of spaces a tab is equal to. This setting is overridden based on the file contents when {0} is on.', '`#editor.detectIndentation#`'),
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.insertSpaces": {
         "type": "boolean",
         "default": true,
-        "markdownDescription": nls.localizeByDefault("Insert spaces when pressing `Tab`. This setting is overridden based on the file contents when `#editor.detectIndentation#` is on."),
+        "markdownDescription": nls.localizeByDefault('Insert spaces when pressing `Tab`. This setting is overridden based on the file contents when {0} is on.', `#editor.detectIndentation#`),
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.detectIndentation": {
         "type": "boolean",
         "default": true,
-        "markdownDescription": nls.localizeByDefault("Controls whether `#editor.tabSize#` and `#editor.insertSpaces#` will be automatically detected when a file is opened based on the file contents."),
+        "markdownDescription": nls.localizeByDefault('Controls whether {0} and {1} will be automatically detected when a file is opened based on the file contents.', '`#editor.tabSize#`', '`#editor.insertSpaces#`'),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -104,7 +104,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.stablePeek": {
         "type": "boolean",
         "default": false,
-        "markdownDescription": nls.localizeByDefault("Keep peek editors open even when double clicking their content or when hitting `Escape`."),
+        "markdownDescription": nls.localizeByDefault('Keep peek editors open even when double-clicking their content or when hitting `Escape`.'),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -221,7 +221,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "markdownEnumDescriptions": [
             nls.localizeByDefault("Lines will never wrap."),
             nls.localizeByDefault("Lines will wrap at the viewport width."),
-            nls.localizeByDefault("Lines will wrap according to the `#editor.wordWrap#` setting.")
+            nls.localizeByDefault('Lines will wrap according to the {0} setting.', '`#editor.wordWrap#`')
         ],
         "scope": "language-overridable",
         "restricted": false
@@ -234,14 +234,14 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "smart",
         "markdownEnumDescriptions": [
-            nls.localize("theia/editor/diffEditor.diffAlgorithm.smart", "Uses the default diffing algorithm."),
-            nls.localize("theia/editor/diffEditor.diffAlgorithm.experimental", "Uses an experimental diffing algorithm.")
+            nls.localizeByDefault("Uses the default diffing algorithm."),
+            nls.localizeByDefault("Uses an experimental diffing algorithm.")
         ],
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.acceptSuggestionOnCommitCharacter": {
-        "markdownDescription": nls.localizeByDefault('Controls whether suggestions should be accepted on commit characters. For example, in JavaScript, the semi-colon (`; `) can be a commit character that accepts a suggestion and types that character.'),
+        "markdownDescription": nls.localizeByDefault('Controls whether suggestions should be accepted on commit characters. For example, in JavaScript, the semi-colon (`;`) can be a commit character that accepts a suggestion and types that character.'),
         "type": "boolean",
         "default": true,
         "scope": "language-overridable",
@@ -272,12 +272,12 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "off"
         ],
         "enumDescriptions": [
-            nls.localizeByDefault("The editor will use platform APIs to detect when a Screen Reader is attached."),
-            nls.localizeByDefault("The editor will be permanently optimized for usage with a Screen Reader. Word wrapping will be disabled."),
-            nls.localizeByDefault("The editor will never be optimized for usage with a Screen Reader.")
+            nls.localizeByDefault('Use platform APIs to detect when a Screen Reader is attached'),
+            nls.localizeByDefault("Optimize for usage with a Screen Reader"),
+            nls.localizeByDefault("Assume a screen reader is not attached")
         ],
         "default": "auto",
-        "description": nls.localizeByDefault("Controls whether the editor should run in a mode where it is optimized for screen readers. Setting to on will disable word wrapping."),
+        "description": nls.localizeByDefault("Controls if the UI should run in a mode where it is optimized for screen readers."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -509,7 +509,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": 0,
         "minimum": 0,
         "maximum": 100,
-        "markdownDescription": nls.localizeByDefault("Controls the font size in pixels for CodeLens. When set to `0`, 90% of `#editor.fontSize#` is used."),
+        "markdownDescription": nls.localizeByDefault('Controls the font size in pixels for CodeLens. When set to 0, 90% of `#editor.fontSize#` is used.'),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -585,7 +585,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.cursorSurroundingLines": {
-        "description": nls.localizeByDefault("Controls the minimal number of visible leading and trailing lines surrounding the cursor. Known as 'scrollOff' or 'scrollOffset' in some other editors."),
+        "description": nls.localizeByDefault('Controls the minimal number of visible leading lines (minimum 0) and trailing lines (minimum 1) surrounding the cursor. Known as \'scrollOff\' or \'scrollOffset\' in some other editors.'),
         "type": "integer",
         "default": 0,
         "minimum": 0,
@@ -854,9 +854,9 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "peek",
         "enumDescriptions": [
-            nls.localizeByDefault("Show peek view of the results (default)"),
-            nls.localizeByDefault("Go to the primary result and show a peek view"),
-            nls.localizeByDefault("Go to the primary result and enable peek-less navigation to others")
+            nls.localizeByDefault("Show Peek view of the results (default)"),
+            nls.localizeByDefault("Go to the primary result and show a Peek view"),
+            nls.localizeByDefault('Go to the primary result and enable Peek-less navigation to others')
         ],
         "scope": "language-overridable",
         "restricted": false
@@ -871,9 +871,9 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "peek",
         "enumDescriptions": [
-            nls.localizeByDefault("Show peek view of the results (default)"),
-            nls.localizeByDefault("Go to the primary result and show a peek view"),
-            nls.localizeByDefault("Go to the primary result and enable peek-less navigation to others")
+            nls.localizeByDefault("Show Peek view of the results (default)"),
+            nls.localizeByDefault("Go to the primary result and show a Peek view"),
+            nls.localizeByDefault('Go to the primary result and enable Peek-less navigation to others')
         ],
         "scope": "language-overridable",
         "restricted": false
@@ -888,9 +888,9 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "peek",
         "enumDescriptions": [
-            nls.localizeByDefault("Show peek view of the results (default)"),
-            nls.localizeByDefault("Go to the primary result and show a peek view"),
-            nls.localizeByDefault("Go to the primary result and enable peek-less navigation to others")
+            nls.localizeByDefault("Show Peek view of the results (default)"),
+            nls.localizeByDefault("Go to the primary result and show a Peek view"),
+            nls.localizeByDefault('Go to the primary result and enable Peek-less navigation to others')
         ],
         "scope": "language-overridable",
         "restricted": false
@@ -905,9 +905,9 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "peek",
         "enumDescriptions": [
-            nls.localizeByDefault("Show peek view of the results (default)"),
-            nls.localizeByDefault("Go to the primary result and show a peek view"),
-            nls.localizeByDefault("Go to the primary result and enable peek-less navigation to others")
+            nls.localizeByDefault("Show Peek view of the results (default)"),
+            nls.localizeByDefault("Go to the primary result and show a Peek view"),
+            nls.localizeByDefault('Go to the primary result and enable Peek-less navigation to others')
         ],
         "scope": "language-overridable",
         "restricted": false
@@ -922,9 +922,9 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "peek",
         "enumDescriptions": [
-            nls.localizeByDefault("Show peek view of the results (default)"),
-            nls.localizeByDefault("Go to the primary result and show a peek view"),
-            nls.localizeByDefault("Go to the primary result and enable peek-less navigation to others")
+            nls.localizeByDefault("Show Peek view of the results (default)"),
+            nls.localizeByDefault("Go to the primary result and show a Peek view"),
+            nls.localizeByDefault('Go to the primary result and enable Peek-less navigation to others')
         ],
         "scope": "language-overridable",
         "restricted": false
@@ -1088,7 +1088,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.lightbulb.enabled": {
         "type": "boolean",
         "default": true,
-        "description": nls.localizeByDefault("Enables the code action lightbulb in the editor."),
+        "description": nls.localizeByDefault('Enables the Code Action lightbulb in the editor.'),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1119,7 +1119,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.linkedEditing": {
-        "description": nls.localizeByDefault("Controls whether the editor has linked editing enabled. Depending on the language, related symbols, e.g. HTML tags, are updated while editing."),
+        "description": nls.localizeByDefault('Controls whether the editor has linked editing enabled. Depending on the language, related symbols such as HTML tags, are updated while editing.'),
         "type": "boolean",
         "default": false,
         "scope": "language-overridable",
@@ -1701,7 +1701,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": 5,
         "minimum": 1,
         "maximum": 10,
-        "description": nls.localize("theia/editor/editor.stickyScroll.maxLineCount", "Defines the maximum number of sticky lines to show."),
+        "description": nls.localizeByDefault("Defines the maximum number of sticky lines to show."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1779,7 +1779,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.suggest.showInlineDetails": {
         "type": "boolean",
         "default": true,
-        "description": nls.localizeByDefault("Controls whether suggest details show inline with the label or only in the details widget"),
+        "description": nls.localizeByDefault('Controls whether suggest details show inline with the label or only in the details widget.'),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -2107,7 +2107,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "inUntrustedWorkspace"
         ],
         "default": "inUntrustedWorkspace",
-        "description": nls.localizeByDefault("Controls whether characters in comments should also be subject to unicode highlighting."),
+        "description": nls.localizeByDefault('Controls whether characters in comments should also be subject to Unicode highlighting.'),
         "scope": "language-overridable"
     },
     "editor.unicodeHighlight.includeStrings": {
@@ -2122,7 +2122,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "inUntrustedWorkspace"
         ],
         "default": true,
-        "description": nls.localizeByDefault("Controls whether characters in strings should also be subject to unicode highlighting."),
+        "description": nls.localizeByDefault('Controls whether characters in strings should also be subject to Unicode highlighting.'),
         "scope": "language-overridable"
     },
     "editor.unicodeHighlight.allowedCharacters": {
@@ -2231,7 +2231,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Assumes that all characters are of the same width. This is a fast algorithm that works correctly for monospace fonts and certain scripts (like Latin characters) where glyphs are of equal width."),
             nls.localizeByDefault("Delegates wrapping points computation to the browser. This is a slow algorithm, that might cause freezes for large files, but it works correctly in all cases.")
         ],
-        "description": nls.localizeByDefault("Controls the algorithm that computes wrapping points."),
+        "description": nls.localizeByDefault('Controls the algorithm that computes wrapping points. Note that when in accessibility mode, advanced will be used for the best experience.'),
         "type": "string",
         "enum": [
             "simple",
