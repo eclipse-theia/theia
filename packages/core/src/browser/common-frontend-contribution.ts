@@ -695,7 +695,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
         registry.registerMenuAction(CommonMenus.FILE_NEW, {
             commandId: CommonCommands.NEW_UNTITLED_FILE.id,
-            label: nls.localizeByDefault('New File'),
+            label: nls.localizeByDefault('New File...'),
             order: 'a'
         });
     }
@@ -1180,8 +1180,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     protected async confirmRestart(languageName: string): Promise<boolean> {
         const appName = FrontendApplicationConfigProvider.get().applicationName;
         const shouldRestart = await new ConfirmDialog({
-            title: nls.localizeByDefault('Press the restart button to restart {0} and set the display language to {1}.', appName, languageName),
-            msg: nls.localizeByDefault('To change the display language, {0} needs to restart', appName),
+            title: nls.localizeByDefault('Restart {0} to switch to {1}?', appName, languageName),
+            msg: nls.localizeByDefault('To change the display language to {0}, {1} needs to restart.', languageName, appName),
             ok: nls.localizeByDefault('Restart'),
             cancel: Dialog.CANCEL,
         }).open();

@@ -40,7 +40,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
     properties: {
         'files.watcherExclude': {
             // eslint-disable-next-line max-len
-            description: nls.localizeByDefault('Configure paths or glob patterns to exclude from file watching. Paths or basic glob patterns that are relative (for example `build/output` or `*.js`) will be resolved to an absolute path using the currently opened workspace. Complex glob patterns must match on absolute paths (i.e. prefix with `**/` or the full path and suffix with `/**` to match files within a path) to match properly (for example `**/build/output/**` or `/Users/name/workspaces/project/build/output/**`). When you experience the file watcher process consuming a lot of CPU, make sure to exclude large folders that are of less interest (such as build output folders).'),
+            description: nls.localizeByDefault('Configure paths or glob patterns to exclude from file watching. Paths can either be relative to the watched folder or absolute. Glob patterns are matched relative from the watched folder. When you experience the file watcher process consuming a lot of CPU, make sure to exclude large folders that are of less interest (such as build output folders).'),
             additionalProperties: {
                 type: 'boolean'
             },
@@ -66,7 +66,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
         'files.associations': {
             type: 'object',
             markdownDescription: nls.localizeByDefault(
-                'Configure file associations to languages (e.g. `\"*.extension\": \"html\"`). These have precedence over the default associations of the languages installed.'
+                'Configure file associations to languages (for example `"*.extension": "html"`). These have precedence over the default associations of the languages installed.'
             )
         },
         'files.autoGuessEncoding': {
