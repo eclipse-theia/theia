@@ -407,7 +407,7 @@ const config = {
         'worker/conoutSocketWorker': require.resolve('node-pty/lib/worker/conoutSocketWorker'),`)}
         ${this.ifPackage('@theia/git', () => `// Ensure the git locator process can the started
         'git-locator-host': require.resolve('@theia/git/lib/node/git-locator/git-locator-host'),`)}
-        ${this.ifElectron("'electron-main': require.resolve('./src-gen/frontend/electron-main'),")}
+        ${this.ifElectron("'electron-main': require.resolve('./src-gen/backend/electron-main'),")}
         ...commonJsLibraries
     },
     module: {
