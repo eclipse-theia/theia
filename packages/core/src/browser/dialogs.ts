@@ -205,10 +205,10 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         return this.closeButton;
     }
 
-    protected appendAcceptButton(text: string = Dialog.OK): HTMLButtonElement {
+    protected appendAcceptButton(text: string = Dialog.OK, className: string = 'main'): HTMLButtonElement {
         this.acceptButton = this.createButton(text);
         this.controlPanel.appendChild(this.acceptButton);
-        this.acceptButton.classList.add('main');
+        this.acceptButton.classList.add(className);
         return this.acceptButton;
     }
 
@@ -368,7 +368,7 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
 
         this.contentNode.appendChild(this.createMessageNode(this.props.msg));
         this.appendCloseButton(props.cancel);
-        this.appendAcceptButton(props.ok);
+        this.appendAcceptButton(props.ok, 'secondary');
     }
 
     protected override onCloseRequest(msg: Message): void {
@@ -421,8 +421,6 @@ export class ConfirmSaveDialog extends ConfirmDialog {
                 this.controlPanel.appendChild(child);
             }
         });
-        this.acceptButton?.classList.remove('main');
-        this.acceptButton?.classList.add('secondary');
         this.appendSaveButton(props.save).addEventListener('click', async () => {
             await props.performSave();
             this.acceptButton?.click();
