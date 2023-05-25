@@ -77,8 +77,8 @@ export namespace BadgeWidget {
 }
 
 /**
- * A widget that may change it's internal structure dynamically. Current use is for
- * updating the toolbar when a contributed view is contructed "lazily"
+ * A widget that may change it's internal structure dynamically.
+ * Current use is to update the toolbar when a contributed view is constructed "lazily".
  */
 export interface DynamicToolbarWidget {
     onDidChangeToolbarItems: CommonEvent<void>;
