@@ -293,8 +293,8 @@ export class ShouldSaveDialog extends AbstractDialog<boolean> {
         messageNode.textContent = nls.localizeByDefault("Your changes will be lost if you don't save them.");
         messageNode.setAttribute('style', 'flex: 1 100%; padding-bottom: calc(var(--theia-ui-padding)*3);');
         this.contentNode.appendChild(messageNode);
-        this.dontSaveButton = this.appendDontSaveButton();
         this.appendCloseButton();
+        this.dontSaveButton = this.appendDontSaveButton();
         this.appendAcceptButton(nls.localizeByDefault('Save'));
     }
 
