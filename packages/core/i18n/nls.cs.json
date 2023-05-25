@@ -72,15 +72,12 @@
       "toggleTracing": "Povolení/zakázání sledování komunikace s ladicími adaptéry"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "Používá experimentální algoritmus diffing.",
-      "diffEditor.diffAlgorithm.smart": "Používá výchozí algoritmus porovnávání.",
       "dirtyEncoding": "Soubor je znečištěný. Než jej znovu otevřete v jiném kódování, nejprve jej uložte.",
       "editor.codeActionWidget.showHeaders": "Povolení/zakázání zobrazování záhlaví skupin v nabídce akcí kódu.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Pokusí se formátovat pouze změny (vyžaduje kontrolu zdrojů). Pokud nelze použít kontrolu zdrojů, bude formátován celý soubor.",
       "editor.inlayHints.enabled1": "Vložené nápovědy se zobrazují ve výchozím nastavení a skrývají se při podržení `Ctrl+Alt`",
       "editor.inlayHints.enabled2": "Vložené nápovědy jsou ve výchozím nastavení skryté a zobrazí se při podržení `Ctrl+Alt`.",
       "editor.quickSuggestions": "Ovládá, zda se mají při psaní automaticky zobrazovat návrhy. To lze ovládat při psaní komentářů, řetězců a dalšího kódu. Rychlé návrhy lze nakonfigurovat tak, aby se zobrazovaly jako text ducha nebo s widgetem návrhu. Mějte také na paměti nastavení '#editor.suggestOnTriggerCharacters#', které řídí, zda se návrhy spouštějí pomocí speciálních znaků.",
-      "editor.stickyScroll.maxLineCount": "Definuje maximální počet lepicích řádků, které se mají zobrazit.",
       "editor.suggest.matchOnWordStartOnly": "Je-li zapnuto filtrování IntelliSense, vyžaduje, aby první znak odpovídal začátku slova, např. `c` u `Console` nebo `WebContext`, ale _ne_ u `description`. Když je funkce IntelliSense vypnutá, zobrazí více výsledků, ale stále je třídí podle kvality shody.",
       "files.autoSave": "Ovládá [automatické ukládání](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) editorů, které mají neuložené změny.",
       "files.autoSave.afterDelay": "Editor se změnami se automaticky uloží po uplynutí nastavené doby `#files.autoSaveDelay#`.",
@@ -282,6 +279,7 @@
       "hiddenChannels": "Skryté kanály",
       "hideOutputChannel": "Skrýt výstupní kanál...",
       "maxChannelHistory": "Maximální počet záznamů ve výstupním kanálu.",
+      "outputChannels": "Výstupní kanály",
       "showOutputChannel": "Zobrazit výstupní kanál..."
     },
     "plugin": {
@@ -375,7 +373,6 @@
       "profileIcon": "ID kodikonu, které se přiřadí k ikoně terminálu.\nterminal-tmux:\"$(terminal-tmux)\"",
       "profileNew": "Nový terminál (s profilem)...",
       "profilePath": "Cesta k shellu, který tento profil používá.",
-      "profileSource": "Zdroj profilu, který automaticky detekuje cesty k shellu. Všimněte si, že nestandardní umístění spustitelných souborů nejsou podporována a musí být vytvořena ručně v novém profilu.",
       "profiles": "Profily, které se mají zobrazit při vytváření nového terminálu. Vlastnost path nastavte ručně pomocí nepovinných argumentů.\nNastavením existujícího profilu na `null` jej skryjete ze seznamu, například: `\"{0}\": null`.",
       "rendererType": "Ovládá způsob vykreslování terminálu.",
       "selectProfile": "Výběr profilu pro nový terminál",

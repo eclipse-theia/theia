@@ -72,15 +72,12 @@
       "toggleTracing": "Activer/désactiver le traçage des communications avec les adaptateurs de débogage"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "Utilise un algorithme de différenciation expérimental.",
-      "diffEditor.diffAlgorithm.smart": "Utilise l'algorithme de différenciation par défaut.",
       "dirtyEncoding": "Le fichier est sale. Veuillez le sauvegarder avant de le rouvrir avec un autre encodage.",
       "editor.codeActionWidget.showHeaders": "Activez/désactivez l'affichage des en-têtes de groupe dans le menu d'action du code.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tentera de formater uniquement les modifications (nécessite le contrôle de la source). Si le contrôle de la source ne peut pas être utilisé, alors le fichier entier sera formaté.",
       "editor.inlayHints.enabled1": "Les conseils d'incrustation sont affichés par défaut et sont masqués lorsque vous maintenez les touches `Ctrl+Alt`.",
       "editor.inlayHints.enabled2": "Les indices d'incrustation sont cachés par défaut et s'affichent en maintenant les touches `Ctrl+Alt`.",
       "editor.quickSuggestions": "Contrôle si les suggestions doivent s'afficher automatiquement pendant la saisie. Cela peut être contrôlé pour la saisie de commentaires, de chaînes de caractères et d'autres codes. La suggestion rapide peut être configurée pour s'afficher sous forme de texte fantôme ou avec le widget de suggestion. Tenez également compte du paramètre '#editor.suggestOnTriggerCharacters#' qui contrôle si les suggestions sont déclenchées par des caractères spéciaux.",
-      "editor.stickyScroll.maxLineCount": "Définit le nombre maximum de lignes adhésives à afficher.",
       "editor.suggest.matchOnWordStartOnly": "Lorsqu'il est activé, le filtrage IntelliSense exige que le premier caractère corresponde au début d'un mot, par exemple `c` sur `Console` ou `WebContext` mais _pas_ sur `description`. Lorsqu'il est désactivé, IntelliSense affiche plus de résultats mais les trie toujours par qualité de correspondance.",
       "files.autoSave": "Contrôle la [sauvegarde automatique](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) des éditeurs dont les modifications n'ont pas été sauvegardées.",
       "files.autoSave.afterDelay": "Un éditeur avec des modifications est automatiquement enregistré après le `#files.autoSaveDelay#` configuré.",
@@ -282,6 +279,7 @@
       "hiddenChannels": "Canaux cachés",
       "hideOutputChannel": "Cacher le canal de sortie...",
       "maxChannelHistory": "Le nombre maximum d'entrées dans un canal de sortie.",
+      "outputChannels": "Canaux de sortie",
       "showOutputChannel": "Afficher le canal de sortie..."
     },
     "plugin": {
@@ -375,7 +373,6 @@
       "profileIcon": "Un ID de codicon à associer à l'icône du terminal.\nterminal-tmux :\"$(terminal-tmux)\"",
       "profileNew": "Nouveau terminal (avec profil)...",
       "profilePath": "Le chemin du shell que ce profil utilise.",
-      "profileSource": "Un profil source qui détectera automatiquement les chemins vers l'interpréteur de commandes. Notez que les emplacements non standard des exécutables ne sont pas pris en charge et doivent être créés manuellement dans un nouveau profil.",
       "profiles": "Les profils à présenter lors de la création d'un nouveau terminal. Définissez manuellement la propriété path avec des args optionnels.\nDonnez la valeur `null` à un profil existant pour le masquer dans la liste, par exemple : `\"{0}\" : null`.",
       "rendererType": "Contrôle la façon dont le terminal est rendu.",
       "selectProfile": "Sélectionnez un profil pour le nouveau terminal",

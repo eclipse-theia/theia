@@ -72,15 +72,12 @@
       "toggleTracing": "启用/禁用与调试适配器的跟踪通信"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "使用一种实验性的扩散算法。",
-      "diffEditor.diffAlgorithm.smart": "使用默认的差分算法。",
       "dirtyEncoding": "该文件是脏的。请先保存它,然后用另一种编码重新打开它。",
       "editor.codeActionWidget.showHeaders": "启用/禁用在代码动作菜单中显示组标题。",
       "editor.formatOnSaveMode.modificationsIfAvailable": "将尝试只对修改部分进行格式化(需要源代码控制)。如果不能使用源码控制,那么整个文件将被格式化。",
       "editor.inlayHints.enabled1": "镶嵌提示默认显示,按住 \"Ctrl+Alt \"时隐藏。",
       "editor.inlayHints.enabled2": "镶嵌提示默认是隐藏的,当按住`Ctrl+Alt`时显示。",
       "editor.quickSuggestions": "控制在输入时是否应该自动显示建议。这可以在输入评论、字符串和其他代码时加以控制。快速建议可以被配置为显示为幽灵文本或建议小部件。还要注意'#editor.suggestOnTriggerCharacters#'设置,它控制建议是否被特殊字符触发。",
-      "editor.stickyScroll.maxLineCount": "定义要显示的最大粘性线数。",
       "editor.suggest.matchOnWordStartOnly": "当启用IntelliSense过滤功能时,需要在一个词的开头匹配第一个字符,例如在 \"Console \"或 \"WebContext \"上的 \"c\",但在 \"description \"上_不需要。当禁用IntelliSense时,将显示更多的结果,但仍然按照匹配质量进行排序。",
       "files.autoSave": "控制有未保存的修改的编辑器的[自动保存](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save)。",
       "files.autoSave.afterDelay": "在配置的 `#files.autoSaveDelay#`之后,有改动的编辑器会自动保存。",
@@ -282,6 +279,7 @@
       "hiddenChannels": "隐蔽通道",
       "hideOutputChannel": "隐藏输出通道...",
       "maxChannelHistory": "一个输出通道中的最大条目数。",
+      "outputChannels": "输出通道",
       "showOutputChannel": "显示输出通道..."
     },
     "plugin": {
@@ -375,7 +373,6 @@
       "profileIcon": "一个与终端图标相关联的codicon ID。\nterminal-tmux:\"$(terminal-tmux)\"",
       "profileNew": "新终端(含简介)...",
       "profilePath": "此配置文件使用的shell的路径。",
-      "profileSource": "一个将自动检测到shell的路径的配置文件源。注意,不支持非标准的可执行位置,必须在一个新的配置文件中手动创建。",
       "profiles": "创建一个新的终端时要呈现的配置文件。用可选的args手动设置路径属性。\n将现有的配置文件设置为`null'以从列表中隐藏该配置文件,例如:`\"{0}\": null`。",
       "rendererType": "控制终端的渲染方式。",
       "selectProfile": "为新终端选择一个配置文件",
