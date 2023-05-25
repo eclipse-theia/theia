@@ -72,15 +72,12 @@
       "toggleTracing": "Włączanie/wyłączanie śledzenia komunikacji z adapterami debugowania"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "Wykorzystuje eksperymentalny algorytm diffingu.",
-      "diffEditor.diffAlgorithm.smart": "Używa domyślnego algorytmu dyfuzji.",
       "dirtyEncoding": "Plik jest zabrudzony. Proszę zapisać go najpierw przed ponownym otwarciem z innym kodowaniem.",
       "editor.codeActionWidget.showHeaders": "Włączenie/wyłączenie pokazywania nagłówków grup w menu akcji kodu.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Spowoduje próbę sformatowania tylko modyfikacji (wymaga kontroli źródła). Jeśli kontrola źródła nie może być użyta, sformatowany zostanie cały plik.",
       "editor.inlayHints.enabled1": "Podpowiedzi są domyślnie wyświetlane i ukrywają się po przytrzymaniu `Ctrl+Alt`.",
       "editor.inlayHints.enabled2": "Podpowiedzi są domyślnie ukryte i pokazują się po przytrzymaniu `Ctrl+Alt`.",
       "editor.quickSuggestions": "Kontroluje czy sugestie powinny być automatycznie wyświetlane podczas pisania. Można to kontrolować w przypadku wpisywania komentarzy, ciągów znaków i innego kodu. Szybkie sugestie mogą być skonfigurowane tak, aby pokazywały się jako tekst widma lub z widżetem sugestii. Należy również pamiętać o ustawieniu '#editor.suggestOnTriggerCharacters#', które kontroluje czy sugestie są uruchamiane przez znaki specjalne.",
-      "editor.stickyScroll.maxLineCount": "Określa maksymalną liczbę lepkich linii do pokazania.",
       "editor.suggest.matchOnWordStartOnly": "Kiedy włączone filtrowanie IntelliSense wymaga, aby pierwszy znak pasował na początku słowa, np. `c` na `Console` lub `WebContext` ale _nie_ na `description`. Kiedy wyłączone IntelliSense pokaże więcej wyników, ale nadal sortuje je według jakości dopasowania.",
       "files.autoSave": "Steruje funkcją [automatycznego zapisywania](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) edytorów, w których nie zapisano zmian.",
       "files.autoSave.afterDelay": "Edytor ze zmianami jest automatycznie zapisywany po upływie skonfigurowanego czasu `#files.autoSaveDelay#`.",
@@ -282,6 +279,7 @@
       "hiddenChannels": "Ukryte kanały",
       "hideOutputChannel": "Ukryj kanał wyjściowy...",
       "maxChannelHistory": "Maksymalna liczba wpisów w kanale wyjściowym.",
+      "outputChannels": "Kanały wyjściowe",
       "showOutputChannel": "Pokaż kanał wyjściowy..."
     },
     "plugin": {
@@ -375,7 +373,6 @@
       "profileIcon": "ID codicon do skojarzenia z ikoną terminala.\nterminal-tmux:\"$(terminal-tmux)\"",
       "profileNew": "Nowy Terminal (z profilem)...",
       "profilePath": "Ścieżka powłoki, której używa ten profil.",
-      "profileSource": "Źródło profilu, które automatycznie wykryje ścieżki do powłoki. Zauważ, że niestandardowe lokalizacje plików wykonywalnych nie są obsługiwane i muszą być tworzone ręcznie w nowym profilu.",
       "profiles": "Profile, które mają być prezentowane podczas tworzenia nowego terminala. Ustaw właściwość path ręcznie z opcjonalnymi argumentami.\nUstaw istniejący profil na `null`, aby ukryć profil z listy, na przykład: `\"{0}\": null`.",
       "rendererType": "Kontroluje sposób renderowania terminala.",
       "selectProfile": "Wybrać profil dla nowego terminalu",

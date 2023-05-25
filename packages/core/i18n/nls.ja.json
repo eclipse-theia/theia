@@ -72,15 +72,12 @@
       "toggleTracing": "デバッグアダプタとの通信のトレースの有効化/無効化"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "実験的な差分アルゴリズムを使用。",
-      "diffEditor.diffAlgorithm.smart": "デフォルトの diffing アルゴリズムを使用します。",
       "dirtyEncoding": "ファイルが汚れています。別のエンコーディングで開き直す前に、まず保存してください。",
       "editor.codeActionWidget.showHeaders": "コードアクションメニューにグループヘッダを表示するかどうかを設定します。",
       "editor.formatOnSaveMode.modificationsIfAvailable": "変更点のみをフォーマットしようとします(ソースコントロールが必要です)。ソースコントロールが使用できない場合は、ファイル全体がフォーマットされます。",
       "editor.inlayHints.enabled1": "インレイのヒントはデフォルトで表示され、`Ctrl+Alt`を押すと隠れます。",
       "editor.inlayHints.enabled2": "インレイのヒントはデフォルトでは非表示で、`Ctrl+Alt`を押したときに表示されます。",
       "editor.quickSuggestions": "入力中に自動的にサジェストを表示するかどうかを制御します。コメント、文字列、その他のコードを入力する際に制御できます。クイックサジェストは、ゴーストテキストとして表示するか、サジェストウィジェットで表示するかを設定できます。また、'#editor.suggestOnTriggerCharacters#'設定は、特殊な文字でサジェストが発生するかどうかを制御します。",
-      "editor.stickyScroll.maxLineCount": "表示する付箋の最大数を定義します。",
       "editor.suggest.matchOnWordStartOnly": "インテリセンスのフィルタリングを有効にすると、最初の文字が単語の先頭にマッチする必要があります。例えば、`Console` や `WebContext` では `c` ですが、`description` では _not_ です。無効化すると、インテリセンスはより多くの結果を表示しますが、マッチの質でソートされます。",
       "files.autoSave": "未保存の変更があるエディターの[自動保存](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save)を制御します。",
       "files.autoSave.afterDelay": "変更されたエディターは、設定された `#files.autoSaveDelay#` の後に自動的に保存されます。",
@@ -282,6 +279,7 @@
       "hiddenChannels": "隠しチャンネル",
       "hideOutputChannel": "出力チャンネルを隠す...",
       "maxChannelHistory": "1つの出力チャネルの最大エントリ数。",
+      "outputChannels": "出力チャンネル",
       "showOutputChannel": "出力チャンネルを表示..."
     },
     "plugin": {
@@ -375,7 +373,6 @@
       "profileIcon": "ターミナルアイコンに関連付けるコーディコンIDです。\nterminal-tmux:\"$(terminal-tmux)\" とする。",
       "profileNew": "新端末(プロフィール付き)...",
       "profilePath": "このプロファイルが使用するシェルのパス。",
-      "profileSource": "シェルへのパスを自動検出するプロファイルソースです。非標準の実行可能位置はサポートされていないので、新しいプロファイルで手動で作成する必要があることに注意してください。",
       "profiles": "新しいターミナルを作成するときに提示するプロファイル。オプションのアーギュメントを使用して、手動でパスプロパティを設定します。\n既存のプロファイルを `null` に設定すると、リストからプロファイルを隠すことができます。 例: `\"{0}\": null`.",
       "rendererType": "端末のレンダリング方法を制御する。",
       "selectProfile": "新規端末のプロファイルを選択する",

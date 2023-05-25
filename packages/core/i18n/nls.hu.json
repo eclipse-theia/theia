@@ -72,15 +72,12 @@
       "toggleTracing": "A hibakeresési adapterekkel folytatott kommunikáció nyomon követésének engedélyezése/letiltása"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "Kísérleti diffing algoritmust használ.",
-      "diffEditor.diffAlgorithm.smart": "Az alapértelmezett diffing algoritmust használja.",
       "dirtyEncoding": "A fájl piszkos. Kérjük, először mentse el, mielőtt más kódolással újra megnyitná.",
       "editor.codeActionWidget.showHeaders": "A csoportfejlécek megjelenítésének engedélyezése/letiltása a kódművelet menüben.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Csak a módosítások formázására tesz kísérletet (forrásellenőrzés szükséges). Ha a forrásellenőrzés nem használható, akkor a teljes fájl lesz formázva.",
       "editor.inlayHints.enabled1": "Az inlay tippek alapértelmezés szerint megjelennek, és elrejtődnek, ha a \"Ctrl+Alt\" billentyűkombinációt nyomva tartjuk.",
       "editor.inlayHints.enabled2": "Az inlay tippek alapértelmezés szerint el vannak rejtve, és a \"Ctrl+Alt\" billentyűkombináció lenyomásakor jelennek meg.",
       "editor.quickSuggestions": "Szabályozza, hogy a javaslatok automatikusan megjelenjenek-e gépelés közben. Ezt a megjegyzések, karakterláncok és más kódok beírása esetén lehet szabályozni. A gyors javaslatok beállíthatók úgy, hogy szellemszövegként vagy a javaslat widget segítségével jelenjenek meg. Figyeljen a '#editor.suggestOnTriggerCharacters#'-beállításra is, amely azt szabályozza, hogy a javaslatok speciális karakterek hatására aktiválódjanak-e.",
-      "editor.stickyScroll.maxLineCount": "Meghatározza a megjelenítendő ragadós sorok maximális számát.",
       "editor.suggest.matchOnWordStartOnly": "Ha engedélyezve van, az IntelliSense szűrés megköveteli, hogy az első karakter egyezzen a szó elején, pl. \"c\" a \"Konzol\" vagy a \"WebContext\" esetében, de _nem_ a \"leírás\" esetében. Ha kikapcsoljuk, az IntelliSense több eredményt mutat, de továbbra is az egyezés minősége szerint rendezi őket.",
       "files.autoSave": "Az [automatikus mentés](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) vezérli a mentetlen módosításokkal rendelkező szerkesztőket.",
       "files.autoSave.afterDelay": "A szerkesztő a változtatásokat automatikusan elmenti a beállított `#files.autoSaveDelay#` után.",
@@ -282,6 +279,7 @@
       "hiddenChannels": "Rejtett csatornák",
       "hideOutputChannel": "Kimeneti csatorna elrejtése...",
       "maxChannelHistory": "A kimeneti csatornában lévő bejegyzések maximális száma.",
+      "outputChannels": "Kimeneti csatornák",
       "showOutputChannel": "Kimeneti csatorna megjelenítése..."
     },
     "plugin": {
@@ -375,7 +373,6 @@
       "profileIcon": "A terminál ikonjához társítandó kódikon azonosító.\nterminal-tmux:\"$(terminal-tmux)\"",
       "profileNew": "Új terminál (profillal)...",
       "profilePath": "A profil által használt héj elérési útja.",
-      "profileSource": "Egy olyan profilforrás, amely automatikusan felismeri a héj elérési útvonalait. Ne feledje, hogy a nem szabványos futtatható helyek nem támogatottak, ezért azokat manuálisan kell létrehozni egy új profilban.",
       "profiles": "Az új terminál létrehozásakor megjelenítendő profilok. A path tulajdonság manuális beállítása opcionális args-ekkel.\nA meglévő profilok `null` értékre állítása a profil elrejtéséhez a listából, például: `\"{0}\": null`.",
       "rendererType": "A terminál megjelenítésének módját szabályozza.",
       "selectProfile": "Válasszon ki egy profilt az új terminálhoz",

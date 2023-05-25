@@ -72,15 +72,12 @@
       "toggleTracing": "Activar/desactivar las comunicaciones de rastreo con los adaptadores de depuración"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "Utiliza un algoritmo de difusión experimental.",
-      "diffEditor.diffAlgorithm.smart": "Utiliza el algoritmo de diffing por defecto.",
       "dirtyEncoding": "El archivo está sucio. Por favor, guárdelo primero antes de volver a abrirlo con otra codificación.",
       "editor.codeActionWidget.showHeaders": "Activar/desactivar la visualización de las cabeceras de los grupos en el menú de acción del código.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Intentará formatear sólo las modificaciones (requiere control de origen). Si no se puede utilizar el control de origen, se formateará todo el archivo.",
       "editor.inlayHints.enabled1": "Los consejos de incrustación se muestran por defecto y se ocultan cuando se mantiene `Ctrl+Alt`.",
       "editor.inlayHints.enabled2": "Los consejos de incrustación están ocultos por defecto y se muestran cuando se mantiene pulsado `Ctrl+Alt`.",
       "editor.quickSuggestions": "Controla si las sugerencias deben aparecer automáticamente mientras se escribe. Esto puede controlarse para escribir comentarios, cadenas y otros códigos. La sugerencia rápida puede ser configurada para mostrarse como texto fantasma o con el widget de sugerencia. También hay que tener en cuenta la configuración '#editor.suggestOnTriggerCharacters#' que controla si las sugerencias son activadas por caracteres especiales.",
-      "editor.stickyScroll.maxLineCount": "Define el número máximo de líneas adhesivas a mostrar.",
       "editor.suggest.matchOnWordStartOnly": "Cuando se activa el filtro IntelliSense se requiere que el primer carácter coincida con el inicio de una palabra, por ejemplo `c` en `Console` o `WebContext` pero _no_ en `description`. Si se desactiva, IntelliSense mostrará más resultados, pero los ordenará según la calidad de la coincidencia.",
       "files.autoSave": "Controla el [autoguardado](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) de los editores que tienen cambios sin guardar.",
       "files.autoSave.afterDelay": "Un editor con cambios se guarda automáticamente después del `#files.autoSaveDelay#` configurado.",
@@ -282,6 +279,7 @@
       "hiddenChannels": "Canales ocultos",
       "hideOutputChannel": "Ocultar canal de salida...",
       "maxChannelHistory": "El número máximo de entradas en un canal de salida.",
+      "outputChannels": "Canales de salida",
       "showOutputChannel": "Mostrar canal de salida..."
     },
     "plugin": {
@@ -375,7 +373,6 @@
       "profileIcon": "Un ID de codicon para asociar con el icono de terminal.\nterminal-tmux:\"$(terminal-tmux)\"",
       "profileNew": "Nuevo Terminal (Con Perfil)...",
       "profilePath": "La ruta del shell que utiliza este perfil.",
-      "profileSource": "Una fuente de perfil que detectará automáticamente las rutas al shell. Tenga en cuenta que las ubicaciones de ejecutables no estándar no son compatibles y deben crearse manualmente en un nuevo perfil.",
       "profiles": "Los perfiles a presentar cuando se crea un nuevo terminal. Establezca la propiedad path manualmente con argumentos opcionales.\nEstablezca un perfil existente como `null` para ocultar el perfil de la lista, por ejemplo: `\"{0}\": null`.",
       "rendererType": "Controla cómo se representa el terminal.",
       "selectProfile": "Seleccione un perfil para el nuevo terminal",
