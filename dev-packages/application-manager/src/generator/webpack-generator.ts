@@ -66,7 +66,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const CompressionPlugin = require('compression-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
-const outputPath = path.resolve(__dirname, 'lib');
+const outputPath = path.resolve(__dirname, 'lib', 'frontend');
 const { mode, staticCompression }  = yargs.option('mode', {
     description: "Mode to use",
     choices: ["development", "production"],
@@ -378,7 +378,7 @@ if (process.platform !== 'win32') {
 }
 
 const nativePlugin = new NativeWebpackPlugin({
-    out: '../native',
+    out: 'native',
     ripgrep: ${this.ifPackage('@theia/search-in-workspace', 'true', 'false')},
     pty: ${this.ifPackage('@theia/process', 'true', 'false')},
     nativeBindings: {
@@ -398,7 +398,7 @@ const config = {
     },
     output: {
         filename: '[name].js',
-        path: path.resolve(__dirname, 'backend', 'bundle'),
+        path: path.resolve(__dirname, 'lib', 'backend'),
         devtoolModuleFilenameTemplate: 'webpack:///[absolute-resource-path]?[loaders]',
     },${this.ifElectron(`
     externals: {
@@ -425,7 +425,7 @@ const config = {
                 test: /\\.node$/,
                 loader: 'node-loader',
                 options: {
-                    name: '../native/[name].[ext]'
+                    name: 'native/[name].[ext]'
                 }
             },
             {

@@ -70,7 +70,7 @@ container.load(electronMainApplicationModule);
 container.bind(ElectronMainApplicationGlobals).toConstantValue({
     THEIA_APP_PROJECT_PATH: resolve(__dirname, '..', '..'),
     THEIA_BACKEND_MAIN_PATH: resolve(__dirname, 'main.js'),
-    THEIA_FRONTEND_HTML_PATH: resolve(__dirname, '..', '..', 'lib', 'index.html'),
+    THEIA_FRONTEND_HTML_PATH: resolve(__dirname, '..', '..', 'lib', 'frontend', 'index.html'),
 });
 
 function load(raw) {
@@ -122,7 +122,7 @@ container.load(messagingBackendModule);
 container.load(loggerBackendModule);
 
 function defaultServeStatic(app) {
-    app.use(express.static(path.resolve(__dirname, '../../lib')))
+    app.use(express.static(path.resolve(__dirname, '../../lib/frontend')))
 }
 
 function load(raw) {

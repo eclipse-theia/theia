@@ -104,8 +104,8 @@ export class ApplicationPackageManager {
     }
 
     async copy(): Promise<void> {
-        await fs.ensureDir(this.pck.lib());
-        await fs.copy(this.pck.frontend('index.html'), this.pck.lib('index.html'));
+        await fs.ensureDir(this.pck.lib('frontend'));
+        await fs.copy(this.pck.frontend('index.html'), this.pck.lib('frontend', 'index.html'));
     }
 
     async build(args: string[] = [], options: GeneratorOptions = {}): Promise<void> {
@@ -128,10 +128,10 @@ export class ApplicationPackageManager {
 
         if (!this.pck.pck.main) {
             // Try the bundled electron app first
-            appPath = this.pck.bundledBackend('electron-main.js');
+            appPath = this.pck.lib('backend', 'electron-main.js');
             if (!fs.existsSync(appPath)) {
                 // Fallback to the generated electron app in src-gen
-                appPath = this.pck.frontend('electron-main.js');
+                appPath = this.pck.backend('electron-main.js');
             }
 
             console.warn(
@@ -152,10 +152,10 @@ export class ApplicationPackageManager {
         // See https://nodejs.org/api/child_process.html#child_process_options_detached
         options.detached = process.platform !== 'win32';
         // Try the bundled backend app first
-        let mainPath = this.pck.bundledBackend('main.js');
+        let mainPath = this.pck.lib('backend', 'main.js');
         if (!fs.existsSync(mainPath)) {
             // Fallback to the generated backend file in src-gen
-            mainPath = this.pck.srcGen('backend', 'main.js');
+            mainPath = this.pck.backend('main.js');
         }
         return this.__process.fork(mainPath, mainArgs, options);
     }

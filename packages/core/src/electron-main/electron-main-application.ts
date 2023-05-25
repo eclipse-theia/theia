@@ -313,7 +313,7 @@ export class ElectronMainApplication {
                 // Setting the following option to `true` causes some features to break, somehow.
                 // Issue: https://github.com/eclipse-theia/theia/issues/8577
                 nodeIntegrationInWorker: false,
-                preload: path.resolve(this.globals.THEIA_APP_PROJECT_PATH, 'lib/preload.js').toString()
+                preload: path.resolve(this.globals.THEIA_APP_PROJECT_PATH, 'lib', 'frontend', 'preload.js').toString()
             },
             ...this.config.electron?.windowOptions || {},
         };

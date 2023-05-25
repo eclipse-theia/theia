@@ -22,6 +22,7 @@ import * as temp from 'temp';
 import type { Compiler } from 'webpack';
 
 const REQUIRE_RIPGREP = '@vscode/ripgrep';
+const REQUIRE_VSCODE_WINDOWS_CA_CERTS = '@vscode/windows-ca-certs';
 const REQUIRE_BINDINGS = 'bindings';
 const REQUIRE_KEYMAPPING = './build/Release/keymapping';
 
@@ -60,11 +61,13 @@ export class NativeWebpackPlugin {
             const bindingsFile = buildFile(directory, 'bindings.js', bindingsReplacement(Array.from(this.bindings.entries())));
             const ripgrepFile = buildFile(directory, 'ripgrep.js', ripgrepReplacement(this.options.out));
             const keymappingFile = './build/Release/keymapping.node';
+            const windowsCaCertsFile = '@vscode/windows-ca-certs/build/Release/crypt32.node';
             replacements = {
                 ...(this.options.replacements ?? {}),
                 [REQUIRE_RIPGREP]: ripgrepFile,
                 [REQUIRE_BINDINGS]: bindingsFile,
-                [REQUIRE_KEYMAPPING]: keymappingFile
+                [REQUIRE_KEYMAPPING]: keymappingFile,
+                [REQUIRE_VSCODE_WINDOWS_CA_CERTS]: windowsCaCertsFile
             };
         });
         compiler.hooks.normalModuleFactory.tap(
