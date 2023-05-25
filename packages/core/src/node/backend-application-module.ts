@@ -40,6 +40,7 @@ import { ProxyCliContribution } from './request/proxy-cli-contribution';
 import { bindNodeStopwatch, bindBackendStopwatchServer } from './performance';
 import { OSBackendApplicationContribution } from './os-backend-application-contribution';
 import { BackendRequestFacade } from './request/backend-request-facade';
+import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -128,4 +129,6 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bindNodeStopwatch(bind);
     bindBackendStopwatchServer(bind);
+
+    bind(FileSystemLocking).to(FileSystemLockingImpl).inSingletonScope();
 });
