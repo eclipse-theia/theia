@@ -43,6 +43,7 @@ export class TabBarToolbar extends ReactWidget {
     protected more = new Map<string, TabBarToolbarItem>();
 
     protected contextKeyListener: Disposable | undefined;
+    protected toDisposeOnUpdateItems: DisposableCollection = new DisposableCollection();
 
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
     @inject(LabelParser) protected readonly labelParser: LabelParser;
@@ -59,11 +60,20 @@ export class TabBarToolbar extends ReactWidget {
     }
 
     updateItems(items: Array<TabBarToolbarItem | ReactTabBarToolbarItem>, current: Widget | undefined): void {
+        this.toDisposeOnUpdateItems.dispose();
+        this.toDisposeOnUpdateItems = new DisposableCollection();
         this.inline.clear();
         this.more.clear();
 
         const contextKeys = new Set<string>();
         for (const item of items.sort(TabBarToolbarItem.PRIORITY_COMPARATOR).reverse()) {
+            if ('command' in item) {
+                this.commands.getAllHandlers(item.command).forEach(handler => {
+                    if (handler.onDidChangeEnabled) {
+                        this.toDisposeOnUpdateItems.push(handler.onDidChangeEnabled(() => this.update()));
+                    }
+                });
+            }
             if ('render' in item || item.group === undefined || item.group === 'navigation') {
                 this.inline.set(item.id, item);
             } else {
@@ -149,7 +159,6 @@ export class TabBarToolbar extends ReactWidget {
         const tooltip = item.tooltip || (command && command.label);
 
         const toolbarItemClassNames = this.getToolbarItemClassNames(item);
-        if (item.menuPath && !item.command) { toolbarItemClassNames.push('enabled'); }
         return <div key={item.id}
             className={toolbarItemClassNames.join(' ')}
             onMouseDown={this.onMouseDownEvent}
@@ -162,10 +171,18 @@ export class TabBarToolbar extends ReactWidget {
         </div>;
     }
 
+    protected isEnabled(item: AnyToolbarItem): boolean {
+        if (!!item.command) {
+            return this.commandIsEnabled(item.command) && this.evaluateWhenClause(item.when);
+        } else {
+            return !!item.menuPath;
+        }
+    }
+
     protected getToolbarItemClassNames(item: AnyToolbarItem): string[] {
         const classNames = [TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM];
         if (item.command) {
-            if (this.commandIsEnabled(item.command) && this.evaluateWhenClause(item.when)) {
+            if (this.isEnabled(item)) {
                 classNames.push('enabled');
             }
             if (this.commandIsToggled(item.command)) {
@@ -254,15 +271,15 @@ export class TabBarToolbar extends ReactWidget {
 
         const item: AnyToolbarItem | undefined = this.inline.get(e.currentTarget.id);
 
-        if (!this.evaluateWhenClause(item?.when)) {
+        if (!item || !this.isEnabled(item)) {
             return;
         }
 
-        if (item?.command && item.menuPath) {
+        if (item.command && item.menuPath) {
             this.menuCommandExecutor.executeCommand(item.menuPath, item.command, this.current);
-        } else if (item?.command) {
+        } else if (item.command) {
             this.commands.executeCommand(item.command, this.current);
-        } else if (item?.menuPath) {
+        } else if (item.menuPath) {
             this.renderMoreContextMenu(this.toAnchor(e), item.menuPath);
         }
         this.update();

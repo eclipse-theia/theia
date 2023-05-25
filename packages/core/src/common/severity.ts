@@ -101,7 +101,7 @@ export namespace Severity {
         } else if (severity === Severity.Log || severity === log) {
             return nls.localize('theia/core/severity/log', 'Log');
         } else {
-            return nls.localize('theia/core/severity/all', 'All');
+            return nls.localizeByDefault('All');
         }
     }
 

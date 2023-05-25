@@ -160,9 +160,11 @@ import {
     TerminalLocation,
     TerminalExitReason,
     TerminalProfile,
+    TerminalQuickFixType,
     InlayHint,
     InlayHintKind,
     InlayHintLabelPart,
+    TelemetryTrustedValue,
     NotebookCell,
     NotebookCellKind,
     NotebookCellStatusBarAlignment,
@@ -191,7 +193,10 @@ import {
     TerminalEditorTabInput,
     TextDiffTabInput,
     TextMergeTabInput,
-    WebviewEditorTabInput
+    WebviewEditorTabInput,
+    DocumentPasteEdit,
+    ExternalUriOpenerPriority,
+    EditSessionIdentityMatch
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -236,6 +241,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FilePermission } from '@theia/filesystem/lib/common/files';
 import { TabsExtImpl } from './tabs';
 import { LocalizationExtImpl } from './localization-ext';
+import { TelemetryExtImpl } from './telemetry-ext';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -277,6 +283,7 @@ export function createAPIFactory(
     const tabsExt = rpc.set(MAIN_RPC_CONTEXT.TABS_EXT, new TabsExtImpl(rpc));
     const customEditorExt = rpc.set(MAIN_RPC_CONTEXT.CUSTOM_EDITORS_EXT, new CustomEditorsExtImpl(rpc, documents, webviewExt, workspaceExt));
     const webviewViewsExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEW_VIEWS_EXT, new WebviewViewsExtImpl(rpc, webviewExt));
+    const telemetryExt = rpc.set(MAIN_RPC_CONTEXT.TELEMETRY_EXT, new TelemetryExtImpl());
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -569,6 +576,18 @@ export function createAPIFactory(
             },
             get tabGroups(): theia.TabGroups {
                 return tabsExt.tabGroups;
+            },
+            /** @stubbed ExternalUriOpener */
+            registerExternalUriOpener(id: string, opener: theia.ExternalUriOpener, metadata: theia.ExternalUriOpenerMetadata): theia.Disposable {
+                return Disposable.NULL;
+            },
+            /** @stubbed ProfileContentHandler */
+            registerProfileContentHandler(id: string, profileContentHandler: theia.ProfileContentHandler): theia.Disposable {
+                return Disposable.NULL;
+            },
+            /** @stubbed TerminalQuickFixProvider */
+            registerTerminalQuickFixProvider(id: string, provider: theia.TerminalQuickFixProvider): theia.Disposable {
+                return terminalExt.registerTerminalQuickFixProvider(id, provider);
             }
         };
 
@@ -714,7 +733,16 @@ export function createAPIFactory(
             },
             get onDidGrantWorkspaceTrust(): theia.Event<void> {
                 return workspaceExt.onDidGrantWorkspaceTrust;
-            }
+            },
+            registerEditSessionIdentityProvider(scheme: string, provider: theia.EditSessionIdentityProvider) {
+                return workspaceExt.$registerEditSessionIdentityProvider(scheme, provider);
+            },
+            /**
+             * @stubbed
+             * This is a stub implementation, that should minimally satisfy vscode built-in extensions
+             * that currently use this proposed API.
+             */
+            onWillCreateEditSessionIdentity: () => Disposable.NULL,
         };
 
         const onDidChangeLogLevel = new Emitter<theia.LogLevel>();
@@ -724,9 +752,12 @@ export function createAPIFactory(
             get appHost(): string { return envExt.appHost; },
             get language(): string { return envExt.language; },
             get isNewAppInstall(): boolean { return envExt.isNewAppInstall; },
-            get isTelemetryEnabled(): boolean { return envExt.isTelemetryEnabled; },
+            get isTelemetryEnabled(): boolean { return telemetryExt.isTelemetryEnabled; },
             get onDidChangeTelemetryEnabled(): theia.Event<boolean> {
-                return envExt.onDidChangeTelemetryEnabled;
+                return telemetryExt.onDidChangeTelemetryEnabled;
+            },
+            createTelemetryLogger(sender: theia.TelemetrySender, options?: theia.TelemetryLoggerOptions): theia.TelemetryLogger {
+                return telemetryExt.createTelemetryLogger(sender, options);
             },
             get remoteName(): string | undefined { return envExt.remoteName; },
             get machineId(): string { return envExt.machineId; },
@@ -918,6 +949,11 @@ export function createAPIFactory(
             },
             createLanguageStatusItem(id: string, selector: theia.DocumentSelector): theia.LanguageStatusItem {
                 return languagesExt.createLanguageStatusItem(plugin, id, selector);
+            },
+            registerDocumentPasteEditProvider(
+                selector: theia.DocumentSelector, provider: theia.DocumentPasteEditProvider, metadata: theia.DocumentPasteProviderMetadata
+            ): theia.Disposable {
+                return languagesExt.registerDocumentPasteEditProvider(plugin, selector, provider, metadata);
             }
         };
 
@@ -1307,6 +1343,7 @@ export function createAPIFactory(
             InlayHint,
             InlayHintKind,
             InlayHintLabelPart,
+            TelemetryTrustedValue,
             NotebookCellData,
             NotebookCellKind,
             NotebookCellOutput,
@@ -1336,7 +1373,11 @@ export function createAPIFactory(
             TabInputWebview: WebviewEditorTabInput,
             TabInputTerminal: TerminalEditorTabInput,
             TerminalLocation,
-            TerminalExitReason
+            TerminalExitReason,
+            DocumentPasteEdit,
+            ExternalUriOpenerPriority,
+            TerminalQuickFixType,
+            EditSessionIdentityMatch
         };
     };
 }

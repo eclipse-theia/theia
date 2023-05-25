@@ -737,7 +737,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected doReplace(node: TreeNode, e: React.MouseEvent<HTMLElement>): void {
-        this.replace(node);
+        const selection = SelectableTreeNode.isSelected(node) ? (this.selectionService.selection as SelectableTreeNode[]) : [node];
+        selection.forEach(n => this.replace(n));
         e.stopPropagation();
     }
 
@@ -899,7 +900,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected readonly remove = (node: TreeNode, e: React.MouseEvent<HTMLElement>) => this.doRemove(node, e);
     protected doRemove(node: TreeNode, e: React.MouseEvent<HTMLElement>): void {
-        this.removeNode(node);
+        const selection = SelectableTreeNode.isSelected(node) ? (this.selectionService.selection as SelectableTreeNode[]) : [node];
+        selection.forEach(n => this.removeNode(n));
         e.stopPropagation();
     }
 
@@ -1029,8 +1031,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const replaceTerm = this.isReplacing ? <span className='replace-term'>{this._replaceTerm}</span> : '';
         const className = `match${this.isReplacing ? ' strike-through' : ''}`;
         const match = typeof node.lineText === 'string' ?
-            node.lineText.substr(node.character - 1, node.length)
-            : node.lineText.text.substr(node.lineText.character - 1, node.length);
+            node.lineText.substring(node.character - 1, node.length + node.character - 1)
+            : node.lineText.text.substring(node.lineText.character - 1, node.length + node.lineText.character - 1);
         return <React.Fragment>
             <span className={className}>{match}</span>
             {replaceTerm}
@@ -1098,8 +1100,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         node.children.forEach(l => {
             const leftPositionedNodes = node.children.filter(rl => rl.line === l.line && rl.character < l.character);
             const diff = (this._replaceTerm.length - this.searchTerm.length) * leftPositionedNodes.length;
-            const start = lines[l.line - 1].substr(0, l.character - 1 + diff);
-            const end = lines[l.line - 1].substr(l.character - 1 + diff + l.length);
+            const start = lines[l.line - 1].substring(0, l.character - 1 + diff);
+            const end = lines[l.line - 1].substring(l.character - 1 + diff + l.length);
             lines[l.line - 1] = start + this._replaceTerm + end;
         });
 

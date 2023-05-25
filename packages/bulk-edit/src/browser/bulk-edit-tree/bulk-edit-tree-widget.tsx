@@ -121,9 +121,9 @@ export class BulkEditTreeWidget extends TreeWidget {
                     const startColumn = +bulkEdit.textEdit.range.startColumn;
                     const endColumn = +bulkEdit.textEdit.range.endColumn;
                     const lineText = lines[startLineNum - 1];
-                    const beforeMatch = (startColumn > 26 ? '... ' : '') + lineText.substr(0, startColumn - 1).substr(-25);
+                    const beforeMatch = (startColumn > 26 ? '... ' : '') + lineText.substring(0, startColumn - 1).slice(-25);
                     const replacedText = lineText.substring(startColumn - 1, endColumn - 1);
-                    const afterMatch = lineText.substr(startColumn - 1 + replacedText.length, 75);
+                    const afterMatch = lineText.substring(startColumn - 1 + replacedText.length, startColumn - 1 + replacedText.length + 75);
 
                     return <div className='bulkEditNode'>
                         <div className='message'>
@@ -193,9 +193,9 @@ export class BulkEditTreeWidget extends TreeWidget {
                         const startColumn = node.bulkEdit.textEdit.range.startColumn;
                         const endColumn = node.bulkEdit.textEdit.range.endColumn;
                         const lineText = lines[startLineNum - 1];
-                        const beforeMatch = lineText.substr(0, startColumn - 1);
+                        const beforeMatch = lineText.substring(0, startColumn - 1);
                         const replacedText = lineText.substring(startColumn - 1, endColumn - 1);
-                        const afterMatch = lineText.substr(startColumn - 1 + replacedText.length);
+                        const afterMatch = lineText.substring(startColumn - 1 + replacedText.length);
                         lines[startLineNum - 1] = beforeMatch + node.bulkEdit.textEdit.text + afterMatch;
                     }
                 }

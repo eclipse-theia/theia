@@ -39,7 +39,7 @@ before(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (previewHandler as any).linkNormalizer = {
         normalizeLink: (documentUri: URI, link: string) =>
-            'endpoint/' + documentUri.parent.resolve(link).path.toString().substr(1)
+            'endpoint/' + documentUri.parent.resolve(link).path.toString().substring(1)
     };
 });
 

@@ -24,7 +24,7 @@ You may also use the `Launch Browser Backend` launch configuration in VS Code.
 
 ### Running the tests in VS Code via the Playwright extension
 
-For quick and easy execution of tests in VS Code, we recommend to use the [VS Code Playwright extension (`ms-playwright.playwright`)](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright).
+For quick and easy execution of tests in VS Code, we recommend using the [VS Code Playwright extension (`ms-playwright.playwright`)](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright).
 
 Once you have installed the VS Code Playwright test extension, open the *Test* view and click the `Run Tests` button on the top toolbar or the `Run Test` button for a particular test.
 It uses the default configuration with chromium as test profile by default.
@@ -46,7 +46,7 @@ If you want to observe the execution of the tests in a browser, use `yarn ui-tes
 ### Watch the tests
 
 Run `yarn watch` in the root of this package to rebuild the test code after each change.
-This ensures, that the executed tests are up to date also when running them with the [Playwright VS Code Extension](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright).
+This ensures, that the executed tests are up-to-date also when running them with the [Playwright VS Code Extension](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright).
 
 ### Debugging the tests
 

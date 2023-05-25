@@ -21,7 +21,7 @@ Now, let's run the tests:
 2. Run `yarn ui-tests` in the theia-playwright-template to run its tests in headless mode
 
 Please note that Theia 🎭 Playwright is built to be extended with custom page objects, such as the one in `test/page-objects/theia-app.ts` in the theia-playwright-template.
-We recommend to add further page objects for all custom views, editors, widgets, etc.
+We recommend adding further page objects for all custom views, editors, widgets, etc.
 Please refer to the [extension guide](EXTENSIBILITY.md) for more information.
 
 Moreover, this repository contains several tests based on Theia 🎭 Playwright in `examples/playwright/src/tests` that may serve as additional examples for writing tests.
@@ -34,7 +34,7 @@ Let's write another system test for the Theia text editor as an example:
 2. Open the Theia text editor
 3. Replace the contents of line 1 with `change` and check the line contents and the dirty state, which now should indicate that the editor is dirty.
 4. Perform an undo twice and verify that the line contents should be what it was before the change. The dirty state should be clean again.
-5. Run redo twice and check that line 1 shows the text `change` again. Also the dirty state should be changed again.
+5. Run redo twice and check that line 1 shows the text `change` again. Also, the dirty state should be changed again.
 6. Save the editor with the saved contents and check whether the editor state is clean after save. Close the editor.
 7. Reopen the same file and check whether the contents of line 1 shows still the changed contents.
 
@@ -141,7 +141,7 @@ This is valid for executing tests with the VS Code Playwright extension or from 
 
 ### Running the tests in VS Code via the Playwright extension
 
-For quick and easy execution of tests in VS Code, we recommend to use the [VS Code Playwright extension (`ms-playwright.playwright`)](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright).
+For quick and easy execution of tests in VS Code, we recommend using the [VS Code Playwright extension (`ms-playwright.playwright`)](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright).
 
 Once you have installed the VS Code Playwright test extension, open the *Test* view and click the `Run Tests` button on the top toolbar or the `Run Test` button for a particular test.
 It uses the default configuration with chromium as test profile by default.
@@ -175,7 +175,7 @@ For an advanced test development experience, Playwright provides the so-called *
 yarn ui-tests --ui
 ```
 
-For more information on the UI mode,  please refer to the [Playwright announcement of the UI mode](https://playwright.dev/docs/release-notes#introducing-ui-mode-preview).
+For more information on the UI mode, please refer to the [Playwright announcement of the UI mode](https://playwright.dev/docs/release-notes#introducing-ui-mode-preview).
 
 ## Advanced Topics
 

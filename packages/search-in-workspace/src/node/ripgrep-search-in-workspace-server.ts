@@ -335,7 +335,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
                             }
                             const character = (start < prefixLength ? start : prefixLength) + prefix.length + 1;
                             lineInfo = <LinePreview>{
-                                text: prefix + lineInfo.substr(start, length),
+                                text: prefix + lineInfo.substring(start, start + length),
                                 character
                             };
                         }
@@ -425,7 +425,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         }
         // remove the `/**` suffix if present
         if (pattern.endsWith('/**')) {
-            pattern = pattern.substr(0, pattern.length - 3);
+            pattern = pattern.substring(0, pattern.length - 3);
         }
         // if `pattern` is absolute then `root` will be ignored by `path.resolve()`
         const targetPath = path.resolve(root, pattern);

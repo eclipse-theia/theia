@@ -25,7 +25,7 @@ export const FileNavigatorConfigSchema: PreferenceSchema = {
     properties: {
         'explorer.autoReveal': {
             type: 'boolean',
-            description: nls.localizeByDefault('Controls whether the explorer should automatically reveal and select files when opening them.'),
+            description: nls.localizeByDefault('Controls whether the Explorer should automatically reveal and select files when opening them.'),
             default: true
         },
         'explorer.decorations.colors': {
@@ -36,7 +36,7 @@ export const FileNavigatorConfigSchema: PreferenceSchema = {
         [EXPLORER_COMPACT_FOLDERS]: {
             type: 'boolean',
             // eslint-disable-next-line max-len
-            description: nls.localizeByDefault('Controls whether the explorer should render folders in a compact form. In such a form, single child folders will be compressed in a combined tree element. Useful for Java package structures, for example.'),
+            description: nls.localizeByDefault('Controls whether the Explorer should render folders in a compact form. In such a form, single child folders will be compressed in a combined tree element. Useful for Java package structures, for example.'),
             default: true,
         }
     },

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Diagnostic, SymbolInformation, WorkspaceSymbolParams } from '@theia/core/shared/vscode-languageserver-protocol';
+import { SymbolInformation, WorkspaceSymbolParams } from '@theia/core/shared/vscode-languageserver-protocol';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
 import URI from '@theia/core/lib/common/uri';
@@ -22,7 +22,7 @@ import { MaybePromise, Mutable } from '@theia/core/lib/common/types';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { Language, LanguageService } from '@theia/core/lib/browser/language-service';
-import { MonacoDiagnosticCollection } from './monaco-diagnostic-collection';
+import { MonacoMarkerCollection } from './monaco-marker-collection';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import * as monaco from '@theia/monaco-editor-core';
 
@@ -36,40 +36,31 @@ export class MonacoLanguages implements LanguageService {
 
     readonly workspaceSymbolProviders: WorkspaceSymbolProvider[] = [];
 
-    protected readonly makers = new Map<string, MonacoDiagnosticCollection>();
+    protected readonly markers = new Map<string, MonacoMarkerCollection>();
 
     @inject(ProblemManager) protected readonly problemManager: ProblemManager;
     @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter;
 
     @postConstruct()
     protected init(): void {
-        for (const uri of this.problemManager.getUris()) {
-            this.updateMarkers(new URI(uri));
-        }
         this.problemManager.onDidChangeMarkers(uri => this.updateMarkers(uri));
+        monaco.editor.onDidCreateModel(model => this.updateModelMarkers(model));
     }
 
-    protected updateMarkers(uri: URI): void {
+    updateMarkers(uri: URI): void {
+        const markers = this.problemManager.findMarkers({ uri });
         const uriString = uri.toString();
-        const owners = new Map<string, Diagnostic[]>();
-        for (const marker of this.problemManager.findMarkers({ uri })) {
-            const diagnostics = owners.get(marker.owner) || [];
-            diagnostics.push(marker.data);
-            owners.set(marker.owner, diagnostics);
-        }
-        const toClean = new Set<string>(this.makers.keys());
-        for (const [owner, diagnostics] of owners) {
-            toClean.delete(owner);
-            const collection = this.makers.get(owner) || new MonacoDiagnosticCollection(owner, this.p2m);
-            collection.set(uriString, diagnostics);
-            this.makers.set(owner, collection);
-        }
-        for (const owner of toClean) {
-            const collection = this.makers.get(owner);
-            if (collection) {
-                collection.set(uriString, []);
-            }
-        }
+        const collection = this.markers.get(uriString) || new MonacoMarkerCollection(uri, this.p2m);
+        this.markers.set(uriString, collection);
+        collection.updateMarkers(markers);
+    }
+
+    updateModelMarkers(model: monaco.editor.ITextModel): void {
+        const uriString = model.uri.toString();
+        const uri = new URI(uriString);
+        const collection = this.markers.get(uriString) || new MonacoMarkerCollection(uri, this.p2m);
+        this.markers.set(uriString, collection);
+        collection.updateModelMarkers(model);
     }
 
     registerWorkspaceSymbolProvider(provider: WorkspaceSymbolProvider): Disposable {

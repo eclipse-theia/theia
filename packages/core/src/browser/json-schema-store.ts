@@ -99,9 +99,10 @@ export class DefaultJsonSchemaContribution implements JsonSchemaContribution {
     @inject(RequestService)
     protected readonly requestService: RequestService;
 
+    protected readonly jsonSchemaUrl = `${new Endpoint().httpScheme}//schemastore.org/api/json/catalog.json`;
+
     async registerSchemas(context: JsonSchemaRegisterContext): Promise<void> {
-        const url = `${new Endpoint().httpScheme}//schemastore.azurewebsites.net/api/json/catalog.json`;
-        const response = await this.requestService.request({ url });
+        const response = await this.requestService.request({ url: this.jsonSchemaUrl });
         const schemas = RequestContext.asJson<{ schemas: DefaultJsonSchemaContribution.SchemaData[] }>(response).schemas;
         for (const s of schemas) {
             if (s.fileMatch) {

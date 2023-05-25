@@ -67,7 +67,7 @@ export async function loadManifest(pluginModel: PluginModel): Promise<any> {
     // translate vscode builtins, as they are published with a prefix.
     const built_prefix = '@theia/vscode-builtin-';
     if (manifest && manifest.name && manifest.name.startsWith(built_prefix)) {
-        manifest.name = manifest.name.substr(built_prefix.length);
+        manifest.name = manifest.name.substring(built_prefix.length);
     }
     return manifest && translations && Object.keys(translations).length ?
         localize(manifest, translations) :

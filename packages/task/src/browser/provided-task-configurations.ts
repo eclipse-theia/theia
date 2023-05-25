@@ -19,7 +19,7 @@ import { TaskProviderRegistry, TaskProvider } from './task-contribution';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskConfiguration, TaskCustomization, TaskOutputPresentation, TaskConfigurationScope, TaskScope } from '../common';
 
-const ALL_TASK_TYPES: string = '*';
+export const ALL_TASK_TYPES: string = '*';
 
 @injectable()
 export class ProvidedTaskConfigurations {

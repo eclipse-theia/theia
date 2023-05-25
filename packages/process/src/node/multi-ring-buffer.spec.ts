@@ -94,7 +94,7 @@ describe('MultiRingBuffer', function (): void {
         const readBuffer = ringBuffer.deq(reader);
         expect(ringBuffer.size()).to.be.equal(size);
         expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
-        expect(readBuffer).to.equal(buffer.substr(buffer.length - size));
+        expect(readBuffer).to.equal(buffer.substring(buffer.length - size));
 
     });
 
@@ -112,7 +112,7 @@ describe('MultiRingBuffer', function (): void {
 
             expect(ringBuffer.size()).to.be.equal(size);
             expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
-            expect(readBuffer).to.equal(buffer.substr(buffer.length - size));
+            expect(readBuffer).to.equal(buffer.substring(buffer.length - size));
         }
     });
 
@@ -130,7 +130,7 @@ describe('MultiRingBuffer', function (): void {
         for (const _ of buffers) {
             const readBuffer = ringBuffer.deq(reader);
             if (i === 0) {
-                expect(readBuffer).to.equal(buffers[buffers.length - 1].substr(buffers[buffers.length - 1].length - size));
+                expect(readBuffer).to.equal(buffers[buffers.length - 1].substring(buffers[buffers.length - 1].length - size));
             } else {
                 expect(readBuffer).to.equal(undefined);
             }

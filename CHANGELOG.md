@@ -4,15 +4,59 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## v1.38.0 - 05/25/2023
+## v1.39.0 - 06/29/2023
 
-<a name="breaking_changes_1.38.0">[Breaking Changes:](#breaking_changes_1.38.0)</a>
+<a name="breaking_changes_1.39.0">[Breaking Changes:](#breaking_changes_1.39.0)</a>
 
-- [core] moved `ToolbarAwareTabBar.Styles` to `ScrollableTabBar.Styles` [12411](https://github.com/eclipse-theia/theia/pull/12411/)
 - [repo] with the upgrade to Inversify 6.0, a few initialization methods were adjusted. See also [this migration guide entry](https://github.com/eclipse-theia/theia/blob/master/doc/Migration.md#inversify-60). Additionally, other changes include: [#12425](https://github.com/eclipse-theia/theia/pull/12425)
   - The type expected by the `PreferenceProxySchema` symbol has been changed from `PromiseLike<PreferenceSchema>` to `() => PromiseLike<PreferenceSchema>`
   - The symbol `OnigasmPromise` has been changed to `OnigasmProvider` and injects a function of type `() => Promise<IOnigLib>`
   - The symbol `PreferenceTransactionPrelude` has been changed to `PreferenceTransactionPreludeProvider ` and injects a function of type `() => Promise<unknown>`
+
+## v1.38.0 - 05/25/2023
+
+- [application-manager] fixed regression preventing browser-only builds from succeeding [#12491](https://github.com/eclipse-theia/theia/pull/12491)
+- [application-package] bumped the default supported VS Code API from `1.74.2` to `1.77.0` [#12516](https://github.com/eclipse-theia/theia/pull/12516)
+- [core] added `open tabs` dropdown for `workbench.tab.shrinkToFit.enabled` preference [#12411](https://github.com/eclipse-theia/theia/pull/12411)
+- [core] added confirmation prompt when executing `Clear Command History` [#12510](https://github.com/eclipse-theia/theia/pull/12510)
+- [core] added handling to prevent concurrent access to the disk [#12236](https://github.com/eclipse-theia/theia/pull/12236)
+- [core] added handling to properly dismiss quick-open menus without explicit focus [#12446](https://github.com/eclipse-theia/theia/pull/12446)
+- [core] added missing theming for `hc-dark` for active borders [#12448](https://github.com/eclipse-theia/theia/pull/12448)
+- [core] added support for `enablement` property for command contributions [#12483](https://github.com/eclipse-theia/theia/pull/12483)
+- [core] updated JSON schema URL [#12376](https://github.com/eclipse-theia/theia/pull/12376)
+- [core] updated `nls.metadata.json` for `1.77.0` [#12555](https://github.com/eclipse-theia/theia/pull/12555)
+- [debug] added handling to associate root folder to dynamic debug configurations [#12482](https://github.com/eclipse-theia/theia/pull/12482)
+- [debug] fixed behavior for exited threads [#12113](https://github.com/eclipse-theia/theia/pull/12113)
+- [debug] fixed focus out for the debug configuration quick-open menu [#12046](https://github.com/eclipse-theia/theia/pull/12046)
+- [debug] fixed incorrect debug configuration on startup [#12480](https://github.com/eclipse-theia/theia/pull/12480)
+- [documentation] added resolution note for `msgpackr` [#12527](https://github.com/eclipse-theia/theia/pull/12527)
+- [editor] added confirmation prompt when executing `Clear Editor History` [#12506](https://github.com/eclipse-theia/theia/pull/12506)
+- [markers] improved the performance when rending markers [#12408](https://github.com/eclipse-theia/theia/pull/12408)
+- [messages] added handling to properly close the toaster container when empty [#12457](https://github.com/eclipse-theia/theia/pull/12457)
+- [monaco] fixed styling for the suggest list highlighting [#12317](https://github.com/eclipse-theia/theia/pull/12317)
+- [plugin] added stubbing for the `ProfileContentHandler` VS Code API [#12535](https://github.com/eclipse-theia/theia/pull/12535)
+- [plugin] added stubbing for the `TerminalQuickFixProvider` VS Code API [#12532](https://github.com/eclipse-theia/theia/pull/12532)
+- [plugin] added stubbing for the `onWillCreateEditSessionIdentity` [#12533](https://github.com/eclipse-theia/theia/pull/12533)
+- [plugin] added stubbing for the proposed `DocumentPaste` VS Code API [#12512](https://github.com/eclipse-theia/theia/pull/12512)
+- [plugin] added stubbing for the proposed `EditSessionIdentityProvider` VS Code API [#12508](https://github.com/eclipse-theia/theia/pull/12508)
+- [plugin] added stubbing for the proposed `ExternalUriOpener` VS Code API [#12539](https://github.com/eclipse-theia/theia/pull/12539)
+- [plugin] added support for `collapse all` in tree-view toolbars [#12514](https://github.com/eclipse-theia/theia/pull/12514)
+- [plugin] added support for the `TelemetryLogger` VS Code API [#12453](https://github.com/eclipse-theia/theia/pull/12453)
+- [plugin] fixed `TreeView#reveal` behavior [#12489](https://github.com/eclipse-theia/theia/pull/12489)
+- [plugin] fixed tab indices logic when moving or closing tabs [#12400](https://github.com/eclipse-theia/theia/pull/12400)
+- [repo] upgraded `engine.io` to fix a known vulnerability [#12556](https://github.com/eclipse-theia/theia/pull/12556)
+- [repo] upgraded `socket.io-parser` to fix a known vulnerability [#12556](https://github.com/eclipse-theia/theia/pull/12556)
+- [scripts] improved `dash-licenses` to handle internal errors [#12545](https://github.com/eclipse-theia/theia/pull/12545)
+- [search-in-workspace] added multiselect support in the view [#12331](https://github.com/eclipse-theia/theia/pull/12331)
+- [task] improved user-experience when configuring and running tasks [#12507](https://github.com/eclipse-theia/theia/pull/12507)
+- [workspace] added exception handling for `WorkspaceDeleteHandler` [#12544](https://github.com/eclipse-theia/theia/pull/12544)
+- [workspace] improved behavior of `open workspace` and `open folder` [#12537](https://github.com/eclipse-theia/theia/pull/12537)
+
+<a name="breaking_changes_1.38.0">[Breaking Changes:](#breaking_changes_1.38.0)</a>
+
+- [core] moved `ToolbarAwareTabBar.Styles` to `ScrollableTabBar.Styles` [#12411](https://github.com/eclipse-theia/theia/pull/12411/)
+- [debug] changed the return type of `DebugConfigurationManager.provideDynamicDebugConfigurations()` to `Promise<Record<string, DynamicDebugConfigurationSessionOptions[]>>` [#12482](https://github.com/eclipse-theia/theia/pull/12482)
+- [workspace] removed `WorkspaceFrontendContribution.createOpenWorkspaceOpenFileDialogProps(...)` and `WorkspaceFrontendContribution.preferences` [#12537](https://github.com/eclipse-theia/theia/pull/12537)
 
 ## v1.37.0 - 04/27/2023
 

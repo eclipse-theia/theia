@@ -72,15 +72,12 @@
       "toggleTracing": "Activar/desactivar as comunicações de rastreio com adaptadores de depuração"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "Utiliza um algoritmo de difusão experimental.",
-      "diffEditor.diffAlgorithm.smart": "Utiliza o algoritmo de difusão padrão.",
       "dirtyEncoding": "O ficheiro está sujo. Por favor guardá-lo primeiro antes de o reabrir com outra codificação.",
       "editor.codeActionWidget.showHeaders": "Activar/desactivar mostrar os cabeçalhos de grupo no menu de acção de código.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tentará apenas formatar modificações (requer controlo da fonte). Se o controlo da fonte não puder ser utilizado, então o ficheiro inteiro será formatado.",
       "editor.inlayHints.enabled1": "Dicas de Inlay estão a mostrar por defeito e escondem-se quando se segura \"Ctrl+Alt\".",
       "editor.inlayHints.enabled2": "Dicas de Inlay são ocultadas por defeito e mostram quando se mantém 'Ctrl+Alt'.",
       "editor.quickSuggestions": "Controla se as sugestões devem aparecer automaticamente durante a dactilografia. Isto pode ser controlado para digitação de comentários, strings, e outros códigos. A sugestão rápida pode ser configurada para aparecer como texto fantasma ou com o widget de sugestão. Esteja também ciente do '#editor.suggestOnTriggerCharacters#'-setting que controla se as sugestões são accionadas por caracteres especiais.",
-      "editor.stickyScroll.maxLineCount": "Define o número máximo de linhas pegajosas a mostrar.",
       "editor.suggest.matchOnWordStartOnly": "Quando activada, a filtragem IntelliSense requer que o primeiro caractere corresponda num início de palavra, por exemplo `c` em `Console` ou `Contexto Web` mas _não_ em `descrição`. Quando desactivado, o IntelliSense mostrará mais resultados, mas ainda os classifica pela qualidade da correspondência.",
       "files.autoSave": "Controla [auto guardar](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) de editores que tenham alterações não guardadas.",
       "files.autoSave.afterDelay": "Um editor com alterações é automaticamente guardado após a configuração `#files.autoSaveDelay#``.",
@@ -282,6 +279,7 @@
       "hiddenChannels": "Canais ocultos",
       "hideOutputChannel": "Esconder canal de saída...",
       "maxChannelHistory": "O número máximo de entradas num canal de saída.",
+      "outputChannels": "Canais de saída",
       "showOutputChannel": "Mostrar canal de saída..."
     },
     "plugin": {
@@ -375,7 +373,6 @@
       "profileIcon": "Um código de identificação para associar com o ícone do terminal.\nterminal-tmux: \"$(terminal-tmux)\".",
       "profileNew": "Novo Terminal (Com Perfil)...",
       "profilePath": "O caminho da concha que este perfil utiliza.",
-      "profileSource": "Uma fonte de perfil que detectará automaticamente os caminhos para a concha. Note-se que os locais executáveis não standard não são suportados e devem ser criados manualmente num novo perfil.",
       "profiles": "Os perfis a apresentar aquando da criação de um novo terminal. Definir manualmente a propriedade do caminho com args opcionais.\nDefinir um perfil existente para `nulo` para ocultar o perfil da lista, por exemplo: `\"{0}\": nulo`.",
       "rendererType": "Controla a forma como o terminal é renderizado.",
       "selectProfile": "Seleccionar um perfil para o novo terminal",

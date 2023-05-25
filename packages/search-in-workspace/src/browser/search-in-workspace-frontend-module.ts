@@ -74,6 +74,7 @@ export function createSearchTreeWidget(parent: interfaces.Container): SearchInWo
         widget: SearchInWorkspaceResultTreeWidget,
         props: {
             contextMenuPath: SearchInWorkspaceResultTreeWidget.Menus.BASE,
+            multiSelect: true,
             globalSelection: true
         }
     });

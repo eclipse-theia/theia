@@ -908,7 +908,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             const signOff = `\n\nSigned-off-by: ${username} <${email}>`;
             const value = scmRepository.input.value;
             if (value.endsWith(signOff)) {
-                scmRepository.input.value = value.substr(0, value.length - signOff.length);
+                scmRepository.input.value = value.substring(0, value.length - signOff.length);
             } else {
                 scmRepository.input.value = `${value}${signOff}`;
             }

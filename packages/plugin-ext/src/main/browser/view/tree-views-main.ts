@@ -63,6 +63,7 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
         this.treeViewProviders.set(treeViewId, this.viewRegistry.registerViewDataProvider(treeViewId, async ({ state, viewInfo }) => {
             const options: TreeViewWidgetOptions = {
                 id: treeViewId,
+                showCollapseAll: $options.showCollapseAll,
                 multiSelect: $options.canSelectMany,
                 dragMimeTypes: $options.dragMimeTypes,
                 dropMimeTypes: $options.dropMimeTypes

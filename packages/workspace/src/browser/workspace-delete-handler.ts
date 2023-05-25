@@ -167,7 +167,7 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
 
     protected async moveFileToTrash(uri: URI, options: FileDeleteOptions): Promise<void> {
         try {
-            this.fileService.delete(uri, { ...options, useTrash: true });
+            await this.fileService.delete(uri, { ...options, useTrash: true });
         } catch (error) {
             console.error('Error deleting with trash:', error);
             if (await this.confirmDeletePermanently(uri)) {

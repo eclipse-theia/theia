@@ -44,17 +44,17 @@ test.describe('Theia Main Menu', () => {
     test("should show the menu items 'New File' and 'New Folder'", async () => {
         const mainMenu = await menuBar.openMenu('File');
         const menuItems = await mainMenu.visibleMenuItems();
-        expect(menuItems).toContain('New File');
-        expect(menuItems).toContain('New Folder');
+        expect(menuItems).toContain('New File...');
+        expect(menuItems).toContain('New Folder...');
     });
 
     test("should return menu item by name 'New File'", async () => {
         const mainMenu = await menuBar.openMenu('File');
-        const menuItem = await mainMenu.menuItemByName('New File');
+        const menuItem = await mainMenu.menuItemByName('New File...');
         expect(menuItem).toBeDefined();
 
         const label = await menuItem?.label();
-        expect(label).toBe('New File');
+        expect(label).toBe('New File...');
 
         const shortCut = await menuItem?.shortCut();
         expect(shortCut).toBe(OSUtil.isMacOS ? '⌥ N' : 'Alt+N');
@@ -65,7 +65,7 @@ test.describe('Theia Main Menu', () => {
 
     test('should detect whether menu item has submenu', async () => {
         const mainMenu = await menuBar.openMenu('File');
-        const newFileItem = await mainMenu.menuItemByName('New File');
+        const newFileItem = await mainMenu.menuItemByName('New File...');
         const settingsItem = await mainMenu.menuItemByName('Preferences');
 
         expect(await newFileItem?.hasSubmenu()).toBe(false);

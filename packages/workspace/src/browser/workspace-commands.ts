@@ -74,9 +74,9 @@ export namespace WorkspaceCommands {
         ...Command.toDefaultLocalizedCommand({
             id: 'workspace:openWorkspace',
             category: CommonCommands.FILE_CATEGORY,
-            label: 'Open Workspace...',
+            label: 'Open Workspace from File...',
         }),
-        dialogLabel: nls.localizeByDefault('Open Workspace')
+        dialogLabel: nls.localizeByDefault('Open Workspace from File')
     };
     export const OPEN_RECENT_WORKSPACE = Command.toLocalizedCommand({
         id: 'workspace:openRecent',
@@ -91,12 +91,12 @@ export namespace WorkspaceCommands {
     export const NEW_FILE = Command.toDefaultLocalizedCommand({
         id: 'file.newFile',
         category: FILE_CATEGORY,
-        label: 'New File'
+        label: 'New File...'
     });
     export const NEW_FOLDER = Command.toDefaultLocalizedCommand({
         id: 'file.newFolder',
         category: FILE_CATEGORY,
-        label: 'New Folder'
+        label: 'New Folder...'
     });
     export const FILE_OPEN_WITH = (opener: OpenHandler): Command => ({
         id: `file.openWith.${opener.id}`
@@ -234,7 +234,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parent, targetUri, false);
 
                     const dialog = new WorkspaceInputDialog({
-                        title: nls.localizeByDefault('New File'),
+                        title: nls.localizeByDefault('New File...'),
                         parentUri: parentUri,
                         initialValue: vacantChildUri.path.base,
                         placeholder: nls.localize('theia/workspace/newFilePlaceholder', 'File Name'),
@@ -259,7 +259,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const targetUri = parentUri.resolve('Untitled');
                     const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parent, targetUri, true);
                     const dialog = new WorkspaceInputDialog({
-                        title: nls.localizeByDefault('New Folder'),
+                        title: nls.localizeByDefault('New Folder...'),
                         parentUri: parentUri,
                         initialValue: vacantChildUri.path.base,
                         placeholder: nls.localize('theia/workspace/newFolderPlaceholder', 'Folder Name'),

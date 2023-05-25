@@ -67,7 +67,7 @@ export class SearchBoxDebounce implements Disposable {
             this.state = input;
         } else {
             if (input === '\b') {
-                this.state = this.state.length === 1 ? '' : this.state.substr(0, this.state.length - 1);
+                this.state = this.state.length === 1 ? '' : this.state.substring(0, this.state.length - 1);
             } else {
                 this.state += input;
             }

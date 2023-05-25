@@ -324,7 +324,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
             toClose.set(uriString, widgets);
         } else if (event.contains(uri, FileChangeType.ADDED)) {
             if (deleted) {
-                widget.title.label = widget.title.label.substr(0, label.length - this.deletedSuffix.length);
+                widget.title.label = widget.title.label.substring(0, label.length - this.deletedSuffix.length);
                 this.onDidChangeEditorFileEmitter.fire({ editor: widget, type: FileChangeType.ADDED });
             }
         }

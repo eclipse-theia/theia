@@ -74,7 +74,7 @@ export interface StableInterface {
 
 - All new APIs should always be added as **experimental** since it's almost impossible to get [stable API](#stable) right the first time.
 - Experimental APIs don't require the stability tag, but if a new member is added to [stable API](#stable) then it should be explicitly annotated.
-- Experimental APIs don't require extensive documentation. It does not mean that one should not document not obvious parts.
+- Experimental APIs don't require extensive documentation. It does not mean that one shouldn't document unobvious parts.
 - Experimental APIs don't follow [semver](https://semver.org/#spec-item-8) semantic.
 - Experimental APIs could be changed or removed without [the deprecation cycle](#deprecation) if they were not widely adopted.
 - Adoption should be measured by the number of internal clients or based on the feedback of Theia contributors and committers.

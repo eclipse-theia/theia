@@ -479,7 +479,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
             const linkAsString = link.toString();
             for (const resourceRoot of [this.externalEndpoint + '/theia-resource', this.externalEndpoint + '/vscode-resource']) {
                 if (linkAsString.startsWith(resourceRoot + '/')) {
-                    return this.normalizeRequestUri(linkAsString.substr(resourceRoot.length));
+                    return this.normalizeRequestUri(linkAsString.substring(resourceRoot.length));
                 }
             }
             return link;

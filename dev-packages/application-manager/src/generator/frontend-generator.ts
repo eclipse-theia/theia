@@ -21,16 +21,14 @@ import { existsSync, readFileSync } from 'fs';
 
 export class FrontendGenerator extends AbstractGenerator {
 
-    async generate(options: GeneratorOptions = {}): Promise<void> {
-        const frontendModules = this.pck.targetFrontendModules;
-        await this.write(this.pck.frontend('index.html'), this.compileIndexHtml(frontendModules));
-        await this.write(this.pck.frontend('index.js'), this.compileIndexJs(frontendModules));
-        await this.write(this.pck.frontend('preload.js'), this.compilePreloadJs());
+    async generate(options?: GeneratorOptions): Promise<void> {
+        await this.write(this.pck.frontend('index.html'), this.compileIndexHtml(this.pck.targetFrontendModules));
+        await this.write(this.pck.frontend('index.js'), this.compileIndexJs(this.pck.targetFrontendModules));
         await this.write(this.pck.frontend('secondary-window.html'), this.compileSecondaryWindowHtml());
         await this.write(this.pck.frontend('secondary-index.js'), this.compileSecondaryIndexJs(this.pck.secondaryWindowModules));
         if (this.pck.isElectron()) {
-            const electronMainModules = this.pck.targetElectronMainModules;
-            await this.write(this.pck.frontend('electron-main.js'), this.compileElectronMain(electronMainModules));
+            await this.write(this.pck.frontend('electron-main.js'), this.compileElectronMain(this.pck.targetElectronMainModules));
+            await this.write(this.pck.frontend('preload.js'), this.compilePreloadJs());
         }
     }
 
@@ -90,8 +88,7 @@ self.MonacoEnvironment = {
     getWorkerUrl: function (moduleId, label) {
         return './editor.worker.js';
     }
-}
-`)}
+}`)}
 
 const preloader = require('@theia/core/lib/browser/preloader');
 

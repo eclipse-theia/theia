@@ -253,6 +253,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
     private onTabClosed(tabInfo: TabInfo, title: Title<Widget>): void {
         tabInfo.group.tabs.splice(tabInfo.tabIndex, 1);
         this.tabInfoLookup.delete(title);
+        this.updateTabIndices(tabInfo, tabInfo.tabIndex);
         this.proxy.$acceptTabOperation({
             kind: TabModelOperationKind.TAB_CLOSE,
             index: tabInfo.tabIndex,
@@ -267,6 +268,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
         const tabDto = this.createTabDto(args.title, tabInfo.group.groupId);
         tabInfo.group.tabs.splice(args.fromIndex, 1);
         tabInfo.group.tabs.splice(args.toIndex, 0, tabDto);
+        this.updateTabIndices(tabInfo, args.fromIndex);
         this.proxy.$acceptTabOperation({
             kind: TabModelOperationKind.TAB_MOVE,
             index: args.toIndex,
@@ -288,6 +290,14 @@ export class TabsMainImpl implements TabsMain, Disposable {
     // #region Messages received from Ext Host
     $moveTab(tabId: string, index: number, viewColumn: number, preserveFocus?: boolean): void {
         return;
+    }
+
+    updateTabIndices(tabInfo: TabInfo, startIndex: number): void {
+        for (const tab of this.tabInfoLookup.values()) {
+            if (tab.group === tabInfo.group && tab.tabIndex >= startIndex) {
+                tab.tabIndex = tab.group.tabs.indexOf(tab.tab);
+            }
+        }
     }
 
     async $closeTab(tabIds: string[], preserveFocus?: boolean): Promise<boolean> {

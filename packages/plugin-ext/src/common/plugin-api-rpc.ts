@@ -702,6 +702,7 @@ export interface WorkspaceExt {
     $provideTextDocumentContent(uri: string): Promise<string | undefined | null>;
     $onTextSearchResult(searchRequestId: number, done: boolean, result?: SearchInWorkspaceResult): void;
     $onWorkspaceTrustChanged(trust: boolean | undefined): void;
+    $registerEditSessionIdentityProvider(scheme: string, provider: theia.EditSessionIdentityProvider): theia.Disposable;
 }
 
 export interface TimelineExt {
@@ -727,6 +728,7 @@ export interface DialogsMain {
 }
 
 export interface RegisterTreeDataProviderOptions {
+    showCollapseAll?: boolean
     canSelectMany?: boolean
     dragMimeTypes?: string[]
     dropMimeTypes?: string[]
@@ -2079,6 +2081,12 @@ export interface TabsMain {
     $closeGroup(groupIds: number[], preserveFocus?: boolean): Promise<boolean>;
 }
 
+export interface TelemetryMain {
+}
+
+export interface TelemetryExt {
+}
+
 // endregion
 
 export const PLUGIN_RPC_CONTEXT = {
@@ -2116,6 +2124,7 @@ export const PLUGIN_RPC_CONTEXT = {
     THEMING_MAIN: <ProxyIdentifier<ThemingMain>>createProxyIdentifier<ThemingMain>('ThemingMain'),
     COMMENTS_MAIN: <ProxyIdentifier<CommentsMain>>createProxyIdentifier<CommentsMain>('CommentsMain'),
     TABS_MAIN: <ProxyIdentifier<TabsMain>>createProxyIdentifier<TabsMain>('TabsMain'),
+    TELEMETRY_MAIN: <ProxyIdentifier<TelemetryMain>>createProxyIdentifier<TelemetryMain>('TelemetryMain'),
     LOCALIZATION_MAIN: <ProxyIdentifier<LocalizationMain>>createProxyIdentifier<LocalizationMain>('LocalizationMain'),
 };
 
@@ -2151,7 +2160,8 @@ export const MAIN_RPC_CONTEXT = {
     TIMELINE_EXT: createProxyIdentifier<TimelineExt>('TimeLineExt'),
     THEMING_EXT: createProxyIdentifier<ThemingExt>('ThemingExt'),
     COMMENTS_EXT: createProxyIdentifier<CommentsExt>('CommentsExt'),
-    TABS_EXT: createProxyIdentifier<TabsExt>('TabsExt')
+    TABS_EXT: createProxyIdentifier<TabsExt>('TabsExt'),
+    TELEMETRY_EXT: createProxyIdentifier<TelemetryExt>('TelemetryExt)')
 };
 
 export interface TasksExt {

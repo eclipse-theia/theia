@@ -14,7 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { deepmerge } from '@theia/core/shared/@theia/application-package';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { FileSystemLocking } from '@theia/core/lib/node';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
 import { FileUri } from '@theia/core/lib/node/file-uri';
@@ -25,72 +27,107 @@ import { PluginPathsService } from '../common/plugin-paths-protocol';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 import { PluginStorageKind } from '../../common';
 
+export interface Store {
+    fsPath: string
+    values: KeysToKeysToAnyValue
+}
+
 @injectable()
 export class PluginsKeyValueStorage {
 
-    private readonly deferredGlobalDataPath = new Deferred<string | undefined>();
+    private stores: Record<string, Store> = Object.create(null);
+    private storesToSync = new Set<Store>();
+    private syncStoresTimeout?: NodeJS.Timeout;
+
+    private deferredGlobalDataPath = new Deferred<string | undefined>();
 
     @inject(PluginPathsService)
-    private readonly pluginPathsService: PluginPathsService;
+    private pluginPathsService: PluginPathsService;
 
     @inject(EnvVariablesServer)
-    protected readonly envServer: EnvVariablesServer;
+    private envServer: EnvVariablesServer;
+
+    @inject(FileSystemLocking)
+    private fsLocking: FileSystemLocking;
 
     @postConstruct()
     protected init(): void {
-        this.doInit();
-    }
-
-    protected async doInit(): Promise<void> {
-        try {
-            const configDirUri = await this.envServer.getConfigDirUri();
-            const globalStorageFsPath = path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR);
-            const exists = await fs.pathExists(globalStorageFsPath);
-            if (!exists) {
-                await fs.mkdirs(globalStorageFsPath);
-            }
-            const globalDataFsPath = path.join(globalStorageFsPath, 'global-state.json');
-            this.deferredGlobalDataPath.resolve(globalDataFsPath);
-        } catch (e) {
-            console.error('Failed to initialize global state path: ', e);
-            this.deferredGlobalDataPath.resolve(undefined);
-        }
+        this.deferredGlobalDataPath.resolve(this.getGlobalDataPath().catch(error => {
+            console.error('Failed to initialize global state path:', error);
+            return undefined;
+        }));
+        process.once('beforeExit', () => this.dispose());
+        this.syncStores();
     }
 
     async set(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean> {
-        const dataPath = await this.getDataPath(kind);
-        if (!dataPath) {
+        const store = await this.getStore(kind);
+        if (!store) {
             console.warn('Cannot save data: no opened workspace');
             return false;
         }
-
-        const data = await this.readFromFile(dataPath);
-
-        if (value === undefined) {
-            delete data[key];
+        if (value === undefined || Object.keys(value).length === 0) {
+            delete store.values[key];
         } else {
-            data[key] = value;
+            store.values[key] = value;
         }
-
-        await this.writeToFile(dataPath, data);
+        this.storesToSync.add(store);
         return true;
     }
 
     async get(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues> {
-        const dataPath = await this.getDataPath(kind);
-        if (!dataPath) {
-            return {};
-        }
-        const data = await this.readFromFile(dataPath);
-        return data[key];
+        const store = await this.getStore(kind);
+        return store?.values[key] ?? {};
     }
 
     async getAll(kind: PluginStorageKind): Promise<KeysToKeysToAnyValue> {
+        const store = await this.getStore(kind);
+        return store?.values ?? {};
+    }
+
+    private async getGlobalDataPath(): Promise<string> {
+        const configDirUri = await this.envServer.getConfigDirUri();
+        const globalStorageFsPath = path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR);
+        await fs.ensureDir(globalStorageFsPath);
+        return path.join(globalStorageFsPath, 'global-state.json');
+    }
+
+    private async initializeStore(storePath: string): Promise<Store> {
+        return this.fsLocking.lockPath(storePath, async resolved => {
+            const values = await this.readFromFile(resolved);
+            return {
+                values,
+                fsPath: storePath
+            };
+        });
+    }
+
+    private async getStore(kind: PluginStorageKind): Promise<Store | undefined> {
         const dataPath = await this.getDataPath(kind);
-        if (!dataPath) {
-            return {};
+        if (dataPath) {
+            return this.stores[dataPath] ??= await this.initializeStore(dataPath);
         }
-        return this.readFromFile(dataPath);
+    }
+
+    private syncStores(): void {
+        this.syncStoresTimeout = setTimeout(async () => {
+            await Promise.all(Array.from(this.storesToSync, async store => {
+                await this.fsLocking.lockPath(store.fsPath, async storePath => {
+                    const valuesOnDisk = await this.readFromFile(storePath);
+                    store.values = deepmerge(valuesOnDisk, store.values);
+                    await this.writeToFile(storePath, store.values);
+                });
+            }));
+            this.storesToSync.clear();
+            if (this.syncStoresTimeout) {
+                this.syncStores();
+            }
+        }, this.getSyncStoreTimeout());
+    }
+
+    private getSyncStoreTimeout(): number {
+        // 0-10s + 1min
+        return 10_000 * Math.random() + 60_000;
     }
 
     private async getDataPath(kind: PluginStorageKind): Promise<string | undefined> {
@@ -98,7 +135,9 @@ export class PluginsKeyValueStorage {
             return this.deferredGlobalDataPath.promise;
         }
         const storagePath = await this.pluginPathsService.getHostStoragePath(kind.workspace, kind.roots);
-        return storagePath ? path.join(storagePath, 'workspace-state.json') : undefined;
+        if (storagePath) {
+            return path.join(storagePath, 'workspace-state.json');
+        }
     }
 
     private async readFromFile(pathToFile: string): Promise<KeysToKeysToAnyValue> {
@@ -118,4 +157,8 @@ export class PluginsKeyValueStorage {
         await fs.writeJSON(pathToFile, data);
     }
 
+    private dispose(): void {
+        clearTimeout(this.syncStoresTimeout);
+        this.syncStoresTimeout = undefined;
+    }
 }

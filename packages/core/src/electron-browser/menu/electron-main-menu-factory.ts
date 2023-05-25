@@ -35,6 +35,12 @@ export interface ElectronMenuOptions {
      * Defaults to `true`.
      */
     readonly showDisabled?: boolean;
+
+    /**
+     * Controls whether to render disabled items as disabled
+     * Defaults to `true`
+     */
+    readonly honorDisabled?: boolean;
     /**
      * A DOM context to use when evaluating any `when` clauses
      * of menu items registered for this item.
@@ -108,7 +114,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         const maxWidget = document.getElementsByClassName(MAXIMIZED_CLASS);
         if (preference === 'visible' || (preference === 'classic' && maxWidget.length === 0)) {
             const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
-            this._menu = this.fillMenuTemplate([], menuModel, [], { rootMenuPath: MAIN_MENU_BAR });
+            this._menu = this.fillMenuTemplate([], menuModel, [], { honorDisabled: false, rootMenuPath: MAIN_MENU_BAR });
             if (isOSX) {
                 this._menu.unshift(this.createOSXMenu());
             }
@@ -121,7 +127,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
 
     createElectronContextMenu(menuPath: MenuPath, args?: any[], context?: HTMLElement, contextKeyService?: ContextMatcher): MenuDto[] {
         const menuModel = this.menuProvider.getMenu(menuPath);
-        return this.fillMenuTemplate([], menuModel, args, { showDisabled: false, context, rootMenuPath: menuPath, contextKeyService });
+        return this.fillMenuTemplate([], menuModel, args, { showDisabled: true, context, rootMenuPath: menuPath, contextKeyService });
     }
 
     protected fillMenuTemplate(parentItems: MenuDto[],
@@ -130,6 +136,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         options: ElectronMenuOptions
     ): MenuDto[] {
         const showDisabled = options?.showDisabled !== false;
+        const honorDisabled = options?.honorDisabled !== false;
 
         if (CompoundMenuNode.is(menu) && menu.children.length && this.undefinedOrMatch(options.contextKeyService ?? this.contextKeyService, menu.when, options.context)) {
             const role = CompoundMenuNode.getRole(menu);
@@ -181,7 +188,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                 label: node.label,
                 type: this.commandRegistry.getToggledHandler(commandId, ...args) ? 'checkbox' : 'normal',
                 checked: this.commandRegistry.isToggled(commandId, ...args),
-                enabled: true, // https://github.com/eclipse-theia/theia/issues/446
+                enabled: !honorDisabled || this.commandRegistry.isEnabled(commandId, ...args), // see https://github.com/eclipse-theia/theia/issues/446
                 visible: true,
                 accelerator,
                 execute: () => this.execute(commandId, args, options.rootMenuPath)

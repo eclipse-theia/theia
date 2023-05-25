@@ -90,7 +90,7 @@ export class IPCConnectionProvider {
         const inspectArgPrefix = `--${options.serverName}-inspect`;
         const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));
         if (inspectArg !== undefined) {
-            forkOptions.execArgv = ['--nolazy', `--inspect${inspectArg.substr(inspectArgPrefix.length)}`];
+            forkOptions.execArgv = ['--nolazy', `--inspect${inspectArg.substring(inspectArgPrefix.length)}`];
         }
 
         const childProcess = cp.fork(path.join(__dirname, 'ipc-bootstrap'), options.args, forkOptions);

@@ -147,7 +147,7 @@ export class NpmRegistry {
     protected async doView(name: string): Promise<ViewResult> {
         let url = this.props.registry;
         if (name[0] === '@') {
-            url += '@' + encodeURIComponent(name.substr(1));
+            url += '@' + encodeURIComponent(name.substring(1));
         } else {
             url += encodeURIComponent(name);
         }

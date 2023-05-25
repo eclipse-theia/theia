@@ -36,7 +36,7 @@ export class GitCommitDetailHeaderWidget extends ReactWidget {
     ) {
         super();
         this.id = 'commit-header' + commitDetailOptions.commitSha;
-        this.title.label = commitDetailOptions.commitSha.substr(0, 8);
+        this.title.label = commitDetailOptions.commitSha.substring(0, 8);
         this.options = {
             range: {
                 fromRevision: commitDetailOptions.commitSha + '~1',
