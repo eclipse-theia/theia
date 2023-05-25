@@ -449,7 +449,7 @@ describe('ripgrep-search-in-workspace-server', function (): void {
             if (typeof match.lineText === 'string') {
                 done(new Error('unexpected lineText'));
             } else {
-                expect(match.lineText.text.substr(match.lineText.character - 1, pattern.length)).eq(pattern);
+                expect(match.lineText.text.substring(match.lineText.character - 1, pattern.length + match.lineText.character - 1)).eq(pattern);
                 done();
             }
         });

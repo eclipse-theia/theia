@@ -222,7 +222,7 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
 
         // convert \c:\something => C:\something
         if (formatting.normalizeDriveLetter && this.hasDriveLetter(label)) {
-            label = label.charAt(1).toUpperCase() + label.substr(2);
+            label = label.charAt(1).toUpperCase() + label.substring(2);
         }
 
         if (formatting.tildify) {

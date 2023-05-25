@@ -284,7 +284,7 @@ export namespace WidgetDecoration {
                         result.push({ data });
                     }
                     const { length } = ranges.splice(containerIndex, 1).shift()!;
-                    result.push({ data: caption.substr(i, length), highlight: true });
+                    result.push({ data: caption.substring(i, i + length), highlight: true });
                     data = '';
                     i = i + length - 1;
                 }

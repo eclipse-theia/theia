@@ -84,8 +84,8 @@ export class WebviewThemeDataProvider {
         const addStyle = (id: string, rawValue: any) => {
             if (rawValue) {
                 const value = typeof rawValue === 'number' || typeof rawValue === 'string' ? rawValue : String(rawValue);
-                styles[this.colors.toCssVariableName(id).substr(2)] = value;
-                styles[this.colors.toCssVariableName(id, 'vscode').substr(2)] = value;
+                styles[this.colors.toCssVariableName(id).substring(2)] = value;
+                styles[this.colors.toCssVariableName(id, 'vscode').substring(2)] = value;
             }
         };
 
