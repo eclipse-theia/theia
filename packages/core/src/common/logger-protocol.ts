@@ -38,6 +38,7 @@ export interface ILogLevelChangedEvent {
 
 export interface ILoggerClient {
     onLogLevelChanged(event: ILogLevelChangedEvent): void;
+    onLogConfigChanged(): void;
 }
 
 @injectable()
@@ -49,6 +50,9 @@ export class DispatchingLoggerClient implements ILoggerClient {
         this.clients.forEach(client => client.onLogLevelChanged(event));
     }
 
+    onLogConfigChanged(): void {
+        this.clients.forEach(client => client.onLogConfigChanged());
+    }
 }
 
 export const rootLoggerName = 'root';

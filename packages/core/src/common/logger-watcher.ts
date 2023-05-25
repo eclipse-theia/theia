@@ -22,22 +22,27 @@ import { ILoggerClient, ILogLevelChangedEvent } from './logger-protocol';
 export class LoggerWatcher {
 
     getLoggerClient(): ILoggerClient {
-        const emitter = this.onLogLevelChangedEmitter;
+        const logLevelEmitter = this.onLogLevelChangedEmitter;
+        const logConfigEmitter = this.onLogConfigChangedEmitter;
         return {
             onLogLevelChanged(event: ILogLevelChangedEvent): void {
-                emitter.fire(event);
-            }
+                logLevelEmitter.fire(event);
+            },
+            onLogConfigChanged(): void {
+                logConfigEmitter.fire();
+            },
         };
     }
 
-    private onLogLevelChangedEmitter = new Emitter<ILogLevelChangedEvent>();
+    protected onLogLevelChangedEmitter = new Emitter<ILogLevelChangedEvent>();
 
     get onLogLevelChanged(): Event<ILogLevelChangedEvent> {
         return this.onLogLevelChangedEmitter.event;
     }
 
-    // FIXME: get rid of it, backend services should as well set a client on the server
-    fireLogLevelChanged(event: ILogLevelChangedEvent): void {
-        this.onLogLevelChangedEmitter.fire(event);
+    protected onLogConfigChangedEmitter = new Emitter<void>();
+
+    get onLogConfigChanged(): Event<void> {
+        return this.onLogConfigChangedEmitter.event;
     }
 }
