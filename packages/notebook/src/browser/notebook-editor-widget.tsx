@@ -52,10 +52,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     readonly saveable: Saveable;
 
     @inject(NotebookCellToolbarFactory)
-    private readonly toolbarFactory: NotebookCellToolbarFactory;
-
-    @inject(NotebookEditorProps)
-    private readonly props: NotebookEditorProps;
+    private readonly cellToolbarFactory: NotebookCellToolbarFactory;
 
     private readonly renderers = new Map<CellKind, CellRenderer>();
 
@@ -65,8 +62,8 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     constructor(
         @inject(NotebookCodeCellRenderer) codeCellRenderer: NotebookCodeCellRenderer,
-        @inject(NotebookMarkdownCellRenderer) markdownCellRenderer: NotebookMarkdownCellRenderer
-        ) {
+        @inject(NotebookMarkdownCellRenderer) markdownCellRenderer: NotebookMarkdownCellRenderer,
+        @inject(NotebookEditorProps) private readonly props: NotebookEditorProps) {
         super();
         this.saveable = this.props.notebookData;
         this.id = 'notebook:' + this.props.uri.toString();
@@ -87,7 +84,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     protected render(): ReactNode {
         return <div>
-            <NotebookCellListView renderers={this.renderers} notebookModel={this.props.notebookData} toolbarRenderer={this.toolbarFactory} />
+            <NotebookCellListView renderers={this.renderers} notebookModel={this.props.notebookData} toolbarRenderer={this.cellToolbarFactory} />
         </div>;
     }
 }

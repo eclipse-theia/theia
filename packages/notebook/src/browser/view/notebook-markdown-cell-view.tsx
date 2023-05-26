@@ -21,32 +21,37 @@ import { NotebookModel } from '../view-model/notebook-model';
 import { Cellrenderer } from './notebook-cell-list-view';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { CellEditor } from './notebook-cell-editor';
-import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
 
 @injectable()
 export class NotebookMarkdownCellRenderer implements Cellrenderer {
 
     @inject(MarkdownRenderer)
     private readonly markdownRenderer: MarkdownRenderer;
-    @inject(MonacoEditorProvider)
-    private readonly editorProvider: MonacoEditorProvider;
+    @inject(MonacoTextModelService)
+    protected readonly textModelService: MonacoTextModelService;
+    @inject(MonacoEditorServices)
+    protected readonly monacoServices: MonacoEditorServices;
 
     render(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
-        return <MarkdownCell markdownRenderer={this.markdownRenderer} editorProvider={this.editorProvider} cell={cell} notebookModel={notebookModel} />;
+        return <MarkdownCell markdownRenderer={this.markdownRenderer} textModelService={this.textModelService} monacoServices={this.monacoServices}
+            cell={cell} notebookModel={notebookModel} />;
     }
 
 }
 
 interface MarkdownCellProps {
     markdownRenderer: MarkdownRenderer,
-    editorProvider: MonacoEditorProvider,
+    textModelService: MonacoTextModelService,
+    monacoServices: MonacoEditorServices
 
     cell: NotebookCellModel,
     notebookModel: NotebookModel
 }
 
-function MarkdownCell({ markdownRenderer, editorProvider, cell, notebookModel }: MarkdownCellProps): JSX.Element {
+function MarkdownCell({ markdownRenderer, textModelService, monacoServices, cell, notebookModel }: MarkdownCellProps): JSX.Element {
     const markdownNode = markdownRenderer.render(new MarkdownStringImpl(cell.source)).element;
 
     const [editMode, setEditMode] = React.useState(false);
@@ -58,7 +63,7 @@ function MarkdownCell({ markdownRenderer, editorProvider, cell, notebookModel }:
 
     return <div>
         {editMode ?
-            <CellEditor cell={cell} editorProvider={editorProvider} notebookModel={notebookModel} /> :
+            <CellEditor cell={cell} notebookModel={notebookModel} textModelService={textModelService} monacoServices={monacoServices}/> :
             <div
                 // This sets the non React HTML node from the markdownrenders output as a child node to this react component
                 // This is currently sadly the best way we have to combine React (Virtual Nodes) and normal dom nodes

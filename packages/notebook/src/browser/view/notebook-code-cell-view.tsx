@@ -16,7 +16,8 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
+import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
+import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
 import { CellEditor } from './notebook-cell-editor';
@@ -24,13 +25,14 @@ import { Cellrenderer } from './notebook-cell-list-view';
 
 @injectable()
 export class NotebookCodeCellRenderer implements Cellrenderer {
-
-    @inject(MonacoEditorProvider)
-    private editorProvider: MonacoEditorProvider;
+    @inject(MonacoTextModelService)
+    protected readonly textModelService: MonacoTextModelService;
+    @inject(MonacoEditorServices)
+    protected readonly monacoServices: MonacoEditorServices;
 
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
-            <CellEditor notebookModel={notebookModel} editorProvider={this.editorProvider} cell={cell} />
+            <CellEditor notebookModel={notebookModel} cell={cell} monacoServices={this.monacoServices} textModelService={this.textModelService}/>
             {/* {cell.outputs && cell.outputs.flatMap(output => output.outputs.map(item => <div>{new TextDecoder().decode(item.data.buffer)}</div>))} */}
         </div >;
     }

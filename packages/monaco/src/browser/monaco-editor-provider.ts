@@ -235,7 +235,7 @@ export class MonacoEditorProvider {
     protected get preferencePrefixes(): string[] {
         return ['editor.'];
     }
-    protected async createMonacoEditor(uri: URI, override: EditorServiceOverrides, toDispose: DisposableCollection): Promise<MonacoEditor> {
+    async createMonacoEditor(uri: URI, override: EditorServiceOverrides, toDispose: DisposableCollection): Promise<MonacoEditor> {
         const model = await this.getModel(uri, toDispose);
         const options = this.createMonacoEditorOptions(model);
         const factory = this.factories.getContributions().find(({ scheme }) => uri.scheme === scheme);
@@ -398,13 +398,11 @@ export class MonacoEditorProvider {
         return MonacoDiffNavigatorFactory.nullNavigator;
     }
 
-    async createInline(uri: URI, node: HTMLElement, options?: MonacoEditor.IOptions, resolveModel = false): Promise<MonacoEditor> {
+    async createInline(uri: URI, node: HTMLElement, options?: MonacoEditor.IOptions): Promise<MonacoEditor> {
         return this.doCreateEditor(uri, async (override, toDispose) => {
             const overrides = override ? Array.from(override) : [];
             overrides.push([IContextMenuService, { showContextMenu: () => {/** no op! */ } }]);
-            const document = resolveModel
-                ? await this.getModel(uri, toDispose)
-                : new MonacoEditorModel({
+            const document = new MonacoEditorModel({
                     uri,
                     readContents: async () => '',
                     dispose: () => { }
