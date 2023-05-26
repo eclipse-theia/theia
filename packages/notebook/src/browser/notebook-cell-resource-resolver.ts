@@ -16,8 +16,9 @@
 
 import { Emitter, Resource, ResourceReadOptions, ResourceResolver, ResourceVersion, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CellData, CellUri } from '../common';
+import { CellUri } from '../common';
 import { NotebookService } from './service/notebook-service';
+import { NotebookCellModel } from './view-model/notebook-cell-model';
 
 export class NotebookCellResource implements Resource {
 
@@ -28,9 +29,9 @@ export class NotebookCellResource implements Resource {
     encoding?: string | undefined;
     isReadonly?: boolean | undefined;
 
-    private cell: CellData;
+    private cell: NotebookCellModel;
 
-    constructor(public uri: URI, cell: CellData) {
+    constructor(public uri: URI, cell: NotebookCellModel) {
         this.cell = cell;
     }
 

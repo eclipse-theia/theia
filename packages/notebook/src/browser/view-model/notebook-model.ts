@@ -17,7 +17,7 @@
 import { Disposable, URI } from '@theia/core';
 import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 import { Saveable, SaveOptions } from '@theia/core/lib/browser';
-import { CellData, CellUri, NotebookCellsChangeType, NotebookCellTextModelSplice, NotebookData, NotebookModelWillAddRemoveEvent } from '../../common';
+import { CellUri, NotebookCellsChangeType, NotebookCellTextModelSplice, NotebookData, NotebookModelWillAddRemoveEvent } from '../../common';
 import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from './notebook-cell-model';
@@ -152,14 +152,14 @@ export class NotebookModel implements Saveable, Disposable {
     }
 
     insertNewCell(index: number, cells: NotebookCellModel[]): void {
-        const changes: NotebookCellTextModelSplice<CellData>[] = [[index, 0, cells]];
+        const changes: NotebookCellTextModelSplice<NotebookCellModel>[] = [[index, 0, cells]];
         this.cells.splice(index, 0, ...cells);
         this.didAddRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes } });
         return;
     }
 
     removeCell(index: number, count: number): void {
-        const changes: NotebookCellTextModelSplice<CellData>[] = [[index, count, []]];
+        const changes: NotebookCellTextModelSplice<NotebookCellModel>[] = [[index, count, []]];
         this.cells.splice(index, count);
         this.didAddRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes } });
     }

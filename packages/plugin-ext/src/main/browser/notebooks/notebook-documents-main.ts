@@ -16,6 +16,7 @@
 
 import { DisposableCollection } from '@theia/core';
 import { URI, UriComponents } from '@theia/core/lib/common/uri';
+import { interfaces } from '@theia/core/shared/inversify';
 import { ResourceMap } from '@theia/monaco-editor-core/esm/vs/base/common/map';
 import { NotebookModelResolverService } from '@theia/notebook/lib/browser';
 import { MAIN_RPC_CONTEXT, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain } from '../../../common';
@@ -28,12 +29,14 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
     private readonly proxy: NotebookDocumentsExt;
     private readonly documentEventListenersMapping = new ResourceMap<DisposableCollection>();
 
+    private readonly notebookModelResolverService: NotebookModelResolverService;
+
     constructor(
         rpc: RPCProtocol,
-        private readonly notebookModelResolverService: NotebookModelResolverService,
-        // private readonly notebookService: NotebookService
+        container: interfaces.Container
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT);
+        this.notebookModelResolverService = container.get(NotebookModelResolverService);
 
         // forward dirty and save events
         this.disposables.push(this.notebookModelResolverService.onDidChangeDirty(model => this.proxy.$acceptDirtyStateChanged(model.uri.toComponents(), model.isDirty())));

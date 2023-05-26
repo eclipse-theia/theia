@@ -13,6 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 
 import { NotebookRenderersExt, NotebookRenderersMain, PLUGIN_RPC_CONTEXT } from '../../common';
 import { RPCProtocol } from '../../common/rpc-protocol';
@@ -39,9 +43,6 @@ export class NotebookRenderersExtImpl implements NotebookRenderersExt {
         const messaging: theia.NotebookRendererMessaging = {
             onDidReceiveMessage: (listener, thisArg, disposables) => this.getOrCreateEmitterFor(rendererId).event(listener, thisArg, disposables),
             postMessage: (message, editorOrAlias) => {
-                if (NotebookEditorExtImpl.apiEditorsToExtHost.has(message)) { // back compat for swapped args
-                    [message, editorOrAlias] = [editorOrAlias, message];
-                }
 
                 const extHostEditor = editorOrAlias && NotebookEditorExtImpl.apiEditorsToExtHost.get(editorOrAlias);
                 return this.proxy.$postMessage(extHostEditor?.id, rendererId, message);

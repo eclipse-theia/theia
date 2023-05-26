@@ -18,8 +18,7 @@ import { Disposable, Emitter, Event, URI } from '@theia/core';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import {
-    CellData,
-    CellInternalMetadataChangedEvent, CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata, NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput
+    CellInternalMetadataChangedEvent, CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata, NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput, CellData
 } from '../../common';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
 
@@ -49,7 +48,7 @@ export interface NotebookCellModelProps {
 }
 
 @injectable()
-export class NotebookCellModel implements Disposable, CellData {
+export class NotebookCellModel implements Disposable {
 
     private readonly ChangeOutputsEmitter = new Emitter<NotebookCellOutputsSplice>();
     readonly onDidChangeOutputs: Event<NotebookCellOutputsSplice> = this.ChangeOutputsEmitter.event;

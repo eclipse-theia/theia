@@ -82,6 +82,6 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
 
     selectorMatches(selector: NotebookFileSelector, resource: URI): boolean {
         return !!selector.filenamePattern
-            && match(selector.filenamePattern.toLowerCase(), resource.path.name.toLowerCase() + resource.path.ext.toLowerCase());
+            && match(selector.filenamePattern, resource.path.name + resource.path.ext);
     }
 }
