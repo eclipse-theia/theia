@@ -64,6 +64,8 @@ import { NotebookService } from '@theia/notebook/lib/browser';
 import { LocalizationMainImpl } from './localization-main';
 import { NotebookRenderersMainImpl } from './notebooks/notebook-renderers-main';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
+import { NotebookEditorsMainImpl } from './notebooks/notebook-editors-main';
+import { NotebookDocumentsMainImpl } from './notebooks/notebook-documents-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -102,6 +104,8 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const pluginSupport = container.get(HostedPluginSupport);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, new NotebooksMainImpl(rpc, notebookService, pluginSupport));
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_MAIN, new NotebookRenderersMainImpl(rpc));
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN, new NotebookEditorsMainImpl(rpc));
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN, new NotebookDocumentsMainImpl(rpc, container));
 
     const bulkEditService = container.get(MonacoBulkEditService);
     const monacoEditorService = container.get(MonacoEditorService);

@@ -2102,6 +2102,7 @@ export const PLUGIN_RPC_CONTEXT = {
     DOCUMENTS_MAIN: createProxyIdentifier<DocumentsMain>('DocumentsMain'),
     NOTEBOOKS_MAIN: createProxyIdentifier<NotebooksMain>('NotebooksMain'),
     NOTEBOOK_DOCUMENTS_MAIN: createProxyIdentifier<NotebookDocumentsMain>('NotebookDocumentsMain'),
+    NOTEBOOK_EDITORS_MAIN: createProxyIdentifier<NotebookEditorsMain>('NotebookEditorsMain'),
     NOTEBOOK_RENDERERS_MAIN: createProxyIdentifier<NotebookRenderersMain>('NotebookRenderersMain'),
     STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain'),
     ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain'),
@@ -2326,6 +2327,20 @@ export interface NotebookEditorPropertiesChangeData {
     selections?: NotebookSelectionChangeEvent;
 }
 
+export enum NotebookEditorRevealType {
+    Default = 0,
+    InCenter = 1,
+    InCenterIfOutsideViewport = 2,
+    AtTop = 3
+}
+
+export interface NotebookDocumentShowOptions {
+    position?: EditorGroupColumn;
+    preserveFocus?: boolean;
+    pinned?: boolean;
+    selections?: CellRange[];
+}
+
 export interface NotebooksExt extends NotebookDocumentsAndEditorsExt {
     $provideNotebookCellStatusBarItems(handle: number, uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarListDto | undefined>;
     $releaseNotebookCellStatusBarItems(id: number): void;
@@ -2364,6 +2379,12 @@ export type NotebookEditorViewColumnInfo = Record<string, number>;
 export interface NotebookEditorsExt {
     $acceptEditorPropertiesChanged(id: string, data: NotebookEditorPropertiesChangeData): void;
     $acceptEditorViewColumns(data: NotebookEditorViewColumnInfo): void;
+}
+
+export interface NotebookEditorsMain {
+    $tryShowNotebookDocument(uriComponents: UriComponents, viewType: string, options: NotebookDocumentShowOptions): Promise<string>;
+    $tryRevealRange(id: string, range: CellRange, revealType: NotebookEditorRevealType): Promise<void>;
+    $trySetSelections(id: string, range: CellRange[]): void;
 }
 export interface NotebookRenderersExt {
     $postRendererMessage(editorId: string, rendererId: string, message: unknown): void;
