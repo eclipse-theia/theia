@@ -199,17 +199,18 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     }
 
     protected appendCloseButton(text: string = Dialog.CANCEL): HTMLButtonElement {
-        this.closeButton = this.createButton(text);
-        this.controlPanel.appendChild(this.closeButton);
-        this.closeButton.classList.add('secondary');
-        return this.closeButton;
+        return this.closeButton = this.appendButton(text, false);
     }
 
     protected appendAcceptButton(text: string = Dialog.OK): HTMLButtonElement {
-        this.acceptButton = this.createButton(text);
-        this.controlPanel.appendChild(this.acceptButton);
-        this.acceptButton.classList.add('main');
-        return this.acceptButton;
+        return this.acceptButton = this.appendButton(text, true);
+    }
+
+    protected appendButton(text: string, primary: boolean): HTMLButtonElement {
+        const button = this.createButton(text);
+        this.controlPanel.appendChild(button);
+        button.classList.add(primary ? 'main' : 'secondary');
+        return button;
     }
 
     protected createButton(text: string): HTMLButtonElement {
@@ -409,19 +410,11 @@ export class ConfirmSaveDialogProps extends MessageDialogProps {
     readonly cancel: string;
     readonly dontSave: string;
     readonly save: string;
-    performSave: () => Promise<void>;
-}
-
-// Possible results of the ConfirmSaveDialog
-export enum ConfirmSaveResults {
-    Cancel,
-    DontSave,
-    Save
 }
 
 // Dialog prompting the user to confirm whether they wish to save changes or not
-export class ConfirmSaveDialog extends AbstractDialog<ConfirmSaveResults> {
-    protected result: ConfirmSaveResults = ConfirmSaveResults.Cancel;
+export class ConfirmSaveDialog extends AbstractDialog<boolean | undefined> {
+    protected result?: boolean = false;
 
     constructor(
         @inject(ConfirmSaveDialogProps) protected override readonly props: ConfirmSaveDialogProps
@@ -429,12 +422,12 @@ export class ConfirmSaveDialog extends AbstractDialog<ConfirmSaveResults> {
         super(props);
         // Append message and buttons to the dialog
         this.contentNode.appendChild(this.createMessageNode(this.props.msg));
-        this.appendButtonAndSetResult(props.cancel, 'secondary', ConfirmSaveResults.Cancel);
-        this.appendButtonAndSetResult(props.dontSave, 'secondary', ConfirmSaveResults.DontSave);
-        this.appendButtonAndSetResult(props.save, 'main', ConfirmSaveResults.Save);
+        this.closeButton = this.appendButtonAndSetResult(props.cancel, false);
+        this.appendButtonAndSetResult(props.dontSave, false, false);
+        this.acceptButton = this.appendButtonAndSetResult(props.save, true, true);
     }
 
-    get value(): ConfirmSaveResults {
+    get value(): boolean | undefined {
         return this.result;
     }
 
@@ -447,28 +440,13 @@ export class ConfirmSaveDialog extends AbstractDialog<ConfirmSaveResults> {
         return msg;
     }
 
-    protected appendButton(text: string, className: string = 'secondary'): HTMLButtonElement {
-        const button = this.createButton(text);
-        this.controlPanel.appendChild(button);
-        button.classList.add(className);
-        return button;
-    }
-
-    protected appendButtonAndSetResult(text: string, className: string = 'secondary', result: ConfirmSaveResults): void {
-        const button = this.appendButton(text, className);
+    protected appendButtonAndSetResult(text: string, primary: boolean, result?: boolean): HTMLButtonElement {
+        const button = this.appendButton(text, primary);
         button.addEventListener('click', () => {
             this.result = result;
             this.accept();
         });
-    }
-
-    // Focuses on the 'save' button
-    protected override onActivateRequest(msg: Message): void {
-        super.onActivateRequest(msg);
-        const saveButton = this.controlPanel.querySelector('.main');
-        if (saveButton instanceof HTMLElement) {
-            saveButton.focus();
-        }
+        return button;
     }
 
 }
@@ -494,21 +472,13 @@ export async function confirmExitWithOrWithoutSaving(captionsToSave: string[], p
             msg: div,
             dontSave: nls.localizeByDefault("Don't Save"),
             save: nls.localizeByDefault('Save All'),
-            cancel: Dialog.CANCEL,
-            performSave: performSave
+            cancel: Dialog.CANCEL
         }).open();
 
-        switch (result) {
-            case ConfirmSaveResults.Save:
-                await performSave();
-                return true;
-            case ConfirmSaveResults.DontSave:
-                return true;
-            case ConfirmSaveResults.Cancel:
-                return false;
-            default:
-                return false;
+        if (result) {
+            await performSave();
         }
+        return result !== undefined;
     } else {
         // fallback if not passed with an empty caption-list.
         return confirmExit();
