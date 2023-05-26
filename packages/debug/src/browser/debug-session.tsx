@@ -870,8 +870,8 @@ export class DebugSession implements CompositeTreeElement {
             <span className='label'>{this.label + label}</span>
             <span className='status'>
                     {this.state === DebugState.Stopped
-                        ? nls.localize('theia/debug/paused', 'Paused')
-                        : nls.localize('theia/debug/running', 'Running')}
+                        ? nls.localizeByDefault('Paused')
+                        : nls.localizeByDefault('Running')}
                 </span>
         </div>;
     }
