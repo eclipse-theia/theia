@@ -54,7 +54,11 @@ export class DirtyDiffManager {
     protected readonly preferences: GitPreferences;
 
     @postConstruct()
-    protected async initialize(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.editorManager.onCreated(async e => this.handleEditorCreated(e));
         this.repositoryTracker.onGitEvent(throttle(async (event: GitStatusChangeEvent | undefined) =>
             this.handleGitStatusUpdate(event && event.source, event && event.status), 500));

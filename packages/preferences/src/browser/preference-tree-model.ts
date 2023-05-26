@@ -97,7 +97,11 @@ export class PreferenceTreeModel extends TreeModelImpl {
     }
 
     @postConstruct()
-    protected override async init(): Promise<void> {
+    protected override init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         super.init();
         this.toDispose.pushAll([
             this.treeGenerator.onSchemaChanged(newTree => this.handleNewSchema(newTree)),

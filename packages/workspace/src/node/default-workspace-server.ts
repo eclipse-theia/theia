@@ -101,7 +101,11 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
     protected readonly utils: CommonWorkspaceUtils;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const root = await this.getRoot();
         this.root.resolve(root);
     }

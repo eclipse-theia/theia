@@ -71,7 +71,11 @@ export abstract class Transaction<Arguments extends unknown[], Result = unknown,
     protected inUse = false;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const release = await this.queue.acquire();
         try {
             const status = await this.setUp();
@@ -176,22 +180,22 @@ export interface PreferenceContext {
     getScope(): PreferenceScope;
 }
 export const PreferenceContext = Symbol('PreferenceContext');
-export const PreferenceTransactionPrelude = Symbol('PreferenceTransactionPrelude');
+export const PreferenceTransactionPreludeProvider = Symbol('PreferenceTransactionPreludeProvider');
+export type PreferenceTransactionPreludeProvider = () => Promise<unknown>;
 
 @injectable()
 export class PreferenceTransaction extends Transaction<[string, string[], unknown], boolean> {
     reference: IReference<MonacoEditorModel> | undefined;
     @inject(PreferenceContext) protected readonly context: PreferenceContext;
-    @inject(PreferenceTransactionPrelude) protected readonly prelude?: Promise<unknown>;
+    @inject(PreferenceTransactionPreludeProvider) protected readonly prelude?: PreferenceTransactionPreludeProvider;
     @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService;
     @inject(MonacoJSONCEditor) protected readonly jsoncEditor: MonacoJSONCEditor;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
 
-    @postConstruct()
-    protected override init(): Promise<void> {
-        this.waitFor(this.prelude);
-        return super.init();
+    protected override async doInit(): Promise<void> {
+        this.waitFor(this.prelude?.());
+        await super.doInit();
     }
 
     protected async setUp(): Promise<boolean> {
@@ -278,6 +282,6 @@ export const preferenceTransactionFactoryCreator: interfaces.FactoryCreator<Pref
     (context: PreferenceContext, waitFor?: Promise<unknown>) => {
         const child = container.createChild();
         child.bind(PreferenceContext).toConstantValue(context);
-        child.bind(PreferenceTransactionPrelude).toConstantValue(waitFor);
+        child.bind(PreferenceTransactionPreludeProvider).toConstantValue(() => waitFor);
         return child.get(PreferenceTransaction);
     };

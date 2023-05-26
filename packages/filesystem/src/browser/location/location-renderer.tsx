@@ -112,7 +112,11 @@ export class LocationListRenderer extends ReactRenderer {
     }
 
     @postConstruct()
-    async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const homeDirWithPrefix = await this.variablesServer.getHomeDirUri();
         this.homeDir = (new URI(homeDirWithPrefix)).path.toString();
     }

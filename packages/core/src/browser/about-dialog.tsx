@@ -55,7 +55,11 @@ export class AboutDialog extends ReactDialog<void> {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.applicationInfo = await this.appServer.getApplicationInfo();
         this.extensionsInfos = await this.appServer.getExtensionsInfos();
         this.update();

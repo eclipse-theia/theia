@@ -113,7 +113,11 @@ export class MemoryTableWidget extends ReactWidget {
     protected deferredScrollContainer = new Deferred<HTMLDivElement>();
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.id = MemoryTableWidget.ID;
         this.addClass(MemoryTableWidget.ID);
         this.scrollOptions = { ...this.scrollOptions, suppressScrollX: false };

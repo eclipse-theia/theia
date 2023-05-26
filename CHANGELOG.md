@@ -4,6 +4,15 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.39.0 - 06/29/2023
+
+<a name="breaking_changes_1.39.0">[Breaking Changes:](#breaking_changes_1.39.0)</a>
+
+- [repo] with the upgrade to Inversify 6.0, a few initialization methods were adjusted. See also [this migration guide entry](https://github.com/eclipse-theia/theia/blob/master/doc/Migration.md#inversify-60). Additionally, other changes include: [#12425](https://github.com/eclipse-theia/theia/pull/12425)
+  - The type expected by the `PreferenceProxySchema` symbol has been changed from `PromiseLike<PreferenceSchema>` to `() => PromiseLike<PreferenceSchema>`
+  - The symbol `OnigasmPromise` has been changed to `OnigasmProvider` and injects a function of type `() => Promise<IOnigLib>`
+  - The symbol `PreferenceTransactionPrelude` has been changed to `PreferenceTransactionPreludeProvider ` and injects a function of type `() => Promise<unknown>`
+
 ## v1.38.0 - 05/25/2023
 
 - [application-manager] fixed regression preventing browser-only builds from succeeding [#12491](https://github.com/eclipse-theia/theia/pull/12491)

@@ -38,7 +38,11 @@ export class UserConfigsPreferenceProvider extends PreferenceProvider {
     protected readonly providers = new Map<string, UserPreferenceProvider>();
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.createProviders();
 
         const readyPromises: Promise<void>[] = [];

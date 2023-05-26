@@ -51,7 +51,11 @@ export class ToolbarImpl extends TabBarToolbar {
     protected isBusyDeferred = new Deferred<void>();
 
     @postConstruct()
-    async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.hide();
         await this.model.ready.promise;
 

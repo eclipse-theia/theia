@@ -34,7 +34,7 @@ export class PluginApiContribution implements BackendApplicationContribution, Ws
     protected serveSameOrigin: boolean = false;
 
     @postConstruct()
-    protected postConstruct(): void {
+    protected init(): void {
         const webviewExternalEndpoint = this.webviewExternalEndpoint();
         console.log(`Configuring to accept webviews on '${webviewExternalEndpoint}' hostname.`);
         this.webviewExternalEndpointRegExp = new RegExp(webviewExternalEndpoint, 'i');

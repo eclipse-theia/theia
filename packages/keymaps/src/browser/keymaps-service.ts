@@ -60,7 +60,11 @@ export class KeymapsService {
      * Initialize the keybinding service.
      */
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const reference = await this.textModelService.createModelReference(UserStorageUri.resolve('keymaps.json'));
         this.model = reference.object;
         this.deferredModel.resolve(this.model);

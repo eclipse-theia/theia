@@ -38,7 +38,7 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
     protected readonly toDisposeOnEnsureDelegateUpToDate = new DisposableCollection();
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
         this.workspaceService.ready.then(() => {
             // If there is no workspace after the workspace service is initialized, then no more work is needed for this provider to be ready.
             // If there is a workspace, then we wait for the new delegate to be ready before declaring this provider ready.

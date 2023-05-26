@@ -95,7 +95,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const wsUriString = await this.getDefaultWorkspaceUri();
         const wsStat = await this.toFileStat(wsUriString);
         await this.setWorkspace(wsStat);

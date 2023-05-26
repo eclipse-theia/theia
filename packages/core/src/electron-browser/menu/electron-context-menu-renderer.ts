@@ -90,7 +90,11 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.useNativeStyle = await window.electronTheiaCore.getTitleBarStyleAtStartup() === 'native';
     }
 

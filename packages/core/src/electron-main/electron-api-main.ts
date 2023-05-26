@@ -64,7 +64,9 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
 
     onStart(application: ElectronMainApplication): MaybePromise<void> {
         // electron security token
-        ipcMain.handle(CHANNEL_GET_SECURITY_TOKEN, () => this.electronSecurityToken.value);
+        ipcMain.on(CHANNEL_GET_SECURITY_TOKEN, event => {
+            event.returnValue = this.electronSecurityToken.value;
+        });
 
         ipcMain.handle(CHANNEL_ATTACH_SECURITY_TOKEN, (event, endpoint) => session.defaultSession.cookies.set({
             url: endpoint,

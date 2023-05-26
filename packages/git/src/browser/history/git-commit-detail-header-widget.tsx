@@ -48,7 +48,11 @@ export class GitCommitDetailHeaderWidget extends ReactWidget {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.authorAvatar = await this.avatarService.getAvatar(this.commitDetailOptions.authorEmail);
     }
 

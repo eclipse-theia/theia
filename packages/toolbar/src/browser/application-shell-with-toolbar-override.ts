@@ -34,7 +34,11 @@ export class ApplicationShellWithToolbarOverride extends ApplicationShell {
     protected toolbar: Toolbar;
 
     @postConstruct()
-    protected override async init(): Promise<void> {
+    protected override init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.toolbar = this.toolbarFactory();
         this.toolbar.id = 'main-toolbar';
         super.init();

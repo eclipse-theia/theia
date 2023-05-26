@@ -48,7 +48,7 @@ export class InjectablePreferenceProxy<T extends Record<string, JSONValue>> impl
 
     @inject(PreferenceProxyOptions) protected readonly options: PreferenceProxyOptions;
     @inject(PreferenceService) protected readonly preferences: PreferenceService;
-    @inject(PreferenceProxySchema) protected readonly promisedSchema: PreferenceSchema | Promise<PreferenceSchema>;
+    @inject(PreferenceProxySchema) protected readonly promisedSchema: () => PreferenceSchema | Promise<PreferenceSchema>;
     @inject(PreferenceProxyFactory) protected readonly factory: PreferenceProxyFactory;
     protected toDispose = new DisposableCollection();
     protected _onPreferenceChangedEmitter: Emitter<PreferenceChangeEvent<T>> | undefined;
@@ -95,10 +95,11 @@ export class InjectablePreferenceProxy<T extends Record<string, JSONValue>> impl
 
     @postConstruct()
     protected init(): void {
-        if (this.promisedSchema instanceof Promise) {
-            this.promisedSchema.then(schema => this.schema = schema);
+        const schema = this.promisedSchema();
+        if (schema instanceof Promise) {
+            schema.then(resolvedSchema => this.schema = resolvedSchema);
         } else {
-            this.schema = this.promisedSchema;
+            this.schema = schema;
         }
     }
 

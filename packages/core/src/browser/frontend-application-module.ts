@@ -121,7 +121,7 @@ import {
     BreadcrumbsService,
     DefaultBreadcrumbRenderer,
 } from './breadcrumbs';
-import { RendererHost } from './widgets';
+import { DockPanel, RendererHost } from './widgets';
 import { TooltipService, TooltipServiceImpl } from './tooltip-service';
 import { BackendRequestService, RequestService, REQUEST_SERVICE_PATH } from '@theia/request';
 import { bindFrontendStopwatch, bindBackendStopwatch } from './performance';
@@ -190,7 +190,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         const hoverService = container.get(HoverService);
         return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService, commandService, corePreferences, hoverService);
     });
-    bind(TheiaDockPanel.Factory).toFactory(({ container }) => options => {
+    bind(TheiaDockPanel.Factory).toFactory(({ container }) => (options?: DockPanel.IOptions) => {
         const corePreferences = container.get<CorePreferences>(CorePreferences);
         return new TheiaDockPanel(options, corePreferences);
     });

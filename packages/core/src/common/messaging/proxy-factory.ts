@@ -241,6 +241,10 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
         if (p === 'onDidCloseConnection') {
             return this.onDidCloseConnectionEmitter.event;
         }
+        if (p === 'then') {
+            // Prevent inversify from identifying this proxy as a promise object.
+            return undefined;
+        }
         const isNotify = this.isNotification(p);
         return (...args: any[]) => {
             const method = p.toString();

@@ -59,7 +59,11 @@ export class DebugExceptionWidget implements Disposable {
     protected readonly toDispose = new DisposableCollection();
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.toDispose.push(this.zone = new DebugExceptionMonacoEditorZoneWidget(this.editor.getControl()));
         this.zone.containerNode.classList.add('theia-debug-exception-widget');
         this.containerNodeRoot = createRoot(this.zone.containerNode);

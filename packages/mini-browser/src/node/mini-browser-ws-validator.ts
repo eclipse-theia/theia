@@ -31,7 +31,7 @@ export class MiniBrowserWsRequestValidator implements WsRequestValidatorContribu
     protected serveSameOrigin: boolean = false;
 
     @postConstruct()
-    protected postConstruct(): void {
+    protected init(): void {
         const pattern = process.env[MiniBrowserEndpoint.HOST_PATTERN_ENV] || MiniBrowserEndpoint.HOST_PATTERN_DEFAULT;
         if (pattern === '{{hostname}}') {
             this.serveSameOrigin = true;

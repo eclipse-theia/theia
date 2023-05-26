@@ -71,7 +71,7 @@ const api: TheiaCoreAPI = {
         commandHandlers.set(mainMenuId, handlers);
         ipcRenderer.send(CHANNEL_SET_MENU, mainMenuId, convertMenu(menu, handlers));
     },
-    getSecurityToken: () => ipcRenderer.invoke(CHANNEL_GET_SECURITY_TOKEN),
+    getSecurityToken: () => ipcRenderer.sendSync(CHANNEL_GET_SECURITY_TOKEN),
     focusWindow: (name: string) => ipcRenderer.send(CHANNEL_FOCUS_WINDOW, name),
     showItemInFolder: fsPath => {
         ipcRenderer.send(CHANNEL_SHOW_ITEM_IN_FOLDER, fsPath);

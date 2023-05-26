@@ -41,7 +41,11 @@ export class FileNavigatorFilter {
     ) { }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.filterPredicate = this.createFilterPredicate(this.filesPreferences['files.exclude']);
         this.filesPreferences.onPreferenceChanged(event => this.onFilesPreferenceChanged(event));
         this.preferences.onPreferenceChanged(event => this.onPreferenceChanged(event));

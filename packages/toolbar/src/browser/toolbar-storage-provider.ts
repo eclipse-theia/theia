@@ -68,7 +68,11 @@ export class ToolbarStorageProvider implements Disposable {
     toolbarItems: DeflatedToolbarTree | undefined;
 
     @postConstruct()
-    async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const reference = await this.textModelService.createModelReference(this.USER_TOOLBAR_URI);
         this.model = reference.object;
         this.toDispose.push(reference);

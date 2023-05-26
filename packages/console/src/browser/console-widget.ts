@@ -83,7 +83,11 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const { id, title, inputFocusContextKey } = this.options;
         const { label, iconClass, caption } = Object.assign({}, title);
         this.id = id;

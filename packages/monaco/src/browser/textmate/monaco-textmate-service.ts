@@ -31,7 +31,7 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import { TokenizationSupportAdapter } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneLanguages';
 import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
-import { OnigasmPromise, TextmateRegistryFactory } from './monaco-theme-types';
+import { OnigasmProvider, TextmateRegistryFactory } from './monaco-theme-types';
 
 @injectable()
 export class MonacoTextmateService implements FrontendApplicationContribution {
@@ -53,8 +53,8 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    @inject(OnigasmPromise)
-    protected readonly onigasmPromise: OnigasmPromise;
+    @inject(OnigasmProvider)
+    protected readonly onigasmProvider: OnigasmProvider;
 
     @inject(ThemeService)
     protected readonly themeService: ThemeService;
@@ -151,7 +151,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         const configuration = this.textmateRegistry.getGrammarConfiguration(languageId);
         const initialLanguage = getEncodedLanguageId(languageId);
 
-        await this.onigasmPromise;
+        await this.onigasmProvider();
         if (toDispose.disposed) {
             return;
         }

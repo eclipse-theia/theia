@@ -44,6 +44,48 @@ For example:
 }
 ```
 
+### v1.38.0
+
+#### Inversify 6.0
+
+With Inversify 6, the library has introduced a strict split between sync and async dependency injection contexts.
+Theia uses the sync dependency injection context, and therefore no async dependencies cannot be used as dependencies in Theia.
+
+This might require a few changes in your Theia extensions, if you've been using async dependencies before. These include:
+1. Injecting promises directly into services
+2. Classes with `@postConstruct` methods which return a `Promise` instance.
+
+In order to work around 1., you can just wrap the promise inside of a function:
+
+```diff
+const PromiseSymbol = Symbol();
+const promise = startLongRunningOperation();
+
+-bind(PromiseSymbol).toConstantValue(promise);
++bind(PromiseSymbol).toConstantValue(() => promise);
+```
+
+The newly bound function needs to be handled appropriately at the injection side.
+
+For 2., `@postConstruct` methods can be refactored into a sync and an async method:
+
+```diff
+-@postConstruct()
+-protected async init(): Promise<void> {
+-  await longRunningOperation(); 
+-}
++@postConstruct()
++protected init(): void {
++  this.doInit();   
++}
++
++protected async doInit(): Promise<void> {
++  await longRunningOperation();    
++}
+```
+
+Note that this release includes a few breaking changes that also perform this refactoring on our own classes.
+If you've been overriding some of these `init()` methods, it might make sense to override `doInit()` instead.
 
 ### v1.37.0
 

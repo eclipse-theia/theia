@@ -129,7 +129,11 @@ export class HostedPluginManagerClient {
     protected readonly fileDialogService: FileDialogService;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.openNewTabAskDialog = new OpenHostedInstanceLinkDialog(this.windowService);
 
         // is needed for case when page is loaded when hosted instance is already running.
