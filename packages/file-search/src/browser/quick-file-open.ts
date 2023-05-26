@@ -168,7 +168,10 @@ export class QuickFileOpenService implements QuickAccessProvider {
 
             if (location.uri.scheme === 'file' && !alreadyCollected.has(uriString) && fuzzy.test(fileFilter, uriString)) {
                 if (recentlyUsedItems.length === 0) {
-                    recentlyUsedItems.push({ type: 'separator', label: 'recently opened' });
+                    recentlyUsedItems.push({
+                        type: 'separator',
+                        label: nls.localize('theia/file-search/recentlyOpened', 'recently opened')
+                    });
                 }
                 const item = this.toItem(fileFilter, location.uri);
                 recentlyUsedItems.push(item);
@@ -198,7 +201,10 @@ export class QuickFileOpenService implements QuickAccessProvider {
                 sortedResults.sort((a, b) => this.compareItems(a, b));
 
                 if (sortedResults.length > 0) {
-                    result.push({ type: 'separator', label: 'file results' });
+                    result.push({
+                        type: 'separator',
+                        label: nls.localize('theia/file-search/fileResults', 'file results')
+                    });
                     result.push(...sortedResults);
                 }
 
