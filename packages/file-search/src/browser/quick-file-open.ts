@@ -170,7 +170,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
                 if (recentlyUsedItems.length === 0) {
                     recentlyUsedItems.push({
                         type: 'separator',
-                        label: nls.localize('theia/file-search/recentlyOpened', 'recently opened')
+                        label: nls.localizeByDefault('recently opened')
                     });
                 }
                 const item = this.toItem(fileFilter, location.uri);
@@ -203,7 +203,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
                 if (sortedResults.length > 0) {
                     result.push({
                         type: 'separator',
-                        label: nls.localize('theia/file-search/fileResults', 'file results')
+                        label: nls.localizeByDefault('file results')
                     });
                     result.push(...sortedResults);
                 }
