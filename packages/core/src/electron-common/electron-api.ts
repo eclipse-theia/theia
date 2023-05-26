@@ -41,7 +41,7 @@ export type InternalMenuDto = Omit<MenuDto, 'execute' | 'submenu'> & {
 export type WindowEvent = 'maximize' | 'unmaximize' | 'focus';
 
 export interface TheiaCoreAPI {
-    getSecurityToken: () => Promise<string>;
+    getSecurityToken: () => string;
     attachSecurityToken: (endpoint: string) => Promise<void>;
 
     setMenuBarVisible(visible: boolean, windowName?: string): void;
