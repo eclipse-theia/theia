@@ -861,6 +861,7 @@ export class DebugSession implements CompositeTreeElement {
 
     render(): React.ReactNode {
         let label = '';
+        const state = this.state === DebugState.Stopped ? nls.localizeByDefault('Paused') : nls.localizeByDefault('Running');
         const child = this.getSingleChildSession();
         if (child && child.configuration.compact) {
             // Inlines the name of the child debug session
@@ -868,11 +869,7 @@ export class DebugSession implements CompositeTreeElement {
         }
         return <div className='theia-debug-session' title='Session'>
             <span className='label'>{this.label + label}</span>
-            <span className='status'>
-                    {this.state === DebugState.Stopped
-                        ? nls.localizeByDefault('Paused')
-                        : nls.localizeByDefault('Running')}
-                </span>
+            <span className='status'>{state}</span>
         </div>;
     }
 
