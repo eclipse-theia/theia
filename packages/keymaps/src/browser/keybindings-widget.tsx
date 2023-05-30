@@ -640,7 +640,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             const binding = { command, keybinding };
             KeySequence.parse(keybinding);
             if (oldKeybinding === keybinding) {
-                return ' '; // if old and new keybindings match, quietly reject update
+                return ''; // if old and new keybindings match, quietly reject update
             }
             if (this.keybindingRegistry.containsKeybindingInScope(binding)) {
                 return nls.localize('theia/keymaps/keybindingCollidesValidation', 'keybinding currently collides');
