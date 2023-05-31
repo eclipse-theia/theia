@@ -362,7 +362,7 @@
     margin: 0;
 }
 
-.dialogControl .error:not(:empty),
+.dialogContent .error:not(:empty),
 .theia-settings-container .pref-content-container .pref-input .pref-input-container .pref-error-notification {
     border-style: solid;
     border-color: var(--theia-inputValidation-errorBorder);
