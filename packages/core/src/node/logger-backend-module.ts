@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ContainerModule, Container, interfaces } from 'inversify';
@@ -54,11 +54,11 @@ export function bindLogger(bind: interfaces.Bind, props?: {
  */
 export const loggerBackendModule = new ContainerModule(bind => {
     bind(BackendApplicationContribution).toDynamicValue(ctx =>
-        ({
-            initialize(): void {
-                setRootLogger(ctx.container.get<ILogger>(ILogger));
-            }
-        }));
+    ({
+        initialize(): void {
+            setRootLogger(ctx.container.get<ILogger>(ILogger));
+        }
+    }));
 
     bind(DispatchingLoggerClient).toSelf().inSingletonScope();
     bindLogger(bind, {

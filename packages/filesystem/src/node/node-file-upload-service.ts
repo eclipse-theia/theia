@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import multer = require('multer');
@@ -67,7 +67,7 @@ export class NodeFileUploadService implements BackendApplicationContribution {
             if (!fields.leaveInTemp) {
                 await fs.move(request.file.path, target, { overwrite: true });
             } else {
-                 // leave the file where it is, just rename it to its original name
+                // leave the file where it is, just rename it to its original name
                 fs.rename(request.file.path, request.file.path.replace(request.file.filename, request.file.originalname));
             }
             response.status(200).send(target); // ok

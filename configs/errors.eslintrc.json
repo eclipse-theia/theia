@@ -105,7 +105,7 @@
             true,
             {
               "allow-single-line-comments": true,
-              "match": "SPDX-License-Identifier: EPL-2\\.0 OR GPL-2\\.0 WITH Classpath-exception-2\\.0"
+              "match": "SPDX-License-Identifier: EPL-2\\.0 OR GPL-2\\.0-only WITH Classpath-exception-2\\.0"
             }
           ],
           "jsdoc-format": [

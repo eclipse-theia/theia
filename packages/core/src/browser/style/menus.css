@@ -11,13 +11,12 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 /*-----------------------------------------------------------------------------
 | Variables
 |----------------------------------------------------------------------------*/
-
 
 :root {
   --theia-private-menubar-height: 32px;
@@ -25,22 +24,18 @@
   --theia-menu-z-index: 10000;
 }
 
-
 /*-----------------------------------------------------------------------------
 | MenuBar
 |----------------------------------------------------------------------------*/
-
 
 .p-Widget.p-MenuBar {
   padding-left: 5px;
   font-size: var(--theia-ui-font-size1);
 }
 
-
 .p-MenuBar-menu {
-  transform: translateY(calc(-2*var(--theia-border-width)));
+  transform: translateY(calc(-2 * var(--theia-border-width)));
 }
-
 
 .p-MenuBar-item {
   padding: 0px 8px;
@@ -51,39 +46,36 @@
   white-space: pre;
 }
 
-
 .p-MenuBar-item.p-mod-active {
   background: var(--theia-menubar-selectionBackground);
   color: var(--theia-menubar-selectionForeground);
   opacity: 1;
 }
 
-
 .p-MenuBar.p-mod-active .p-MenuBar-item.p-mod-active {
   z-index: calc(var(--theia-menu-z-index) - 1);
   background: var(--theia-menubar-selectionBackground);
-  border-left: var(--theia-border-width) solid var(--theia-menubar-selectionBorder);
-  border-right: var(--theia-border-width) solid var(--theia-menubar-selectionBorder);
+  border-left: var(--theia-border-width) solid
+    var(--theia-menubar-selectionBorder);
+  border-right: var(--theia-border-width) solid
+    var(--theia-menubar-selectionBorder);
 }
-
 
 .p-MenuBar-item.p-mod-disabled {
   opacity: var(--theia-mod-disabled-opacity);
 }
 
-
 .p-MenuBar-item.p-type-separator {
   margin: 2px;
   padding: 0;
   border: none;
-  border-left: var(--theia-border-width) solid var(--theia-menu-separatorBackground);
+  border-left: var(--theia-border-width) solid
+    var(--theia-menu-separatorBackground);
 }
-
 
 .p-MenuBar-itemMnemonic {
   text-decoration: underline;
 }
-
 
 #theia-top-panel {
   background: var(--theia-titleBar-activeBackground);
@@ -101,7 +93,6 @@
 /*-----------------------------------------------------------------------------
 | Menu
 |----------------------------------------------------------------------------*/
-
 
 .p-Menu {
   z-index: var(--theia-menu-z-index);
@@ -124,7 +115,6 @@
   line-height: var(--theia-private-menu-item-height);
 }
 
-
 .p-Menu-item.p-mod-active {
   background: var(--theia-menu-selectionBackground);
   color: var(--theia-menu-selectionForeground);
@@ -133,11 +123,9 @@
   cursor: pointer;
 }
 
-
 .p-Menu-item.p-mod-disabled {
   opacity: var(--theia-mod-disabled-opacity);
 }
-
 
 .p-Menu-itemIcon {
   width: 21px;
@@ -145,48 +133,43 @@
   margin-top: -2px;
 }
 
-
 .p-Menu-itemLabel {
   padding: 0px 32px 0px 2px;
 }
-
 
 .p-Menu-itemMnemonic {
   text-decoration: underline;
 }
 
-
 .p-Menu-itemShortcut {
   padding: 0px;
 }
-
 
 .p-Menu-itemSubmenuIcon {
   width: var(--theia-icon-size);
   padding: 0px 10px 0px 0px;
 }
 
-
-.p-Menu-item[data-type='separator'] > div {
+.p-Menu-item[data-type="separator"] > div {
   padding: 0;
   height: 9px;
   opacity: 0.36;
 }
 
-
-.p-Menu-item[data-type='separator'] > div::after {
-  content: '';
+.p-Menu-item[data-type="separator"] > div::after {
+  content: "";
   display: block;
   position: relative;
   top: 4px;
-  border-top: var(--theia-border-width) solid var(--theia-menu-separatorBackground);
+  border-top: var(--theia-border-width) solid
+    var(--theia-menu-separatorBackground);
 }
 
-.p-Menu-item[data-type='separator'] > div.p-Menu-itemIcon::after {
+.p-Menu-item[data-type="separator"] > div.p-Menu-itemIcon::after {
   margin-left: 12px;
 }
 
-.p-Menu-item[data-type='separator'] > div.p-Menu-itemSubmenuIcon::after {
+.p-Menu-item[data-type="separator"] > div.p-Menu-itemSubmenuIcon::after {
   margin-right: 12px;
 }
 
@@ -205,13 +188,11 @@
   transform: translateY(20%);
 }
 
-
 .p-Menu-item.p-mod-toggled > .p-Menu-itemIcon::before {
-  content: '\eab2';
+  content: "\eab2";
   transform: scale(0.8) translateY(20%);
 }
 
-
-.p-Menu-item[data-type='submenu'] > .p-Menu-itemSubmenuIcon::before {
-  content: '\eab6';
+.p-Menu-item[data-type="submenu"] > .p-Menu-itemSubmenuIcon::before {
+  content: "\eab6";
 }
