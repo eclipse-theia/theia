@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -106,18 +106,18 @@ export class ProvidedTaskConfigurations {
 
     protected async resolveTaskConfigurations(taskProvider: TaskProvider): Promise<TaskConfiguration[]> {
         return (await taskProvider.provideTasks())
-        // Global/User tasks from providers are not supported.
-        .filter(task => task.scope !== TaskScope.Global)
-        .map(providedTask => {
-            const originalPresentation = providedTask.presentation || {};
-            return {
-                ...providedTask,
-                presentation: {
-                    ...TaskOutputPresentation.getDefault(),
-                    ...originalPresentation
-                }
-            };
-        });
+            // Global/User tasks from providers are not supported.
+            .filter(task => task.scope !== TaskScope.Global)
+            .map(providedTask => {
+                const originalPresentation = providedTask.presentation || {};
+                return {
+                    ...providedTask,
+                    presentation: {
+                        ...TaskOutputPresentation.getDefault(),
+                        ...originalPresentation
+                    }
+                };
+            });
     }
 
     /** returns the task configuration for a given source and label or undefined if none */

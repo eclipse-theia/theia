@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { enableJSDOM } from '../browser/test/jsdom';
@@ -171,7 +171,7 @@ describe('frontend-connection-status', function (): void {
         sinon.assert.calledOnce(pingSpy);
     });
 
-    it('should not perform ping request before desired timeout',  () => {
+    it('should not perform ping request before desired timeout', () => {
         const frontendConnectionStatusService = testContainer.get<FrontendConnectionStatusService>(FrontendConnectionStatusService);
         frontendConnectionStatusService['init']();
         mockIncomingMessageActivityEmitter.fire(undefined);

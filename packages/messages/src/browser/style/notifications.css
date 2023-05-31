@@ -11,260 +11,269 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 /* Container */
 
 .theia-notifications-overlay {
-    height: 0px;
+  height: 0px;
 }
 
 .theia-notifications-container {
-    position: absolute;
-    bottom: 36px;
-    right: 16px;
-    width: 500px;
-    user-select: none;
-    z-index: 1111;
+  position: absolute;
+  bottom: 36px;
+  right: 16px;
+  width: 500px;
+  user-select: none;
+  z-index: 1111;
 }
 .theia-notifications-container.closed {
-    display: none;
+  display: none;
 }
 .theia-notifications-container > * {
-    position: relative;
+  position: relative;
 }
 
 /* Toasts */
 
-.theia-notifications-container.theia-notification-toasts .theia-notification-list-item-container {
-    margin-top: 6px;
+.theia-notifications-container.theia-notification-toasts
+  .theia-notification-list-item-container {
+  margin-top: 6px;
 }
 
-.theia-notifications-container.theia-notification-toasts .theia-notification-list-item {
-    box-shadow: 0px 0px 4px 0px var(--theia-widget-shadow);
-    border: 1px solid var(--theia-notificationToast-border);
+.theia-notifications-container.theia-notification-toasts
+  .theia-notification-list-item {
+  box-shadow: 0px 0px 4px 0px var(--theia-widget-shadow);
+  border: 1px solid var(--theia-notificationToast-border);
 }
 
 /* Center */
 
 .theia-notifications-container.theia-notification-center {
-    background-color: var(--theia-notifications-background);
-    border: 1px solid var(--theia-notificationCenter-border);
-    box-shadow: 0px 0px 6px 0px var(--theia-widget-shadow);
+  background-color: var(--theia-notifications-background);
+  border: 1px solid var(--theia-notificationCenter-border);
+  box-shadow: 0px 0px 6px 0px var(--theia-widget-shadow);
 }
 
 /* Center > Header */
 
 .theia-notification-center-header {
-    color: var(--theia-notificationCenterHeader-foreground);
-    background-color: var(--theia-notificationCenterHeader-background);
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    justify-content: flex-end;
-    min-height: 30px;
-    align-items: center;
+  color: var(--theia-notificationCenterHeader-foreground);
+  background-color: var(--theia-notificationCenterHeader-background);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  min-height: 30px;
+  align-items: center;
 }
 
 .theia-notification-center-header-title {
-    font-size: calc(var(--theia-ui-font-size1) / 1.1);
-    font-family: var(--theia-ui-font-family);
-    margin: 8px;
-    flex-grow: 2;
+  font-size: calc(var(--theia-ui-font-size1) / 1.1);
+  font-family: var(--theia-ui-font-family);
+  margin: 8px;
+  flex-grow: 2;
 }
 
 .theia-notification-center-header-actions {
-    margin: 8px;
+  margin: 8px;
 }
 
 /* List */
 
 .theia-notification-list-scroll-container {
-    max-height: 300px;
-    overflow: auto;
+  max-height: 300px;
+  overflow: auto;
 }
 
 .theia-notification-list {
-    display: flex;
-    flex-direction: column-reverse;
-    flex-wrap: nowrap;
+  display: flex;
+  flex-direction: column-reverse;
+  flex-wrap: nowrap;
 }
-
 
 /* List > Item */
 
 .theia-notification-list-item {
-    background-color: var(--theia-notifications-background);
-    width: 100%;
-    cursor: pointer;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    justify-content: space-between;
+  background-color: var(--theia-notifications-background);
+  width: 100%;
+  cursor: pointer;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: space-between;
 }
 
 .theia-notification-list-item:focus {
-    border-color: var(--theia-focusBorder);
+  border-color: var(--theia-focusBorder);
 }
 
 .theia-notification-center .theia-notification-list-item:not(:last-child) {
-    border-top: 1px var(--theia-notifications-border) solid;
+  border-top: 1px var(--theia-notifications-border) solid;
 }
 
 .theia-notification-list-item-content {
-    margin: 6px;
-    flex-grow: 3;
+  margin: 6px;
+  flex-grow: 3;
 }
-.theia-notification-list-item-content.collapsed .theia-notification-list-item-content-bottom {
-    display: none;
+.theia-notification-list-item-content.collapsed
+  .theia-notification-list-item-content-bottom {
+  display: none;
 }
 .theia-notification-list-item-content.collapsed .theia-notification-message {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .theia-notification-list-item-content-main {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    padding: 5px 4px 7px 4px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  padding: 5px 4px 7px 4px;
 }
 
 .theia-notification-message {
-    font-size: var(--theia-ui-font-size1);
-    font-family: var(--theia-ui-font-family);
-    overflow-wrap: break-word;
-    box-sizing: border-box;
-    flex-basis: 0%;
-    flex-grow: 1;
-    flex-shrink: 1;
-    display: block;
-    overflow: hidden;
-    user-select: text;
-    margin-top: 3px;
+  font-size: var(--theia-ui-font-size1);
+  font-family: var(--theia-ui-font-family);
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+  flex-basis: 0%;
+  flex-grow: 1;
+  flex-shrink: 1;
+  display: block;
+  overflow: hidden;
+  user-select: text;
+  margin-top: 3px;
 }
 
 .theia-notification-message a {
-    border: none;
-    color: var(--theia-notificationLink-foreground);
-    outline: 0;
-    text-decoration: none;
+  border: none;
+  color: var(--theia-notificationLink-foreground);
+  outline: 0;
+  text-decoration: none;
 }
 .theia-notification-message a:focus {
-    outline-color: var(--theia-focusBorder);
+  outline-color: var(--theia-focusBorder);
 }
 
 .theia-notification-icon {
-    margin-top: 1px;
+  margin-top: 1px;
 }
 
 .theia-notification-icon:before {
-    font-size: 18px;
-    padding-right: 4px;
+  font-size: 18px;
+  padding-right: 4px;
 }
 
 .theia-notification-icon.info:before {
-    color: var(--theia-notificationsInfoIcon-foreground);
+  color: var(--theia-notificationsInfoIcon-foreground);
 }
 
 .theia-notification-icon.warning:before {
-    color: var(--theia-notificationsWarningIcon-foreground);
+  color: var(--theia-notificationsWarningIcon-foreground);
 }
 
 .theia-notification-icon.error:before {
-    color: var(--theia-notificationsErrorIcon-foreground);
+  color: var(--theia-notificationsErrorIcon-foreground);
 }
 
 .theia-notification-actions {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    margin: 0px;
-    padding: 0px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  margin: 0px;
+  padding: 0px;
 }
 
 .theia-notification-actions > li {
-    display: inline-block;
-    height: 16px;
-    width: 16px;
-    cursor: pointer;
-    margin-left: 4px;
+  display: inline-block;
+  height: 16px;
+  width: 16px;
+  cursor: pointer;
+  margin-left: 4px;
 }
 
 .theia-notification-actions > .expand {
-    transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 
 .theia-notification-list-item-content-bottom {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-between;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 .theia-notification-source {
-    font-size: var(--theia-ui-font-size0);
-    font-family: var(--theia-ui-font-family);
-    overflow-wrap: break-word;
-    box-sizing: border-box;
-    flex-grow: 1;
-    padding: 4px;
-    display: block;
-    overflow: hidden;
+  font-size: var(--theia-ui-font-size0);
+  font-family: var(--theia-ui-font-family);
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+  flex-grow: 1;
+  padding: 4px;
+  display: block;
+  overflow: hidden;
 }
 
 .theia-notification-buttons {
-    flex-grow: 2;
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-end;
-    flex-wrap: wrap;
+  flex-grow: 2;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .theia-notification-buttons > button {
-    margin: 4px;
-    max-width: 160px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
+  margin: 4px;
+  max-width: 160px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .theia-notification-item-progress {
-    display: block;
+  display: block;
 }
 
 .theia-notification-item-progressbar {
-    height: 2px;
-    background-color: var(--theia-progressBar-background);
-    width: 66%;
+  height: 2px;
+  background-color: var(--theia-progressBar-background);
+  width: 66%;
 }
 
 .theia-notification-item-progressbar.indeterminate {
-    /* `progress-animation` is defined in `packages/core/src/browser/style/progress-bar.css` */
-    animation: progress-animation 1.3s 0s infinite cubic-bezier(0.645, 0.045, 0.355, 1);
+  /* `progress-animation` is defined in `packages/core/src/browser/style/progress-bar.css` */
+  animation: progress-animation 1.3s 0s infinite
+    cubic-bezier(0.645, 0.045, 0.355, 1);
 }
 
 /* Perfect scrollbar */
 
 .theia-notification-list-scroll-container .ps__rail-y {
-    width: var(--theia-scrollbar-rail-width);
+  width: var(--theia-scrollbar-rail-width);
 }
 
 .theia-notification-list-scroll-container .ps__rail-y:hover > .ps__thumb-y,
 .theia-notification-list-scroll-container .ps__rail-y:focus > .ps__thumb-y,
-.theia-notification-list-scroll-container .ps__rail-y.ps--clicking .ps__thumb-y {
-    right: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
-    width: var(--theia-scrollbar-width);
+.theia-notification-list-scroll-container
+  .ps__rail-y.ps--clicking
+  .ps__thumb-y {
+  right: calc(
+    (var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2
+  );
+  width: var(--theia-scrollbar-width);
 }
 
 .theia-notification-list-scroll-container .ps__rail-y > .ps__thumb-y {
-    width: var(--theia-scrollbar-width);
-    right: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
-    background: var(--theia-scrollbarSlider-background);
-    border-radius: 0px;
+  width: var(--theia-scrollbar-width);
+  right: calc(
+    (var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2
+  );
+  background: var(--theia-scrollbarSlider-background);
+  border-radius: 0px;
 }

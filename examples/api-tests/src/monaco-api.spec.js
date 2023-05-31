@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 // @ts-check
@@ -33,7 +33,7 @@ describe('Monaco API', async function () {
     const { MonacoContextKeyService } = require('@theia/monaco/lib/browser/monaco-context-key-service');
     const { URI } = require('@theia/monaco-editor-core/esm/vs/base/common/uri');
     const { animationFrame } = require('@theia/core/lib/browser/browser');
-    
+
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
     const workspaceService = container.get(WorkspaceService);

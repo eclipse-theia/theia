@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { PLUGIN_RPC_CONTEXT, NotificationExt, NotificationMain } from '../common/plugin-api-rpc';
@@ -35,7 +35,7 @@ export class NotificationExtImpl implements NotificationExt {
     ): Promise<R> {
         const source = new CancellationTokenSource();
         const id = new Deferred<string>();
-        const progress = task({ report: async item => this.proxy.$updateProgress(await id.promise, item)}, source.token);
+        const progress = task({ report: async item => this.proxy.$updateProgress(await id.promise, item) }, source.token);
         const title = options.title ? options.title : '';
         const location = this.mapLocation(options.location);
         const cancellable = options.cancellable;
