@@ -193,7 +193,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         this.errorMessageNode = document.createElement('div');
         this.errorMessageNode.classList.add('error');
         this.errorMessageNode.setAttribute('style', 'flex: 2');
-        this.contentNode.appendChild(this.errorMessageNode);
+        this.controlPanel.appendChild(this.errorMessageNode);
 
         this.update();
     }
@@ -366,7 +366,7 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
     ) {
         super(props);
 
-        this.contentNode.insertBefore(this.createMessageNode(this.props.msg), this.errorMessageNode);
+        this.contentNode.appendChild(this.createMessageNode(this.props.msg));
         this.appendCloseButton(props.cancel);
         this.appendAcceptButton(props.ok);
     }
@@ -511,7 +511,10 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         } else {
             this.inputField.select();
         }
-        this.contentNode.insertBefore(this.inputField, this.errorMessageNode);
+
+        this.contentNode.appendChild(this.inputField);
+        this.controlPanel.removeChild(this.errorMessageNode);
+        this.contentNode.appendChild(this.errorMessageNode);
 
         this.appendAcceptButton(props.confirmButtonLabel);
     }
