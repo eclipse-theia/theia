@@ -91,6 +91,7 @@ export class ApplicationPackage {
     }
 
     protected _frontendModules: Map<string, string> | undefined;
+    protected _frontendPreloadModules: Map<string, string> | undefined;
     protected _frontendElectronModules: Map<string, string> | undefined;
     protected _secondaryWindowModules: Map<string, string> | undefined;
     protected _backendModules: Map<string, string> | undefined;
@@ -133,6 +134,13 @@ export class ApplicationPackage {
 
     protected newExtensionPackage(raw: PublishedNodePackage, options: ExtensionPackageOptions = {}): ExtensionPackage {
         return new ExtensionPackage(raw, this.registry, options);
+    }
+
+    get frontendPreloadModules(): Map<string, string> {
+        if (!this._frontendPreloadModules) {
+            this._frontendPreloadModules = this.computeModules('frontendPreload');
+        }
+        return this._frontendPreloadModules;
     }
 
     get frontendModules(): Map<string, string> {

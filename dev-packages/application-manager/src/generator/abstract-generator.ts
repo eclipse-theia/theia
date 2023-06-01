@@ -30,9 +30,9 @@ export abstract class AbstractGenerator {
         protected options: GeneratorOptions = {}
     ) { }
 
-    protected compileFrontendModuleImports(modules: Map<string, string>): string {
+    protected compileFrontendModuleImports(modules: Map<string, string>, indentation = 1): string {
         const splitFrontend = this.options.splitFrontend ?? this.options.mode !== 'production';
-        return this.compileModuleImports(modules, splitFrontend ? 'import' : 'require');
+        return this.compileModuleImports(modules, splitFrontend ? 'import' : 'require', indentation);
     }
 
     protected compileBackendModuleImports(modules: Map<string, string>): string {
@@ -43,7 +43,7 @@ export abstract class AbstractGenerator {
         return modules && this.compileModuleImports(modules, 'require') || '';
     }
 
-    protected compileModuleImports(modules: Map<string, string>, fn: 'import' | 'require'): string {
+    protected compileModuleImports(modules: Map<string, string>, fn: 'import' | 'require', indentation = 1): string {
         if (modules.size === 0) {
             return '';
         }
@@ -53,7 +53,7 @@ export abstract class AbstractGenerator {
                 return `Promise.resolve(${invocation})`;
             }
             return invocation;
-        }).map(statement => `    .then(function () { return ${statement}.then(load) })`);
+        }).map(statement => `${' '.repeat(indentation * 4)}.then(function () { return ${statement}.then(load) })`);
         return os.EOL + lines.join(os.EOL);
     }
 
