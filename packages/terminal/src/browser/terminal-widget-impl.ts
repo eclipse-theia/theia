@@ -42,6 +42,7 @@ import { CommandLineOptions, ShellCommandBuilder } from '@theia/process/lib/comm
 import { Key } from '@theia/core/lib/browser/keys';
 import { nls } from '@theia/core/lib/common/nls';
 import { TerminalMenus } from './terminal-frontend-contribution';
+import debounce = require('p-debounce');
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -758,7 +759,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         super.dispose();
     }
 
-    protected resizeTerminal(): void {
+    protected resizeTerminal = debounce(() => this.doResizeTerminal(), 50);
+
+    protected doResizeTerminal(): void {
+        if (this.isDisposed) {
+            return;
+        }
         const geo = this.fitAddon.proposeDimensions();
         const cols = geo.cols;
         const rows = geo.rows - 1; // subtract one row for margin
