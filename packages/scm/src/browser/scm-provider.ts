@@ -58,6 +58,8 @@ export interface ScmResource {
 }
 
 export interface ScmResourceDecorations {
+    icon?: string;
+    iconDark?: string;
     tooltip?: string;
     source?: string;
     letter?: string;
