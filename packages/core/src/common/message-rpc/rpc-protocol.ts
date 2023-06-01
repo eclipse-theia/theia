@@ -77,7 +77,11 @@ export class RpcProtocol {
         this.encoder = options.encoder ?? new MsgPackMessageEncoder();
         this.decoder = options.decoder ?? new MsgPackMessageDecoder();
         this.toDispose.push(this.onNotificationEmitter);
-        channel.onClose(() => this.toDispose.dispose());
+        channel.onClose(event => {
+            this.pendingRequests.forEach(pending => pending.reject(new Error(event.reason)));
+            this.pendingRequests.clear();
+            this.toDispose.dispose();
+        });
         this.toDispose.push(channel.onMessage(readBuffer => this.handleMessage(this.decoder.parse(readBuffer()))));
         this.mode = options.mode ?? 'default';
 
@@ -98,7 +102,7 @@ export class RpcProtocol {
                     return;
                 }
                 case RpcMessageType.Notification: {
-                    this.handleNotify(message.id, message.method, message.args);
+                    this.handleNotify(message.method, message.args, message.id);
                     return;
                 }
             }
@@ -179,7 +183,7 @@ export class RpcProtocol {
         }
 
         const output = this.channel.getWriteBuffer();
-        this.encoder.notification(output, this.nextMessageId++, method, args);
+        this.encoder.notification(output, method, args, this.nextMessageId++);
         output.commit();
     }
 
@@ -226,7 +230,7 @@ export class RpcProtocol {
         }
     }
 
-    protected async handleNotify(id: number, method: string, args: any[]): Promise<void> {
+    protected async handleNotify(method: string, args: any[], id?: number): Promise<void> {
         if (this.toDispose.disposed) {
             return;
         }
