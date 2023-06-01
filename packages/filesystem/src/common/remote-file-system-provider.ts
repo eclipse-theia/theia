@@ -25,7 +25,7 @@ import {
     hasOpenReadWriteCloseCapability, hasFileFolderCopyCapability, hasReadWriteCapability, hasAccessCapability,
     FileSystemProviderError, FileSystemProviderErrorCode, FileUpdateOptions, hasUpdateCapability, FileUpdateResult, FileReadStreamOptions, hasFileReadStreamCapability
 } from './files';
-import { JsonRpcServer, JsonRpcProxy, JsonRpcProxyFactory } from '@theia/core/lib/common/messaging/proxy-factory';
+import { RpcServer, RpcProxy, RpcProxyFactory } from '@theia/core/lib/common/messaging/proxy-factory';
 import { ApplicationError } from '@theia/core/lib/common/application-error';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
@@ -35,7 +35,7 @@ import { CancellationToken, cancelled } from '@theia/core/lib/common/cancellatio
 export const remoteFileSystemPath = '/services/remote-filesystem';
 
 export const RemoteFileSystemServer = Symbol('RemoteFileSystemServer');
-export interface RemoteFileSystemServer extends JsonRpcServer<RemoteFileSystemClient> {
+export interface RemoteFileSystemServer extends RpcServer<RemoteFileSystemClient> {
     getCapabilities(): Promise<FileSystemProviderCapabilities>
     stat(resource: string): Promise<Stat>;
     access(resource: string, mode?: number): Promise<void>;
@@ -79,7 +79,7 @@ export const RemoteFileSystemProviderError = ApplicationError.declare(-33005,
         ({ message, data, stack })
 );
 
-export class RemoteFileSystemProxyFactory<T extends object> extends JsonRpcProxyFactory<T> {
+export class RemoteFileSystemProxyFactory<T extends object> extends RpcProxyFactory<T> {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected override serializeError(e: any): any {
@@ -153,7 +153,7 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
      * Wrapped remote filesystem.
      */
     @inject(RemoteFileSystemServer)
-    protected readonly server: JsonRpcProxy<RemoteFileSystemServer>;
+    protected readonly server: RpcProxy<RemoteFileSystemServer>;
 
     @postConstruct()
     protected init(): void {

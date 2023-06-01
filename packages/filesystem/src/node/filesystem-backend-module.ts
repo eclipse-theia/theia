@@ -16,7 +16,7 @@
 
 import * as path from 'path';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from '@theia/core/lib/common';
+import { ConnectionHandler, RpcConnectionHandler, ILogger } from '@theia/core/lib/common';
 import { FileSystemWatcherServer, FileSystemWatcherService } from '../common/filesystem-watcher-protocol';
 import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
 import { NsfwFileSystemWatcherService, NsfwFileSystemWatcherServerOptions } from './nsfw-watcher/nsfw-filesystem-service';
@@ -29,7 +29,7 @@ import {
 import { FileSystemProvider } from '../common/files';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BackendApplicationContribution, IPCConnectionProvider } from '@theia/core/lib/node';
-import { JsonRpcProxyFactory, ConnectionErrorHandler } from '@theia/core';
+import { RpcProxyFactory, ConnectionErrorHandler } from '@theia/core';
 import { FileSystemWatcherServiceDispatcher } from './filesystem-watcher-dispatcher';
 
 export const NSFW_SINGLE_THREADED = process.argv.includes('--no-cluster');
@@ -54,7 +54,7 @@ export default new ContainerModule(bind => {
     bind(FileSystemProviderServer).toSelf();
     bind(RemoteFileSystemServer).toService(FileSystemProviderServer);
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<RemoteFileSystemClient>(remoteFileSystemPath, client => {
+        new RpcConnectionHandler<RemoteFileSystemClient>(remoteFileSystemPath, client => {
             const server = ctx.container.get<RemoteFileSystemServer>(RemoteFileSystemServer);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
@@ -116,7 +116,7 @@ export function spawnNsfwFileSystemWatcherServiceProcess(ctx: interfaces.Context
     const logger = ctx.container.get<ILogger>(ILogger);
     const nsfwOptions = ctx.container.get<NsfwOptions>(NsfwOptions);
     const ipcConnectionProvider = ctx.container.get<IPCConnectionProvider>(IPCConnectionProvider);
-    const proxyFactory = new JsonRpcProxyFactory<FileSystemWatcherService>();
+    const proxyFactory = new RpcProxyFactory<FileSystemWatcherService>();
     const serverProxy = proxyFactory.createProxy();
     // We need to call `.setClient` before listening, else the JSON-RPC calls won't go through.
     serverProxy.setClient(dispatcher);

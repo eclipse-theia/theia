@@ -17,7 +17,10 @@
 - [repo] with the upgrade to Inversify 6.0, a few initialization methods were adjusted. See also [this migration guide entry](https://github.com/eclipse-theia/theia/blob/master/doc/Migration.md#inversify-60). Additionally, other changes include: [#12425](https://github.com/eclipse-theia/theia/pull/12425)
   - The type expected by the `PreferenceProxySchema` symbol has been changed from `PromiseLike<PreferenceSchema>` to `() => PromiseLike<PreferenceSchema>`
   - The symbol `OnigasmPromise` has been changed to `OnigasmProvider` and injects a function of type `() => Promise<IOnigLib>`
-  - The symbol `PreferenceTransactionPrelude` has been changed to `PreferenceTransactionPreludeProvider ` and injects a function of type `() => Promise<unknown>`
+  - The symbol `PreferenceTransactionPrelude` has been changed to `PreferenceTransactionPreludeProvider` and injects a function of type `() => Promise<unknown>`
+- [rpc] Replaced name suffixes classes and types that were still referencing the old rpc protocol. From `JsonRpc*` to `Rpc*`.
+  - Old classes and types are still available but haven been deprecated and might get removed in future releases [#12588](https://github.com/eclipse-theia/theia/pull/12588)
+  - e.g. `JsonRpcProxyFactory` is deprecated, use `RpcProxyFactory` instead.
 
 ## v1.38.0 - 05/25/2023
 

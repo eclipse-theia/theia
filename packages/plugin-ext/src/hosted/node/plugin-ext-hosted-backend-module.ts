@@ -36,7 +36,7 @@ import { FilePluginUriFactory } from './scanners/file-plugin-uri-factory';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
 import { LanguagePackService, languagePackServicePath } from '../../common/language-pack-service';
 import { PluginLanguagePackService } from './plugin-language-pack-service';
-import { JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging/proxy-factory';
+import { RpcConnectionHandler } from '@theia/core/lib/common/messaging/proxy-factory';
 import { ConnectionHandler } from '@theia/core/lib/common/messaging/handler';
 
 const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
@@ -71,7 +71,7 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(PluginLanguagePackService).toSelf().inSingletonScope();
     bind(LanguagePackService).toService(PluginLanguagePackService);
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(languagePackServicePath, () =>
+        new RpcConnectionHandler(languagePackServicePath, () =>
             ctx.container.get(LanguagePackService)
         )
     ).inSingletonScope();

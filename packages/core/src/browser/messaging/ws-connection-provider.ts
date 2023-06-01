@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import { injectable, interfaces, decorate, unmanaged } from 'inversify';
-import { JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event, Channel } from '../../common';
+import { RpcProxyFactory, RpcProxy, Emitter, Event, Channel } from '../../common';
 import { Endpoint } from '../endpoint';
 import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
 import { io, Socket } from 'socket.io-client';
 import { IWebSocket, WebSocketChannel } from '../../common/messaging/web-socket-channel';
 
-decorate(injectable(), JsonRpcProxyFactory);
-decorate(unmanaged(), JsonRpcProxyFactory, 0);
+decorate(injectable(), RpcProxyFactory);
+decorate(unmanaged(), RpcProxyFactory, 0);
 
 export interface WebSocketOptions {
     /**
@@ -44,7 +44,7 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
         return this.onSocketDidCloseEmitter.event;
     }
 
-    static override createProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): JsonRpcProxy<T> {
+    static override createProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): RpcProxy<T> {
         return container.get(WebSocketConnectionProvider).createProxy<T>(path, arg);
     }
 

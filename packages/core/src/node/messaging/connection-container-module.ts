@@ -17,11 +17,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { interfaces, ContainerModule } from 'inversify';
-import { JsonRpcProxyFactory, ConnectionHandler, JsonRpcConnectionHandler, JsonRpcProxy } from '../../common';
+import { RpcProxyFactory, ConnectionHandler, RpcConnectionHandler, RpcProxy } from '../../common';
 
 export type BindFrontendService = <T extends object>(path: string, serviceIdentifier: interfaces.ServiceIdentifier<T>) => interfaces.BindingWhenOnSyntax<T>;
 export type BindBackendService = <T extends object, C extends object = object>(
-    path: string, serviceIdentifier: interfaces.ServiceIdentifier<T>, onActivation?: (service: T, proxy: JsonRpcProxy<C>) => T
+    path: string, serviceIdentifier: interfaces.ServiceIdentifier<T>, onActivation?: (service: T, proxy: RpcProxy<C>) => T
 ) => void;
 export type ConnectionContainerModuleCallBack = (registry: {
     bind: interfaces.Bind
@@ -74,7 +74,7 @@ export const ConnectionContainerModule: symbol & { create(callback: ConnectionCo
     create(callback: ConnectionContainerModuleCallBack): ContainerModule {
         return new ContainerModule((bind, unbind, isBound, rebind) => {
             const bindFrontendService: BindFrontendService = (path, serviceIdentifier) => {
-                const serviceFactory = new JsonRpcProxyFactory();
+                const serviceFactory = new RpcProxyFactory();
                 const service = serviceFactory.createProxy();
                 bind<ConnectionHandler>(ConnectionHandler).toConstantValue({
                     path,
@@ -84,7 +84,7 @@ export const ConnectionContainerModule: symbol & { create(callback: ConnectionCo
             };
             const bindBackendService: BindBackendService = (path, serviceIdentifier, onActivation) => {
                 bind(ConnectionHandler).toDynamicValue(context =>
-                    new JsonRpcConnectionHandler<any>(path, proxy => {
+                    new RpcConnectionHandler<any>(path, proxy => {
                         const service = context.container.get(serviceIdentifier);
                         return onActivation ? onActivation(service, proxy) : service;
                     })

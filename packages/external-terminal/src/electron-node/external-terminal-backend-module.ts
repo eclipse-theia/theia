@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common';
+import { ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common';
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
 import { ExternalTerminalService, externalTerminalServicePath } from '../common/external-terminal';
 import { MacExternalTerminalService } from './mac-external-terminal-service';
@@ -29,7 +29,7 @@ export function bindExternalTerminalService(bind: interfaces.Bind): void {
     bind(ExternalTerminalService).toService(serviceProvider);
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(externalTerminalServicePath, () =>
+        new RpcConnectionHandler(externalTerminalServicePath, () =>
             ctx.container.get(ExternalTerminalService)
         )
     ).inSingletonScope();
