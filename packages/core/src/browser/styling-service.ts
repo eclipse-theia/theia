@@ -21,6 +21,7 @@ import { ColorRegistry } from './color-registry';
 import { DecorationStyle } from './decoration-style';
 import { FrontendApplicationContribution } from './frontend-application';
 import { ThemeService } from './theming';
+import { Disposable } from '../common';
 
 export const StylingParticipant = Symbol('StylingParticipant');
 
@@ -40,8 +41,7 @@ export interface CssStyleCollector {
 
 @injectable()
 export class StylingService implements FrontendApplicationContribution {
-
-    protected cssElement = DecorationStyle.createStyleElement('contributedColorTheme');
+    protected cssElements = new Map<Window, HTMLStyleElement>();
 
     @inject(ThemeService)
     protected readonly themeService: ThemeService;
@@ -53,11 +53,22 @@ export class StylingService implements FrontendApplicationContribution {
     protected readonly themingParticipants: ContributionProvider<StylingParticipant>;
 
     onStart(): void {
-        this.applyStyling(this.themeService.getCurrentTheme());
-        this.themeService.onDidColorThemeChange(e => this.applyStyling(e.newTheme));
+        this.registerWindow(window);
+        this.themeService.onDidColorThemeChange(e => this.applyStylingToWindows(e.newTheme));
     }
 
-    protected applyStyling(theme: Theme): void {
+    registerWindow(win: Window): Disposable {
+        const cssElement = DecorationStyle.createStyleElement('contributedColorTheme', win.document.head);
+        this.cssElements.set(win, cssElement);
+        this.applyStyling(this.themeService.getCurrentTheme(), cssElement);
+        return Disposable.create(() => this.cssElements.delete(win));
+    }
+
+    protected applyStylingToWindows(theme: Theme): void {
+        this.cssElements.forEach(cssElement => this.applyStyling(theme, cssElement));
+    }
+
+    protected applyStyling(theme: Theme, cssElement: HTMLStyleElement): void {
         const rules: string[] = [];
         const colorTheme: ColorTheme = {
             type: theme.type,
@@ -71,6 +82,6 @@ export class StylingService implements FrontendApplicationContribution {
             themingParticipant.registerThemeStyle(colorTheme, styleCollector);
         }
         const fullCss = rules.join('\n');
-        this.cssElement.innerText = fullCss;
+        cssElement.innerText = fullCss;
     }
 }

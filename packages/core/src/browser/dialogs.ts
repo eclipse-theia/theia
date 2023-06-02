@@ -84,10 +84,9 @@ export class DialogOverlayService implements FrontendApplicationContribution {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected readonly dialogs: AbstractDialog<any>[] = [];
+    protected readonly documents: Document[] = [];
 
     constructor() {
-        addKeyListener(document.body, Key.ENTER, e => this.handleEnter(e));
-        addKeyListener(document.body, Key.ESCAPE, e => this.handleEscape(e));
     }
 
     initialize(): void {
@@ -101,6 +100,11 @@ export class DialogOverlayService implements FrontendApplicationContribution {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     push(dialog: AbstractDialog<any>): Disposable {
+        if (this.documents.findIndex(document => document === dialog.node.ownerDocument) < 0) {
+            addKeyListener(dialog.node.ownerDocument.body, Key.ENTER, e => this.handleEnter(e));
+            addKeyListener(dialog.node.ownerDocument.body, Key.ESCAPE, e => this.handleEscape(e));
+            this.documents.push(dialog.node.ownerDocument);
+        }
         this.dialogs.unshift(dialog);
         return Disposable.create(() => {
             const index = this.dialogs.indexOf(dialog);
@@ -147,9 +151,10 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     protected activeElement: HTMLElement | undefined;
 
     constructor(
-        @inject(DialogProps) protected readonly props: DialogProps
+        protected readonly props: DialogProps,
+        options?: Widget.IOptions
     ) {
-        super();
+        super(options);
         this.id = 'theia-dialog-shell';
         this.addClass('dialogOverlay');
         this.toDispose.push(Disposable.create(() => {
@@ -157,7 +162,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
                 Widget.detach(this);
             }
         }));
-        const container = document.createElement('div');
+        const container = this.node.ownerDocument.createElement('div');
         container.classList.add('dialogBlock');
         if (props.maxWidth === undefined) {
             container.setAttribute('style', 'max-width: none');
@@ -166,31 +171,31 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         }
         this.node.appendChild(container);
 
-        const titleContentNode = document.createElement('div');
+        const titleContentNode = this.node.ownerDocument.createElement('div');
         titleContentNode.classList.add('dialogTitle');
         container.appendChild(titleContentNode);
 
-        this.titleNode = document.createElement('div');
+        this.titleNode = this.node.ownerDocument.createElement('div');
         this.titleNode.textContent = props.title;
         titleContentNode.appendChild(this.titleNode);
 
-        this.closeCrossNode = document.createElement('i');
+        this.closeCrossNode = this.node.ownerDocument.createElement('i');
         this.closeCrossNode.classList.add(...codiconArray('close'));
         this.closeCrossNode.classList.add('closeButton');
         titleContentNode.appendChild(this.closeCrossNode);
 
-        this.contentNode = document.createElement('div');
+        this.contentNode = this.node.ownerDocument.createElement('div');
         this.contentNode.classList.add('dialogContent');
         if (props.wordWrap !== undefined) {
             this.contentNode.setAttribute('style', `word-wrap: ${props.wordWrap}`);
         }
         container.appendChild(this.contentNode);
 
-        this.controlPanel = document.createElement('div');
+        this.controlPanel = this.node.ownerDocument.createElement('div');
         this.controlPanel.classList.add('dialogControl');
         container.appendChild(this.controlPanel);
 
-        this.errorMessageNode = document.createElement('div');
+        this.errorMessageNode = this.node.ownerDocument.createElement('div');
         this.errorMessageNode.classList.add('error');
         this.errorMessageNode.setAttribute('style', 'flex: 2');
         this.controlPanel.appendChild(this.errorMessageNode);
@@ -255,7 +260,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         if (this.resolve) {
             return Promise.reject(new Error('The dialog is already opened.'));
         }
-        this.activeElement = window.document.activeElement as HTMLElement;
+        this.activeElement = this.node.ownerDocument.activeElement as HTMLElement;
         return new Promise<T | undefined>((resolve, reject) => {
             this.resolve = resolve;
             this.reject = reject;
@@ -264,7 +269,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
                 this.reject = undefined;
             }));
 
-            Widget.attach(this, document.body);
+            Widget.attach(this, this.node.ownerDocument.body);
             this.activate();
         });
     }
@@ -388,7 +393,7 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
 
     protected createMessageNode(msg: string | HTMLElement): HTMLElement {
         if (typeof msg === 'string') {
-            const messageNode = document.createElement('div');
+            const messageNode = this.node.ownerDocument.createElement('div');
             messageNode.textContent = msg;
             return messageNode;
         }

@@ -49,7 +49,8 @@ import {
     InternalMenuDto,
     CHANNEL_SET_MENU_BAR_VISIBLE,
     CHANNEL_TOGGLE_FULL_SCREEN,
-    CHANNEL_IS_MAXIMIZED
+    CHANNEL_IS_MAXIMIZED,
+    CHANNEL_REQUEST_SECONDARY_CLOSE
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
 import { Disposable, DisposableCollection, isOSX, MaybePromise } from '../common';
@@ -258,6 +259,23 @@ export namespace TheiaRendererAPI {
 
         return new Promise<boolean>(resolve => {
             wc.send(CHANNEL_REQUEST_CLOSE, stopReason, confirmChannel, cancelChannel);
+            createDisposableListener(ipcMain, confirmChannel, e => {
+                resolve(true);
+            }, disposables);
+            createDisposableListener(ipcMain, cancelChannel, e => {
+                resolve(false);
+            }, disposables);
+        }).finally(() => disposables.dispose());
+    }
+
+    export function requestSecondaryClose(mainWindow: WebContents, secondaryWindow: WebContents): Promise<boolean> {
+        const channelNr = nextReplyChannel++;
+        const confirmChannel = `confirm-${channelNr}`;
+        const cancelChannel = `cancel-${channelNr}`;
+        const disposables = new DisposableCollection();
+
+        return new Promise<boolean>(resolve => {
+            mainWindow.send(CHANNEL_REQUEST_SECONDARY_CLOSE, secondaryWindow.mainFrame.name, confirmChannel, cancelChannel);
             createDisposableListener(ipcMain, confirmChannel, e => {
                 resolve(true);
             }, disposables);

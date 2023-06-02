@@ -287,9 +287,11 @@ export class ShouldSaveDialog extends AbstractDialog<boolean> {
     constructor(widget: Widget) {
         super({
             title: nls.localizeByDefault('Do you want to save the changes you made to {0}?', widget.title.label || widget.title.caption)
+        }, {
+            node: widget.node.ownerDocument.createElement('div')
         });
 
-        const messageNode = document.createElement('div');
+        const messageNode = this.node.ownerDocument.createElement('div');
         messageNode.textContent = nls.localizeByDefault("Your changes will be lost if you don't save them.");
         messageNode.setAttribute('style', 'flex: 1 100%; padding-bottom: calc(var(--theia-ui-padding)*3);');
         this.contentNode.appendChild(messageNode);

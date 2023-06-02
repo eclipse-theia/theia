@@ -185,7 +185,7 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
 
         switch (modelType) {
             case CustomEditorModelType.Text: {
-                const model = CustomTextEditorModel.create(viewType, resource, this.textModelService, this.fileService, this.editorPreferences);
+                const model = CustomTextEditorModel.create(viewType, resource, this.textModelService, this.fileService);
                 return this.customEditorService.models.add(resource, viewType, model);
             }
             case CustomEditorModelType.Custom: {
@@ -521,19 +521,16 @@ export class CustomTextEditorModel implements CustomEditorModel {
     private readonly toDispose = new DisposableCollection();
     private readonly onDirtyChangedEmitter = new Emitter<void>();
     readonly onDirtyChanged = this.onDirtyChangedEmitter.event;
-    autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
-    autoSaveDelay: number;
 
     static async create(
         viewType: string,
         resource: TheiaURI,
         editorModelService: EditorModelService,
         fileService: FileService,
-        editorPreferences: EditorPreferences,
     ): Promise<CustomTextEditorModel> {
         const model = await editorModelService.createModelReference(resource);
         model.object.suppressOpenEditorWhenDirty = true;
-        return new CustomTextEditorModel(viewType, resource, model, fileService, editorPreferences);
+        return new CustomTextEditorModel(viewType, resource, model, fileService);
     }
 
     constructor(
@@ -541,7 +538,6 @@ export class CustomTextEditorModel implements CustomEditorModel {
         readonly editorResource: TheiaURI,
         private readonly model: Reference<MonacoEditorModel>,
         private readonly fileService: FileService,
-        private readonly editorPreferences: EditorPreferences
     ) {
         this.toDispose.push(
             this.editorTextModel.onDirtyChanged(e => {
@@ -549,21 +545,14 @@ export class CustomTextEditorModel implements CustomEditorModel {
             })
         );
         this.toDispose.push(this.onDirtyChangedEmitter);
+    }
 
-        this.autoSave = this.editorPreferences.get('files.autoSave', undefined, editorResource.toString());
-        this.autoSaveDelay = this.editorPreferences.get('files.autoSaveDelay', undefined, editorResource.toString());
+    get autoSave(): 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange' {
+        return this.editorTextModel.autoSave;
+    }
 
-        this.toDispose.push(
-            this.editorPreferences.onPreferenceChanged(event => {
-                if (event.preferenceName === 'files.autoSave') {
-                    this.autoSave = this.editorPreferences.get('files.autoSave', undefined, editorResource.toString());
-                }
-                if (event.preferenceName === 'files.autoSaveDelay') {
-                    this.autoSaveDelay = this.editorPreferences.get('files.autoSaveDelay', undefined, editorResource.toString());
-                }
-            })
-        );
-        this.toDispose.push(this.onDirtyChangedEmitter);
+    get autoSaveDelay(): number {
+        return this.editorTextModel.autoSaveDelay;
     }
 
     dispose(): void {

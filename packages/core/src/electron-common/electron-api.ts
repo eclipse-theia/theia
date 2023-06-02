@@ -64,6 +64,8 @@ export interface TheiaCoreAPI {
     onWindowEvent(event: WindowEvent, handler: () => void): Disposable;
     setCloseRequestHandler(handler: (reason: StopReason) => Promise<boolean>): void;
 
+    setSecondaryWindowCloseRequestHandler(windowName: string, handler: () => Promise<boolean>): void;
+
     toggleDevTools(): void;
     getZoomLevel(): Promise<number>;
     setZoomLevel(desired: number): void;
@@ -120,6 +122,8 @@ export const CHANNEL_SET_ZOOM_LEVEL = 'SetZoomLevel';
 export const CHANNEL_IS_FULL_SCREENABLE = 'IsFullScreenable';
 export const CHANNEL_IS_FULL_SCREEN = 'IsFullScreen';
 export const CHANNEL_TOGGLE_FULL_SCREEN = 'ToggleFullScreen';
+
+export const CHANNEL_REQUEST_SECONDARY_CLOSE = 'RequestSecondaryClose';
 
 export const CHANNEL_REQUEST_CLOSE = 'RequestClose';
 export const CHANNEL_REQUEST_RELOAD = 'RequestReload';
