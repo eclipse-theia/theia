@@ -68,6 +68,7 @@ export interface SideBarRenderData extends TabBar.IRenderData<Widget> {
     iconSize?: SizeData;
     paddingTop?: number;
     paddingBottom?: number;
+    visible?: boolean
 }
 
 export interface ScrollableRenderData extends TabBar.IRenderData<Widget> {
@@ -192,6 +193,14 @@ export class TabBarRenderer extends TabBar.Renderer {
                 onclick: this.handleCloseClickEvent
             })
         );
+    }
+
+    override createTabClass(data: SideBarRenderData): string {
+        let tabClass = super.createTabClass(data);
+        if (!(data.visible ?? true)) {
+            tabClass += ' p-mod-invisible';
+        }
+        return tabClass;
     }
 
     /**
@@ -586,7 +595,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
     protected scrollBar?: PerfectScrollbar;
 
     private scrollBarFactory: () => PerfectScrollbar;
-    private pendingReveal?: Promise<void>;
+    protected pendingReveal?: Promise<void>;
     private isMouseOver = false;
     protected needsRecompute = false;
     protected tabSize = 0;
@@ -960,11 +969,23 @@ export class SideTabBar extends ScrollableTabBar {
      */
     readonly collapseRequested = new Signal<this, Title<Widget>>(this);
 
+    /**
+     * Emitted when the set of overflowing/hidden tabs changes.
+     */
+    readonly tabsOverflowChanged = new Signal<this, { titles: Title<Widget>[], startIndex: number }>(this);
+
     private mouseData?: {
         pressX: number,
         pressY: number,
         mouseDownTabIndex: number
     };
+
+    private tabsOverflowData?: {
+        titles: Title<Widget>[],
+        startIndex: number
+    };
+
+    private _rowGap: number;
 
     constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
         super(options);
@@ -996,7 +1017,6 @@ export class SideTabBar extends ScrollableTabBar {
     }
 
     protected override onAfterAttach(msg: Message): void {
-        super.onAfterAttach(msg);
         this.updateTabs();
         this.node.addEventListener('p-dragenter', this);
         this.node.addEventListener('p-dragover', this);
@@ -1014,9 +1034,65 @@ export class SideTabBar extends ScrollableTabBar {
 
     protected override onUpdateRequest(msg: Message): void {
         this.updateTabs();
-        if (this.scrollBar) {
-            this.scrollBar.update();
+    }
+
+    protected override onResize(msg: Widget.ResizeMessage): void {
+        // Tabs need to be updated if there are already overflowing tabs or the current tabs don't fit
+        if (this.tabsOverflowData || this.node.clientHeight < this.contentNode.clientHeight) {
+            this.updateTabs();
         }
+    }
+
+    // Queries the tabRowGap value of the content node. Needed to properly compute overflowing
+    // tabs that should be hidden
+    protected get tabRowGap(): number {
+        // We assume that the tab row gap is static i.e. we compute it once an then cache it
+        if (!this._rowGap) {
+            this._rowGap = this.computeTabRowGap();
+        }
+        return this._rowGap;
+
+    }
+
+    protected computeTabRowGap(): number {
+        const style = window.getComputedStyle(this.contentNode);
+        const rowGapStyle = style.getPropertyValue('row-gap');
+        const numericValue = parseFloat(rowGapStyle);
+        const unit = rowGapStyle.match(/[a-zA-Z]+/)?.[0];
+
+        const tempDiv = document.createElement('div');
+        tempDiv.style.height = '1' + unit;
+        document.body.appendChild(tempDiv);
+        const rowGapValue = numericValue * tempDiv.offsetHeight;
+        document.body.removeChild(tempDiv);
+        return rowGapValue;
+    }
+
+    /**
+     * Reveal the tab with the given index by moving it into the non-overflowing tabBar section
+     * if necessary.
+     */
+    override revealTab(index: number): Promise<void> {
+        if (this.pendingReveal) {
+            // A reveal has already been scheduled
+            return this.pendingReveal;
+        }
+        const result = new Promise<void>(resolve => {
+            // The tab might not have been created yet, so wait until the next frame
+            window.requestAnimationFrame(() => {
+                if (this.tabsOverflowData && index >= this.tabsOverflowData.startIndex) {
+                    const title = this.titles[index];
+                    this.insertTab(this.tabsOverflowData.startIndex - 1, title);
+                }
+
+                if (this.pendingReveal === result) {
+                    this.pendingReveal = undefined;
+                }
+                resolve();
+            });
+        });
+        this.pendingReveal = result;
+        return result;
     }
 
     /**
@@ -1032,13 +1108,18 @@ export class SideTabBar extends ScrollableTabBar {
                 const hiddenContent = this.hiddenContentNode;
                 const n = hiddenContent.children.length;
                 const renderData = new Array<Partial<SideBarRenderData>>(n);
+                const availableWidth = this.node.clientHeight;
+                let actualWidth = 0;
+                let overflowStartIndex = -1;
                 for (let i = 0; i < n; i++) {
                     const hiddenTab = hiddenContent.children[i];
                     // Extract tab padding from the computed style
                     const tabStyle = window.getComputedStyle(hiddenTab);
+                    const paddingTop = parseFloat(tabStyle.paddingTop!);
+                    const paddingBottom = parseFloat(tabStyle.paddingBottom!);
                     const rd: Partial<SideBarRenderData> = {
-                        paddingTop: parseFloat(tabStyle.paddingTop!),
-                        paddingBottom: parseFloat(tabStyle.paddingBottom!)
+                        paddingTop,
+                        paddingBottom
                     };
                     // Extract label size from the DOM
                     const labelElements = hiddenTab.getElementsByClassName('p-TabBar-tabLabel');
@@ -1051,13 +1132,48 @@ export class SideTabBar extends ScrollableTabBar {
                     if (iconElements.length === 1) {
                         const icon = iconElements[0];
                         rd.iconSize = { width: icon.clientWidth, height: icon.clientHeight };
+                        actualWidth += icon.clientHeight + paddingTop + paddingBottom + this.tabRowGap;
+
+                        if (actualWidth > availableWidth && i !== 0) {
+                            rd.visible = false;
+                            if (overflowStartIndex === -1) {
+                                overflowStartIndex = i;
+                            }
+                        }
+                        renderData[i] = rd;
                     }
-                    renderData[i] = rd;
                 }
                 // Render into the visible node
                 this.renderTabs(this.contentNode, renderData);
+                this.computeOverflowingTabsData(overflowStartIndex);
             });
         }
+    }
+
+    private computeOverflowingTabsData(startIndex: number): void {
+        // ensure that render tabs has completed
+        window.requestAnimationFrame(() => {
+            if (startIndex === -1) {
+                if (this.tabsOverflowData) {
+                    this.tabsOverflowData = undefined;
+                    this.tabsOverflowChanged.emit({ titles: [], startIndex });
+                }
+                return;
+            }
+            const newOverflowingTabs = this.titles.slice(startIndex);
+
+            if (!this.tabsOverflowData) {
+                this.tabsOverflowData = { titles: newOverflowingTabs, startIndex };
+                this.tabsOverflowChanged.emit(this.tabsOverflowData);
+                return;
+            }
+
+            if ((newOverflowingTabs.length !== this.tabsOverflowData?.titles.length ?? 0) ||
+                newOverflowingTabs.find((newTitle, i) => newTitle !== this.tabsOverflowData?.titles[i]) !== undefined) {
+                this.tabsOverflowData = { titles: newOverflowingTabs, startIndex };
+                this.tabsOverflowChanged.emit(this.tabsOverflowData);
+            }
+        });
     }
 
     /**

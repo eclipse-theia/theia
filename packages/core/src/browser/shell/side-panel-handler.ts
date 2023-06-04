@@ -34,6 +34,7 @@ import { MenuPath } from '../../common/menu';
 import { SidebarBottomMenuWidget } from './sidebar-bottom-menu-widget';
 import { SidebarTopMenuWidget } from './sidebar-top-menu-widget';
 import { PINNED_CLASS } from '../widgets';
+import { AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './additional-views-menu-widget';
 
 /** The class name added to the left and right area panels. */
 export const LEFT_RIGHT_AREA_CLASS = 'theia-app-sides';
@@ -68,6 +69,11 @@ export class SidePanelHandler {
      * tab bar itself remains visible as long as there is at least one widget.
      */
     tabBar: SideTabBar;
+    /**
+     * Conditional menu placed below the tabBar. Manages overflowing/hidden tabs.
+     * Is only visible if there are overflowing tabs.
+     */
+    additionalViewsMenu: AdditionalViewsMenuWidget;
     /**
      * The menu placed on the sidebar top.
      * Displayed as icons.
@@ -118,6 +124,7 @@ export class SidePanelHandler {
     @inject(TabBarRendererFactory) protected tabBarRendererFactory: () => TabBarRenderer;
     @inject(SidebarTopMenuWidgetFactory) protected sidebarTopWidgetFactory: () => SidebarTopMenuWidget;
     @inject(SidebarBottomMenuWidgetFactory) protected sidebarBottomWidgetFactory: () => SidebarBottomMenuWidget;
+    @inject(AdditionalViewsMenuWidgetFactory) protected additionalViewsMenuFactory: AdditionalViewsMenuWidgetFactory;
     @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler;
     @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService;
     @inject(TheiaDockPanel.Factory) protected readonly dockPanelFactory: TheiaDockPanel.Factory;
@@ -133,6 +140,7 @@ export class SidePanelHandler {
         this.options = options;
         this.topMenu = this.createSidebarTopMenu();
         this.tabBar = this.createSideBar();
+        this.additionalViewsMenu = this.createAdditionalViewsWidget();
         this.bottomMenu = this.createSidebarBottomMenu();
         this.toolBar = this.createToolbar();
         this.dockPanel = this.createSidePanel();
@@ -175,6 +183,7 @@ export class SidePanelHandler {
         sideBar.collapseRequested.connect(() => this.collapse(), this);
         sideBar.currentChanged.connect(this.onCurrentTabChanged, this);
         sideBar.tabDetachRequested.connect(this.onTabDetachRequested, this);
+        sideBar.tabsOverflowChanged.connect(this.onTabsOverflowChanged, this);
         return sideBar;
     }
 
@@ -197,6 +206,12 @@ export class SidePanelHandler {
         const toolbar = new SidePanelToolbar(this.tabBarToolBarRegistry, this.tabBarToolBarFactory, this.side);
         toolbar.onContextMenu(e => this.showContextMenu(e));
         return toolbar;
+    }
+
+    protected createAdditionalViewsWidget(): AdditionalViewsMenuWidget {
+        const widget = this.additionalViewsMenuFactory(this.side);
+        widget.addClass('theia-sidebar-menu');
+        return widget;
     }
 
     protected createSidebarTopMenu(): SidebarTopMenuWidget {
@@ -254,6 +269,7 @@ export class SidePanelHandler {
         sidebarContainer.addClass('theia-app-sidebar-container');
         sidebarContainerLayout.addWidget(this.topMenu);
         sidebarContainerLayout.addWidget(this.tabBar);
+        sidebarContainerLayout.addWidget(this.additionalViewsMenu);
         sidebarContainerLayout.addWidget(this.bottomMenu);
 
         BoxPanel.setStretch(sidebarContainer, 0);
@@ -634,6 +650,14 @@ export class SidePanelHandler {
             // The promise is resolved when the drag has ended
             tab.classList.remove('p-mod-hidden');
         });
+    }
+
+    protected onTabsOverflowChanged(sender: SideTabBar, event: { titles: Title<Widget>[], startIndex: number }): void {
+        if (event.startIndex >= 0 && event.startIndex <= sender.currentIndex) {
+            sender.revealTab(sender.currentIndex);
+        } else {
+            this.additionalViewsMenu.updateAdditionalViews(sender, event);
+        }
     }
 
     /*

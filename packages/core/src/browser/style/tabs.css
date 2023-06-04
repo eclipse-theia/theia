@@ -195,6 +195,10 @@
     height: inherit;
 }
 
+.p-TabBar[data-orientation='vertical'] .p-TabBar-tab.p-mod-invisible {
+    visibility: hidden;
+}
+
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon,
 .p-TabBar.theia-app-centers .p-TabBar-tab.theia-mod-pinned > .p-TabBar-tabCloseIcon {
   padding: 2px;
@@ -322,6 +326,10 @@
 .p-TabBar[data-orientation='vertical'] .p-TabBar-content-container > .ps__rail-y  > .ps__thumb-y {
   width: var(--theia-private-horizontal-tab-scrollbar-height) !important;
   right: calc((var(--theia-private-horizontal-tab-scrollbar-rail-height) - var(--theia-private-horizontal-tab-scrollbar-height)) / 2);
+}
+
+.p-TabBar[data-orientation='vertical'] .p-TabBar-content-container {
+  display: block;
 }
 
 /*-----------------------------------------------------------------------------
