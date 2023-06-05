@@ -112,9 +112,17 @@ export class NativeWebpackPlugin {
     }
 
     protected async copyNodePtySpawnHelper(compiler: Compiler): Promise<void> {
-        if (process.platform !== 'win32') {
+        const targetDirectory = path.resolve(compiler.outputPath, '..', 'build', 'Release');
+        if (process.platform === 'win32') {
+            const agentFile = require.resolve('node-pty/build/Release/winpty-agent.exe');
+            const targetAgentFile = path.join(targetDirectory, 'winpty-agent.exe');
+            await this.copyExecutable(agentFile, targetAgentFile);
+            const dllFile = require.resolve('node-pty/build/Release/winpty.dll');
+            const targetDllFile = path.join(targetDirectory, 'winpty.dll');
+            await this.copyExecutable(dllFile, targetDllFile);
+        } else {
             const sourceFile = require.resolve('node-pty/build/Release/spawn-helper');
-            const targetFile = path.resolve(compiler.outputPath, '..', 'build', 'Release', 'spawn-helper');
+            const targetFile = path.join(targetDirectory, 'spawn-helper');
             await this.copyExecutable(sourceFile, targetFile);
         }
     }
