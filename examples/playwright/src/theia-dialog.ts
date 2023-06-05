@@ -65,7 +65,7 @@ export class TheiaDialog extends TheiaPageObject {
     }
 
     protected async validationElement(): Promise<ElementHandle<SVGElement | HTMLElement>> {
-        return this.page.waitForSelector(`${this.errorSelector} div.error`);
+        return this.page.waitForSelector(`${this.errorSelector} div.error`, { state: 'attached' });
     }
 
     async getValidationText(): Promise<string | null> {
