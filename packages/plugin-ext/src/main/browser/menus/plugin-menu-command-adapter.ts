@@ -94,6 +94,7 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
             ['editor/context', selectedResource],
             ['editor/title', widgetURI],
             ['editor/title/context', selectedResource],
+            ['editor/title/run', widgetURI],
             ['explorer/context', selectedResource],
             ['scm/resourceFolder/context', toScmArgs],
             ['scm/resourceGroup/context', toScmArgs],

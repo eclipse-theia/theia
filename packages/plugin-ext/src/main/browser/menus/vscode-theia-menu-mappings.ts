@@ -32,6 +32,7 @@ import { VIEW_ITEM_CONTEXT_MENU } from '../view/tree-view-widget';
 import { WebviewWidget } from '../webview/webview';
 
 export const PLUGIN_EDITOR_TITLE_MENU = ['plugin_editor/title'];
+export const PLUGIN_EDITOR_TITLE_RUN_MENU = ['plugin_editor/title/run'];
 export const PLUGIN_SCM_TITLE_MENU = ['plugin_scm/title'];
 export const PLUGIN_VIEW_TITLE_MENU = ['plugin_view/title'];
 
@@ -45,6 +46,7 @@ export const implementedVSCodeContributionPoints = [
     'editor/context',
     'editor/title',
     'editor/title/context',
+    'editor/title/run',
     'explorer/context',
     'scm/resourceFolder/context',
     'scm/resourceGroup/context',
@@ -68,6 +70,7 @@ export const codeToTheiaMappings = new Map<ContributionPoint, MenuPath[]>([
     ['editor/context', [EDITOR_CONTEXT_MENU]],
     ['editor/title', [PLUGIN_EDITOR_TITLE_MENU]],
     ['editor/title/context', [SHELL_TABBAR_CONTEXT_MENU]],
+    ['editor/title/run', [PLUGIN_EDITOR_TITLE_RUN_MENU]],
     ['explorer/context', [NAVIGATOR_CONTEXT_MENU]],
     ['scm/resourceFolder/context', [ScmTreeWidget.RESOURCE_FOLDER_CONTEXT_MENU]],
     ['scm/resourceGroup/context', [ScmTreeWidget.RESOURCE_GROUP_CONTEXT_MENU]],
