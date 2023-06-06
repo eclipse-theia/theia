@@ -14,12 +14,26 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DependencyDownloadContribution } from '@theia/core/lib/node/dependency-download';
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable } from 'inversify';
+import { DependencyDownloadContribution } from './dependency-download';
 
 @injectable()
-export class FindGitRepositoriesDependebcyDownload implements DependencyDownloadContribution {
+export class DrivelistDependencyDownload implements DependencyDownloadContribution {
     getDownloadUrl(remoteOS: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('find-git-repositories.zip', remoteOS);
+        return DependencyDownloadContribution.getDefaultURLForFile('drivelist.zip', remoteOS);
+    }
+}
+
+@injectable()
+export class keytarDependencyDownload implements DependencyDownloadContribution {
+    getDownloadUrl(remoteOS: string): string {
+        return DependencyDownloadContribution.getDefaultURLForFile('keytar.zip', remoteOS);
+    }
+}
+
+@injectable()
+export class NSFWDependencyDownload implements DependencyDownloadContribution {
+    getDownloadUrl(remoteOS: string): string {
+        return DependencyDownloadContribution.getDefaultURLForFile('nsfw.zip', remoteOS);
     }
 }

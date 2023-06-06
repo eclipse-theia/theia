@@ -17,9 +17,22 @@
 import { DependencyDownloadContribution } from '@theia/core/lib/node/dependency-download';
 import { injectable } from '@theia/core/shared/inversify';
 
+const BASE_URL = 'https://github.com/microsoft/ripgrep-prebuilt/releases/download/v13.0.0-8/ripgrep-v13.0.0-8';
+
 @injectable()
-export class FindGitRepositoriesDependebcyDownload implements DependencyDownloadContribution {
+export class RigrepDependencyDownload implements DependencyDownloadContribution {
     getDownloadUrl(remoteOS: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('find-git-repositories.zip', remoteOS);
+        const [platform, architecure] = remoteOS.split('-');
+
+        let transformedPlatform: string;
+        if (remoteOS.includes('darwin')) {
+            transformedPlatform = 'apple-darwin';
+        } else if (remoteOS.includes('win')) {
+            transformedPlatform = 'pc-windows-msvc';
+        } else {
+            transformedPlatform = 'unkown-linux-gnu';
+        }
+
+        return `${BASE_URL}-${architecure === 'x64' ? 'x86_64' : architecure}-${transformedPlatform}.${platform.includes('win') ? 'zip' : 'tar.gz'}`;
     }
 }

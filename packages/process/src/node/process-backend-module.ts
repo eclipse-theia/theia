@@ -22,6 +22,8 @@ import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { ProcessManager } from './process-manager';
 import { ILogger } from '@theia/core/lib/common';
 import { MultiRingBuffer, MultiRingBufferOptions } from './multi-ring-buffer';
+import { DependencyDownloadContribution } from '@theia/core/lib/node/dependency-download';
+import { NodePtyDependencyDownload } from './node-pty-download-contribution';
 
 export default new ContainerModule(bind => {
     bind(RawProcess).toSelf().inTransientScope();
@@ -64,4 +66,6 @@ export default new ContainerModule(bind => {
     bind(MultiRingBuffer).toSelf().inTransientScope();
     /* 1MB size, TODO should be a user preference. */
     bind(MultiRingBufferOptions).toConstantValue({ size: 1048576 });
+
+    bind(DependencyDownloadContribution.Contribution).to(NodePtyDependencyDownload);
 });

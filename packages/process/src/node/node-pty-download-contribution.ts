@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2017 TypeFox and others.
+// Copyright (C) 2023 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,21 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common';
-import { FileSearchServiceImpl } from './file-search-service-impl';
-import { fileSearchServicePath, FileSearchService } from '../common/file-search-service';
 import { DependencyDownloadContribution } from '@theia/core/lib/node/dependency-download';
-import { RigrepDependencyDownload } from './rigrep-download-contribution';
+import { injectable } from '@theia/core/shared/inversify';
 
-export default new ContainerModule(bind => {
-
-    bind(FileSearchService).to(FileSearchServiceImpl).inSingletonScope();
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(fileSearchServicePath, () =>
-            ctx.container.get(FileSearchService)
-        )
-    ).inSingletonScope();
-
-    bind(DependencyDownloadContribution.Contribution).to(RigrepDependencyDownload);
-});
+@injectable()
+export class NodePtyDependencyDownload implements DependencyDownloadContribution {
+    getDownloadUrl(remoteOS: string): string {
+        return DependencyDownloadContribution.getDefaultURLForFile('node-pty.zip', remoteOS);
+    }
+}

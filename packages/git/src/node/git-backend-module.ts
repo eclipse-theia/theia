@@ -30,7 +30,7 @@ import { GitPromptServer, GitPromptClient, GitPrompt } from '../common/git-promp
 import { DugiteGitPromptServer } from './dugite-git-prompt';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { DefaultGitInit, GitInit } from './init/git-init';
-import { dependencyDownloadContribution } from '@theia/core/lib/node/dependency-download';
+import { DependencyDownloadContribution } from '@theia/core/lib/node/dependency-download';
 import { FindGitRepositoriesDependebcyDownload } from './nativ-dependencies/find-git-repositories-download-contribution';
 
 const SINGLE_THREADED = process.argv.indexOf('--no-cluster') !== -1;
@@ -79,7 +79,7 @@ export function bindGit(bind: interfaces.Bind, bindingOptions: GitBindingOptions
     bind(DefaultGitInit).toSelf();
     bind(GitInit).toService(DefaultGitInit);
     bind(ConnectionContainerModule).toConstantValue(gitConnectionModule);
-    bind(dependencyDownloadContribution).to(FindGitRepositoriesDependebcyDownload);
+    bind(DependencyDownloadContribution.Contribution).to(FindGitRepositoriesDependebcyDownload);
 }
 
 const gitConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {

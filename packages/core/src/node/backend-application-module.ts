@@ -41,7 +41,8 @@ import { bindNodeStopwatch, bindBackendStopwatchServer } from './performance';
 import { OSBackendApplicationContribution } from './os-backend-application-contribution';
 import { BackendRequestFacade } from './request/backend-request-facade';
 import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
-import { dependencyDownloadContribution, DependencyDownloadService, DummyDependencyDownloader } from './dependency-download';
+import { DependencyDownloadContribution, DependencyDownloadService, DummyDependencyDownloader } from './dependency-download';
+import { DrivelistDependencyDownload, keytarDependencyDownload, NSFWDependencyDownload } from './native-dependency-download-contributions';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -133,5 +134,9 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(FileSystemLocking).to(FileSystemLockingImpl).inSingletonScope();
     bind(DependencyDownloadService).to(DummyDependencyDownloader);
-    bindContributionProvider(bind, dependencyDownloadContribution);
+    bindContributionProvider(bind, DependencyDownloadContribution.Contribution);
+
+    bind(DependencyDownloadContribution.Contribution).to(keytarDependencyDownload);
+    bind(DependencyDownloadContribution.Contribution).to(DrivelistDependencyDownload);
+    bind(DependencyDownloadContribution.Contribution).to(NSFWDependencyDownload);
 });

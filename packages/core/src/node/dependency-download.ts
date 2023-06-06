@@ -17,15 +17,40 @@
 import { RequestOptions } from 'https';
 import { MaybePromise, URI } from 'src/common';
 
-export const dependencyDownloadContribution = Symbol('dependencyDownloadContribution');
 
+/**
+ * contribution used for downloading prebuild nativ dependency when connecting to a remote machine with a different system
+ */
 export interface DependencyDownloadContribution {
     httpOptions?: RequestOptions;
+    skipUnzip?: boolean
 
     getDownloadUrl(remoteOS: string): MaybePromise<string>;
 
     onDownloadCompleted?(file: URI, err?: Error): void;
 }
+
+export namespace DependencyDownloadContribution {
+    export const Contribution = Symbol('dependencyDownloadContribution');
+
+    const DEFAULT_DEPENDENCY_DOWNLOAD_URL = 'https://github.com/jonah-iden/theia-native-dependencies/releases/download/1.38.0-';
+    export const DEFAULT_WIN_DEPENDENCY_URL = DEFAULT_DEPENDENCY_DOWNLOAD_URL + 'windows-latest';
+    export const DEFAULT_MAC_DEPENDENCY_URL = DEFAULT_DEPENDENCY_DOWNLOAD_URL + 'mac-latest';
+    export const DEFAULT_LINUX_DEPENDENCY_URL = DEFAULT_DEPENDENCY_DOWNLOAD_URL + 'ubuntu-latest';
+
+    export function getDefaultURLForFile(fileName: string, remoteOS: string): string {
+        if (remoteOS.includes('darwin')) {
+            return `${DEFAULT_MAC_DEPENDENCY_URL}/${fileName}`;
+        } else if (remoteOS.includes('win')) {
+            return `${DEFAULT_WIN_DEPENDENCY_URL}/${fileName}`;
+        } else {
+            return `${DEFAULT_LINUX_DEPENDENCY_URL}/${fileName}`;
+        }
+
+    }
+
+}
+
 
 export const DependencyDownloadService = Symbol('dependencyDownloadService');
 /**
