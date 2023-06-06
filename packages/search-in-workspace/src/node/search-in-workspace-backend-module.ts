@@ -19,6 +19,8 @@ import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/com
 import { SearchInWorkspaceServer, SearchInWorkspaceClient, SIW_WS_PATH } from '../common/search-in-workspace-interface';
 import { RipgrepSearchInWorkspaceServer, RgPath } from './ripgrep-search-in-workspace-server';
 import { rgPath } from '@vscode/ripgrep';
+import { DependencyDownloadContribution } from '@theia/core/lib/node/dependency-download';
+import { RigrepDependencyDownload } from './rigrep-download-contribution';
 
 export default new ContainerModule(bind => {
     bind(SearchInWorkspaceServer).to(RipgrepSearchInWorkspaceServer);
@@ -30,4 +32,5 @@ export default new ContainerModule(bind => {
             return server;
         }));
     bind(RgPath).toConstantValue(rgPath);
+    bind(DependencyDownloadContribution.Contribution).to(RigrepDependencyDownload);
 });

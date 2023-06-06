@@ -39,14 +39,19 @@ export class NativeDependencyDownloadService implements DependencyDownloadServic
 
     async downloadDependencies(remoteOS: string): Promise<string> {
         const tmpDir = temp.mkdirSync(`theia-native-dependencies-${remoteOS}`);
-        const unpackDir = path.join(tmpDir, 'unpacked')
+        const unpackDir = path.join(tmpDir, 'unpacked');
+        const downloadURLs = new Set<string>();
         await Promise.all(this.dependencyDownloadContributions.getContributions()
             .map(async contribution => {
-                if (contribution.skipUnzip) {
-                    await this.downloadDependency(await contribution.getDownloadUrl(remoteOS), unpackDir, contribution.httpOptions);
-                } else {
-                    const file = await this.downloadDependency(await contribution.getDownloadUrl(remoteOS), tmpDir, contribution.httpOptions);
-                    await this.unpackDependency(file, unpackDir);
+                const url = await contribution.getDownloadUrl(remoteOS)
+                if (downloadURLs.has(url)) {
+                    if (contribution.skipUnzip) {
+                        await this.downloadDependency(url, unpackDir, contribution.httpOptions);
+                    } else {
+                        const file = await this.downloadDependency(await contribution.getDownloadUrl(remoteOS), tmpDir, contribution.httpOptions);
+                        await this.unpackDependency(file, unpackDir);
+                    }
+                    downloadURLs.add(url);
                 }
             }));
         return unpackDir
