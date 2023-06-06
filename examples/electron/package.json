@@ -45,6 +45,7 @@
     "@theia/preview": "1.38.0",
     "@theia/process": "1.38.0",
     "@theia/property-view": "1.38.0",
+    "@theia/remote": "1.38.0",
     "@theia/scm": "1.38.0",
     "@theia/scm-extra": "1.38.0",
     "@theia/search-in-workspace": "1.38.0",

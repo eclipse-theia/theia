@@ -41,6 +41,7 @@ import { bindNodeStopwatch, bindBackendStopwatchServer } from './performance';
 import { OSBackendApplicationContribution } from './os-backend-application-contribution';
 import { BackendRequestFacade } from './request/backend-request-facade';
 import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
+import { dependencyDownloadContribution, DependencyDownloadService, DummyDependencyDownloader } from './dependency-download';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -131,4 +132,6 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bindBackendStopwatchServer(bind);
 
     bind(FileSystemLocking).to(FileSystemLockingImpl).inSingletonScope();
+    bind(DependencyDownloadService).to(DummyDependencyDownloader);
+    bindContributionProvider(bind, dependencyDownloadContribution);
 });
