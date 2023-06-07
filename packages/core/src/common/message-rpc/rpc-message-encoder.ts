@@ -51,7 +51,7 @@ export interface RequestMessage {
 
 export interface NotificationMessage {
     type: RpcMessageType.Notification;
-    id: number;
+    id?: number;
     method: string;
     args: any[];
 }
@@ -111,7 +111,7 @@ export interface RpcMessageDecoder {
 export interface RpcMessageEncoder {
     cancel(buf: WriteBuffer, requestId: number): void;
 
-    notification(buf: WriteBuffer, requestId: number, method: string, args: any[]): void
+    notification(buf: WriteBuffer, method: string, args: any[], id?: number): void
 
     request(buf: WriteBuffer, requestId: number, method: string, args: any[]): void
 
@@ -130,8 +130,8 @@ export class MsgPackMessageEncoder implements RpcMessageEncoder {
     cancel(buf: WriteBuffer, requestId: number): void {
         this.encode<CancelMessage>(buf, { type: RpcMessageType.Cancel, id: requestId });
     }
-    notification(buf: WriteBuffer, requestId: number, method: string, args: any[]): void {
-        this.encode<NotificationMessage>(buf, { type: RpcMessageType.Notification, id: requestId, method, args });
+    notification(buf: WriteBuffer, method: string, args: any[], id?: number): void {
+        this.encode<NotificationMessage>(buf, { type: RpcMessageType.Notification, method, args, id });
     }
     request(buf: WriteBuffer, requestId: number, method: string, args: any[]): void {
         this.encode<RequestMessage>(buf, { type: RpcMessageType.Request, id: requestId, method, args });
