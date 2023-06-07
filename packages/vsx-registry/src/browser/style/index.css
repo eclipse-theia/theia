@@ -39,6 +39,9 @@
     flex: 1;
     padding-top: calc(var(--theia-ui-padding)/2);
     padding-bottom: calc(var(--theia-ui-padding)/2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .theia-vsx-extension {
@@ -351,4 +354,3 @@
 .theia-vsx-extension-action-bar .action.prominent:hover {
     background-color: var(--theia-extensionButton-prominentHoverBackground);
 }
-
