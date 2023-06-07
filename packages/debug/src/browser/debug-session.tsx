@@ -693,13 +693,8 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     protected async sendExceptionBreakpoints(): Promise<void> {
-        const args: DebugProtocol.SetExceptionBreakpointsArguments = {
-            filters: []
-        };
-        if (this.capabilities.supportsExceptionFilterOptions) {
-            args.filterOptions = [];
-        }
-        const { filters, filterOptions } = args;
+        const filters: string[] = [];
+        const filterOptions: DebugProtocol.ExceptionFilterOptions[] | undefined = this.capabilities.supportsExceptionFilterOptions ? [] : undefined;
         for (const breakpoint of this.breakpoints.getExceptionBreakpoints()) {
             if (breakpoint.enabled) {
                 if (filterOptions) {
@@ -712,7 +707,7 @@ export class DebugSession implements CompositeTreeElement {
                 }
             }
         }
-        await this.sendRequest('setExceptionBreakpoints', args);
+        await this.sendRequest('setExceptionBreakpoints', { filters, filterOptions });
     }
 
     protected async sendFunctionBreakpoints(affectedUri: URI): Promise<void> {
