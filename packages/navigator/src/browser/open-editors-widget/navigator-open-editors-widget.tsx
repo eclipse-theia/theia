@@ -118,9 +118,11 @@ export class OpenEditorsWidget extends AbstractNavigatorTreeWidget {
             {this.renderExpansionToggle(node, props)}
             {isEditorNode && this.renderPrefixIcon(node)}
             {this.decorateIcon(node, this.renderIcon(node, props))}
-            {this.renderCaptionAffixes(node, props, 'captionPrefixes')}
-            {this.renderCaption(node, props)}
-            {this.renderCaptionAffixes(node, props, 'captionSuffixes')}
+            <div className='noWrapInfo theia-TreeNodeSegmentGrow'>
+                {this.renderCaptionAffixes(node, props, 'captionPrefixes')}
+                {this.renderCaption(node, props)}
+                {this.renderCaptionAffixes(node, props, 'captionSuffixes')}
+            </div>
             {this.renderTailDecorations(node, props)}
             {(this.isGroupNode(node) || this.isAreaNode(node)) && this.renderInteractables(node, props)}
         </div>;

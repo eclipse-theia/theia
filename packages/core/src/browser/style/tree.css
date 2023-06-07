@@ -162,6 +162,13 @@
     justify-content: center;
 }
 
+.open-editors-node-row .theia-TreeNode .theia-TreeNodeContent .noWrapInfo > * {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline;
+}
+
 .theia-TreeNodeSegment mark {
     background-color: var(--theia-list-filterMatchBackground);
     color: var(--theia-list-inactiveSelectionForeground);
