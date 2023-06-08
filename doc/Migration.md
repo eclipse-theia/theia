@@ -11,7 +11,9 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 _msgpackr_:
 
-If you're experiencing [`maximum callstack exceeded`](https://github.com/eclipse-theia/theia/issues/12499) errors you may need to downgrade the version of `msgpackr` pulled using a [yarn resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/).
+If you're experiencing [`maximum callstack exceeded`](https://github.com/eclipse-theia/theia/issues/12499) errors you may need to either use a newer version (ex: `^1.9.5`) or downgrade the version of `msgpackr` pulled using a [yarn resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/).
+
+Versions known to be problematic are `>1.8.3 && <1.9.5`.
 
 ```
 rpc-message-encoder.ts:151 Uncaught (in promise) Error: Error during encoding: 'Maximum call stack size exceeded'
@@ -24,6 +26,12 @@ rpc-message-encoder.ts:151 Uncaught (in promise) Error: Error during encoding: '
 For the best results follow the version used and tested by the framework.
 
 For example:
+
+```json
+"resolutions": {
+    "**/msgpackr": "1.9.5"
+}
+```
 
 ```json
 "resolutions": {
@@ -72,15 +80,15 @@ For 2., `@postConstruct` methods can be refactored into a sync and an async meth
 ```diff
 -@postConstruct()
 -protected async init(): Promise<void> {
--  await longRunningOperation(); 
+-  await longRunningOperation();
 -}
 +@postConstruct()
 +protected init(): void {
-+  this.doInit();   
++  this.doInit();
 +}
 +
 +protected async doInit(): Promise<void> {
-+  await longRunningOperation();    
++  await longRunningOperation();
 +}
 ```
 
