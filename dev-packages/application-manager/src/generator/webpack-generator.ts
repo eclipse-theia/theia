@@ -379,7 +379,7 @@ if (process.platform !== 'win32') {
 
 const nativePlugin = new NativeWebpackPlugin({
     out: 'native',
-    ripgrep: ${this.ifPackage('@theia/search-in-workspace', 'true', 'false')},
+    ripgrep: ${this.ifPackage(['@theia/search-in-workspace', '@theia/file-search'], 'true', 'false')},
     pty: ${this.ifPackage('@theia/process', 'true', 'false')},
     nativeBindings: {
         drivelist: 'drivelist/build/Release/drivelist.node'
