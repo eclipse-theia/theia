@@ -32,6 +32,7 @@
   "dependencies": {
     "@theia/application-manager": "1.38.0",
     "@theia/application-package": "1.38.0",
+    "@theia/native-dependency-build": "1.38.0",
     "@theia/ffmpeg": "1.38.0",
     "@theia/localization-manager": "1.38.0",
     "@theia/ovsx-client": "1.38.0",

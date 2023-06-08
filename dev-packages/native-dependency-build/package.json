@@ -1,0 +1,28 @@
+{
+  "name": "@theia/native-dependency-build",
+  "version": "1.38.0",
+  "description": "Theia Nativ Dependency Build",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "build.js"
+  ],
+  "main": "build.js",
+  "scripts": {
+    "build:dependencies": "node build.js"
+  },
+  "devDependencies": {
+    "node-gyp": "^9.0.0",
+    "archiver": "5.3.1"
+  }
+}
