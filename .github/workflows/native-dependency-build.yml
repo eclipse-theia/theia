@@ -25,4 +25,4 @@ jobs:
       uses: actions/upload-artifact@v3 
       with: 
         name: native-dependencies
-        path: ./dev-packages/native-dependency-build/artifacts/*.zip
+        path: ./prebuild-native-dependencies/*.zip

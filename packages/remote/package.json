@@ -4,7 +4,8 @@
   "description": "Theia - Remote",
   "dependencies": {
     "@theia/core": "1.38.0",
-    "decompress": "^4.2.1"
+    "decompress": "^4.2.1",
+    "ssh2": "1.13.0"
   },
   "publishConfig": {
     "access": "public"

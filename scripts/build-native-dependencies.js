@@ -20,13 +20,12 @@ const fs = require('fs');
 const archiver = require('archiver');
 
 const modulesToBuild = [
-    // { name: "cpu-features", files: ['build/Release/cpufeatures.node'] },
+    { name: "cpu-features", files: ['build/Release/cpufeatures.node'] },
     { name: "drivelist", files: ['build/Release/drivelist.node'] },
     { name: "find-git-repositories", files: ['build/Release/findGitRepos.node'] },
     { name: "keytar", files: ['build/Release/keytar.node'] },
     { name: "nsfw", files: ['build/Release/nsfw.node'] },
     { name: "node-pty", files: ['build/Release/pty.node', 'build/Release/spawn-helper', 'build/Release/winpty-agent.exe', 'build/Release/winpty.dll'] },
-    //{name: "ssh2", files: [] },
 ]
 
 const artifactsPath = path.join(process.cwd(), 'artifacts');
@@ -36,7 +35,7 @@ if (fs.existsSync(artifactsPath)) {
 }
 
 for (let module of modulesToBuild) {
-    const modulePath = path.join(process.cwd(), '..', '..', 'node_modules', module.name);
+    const modulePath = path.join(process.cwd(), 'node_modules', module.name);
     console.log(modulePath)
     execSync('node-gyp rebuild', { cwd: modulePath, stdio: 'inherit' });
     const dstDir = path.join(artifactsPath, module.name);

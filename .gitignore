@@ -33,3 +33,4 @@ dependency-check-summary.txt*
 *-trace.json
 .tours
 /performance-result.json
+prebuild-native-dependencies
