@@ -19,21 +19,21 @@ import { DependencyDownloadContribution } from './dependency-download';
 
 @injectable()
 export class DrivelistDependencyDownload implements DependencyDownloadContribution {
-    getDownloadUrl(remoteOS: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('drivelist.zip', remoteOS);
+    getDownloadUrl(remoteOS: string, theiaVersion: string): string {
+        return DependencyDownloadContribution.getDefaultURLForFile('drivelist.zip', remoteOS, theiaVersion);
     }
 }
 
 @injectable()
 export class keytarDependencyDownload implements DependencyDownloadContribution {
-    getDownloadUrl(remoteOS: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('keytar.zip', remoteOS);
+    getDownloadUrl(remoteOS: string, theiaVersion: string): string {
+        return DependencyDownloadContribution.getDefaultURLForFile('keytar.zip', remoteOS, theiaVersion);
     }
 }
 
 @injectable()
 export class NSFWDependencyDownload implements DependencyDownloadContribution {
-    getDownloadUrl(remoteOS: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('nsfw.zip', remoteOS);
+    getDownloadUrl(remoteOS: string, theiaVersion: string): string {
+        return DependencyDownloadContribution.getDefaultURLForFile('nsfw.zip', remoteOS, theiaVersion);
     }
 }

@@ -25,7 +25,7 @@ export interface DependencyDownloadContribution {
     httpOptions?: RequestOptions;
     skipUnzip?: boolean
 
-    getDownloadUrl(remoteOS: string): MaybePromise<string>;
+    getDownloadUrl(remoteOS: string, theiaVersion: string | undefined): MaybePromise<string>;
 
     onDownloadCompleted?(file: URI, err?: Error): void;
 }
@@ -33,24 +33,13 @@ export interface DependencyDownloadContribution {
 export namespace DependencyDownloadContribution {
     export const Contribution = Symbol('dependencyDownloadContribution');
 
-    const DEFAULT_DEPENDENCY_DOWNLOAD_URL = 'https://github.com/jonah-iden/theia-native-dependencies/releases/download/1.38.0-';
-    export const DEFAULT_WIN_DEPENDENCY_URL = DEFAULT_DEPENDENCY_DOWNLOAD_URL + 'windows-latest';
-    export const DEFAULT_MAC_DEPENDENCY_URL = DEFAULT_DEPENDENCY_DOWNLOAD_URL + 'mac-latest';
-    export const DEFAULT_LINUX_DEPENDENCY_URL = DEFAULT_DEPENDENCY_DOWNLOAD_URL + 'ubuntu-latest';
+    const DEFAULT_DEPENDENCY_DOWNLOAD_URL = 'https://github.com/eclipse-theia/theia/releases';
 
-    export function getDefaultURLForFile(fileName: string, remoteOS: string): string {
-        if (remoteOS.includes('darwin')) {
-            return `${DEFAULT_MAC_DEPENDENCY_URL}/${fileName}`;
-        } else if (remoteOS.includes('win')) {
-            return `${DEFAULT_WIN_DEPENDENCY_URL}/${fileName}`;
-        } else {
-            return `${DEFAULT_LINUX_DEPENDENCY_URL}/${fileName}`;
-        }
-
+    export function getDefaultURLForFile(dependencyName: string, remoteSystem: string, theiaVersion: string): string {
+        return `${DEFAULT_DEPENDENCY_DOWNLOAD_URL}/${theiaVersion ? `tag/v${theiaVersion}` : 'latest'}/${dependencyName}-${remoteSystem}.zip`;
     }
 
 }
-
 
 export const DependencyDownloadService = Symbol('dependencyDownloadService');
 /**
@@ -60,13 +49,13 @@ export interface DependencyDownloadService {
 
     /**
      * downloads natvie dependencies for copying on a remote machine
-     * @param remoteOS the operating system of the remote machine in format "{platform}-{architecure}"" e.g. "win32-x64"
+     * @param remoteSystem the operating system of the remote machine in format "{platform}-{architecure}"" e.g. "win32-x64"
      */
-    downloadDependencies(remoteOS: string): MaybePromise<string>;
+    downloadDependencies(remoteSystem: string): MaybePromise<string>;
 }
 
 export class DummyDependencyDownloader implements DependencyDownloadService {
-    downloadDependencies(remoteOS: string): string {
+    downloadDependencies(remoteSystem: string): string {
         return '';
     }
 }

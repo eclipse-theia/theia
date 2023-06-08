@@ -16,6 +16,7 @@
 
 import { ContributionProvider, URI } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { ApplicationPackage } from '@theia/application-package';
 import { DependencyDownloadContribution, DependencyDownloadService } from '@theia/core/lib/node/dependency-download';
 import { createWriteStream } from 'fs';
 import { request } from 'https'
@@ -37,18 +38,21 @@ export class NativeDependencyDownloadService implements DependencyDownloadServic
     @inject(ContributionProvider) @named(DependencyDownloadContribution.Contribution)
     protected dependencyDownloadContributions: ContributionProvider<DependencyDownloadContribution>;
 
+    @inject(ApplicationPackage)
+    protected applicationPackage: ApplicationPackage;
+
     async downloadDependencies(remoteOS: string): Promise<string> {
         const tmpDir = temp.mkdirSync(`theia-native-dependencies-${remoteOS}`);
         const unpackDir = path.join(tmpDir, 'unpacked');
         const downloadURLs = new Set<string>();
         await Promise.all(this.dependencyDownloadContributions.getContributions()
             .map(async contribution => {
-                const url = await contribution.getDownloadUrl(remoteOS)
+                const url = await contribution.getDownloadUrl(remoteOS, this.applicationPackage.pck.version)
                 if (downloadURLs.has(url)) {
                     if (contribution.skipUnzip) {
                         await this.downloadDependency(url, unpackDir, contribution.httpOptions);
                     } else {
-                        const file = await this.downloadDependency(await contribution.getDownloadUrl(remoteOS), tmpDir, contribution.httpOptions);
+                        const file = await this.downloadDependency(url, tmpDir, contribution.httpOptions);
                         await this.unpackDependency(file, unpackDir);
                     }
                     downloadURLs.add(url);

@@ -16,7 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { DependencyDownloadService } from '@theia/core/lib/node/dependency-download';
-import { NativeDependencyDownloadService } from './nativ-dependency-download/nativ-dependency-download-service';
+import { NativeDependencyDownloadService } from './native-dependency-download/native-dependency-download-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(DependencyDownloadService).to(NativeDependencyDownloadService);

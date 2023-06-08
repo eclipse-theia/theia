@@ -3,16 +3,21 @@
 
 ## Release Procedure
 
-- [**Yarn Upgrade**](#yarn-upgrade)
-- [**Announce Release**](#announce-release)
-- [**Pre-Publishing Steps**](#pre-publishing-steps)
-- [**Login to NPM Registry**](#login-to-npm-registry)
-- [**Publish Packages**](#publish-packages)
-- [**Commit Updated Versions**](#commit-updated-version)
-- [**Create Release**](#create-release)
-- [**Update Eclipse Release Page**](#update-eclipse-release-page)
-- [**Post-Release**](#post-release)
+- [Publishing](#publishing)
+  - [Release Procedure](#release-procedure)
+  - [Yarn Upgrade](#yarn-upgrade)
+  - [Announce Release](#announce-release)
+  - [Pre-Release Steps](#pre-release-steps)
+  - [Pre-Publishing Steps](#pre-publishing-steps)
+  - [Login to NPM Registry](#login-to-npm-registry)
+  - [Publish Packages](#publish-packages)
+  - [Commit Updated Version](#commit-updated-version)
+  - [Create Release](#create-release)
+  - [Update Eclipse Release Page](#update-eclipse-release-page)
+  - [Post Release](#post-release)
     - [Announce Release is Completed](#announce-release-is-completed)
+    - [Update Milestones](#update-milestones)
+    - [Update Roadmap](#update-roadmap)
 
 ## Yarn Upgrade
 
@@ -149,6 +154,11 @@ Login to [Eclipse Foundation Theia project page]( https://projects.eclipse.org/p
 
 
 ## Post Release
+
+Upload prebuild native dependencies to the release:
+- Execute the `Build-Native-Dependencies` Github Action
+- Download the `native-dependencies` artifact from the Job
+- Upload the contents of the artifact as release assets to the theia release
 
 ### Announce Release is Completed
 

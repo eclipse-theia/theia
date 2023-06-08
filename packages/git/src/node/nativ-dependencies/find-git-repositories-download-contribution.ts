@@ -19,7 +19,7 @@ import { injectable } from '@theia/core/shared/inversify';
 
 @injectable()
 export class FindGitRepositoriesDependebcyDownload implements DependencyDownloadContribution {
-    getDownloadUrl(remoteOS: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('find-git-repositories.zip', remoteOS);
+    getDownloadUrl(remoteOS: string, theiaVersion: string): string {
+        return DependencyDownloadContribution.getDefaultURLForFile('find-git-repositories.zip', remoteOS, theiaVersion);
     }
 }
