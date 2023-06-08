@@ -17,7 +17,6 @@
 import { RequestOptions } from 'https';
 import { MaybePromise, URI } from 'src/common';
 
-
 /**
  * contribution used for downloading prebuild nativ dependency when connecting to a remote machine with a different system
  */
