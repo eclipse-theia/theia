@@ -14,12 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DependencyDownloadContribution } from '@theia/core/lib/node/dependency-download';
+import { DependencyDownloadContribution, DirectoryDependencyDownload, DownloadOptions, FileDependencyDownload } from '@theia/core/lib/node/dependency-download';
 import { injectable } from '@theia/core/shared/inversify';
 
 @injectable()
 export class NodePtyDependencyDownload implements DependencyDownloadContribution {
-    getDownloadUrl(remoteOS: string, theiaVersion: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('node-pty', remoteOS, theiaVersion);
+    dependencyId = 'node-pty';
+
+    async download(options: DownloadOptions): Promise<FileDependencyDownload | DirectoryDependencyDownload> {
+        return {
+            files: path => ({
+                targetFile: path.endsWith('pty.node') ? 'lib/backend/native/pty.node' : 'lib/build/Release/spawn-helper'
+            }),
+            downloadHandler: await options.download(DependencyDownloadContribution.getDefaultURLForFile('node-pty', options.remoteOS, options.theiaVersion))
+        };
     }
 }

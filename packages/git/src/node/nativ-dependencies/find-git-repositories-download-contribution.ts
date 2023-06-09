@@ -14,12 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DependencyDownloadContribution } from '@theia/core/lib/node/dependency-download';
+import { DependencyDownloadContribution, DirectoryDependencyDownload, DownloadOptions, FileDependencyDownload } from '@theia/core/lib/node/dependency-download';
 import { injectable } from '@theia/core/shared/inversify';
 
 @injectable()
-export class FindGitRepositoriesDependebcyDownload implements DependencyDownloadContribution {
-    getDownloadUrl(remoteOS: string, theiaVersion: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('find-git-repositories', remoteOS, theiaVersion);
+export class FindGitRepositoriesDependencyDownload implements DependencyDownloadContribution {
+    dependencyId = 'find-git-repositories';
+
+    async download(options: DownloadOptions): Promise<FileDependencyDownload | DirectoryDependencyDownload> {
+        return {
+            file: {
+                targetFile: 'lib/build/Release/findGitRepos.node'
+            },
+            unzip: true,
+            downloadHandler: await options.download(DependencyDownloadContribution.getDefaultURLForFile('findGitRepos', options.remoteOS, options.theiaVersion))
+        };
     }
 }

@@ -19,7 +19,7 @@ import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/com
 import { FileSearchServiceImpl } from './file-search-service-impl';
 import { fileSearchServicePath, FileSearchService } from '../common/file-search-service';
 import { DependencyDownloadContribution } from '@theia/core/lib/node/dependency-download';
-import { RigrepDependencyDownload } from './rigrep-download-contribution';
+import { RigrepDependencyDownload } from '@theia/core/lib/node/native-dependency-download-contributions';
 
 export default new ContainerModule(bind => {
 

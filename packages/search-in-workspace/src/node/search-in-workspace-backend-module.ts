@@ -20,7 +20,7 @@ import { SearchInWorkspaceServer, SearchInWorkspaceClient, SIW_WS_PATH } from '.
 import { RipgrepSearchInWorkspaceServer, RgPath } from './ripgrep-search-in-workspace-server';
 import { rgPath } from '@vscode/ripgrep';
 import { DependencyDownloadContribution } from '@theia/core/lib/node/dependency-download';
-import { RigrepDependencyDownload } from './rigrep-download-contribution';
+import { RigrepDependencyDownload } from '@theia/core/lib/node/native-dependency-download-contributions';
 
 export default new ContainerModule(bind => {
     bind(SearchInWorkspaceServer).to(RipgrepSearchInWorkspaceServer);

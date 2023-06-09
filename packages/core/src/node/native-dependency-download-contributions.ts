@@ -15,25 +15,79 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { DependencyDownloadContribution } from './dependency-download';
+import { DependencyDownloadContribution, DirectoryDependencyDownload, DownloadOptions, FileDependencyDownload } from './dependency-download';
 
 @injectable()
 export class DrivelistDependencyDownload implements DependencyDownloadContribution {
-    getDownloadUrl(remoteOS: string, theiaVersion: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('drivelist', remoteOS, theiaVersion);
+    dependencyId = 'drivelist';
+
+    async download(options: DownloadOptions): Promise<FileDependencyDownload | DirectoryDependencyDownload> {
+        return {
+            file: {
+                targetFile: 'lib/backend/native/drivelist.node'
+            },
+            unzip: true,
+            downloadHandler: await options.download(DependencyDownloadContribution.getDefaultURLForFile('drivelist', options.remoteOS, options.theiaVersion))
+        };
     }
 }
 
 @injectable()
 export class keytarDependencyDownload implements DependencyDownloadContribution {
-    getDownloadUrl(remoteOS: string, theiaVersion: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('keytar', remoteOS, theiaVersion);
+    dependencyId = 'keytar';
+
+    async download(options: DownloadOptions): Promise<FileDependencyDownload | DirectoryDependencyDownload> {
+        return {
+            file: {
+                targetFile: 'lib/backend/native/keytar.node'
+            },
+            unzip: true,
+            downloadHandler: await options.download(DependencyDownloadContribution.getDefaultURLForFile('keytar', options.remoteOS, options.theiaVersion))
+        };
     }
 }
 
 @injectable()
 export class NSFWDependencyDownload implements DependencyDownloadContribution {
-    getDownloadUrl(remoteOS: string, theiaVersion: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('nsfw', remoteOS, theiaVersion);
+    dependencyId = 'nsfw';
+
+    async download(options: DownloadOptions): Promise<FileDependencyDownload | DirectoryDependencyDownload> {
+        return {
+            file: {
+                targetFile: 'lib/backend/native/nsfw.node'
+            },
+            unzip: true,
+            downloadHandler: await options.download(DependencyDownloadContribution.getDefaultURLForFile('nsfw', options.remoteOS, options.theiaVersion))
+        };
+    }
+}
+
+const BASE_URL = 'https://github.com/microsoft/ripgrep-prebuilt/releases/download/v13.0.0-8/ripgrep-v13.0.0-8';
+@injectable()
+export class RigrepDependencyDownload implements DependencyDownloadContribution {
+    dependencyId = 'rigrep';
+    async download(options: DownloadOptions): Promise<FileDependencyDownload | DirectoryDependencyDownload> {
+        return {
+            file: {
+                targetFile: `lib/build/Release/rg${options.remoteOS.includes('win') ? '.exe' : ''}`
+            },
+            unzip: true,
+            downloadHandler: await options.download(this.getDownloadUrl(options.remoteOS))
+        };
+    }
+
+    getDownloadUrl(remoteOS: string): string {
+        const [platform, architecure] = remoteOS.split('-');
+
+        let transformedPlatform: string;
+        if (remoteOS.includes('darwin')) {
+            transformedPlatform = 'apple-darwin';
+        } else if (remoteOS.includes('win')) {
+            transformedPlatform = 'pc-windows-msvc';
+        } else {
+            transformedPlatform = 'unkown-linux-gnu';
+        }
+
+        return `${BASE_URL}-${architecure === 'x64' ? 'x86_64' : architecure}-${transformedPlatform}.${platform.includes('win') ? 'zip' : 'tar.gz'}`;
     }
 }

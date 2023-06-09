@@ -14,17 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContributionProvider, URI } from '@theia/core';
+import { ContributionProvider } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
-import { DependencyDownloadContribution, DependencyDownloadService } from '@theia/core/lib/node/dependency-download';
-import { createWriteStream } from 'fs';
-import { request, RequestOptions } from 'https';
-import * as path from 'path';
-import temp = require('temp');
-import * as decompress from 'decompress';
+import { DependencyDownloadContribution, DependencyDownloadService, DirectoryDependencyDownload, FileDependencyDownload } from '@theia/core/lib/node/dependency-download';
+import { NodeRequestOptions, NodeRequestService } from '@theia/core/shared/@theia/request/lib/node-request-service';
 
-const DEFAULT_HTTP_OPTIONS: RequestOptions = {
+const DEFAULT_HTTP_OPTIONS = {
     method: 'GET',
     headers: {
         Accept: 'application/octet-stream'
@@ -40,49 +36,32 @@ export class NativeDependencyDownloadService implements DependencyDownloadServic
     @inject(ApplicationPackage)
     protected applicationPackage: ApplicationPackage;
 
-    async downloadDependencies(remoteOS: string): Promise<string> {
-        const tmpDir = temp.mkdirSync(`theia-native-dependencies-${remoteOS}`);
-        const unpackDir = path.join(tmpDir, 'unpacked');
-        const downloadedDependencies = new Set<string>();
-        await Promise.all(this.dependencyDownloadContributions.getContributions()
-            .map(async contribution => {
-                const url = await contribution.getDownloadUrl(remoteOS, this.applicationPackage.pck.version);
-                if (!downloadedDependencies.has(url)) {
-                    if (contribution.skipUnzip) {
-                        await this.downloadDependency(url, unpackDir, contribution.httpOptions);
-                    } else {
-                        const file = await this.downloadDependency(url, tmpDir, contribution.httpOptions);
-                        await this.unpackDependency(file, unpackDir);
-                    }
-                    downloadedDependencies.add(url);
-                }
-            }));
-        return unpackDir;
+    @inject(NodeRequestService)
+    protected nodeRequestService: NodeRequestService;
+
+    async downloadDependencies(remoteOS: string): Promise<Array<FileDependencyDownload | DirectoryDependencyDownload>> {
+        if (!this.applicationPackage.pck.version) {
+            throw new Error('No Theia version found. Can\'t download dependencies');
+        }
+        return Promise.all(this.dependencyDownloadContributions.getContributions()
+            .filter((contribution, index) => this.dependencyDownloadContributions.getContributions().findIndex(c => c.dependencyId === contribution.dependencyId) !== index)
+            .map(async contribution =>
+                contribution.download({
+                    remoteOS,
+                    theiaVersion: this.applicationPackage.pck.version!,
+                    download: (requestInfo: string | NodeRequestOptions) => this.downloadDependency(requestInfo)
+                })
+            ));
     }
 
-    protected async downloadDependency(downloadURI: string, destinationPath: string, httpOptions?: RequestOptions, fileName?: string): Promise<string> {
-
-        return new Promise(async (resolve, reject) => {
-            const req = request(downloadURI, httpOptions ?? DEFAULT_HTTP_OPTIONS, async res => {
-                const uri = new URI(downloadURI);
-                if (!res.statusCode || res.statusCode >= 400) {
-                    reject('Server error while downloading nativ dependency');
-                } else if (res.statusCode >= 300 && res.statusCode < 400) {
-                    const destinationFile = await this.downloadDependency(res.headers.location!, destinationPath, httpOptions, uri.path.name);
-                    resolve(destinationFile);
-                } else {
-                    const destinationFile = path.join(destinationPath, fileName ?? uri.path.name);
-                    const fileStream = createWriteStream(destinationFile, { flags: 'w', autoClose: true });
-                    res.pipe(fileStream);
-                    res.on('error', err => reject(err));
-                    res.on('close', () => resolve(destinationFile));
-                }
-            });
-            req.end();
-        });
-    }
-
-    protected async unpackDependency(file: string, destinationDir: string): Promise<void> {
-        await decompress(file, destinationDir);
+    protected async downloadDependency(downloadURI: string | NodeRequestOptions): Promise<Buffer> {
+        const req = await this.nodeRequestService.request(typeof downloadURI === 'string' ? { url: downloadURI, ...DEFAULT_HTTP_OPTIONS } : downloadURI);
+        if (!req.res.statusCode || req.res.statusCode >= 400) {
+            throw new Error('Server error while downloading nativ dependency');
+        } else if (req.res.statusCode >= 300 && req.res.statusCode < 400) {
+            return this.downloadDependency(req.res.headers.location!);
+        } else {
+            return Buffer.from(req.buffer);
+        }
     }
 }
