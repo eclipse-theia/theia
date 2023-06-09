@@ -100,7 +100,43 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     }
 
     protected doCreateSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): Window | undefined {
-        const newWindow = window.open(DefaultSecondaryWindowService.SECONDARY_WINDOW_URL, this.nextWindowId(), 'popup') ?? undefined;
+        // const options = 'popup';
+        // const options = 'popup,width=500,height=500,left=500,top=500';
+        console.log('**** widget: ' + widget);
+        console.log('**** widget.id: ' + widget.id);
+
+        // console.log('**** widget.node.parentNode?.textContent: ' + widget.node?.parentNode?.textContent);
+
+        // const options = 'popup,width=600,height=200,left=2800,top=150';
+        // const options = 'popup,innerWidth=600,innerHeight=200,left=2800,top=150';
+        let options;
+        if (widget.node) {
+            const clientBounds = widget.node.getBoundingClientRect();
+
+            // shift a bit right and down (enough to clear the editor's preview button)
+            const offsetX = 0; // 50 + widget.node.clientWidth;
+            const offsetY = 0;
+            const offsetHeigth = 0;
+            const offsetWidth = 0;
+
+            // try to place secondary window left of the main window
+            // const offsetX = widget.node.clientWidth;
+            // const offsetY = 0;
+
+            const h = widget.node.clientHeight + offsetHeigth;
+            const w = widget.node.clientWidth + offsetWidth;
+            // window.screenLeft: horizontal offset of main window (top left corner) vs desktop
+            // window.screenTop: vertical offset of main window vs desktop
+            const l = widget.node.clientLeft + window.screenLeft + clientBounds.x + offsetX;
+            const t = widget.node.clientTop + window.screenTop + clientBounds.y + offsetY;
+
+            options = `popup=1,width=${w},height=${h},left=${l},top=${t}`;
+            // TODO: add a preference?
+            options += ',alwaysOnTop=true';
+            console.log('*** creating secondary window with options: ' + options);
+        }
+
+        const newWindow = window.open(DefaultSecondaryWindowService.SECONDARY_WINDOW_URL, this.nextWindowId(), options) ?? undefined;
         if (newWindow) {
             newWindow.addEventListener('DOMContentLoaded', () => {
                 newWindow.addEventListener('beforeunload', evt => {
