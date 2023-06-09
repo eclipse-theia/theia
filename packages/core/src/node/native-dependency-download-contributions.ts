@@ -69,7 +69,7 @@ export class RigrepDependencyDownload implements DependencyDownloadContribution 
     async download(options: DownloadOptions): Promise<FileDependencyDownload | DirectoryDependencyDownload> {
         return {
             file: {
-                targetFile: `lib/build/Release/rg${options.remoteOS.includes('win') ? '.exe' : ''}`
+                targetFile: `lib/build/Release/rg${options.remoteOS.startsWith('win32') ? '.exe' : ''}`
             },
             unzip: true,
             downloadHandler: await options.download(this.getDownloadUrl(options.remoteOS))
@@ -82,12 +82,12 @@ export class RigrepDependencyDownload implements DependencyDownloadContribution 
         let transformedPlatform: string;
         if (remoteOS.includes('darwin')) {
             transformedPlatform = 'apple-darwin';
-        } else if (remoteOS.includes('win')) {
+        } else if (remoteOS.startsWith('win32')) {
             transformedPlatform = 'pc-windows-msvc';
         } else {
             transformedPlatform = 'unkown-linux-gnu';
         }
 
-        return `${BASE_URL}-${architecure === 'x64' ? 'x86_64' : architecure}-${transformedPlatform}.${platform.includes('win') ? 'zip' : 'tar.gz'}`;
+        return `${BASE_URL}-${architecure === 'x64' ? 'x86_64' : architecure}-${transformedPlatform}.${platform.startsWith('win32') ? 'zip' : 'tar.gz'}`;
     }
 }
