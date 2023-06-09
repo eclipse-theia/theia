@@ -112,10 +112,16 @@ blockquote {
     font-size: var(--theia-ui-font-size1);
     line-height: var(--theia-content-line-height);
     padding-left: 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .theia-input::placeholder {
     color: var(--theia-input-placeholderForeground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .theia-maximized {
