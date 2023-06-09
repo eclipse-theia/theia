@@ -20,6 +20,6 @@ import { injectable } from '@theia/core/shared/inversify';
 @injectable()
 export class NodePtyDependencyDownload implements DependencyDownloadContribution {
     getDownloadUrl(remoteOS: string, theiaVersion: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('node-pty.zip', remoteOS, theiaVersion);
+        return DependencyDownloadContribution.getDefaultURLForFile('node-pty', remoteOS, theiaVersion);
     }
 }

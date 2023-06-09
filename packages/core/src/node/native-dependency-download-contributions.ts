@@ -20,20 +20,20 @@ import { DependencyDownloadContribution } from './dependency-download';
 @injectable()
 export class DrivelistDependencyDownload implements DependencyDownloadContribution {
     getDownloadUrl(remoteOS: string, theiaVersion: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('drivelist.zip', remoteOS, theiaVersion);
+        return DependencyDownloadContribution.getDefaultURLForFile('drivelist', remoteOS, theiaVersion);
     }
 }
 
 @injectable()
 export class keytarDependencyDownload implements DependencyDownloadContribution {
     getDownloadUrl(remoteOS: string, theiaVersion: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('keytar.zip', remoteOS, theiaVersion);
+        return DependencyDownloadContribution.getDefaultURLForFile('keytar', remoteOS, theiaVersion);
     }
 }
 
 @injectable()
 export class NSFWDependencyDownload implements DependencyDownloadContribution {
     getDownloadUrl(remoteOS: string, theiaVersion: string): string {
-        return DependencyDownloadContribution.getDefaultURLForFile('nsfw.zip', remoteOS, theiaVersion);
+        return DependencyDownloadContribution.getDefaultURLForFile('nsfw', remoteOS, theiaVersion);
     }
 }
