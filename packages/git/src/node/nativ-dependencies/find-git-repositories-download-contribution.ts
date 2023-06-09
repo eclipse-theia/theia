@@ -24,7 +24,7 @@ export class FindGitRepositoriesDependencyDownload implements DependencyDownload
     async download(options: DownloadOptions): Promise<FileDependencyDownload | DirectoryDependencyDownload> {
         return {
             file: {
-                targetFile: 'lib/build/Release/findGitRepos.node'
+                targetFile: 'lib/backend/native/findGitRepos.node'
             },
             unzip: true,
             downloadHandler: await options.download(DependencyDownloadContribution.getDefaultURLForFile('findGitRepos', options.remoteOS, options.theiaVersion))

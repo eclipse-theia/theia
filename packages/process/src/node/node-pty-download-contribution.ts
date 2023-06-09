@@ -16,6 +16,7 @@
 
 import { DependencyDownloadContribution, DirectoryDependencyDownload, DownloadOptions, FileDependencyDownload } from '@theia/core/lib/node/dependency-download';
 import { injectable } from '@theia/core/shared/inversify';
+import path = require('path');
 
 @injectable()
 export class NodePtyDependencyDownload implements DependencyDownloadContribution {
@@ -23,8 +24,8 @@ export class NodePtyDependencyDownload implements DependencyDownloadContribution
 
     async download(options: DownloadOptions): Promise<FileDependencyDownload | DirectoryDependencyDownload> {
         return {
-            files: path => ({
-                targetFile: path.endsWith('pty.node') ? 'lib/backend/native/pty.node' : 'lib/build/Release/spawn-helper'
+            files: filePath => ({
+                targetFile: filePath.endsWith('pty.node') ? 'lib/backend/native/pty.node' : `lib/build/Release/${path.basename(filePath)}`
             }),
             downloadHandler: await options.download(DependencyDownloadContribution.getDefaultURLForFile('node-pty', options.remoteOS, options.theiaVersion))
         };

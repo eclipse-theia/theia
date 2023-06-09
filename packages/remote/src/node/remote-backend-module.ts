@@ -17,11 +17,8 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { DependencyDownloadService } from '@theia/core/lib/node/dependency-download';
 import { NativeDependencyDownloadService } from './native-dependency-download/native-dependency-download-service';
-import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { TestBackendContrib } from './test-backend-contrib';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(DependencyDownloadService).to(NativeDependencyDownloadService);
-    bind(BackendApplicationContribution).to(TestBackendContrib);
 });
 
