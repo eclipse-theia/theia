@@ -16,21 +16,20 @@
 
 import { ContributionProvider, URI } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ApplicationPackage } from '@theia/application-package';
+import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { DependencyDownloadContribution, DependencyDownloadService } from '@theia/core/lib/node/dependency-download';
 import { createWriteStream } from 'fs';
-import { request } from 'https'
-import { RequestOptions } from 'https';
-import * as path from 'path'
+import { request, RequestOptions } from 'https';
+import * as path from 'path';
 import temp = require('temp');
-import * as decompress from 'decompress'
+import * as decompress from 'decompress';
 
 const DEFAULT_HTTP_OPTIONS: RequestOptions = {
     method: 'GET',
     headers: {
         Accept: 'application/octet-stream'
     },
-}
+};
 
 @injectable()
 export class NativeDependencyDownloadService implements DependencyDownloadService {
@@ -47,7 +46,7 @@ export class NativeDependencyDownloadService implements DependencyDownloadServic
         const downloadURLs = new Set<string>();
         await Promise.all(this.dependencyDownloadContributions.getContributions()
             .map(async contribution => {
-                const url = await contribution.getDownloadUrl(remoteOS, this.applicationPackage.pck.version)
+                const url = await contribution.getDownloadUrl(remoteOS, this.applicationPackage.pck.version);
                 if (downloadURLs.has(url)) {
                     if (contribution.skipUnzip) {
                         await this.downloadDependency(url, unpackDir, contribution.httpOptions);
@@ -58,7 +57,7 @@ export class NativeDependencyDownloadService implements DependencyDownloadServic
                     downloadURLs.add(url);
                 }
             }));
-        return unpackDir
+        return unpackDir;
     }
 
     protected async downloadDependency(downloadURI: string, destinationPath: string, httpOptions?: RequestOptions, fileName?: string): Promise<string> {
@@ -67,23 +66,23 @@ export class NativeDependencyDownloadService implements DependencyDownloadServic
             const req = request(downloadURI, httpOptions ?? DEFAULT_HTTP_OPTIONS, async res => {
                 const uri = new URI(downloadURI);
                 if (!res.statusCode || res.statusCode >= 400) {
-                    reject('Server error while downloading nativ dependency')
+                    reject('Server error while downloading nativ dependency');
                 } else if (res.statusCode >= 300 && res.statusCode < 400) {
                     const destinationFile = await this.downloadDependency(res.headers.location!, destinationPath, httpOptions, uri.path.name);
                     resolve(destinationFile);
                 } else {
-                    const destinationFile = path.join(destinationPath, fileName ?? uri.path.name)
+                    const destinationFile = path.join(destinationPath, fileName ?? uri.path.name);
                     const fileStream = createWriteStream(destinationFile, { flags: 'w', autoClose: true });
                     res.pipe(fileStream);
                     res.on('error', err => reject(err));
                     res.on('close', () => resolve(destinationFile));
                 }
             });
-            req.end()
+            req.end();
         });
     }
 
-    protected async unpackDependency(file: string, destinationDir: string) {
+    protected async unpackDependency(file: string, destinationDir: string): Promise<void> {
         await decompress(file, destinationDir);
     }
 }
