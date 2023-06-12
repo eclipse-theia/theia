@@ -129,7 +129,7 @@ export class FileSearchServiceImpl implements FileSearchService {
         return [...exactMatches, ...fuzzyMatches].slice(0, opts.limit);
     }
 
-    private doFind(rootUri: URI, options: FileSearchService.BaseOptions, accept: (fileUri: string) => void, token: CancellationToken): Promise<void> {
+    protected doFind(rootUri: URI, options: FileSearchService.BaseOptions, accept: (fileUri: string) => void, token: CancellationToken): Promise<void> {
         return new Promise((resolve, reject) => {
             const cwd = FileUri.fsPath(rootUri);
             const args = this.getSearchArgs(options);
@@ -159,7 +159,7 @@ export class FileSearchServiceImpl implements FileSearchService {
         });
     }
 
-    private getSearchArgs(options: FileSearchService.BaseOptions): string[] {
+    protected getSearchArgs(options: FileSearchService.BaseOptions): string[] {
         const args = ['--files', '--hidden', '--case-sensitive', '--no-require-git', '--no-config'];
         if (options.includePatterns) {
             for (const includePattern of options.includePatterns) {
