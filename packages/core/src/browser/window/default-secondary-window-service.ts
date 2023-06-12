@@ -104,11 +104,6 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
         // const options = 'popup,width=500,height=500,left=500,top=500';
         console.log('**** widget: ' + widget);
         console.log('**** widget.id: ' + widget.id);
-
-        // console.log('**** widget.node.parentNode?.textContent: ' + widget.node?.parentNode?.textContent);
-
-        // const options = 'popup,width=600,height=200,left=2800,top=150';
-        // const options = 'popup,innerWidth=600,innerHeight=200,left=2800,top=150';
         let options;
         if (widget.node) {
             const clientBounds = widget.node.getBoundingClientRect();
@@ -116,14 +111,14 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
             // shift a bit right and down (enough to clear the editor's preview button)
             const offsetX = 0; // 50 + widget.node.clientWidth;
             const offsetY = 0;
-            const offsetHeigth = 0;
+            const offsetHeight = 0;
             const offsetWidth = 0;
 
             // try to place secondary window left of the main window
             // const offsetX = widget.node.clientWidth;
             // const offsetY = 0;
 
-            const h = widget.node.clientHeight + offsetHeigth;
+            const h = widget.node.clientHeight + offsetHeight;
             const w = widget.node.clientWidth + offsetWidth;
             // window.screenLeft: horizontal offset of main window (top left corner) vs desktop
             // window.screenTop: vertical offset of main window vs desktop

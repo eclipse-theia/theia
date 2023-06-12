@@ -256,6 +256,7 @@ export class ElectronMainApplication {
      * @param options
      */
     async createWindow(asyncOptions: MaybePromise<TheiaBrowserWindowOptions> = this.getDefaultTheiaWindowOptions()): Promise<BrowserWindow> {
+        console.log('** ** ** createWindow() - ');
         let options = await asyncOptions;
         options = this.avoidOverlap(options);
         const electronWindow = this.windowFactory(options, this.config);
@@ -271,6 +272,7 @@ export class ElectronMainApplication {
     }
 
     async getLastWindowOptions(): Promise<TheiaBrowserWindowOptions> {
+        console.log('*** *** getLastWindowOptions() ');
         const previousWindowState: TheiaBrowserWindowOptions | undefined = this.electronStore.get('windowstate');
         const windowState = previousWindowState?.screenLayout === this.getCurrentScreenLayout()
             ? previousWindowState
@@ -422,23 +424,7 @@ export class ElectronMainApplication {
     }
 
     protected getDefaultTheiaSecondaryWindowBounds(): TheiaBrowserWindowOptions {
-        // const { bounds } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-        // const height = Math.round(bounds.height * (2 / 3));
-        // const width = Math.round(bounds.width * (2 / 3));
-        // const y = Math.round(bounds.y + (bounds.height - height) / 2);
-        // const x = Math.round(bounds.x + (bounds.width - width) / 2);
-        // const { bounds } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-        // const height = Math.round(bounds.height * (2 / 3));
-        // const width = Math.round(bounds.width * (2 / 3));
-        // const y = Math.round(bounds.y + (bounds.height - height) / 2);
-        // const x = Math.round(bounds.x + (bounds.width - width) / 2);
-        // console.log(`*** getDefaultTheiaSecondaryWindowBounds(): { width=${width}, height=${height}, x=${x}}, y=${y} }`);
-        return {
-            // width,
-            // height,
-            // x,
-            // y
-        };
+        return {};
     }
 
     /**
@@ -464,6 +450,7 @@ export class ElectronMainApplication {
     }
 
     protected saveWindowState(electronWindow: BrowserWindow): void {
+        console.log('*** *** saveWindowState() ');
         // In some circumstances the `electronWindow` can be `null`
         if (!electronWindow) {
             return;
