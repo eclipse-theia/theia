@@ -57,7 +57,7 @@ export class NotebookService implements Disposable {
     protected readonly notebookModels = new Map<string, NotebookModel>();
 
     private readonly didAddViewTypeEmitter = new Emitter<string>();
-    readonly onAddViewType = this.didAddViewTypeEmitter.event;
+    readonly onDidAddViewType = this.didAddViewTypeEmitter.event;
 
     private readonly didRemoveViewTypeEmitter = new Emitter<string>();
     readonly onDidRemoveViewType = this.didRemoveViewTypeEmitter.event;
