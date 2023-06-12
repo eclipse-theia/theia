@@ -133,7 +133,7 @@ export class FileSearchServiceImpl implements FileSearchService {
         return new Promise((resolve, reject) => {
             const cwd = FileUri.fsPath(rootUri);
             const args = this.getSearchArgs(options);
-            const ripgrep = cp.spawn(rgPath, args, { cwd, stdio: ['pipe', 'pipe', 'inherit'] });
+            const ripgrep = cp.spawn(rgPath, args, { cwd });
             ripgrep.on('error', reject);
             ripgrep.on('exit', (code, signal) => {
                 if (typeof code === 'number' && code !== 0) {
@@ -160,7 +160,7 @@ export class FileSearchServiceImpl implements FileSearchService {
     }
 
     private getSearchArgs(options: FileSearchService.BaseOptions): string[] {
-        const args = ['--files', '--hidden'];
+        const args = ['--files', '--hidden', '--case-sensitive', '--no-require-git', '--no-config'];
         if (options.includePatterns) {
             for (const includePattern of options.includePatterns) {
                 if (includePattern) {
