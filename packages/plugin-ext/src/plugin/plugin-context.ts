@@ -633,6 +633,9 @@ export function createAPIFactory(
             onDidChangeNotebookDocument(listener, thisArg?, disposables?) {
                 return Disposable.NULL;
             },
+            onWillSaveNotebookDocument(listener, thisArg?, disposables?) {
+                return Disposable.NULL;
+            },
             onDidSaveNotebookDocument(listener, thisArg?, disposables?) {
                 return Disposable.NULL;
             },
