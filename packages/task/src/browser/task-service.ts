@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ApplicationShell, FrontendApplication, QuickPickValue, WidgetManager, WidgetOpenMode } from '@theia/core/lib/browser';
@@ -98,7 +98,7 @@ export class TaskService implements TaskConfigurationClient {
     /**
      * The last executed task.
      */
-    protected lastTask: LastRunTaskInfo = {resolvedTask: undefined, option: undefined};
+    protected lastTask: LastRunTaskInfo = { resolvedTask: undefined, option: undefined };
     protected cachedRecentTasks: TaskConfiguration[] = [];
     protected runningTasks = new Map<number, {
         exitCode: Deferred<number | undefined>,
@@ -997,7 +997,7 @@ export class TaskService implements TaskConfigurationClient {
         let taskInfo: TaskInfo | undefined;
         try {
             taskInfo = await this.taskServer.run(resolvedTask, this.getContext(), option);
-            this.lastTask = {resolvedTask, option };
+            this.lastTask = { resolvedTask, option };
             this.logger.debug(`Task created. Task id: ${taskInfo.taskId}`);
 
             /**

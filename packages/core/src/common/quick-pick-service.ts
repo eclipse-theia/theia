@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import URI from './uri';
@@ -217,7 +217,7 @@ export interface InputOptions {
     placeHolder?: string;
     password?: boolean;
     ignoreFocusLost?: boolean;
-    validateInput?(input: string): Promise<string | { content: string; severity: number; }  | null | undefined> | undefined;
+    validateInput?(input: string): Promise<string | { content: string; severity: number; } | null | undefined> | undefined;
 }
 
 export interface QuickPickItemButtonEvent<T extends QuickPickItemOrSeparator> {

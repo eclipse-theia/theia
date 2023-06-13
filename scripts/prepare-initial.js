@@ -12,7 +12,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 // @ts-check
 
@@ -40,7 +40,7 @@ function replaceCopyrights() {
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/`);
             fs.writeFileSync(fileName, result);
         } catch (e) {
@@ -63,7 +63,7 @@ function replaceLicenses() {
             }
             if (path.basename(fileName) === 'package.json') {
                 const content = fs.readFileSync(fileName, { encoding: 'UTF-8' });
-                const result = content.replace('"license": "Apache-2.0"', '"license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0"');
+                const result = content.replace('"license": "Apache-2.0"', '"license": "EPL-2.0 OR GPL-2.0-with-classpath-exception"');
                 fs.writeFileSync(fileName, result);
             }
         } catch (e) {

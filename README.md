@@ -19,16 +19,16 @@ Eclipse Theia is an extensible framework to develop full-fledged multi-language 
 
 </div>
 
-- [**Website**](#website)
-- [**Releases**](#releases)
-- [**Scope**](#scope)
-- [**Roadmap**](#roadmap)
-- [**Getting Started**](#getting-started)
-- [**Contributing**](#contributing)
-- [**Feedback**](#feedback)
-- [**Documentation**](#documentation)
-- [**License**](#license)
-- [**Trademark**](#trademark)
+- [Website](#website)
+- [Releases](#releases)
+- [Scope](#scope)
+- [Roadmap](#roadmap)
+- [Getting Started](#getting-started)
+- [Contributing](#contributing)
+- [Feedback](#feedback)
+- [Documentation](#documentation)
+- [License](#license)
+- [Trademark](#trademark)
 
 <div style='margin:0 auto;width:60%;'>
 
@@ -112,7 +112,7 @@ Read below how to engage with Theia community:
 ## License
 
 - [Eclipse Public License 2.0](LICENSE-EPL)
-- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](LICENSE-GPL)
+- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](LICENSE-GPL-W-CLASSPATH-EXCEPTION)
 
 ## Trademark
 

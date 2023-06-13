@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
@@ -61,7 +61,7 @@ export interface HoverRequest {
      * Additional css classes that should be added to the hover box.
      * Used to style certain boxes different e.g. for the extended tab preview.
      */
-    cssClasses?: string []
+    cssClasses?: string[]
 }
 
 @injectable()

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
@@ -24,7 +24,7 @@ FrontendApplicationConfigProvider.set({});
 
 import { Container } from '@theia/core/shared/inversify';
 import { TreeNode } from '@theia/core/lib/browser/tree/tree';
-import { DEFAULT_INFO_ICON, ResourcePropertiesLabelProvider,  } from './resource-property-view-label-provider';
+import { DEFAULT_INFO_ICON, ResourcePropertiesLabelProvider, } from './resource-property-view-label-provider';
 import { LabelProvider, LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { ContributionProvider } from '@theia/core/lib/common';
 import { ResourcePropertiesCategoryNode, ResourcePropertiesItemNode } from './resource-property-view-tree-items';

@@ -11,27 +11,26 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 .theia-debug-container,
 .theia-session-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
-
 .theia-debug-container .theia-select {
-    margin-left: var(--theia-ui-padding);
+  margin-left: var(--theia-ui-padding);
 }
 
 .theia-source-breakpoint,
 .theia-debug-session,
 .theia-debug-thread,
 .theia-debug-stack-frame {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 .theia-source-breakpoint > span,
@@ -39,202 +38,202 @@
 .theia-debug-thread > span,
 .theia-debug-stack-frame > span,
 .theia-debug-stack-frame .file > span {
-    margin-left: calc(var(--theia-ui-padding)/2);
+  margin-left: calc(var(--theia-ui-padding) / 2);
 }
 
 .theia-debug-session .label,
 .theia-debug-thread .label,
 .theia-debug-stack-frame .expression {
-    width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .theia-source-breakpoint .path {
-    font-size: var(--theia-ui-font-size0);
+  font-size: var(--theia-ui-font-size0);
 }
 
 .theia-source-breakpoint .line-info {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 100%;
-    white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  white-space: nowrap;
 }
 
 .theia-source-breakpoint .line,
 .theia-debug-stack-frame .line {
-    background: var(--theia-descriptionForeground);
-    color: var(--theia-editor-background);
-    padding: calc(var(--theia-ui-padding)/3);
-    font-size: var(--theia-ui-font-size0);
-    line-height: calc(var(--theia-private-horizontal-tab-height)/2);
-    border-radius: 2px;
+  background: var(--theia-descriptionForeground);
+  color: var(--theia-editor-background);
+  padding: calc(var(--theia-ui-padding) / 3);
+  font-size: var(--theia-ui-font-size0);
+  line-height: calc(var(--theia-private-horizontal-tab-height) / 2);
+  border-radius: 2px;
 }
 
 .theia-debug-session .status,
 .theia-debug-thread .status {
-    text-transform: uppercase;
-    white-space: nowrap;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .theia-debug-stack-frame .expression {
-    white-space: pre;
+  white-space: pre;
 }
 
 .theia-debug-stack-frame.label {
-    text-align: center;
-    font-style: italic;
+  text-align: center;
+  font-style: italic;
 }
 
 .theia-debug-stack-frame.subtle {
-    font-style: italic;
+  font-style: italic;
 }
 
 .theia-debug-stack-frame .file > span {
-    white-space: nowrap;
+  white-space: nowrap;
 }
 
 .theia-load-more-frames {
-    text-align: center;
-    font-style: italic;
-    white-space: nowrap;
-    display: flex;
-    flex-direction: column;
+  text-align: center;
+  font-style: italic;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
 }
 
 /** Miscellaneous */
 
 .debug-toolbar {
-    display: flex;
-    align-items: center;
-    padding-top: calc(var(--theia-ui-padding)*2);
-    padding-right: calc(var(--theia-ui-padding)*3);
-    padding-bottom: var(--theia-ui-padding);
-    padding-left: calc(var(--theia-ui-padding)*2);
+  display: flex;
+  align-items: center;
+  padding-top: calc(var(--theia-ui-padding) * 2);
+  padding-right: calc(var(--theia-ui-padding) * 3);
+  padding-bottom: var(--theia-ui-padding);
+  padding-left: calc(var(--theia-ui-padding) * 2);
 }
 
 .theia-session-container > .debug-toolbar {
-    padding-top: var(--theia-ui-padding);
-    padding-bottom: var(--theia-ui-padding);
-    border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
+  padding-top: var(--theia-ui-padding);
+  padding-bottom: var(--theia-ui-padding);
+  border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
 }
 
 .debug-toolbar .theia-select-component {
-    width: 100%;
-    min-width: 40px;
-    margin: 0px 4px;
+  width: 100%;
+  min-width: 40px;
+  margin: 0px 4px;
 }
 
 .debug-toolbar .debug-action {
-    opacity: 0.9;
-    cursor: pointer;
-    pointer-events: all;
-    padding-left: var(--theia-ui-padding);
-    padding-right: var(--theia-ui-padding);
-    min-width: var(--theia-icon-size);
-    min-height: var(--theia-icon-size);
+  opacity: 0.9;
+  cursor: pointer;
+  pointer-events: all;
+  padding-left: var(--theia-ui-padding);
+  padding-right: var(--theia-ui-padding);
+  min-width: var(--theia-icon-size);
+  min-height: var(--theia-icon-size);
 }
 
 .debug-toolbar .debug-action.theia-mod-disabled {
-    opacity: 0.5 !important;
-    user-select: none;
-    pointer-events: none;
+  opacity: 0.5 !important;
+  user-select: none;
+  pointer-events: none;
 }
 
 .debug-toolbar .debug-action:not(.theia-mod-disabled):hover {
-    opacity: 1;
+  opacity: 1;
 }
 
-.debug-toolbar .debug-action>div {
-    font-family: var(--theia-ui-font-family);
-    font-size: var(--theia-ui-font-size0);
-    display: flex;
-    align-items: center;
-    align-self: center;
-    justify-content: center;
-    text-align: center;
-    min-height: inherit;
+.debug-toolbar .debug-action > div {
+  font-family: var(--theia-ui-font-family);
+  font-size: var(--theia-ui-font-size0);
+  display: flex;
+  align-items: center;
+  align-self: center;
+  justify-content: center;
+  text-align: center;
+  min-height: inherit;
 }
 
 /** Console */
 
 #debug-console .theia-console-info {
-    color: var(--theia-debugConsole-infoForeground) !important;
+  color: var(--theia-debugConsole-infoForeground) !important;
 }
 #debug-console .theia-console-warning {
-    color: var(--theia-debugConsole-warningForeground) !important;
+  color: var(--theia-debugConsole-warningForeground) !important;
 }
 #debug-console .theia-console-error {
-    color: var(--theia-debugConsole-errorForeground) !important;
+  color: var(--theia-debugConsole-errorForeground) !important;
 }
 
 .theia-debug-console-unavailable {
-    font-style: italic;
+  font-style: italic;
 }
 
 .theia-debug-console-expression {
-    display: flex;
-    flex-direction: column;
-    white-space: pre-wrap;
+  display: flex;
+  flex-direction: column;
+  white-space: pre-wrap;
 }
 
 .theia-debug-console-variable {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--theia-variable-value-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--theia-variable-value-color);
 }
 
 .theia-debug-hover-title.number,
 .theia-debug-console-variable.number {
-    color: var(--theia-variable-number-variable-color);
+  color: var(--theia-variable-number-variable-color);
 }
 
 .theia-debug-hover-title.boolean,
 .theia-debug-console-variable.boolean {
-    color: var(--theia-variable-boolean-variable-color);
+  color: var(--theia-variable-boolean-variable-color);
 }
 
 .theia-debug-hover-title.string,
 .theia-debug-console-variable.string {
-    color: var(--theia-variable-string-variable-color);
+  color: var(--theia-variable-string-variable-color);
 }
 
 .theia-debug-console-variable .name {
-    color: var(--theia-variable-name-color);
+  color: var(--theia-variable-name-color);
 }
 
 .theia-TreeNode:not(:hover) .theia-debug-console-variable .action-label {
-    visibility: hidden;
+  visibility: hidden;
 }
 
 .theia-debug-console-variable .action-label {
-    /* Vertically center the button in the tree node */
-    margin: auto;
+  /* Vertically center the button in the tree node */
+  margin: auto;
 }
 
 .theia-debug-console-variable .watch-error {
-    font-style: italic;
-    color: var(--theia-debugConsole-errorForeground);
+  font-style: italic;
+  color: var(--theia-debugConsole-errorForeground);
 }
 
 .theia-debug-watch-expression {
-    display: flex;
+  display: flex;
 }
 
 /** Editor **/
 
 .theia-debug-breakpoint-icon {
-    font-size: 19px !important;
-    width: 19px;
-    height: 19px;
-    min-width: 19px;
-    margin-left: 0px !important;
+  font-size: 19px !important;
+  width: 19px;
+  height: 19px;
+  min-width: 19px;
+  margin-left: 0px !important;
 }
 
 .codicon-debug-hint {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .codicon-debug-breakpoint,
@@ -243,203 +242,212 @@
 .codicon-debug-breakpoint-function,
 .codicon-debug-breakpoint-data,
 .codicon-debug-breakpoint-unsupported,
-.codicon-debug-hint:not([class*='codicon-debug-breakpoint']):not([class*='codicon-debug-stackframe']),
+.codicon-debug-hint:not([class*="codicon-debug-breakpoint"]):not(
+    [class*="codicon-debug-stackframe"]
+  ),
 .codicon-debug-breakpoint.codicon-debug-stackframe-focused::after,
 .codicon-debug-breakpoint.codicon-debug-stackframe::after {
-    color: var(--theia-debugIcon-breakpointForeground) !important;
+  color: var(--theia-debugIcon-breakpointForeground) !important;
 }
 
-.codicon[class*='-disabled'] {
-    color: var(--theia-debugIcon-breakpointDisabledForeground) !important;
+.codicon[class*="-disabled"] {
+  color: var(--theia-debugIcon-breakpointDisabledForeground) !important;
 }
 
-.codicon[class*='-unverified'] {
-    color: var(--theia-debugIcon-breakpointUnverifiedForeground) !important;
+.codicon[class*="-unverified"] {
+  color: var(--theia-debugIcon-breakpointUnverifiedForeground) !important;
 }
 
 .codicon-debug-stackframe,
 .monaco-editor .theia-debug-top-stack-frame-column::before {
-    color: var(--theia-debugIcon-breakpointCurrentStackframeForeground) !important;
+  color: var(
+    --theia-debugIcon-breakpointCurrentStackframeForeground
+  ) !important;
 }
 
 .codicon-debug-stackframe-focused {
-    color: var(--theia-debugIcon-breakpointStackframeForeground) !important;
+  color: var(--theia-debugIcon-breakpointStackframeForeground) !important;
 }
 
 .codicon-debug-breakpoint.codicon-debug-stackframe-focused::after,
 .codicon-debug-breakpoint.codicon-debug-stackframe::after {
-    content: '\eb8a';
-    position: absolute;
+  content: "\eb8a";
+  position: absolute;
 }
 
 .monaco-editor .theia-debug-breakpoint-column::before {
-    height: .9em;
-    display: inline-flex;
-    vertical-align: middle;
+  height: 0.9em;
+  display: inline-flex;
+  vertical-align: middle;
 }
 
 .monaco-editor .theia-debug-top-stack-frame-column::before {
-    content: ' ';
-    width: 0.9em;
-    display: inline-flex;
-    vertical-align: middle;
-    margin-top: -1px; /* TODO @misolori: figure out a way to not use negative margin for alignment */
+  content: " ";
+  width: 0.9em;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-top: -1px; /* TODO @misolori: figure out a way to not use negative margin for alignment */
 }
 
 .monaco-editor .theia-debug-top-stack-frame-column {
-    display: inline-flex;
-    vertical-align: middle;
+  display: inline-flex;
+  vertical-align: middle;
 }
 
 .monaco-editor .theia-debug-top-stack-frame-column::before {
-    content: '\eb8b';
-    font: normal normal normal 16px/1 codicon;
-    text-rendering: auto;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    margin-left: 0;
-    margin-right: 4px;
+  content: "\eb8b";
+  font: normal normal normal 16px/1 codicon;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin-left: 0;
+  margin-right: 4px;
 }
 
-.codicon-debug-hint:not([class*='codicon-debug-breakpoint']):not([class*='codicon-debug-stackframe']) {
-    opacity: 0.4 !important;
+.codicon-debug-hint:not([class*="codicon-debug-breakpoint"]):not(
+    [class*="codicon-debug-stackframe"]
+  ) {
+  opacity: 0.4 !important;
 }
 
 .monaco-editor .view-overlays .theia-debug-top-stack-frame-line {
-    background: var(--theia-editor-stackFrameHighlightBackground);
+  background: var(--theia-editor-stackFrameHighlightBackground);
 }
 
 .monaco-editor .view-overlays .theia-debug-focused-stack-frame-line {
-    background: var(--theia-editor-focusedStackFrameHighlightBackground);
+  background: var(--theia-editor-focusedStackFrameHighlightBackground);
 }
 
 /** Toolbars */
 
 .codicon-debug-start {
-    color: var(--theia-debugIcon-startForeground) !important;
+  color: var(--theia-debugIcon-startForeground) !important;
 }
 .codicon-debug-pause {
-    color: var(--theia-debugIcon-pauseForeground) !important;
+  color: var(--theia-debugIcon-pauseForeground) !important;
 }
 
 .codicon-debug-stop {
-    color: var(--theia-debugIcon-stopForeground) !important;
+  color: var(--theia-debugIcon-stopForeground) !important;
 }
 .codicon-debug-disconnect {
-    color: var(--theia-debugIcon-disconnectForeground) !important;
+  color: var(--theia-debugIcon-disconnectForeground) !important;
 }
 .codicon-debug-restart,
 .codicon-debug-restart-frame {
-    color: var(--theia-debugIcon-restartForeground) !important;
+  color: var(--theia-debugIcon-restartForeground) !important;
 }
 .codicon-debug-step-over {
-    color: var(--theia-debugIcon-stepOverForeground) !important;
+  color: var(--theia-debugIcon-stepOverForeground) !important;
 }
 .codicon-debug-step-into {
-    color: var(--theia-debugIcon-stepIntoForeground) !important;
+  color: var(--theia-debugIcon-stepIntoForeground) !important;
 }
 .codicon-debug-step-out {
-    color: var(--theia-debugIcon-stepOutForeground) !important;
+  color: var(--theia-debugIcon-stepOutForeground) !important;
 }
 .codicon-debug-continue,
 .codicon-debug-reverse-continue {
-    color: var(--theia-debugIcon-continueForeground) !important;
+  color: var(--theia-debugIcon-continueForeground) !important;
 }
 
 .codicon-debug-step-back {
-    color: var(--theia-debugIcon-stepBackForeground) !important;
+  color: var(--theia-debugIcon-stepBackForeground) !important;
 }
 
 /** Hover */
 .theia-debug-hover {
-    display: flex !important;
-    flex-direction: column;
-    border: 1px solid var(--theia-editorHoverWidget-border);
-    background: var(--theia-editorHoverWidget-background);
-    color: var(--theia-editorHoverWidget-foreground);
+  display: flex !important;
+  flex-direction: column;
+  border: 1px solid var(--theia-editorHoverWidget-border);
+  background: var(--theia-editorHoverWidget-background);
+  color: var(--theia-editorHoverWidget-foreground);
 }
 
 .theia-debug-hover.complex-value {
-    min-width: 324px;
-    min-height: 324px;
-    width: 324px;
-    height: 324px;
+  min-width: 324px;
+  min-height: 324px;
+  width: 324px;
+  height: 324px;
 }
 
 .theia-debug-hover .theia-source-tree {
-    height: 100%;
-    width: 100%;
+  height: 100%;
+  width: 100%;
 }
 
 .theia-debug-hover-title {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    padding: var(--theia-ui-padding);
-    border-bottom: 1px solid var(--theia-editorHoverWidget-border);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: var(--theia-ui-padding);
+  border-bottom: 1px solid var(--theia-editorHoverWidget-border);
 }
 
 .theia-debug-hover-content {
-    display: flex;
-    flex: 1;
-    overflow-y: auto;
+  display: flex;
+  flex: 1;
+  overflow-y: auto;
 }
 
 /** Breakpoint Widget */
 .theia-debug-breakpoint-widget {
-    display: flex;
+  display: flex;
 }
 
 .theia-debug-breakpoint-select {
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
-    padding: 0 10px;
-    flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0 10px;
+  flex-shrink: 0;
 }
 
 .theia-debug-breakpoint-input {
-    flex: 1;
-    margin-top: var(--theia-ui-padding);
-    margin-bottom: var(--theia-ui-padding);
+  flex: 1;
+  margin-top: var(--theia-ui-padding);
+  margin-bottom: var(--theia-ui-padding);
 }
 
 /* Status Bar */
 .theia-mod-debugging #theia-statusBar {
-    background: var(--theia-statusBar-debuggingBackground);
-    border-top: var(--theia-border-width) solid var(--theia-statusBar-debuggingBorder);
+  background: var(--theia-statusBar-debuggingBackground);
+  border-top: var(--theia-border-width) solid
+    var(--theia-statusBar-debuggingBorder);
 }
 
 .theia-mod-debugging #theia-statusBar .area .element {
-    color: var(--theia-statusBar-debuggingForeground);
+  color: var(--theia-statusBar-debuggingForeground);
 }
 
 /** Exception Widget */
-.monaco-editor .zone-widget .zone-widget-container.theia-debug-exception-widget {
-    color: var(--theia-editor-foreground);
-    font-size: var(--theia-code-font-size);
-    line-height: var(--theia-code-line-height);
-    font-family: var(--theia-code-font-family);
-    border-top-color: var(--theia-debugExceptionWidget-border);
-    border-bottom-color: var(--theia-debugExceptionWidget-border);
-    background-color: var(--theia-debugExceptionWidget-background);
-    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding)*1.5);
-    white-space: pre-wrap;
-    user-select: text;
-    overflow: hidden;
+.monaco-editor
+  .zone-widget
+  .zone-widget-container.theia-debug-exception-widget {
+  color: var(--theia-editor-foreground);
+  font-size: var(--theia-code-font-size);
+  line-height: var(--theia-code-line-height);
+  font-family: var(--theia-code-font-family);
+  border-top-color: var(--theia-debugExceptionWidget-border);
+  border-bottom-color: var(--theia-debugExceptionWidget-border);
+  background-color: var(--theia-debugExceptionWidget-background);
+  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5);
+  white-space: pre-wrap;
+  user-select: text;
+  overflow: hidden;
 }
 
 .theia-debug-exception-widget .title {
-    font-family: var(--theia-ui-font-family);
-    font-weight: bold;
+  font-family: var(--theia-ui-font-family);
+  font-weight: bold;
 }
 
 .theia-debug-exception-widget .stack-trace {
-    margin-top: 0.5em;
+  margin-top: 0.5em;
 }
 
 .theia-debug-exception-widget #exception-close {
-    cursor: pointer;
-    margin-left: 5px;
-    vertical-align: middle;
+  cursor: pointer;
+  margin-left: 5px;
+  vertical-align: middle;
 }

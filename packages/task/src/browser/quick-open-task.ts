@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
@@ -271,7 +271,7 @@ export class QuickOpenTask implements QuickAccessProvider {
             });
     }
 
-    protected async resolveItemsToConfigure(): Promise<QuickPickInput<QuickPickItemOrSeparator>[]>  {
+    protected async resolveItemsToConfigure(): Promise<QuickPickInput<QuickPickItemOrSeparator>[]> {
         const items: Array<QuickPickInput<QuickPickItemOrSeparator>> = [];
         const isMulti: boolean = this.workspaceService.isMultiRootWorkspaceOpened;
         const token: number = this.taskService.startUserAction();

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 // @ts-check
 
@@ -82,11 +82,11 @@ async function main() {
         if (dashStatus.status == dashLicensesInternalError) {
             error(dashError);
             error('Detected an internal error in dash-licenses - run inconclusive');
-            process.exit(dashLicensesInternalError);        
+            process.exit(dashLicensesInternalError);
         }
-       warn(dashError);
+        warn(dashError);
     }
-    
+
     const restricted = await getRestrictedDependenciesFromSummary(dashLicensesSummary);
     if (restricted.length > 0) {
         if (fs.existsSync(dashLicensesBaseline)) {
