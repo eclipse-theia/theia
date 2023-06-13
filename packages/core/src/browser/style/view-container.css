@@ -106,8 +106,10 @@
 
 .theia-view-container-part-header .label {
   flex: 0;
-  white-space: nowrap;
+  flex-basis: fit-content;
+  overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .theia-view-container-part-header .description {
@@ -161,6 +163,7 @@
 }
 
 .p-TabBar-toolbar.theia-view-container-part-title {
+  overflow: visible !important;
   padding: 0px;
   padding-right: calc(var(--theia-ui-padding) * 2 / 3);
 }
