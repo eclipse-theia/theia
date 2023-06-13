@@ -27,6 +27,5 @@
 
 .theia-settings-container .preference-file-button {
   margin-left: 0px;
-  padding-bottom: 6px;
-  padding-top: 5px;
+  height: calc(var(--theia-content-line-height) + 4px);
 }
