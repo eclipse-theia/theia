@@ -15,15 +15,25 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { ElectronShell, ELECTRON_SHELL_IPC as ipc, proxy, proxyable, TheiaIpcRenderer } from '../electron-common';
+import { ElectronPreloadContribution, ElectronRpcSync, ELECTRON_MAIN_RPC_IPC as rpc, TheiaContextBridge, TheiaIpcRenderer } from '../electron-common';
 
-@injectable() @proxyable()
-export class ElectronShellImpl implements ElectronShell {
+/**
+ * This component acts as a bridge `main <-- preload <-- window` for
+ * sending synchronous RPC messages.
+ */
+@injectable()
+export class ElectronPreloadRpcSync implements ElectronPreloadContribution {
+
+    @inject(TheiaContextBridge)
+    protected contextBridge: TheiaContextBridge;
 
     @inject(TheiaIpcRenderer)
     protected ipcRenderer: TheiaIpcRenderer;
 
-    @proxy() showItemInFolder(fsPath: string): void {
-        this.ipcRenderer.send(ipc.showItemInFolder, fsPath);
+    preload(): void {
+        this.contextBridge.exposeInMainWorld<ElectronRpcSync>('electronRpcSync', {
+            createProxy: proxyPath => this.ipcRenderer.sendSync(rpc.create, { proxyPath }),
+            requestSync: (proxyId, method, params) => this.ipcRenderer.sendSync(rpc.requestSync, { proxyId, method, params })
+        });
     }
 }

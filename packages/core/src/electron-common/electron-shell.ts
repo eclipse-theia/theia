@@ -14,14 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { createIpcNamespace } from './electron-ipc';
-import { preloadServiceIdentifier } from './preload';
+import { Extends, Proxyable, ProxyId } from '../common';
 
-export const ELECTRON_SHELL_IPC = createIpcNamespace('theia-electron-shell', channel => ({
-    showItemInFolder: channel<(fsPath: string) => void>()
-}));
-
-export const ElectronShell = preloadServiceIdentifier<ElectronShell>('PreloadShell');
-export interface ElectronShell {
+export const ElectronShell = ProxyId<ElectronShell>('PreloadShell');
+export type ElectronShell = Extends<$ElectronShell, Proxyable<$ElectronShell>>;
+interface $ElectronShell {
     showItemInFolder(fsPath: string): void
 }

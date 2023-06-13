@@ -15,23 +15,23 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { ElectronWindows } from '../../electron-common';
+import { ElectronWindow } from '../../electron-common';
 import { DefaultSecondaryWindowService } from '../../browser/window/default-secondary-window-service';
 
 @injectable()
 export class ElectronSecondaryWindowService extends DefaultSecondaryWindowService {
 
-    @inject(ElectronWindows)
-    protected electronWindows: ElectronWindows;
+    @inject(ElectronWindow)
+    protected electronWindow: ElectronWindow;
 
     override focus(win: Window): void {
-        this.electronWindows.focusWindow(win.name);
+        this.electronWindow.focusWindow(win.name);
     }
 
     protected override doCreateSecondaryWindow(onClose?: (closedWin: Window) => void): Window | undefined {
         const secondaryWindow = super.doCreateSecondaryWindow(onClose);
         if (secondaryWindow) {
-            this.electronWindows.setMenuBarVisible(false, secondaryWindow.name);
+            this.electronWindow.setMenuBarVisible(false, secondaryWindow.name);
         }
         return secondaryWindow;
     }

@@ -17,8 +17,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { interfaces } from 'inversify';
+import { isFunction, isObject } from '../types';
 import type { CancellationToken } from '../cancellation';
-import type { Disposable } from '../disposable';
 import type { Event } from '../event';
 
 /**
@@ -35,35 +35,52 @@ type WithoutCancellationToken<T extends unknown[]> =
     T extends [...infer U, CancellationToken?] ? U :
     T;
 
+export const RpcServerProvider = Symbol('RpcServerProvider') as symbol & interfaces.Abstract<RpcServerProvider>;
+export interface RpcServerProvider {
+    <T extends object = any>(proxyPath: unknown): T;
+}
+
 /**
  * Special opaque marker type to send events over RPC.
  */
 export abstract class RpcContextEvent<T> {
-
-    #value: T;
-
-    constructor(value: T) {
-        this.#value = value;
-    }
-
-    get value(): T {
-        return this.#value;
-    }
+    constructor(readonly value: T) { }
 }
 
 /**
  * Event API for RPC.
  */
-export const RpcEvent = Symbol('RpcEvent') as symbol & interfaces.Abstract<RpcEvent<unknown>>;
-export interface RpcEvent<T> {
-    (listener: (e: T | RpcContextEvent<T>) => void, disposables?: unknown, thisArg?: unknown): Disposable
-    emit(e: T | RpcContextEvent<T>): void
+export abstract class RpcEvent<T> {
+    abstract readonly onSendAll: Event<RpcEvent.SendAllEvent<T>>;
+    abstract readonly onSendTo: Event<RpcEvent.SendToEvent<T>>;
+    abstract sendAll(event: T, exceptions?: unknown[]): void;
+    abstract sendTo(event: T, targets: unknown[]): void;
+}
+export namespace RpcEvent {
+
+    export interface SendAllEvent<T> {
+        value: T;
+        exceptions?: unknown[]
+    }
+
+    export interface SendToEvent<T> {
+        value: T
+        targets: unknown[]
+    }
+
+    export function is(value: unknown): value is RpcEvent<any> {
+        return isObject<RpcEvent<any>>(value)
+            && isFunction(value.onSendAll)
+            && isFunction(value.onSendTo)
+            && isFunction(value.sendAll)
+            && isFunction(value.sendTo);
+    }
 }
 
 /**
  * Define and use keys to share contextual values when handling RPC.
  */
-export type RpcContextKey<T> = (string | symbol) & { $t?: T };
+export type RpcContextKey<T> = (string | symbol) & { $rpcContextType?: T };
 export function RpcContextKey<T>(key: string | symbol): RpcContextKey<T> {
     return key as RpcContextKey<T>;
 }
@@ -73,26 +90,25 @@ export function RpcContextKey<T>(key: string | symbol): RpcContextKey<T> {
  */
 export interface RpcContext {
     /**
+     * TODO
+     */
+    readonly sender: unknown;
+    /**
      * *Might* be defined when handling an async request.
      */
-    request?: CancellationToken;
+    readonly request?: CancellationToken;
     /**
      * Try and get the value associated with the context key.
      *
      * Will return `undefined` if a value for the context is not defined.
      */
-    get<T = any>(key: RpcContextKey<T>): T | undefined
+    get<T = any>(key: RpcContextKey<T>): T | undefined;
     /**
      * Get the value associated with the context key.
      *
      * Will throw if a value for the context is not defined.
      */
-    require<T = any>(key: RpcContextKey<T>): T
-    /**
-     * Create a special event that will only be dispatched to the sender.
-     */
-    toSender<T>(event: T): RpcContextEvent<T>
-    toSender(): RpcContextEvent<void>
+    require<T = any>(key: RpcContextKey<T>): T;
 }
 
 /**

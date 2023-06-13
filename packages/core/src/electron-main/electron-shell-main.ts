@@ -15,21 +15,14 @@
 // *****************************************************************************
 
 import { shell } from '@theia/electron/shared/electron';
-import { inject, injectable } from 'inversify';
-import { ELECTRON_SHELL_IPC as ipc, TheiaIpcMain, TheiaIpcMainEvent } from '../electron-common';
-import { ElectronMainApplicationContribution } from './electron-main-application';
+import { injectable } from 'inversify';
+import { RpcServer, RpcContext } from '../common';
+import { ElectronShell } from '../electron-common';
 
 @injectable()
-export class ElectronShellMain implements ElectronMainApplicationContribution {
+export class ElectronShellMain implements RpcServer<ElectronShell> {
 
-    @inject(TheiaIpcMain)
-    protected ipcMain: TheiaIpcMain;
-
-    onStart(): void {
-        this.ipcMain.on(ipc.showItemInFolder, this.onShowItemInFolder, this);
-    }
-
-    protected onShowItemInFolder(event: TheiaIpcMainEvent, fsPath: string): void {
+    $showItemInFolder(ctx: RpcContext, fsPath: string): void {
         shell.showItemInFolder(fsPath);
     }
 }

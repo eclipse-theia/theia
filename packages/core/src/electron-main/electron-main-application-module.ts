@@ -17,13 +17,11 @@
 import { ContainerModule } from 'inversify';
 import { v4 } from 'uuid';
 import { bindContributionProvider } from '../common/contribution-provider';
-import { JsonRpcConnectionHandler } from '../common/messaging/proxy-factory';
-import { FunctionUtils, MessagePortServer, TheiaIpcMain } from '../electron-common';
-import { ElectronMainWindowService, electronMainWindowServicePath } from '../electron-common/electron-main-window-service';
+import { FunctionUtils, TheiaIpcMain } from '../electron-common';
+import { ElectronMainWindowService } from '../electron-common/electron-main-window-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
-import { ElectronConnectionHandler } from '../electron-common/messaging/electron-connection-handler';
 import { ElectronClipboardMain } from './electron-clipboard-main';
-import { ElectronCurrentWindowMain } from './electron-current-window-main';
+import { ElectronWindowMain } from './electron-window-main';
 import { ElectronFrontendApplicationMain } from './electron-frontend-application-main';
 import { TheiaIpcMainImpl } from './electron-ipc-main-impl';
 import { ElectronKeyboardLayoutMain } from './electron-keyboard-layout';
@@ -32,11 +30,8 @@ import { ElectronMainWindowServiceImpl } from './electron-main-window-service-im
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronShellMain } from './electron-shell-main';
 import { ElectronSecurityTokenServiceMain } from './electron-token-main';
-import { ElectronWindowsMain } from './electron-windows-main';
-import { ElectronMessagingContribution } from './messaging/electron-messaging-contribution';
-import { ElectronMessagingService } from './messaging/electron-messaging-service';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory, WindowApplicationConfig } from './theia-electron-window';
-import { ElectronMessagePortServerMain } from './electron-message-port-server-main';
+import { ElectronMainContext } from '../common';
 
 const electronSecurityToken: ElectronSecurityToken = { value: v4() };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,35 +44,30 @@ export default new ContainerModule(bind => {
     bind(ElectronSecurityToken).toConstantValue(electronSecurityToken);
     bind(ElectronSecurityTokenService).toSelf().inSingletonScope();
 
-    bindContributionProvider(bind, ElectronConnectionHandler);
-    bindContributionProvider(bind, ElectronMessagingService.Contribution);
     bindContributionProvider(bind, ElectronMainApplicationContribution);
 
-    bind(MessagePortServer).toService(ElectronMessagePortServerMain);
-
-    bind(ElectronMessagePortServerMain).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronMessagePortServerMain);
-    bind(ElectronMessagingContribution).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronMessagingContribution);
-    bind(ElectronSecurityTokenServiceMain).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronSecurityTokenServiceMain);
-    bind(ElectronCurrentWindowMain).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronCurrentWindowMain);
     bind(ElectronClipboardMain).toSelf().inSingletonScope();
     bind(ElectronMainApplicationContribution).toService(ElectronClipboardMain);
     bind(ElectronFrontendApplicationMain).toSelf().inSingletonScope();
     bind(ElectronMainApplicationContribution).toService(ElectronFrontendApplicationMain);
-    bind(ElectronWindowsMain).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronWindowsMain);
-    bind(ElectronShellMain).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronShellMain);
     bind(ElectronKeyboardLayoutMain).toSelf().inSingletonScope();
     bind(ElectronMainApplicationContribution).toService(ElectronKeyboardLayoutMain);
+    bind(ElectronSecurityTokenServiceMain).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(ElectronSecurityTokenServiceMain);
+    bind(ElectronShellMain).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(ElectronShellMain);
+    bind(ElectronWindowMain).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(ElectronWindowMain);
 
     bind(ElectronMainWindowService).to(ElectronMainWindowServiceImpl).inSingletonScope();
-    bind(ElectronConnectionHandler)
-        .toDynamicValue(ctx => new JsonRpcConnectionHandler(electronMainWindowServicePath, () => ctx.container.get(ElectronMainWindowService)))
-        .inSingletonScope();
+    bind(ProxyHandler)
+        .toDynamicValue(ctx => (proxyId: unknown) => {
+            if (proxyId === ElectronMainWindowService) {
+                return ctx.container.get(ElectronMainWindowService);
+            }
+        })
+        .inSingletonScope()
+        .whenTargetNamed(ElectronMainContext);
 
     bind(ElectronMainProcessArgv).toSelf().inSingletonScope();
 

@@ -20,17 +20,17 @@ import { ElectronWindowService } from './electron-window-service';
 import { FrontendApplicationContribution } from '../../browser/frontend-application';
 import { ElectronClipboardService } from '../../electron-common';
 import { ClipboardService } from '../../browser/clipboard-service';
-import { ElectronMainWindowService, electronMainWindowServicePath } from '../../electron-common/electron-main-window-service';
-import { ElectronIpcConnectionProvider } from '../messaging/electron-ipc-connection-provider';
+import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
 import { bindWindowPreferences } from './electron-window-preferences';
 import { FrontendApplicationStateService } from '../../browser/frontend-application-state';
 import { ElectronFrontendApplicationStateService } from './electron-frontend-application-state';
 import { ElectronSecondaryWindowService } from './electron-secondary-window-service';
 import { SecondaryWindowService } from '../../browser/window/secondary-window-service';
+import { ElectronMainContext, ProxyProvider } from '../../common';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(ElectronMainWindowService)
-        .toDynamicValue(ctx => ElectronIpcConnectionProvider.createProxy(ctx.container, electronMainWindowServicePath))
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, ElectronMainContext).getProxy(ElectronMainWindowService))
         .inSingletonScope();
     bindWindowPreferences(bind);
     bind(WindowService).to(ElectronWindowService).inSingletonScope();

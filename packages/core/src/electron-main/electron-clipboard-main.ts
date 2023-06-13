@@ -15,26 +15,18 @@
 // *****************************************************************************
 
 import { clipboard } from '@theia/electron/shared/electron';
-import { inject, injectable } from 'inversify';
-import { ELECTRON_CLIPBOARD_IPC as ipc, TheiaIpcMain, TheiaIpcMainInvokeEvent } from '../electron-common';
-import { ElectronMainApplicationContribution } from './electron-main-application';
+import { injectable } from 'inversify';
+import { RpcServer, RpcContext } from '../common';
+import { ElectronClipboardService } from '../electron-common';
 
 @injectable()
-export class ElectronClipboardMain implements ElectronMainApplicationContribution {
+export class ElectronClipboardMain implements RpcServer<ElectronClipboardService> {
 
-    @inject(TheiaIpcMain)
-    protected ipcMain: TheiaIpcMain;
-
-    onStart(): void {
-        this.ipcMain.handle(ipc.readClipboard, this.handleReadText, this);
-        this.ipcMain.handle(ipc.writeClipboard, this.handleWriteText, this);
-    }
-
-    protected async handleReadText(event: TheiaIpcMainInvokeEvent): Promise<string> {
+    async $readText(ctx: RpcContext): Promise<string> {
         return clipboard.readText();
     }
 
-    protected async handleWriteText(event: TheiaIpcMainInvokeEvent, value: string): Promise<void> {
+    async $writeText(ctx: RpcContext, value: string): Promise<void> {
         clipboard.writeText(value);
     }
 }

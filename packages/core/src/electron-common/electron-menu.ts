@@ -17,23 +17,19 @@
 export type MenuRole = 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll' | 'about' | 'services' | 'hide' | 'hideOthers' | 'unhide' | 'quit';
 
 export interface MenuDto {
-    id?: string,
-    label?: string,
-    submenu?: MenuDto[],
+    id?: string;
+    label?: string;
+    submenu?: MenuDto[];
     type?: 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio';
-    checked?: boolean,
-    enabled?: boolean,
+    checked?: boolean;
+    enabled?: boolean;
     visible?: boolean;
     role?: MenuRole;
-    accelerator?: string,
-    execute?: () => void
+    accelerator?: string;
+    execute?: () => void;
 }
 
 export type InternalMenuDto = Omit<MenuDto, 'execute' | 'submenu'> & {
-    submenu?: InternalMenuDto[],
-    handlerId?: number
+    submenu?: InternalMenuDto[];
+    handlerId?: number;
 };
-
-export interface ElectronMenus {
-
-}

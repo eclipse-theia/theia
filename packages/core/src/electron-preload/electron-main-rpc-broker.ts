@@ -14,18 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { interfaces } from 'inversify';
-import { proxy, proxyable, TheiaPreloadApi, TheiaPreloadContext } from '../electron-common';
+import { inject, injectable } from 'inversify';
+import { TheiaIpcRenderer, ElectronPreloadContribution, TheiaIpcWindow, ELECTRON_MAIN_RPC_IPC as ipc, RpcPortForwardMessage } from '../electron-common';
 
-@proxyable()
-export class TheiaPreloadContextImpl implements TheiaPreloadContext {
+@injectable()
+export class ElectronMainRpcBroker implements ElectronPreloadContribution {
 
-    constructor(
-        protected container: interfaces.Container
-    ) { }
+    @inject(TheiaIpcRenderer)
+    protected ipcRenderer: TheiaIpcRenderer;
 
-    @proxy() getAllPreloadApis(): [string, object][] {
-        return this.container.getAll(TheiaPreloadApi)
-            .map(serviceIdentifier => [serviceIdentifier, this.container.get(serviceIdentifier)]);
+    @inject(TheiaIpcWindow)
+    protected ipcWindow: TheiaIpcWindow;
+
+    preload(): void {
+        this.ipcWindow.on(ipc.portForward, this.handlePortForward, this);
+    }
+
+    protected handlePortForward(event: MessageEvent, message: RpcPortForwardMessage): void {
+        this.ipcRenderer.postMessage(ipc.portForward, message, event.ports);
     }
 }

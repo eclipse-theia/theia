@@ -14,9 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { preloadServiceIdentifier } from './preload';
-import { createIpcNamespace } from './electron-ipc';
 import { interfaces } from 'inversify';
+import { Extends, Proxyable, ProxyId } from '../common';
 
 /**
  * This token is unique to the current running instance. It is used by the backend
@@ -30,13 +29,9 @@ export interface ElectronSecurityToken {
     value: string;
 };
 
-export const ELECTRON_SECURITY_TOKEN_IPC = createIpcNamespace('theia-electron-security-token', channel => ({
-    getSecurityToken: channel<() => string>(),
-    attachSecurityToken: channel<(endpoint: string) => Promise<void>>()
-}));
-
-export const ElectronSecurityTokenService = preloadServiceIdentifier<ElectronSecurityTokenService>('ElectronSecurityTokenService');
-export interface ElectronSecurityTokenService {
-    getSecurityToken(): ElectronSecurityToken
-    attachSecurityToken(endpoint: string): Promise<void>
+export const ElectronSecurityTokenService = ProxyId<ElectronSecurityTokenService>('ElectronSecurityTokenService');
+export type ElectronSecurityTokenService = Extends<$ElectronSecurityTokenService, Proxyable<$ElectronSecurityTokenService>>;
+interface $ElectronSecurityTokenService {
+    getSecurityTokenSync(): ElectronSecurityToken;
+    attachSecurityToken(endpoint: string): Promise<void>;
 }

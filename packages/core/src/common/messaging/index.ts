@@ -17,3 +17,5 @@
 export * from './handler';
 export * from './proxy-factory';
 export * from './connection-error-handler';
+export { ChannelDescriptor, ChannelHandler, ChannelHandlerFactory } from './channels';
+export { ElectronMainContext, ElectronPreloadContext, FrontendContext } from './contexts';

@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2020 Ericsson and others.
+// Copyright (C) 2023 Ericsson and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,12 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MessagePortHandlerId } from '../electron-message-port';
+import type { interfaces } from 'inversify';
 
-export const ElectronConnectionHandlerId = MessagePortHandlerId<[]>('electron-main-connection');
-
-/**
- * Electron-IPC-specific connection handler.
- * Use this if you want to establish communication between the frontend and the electron-main process.
- */
-export const ElectronConnectionHandler = Symbol('ElectronConnectionHandler');
+export const ElectronRpcSync = Symbol('ElectronRpcSync') as symbol & interfaces.Abstract<ElectronRpcSync>;
+export interface ElectronRpcSync<ProxyId = unknown> {
+    createProxy(proxyPath: string): ProxyId
+    requestSync(proxyId: ProxyId, method: string, params: unknown[]): unknown
+}

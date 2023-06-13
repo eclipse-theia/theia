@@ -19,14 +19,9 @@ import { ProxyId, ProxyProvider } from '../proxy-provider';
 import { RpcClient, RpcHandler } from './rpc-api';
 import { RpcProxyHandler } from './rpc-proxy-handler';
 
-export const RpcClientProvider = Symbol('RpcClientProvider') as symbol & interfaces.Abstract<RpcClientProvider>;
-export interface RpcClientProvider {
-    getRpcClient(proxyId: string): RpcClient
-}
-
-export const RpcHandlerProvider = Symbol('RpcHandlerProvider') as symbol & interfaces.Abstract<RpcHandlerProvider>;
-export interface RpcHandlerProvider {
-    getRpcHandler(proxyId: string): RpcHandler
+export const RpcProvider = Symbol('RpcClientProvider') as symbol & interfaces.Abstract<RpcProvider>;
+export interface RpcProvider {
+    getRpc(proxyPath: string): { client: RpcClient, handler?: RpcHandler }
 }
 
 /**
@@ -37,16 +32,14 @@ export class RpcProxyProvider implements ProxyProvider {
     protected proxies = new Map<string, object>();
 
     constructor(
-        protected clientProvider: RpcClientProvider,
-        protected handlerProvider?: RpcHandlerProvider
+        protected rpcProvider: RpcProvider
     ) { }
 
-    getProxy<T extends object>(proxyId: ProxyId<T>): T {
-        let proxy = this.proxies.get(proxyId);
+    getProxy<T extends object>(proxyPath: ProxyId<T>): T {
+        let proxy = this.proxies.get(proxyPath);
         if (!proxy) {
-            const client = this.clientProvider.getRpcClient(proxyId);
-            const handler = this.handlerProvider?.getRpcHandler(proxyId);
-            this.proxies.set(proxyId, proxy = this.createProxy(client, handler));
+            const { client, handler } = this.rpcProvider.getRpc(proxyPath);
+            this.proxies.set(proxyPath, proxy = this.createProxy(client, handler));
         }
         return proxy as T;
     }

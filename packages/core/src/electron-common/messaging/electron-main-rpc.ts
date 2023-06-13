@@ -16,43 +16,47 @@
 
 import { createIpcNamespace } from './electron-ipc';
 
-export interface Create {
-    proxyId: string
-    requestId: number
+export interface RpcCreateMessage {
+    proxyPath: string
+}
+
+export interface RpcPortForwardMessage {
+    proxyId: unknown
+}
+
+export interface RpcNotificationMessage {
+    method: string
     params?: unknown[]
 }
 
-export interface Notification {
-    method: string
-    params: unknown[]
-}
-
-export interface Request {
+export interface RpcRequestMessage {
     requestId: number
     method: string
-    params: unknown[]
+    params?: unknown[]
 }
 
-export interface RequestSync {
+export interface RpcRequestSyncMessage {
+    proxyId: unknown
     method: string
-    params: unknown[]
+    params?: unknown[]
 }
 
-export interface Response {
+export interface RpcResponseMessage {
     requestId: number
     error?: Error
     result?: unknown
 }
 
-export interface Cancel {
+export interface RpcCancelMessage {
     requestId: number
 }
 
-export const ELECTRON_PROXYING_IPC = createIpcNamespace('theia-electron-proxying', channel => ({
-    create: channel<(message: Create) => void>(),
-    notification: channel<(message: Notification) => void>(),
-    request: channel<(message: Request) => void>(),
-    requestSync: channel<(message: RequestSync) => void>(),
-    response: channel<(message: Response) => void>(),
-    cancel: channel<(message: Cancel) => void>()
+export const ELECTRON_MAIN_RPC_IPC = createIpcNamespace('theia-electron-main-rpc', channel => ({
+    create: channel<(message: RpcCreateMessage) => void>(),
+    portForward: channel<(message: RpcPortForwardMessage) => void>(),
+    notification: channel<(message: RpcNotificationMessage) => void>(),
+    request: channel<(message: RpcRequestMessage) => void>(),
+    requestSync: channel<(message: RpcRequestSyncMessage) => void>(),
+    response: channel<(message: RpcResponseMessage) => void>(),
+    cancel: channel<(message: RpcCancelMessage) => void>()
 }));

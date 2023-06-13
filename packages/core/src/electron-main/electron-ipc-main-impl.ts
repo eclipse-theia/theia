@@ -18,15 +18,14 @@
 
 import { ipcMain, IpcMainEvent, WebContents, webContents as electronWebContents, MessagePortMain } from '@theia/electron/shared/electron';
 import { inject, injectable, postConstruct } from 'inversify';
-import { Disposable, Emitter } from '../common';
+import { ChannelDescriptor, Disposable, Emitter } from '../common';
 import { Deferred } from '../common/promise-util';
-import { AnyFunction, ELECTRON_INVOKE_IPC as ipc, FunctionUtils, IpcChannel, IpcEvent, TheiaIpcMain, TheiaIpcMainEvent } from '../electron-common';
+import { AnyFunction, ELECTRON_INVOKE_IPC as ipc, FunctionUtils, IpcEvent, TheiaIpcMain, TheiaIpcMainEvent } from '../electron-common';
 
 @injectable()
 export class TheiaIpcMainImpl implements TheiaIpcMain {
 
-    electronIpcMain = ipcMain;
-
+    protected ipcMain = ipcMain;
     protected invokeId = 0;
     protected pendingInvokeResults = new Map<string, Deferred<unknown>>();
 
@@ -38,19 +37,19 @@ export class TheiaIpcMainImpl implements TheiaIpcMain {
         (this as TheiaIpcMain).on(ipc.invokeResponse, this.onInvokeResponse, this);
     }
 
-    createEvent(channel: IpcChannel<(event: any) => void>): IpcEvent<any> & Disposable {
+    createEvent(channel: ChannelDescriptor<(event: any) => void>): IpcEvent<any> & Disposable {
         const emitter = new Emitter();
         const channelListener = (event: TheiaIpcMainEvent, arg: any) => emitter.fire(arg);
         const ipcEvent: IpcEvent<any> = listener => emitter.event(listener);
         const dispose = () => {
-            this.electronIpcMain.removeListener(channel.channel, channelListener);
+            this.ipcMain.removeListener(channel.channel, channelListener);
             emitter.dispose();
         };
-        this.electronIpcMain.on(channel.channel, channelListener);
+        this.ipcMain.on(channel.channel, channelListener);
         return Object.assign(ipcEvent, { dispose });
     }
 
-    invoke(webContents: WebContents, channel: IpcChannel, ...args: any[]): any {
+    invoke(webContents: WebContents, channel: ChannelDescriptor, ...args: any[]): any {
         const pending = new Deferred();
         const invokeId = this.invokeId++;
         this.pendingInvokeResults.set(`${channel.channel}-${webContents.id}-${invokeId}`, pending);
@@ -58,53 +57,53 @@ export class TheiaIpcMainImpl implements TheiaIpcMain {
         return pending.promise;
     }
 
-    handle(channel: IpcChannel, listener: AnyFunction, thisArg?: object): void {
-        this.electronIpcMain.handle(channel.channel, this.futils.bindfn(listener, thisArg));
+    handle(channel: ChannelDescriptor, listener: AnyFunction, thisArg?: object): void {
+        this.ipcMain.handle(channel.channel, this.futils.bindfn(listener, thisArg));
     }
 
-    handleOnce(channel: IpcChannel, listener: AnyFunction, thisArg?: object): void {
-        this.electronIpcMain.handleOnce(channel.channel, this.futils.bindfn(listener, thisArg));
+    handleOnce(channel: ChannelDescriptor, listener: AnyFunction, thisArg?: object): void {
+        this.ipcMain.handleOnce(channel.channel, this.futils.bindfn(listener, thisArg));
     }
 
-    on(channel: IpcChannel, listener: AnyFunction, thisArg?: object): this {
+    on(channel: ChannelDescriptor, listener: AnyFunction, thisArg?: object): this {
         const boundListener = this.futils.bindfn(listener, thisArg);
         const boundMap = this.futils.bindfn(this.mapSyncHandler, this);
-        this.electronIpcMain.on(channel.channel, this.futils.mapfn(boundListener, boundMap));
+        this.ipcMain.on(channel.channel, this.futils.mapfn(boundListener, boundMap));
         return this;
     }
 
-    once(channel: IpcChannel, listener: AnyFunction, thisArg?: object): this {
+    once(channel: ChannelDescriptor, listener: AnyFunction, thisArg?: object): this {
         const boundListener = this.futils.bindfn(listener, thisArg);
         const boundMap = this.futils.bindfn(this.mapSyncHandler, this);
-        this.electronIpcMain.once(channel.channel, this.futils.mapfn(boundListener, boundMap));
+        this.ipcMain.once(channel.channel, this.futils.mapfn(boundListener, boundMap));
         return this;
     }
 
-    postMessageTo(webContents: WebContents, channel: IpcChannel, message: any, transfer?: MessagePortMain[]): void {
+    postMessageTo(webContents: WebContents, channel: ChannelDescriptor, message: any, transfer?: MessagePortMain[]): void {
         webContents.postMessage(channel.channel, message, transfer);
     }
 
-    removeAllListeners(channel: IpcChannel): this {
-        this.electronIpcMain.removeAllListeners(channel.channel);
+    removeAllListeners(channel: ChannelDescriptor): this {
+        this.ipcMain.removeAllListeners(channel.channel);
         return this;
     }
 
-    removeHandler(channel: IpcChannel): void {
-        this.electronIpcMain.removeHandler(channel.channel);
+    removeHandler(channel: ChannelDescriptor): void {
+        this.ipcMain.removeHandler(channel.channel);
     }
 
-    removeListener(channel: IpcChannel, listener: AnyFunction, thisArg?: object): this {
-        this.electronIpcMain.removeListener(channel.channel, this.futils.bindfn(listener, thisArg));
+    removeListener(channel: ChannelDescriptor, listener: AnyFunction, thisArg?: object): this {
+        this.ipcMain.removeListener(channel.channel, this.futils.bindfn(listener, thisArg));
         return this;
     }
 
-    sendAll(channel: IpcChannel, ...args: any[]): void {
+    sendAll(channel: ChannelDescriptor, ...args: any[]): void {
         electronWebContents.getAllWebContents().forEach(webContents => {
             this.sendTo(webContents, channel, ...args);
         });
     }
 
-    sendTo(webContents: WebContents, channel: IpcChannel, ...args: any[]): void {
+    sendTo(webContents: WebContents, channel: ChannelDescriptor, ...args: any[]): void {
         webContents.send(channel.channel, ...args);
     }
 

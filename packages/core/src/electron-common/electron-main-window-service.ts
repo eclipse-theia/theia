@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Extends, Proxyable, ProxyId } from '../common';
 import { NewWindowOptions } from '../common/window';
 
-export const electronMainWindowServicePath = '/services/electron-window';
-export const ElectronMainWindowService = Symbol('ElectronMainWindowService');
-export interface ElectronMainWindowService {
-    openNewWindow(url: string, options?: NewWindowOptions): undefined;
+export const ElectronMainWindowService = ProxyId<ElectronMainWindowService>('ElectronMainWindowService');
+export type ElectronMainWindowService = Extends<$ElectronWindowService, Proxyable<$ElectronWindowService>>;
+interface $ElectronWindowService {
+    openNewWindow(url: string, options?: NewWindowOptions): void;
     openNewDefaultWindow(): void;
 }

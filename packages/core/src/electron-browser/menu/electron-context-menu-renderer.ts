@@ -24,7 +24,7 @@ import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { ContextMenuContext } from '../../browser/menu/context-menu-context';
 import { MenuPath, MenuContribution, MenuModelRegistry } from '../../common';
 import { BrowserContextMenuRenderer } from '../../browser/menu/browser-context-menu-renderer';
-import { ElectronWindows } from '../../electron-common';
+import { ElectronWindow } from '../../electron-common';
 
 export namespace ElectronTextInputContextMenu {
     export const MENU_PATH: MenuPath = ['electron_text_input'];
@@ -75,8 +75,8 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
-    @inject(ElectronWindows)
-    protected electronWindows: ElectronWindows;
+    @inject(ElectronWindow)
+    protected electronWindow: ElectronWindow;
 
     protected useNativeStyle: boolean = true;
 
@@ -86,7 +86,7 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
 
     @postConstruct()
     protected init(): void {
-        this.electronWindows.currentWindow.getTitleBarStyle().then(style => {
+        this.electronWindow.getTitleBarStyle().then(style => {
             this.useNativeStyle = style === 'native';
         });
     }
@@ -96,14 +96,14 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
             const { menuPath, anchor, args, onHide, context, contextKeyService } = options;
             const menu = this.electronMenuFactory.createElectronContextMenu(menuPath, args, context, contextKeyService);
             const { x, y } = coordinateFromAnchor(anchor);
-            const handlePromise = this.electronWindows.currentWindow.popup(menu, x, y, () => {
+            const handlePromise = this.electronWindow.popup(menu, x, y, () => {
                 onHide?.();
             });
             // native context menu stops the event loop, so there is no keyboard events
             this.context.resetAltPressed();
             return new ElectronContextMenuAccess({
                 dispose: () => {
-                    handlePromise.then(handle => this.electronWindows.currentWindow.closePopup(handle));
+                    handlePromise.then(handle => this.electronWindow.closePopup(handle));
                 }
             });
         }

@@ -16,8 +16,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { CancellationToken } from '../cancellation';
-import { Event } from '../event';
+import type { MaybePromise } from '../types';
+import type { CancellationToken } from '../cancellation';
+import type { Event } from '../event';
 
 type WithoutPrefix<Prefix extends string, T> =
     T extends `${Prefix}${infer U}` ? U :
@@ -25,33 +26,9 @@ type WithoutPrefix<Prefix extends string, T> =
     never;
 
 type EnsureTail<T extends unknown[], Tail extends unknown[]> =
-    T extends [...infer V, ...Tail] ? [...V, ...Tail] :
+    T extends [] ?
+    Tail :
     [...T, ...Tail];
-
-export type ToProxyable<T> = {
-    // Fields cannot be optional:
-    [K in keyof T]-?: (
-        // Events:
-        WithoutPrefix<'$', K> extends `on${string}` ? (
-            T[K] extends Event<any> ? T[K] : Event<any>
-        ) :
-        // Methods:
-        T[K] extends (...params: infer U) => infer V ? (
-            // Need to use `[T] extends [U]` notation to avoid booleans being distributed as `true | false`.
-            // See: https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types
-            // Methods returning void are allowed for anything:
-            [V] extends [void] ? (...params: U) => void :
-            // Notification method:
-            WithoutPrefix<'$', K> extends `notify${string}` ? (...params: U) => void :
-            // Synchronous method:
-            K extends `${string}Sync` ? (...params: U) => [V] extends [PromiseLike<infer W>] ? W : V :
-            // Asynchonous method:
-            (...params: EnsureTail<U, [cancel?: CancellationToken]>) => [V] extends [PromiseLike<unknown>] ? V : PromiseLike<V>
-        ) :
-        // Expect functions for everything else:
-        (...params: any[]) => any
-    )
-};
 
 /**
  * Ensure that `T` matches the proxy API naming convention:
@@ -60,4 +37,27 @@ export type ToProxyable<T> = {
  * - `<method>Sync` send a synchronous request.
  * - `<method>` send an asynchronous request.
  */
-export type Proxyable<T extends ToProxyable<T>> = ToProxyable<T>;
+export type Proxyable<T> = {
+    // Fields cannot be optional:
+    [K in keyof T]-?: (
+        // Events:
+        WithoutPrefix<'$', K> extends `on${string}` ? (
+            T[K] extends Event<any> ? T[K] : Event<any>
+        ) :
+        // Methods:
+        T[K] extends (...params: infer U) => infer V ? (
+            // Need to use `[X] extends [Y]` notation to avoid booleans being distributed as `true | false`.
+            // See: https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types
+            // Methods returning void are allowed for anything:
+            [V] extends [void] ? (...params: U) => void :
+            // Notification method:
+            WithoutPrefix<'$', K> extends `notify${string}` ? (...params: U) => void :
+            // Synchronous method:
+            K extends `${string}Sync` ? (...params: U) => [V] extends [MaybePromise<infer W>] ? W : never :
+            // Asynchonous method:
+            (...params: EnsureTail<U, [cancel?: CancellationToken]>) => [V] extends [MaybePromise<infer W>] ? Promise<W> : never
+        ) :
+        // Expect functions for everything else:
+        (...params: any[]) => any
+    )
+};

@@ -22,7 +22,6 @@ export * from './contribution-filter';
 export * from './contribution-provider';
 export * from './disposable';
 export * from './event';
-export * from './ipc';
 export * from './logger';
 export * from './lsp-types';
 export * from './menu';

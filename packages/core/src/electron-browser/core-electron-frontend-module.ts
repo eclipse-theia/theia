@@ -16,9 +16,12 @@
 
 import { ContainerModule } from 'inversify';
 import { ElectronMainContext, Emitter, ProxyProvider, RpcEvent, RpcProxyProvider } from '../common';
-import { ElectronCurrentWindow, FunctionUtils, MessagePortClient, TheiaIpcWindow } from '../electron-common';
+import * as common from '../electron-common';
 import { TheiaIpcWindowImpl } from './electron-ipc-window-impl';
-import { MessagePortClientImpl } from './electron-message-port-client-impl';
+import { ElectronMainRpcProvider } from './messaging/electron-main-rpc-provider';
+
+// This symbol comes from the Electron preload context:
+declare const electronRpcSync: common.ElectronRpcSync;
 
 export default new ContainerModule(bind => {
     // Transients
@@ -30,18 +33,24 @@ export default new ContainerModule(bind => {
         });
     });
     // Singletons
-    bind(FunctionUtils).toSelf().inSingletonScope();
-    bind(TheiaIpcWindow).to(TheiaIpcWindowImpl).inSingletonScope();
-    bind(MessagePortClient).to(MessagePortClientImpl).inSingletonScope();
+    bind(common.ElectronRpcSync).toConstantValue(electronRpcSync);
+    bind(common.FunctionUtils).toSelf().inSingletonScope();
+    bind(common.TheiaIpcWindow).to(TheiaIpcWindowImpl).inSingletonScope();
+    bind(ElectronMainRpcProvider).toSelf().inSingletonScope();
     bind(ProxyProvider)
-        .toDynamicValue(ctx => {
-            const electronMainRpc = ctx.container.get('electronMainRpc');
-            return new RpcProxyProvider(electronMainRpc, electronMainRpc);
-        })
+        .toDynamicValue(ctx => new RpcProxyProvider(ctx.container.get(ElectronMainRpcProvider)))
         .inSingletonScope()
         .whenTargetNamed(ElectronMainContext);
     // Proxies
-    bind(ElectronCurrentWindow)
-        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, ElectronMainContext).getProxy(ElectronCurrentWindow))
-        .inSingletonScope();
+    function bindProxy(target: symbol, proxyId: string): void {
+        bind(proxyId)
+            .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, target).getProxy(proxyId))
+            .inSingletonScope();
+    }
+    bindProxy(ElectronMainContext, common.ElectronClipboardService);
+    bindProxy(ElectronMainContext, common.ElectronFrontendApplication);
+    bindProxy(ElectronMainContext, common.ElectronKeyboardLayout);
+    bindProxy(ElectronMainContext, common.ElectronShell);
+    bindProxy(ElectronMainContext, common.ElectronSecurityTokenService);
+    bindProxy(ElectronMainContext, common.ElectronWindow);
 });

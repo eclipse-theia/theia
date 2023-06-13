@@ -24,7 +24,7 @@ import debounce = require('lodash.debounce');
 import { MAXIMIZED_CLASS } from '../../browser/shell/theia-dock-panel';
 import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin';
 import { ContextMatcher } from '../../browser/context-key-service';
-import { ElectronWindows, MenuDto, MenuRole } from '../../electron-common';
+import { ElectronWindow, MenuDto, MenuRole } from '../../electron-common';
 
 /**
  * Representation of possible electron menu options.
@@ -74,8 +74,8 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
     @inject(PreferenceService)
     protected preferencesService: PreferenceService;
 
-    @inject(ElectronWindows)
-    protected electronWindows: ElectronWindows;
+    @inject(ElectronWindow)
+    protected electronWindow: ElectronWindow;
 
     @postConstruct()
     postConstruct(): void {
@@ -91,7 +91,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                             menuItem.checked = this.commandRegistry.isToggled(cmd);
                         }
                     }
-                    this.electronWindows.currentWindow.setMenu(this._menu);
+                    this.electronWindow.setMenu(this._menu);
                 }
             }, 10)
         );
@@ -103,7 +103,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
     async setMenuBar(): Promise<void> {
         await this.preferencesService.ready;
         const createdMenuBar = this.createElectronMenuBar();
-        this.electronWindows.currentWindow.setMenu(createdMenuBar);
+        this.electronWindow.setMenu(createdMenuBar);
     }
 
     createElectronMenuBar(): MenuDto[] | undefined {
@@ -269,7 +269,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                     const item = this.findMenuById(this._menu, cmd);
                     if (item) {
                         item.checked = this.menuCommandExecutor.isToggled(menuPath, cmd, ...args);
-                        this.electronWindows.currentWindow.setMenu(this._menu);
+                        this.electronWindow.setMenu(this._menu);
                     }
                 }
             }

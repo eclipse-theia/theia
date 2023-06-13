@@ -27,7 +27,7 @@ import { ZoomLevel } from '../window/electron-window-preferences';
 import { BrowserMenuBarContribution } from '../../browser/menu/browser-menu-plugin';
 import { WindowService } from '../../browser/window/window-service';
 import { WindowTitleService } from '../../browser/window/window-title-service';
-import { ElectronFrontendApplication, ElectronWindows, MenuDto } from '../../electron-common';
+import { ElectronFrontendApplication, ElectronWindow, MenuDto } from '../../electron-common';
 
 import '../../../src/electron-browser/menu/electron-menu-style.css';
 
@@ -94,8 +94,8 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     @inject(CustomTitleWidgetFactory)
     protected readonly customTitleWidgetFactory: CustomTitleWidgetFactory;
 
-    @inject(ElectronWindows)
-    protected electronWindows: ElectronWindows;
+    @inject(ElectronWindow)
+    protected electronWindow: ElectronWindow;
 
     protected titleBarStyleChangeFlag = false;
     protected titleBarStyle?: string;
@@ -135,7 +135,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         // OSX: Recreate the menus when changing windows.
         // OSX only has one menu bar for all windows, so we need to swap
         // between them as the user switches windows.
-        const disposeHandler = this.electronWindows.currentWindow.onFocus(() => {
+        const disposeHandler = this.electronWindow.onFocus(() => {
             this.setMenu(app);
         });
         window.addEventListener('unload', () => disposeHandler.dispose());
@@ -151,7 +151,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
 
     handleTitleBarStyling(app: FrontendApplication): void {
         this.hideTopPanel(app);
-        this.electronWindows.currentWindow.getTitleBarStyle().then(style => {
+        this.electronWindow.getTitleBarStyle().then(style => {
             this.titleBarStyle = style;
             this.setMenu(app);
             this.preferenceService.ready.then(() => {
@@ -159,13 +159,13 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
             });
         });
         this.preferenceService.ready.then(() => {
-            this.electronWindows.setMenuBarVisible(['classic', 'visible'].includes(this.preferenceService.get('window.menuBarVisibility', 'classic')));
+            this.electronWindow.setMenuBarVisible(['classic', 'visible'].includes(this.preferenceService.get('window.menuBarVisibility', 'classic')));
         });
 
         this.preferenceService.onPreferenceChanged(change => {
             if (change.preferenceName === 'window.titleBarStyle') {
                 if (this.titleBarStyleChangeFlag && this.titleBarStyle !== change.newValue) {
-                    this.electronWindows.currentWindow.setTitleBarStyle(change.newValue);
+                    this.electronWindow.setTitleBarStyle(change.newValue);
                     this.handleRequiredRestart();
                 }
                 this.titleBarStyleChangeFlag = true;
@@ -209,7 +209,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
             }
         }
         electronMenu ??= this.factory.createElectronMenuBar();
-        this.electronWindows.currentWindow.setMenu(electronMenu);
+        this.electronWindow.setMenu(electronMenu);
     }
 
     protected createCustomTitleBar(app: FrontendApplication): void {
@@ -221,10 +221,10 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         const controls = document.createElement('div');
         controls.id = 'window-controls';
         controls.append(
-            this.createControlButton('minimize', () => this.electronWindows.currentWindow.minimize()),
-            this.createControlButton('maximize', () => this.electronWindows.currentWindow.maximize()),
-            this.createControlButton('restore', () => this.electronWindows.currentWindow.unMaximize()),
-            this.createControlButton('close', () => this.electronWindows.currentWindow.close())
+            this.createControlButton('minimize', () => this.electronWindow.minimize()),
+            this.createControlButton('maximize', () => this.electronWindow.maximize()),
+            this.createControlButton('restore', () => this.electronWindow.unMaximize()),
+            this.createControlButton('close', () => this.electronWindow.close())
         );
         app.shell.topPanel.node.append(controls);
         this.handleWindowControls();
@@ -238,13 +238,13 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     }
 
     protected handleWindowControls(): void {
-        if (this.electronWindows.currentWindow.isMaximizedSync()) {
+        if (this.electronWindow.isMaximizedSync()) {
             document.body.classList.add('maximized');
         }
-        this.electronWindows.currentWindow.onMaximize(() => {
+        this.electronWindow.onMaximize(() => {
             document.body.classList.add('maximized');
         });
-        this.electronWindows.currentWindow.onUnmaximize(() => {
+        this.electronWindow.onUnmaximize(() => {
             document.body.classList.remove('maximized');
         });
     }
@@ -282,7 +282,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
 
         registry.registerCommand(ElectronCommands.TOGGLE_DEVELOPER_TOOLS, {
             execute: () => {
-                this.electronWindows.currentWindow.toggleDevTools();
+                this.electronWindow.toggleDevTools();
             }
         });
 
@@ -290,12 +290,12 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
             execute: () => this.windowService.reload()
         });
         registry.registerCommand(ElectronCommands.CLOSE_WINDOW, {
-            execute: () => this.electronWindows.currentWindow.close()
+            execute: () => this.electronWindow.close()
         });
 
         registry.registerCommand(ElectronCommands.ZOOM_IN, {
             execute: async () => {
-                const curentLevel = await this.electronWindows.currentWindow.getZoomLevel();
+                const curentLevel = await this.electronWindow.getZoomLevel();
                 // When starting at a level that is not a multiple of 0.5, increment by at most 0.5 to reach the next highest multiple of 0.5.
                 let zoomLevel = (Math.floor(curentLevel / ZoomLevel.VARIATION) * ZoomLevel.VARIATION) + ZoomLevel.VARIATION;
                 if (zoomLevel > ZoomLevel.MAX) {
@@ -307,7 +307,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         });
         registry.registerCommand(ElectronCommands.ZOOM_OUT, {
             execute: async () => {
-                const curentLevel = await this.electronWindows.currentWindow.getZoomLevel();
+                const curentLevel = await this.electronWindow.getZoomLevel();
                 // When starting at a level that is not a multiple of 0.5, decrement by at most 0.5 to reach the next lowest multiple of 0.5.
                 let zoomLevel = (Math.ceil(curentLevel / ZoomLevel.VARIATION) * ZoomLevel.VARIATION) - ZoomLevel.VARIATION;
                 if (zoomLevel < ZoomLevel.MIN) {
@@ -322,8 +322,8 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         });
 
         registry.registerCommand(ElectronCommands.TOGGLE_FULL_SCREEN, {
-            isEnabled: () => this.electronWindows.currentWindow.isFullScreenableSync(),
-            isVisible: () => this.electronWindows.currentWindow.isFullScreenableSync(),
+            isEnabled: () => this.electronWindow.isFullScreenableSync(),
+            isVisible: () => this.electronWindow.isFullScreenableSync(),
             execute: () => this.toggleFullScreen()
         });
     }
@@ -402,15 +402,15 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     }
 
     protected toggleFullScreen(): void {
-        this.electronWindows.currentWindow.toggleFullScreen();
+        this.electronWindow.toggleFullScreen();
         const menuBarVisibility = this.preferenceService.get('window.menuBarVisibility', 'classic');
         this.handleFullScreen(menuBarVisibility);
     }
 
     protected handleFullScreen(menuBarVisibility: string): void {
-        const shouldShowTop = !this.electronWindows.currentWindow.isFullScreenSync() || menuBarVisibility === 'visible';
+        const shouldShowTop = !this.electronWindow.isFullScreenSync() || menuBarVisibility === 'visible';
         if (this.titleBarStyle === 'native') {
-            this.electronWindows.setMenuBarVisible(shouldShowTop);
+            this.electronWindow.setMenuBarVisible(shouldShowTop);
         } else if (shouldShowTop) {
             this.shell.topPanel.show();
         } else {

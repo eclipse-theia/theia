@@ -30,13 +30,13 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
-import { Disposable, DisposableCollection, isOSX, isWindows } from '../common';
+import { Disposable, DisposableCollection, Emitter, Event, isOSX, isWindows } from '../common';
 import { DEFAULT_WINDOW_HASH } from '../common/window';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
 import { createDisposableListener } from './event-utils';
 import { StopReason } from '../common/frontend-application-state';
-import { TheiaIpcMain, ELECTRON_CURRENT_WINDOW_IPC } from '../electron-common';
+import { TheiaIpcMain } from '../electron-common';
 
 export { ElectronMainApplicationGlobals };
 
@@ -98,6 +98,10 @@ export interface ElectronMainApplicationContribution {
      * The application is stopping. Contributions must perform only synchronous operations.
      */
     onStop?(application: ElectronMainApplication): void;
+}
+
+export interface DidCreateTheiaElectronWindowEvent {
+    theiaElectronWindow: TheiaElectronWindow
 }
 
 // Extracted and modified the functionality from `yargs@15.4.0-beta.0`.
@@ -184,12 +188,17 @@ export class ElectronMainApplication {
     protected didUseNativeWindowFrameOnStart = new Map<number, boolean>();
     protected windows = new Map<number, TheiaElectronWindow>();
     protected restarting = false;
+    protected onDidCreateTheiaElectronWindowEmitter = new Emitter<DidCreateTheiaElectronWindowEvent>();
 
     get config(): FrontendApplicationConfig {
         if (!this._config) {
             throw new Error('You have to start the application first.');
         }
         return this._config;
+    }
+
+    get onDidCreateTheiaElectronWindow(): Event<DidCreateTheiaElectronWindowEvent> {
+        return this.onDidCreateTheiaElectronWindowEmitter.event;
     }
 
     async start(config: FrontendApplicationConfig): Promise<void> {
@@ -272,11 +281,9 @@ export class ElectronMainApplication {
         const id = electronWindow.window.webContents.id;
         this.windows.set(id, electronWindow);
         electronWindow.onDidClose(() => this.windows.delete(id));
-        electronWindow.window.on('maximize', () => this.ipcMain.sendTo(electronWindow.window.webContents, ELECTRON_CURRENT_WINDOW_IPC.onMaximize));
-        electronWindow.window.on('unmaximize', () => this.ipcMain.sendTo(electronWindow.window.webContents, ELECTRON_CURRENT_WINDOW_IPC.onUnmaximize));
-        electronWindow.window.on('focus', () => this.ipcMain.sendTo(electronWindow.window.webContents, ELECTRON_CURRENT_WINDOW_IPC.onFocus));
         this.attachSaveWindowState(electronWindow.window);
         this.configureNativeSecondaryWindowCreation(electronWindow.window);
+        this.onDidCreateTheiaElectronWindowEmitter.fire({ theiaElectronWindow: electronWindow });
         return electronWindow.window;
     }
 

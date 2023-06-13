@@ -16,28 +16,20 @@
 
 import { session } from '@theia/electron/shared/electron';
 import { inject, injectable } from 'inversify';
-import { TheiaIpcMain, ELECTRON_SECURITY_TOKEN_IPC as ipc, TheiaIpcMainInvokeEvent, ElectronSecurityToken, TheiaIpcMainEvent } from '../electron-common';
-import { ElectronMainApplicationContribution } from './electron-main-application';
+import { RpcServer, RpcContext } from '../common';
+import { ElectronSecurityToken, ElectronSecurityTokenService } from '../electron-common';
 
 @injectable()
-export class ElectronSecurityTokenServiceMain implements ElectronMainApplicationContribution {
-
-    @inject(TheiaIpcMain)
-    protected ipcMain: TheiaIpcMain;
+export class ElectronSecurityTokenServiceMain implements RpcServer<ElectronSecurityTokenService> {
 
     @inject(ElectronSecurityToken)
     protected token: ElectronSecurityToken;
 
-    onStart(): void {
-        this.ipcMain.handle(ipc.getSecurityToken, this.onGetSecurityToken, this);
-        this.ipcMain.handle(ipc.attachSecurityToken, this.handleAttachSecurityToken, this);
+    $getSecurityTokenSync(ctx: RpcContext): ElectronSecurityToken {
+        return this.token;
     }
 
-    protected onGetSecurityToken(event: TheiaIpcMainEvent): string {
-        return this.token.value;
-    }
-
-    protected async handleAttachSecurityToken(event: TheiaIpcMainInvokeEvent, endpoint: string): Promise<void> {
+    async $attachSecurityToken(ctx: RpcContext, endpoint: string): Promise<void> {
         await session.defaultSession.cookies.set({
             url: endpoint,
             name: ElectronSecurityToken,

@@ -14,20 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Extends, Proxyable, ProxyId } from '../common';
 import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
-import { createIpcNamespace } from './electron-ipc';
-import { preloadServiceIdentifier } from './preload';
 
-export const ELECTRON_FRONTEND_APPLICATION_IPC = createIpcNamespace('theia-electron-frontend-application', channel => ({
-    updateApplicationState: channel<(state: FrontendApplicationState) => void>(),
-    canClose: channel<(reason: StopReason) => Promise<boolean>>(),
-    reload: channel<() => void>(),
-    restart: channel<() => void>()
-}));
-
-export const ElectronFrontendApplication = preloadServiceIdentifier<ElectronFrontendApplication>('ElectronFrontendApplication');
-export interface ElectronFrontendApplication {
-    handleCanClose(handler: (reason: StopReason) => Promise<boolean>): void
+export const ElectronFrontendApplication = ProxyId<ElectronFrontendApplication>('ElectronFrontendApplication');
+export type ElectronFrontendApplication = Extends<$ElectronFrontendApplication, Proxyable<$ElectronFrontendApplication>>;
+interface $ElectronFrontendApplication {
+    // handleCanClose(handler: (reason: StopReason) => Promise<boolean>): void // TODO: FIX
     updateApplicationState(state: FrontendApplicationState): void
     restart(): void
 }

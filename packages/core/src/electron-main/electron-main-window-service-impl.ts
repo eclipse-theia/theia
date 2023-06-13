@@ -19,14 +19,15 @@ import { injectable, inject } from 'inversify';
 import { ElectronMainWindowService } from '../electron-common/electron-main-window-service';
 import { ElectronMainApplication } from './electron-main-application';
 import { NewWindowOptions } from '../common/window';
+import { RpcContext, RpcServer } from '../common';
 
 @injectable()
-export class ElectronMainWindowServiceImpl implements ElectronMainWindowService {
+export class ElectronMainWindowServiceImpl implements RpcServer<ElectronMainWindowService> {
 
     @inject(ElectronMainApplication)
     protected readonly app: ElectronMainApplication;
 
-    openNewWindow(url: string, { external }: NewWindowOptions): undefined {
+    async $openNewWindow(ctx: RpcContext, url: string, { external }: NewWindowOptions): Promise<void> {
         if (external) {
             shell.openExternal(url);
         } else {
@@ -34,11 +35,9 @@ export class ElectronMainWindowServiceImpl implements ElectronMainWindowService 
                 electronWindow.loadURL(url);
             });
         }
-        return undefined;
     }
 
-    openNewDefaultWindow(): void {
+    $openNewDefaultWindow(ctx: RpcContext): void {
         this.app.openDefaultWindow();
     }
-
 }

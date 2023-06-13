@@ -18,14 +18,13 @@
 
 import { ipcRenderer, IpcRendererEvent } from '@theia/electron/shared/electron';
 import { inject, injectable, postConstruct } from 'inversify';
-import { Disposable, Emitter } from '../common';
-import { AnyFunction, FunctionUtils, IpcChannel, TheiaIpcRenderer, ELECTRON_INVOKE_IPC as ipc, IpcEvent, TheiaIpcRendererEvent } from '../electron-common';
+import { ChannelDescriptor, Disposable, Emitter } from '../common';
+import { AnyFunction, FunctionUtils, TheiaIpcRenderer, ELECTRON_INVOKE_IPC as ipc, IpcEvent, TheiaIpcRendererEvent } from '../electron-common';
 
 @injectable()
 export class TheiaIpcRendererImpl implements TheiaIpcRenderer {
 
-    electronIpcRenderer = ipcRenderer;
-
+    protected ipcRenderer = ipcRenderer;
     protected handleListeners = new Map<string, { handler: AnyFunction, once: boolean }>();
 
     @inject(FunctionUtils)
@@ -36,74 +35,74 @@ export class TheiaIpcRendererImpl implements TheiaIpcRenderer {
         (this as TheiaIpcRenderer).on(ipc.invokeRequest, this.onInvokeRequest, this);
     }
 
-    createEvent(channel: IpcChannel<(event: any) => void>): IpcEvent<any> & Disposable {
+    createEvent(channel: ChannelDescriptor<(event: any) => void>): IpcEvent<any> & Disposable {
         const emitter = new Emitter();
         const channelListener = (event: TheiaIpcRendererEvent, arg: any) => emitter.fire(arg);
         const ipcEvent: IpcEvent<any> = listener => emitter.event(listener);
         const dispose = () => {
-            this.electronIpcRenderer.removeListener(channel.channel, channelListener);
+            this.ipcRenderer.removeListener(channel.channel, channelListener);
             emitter.dispose();
         };
-        this.electronIpcRenderer.on(channel.channel, channelListener);
+        this.ipcRenderer.on(channel.channel, channelListener);
         return Object.assign(ipcEvent, { dispose });
     }
 
-    invoke(channel: IpcChannel, ...args: any[]): any {
-        return this.electronIpcRenderer.invoke(channel.channel, ...args);
+    invoke(channel: ChannelDescriptor, ...args: any[]): any {
+        return this.ipcRenderer.invoke(channel.channel, ...args);
     }
 
-    handle(channel: IpcChannel, listener: AnyFunction, thisArg?: object): void {
+    handle(channel: ChannelDescriptor, listener: AnyFunction, thisArg?: object): void {
         if (this.handleListeners.has(channel.channel)) {
             console.warn(`replacing the handler for: "${channel.channel}"`);
         }
         this.handleListeners.set(channel.channel, { handler: this.futils.bindfn(listener, thisArg), once: false });
     }
 
-    handleOnce(channel: IpcChannel, listener: AnyFunction, thisArg?: object): void {
+    handleOnce(channel: ChannelDescriptor, listener: AnyFunction, thisArg?: object): void {
         if (this.handleListeners.has(channel.channel)) {
             console.warn(`replacing the handler for: "${channel.channel}"`);
         }
         this.handleListeners.set(channel.channel, { handler: this.futils.bindfn(listener, thisArg), once: true });
     }
 
-    on(channel: IpcChannel, listener: AnyFunction, thisArg?: object): this {
-        this.electronIpcRenderer.on(channel.channel, this.futils.bindfn(listener, thisArg));
+    on(channel: ChannelDescriptor, listener: AnyFunction, thisArg?: object): this {
+        this.ipcRenderer.on(channel.channel, this.futils.bindfn(listener, thisArg));
         return this;
     }
 
-    once(channel: IpcChannel, listener: AnyFunction, thisArg?: object): this {
-        this.electronIpcRenderer.once(channel.channel, this.futils.bindfn(listener, thisArg));
+    once(channel: ChannelDescriptor, listener: AnyFunction, thisArg?: object): this {
+        this.ipcRenderer.once(channel.channel, this.futils.bindfn(listener, thisArg));
         return this;
     }
 
-    postMessage(channel: IpcChannel, message: any, transfer?: MessagePort[]): void {
-        this.electronIpcRenderer.postMessage(channel.channel, message, transfer);
+    postMessage(channel: ChannelDescriptor, message: any, transfer?: MessagePort[]): void {
+        this.ipcRenderer.postMessage(channel.channel, message, transfer);
     }
 
-    removeAllListeners(channel: IpcChannel): this {
-        this.electronIpcRenderer.removeAllListeners(channel.channel);
+    removeAllListeners(channel: ChannelDescriptor): this {
+        this.ipcRenderer.removeAllListeners(channel.channel);
         return this;
     }
 
-    removeListener(channel: IpcChannel, listener: AnyFunction, thisArg?: object): this {
-        this.electronIpcRenderer.removeListener(channel.channel, this.futils.bindfn(listener, thisArg));
+    removeListener(channel: ChannelDescriptor, listener: AnyFunction, thisArg?: object): this {
+        this.ipcRenderer.removeListener(channel.channel, this.futils.bindfn(listener, thisArg));
         return this;
     }
 
-    send(channel: IpcChannel, ...args: any[]): void {
-        this.electronIpcRenderer.send(channel.channel, ...args);
+    send(channel: ChannelDescriptor, ...args: any[]): void {
+        this.ipcRenderer.send(channel.channel, ...args);
     }
 
-    sendSync(channel: IpcChannel, ...args: any[]): any {
-        return this.electronIpcRenderer.sendSync(channel.channel, ...args);
+    sendSync(channel: ChannelDescriptor, ...args: any[]): any {
+        return this.ipcRenderer.sendSync(channel.channel, ...args);
     }
 
-    sendTo(webContentsId: number, channel: IpcChannel, ...args: any[]): void {
-        this.electronIpcRenderer.sendTo(webContentsId, channel.channel, ...args);
+    sendTo(webContentsId: number, channel: ChannelDescriptor, ...args: any[]): void {
+        this.ipcRenderer.sendTo(webContentsId, channel.channel, ...args);
     }
 
-    sendToHost(channel: IpcChannel, ...args: any[]): void {
-        this.electronIpcRenderer.sendToHost(channel.channel, ...args);
+    sendToHost(channel: ChannelDescriptor, ...args: any[]): void {
+        this.ipcRenderer.sendToHost(channel.channel, ...args);
     }
 
     protected onInvokeRequest(event: IpcRendererEvent, invokeChannel: string, invokeId: number, args: any[]): void {

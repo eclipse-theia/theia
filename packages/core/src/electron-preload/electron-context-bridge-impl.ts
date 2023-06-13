@@ -15,16 +15,13 @@
 // *****************************************************************************
 
 import { contextBridge } from '@theia/electron/shared/electron';
-import { inject, injectable } from 'inversify';
-import { IpcHandleConverter, TheiaContextBridge } from '../electron-common';
+import { injectable } from 'inversify';
+import { TheiaContextBridge } from '../electron-common';
 
 @injectable()
 export class TheiaContextBridgeImpl implements TheiaContextBridge {
 
-    @inject(IpcHandleConverter)
-    protected ipcHandleConverter: IpcHandleConverter;
-
     exposeInMainWorld(globalName: string, value: object): void {
-        contextBridge.exposeInMainWorld(globalName, this.ipcHandleConverter.getIpcHandle(value));
+        contextBridge.exposeInMainWorld(globalName, value);
     }
 }

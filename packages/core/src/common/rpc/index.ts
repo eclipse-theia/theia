@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 export { RpcClient, RpcHandler } from './rpc-api';
-export { Proxyable, ToProxyable } from './rpc-proxy';
+export { Proxyable } from './rpc-proxy';
 export { RpcProxyHandler } from './rpc-proxy-handler';
 export { RpcProvider, RpcProxyProvider } from './rpc-proxy-provider';
-export { RpcContext, RpcContextKey, RpcEvent, RpcServer } from './rpc-server';
+export { RpcServer, RpcContext, RpcContextEvent, RpcContextKey, RpcEvent, RpcServerProvider } from './rpc-server';

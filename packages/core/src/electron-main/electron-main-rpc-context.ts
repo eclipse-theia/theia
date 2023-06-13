@@ -16,39 +16,45 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { WebContents } from '@theia/electron/shared/electron';
-import { RpcContextEvent } from 'src/common/rpc/rpc-server';
-import { RpcContext, RpcContextKey } from '../common';
+import type { WebContents } from '@theia/electron/shared/electron';
+import { RpcContextEvent } from '../common/rpc/rpc-server';
+import { CancellationToken, RpcContext, RpcContextKey } from '../common';
 
 export const SenderWebContents = RpcContextKey<WebContents>(Symbol('sender:WebContents'));
 
-class ToSender extends RpcContextEvent<unknown> {
-    constructor(readonly sender: WebContents, value?: unknown) {
+class ToSender<T = void> extends RpcContextEvent<T> {
+    constructor(readonly sender: WebContents, value: T) {
         super(value);
     }
 }
 
 export class ElectronMainRpcContext implements RpcContext {
 
+    #sender: WebContents;
+    #bindings: Map<string | symbol, unknown>;
+
     constructor(
-        protected sender: WebContents,
-        protected bindings: Map<string | symbol, unknown>
+        sender: WebContents,
+        bindings: Map<string | symbol, unknown>,
+        readonly request?: CancellationToken
     ) {
-        this.bindings.set(SenderWebContents, sender);
+        this.#sender = sender;
+        this.#bindings = bindings;
+        this.#bindings.set(SenderWebContents, sender);
     }
 
     get<T = any>(key: RpcContextKey<T>): T | undefined {
-        return this.bindings.get(key) as T | undefined;
+        return this.#bindings.get(key) as T | undefined;
     }
 
     require<T = any>(key: RpcContextKey<T>): T {
-        if (!this.bindings.has(key)) {
+        if (!this.#bindings.has(key)) {
             throw new Error(`no value for context key: ${key.toString()}`);
         }
-        return this.bindings.get(key) as T;
+        return this.#bindings.get(key) as T;
     }
 
     toSender(event?: unknown): RpcContextEvent<any> {
-        return new ToSender(this.sender, event);
+        return new ToSender(this.#sender, event);
     }
 }

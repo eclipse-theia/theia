@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { BrowserWindow, Menu, MenuItemConstructorOptions, WebContents } from '@theia/electron/shared/electron';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { isOSX, RpcContext, RpcEvent, RpcServer } from '../common';
-import { ElectronCurrentWindow } from '../electron-common';
+import { ElectronWindow } from '../electron-common';
 import { InternalMenuDto, MenuDto } from '../electron-common/electron-menu';
 import { ElectronMainApplication } from './electron-main-application';
 import { SenderWebContents } from './electron-main-rpc-context';
@@ -25,7 +25,7 @@ import { SenderWebContents } from './electron-main-rpc-context';
 type MenuId = number;
 
 @injectable()
-export class ElectronCurrentWindowMain implements RpcServer<ElectronCurrentWindow> {
+export class ElectronWindowMain implements RpcServer<ElectronWindow> {
 
     protected menuId = 1;
     protected openPopups = new Map<MenuId, Menu>();
@@ -38,6 +38,17 @@ export class ElectronCurrentWindowMain implements RpcServer<ElectronCurrentWindo
 
     @inject(ElectronMainApplication)
     protected application: ElectronMainApplication;
+
+    @postConstruct()
+    protected init(): void {
+        this.application.onDidCreateTheiaElectronWindow(event => {
+            const { window: browserWindow } = event.theiaElectronWindow;
+            const targets = [browserWindow.webContents];
+            browserWindow.on('maximize', () => this.$onMaximize.sendTo(undefined, targets));
+            browserWindow.on('unmaximize', () => this.$onUnmaximize.sendTo(undefined, targets));
+            browserWindow.on('focus', () => this.$onFocus.sendTo(undefined, targets));
+        });
+    }
 
     $isMaximizedSync(ctx: RpcContext): boolean {
         return this.getBrowserWindow(ctx).isMaximized();
@@ -135,6 +146,27 @@ export class ElectronCurrentWindowMain implements RpcServer<ElectronCurrentWindo
         this.application.setTitleBarStyle(this.getWebContents(ctx), style);
     }
 
+    $setMenuBarVisible(ctx: RpcContext, visible: boolean, windowName?: string): void {
+        const electronWindow = typeof windowName === 'string'
+            ? BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName)
+            : this.getBrowserWindow(ctx);
+        if (!electronWindow) {
+            throw new Error(`no window found with name: "${windowName}"`);
+        }
+        electronWindow.setMenuBarVisibility(visible);
+    }
+
+    $focusWindow(ctx: RpcContext, windowName: string): void {
+        const electronWindow = BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName);
+        if (!electronWindow) {
+            throw new Error(`no window found with name: "${windowName}"`);
+        }
+        if (electronWindow.isMinimized()) {
+            electronWindow.restore();
+        }
+        electronWindow.focus();
+    }
+
     protected fromMenuDto(ctx: RpcContext, menuId: MenuId, menuDto: InternalMenuDto[]): MenuItemConstructorOptions[] {
         return menuDto.map(dto => {
             const result: MenuItemConstructorOptions = {
@@ -152,7 +184,7 @@ export class ElectronCurrentWindowMain implements RpcServer<ElectronCurrentWindo
             }
             if (dto.handlerId) {
                 result.click = () => {
-                    this.$onMenuClicked.emit(ctx.toSender({ menuId, handlerId: dto.handlerId! }));
+                    this.$onMenuClicked.sendTo({ menuId, handlerId: dto.handlerId! }, [ctx.sender]);
                 };
             }
             return result;

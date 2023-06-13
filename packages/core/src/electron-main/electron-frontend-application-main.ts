@@ -15,37 +15,39 @@
 // *****************************************************************************
 
 import { WebContents } from '@theia/electron/shared/electron';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
+import { ElectronMainContext, RpcContext, RpcServer } from '../common';
 import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
-import { ELECTRON_FRONTEND_APPLICATION_IPC as ipc, TheiaIpcMain, TheiaIpcMainEvent } from '../electron-common';
+import { ElectronFrontendApplication } from '../electron-common';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
+import { SenderWebContents } from './electron-main-rpc-context';
 
 @injectable()
-export class ElectronFrontendApplicationMain implements ElectronMainApplicationContribution {
+export class ElectronFrontendApplicationMain implements RpcServer<ElectronFrontendApplication>, ElectronMainApplicationContribution {
 
-    protected application: ElectronMainApplication;
+    protected application?: ElectronMainApplication;
 
-    @inject(TheiaIpcMain)
-    protected ipcMain: TheiaIpcMain;
+    @inject(ProxyHandler) @named(ElectronMainContext)
+    protected proxyHandler: ProxyHandler;
 
     onStart(application: ElectronMainApplication): void {
         this.application = application;
-        this.ipcMain.on(ipc.updateApplicationState, this.onUpdateApplicationState, this);
-        this.ipcMain.on(ipc.restart, this.onRestart, this);
+        this.proxyHandler.register(ElectronFrontendApplication, this);
     }
 
-    canClose(webContents: WebContents, reason: StopReason): Promise<boolean> {
-        return this.ipcMain.invoke(webContents, ipc.canClose, reason);
+    async canClose(webContents: WebContents, reason: StopReason): Promise<boolean> {
+        // return this.ipcMain.invoke(webContents, ipc.canClose, reason);
+        return true;
     }
 
-    protected onUpdateApplicationState(event: TheiaIpcMainEvent, state: FrontendApplicationState): void {
-        const theiaWindow = this.application.getTheiaElectronWindow(event.sender.id);
+    $updateApplicationState(ctx: RpcContext, state: FrontendApplicationState): void {
+        const theiaWindow = this.application!.getTheiaElectronWindow(ctx.require(SenderWebContents).id);
         if (theiaWindow) {
             theiaWindow.applicationState = state;
         }
     }
 
-    protected onRestart(event: TheiaIpcMainEvent): void {
-        this.application.restart(event.sender);
+    $restart(ctx: RpcContext): void {
+        this.application!.restart(ctx.require(SenderWebContents));
     }
 }

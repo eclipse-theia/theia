@@ -17,13 +17,7 @@
 // Only importing a type, it should be defined in common anyway:
 // eslint-disable-next-line @theia/runtime-import-check
 import type { ClipboardService } from '../browser/clipboard-service';
-import { preloadServiceIdentifier } from './preload';
-import { createIpcNamespace } from './electron-ipc';
+import { Extends, Proxyable, ProxyId } from '../common';
 
-export const ELECTRON_CLIPBOARD_IPC = createIpcNamespace('theia-electron-clipboard', channel => ({
-    readClipboard: channel<() => Promise<string>>(),
-    writeClipboard: channel<(contents: string) => Promise<void>>()
-}));
-
-export const ElectronClipboardService = preloadServiceIdentifier<ElectronClipboardService>('ElectronClipboardService');
-export interface ElectronClipboardService extends ClipboardService { }
+export const ElectronClipboardService = ProxyId<ElectronClipboardService>('ElectronClipboardService');
+export type ElectronClipboardService = Extends<ClipboardService, Proxyable<ClipboardService>>;

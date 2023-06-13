@@ -15,19 +15,19 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { ELECTRON_KEYBOARD_LAYOUT_IPC, TheiaIpcMain } from '../electron-common';
+import { ElectronKeyboardLayout, NativeKeyboardLayout } from '../electron-common';
 import { ElectronMainApplicationContribution } from './electron-main-application';
 import { onDidChangeKeyboardLayout, getCurrentKeyboardLayout, getKeyMap } from '@theia/electron/shared/native-keymap';
+import { RpcServer, RpcEvent } from '../common';
 
 @injectable()
-export class ElectronKeyboardLayoutMain implements ElectronMainApplicationContribution {
+export class ElectronKeyboardLayoutMain implements RpcServer<ElectronKeyboardLayout>, ElectronMainApplicationContribution {
 
-    @inject(TheiaIpcMain)
-    protected ipcMain: TheiaIpcMain;
+    @inject(RpcEvent) $onKeyboardLayoutChanged: RpcEvent<NativeKeyboardLayout>;
 
     onStart(): void {
         onDidChangeKeyboardLayout(() => {
-            this.ipcMain.sendAll(ELECTRON_KEYBOARD_LAYOUT_IPC.onKeyboardLayoutChanged, {
+            this.$onKeyboardLayoutChanged.emit({
                 info: getCurrentKeyboardLayout(),
                 mapping: getKeyMap()
             });
