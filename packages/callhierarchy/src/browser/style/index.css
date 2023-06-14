@@ -11,53 +11,55 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 .theia-CallHierarchyTree {
-    font-size: var(--theia-ui-font-size1);
+  font-size: var(--theia-ui-font-size1);
 }
 
 .theia-CallHierarchyTree .theia-TreeNode {
-    width: 100%;
+  width: 100%;
 }
 
 .theia-CallHierarchyTree .theia-ExpansionToggle {
-    min-width: 9px;
-    padding-right: 4px;
+  min-width: 9px;
+  padding-right: 4px;
 }
 
 .theia-CallHierarchyTree .definitionNode {
-    display: flex;
+  display: flex;
 }
 
 .theia-CallHierarchyTree .definitionNode {
-    width: calc(100% - 32px);
+  width: calc(100% - 32px);
 }
 
 .theia-CallHierarchyTree .definitionNode div {
-    margin-right: 5px;
+  margin-right: 5px;
 }
 
 .theia-CallHierarchyTree .definitionNode .symbol {
-    padding-right: 4px;
+  padding-right: 4px;
 }
 
 .theia-CallHierarchyTree .definitionNode .referenceCount {
-    color: var(--theia-badge-background);
-    padding-right: 4px;
+  color: var(--theia-badge-background);
+  padding-right: 4px;
 }
 
 .theia-CallHierarchyTree .definitionNode .container {
-    color: var(--theia-descriptionForeground);
+  color: var(--theia-descriptionForeground);
 }
 
 .theia-CallHierarchyTree .definitionNode-content {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.theia-CallHierarchyTree .definitionNode.deprecatedDefinition .definitionNode-content {
-    text-decoration: line-through;
+.theia-CallHierarchyTree
+  .definitionNode.deprecatedDefinition
+  .definitionNode-content {
+  text-decoration: line-through;
 }

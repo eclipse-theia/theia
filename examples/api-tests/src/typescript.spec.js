@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 // @ts-check
@@ -445,9 +445,9 @@ describe('TypeScript', function () {
         assert.isTrue(contextKeyService.match('suggestWidgetVisible'));
 
         keybindings.dispatchKeyDown('Escape');
-        
+
         // once in a while, a second "Escape" is needed to dismiss widget
-        await waitForAnimation(() => { 
+        await waitForAnimation(() => {
             const suggestWidgetDismissed = !contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === undefined;
             if (!suggestWidgetDismissed) {
                 console.log('Re-try to dismiss suggest using "Escape" key');
@@ -706,7 +706,7 @@ SPAN {
         await commands.executeCommand('editor.action.quickFix');
         const codeActionSelector = '.codeActionWidget';
         assert.isFalse(!!document.querySelector(codeActionSelector), 'Failed at assert 3 - codeActionWidget should not be visible');
-        
+
         console.log('Waiting for Quick Fix widget to be visible');
         await waitForAnimation(() => {
             const quickFixWidgetVisible = !!document.querySelector(codeActionSelector);

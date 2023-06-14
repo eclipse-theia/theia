@@ -11,63 +11,63 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 .theia-plugins {
-    min-width: 250px !important;
-    display: flex;
-    flex-direction: column;
+  min-width: 250px !important;
+  display: flex;
+  flex-direction: column;
 }
 
 #pluginListContainer {
-    width: 100%;
-    box-sizing: border-box;
-    overflow-y: auto;
-    flex-grow: 1;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  flex-grow: 1;
 }
 
 .theia-plugins .pluginHeaderContainer {
-    padding: 5px 15px;
-    font-size: var(--theia-ui-font-size0);
+  padding: 5px 15px;
+  font-size: var(--theia-ui-font-size0);
 }
 
 .theia-side-panel .theia-plugins .pluginHeaderContainer {
-    padding-left: 20px;
+  padding-left: 20px;
 }
 
 .theia-plugins .pluginHeaderContainer:hover {
-    background: var(--theia-list-hoverBackground);
+  background: var(--theia-list-hoverBackground);
 }
 
 .theia-plugins .pluginHeaderContainer .row {
-    margin: 3px 0;
+  margin: 3px 0;
 }
 
 .theia-plugins .pluginName {
-    flex: 1;
-    margin-right: 5px;
-    margin-left: 4px;
-    font-size: var(--theia-ui-font-size1);
-    font-weight: 400;
+  flex: 1;
+  margin-right: 5px;
+  margin-left: 4px;
+  font-size: var(--theia-ui-font-size1);
+  font-weight: 400;
 }
 
 .theia-plugins .pluginVersion {
-    flex: 1;
-    text-align: left;
-    font-size: var(--theia-ui-font-size0)
+  flex: 1;
+  text-align: left;
+  font-size: var(--theia-ui-font-size0);
 }
 
 .theia-plugins .pluginDescription {
-    flex: 1;
+  flex: 1;
 }
 
 .theia-plugins .pluginPublisher {
-    font-size: var(--theia-ui-font-size0);
-    flex: 5;
-    align-items: center;
+  font-size: var(--theia-ui-font-size0);
+  flex: 5;
+  align-items: center;
 }
 
 .plugins-tab-icon::before {
-    content: "\f0fe"
+  content: "\f0fe";
 }

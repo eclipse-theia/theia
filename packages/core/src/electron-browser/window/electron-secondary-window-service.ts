@@ -11,11 +11,12 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable } from 'inversify';
 import { DefaultSecondaryWindowService } from '../../browser/window/default-secondary-window-service';
+import { ApplicationShell, ExtractableWidget } from 'src/browser';
 
 @injectable()
 export class ElectronSecondaryWindowService extends DefaultSecondaryWindowService {
@@ -23,11 +24,16 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
         window.electronTheiaCore.focusWindow(win.name);
     }
 
-    protected override doCreateSecondaryWindow(onClose?: (closedWin: Window) => void): Window | undefined {
-        const w = super.doCreateSecondaryWindow(onClose);
+    protected override doCreateSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): Window | undefined {
+        const w = super.doCreateSecondaryWindow(widget, shell);
         if (w) {
             window.electronTheiaCore.setMenuBarVisible(false, w.name);
+            window.electronTheiaCore.setSecondaryWindowCloseRequestHandler(w.name, () => this.canClose(widget, shell));
         }
         return w;
+    }
+    private async canClose(widget: ExtractableWidget, shell: ApplicationShell): Promise<boolean> {
+        await shell.closeWidget(widget.id, undefined);
+        return widget.isDisposed;
     }
 }

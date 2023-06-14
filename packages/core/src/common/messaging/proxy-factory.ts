@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -23,6 +23,7 @@ import { Emitter, Event } from '../event';
 import { Channel } from '../message-rpc/channel';
 import { RequestHandler, RpcProtocol } from '../message-rpc/rpc-protocol';
 import { ConnectionHandler } from './handler';
+import { Deferred } from '../promise-util';
 
 export type JsonRpcServer<Client> = Disposable & {
     /**
@@ -55,11 +56,11 @@ export class JsonRpcConnectionHandler<T extends object> implements ConnectionHan
     }
 }
 /**
- * Factory for creating a new {@link RpcConnection} for a given chanel and {@link RequestHandler}.
+ * Factory for creating a new {@link RpcProtocol} for a given chanel and {@link RequestHandler}.
  */
-export type RpcConnectionFactory = (channel: Channel, requestHandler: RequestHandler) => RpcProtocol;
+export type RpcProtocolFactory = (channel: Channel, requestHandler: RequestHandler) => RpcProtocol;
 
-const defaultRPCConnectionFactory: RpcConnectionFactory = (channel, requestHandler) => new RpcProtocol(channel, requestHandler);
+const defaultRpcProtocolFactory: RpcProtocolFactory = (channel, requestHandler) => new RpcProtocol(channel, requestHandler);
 
 /**
  * Factory for JSON-RPC proxy objects.
@@ -109,8 +110,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
     protected readonly onDidOpenConnectionEmitter = new Emitter<void>();
     protected readonly onDidCloseConnectionEmitter = new Emitter<void>();
 
-    protected connectionPromiseResolve: (connection: RpcProtocol) => void;
-    protected connectionPromise: Promise<RpcProtocol>;
+    protected rpcDeferred: Deferred<RpcProtocol>;
 
     /**
      * Build a new JsonRpcProxyFactory.
@@ -118,16 +118,14 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * @param target - The object to expose to JSON-RPC methods calls.  If this
      *   is omitted, the proxy won't be able to handle requests, only send them.
      */
-    constructor(public target?: any, protected rpcConnectionFactory = defaultRPCConnectionFactory) {
+    constructor(public target?: any, protected rpcProtocolFactory = defaultRpcProtocolFactory) {
         this.waitForConnection();
     }
 
     protected waitForConnection(): void {
-        this.connectionPromise = new Promise(resolve =>
-            this.connectionPromiseResolve = resolve
-        );
-        this.connectionPromise.then(connection => {
-            connection.channel.onClose(() => {
+        this.rpcDeferred = new Deferred<RpcProtocol>();
+        this.rpcDeferred.promise.then(protocol => {
+            protocol.channel.onClose(() => {
                 this.onDidCloseConnectionEmitter.fire(undefined);
                 // Wait for connection in case the backend reconnects
                 this.waitForConnection();
@@ -143,10 +141,10 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * response.
      */
     listen(channel: Channel): void {
-        const connection = this.rpcConnectionFactory(channel, (meth, args) => this.onRequest(meth, ...args));
-        connection.onNotification(event => this.onNotification(event.method, ...event.args));
+        const protocol = this.rpcProtocolFactory(channel, (meth, args) => this.onRequest(meth, ...args));
+        protocol.onNotification(event => this.onNotification(event.method, ...event.args));
 
-        this.connectionPromiseResolve(connection);
+        this.rpcDeferred.resolve(protocol);
     }
 
     /**
@@ -249,7 +247,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
         return (...args: any[]) => {
             const method = p.toString();
             const capturedError = new Error(`Request '${method}' failed`);
-            return this.connectionPromise.then(connection =>
+            return this.rpcDeferred.promise.then(connection =>
                 new Promise<void>((resolve, reject) => {
                     try {
                         if (isNotify) {

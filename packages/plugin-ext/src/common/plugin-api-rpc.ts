@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -964,7 +964,7 @@ export interface SourceControlGroupFeatures {
 export interface ScmRawResource {
     handle: number,
     sourceUri: UriComponents,
-    icons: UriComponents[],
+    icons: (IconUrl | ThemeIcon | undefined)[], /* icons: light, dark */
     tooltip: string,
     strikeThrough: boolean,
     faded: boolean,

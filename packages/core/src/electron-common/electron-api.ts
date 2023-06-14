@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { NativeKeyboardLayout } from '../common/keyboard/keyboard-layout-provider';
@@ -63,6 +63,8 @@ export interface TheiaCoreAPI {
     close(): void;
     onWindowEvent(event: WindowEvent, handler: () => void): Disposable;
     setCloseRequestHandler(handler: (reason: StopReason) => Promise<boolean>): void;
+
+    setSecondaryWindowCloseRequestHandler(windowName: string, handler: () => Promise<boolean>): void;
 
     toggleDevTools(): void;
     getZoomLevel(): Promise<number>;
@@ -120,6 +122,8 @@ export const CHANNEL_SET_ZOOM_LEVEL = 'SetZoomLevel';
 export const CHANNEL_IS_FULL_SCREENABLE = 'IsFullScreenable';
 export const CHANNEL_IS_FULL_SCREEN = 'IsFullScreen';
 export const CHANNEL_TOGGLE_FULL_SCREEN = 'ToggleFullScreen';
+
+export const CHANNEL_REQUEST_SECONDARY_CLOSE = 'RequestSecondaryClose';
 
 export const CHANNEL_REQUEST_CLOSE = 'RequestClose';
 export const CHANNEL_REQUEST_RELOAD = 'RequestReload';

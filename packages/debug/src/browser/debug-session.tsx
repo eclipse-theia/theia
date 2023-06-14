@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -43,6 +43,7 @@ import { DebugContribution } from './debug-contribution';
 import { Deferred, waitForEvent } from '@theia/core/lib/common/promise-util';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
+import { nls } from '@theia/core';
 
 export enum DebugState {
     Inactive,
@@ -692,13 +693,21 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     protected async sendExceptionBreakpoints(): Promise<void> {
-        const filters = [];
+        const filters: string[] = [];
+        const filterOptions: DebugProtocol.ExceptionFilterOptions[] | undefined = this.capabilities.supportsExceptionFilterOptions ? [] : undefined;
         for (const breakpoint of this.breakpoints.getExceptionBreakpoints()) {
             if (breakpoint.enabled) {
-                filters.push(breakpoint.raw.filter);
+                if (filterOptions) {
+                    filterOptions.push({
+                        filterId: breakpoint.raw.filter,
+                        condition: breakpoint.condition
+                    });
+                } else {
+                    filters.push(breakpoint.raw.filter);
+                }
             }
         }
-        await this.sendRequest('setExceptionBreakpoints', { filters });
+        await this.sendRequest('setExceptionBreakpoints', { filters, filterOptions });
     }
 
     protected async sendFunctionBreakpoints(affectedUri: URI): Promise<void> {
@@ -860,6 +869,7 @@ export class DebugSession implements CompositeTreeElement {
 
     render(): React.ReactNode {
         let label = '';
+        const state = this.state === DebugState.Stopped ? nls.localizeByDefault('Paused') : nls.localizeByDefault('Running');
         const child = this.getSingleChildSession();
         if (child && child.configuration.compact) {
             // Inlines the name of the child debug session
@@ -867,7 +877,7 @@ export class DebugSession implements CompositeTreeElement {
         }
         return <div className='theia-debug-session' title='Session'>
             <span className='label'>{this.label + label}</span>
-            <span className='status'>{this.state === DebugState.Stopped ? 'Paused' : 'Running'}</span>
+            <span className='status'>{state}</span>
         </div>;
     }
 
