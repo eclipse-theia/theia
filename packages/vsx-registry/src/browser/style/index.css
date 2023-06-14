@@ -39,6 +39,7 @@
 }
 
 .theia-vsx-extensions-search-bar .theia-input {
+  overflow: hidden;
   line-height: var(--theia-content-line-height);
   flex: 1;
   padding-top: calc(var(--theia-ui-padding) / 2);
