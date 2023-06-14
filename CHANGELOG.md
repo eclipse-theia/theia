@@ -10,9 +10,10 @@
 
 <a name="breaking_changes_1.39.0">[Breaking Changes:](#breaking_changes_1.39.0)</a>
 
-- [cli] locations for generated and compiled files where modified [#12412](https://github.com/eclipse-theia/theia/pull/12412)
+- [cli] build process has been adapted to facilitate backend bundling [#12412](https://github.com/eclipse-theia/theia/pull/12412)
     - webpack compiles frontend files now into the `lib/frontend` directory (previous `lib`)
     - the `electron-main.js` has been moved from `src-gen/frontend` to `src-gen/backend`
+    - `theia rebuild` needs to run **before** `theia build` for the respective target when using a bundled backend 
 - [repo] with the upgrade to Inversify 6.0, a few initialization methods were adjusted. See also [this migration guide entry](https://github.com/eclipse-theia/theia/blob/master/doc/Migration.md#inversify-60). Additionally, other changes include: [#12425](https://github.com/eclipse-theia/theia/pull/12425)
   - The type expected by the `PreferenceProxySchema` symbol has been changed from `PromiseLike<PreferenceSchema>` to `() => PromiseLike<PreferenceSchema>`
   - The symbol `OnigasmPromise` has been changed to `OnigasmProvider` and injects a function of type `() => Promise<IOnigLib>`

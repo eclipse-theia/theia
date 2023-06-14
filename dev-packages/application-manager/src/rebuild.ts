@@ -36,6 +36,9 @@ export const DEFAULT_MODULES = [
     'native-keymap',
     'find-git-repositories',
     'drivelist',
+    'keytar',
+    'ssh2',
+    'cpu-features'
 ];
 
 export interface RebuildOptions {
