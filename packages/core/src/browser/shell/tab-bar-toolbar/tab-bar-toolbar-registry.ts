@@ -81,6 +81,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
             throw new Error(`A toolbar item is already registered with the '${id}' ID.`);
         }
         this.items.set(id, item);
+        console.warn('***** alvs: registering tab item: ', item.id);
         this.fireOnDidChange();
         const toDispose = new DisposableCollection(
             Disposable.create(() => this.fireOnDidChange()),

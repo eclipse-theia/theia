@@ -23,6 +23,7 @@ import {
     buildFrontendModuleName,
     DebuggerContribution,
     IconThemeContribution,
+    IconContribution,
     IconUrl,
     Keybinding,
     LanguageConfiguration,
@@ -60,7 +61,8 @@ import {
     PluginPackageTranslation,
     Translation,
     PluginIdentifiers,
-    TerminalProfile
+    TerminalProfile,
+    PluginIconContribution
 } from '../../../common/plugin-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -73,6 +75,7 @@ import { deepClone } from '@theia/core/lib/common/objects';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
 import { TaskDefinition } from '@theia/task/lib/common/task-protocol';
 import { ColorDefinition } from '@theia/core/lib/common/color';
+import { CSSIcon } from '@theia/core/lib/common/markdown-rendering/icon-utilities';
 import { PluginUriFactory } from './plugin-uri-factory';
 
 namespace nls {
@@ -88,6 +91,12 @@ const INTERNAL_CONSOLE_OPTIONS_SCHEMA = {
 };
 
 const colorIdPattern = '^\\w+[.\\w+]*$';
+const iconIdPattern = `^${CSSIcon.iconNameSegment}(-${CSSIcon.iconNameSegment})+$`;
+
+function getFileExtension(filePath: string): string {
+    const index = filePath.lastIndexOf('.');
+    return index === -1 ? '' : filePath.substring(index + 1);
+}
 
 @injectable()
 export class TheiaPluginScanner implements PluginScanner {
@@ -145,6 +154,7 @@ export class TheiaPluginScanner implements PluginScanner {
     }
 
     getContribution(rawPlugin: PluginPackage): PluginContribution | undefined {
+        console.warn('**** alvs, scanner-theia.ts#getContribution: ', rawPlugin.name);
         if (!rawPlugin.contributes && !rawPlugin.activationEvents) {
             return undefined;
         }
@@ -343,6 +353,12 @@ export class TheiaPluginScanner implements PluginScanner {
         }
 
         try {
+            contributions.icons = this.readIcons(rawPlugin);
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'icons'.`, rawPlugin.contributes.icons, err);
+        }
+
+        try {
             contributions.iconThemes = this.readIconThemes(rawPlugin);
         } catch (err) {
             console.error(`Could not read '${rawPlugin.name}' contribution 'iconThemes'.`, rawPlugin.contributes.iconThemes, err);
@@ -508,6 +524,59 @@ export class TheiaPluginScanner implements PluginScanner {
                 label: contribution.label,
                 uiTheme: contribution.uiTheme
             });
+        }
+        return result;
+    }
+
+    protected readIcons(pck: PluginPackage): IconContribution[] | undefined {
+        if (!pck.contributes || !pck.contributes.icons) {
+            return undefined;
+        }
+        const result: IconContribution[] = [];
+        const iconEntries = <PluginIconContribution>(<unknown>pck.contributes.icons);
+        for (const id in iconEntries) {
+            if (pck.contributes.icons.hasOwnProperty(id)) {
+                if (!id.match(iconIdPattern)) {
+                    console.error("'configuration.icons' keys represent the icon id and can only contain letter, digits and minuses. " +
+                        'They need to consist of at least two segments in the form `component-iconname`.', 'extension: ', pck.name, 'icon id: ', id);
+                    return;
+                }
+                const iconContribution = iconEntries[id];
+                if (typeof iconContribution.description !== 'string' || iconContribution.description['length'] === 0) {
+                    console.error('configuration.icons.description must be defined and can not be empty, ', 'extension: ', pck.name, 'icon id: ', id);
+                    return;
+                }
+
+                const defaultIcon = iconContribution.default;
+                if (typeof defaultIcon === 'string') {
+                    result.push({
+                        id,
+                        extensionId: pck.publisher + '.' + pck.name,
+                        description: iconContribution.description,
+                        defaults: { id: defaultIcon }
+                    });
+                } else if (typeof defaultIcon === 'object' && typeof defaultIcon.fontPath === 'string' && typeof defaultIcon.fontCharacter === 'string') {
+                    const format = getFileExtension(defaultIcon.fontPath);
+                    if (['woff', 'woff2', 'ttf'].indexOf(format) === -1) {
+                        console.warn("Expected `contributes.icons.default.fontPath` to have file extension 'woff', woff2' or 'ttf', is '{0}'.", format);
+                        return;
+                    }
+
+                    const iconFontLocation = this.pluginUriFactory.createUri(pck, defaultIcon.fontPath).toString();
+                    result.push({
+                        id,
+                        extensionId: pck.publisher + '.' + pck.name,
+                        description: iconContribution.description,
+                        defaults: {
+                            fontCharacter: defaultIcon.fontCharacter,
+                            location: iconFontLocation
+                        }
+                    });
+                } else {
+                    console.error("'configuration.icons.default' must be either a reference to the id of an other theme icon (string) or a icon definition (object) with ",
+                        'properties `fontPath` and `fontCharacter`.');
+                }
+            }
         }
         return result;
     }

@@ -80,6 +80,7 @@ import { bindTreeViewDecoratorUtilities, TreeViewDecoratorService } from './view
 import { CodeEditorWidgetUtil } from './menus/vscode-theia-menu-mappings';
 import { PluginMenuCommandAdapter } from './menus/plugin-menu-command-adapter';
 import './theme-icon-override';
+import { PluginIconService } from './plugin-icon-service';
 import { PluginTerminalRegistry } from './plugin-terminal-registry';
 import { DnDFileContentStore } from './view/dnd-file-content-store';
 import { WebviewContextKeys } from './webview/webview-context-keys';
@@ -247,6 +248,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(WebviewFrontendSecurityWarnings).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WebviewFrontendSecurityWarnings);
+
+    bind(PluginIconService).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(PluginIconService);
 
     bind(PluginAuthenticationServiceImpl).toSelf().inSingletonScope();
     rebind(AuthenticationService).toService(PluginAuthenticationServiceImpl);
