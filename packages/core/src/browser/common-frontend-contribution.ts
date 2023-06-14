@@ -65,6 +65,7 @@ import { SaveResourceService } from './save-resource-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
 import { UntitledResourceResolver } from '../common';
 import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
+import { EOL } from 'os';
 
 export namespace CommonMenus {
 
@@ -736,7 +737,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             isEnabled: uris => Array.isArray(uris) && uris.some(uri => uri instanceof URI),
             execute: async uris => {
                 if (uris.length) {
-                    const lineDelimiter = isWindows ? '\r\n' : '\n';
+                    const lineDelimiter = EOL;
                     const text = uris.map(resource => resource.path.fsPath()).join(lineDelimiter);
                     await this.clipboardService.writeText(text);
                 } else {

@@ -706,7 +706,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     async executeCommand(commandOptions: CommandLineOptions): Promise<void> {
-        this.sendText(this.shellCommandBuilder.buildCommand(await this.processInfo, commandOptions) + (OS.backend.isWindows ? '\r\n' : '\n'));
+        this.sendText(this.shellCommandBuilder.buildCommand(await this.processInfo, commandOptions) + OS.backend.EOL);
     }
 
     scrollLineUp(): void {

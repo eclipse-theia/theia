@@ -33,7 +33,7 @@ import {
     codicon,
     TopDownTreeIterator
 } from '@theia/core/lib/browser';
-import { CancellationTokenSource, Emitter, Event, isWindows, ProgressService } from '@theia/core';
+import { CancellationTokenSource, Emitter, EOL, Event, ProgressService } from '@theia/core';
 import {
     EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane,
     EditorWidget, EditorOpenerOptions, FindMatch
@@ -1210,7 +1210,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 strings.push(string);
             }
         }
-        return strings.join(isWindows ? '\r\n' : '\n');
+        return strings.join(EOL);
     }
 }
 
