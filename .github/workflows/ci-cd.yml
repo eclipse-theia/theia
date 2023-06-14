@@ -101,6 +101,7 @@ jobs:
         if: matrix.tests != 'skip'
         shell: bash
         run: |
+          yarn browser rebuild
           yarn test:theia
 
       - name: Test (browser)
