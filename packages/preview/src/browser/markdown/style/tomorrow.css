@@ -11,7 +11,7 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 /* Tomorrow Theme */
@@ -37,7 +37,7 @@
 /* Tomorrow Comment */
 .theia-preview-widget .hljs-comment,
 .theia-preview-widget .hljs-quote {
-	color: #8e908c;
+  color: #8e908c;
 }
 
 /* Tomorrow Red */
@@ -49,7 +49,7 @@
 .theia-preview-widget .hljs-selector-class,
 .theia-preview-widget .hljs-regexp,
 .theia-preview-widget .hljs-deletion {
-	color: #c82829;
+  color: #c82829;
 }
 
 /* Tomorrow Orange */
@@ -61,12 +61,12 @@
 .theia-preview-widget .hljs-params,
 .theia-preview-widget .hljs-meta,
 .theia-preview-widget .hljs-link {
-	color: #f5871f;
+  color: #f5871f;
 }
 
 /* Tomorrow Yellow */
 .theia-preview-widget .hljs-attribute {
-	color: #eab700;
+  color: #eab700;
 }
 
 /* Tomorrow Green */
@@ -74,32 +74,32 @@
 .theia-preview-widget .hljs-symbol,
 .theia-preview-widget .hljs-bullet,
 .theia-preview-widget .hljs-addition {
-	color: #718c00;
+  color: #718c00;
 }
 
 /* Tomorrow Blue */
 .theia-preview-widget .hljs-title,
 .theia-preview-widget .hljs-section {
-	color: #4271ae;
+  color: #4271ae;
 }
 
 /* Tomorrow Purple */
 .theia-preview-widget .hljs-keyword,
 .theia-preview-widget .hljs-selector-tag {
-	color: #8959a8;
+  color: #8959a8;
 }
 
 .theia-preview-widget .hljs {
-	display: block;
-	overflow-x: auto;
-	color: #4d4d4c;
-	padding: 0.5em;
+  display: block;
+  overflow-x: auto;
+  color: #4d4d4c;
+  padding: 0.5em;
 }
 
 .theia-preview-widget .hljs-emphasis {
-	font-style: italic;
+  font-style: italic;
 }
 
 .theia-preview-widget .hljs-strong {
-	font-weight: bold;
+  font-weight: bold;
 }

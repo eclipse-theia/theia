@@ -25,7 +25,7 @@ availability set forth in the Eclipse Public License v. 2.0 are satisfied:
 General Public License v2.0 w/Classpath exception',
 'https://www.gnu.org/software/classpath/license.html.
 
-SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-with-classpath-exception
+SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 
 ## Source Code
 

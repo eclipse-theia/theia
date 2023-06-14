@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
@@ -55,12 +55,14 @@ export namespace BreakpointMarker {
 
 export interface ExceptionBreakpoint {
     enabled: boolean;
+    condition?: string;
     raw: DebugProtocol.ExceptionBreakpointsFilter;
 }
 export namespace ExceptionBreakpoint {
     export function create(data: DebugProtocol.ExceptionBreakpointsFilter, origin?: ExceptionBreakpoint): ExceptionBreakpoint {
         return {
             enabled: origin ? origin.enabled : false,
+            condition: origin ? origin.condition : undefined,
             raw: {
                 ...(origin && origin.raw),
                 ...data

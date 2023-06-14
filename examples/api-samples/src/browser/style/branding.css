@@ -11,24 +11,24 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 .theia-icon {
-    background-image: url('../icons/theia.png');
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: contain;
+  background-image: url("../icons/theia.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
 }
 
- #theia-main-content-panel {
-    background-image: url('../icons/theia.png');
-    background-position: center center;
-    background-repeat: no-repeat;
-    background-size: 15%;
+#theia-main-content-panel {
+  background-image: url("../icons/theia.png");
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: 15%;
 }
 
 .unclosable-window-icon {
-    -webkit-mask: url('window-icon.svg');
-    mask: url('window-icon.svg');
+  -webkit-mask: url("window-icon.svg");
+  mask: url("window-icon.svg");
 }

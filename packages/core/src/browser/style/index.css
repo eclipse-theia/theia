@@ -11,23 +11,21 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-@import url('~@phosphor/widgets/style/index.css');
-@import url('~font-awesome/css/font-awesome.min.css');
+@import url("~@phosphor/widgets/style/index.css");
+@import url("~font-awesome/css/font-awesome.min.css");
 
 /*-----------------------------------------------------------------------------
 | General
 |----------------------------------------------------------------------------*/
 
 :root {
-
   /* Borders: Width and color (dark to bright) */
 
   --theia-border-width: 1px;
   --theia-panel-border-width: 1px;
-
 
   /* UI fonts: Family, size and color (bright to dark)
      ---------------------------------------------------
@@ -36,10 +34,16 @@
    */
 
   --theia-ui-font-scale-factor: 1.2;
-  --theia-ui-font-size0: calc(var(--theia-ui-font-size1) / var(--theia-ui-font-scale-factor));
+  --theia-ui-font-size0: calc(
+    var(--theia-ui-font-size1) / var(--theia-ui-font-scale-factor)
+  );
   --theia-ui-font-size1: 13px; /* Base font size */
-  --theia-ui-font-size2: calc(var(--theia-ui-font-size1) * var(--theia-ui-font-scale-factor));
-  --theia-ui-font-size3: calc(var(--theia-ui-font-size2) * var(--theia-ui-font-scale-factor));
+  --theia-ui-font-size2: calc(
+    var(--theia-ui-font-size1) * var(--theia-ui-font-scale-factor)
+  );
+  --theia-ui-font-size3: calc(
+    var(--theia-ui-font-size2) * var(--theia-ui-font-scale-factor)
+  );
   --theia-ui-icon-font-size: 14px; /* Ensures px perfect FontAwesome icons */
   --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 
@@ -53,7 +57,8 @@
   --theia-code-font-size: 13px;
   --theia-code-line-height: 17px;
   --theia-code-padding: 5px;
-  --theia-code-font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+  --theia-code-font-family: Menlo, Monaco, Consolas, "Droid Sans Mono",
+    "Courier New", monospace, "Droid Sans Fallback";
   --theia-monospace-font-family: monospace;
   --theia-ui-padding: 6px;
 
@@ -86,32 +91,33 @@ body:-moz-window-inactive {
 }
 
 a {
-    color: var(--theia-textLink-foreground);
+  color: var(--theia-textLink-foreground);
 }
 
-a:active, a:hover {
-    color: var(--theia-textLink-activeForeground);
+a:active,
+a:hover {
+  color: var(--theia-textLink-activeForeground);
 }
 
 code {
-    color: var(--theia-textPreformat-foreground);
+  color: var(--theia-textPreformat-foreground);
 }
 
 blockquote {
-    margin: 0 7px 0 5px;
-    padding: 0px 16px 0px 10px;
-    background: var(--theia-textBlockQuote-background);
-    border-left: 5px solid var(--theia-textBlockQuote-border);
+  margin: 0 7px 0 5px;
+  padding: 0px 16px 0px 10px;
+  background: var(--theia-textBlockQuote-background);
+  border-left: 5px solid var(--theia-textBlockQuote-border);
 }
 
 .theia-input {
-    background: var(--theia-input-background);
-    color: var(--theia-input-foreground);
-    border: var(--theia-border-width) solid var(--theia-input-border);
-    font-family: var(--theia-ui-font-family);
-    font-size: var(--theia-ui-font-size1);
-    line-height: var(--theia-content-line-height);
-    padding-left: 5px;
+  background: var(--theia-input-background);
+  color: var(--theia-input-foreground);
+  border: var(--theia-border-width) solid var(--theia-input-border);
+  font-family: var(--theia-ui-font-family);
+  font-size: var(--theia-ui-font-size1);
+  line-height: var(--theia-content-line-height);
+  padding-left: 5px;
 }
 
 .theia-input[type="text"] {
@@ -121,22 +127,22 @@ blockquote {
 }
 
 .theia-input::placeholder {
-    color: var(--theia-input-placeholderForeground);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  color: var(--theia-input-placeholderForeground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .theia-maximized {
-    position: fixed !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: auto !important;
-    height: auto !important;
-    z-index: 255 !important;
-    background: var(--theia-editor-background);
+  position: fixed !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  z-index: 255 !important;
+  background: var(--theia-editor-background);
 }
 
 .theia-visible-menu-maximized {
@@ -197,7 +203,8 @@ blockquote {
   margin-left: 8px;
 }
 
-.theia-mod-disabled, .theia-mod-disabled:focus {
+.theia-mod-disabled,
+.theia-mod-disabled:focus {
   opacity: var(--theia-mod-disabled-opacity) !important;
 }
 
@@ -218,21 +225,21 @@ blockquote {
 .noselect,
 .no-select {
   -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-     -khtml-user-select: none; /* Konqueror HTML */
-       -moz-user-select: none; /* Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
                                   supported by Chrome and Opera */
-         -o-user-select: none;
+  -o-user-select: none;
 }
 
 :focus {
-    outline-width: 1px;
-    outline-style: solid;
-    outline-offset: -1px;
-    opacity: 1;
-    outline-color: var(--theia-focusBorder);
+  outline-width: 1px;
+  outline-style: solid;
+  outline-offset: -1px;
+  opacity: 1;
+  outline-color: var(--theia-focusBorder);
 }
 
 ::selection {
@@ -256,7 +263,7 @@ blockquote {
   outline: none;
   cursor: pointer;
   padding: 4px 9px;
-  margin-left: calc(var(--theia-ui-padding)*2);
+  margin-left: calc(var(--theia-ui-padding) * 2);
 }
 
 .theia-button:focus {
@@ -275,36 +282,38 @@ blockquote {
   cursor: default;
 }
 
-button.secondary[disabled], .theia-button.secondary[disabled] {
-    color: var(--theia-secondaryButton-disabledForeground);
-    background-color: var(--theia-secondaryButton-disabledBackground);
+button.secondary[disabled],
+.theia-button.secondary[disabled] {
+  color: var(--theia-secondaryButton-disabledForeground);
+  background-color: var(--theia-secondaryButton-disabledBackground);
 }
 
 .theia-select {
-    color: var(--dropdown-foreground);
-    font-size: var(--theia-ui-font-size1);
-    border-radius: 0;
-    border: 1px solid var(--theia-dropdown-border);
-    background: var(--theia-dropdown-background);
-    outline: none;
-    cursor: pointer;
+  color: var(--dropdown-foreground);
+  font-size: var(--theia-ui-font-size1);
+  border-radius: 0;
+  border: 1px solid var(--theia-dropdown-border);
+  background: var(--theia-dropdown-background);
+  outline: none;
+  cursor: pointer;
 }
 
 .theia-select option {
-    background: var(--theia-dropdown-listBackground);
+  background: var(--theia-dropdown-listBackground);
 }
 
 .theia-transparent-overlay {
-    background-color: transparent;
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-    z-index: 999;
+  background-color: transparent;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 999;
 }
 
-.theia-cursor-no-drop, .theia-cursor-no-drop:active {
+.theia-cursor-no-drop,
+.theia-cursor-no-drop:active {
   cursor: no-drop;
 }
 
@@ -312,24 +321,24 @@ button.secondary[disabled], .theia-button.secondary[disabled] {
 | Import children style files
 |----------------------------------------------------------------------------*/
 
-@import './dockpanel.css';
-@import './dialog.css';
-@import './menus.css';
-@import './sidepanel.css';
-@import './tabs.css';
-@import './scrollbars.css';
-@import './tree.css';
-@import './status-bar.css';
-@import './tree-decorators.css';
-@import './about.css';
-@import './search-box.css';
-@import './ansi.css';
-@import './view-container.css';
-@import './notification.css';
-@import './alert-messages.css';
-@import './icons.css';
-@import './widget.css';
-@import './quick-title-bar.css';
-@import './progress-bar.css';
-@import './breadcrumbs.css';
-@import './tooltip.css';
+@import "./dockpanel.css";
+@import "./dialog.css";
+@import "./menus.css";
+@import "./sidepanel.css";
+@import "./tabs.css";
+@import "./scrollbars.css";
+@import "./tree.css";
+@import "./status-bar.css";
+@import "./tree-decorators.css";
+@import "./about.css";
+@import "./search-box.css";
+@import "./ansi.css";
+@import "./view-container.css";
+@import "./notification.css";
+@import "./alert-messages.css";
+@import "./icons.css";
+@import "./widget.css";
+@import "./quick-title-bar.css";
+@import "./progress-bar.css";
+@import "./breadcrumbs.css";
+@import "./tooltip.css";

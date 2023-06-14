@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -693,13 +693,21 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     protected async sendExceptionBreakpoints(): Promise<void> {
-        const filters = [];
+        const filters: string[] = [];
+        const filterOptions: DebugProtocol.ExceptionFilterOptions[] | undefined = this.capabilities.supportsExceptionFilterOptions ? [] : undefined;
         for (const breakpoint of this.breakpoints.getExceptionBreakpoints()) {
             if (breakpoint.enabled) {
-                filters.push(breakpoint.raw.filter);
+                if (filterOptions) {
+                    filterOptions.push({
+                        filterId: breakpoint.raw.filter,
+                        condition: breakpoint.condition
+                    });
+                } else {
+                    filters.push(breakpoint.raw.filter);
+                }
             }
         }
-        await this.sendRequest('setExceptionBreakpoints', { filters });
+        await this.sendRequest('setExceptionBreakpoints', { filters, filterOptions });
     }
 
     protected async sendFunctionBreakpoints(affectedUri: URI): Promise<void> {
