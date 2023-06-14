@@ -32,7 +32,7 @@ import { AboutDialog } from './about-dialog';
 import * as browser from './browser';
 import URI from '../common/uri';
 import { ContextKey, ContextKeyService } from './context-key-service';
-import { OS, isOSX, isWindows } from '../common/os';
+import { OS, isOSX, isWindows, EOL } from '../common/os';
 import { ResourceContextKey } from './resource-context-key';
 import { UriSelection } from '../common/selection';
 import { StorageService } from './storage-service';
@@ -65,7 +65,6 @@ import { SaveResourceService } from './save-resource-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
 import { UntitledResourceResolver } from '../common';
 import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
-import { EOL } from 'os';
 
 export namespace CommonMenus {
 
