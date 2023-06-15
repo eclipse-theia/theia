@@ -47,7 +47,12 @@ export interface BackendApplicationServer extends BackendApplicationContribution
 
 export const BackendApplicationContribution = Symbol('BackendApplicationContribution');
 /**
- * Contribution for hooking into the backend lifecycle.
+ * Contribution for hooking into the backend lifecycle:
+ *
+ * - `initialize()`
+ * - `configure(expressApp)`
+ * - `onStart(httpServer)`
+ * - `onStop()`
  */
 export interface BackendApplicationContribution {
     /**
@@ -134,7 +139,6 @@ export class BackendApplicationCliContribution implements CliContribution {
         }
         return process.cwd();
     }
-
 }
 
 /**

@@ -43,8 +43,7 @@ export * from './resource';
 export * from './selection';
 export * from './selection-service';
 export * from './strings';
+export * from './telemetry';
 export * from './types';
 export { default as URI } from './uri';
 export * from './view-column';
-export * from './telemetry';
-

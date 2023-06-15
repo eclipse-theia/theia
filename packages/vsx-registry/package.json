@@ -23,6 +23,10 @@
   ],
   "theiaExtensions": [
     {
+      "frontend": "lib/common/vsx-registry-common-module",
+      "backend": "lib/common/vsx-registry-common-module"
+    },
+    {
       "frontend": "lib/browser/vsx-registry-frontend-module",
       "backend": "lib/node/vsx-registry-backend-module"
     }

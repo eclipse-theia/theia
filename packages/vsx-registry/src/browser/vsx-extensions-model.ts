@@ -18,25 +18,40 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import debounce from 'p-debounce';
 import * as markdownit from '@theia/core/shared/markdown-it';
 import * as DOMPurify from '@theia/core/shared/dompurify';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin';
 import { VSXExtension, VSXExtensionFactory } from './vsx-extension';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import { PreferenceInspectionScope, PreferenceService } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { RecommendedExtensions } from './recommended-extensions/recommended-extensions-preference-contribution';
 import URI from '@theia/core/lib/common/uri';
-import { VSXResponseError, VSXSearchParam } from '@theia/ovsx-client/lib/ovsx-types';
+import { VSXExtensionRaw, VSXResponseError, VSXSearchOptions } from '@theia/ovsx-client/lib/ovsx-types';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
+import { RequestContext, RequestService } from '@theia/core/shared/@theia/request';
+import { OVSXApiFilter } from '@theia/ovsx-client';
 
 @injectable()
 export class VSXExtensionsModel {
 
+    protected initialized: Promise<void>;
+    /**
+     * Single source for all extensions
+     */
+    protected readonly extensions = new Map<string, VSXExtension>();
     protected readonly onDidChangeEmitter = new Emitter<void>();
-    readonly onDidChange = this.onDidChangeEmitter.event;
+    protected _installed = new Set<string>();
+    protected _recommended = new Set<string>();
+    protected _searchResult = new Set<string>();
+    protected _searchError?: string;
+
+    protected searchCancellationTokenSource = new CancellationTokenSource();
+    protected updateSearchResult = debounce(async () => {
+        const { token } = this.resetSearchCancellationTokenSource();
+        await this.doUpdateSearchResult({ query: this.search.query, includeAllVersions: true }, token);
+    }, 500);
 
     @inject(OVSXClientProvider)
     protected clientProvider: OVSXClientProvider;
@@ -59,11 +74,15 @@ export class VSXExtensionsModel {
     @inject(VSXExtensionsSearchModel)
     readonly search: VSXExtensionsSearchModel;
 
-    protected readonly initialized = new Deferred<void>();
+    @inject(RequestService)
+    protected request: RequestService;
+
+    @inject(OVSXApiFilter)
+    protected vsxApiFilter: OVSXApiFilter;
 
     @postConstruct()
     protected init(): void {
-        this.doInit();
+        this.initialized = this.doInit().catch(console.error);
     }
 
     protected async doInit(): Promise<void> {
@@ -72,7 +91,56 @@ export class VSXExtensionsModel {
             this.initSearchResult(),
             this.initRecommended(),
         ]);
-        this.initialized.resolve();
+    }
+
+    get onDidChange(): Event<void> {
+        return this.onDidChangeEmitter.event;
+    }
+
+    get installed(): IterableIterator<string> {
+        return this._installed.values();
+    }
+
+    get searchError(): string | undefined {
+        return this._searchError;
+    }
+
+    get searchResult(): IterableIterator<string> {
+        return this._searchResult.values();
+    }
+
+    get recommended(): IterableIterator<string> {
+        return this._recommended.values();
+    }
+
+    isInstalled(id: string): boolean {
+        return this._installed.has(id);
+    }
+
+    getExtension(id: string): VSXExtension | undefined {
+        return this.extensions.get(id);
+    }
+
+    resolve(id: string): Promise<VSXExtension> {
+        return this.doChange(async () => {
+            await this.initialized;
+            const extension = await this.refresh(id);
+            if (!extension) {
+                throw new Error(`Failed to resolve ${id} extension.`);
+            }
+            if (extension.readmeUrl) {
+                try {
+                    const rawReadme = RequestContext.asText(await this.request.request({ url: extension.readmeUrl }));
+                    const readme = this.compileReadme(rawReadme);
+                    extension.update({ readme });
+                } catch (e) {
+                    if (!VSXResponseError.is(e) || e.statusCode !== 404) {
+                        console.error(`[${id}]: failed to compile readme, reason:`, e);
+                    }
+                }
+            }
+            return extension;
+        });
     }
 
     protected async initInstalled(): Promise<void> {
@@ -108,37 +176,9 @@ export class VSXExtensionsModel {
         }
     }
 
-    /**
-     * single source of all extensions
-     */
-    protected readonly extensions = new Map<string, VSXExtension>();
-
-    protected _installed = new Set<string>();
-    get installed(): IterableIterator<string> {
-        return this._installed.values();
-    }
-
-    isInstalled(id: string): boolean {
-        return this._installed.has(id);
-    }
-
-    protected _searchError?: string;
-    get searchError(): string | undefined {
-        return this._searchError;
-    }
-
-    protected _searchResult = new Set<string>();
-    get searchResult(): IterableIterator<string> {
-        return this._searchResult.values();
-    }
-
-    protected _recommended = new Set<string>();
-    get recommended(): IterableIterator<string> {
-        return this._recommended.values();
-    }
-
-    getExtension(id: string): VSXExtension | undefined {
-        return this.extensions.get(id);
+    protected resetSearchCancellationTokenSource(): CancellationTokenSource {
+        this.searchCancellationTokenSource.cancel();
+        return this.searchCancellationTokenSource = new CancellationTokenSource();
     }
 
     protected setExtension(id: string): VSXExtension {
@@ -155,25 +195,18 @@ export class VSXExtensionsModel {
     protected doChange<T>(task: () => Promise<T>, token: CancellationToken = CancellationToken.None): Promise<T | undefined> {
         return this.progressService.withProgress('', 'extensions', async () => {
             if (token && token.isCancellationRequested) {
-                return undefined;
+                return;
             }
             const result = await task();
             if (token && token.isCancellationRequested) {
-                return undefined;
+                return;
             }
-            this.onDidChangeEmitter.fire(undefined);
+            this.onDidChangeEmitter.fire();
             return result;
         });
     }
 
-    protected searchCancellationTokenSource = new CancellationTokenSource();
-    protected updateSearchResult = debounce(() => {
-        this.searchCancellationTokenSource.cancel();
-        this.searchCancellationTokenSource = new CancellationTokenSource();
-        const query = this.search.query;
-        return this.doUpdateSearchResult({ query, includeAllVersions: true }, this.searchCancellationTokenSource.token);
-    }, 500);
-    protected doUpdateSearchResult(param: VSXSearchParam, token: CancellationToken): Promise<void> {
+    protected doUpdateSearchResult(param: VSXSearchOptions, token: CancellationToken): Promise<void> {
         return this.doChange(async () => {
             const searchResult = new Set<string>();
             if (!param.query) {
@@ -188,8 +221,8 @@ export class VSXExtensionsModel {
             }
             for (const data of result.extensions) {
                 const id = data.namespace.toLowerCase() + '.' + data.name.toLowerCase();
-                const extension = client.getLatestCompatibleVersion(data);
-                if (!extension) {
+                const allVersions = this.vsxApiFilter.getLatestCompatibleVersion(data);
+                if (!allVersions) {
                     continue;
                 }
                 this.setExtension(id).update(Object.assign(data, {
@@ -198,7 +231,7 @@ export class VSXExtensionsModel {
                     iconUrl: data.files.icon,
                     readmeUrl: data.files.readme,
                     licenseUrl: data.files.license,
-                    version: extension.version
+                    version: allVersions.version
                 }));
                 searchResult.add(id);
             }
@@ -268,29 +301,6 @@ export class VSXExtensionsModel {
         };
     }
 
-    resolve(id: string): Promise<VSXExtension> {
-        return this.doChange(async () => {
-            await this.initialized.promise;
-            const extension = await this.refresh(id);
-            if (!extension) {
-                throw new Error(`Failed to resolve ${id} extension.`);
-            }
-            if (extension.readmeUrl) {
-                try {
-                    const client = await this.clientProvider();
-                    const rawReadme = await client.fetchText(extension.readmeUrl);
-                    const readme = this.compileReadme(rawReadme);
-                    extension.update({ readme });
-                } catch (e) {
-                    if (!VSXResponseError.is(e) || e.statusCode !== 404) {
-                        console.error(`[${id}]: failed to compile readme, reason:`, e);
-                    }
-                }
-            }
-            return extension;
-        });
-    }
-
     protected compileReadme(readmeMarkdown: string): string {
         const readmeHtml = markdownit({ html: true }).render(readmeMarkdown);
         return DOMPurify.sanitize(readmeHtml);
@@ -303,9 +313,18 @@ export class VSXExtensionsModel {
                 return extension;
             }
             const client = await this.clientProvider();
-            const data = version !== undefined
-                ? await client.getExtension(id, { extensionVersion: version, includeAllVersions: true })
-                : await client.getLatestCompatibleExtensionVersion(id);
+            let data: VSXExtensionRaw | undefined;
+            if (version === undefined) {
+                const { extensions } = await client.query({ extensionId: id });
+                if (extensions?.length) {
+                    data = this.vsxApiFilter.getLatestCompatibleExtension(extensions);
+                }
+            } else {
+                const { extensions } = await client.query({ extensionId: id, extensionVersion: version, includeAllVersions: true });
+                if (extensions?.length) {
+                    data = extensions?.[0];
+                }
+            }
             if (!data) {
                 return;
             }

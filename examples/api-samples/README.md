@@ -19,6 +19,12 @@ The purpose of the extension is to:
 
 The extension is for reference and test purposes only and is not published on `npm` (`private: true`).
 
+### Sample mock OpenVSX server
+
+These samples contain a mock implementation of an OpenVSX server. This is done
+for testing purposes only. It is currently hosted at
+`<backend-host>/mock-open-vsx/api/...`.
+
 ## Additional Information
 
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)

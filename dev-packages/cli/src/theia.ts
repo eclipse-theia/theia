@@ -25,6 +25,8 @@ import checkDependencies from './check-dependencies';
 import downloadPlugins from './download-plugins';
 import runTest from './run-test';
 import { LocalizationManager, extract } from '@theia/localization-manager';
+import { NodeRequestService } from '@theia/request/lib/node-request-service';
+import { ExtensionIdMatchesFilterFactory, OVSXClient, OVSXHttpClient, OVSXRouterClient, RequestContainsFilterFactory } from '@theia/ovsx-client';
 
 const { executablePath } = require('puppeteer');
 
@@ -45,9 +47,7 @@ theiaCli();
 function toStringArray(argv: (string | number)[]): string[];
 function toStringArray(argv?: (string | number)[]): string[] | undefined;
 function toStringArray(argv?: (string | number)[]): string[] | undefined {
-    return argv === undefined
-        ? undefined
-        : argv.map(arg => String(arg));
+    return argv?.map(arg => String(arg));
 }
 
 function rebuildCommand(command: string, target: ApplicationProps.Target): yargs.CommandModule<unknown, {
@@ -314,8 +314,10 @@ async function theiaCli(): Promise<void> {
             apiUrl: string
             parallel: boolean
             proxyUrl?: string
-            proxyAuthentification?: string
+            proxyAuthorization?: string
             strictSsl: boolean
+            rateLimit: number
+            ovsxRouterConfig?: string
         }>({
             command: 'download:plugins',
             describe: 'Download defined external plugins',
@@ -355,17 +357,43 @@ async function theiaCli(): Promise<void> {
                 'proxy-url': {
                     describe: 'Proxy URL'
                 },
-                'proxy-authentification': {
-                    describe: 'Proxy authentification information'
+                'proxy-authorization': {
+                    describe: 'Proxy authorization information'
                 },
                 'strict-ssl': {
                     describe: 'Whether to enable strict SSL mode',
                     boolean: true,
                     default: false
+                },
+                'ovsx-router-config': {
+                    describe: 'JSON configuration file for the OVSX router client',
+                    type: 'string'
                 }
             },
-            handler: async args => {
-                await downloadPlugins(args);
+            handler: async ({ apiUrl, proxyUrl, proxyAuthorization, strictSsl, ovsxRouterConfig, ...options }) => {
+                const requestService = new NodeRequestService();
+                await requestService.configure({
+                    proxyUrl,
+                    proxyAuthorization,
+                    strictSSL: strictSsl
+                });
+                let client: OVSXClient | undefined;
+                if (ovsxRouterConfig) {
+                    const routerConfig = await fs.promises.readFile(ovsxRouterConfig, 'utf8').then(JSON.parse, error => {
+                        console.error(error);
+                    });
+                    if (routerConfig) {
+                        client = await OVSXRouterClient.FromConfig(
+                            routerConfig,
+                            OVSXHttpClient.createClientFactory(requestService),
+                            [RequestContainsFilterFactory, ExtensionIdMatchesFilterFactory]
+                        );
+                    }
+                }
+                if (!client) {
+                    client = new OVSXHttpClient(apiUrl, requestService);
+                }
+                await downloadPlugins(client, requestService, options);
             },
         })
         .command<{

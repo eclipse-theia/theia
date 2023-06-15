@@ -14,14 +14,58 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { MaybePromise } from './types';
+
+export interface ExtensionLike {
+    name: string;
+    namespace: string;
+    version?: string;
+}
+export namespace ExtensionLike {
+    export function id<T extends ExtensionLike>(extension: T): `${string}.${string}` {
+        return `${extension.namespace}.${extension.name}`;
+    }
+    export function idWithVersion<T extends ExtensionLike>(extension: T): `${string}.${string}@${string}` {
+        if (!extension.version) {
+            throw new Error(`no valid "version" value provided for "${id(extension)}"`);
+        }
+        return `${id(extension)}@${extension.version}`;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-shadow
+    export function fromId(id: string): ExtensionLike {
+        const [left, version] = id.split('@', 2);
+        const [namespace, name] = left.split('.', 2);
+        return {
+            name,
+            namespace,
+            version
+        };
+    }
+}
+
+export interface OVSXClient {
+    /**
+     * GET https://openvsx.org/api/-/search
+     */
+    search(searchOptions?: VSXSearchOptions): Promise<VSXSearchResult>;
+    /**
+     * GET https://openvsx.org/api/-/query
+     *
+     * Fetch one or all versions of an extension.
+     */
+    query(queryOptions?: VSXQueryOptions): Promise<VSXQueryResult>;
+}
+
+/** @deprecated since 1.31.0 use {@link VSXSearchOptions} instead */
+export type VSXSearchParam = VSXSearchOptions;
 /**
  * The possible options when performing a search.
  *
- * For available options, and default values consult the `swagger`: https://open-vsx.org/swagger-ui/#/registry-api/searchUsingGET.
+ * For available options, and default values consult the `swagger`: https://open-vsx.org/swagger-ui/index.html.
  *
  * Should be aligned with https://github.com/eclipse/openvsx/blob/b5694a712e07d266801394916bac30609e16d77b/server/src/main/java/org/eclipse/openvsx/RegistryAPI.java#L246-L266
  */
-export interface VSXSearchParam {
+export interface VSXSearchOptions {
     /**
      * The query text for searching.
      */
@@ -47,7 +91,12 @@ export interface VSXSearchParam {
      */
     sortBy?: 'averageRating' | 'downloadCount' | 'relevance' | 'timestamp';
     /**
-     * Determines whether to include information regarding all available entries for the entry.
+     * By default an OpenVSX registry will return the last known version of
+     * extensions. Setting this field to `true` will have the registry specify
+     * the {@link VSXExtensionRaw.allVersions} field which references all known
+     * versions for each returned extension.
+     *
+     * @default false
      */
     includeAllVersions?: boolean;
 }
@@ -56,96 +105,21 @@ export interface VSXSearchParam {
  * Should be aligned with https://github.com/eclipse/openvsx/blob/e8f64fe145fc05d2de1469735d50a7a90e400bc4/server/src/main/java/org/eclipse/openvsx/json/SearchResultJson.java
  */
 export interface VSXSearchResult {
-    readonly error?: string;
-    readonly offset: number;
-    readonly extensions: VSXSearchEntry[];
+    error?: string;
+    offset: number;
+    extensions: VSXSearchEntry[];
 }
 
-export interface VSXAllVersions {
-    url: string,
-    version: string,
-    engines?: {
-        [version: string]: string
-    }
-}
-
+/** @deprecated since 1.31.0 use {@link VSXQueryOptions} instead */
+export type VSXQueryParam = VSXQueryOptions;
 /**
- * Should be aligned with https://github.com/eclipse/openvsx/blob/master/server/src/main/java/org/eclipse/openvsx/json/SearchEntryJson.java
+ * The possible options when performing a search.
+ *
+ * For available options, and default values consult the `swagger`: https://open-vsx.org/swagger-ui/index.html.
+ *
+ * Should be aligned with https://github.com/eclipse/openvsx/blob/b5694a712e07d266801394916bac30609e16d77b/server/src/main/java/org/eclipse/openvsx/json/QueryParamJson.java#L18-L46
  */
-export interface VSXSearchEntry {
-    readonly url: string;
-    readonly files: {
-        download: string
-        manifest?: string
-        readme?: string
-        license?: string
-        icon?: string
-    }
-    readonly name: string;
-    readonly namespace: string;
-    readonly version: string;
-    readonly timestamp: string;
-    readonly averageRating?: number;
-    readonly downloadCount: number;
-    readonly displayName?: string;
-    readonly description?: string;
-    readonly allVersions: VSXAllVersions[];
-}
-
-export type VSXExtensionNamespaceAccess = 'public' | 'restricted';
-
-/**
- * Should be aligned with https://github.com/eclipse/openvsx/blob/master/server/src/main/java/org/eclipse/openvsx/json/UserJson.java
- */
-export interface VSXUser {
-    loginName: string
-    homepage?: string
-}
-
-export interface VSXExtensionRawFiles {
-    download: string
-    readme?: string
-    license?: string
-    icon?: string
-}
-
-/**
- * Should be aligned with https://github.com/eclipse/openvsx/blob/master/server/src/main/java/org/eclipse/openvsx/json/ExtensionJson.java
- */
-export interface VSXExtensionRaw {
-    readonly error?: string;
-    readonly namespaceUrl: string;
-    readonly reviewsUrl: string;
-    readonly name: string;
-    readonly namespace: string;
-    readonly publishedBy: VSXUser
-    readonly namespaceAccess: VSXExtensionNamespaceAccess;
-    readonly files: VSXExtensionRawFiles,
-    readonly allVersions: {
-        [version: string]: string
-    }
-    readonly averageRating?: number;
-    readonly downloadCount: number;
-    readonly reviewCount: number;
-    readonly version: string;
-    readonly timestamp: string;
-    readonly preview?: boolean;
-    readonly displayName?: string;
-    readonly description?: string;
-    readonly categories?: string[];
-    readonly tags?: string[];
-    readonly license?: string;
-    readonly homepage?: string;
-    readonly repository?: string;
-    readonly bugs?: string;
-    readonly markdown?: string;
-    readonly galleryColor?: string;
-    readonly galleryTheme?: string;
-    readonly qna?: string;
-    readonly engines?: { [engine: string]: string };
-}
-
-export interface VSXQueryParam {
+export interface VSXQueryOptions {
     namespaceName?: string;
     extensionName?: string;
     extensionVersion?: string;
@@ -156,11 +130,106 @@ export interface VSXQueryParam {
 }
 
 export interface VSXQueryResult {
-    extensions?: VSXExtensionRaw[];
+    extensions: VSXExtensionRaw[];
+}
+
+/**
+ * This type describes the data as found in {@link VSXSearchEntry.allVersions}.
+ *
+ * Note that this type only represents one version of a given plugin, despite the name.
+ */
+export interface VSXAllVersions {
+    url: string;
+    version: string;
+    engines?: {
+        [version: string]: string;
+    };
+}
+
+/**
+ * Should be aligned with https://github.com/eclipse/openvsx/blob/master/server/src/main/java/org/eclipse/openvsx/json/SearchEntryJson.java
+ */
+export interface VSXSearchEntry {
+    url: string;
+    files: {
+        download: string;
+        manifest?: string;
+        readme?: string;
+        license?: string;
+        icon?: string;
+    };
+    name: string;
+    namespace: string;
+    version: string;
+    timestamp: string;
+    averageRating?: number;
+    downloadCount: number;
+    displayName?: string;
+    description?: string;
+    /**
+     * May be undefined when {@link VSXSearchOptions.includeAllVersions} is
+     * `false` or `undefined`.
+     */
+    allVersions?: VSXAllVersions[];
+}
+
+export type VSXExtensionNamespaceAccess = 'public' | 'restricted';
+
+/**
+ * Should be aligned with https://github.com/eclipse/openvsx/blob/master/server/src/main/java/org/eclipse/openvsx/json/UserJson.java
+ */
+export interface VSXUser {
+    loginName: string;
+    homepage?: string;
+}
+
+export interface VSXExtensionRawFiles {
+    download: string;
+    readme?: string;
+    license?: string;
+    icon?: string;
+}
+
+/**
+ * Should be aligned with https://github.com/eclipse/openvsx/blob/master/server/src/main/java/org/eclipse/openvsx/json/ExtensionJson.java
+ */
+export interface VSXExtensionRaw {
+    error?: string;
+    namespaceUrl: string;
+    reviewsUrl: string;
+    name: string;
+    namespace: string;
+    publishedBy: VSXUser
+    namespaceAccess: VSXExtensionNamespaceAccess;
+    files: VSXExtensionRawFiles;
+    allVersions: {
+        [version: string]: string;
+    };
+    averageRating?: number;
+    downloadCount: number;
+    reviewCount: number;
+    version: string;
+    timestamp: string;
+    preview?: boolean;
+    displayName?: string;
+    description?: string;
+    categories?: string[];
+    tags?: string[];
+    license?: string;
+    homepage?: string;
+    repository?: string;
+    bugs?: string;
+    markdown?: string;
+    galleryColor?: string;
+    galleryTheme?: string;
+    qna?: string;
+    engines?: {
+        [engine: string]: string;
+    };
 }
 
 export interface VSXResponseError extends Error {
-    statusCode: number
+    statusCode: number;
 }
 
 export namespace VSXResponseError {
@@ -173,13 +242,26 @@ export namespace VSXResponseError {
  * Builtin namespaces maintained by the framework.
  */
 export namespace VSXBuiltinNamespaces {
+
     /**
      * Namespace for individual vscode builtin extensions.
      */
     export const VSCODE = 'vscode';
+
     /**
      * Namespace for vscode builtin extension packs.
      * - corresponds to: https://github.com/eclipse-theia/vscode-builtin-extensions/blob/af9cfeb2ea23e1668a8340c1c2fb5afd56be07d7/src/create-extension-pack.js#L45
      */
     export const THEIA = 'eclipse-theia';
+
+    /**
+     * Determines if the extension namespace is a builtin maintained by the framework.
+     * @param namespace the extension namespace to verify.
+     */
+    export function is(namespace: string): boolean {
+        return namespace === VSCODE
+            || namespace === THEIA;
+    }
 }
+
+export type OVSXClientProvider = (uri: string) => MaybePromise<OVSXClient>;
