@@ -30,7 +30,7 @@ import {
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { VariableContribution } from '@theia/variable-resolver/lib/browser';
-import { WorkspaceServer, workspacePath, CommonWorkspaceUtils } from '../common';
+import { WorkspaceServer, workspacePath, UntitledWorkspaceService, WorkspaceFileService } from '../common';
 import { WorkspaceFrontendContribution } from './workspace-frontend-contribution';
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceCommandContribution, FileMenuContribution, EditMenuContribution } from './workspace-commands';
@@ -104,7 +104,8 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(QuickOpenWorkspace).toSelf().inSingletonScope();
 
     bind(WorkspaceUtils).toSelf().inSingletonScope();
-    bind(CommonWorkspaceUtils).toSelf().inSingletonScope();
+    bind(WorkspaceFileService).toSelf().inSingletonScope();
+    bind(UntitledWorkspaceService).toSelf().inSingletonScope();
 
     bind(WorkspaceSchemaUpdater).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(WorkspaceSchemaUpdater);

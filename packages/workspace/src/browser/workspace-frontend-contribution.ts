@@ -39,7 +39,6 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { UntitledWorkspaceExitDialog } from './untitled-workspace-exit-dialog';
 import { FilesystemSaveResourceService } from '@theia/filesystem/lib/browser/filesystem-save-resource-service';
 import { StopReason } from '@theia/core/lib/common/frontend-application-state';
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import * as monaco from '@theia/monaco-editor-core';
 
 export enum WorkspaceStates {
