@@ -71,7 +71,19 @@ export abstract class AbstractGenerator {
     }
 
     protected ifMonaco(value: () => string, defaultValue: () => string = () => ''): string {
-        return (this.pck.extensionPackages.some(e => e.name === '@theia/monaco' || e.name === '@theia/monaco-editor-core') ? value : defaultValue)();
+        return this.ifPackage([
+            '@theia/monaco',
+            '@theia/monaco-editor-core'
+        ], value, defaultValue);
+    }
+
+    protected ifPackage(packageName: string | string[], value: string | (() => string), defaultValue: string | (() => string) = ''): string {
+        const packages = Array.isArray(packageName) ? packageName : [packageName];
+        if (this.pck.extensionPackages.some(e => packages.includes(e.name))) {
+            return typeof value === 'string' ? value : value();
+        } else {
+            return typeof defaultValue === 'string' ? defaultValue : defaultValue();
+        }
     }
 
     protected prettyStringify(object: object): string {

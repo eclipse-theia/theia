@@ -316,7 +316,7 @@ export class BackendApplication {
         const acceptedEncodings = req.acceptsEncodings();
 
         const gzUrl = `${req.url}.gz`;
-        const gzPath = path.join(this.applicationPackage.projectPath, 'lib', gzUrl);
+        const gzPath = path.join(this.applicationPackage.projectPath, 'lib', 'frontend', gzUrl);
         if (acceptedEncodings.indexOf('gzip') === -1 || !(await fs.pathExists(gzPath))) {
             next();
             return;
