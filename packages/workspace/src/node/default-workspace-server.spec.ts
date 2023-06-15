@@ -41,7 +41,7 @@ describe('DefaultWorkspaceServer', function (): void {
             // create a container with the necessary bindings for the DefaultWorkspaceServer
             const container = new Container();
             container.bind(WorkspaceCliContribution).toSelf().inSingletonScope();
-            container.bind(WorkspaceFileService).toSelf().inSingletonScope();
+            container.bind(DefaultWorkspaceServer).toSelf().inSingletonScope();
             container.bind(WorkspaceFileService).toSelf().inSingletonScope();
             container.bind(UntitledWorkspaceService).toSelf().inSingletonScope();
             container.bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(tmpConfigDir));
