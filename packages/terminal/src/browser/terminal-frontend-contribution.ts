@@ -32,7 +32,7 @@ import {
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager, PreferenceService,
     KeybindingRegistry, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService,
-    codicon, CommonCommands, FrontendApplicationContribution, OnWillStopAction, Dialog, ConfirmDialog, FrontendApplication, PreferenceScope
+    codicon, CommonCommands, FrontendApplicationContribution, OnWillStopAction, Dialog, ConfirmDialog, FrontendApplication, PreferenceScope, Widget
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl } from './terminal-widget-impl';
@@ -543,8 +543,8 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
         commands.registerCommand(TerminalCommands.SPLIT, {
             execute: () => this.splitTerminal(),
-            isEnabled: () => this.shell.currentWidget instanceof TerminalWidget,
-            isVisible: () => this.shell.currentWidget instanceof TerminalWidget,
+            isEnabled: w => this.withWidget(w, () => true),
+            isVisible: w => this.withWidget(w, () => true),
         });
         commands.registerCommand(TerminalCommands.TERMINAL_CLEAR);
         commands.registerHandler(TerminalCommands.TERMINAL_CLEAR.id, {
@@ -1020,6 +1020,13 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         const termWidget = await this.newTerminal({});
         termWidget.start();
         this.open(termWidget, { widgetOptions: options });
+    }
+
+    protected withWidget<T>(widget: Widget | undefined, fn: (widget: TerminalWidget) => T): T | false {
+        if (widget instanceof TerminalWidget) {
+            return fn(widget);
+        }
+        return false;
     }
 
     /**
