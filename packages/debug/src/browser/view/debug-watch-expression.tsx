@@ -42,11 +42,10 @@ export class DebugWatchExpression extends ExpressionItem {
     }
 
     protected override setResult(body?: DebugProtocol.EvaluateResponse['body'], error?: string): void {
-        if (!this.options.session()) {
-            return;
+        if (this.options.session()) {
+            super.setResult(body, error);
+            this.isError = !!error;
         }
-        super.setResult(body, error);
-        this.isError = !!error;
         this.options.onDidChange();
     }
 
