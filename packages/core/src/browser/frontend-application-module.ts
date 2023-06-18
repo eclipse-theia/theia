@@ -137,6 +137,7 @@ import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from 
 import { StylingParticipant, StylingService } from './styling-service';
 import { bindCommonStylingParticipants } from './common-styling-participants';
 import { HoverService } from './hover-service';
+import { NullRemoteService, RemoteService } from './remote-service';
 import { AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
@@ -248,7 +249,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(SelectionService).toSelf().inSingletonScope();
     bind(CommandRegistry).toSelf().inSingletonScope().onActivation(({ container }, registry) => {
-        WebSocketConnectionProvider.createProxy(container, commandServicePath, registry);
+        WebSocketConnectionProvider.createDualProxy(container, commandServicePath, registry);
         return registry;
     });
     bind(CommandService).toService(CommandRegistry);
@@ -268,7 +269,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bindMessageService(bind).onActivation(({ container }, messages) => {
         const client = container.get(MessageClient);
-        WebSocketConnectionProvider.createProxy(container, messageServicePath, client);
+        WebSocketConnectionProvider.createDualProxy(container, messageServicePath, client);
         return messages;
     });
 
@@ -296,7 +297,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(QuickAccessContribution).toService(QuickHelpService);
 
     bind(QuickPickService).to(QuickPickServiceImpl).inSingletonScope().onActivation(({ container }, quickPickService: QuickPickService) => {
-        WebSocketConnectionProvider.createProxy(container, quickPickServicePath, quickPickService);
+        WebSocketConnectionProvider.createDualProxy(container, quickPickServicePath, quickPickService);
         return quickPickService;
     });
 
@@ -448,6 +449,9 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(StylingService).toSelf().inSingletonScope();
     bindContributionProvider(bind, StylingParticipant);
     bind(FrontendApplicationContribution).toService(StylingService);
+
+    bind(NullRemoteService).toSelf().inSingletonScope();
+    bind(RemoteService).toService(NullRemoteService);
 
     bind(SecondaryWindowHandler).toSelf().inSingletonScope();
 });

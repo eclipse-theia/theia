@@ -32,11 +32,11 @@ Object.assign(MonacoNls, {
 
 import '../../src/browser/style/index.css';
 import { ContainerModule, decorate, injectable, interfaces } from '@theia/core/shared/inversify';
-import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
+import { MenuContribution, CommandContribution, quickInputServicePath } from '@theia/core/lib/common';
 import {
     FrontendApplicationContribution, KeybindingContribution,
     PreferenceService, PreferenceSchemaProvider, createPreferenceProxy,
-    PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService, StylingParticipant
+    PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService, StylingParticipant, WebSocketConnectionProvider
 } from '@theia/core/lib/browser';
 import { TextEditorProvider, DiffNavigatorProvider, TextEditor } from '@theia/editor/lib/browser';
 import { MonacoEditorProvider, MonacoEditorFactory } from './monaco-editor-provider';
@@ -159,7 +159,10 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(KeybindingContribution).toService(MonacoKeybindingContribution);
 
     bind(MonacoQuickInputImplementation).toSelf().inSingletonScope();
-    bind(MonacoQuickInputService).toSelf().inSingletonScope();
+    bind(MonacoQuickInputService).toSelf().inSingletonScope().onActivation(({ container }, quickInputService: MonacoQuickInputService) => {
+        WebSocketConnectionProvider.createDualProxy(container, quickInputServicePath, quickInputService);
+        return quickInputService;
+    });
     bind(QuickInputService).toService(MonacoQuickInputService);
 
     bind(MonacoQuickAccessRegistry).toSelf().inSingletonScope();

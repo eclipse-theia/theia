@@ -2300,6 +2300,24 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hcLight: Color.lighten('statusBar.offlineBackground', 0.6)
                 }, description: 'Background of active statusbar item in case the theia server is offline.'
             },
+            {
+                id: 'statusBarItem.remoteBackground',
+                defaults: {
+                    dark: 'activityBarBadge.background',
+                    light: 'activityBarBadge.background',
+                    hcDark: 'activityBarBadge.background',
+                    hcLight: 'activityBarBadge.background'
+                }, description: 'Background color for the remote indicator on the status bar.'
+            },
+            {
+                id: 'statusBarItem.remoteForeground',
+                defaults: {
+                    dark: 'activityBarBadge.foreground',
+                    light: 'activityBarBadge.foreground',
+                    hcDark: 'activityBarBadge.foreground',
+                    hcLight: 'activityBarBadge.foreground'
+                }, description: 'Foreground color for the remote indicator on the status bar.'
+            },
             // Buttons
             {
                 id: 'secondaryButton.foreground',

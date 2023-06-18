@@ -21,16 +21,23 @@
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.55.2/src/vs/platform/native/electron-main/nativeHostMainService.ts#L679-L771
 
 import { KeytarService } from '../common/keytar-protocol';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { isWindows } from '../common';
-import * as keytar from 'keytar';
+import { BackendRemoteService } from './remote/backend-remote-service';
 
 @injectable()
 export class KeytarServiceImpl implements KeytarService {
+
+    @inject(BackendRemoteService)
+    protected readonly backendRemoteService: BackendRemoteService;
+
     private static readonly MAX_PASSWORD_LENGTH = 2500;
     private static readonly PASSWORD_CHUNK_SIZE = KeytarServiceImpl.MAX_PASSWORD_LENGTH - 100;
 
+    protected cache?: typeof import('keytar');
+
     async setPassword(service: string, account: string, password: string): Promise<void> {
+        const keytar = await this.getKeytar();
         if (isWindows && password.length > KeytarServiceImpl.MAX_PASSWORD_LENGTH) {
             let index = 0;
             let chunk = 0;
@@ -54,11 +61,13 @@ export class KeytarServiceImpl implements KeytarService {
         }
     }
 
-    deletePassword(service: string, account: string): Promise<boolean> {
+    async deletePassword(service: string, account: string): Promise<boolean> {
+        const keytar = await this.getKeytar();
         return keytar.deletePassword(service, account);
     }
 
     async getPassword(service: string, account: string): Promise<string | undefined> {
+        const keytar = await this.getKeytar();
         const password = await keytar.getPassword(service, account);
         if (password) {
             try {
@@ -81,14 +90,77 @@ export class KeytarServiceImpl implements KeytarService {
             }
         }
     }
+
     async findPassword(service: string): Promise<string | undefined> {
+        const keytar = await this.getKeytar();
         const password = await keytar.findPassword(service);
         if (password) {
             return password;
         }
     }
+
     async findCredentials(service: string): Promise<Array<{ account: string, password: string }>> {
+        const keytar = await this.getKeytar();
         return keytar.findCredentials(service);
+    }
+
+    protected async getKeytar(): Promise<typeof import('keytar')> {
+        if (this.cache) {
+            return this.cache;
+        }
+        try {
+            return (this.cache = await import('keytar'));
+        } catch (err) {
+            if (this.backendRemoteService.isRemoteServer()) {
+                // When running as a remote server, the necessary prerequisites might not be installed on the system
+                // Just use an in-memory cache for credentials
+                return (this.cache = new InMemoryCredentialsProvider());
+            } else {
+                throw err;
+            }
+        }
+    }
+}
+
+export class InMemoryCredentialsProvider {
+    private secretVault: Record<string, Record<string, string> | undefined> = {};
+
+    async getPassword(service: string, account: string): Promise<string | null> {
+        // eslint-disable-next-line no-null/no-null
+        return this.secretVault[service]?.[account] ?? null;
+    }
+
+    async setPassword(service: string, account: string, password: string): Promise<void> {
+        this.secretVault[service] = this.secretVault[service] ?? {};
+        this.secretVault[service]![account] = password;
+    }
+
+    async deletePassword(service: string, account: string): Promise<boolean> {
+        if (!this.secretVault[service]?.[account]) {
+            return false;
+        }
+        delete this.secretVault[service]![account];
+        if (Object.keys(this.secretVault[service]!).length === 0) {
+            delete this.secretVault[service];
+        }
+        return true;
+    }
+
+    async findPassword(service: string): Promise<string | null> {
+        // eslint-disable-next-line no-null/no-null
+        return JSON.stringify(this.secretVault[service]) ?? null;
+    }
+
+    async findCredentials(service: string): Promise<Array<{ account: string; password: string }>> {
+        const credentials: { account: string; password: string }[] = [];
+        for (const account of Object.keys(this.secretVault[service] || {})) {
+            credentials.push({ account, password: this.secretVault[service]![account] });
+        }
+        return credentials;
+    }
+
+    async clear(): Promise<void> {
+        this.secretVault = {};
     }
 }
 

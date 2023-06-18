@@ -151,6 +151,9 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         } else {
             attrs['aria-label'] = [entry.text, entry.tooltip].join(', ');
         }
+        if (entry.backgroundColor) {
+            attrs.className += ' has-background';
+        }
 
         attrs.style = {
             color: entry.color || this.color,
@@ -178,8 +181,9 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
                 children.push(<span key={key}>{val}</span>);
             }
         });
-        const elementInnerDiv = <React.Fragment>{children}</React.Fragment>;
-        return React.createElement('div', { key: entry.id, ...this.createAttributes(entry) }, elementInnerDiv);
+        return <div key={entry.id} {...this.createAttributes(entry)}>
+            {children}
+        </div>;
     }
 
 }

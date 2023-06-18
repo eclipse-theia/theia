@@ -22,6 +22,7 @@
     "@typescript-eslint/eslint-plugin-tslint": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
     "@vscode/vsce": "^2.15.0",
+    "archiver": "^5.3.1",
     "chai": "4.3.10",
     "chai-spies": "1.0.0",
     "chai-string": "^1.4.0",
@@ -90,7 +91,8 @@
     "watch:compile": "concurrently --kill-others -n cleanup,tsc -c magenta,red \"ts-clean dev-packages/* packages/* -w\" \"tsc -b -w --preserveWatchOutput\"",
     "performance:startup": "yarn -s performance:startup:browser && yarn -s performance:startup:electron",
     "performance:startup:browser": "concurrently --success first -k -r \"cd scripts/performance && node browser-performance.js --name 'Browser Frontend Startup' --folder browser --runs 10\" \"yarn -s --cwd examples/browser start\"",
-    "performance:startup:electron": "yarn -s electron rebuild && cd scripts/performance && node electron-performance.js --name 'Electron Frontend Startup' --folder electron --runs 10"
+    "performance:startup:electron": "yarn -s electron rebuild && cd scripts/performance && node electron-performance.js --name 'Electron Frontend Startup' --folder electron --runs 10",
+    "zip:native:dependencies": "node ./scripts/zip-native-dependencies.js"
   },
   "workspaces": [
     "dev-packages/*",

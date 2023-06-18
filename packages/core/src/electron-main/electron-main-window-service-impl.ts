@@ -18,7 +18,7 @@ import { shell } from '@theia/electron/shared/electron';
 import { injectable, inject } from 'inversify';
 import { ElectronMainWindowService } from '../electron-common/electron-main-window-service';
 import { ElectronMainApplication } from './electron-main-application';
-import { NewWindowOptions } from '../common/window';
+import { NewWindowOptions, WindowSearchParams } from '../common/window';
 
 @injectable()
 export class ElectronMainWindowServiceImpl implements ElectronMainWindowService {
@@ -37,8 +37,8 @@ export class ElectronMainWindowServiceImpl implements ElectronMainWindowService 
         return undefined;
     }
 
-    openNewDefaultWindow(): void {
-        this.app.openDefaultWindow();
+    openNewDefaultWindow(params?: WindowSearchParams): void {
+        this.app.openDefaultWindow(params);
     }
 
 }

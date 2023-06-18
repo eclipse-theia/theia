@@ -28,7 +28,7 @@ import { WsRequestValidatorContribution } from '../../node/ws-request-validators
 @injectable()
 export class ElectronTokenValidator implements WsRequestValidatorContribution {
 
-    protected electronSecurityToken: ElectronSecurityToken;
+    protected electronSecurityToken?: ElectronSecurityToken;
 
     @postConstruct()
     protected init(): void {
@@ -43,6 +43,9 @@ export class ElectronTokenValidator implements WsRequestValidatorContribution {
      * Expects the token to be passed via cookies by default.
      */
     allowRequest(request: http.IncomingMessage): boolean {
+        if (!this.electronSecurityToken) {
+            return true;
+        }
         const cookieHeader = request.headers.cookie;
         if (isString(cookieHeader)) {
             const token = cookie.parse(cookieHeader)[ElectronSecurityToken];
@@ -76,8 +79,13 @@ export class ElectronTokenValidator implements WsRequestValidatorContribution {
     /**
      * Returns the token to compare to when authorizing requests.
      */
-    protected getToken(): ElectronSecurityToken {
-        return JSON.parse(process.env[ElectronSecurityToken]!);
+    protected getToken(): ElectronSecurityToken | undefined {
+        const token = process.env[ElectronSecurityToken];
+        if (token) {
+            return JSON.parse(token);
+        } else {
+            return undefined;
+        }
     }
 
 }

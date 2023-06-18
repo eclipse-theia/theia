@@ -29,7 +29,7 @@ import { ApplicationServer, applicationPath } from '../common/application-protoc
 import { EnvVariablesServer, envVariablesPath } from './../common/env-variables';
 import { EnvVariablesServerImpl } from './env-variables';
 import { ConnectionContainerModule } from './messaging/connection-container-module';
-import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
+import { QuickInputService, quickInputServicePath, QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 import { WsRequestValidator, WsRequestValidatorContribution } from './ws-request-validators';
 import { KeytarService, keytarServicePath } from '../common/keytar-protocol';
 import { KeytarServiceImpl } from './keytar-server';
@@ -54,6 +54,7 @@ const messageConnectionModule = ConnectionContainerModule.create(({ bind, bindFr
 });
 
 const quickPickConnectionModule = ConnectionContainerModule.create(({ bindFrontendService }) => {
+    bindFrontendService(quickInputServicePath, QuickInputService);
     bindFrontendService(quickPickServicePath, QuickPickService);
 });
 

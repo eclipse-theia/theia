@@ -15,8 +15,9 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { WebSocketConnectionProvider } from './ws-connection-provider';
+import { LocalWebSocketConnectionProvider, WebSocketConnectionProvider } from './ws-connection-provider';
 
 export const messagingFrontendModule = new ContainerModule(bind => {
     bind(WebSocketConnectionProvider).toSelf().inSingletonScope();
+    bind(LocalWebSocketConnectionProvider).toService(WebSocketConnectionProvider);
 });

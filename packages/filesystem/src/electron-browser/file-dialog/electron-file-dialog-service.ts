@@ -16,6 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
+import { RemoteService } from '@theia/core/lib/browser/remote-service';
 import { MaybeArray } from '@theia/core/lib/common/types';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileStat } from '../../common/files';
@@ -35,10 +36,14 @@ import { OpenDialogOptions, SaveDialogOptions } from '../../electron-common/elec
 export class ElectronFileDialogService extends DefaultFileDialogService {
 
     @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(RemoteService) protected readonly remoteService: RemoteService;
 
     override async showOpenDialog(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<URI> | undefined>;
     override async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<URI | undefined>;
     override async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<URI> | undefined> {
+        if (this.remoteService.isConnected()) {
+            return super.showOpenDialog(props, folder);
+        }
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
             const filePaths = await window.electronTheiaFilesystem.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props));
@@ -55,6 +60,9 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     }
 
     override async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
+        if (this.remoteService.isConnected()) {
+            return super.showSaveDialog(props, folder);
+        }
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
             const filePath = await window.electronTheiaFilesystem.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props));

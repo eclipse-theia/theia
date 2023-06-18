@@ -26,6 +26,7 @@ import { environment } from '@theia/core/shared/@theia/application-package/lib/e
 import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
 import { MaybePromise } from '@theia/core/lib/common';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
+import { BackendRemoteService } from '@theia/core/lib/node/remote/backend-remote-service';
 
 @injectable()
 export class PluginApiContribution implements BackendApplicationContribution, WsRequestValidatorContribution {
@@ -37,6 +38,9 @@ export class PluginApiContribution implements BackendApplicationContribution, Ws
     @inject(ApplicationPackage)
     protected readonly applicationPackage: ApplicationPackage;
 
+    @inject(BackendRemoteService)
+    protected readonly remoteService: BackendRemoteService;
+
     @postConstruct()
     protected init(): void {
         const webviewExternalEndpoint = this.webviewExternalEndpoint();
@@ -47,7 +51,13 @@ export class PluginApiContribution implements BackendApplicationContribution, Ws
     configure(app: express.Application): void {
         const webviewApp = express();
         webviewApp.use('/webview', express.static(path.join(this.applicationPackage.projectPath, 'lib', 'webview', 'pre')));
-        app.use(vhost(this.webviewExternalEndpointRegExp, webviewApp));
+        if (this.remoteService.isRemoteServer()) {
+            // If we are a remote server, the subdomain information gets lost
+            // We simply serve the webviews on a path
+            app.use(webviewApp);
+        } else {
+            app.use(vhost(this.webviewExternalEndpointRegExp, webviewApp));
+        }
     }
 
     allowWsUpgrade(request: http.IncomingMessage): MaybePromise<boolean> {

@@ -38,7 +38,9 @@
       "backend": "lib/node/download/file-download-backend-module"
     },
     {
-      "frontend": "lib/browser/file-dialog/file-dialog-module",
+      "frontend": "lib/browser/file-dialog/file-dialog-module"
+    },
+    {
       "frontendElectron": "lib/electron-browser/file-dialog/electron-file-dialog-module"
     }
   ],
