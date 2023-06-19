@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { injectable } from '@theia/core/shared/inversify';
 
 export type NotebookCellExecutionStateContext = 'idle' | 'pending' | 'executing' | 'succeeded' | 'failed';
 
@@ -52,9 +51,8 @@ export const NOTEBOOK_INTERRUPTIBLE_KERNEL = 'notebookInterruptibleKernel';
 export const NOTEBOOK_MISSING_KERNEL_EXTENSION = 'notebookMissingKernelExtension';
 export const NOTEBOOK_HAS_OUTPUTS = 'notebookHasOutputs';
 
-@injectable()
-export class NotebookContextKeyService {
-    createContextKeys(service: ContextKeyService): void {
+export namespace NotebookContextKeys {
+    export function initNotebookContextKeys(service: ContextKeyService): void {
         service.createKey(HAS_OPENED_NOTEBOOK, false);
         service.createKey(KEYBINDING_CONTEXT_NOTEBOOK_FIND_WIDGET_FOCUSED, false);
 

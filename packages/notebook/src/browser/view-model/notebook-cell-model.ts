@@ -20,6 +20,7 @@ import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model
 import {
     CellInternalMetadataChangedEvent, CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata, NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput, CellData
 } from '../../common';
+import { NotebookCellContextManager } from '../service/notebook-cell-context-manager';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
 
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
@@ -28,6 +29,7 @@ export function createNotebookCellModelContainer(parent: interfaces.Container, p
     const child = parent.createChild();
 
     child.bind(NotebookCellModelProps).toConstantValue(props);
+    child.bind(NotebookCellContextManager).toSelf().inSingletonScope();
     child.bind(NotebookCellModel).toSelf();
 
     return child;
@@ -68,8 +70,11 @@ export class NotebookCellModel implements Disposable {
     private readonly ChangeLanguageEmitter = new Emitter<string>();
     readonly onDidChangeLanguage: Event<string> = this.ChangeLanguageEmitter.event;
 
-    private readonly requestCellEditEmitter = new Emitter<void>();
-    readonly onRequestCellEdit = this.requestCellEditEmitter.event;
+    private readonly requestCellEditChangeEmitter = new Emitter<boolean>();
+    readonly onRequestCellEditChange = this.requestCellEditChangeEmitter.event;
+
+    @inject(NotebookCellContextManager)
+    protected notebookCellContextManager: NotebookCellContextManager;
 
     readonly outputs: NotebookCellOutputModel[];
 
@@ -78,6 +83,11 @@ export class NotebookCellModel implements Disposable {
     readonly internalMetadata: NotebookCellInternalMetadata;
 
     textModel: MonacoEditorModel;
+
+    private htmlContext: HTMLLIElement;
+    get context(): HTMLLIElement {
+        return this.htmlContext;
+    }
 
     get textBuffer(): string {
         return this.textModel ? this.textModel.getText() : this.source;
@@ -102,10 +112,18 @@ export class NotebookCellModel implements Disposable {
         return this.props.cellKind;
     }
 
-    constructor(@inject(NotebookCellModelProps) private props: NotebookCellModelProps) {
+    constructor(@inject(NotebookCellModelProps) private props: NotebookCellModelProps,
+    ) {
         this.outputs = props.outputs.map(op => new NotebookCellOutputModel(op));
         this.metadata = props.metadata ?? {};
         this.internalMetadata = props.internalMetadata ?? {};
+    }
+
+    refChanged(node: HTMLLIElement): void {
+        if (node) {
+            this.htmlContext = node;
+            this.notebookCellContextManager.updateCellContext(this, node);
+        }
     }
 
     dispose(): void {
@@ -115,10 +133,15 @@ export class NotebookCellModel implements Disposable {
         this.ChangeMetadataEmitter.dispose();
         this.ChangeInternalMetadataEmitter.dispose();
         this.ChangeLanguageEmitter.dispose();
+        this.notebookCellContextManager.dispose();
     }
 
     requestEdit(): void {
-        this.requestCellEditEmitter.fire();
+        this.requestCellEditChangeEmitter.fire(true);
+    }
+
+    requestStopEdit(): void {
+        this.requestCellEditChangeEmitter.fire(false);
     }
 
     toDto(): CellData {

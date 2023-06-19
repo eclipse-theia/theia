@@ -50,7 +50,7 @@ export class NotebookCellToolbarFactory {
         const toolbarMenuId = 'notebook-cell-acions-menu';
 
         for (const menuNode of this.menuRegistry.getMenu([toolbarMenuId]).children) {
-            if (!menuNode.when || this.contextKeyService.match(menuNode.when)) {
+            if (!menuNode.when || this.contextKeyService.match(menuNode.when, cell.context ?? undefined)) {
                 inlineItems.push({
                     icon: menuNode.icon,
                     label: menuNode.label,

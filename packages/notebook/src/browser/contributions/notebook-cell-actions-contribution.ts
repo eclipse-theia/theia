@@ -16,14 +16,20 @@
 
 import { Command, CommandContribution, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
+import { NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE, NotebookContextKeys } from './notebook-context-keys';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 export namespace NotebookCellCommands {
     export const EDIT_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.edit',
         iconClass: codicon('edit')
+    });
+    export const STOP_EDIT_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.stop-edit',
+        iconClass: codicon('check')
     });
     export const DELETE_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.delete',
@@ -38,6 +44,9 @@ export namespace NotebookCellCommands {
 @injectable()
 export class NotebookCellActionContribution implements MenuContribution, CommandContribution {
 
+    @inject(ContextKeyService)
+    protected contextKeyService: ContextKeyService;
+
     protected runDeleteAction(notebookModel: NotebookModel, cell: NotebookCellModel): void {
         notebookModel.removeCell(notebookModel.cells.indexOf(cell), 1);
     }
@@ -46,13 +55,22 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         cell.requestEdit();
     }
 
+    @postConstruct()
+    protected init(): void {
+        NotebookContextKeys.initNotebookContextKeys(this.contextKeyService);
+    }
+
     registerMenus(menus: MenuModelRegistry): void {
         const menuId = 'notebook-cell-acions-menu';
-        menus.registerIndependentSubmenu(menuId, '');
         menus.registerMenuAction([menuId], {
             commandId: NotebookCellCommands.EDIT_COMMAND.id,
             icon: NotebookCellCommands.EDIT_COMMAND.iconClass,
-            // when: `${NOTEBOOK_CELL_TYPE} == 'markdown'`
+            when: `${NOTEBOOK_CELL_TYPE} == 'markdown' && !${NOTEBOOK_CELL_MARKDOWN_EDIT_MODE}`
+        });
+        menus.registerMenuAction([menuId], {
+            commandId: NotebookCellCommands.STOP_EDIT_COMMAND.id,
+            icon: NotebookCellCommands.STOP_EDIT_COMMAND.iconClass,
+            when: `${NOTEBOOK_CELL_TYPE} == 'markdown' && ${NOTEBOOK_CELL_MARKDOWN_EDIT_MODE}`
         });
         menus.registerMenuAction([menuId], {
             commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
@@ -73,6 +91,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, { execute: this.requestCellEdit });
+        commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => cell.requestStopEdit() });
         commands.registerCommand(NotebookCellCommands.DELETE_COMMAND, { execute: this.runDeleteAction });
         commands.registerCommand(NotebookCellCommands.SPLIT_CELL_COMMAND);
     }
