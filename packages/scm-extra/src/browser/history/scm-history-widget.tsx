@@ -219,21 +219,19 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         if (repository) {
             if (this.historySupport) {
                 try {
-                    const currentCommits = this.status.state === 'ready' ? this.status.commits : [];
-
-                    let sourceHistory = await this.historySupport.getCommitHistory(options);
+                    const history = await this.historySupport.getCommitHistory(options);
                     if (token.isCancellationRequested || !this.hasMoreCommits) {
                         return;
                     }
 
-                    if (options && ((options.maxCount && sourceHistory.length < options.maxCount) || (!options.maxCount && currentCommits))) {
+                    if (options && (options.maxCount && history.length < options.maxCount)) {
                         this.hasMoreCommits = false;
                     }
-                    if (currentCommits.length > 0) {
-                        sourceHistory = sourceHistory.slice(1);
-                    }
+
+                    const avatarCache = new Map<string, string>();
+
                     const commits: ScmCommitNode[] = [];
-                    for (const commit of sourceHistory) {
+                    for (const commit of history) {
                         const fileChangeNodes: ScmFileChangeNode[] = [];
                         await Promise.all(commit.fileChanges.map(async fileChange => {
                             fileChangeNodes.push({
@@ -241,7 +239,13 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                             });
                         }));
 
-                        const avatarUrl = await this.avatarService.getAvatar(commit.authorEmail);
+                        let avatarUrl = '';
+                        if (avatarCache.has(commit.authorEmail)) {
+                            avatarUrl = avatarCache.get(commit.authorEmail)!;
+                        } else {
+                            avatarUrl = await this.avatarService.getAvatar(commit.authorEmail);
+                        }
+
                         commits.push({
                             commitDetails: commit,
                             authorAvatar: avatarUrl,
@@ -250,8 +254,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                             selected: false
                         });
                     }
-                    currentCommits.push(...commits);
-                    this.status = { state: 'ready', commits: currentCommits };
+                    this.status = { state: 'ready', commits };
                 } catch (error) {
                     if (options && options.uri && repository) {
                         this.hasMoreCommits = false;
