@@ -57,7 +57,7 @@ function MarkdownCell({ markdownRenderer, textModelService, monacoServices, cell
     const [editMode, setEditMode] = React.useState(false);
 
     React.useEffect(() => {
-        const listener = cell.onRequestCellEdit(() => setEditMode(true));
+        const listener = cell.onRequestCellEditChange(cellEdit => setEditMode(cellEdit));
         return () => listener.dispose();
     }, [editMode]);
 

@@ -47,7 +47,9 @@ export class NotebookCellListView extends React.Component<CellListProps, { selec
                 .map((cell, index) =>
                     <React.Fragment key={index}>
                         <NotebookCellDivider notebookModel={this.props.notebookModel} key={'cell-divider-' + index} index={index} />
-                        <li className='theia-notebook-cell' key={'cell-' + index} onClick={() => this.setState({ selectedCell: cell })}>
+                        <li className='theia-notebook-cell' key={'cell-' + index}
+                        onClick={() => this.setState({ selectedCell: cell })}
+                        ref={(node: HTMLLIElement) => cell.refChanged(node)}>
                             <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
                             <div className='theia-notebook-cell-statusbar'></div>
                             <div className='theia-notebook-cell-content'>
