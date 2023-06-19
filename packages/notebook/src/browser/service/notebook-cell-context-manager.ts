@@ -32,9 +32,9 @@ export class NotebookCellContextManager implements Disposable {
     private currentContext: HTMLLIElement;
 
     updateCellContext(cell: NotebookCellModel, newHtmlContext: HTMLLIElement): void {
-        this.dispose();
-
         if (newHtmlContext !== this.currentContext) {
+            this.dispose();
+
             this.currentContext = newHtmlContext;
             this.currentStore = this.contextKeyService.createScoped(newHtmlContext);
 
