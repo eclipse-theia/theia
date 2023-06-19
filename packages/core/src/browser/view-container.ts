@@ -1234,7 +1234,20 @@ export class ViewContainerPart extends BaseWidget {
         };
     }
 
+    protected noPointerOnHover(): void {
+        const explorer = document.querySelector('#explorer-view-container--files');
+        const handleMouseEnter = () => {
+            explorer?.classList.add('no-pointer-events');
+            setTimeout(() => {
+                explorer?.classList.remove('no-pointer-events');
+                explorer?.removeEventListener('mouseenter', handleMouseEnter);
+            }, 500);
+        };
+        explorer?.addEventListener('mouseenter', handleMouseEnter);
+    }
+
     protected override onResize(msg: Widget.ResizeMessage): void {
+        this.noPointerOnHover();
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, Widget.ResizeMessage.UnknownSize);
         }

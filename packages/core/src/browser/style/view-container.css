@@ -188,3 +188,7 @@
   .theia-view-container-part-title {
   display: flex;
 }
+
+.no-pointer-events {
+  pointer-events: none;
+}
