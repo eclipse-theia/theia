@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as os from 'os';
 import * as fs from 'fs-extra';
 import { ApplicationPackage } from '@theia/application-package';
 
@@ -29,33 +28,6 @@ export abstract class AbstractGenerator {
         protected readonly pck: ApplicationPackage,
         protected options: GeneratorOptions = {}
     ) { }
-
-    protected compileFrontendModuleImports(modules: Map<string, string>, indentation = 1): string {
-        const splitFrontend = this.options.splitFrontend ?? this.options.mode !== 'production';
-        return this.compileModuleImports(modules, splitFrontend ? 'import' : 'require', indentation);
-    }
-
-    protected compileBackendModuleImports(modules: Map<string, string>): string {
-        return this.compileModuleImports(modules, 'require');
-    }
-
-    protected compileElectronMainModuleImports(modules?: Map<string, string>): string {
-        return modules && this.compileModuleImports(modules, 'require') || '';
-    }
-
-    protected compileModuleImports(modules: Map<string, string>, fn: 'import' | 'require', indentation = 1): string {
-        if (modules.size === 0) {
-            return '';
-        }
-        const lines = Array.from(modules.keys()).map(moduleName => {
-            const invocation = `${fn}('${modules.get(moduleName)}')`;
-            if (fn === 'require') {
-                return `Promise.resolve(${invocation})`;
-            }
-            return invocation;
-        }).map(statement => `${' '.repeat(indentation * 4)}.then(function () { return ${statement}.then(load) })`);
-        return os.EOL + lines.join(os.EOL);
-    }
 
     protected ifBrowser(value: string, defaultValue: string = ''): string {
         return this.pck.ifBrowser(value, defaultValue);

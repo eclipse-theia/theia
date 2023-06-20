@@ -84,8 +84,12 @@ async function start() {
     await application.start(config);
 }
 
-module.exports = Promise.resolve()${this.compileElectronMainModuleImports(electronMainModules)}
-    .then(start).catch(reason => {
+module.exports = async () => {
+    try {
+        ${Array.from(electronMainModules?.values() ?? [], jsModulePath => `\
+        await load(container, import('${jsModulePath}'));`).join('\n')}
+        await start();
+    } catch (reason) {
         console.error('Failed to start the electron application.');
         if (reason) {
             console.error(reason);
