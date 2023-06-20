@@ -946,6 +946,8 @@ export class ViewContainerPart extends BaseWidget {
     protected readonly onDidChangeBadgeTooltipEmitter = new Emitter<void>();
     readonly onDidChangeBadgeTooltip = this.onDidChangeBadgeTooltipEmitter.event;
 
+    protected readonly onResizeEvent = new Event('onResizeEvent');
+
     protected readonly toolbar: TabBarToolbar;
 
     protected _collapsed: boolean;
@@ -1022,6 +1024,18 @@ export class ViewContainerPart extends BaseWidget {
         if (options.initiallyHidden && this.canHide) {
             this.hide();
         }
+
+        const handleResize = () => {
+            const handleMouseEnter = () => {
+                this.node?.classList.add('no-pointer-events');
+                setTimeout(() => {
+                    this.node?.classList.remove('no-pointer-events');
+                    this.node?.removeEventListener('mouseenter', handleMouseEnter);
+                }, 1000);
+            };
+            this.node.addEventListener('mouseenter', handleMouseEnter);
+        };
+        this.node.addEventListener('onResizeEvent', handleResize);
     }
 
     get viewContainer(): ViewContainer | undefined {
@@ -1234,20 +1248,8 @@ export class ViewContainerPart extends BaseWidget {
         };
     }
 
-    protected noPointerOnHover(): void {
-        const explorer = document.querySelector('#explorer-view-container--files');
-        const handleMouseEnter = () => {
-            explorer?.classList.add('no-pointer-events');
-            setTimeout(() => {
-                explorer?.classList.remove('no-pointer-events');
-                explorer?.removeEventListener('mouseenter', handleMouseEnter);
-            }, 500);
-        };
-        explorer?.addEventListener('mouseenter', handleMouseEnter);
-    }
-
     protected override onResize(msg: Widget.ResizeMessage): void {
-        this.noPointerOnHover();
+        this.node.dispatchEvent(this.onResizeEvent);
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, Widget.ResizeMessage.UnknownSize);
         }
