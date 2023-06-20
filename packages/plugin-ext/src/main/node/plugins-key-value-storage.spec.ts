@@ -27,6 +27,7 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-env-variables-server';
 import { FileSystemLocking, FileUri } from '@theia/core/lib/node';
 import { FileSystemLockingImpl } from '@theia/core/lib/node/filesystem-locking';
+import { WorkspaceFileService } from '@theia/workspace/lib/common';
 import { UntitledWorkspaceService } from '@theia/workspace/lib/common/untitled-workspace-service';
 import * as temp from 'temp';
 
@@ -41,6 +42,7 @@ describe('Plugins Key Value Storage', () => {
         container.bind(PluginsKeyValueStorage).toSelf().inSingletonScope();
         container.bind(PluginCliContribution).toSelf().inSingletonScope();
         container.bind(UntitledWorkspaceService).toSelf().inSingletonScope();
+        container.bind(WorkspaceFileService).toSelf().inSingletonScope();
         container.bind(FileSystemLocking).to(FileSystemLockingImpl).inSingletonScope();
         container.bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(FileUri.create(temp.track().mkdirSync())));
         container.bind(PluginPathsService).to(PluginPathsServiceImpl).inSingletonScope();
