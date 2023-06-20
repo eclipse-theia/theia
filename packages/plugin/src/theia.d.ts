@@ -12628,6 +12628,9 @@ export module '@theia/plugin' {
 
         /** Controls whether the terminal is cleared before executing the task. */
         clear?: boolean;
+
+        /** Controls whether the terminal is closed after executing the task. */
+        close?: boolean;
     }
 
     /**
