@@ -60,6 +60,8 @@ export class NotebookModel implements Saveable, Disposable {
 
     readonly autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
+    currentLastHandle: number = 0;
+
     dirty: boolean;
     selectedCell?: NotebookCellModel;
     private dirtyCells: NotebookCellModel[] = [];
@@ -107,6 +109,7 @@ export class NotebookModel implements Saveable, Disposable {
                 }
             }
         });
+        this.currentLastHandle = this.cells.length - 1;
     }
 
     dispose(): void {

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { URI } from '@theia/core';
+import { CommandRegistry, URI } from '@theia/core';
 import { ReactWidget, Navigatable, SaveableSource, Saveable } from '@theia/core/lib/browser';
 import { ReactNode } from '@theia/core/shared/react';
 import { CellKind } from '../common';
@@ -52,7 +52,10 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     readonly saveable: Saveable;
 
     @inject(NotebookCellToolbarFactory)
-    private readonly cellToolbarFactory: NotebookCellToolbarFactory;
+    protected readonly cellToolbarFactory: NotebookCellToolbarFactory;
+
+    @inject(CommandRegistry)
+    protected commandRegistry: CommandRegistry;
 
     private readonly renderers = new Map<CellKind, CellRenderer>();
 
@@ -84,7 +87,10 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     protected render(): ReactNode {
         return <div>
-            <NotebookCellListView renderers={this.renderers} notebookModel={this.props.notebookData} toolbarRenderer={this.cellToolbarFactory} />
+            <NotebookCellListView renderers={this.renderers}
+                notebookModel={this.props.notebookData}
+                toolbarRenderer={this.cellToolbarFactory}
+                commandRegistry={this.commandRegistry}/>
         </div>;
     }
 }

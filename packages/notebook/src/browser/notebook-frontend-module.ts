@@ -31,6 +31,7 @@ import { createNotebookCellModelContainer, NotebookCellModel, NotebookCellModelF
 import { createNotebookEditorWidgetContainer, NotebookEditorContainerFactory, NotebookEditorProps, NotebookEditorWidget } from './notebook-editor-widget';
 import { NotebookCodeCellRenderer } from './view/notebook-code-cell-view';
 import { NotebookMarkdownCellRenderer } from './view/notebook-markdown-cell-view';
+import { NotebookActionsContribution } from './contributions/notebook-actions-contribution';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Symbol('notebooks'));
@@ -52,6 +53,9 @@ export default new ContainerModule(bind => {
     bind(NotebookCellActionContribution).toSelf().inSingletonScope();
     bind(MenuContribution).toService(NotebookCellActionContribution);
     bind(CommandContribution).toService(NotebookCellActionContribution);
+
+    bind(NotebookActionsContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(NotebookActionsContribution);
 
     bind(NotebookCodeCellRenderer).toSelf().inSingletonScope();
     bind(NotebookMarkdownCellRenderer).toSelf().inSingletonScope();
