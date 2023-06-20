@@ -24,10 +24,9 @@ export class ThemePreloadContribution implements PreloadContribution {
     initialize(): void {
         // The default light background color is based on the `colors#editor.background` value from
         // `packages/monaco/data/monaco-themes/vscode/dark_vs.json` and the dark background comes from the `light_vs.json`.
-        const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const dark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
         const value = window.localStorage.getItem(DEFAULT_BACKGROUND_COLOR_STORAGE_KEY) || (dark ? '#1E1E1E' : '#FFFFFF');
-        const documentElement = document.documentElement;
-        documentElement.style.setProperty('--theia-editor-background', value);
+        document.documentElement.style.setProperty('--theia-editor-background', value);
     }
 
 }

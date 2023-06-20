@@ -127,27 +127,31 @@ function defaultServeStatic(app) {
 }
 
 function load(raw) {
-    return Promise.resolve(raw.default).then(
-        module => container.load(module)
+    return Promise.resolve(raw).then(
+        module => container.load(module.default)
     );
 }
 
-function start(port, host, argv = process.argv) {
+async function start(port, host, argv = process.argv) {
     if (!container.isBound(BackendApplicationServer)) {
         container.bind(BackendApplicationServer).toConstantValue({ configure: defaultServeStatic });
     }
-    return container.get(CliManager).initializeCli(argv).then(() => {
-        return container.get(BackendApplication).start(port, host);
-    });
+    await container.get(CliManager).initializeCli(argv);
+    await container.get(BackendApplication).start(port, host);
 }
 
-module.exports = (port, host, argv) => Promise.resolve()${this.compileBackendModuleImports(backendModules)}
-    .then(() => start(port, host, argv)).catch(error => {
+module.exports = async (port, host, argv) => {
+    try {
+${Array.from(backendModules.values(), jsModulePath => `\
+        await load(require('${jsModulePath}'));`).join('\n')}
+        await start(port, host, argv);
+    } catch (error) {
         console.error('Failed to start the backend application:');
         console.error(error);
         process.exitCode = 1;
         throw error;
-    });
+    }
+}
 `;
     }
 

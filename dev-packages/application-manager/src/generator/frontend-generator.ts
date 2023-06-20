@@ -69,8 +69,6 @@ export class FrontendGenerator extends AbstractGenerator {
     }
 
     protected compileIndexJs(frontendModules: Map<string, string>, frontendPreloadModules: Map<string, string>): string {
-        const compiledModuleImports = this.compileFrontendModuleImports(frontendModules, 2);
-        const compiledPreloadModuleImports = this.compileFrontendModuleImports(frontendPreloadModules, 2);
         return `\
 // @ts-check
 ${this.ifBrowser("require('es6-promise/auto');")}
@@ -88,23 +86,29 @@ self.MonacoEnvironment = {
     }
 }`)}
 
-function preload() {
-    const preloadContainer = new Container();
+function load(container, jsModule) {
+    return Promise.resolve(jsModule)
+        .then(containerModule => container.load(containerModule.default));
+}
 
-    return Promise.resolve()${compiledPreloadModuleImports}
-        .then(() => {
-            const { Preloader } = require('@theia/core/lib/browser/preload/preloader');
-            const preloader = preloadContainer.get(Preloader);
-            return preloader.initialize();
-        });
-    
-    function load(jsModule) {
-        return Promise.resolve(jsModule.default)
-            .then(containerModule => preloadContainer.load(containerModule));
+async function preload() {
+    const container = new Container();
+    try {
+${Array.from(frontendPreloadModules.values(), jsModulePath => `\
+        await load(container, import('${jsModulePath}'));`).join('\n')}
+        const { Preloader } = require('@theia/core/lib/browser/preload/preloader');
+        const preloader = container.get(Preloader);
+        await preloader.initialize();
+    } catch (reason) {
+        console.error('Failed to run preload scripts.');
+        if (reason) {
+            console.error(reason);
+        }
     }
 }
 
-module.exports = preload().then(() => {
+module.exports = async () => {
+    await preload();
     const { FrontendApplication } = require('@theia/core/lib/browser');
     const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');
     const { messagingFrontendModule } = require('@theia/core/lib/${this.pck.isBrowser()
@@ -117,24 +121,22 @@ module.exports = preload().then(() => {
     container.load(messagingFrontendModule);
     container.load(loggerFrontendModule);
 
-    return Promise.resolve()${compiledModuleImports}
-        .then(start).catch(reason => {
-            console.error('Failed to start the frontend application.');
-            if (reason) {
-                console.error(reason);
-            }
-        });
-
-    function load(jsModule) {
-        return Promise.resolve(jsModule.default)
-            .then(containerModule => container.load(containerModule));
+    try {
+${Array.from(frontendModules.values(), jsModulePath => `\
+        await load(container, import('${jsModulePath}'));`).join('\n')}
+        await start();
+    } catch (reason) {
+        console.error('Failed to start the frontend application.');
+        if (reason) {
+            console.error(reason);
+        }
     }
 
     function start() {
         (window['theia'] = window['theia'] || {}).container = container;
         return container.get(FrontendApplication).start();
     }
-});
+};
 `;
     }
 

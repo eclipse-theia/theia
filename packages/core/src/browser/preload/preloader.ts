@@ -16,10 +16,10 @@
 
 import { Endpoint } from '../endpoint';
 import { MaybePromise } from '../../common/types';
-import { inject, injectable, named } from 'inversify';
+import { inject, injectable, interfaces, named } from 'inversify';
 import { ContributionProvider } from '../../common/contribution-provider';
 
-export const PreloadContribution = Symbol('PreloadContribution');
+export const PreloadContribution = Symbol('PreloadContribution') as symbol & interfaces.Abstract<PreloadContribution>;
 
 export interface PreloadContribution {
     initialize(): MaybePromise<void>;

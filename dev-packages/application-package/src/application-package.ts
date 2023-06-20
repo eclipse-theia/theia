@@ -137,59 +137,35 @@ export class ApplicationPackage {
     }
 
     get frontendPreloadModules(): Map<string, string> {
-        if (!this._frontendPreloadModules) {
-            this._frontendPreloadModules = this.computeModules('frontendPreload');
-        }
-        return this._frontendPreloadModules;
+        return this._frontendPreloadModules ??= this.computeModules('frontendPreload');
     }
 
     get frontendModules(): Map<string, string> {
-        if (!this._frontendModules) {
-            this._frontendModules = this.computeModules('frontend');
-        }
-        return this._frontendModules;
+        return this._frontendModules ??= this.computeModules('frontend');
     }
 
     get frontendElectronModules(): Map<string, string> {
-        if (!this._frontendElectronModules) {
-            this._frontendElectronModules = this.computeModules('frontendElectron', 'frontend');
-        }
-        return this._frontendElectronModules;
+        return this._frontendElectronModules ??= this.computeModules('frontendElectron', 'frontend');
     }
 
     get secondaryWindowModules(): Map<string, string> {
-        if (!this._secondaryWindowModules) {
-            this._secondaryWindowModules = this.computeModules('secondaryWindow');
-        }
-        return this._secondaryWindowModules;
+        return this._secondaryWindowModules ??= this.computeModules('secondaryWindow');
     }
 
     get backendModules(): Map<string, string> {
-        if (!this._backendModules) {
-            this._backendModules = this.computeModules('backend');
-        }
-        return this._backendModules;
+        return this._backendModules ??= this.computeModules('backend');
     }
 
     get backendElectronModules(): Map<string, string> {
-        if (!this._backendElectronModules) {
-            this._backendElectronModules = this.computeModules('backendElectron', 'backend');
-        }
-        return this._backendElectronModules;
+        return this._backendElectronModules ??= this.computeModules('backendElectron', 'backend');
     }
 
     get electronMainModules(): Map<string, string> {
-        if (!this._electronMainModules) {
-            this._electronMainModules = this.computeModules('electronMain');
-        }
-        return this._electronMainModules;
+        return this._electronMainModules ??= this.computeModules('electronMain');
     }
 
     get preloadModules(): Map<string, string> {
-        if (!this._preloadModules) {
-            this._preloadModules = this.computeModules('preload');
-        }
-        return this._preloadModules;
+        return this._preloadModules ??= this.computeModules('preload');
     }
 
     protected computeModules<P extends keyof Extension, S extends keyof Extension = P>(primary: P, secondary?: S): Map<string, string> {
