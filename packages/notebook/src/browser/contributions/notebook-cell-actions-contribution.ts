@@ -65,24 +65,28 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         menus.registerMenuAction([menuId], {
             commandId: NotebookCellCommands.EDIT_COMMAND.id,
             icon: NotebookCellCommands.EDIT_COMMAND.iconClass,
-            when: `${NOTEBOOK_CELL_TYPE} == 'markdown' && !${NOTEBOOK_CELL_MARKDOWN_EDIT_MODE}`
+            when: `${NOTEBOOK_CELL_TYPE} == 'markdown' && !${NOTEBOOK_CELL_MARKDOWN_EDIT_MODE}`,
+            order: '10'
         });
         menus.registerMenuAction([menuId], {
             commandId: NotebookCellCommands.STOP_EDIT_COMMAND.id,
             icon: NotebookCellCommands.STOP_EDIT_COMMAND.iconClass,
-            when: `${NOTEBOOK_CELL_TYPE} == 'markdown' && ${NOTEBOOK_CELL_MARKDOWN_EDIT_MODE}`
+            when: `${NOTEBOOK_CELL_TYPE} == 'markdown' && ${NOTEBOOK_CELL_MARKDOWN_EDIT_MODE}`,
+            order: '10'
         });
         menus.registerMenuAction([menuId], {
             commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
-            icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass
+            icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass,
+            order: '20'
         });
         menus.registerMenuAction([menuId], {
             commandId: NotebookCellCommands.DELETE_COMMAND.id,
-            icon: NotebookCellCommands.DELETE_COMMAND.iconClass
+            icon: NotebookCellCommands.DELETE_COMMAND.iconClass,
+            order: '30'
         });
 
         const moreMenuPath = [menuId, 'more'];
-        menus.registerSubmenu(moreMenuPath, 'more', { icon: codicon('ellipsis'), role: CompoundMenuNodeRole.Submenu });
+        menus.registerSubmenu(moreMenuPath, 'more', { icon: codicon('ellipsis'), role: CompoundMenuNodeRole.Submenu, order: '100' });
         menus.registerMenuAction(moreMenuPath, {
             commandId: NotebookCellCommands.EDIT_COMMAND.id,
             label: 'test submenu item',
