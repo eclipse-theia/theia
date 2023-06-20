@@ -43,9 +43,9 @@ export interface NotebookCellModelProps {
     language: string,
     readonly cellKind: CellKind,
     outputs: CellOutput[],
-    metadata: NotebookCellMetadata | undefined,
-    internalMetadata: NotebookCellInternalMetadata | undefined,
-    readonly collapseState: NotebookCellCollapseState | undefined,
+    metadata?: NotebookCellMetadata | undefined,
+    internalMetadata?: NotebookCellInternalMetadata | undefined,
+    readonly collapseState?: NotebookCellCollapseState | undefined,
 
 }
 

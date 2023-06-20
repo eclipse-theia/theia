@@ -19,7 +19,8 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
 import { codicon } from '@theia/core/lib/browser';
-import { nls } from '@theia/core';
+import { CommandRegistry, nls } from '@theia/core';
+import { NotebookCommands } from '../contributions/notebook-actions-contribution';
 
 export interface Cellrenderer {
     render(notebookData: NotebookModel, cell: NotebookCellModel, index: number): React.ReactNode
@@ -29,6 +30,7 @@ interface CellListProps {
     renderers: Map<CellKind, Cellrenderer>;
     notebookModel: NotebookModel;
     toolbarRenderer: NotebookCellToolbarFactory;
+    commandRegistry: CommandRegistry
 }
 
 export class NotebookCellListView extends React.Component<CellListProps, { selectedCell?: NotebookCellModel }> {
@@ -46,7 +48,7 @@ export class NotebookCellListView extends React.Component<CellListProps, { selec
             {this.props.notebookModel.cells
                 .map((cell, index) =>
                     <React.Fragment key={index}>
-                        <NotebookCellDivider notebookModel={this.props.notebookModel} key={'cell-divider-' + index} index={index} />
+                        <NotebookCellDivider onAddNewCell={(kind: CellKind) => this.onAddNewCell(kind, index)} />
                         <li className='theia-notebook-cell' key={'cell-' + index}
                         data-keybinding-context={cell.uri} // needed for contextKey context to work
                         onClick={() => this.setState({ selectedCell: cell })}
@@ -64,6 +66,14 @@ export class NotebookCellListView extends React.Component<CellListProps, { selec
         </ul >;
     }
 
+    private onAddNewCell(kind: CellKind, index: number): void {
+        this.props.commandRegistry.executeCommand(NotebookCommands.Add_NEW_CELL_COMMAND.id,
+            this.props.notebookModel,
+            kind,
+            index
+        );
+    }
+
     renderCellContent(cell: NotebookCellModel, index: number): React.ReactNode {
         const renderer = this.props.renderers.get(cell.cellKind);
         if (!renderer) {
@@ -74,20 +84,16 @@ export class NotebookCellListView extends React.Component<CellListProps, { selec
 
 }
 
-function NotebookCellDivider({ notebookModel, index }: { notebookModel: NotebookModel, index: number }): JSX.Element {
+function NotebookCellDivider({ onAddNewCell }: { onAddNewCell: (type: CellKind) => void }): JSX.Element {
     const [hover, setHover] = React.useState(false);
-
-    const insertNewCell = () => {
-        // not implemented yet
-    };
 
     return <li className='theia-notebook-cell-divider' onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
         {hover && <div className='theia-notebook-add-cell-buttons'>
-            <button className='theia-notebook-add-cell-button' onClick={insertNewCell}>
+            <button className='theia-notebook-add-cell-button' onClick={() => onAddNewCell(CellKind.Markup)}>
                 <div className={codicon('add') + ' theia-notebook-add-cell-button-icon'} />
                 {nls.localize('theia/notebook/markdown', 'markdown')}
             </button>
-            <button className='theia-notebook-add-cell-button' onClick={insertNewCell}>
+            <button className='theia-notebook-add-cell-button' onClick={() => onAddNewCell(CellKind.Code)}>
                 <div className={codicon('add') + ' theia-notebook-add-cell-button-icon'} />
                 {nls.localize('theia/notebook/code', 'code')}
             </button>
