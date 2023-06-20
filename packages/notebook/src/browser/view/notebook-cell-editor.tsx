@@ -41,13 +41,12 @@ export function CellEditor({ textModelService, monacoServices, notebookModel, ce
                 Object.assign(
                 { minHeight: -1,
                     maxHeight: -1,
-                    autoSizing: true,
                     model: (await cellDocument.object.load()).textEditorModel,
                 }, MonacoEditorProvider.inlineOptions));
             editor.setLanguage(cell.language);
             editor.getControl().onDidContentSizeChange(() => {
                 editorNode.style.height = editor.getControl().getContentHeight() + 7 + 'px';
-                editor.resizeToFit();
+                editor.setSize({width: -1, height: editor.getControl().getContentHeight()});
             });
             editor.document.onDirtyChanged(() => notebookModel.cellDirtyChanged(cell, editor.document.dirty));
             editor.onDocumentContentChanged(e => cell.source = e.document.getText());
