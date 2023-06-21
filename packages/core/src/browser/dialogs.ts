@@ -166,8 +166,10 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         container.classList.add('dialogBlock');
         if (props.maxWidth === undefined) {
             container.setAttribute('style', 'max-width: none');
-        } else {
+        } else if (props.maxWidth < 400) {
             container.setAttribute('style', `max-width: ${props.maxWidth}px; min-width: 0px`);
+        } else {
+            container.setAttribute('style', `max-width: ${props.maxWidth}px`);
         }
         this.node.appendChild(container);
 
