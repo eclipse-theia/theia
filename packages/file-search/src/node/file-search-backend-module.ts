@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common';
+import { ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common';
 import { FileSearchServiceImpl } from './file-search-service-impl';
 import { fileSearchServicePath, FileSearchService } from '../common/file-search-service';
 
@@ -23,7 +23,7 @@ export default new ContainerModule(bind => {
 
     bind(FileSearchService).to(FileSearchServiceImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(fileSearchServicePath, () =>
+        new RpcConnectionHandler(fileSearchServicePath, () =>
             ctx.container.get(FileSearchService)
         )
     ).inSingletonScope();

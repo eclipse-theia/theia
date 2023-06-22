@@ -16,7 +16,7 @@
 
 import { interfaces } from 'inversify';
 import {
-    ConnectionHandler, DefaultBackendStopwatch, BackendStopwatch, JsonRpcConnectionHandler,
+    ConnectionHandler, DefaultBackendStopwatch, BackendStopwatch, RpcConnectionHandler,
     Stopwatch, stopwatchPath
 } from '../../common';
 import { NodeStopwatch } from './node-stopwatch';
@@ -27,7 +27,7 @@ export function bindNodeStopwatch(bind: interfaces.Bind): interfaces.BindingWhen
 
 export function bindBackendStopwatchServer(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<unknown> {
     bind(ConnectionHandler).toDynamicValue(({ container }) =>
-        new JsonRpcConnectionHandler<never>(stopwatchPath, () => container.get<BackendStopwatch>(BackendStopwatch))
+        new RpcConnectionHandler<never>(stopwatchPath, () => container.get<BackendStopwatch>(BackendStopwatch))
     ).inSingletonScope();
 
     bind(DefaultBackendStopwatch).toSelf().inSingletonScope();

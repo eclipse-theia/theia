@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
+import { RpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { RPCProtocol } from './rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { LogPart, KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -944,7 +944,7 @@ export interface DeployedPlugin {
 }
 
 export const HostedPluginServer = Symbol('HostedPluginServer');
-export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
+export interface HostedPluginServer extends RpcServer<HostedPluginClient> {
 
     getDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]>;
 

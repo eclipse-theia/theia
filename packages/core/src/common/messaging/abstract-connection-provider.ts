@@ -17,7 +17,7 @@
 import { injectable, interfaces } from 'inversify';
 import { Emitter, Event } from '../event';
 import { ConnectionHandler } from './handler';
-import { JsonRpcProxy, JsonRpcProxyFactory } from './proxy-factory';
+import { RpcProxy, RpcProxyFactory } from './proxy-factory';
 import { Channel, ChannelMultiplexer } from '../message-rpc/channel';
 
 /**
@@ -32,7 +32,7 @@ export abstract class AbstractConnectionProvider<AbstractOptions extends object>
      * Create a proxy object to remote interface of T type
      * over an electron ipc connection for the given path and proxy factory.
      */
-    static createProxy<T extends object>(container: interfaces.Container, path: string, factory: JsonRpcProxyFactory<T>): JsonRpcProxy<T>;
+    static createProxy<T extends object>(container: interfaces.Container, path: string, factory: RpcProxyFactory<T>): RpcProxy<T>;
     /**
      * Create a proxy object to remote interface of T type
      * over an electron ipc connection for the given path.
@@ -40,7 +40,7 @@ export abstract class AbstractConnectionProvider<AbstractOptions extends object>
      * An optional target can be provided to handle
      * notifications and requests from a remote side.
      */
-    static createProxy<T extends object>(container: interfaces.Container, path: string, target?: object): JsonRpcProxy<T> {
+    static createProxy<T extends object>(container: interfaces.Container, path: string, target?: object): RpcProxy<T> {
         throw new Error('abstract');
     }
 
@@ -53,7 +53,7 @@ export abstract class AbstractConnectionProvider<AbstractOptions extends object>
      * Create a proxy object to remote interface of T type
      * over a web socket connection for the given path and proxy factory.
      */
-    createProxy<T extends object>(path: string, factory: JsonRpcProxyFactory<T>): JsonRpcProxy<T>;
+    createProxy<T extends object>(path: string, factory: RpcProxyFactory<T>): RpcProxy<T>;
     /**
      * Create a proxy object to remote interface of T type
      * over a web socket connection for the given path.
@@ -61,9 +61,9 @@ export abstract class AbstractConnectionProvider<AbstractOptions extends object>
      * An optional target can be provided to handle
      * notifications and requests from a remote side.
      */
-    createProxy<T extends object>(path: string, target?: object): JsonRpcProxy<T>;
-    createProxy<T extends object>(path: string, arg?: object): JsonRpcProxy<T> {
-        const factory = arg instanceof JsonRpcProxyFactory ? arg : new JsonRpcProxyFactory<T>(arg);
+    createProxy<T extends object>(path: string, target?: object): RpcProxy<T>;
+    createProxy<T extends object>(path: string, arg?: object): RpcProxy<T> {
+        const factory = arg instanceof RpcProxyFactory ? arg : new RpcProxyFactory<T>(arg);
         this.listen({
             path,
             onConnection: c => factory.listen(c)

@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { JsonRpcServer } from './messaging/proxy-factory';
+import { RpcServer } from './messaging/proxy-factory';
 
 export const ILoggerServer = Symbol('ILoggerServer');
 
 export const loggerPath = '/services/logger';
 
-export interface ILoggerServer extends JsonRpcServer<ILoggerClient> {
+export interface ILoggerServer extends RpcServer<ILoggerClient> {
     setLogLevel(name: string, logLevel: number): Promise<void>;
     getLogLevel(name: string): Promise<number>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
+import { RpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { Disposable } from '@theia/core';
 
 export interface TerminalProcessInfo {
@@ -24,7 +24,7 @@ export interface TerminalProcessInfo {
 
 export interface IBaseTerminalServerOptions { }
 
-export interface IBaseTerminalServer extends JsonRpcServer<IBaseTerminalClient> {
+export interface IBaseTerminalServer extends RpcServer<IBaseTerminalClient> {
     create(IBaseTerminalServerOptions: object): Promise<number>;
     getProcessId(id: number): Promise<number>;
     getProcessInfo(id: number): Promise<TerminalProcessInfo>;

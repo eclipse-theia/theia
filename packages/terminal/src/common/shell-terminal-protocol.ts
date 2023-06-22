@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { JsonRpcProxy } from '@theia/core';
+import { RpcProxy } from '@theia/core';
 import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol';
 import { OS } from '@theia/core/lib/common/os';
 
@@ -47,4 +47,4 @@ export interface IShellTerminalServerOptions extends IBaseTerminalServerOptions 
 }
 
 export const ShellTerminalServerProxy = Symbol('ShellTerminalServerProxy');
-export type ShellTerminalServerProxy = JsonRpcProxy<IShellTerminalServer>;
+export type ShellTerminalServerProxy = RpcProxy<IShellTerminalServer>;

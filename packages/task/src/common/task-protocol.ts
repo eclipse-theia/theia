@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Event } from '@theia/core';
-import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
+import { RpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { ProblemMatcher, ProblemMatch, WatchingMatcherContribution, ProblemMatcherContribution, ProblemPatternContribution } from './problem-matcher-protocol';
 export { WatchingMatcherContribution, ProblemMatcherContribution, ProblemPatternContribution };
@@ -203,7 +203,7 @@ export interface TaskInfo {
     readonly [key: string]: any;
 }
 
-export interface TaskServer extends JsonRpcServer<TaskClient> {
+export interface TaskServer extends RpcServer<TaskClient> {
     /** Run a task. Optionally pass a context.  */
     run(task: TaskConfiguration, ctx?: string, option?: RunTaskOption): Promise<TaskInfo>;
     /** Kill a task, by id. */

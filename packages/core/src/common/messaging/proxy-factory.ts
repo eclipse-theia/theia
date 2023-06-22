@@ -24,28 +24,29 @@ import { Channel } from '../message-rpc/channel';
 import { RequestHandler, RpcProtocol } from '../message-rpc/rpc-protocol';
 import { ConnectionHandler } from './handler';
 import { Deferred } from '../promise-util';
+import { decorate, injectable, unmanaged } from '../../../shared/inversify';
 
-export type JsonRpcServer<Client> = Disposable & {
+export type RpcServer<Client> = Disposable & {
     /**
      * If this server is a proxy to a remote server then
      * a client is used as a local object
-     * to handle JSON-RPC messages from the remote server.
+     * to handle RPC messages from the remote server.
      */
     setClient(client: Client | undefined): void;
     getClient?(): Client | undefined;
 };
 
-export interface JsonRpcConnectionEventEmitter {
+export interface RpcConnectionEventEmitter {
     readonly onDidOpenConnection: Event<void>;
     readonly onDidCloseConnection: Event<void>;
 }
-export type JsonRpcProxy<T> = T & JsonRpcConnectionEventEmitter;
+export type RpcProxy<T> = T & RpcConnectionEventEmitter;
 
-export class JsonRpcConnectionHandler<T extends object> implements ConnectionHandler {
+export class RpcConnectionHandler<T extends object> implements ConnectionHandler {
     constructor(
         readonly path: string,
-        readonly targetFactory: (proxy: JsonRpcProxy<T>) => any,
-        readonly factoryConstructor: new () => JsonRpcProxyFactory<T> = JsonRpcProxyFactory
+        readonly targetFactory: (proxy: RpcProxy<T>) => any,
+        readonly factoryConstructor: new () => RpcProxyFactory<T> = RpcProxyFactory
     ) { }
 
     onConnection(connection: Channel): void {
@@ -63,12 +64,12 @@ export type RpcProtocolFactory = (channel: Channel, requestHandler: RequestHandl
 const defaultRpcProtocolFactory: RpcProtocolFactory = (channel, requestHandler) => new RpcProtocol(channel, requestHandler);
 
 /**
- * Factory for JSON-RPC proxy objects.
+ * Factory for RPC proxy objects.
  *
- * A JSON-RPC proxy exposes the programmatic interface of an object through
- * JSON-RPC.  This allows remote programs to call methods of this objects by
- * sending JSON-RPC requests.  This takes place over a bi-directional stream,
- * where both ends can expose an object and both can call methods each other's
+ * A RPC proxy exposes the programmatic interface of an object through
+ * Theia's RPC protocol. This allows remote programs to call methods of this objects by
+ * sending RPC requests. This takes place over a bi-directional stream,
+ * where both ends can expose an object and both can call methods on each other'
  * exposed object.
  *
  * For example, assuming we have an object of the following type on one end:
@@ -77,16 +78,16 @@ const defaultRpcProtocolFactory: RpcProtocolFactory = (channel, requestHandler) 
  *         bar(baz: number): number { return baz + 1 }
  *     }
  *
- * which we want to expose through a JSON-RPC interface.  We would do:
+ * which we want to expose through a RPC interface.  We would do:
  *
  *     let target = new Foo()
- *     let factory = new JsonRpcProxyFactory<Foo>('/foo', target)
+ *     let factory = new RpcProxyFactory<Foo>('/foo', target)
  *     factory.onConnection(connection)
  *
  * The party at the other end of the `connection`, in order to remotely call
  * methods on this object would do:
  *
- *     let factory = new JsonRpcProxyFactory<Foo>('/foo')
+ *     let factory = new RpcProxyFactory<Foo>('/foo')
  *     factory.onConnection(connection)
  *     let proxy = factory.createProxy();
  *     let result = proxy.bar(42)
@@ -94,18 +95,18 @@ const defaultRpcProtocolFactory: RpcProtocolFactory = (channel, requestHandler) 
  *
  * One the wire, it would look like this:
  *
- *     --> {"jsonrpc": "2.0", "id": 0, "method": "bar", "params": {"baz": 42}}
- *     <-- {"jsonrpc": "2.0", "id": 0, "result": 43}
+ *     --> { "type":"1", "id": 1, "method": "bar", "args": [42]}
+ *     <-- { "type":"3", "id": 1, "res": 43}
  *
  * Note that in the code of the caller, we didn't pass a target object to
- * JsonRpcProxyFactory, because we don't want/need to expose an object.
+ * RpcProxyFactory, because we don't want/need to expose an object.
  * If we had passed a target object, the other side could've called methods on
  * it.
  *
- * @param <T> - The type of the object to expose to JSON-RPC.
+ * @param <T> - The type of the object to expose to RPC.
  */
 
-export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
+export class RpcProxyFactory<T extends object> implements ProxyHandler<T> {
 
     protected readonly onDidOpenConnectionEmitter = new Emitter<void>();
     protected readonly onDidCloseConnectionEmitter = new Emitter<void>();
@@ -113,9 +114,9 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
     protected rpcDeferred: Deferred<RpcProtocol>;
 
     /**
-     * Build a new JsonRpcProxyFactory.
+     * Build a new RpcProxyFactory.
      *
-     * @param target - The object to expose to JSON-RPC methods calls.  If this
+     * @param target - The object to expose to RPC methods calls.  If this
      *   is omitted, the proxy won't be able to handle requests, only send them.
      */
     constructor(public target?: any, protected rpcProtocolFactory = defaultRpcProtocolFactory) {
@@ -135,10 +136,10 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
     }
 
     /**
-     * Connect a MessageConnection to the factory.
+     * Connect a {@link Channel} to the factory by creating an {@link RpcProtocol} on top of it.
      *
-     * This connection will be used to send/receive JSON-RPC requests and
-     * response.
+     * This protocol will be used to send/receive RPC requests and
+     * responses.
      */
     listen(channel: Channel): void {
         const protocol = this.rpcProtocolFactory(channel, (meth, args) => this.onRequest(meth, ...args));
@@ -148,9 +149,9 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
     }
 
     /**
-     * Process an incoming JSON-RPC method call.
+     * Process an incoming RPC method call.
      *
-     * onRequest is called when the JSON-RPC connection received a method call
+     * onRequest is called when the RPC connection received a method call
      * request.  It calls the corresponding method on [[target]].
      *
      * The return value is a Promise object that is resolved with the return
@@ -179,7 +180,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
     }
 
     /**
-     * Process an incoming JSON-RPC notification.
+     * Process an incoming RPC notification.
      *
      * Same as [[onRequest]], but called on incoming notifications rather than
      * methods calls.
@@ -192,37 +193,37 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
 
     /**
      * Create a Proxy exposing the interface of an object of type T.  This Proxy
-     * can be used to do JSON-RPC method calls on the remote target object as
+     * can be used to do RPC method calls on the remote target object as
      * if it was local.
      *
-     * If `T` implements `JsonRpcServer` then a client is used as a target object for a remote target object.
+     * If `T` implements `RpcServer` then a client is used as a target object for a remote target object.
      */
-    createProxy(): JsonRpcProxy<T> {
+    createProxy(): RpcProxy<T> {
         const result = new Proxy<T>(this as any, this);
         return result as any;
     }
 
     /**
-     * Get a callable object that executes a JSON-RPC method call.
+     * Get a callable object that executes a RPC method call.
      *
      * Getting a property on the Proxy object returns a callable that, when
-     * called, executes a JSON-RPC call.  The name of the property defines the
+     * called, executes a RPC call.  The name of the property defines the
      * method to be called.  The callable takes a variable number of arguments,
-     * which are passed in the JSON-RPC method call.
+     * which are passed in the RPC method call.
      *
      * For example, if you have a Proxy object:
      *
-     *     let fooProxyFactory = JsonRpcProxyFactory<Foo>('/foo')
+     *     let fooProxyFactory = RpcProxyFactory<Foo>('/foo')
      *     let fooProxy = fooProxyFactory.createProxy()
      *
      * accessing `fooProxy.bar` will return a callable that, when called,
-     * executes a JSON-RPC method call to method `bar`.  Therefore, doing
+     * executes a RPC method call to method `bar`.  Therefore, doing
      * `fooProxy.bar()` will call the `bar` method on the remote Foo object.
      *
      * @param target - unused.
      * @param p - The property accessed on the Proxy object.
      * @param receiver - unused.
-     * @returns A callable that executes the JSON-RPC call.
+     * @returns A callable that executes the RPC call.
      */
     get(target: T, p: PropertyKey, receiver: any): any {
         if (p === 'setClient') {
@@ -305,4 +306,38 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
     }
 
 }
+
+/**
+ * @deprecated since 1.39.0 use `RpcConnectionEventEmitter` instead
+ */
+export type JsonRpcConnectionEventEmitter = RpcConnectionEventEmitter;
+
+/**
+ * @deprecated since 1.39.0 use `RpcServer` instead
+ */
+export type JsonRpcServer<Client> = RpcServer<Client>;
+
+/**
+ * @deprecated since 1.39.0 use `RpcProxy` instead
+ */
+export type JsonRpcProxy<T> = RpcProxy<T>;
+
+/**
+ * @deprecated since 1.39.0 use `RpcConnectionHandler` instead
+ */
+export class JsonRpcConnectionHandler<T extends object> extends RpcConnectionHandler<T> {
+
+}
+
+/**
+ * @deprecated since 1.39.0 use `RpcProxyFactory` instead
+ */
+export class JsonRpcProxyFactory<T extends object> extends RpcProxyFactory<T> {
+
+}
+
+// eslint-disable-next-line deprecation/deprecation
+decorate(injectable(), JsonRpcProxyFactory);
+// eslint-disable-next-line deprecation/deprecation
+decorate(unmanaged(), JsonRpcProxyFactory, 0);
 

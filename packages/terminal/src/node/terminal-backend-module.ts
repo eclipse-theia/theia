@@ -16,7 +16,7 @@
 
 import { ContainerModule, Container, interfaces } from '@theia/core/shared/inversify';
 import { TerminalBackendContribution } from './terminal-backend-contribution';
-import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging';
+import { ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common/messaging';
 import { ShellProcess, ShellProcessFactory, ShellProcessOptions } from './shell-process';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { IBaseTerminalClient, DispatchingBaseTerminalClient, IBaseTerminalServer } from '../common/base-terminal-protocol';
@@ -45,7 +45,7 @@ export function bindTerminalServer(bind: interfaces.Bind, { path, identifier, co
         return terminalServer;
     });
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<IBaseTerminalClient>(path, client => {
+        new RpcConnectionHandler<IBaseTerminalClient>(path, client => {
             const disposable = dispatchingClient.push(client);
             client.onDidCloseConnection(() => disposable.dispose());
             return ctx.container.get(identifier);

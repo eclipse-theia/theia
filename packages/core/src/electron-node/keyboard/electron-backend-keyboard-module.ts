@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { ConnectionHandler, JsonRpcConnectionHandler } from '../../common/messaging';
+import { ConnectionHandler, RpcConnectionHandler } from '../../common/messaging';
 import { KeyboardLayoutProvider, keyboardPath } from '../../common/keyboard/keyboard-layout-provider';
 import { ElectronKeyboardLayoutProvider } from './electron-keyboard-layout-provider';
 
@@ -23,7 +23,7 @@ export default new ContainerModule(bind => {
     bind(ElectronKeyboardLayoutProvider).toSelf().inSingletonScope();
     bind(KeyboardLayoutProvider).toService(ElectronKeyboardLayoutProvider);
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(keyboardPath, () =>
+        new RpcConnectionHandler(keyboardPath, () =>
             ctx.container.get(KeyboardLayoutProvider)
         )
     ).inSingletonScope();

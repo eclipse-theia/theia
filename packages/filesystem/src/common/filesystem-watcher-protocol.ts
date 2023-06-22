@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { JsonRpcServer } from '@theia/core';
+import { RpcServer } from '@theia/core';
 import { FileChangeType } from './files';
 export { FileChangeType };
 
@@ -24,7 +24,7 @@ export const FileSystemWatcherService = Symbol('FileSystemWatcherServer2');
  *
  * Since multiple clients all make requests to this service, we need to track those individually via a `clientId`.
  */
-export interface FileSystemWatcherService extends JsonRpcServer<FileSystemWatcherServiceClient> {
+export interface FileSystemWatcherService extends RpcServer<FileSystemWatcherServiceClient> {
     /**
      * @param clientId arbitrary id used to identify a client.
      * @param uri the path to watch.
@@ -60,7 +60,7 @@ export interface FileSystemWatcherErrorParams {
 }
 
 export const FileSystemWatcherServer = Symbol('FileSystemWatcherServer');
-export interface FileSystemWatcherServer extends JsonRpcServer<FileSystemWatcherClient> {
+export interface FileSystemWatcherServer extends RpcServer<FileSystemWatcherClient> {
     /**
      * Start file watching for the given param.
      * Resolve when watching is started.

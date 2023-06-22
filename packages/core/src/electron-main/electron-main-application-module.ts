@@ -17,7 +17,7 @@
 import { ContainerModule } from 'inversify';
 import { v4 } from 'uuid';
 import { bindContributionProvider } from '../common/contribution-provider';
-import { JsonRpcConnectionHandler } from '../common/messaging/proxy-factory';
+import { RpcConnectionHandler } from '../common/messaging/proxy-factory';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import { ElectronMainWindowService, electronMainWindowServicePath } from '../electron-common/electron-main-window-service';
 import { ElectronMainApplication, ElectronMainApplicationContribution, ElectronMainProcessArgv } from './electron-main-application';
@@ -49,7 +49,7 @@ export default new ContainerModule(bind => {
 
     bind(ElectronMainWindowService).to(ElectronMainWindowServiceImpl).inSingletonScope();
     bind(ElectronConnectionHandler).toDynamicValue(context =>
-        new JsonRpcConnectionHandler(electronMainWindowServicePath,
+        new RpcConnectionHandler(electronMainWindowServicePath,
             () => context.container.get(ElectronMainWindowService))
     ).inSingletonScope();
 
