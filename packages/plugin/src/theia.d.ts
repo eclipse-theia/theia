@@ -13672,6 +13672,17 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Optional options to be used when calling {@link authentication.getSession} with the flag `forceNewSession`.
+     */
+    export interface AuthenticationForceNewSessionOptions {
+        /**
+         * An optional message that will be displayed to the user when we ask to re-authenticate. Providing additional context
+         * as to why you are asking a user to re-authenticate can help increase the odds that they will accept.
+         */
+        detail?: string;
+    }
+
+    /**
      * Options to be used when getting an {@link AuthenticationSession AuthenticationSession} from an {@link AuthenticationProvider AuthenticationProvider}.
      */
     export interface AuthenticationGetSessionOptions {
@@ -13705,7 +13716,7 @@ export module '@theia/plugin' {
          *
          * Defaults to false.
          */
-        forceNewSession?: boolean | { detail: string };
+        forceNewSession?: boolean | AuthenticationForceNewSessionOptions;
 
         /**
          * Whether we should show the indication to sign in in the Accounts menu.
