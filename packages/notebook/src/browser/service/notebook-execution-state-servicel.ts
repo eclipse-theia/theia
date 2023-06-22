@@ -14,8 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './notebook-type-registry';
-export * from './notebook-editor-widget';
-export * from './service/notebook-service';
-export * from './service/notebook-kernel-service';
-export * from './service/notebook-model-resolver-service';
+import { URI } from '@theia/core';
+
+export interface INotebookCellExecution {
+    readonly notebook: URI;
+    readonly cellHandle: number;
+    readonly state: NotebookCellExecutionState;
+    readonly didPause: boolean;
+    readonly isPaused: boolean;
+
+    confirm(): void;
+    update(updates: CellExecuteUpdate[]): void;
+    complete(complete: CellExecutionComplete): void;
+}
+
+export class NotebookExecutionStateService {
+    createCellExecution(notebook: URI, cellHandle: number): NotebookCellExecution;
+}

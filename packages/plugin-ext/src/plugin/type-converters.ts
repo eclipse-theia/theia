@@ -32,7 +32,7 @@ import { DisposableCollection, isEmptyObject, isObject } from '@theia/core/lib/c
 import * as notebooks from '@theia/notebook/lib/common';
 import { CommandsConverter } from './command-registry';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { CellRange } from '@theia/notebook/lib/common';
+import { CellRange, isTextStreamMime } from '@theia/notebook/lib/common';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -1511,6 +1511,28 @@ export namespace NotebookCellOutput {
     export function to(output: rpc.NotebookOutputDto): types.NotebookCellOutput {
         const items = output.items.map(NotebookCellOutputItem.to);
         return new types.NotebookCellOutput(items, output.metadata);
+    }
+
+    export function ensureUniqueMimeTypes(items: types.NotebookCellOutputItem[], warn: boolean = false): types.NotebookCellOutputItem[] {
+        const seen = new Set<string>();
+        const removeIdx = new Set<number>();
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            // We can have multiple text stream mime types in the same output.
+            if (!seen.has(item.mime) || isTextStreamMime(item.mime)) {
+                seen.add(item.mime);
+                continue;
+            }
+            // duplicated mime types... first has won
+            removeIdx.add(i);
+            if (warn) {
+                console.warn(`DUPLICATED mime type '${item.mime}' will be dropped`);
+            }
+        }
+        if (removeIdx.size === 0) {
+            return items;
+        }
+        return items.filter((_, index) => !removeIdx.has(index));
     }
 }
 

@@ -71,10 +71,10 @@ export class Cell {
     private metadata: Readonly<notebookCommon.NotebookCellMetadata>;
     private previousResult: Readonly<theia.NotebookCellExecutionSummary | undefined>;
 
-    // private internalMetadata: notebookCommon.NotebookCellInternalMetadata;
+    readonly internalMetadata: notebookCommon.NotebookCellInternalMetadata;
 
     constructor(
-        readonly notebookDocument: NotebookDocument,
+        public readonly notebookDocument: NotebookDocument,
         private readonly editorsAndDocuments: EditorsAndDocumentsExtImpl,
         private readonly cellData: rpc.NotebookCellDto,
     ) {
@@ -82,7 +82,7 @@ export class Cell {
         this.uri = URI.fromComponents(cellData.uri);
         this.cellKind = cellData.cellKind;
         this.outputs = cellData.outputs.map(typeConverters.NotebookCellOutput.to);
-        // this.internalMetadata = cellData.internalMetadata ?? {};
+        this.internalMetadata = cellData.internalMetadata ?? {};
         this.metadata = Object.freeze(cellData.metadata ?? {});
         this.previousResult = Object.freeze(typeConverters.NotebookCellExecutionSummary.to(cellData.internalMetadata ?? {}));
     }
@@ -176,7 +176,7 @@ export class NotebookDocument {
         private readonly proxy: rpc.NotebookDocumentsMain,
         private readonly editorsAndDocuments: EditorsAndDocumentsExtImpl,
         // private readonly textDocuments: DocumentsExt,
-        readonly uri: theia.Uri
+        public readonly uri: theia.Uri
     ) {
 
     }
@@ -233,14 +233,6 @@ export class NotebookDocument {
         return range.with({ start, end });
     }
 
-    getCellFromIndex(index: number): Cell | undefined {
-        return this.cells[index];
-    }
-
-    getCellIndex(cell: Cell): number {
-        return this.cells.indexOf(cell);
-    }
-
     private getCells(range: theia.NotebookRange): Cell[] {
         range = this.validateRange(range);
         const result: Cell[] = [];
@@ -280,10 +272,10 @@ export class NotebookDocument {
 
         for (const rawEvent of event.rawEvents) {
             if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ModelChange) {
-                this._spliceNotebookCells(rawEvent.changes, false, result.contentChanges);
+                this.spliceNotebookCells(rawEvent.changes, false, result.contentChanges);
 
             } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.Move) {
-                this._moveCells(rawEvent.index, rawEvent.length, rawEvent.newIdx, result.contentChanges);
+                this.moveCells(rawEvent.index, rawEvent.length, rawEvent.newIdx, result.contentChanges);
             } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.Output) {
                 this.setCellOutputs(rawEvent.index, rawEvent.outputs);
                 relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, outputs: this.cells[rawEvent.index].apiCell.outputs });
@@ -341,7 +333,7 @@ export class NotebookDocument {
         return result;
     }
 
-    private _spliceNotebookCells(splices: notebookCommon.NotebookCellTextModelSplice<NotebookCellDto>[], initialization: boolean,
+    private spliceNotebookCells(splices: notebookCommon.NotebookCellTextModelSplice<NotebookCellDto>[], initialization: boolean,
         bucket: theia.NotebookDocumentContentChange[] | undefined): void {
         if (this.disposed) {
             return;
@@ -383,7 +375,7 @@ export class NotebookDocument {
         }
     }
 
-    private _moveCells(index: number, length: number, newIdx: number, bucket: theia.NotebookDocumentContentChange[]): void {
+    private moveCells(index: number, length: number, newIdx: number, bucket: theia.NotebookDocumentContentChange[]): void {
         const cells = this.cells.splice(index, length);
         this.cells.splice(newIdx, 0, ...cells);
         const changes = [
@@ -421,5 +413,21 @@ export class NotebookDocument {
     //     const cell = this.cells[index];
     //     cell.setInternalMetadata(newInternalMetadata);
     // }
+
+    getCellFromApiCell(apiCell: theia.NotebookCell): Cell | undefined {
+        return this.cells.find(cell => cell.apiCell === apiCell);
+    }
+
+    getCell(cellHandle: number): Cell | undefined {
+        return this.cells.find(cell => cell.handle === cellHandle);
+    }
+
+    getCellFromIndex(index: number): Cell | undefined {
+        return this.cells[index];
+    }
+
+    getCellIndex(cell: Cell): number {
+        return this.cells.indexOf(cell);
+    }
 
 }

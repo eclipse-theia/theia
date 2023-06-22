@@ -2113,6 +2113,7 @@ export const PLUGIN_RPC_CONTEXT = {
     NOTEBOOK_DOCUMENTS_MAIN: createProxyIdentifier<NotebookDocumentsMain>('NotebookDocumentsMain'),
     NOTEBOOK_EDITORS_MAIN: createProxyIdentifier<NotebookEditorsMain>('NotebookEditorsMain'),
     NOTEBOOK_RENDERERS_MAIN: createProxyIdentifier<NotebookRenderersMain>('NotebookRenderersMain'),
+    NOTEBOOK_KERNELS_MAIN: createProxyIdentifier<NotebookKernelsMain>('NotebookKernelsMain'),
     STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain'),
     ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain'),
     NOTIFICATION_MAIN: createProxyIdentifier<NotificationMain>('NotificationMain'),
@@ -2158,6 +2159,7 @@ export const MAIN_RPC_CONTEXT = {
     NOTEBOOK_DOCUMENTS_EXT: createProxyIdentifier<NotebookDocumentsExt>('NotebookDocumentsExt'),
     NOTEBOOK_EDITORS_EXT: createProxyIdentifier<NotebookEditorsExt>('NotebookEditorsExt'),
     NOTEBOOK_RENDERERS_EXT: createProxyIdentifier<NotebookRenderersExt>('NotebooksExt'),
+    NOTEBOOK_KERNELS_EXT: createProxyIdentifier<NotebookKernelsExt>('NotebookKernelsExt'),
     TERMINAL_EXT: createProxyIdentifier<TerminalServiceExt>('TerminalServiceExt'),
     OUTPUT_CHANNEL_REGISTRY_EXT: createProxyIdentifier<OutputChannelRegistryExt>('OutputChannelRegistryExt'),
     TREE_VIEWS_EXT: createProxyIdentifier<TreeViewsExt>('TreeViewsExt'),
@@ -2350,6 +2352,68 @@ export interface NotebookDocumentShowOptions {
     selections?: CellRange[];
 }
 
+export interface NotebookKernelDto {
+    id: string;
+    notebookType: string;
+    extensionId: string;
+    // extensionLocation: UriComponents;
+    label: string;
+    detail?: string;
+    description?: string;
+    supportedLanguages?: string[];
+    supportsInterrupt?: boolean;
+    supportsExecutionOrder?: boolean;
+    preloads?: { uri: UriComponents; provides: readonly string[] }[];
+}
+
+export type CellExecuteUpdateDto = CellExecuteOutputEditDto | CellExecuteOutputItemEditDto | CellExecutionStateUpdateDto;
+
+export interface CellExecuteOutputEditDto {
+    editType: CellExecutionUpdateType.Output;
+    cellHandle: number;
+    append?: boolean;
+    outputs: NotebookOutputDto[];
+}
+
+export interface CellExecuteOutputItemEditDto {
+    editType: CellExecutionUpdateType.OutputItems;
+    append?: boolean;
+    items: NotebookOutputItemDto[];
+}
+
+export interface CellExecutionStateUpdateDto {
+    editType: CellExecutionUpdateType.ExecutionState;
+    executionOrder?: number;
+    runStartTime?: number;
+    didPause?: boolean;
+    isPaused?: boolean;
+}
+
+export enum CellExecutionUpdateType {
+    Output = 1,
+    OutputItems = 2,
+    ExecutionState = 3,
+}
+
+export enum NotebookCellExecutionState {
+    Unconfirmed = 1,
+    Pending = 2,
+    Executing = 3
+}
+
+export interface CellExecutionCompleteDto {
+    runEndTime?: number;
+    lastRunSuccess?: boolean;
+}
+
+export interface NotebookKernelSourceActionDto {
+    readonly label: string;
+    readonly description?: string;
+    readonly detail?: string;
+    readonly command?: string | Command;
+    readonly documentation?: UriComponents | string;
+}
+
 export interface NotebooksExt extends NotebookDocumentsAndEditorsExt {
     $provideNotebookCellStatusBarItems(handle: number, uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarListDto | undefined>;
     $releaseNotebookCellStatusBarItems(id: number): void;
@@ -2365,6 +2429,38 @@ export interface NotebooksMain extends Disposable {
     $registerNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined, viewType: string): Promise<void>;
     $unregisterNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined): Promise<void>;
     $emitCellStatusBarEvent(eventHandle: number): void;
+}
+
+export interface NotebookKernelsExt {
+    $acceptNotebookAssociation(handle: number, uri: UriComponents, value: boolean): void;
+    $executeCells(handle: number, uri: UriComponents, handles: number[]): Promise<void>;
+    $cancelCells(handle: number, uri: UriComponents, handles: number[]): Promise<void>;
+    $acceptKernelMessageFromRenderer(handle: number, editorId: string, message: any): void;
+    $cellExecutionChanged(uri: UriComponents, cellHandle: number, state: NotebookCellExecutionState | undefined): void;
+    $provideKernelSourceActions(handle: number, token: CancellationToken): Promise<NotebookKernelSourceActionDto[]>;
+}
+
+export interface NotebookKernelsMain extends Disposable {
+    $postMessage(handle: number, editorId: string | undefined, message: any): Promise<boolean>;
+    $addKernel(handle: number, data: NotebookKernelDto): Promise<void>;
+    $updateKernel(handle: number, data: Partial<NotebookKernelDto>): void;
+    $removeKernel(handle: number): void;
+    $updateNotebookPriority(handle: number, uri: UriComponents, value: number | undefined): void;
+
+    $createExecution(handle: number, controllerId: string, uri: UriComponents, cellHandle: number): void;
+    $updateExecution(handle: number, data: CellExecuteUpdateDto[]): void;
+    $completeExecution(handle: number, data: CellExecutionCompleteDto): void;
+
+    $createNotebookExecution(handle: number, controllerId: string, uri: UriComponents): void;
+    $beginNotebookExecution(handle: number): void;
+    $completeNotebookExecution(handle: number): void;
+
+    $addKernelDetectionTask(handle: number, notebookType: string): Promise<void>;
+    $removeKernelDetectionTask(handle: number): void;
+
+    $addKernelSourceActionProvider(handle: number, eventHandle: number, notebookType: string): Promise<void>;
+    $removeKernelSourceActionProvider(handle: number, eventHandle: number): void;
+    $emitNotebookKernelSourceActionsChangeEvent(eventHandle: number): void;
 }
 
 export interface NotebookDocumentsMain extends Disposable {
