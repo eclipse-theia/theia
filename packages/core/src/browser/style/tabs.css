@@ -470,6 +470,16 @@
   margin: 0px 4px;
 }
 
+.enhanced-preview-div {
+  margin: 4px 4px;
+  pointer-events: none;
+  background: var(--theia-editor-background);
+}
+
+.enhanced-preview {
+  transform-origin: top left;
+}
+
 .theia-horizontal-tabBar-hover-title {
   font-weight: bolder;
   font-size: medium;
