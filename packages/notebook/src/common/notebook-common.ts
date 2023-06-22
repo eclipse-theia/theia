@@ -237,6 +237,13 @@ export interface NotebookModelWillAddRemoveEvent {
     readonly rawEvent: NotebookCellsModelChangedEvent<CellData>;
 };
 
+/**
+ * Whether the provided mime type is a text stream like `stdout`, `stderr`.
+ */
+export function isTextStreamMime(mimeType: string): boolean {
+    return ['application/vnd.code.notebook.stdout', 'application/vnd.code.notebook.stderr'].includes(mimeType);
+}
+
 export namespace CellUri {
 
     export const scheme = 'vscode-notebook-cell';
