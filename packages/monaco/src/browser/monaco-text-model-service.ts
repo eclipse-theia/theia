@@ -88,7 +88,7 @@ export class MonacoTextModelService implements ITextModelService {
                 if (eol && eol !== 'auto') {
                     return eol;
                 }
-                return OS.backend.isWindows ? '\r\n' : '\n';
+                return OS.backend.EOL;
             };
         }
     }

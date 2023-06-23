@@ -32,7 +32,7 @@ import { AboutDialog } from './about-dialog';
 import * as browser from './browser';
 import URI from '../common/uri';
 import { ContextKey, ContextKeyService } from './context-key-service';
-import { OS, isOSX, isWindows } from '../common/os';
+import { OS, isOSX, isWindows, EOL } from '../common/os';
 import { ResourceContextKey } from './resource-context-key';
 import { UriSelection } from '../common/selection';
 import { StorageService } from './storage-service';
@@ -736,7 +736,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             isEnabled: uris => Array.isArray(uris) && uris.some(uri => uri instanceof URI),
             execute: async uris => {
                 if (uris.length) {
-                    const lineDelimiter = isWindows ? '\r\n' : '\n';
+                    const lineDelimiter = EOL;
                     const text = uris.map(resource => resource.path.fsPath()).join(lineDelimiter);
                     await this.clipboardService.writeText(text);
                 } else {

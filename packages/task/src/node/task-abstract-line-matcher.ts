@@ -19,7 +19,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { isWindows } from '@theia/core/lib/common/os';
+import { EOL } from '@theia/core/lib/common/os';
 import { Diagnostic, DiagnosticSeverity, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import {
     FileLocationKind, ProblemMatcher, ProblemPattern,
@@ -31,7 +31,7 @@ import { URI as vscodeURI } from '@theia/core/shared/vscode-uri';
 import { Severity } from '@theia/core/lib/common/severity';
 import { MAX_SAFE_INTEGER } from '@theia/core/lib/common/numbers';
 
-const endOfLine: string = isWindows ? '\r\n' : '\n';
+const endOfLine: string = EOL;
 
 export interface ProblemData {
     kind?: ProblemLocationKind;

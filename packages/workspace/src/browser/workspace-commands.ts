@@ -34,7 +34,7 @@ import { WorkspaceCompareHandler } from './workspace-compare-handler';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
 import { WorkspaceInputDialog } from './workspace-input-dialog';
-import { Emitter, Event, isWindows, OS } from '@theia/core/lib/common';
+import { Emitter, EOL, Event, OS } from '@theia/core/lib/common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { nls } from '@theia/core/lib/common/nls';
@@ -313,7 +313,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
             isEnabled: uris => !!uris.length,
             isVisible: uris => !!uris.length,
             execute: async uris => {
-                const lineDelimiter = isWindows ? '\r\n' : '\n';
+                const lineDelimiter = EOL;
                 const text = uris.map((uri: URI) => {
                     const workspaceRoot = this.workspaceService.getWorkspaceRootUri(uri);
                     if (workspaceRoot) {

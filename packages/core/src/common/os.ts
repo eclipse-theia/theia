@@ -29,6 +29,8 @@ function is(userAgent: string, platform: string): boolean {
 export const isWindows = is('Windows', 'win32');
 export const isOSX = is('Mac', 'darwin');
 
+export const EOL = isWindows ? '\r\n' : '\n';
+
 export type CMD = [string, string[]];
 export function cmd(command: string, ...args: string[]): CMD {
     return [
@@ -65,7 +67,8 @@ export namespace OS {
     export const backend = {
         type,
         isWindows,
-        isOSX
+        isOSX,
+        EOL
     };
 
 }

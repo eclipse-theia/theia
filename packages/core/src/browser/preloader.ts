@@ -55,6 +55,7 @@ async function loadBackendOS(): Promise<void> {
     OS.backend.isOSX = isOSX;
     OS.backend.isWindows = isWindows;
     OS.backend.type = () => osType;
+    OS.backend.EOL = isWindows ? '\r\n' : '\n';
 }
 
 function initBackground(): void {
