@@ -37,7 +37,6 @@ import { ViewContextKeyService } from './view-context-key-service';
 import { PROBLEMS_WIDGET_ID } from '@theia/markers/lib/browser/problem/problem-widget';
 import { OutputWidget } from '@theia/output/lib/browser/output-widget';
 import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug-console-contribution';
-import { TERMINAL_WIDGET_FACTORY_ID } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TreeViewWidget } from './tree-view-widget';
 import { SEARCH_VIEW_CONTAINER_ID } from '@theia/search-in-workspace/lib/browser/search-in-workspace-factory';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
@@ -114,7 +113,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         [PROBLEMS_WIDGET_ID, 'workbench.panel.markers'],
         [OutputWidget.ID, 'workbench.panel.output'],
         [DebugConsoleContribution.options.id, 'workbench.panel.repl'],
-        [TERMINAL_WIDGET_FACTORY_ID, 'workbench.panel.terminal']
+        // Theia does not have a single terminal widget, but instead each terminal gets its own widget. Therefore "the terminal widget is active" doesnt' make sense in Theia
+        // [TERMINAL_WIDGET_FACTORY_ID, 'workbench.panel.terminal'],
         // [?? , 'workbench.panel.comments'] not sure what this mean: we don't show comments in sidebars nor the bottom
     ]);
 
