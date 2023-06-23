@@ -24,13 +24,22 @@ export interface WorkspaceFileType {
 }
 
 /**
- * @deprecated Since 1.38.0. Use `WorkspaceFileService#getWorkspaceFileTypes` instead.
+ * @deprecated Since 1.39.0. Use `WorkspaceFileService#getWorkspaceFileTypes` instead.
  */
 export const THEIA_EXT = 'theia-workspace';
+/**
+ * @deprecated Since 1.39.0. Use `WorkspaceFileService#getWorkspaceFileTypes` instead.
+ */
 export const VSCODE_EXT = 'code-workspace';
 
 @injectable()
 export class WorkspaceFileService {
+
+    protected _defaultFileTypeIndex = 0;
+
+    get defaultFileTypeIndex(): number {
+        return this._defaultFileTypeIndex;
+    }
 
     /**
      * Check if the file should be considered as a workspace file.
@@ -39,7 +48,7 @@ export class WorkspaceFileService {
      */
     isWorkspaceFile(candidate: FileStat | URI): boolean {
         const uri = FileStat.is(candidate) ? candidate.resource : candidate;
-        const extensions = this.getWorkspaceFileTypes().map(type => `.${type.extension}`);
+        const extensions = this.getWorkspaceFileExtensions(true);
         return extensions.includes(uri.path.ext);
     }
 

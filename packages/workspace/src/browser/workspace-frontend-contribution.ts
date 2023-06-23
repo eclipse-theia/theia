@@ -378,7 +378,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             title: WorkspaceCommands.OPEN_WORKSPACE.dialogLabel,
             canSelectFiles: true,
             canSelectFolders: false,
-            filters: WorkspaceFrontendContribution.DEFAULT_FILE_FILTER
+            filters: this.getWorkspaceDialogFileFilters()
         };
         const [rootStat] = await this.workspaceService.roots;
         const workspaceFileUri = await this.fileDialogService.showOpenDialog(props, rootStat);
@@ -412,7 +412,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                 const displayName = selected.displayName;
                 const extensions = this.workspaceFileService.getWorkspaceFileExtensions(true);
                 if (!extensions.some(ext => displayName.endsWith(ext))) {
-                    selected = selected.parent.resolve(`${displayName}${extensions[0]}`);
+                    const defaultExtension = extensions[this.workspaceFileService.defaultFileTypeIndex];
+                    selected = selected.parent.resolve(`${displayName}${defaultExtension}`);
                 }
                 exist = await this.fileService.exists(selected);
                 if (exist) {
@@ -509,7 +510,7 @@ export namespace WorkspaceFrontendContribution {
     /**
      * File filter for all Theia and VS Code workspace file types.
      *
-     * @deprecated Since 1.38.0 Use `WorkspaceFrontendContribution#getWorkspaceDialogFileFilters` instead.
+     * @deprecated Since 1.39.0 Use `WorkspaceFrontendContribution#getWorkspaceDialogFileFilters` instead.
      */
     export const DEFAULT_FILE_FILTER: FileDialogTreeFilters = {
         'Theia Workspace (*.theia-workspace)': [THEIA_EXT],

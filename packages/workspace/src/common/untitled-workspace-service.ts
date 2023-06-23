@@ -31,12 +31,13 @@ export class UntitledWorkspaceService {
 
     async getUntitledWorkspaceUri(configDirUri: URI, isAcceptable: (candidate: URI) => MaybePromise<boolean>, warnOnHits?: () => unknown): Promise<URI> {
         const parentDir = configDirUri.resolve('workspaces');
-        const workspaceExtension = this.workspaceFileService.getWorkspaceFileExtensions()[0];
+        const workspaceExtensions = this.workspaceFileService.getWorkspaceFileExtensions();
+        const defaultFileExtension = workspaceExtensions[this.workspaceFileService.defaultFileTypeIndex];
         let uri;
         let attempts = 0;
         do {
             attempts++;
-            uri = parentDir.resolve(`Untitled-${Math.round(Math.random() * 1000)}.${workspaceExtension}`);
+            uri = parentDir.resolve(`Untitled-${Math.round(Math.random() * 1000)}.${defaultFileExtension}`);
             if (attempts === 10) {
                 warnOnHits?.();
             }
