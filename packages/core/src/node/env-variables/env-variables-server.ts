@@ -43,6 +43,7 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     }
 
     protected async createConfigDirUri(): Promise<string> {
+        process.env.THEIA_CONFIG_DIR = join(homedir(), 'data');
         return FileUri.create(process.env.THEIA_CONFIG_DIR || join(homedir(), '.theia')).toString();
     }
 
