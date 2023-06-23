@@ -20,10 +20,22 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
 import './theia-extra';
-import './theia-proposed';
+import './theia.proposed.customEditorMove';
+import './theia.proposed.diffCommand';
+import './theia.proposed.documentPaste';
+import './theia.proposed.editSessionIdentityProvider';
+import './theia.proposed.extensionsAny';
 import './theia.proposed.externalUriOpener';
-import './vscode.proposed.editSessionIdentityProvider';
+import './theia.proposed.findTextInFiles';
+import './theia.proposed.fsChunks';
+import './theia.proposed.profileContentHandlers';
+import './theia.proposed.resolvers';
+import './theia.proposed.scmValidation';
+import './theia.proposed.terminalQuickFixProvider';
+import './theia.proposed.textSearchProvider';
+import './theia.proposed.timeline';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable max-len */

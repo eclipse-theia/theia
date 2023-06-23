@@ -293,5 +293,91 @@ export module '@theia/plugin' {
         readonly logUri: Uri;
     }
 
+    export namespace commands {
+
+        /**
+         * Get the keybindings associated to commandId.
+         * @param commandId The ID of the command for which we are looking for keybindings.
+         */
+        export function getKeyBinding(commandId: string): Thenable<CommandKeyBinding[] | undefined>;
+    }
+
+    /**
+     * Key Binding of a command
+     */
+    export interface CommandKeyBinding {
+        /**
+         * Identifier of the command.
+         */
+        id: string;
+        /**
+         * Value of the keyBinding
+         */
+        value: string;
+    }
+
+    /**
+     * Enumeration of the supported operating systems.
+     */
+    export enum OperatingSystem {
+        Windows = 'Windows',
+        Linux = 'Linux',
+        OSX = 'OSX'
+    }
+
+    export namespace env {
+
+        /**
+         * Returns the type of the operating system on the client side (like browser'OS if using browser mode). If it is neither [Windows](isWindows) nor [OS X](isOSX), then
+         * it always return with the `Linux` OS type.
+         */
+        export function getClientOperatingSystem(): Thenable<OperatingSystem>;
+
+    }
+
+    export interface DecorationData {
+        letter?: string;
+        title?: string;
+        color?: ThemeColor;
+        priority?: number;
+        bubble?: boolean;
+        source?: string;
+    }
+
+    export interface SourceControl {
+
+        /**
+         * Whether the source control is selected.
+         */
+        readonly selected: boolean;
+
+        /**
+         * An event signaling when the selection state changes.
+         */
+        readonly onDidChangeSelection: Event<boolean>;
+    }
+
+    export interface SourceControlResourceDecorations {
+        source?: string;
+        letter?: string;
+        color?: ThemeColor;
+    }
+
 }
 
+/**
+ * Thenable is a common denominator between ES6 promises, Q, jquery.Deferred, WinJS.Promise,
+ * and others. This API makes no assumption about what promise library is being used which
+ * enables reusing existing code without migrating to a specific promise implementation. Still,
+ * we recommend the use of native promises which are available in this editor.
+ */
+interface Thenable<T> {
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult>(onfulfilled?: (value: T) => TResult | Thenable<TResult>, onrejected?: (reason: any) => TResult | Thenable<TResult>): Thenable<TResult>;
+    then<TResult>(onfulfilled?: (value: T) => TResult | Thenable<TResult>, onrejected?: (reason: any) => void): Thenable<TResult>;
+}

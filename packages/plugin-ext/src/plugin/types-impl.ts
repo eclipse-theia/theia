@@ -2049,6 +2049,12 @@ export enum TerminalLocation {
     Panel = 1,
     Editor = 2
 }
+
+export enum TerminalOutputAnchor {
+    Top = 0,
+    Bottom = 1
+}
+
 export class TerminalProfile {
     /**
      * Creates a new terminal profile.
