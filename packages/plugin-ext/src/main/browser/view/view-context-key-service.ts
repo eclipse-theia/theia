@@ -19,7 +19,6 @@ import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-k
 
 @injectable()
 export class ViewContextKeyService {
-
     protected _view: ContextKey<string>;
     get view(): ContextKey<string> {
         return this._view;
@@ -30,28 +29,21 @@ export class ViewContextKeyService {
         return this._viewItem;
     }
 
+    // for the next three keys, see https://code.visualstudio.com/api/references/when-clause-contexts#visible-view-container-when-clause-context
+
     protected _activeViewlet: ContextKey<string>;
-    /**
-     * Viewlet is a tab in the left area in VS Code. Active means visible in this context.
-     *
-     * In VS Code there can be only one visible viewlet at any time.
-     * It is not true for Theia, since views can be layed-out again to different areas.
-     * So only last visible view will be an active viewlet.
-     */
     get activeViewlet(): ContextKey<string> {
         return this._activeViewlet;
     }
 
     protected _activePanel: ContextKey<string>;
-    /**
-     * Panel is a tab in the bottom area in VS Code. Active means visible in this context.
-     *
-     * In VS Code there can be only one visible panel at any time.
-     * It is not true for Theia, since views can be layed-out again to different areas.
-     * So only last visible view will be an active panel.
-     */
     get activePanel(): ContextKey<string> {
         return this._activePanel;
+    }
+
+    protected _activeAuxiliary: ContextKey<string>;
+    get activeAuxiliary(): ContextKey<string> {
+        return this._activeAuxiliary;
     }
 
     protected _focusedView: ContextKey<string>;
@@ -68,6 +60,7 @@ export class ViewContextKeyService {
         this._viewItem = this.contextKeyService.createKey('viewItem', '');
         this._activeViewlet = this.contextKeyService.createKey('activeViewlet', '');
         this._activePanel = this.contextKeyService.createKey('activePanel', '');
+        this._activeAuxiliary = this.contextKeyService.createKey('activeAuxiliary', '');
         this._focusedView = this.contextKeyService.createKey('focusedView', '');
     }
 
