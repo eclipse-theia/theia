@@ -946,8 +946,6 @@ export class ViewContainerPart extends BaseWidget {
     protected readonly onDidChangeBadgeTooltipEmitter = new Emitter<void>();
     readonly onDidChangeBadgeTooltip = this.onDidChangeBadgeTooltipEmitter.event;
 
-    protected readonly onResizeEvent = new Event('onResizeEvent');
-
     protected readonly toolbar: TabBarToolbar;
 
     protected _collapsed: boolean;
@@ -1242,7 +1240,7 @@ export class ViewContainerPart extends BaseWidget {
             setTimeout(() => {
                 this.node?.classList.remove('no-pointer-events');
                 this.node?.removeEventListener('mouseenter', handleMouseEnter);
-            }, 1000);
+            }, 100);
         };
         this.node?.addEventListener('mouseenter', handleMouseEnter);
     }
