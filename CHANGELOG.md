@@ -7,6 +7,7 @@
 ## v1.39.0 - 06/29/2023
 
 - [debug] added support for conditional exception breakpoints [#12445](https://github.com/eclipse-theia/theia/pull/12445)
+- [vscode] Support "editor/title/run" toolbar commands [#12637](https://github.com/eclipse-theia/theia/pull/12637) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.39.0">[Breaking Changes:](#breaking_changes_1.39.0)</a>
 
