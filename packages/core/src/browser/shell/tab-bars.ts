@@ -348,7 +348,7 @@ export class TabBarRenderer extends TabBar.Renderer {
      * @param {string | string[]} iconName The name of the icon.
      * @param {string[]} additionalClasses Additional classes of the icon.
      */
-    private getIconClass(iconName: string | string[], additionalClasses: string[] = []): string {
+    protected getIconClass(iconName: string | string[], additionalClasses: string[] = []): string {
         const iconClass = (typeof iconName === 'string') ? ['a', 'fa', `fa-${iconName}`] : ['a'].concat(iconName);
         return iconClass.concat(additionalClasses).join(' ');
     }
@@ -594,12 +594,12 @@ export class ScrollableTabBar extends TabBar<Widget> {
 
     protected scrollBar?: PerfectScrollbar;
 
-    private scrollBarFactory: () => PerfectScrollbar;
+    protected scrollBarFactory: () => PerfectScrollbar;
     protected pendingReveal?: Promise<void>;
-    private isMouseOver = false;
+    protected isMouseOver = false;
     protected needsRecompute = false;
     protected tabSize = 0;
-    private _dynamicTabOptions?: ScrollableTabBar.Options;
+    protected _dynamicTabOptions?: ScrollableTabBar.Options;
     protected contentContainer: HTMLElement;
     protected topRow: HTMLElement;
 
@@ -638,7 +638,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
      * Instead of this structure, we add a container for the `this.contentNode` and for the toolbar.
      * The scrollbar will only work for the `ul` part but it does not affect the toolbar, so it can be on the right hand-side.
      */
-    private rewireDOM(): void {
+    protected rewireDOM(): void {
         const contentNode = this.node.getElementsByClassName(ScrollableTabBar.Styles.TAB_BAR_CONTENT)[0];
         if (!contentNode) {
             throw new Error("'this.node' does not have the content as a direct child with class name 'p-TabBar-content'.");
@@ -933,7 +933,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
         super.handleEvent(event);
     }
 
-    private isOver(event: Event, element: Element): boolean {
+    protected isOver(event: Event, element: Element): boolean {
         return element && event.target instanceof Element && element.contains(event.target);
     }
 
@@ -944,7 +944,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
      * Instead of this structure, we add a container for the `this.contentNode` and for the toolbar.
      * The scrollbar will only work for the `ul` part but it does not affect the toolbar, so it can be on the right hand-side.
      */
-    private addBreadcrumbs(): void {
+    protected addBreadcrumbs(): void {
         this.breadcrumbsContainer = document.createElement('div');
         this.breadcrumbsContainer.classList.add('theia-tabBar-breadcrumb-row');
         this.breadcrumbsContainer.appendChild(this.breadcrumbsRenderer.host);
@@ -957,7 +957,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
  */
 export class SideTabBar extends ScrollableTabBar {
 
-    private static readonly DRAG_THRESHOLD = 5;
+    protected static readonly DRAG_THRESHOLD = 5;
 
     /**
      * Emitted when a tab is added to the tab bar.
@@ -974,18 +974,18 @@ export class SideTabBar extends ScrollableTabBar {
      */
     readonly tabsOverflowChanged = new Signal<this, { titles: Title<Widget>[], startIndex: number }>(this);
 
-    private mouseData?: {
+    protected mouseData?: {
         pressX: number,
         pressY: number,
         mouseDownTabIndex: number
     };
 
-    private tabsOverflowData?: {
+    protected tabsOverflowData?: {
         titles: Title<Widget>[],
         startIndex: number
     };
 
-    private _rowGap: number;
+    protected _rowGap: number;
 
     constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
         super(options);
@@ -1108,7 +1108,7 @@ export class SideTabBar extends ScrollableTabBar {
                 const hiddenContent = this.hiddenContentNode;
                 const n = hiddenContent.children.length;
                 const renderData = new Array<Partial<SideBarRenderData>>(n);
-                const availableWidth = this.node.clientHeight;
+                const availableWidth = this.node.clientHeight - this.tabRowGap;
                 let actualWidth = 0;
                 let overflowStartIndex = -1;
                 for (let i = 0; i < n; i++) {
@@ -1143,6 +1143,17 @@ export class SideTabBar extends ScrollableTabBar {
                         renderData[i] = rd;
                     }
                 }
+
+                // Special handling if only one element is overflowing.
+                if (overflowStartIndex === n - 1) {
+                    if (!this.tabsOverflowData) {
+                        overflowStartIndex--;
+                        renderData[overflowStartIndex].visible = false;
+                    } else {
+                        renderData[overflowStartIndex].visible = true;
+                        overflowStartIndex = -1;
+                    }
+                }
                 // Render into the visible node
                 this.renderTabs(this.contentNode, renderData);
                 this.computeOverflowingTabsData(overflowStartIndex);
@@ -1150,7 +1161,7 @@ export class SideTabBar extends ScrollableTabBar {
         }
     }
 
-    private computeOverflowingTabsData(startIndex: number): void {
+    protected computeOverflowingTabsData(startIndex: number): void {
         // ensure that render tabs has completed
         window.requestAnimationFrame(() => {
             if (startIndex === -1) {
@@ -1238,7 +1249,7 @@ export class SideTabBar extends ScrollableTabBar {
         }
     }
 
-    private onMouseDown(event: MouseEvent): void {
+    protected onMouseDown(event: MouseEvent): void {
         // Check for left mouse button and current mouse status
         if (event.button !== 0 || this.mouseData) {
             return;
@@ -1264,7 +1275,7 @@ export class SideTabBar extends ScrollableTabBar {
         };
     }
 
-    private onMouseUp(event: MouseEvent): void {
+    protected onMouseUp(event: MouseEvent): void {
         // Check for left mouse button and current mouse status
         if (event.button !== 0 || !this.mouseData) {
             return;
@@ -1283,7 +1294,7 @@ export class SideTabBar extends ScrollableTabBar {
         this.collapseRequested.emit(this.titles[index]);
     }
 
-    private onMouseMove(event: MouseEvent): void {
+    protected onMouseMove(event: MouseEvent): void {
         // Check for left mouse button and current mouse status
         if (event.button !== 0 || !this.mouseData) {
             return;
