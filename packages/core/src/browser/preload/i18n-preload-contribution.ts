@@ -14,14 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AbstractPreloadContribution } from './preloader';
+import { PreloadContribution } from './preloader';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
 import { nls } from '../../common/nls';
-import { Localization } from '../../common/i18n/localization';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
+import { LocalizationServer } from '../../common/i18n/localization-server';
 
 @injectable()
-export class I18nPreloadContribution extends AbstractPreloadContribution {
+export class I18nPreloadContribution implements PreloadContribution {
+
+    @inject(LocalizationServer)
+    protected readonly localizationServer: LocalizationServer;
 
     async initialize(): Promise<void> {
         const defaultLocale = FrontendApplicationConfigProvider.get().defaultLocale;
@@ -31,8 +34,7 @@ export class I18nPreloadContribution extends AbstractPreloadContribution {
             });
         }
         if (nls.locale) {
-            const response = await this.fetch(`/i18n/${nls.locale}`);
-            const localization = await response.json() as Localization;
+            const localization = await this.localizationServer.loadLocalization(nls.locale);
             if (localization.languagePack) {
                 nls.localization = localization;
             } else {

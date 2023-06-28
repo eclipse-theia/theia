@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as express from 'express';
 import { inject, injectable } from 'inversify';
+import { Localization } from 'src/common/i18n/localization';
+import { LocalizationServer } from '../../common/i18n/localization-server';
 import { nls } from '../../common/nls';
 import { Deferred } from '../../common/promise-util';
 import { BackendApplicationContribution } from '../backend-application';
@@ -23,7 +24,8 @@ import { LocalizationRegistry } from './localization-contribution';
 import { LocalizationProvider } from './localization-provider';
 
 @injectable()
-export class LocalizationBackendContribution implements BackendApplicationContribution {
+export class LocalizationServerImpl implements LocalizationServer, BackendApplicationContribution {
+
     protected readonly initialized = new Deferred<void>();
 
     @inject(LocalizationRegistry)
@@ -41,13 +43,10 @@ export class LocalizationBackendContribution implements BackendApplicationContri
         return this.initialized.promise;
     }
 
-    configure(app: express.Application): void {
-        app.get('/i18n/:locale', async (req, res) => {
-            await this.waitForInitialization();
-            let locale = req.params.locale;
-            locale = this.localizationProvider.getAvailableLanguages().some(e => e.languageId === locale) ? locale : nls.defaultLocale;
-            this.localizationProvider.setCurrentLanguage(locale);
-            res.send(this.localizationProvider.loadLocalization(locale));
-        });
+    async loadLocalization(languageId: string): Promise<Localization> {
+        await this.waitForInitialization();
+        languageId = this.localizationProvider.getAvailableLanguages().some(e => e.languageId === languageId) ? languageId : nls.defaultLocale;
+        this.localizationProvider.setCurrentLanguage(languageId);
+        return this.localizationProvider.loadLocalization(languageId);
     }
 }

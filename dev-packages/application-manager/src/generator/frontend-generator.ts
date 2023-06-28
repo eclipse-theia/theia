@@ -91,8 +91,9 @@ function load(container, jsModule) {
         .then(containerModule => container.load(containerModule.default));
 }
 
-async function preload() {
+async function preload(parent) {
     const container = new Container();
+    container.parent = parent;
     try {
 ${Array.from(frontendPreloadModules.values(), jsModulePath => `\
         await load(container, import('${jsModulePath}'));`).join('\n')}
@@ -107,18 +108,18 @@ ${Array.from(frontendPreloadModules.values(), jsModulePath => `\
     }
 }
 
-module.exports = async () => {
-    await preload();
-    const { FrontendApplication } = require('@theia/core/lib/browser');
-    const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');
+module.exports = (async () => {
     const { messagingFrontendModule } = require('@theia/core/lib/${this.pck.isBrowser()
-                ? 'browser/messaging/messaging-frontend-module'
-                : 'electron-browser/messaging/electron-messaging-frontend-module'}');
+            ? 'browser/messaging/messaging-frontend-module'
+            : 'electron-browser/messaging/electron-messaging-frontend-module'}');
+    const container = new Container();
+    container.load(messagingFrontendModule);
+    await preload(container);
+    const { FrontendApplication } = require('@theia/core/lib/browser');
+    const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');    
     const { loggerFrontendModule } = require('@theia/core/lib/browser/logger-frontend-module');
 
-    const container = new Container();
     container.load(frontendApplicationModule);
-    container.load(messagingFrontendModule);
     container.load(loggerFrontendModule);
 
     try {
@@ -136,7 +137,7 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
         (window['theia'] = window['theia'] || {}).container = container;
         return container.get(FrontendApplication).start();
     }
-};
+})();
 `;
     }
 

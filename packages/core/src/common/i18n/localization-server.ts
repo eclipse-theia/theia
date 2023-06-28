@@ -14,24 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
-import { OS, OSBackendProvider } from '../../common';
-import { PreloadContribution } from './preloader';
+import { Localization } from './localization';
 
-@injectable()
-export class OSPreloadContribution implements PreloadContribution {
+export const LocalizationServerPath = '/localization-server';
 
-    @inject(OSBackendProvider)
-    protected readonly osBackendProvider: OSBackendProvider;
+export const LocalizationServer = Symbol('LocalizationServer');
 
-    async initialize(): Promise<void> {
-        const osType = await this.osBackendProvider.getBackendOS();
-        const isWindows = osType === 'Windows';
-        const isOSX = osType === 'OSX';
-        OS.backend.isOSX = isOSX;
-        OS.backend.isWindows = isWindows;
-        OS.backend.type = () => osType;
-        OS.backend.EOL = isWindows ? '\r\n' : '\n';
-    }
-
+export interface LocalizationServer {
+    loadLocalization(languageId: string): Promise<Localization>;
 }

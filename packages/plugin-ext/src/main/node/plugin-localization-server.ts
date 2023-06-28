@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { LocalizationBackendContribution } from '@theia/core/lib/node/i18n/localization-backend-contribution';
 import { PluginDeployer } from '../../common/plugin-protocol';
 import { PluginDeployerImpl } from './plugin-deployer-impl';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { LocalizationServerImpl } from '@theia/core/lib/node/i18n/localization-server';
 
 @injectable()
-export class PluginLocalizationBackendContribution extends LocalizationBackendContribution {
+export class PluginLocalizationServer extends LocalizationServerImpl {
     @inject(PluginDeployer)
     protected readonly pluginDeployer: PluginDeployerImpl;
     protected readonly pluginsDeployed = new Deferred();

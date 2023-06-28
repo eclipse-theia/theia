@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Endpoint } from '../endpoint';
 import { MaybePromise } from '../../common/types';
 import { inject, injectable, interfaces, named } from 'inversify';
 import { ContributionProvider } from '../../common/contribution-provider';
@@ -23,16 +22,6 @@ export const PreloadContribution = Symbol('PreloadContribution') as symbol & int
 
 export interface PreloadContribution {
     initialize(): MaybePromise<void>;
-}
-
-@injectable()
-export abstract class AbstractPreloadContribution {
-
-    protected fetch(path: string): Promise<Response> {
-        const endpoint = new Endpoint({ path }).getRestUrl().toString();
-        return fetch(endpoint);
-    }
-
 }
 
 @injectable()

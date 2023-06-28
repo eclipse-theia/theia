@@ -141,14 +141,14 @@ async function start(port, host, argv = process.argv) {
         container.bind(BackendApplicationServer).toConstantValue({ configure: defaultServeStatic });
     }
     await container.get(CliManager).initializeCli(argv);
-    await container.get(BackendApplication).start(port, host);
+    return container.get(BackendApplication).start(port, host);
 }
 
 module.exports = async (port, host, argv) => {
     try {
 ${Array.from(backendModules.values(), jsModulePath => `\
         await load(require('${jsModulePath}'));`).join('\n')}
-        await start(port, host, argv);
+        return await start(port, host, argv);
     } catch (error) {
         console.error('Failed to start the backend application:');
         console.error(error);

@@ -20,10 +20,21 @@ import { bindContributionProvider } from '../../common/contribution-provider';
 import { I18nPreloadContribution } from './i18n-preload-contribution';
 import { OSPreloadContribution } from './os-preload-contribution';
 import { ThemePreloadContribution } from './theme-preload-contribution';
+import { LocalizationServer, LocalizationServerPath } from '../../common/i18n/localization-server';
+import { WebSocketConnectionProvider } from '../messaging/ws-connection-provider';
+import { OSBackendProvider, OSBackendProviderPath } from '../../common/os';
 
 export default new ContainerModule(bind => {
     bind(Preloader).toSelf().inSingletonScope();
     bindContributionProvider(bind, PreloadContribution);
+
+    bind(LocalizationServer).toDynamicValue(ctx =>
+        WebSocketConnectionProvider.createProxy<LocalizationServer>(ctx.container, LocalizationServerPath)
+    ).inSingletonScope();
+
+    bind(OSBackendProvider).toDynamicValue(ctx =>
+        WebSocketConnectionProvider.createProxy<OSBackendProvider>(ctx.container, OSBackendProviderPath)
+    ).inSingletonScope();
 
     bind(I18nPreloadContribution).toSelf().inSingletonScope();
     bind(PreloadContribution).toService(I18nPreloadContribution);
