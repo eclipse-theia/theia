@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { join } from 'path';
+import { existsSync } from 'node:fs';
+import { join, sep } from 'path';
 import { homedir } from 'os';
 import { injectable } from 'inversify';
 import * as drivelist from 'drivelist';
@@ -43,8 +44,21 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     }
 
     protected async createConfigDirUri(): Promise<string> {
-        process.env.THEIA_CONFIG_DIR = join(homedir(), 'data');
-        return FileUri.create(process.env.THEIA_CONFIG_DIR || join(homedir(), '.theia')).toString();
+        const projectPath = this.handlePath(process.cwd());
+        const dataFolderPath = join(projectPath, 'data');
+        if (existsSync(dataFolderPath)) {
+            process.env.THEIA_CONFIG_DIR = dataFolderPath;
+        } else {
+            process.env.THEIA_CONFIG_DIR = join(homedir(), '.theia');
+        }
+        return FileUri.create(process.env.THEIA_CONFIG_DIR).toString();
+    }
+
+    protected handlePath(pathStr: string): string {
+        let pathArr = pathStr.split(sep);
+        pathArr = pathArr.slice(0, pathArr.indexOf('theia') + 1);
+        pathStr = pathArr.join(sep);
+        return pathStr;
     }
 
     async getExecPath(): Promise<string> {
