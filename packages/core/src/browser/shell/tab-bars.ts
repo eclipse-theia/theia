@@ -68,6 +68,7 @@ export interface SideBarRenderData extends TabBar.IRenderData<Widget> {
     iconSize?: SizeData;
     paddingTop?: number;
     paddingBottom?: number;
+    visible?: boolean
 }
 
 export interface ScrollableRenderData extends TabBar.IRenderData<Widget> {
@@ -192,6 +193,14 @@ export class TabBarRenderer extends TabBar.Renderer {
                 onclick: this.handleCloseClickEvent
             })
         );
+    }
+
+    override createTabClass(data: SideBarRenderData): string {
+        let tabClass = super.createTabClass(data);
+        if (!(data.visible ?? true)) {
+            tabClass += ' p-mod-invisible';
+        }
+        return tabClass;
     }
 
     /**
@@ -339,7 +348,7 @@ export class TabBarRenderer extends TabBar.Renderer {
      * @param {string | string[]} iconName The name of the icon.
      * @param {string[]} additionalClasses Additional classes of the icon.
      */
-    private getIconClass(iconName: string | string[], additionalClasses: string[] = []): string {
+    protected getIconClass(iconName: string | string[], additionalClasses: string[] = []): string {
         const iconClass = (typeof iconName === 'string') ? ['a', 'fa', `fa-${iconName}`] : ['a'].concat(iconName);
         return iconClass.concat(additionalClasses).join(' ');
     }
@@ -585,12 +594,12 @@ export class ScrollableTabBar extends TabBar<Widget> {
 
     protected scrollBar?: PerfectScrollbar;
 
-    private scrollBarFactory: () => PerfectScrollbar;
-    private pendingReveal?: Promise<void>;
-    private isMouseOver = false;
+    protected scrollBarFactory: () => PerfectScrollbar;
+    protected pendingReveal?: Promise<void>;
+    protected isMouseOver = false;
     protected needsRecompute = false;
     protected tabSize = 0;
-    private _dynamicTabOptions?: ScrollableTabBar.Options;
+    protected _dynamicTabOptions?: ScrollableTabBar.Options;
     protected contentContainer: HTMLElement;
     protected topRow: HTMLElement;
 
@@ -629,7 +638,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
      * Instead of this structure, we add a container for the `this.contentNode` and for the toolbar.
      * The scrollbar will only work for the `ul` part but it does not affect the toolbar, so it can be on the right hand-side.
      */
-    private rewireDOM(): void {
+    protected rewireDOM(): void {
         const contentNode = this.node.getElementsByClassName(ScrollableTabBar.Styles.TAB_BAR_CONTENT)[0];
         if (!contentNode) {
             throw new Error("'this.node' does not have the content as a direct child with class name 'p-TabBar-content'.");
@@ -924,7 +933,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
         super.handleEvent(event);
     }
 
-    private isOver(event: Event, element: Element): boolean {
+    protected isOver(event: Event, element: Element): boolean {
         return element && event.target instanceof Element && element.contains(event.target);
     }
 
@@ -935,7 +944,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
      * Instead of this structure, we add a container for the `this.contentNode` and for the toolbar.
      * The scrollbar will only work for the `ul` part but it does not affect the toolbar, so it can be on the right hand-side.
      */
-    private addBreadcrumbs(): void {
+    protected addBreadcrumbs(): void {
         this.breadcrumbsContainer = document.createElement('div');
         this.breadcrumbsContainer.classList.add('theia-tabBar-breadcrumb-row');
         this.breadcrumbsContainer.appendChild(this.breadcrumbsRenderer.host);
@@ -948,7 +957,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
  */
 export class SideTabBar extends ScrollableTabBar {
 
-    private static readonly DRAG_THRESHOLD = 5;
+    protected static readonly DRAG_THRESHOLD = 5;
 
     /**
      * Emitted when a tab is added to the tab bar.
@@ -960,11 +969,23 @@ export class SideTabBar extends ScrollableTabBar {
      */
     readonly collapseRequested = new Signal<this, Title<Widget>>(this);
 
-    private mouseData?: {
+    /**
+     * Emitted when the set of overflowing/hidden tabs changes.
+     */
+    readonly tabsOverflowChanged = new Signal<this, { titles: Title<Widget>[], startIndex: number }>(this);
+
+    protected mouseData?: {
         pressX: number,
         pressY: number,
         mouseDownTabIndex: number
     };
+
+    protected tabsOverflowData?: {
+        titles: Title<Widget>[],
+        startIndex: number
+    };
+
+    protected _rowGap: number;
 
     constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
         super(options);
@@ -996,7 +1017,6 @@ export class SideTabBar extends ScrollableTabBar {
     }
 
     protected override onAfterAttach(msg: Message): void {
-        super.onAfterAttach(msg);
         this.updateTabs();
         this.node.addEventListener('p-dragenter', this);
         this.node.addEventListener('p-dragover', this);
@@ -1014,9 +1034,65 @@ export class SideTabBar extends ScrollableTabBar {
 
     protected override onUpdateRequest(msg: Message): void {
         this.updateTabs();
-        if (this.scrollBar) {
-            this.scrollBar.update();
+    }
+
+    protected override onResize(msg: Widget.ResizeMessage): void {
+        // Tabs need to be updated if there are already overflowing tabs or the current tabs don't fit
+        if (this.tabsOverflowData || this.node.clientHeight < this.contentNode.clientHeight) {
+            this.updateTabs();
         }
+    }
+
+    // Queries the tabRowGap value of the content node. Needed to properly compute overflowing
+    // tabs that should be hidden
+    protected get tabRowGap(): number {
+        // We assume that the tab row gap is static i.e. we compute it once an then cache it
+        if (!this._rowGap) {
+            this._rowGap = this.computeTabRowGap();
+        }
+        return this._rowGap;
+
+    }
+
+    protected computeTabRowGap(): number {
+        const style = window.getComputedStyle(this.contentNode);
+        const rowGapStyle = style.getPropertyValue('row-gap');
+        const numericValue = parseFloat(rowGapStyle);
+        const unit = rowGapStyle.match(/[a-zA-Z]+/)?.[0];
+
+        const tempDiv = document.createElement('div');
+        tempDiv.style.height = '1' + unit;
+        document.body.appendChild(tempDiv);
+        const rowGapValue = numericValue * tempDiv.offsetHeight;
+        document.body.removeChild(tempDiv);
+        return rowGapValue;
+    }
+
+    /**
+     * Reveal the tab with the given index by moving it into the non-overflowing tabBar section
+     * if necessary.
+     */
+    override revealTab(index: number): Promise<void> {
+        if (this.pendingReveal) {
+            // A reveal has already been scheduled
+            return this.pendingReveal;
+        }
+        const result = new Promise<void>(resolve => {
+            // The tab might not have been created yet, so wait until the next frame
+            window.requestAnimationFrame(() => {
+                if (this.tabsOverflowData && index >= this.tabsOverflowData.startIndex) {
+                    const title = this.titles[index];
+                    this.insertTab(this.tabsOverflowData.startIndex - 1, title);
+                }
+
+                if (this.pendingReveal === result) {
+                    this.pendingReveal = undefined;
+                }
+                resolve();
+            });
+        });
+        this.pendingReveal = result;
+        return result;
     }
 
     /**
@@ -1032,13 +1108,18 @@ export class SideTabBar extends ScrollableTabBar {
                 const hiddenContent = this.hiddenContentNode;
                 const n = hiddenContent.children.length;
                 const renderData = new Array<Partial<SideBarRenderData>>(n);
+                const availableWidth = this.node.clientHeight - this.tabRowGap;
+                let actualWidth = 0;
+                let overflowStartIndex = -1;
                 for (let i = 0; i < n; i++) {
                     const hiddenTab = hiddenContent.children[i];
                     // Extract tab padding from the computed style
                     const tabStyle = window.getComputedStyle(hiddenTab);
+                    const paddingTop = parseFloat(tabStyle.paddingTop!);
+                    const paddingBottom = parseFloat(tabStyle.paddingBottom!);
                     const rd: Partial<SideBarRenderData> = {
-                        paddingTop: parseFloat(tabStyle.paddingTop!),
-                        paddingBottom: parseFloat(tabStyle.paddingBottom!)
+                        paddingTop,
+                        paddingBottom
                     };
                     // Extract label size from the DOM
                     const labelElements = hiddenTab.getElementsByClassName('p-TabBar-tabLabel');
@@ -1051,13 +1132,59 @@ export class SideTabBar extends ScrollableTabBar {
                     if (iconElements.length === 1) {
                         const icon = iconElements[0];
                         rd.iconSize = { width: icon.clientWidth, height: icon.clientHeight };
+                        actualWidth += icon.clientHeight + paddingTop + paddingBottom + this.tabRowGap;
+
+                        if (actualWidth > availableWidth && i !== 0) {
+                            rd.visible = false;
+                            if (overflowStartIndex === -1) {
+                                overflowStartIndex = i;
+                            }
+                        }
+                        renderData[i] = rd;
                     }
-                    renderData[i] = rd;
+                }
+
+                // Special handling if only one element is overflowing.
+                if (overflowStartIndex === n - 1) {
+                    if (!this.tabsOverflowData) {
+                        overflowStartIndex--;
+                        renderData[overflowStartIndex].visible = false;
+                    } else {
+                        renderData[overflowStartIndex].visible = true;
+                        overflowStartIndex = -1;
+                    }
                 }
                 // Render into the visible node
                 this.renderTabs(this.contentNode, renderData);
+                this.computeOverflowingTabsData(overflowStartIndex);
             });
         }
+    }
+
+    protected computeOverflowingTabsData(startIndex: number): void {
+        // ensure that render tabs has completed
+        window.requestAnimationFrame(() => {
+            if (startIndex === -1) {
+                if (this.tabsOverflowData) {
+                    this.tabsOverflowData = undefined;
+                    this.tabsOverflowChanged.emit({ titles: [], startIndex });
+                }
+                return;
+            }
+            const newOverflowingTabs = this.titles.slice(startIndex);
+
+            if (!this.tabsOverflowData) {
+                this.tabsOverflowData = { titles: newOverflowingTabs, startIndex };
+                this.tabsOverflowChanged.emit(this.tabsOverflowData);
+                return;
+            }
+
+            if ((newOverflowingTabs.length !== this.tabsOverflowData?.titles.length ?? 0) ||
+                newOverflowingTabs.find((newTitle, i) => newTitle !== this.tabsOverflowData?.titles[i]) !== undefined) {
+                this.tabsOverflowData = { titles: newOverflowingTabs, startIndex };
+                this.tabsOverflowChanged.emit(this.tabsOverflowData);
+            }
+        });
     }
 
     /**
@@ -1122,7 +1249,7 @@ export class SideTabBar extends ScrollableTabBar {
         }
     }
 
-    private onMouseDown(event: MouseEvent): void {
+    protected onMouseDown(event: MouseEvent): void {
         // Check for left mouse button and current mouse status
         if (event.button !== 0 || this.mouseData) {
             return;
@@ -1148,7 +1275,7 @@ export class SideTabBar extends ScrollableTabBar {
         };
     }
 
-    private onMouseUp(event: MouseEvent): void {
+    protected onMouseUp(event: MouseEvent): void {
         // Check for left mouse button and current mouse status
         if (event.button !== 0 || !this.mouseData) {
             return;
@@ -1167,7 +1294,7 @@ export class SideTabBar extends ScrollableTabBar {
         this.collapseRequested.emit(this.titles[index]);
     }
 
-    private onMouseMove(event: MouseEvent): void {
+    protected onMouseMove(event: MouseEvent): void {
         // Check for left mouse button and current mouse status
         if (event.button !== 0 || !this.mouseData) {
             return;

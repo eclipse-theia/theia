@@ -302,6 +302,7 @@
   display: flex;
   position: absolute;
   visibility: hidden;
+  padding-inline-start: 0px;
 }
 
 .p-TabBar.theia-app-sides > .theia-TabBar-hidden-content .p-TabBar-tab {

@@ -136,6 +136,7 @@ import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from 
 import { StylingParticipant, StylingService } from './styling-service';
 import { bindCommonStylingParticipants } from './common-styling-participants';
 import { HoverService } from './hover-service';
+import { AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -167,6 +168,12 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(SidebarMenuWidget).toSelf();
     bind(SidebarBottomMenuWidget).toSelf();
     bind(SidebarBottomMenuWidgetFactory).toAutoFactory(SidebarBottomMenuWidget);
+    bind(AdditionalViewsMenuWidget).toSelf();
+    bind(AdditionalViewsMenuWidgetFactory).toFactory(ctx => (side: 'left' | 'right') => {
+        const widget = ctx.container.resolve(AdditionalViewsMenuWidget);
+        widget.side = side;
+        return widget;
+    });
     bind(SplitPositionHandler).toSelf().inSingletonScope();
 
     bindContributionProvider(bind, TabBarToolbarContribution);
