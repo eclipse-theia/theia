@@ -315,7 +315,7 @@ export class VSXExtensionsModel {
             const client = await this.clientProvider();
             let data: VSXExtensionRaw | undefined;
             if (version === undefined) {
-                const { extensions } = await client.query({ extensionId: id });
+                const { extensions } = await client.query({ extensionId: id, includeAllVersions: true });
                 if (extensions?.length) {
                     data = this.vsxApiFilter.getLatestCompatibleExtension(extensions);
                 }

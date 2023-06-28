@@ -129,7 +129,7 @@ export default async function downloadPlugins(ovsxClient: OVSXClient, requestSer
             await parallelOrSequence(Array.from(ids, id => async () => {
                 try {
                     await rateLimiter.removeTokens(1);
-                    const { extensions } = await ovsxClient.query({ extensionId: id });
+                    const { extensions } = await ovsxClient.query({ extensionId: id, includeAllVersions: true });
                     const extension = apiFilter.getLatestCompatibleExtension(extensions);
                     const version = extension?.version;
                     const downloadUrl = extension?.files.download;
