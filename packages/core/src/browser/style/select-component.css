@@ -25,6 +25,7 @@
   display: flex;
   align-items: center;
   user-select: none;
+  border-radius: 2px;
 }
 
 .theia-select-component .theia-select-component-label {
@@ -48,6 +49,7 @@
   outline-offset: -1px;
   user-select: none;
   overflow: auto;
+  border-radius: 2px;
 }
 
 .theia-select-component-dropdown .theia-select-component-option {

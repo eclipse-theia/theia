@@ -118,6 +118,7 @@ blockquote {
   font-size: var(--theia-ui-font-size1);
   line-height: var(--theia-content-line-height);
   padding-left: 5px;
+  border-radius: 2px;
 }
 
 .theia-input[type="text"] {
@@ -263,6 +264,7 @@ blockquote {
   cursor: pointer;
   padding: 4px 9px;
   margin-left: calc(var(--theia-ui-padding) * 2);
+  border-radius: 2px;
 }
 
 .theia-button:focus {
@@ -290,7 +292,7 @@ button.secondary[disabled],
 .theia-select {
   color: var(--dropdown-foreground);
   font-size: var(--theia-ui-font-size1);
-  border-radius: 0;
+  border-radius: 2px;
   border: 1px solid var(--theia-dropdown-border);
   background: var(--theia-dropdown-background);
   outline: none;

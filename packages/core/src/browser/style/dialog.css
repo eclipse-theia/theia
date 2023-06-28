@@ -33,9 +33,12 @@
   display: flex;
   flex-direction: column;
   min-width: 400px;
+  min-height: 150px;
   color: var(--theia-editorWidget-foreground);
   background-color: var(--theia-editorWidget-background);
   border: 1px solid var(--theia-contrastBorder);
+  border-radius: 4px;
+  overflow: hidden;
   box-shadow: 0 0px 8px var(--theia-widget-shadow);
 }
 .p-Widget.dialogOverlay .dialogTitle {
