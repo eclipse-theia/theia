@@ -283,7 +283,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
                 const install = nls.localizeByDefault('Install');
                 const showRecommendations = nls.localizeByDefault('Show Recommendations');
                 const userResponse = await this.messageService.info(
-                    nls.localizeByDefault('Do you want to install the recommended extensions for this repository?'),
+                    nls.localize('theia/vsx-registry/recommendedExtensions', 'Do you want to install the recommended extensions for this repository?'),
                     install,
                     showRecommendations
                 );

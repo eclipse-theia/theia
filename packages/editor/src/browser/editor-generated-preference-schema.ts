@@ -234,8 +234,8 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "smart",
         "markdownEnumDescriptions": [
-            nls.localizeByDefault("Uses the default diffing algorithm."),
-            nls.localizeByDefault("Uses an experimental diffing algorithm.")
+            nls.localizeByDefault("Uses the legacy diffing algorithm."),
+            nls.localizeByDefault("Uses the advanced diffing algorithm.")
         ],
         "scope": "language-overridable",
         "restricted": false

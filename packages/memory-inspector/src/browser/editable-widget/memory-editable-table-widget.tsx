@@ -94,9 +94,9 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
                         className='theia-button main'
                         onClick={this.submitMemoryEdits}
                         type='submit'
-                        title={nls.localize('theia/memory-inspector/editable/apply', 'Apply Changes')}
+                        title={nls.localizeByDefault('Apply Changes')}
                     >
-                        {nls.localize('theia/memory-inspector/editable/apply', 'Apply Changes')}
+                        {nls.localizeByDefault('Apply Changes')}
                     </button>}
                     {!!this.writeErrorInfo && <div className='memory-edit-error'>
                         <div className='memory-edit-error-location'>{`Error writing to 0x${Long.fromString(this.writeErrorInfo?.location).toString(16)}`}</div>

@@ -270,12 +270,12 @@ export namespace CommonCommands {
     export const SHOW_MENU_BAR = Command.toDefaultLocalizedCommand({
         id: 'window.menuBarVisibility',
         category: VIEW_CATEGORY,
-        label: 'Show Menu Bar'
+        label: 'Toggle Menu Bar'
     });
     export const NEW_UNTITLED_FILE = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.files.newUntitledFile',
         category: FILE_CATEGORY,
-        label: 'New Untitled File'
+        label: 'New Untitled Text File'
     });
     export const SAVE = Command.toDefaultLocalizedCommand({
         id: 'core.save',

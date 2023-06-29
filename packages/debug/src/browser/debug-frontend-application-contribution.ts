@@ -240,8 +240,7 @@ export namespace DebugCommands {
     });
     export const SHOW_HOVER = Command.toDefaultLocalizedCommand({
         id: 'editor.debug.action.showDebugHover',
-        category: DEBUG_CATEGORY,
-        label: 'Show Hover'
+        label: 'Debug: Show Hover'
     });
 
     export const RESTART_FRAME = Command.toDefaultLocalizedCommand({

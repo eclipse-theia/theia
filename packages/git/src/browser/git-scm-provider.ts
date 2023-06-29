@@ -415,7 +415,7 @@ export class GitScmProvider implements ScmProvider {
             fileText = `${paths.length} files`;
         }
         return new ConfirmDialog({
-            title: nls.localize('vscode.git/package/command.clean', 'Discard Changes'),
+            title: nls.localizeByDefault('Discard Changes'),
             msg: nls.localize('vscode.git/commands/confirm discard', 'Do you really want to discard changes in {0}?', fileText)
         }).open();
     }
