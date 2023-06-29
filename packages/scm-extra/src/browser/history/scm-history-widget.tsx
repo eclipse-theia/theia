@@ -307,12 +307,14 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                     const repo = this.scmService.findRepository(new URI(this.options.uri));
                     const repoName = repo ? `${this.labelProvider.getName(new URI(repo.provider.rootUri))}` : '';
 
-                    const relPathAndRepo = [relPath, repoName].filter(Boolean).join(' in ');
-                    path = ` for ${relPathAndRepo}`;
+                    const relPathAndRepo = [relPath, repoName].filter(Boolean).join(
+                        ` ${nls.localize('theia/git/prepositionIn', 'in')} `
+                    );
+                    path = `${relPathAndRepo}`;
                 }
                 content = <AlertMessage
                     type='WARNING'
-                    header={`There is no history available${path}.`}>
+                    header={nls.localize('theia/git/noHistoryForError', 'There is no history available for {0}', `${path}`)}>
                     {reason}
                 </AlertMessage>;
                 break;
