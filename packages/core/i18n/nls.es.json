@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Editar condición...",
   "terminal:new:profile": "Crear un nuevo terminal integrado a partir de un perfil",
   "terminal:profile:default": "Elija el perfil de terminal por defecto",
   "theia": {
@@ -43,6 +44,10 @@
         "mac": "Teclados Mac",
         "pc": "Teclados para PC",
         "tryDetect": "Intenta detectar la distribución del teclado a partir de la información del navegador y de las teclas pulsadas."
+      },
+      "navigator": {
+        "clipboardWarn": "El acceso al portapapeles está denegado. Comprueba los permisos de tu navegador.",
+        "clipboardWarnFirefox": "La API del portapapeles no está disponible. Se puede activar mediante la preferencia '{0}' en la página '{1}'. A continuación, vuelva a cargar Theia. Tenga en cuenta que esto permitirá a FireFox tener acceso completo al portapapeles del sistema."
       },
       "offline": "Fuera de línea",
       "quitMessage": "Cualquier cambio no guardado no se guardará.",
@@ -154,11 +159,15 @@
       "gitDecorationsColors": "Utilice la decoración de colores en el navegador.",
       "mergeQuickPickPlaceholder": "Elige una rama para fusionar con la rama {0} actualmente activa:",
       "missingUserInfo": "Asegúrate de configurar tu 'user.name' y 'user.email' en git.",
+      "noHistoryForError": "No hay historial disponible para {0}",
       "noPreviousCommit": "No hay compromiso previo para modificar",
       "noRepositoriesSelected": "No se ha seleccionado ningún repositorio.",
+      "prepositionIn": "en",
       "repositoryNotInitialized": "El repositorio {0} aún no está inicializado.",
       "stashChanges": "Cambios en el alijo. Pulse \"Enter\" para confirmar o \"Escape\" para cancelar.",
       "stashChangesWithMessage": "Cambios en el alijo con mensaje: {0}. Pulse 'Enter' para confirmar o 'Escape' para cancelar.",
+      "tabTitleIndex": "{0} (índice)",
+      "tabTitleWorkingTree": "{0} (Árbol de trabajo)",
       "toggleBlameAnnotations": "Alternar las anotaciones de culpabilidad"
     },
     "keybinding-schema-updater": {
@@ -207,7 +216,6 @@
         "offset-title": "Bytes para compensar la memoria de {0}"
       },
       "editable": {
-        "apply": "Aplicar cambios",
         "clear": "Cambios claros"
       },
       "endianness": "Endiosamiento",
@@ -269,6 +277,8 @@
     },
     "navigator": {
       "autoReveal": "Auto Reveal",
+      "clipboardWarn": "El acceso al portapapeles está denegado. Comprueba los permisos de tu navegador.",
+      "clipboardWarnFirefox": "La API del portapapeles no está disponible. Se puede activar mediante la preferencia '{0}' en la página '{1}'. A continuación, vuelva a cargar Theia. Tenga en cuenta que esto permitirá a FireFox tener acceso completo al portapapeles del sistema.",
       "refresh": "Actualizar en el Explorador",
       "reveal": "Revelar en el Explorador",
       "toggleHiddenFiles": "Activar los archivos ocultos"
@@ -416,6 +426,7 @@
       "license": "License: {0}",
       "recommendedExtensions": "Una lista de los nombres de las extensiones recomendadas para su uso en este espacio de trabajo.",
       "searchPlaceholder": "Buscar extensiones en {0}",
+      "showInstalled": "Mostrar extensiones instaladas",
       "showRecommendedExtensions": "Controla si se muestran las notificaciones de las recomendaciones de extensión.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Error al eliminar la extensión: {0}.",

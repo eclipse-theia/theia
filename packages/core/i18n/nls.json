@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Edit Condition...",
   "terminal:new:profile": "Create New Integrated Terminal from a Profile",
   "terminal:profile:default": "Choose the default Terminal Profile",
   "theia": {
@@ -43,6 +44,10 @@
         "mac": "Mac Keyboards",
         "pc": "PC Keyboards",
         "tryDetect": "Try to detect the keyboard layout from browser information and pressed keys."
+      },
+      "navigator": {
+        "clipboardWarn": "Access to the clipboard is denied. Check your browser's permission.",
+        "clipboardWarnFirefox": "Clipboard API is not available. It can be enabled by '{0}' preference on '{1}' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard."
       },
       "offline": "Offline",
       "quitMessage": "Any unsaved changes will not be saved.",
@@ -154,11 +159,15 @@
       "gitDecorationsColors": "Use color decoration in the navigator.",
       "mergeQuickPickPlaceholder": "Pick a branch to merge into the currently active {0} branch:",
       "missingUserInfo": "Make sure you configure your 'user.name' and 'user.email' in git.",
+      "noHistoryForError": "There is no history available for {0}",
       "noPreviousCommit": "No previous commit to amend",
       "noRepositoriesSelected": "No repositories were selected.",
+      "prepositionIn": "in",
       "repositoryNotInitialized": "Repository {0} is not yet initialized.",
       "stashChanges": "Stash changes. Press 'Enter' to confirm or 'Escape' to cancel.",
       "stashChangesWithMessage": "Stash changes with message: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
+      "tabTitleIndex": "{0} (Index)",
+      "tabTitleWorkingTree": "{0} (Working tree)",
       "toggleBlameAnnotations": "Toggle Blame Annotations"
     },
     "keybinding-schema-updater": {
@@ -207,7 +216,6 @@
         "offset-title": "Bytes to offset the memory from {0}"
       },
       "editable": {
-        "apply": "Apply Changes",
         "clear": "Clear Changes"
       },
       "endianness": "Endianness",
@@ -269,6 +277,8 @@
     },
     "navigator": {
       "autoReveal": "Auto Reveal",
+      "clipboardWarn": "Access to the clipboard is denied. Check your browser's permission.",
+      "clipboardWarnFirefox": "Clipboard API is not available. It can be enabled by '{0}' preference on '{1}' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard.",
       "refresh": "Refresh in Explorer",
       "reveal": "Reveal in Explorer",
       "toggleHiddenFiles": "Toggle Hidden Files"
@@ -414,8 +424,9 @@
       "failedInstallingVSIX": "Failed to install {0} from VSIX.",
       "invalidVSIX": "The selected file is not a valid \"*.vsix\" plugin.",
       "license": "License: {0}",
-      "recommendedExtensions": "A list of the names of extensions recommended for use in this workspace.",
+      "recommendedExtensions": "Do you want to install the recommended extensions for this repository?",
       "searchPlaceholder": "Search Extensions in {0}",
+      "showInstalled": "Show Installed Extensions",
       "showRecommendedExtensions": "Controls whether notifications are shown for extension recommendations.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Error while removing the extension: {0}.",
