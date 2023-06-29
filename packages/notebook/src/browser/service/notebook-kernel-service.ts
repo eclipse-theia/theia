@@ -19,7 +19,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Disposable, Event, URI } from '@theia/core';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
+import { NotebookModel } from '../view-model/notebook-model';
+import { NotebookService } from './notebook-service';
 
 export interface SelectedNotebooksChangeEvent {
     notebook: URI;
@@ -76,7 +79,30 @@ export interface INotebookProxyKernelChangeEvent extends NotebookKernelChangeEve
 
 export interface NotebookTextModelLike { uri: URI; viewType: string }
 
-export class NotebookKernelSerivce {
+class KernelInfo {
+
+    private static logicClock = 0;
+
+    readonly kernel: NotebookKernel;
+    public score: number;
+    readonly time: number;
+
+    constructor(kernel: NotebookKernel) {
+        this.kernel = kernel;
+        this.score = -1;
+        this.time = KernelInfo.logicClock++;
+    }
+}
+
+@injectable()
+export class NotebookKernelService {
+
+    @inject(NotebookService)
+    protected notebookService: NotebookService;
+
+    private readonly kernels = new Map<string, KernelInfo>();
+
+    private readonly notebookBindings = new Map<string, string>();
 
     private readonly onDidAddKernelEmitter = new Emitter<NotebookKernel>();
     readonly onDidAddKernel: Event<NotebookKernel> = this.onDidAddKernelEmitter.event;
@@ -91,11 +117,75 @@ export class NotebookKernelSerivce {
     readonly onDidChangeNotebookAffinity: Event<void> = this.onDidChangeNotebookAffinityEmitter.event;
 
     registerKernel(kernel: NotebookKernel): Disposable {
-        throw new Error('Method not implemented.');
+        if (this.kernels.has(kernel.id)) {
+            throw new Error(`NOTEBOOK CONTROLLER with id '${kernel.id}' already exists`);
+        }
+
+        this.kernels.set(kernel.id, new KernelInfo(kernel));
+        this.onDidAddKernelEmitter.fire(kernel);
+
+        return Disposable.create(() => {
+            if (this.kernels.delete(kernel.id)) {
+                this.onDidRemoveKernelEmitter.fire(kernel);
+            }
+        });
     }
 
     getMatchingKernel(notebook: NotebookTextModelLike): NotebookKernelMatchResult {
-        throw new Error('Method not implemented.');
+        const kernels: { kernel: NotebookKernel; instanceAffinity: number; score: number }[] = [];
+        for (const info of this.kernels.values()) {
+            const score = NotebookKernelService.score(info.kernel, notebook);
+            if (score) {
+                kernels.push({
+                    score,
+                    kernel: info.kernel,
+                    instanceAffinity: 1 /* vscode.NotebookControllerPriority.Default */,
+                });
+            }
+        }
+
+        kernels
+            .sort((a, b) => b.instanceAffinity - a.instanceAffinity || a.score - b.score || a.kernel.label.localeCompare(b.kernel.label));
+        const all = kernels.map(obj => obj.kernel);
+
+        // bound kernel
+        const selectedId = this.notebookBindings.get(`${notebook.viewType}/${notebook.uri}`);
+        const selected = selectedId ? this.kernels.get(selectedId)?.kernel : undefined;
+        const suggestions = kernels.filter(item => item.instanceAffinity > 1).map(item => item.kernel);
+        const hidden = kernels.filter(item => item.instanceAffinity < 0).map(item => item.kernel);
+        return { all, selected, suggestions, hidden };
+
+    }
+
+    selectKernelForNotebook(kernel: NotebookKernel | undefined, notebook: NotebookTextModelLike): void {
+        const key = `${notebook.viewType}/${notebook.uri}`;
+        const oldKernel = this.notebookBindings.get(key);
+        if (oldKernel !== kernel?.id) {
+            if (kernel) {
+                this.notebookBindings.set(key, kernel.id);
+            } else {
+                this.notebookBindings.delete(key);
+            }
+        }
+    }
+
+    getSelectedOrSuggestedKernel(notebook: NotebookModel): NotebookKernel | undefined {
+        const info = this.getMatchingKernel(notebook);
+        if (info.selected) {
+            return info.selected;
+        }
+
+        return info.all.length === 1 ? info.all[0] : undefined;
+    }
+
+    private static score(kernel: NotebookKernel, notebook: NotebookTextModelLike): number {
+        if (kernel.viewType === '*') {
+            return 5;
+        } else if (kernel.viewType === notebook.viewType) {
+            return 10;
+        } else {
+            return 0;
+        }
     }
 
 }

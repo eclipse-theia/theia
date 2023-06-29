@@ -20,13 +20,19 @@ import { codicon } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from '../service/notebook-service';
 import { CellKind } from '../../common';
+import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
 
 export namespace NotebookCommands {
-    export const Add_NEW_CELL_COMMAND = Command.toDefaultLocalizedCommand({
+    export const ADD_NEW_CELL_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.add-new-cell',
         iconClass: codicon('add')
     });
 
+    export const SELECT_KERNEL_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.selectKernel',
+        category: 'Notebook',
+        iconClass: codicon('server-environment')
+    });
 }
 
 @injectable()
@@ -35,11 +41,20 @@ export class NotebookActionsContribution implements CommandContribution {
     @inject(NotebookService)
     protected notebookService: NotebookService;
 
+    @inject(NotebookKernelQuickPickService)
+    protected notebookKernelQuickPickService: NotebookKernelQuickPickService;
+
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(NotebookCommands.Add_NEW_CELL_COMMAND, {
+        commands.registerCommand(NotebookCommands.ADD_NEW_CELL_COMMAND, {
             execute: (notebookModel: NotebookModel, cellKind: CellKind, index?: number) => {
                 notebookModel.insertNewCell(index ?? notebookModel.cells.length,
                     [this.notebookService.createEmptyCellModel(notebookModel, cellKind)]);
+            }
+        });
+
+        commands.registerCommand(NotebookCommands.SELECT_KERNEL_COMMAND, {
+            execute: (notebookModel: NotebookModel) => {
+                this.notebookKernelQuickPickService.showQuickPick(notebookModel);
             }
         });
     }

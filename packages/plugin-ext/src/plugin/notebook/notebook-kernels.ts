@@ -20,10 +20,7 @@
 
 import { CancellationToken } from '@theia/plugin';
 import {
-    CellExecuteUpdateDto,
-    CellExecutionUpdateType,
-    NotebookCellExecutionState, NotebookKernelDto, NotebookKernelsExt, NotebookKernelsMain, NotebookKernelSourceActionDto, NotebookOutputDto,
-    PLUGIN_RPC_CONTEXT
+    CellExecuteUpdateDto, NotebookKernelDto, NotebookKernelsExt, NotebookKernelsMain, NotebookKernelSourceActionDto, NotebookOutputDto, PLUGIN_RPC_CONTEXT
 } from '../../common';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
@@ -34,6 +31,7 @@ import { Cell } from './notebook-document';
 import { NotebooksExtImpl } from './notebooks';
 import { NotebookCellOutput, NotebookCellOutputItem } from '../type-converters';
 import { timeout, Deferred } from '@theia/core/lib/common/promise-util';
+import { CellExecutionUpdateType, NotebookCellExecutionState } from '@theia/notebook/lib/common';
 
 interface KernelData {
     extensionId: string;
@@ -50,6 +48,15 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
     private readonly kernelData = new Map<number, KernelData>();
 
     private readonly proxy: NotebookKernelsMain;
+
+    private kernelDetectionTasks = new Map<number, theia.NotebookControllerDetectionTask>();
+    private currentkernelDetectionTaskHandle = 0;
+
+    private kernelSourceActionProviders = new Map<number, theia.NotebookKernelSourceActionProvider>();
+    private currentSourceActionProviderHandle = 0;
+
+    private readonly onDidChangeCellExecutionStateEmitter = new Emitter<theia.NotebookCellExecutionStateChangeEvent>();
+    readonly onDidChangeNotebookCellExecutionState = this.onDidChangeCellExecutionStateEmitter.event;
 
     constructor(
         rpc: RPCProtocol,
@@ -233,6 +240,45 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         return execution.asApiObject();
     }
 
+    createNotebookControllerDetectionTask(viewType: string): theia.NotebookControllerDetectionTask {
+        const handle = this.currentkernelDetectionTaskHandle++;
+        const that = this;
+
+        this.proxy.$addKernelDetectionTask(handle, viewType);
+
+        const detectionTask: theia.NotebookControllerDetectionTask = {
+            dispose: () => {
+                this.kernelDetectionTasks.delete(handle);
+                that.proxy.$removeKernelDetectionTask(handle);
+            }
+        };
+
+        this.kernelDetectionTasks.set(handle, detectionTask);
+        return detectionTask;
+    }
+
+    registerKernelSourceActionProvider(viewType: string, provider: theia.NotebookKernelSourceActionProvider): Disposable {
+        const handle = this.currentSourceActionProviderHandle++;
+        const eventHandle = typeof provider.onDidChangeNotebookKernelSourceActions === 'function' ? handle : undefined;
+        const that = this;
+
+        this.kernelSourceActionProviders.set(handle, provider);
+        this.proxy.$addKernelSourceActionProvider(handle, handle, viewType);
+
+        let subscription: theia.Disposable | undefined;
+        if (eventHandle !== undefined) {
+            subscription = provider.onDidChangeNotebookKernelSourceActions!(_ => this.proxy.$emitNotebookKernelSourceActionsChangeEvent(eventHandle));
+        }
+
+        return {
+            dispose: () => {
+                this.kernelSourceActionProviders.delete(handle);
+                that.proxy.$removeKernelSourceActionProvider(handle, handle);
+                subscription?.dispose();
+            }
+        };
+    }
+
     $acceptNotebookAssociation(handle: number, uri: UriComponents, value: boolean): void {
         const obj = this.kernelData.get(handle);
         if (obj) {
@@ -286,7 +332,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         }
 
         // cancel or interrupt depends on the controller. When an interrupt handler is used we
-        // don't trigger the cancelation token of executions.
+        // don't trigger the cancelation token of executions.N
         const document = this.notebooks.getNotebookDocument(URI.fromComponents(uri));
         if (obj.controller.interruptHandler) {
             await obj.controller.interruptHandler.call(obj.controller, document.apiNotebook);
@@ -313,7 +359,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
     }
 
     $cellExecutionChanged(uri: UriComponents, cellHandle: number, state: NotebookCellExecutionState | undefined): void {
-        throw new Error('Method not implemented.'); // Proposed Api
+        throw new Error('Method not implemented.'); // Proposed Api though seems needed by jupyter
     }
     $provideKernelSourceActions(handle: number, token: CancellationToken): Promise<NotebookKernelSourceActionDto[]> {
         throw new Error('Method not implemented.');

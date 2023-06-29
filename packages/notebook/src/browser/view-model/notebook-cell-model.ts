@@ -13,6 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 
 import { Disposable, Emitter, Event, URI } from '@theia/core';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
@@ -80,7 +84,22 @@ export class NotebookCellModel implements Disposable {
 
     readonly metadata: NotebookCellMetadata;
 
-    readonly internalMetadata: NotebookCellInternalMetadata;
+    private _internalMetadata: NotebookCellInternalMetadata;
+
+    get internalMetadata(): NotebookCellInternalMetadata {
+        return this._internalMetadata;
+    }
+
+    set internalMetadata(newInternalMetadata: NotebookCellInternalMetadata) {
+        const lastRunSuccessChanged = this._internalMetadata.lastRunSuccess !== newInternalMetadata.lastRunSuccess;
+        newInternalMetadata = {
+            ...newInternalMetadata,
+            ...{ runStartTimeAdjustment: computeRunStartTimeAdjustment(this._internalMetadata, newInternalMetadata) }
+        };
+        this._internalMetadata = newInternalMetadata;
+        this.ChangeInternalMetadataEmitter.fire({ lastRunSuccessChanged });
+
+    }
 
     textModel: MonacoEditorModel;
 
@@ -116,7 +135,7 @@ export class NotebookCellModel implements Disposable {
     ) {
         this.outputs = props.outputs.map(op => new NotebookCellOutputModel(op));
         this.metadata = props.metadata ?? {};
-        this.internalMetadata = props.internalMetadata ?? {};
+        this._internalMetadata = props.internalMetadata ?? {};
     }
 
     refChanged(node: HTMLLIElement): void {
@@ -154,5 +173,14 @@ export class NotebookCellModel implements Disposable {
             internalMetadata: this.internalMetadata,
             metadata: this.metadata
         };
+    }
+}
+
+function computeRunStartTimeAdjustment(oldMetadata: NotebookCellInternalMetadata, newMetadata: NotebookCellInternalMetadata): number | undefined {
+    if (oldMetadata.runStartTime !== newMetadata.runStartTime && typeof newMetadata.runStartTime === 'number') {
+        const offset = Date.now() - newMetadata.runStartTime;
+        return offset < 0 ? Math.abs(offset) : 0;
+    } else {
+        return newMetadata.runStartTimeAdjustment;
     }
 }

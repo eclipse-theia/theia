@@ -23,11 +23,10 @@ import { UriComponents } from '@theia/core/lib/common/uri';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { CellExecutionCompleteDto, CellExecutionStateUpdateDto, MAIN_RPC_CONTEXT, NotebookKernelDto, NotebookKernelsExt, NotebookKernelsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
-import { NotebookKernelChangeEvent, NotebookKernelSerivce, NotebookService } from '@theia/notebook/lib/browser';
+import { CellExecution, NotebookExecutionStateService, NotebookKernelChangeEvent, NotebookKernelService, NotebookService } from '@theia/notebook/lib/browser';
 import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 import { combinedDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { interfaces } from '@theia/core/shared/inversify';
-import { NotebookCellExecution } from '@theia/plugin';
 
 abstract class NotebookKernel {
     private readonly onDidChangeEmitter = new Emitter<NotebookKernelChangeEvent>();
@@ -110,11 +109,12 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
 
     private readonly kernels = new Map<number, [kernel: NotebookKernel, registraion: Disposable]>();
 
-    private notebookKernelService: NotebookKernelSerivce;
+    private notebookKernelService: NotebookKernelService;
     private notebookService: NotebookService;
     private languageService: LanguageService;
+    private notebookExecutionStateService: NotebookExecutionStateService;
 
-    private readonly executions = new Map<number, NotebookCellExecution>();
+    private readonly executions = new Map<number, CellExecution>();
 
     constructor(
         rpc: RPCProtocol,
@@ -122,7 +122,8 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT);
 
-        this.notebookKernelService = container.get(NotebookKernelSerivce);
+        this.notebookKernelService = container.get(NotebookKernelService);
+        this.notebookExecutionStateService = container.get(NotebookExecutionStateService);
         this.notebookService = container.get(NotebookService);
         this.languageService = container.get(LanguageService);
     }
@@ -207,16 +208,14 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
         throw new Error('Method not implemented.');
     }
     $removeKernelDetectionTask(handle: number): void {
-        throw new Error('Method not implemented.');
     }
     $addKernelSourceActionProvider(handle: number, eventHandle: number, notebookType: string): Promise<void> {
-        throw new Error('Method not implemented.');
+        return Promise.resolve();
     }
     $removeKernelSourceActionProvider(handle: number, eventHandle: number): void {
         throw new Error('Method not implemented.');
     }
     $emitNotebookKernelSourceActionsChangeEvent(eventHandle: number): void {
-        throw new Error('Method not implemented.');
     }
 
     dispose(): void {

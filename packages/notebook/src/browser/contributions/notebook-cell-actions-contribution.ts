@@ -21,6 +21,7 @@ import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE, NotebookContextKeys } from './notebook-context-keys';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { NotebookExecutionService } from '../service/notebook-execution-service';
 
 export namespace NotebookCellCommands {
     export const EDIT_COMMAND = Command.toDefaultLocalizedCommand({
@@ -39,6 +40,10 @@ export namespace NotebookCellCommands {
         id: 'notebook.cell.split-cell',
         iconClass: codicon('split-vertical'),
     });
+    export const EXECUTE_SINGLE_CELL_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.execute-cell',
+        iconClass: codicon('play'),
+    });
 }
 
 @injectable()
@@ -47,13 +52,8 @@ export class NotebookCellActionContribution implements MenuContribution, Command
     @inject(ContextKeyService)
     protected contextKeyService: ContextKeyService;
 
-    protected runDeleteAction(notebookModel: NotebookModel, cell: NotebookCellModel): void {
-        notebookModel.removeCell(notebookModel.cells.indexOf(cell), 1);
-    }
-
-    protected requestCellEdit(notebookModel: NotebookModel, cell: NotebookCellModel): void {
-        cell.requestEdit();
-    }
+    @inject(NotebookExecutionService)
+    protected notebookExecutionService: NotebookExecutionService;
 
     @postConstruct()
     protected init(): void {
@@ -75,6 +75,12 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             order: '10'
         });
         menus.registerMenuAction([menuId], {
+            commandId: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id,
+            icon: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.iconClass,
+            when: `${NOTEBOOK_CELL_TYPE} == 'code'`,
+            order: '10'
+        });
+        menus.registerMenuAction([menuId], {
             commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
             icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass,
             order: '20'
@@ -86,7 +92,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         });
 
         const moreMenuPath = [menuId, 'more'];
-        menus.registerSubmenu(moreMenuPath, 'more', { icon: codicon('ellipsis'), role: CompoundMenuNodeRole.Submenu, order: '100' });
+        menus.registerSubmenu(moreMenuPath, 'more', { icon: codicon('ellipsis'), role: CompoundMenuNodeRole.Submenu, order: '999' });
         menus.registerMenuAction(moreMenuPath, {
             commandId: NotebookCellCommands.EDIT_COMMAND.id,
             label: 'test submenu item',
@@ -94,10 +100,15 @@ export class NotebookCellActionContribution implements MenuContribution, Command
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, { execute: this.requestCellEdit });
+        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => cell.requestEdit() });
         commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => cell.requestStopEdit() });
-        commands.registerCommand(NotebookCellCommands.DELETE_COMMAND, { execute: this.runDeleteAction });
+        commands.registerCommand(NotebookCellCommands.DELETE_COMMAND, {
+            execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => notebookModel.removeCell(notebookModel.cells.indexOf(cell), 1)
+        });
         commands.registerCommand(NotebookCellCommands.SPLIT_CELL_COMMAND);
-    }
 
+        commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND, {
+            execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => this.notebookExecutionService.executeNotebookCells(notebookModel, [cell])
+        });
+    }
 }

@@ -118,7 +118,7 @@ import { isString, isObject, PickOptions, QuickInputButtonHandle } from '@theia/
 import { Severity } from '@theia/core/lib/common/severity';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
 import * as notebookCommon from '@theia/notebook/lib/common';
-import { CellRange } from '@theia/notebook/lib/common';
+import { CellExecutionUpdateType, CellRange, NotebookCellExecutionState } from '@theia/notebook/lib/common';
 import { LanguagePackBundle } from './language-pack-service';
 
 export interface PreferenceData {
@@ -2387,18 +2387,6 @@ export interface CellExecutionStateUpdateDto {
     runStartTime?: number;
     didPause?: boolean;
     isPaused?: boolean;
-}
-
-export enum CellExecutionUpdateType {
-    Output = 1,
-    OutputItems = 2,
-    ExecutionState = 3,
-}
-
-export enum NotebookCellExecutionState {
-    Unconfirmed = 1,
-    Pending = 2,
-    Executing = 3
 }
 
 export interface CellExecutionCompleteDto {

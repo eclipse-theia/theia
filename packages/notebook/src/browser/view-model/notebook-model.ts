@@ -17,7 +17,10 @@
 import { Disposable, URI } from '@theia/core';
 import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 import { Saveable, SaveOptions } from '@theia/core/lib/browser';
-import { CellUri, NotebookCellsChangeType, NotebookCellTextModelSplice, NotebookData, NotebookModelWillAddRemoveEvent } from '../../common';
+import {
+    CellEditOperation, CellEditType, CellUri, NotebookCellInternalMetadata,
+    NotebookCellsChangeType, NotebookCellTextModelSplice, NotebookData, NotebookModelWillAddRemoveEvent, NullablePartialNotebookCellInternalMetadata
+} from '../../common';
 import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from './notebook-cell-model';
@@ -165,5 +168,66 @@ export class NotebookModel implements Saveable, Disposable {
         const changes: NotebookCellTextModelSplice<NotebookCellModel>[] = [[index, count, []]];
         this.cells.splice(index, count);
         this.didAddRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes } });
+    }
+
+    applyEdits(rawEdits: CellEditOperation[]): void {
+        const editsWithDetails = rawEdits.map((edit, index) => {
+            let cellIndex: number = -1;
+            if ('index' in edit) {
+                cellIndex = edit.index;
+            } else if ('handle' in edit) {
+                cellIndex = this.getCellIndexByHandle(edit.handle);
+            }
+
+            return {
+                edit,
+                cellIndex,
+                end: edit.editType === CellEditType.Replace ? edit.index + edit.count : cellIndex,
+                originalIndex: index
+            };
+        }).filter(edit => !!edit);
+
+        for (const edit of editsWithDetails) {
+            switch (edit.edit.editType) {
+                case CellEditType.Replace:
+                    break;
+                // case CellEditType.Output: {
+                //     break;
+                // }
+                // case CellEditType.OutputItems:
+                //     break;
+                // case CellEditType.Metadata:
+                //     break;
+                // case CellEditType.PartialMetadata:
+                //     break;
+                case CellEditType.PartialInternalMetadata:
+                    this.changeCellInternalMetadataPartial(this.cells[edit.cellIndex], edit.edit.internalMetadata);
+                    break;
+                // case CellEditType.CellLanguage:
+                //     break;
+                // case CellEditType.DocumentMetadata:
+                //     break;
+                // case CellEditType.Move:
+                //     break;
+
+            }
+        }
+    }
+
+    private changeCellInternalMetadataPartial(cell: NotebookCellModel, internalMetadata: NullablePartialNotebookCellInternalMetadata): void {
+        const newInternalMetadata: NotebookCellInternalMetadata = {
+            ...cell.internalMetadata
+        };
+        let k: keyof NotebookCellInternalMetadata;
+        // eslint-disable-next-line guard-for-in
+        for (k in internalMetadata) {
+            newInternalMetadata[k] = (internalMetadata[k] ?? undefined) as never;
+        }
+
+        cell.internalMetadata = newInternalMetadata;
+    }
+
+    private getCellIndexByHandle(handle: number): number {
+        return this.cells.findIndex(c => c.handle === handle);
     }
 }

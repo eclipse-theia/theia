@@ -165,8 +165,8 @@ import {
     InlayHintKind,
     InlayHintLabelPart,
     TelemetryTrustedValue,
-    NotebookCell,
     NotebookCellKind,
+    NotebookCellExecutionState,
     NotebookCellStatusBarAlignment,
     NotebookEditorRevealType,
     NotebookControllerAffinity,
@@ -178,6 +178,7 @@ import {
     NotebookRange,
     NotebookCellStatusBarItem,
     NotebookEdit,
+    NotebookKernelSourceAction,
     TestRunProfileKind,
     TestTag,
     TestRunRequest,
@@ -245,6 +246,7 @@ import { LocalizationExtImpl } from './localization-ext';
 import { NotebooksExtImpl } from './notebook/notebooks';
 import { TelemetryExtImpl } from './telemetry-ext';
 import { NotebookRenderersExtImpl } from './notebook/notebook-renderers';
+import { NotebookKernelsExtImpl } from './notebook/notebook-kernels';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -270,6 +272,7 @@ export function createAPIFactory(
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocumentsExt));
     const notebooksExt = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT, new NotebooksExtImpl(rpc));
     const notebookRenderers = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT, new NotebookRenderersExtImpl(rpc, notebooksExt));
+    const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = rpc.set(MAIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_EXT, new OutputChannelRegistryExtImpl(rpc));
@@ -1162,33 +1165,7 @@ export function createAPIFactory(
                     notebook: theia.NotebookDocument,
                     controller: theia.NotebookController) => void | Thenable<void>
             ) {
-                return {
-                    id,
-                    notebookType,
-                    label,
-                    handler,
-                    createNotebookCellExecution: (cell: NotebookCell) => ({
-                        cell,
-                        token: CancellationToken.None,
-                        executionOrder: undefined,
-                        start: () => undefined,
-                        end: () => undefined,
-                        clearOutput: () => ({} as Thenable<void>),
-                        replaceOutput: () => ({} as Thenable<void>),
-                        appendOutput: () => ({} as Thenable<void>),
-                        replaceOutputItems: () => ({} as Thenable<void>),
-                        appendOutputItems: () => ({} as Thenable<void>)
-                    }),
-                    executeHandler(
-                        cells: theia.NotebookCell[],
-                        notebook: theia.NotebookDocument,
-                        controller: theia.NotebookController
-                    ): (void | Thenable<void>) { },
-                    onDidChangeSelectedNotebooks: () => Disposable.create(() => { }),
-                    updateNotebookAffinity: (notebook: theia.NotebookDocument, affinity: theia.NotebookControllerAffinity) => undefined,
-                    dispose: () => undefined,
-                };
-
+                return notebookKernels.createNotebookController(plugin.model.id, id, notebookType, label, handler);
             },
             createRendererMessaging(rendererId) {
                 return notebookRenderers.createRendererMessaging(rendererId);
@@ -1198,6 +1175,14 @@ export function createAPIFactory(
                 provider
             ) {
                 return notebooksExt.registerNotebookCellStatusBarItemProvider(notebookType, provider);
+            },
+            onDidChangeNotebookCellExecutionState: notebookKernels.onDidChangeNotebookCellExecutionState,
+
+            createNotebookControllerDetectionTask(notebookType: string) {
+                return notebookKernels.createNotebookControllerDetectionTask(notebookType);
+            },
+            registerKernelSourceActionProvider(notebookType: string, provider: theia.NotebookKernelSourceActionProvider) {
+                return notebookKernels.registerKernelSourceActionProvider(notebookType, provider);
             }
         };
 
@@ -1351,6 +1336,7 @@ export function createAPIFactory(
             InlayHintLabelPart,
             TelemetryTrustedValue,
             NotebookCellData,
+            NotebookCellExecutionState,
             NotebookCellKind,
             NotebookCellOutput,
             NotebookCellOutputItem,
@@ -1362,6 +1348,7 @@ export function createAPIFactory(
             NotebookDocument,
             NotebookRange,
             NotebookEdit,
+            NotebookKernelSourceAction,
             TestRunProfileKind,
             TestTag,
             TestRunRequest,

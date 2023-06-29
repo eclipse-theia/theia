@@ -102,6 +102,13 @@ export interface CellData {
     collapseState?: NotebookCellCollapseState;
 }
 
+export interface CellReplaceEdit {
+    editType: CellEditType.Replace;
+    index: number;
+    count: number;
+    cells: CellData[];
+}
+
 export interface NotebookData {
     readonly cells: CellData[];
     readonly metadata: NotebookDocumentMetadata;
@@ -236,6 +243,63 @@ export interface NotebookModelChangedEvent {
 export interface NotebookModelWillAddRemoveEvent {
     readonly rawEvent: NotebookCellsModelChangedEvent<CellData>;
 };
+
+export enum NotebookCellExecutionState {
+    Unconfirmed = 1,
+    Pending = 2,
+    Executing = 3
+}
+
+export enum CellExecutionUpdateType {
+    Output = 1,
+    OutputItems = 2,
+    ExecutionState = 3,
+}
+
+export interface CellExecuteOutputEdit {
+    editType: CellExecutionUpdateType.Output;
+    cellHandle: number;
+    append?: boolean;
+    outputs: CellOutput[];
+}
+
+export interface CellExecuteOutputItemEdit {
+    editType: CellExecutionUpdateType.OutputItems;
+    append?: boolean;
+    items: CellOutputItem[];
+}
+
+export interface CellExecutionStateUpdateDto {
+    editType: CellExecutionUpdateType.ExecutionState;
+    executionOrder?: number;
+    runStartTime?: number;
+    didPause?: boolean;
+    isPaused?: boolean;
+}
+
+export const enum CellEditType {
+    Replace = 1,
+    Output = 2,
+    Metadata = 3,
+    CellLanguage = 4,
+    DocumentMetadata = 5,
+    Move = 6,
+    OutputItems = 7,
+    PartialMetadata = 8,
+    PartialInternalMetadata = 9,
+}
+
+export type ImmediateCellEditOperation = CellPartialInternalMetadataEditByHandle; // add more later on
+export type CellEditOperation = ImmediateCellEditOperation | CellReplaceEdit; // add more later on
+
+export type NullablePartialNotebookCellInternalMetadata = {
+    [Key in keyof Partial<NotebookCellInternalMetadata>]: NotebookCellInternalMetadata[Key] | null
+};
+export interface CellPartialInternalMetadataEditByHandle {
+    editType: CellEditType.PartialInternalMetadata;
+    handle: number;
+    internalMetadata: NullablePartialNotebookCellInternalMetadata;
+}
 
 /**
  * Whether the provided mime type is a text stream like `stdout`, `stderr`.
