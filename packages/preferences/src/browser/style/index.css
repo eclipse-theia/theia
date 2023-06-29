@@ -384,7 +384,7 @@
 
 .theia-settings-container .theia-input[type="checkbox"]:focus,
 .theia-settings-container .theia-input[type="number"]:focus {
-  outline-width: 2px;
+  outline-width: 1px;
 }
 
 .theia-settings-container .theia-input[type="checkbox"] {
@@ -404,12 +404,10 @@
   margin: 0;
 }
 
-.theia-settings-container
-  .pref-content-container
-  .pref-input
-  .pref-input-container
-  .pref-error-notification {
+.dialogContent .error:not(:empty),
+.theia-settings-container .pref-content-container .pref-input .pref-input-container .pref-error-notification {
   border-style: solid;
+  border-width: 1px;
   border-color: var(--theia-inputValidation-errorBorder);
   background-color: var(--theia-inputValidation-errorBackground);
   width: 100%;

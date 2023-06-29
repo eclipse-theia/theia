@@ -528,7 +528,10 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         } else {
             this.inputField.select();
         }
+
         this.contentNode.appendChild(this.inputField);
+        this.controlPanel.removeChild(this.errorMessageNode);
+        this.contentNode.appendChild(this.errorMessageNode);
 
         this.appendAcceptButton(props.confirmButtonLabel);
     }
