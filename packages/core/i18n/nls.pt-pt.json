@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Editar condição...",
   "terminal:new:profile": "Criar Novo Terminal Integrado a partir de um Perfil",
   "terminal:profile:default": "Escolha o Perfil Terminal padrão",
   "theia": {
@@ -43,6 +44,10 @@
         "mac": "Teclados Mac",
         "pc": "Teclados de PC",
         "tryDetect": "Tente detectar a disposição do teclado a partir da informação do browser e prima as teclas."
+      },
+      "navigator": {
+        "clipboardWarn": "O acesso à área de transferência foi negado. Verifique a permissão do seu browser.",
+        "clipboardWarnFirefox": "A API da área de transferência não está disponível. Pode ser activada através da preferência '{0}' na página '{1}'. Em seguida, recarregue o Theia. Note que isso permitirá ao FireFox obter acesso total à área de transferência do sistema."
       },
       "offline": "Offline",
       "quitMessage": "Quaisquer alterações não guardadas não serão salvas.",
@@ -154,11 +159,15 @@
       "gitDecorationsColors": "Utilizar decoração a cores no navegador.",
       "mergeQuickPickPlaceholder": "Escolher um ramo para se fundir no ramo actualmente activo {0}:",
       "missingUserInfo": "Certifique-se de configurar o seu 'user.name' e 'user.email' em git.",
+      "noHistoryForError": "Não existe um historial disponível para {0}",
       "noPreviousCommit": "Nenhum compromisso anterior para emendar",
       "noRepositoriesSelected": "Não foram seleccionados repositórios.",
+      "prepositionIn": "em",
       "repositoryNotInitialized": "Repositório {0} ainda não foi inicializado.",
       "stashChanges": "Mudanças de stock. Prima 'Enter' para confirmar ou 'Escape' para cancelar.",
       "stashChangesWithMessage": "Mudanças de stock com mensagem: {0}. Prima 'Enter' para confirmar ou 'Escape' para cancelar.",
+      "tabTitleIndex": "{0} (índice)",
+      "tabTitleWorkingTree": "{0} (Árvore de trabalho)",
       "toggleBlameAnnotations": "Anotações de culpa alternadas"
     },
     "keybinding-schema-updater": {
@@ -207,7 +216,6 @@
         "offset-title": "Bytes para compensar a memória de {0}"
       },
       "editable": {
-        "apply": "Aplicar Alterações",
         "clear": "Mudanças claras"
       },
       "endianness": "Endianness",
@@ -269,6 +277,8 @@
     },
     "navigator": {
       "autoReveal": "Auto Revelação",
+      "clipboardWarn": "O acesso à área de transferência foi negado. Verifique a permissão do seu browser.",
+      "clipboardWarnFirefox": "A API da área de transferência não está disponível. Pode ser activada através da preferência '{0}' na página '{1}'. Em seguida, recarregue o Theia. Note que isso permitirá ao FireFox obter acesso total à área de transferência do sistema.",
       "refresh": "Actualizar no Explorer",
       "reveal": "Revelar no Explorer",
       "toggleHiddenFiles": "Alternar ficheiros escondidos"
@@ -416,6 +426,7 @@
       "license": "Licença: {0}",
       "recommendedExtensions": "Uma lista dos nomes das extensões recomendadas para utilização neste espaço de trabalho.",
       "searchPlaceholder": "Pesquisar extensões em {0}",
+      "showInstalled": "Mostrar extensões instaladas",
       "showRecommendedExtensions": "Controla se as notificações são mostradas para recomendações de extensão.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Erro ao retirar a extensão: {0}.",

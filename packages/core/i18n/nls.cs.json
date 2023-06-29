@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Upravit stav...",
   "terminal:new:profile": "Vytvoření nového integrovaného terminálu z profilu",
   "terminal:profile:default": "Zvolte výchozí profil terminálu",
   "theia": {
@@ -43,6 +44,10 @@
         "mac": "Klávesnice pro Mac",
         "pc": "Klávesnice PC",
         "tryDetect": "Pokuste se zjistit rozložení klávesnice z informací o prohlížeči a stisknutých klávesách."
+      },
+      "navigator": {
+        "clipboardWarn": "Přístup do schránky je odepřen. Zkontrolujte oprávnění prohlížeče.",
+        "clipboardWarnFirefox": "Rozhraní API schránky není k dispozici. Lze ji povolit pomocí předvolby '{0}' na stránce '{1}'. Poté znovu načtěte aplikaci Theia. Všimněte si, že to umožní FireFoxu získat plný přístup k systémové schránce."
       },
       "offline": "Offline",
       "quitMessage": "Neuložené změny se neuloží.",
@@ -154,11 +159,15 @@
       "gitDecorationsColors": "Použití barevné dekorace v navigátoru.",
       "mergeQuickPickPlaceholder": "Vyberte větev, kterou chcete sloučit s aktuálně aktivní větví {0}:",
       "missingUserInfo": "Ujistěte se, že jste v systému git nakonfigurovali položky 'user.name' a 'user.email'.",
+      "noHistoryForError": "Není k dispozici žádná historie {0}",
       "noPreviousCommit": "Žádný předchozí závazek ke změně",
       "noRepositoriesSelected": "Nebyla vybrána žádná úložiště.",
+      "prepositionIn": "na adrese",
       "repositoryNotInitialized": "Úložiště {0} ještě není inicializováno.",
       "stashChanges": "Změny v úložišti. Stisknutím klávesy \"Enter\" potvrďte nebo klávesou \"Escape\" zrušte zadání.",
       "stashChangesWithMessage": "Úschovna se mění se zprávou: {0}. Stisknutím klávesy 'Enter' potvrďte nebo klávesou 'Escape' zrušte.",
+      "tabTitleIndex": "{0} (rejstřík)",
+      "tabTitleWorkingTree": "{0} (pracovní strom)",
       "toggleBlameAnnotations": "Přepínání Anotace obvinění"
     },
     "keybinding-schema-updater": {
@@ -207,7 +216,6 @@
         "offset-title": "Bajty pro odsazení paměti od {0}"
       },
       "editable": {
-        "apply": "Použít změny",
         "clear": "Jasné změny"
       },
       "endianness": "Endianness",
@@ -269,6 +277,8 @@
     },
     "navigator": {
       "autoReveal": "Automatické odhalení",
+      "clipboardWarn": "Přístup do schránky je odepřen. Zkontrolujte oprávnění prohlížeče.",
+      "clipboardWarnFirefox": "Rozhraní API schránky není k dispozici. Lze ji povolit pomocí předvolby '{0}' na stránce '{1}'. Poté znovu načtěte aplikaci Theia. Všimněte si, že to umožní FireFoxu získat plný přístup k systémové schránce.",
       "refresh": "Obnovení v Průzkumníku",
       "reveal": "Odhalení v Průzkumníkovi",
       "toggleHiddenFiles": "Přepínání skrytých souborů"
@@ -416,6 +426,7 @@
       "license": "Licence: {0}",
       "recommendedExtensions": "Seznam názvů rozšíření doporučených pro použití v tomto pracovním prostoru.",
       "searchPlaceholder": "Hledat rozšíření v {0}",
+      "showInstalled": "Zobrazit nainstalovaná rozšíření",
       "showRecommendedExtensions": "Řídí, zda se mají zobrazovat oznámení pro doporučení rozšíření.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Chyba při odstraňování rozšíření: {0}.",

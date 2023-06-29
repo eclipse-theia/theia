@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "编辑条件...",
   "terminal:new:profile": "从配置文件中创建新的集成终端",
   "terminal:profile:default": "选择默认的终端配置文件",
   "theia": {
@@ -43,6 +44,10 @@
         "mac": "苹果键盘",
         "pc": "电脑键盘",
         "tryDetect": "尝试从浏览器信息和按下的按键中检测键盘布局。"
+      },
+      "navigator": {
+        "clipboardWarn": "对剪贴板的访问被拒绝了。检查你的浏览器的权限。",
+        "clipboardWarnFirefox": "剪贴板API是不可用的。它可以通过'{0}'页面上的'{1}'偏好启用。然后重新加载Theia。注意,这将允许FireFox获得对系统剪贴板的完全访问。"
       },
       "offline": "离线",
       "quitMessage": "任何未保存的修改都不会被保存。",
@@ -154,11 +159,15 @@
       "gitDecorationsColors": "在导航器中使用颜色装饰。",
       "mergeQuickPickPlaceholder": "挑选一个分支来合并到当前活动的{0}分支。",
       "missingUserInfo": "确保你在git中配置了'user.name'和'user.email'。",
+      "noHistoryForError": "没有任何历史记录可用于{0}",
       "noPreviousCommit": "没有以前的承诺可以修改",
       "noRepositoriesSelected": "没有选择存储库。",
+      "prepositionIn": "在",
       "repositoryNotInitialized": "存储库{0}还没有被初始化。",
       "stashChanges": "储藏室的变化。按'Enter'键确认,或按'Escape'键取消。",
       "stashChangesWithMessage": "储藏室的变化与信息。{0}.按'Enter'键确认或按'Escape'键取消。",
+      "tabTitleIndex": "{0} (索引)",
+      "tabTitleWorkingTree": "{0} (工作树)",
       "toggleBlameAnnotations": "切换指责注释"
     },
     "keybinding-schema-updater": {
@@ -207,7 +216,6 @@
         "offset-title": "字节,以抵消内存从{0}"
       },
       "editable": {
-        "apply": "申请变更",
         "clear": "清晰的变化"
       },
       "endianness": "内联性",
@@ -269,6 +277,8 @@
     },
     "navigator": {
       "autoReveal": "自动显示",
+      "clipboardWarn": "对剪贴板的访问被拒绝了。检查你的浏览器的权限。",
+      "clipboardWarnFirefox": "剪贴板API是不可用的。它可以通过'{0}'页面上的'{1}'偏好启用。然后重新加载Theia。注意,这将允许FireFox获得对系统剪贴板的完全访问。",
       "refresh": "在资源管理器中刷新",
       "reveal": "在资源管理器中显示",
       "toggleHiddenFiles": "切换隐藏文件"
@@ -416,6 +426,7 @@
       "license": "许可证: {0}",
       "recommendedExtensions": "建议在该工作区使用的扩展名称的列表。",
       "searchPlaceholder": "在{0}中搜索扩展",
+      "showInstalled": "显示已安装的扩展程序",
       "showRecommendedExtensions": "控制是否显示扩展建议的通知。",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "删除扩展名时出错:{0}.",

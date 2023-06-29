@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Edit Bedingung...",
   "terminal:new:profile": "Neues integriertes Terminal aus einem Profil erstellen",
   "terminal:profile:default": "Wählen Sie das Standard-Terminalprofil",
   "theia": {
@@ -43,6 +44,10 @@
         "mac": "Mac-Tastaturen",
         "pc": "PC-Tastaturen",
         "tryDetect": "Versuchen Sie, das Tastaturlayout anhand der Browserinformationen und der gedrückten Tasten zu ermitteln."
+      },
+      "navigator": {
+        "clipboardWarn": "Der Zugriff auf die Zwischenablage wird verweigert. Überprüfen Sie die Berechtigung Ihres Browsers.",
+        "clipboardWarnFirefox": "Die Zwischenablage-API ist nicht verfügbar. Sie kann durch die Einstellung '{0}' auf der Seite '{1}' aktiviert werden. Dann laden Sie Theia neu. Beachten Sie, dass FireFox dadurch vollen Zugriff auf die Zwischenablage des Systems erhält."
       },
       "offline": "Offline",
       "quitMessage": "Alle nicht gespeicherten Änderungen werden nicht gespeichert.",
@@ -154,11 +159,15 @@
       "gitDecorationsColors": "Farbdekoration im Navigator verwenden.",
       "mergeQuickPickPlaceholder": "Wählen Sie einen Zweig, der mit dem derzeit aktiven {0}-Zweig zusammengeführt werden soll:",
       "missingUserInfo": "Stellen Sie sicher, dass Sie Ihren 'user.name' und 'user.email' in git konfigurieren.",
+      "noHistoryForError": "Es ist keine Historie verfügbar für {0}",
       "noPreviousCommit": "Kein früherer Commit zur Änderung",
       "noRepositoriesSelected": "Es wurden keine Repositories ausgewählt.",
+      "prepositionIn": "in",
       "repositoryNotInitialized": "Das Repository {0} ist noch nicht initialisiert.",
       "stashChanges": "Versteckte Änderungen. Drücken Sie \"Enter\" zur Bestätigung oder \"Escape\" zum Abbrechen.",
       "stashChangesWithMessage": "Stash-Änderungen mit Meldung: {0}. Drücken Sie \"Enter\" zur Bestätigung oder \"Escape\" zum Abbrechen.",
+      "tabTitleIndex": "{0} (Index)",
+      "tabTitleWorkingTree": "{0} (Arbeitsbaum)",
       "toggleBlameAnnotations": "Blame Annotationen umschalten"
     },
     "keybinding-schema-updater": {
@@ -207,7 +216,6 @@
         "offset-title": "Bytes zum Versetzen des Speichers von {0}"
       },
       "editable": {
-        "apply": "Änderungen anwenden",
         "clear": "Deutliche Änderungen"
       },
       "endianness": "Endianness",
@@ -269,6 +277,8 @@
     },
     "navigator": {
       "autoReveal": "Auto-Enthüllung",
+      "clipboardWarn": "Der Zugriff auf die Zwischenablage wird verweigert. Überprüfen Sie die Berechtigung Ihres Browsers.",
+      "clipboardWarnFirefox": "Die Zwischenablage-API ist nicht verfügbar. Sie kann durch die Einstellung '{0}' auf der Seite '{1}' aktiviert werden. Dann laden Sie Theia neu. Beachten Sie, dass FireFox dadurch vollen Zugriff auf die Systemzwischenablage erhält.",
       "refresh": "Aktualisieren im Explorer",
       "reveal": "Enthüllen im Explorer",
       "toggleHiddenFiles": "Versteckte Dateien umschalten"
@@ -416,6 +426,7 @@
       "license": "Lizenz: {0}",
       "recommendedExtensions": "Eine Liste mit den Namen der Erweiterungen, die für die Verwendung in diesem Arbeitsbereich empfohlen werden.",
       "searchPlaceholder": "Erweiterungen suchen in {0}",
+      "showInstalled": "Installierte Erweiterungen anzeigen",
       "showRecommendedExtensions": "Steuert, ob Benachrichtigungen für Erweiterungsempfehlungen angezeigt werden.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Fehler beim Entfernen der Erweiterung: {0}.",

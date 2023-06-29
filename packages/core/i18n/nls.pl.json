@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Warunek edycji...",
   "terminal:new:profile": "Tworzenie nowego zintegrowanego terminalu z profilu",
   "terminal:profile:default": "Wybierz domyślny profil terminala",
   "theia": {
@@ -43,6 +44,10 @@
         "mac": "Klawiatury Mac",
         "pc": "Klawiatury PC",
         "tryDetect": "Spróbuj wykryć układ klawiatury na podstawie informacji z przeglądarki i wciśniętych klawiszy."
+      },
+      "navigator": {
+        "clipboardWarn": "Dostęp do schowka jest zablokowany. Sprawdź uprawnienia przeglądarki.",
+        "clipboardWarnFirefox": "Interfejs API schowka nie jest dostępny. Można go włączyć za pomocą opcji '{0}' na stronie '{1}'. Następnie należy ponownie załadować Theia. Uwaga, pozwoli to FireFox uzyskać pełny dostęp do schowka systemowego."
       },
       "offline": "Offline",
       "quitMessage": "Wszelkie niezapisane zmiany nie zostaną zapisane.",
@@ -154,11 +159,15 @@
       "gitDecorationsColors": "Użyj dekoracji kolorystycznej w nawigatorze.",
       "mergeQuickPickPlaceholder": "Wybierz gałąź, która ma zostać połączona z aktualnie aktywną gałęzią {0}:",
       "missingUserInfo": "Upewnij się, że skonfigurowałeś swoje 'user.name' i 'user.email' w git.",
+      "noHistoryForError": "Nie ma dostępnej historii dla {0}",
       "noPreviousCommit": "Brak wcześniejszych zobowiązań do zmiany",
       "noRepositoriesSelected": "Nie wybrano żadnych repozytoriów.",
+      "prepositionIn": "w",
       "repositoryNotInitialized": "Repozytorium {0} nie jest jeszcze zainicjalizowane.",
       "stashChanges": "Zmiany w schowku. Wcisnąć 'Enter', aby potwierdzić lub 'Escape', aby anulować.",
       "stashChangesWithMessage": "Zmiany w pamięci masowej z komunikatem: {0}. Wcisnąć 'Enter', aby potwierdzić lub 'Escape', aby anulować.",
+      "tabTitleIndex": "{0} (indeks)",
+      "tabTitleWorkingTree": "{0} (Drzewo robocze)",
       "toggleBlameAnnotations": "Przełączanie adnotacji o winie"
     },
     "keybinding-schema-updater": {
@@ -207,7 +216,6 @@
         "offset-title": "Bajty do przesunięcia pamięci z {0}"
       },
       "editable": {
-        "apply": "Zastosuj zmiany",
         "clear": "Wyraźne zmiany"
       },
       "endianness": "Endianness",
@@ -269,6 +277,8 @@
     },
     "navigator": {
       "autoReveal": "Auto ujawnienie",
+      "clipboardWarn": "Dostęp do schowka jest zablokowany. Sprawdź uprawnienia przeglądarki.",
+      "clipboardWarnFirefox": "Interfejs API schowka nie jest dostępny. Można go włączyć za pomocą opcji '{0}' na stronie '{1}'. Następnie należy ponownie załadować Theia. Uwaga, pozwoli to FireFox uzyskać pełny dostęp do schowka systemowego.",
       "refresh": "Odśwież w Eksploratorze",
       "reveal": "Ujawnij w Eksploratorze",
       "toggleHiddenFiles": "Przełącz ukryte pliki"
@@ -416,6 +426,7 @@
       "license": "Licencja: {0}",
       "recommendedExtensions": "Lista nazw rozszerzeń zalecanych do użycia w tym obszarze roboczym.",
       "searchPlaceholder": "Wyszukaj rozszerzenia w {0}.",
+      "showInstalled": "Pokaż zainstalowane rozszerzenia",
       "showRecommendedExtensions": "Określa, czy dla zaleceń dotyczących rozszerzeń mają być wyświetlane powiadomienia.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Błąd podczas usuwania rozszerzenia: {0}.",

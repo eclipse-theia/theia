@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "編集条件...",
   "terminal:new:profile": "プロファイルから新しい統合端末を作成する",
   "terminal:profile:default": "デフォルトの端末プロファイルを選択",
   "theia": {
@@ -43,6 +44,10 @@
         "mac": "Mac用キーボード",
         "pc": "PCキーボード",
         "tryDetect": "ブラウザの情報や押されたキーからキーボードの配列を検出してみてください。"
+      },
+      "navigator": {
+        "clipboardWarn": "クリップボードへのアクセスが拒否されました。ブラウザのアクセス許可を確認してください。",
+        "clipboardWarnFirefox": "クリップボードAPIは使用できません。これは、'{1}' ページの '{0}' 環境設定によって有効にすることができます。その後Theiaをリロードしてください。これにより、FireFoxがシステムクリップボードにフルアクセスできるようになります。"
       },
       "offline": "オフライン",
       "quitMessage": "保存されていない変更は、保存されません。",
@@ -154,11 +159,15 @@
       "gitDecorationsColors": "ナビゲーターに色の装飾を施す。",
       "mergeQuickPickPlaceholder": "現在アクティブな{0}ブランチにマージするブランチを選びます。",
       "missingUserInfo": "gitで「user.name」と「user.email」を設定していることを確認してください。",
+      "noHistoryForError": "の履歴はありません。{0}",
       "noPreviousCommit": "修正する前のコミットがない",
       "noRepositoriesSelected": "リポジトリが選択されていません。",
+      "prepositionIn": "で",
       "repositoryNotInitialized": "リポジトリ {0} はまだ初期化されていません。",
       "stashChanges": "スタッシュの変更確定するには「Enter」を、キャンセルするには「Escape」を押します。",
       "stashChangesWithMessage": "メッセージでスタッシュが変わります。{0}.確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
+      "tabTitleIndex": "{0} (インデックス)",
+      "tabTitleWorkingTree": "{0} (ワーキングツリー)",
       "toggleBlameAnnotations": "トグル・ブレイム・アノテーション"
     },
     "keybinding-schema-updater": {
@@ -207,7 +216,6 @@
         "offset-title": "からメモリをオフセットするバイト数{0}"
       },
       "editable": {
-        "apply": "変更を適用する",
         "clear": "クリアランス"
       },
       "endianness": "エンディアン",
@@ -269,6 +277,8 @@
     },
     "navigator": {
       "autoReveal": "オートリヴェール",
+      "clipboardWarn": "クリップボードへのアクセスが拒否されました。ブラウザのアクセス許可を確認してください。",
+      "clipboardWarnFirefox": "クリップボードAPIは使用できません。これは、'{1}' ページの '{0}' 環境設定によって有効にすることができます。その後Theiaをリロードしてください。これにより、FireFoxがシステムクリップボードにフルアクセスできるようになります。",
       "refresh": "エクスプローラーでの更新",
       "reveal": "エクスプローラーでの表示",
       "toggleHiddenFiles": "隠しファイルのトグル"
@@ -416,6 +426,7 @@
       "license": "ライセンス{0}",
       "recommendedExtensions": "このワークスペースでの使用が推奨される拡張機能の名前のリストです。",
       "searchPlaceholder": "{0}で拡張子を検索",
+      "showInstalled": "インストールされている拡張機能を表示する",
       "showRecommendedExtensions": "拡張機能の推奨事項について、通知を表示するかどうかを制御します。",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "拡張子の削除中にエラーが発生しました。{0}.",

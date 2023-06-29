@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Szerkesztési feltétel...",
   "terminal:new:profile": "Új integrált terminál létrehozása profilból",
   "terminal:profile:default": "Válassza ki az alapértelmezett terminálprofilt",
   "theia": {
@@ -43,6 +44,10 @@
         "mac": "Mac billentyűzetek",
         "pc": "PC billentyűzetek",
         "tryDetect": "Próbálja meg felismerni a billentyűzetkiosztást a böngésző információi és a lenyomott billentyűk alapján."
+      },
+      "navigator": {
+        "clipboardWarn": "A vágólaphoz való hozzáférés megtagadva. Ellenőrizze a böngésző engedélyeit.",
+        "clipboardWarnFirefox": "A vágólap API nem érhető el. A '{0}' beállítással engedélyezhető a '{1}' oldalon. Ezután töltse be újra a Theia-t. Figyelem, ez lehetővé teszi, hogy a FireFox teljes hozzáférést kapjon a rendszer vágólapjához."
       },
       "offline": "Offline",
       "quitMessage": "A mentetlen módosítások nem kerülnek mentésre.",
@@ -154,11 +159,15 @@
       "gitDecorationsColors": "Színes dekoráció használata a navigátorban.",
       "mergeQuickPickPlaceholder": "Válasszon ki egy ágat, amelyet beolvaszt a jelenleg aktív {0} ágba:",
       "missingUserInfo": "Győződjön meg róla, hogy a gitben beállította a 'user.name' és a 'user.email' értékeket.",
+      "noHistoryForError": "Nem áll rendelkezésre előzmény {0}",
       "noPreviousCommit": "Nincs korábbi kötelezettségvállalás a módosításra",
       "noRepositoriesSelected": "Nem választottak ki tárolóhelyeket.",
+      "prepositionIn": "a  oldalon.",
       "repositoryNotInitialized": "A {0} tároló még nincs inicializálva.",
       "stashChanges": "Készletváltozások. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
       "stashChangesWithMessage": "Stash változik az üzenettel: {0}. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
+      "tabTitleIndex": "{0} (index)",
+      "tabTitleWorkingTree": "{0} (Munkafa)",
       "toggleBlameAnnotations": "Hibáztatás megjegyzések"
     },
     "keybinding-schema-updater": {
@@ -207,7 +216,6 @@
         "offset-title": "Bájtok a memória eltolásához a {0}"
       },
       "editable": {
-        "apply": "Változások alkalmazása",
         "clear": "Tiszta változások"
       },
       "endianness": "Endianness",
@@ -269,6 +277,8 @@
     },
     "navigator": {
       "autoReveal": "Automatikus felfedés",
+      "clipboardWarn": "A vágólaphoz való hozzáférés megtagadva. Ellenőrizze a böngésző engedélyeit.",
+      "clipboardWarnFirefox": "A vágólap API nem érhető el. A '{0}' beállítással engedélyezhető a '{1}' oldalon. Ezután töltse be újra a Theia-t. Figyelem, ez lehetővé teszi, hogy a FireFox teljes hozzáférést kapjon a rendszer vágólapjához.",
       "refresh": "Frissítés az Explorerben",
       "reveal": "Feltárása az Explorerben",
       "toggleHiddenFiles": "Rejtett fájlok kapcsolása"
@@ -416,6 +426,7 @@
       "license": "Engedély: {0}",
       "recommendedExtensions": "A munkaterületre ajánlott kiterjesztések neveinek listája.",
       "searchPlaceholder": "Keresés kiterjesztések {0}",
+      "showInstalled": "Telepített bővítmények megjelenítése",
       "showRecommendedExtensions": "Szabályozza, hogy a kiterjesztési ajánlásokhoz megjelenjenek-e értesítések.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Hiba a kiterjesztés eltávolításakor: {0}.",

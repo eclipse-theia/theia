@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Edit Condition...",
   "terminal:new:profile": "Créer un nouveau terminal intégré à partir d'un profil",
   "terminal:profile:default": "Choisissez le profil du terminal par défaut",
   "theia": {
@@ -43,6 +44,10 @@
         "mac": "Claviers Mac",
         "pc": "Claviers pour PC",
         "tryDetect": "Essayez de détecter la disposition du clavier à partir des informations du navigateur et des touches pressées."
+      },
+      "navigator": {
+        "clipboardWarn": "L'accès au presse-papiers est refusé. Vérifiez les autorisations de votre navigateur.",
+        "clipboardWarnFirefox": "L'API Presse-papiers n'est pas disponible. Elle peut être activée par la préférence '{0}' sur la page '{1}'. Rechargez ensuite Theia. Notez que cela permettra à FireFox d'avoir un accès complet au presse-papiers du système."
       },
       "offline": "Hors ligne",
       "quitMessage": "Les modifications non sauvegardées ne seront pas enregistrées.",
@@ -154,11 +159,15 @@
       "gitDecorationsColors": "Utilisez la décoration par couleur dans le navigateur.",
       "mergeQuickPickPlaceholder": "Choisissez une branche à fusionner avec la branche {0} actuellement active :",
       "missingUserInfo": "Assurez-vous de configurer votre 'user.name' et 'user.email' dans git.",
+      "noHistoryForError": "Il n'y a pas d'historique disponible pour {0}",
       "noPreviousCommit": "Aucun engagement antérieur à modifier",
       "noRepositoriesSelected": "Aucun dépôt n'a été sélectionné.",
+      "prepositionIn": "en",
       "repositoryNotInitialized": "Le référentiel {0} n'est pas encore initialisé.",
       "stashChanges": "Modifications de la cachette. Appuyez sur \" Enter \" pour confirmer ou sur \" Escape \" pour annuler.",
       "stashChangesWithMessage": "Changements de cachette avec message : {0}. Appuyez sur 'Enter' pour confirmer ou 'Escape' pour annuler.",
+      "tabTitleIndex": "{0} (index)",
+      "tabTitleWorkingTree": "{0} (Arbre de travail)",
       "toggleBlameAnnotations": "Annotations sur le blâme"
     },
     "keybinding-schema-updater": {
@@ -207,7 +216,6 @@
         "offset-title": "Octets pour décaler la mémoire de {0}"
       },
       "editable": {
-        "apply": "Appliquer les changements",
         "clear": "Changements clairs"
       },
       "endianness": "Endianness",
@@ -269,6 +277,8 @@
     },
     "navigator": {
       "autoReveal": "Révélation automobile",
+      "clipboardWarn": "L'accès au presse-papiers est refusé. Vérifiez les autorisations de votre navigateur.",
+      "clipboardWarnFirefox": "L'API Presse-papiers n'est pas disponible. Elle peut être activée par la préférence '{0}' sur la page '{1}'. Rechargez ensuite Theia. Notez que cela permettra à FireFox d'avoir un accès complet au presse-papiers du système.",
       "refresh": "Rafraîchir dans l'Explorateur",
       "reveal": "Révéler dans Explorer",
       "toggleHiddenFiles": "Basculer les fichiers cachés"
@@ -416,6 +426,7 @@
       "license": "Licence : {0}",
       "recommendedExtensions": "Une liste des noms des extensions dont l'utilisation est recommandée dans cet espace de travail.",
       "searchPlaceholder": "Rechercher les extensions dans {0}",
+      "showInstalled": "Afficher les extensions installées",
       "showRecommendedExtensions": "Contrôle si les notifications sont affichées pour les recommandations d'extension.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Erreur lors de la suppression de l'extension : {0}.",
