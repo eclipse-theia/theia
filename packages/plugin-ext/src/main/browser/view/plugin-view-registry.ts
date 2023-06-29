@@ -109,11 +109,11 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         [SCM_VIEW_CONTAINER_ID, 'workbench.view.scm'],
         [SEARCH_VIEW_CONTAINER_ID, 'workbench.view.search'],
         [DebugWidget.ID, 'workbench.view.debug'],
-        ['vsx-extensions-view-container', 'workbench.view.extensions'], // cannot use the id from 'vsx-registry' package becuase of circular dependency
+        ['vsx-extensions-view-container', 'workbench.view.extensions'], // cannot use the id from 'vsx-registry' package because of circular dependency
         [PROBLEMS_WIDGET_ID, 'workbench.panel.markers'],
         [OutputWidget.ID, 'workbench.panel.output'],
         [DebugConsoleContribution.options.id, 'workbench.panel.repl'],
-        // Theia does not have a single terminal widget, but instead each terminal gets its own widget. Therefore "the terminal widget is active" doesnt' make sense in Theia
+        // Theia does not have a single terminal widget, but instead each terminal gets its own widget. Therefore "the terminal widget is active" doesn't make sense in Theia
         // [TERMINAL_WIDGET_FACTORY_ID, 'workbench.panel.terminal'],
         // [?? , 'workbench.panel.comments'] not sure what this mean: we don't show comments in sidebars nor the bottom
     ]);
