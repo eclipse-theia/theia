@@ -1145,7 +1145,7 @@ export class SideTabBar extends ScrollableTabBar {
                 }
 
                 // Special handling if only one element is overflowing.
-                if (overflowStartIndex === n - 1) {
+                if (overflowStartIndex === n - 1 && renderData[overflowStartIndex]) {
                     if (!this.tabsOverflowData) {
                         overflowStartIndex--;
                         renderData[overflowStartIndex].visible = false;
