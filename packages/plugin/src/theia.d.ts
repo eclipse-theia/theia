@@ -28,6 +28,8 @@ import './theia.proposed.documentPaste';
 import './theia.proposed.editSessionIdentityProvider';
 import './theia.proposed.extensionsAny';
 import './theia.proposed.externalUriOpener';
+import './theia.proposed.notebookCellExecutionState';
+import './theia.proposed.notebookKernelSource';
 import './theia.proposed.findTextInFiles';
 import './theia.proposed.fsChunks';
 import './theia.proposed.profileContentHandlers';
@@ -15728,7 +15730,6 @@ export module '@theia/plugin' {
          */
         export function registerNotebookCellStatusBarItemProvider(notebookType: string, provider: NotebookCellStatusBarItemProvider): Disposable;
     }
-}
 
 /**
  * Namespace for testing functionality. Tests are published by registering
@@ -16351,3 +16352,4 @@ interface Thenable<T> {
     then<TResult>(onfulfilled?: (value: T) => TResult | Thenable<TResult>, onrejected?: (reason: any) => void): Thenable<TResult>;
 }
 
+}

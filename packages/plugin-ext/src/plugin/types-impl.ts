@@ -1130,6 +1130,31 @@ export enum NotebookEditorRevealType {
     InCenterIfOutsideViewport = 2,
     AtTop = 3
 }
+
+export enum NotebookCellExecutionState {
+    /**
+     * The cell is idle.
+     */
+    Idle = 1,
+    /**
+     * Execution for the cell is pending.
+     */
+    Pending = 2,
+    /**
+     * The cell is currently executing.
+     */
+    Executing = 3,
+}
+
+export class NotebookKernelSourceAction {
+    description?: string;
+    detail?: string;
+    command?: theia.Command;
+    constructor(
+        public label: string
+    ) { }
+}
+
 @es5ClassCompat
 export class NotebookCellData implements theia.NotebookCellData {
     languageId: string;

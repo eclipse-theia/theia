@@ -5,7 +5,8 @@
   "dependencies": {
     "@theia/core": "1.38.0",
     "@theia/filesystem": "1.38.0",
-    "@theia/monaco": "1.38.0"
+    "@theia/monaco": "1.38.0",
+    "uuid": "^8.3.2"
   },
   "publishConfig": {
     "access": "public"

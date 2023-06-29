@@ -67,7 +67,7 @@ export class NotebookCellListView extends React.Component<CellListProps, { selec
     }
 
     private onAddNewCell(kind: CellKind, index: number): void {
-        this.props.commandRegistry.executeCommand(NotebookCommands.Add_NEW_CELL_COMMAND.id,
+        this.props.commandRegistry.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id,
             this.props.notebookModel,
             kind,
             index
