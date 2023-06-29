@@ -1,4 +1,5 @@
 {
+  "private": true,
   "name": "plugin-a",
   "version": "1.0.0",
   "main": "extension.js",
