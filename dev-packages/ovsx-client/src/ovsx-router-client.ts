@@ -197,11 +197,11 @@ export class OVSXRouterClient implements OVSXClient {
     }
 
     protected runRules<T>(runFilter: (filter: OVSXRouterFilter) => unknown, onRuleMatched: (rule: OVSXRouterParsedRule) => T): Promise<T | undefined>;
-    protected runRules<T, U>(runFilter: (filter: OVSXRouterFilter) => unknown, onRuleMatched: (rule: OVSXRouterParsedRule) => T, onFallthru: () => U): Promise<T | U>;
+    protected runRules<T, U>(runFilter: (filter: OVSXRouterFilter) => unknown, onRuleMatched: (rule: OVSXRouterParsedRule) => T, onNoRuleMatched: () => U): Promise<T | U>;
     protected async runRules<T, U>(
         runFilter: (filter: OVSXRouterFilter) => unknown,
         onRuleMatched: (rule: OVSXRouterParsedRule) => T,
-        onFallthru?: () => U
+        onNoRuleMatched?: () => U
     ): Promise<T | U | undefined> {
         for (const rule of this.rules) {
             const results = removeNullValues(await Promise.all(rule.filters.map(filter => runFilter(filter))));
@@ -209,7 +209,7 @@ export class OVSXRouterClient implements OVSXClient {
                 return onRuleMatched(rule);
             }
         }
-        return onFallthru?.();
+        return onNoRuleMatched?.();
     }
 }
 

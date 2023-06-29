@@ -6,22 +6,48 @@
 
 ## v1.39.0 - 06/29/2023
 
+- [application-manager] added support for backend bundling [#12412](https://github.com/eclipse-theia/theia/pull/12412)
+- [application-package] bumped the default supported VS Code API from `1.77.0` to `1.78.0` [#12655](https://github.com/eclipse-theia/theia/pull/12655)
+- [core] fixed visibility of the toolbar when resizing [#12617](https://github.com/eclipse-theia/theia/pull/12617)
+- [core] improved responsiveness of input fields [#12604](https://github.com/eclipse-theia/theia/pull/12604)
+- [core] improved rpc protocol [#12581](https://github.com/eclipse-theia/theia/pull/12581)
+- [core] updated `ConfirmSaveDialog` button order for consistency [#12559](https://github.com/eclipse-theia/theia/pull/12559)
+- [core] updated handling on tab overflow for sidepanels [#12593](https://github.com/eclipse-theia/theia/pull/12593)
+- [core] updated localization metadata for `1.78.0` [#12661](https://github.com/eclipse-theia/theia/pull/12661)
+- [core] updated styling for input validation in dialogs [#12585](https://github.com/eclipse-theia/theia/pull/12585)
+- [debug] added missing localizations for the debug session status [#12569](https://github.com/eclipse-theia/theia/pull/12569)
 - [debug] added support for conditional exception breakpoints [#12445](https://github.com/eclipse-theia/theia/pull/12445)
-- [vscode] Support "editor/title/run" toolbar commands [#12637](https://github.com/eclipse-theia/theia/pull/12637) - Contributed on behalf of STMicroelectronics
+- [electron] added secondary window support [#12481](https://github.com/eclipse-theia/theia/pull/12481)
+- [file-search] added missing localizations for the quick-file open [#12571](https://github.com/eclipse-theia/theia/pull/12571)
+- [file-search] updated `ripgrep` arguments for file searches [#12608](https://github.com/eclipse-theia/theia/pull/12608)
+- [keymaps] fixed broken typedoc link for supported keys [#12573](https://github.com/eclipse-theia/theia/pull/12573)
+- [monaco] improved styling of the quick-input menu [#12239](https://github.com/eclipse-theia/theia/pull/12239)
+- [navigator] improved open editors styling and decorations [#12598](https://github.com/eclipse-theia/theia/pull/12598)
+- [plugin] added `ThemeIcon` support for `SourceControlResourceThemableDecorations.iconPath` VS Code API [#12187](https://github.com/eclipse-theia/theia/pull/12187)
+- [plugin] added stubbing for the `onWillSaveNotebookDocument` VS Code API [#12614](https://github.com/eclipse-theia/theia/pull/12614)
+- [plugin] added support to track the visible viewlet [#12597](https://github.com/eclipse-theia/theia/pull/12597)
+- [repo] updated border-radius styling for various elements [#12252](https://github.com/eclipse-theia/theia/pull/12252)
+- [repo] updated license headers to respect `SPDX` standards [#12584](https://github.com/eclipse-theia/theia/pull/12584)
+- [repo] upgraded builtin extension-pack to `v1.77.0` [#12576](https://github.com/eclipse-theia/theia/pull/12576)
+- [terminal] fixed `split-terminal` toolbar item visibility [#12626](https://github.com/eclipse-theia/theia/pull/12626)
+- [terminal] fixed command executions on Windows [#12620](https://github.com/eclipse-theia/theia/pull/12620)
+- [terminal] fixed terminal flicker when resizing [#12587](https://github.com/eclipse-theia/theia/pull/12587)
 - [vscode] added missing editor/lineNumber/context menu mapping [#12638](https://github.com/eclipse-theia/theia/pull/12638) - Contributed on behalf of STMicroelectronics
+- [vscode] added support for the `editor/title/run` toolbar menu [#12637](https://github.com/eclipse-theia/theia/pull/12637) - Contributed on behalf of STMicroelectronics
+- [vsx-registry] added multiple registries support [#12040](https://github.com/eclipse-theia/theia/pull/12040)
 
 <a name="breaking_changes_1.39.0">[Breaking Changes:](#breaking_changes_1.39.0)</a>
 
 - [cli] build process has been adapted to facilitate backend bundling [#12412](https://github.com/eclipse-theia/theia/pull/12412)
-    - webpack compiles frontend files now into the `lib/frontend` directory (previously `lib`)
-    - the `electron-main.js` has been moved from `src-gen/frontend` to `src-gen/backend`
-    - `theia rebuild` needs to run **before** `theia build` for the respective target when using a bundled backend
+  - `webpack` compiles frontend files now into the `lib/frontend` directory (previously `lib`)
+  - the `electron-main.js` has been moved from `src-gen/frontend` to `src-gen/backend`
+  - `theia rebuild` needs to run **before** `theia build` for the respective target when using a bundled backend
 - [repo] with the upgrade to Inversify 6.0, a few initialization methods were adjusted. See also [this migration guide entry](https://github.com/eclipse-theia/theia/blob/master/doc/Migration.md#inversify-60). Additionally, other changes include: [#12425](https://github.com/eclipse-theia/theia/pull/12425)
-  - The type expected by the `PreferenceProxySchema` symbol has been changed from `PromiseLike<PreferenceSchema>` to `() => PromiseLike<PreferenceSchema>`
-  - The symbol `OnigasmPromise` has been changed to `OnigasmProvider` and injects a function of type `() => Promise<IOnigLib>`
-  - The symbol `PreferenceTransactionPrelude` has been changed to `PreferenceTransactionPreludeProvider` and injects a function of type `() => Promise<unknown>`
+  - the type expected by the `PreferenceProxySchema` symbol has been changed from `PromiseLike<PreferenceSchema>` to `() => PromiseLike<PreferenceSchema>`
+  - the symbol `OnigasmPromise` has been changed to `OnigasmProvider` and injects a function of type `() => Promise<IOnigLib>`
+  - the symbol `PreferenceTransactionPrelude` has been changed to `PreferenceTransactionPreludeProvider` and injects a function of type `() => Promise<unknown>`
 - [rpc] Renamed suffixes of classes and types that were still referencing the old rpc protocol. From `JsonRpc*` to `Rpc*`.
-  - Old classes and types are still available but haven been deprecated and will be removed future releases [#12588](https://github.com/eclipse-theia/theia/pull/12588)
+  - old classes and types are still available but haven been deprecated and will be removed future releases [#12588](https://github.com/eclipse-theia/theia/pull/12588)
   - e.g. `JsonRpcProxyFactory` is deprecated, use `RpcProxyFactory` instead.
 
 ## v1.38.0 - 05/25/2023
