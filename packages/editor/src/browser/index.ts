@@ -24,3 +24,4 @@ export * from './editor-keybinding-contexts';
 export * from './editor-frontend-module';
 export * from './editor-preferences';
 export * from './decorations';
+export * from './editor-linenumber-contribution';

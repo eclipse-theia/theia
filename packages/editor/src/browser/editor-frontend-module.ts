@@ -37,6 +37,7 @@ import { EditorVariableContribution } from './editor-variable-contribution';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
 import { QuickEditorService } from './quick-editor-service';
 import { EditorLanguageStatusService } from './language-status/editor-language-status-service';
+import { EditorLineNumberContribution } from './editor-linenumber-contribution';
 
 export default new ContainerModule(bind => {
     bindEditorPreferences(bind);
@@ -63,6 +64,9 @@ export default new ContainerModule(bind => {
     bind(EditorContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(EditorContribution);
     bind(EditorLanguageStatusService).toSelf().inSingletonScope();
+
+    bind(EditorLineNumberContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(EditorLineNumberContribution);
 
     bind(EditorNavigationContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(EditorNavigationContribution);
