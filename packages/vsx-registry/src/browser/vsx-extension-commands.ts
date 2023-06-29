@@ -50,11 +50,11 @@ export namespace VSXExtensionsCommands {
         label: 'Show Built-in Extensions',
         category: EXTENSIONS_CATEGORY,
     });
-    export const SHOW_INSTALLED = Command.toDefaultLocalizedCommand({
+    export const SHOW_INSTALLED = Command.toLocalizedCommand({
         id: 'vsxExtension.showInstalled',
         label: 'Show Installed Extensions',
         category: EXTENSIONS_CATEGORY,
-    });
+    }, 'theia/vsx-registry/showInstalled');
     export const SHOW_RECOMMENDATIONS = Command.toDefaultLocalizedCommand({
         id: 'vsxExtension.showRecommendations',
         label: 'Show Recommended Extensions',
