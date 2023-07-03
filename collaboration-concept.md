@@ -101,3 +101,37 @@ For the messages architecture above, we need a coordination or messaging server.
 2. Communication between collaborators within a session. For example, a broadcast notification needs to be send to the coordination server first, which then relays the message to all other participants.
 
 Assuming the server is built specifically for Theia, we can reuse some of Theia’s dependencies for this, i.e. socket-io for bidirectional, high-performance messaging on top of HTTP.
+
+
+## API Concept
+
+The following outlines the API that is supposed to be used to implement the technical requirements above.
+All 3 message types (broadcast, request, notification) can be accomplished using this approach.
+
+```ts
+// Message type:
+export type DocumentUpdateInfo = {
+    documentUri: string
+    text: string
+    range: Range
+}
+export const DocumentUpdate: Broadcast<DocumentUpdateInfo> = { 
+    kind: 'Broadcast', 
+    method: 'DocumentUpdate' 
+};
+// Alternatively Notification<P>/Request<P>
+
+// Message listener:
+session.onBroadcast(DocumentUpdate, /** automatically typed as `DocumentUpdateInfo` */ updateInfo => {
+
+});
+// alternatively onRequest/onNotification
+
+// Message sender:
+session.sendBroadcast(DocumentUpdate, /** automatically typed as `DocumentUpdateInfo` */ {
+    documentUri,
+    text,
+    range
+});
+// alternatively sendRequest/sendNotification
+```
