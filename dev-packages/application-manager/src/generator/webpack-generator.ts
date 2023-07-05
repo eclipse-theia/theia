@@ -375,6 +375,7 @@ const ignoredResources = new Set();
 
 if (process.platform !== 'win32') {
     ignoredResources.add('@vscode/windows-ca-certs');
+    ignoredResources.add('@vscode/windows-ca-certs/build/Release/crypt32.node');
 }
 
 const nativePlugin = new NativeWebpackPlugin({
