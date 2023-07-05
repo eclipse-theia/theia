@@ -1,5 +1,8 @@
 # Collaboration Concept
 
+Collaboration is an often requested for feature in Theia.
+In this document we analyze the collaboration feature of VS Code, specify technical requirements and architecture for Theia and give an overview over the API concept.
+
 ## Microsoft VSCode Live Share Extension
 
 The official Microsoft [Live Share Extension](https://visualstudio.microsoft.com/services/live-share/) implements collaboration support for the following features:
@@ -12,20 +15,31 @@ The official Microsoft [Live Share Extension](https://visualstudio.microsoft.com
 - Chat Functionality
 - Mechanism for making the API available to other extensions, see [vsls](https://www.npmjs.com/package/vsls)
 
-Similar to the tunnel feature, the connection between host and other users is accomplished using hole-punching.
-I.e. a single central server serves as an intermediary to exchange messages. No messages are being exchanged directly between users. 
+Similar to the tunnel feature, the connection between host and other users can be accomplished using hole-punching.
+I.e. a single central server serves as an intermediary to exchange messages. No messages are being exchanged directly between users.
+If possible - for example, if the users are on the same network - the extension will try to connect directly to the host,
+see [here](https://learn.microsoft.com/en-us/visualstudio/liveshare/reference/connectivity#connection-modes).
 
 ## Requirements for Theia Collaboration Feature
 
-### Technical Requirements
+### Functional Requirements
 
-The protocol/implementation that this new live share feature is supposed to be using therefore has a few different tasks for different widgets/features
+The protocol/implementation that this new collaboration feature is supposed to be using therefore has a few different tasks for different widgets/features
 
 1. Document syncing akin to yjs monaco binding + Awareness information exchange (i.e. broadcast information to all users)
 2. Virtual File System coming from the host user
 3. Frontend message proxying for debug sync (i.e. debug launch or monaco language service requests need to be proxied to the plugin host and the results send back)
 4. Terminal input + output syncing requires a yjs like approach for input and a broadcast for output
 5. Broadcast required for Chat functionality
+6. Extensibility (for customized messages between plugins, similar to what VS Code offers with `vsls`)
+
+### Non-Functional Requirements
+
+The requirements above are purely about the functionality of the collaboration feature. The following requirements are still necessary to be met to find adoption in Theia.
+
+1. Privacy (e.g. allow to configure an own message server without going through one central public instance)
+2. Encryption
+3. Authentication
 
 ### Messaging System Architecture
 
