@@ -23,7 +23,7 @@
 }
 
 .t-siw-search-container {
-  padding: 5px;
+  padding: 0px 1px;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -52,8 +52,7 @@
 }
 
 .t-siw-search-container .searchHeader {
-  width: 100%;
-  margin-bottom: 10px;
+  padding: 5px 5px 15px 2px;
 }
 
 .t-siw-search-container .searchHeader .controls.button-container {
@@ -206,7 +205,6 @@
 
 .t-siw-search-container .resultContainer {
   height: 100%;
-  margin-left: 13px;
 }
 
 .t-siw-search-container .result {
