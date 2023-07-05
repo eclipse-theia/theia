@@ -577,6 +577,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
         const oldKeybinding = item.keybinding;
         const dialog = new EditKeybindingDialog({
             title: nls.localize('theia/keymaps/editKeybindingTitle', 'Edit Keybinding for {0}', command),
+            maxWidth: 400,
             initialValue: oldKeybinding?.keybinding,
             validate: newKeybinding => this.validateKeybinding(command, oldKeybinding?.keybinding, newKeybinding),
         }, this.keymapsService, item);

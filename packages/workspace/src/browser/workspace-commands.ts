@@ -235,6 +235,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
 
                     const dialog = new WorkspaceInputDialog({
                         title: nls.localizeByDefault('New File...'),
+                        maxWidth: 400,
                         parentUri: parentUri,
                         initialValue: vacantChildUri.path.base,
                         placeholder: nls.localize('theia/workspace/newFilePlaceholder', 'File Name'),
@@ -260,6 +261,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parent, targetUri, true);
                     const dialog = new WorkspaceInputDialog({
                         title: nls.localizeByDefault('New Folder...'),
+                        maxWidth: 400,
                         parentUri: parentUri,
                         initialValue: vacantChildUri.path.base,
                         placeholder: nls.localize('theia/workspace/newFolderPlaceholder', 'Folder Name'),
@@ -285,6 +287,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const oldName = uri.path.base;
                     const dialog = new SingleTextInputDialog({
                         title: nls.localizeByDefault('Rename'),
+                        maxWidth: 400,
                         initialValue: oldName,
                         initialSelectionRange: {
                             start: 0,
