@@ -1234,7 +1234,19 @@ export class ViewContainerPart extends BaseWidget {
         };
     }
 
+    protected handleResize(): void {
+        const handleMouseEnter = () => {
+            this.node?.classList.add('no-pointer-events');
+            setTimeout(() => {
+                this.node?.classList.remove('no-pointer-events');
+                this.node?.removeEventListener('mouseenter', handleMouseEnter);
+            }, 100);
+        };
+        this.node?.addEventListener('mouseenter', handleMouseEnter);
+    }
+
     protected override onResize(msg: Widget.ResizeMessage): void {
+        this.handleResize();
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, Widget.ResizeMessage.UnknownSize);
         }
