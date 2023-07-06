@@ -32,7 +32,8 @@ import {
     TooltipAttributes,
     TreeSelection,
     HoverService,
-    ApplicationShell
+    ApplicationShell,
+    KeybindingRegistry
 } from '@theia/core/lib/browser';
 import { MenuPath, MenuModelRegistry, ActionMenuNode } from '@theia/core/lib/common/menu';
 import * as React from '@theia/core/shared/react';
@@ -404,6 +405,9 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     @inject(MenuModelRegistry)
     protected readonly menus: MenuModelRegistry;
 
+    @inject(KeybindingRegistry)
+    protected readonly keybindings: KeybindingRegistry;
+
     @inject(ContextKeyService)
     protected readonly contextKeys: ContextKeyService;
 
@@ -441,6 +445,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         this.toDispose.push(this.model.onDidChangeWelcomeState(this.update, this));
         this.toDispose.push(this.onDidChangeVisibilityEmitter);
         this.toDispose.push(this.contextKeyService.onDidChange(() => this.update()));
+        this.toDispose.push(this.keybindings.onKeybindingsChanged(() => this.update()));
         this.treeDragType = `application/vnd.code.tree.${this.id.toLowerCase()}`;
     }
 
@@ -731,6 +736,23 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         return { viewId: this.id, itemId: treeNode.id };
     }
 
+    protected resolveKeybindingForCommand(command: string | undefined): string {
+        let result = '';
+        if (command) {
+            const bindings = this.keybindings.getKeybindingsForCommand(command);
+            let found = false;
+            if (bindings && bindings.length > 0) {
+                bindings.forEach(binding => {
+                    if (!found && this.keybindings.isEnabledInScope(binding, this.node)) {
+                        found = true;
+                        result = ` (${this.keybindings.acceleratorFor(binding, '+')})`;
+                    }
+                });
+            }
+        }
+        return result;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected renderInlineCommand(actionMenuNode: ActionMenuNode, index: number, tabbable: boolean, args: any[]): React.ReactNode {
         if (!actionMenuNode.icon || !this.commands.isVisible(actionMenuNode.command, ...args) || !actionMenuNode.when || !this.contextKeys.match(actionMenuNode.when)) {
@@ -738,7 +760,9 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         }
         const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, actionMenuNode.icon, ACTION_ITEM, 'theia-tree-view-inline-action'].join(' ');
         const tabIndex = tabbable ? 0 : undefined;
-        return <div key={index} className={className} title={actionMenuNode.label} tabIndex={tabIndex} onClick={e => {
+        const titleString = actionMenuNode.label + this.resolveKeybindingForCommand(actionMenuNode.command);
+
+        return <div key={index} className={className} title={titleString} tabIndex={tabIndex} onClick={e => {
             e.stopPropagation();
             this.commands.executeCommand(actionMenuNode.command, ...args);
         }} />;

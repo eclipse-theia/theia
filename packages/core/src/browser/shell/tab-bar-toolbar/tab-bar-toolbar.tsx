@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import * as React from 'react';
 import { ContextKeyService } from '../../context-key-service';
 import { CommandRegistry, Disposable, DisposableCollection, MenuCommandExecutor, MenuModelRegistry, MenuPath, nls } from '../../../common';
@@ -23,6 +23,7 @@ import { LabelIcon, LabelParser } from '../../label-parser';
 import { ACTION_ITEM, codicon, ReactWidget, Widget } from '../../widgets';
 import { TabBarToolbarRegistry } from './tab-bar-toolbar-registry';
 import { AnyToolbarItem, ReactTabBarToolbarItem, TabBarDelegator, TabBarToolbarItem, TAB_BAR_TOOLBAR_CONTEXT_MENU } from './tab-bar-toolbar-types';
+import { KeybindingRegistry } from '../..//keybinding';
 
 /**
  * Factory for instantiating tab-bar toolbars.
@@ -45,6 +46,8 @@ export class TabBarToolbar extends ReactWidget {
     protected contextKeyListener: Disposable | undefined;
     protected toDisposeOnUpdateItems: DisposableCollection = new DisposableCollection();
 
+    protected keybindingContextKeys = new Set<string>();
+
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
     @inject(LabelParser) protected readonly labelParser: LabelParser;
     @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
@@ -52,11 +55,23 @@ export class TabBarToolbar extends ReactWidget {
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
     @inject(TabBarToolbarRegistry) protected readonly toolbarRegistry: TabBarToolbarRegistry;
     @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
+    @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry;
 
     constructor() {
         super();
         this.addClass(TabBarToolbar.Styles.TAB_BAR_TOOLBAR);
         this.hide();
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.toDispose.push(this.keybindings.onKeybindingsChanged(() => this.update()));
+
+        this.toDispose.push(this.contextKeyService.onDidChange(e => {
+            if (e.affects(this.keybindingContextKeys)) {
+                this.update();
+            }
+        }));
     }
 
     updateItems(items: Array<TabBarToolbarItem | ReactTabBarToolbarItem>, current: Widget | undefined): void {
@@ -131,10 +146,31 @@ export class TabBarToolbar extends ReactWidget {
     }
 
     protected render(): React.ReactNode {
+        this.keybindingContextKeys.clear();
         return <React.Fragment>
             {this.renderMore()}
             {[...this.inline.values()].map(item => TabBarToolbarItem.is(item) ? this.renderItem(item) : item.render(this.current))}
         </React.Fragment>;
+    }
+
+    protected resolveKeybindingForCommand(command: string | undefined): string {
+        let result = '';
+        if (command) {
+            const bindings = this.keybindings.getKeybindingsForCommand(command);
+            let found = false;
+            if (bindings && bindings.length > 0) {
+                bindings.forEach(binding => {
+                    if (binding.when) {
+                        this.contextKeyService.parseKeys(binding.when)?.forEach(key => this.keybindingContextKeys.add(key));
+                    }
+                    if (!found && this.keybindings.isEnabledInScope(binding, this.current?.node)) {
+                        found = true;
+                        result = ` (${this.keybindings.acceleratorFor(binding, '+')})`;
+                    }
+                });
+            }
+        }
+        return result;
     }
 
     protected renderItem(item: AnyToolbarItem): React.ReactNode {
@@ -156,7 +192,7 @@ export class TabBarToolbar extends ReactWidget {
             iconClass += ` ${ACTION_ITEM}`;
             classNames.push(iconClass);
         }
-        const tooltip = item.tooltip || (command && command.label);
+        const tooltip = `${item.tooltip || (command && command.label) || ''}${this.resolveKeybindingForCommand(command?.id)}`;
 
         const toolbarItemClassNames = this.getToolbarItemClassNames(item);
         return <div key={item.id}
