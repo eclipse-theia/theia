@@ -50,11 +50,9 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
         if (existsSync(dataFolderPath)) {
             if (existsSync(userDataPath)) {
                 process.env.THEIA_CONFIG_DIR = userDataPath;
-                return FileUri.create(userDataPath).toString();
             } else {
                 mkdirSync(userDataPath);
                 process.env.THEIA_CONFIG_DIR = userDataPath;
-                return FileUri.create(userDataPath).toString();
             }
         } else {
             process.env.THEIA_CONFIG_DIR = join(homedir(), '.theia');
