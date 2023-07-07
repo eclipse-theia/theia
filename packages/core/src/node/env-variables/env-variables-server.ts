@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { existsSync } from 'node:fs';
-import { join, sep } from 'path';
+import { existsSync, mkdirSync } from 'node:fs';
+import { join } from 'path';
 import { homedir } from 'os';
 import { injectable } from 'inversify';
 import * as drivelist from 'drivelist';
@@ -44,21 +44,22 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     }
 
     protected async createConfigDirUri(): Promise<string> {
-        const projectPath = this.handlePath(process.cwd());
-        const dataFolderPath = join(projectPath, 'data');
+        const dataFolderPath = join(process.cwd(), 'data');
+        const userDataPath = join(dataFolderPath, 'user-data');
+        // Check if data folder exists for portable mode
         if (existsSync(dataFolderPath)) {
-            process.env.THEIA_CONFIG_DIR = dataFolderPath;
+            if (existsSync(userDataPath)) {
+                process.env.THEIA_CONFIG_DIR = userDataPath;
+                return FileUri.create(userDataPath).toString();
+            } else {
+                mkdirSync(userDataPath);
+                process.env.THEIA_CONFIG_DIR = userDataPath;
+                return FileUri.create(userDataPath).toString();
+            }
         } else {
             process.env.THEIA_CONFIG_DIR = join(homedir(), '.theia');
         }
         return FileUri.create(process.env.THEIA_CONFIG_DIR).toString();
-    }
-
-    protected handlePath(pathStr: string): string {
-        let pathArr = pathStr.split(sep);
-        pathArr = pathArr.slice(0, pathArr.indexOf('theia') + 1);
-        pathStr = pathArr.join(sep);
-        return pathStr;
     }
 
     async getExecPath(): Promise<string> {

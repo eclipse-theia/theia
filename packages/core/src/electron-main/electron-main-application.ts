@@ -19,7 +19,7 @@ import { screen, app, BrowserWindow, WebContents, Event as ElectronEvent, Browse
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
-import { promises as fs } from 'fs';
+import { promises as fs, existsSync, mkdirSync } from 'fs';
 import { fork, ForkOptions } from 'child_process';
 import { DefaultTheme, FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import URI from '../common/uri';
@@ -171,6 +171,8 @@ export class ElectronMainApplication {
     @inject(TheiaElectronWindowFactory)
     protected readonly windowFactory: TheiaElectronWindowFactory;
 
+    protected isPortable = this.makePortable();
+
     protected readonly electronStore = new Storage<{
         windowstate?: TheiaBrowserWindowOptions
     }>();
@@ -192,6 +194,19 @@ export class ElectronMainApplication {
             throw new Error('You have to start the application first.');
         }
         return this._config;
+    }
+
+    protected makePortable(): boolean {
+        const dataFolderPath = path.join(process.cwd(), 'data');
+        const appDataPath = path.join(dataFolderPath, 'app-data');
+        if (existsSync(dataFolderPath)) {
+            if (!existsSync(appDataPath)) {
+                mkdirSync(appDataPath);
+            }
+            app.setPath('userData', appDataPath);
+            return true;
+        }
+        return false;
     }
 
     async start(config: FrontendApplicationConfig): Promise<void> {
