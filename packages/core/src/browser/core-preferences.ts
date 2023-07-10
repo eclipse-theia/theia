@@ -20,6 +20,7 @@ import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceCo
 import { SUPPORTED_ENCODINGS } from './supported-encodings';
 import { isOSX } from '../common/os';
 import { nls } from '../common/nls';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 
 const windowTitleDescription = [
     'Controls the window title based on the active editor. Variables are substituted based on the context:',
@@ -191,7 +192,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             type: ['string'],
             enum: ['none', 'theia-file-icons'],
             enumItemLabels: [nls.localizeByDefault('None'), 'File Icons (Theia)'],
-            default: 'none',
+            default: FrontendApplicationConfigProvider.get().defaultIconTheme,
             description: nls.localizeByDefault("Specifies the file icon theme used in the workbench or 'null' to not show any file icons.")
         },
         'workbench.silentNotifications': {
