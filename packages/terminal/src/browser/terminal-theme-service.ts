@@ -187,14 +187,18 @@ export class TerminalThemeService {
         const backgroundColor = this.colorRegistry.getCurrentColor('terminal.background') || this.colorRegistry.getCurrentColor('panel.background');
         const cursorColor = this.colorRegistry.getCurrentColor('terminalCursor.foreground') || foregroundColor;
         const cursorAccentColor = this.colorRegistry.getCurrentColor('terminalCursor.background') || backgroundColor;
-        const selectionColor = this.colorRegistry.getCurrentColor('terminal.selectionBackground');
+        const selectionBackgroundColor = this.colorRegistry.getCurrentColor('terminal.selectionBackground');
+        const selectionInactiveBackground = this.colorRegistry.getCurrentColor('terminal.inactiveSelectionBackground');
+        const selectionForegroundColor = this.colorRegistry.getCurrentColor('terminal.selectionForeground');
 
         const theme: ITheme = {
             background: backgroundColor,
             foreground: foregroundColor,
             cursor: cursorColor,
             cursorAccent: cursorAccentColor,
-            selection: selectionColor
+            selectionBackground: selectionBackgroundColor,
+            selectionInactiveBackground: selectionInactiveBackground,
+            selectionForeground: selectionForegroundColor
         };
         // eslint-disable-next-line guard-for-in
         for (const id in terminalAnsiColorMap) {

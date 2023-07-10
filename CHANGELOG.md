@@ -232,6 +232,8 @@
 
 - [deps] bumped supported Node.js version from 16.x to >=18, you may need to update your environments [#12711](https://github.com/eclipse-theia/theia/pull/12711)
 - [preferences] removed the `welcome.alwaysShowWelcomePage` preference in favor of `workbench.startupEditor` [#12813](https://github.com/eclipse-theia/theia/pull/12813)
+- [terminal] deprecated `terminal.integrated.rendererType` preference [#12691](https://github.com/eclipse-theia/theia/pull/12691)
+- [terminal] removed protected method `TerminalWidgetImpl.getTerminalRendererType` [#12691](https://github.com/eclipse-theia/theia/pull/12691)
 
 ## v1.40.0 - 07/27/2023
 
