@@ -14,13 +14,29 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { createIpcNamespace } from './electron-ipc';
+import type { CancellationToken } from '../cancellation';
+import type { RpcContext, RpcContextKey } from './rpc-server';
 
-/**
- * Electron doesn't support invoking handlers from main to webContents,
- * so we'll use a simple IPC protocol instead.
- */
-export const ELECTRON_INVOKE_IPC = createIpcNamespace('theia-electron-invoke-ipc', channel => ({
-    invokeRequest: channel<(invokeChannel: string, invokeId: number, args: unknown[]) => void>(),
-    invokeResponse: channel<(invokeChannel: string, invokeId: number, error: unknown, result: unknown) => void>(),
-}));
+export class RpcContextImpl<T = unknown> implements RpcContext {
+
+    #bindings: Map<string | symbol, unknown>;
+
+    constructor(
+        bindings: Map<string | symbol, unknown>,
+        readonly sender: T,
+        readonly request?: CancellationToken
+    ) {
+        this.#bindings = bindings;
+    }
+
+    get<U>(key: RpcContextKey<U>): U | undefined {
+        return this.#bindings.get(key) as U | undefined;
+    }
+
+    require<U>(key: RpcContextKey<U>): U {
+        if (!this.#bindings.has(key)) {
+            throw new Error(`no value for context key: ${key.toString()}`);
+        }
+        return this.#bindings.get(key) as U;
+    }
+}

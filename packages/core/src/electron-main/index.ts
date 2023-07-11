@@ -16,5 +16,5 @@
 
 export { ElectronMainApplication } from './electron-main-application';
 export { ElectronMainApplicationGlobals } from './electron-main-constants';
-export { ElectronMainRpcContext, SenderWebContents } from './electron-main-rpc-context';
+export { SenderWebContents } from './electron-main-rpc-context';
 export { ElectronSecurityTokenService } from './electron-security-token-service';

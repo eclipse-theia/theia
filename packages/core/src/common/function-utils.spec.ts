@@ -16,7 +16,8 @@
 
 import { assert } from 'chai';
 import { Container } from 'inversify';
-import { AnyFunction, FunctionUtils } from './function-utils';
+import { FunctionUtils } from './function-utils';
+import type { AnyFunction } from './types';
 
 describe('FunctionUtils', () => {
 
@@ -60,15 +61,24 @@ describe('FunctionUtils', () => {
         });
 
         it('identity is preserved when the same arguments are used', () => {
-            assert.strictEqual(futils.bindfn(a1.methodA, a1), futils.bindfn(a1.methodA, a1));
+            assert.strictEqual(
+                futils.bindfn(a1.methodA, a1),
+                futils.bindfn(a1.methodA, a1)
+            );
         });
 
         it('identity is different when callbackfn is different', () => {
-            assert.notStrictEqual(futils.bindfn(a1.methodA, a1), futils.bindfn(a1.methodB, a1));
+            assert.notStrictEqual(
+                futils.bindfn(a1.methodA, a1),
+                futils.bindfn(a1.methodB, a1)
+            );
         });
 
         it('identity is different when thisArg is different', () => {
-            assert.notStrictEqual(futils.bindfn(a1.methodA, a1), futils.bindfn(a1.methodA, a2));
+            assert.notStrictEqual(
+                futils.bindfn(a1.methodA, a1),
+                futils.bindfn(a1.methodA, a2)
+            );
         });
     });
 
@@ -87,9 +97,7 @@ describe('FunctionUtils', () => {
         }
 
         function mapVoid<T extends AnyFunction>(fn: T): (...args: Parameters<T>) => void {
-            return (...args) => {
-                fn(...args);
-            };
+            return (...args) => void fn(...args);
         }
 
         it('mapped functions should work', () => {
@@ -98,15 +106,24 @@ describe('FunctionUtils', () => {
         });
 
         it('identity is preserved when the same arguments are used', () => {
-            assert.strictEqual(futils.mapfn(returnArgs, mapResultToString), futils.mapfn(returnArgs, mapResultToString));
+            assert.strictEqual(
+                futils.mapfn(returnArgs, mapResultToString),
+                futils.mapfn(returnArgs, mapResultToString)
+            );
         });
 
         it('identity is different when callbackfn is different', () => {
-            assert.notStrictEqual(futils.mapfn(returnArgs, mapResultToString), futils.mapfn(returnArgsLength, mapResultToString));
+            assert.notStrictEqual(
+                futils.mapfn(returnArgs, mapResultToString),
+                futils.mapfn(returnArgsLength, mapResultToString)
+            );
         });
 
         it('identity is different when mapfn is different', () => {
-            assert.notStrictEqual(futils.mapfn(returnArgs, mapResultToString), futils.mapfn(returnArgs, mapVoid));
+            assert.notStrictEqual(
+                futils.mapfn(returnArgs, mapResultToString),
+                futils.mapfn(returnArgs, mapVoid)
+            );
         });
     });
 });

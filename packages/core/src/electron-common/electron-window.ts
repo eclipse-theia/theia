@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { NewWindowOptions } from '../common/window';
 import { Event, Extends, Proxyable, ProxyId } from '../common';
 import { MenuDto } from './electron-menu';
 
@@ -45,4 +46,7 @@ interface $ElectronWindow {
 
     setMenuBarVisible(visible: boolean, windowName?: string): void;
     focusWindow(windowName: string): void;
+
+    openNewWindow(url: string, options?: NewWindowOptions): void;
+    openNewDefaultWindow(): void;
 }

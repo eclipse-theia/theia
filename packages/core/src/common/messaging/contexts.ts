@@ -14,6 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import type { WebContents } from '@theia/electron/shared/electron';
+import type { interfaces } from 'inversify';
+
 export const FrontendContext = Symbol('FrontendContext');
 export const ElectronMainContext = Symbol('ElectronMainContext');
 export const ElectronPreloadContext = Symbol('ElectronPreloadContext');
+export const ElectronWebContentsScope = Symbol('ElectronWebContentsScope') as symbol & interfaces.Abstract<WebContents>;

@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { AnyFunction, FunctionUtils, IpcChannel, TheiaIpcWindow } from '../electron-common';
+import { TheiaIpcWindow } from './ipc-window';
+import { AnyFunction, ChannelDescriptor, FunctionUtils } from '../common';
 
 @injectable()
 export class TheiaIpcWindowImpl implements TheiaIpcWindow {
@@ -31,26 +32,26 @@ export class TheiaIpcWindowImpl implements TheiaIpcWindow {
         window.addEventListener('message', event => this.handleMessageEvent(event));
     }
 
-    on(channel: IpcChannel, listener: AnyFunction, thisArg?: object): this {
+    on(channel: ChannelDescriptor, listener: AnyFunction, thisArg?: object): this {
         this.getOrCreateListeners(channel.channel).set(this.futils.bindfn(listener, thisArg), false);
         return this;
     }
 
-    once(channel: IpcChannel, listener: AnyFunction, thisArg?: object): this {
+    once(channel: ChannelDescriptor, listener: AnyFunction, thisArg?: object): this {
         this.getOrCreateListeners(channel.channel).set(this.futils.bindfn(listener, thisArg), true);
         return this;
     }
 
-    postMessage(targetOrigin: string, channel: IpcChannel, message: unknown, transfer?: MessagePort[]): void {
+    postMessage(targetOrigin: string, channel: ChannelDescriptor, message: unknown, transfer?: MessagePort[]): void {
         window.postMessage([this.canary, channel.channel, message], targetOrigin, transfer);
     }
 
-    removeAllListeners(channel: IpcChannel): this {
+    removeAllListeners(channel: ChannelDescriptor): this {
         this.messageListeners.delete(channel.channel);
         return this;
     }
 
-    removeListener(channel: IpcChannel, listener: AnyFunction, thisArg?: object): this {
+    removeListener(channel: ChannelDescriptor, listener: AnyFunction, thisArg?: object): this {
         this.messageListeners.get(channel.channel)?.delete(this.futils.bindfn(listener, thisArg));
         return this;
     }

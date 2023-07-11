@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+export { ChannelDescriptor, ChannelHandler, ChannelHandlerFactory, createChannelDescriptor, createChannelNamespace } from './channels';
+export * from './connection-error-handler';
+export { ElectronMainContext, ElectronPreloadContext, ElectronWebContentsScope, FrontendContext } from './contexts';
 export * from './handler';
 export * from './proxy-factory';
-export * from './connection-error-handler';
-export { ChannelDescriptor, ChannelHandler, ChannelHandlerFactory } from './channels';
-export { ElectronMainContext, ElectronPreloadContext, FrontendContext } from './contexts';

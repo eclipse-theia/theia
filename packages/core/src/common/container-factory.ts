@@ -14,14 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { contextBridge } from '@theia/electron/shared/electron';
-import { injectable } from 'inversify';
-import { TheiaContextBridge } from '../electron-common';
+import type { interfaces } from 'inversify';
 
-@injectable()
-export class TheiaContextBridgeImpl implements TheiaContextBridge {
-
-    exposeInMainWorld(globalName: string, value: object): void {
-        contextBridge.exposeInMainWorld(globalName, value);
-    }
+export const ContainerFactory = Symbol('ContainerFactory') as symbol & interfaces.Abstract<ContainerFactory>;
+export interface ContainerFactory {
+    (): interfaces.Container;
 }

@@ -15,17 +15,24 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { TheiaIpcWindowImpl } from '../electron-browser/electron-ipc-window-impl';
-import * as common from '../electron-common';
-import { TheiaContextBridgeImpl } from './electron-context-bridge-impl';
-import { TheiaIpcRendererImpl } from './electron-ipc-renderer-impl';
-import { ElectronPreloadRpcSync } from './electron-rpc-sync-preload';
+import { TheiaIpcWindow } from '../browser';
+import { TheiaIpcWindowImpl } from '../browser/messaging/ipc-window-impl';
+import { FunctionUtils } from '../common';
+import { TheiaContextBridgeImpl } from './context-bridge-impl';
+import { ElectronPreloadRpcSync } from './electron-preload-rpc-sync';
+import { TheiaIpcRendererImpl } from './ipc-renderer-impl';
+import { TheiaIpcRenderer } from './ipc-renderer';
+import { TheiaContextBridge } from './context-bridge';
+import { ElectronPreloadContribution } from './preload-contribution';
+import { ElectronPreloadRpcBroker } from './electron-preload-rpc-broker';
 
 export default new ContainerModule(bind => {
-    bind(common.FunctionUtils).toSelf().inSingletonScope();
-    bind(common.TheiaIpcWindow).to(TheiaIpcWindowImpl).inSingletonScope();
-    bind(common.TheiaIpcRenderer).to(TheiaIpcRendererImpl).inSingletonScope();
-    bind(common.TheiaContextBridge).to(TheiaContextBridgeImpl).inSingletonScope();
+    bind(FunctionUtils).toSelf().inSingletonScope();
+    bind(TheiaIpcWindow).to(TheiaIpcWindowImpl).inSingletonScope();
+    bind(TheiaIpcRenderer).to(TheiaIpcRendererImpl).inSingletonScope();
+    bind(TheiaContextBridge).to(TheiaContextBridgeImpl).inSingletonScope();
+    bind(ElectronPreloadRpcBroker).toSelf().inSingletonScope();
+    bind(ElectronPreloadContribution).toService(ElectronPreloadRpcBroker);
     bind(ElectronPreloadRpcSync).toSelf().inSingletonScope();
-    bind(common.ElectronPreloadContribution).toService(ElectronPreloadRpcSync);
+    bind(ElectronPreloadContribution).toService(ElectronPreloadRpcSync);
 });

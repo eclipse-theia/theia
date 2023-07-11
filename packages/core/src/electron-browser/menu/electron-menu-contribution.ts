@@ -27,7 +27,7 @@ import { ZoomLevel } from '../window/electron-window-preferences';
 import { BrowserMenuBarContribution } from '../../browser/menu/browser-menu-plugin';
 import { WindowService } from '../../browser/window/window-service';
 import { WindowTitleService } from '../../browser/window/window-title-service';
-import { ElectronFrontendApplication, ElectronWindow, MenuDto } from '../../electron-common';
+import { ElectronApplication, ElectronWindow, MenuDto } from '../../electron-common';
 
 import '../../../src/electron-browser/menu/electron-menu-style.css';
 
@@ -82,8 +82,8 @@ export type CustomTitleWidgetFactory = () => Widget | undefined;
 @injectable()
 export class ElectronMenuContribution extends BrowserMenuBarContribution implements FrontendApplicationContribution, CommandContribution, MenuContribution, KeybindingContribution {
 
-    @inject(ElectronFrontendApplication)
-    protected electronFrontendApplication: ElectronFrontendApplication;
+    @inject(ElectronApplication)
+    protected electronApplication: ElectronApplication;
 
     @inject(FrontendApplicationStateService)
     protected readonly stateService: FrontendApplicationStateService;
@@ -274,7 +274,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         });
         if (await dialog.open()) {
             this.windowService.setSafeToShutDown();
-            this.electronFrontendApplication.restart();
+            this.electronApplication.restart();
         }
     }
 

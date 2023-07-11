@@ -14,10 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
+import type { AnyFunction } from './types';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyFunction = (...params: any[]) => any;
+export interface FunctionBinder {
+    bindfn<T extends AnyFunction>(callbackfn: T, thisArg?: object): T;
+}
+
+export interface FunctionMapper {
+    mapfn<T extends AnyFunction, U extends AnyFunction>(callbackfn: T, mapfn: (callbackfn: T) => U): U;
+}
 
 /**
  * Utility to bind functions and preserve indentity.
@@ -36,8 +41,7 @@ export type AnyFunction = (...params: any[]) => any;
  * // Identity is conversed when using FunctionUtils.bindfn:
  * futils.bindfn(instance.bar, instance) === futils.bindfn(instance.bar, instance);
  */
-@injectable()
-export class FunctionUtils {
+export class FunctionUtils implements FunctionBinder, FunctionMapper {
 
     /** callbackfn => thisArg => boundfn */
     protected boundfnCache = new WeakMap<AnyFunction, WeakMap<object, AnyFunction>>();

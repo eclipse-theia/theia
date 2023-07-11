@@ -14,24 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { inject, injectable } from 'inversify';
+import type { RpcContext, RpcServer } from '../common';
+import type { ElectronApplication } from '../electron-common';
+import { ElectronMainApplication } from './electron-main-application';
+import { SenderWebContents } from './electron-main-rpc-context';
 
-import type { interfaces } from 'inversify';
+@injectable()
+export class ElectronFrontendApplicationMain implements RpcServer<ElectronApplication> {
 
-/**
- * Implement this interface and bind to this service identifier to contribute
- * to the Electron preload context bootstrap.
- */
-export const ElectronPreloadContribution = Symbol('ElectronPreloadContribution') as symbol & interfaces.Abstract<ElectronPreloadContribution>;
-export interface ElectronPreloadContribution {
-    preload(): void
-}
+    @inject(ElectronMainApplication)
+    protected application: ElectronMainApplication;
 
-/**
- * Wrapper around Electron's {@link ContextBridge} that can expose instances
- * with proxyable prototypes.
- */
-export const TheiaContextBridge = Symbol('TheiaContextBridge') as symbol & interfaces.Abstract<TheiaContextBridge>;
-export interface TheiaContextBridge {
-    exposeInMainWorld<T extends object>(apiKey: string, api: T): void
+    $restart(ctx: RpcContext): void {
+        this.application!.restart(ctx.require(SenderWebContents));
+    }
 }

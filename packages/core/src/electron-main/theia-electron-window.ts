@@ -16,18 +16,27 @@
 
 import { FrontendApplicationConfig } from '@theia/application-package';
 import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
-import { BrowserWindow, BrowserWindowConstructorOptions } from '../../electron-shared/electron';
-import { inject, injectable, postConstruct } from '../../shared/inversify';
+import { BrowserWindow, BrowserWindowConstructorOptions, WebContents } from '../../electron-shared/electron';
+import { inject, injectable, named, postConstruct } from '../../shared/inversify';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
-import { DisposableCollection, Emitter, Event } from '../common';
+import { ContainerScope, ContainerScopeManager, DisposableCollection, ElectronWebContentsScope, Emitter, Event } from '../common';
 import { createDisposableListener } from './event-utils';
 import { URI } from '../common/uri';
 import { FileUri } from '../node/file-uri';
-import { ElectronFrontendApplicationMain } from './electron-frontend-application-main';
+import { ElectronFrontendApplication } from 'src/electron-common';
+
+export const WindowApplicationConfig = Symbol('WindowApplicationConfig');
+export type WindowApplicationConfig = FrontendApplicationConfig;
+
+export const TheiaElectronWindowFactory = Symbol('TheiaElectronWindowFactory');
+export interface TheiaElectronWindowFactory {
+    (options: TheiaBrowserWindowOptions, config: FrontendApplicationConfig): TheiaElectronWindow;
+}
 
 /**
  * Theia tracks the maximized state of Electron Browser Windows.
  */
+export const TheiaBrowserWindowOptions = Symbol('TheiaBrowserWindowOptions');
 export interface TheiaBrowserWindowOptions extends BrowserWindowConstructorOptions {
     isMaximized?: boolean;
     isFullScreen?: boolean;
@@ -39,32 +48,16 @@ export interface TheiaBrowserWindowOptions extends BrowserWindowConstructorOptio
     screenLayout?: string;
 }
 
-export const TheiaBrowserWindowOptions = Symbol('TheiaBrowserWindowOptions');
-
-export const WindowApplicationConfig = Symbol('WindowApplicationConfig');
-export type WindowApplicationConfig = FrontendApplicationConfig;
-
 @injectable()
 export class TheiaElectronWindow {
 
-    protected onDidCloseEmitter = new Emitter<void>();
-
-    get onDidClose(): Event<void> {
-        return this.onDidCloseEmitter.event;
-    }
-
-    protected readonly toDispose = new DisposableCollection(this.onDidCloseEmitter);
-
-    protected _window: BrowserWindow;
-    get window(): BrowserWindow {
-        return this._window;
-    }
-
-    protected closeIsConfirmed = false;
     applicationState: FrontendApplicationState = 'init';
 
-    @inject(ElectronFrontendApplicationMain)
-    protected electronFrontendApplication: ElectronFrontendApplicationMain;
+    protected closeIsConfirmed = false;
+    protected onDidCloseEmitter = new Emitter<void>();
+    protected readonly toDispose = new DisposableCollection(this.onDidCloseEmitter);
+    protected windowScope: Promise<ContainerScope>;
+    protected _window: BrowserWindow;
 
     @inject(TheiaBrowserWindowOptions)
     protected options: TheiaBrowserWindowOptions;
@@ -75,6 +68,9 @@ export class TheiaElectronWindow {
     @inject(ElectronMainApplicationGlobals)
     protected globals: ElectronMainApplicationGlobals;
 
+    @inject(ContainerScopeManager) @named(ElectronWebContentsScope)
+    protected scopes: ContainerScopeManager<WebContents>;
+
     @postConstruct()
     protected init(): void {
         this._window = new BrowserWindow(this.options);
@@ -82,6 +78,30 @@ export class TheiaElectronWindow {
         this.attachReadyToShow();
         this.restoreMaximizedState();
         this.attachCloseListeners();
+        this.windowScope = this.createWindowScope();
+    }
+
+    get window(): BrowserWindow {
+        return this._window;
+    }
+
+    get onDidClose(): Event<void> {
+        return this.onDidCloseEmitter.event;
+    }
+
+    close(reason: StopReason = StopReason.Close): Promise<boolean> {
+        return this.handleStopRequest(() => this.doCloseWindow(), reason);
+    }
+
+    reload(): void {
+        this.handleStopRequest(() => {
+            this.applicationState = 'init';
+            this._window.reload();
+        }, StopReason.Reload);
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     /**
@@ -106,20 +126,17 @@ export class TheiaElectronWindow {
         }, this.toDispose);
     }
 
+    protected async createWindowScope(): Promise<ContainerScope> {
+        const scope = await this.scopes.create(this._window.webContents);
+        this._window.webContents.once('destroyed', () => scope.dispose());
+        const frontend = scope.container.get(ElectronFrontendApplication);
+        this.toDispose.push(frontend.onDidUpdateApplicationState(state => this.applicationState = state));
+        return scope;
+    }
+
     protected doCloseWindow(): void {
         this.closeIsConfirmed = true;
         this._window.close();
-    }
-
-    close(reason: StopReason = StopReason.Close): Promise<boolean> {
-        return this.handleStopRequest(() => this.doCloseWindow(), reason);
-    }
-
-    reload(): void {
-        this.handleStopRequest(() => {
-            this.applicationState = 'init';
-            this._window.reload();
-        }, StopReason.Reload);
     }
 
     protected async handleStopRequest(onSafeCallback: () => unknown, reason: StopReason): Promise<boolean> {
@@ -144,8 +161,9 @@ export class TheiaElectronWindow {
         return false;
     }
 
-    protected checkSafeToStop(reason: StopReason): Promise<boolean> {
-        return this.electronFrontendApplication.canClose(this.window.webContents, reason);
+    protected async checkSafeToStop(reason: StopReason): Promise<boolean> {
+        const { container } = await this.windowScope;
+        return container.get(ElectronFrontendApplication).canClose(reason);
     }
 
     protected restoreMaximizedState(): void {
@@ -155,14 +173,4 @@ export class TheiaElectronWindow {
             this._window.unmaximize();
         }
     }
-
-    dispose(): void {
-        this.toDispose.dispose();
-    }
 }
-
-export interface TheiaElectronWindowFactory {
-    (options: TheiaBrowserWindowOptions, config: FrontendApplicationConfig): TheiaElectronWindow;
-}
-
-export const TheiaElectronWindowFactory = Symbol('TheiaElectronWindowFactory');

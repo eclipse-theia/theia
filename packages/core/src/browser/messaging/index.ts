@@ -15,3 +15,4 @@
 // *****************************************************************************
 
 export * from './ws-connection-provider';
+export { TheiaIpcWindow } from './ipc-window';

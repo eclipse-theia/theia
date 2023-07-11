@@ -16,46 +16,18 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ipcMain, IpcMainEvent, WebContents, webContents as electronWebContents, MessagePortMain } from '@theia/electron/shared/electron';
-import { inject, injectable, postConstruct } from 'inversify';
-import { ChannelDescriptor, Disposable, Emitter } from '../common';
-import { Deferred } from '../common/promise-util';
-import { AnyFunction, ELECTRON_INVOKE_IPC as ipc, FunctionUtils, IpcEvent, TheiaIpcMain, TheiaIpcMainEvent } from '../electron-common';
+import { ipcMain, WebContents, webContents as electronWebContents, MessagePortMain } from '@theia/electron/shared/electron';
+import { inject, injectable } from 'inversify';
+import { AnyFunction, ChannelDescriptor, FunctionUtils } from '../../common';
+import { TheiaIpcMain, TheiaIpcMainEvent } from './ipc-main';
 
 @injectable()
 export class TheiaIpcMainImpl implements TheiaIpcMain {
 
     protected ipcMain = ipcMain;
-    protected invokeId = 0;
-    protected pendingInvokeResults = new Map<string, Deferred<unknown>>();
 
     @inject(FunctionUtils)
     protected futils: FunctionUtils;
-
-    @postConstruct()
-    protected postConstruct(): void {
-        (this as TheiaIpcMain).on(ipc.invokeResponse, this.onInvokeResponse, this);
-    }
-
-    createEvent(channel: ChannelDescriptor<(event: any) => void>): IpcEvent<any> & Disposable {
-        const emitter = new Emitter();
-        const channelListener = (event: TheiaIpcMainEvent, arg: any) => emitter.fire(arg);
-        const ipcEvent: IpcEvent<any> = listener => emitter.event(listener);
-        const dispose = () => {
-            this.ipcMain.removeListener(channel.channel, channelListener);
-            emitter.dispose();
-        };
-        this.ipcMain.on(channel.channel, channelListener);
-        return Object.assign(ipcEvent, { dispose });
-    }
-
-    invoke(webContents: WebContents, channel: ChannelDescriptor, ...args: any[]): any {
-        const pending = new Deferred();
-        const invokeId = this.invokeId++;
-        this.pendingInvokeResults.set(`${channel.channel}-${webContents.id}-${invokeId}`, pending);
-        webContents.send(ipc.invokeRequest.channel, channel.channel, invokeId, args);
-        return pending.promise;
-    }
 
     handle(channel: ChannelDescriptor, listener: AnyFunction, thisArg?: object): void {
         this.ipcMain.handle(channel.channel, this.futils.bindfn(listener, thisArg));
@@ -105,21 +77,6 @@ export class TheiaIpcMainImpl implements TheiaIpcMain {
 
     sendTo(webContents: WebContents, channel: ChannelDescriptor, ...args: any[]): void {
         webContents.send(channel.channel, ...args);
-    }
-
-    protected onInvokeResponse(event: IpcMainEvent, invokeChannel: string, invokeId: number, error: unknown, result: unknown): void {
-        const key = `${invokeChannel}-${event.sender.id}-${invokeId}`;
-        const pending = this.pendingInvokeResults.get(key);
-        if (pending) {
-            this.pendingInvokeResults.delete(key);
-            if (error) {
-                pending.reject(error);
-            } else {
-                pending.resolve(result);
-            }
-        } else {
-            console.warn(`no pending request for: "${key}"`);
-        }
     }
 
     /**

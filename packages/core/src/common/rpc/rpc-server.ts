@@ -41,21 +41,17 @@ export interface RpcServerProvider {
 }
 
 /**
- * Special opaque marker type to send events over RPC.
+ * RPC event API.
+ *
+ * Dispatch events to every client or only specific targets.
  */
-export abstract class RpcContextEvent<T> {
-    constructor(readonly value: T) { }
+export interface RpcEvent<T> {
+    onSendAll: Event<RpcEvent.SendAllEvent<T>>;
+    onSendTo: Event<RpcEvent.SendToEvent<T>>;
+    sendAll(event: T, exceptions?: unknown[]): void;
+    sendTo(event: T, targets: unknown[]): void;
 }
-
-/**
- * Event API for RPC.
- */
-export abstract class RpcEvent<T> {
-    abstract readonly onSendAll: Event<RpcEvent.SendAllEvent<T>>;
-    abstract readonly onSendTo: Event<RpcEvent.SendToEvent<T>>;
-    abstract sendAll(event: T, exceptions?: unknown[]): void;
-    abstract sendTo(event: T, targets: unknown[]): void;
-}
+export abstract class RpcEvent<T> { }
 export namespace RpcEvent {
 
     export interface SendAllEvent<T> {
@@ -90,7 +86,7 @@ export function RpcContextKey<T>(key: string | symbol): RpcContextKey<T> {
  */
 export interface RpcContext {
     /**
-     * TODO
+     * Opaque value representing the sender of the RPC message.
      */
     readonly sender: unknown;
     /**

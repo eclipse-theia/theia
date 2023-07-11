@@ -15,11 +15,15 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { ElectronPreloadContribution, ElectronRpcSync, ELECTRON_MAIN_RPC_IPC as rpc, TheiaContextBridge, TheiaIpcRenderer } from '../electron-common';
+import { THEIA_RPC_CHANNELS as rpc } from '../common';
+import { ElectronRpcSync } from '../electron-common';
+import { TheiaContextBridge } from './context-bridge';
+import { TheiaIpcRenderer } from './ipc-renderer';
+import { ElectronPreloadContribution } from './preload-contribution';
 
 /**
- * This component acts as a bridge `main <-- preload <-- window` for
- * sending synchronous RPC messages.
+ * This component forwards synchronous RPC messages from the frontend context
+ * to the main context.
  */
 @injectable()
 export class ElectronPreloadRpcSync implements ElectronPreloadContribution {

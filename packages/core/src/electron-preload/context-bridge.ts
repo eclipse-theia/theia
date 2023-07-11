@@ -14,12 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event, Extends, Proxyable, ProxyId } from '../common';
-import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
+import type { interfaces } from 'inversify';
 
-export const ElectronFrontendApplication = ProxyId<ElectronFrontendApplication>('ElectronFrontendApplication');
-export type ElectronFrontendApplication = Extends<$ElectronFrontendApplication, Proxyable<$ElectronFrontendApplication>>;
-interface $ElectronFrontendApplication {
-    onDidUpdateApplicationState: Event<FrontendApplicationState>;
-    canClose(reason: StopReason): Promise<boolean>;
+/**
+ * Wrapper around Electron's {@link ContextBridge} that can expose instances
+ * with proxyable prototypes.
+ */
+export const TheiaContextBridge = Symbol('TheiaContextBridge') as symbol & interfaces.Abstract<TheiaContextBridge>;
+export interface TheiaContextBridge {
+    exposeInMainWorld<T extends object>(apiKey: string, api: T): void
 }

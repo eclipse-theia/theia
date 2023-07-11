@@ -14,24 +14,24 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule, interfaces } from 'inversify';
 import { v4 } from 'uuid';
+import { ContainerScopeContribution, ContainerScopeManager, ElectronMainContext, ElectronWebContentsScope, FunctionUtils } from '../common';
+import { ContainerScopeManagerImpl } from '../common/container-scope-manager';
 import { bindContributionProvider } from '../common/contribution-provider';
-import { FunctionUtils, TheiaIpcMain } from '../electron-common';
-import { ElectronMainWindowService } from '../electron-common/electron-main-window-service';
+import { ElectronClipboardService, ElectronFrontendApplication, ElectronKeyboardLayout, ElectronSecurityTokenApi, ElectronShell, ElectronWindow } from '../electron-common';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
+import { ElectronFrontendApplicationMain } from './electron-application-main';
 import { ElectronClipboardMain } from './electron-clipboard-main';
-import { ElectronWindowMain } from './electron-window-main';
-import { ElectronFrontendApplicationMain } from './electron-frontend-application-main';
-import { TheiaIpcMainImpl } from './electron-ipc-main-impl';
 import { ElectronKeyboardLayoutMain } from './electron-keyboard-layout';
 import { ElectronMainApplication, ElectronMainApplicationContribution, ElectronMainProcessArgv } from './electron-main-application';
-import { ElectronMainWindowServiceImpl } from './electron-main-window-service-impl';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronShellMain } from './electron-shell-main';
 import { ElectronSecurityTokenServiceMain } from './electron-token-main';
+import { ElectronWindowMain } from './electron-window-main';
+import { TheiaIpcMain } from './messaging';
+import { TheiaIpcMainImpl } from './messaging/ipc-main-impl';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory, WindowApplicationConfig } from './theia-electron-window';
-import { ElectronMainContext } from '../common';
 
 const electronSecurityToken: ElectronSecurityToken = { value: v4() };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,28 +46,28 @@ export default new ContainerModule(bind => {
 
     bindContributionProvider(bind, ElectronMainApplicationContribution);
 
+    function bindProxyHandler(context: symbol, expectedProxyId: string, targetBinding: interfaces.ServiceIdentifier<unknown>): void {
+        bind(ProxyHandler)
+            .toDynamicValue(ctx => proxyId => {
+                if (proxyId === expectedProxyId) {
+                    return ctx.container.get(targetBinding);
+                }
+            })
+            .inSingletonScope()
+            .whenTargetNamed(context);
+    }
     bind(ElectronClipboardMain).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronClipboardMain);
+    bindProxyHandler(ElectronMainContext, ElectronClipboardService, ElectronClipboardMain);
     bind(ElectronFrontendApplicationMain).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronFrontendApplicationMain);
+    bindProxyHandler(ElectronMainContext, ElectronFrontendApplication, ElectronFrontendApplicationMain);
     bind(ElectronKeyboardLayoutMain).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronKeyboardLayoutMain);
+    bindProxyHandler(ElectronMainContext, ElectronKeyboardLayout, ElectronKeyboardLayoutMain);
     bind(ElectronSecurityTokenServiceMain).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronSecurityTokenServiceMain);
+    bindProxyHandler(ElectronMainContext, ElectronSecurityTokenApi, ElectronSecurityTokenServiceMain);
     bind(ElectronShellMain).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronShellMain);
+    bindProxyHandler(ElectronMainContext, ElectronShell, ElectronShellMain);
     bind(ElectronWindowMain).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronWindowMain);
-
-    bind(ElectronMainWindowService).to(ElectronMainWindowServiceImpl).inSingletonScope();
-    bind(ProxyHandler)
-        .toDynamicValue(ctx => (proxyId: unknown) => {
-            if (proxyId === ElectronMainWindowService) {
-                return ctx.container.get(ElectronMainWindowService);
-            }
-        })
-        .inSingletonScope()
-        .whenTargetNamed(ElectronMainContext);
+    bindProxyHandler(ElectronMainContext, ElectronWindow, ElectronWindowMain);
 
     bind(ElectronMainProcessArgv).toSelf().inSingletonScope();
 
@@ -78,4 +78,16 @@ export default new ContainerModule(bind => {
         child.bind(WindowApplicationConfig).toConstantValue(config);
         return child.get(TheiaElectronWindow);
     });
+
+    bind(ContainerScopeManager)
+        .toDynamicValue(ctx => new ContainerScopeManagerImpl(
+            () => ctx.container.createChild(),
+            ctx.container.getAllNamed(ContainerScopeContribution, ElectronWebContentsScope),
+            ElectronWebContentsScope
+        ))
+        .inSingletonScope()
+        .whenTargetNamed(ElectronWebContentsScope);
+    bind(ContainerScopeContribution)
+        .toConstantValue(new class MainWebContentsModule { getContainerModule = () => import('./web-contents-scope/web-contents-scope-module'); })
+        .whenTargetNamed(ElectronWebContentsScope);
 });

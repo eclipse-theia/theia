@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { createIpcNamespace } from './electron-ipc';
+import { createChannelNamespace } from '../messaging/channels';
 
 export interface RpcCreateMessage {
     proxyPath: string
@@ -51,7 +51,7 @@ export interface RpcCancelMessage {
     requestId: number
 }
 
-export const ELECTRON_MAIN_RPC_IPC = createIpcNamespace('theia-electron-main-rpc', channel => ({
+export const THEIA_RPC_CHANNELS = createChannelNamespace('theia-rpc', channel => ({
     create: channel<(message: RpcCreateMessage) => void>(),
     portForward: channel<(message: RpcPortForwardMessage) => void>(),
     notification: channel<(message: RpcNotificationMessage) => void>(),

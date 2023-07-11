@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { BrowserWindow, Menu, MenuItemConstructorOptions, WebContents } from '@theia/electron/shared/electron';
+import { BrowserWindow, Menu, MenuItemConstructorOptions, WebContents, shell } from '@theia/electron/shared/electron';
 import { inject, injectable, postConstruct } from 'inversify';
-import { isOSX, RpcContext, RpcEvent, RpcServer } from '../common';
+import { RpcContext, RpcEvent, RpcServer, isOSX } from '../common';
+import { NewWindowOptions } from '../common/window';
 import { ElectronWindow } from '../electron-common';
 import { InternalMenuDto, MenuDto } from '../electron-common/electron-menu';
 import { ElectronMainApplication } from './electron-main-application';
@@ -81,6 +82,7 @@ export class ElectronWindowMain implements RpcServer<ElectronWindow> {
         this.openPopups.set(menuId, popup);
         return new Promise(resolve => {
             popup.popup({
+                x, y,
                 callback: () => {
                     this.openPopups.delete(menuId);
                     resolve();
@@ -165,6 +167,20 @@ export class ElectronWindowMain implements RpcServer<ElectronWindow> {
             electronWindow.restore();
         }
         electronWindow.focus();
+    }
+
+    async $openNewWindow(ctx: RpcContext, url: string, { external }: NewWindowOptions): Promise<void> {
+        if (external) {
+            shell.openExternal(url);
+        } else {
+            this.application.createWindow().then(electronWindow => {
+                electronWindow.loadURL(url);
+            });
+        }
+    }
+
+    $openNewDefaultWindow(ctx: RpcContext): void {
+        this.application.openDefaultWindow();
     }
 
     protected fromMenuDto(ctx: RpcContext, menuId: MenuId, menuDto: InternalMenuDto[]): MenuItemConstructorOptions[] {

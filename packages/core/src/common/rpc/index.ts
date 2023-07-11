@@ -14,8 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+/* eslint-disable max-len */
+
 export { RpcClient, RpcHandler } from './rpc-api';
 export { Proxyable } from './rpc-proxy';
 export { RpcProxyHandler } from './rpc-proxy-handler';
 export { RpcProvider, RpcProxyProvider } from './rpc-proxy-provider';
-export { RpcServer, RpcContext, RpcContextEvent, RpcContextKey, RpcEvent, RpcServerProvider } from './rpc-server';
+export { RpcServer, RpcContext, RpcContextKey, RpcEvent, RpcServerProvider } from './rpc-server';
+export { RpcCancelMessage, RpcCreateMessage, RpcNotificationMessage, RpcPortForwardMessage, RpcRequestMessage, RpcRequestSyncMessage, RpcResponseMessage, THEIA_RPC_CHANNELS } from './rpc-messaging';

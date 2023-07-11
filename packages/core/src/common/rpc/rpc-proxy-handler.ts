@@ -73,7 +73,7 @@ export class RpcProxyHandler implements ProxyHandler<object> {
 
     protected ensurePropertyIsDefined<T, K extends keyof T>(target: T | undefined, propertyName: K, error: string): T & { [key in K]-?: T[K] } {
         if (!target?.[propertyName]) {
-            throw new TypeError(`"${propertyName}" is undefined: ${error}`);
+            throw new TypeError(`"${propertyName.toString()}" is undefined: ${error}`);
         }
         return target as T & { [key in K]-?: T[K] };
     }

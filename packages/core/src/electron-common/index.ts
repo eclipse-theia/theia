@@ -16,16 +16,12 @@
 
 /* eslint-disable max-len */
 
-export { ElectronClipboardService as common, ElectronClipboardService } from './electron-clipboard';
+export { ElectronClipboardService } from './electron-clipboard';
 export { ElectronWindow } from './electron-window';
+export { ElectronApplication } from './electron-application';
 export { ElectronFrontendApplication } from './electron-frontend-application';
-export { createIpcChannel, createIpcNamespace, IpcEvent, IpcListener, TheiaIpcMain, TheiaIpcMainEvent, TheiaIpcMainInvokeEvent, TheiaIpcRenderer, TheiaIpcRendererEvent, TheiaIpcRendererInvokeEvent, TheiaIpcWindow } from './messaging/electron-ipc';
 export { ElectronKeyboardLayout, NativeKeyboardLayout } from './electron-keyboard-layout';
 export { MenuDto, MenuRole } from './electron-menu';
 export { ElectronShell } from './electron-shell';
-export { ElectronSecurityToken, ElectronSecurityTokenService } from './electron-token';
-export { AnyFunction, FunctionUtils } from './function-utils';
-export { ELECTRON_INVOKE_IPC } from './messaging/electron-invoke';
-export { ELECTRON_MAIN_RPC_IPC, RpcCancelMessage, RpcCreateMessage, RpcNotificationMessage, RpcPortForwardMessage, RpcRequestMessage, RpcRequestSyncMessage, RpcResponseMessage } from './messaging/electron-main-rpc';
+export { ElectronSecurityToken, ElectronSecurityTokenApi } from './electron-token';
 export { ElectronRpcSync } from './messaging/electron-rpc-sync';
-export { ElectronPreloadContribution, TheiaContextBridge } from './preload';

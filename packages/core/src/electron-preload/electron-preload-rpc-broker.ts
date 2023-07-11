@@ -15,22 +15,29 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { ElectronKeyboardLayout, NativeKeyboardLayout } from '../electron-common';
-import { ElectronMainApplicationContribution } from './electron-main-application';
-import { onDidChangeKeyboardLayout, getCurrentKeyboardLayout, getKeyMap } from '@theia/electron/shared/native-keymap';
-import { RpcServer, RpcEvent } from '../common';
+import { TheiaIpcWindow } from '../browser';
+import { RpcPortForwardMessage, THEIA_RPC_CHANNELS as ipc } from '../common';
+import { TheiaIpcRenderer } from './ipc-renderer';
+import { ElectronPreloadContribution } from './preload-contribution';
 
+/**
+ * This component forwards messages with {@link MessagePort} from the frontend
+ * context to the main context.
+ */
 @injectable()
-export class ElectronKeyboardLayoutMain implements RpcServer<ElectronKeyboardLayout>, ElectronMainApplicationContribution {
+export class ElectronPreloadRpcBroker implements ElectronPreloadContribution {
 
-    @inject(RpcEvent) $onKeyboardLayoutChanged: RpcEvent<NativeKeyboardLayout>;
+    @inject(TheiaIpcRenderer)
+    protected ipcRenderer: TheiaIpcRenderer;
 
-    onStart(): void {
-        onDidChangeKeyboardLayout(() => {
-            this.$onKeyboardLayoutChanged.sendAll({
-                info: getCurrentKeyboardLayout(),
-                mapping: getKeyMap()
-            });
-        });
+    @inject(TheiaIpcWindow)
+    protected ipcWindow: TheiaIpcWindow;
+
+    preload(): void {
+        this.ipcWindow.on(ipc.portForward, this.handlePortForward, this);
+    }
+
+    protected handlePortForward(event: MessageEvent, message: RpcPortForwardMessage): void {
+        this.ipcRenderer.postMessage(ipc.portForward, message, event.ports);
     }
 }

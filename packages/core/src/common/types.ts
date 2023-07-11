@@ -24,18 +24,58 @@ export interface Prototype {
     constructor: Function
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyFunction = (...params: any[]) => any;
 export type Deferred<T> = { [P in keyof T]: Promise<T[P]> };
 export type Extends<T, U extends T> = U;
 export type MaybeArray<T> = T | T[];
-export type MaybeNull<T> = { [P in keyof T]: T[P] | null };
+/**
+ * This type is useful when dealing with module exports where APIs are either
+ * returned directly or inside a namespace object as `default`.
+ */
+export type MaybeDefault<T> = T | { default: T };
 export type MaybePromise<T> = T | PromiseLike<T>;
+export type MaybeNull<T> = { [P in keyof T]: T[P] | null };
 export type MaybeUndefined<T> = { [P in keyof T]?: T[P] | undefined };
 export type Mutable<T> = { -readonly [P in keyof T]: T[P] };
+/**
+ * Common API pattern for event listeners.
+ */
+export type Listener<E, T extends AnyFunction = () => void> = (event: E, ...params: Parameters<T>) => ReturnType<T>;
 export type RecursivePartial<T> = {
     [P in keyof T]?: T[P] extends (infer I)[]
     ? RecursivePartial<I>[]
     : RecursivePartial<T[P]>;
 };
+export type ToPromise<T> = T extends PromiseLike<infer U> ? Promise<U> : Promise<T>;
+
+/**
+ * Common API for logging info messages, e.g. {@link console.log}.
+ */
+export interface InfoLogger {
+    log(...data: unknown[]): void;
+}
+
+/**
+ * Common API for logging info messages, e.g. {@link console.warn}.
+ */
+export interface WarningLogger {
+    warn(...data: unknown[]): void;
+}
+
+/**
+ * Common API for logging info messages, e.g. {@link console.error}.
+ */
+export interface ErrorLogger {
+    error(...data: unknown[]): void;
+}
+
+/**
+ * Common API pattern for sending messages, e.g. {@link MessagePort.postMessage}.
+ */
+export interface PostMessage<O = unknown> {
+    postMessage(message: unknown, options?: O): void;
+}
 
 export function isBoolean(value: unknown): value is boolean {
     return value === true || value === false;
@@ -137,4 +177,21 @@ export function nullToUndefined<T>(nullable: MaybeNull<T>): MaybeUndefined<T> {
  */
 export function unreachable(_never: never, message: string = 'unhandled case'): never {
     throw new Error(message);
+}
+
+/**
+ * Wraps `callbackfn` into a function that never throws and logs errors.
+ *
+ * Doesn't handle async functions.
+ */
+export function logError<A extends unknown[], R extends unknown>(callbackfn: (...params: A) => R, logger?: ErrorLogger): (...params: A) => R | undefined;
+export function logError(callbackfn: (...params: unknown[]) => unknown, logger: ErrorLogger = console): (...params: unknown[]) => unknown {
+    return function (this: unknown): unknown {
+        'use strict';
+        try {
+            return callbackfn.apply(this, arguments);
+        } catch (error) {
+            logger!.error(error);
+        }
+    };
 }

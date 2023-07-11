@@ -14,83 +14,54 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
-import {
-    ELECTRON_MAIN_RPC_IPC as ipc, TheiaIpcWindow, RpcResponseMessage, RpcNotificationMessage, RpcRequestMessage, ElectronRpcSync, RpcCancelMessage
-} from '../../electron-common';
-import { ChannelHandler, ChannelHandlerFactory, CancellationToken, CancellationTokenSource, cancelled, RpcClient, RpcHandler, RpcProvider, ChannelDescriptor } from '../../common';
+// eslint-disable-next-line max-len
+import { CancellationToken, CancellationTokenSource, ChannelDescriptor, ChannelHandler, PostMessage, RpcCancelMessage, RpcClient, RpcHandler, RpcNotificationMessage, RpcRequestMessage, RpcResponseMessage, cancelled, THEIA_RPC_CHANNELS as ipc } from '../../common';
 import { Deferred } from '../../common/promise-util';
 
-/**
- * @internal
- */
-@injectable()
-export class ElectronMainRpcProvider implements RpcProvider {
+export class ElectronRpcImpl implements RpcClient, RpcHandler {
 
-    @inject(TheiaIpcWindow)
-    protected ipcWindow: TheiaIpcWindow;
-
-    @inject(ElectronRpcSync)
-    protected rpcSync: ElectronRpcSync;
-
-    @inject(ChannelHandlerFactory)
-    protected channelHandlerFactory: ChannelHandlerFactory;
-
-    getRpc(proxyPath: string): { client: RpcClient, handler?: RpcHandler } {
-        const proxyId = this.rpcSync.createProxy(proxyPath);
-        const { port1, port2 } = new MessageChannel();
-        this.ipcWindow.postMessage(ipc.portForward, { proxyId }, [port1]);
-        const rpc = new ElectronMainRpc(this.channelHandlerFactory());
-        rpc.sendRequestSync = (method, params) => this.rpcSync.requestSync(proxyId, method, params);
-        rpc.listen(port2);
-        return {
-            client: rpc,
-            handler: rpc
-        };
-    }
-}
-
-export class ElectronMainRpc implements RpcClient, RpcHandler {
-
+    /**
+     * Field to be set from outside if supported.
+     */
     sendRequestSync?: (method: string, params: unknown[]) => unknown;
 
     #notificationHandler?: (method: string, params?: unknown[]) => void;
     #requestHandler?: (method: string, params?: unknown[], cancel?: CancellationToken) => unknown;
 
-    #channels: ChannelHandler<MessageEvent>;
-    #port: MessagePort;
+    #channels: ChannelHandler<void>;
+    #port: PostMessage;
 
     #requestId = 0;
     #requests = new Map<number, Deferred<unknown>>();
     #cancellation = new Map<number, CancellationTokenSource>();
+    #disposed = false;
 
-    constructor(channels: ChannelHandler<MessageEvent>) {
-        this.#channels = channels;
-    }
-
-    listen(port: MessagePort): void {
+    constructor(port: PostMessage, channels: ChannelHandler<void>) {
         this.#port = port;
-        this.#port.addEventListener('message', event => this.#channels.handleMessage(event.data, event));
+        this.#channels = channels;
         this.#channels.on(ipc.cancel, this.#handleCancelMessage, this);
         this.#channels.on(ipc.notification, this.#handleNotificationMessage, this);
         this.#channels.on(ipc.request, this.#handleRequestMessage, this);
         this.#channels.on(ipc.response, this.#handleResponseMessage, this);
-        this.#port.start();
     }
 
     handleNotification(handler: (method: string, params?: unknown[]) => void): void {
+        this.#ensureNotDisposed();
         this.#notificationHandler = handler;
     }
 
     handleRequest(handler: (method: string, params: unknown[] | undefined, cancel: CancellationToken) => unknown): void {
+        this.#ensureNotDisposed();
         this.#requestHandler = handler;
     }
 
     sendNotification(method: string, params?: unknown[]): void {
+        this.#ensureNotDisposed();
         this.#sendChannelMessage(ipc.notification, { method, params });
     }
 
     async sendRequest(method: string, params?: unknown[], cancel?: CancellationToken): Promise<unknown> {
+        this.#ensureNotDisposed();
         if (cancel?.isCancellationRequested) {
             throw cancelled();
         }
@@ -98,28 +69,52 @@ export class ElectronMainRpc implements RpcClient, RpcHandler {
         const requestId = this.#requestId++;
         this.#requests.set(requestId, request);
         this.#sendChannelMessage(ipc.request, { requestId, method, params });
-        cancel?.onCancellationRequested(() => {
+        const cancellation = cancel?.onCancellationRequested(() => {
             this.#sendChannelMessage(ipc.cancel, { requestId });
             request.reject(cancelled());
         });
         return request.promise.finally(() => {
             this.#requests.delete(requestId);
+            cancellation?.dispose();
         });
+    }
+
+    dispose(): void {
+        if (this.#disposed) {
+            return;
+        }
+        this.#disposed = true;
+        this.#channels.dispose();
+        // Keep the field undefined if it already is:
+        if (this.sendRequestSync) {
+            this.sendRequestSync = () => this.#ensureNotDisposed();
+        }
+        this.#notificationHandler = undefined;
+        this.#requestHandler = undefined;
+        this.#cancellation.forEach(source => source.cancel());
+        this.#cancellation.clear();
+        this.#requests.clear();
+    }
+
+    #ensureNotDisposed(): void {
+        if (this.#disposed) {
+            throw new Error('this instance is disposed');
+        }
     }
 
     #sendChannelMessage<T>(channel: ChannelDescriptor<(message: T) => void>, message: T): void {
         this.#port.postMessage(this.#channels.createMessage(channel, message));
     }
 
-    #handleCancelMessage(event: MessageEvent, { requestId }: RpcCancelMessage): void {
+    #handleCancelMessage(event: void, { requestId }: RpcCancelMessage): void {
         this.#cancellation.get(requestId)?.cancel();
     }
 
-    #handleNotificationMessage(event: MessageEvent, { method, params }: RpcNotificationMessage): void {
+    #handleNotificationMessage(event: void, { method, params }: RpcNotificationMessage): void {
         this.#notificationHandler?.(method, params);
     }
 
-    async #handleRequestMessage(event: MessageEvent, { requestId, method, params }: RpcRequestMessage): Promise<void> {
+    async #handleRequestMessage(event: void, { requestId, method, params }: RpcRequestMessage): Promise<void> {
         if (this.#requestHandler) {
             const cancel = new CancellationTokenSource();
             this.#cancellation.set(requestId, cancel);
@@ -136,7 +131,7 @@ export class ElectronMainRpc implements RpcClient, RpcHandler {
         }
     }
 
-    #handleResponseMessage(event: MessageEvent, { requestId, error, result }: RpcResponseMessage): void {
+    #handleResponseMessage(event: void, { requestId, error, result }: RpcResponseMessage): void {
         const request = this.#requests.get(requestId);
         if (!request) {
             throw new Error(`no request for id: ${requestId}`);

@@ -15,13 +15,17 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { ElectronMainContext, Emitter, ProxyProvider, RpcEvent, RpcProxyProvider } from '../common';
-import * as common from '../electron-common';
-import { TheiaIpcWindowImpl } from './electron-ipc-window-impl';
-import { ElectronMainRpcProvider } from './messaging/electron-main-rpc-provider';
+import { FrontendApplicationContribution, TheiaIpcWindow } from '../browser';
+import { ElectronMainContext, Emitter, FunctionUtils, ProxyProvider, RpcEvent, RpcProxyProvider } from '../common';
+// eslint-disable-next-line max-len
+import { ElectronApplication, ElectronClipboardService, ElectronKeyboardLayout, ElectronRpcSync, ElectronSecurityTokenApi, ElectronShell, ElectronWindow } from '../electron-common';
+import { TheiaIpcWindowImpl } from '../browser/messaging/ipc-window-impl';
+import { ElectronBrowserRpcProvider } from './messaging/electron-browser-rpc-provider';
 
-// This symbol comes from the Electron preload context:
-declare const electronRpcSync: common.ElectronRpcSync;
+/**
+ * This symbol should be exposed from the preload context.
+ */
+declare const electronRpcSync: ElectronRpcSync;
 
 export default new ContainerModule(bind => {
     // Transients
@@ -33,24 +37,26 @@ export default new ContainerModule(bind => {
         });
     });
     // Singletons
-    bind(common.ElectronRpcSync).toConstantValue(electronRpcSync);
-    bind(common.FunctionUtils).toSelf().inSingletonScope();
-    bind(common.TheiaIpcWindow).to(TheiaIpcWindowImpl).inSingletonScope();
-    bind(ElectronMainRpcProvider).toSelf().inSingletonScope();
+    bind(ElectronRpcSync).toConstantValue(electronRpcSync);
+    bind(FunctionUtils).toSelf().inSingletonScope();
+    bind(TheiaIpcWindow).to(TheiaIpcWindowImpl).inSingletonScope();
+    bind(ElectronBrowserRpcProvider).toSelf().inSingletonScope();
     bind(ProxyProvider)
-        .toDynamicValue(ctx => new RpcProxyProvider(ctx.container.get(ElectronMainRpcProvider)))
+        .toDynamicValue(ctx => new RpcProxyProvider(ctx.container.get(ElectronBrowserRpcProvider)))
         .inSingletonScope()
         .whenTargetNamed(ElectronMainContext);
+    bind(ElectronWebContentsRpc).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ElectronWebContentsRpc);
     // Proxies
-    function bindProxy(target: symbol, proxyId: string): void {
+    function bindProxy(context: symbol, proxyId: string): void {
         bind(proxyId)
-            .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, target).getProxy(proxyId))
+            .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, context).getProxy(proxyId))
             .inSingletonScope();
     }
-    bindProxy(ElectronMainContext, common.ElectronClipboardService);
-    bindProxy(ElectronMainContext, common.ElectronFrontendApplication);
-    bindProxy(ElectronMainContext, common.ElectronKeyboardLayout);
-    bindProxy(ElectronMainContext, common.ElectronShell);
-    bindProxy(ElectronMainContext, common.ElectronSecurityTokenService);
-    bindProxy(ElectronMainContext, common.ElectronWindow);
+    bindProxy(ElectronMainContext, ElectronClipboardService);
+    bindProxy(ElectronMainContext, ElectronApplication);
+    bindProxy(ElectronMainContext, ElectronKeyboardLayout);
+    bindProxy(ElectronMainContext, ElectronShell);
+    bindProxy(ElectronMainContext, ElectronSecurityTokenApi);
+    bindProxy(ElectronMainContext, ElectronWindow);
 });

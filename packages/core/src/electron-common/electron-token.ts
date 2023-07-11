@@ -29,9 +29,9 @@ export interface ElectronSecurityToken {
     value: string;
 };
 
-export const ElectronSecurityTokenService = ProxyId<ElectronSecurityTokenService>('ElectronSecurityTokenService');
-export type ElectronSecurityTokenService = Extends<$ElectronSecurityTokenService, Proxyable<$ElectronSecurityTokenService>>;
-interface $ElectronSecurityTokenService {
+export const ElectronSecurityTokenApi = ProxyId<ElectronSecurityTokenApi>('ElectronSecurityTokenApi');
+export type ElectronSecurityTokenApi = Extends<$ElectronSecurityTokenApi, Proxyable<$ElectronSecurityTokenApi>>;
+interface $ElectronSecurityTokenApi {
     getSecurityTokenSync(): ElectronSecurityToken;
     attachSecurityToken(endpoint: string): Promise<void>;
 }

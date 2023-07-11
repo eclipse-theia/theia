@@ -17,7 +17,7 @@
 import type { CancellationToken } from '../cancellation';
 
 /**
- * Send RPC messages.
+ * Execute remote functions.
  */
 export interface RpcClient {
     sendNotification?(method: string, params?: unknown[]): void
@@ -26,7 +26,7 @@ export interface RpcClient {
 }
 
 /**
- * Handle RPC messages.
+ * Handle remote function calls.
  */
 export interface RpcHandler {
     handleNotification?(handler: (method: string, params?: unknown[]) => void): void

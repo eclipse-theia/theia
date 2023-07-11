@@ -36,7 +36,6 @@ import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFact
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
 import { createDisposableListener } from './event-utils';
 import { StopReason } from '../common/frontend-application-state';
-import { TheiaIpcMain } from '../electron-common';
 
 export { ElectronMainApplicationGlobals };
 
@@ -101,7 +100,7 @@ export interface ElectronMainApplicationContribution {
 }
 
 export interface DidCreateTheiaElectronWindowEvent {
-    theiaElectronWindow: TheiaElectronWindow
+    readonly theiaElectronWindow: TheiaElectronWindow
 }
 
 // Extracted and modified the functionality from `yargs@15.4.0-beta.0`.
@@ -172,9 +171,6 @@ export class ElectronMainApplication {
 
     @inject(TheiaElectronWindowFactory)
     protected readonly windowFactory: TheiaElectronWindowFactory;
-
-    @inject(TheiaIpcMain)
-    protected ipcMain: TheiaIpcMain;
 
     protected readonly electronStore = new Storage<{
         windowstate?: TheiaBrowserWindowOptions

@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2022 Ericsson and others.
+// Copyright (C) 2023 Ericsson and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,18 +14,4 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
-import { ElectronFrontendApplication } from '../../electron-common';
-import { FrontendApplicationState, FrontendApplicationStateService } from '../../browser/frontend-application-state';
-
-@injectable()
-export class ElectronFrontendApplicationStateService extends FrontendApplicationStateService {
-
-    @inject(ElectronFrontendApplication)
-    protected electronFrontendApplication: ElectronFrontendApplication;
-
-    protected override doSetState(state: FrontendApplicationState): void {
-        super.doSetState(state);
-        this.electronFrontendApplication.updateApplicationState(state);
-    }
-}
+export { TheiaIpcMain } from './ipc-main';

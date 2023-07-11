@@ -14,12 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event, Extends, Proxyable, ProxyId } from '../common';
-import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
+import { Extends, Proxyable, ProxyId } from '../common';
 
-export const ElectronFrontendApplication = ProxyId<ElectronFrontendApplication>('ElectronFrontendApplication');
-export type ElectronFrontendApplication = Extends<$ElectronFrontendApplication, Proxyable<$ElectronFrontendApplication>>;
-interface $ElectronFrontendApplication {
-    onDidUpdateApplicationState: Event<FrontendApplicationState>;
-    canClose(reason: StopReason): Promise<boolean>;
+export const ElectronApplication = ProxyId<ElectronApplication>('ElectronApplication');
+export type ElectronApplication = Extends<$ElectronApplication, Proxyable<$ElectronApplication>>;
+interface $ElectronApplication {
+    restart(): void
 }

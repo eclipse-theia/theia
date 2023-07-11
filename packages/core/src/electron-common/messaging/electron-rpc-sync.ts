@@ -16,6 +16,10 @@
 
 import type { interfaces } from 'inversify';
 
+/**
+ * Component used to handle proxies synchronously between the preload context
+ * and the main context.
+ */
 export const ElectronRpcSync = Symbol('ElectronRpcSync') as symbol & interfaces.Abstract<ElectronRpcSync>;
 export interface ElectronRpcSync<ProxyId = unknown> {
     createProxy(proxyPath: string): ProxyId

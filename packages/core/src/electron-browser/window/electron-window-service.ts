@@ -19,7 +19,7 @@ import { NewWindowOptions } from '../../common/window';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
 import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
 import { ElectronWindowPreferences } from './electron-window-preferences';
-import { ElectronFrontendApplication, ElectronWindow } from '../../electron-common';
+import { ElectronWindow } from '../../electron-common';
 
 @injectable()
 export class ElectronWindowService extends DefaultWindowService {
@@ -43,9 +43,6 @@ export class ElectronWindowService extends DefaultWindowService {
     @inject(ElectronWindow)
     protected electronWindow: ElectronWindow;
 
-    @inject(ElectronFrontendApplication)
-    protected electronFrontendApplication: ElectronFrontendApplication;
-
     override openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
         this.delegate.openNewWindow(url, { external });
         return undefined;
@@ -66,7 +63,6 @@ export class ElectronWindowService extends DefaultWindowService {
     }
 
     protected override registerUnloadListeners(): void {
-        this.electronFrontendApplication.handleCanClose(reason => this.isSafeToShutDown(reason));
         window.addEventListener('unload', () => {
             this.onUnloadEmitter.fire();
         });

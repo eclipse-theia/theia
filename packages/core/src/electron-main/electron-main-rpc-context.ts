@@ -17,44 +17,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { WebContents } from '@theia/electron/shared/electron';
-import { RpcContextEvent } from '../common/rpc/rpc-server';
-import { CancellationToken, RpcContext, RpcContextKey } from '../common';
+import { RpcContextKey } from '../common';
 
 export const SenderWebContents = RpcContextKey<WebContents>(Symbol('sender:WebContents'));
-
-class ToSender<T = void> extends RpcContextEvent<T> {
-    constructor(readonly sender: WebContents, value: T) {
-        super(value);
-    }
-}
-
-export class ElectronMainRpcContext implements RpcContext {
-
-    #sender: WebContents;
-    #bindings: Map<string | symbol, unknown>;
-
-    constructor(
-        sender: WebContents,
-        bindings: Map<string | symbol, unknown>,
-        readonly request?: CancellationToken
-    ) {
-        this.#sender = sender;
-        this.#bindings = bindings;
-        this.#bindings.set(SenderWebContents, sender);
-    }
-
-    get<T = any>(key: RpcContextKey<T>): T | undefined {
-        return this.#bindings.get(key) as T | undefined;
-    }
-
-    require<T = any>(key: RpcContextKey<T>): T {
-        if (!this.#bindings.has(key)) {
-            throw new Error(`no value for context key: ${key.toString()}`);
-        }
-        return this.#bindings.get(key) as T;
-    }
-
-    toSender(event?: unknown): RpcContextEvent<any> {
-        return new ToSender(this.#sender, event);
-    }
-}
