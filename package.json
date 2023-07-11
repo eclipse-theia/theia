@@ -40,7 +40,7 @@
     "ignore-styles": "^5.0.1",
     "improved-yarn-audit": "^3.0.0",
     "jsdom": "^21.1.1",
-    "lerna": "^6.0.1",
+    "lerna": "^7.1.1",
     "mkdirp": "^0.5.0",
     "node-gyp": "^9.0.0",
     "nsfw": "^2.2.4",
