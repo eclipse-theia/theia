@@ -180,20 +180,18 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         });
 
         commands.registerCommand(SearchInWorkspaceCommands.FOCUS_NEXT_RESULT, {
+            isEnabled: () => this.tryGetWidget()?.hasResultList() || false,
             execute: async () => {
-                if (this.tryGetWidget()?.hasResultList()) {
-                    const widget = await this.openView({ activate: true });
-                    widget.resultTreeWidget.model.selectNextNode();
-                }
+                const widget = await this.openView({ activate: true });
+                widget.resultTreeWidget.model.selectNextNode();
             }
         });
 
         commands.registerCommand(SearchInWorkspaceCommands.FOCUS_PREV_RESULT, {
+            isEnabled: () => this.tryGetWidget()?.hasResultList() || false,
             execute: async () => {
-                if (this.tryGetWidget()?.hasResultList()) {
-                    const widget = await this.openView({ activate: true });
-                    widget.resultTreeWidget.model.selectPrevNode();
-                }
+                const widget = await this.openView({ activate: true });
+                widget.resultTreeWidget.model.selectPrevNode();
             }
         });
 
