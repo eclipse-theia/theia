@@ -58,12 +58,12 @@ export namespace SearchInWorkspaceCommands {
         label: 'Find in Folder...'
     });
     export const FOCUS_NEXT_RESULT = Command.toDefaultLocalizedCommand({
-        id: 'search-in-workspace.focusNextSearchResult',
+        id: 'search.action.focusNextSearchResult',
         category: SEARCH_CATEGORY,
         label: 'Focus Next Search Result'
     });
     export const FOCUS_PREV_RESULT = Command.toDefaultLocalizedCommand({
-        id: 'search-in-workspace.focusPreviousSearchResult',
+        id: 'search.action.focusPreviousSearchResult',
         category: SEARCH_CATEGORY,
         label: 'Focus Previous Search Result'
     });
@@ -181,15 +181,19 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
 
         commands.registerCommand(SearchInWorkspaceCommands.FOCUS_NEXT_RESULT, {
             execute: async () => {
-                const widget = await this.openView({ activate: true });
-                widget.resultTreeWidget.model.selectNextNode();
+                if (this.tryGetWidget()?.hasResultList()) {
+                    const widget = await this.openView({ activate: true });
+                    widget.resultTreeWidget.model.selectNextNode();
+                }
             }
         });
 
         commands.registerCommand(SearchInWorkspaceCommands.FOCUS_PREV_RESULT, {
             execute: async () => {
-                const widget = await this.openView({ activate: true });
-                widget.resultTreeWidget.model.selectPrevNode();
+                if (this.tryGetWidget()?.hasResultList()) {
+                    const widget = await this.openView({ activate: true });
+                    widget.resultTreeWidget.model.selectPrevNode();
+                }
             }
         });
 
