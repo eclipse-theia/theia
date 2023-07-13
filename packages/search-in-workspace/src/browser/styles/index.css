@@ -89,8 +89,10 @@
 }
 
 .t-siw-search-container .searchHeader .search-field .option.enabled {
+  color: var(--theia-inputOption-activeForeground);
   border: var(--theia-border-width) var(--theia-inputOption-activeBorder) solid;
   background-color: var(--theia-inputOption-activeBackground);
+  opacity: 1;
 }
 
 .t-siw-search-container .searchHeader .search-field .option:hover {
