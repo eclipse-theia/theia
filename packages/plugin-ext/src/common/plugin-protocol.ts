@@ -136,11 +136,18 @@ export interface PluginPackageTranslation {
     path: string;
 }
 
+export enum InitialVisibility {
+    Visible = 'visible',
+    Hidden = 'hidden',
+    Collapsed = 'collapsed'
+}
+
 export interface PluginPackageCustomEditor {
     viewType: string;
     displayName: string;
     selector?: CustomEditorSelector[];
     priority?: CustomEditorPriority;
+    visibility?: InitialVisibility;
 }
 
 export interface CustomEditorSelector {
@@ -169,12 +176,14 @@ export interface PluginPackageView {
     name: string;
     when?: string;
     type?: string;
+    visibility?: InitialVisibility;
 }
 
 export interface PluginPackageViewWelcome {
     view: string;
     contents: string;
     when?: string;
+    visibility?: InitialVisibility;
 }
 
 export interface PluginPackageCommand {
@@ -774,6 +783,7 @@ export interface View {
     name: string;
     when?: string;
     type?: string;
+    visibility?: InitialVisibility;
 }
 
 /**

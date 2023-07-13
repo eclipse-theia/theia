@@ -596,7 +596,8 @@ export class TheiaPluginScanner implements PluginScanner {
             id: rawView.id,
             name: rawView.name,
             when: rawView.when,
-            type: rawView.type
+            type: rawView.type,
+            visibility: rawView.visibility,
         };
 
         return result;

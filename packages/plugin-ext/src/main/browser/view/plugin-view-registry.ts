@@ -20,7 +20,7 @@ import {
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
     StatefulWidget, CommonMenus, TreeViewWelcomeWidget, codicon, ViewContainerPart, BaseWidget
 } from '@theia/core/lib/browser';
-import { ViewContainer, View, ViewWelcome, PluginViewType } from '../../../common';
+import { ViewContainer, View, ViewWelcome, PluginViewType, InitialVisibility } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
 import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widget';
@@ -608,9 +608,15 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
             const widget = await this.widgetManager.getOrCreateWidget<PluginViewWidget>(PLUGIN_VIEW_FACTORY_ID, identifier);
             if (containerWidget.getTrackableWidgets().indexOf(widget) === -1) {
+                const viewInfo = this.views.get(viewId);
+                const initialVisibility = viewInfo?.[1].visibility;
+                const isInitiallyVisible = initialVisibility === InitialVisibility.Visible;
+                const isinitiallyHidden = initialVisibility === InitialVisibility.Hidden;
+                const isInitiallyCollapsed = initialVisibility === InitialVisibility.Collapsed;
+
                 containerWidget.addWidget(widget, {
-                    initiallyCollapsed: !!containerWidget.getParts().length,
-                    initiallyHidden: !this.isViewVisible(viewId)
+                    initiallyCollapsed: !!containerWidget.getParts().length && (!isInitiallyVisible || isInitiallyCollapsed),
+                    initiallyHidden: (!this.isViewVisible(viewId) || isinitiallyHidden) && !isInitiallyVisible,
                 });
             }
             this.registerWidgetPartEvents(widget, containerWidget);
