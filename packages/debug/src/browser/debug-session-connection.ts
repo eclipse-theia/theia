@@ -18,7 +18,7 @@
 
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { Event, Emitter, DisposableCollection, Disposable, MaybePromise } from '@theia/core';
+import { Event, Emitter, DisposableCollection, Disposable, MaybePromise, nls } from '@theia/core';
 import { OutputChannel } from '@theia/output/lib/browser/output-channel';
 
 import { DebugChannel } from '../common/debug-service';
@@ -153,7 +153,7 @@ export class DebugSessionConnection implements Disposable {
 
     protected checkDisposed(): void {
         if (this.disposed) {
-            throw new Error('the debug session connection is disposed, id: ' + this.sessionId);
+            throw new Error(nls.localize('theia/debug/isDisposed', 'the debug session connection is disposed, id: {0}', this.sessionId));
         }
     }
 
@@ -197,7 +197,7 @@ export class DebugSessionConnection implements Disposable {
 
     protected cancelPendingRequests(): void {
         this.pendingRequests.forEach((deferred, requestId) => {
-            deferred.reject(new Error(`Request ${requestId} cancelled on connection close`));
+            deferred.reject(new Error(nls.localize('theia/debug/requestCanceled', 'Request {0} cancelled on connection close', requestId)));
         });
     }
 
@@ -205,7 +205,7 @@ export class DebugSessionConnection implements Disposable {
         const result = new Deferred<K>();
 
         if (this.isClosed) {
-            result.reject(new Error('Connection is closed'));
+            result.reject(new Error(nls.localize('theia/debug/connectionClosed', 'Connection is closed')));
         } else {
             const request: DebugProtocol.Request = {
                 seq: this.sequence++,
