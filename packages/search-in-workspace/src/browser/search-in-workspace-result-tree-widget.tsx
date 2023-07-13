@@ -718,6 +718,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         };
     }
 
+    protected override getDepthPadding(depth: number): number {
+        return super.getDepthPadding(depth) + 5;
+    }
+
     protected override renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (SearchInWorkspaceRootFolderNode.is(node)) {
             return this.renderRootFolderNode(node);

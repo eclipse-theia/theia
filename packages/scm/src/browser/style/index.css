@@ -19,16 +19,12 @@
   font-size: var(--theia-ui-font-size1);
   max-height: calc(100% - var(--theia-border-width));
   position: relative;
+  padding: 5px 5px 0px 19px;
 }
 
 .theia-scm {
-  padding: 5px;
   box-sizing: border-box;
   height: 100%;
-}
-
-.theia-side-panel .theia-scm {
-  padding-left: 19px;
 }
 
 .groups-outer-container:focus {
