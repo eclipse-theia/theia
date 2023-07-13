@@ -21,13 +21,15 @@
 import * as theia from '@theia/plugin';
 import { NotebookDocument } from './notebook-document';
 
-export class NotebookEditorExtImpl {
+export class NotebookEditor {
 
-    public static readonly apiEditorsToExtHost = new WeakMap<theia.NotebookEditor, NotebookEditorExtImpl>();
+    public static readonly apiEditorsToExtHost = new WeakMap<theia.NotebookEditor, NotebookEditor>();
 
     private selections: theia.NotebookRange[] = [];
     private visibleRanges: theia.NotebookRange[] = [];
     private viewColumn?: theia.ViewColumn;
+
+    private internalVisible: boolean = false;
 
     private editor?: theia.NotebookEditor;
 
@@ -82,9 +84,17 @@ export class NotebookEditorExtImpl {
                 },
             };
 
-            NotebookEditorExtImpl.apiEditorsToExtHost.set(this.editor, this);
+            NotebookEditor.apiEditorsToExtHost.set(this.editor, this);
         }
         return this.editor;
+    }
+
+    get visible(): boolean {
+        return this.internalVisible;
+    }
+
+    acceptVisibility(value: boolean): void {
+        this.internalVisible = value;
     }
 
     acceptVisibleRanges(value: theia.NotebookRange[]): void {

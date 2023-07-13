@@ -23,8 +23,11 @@ import { CellExecution, NotebookExecutionStateService } from '../service/noteboo
 import { CellKind, NotebookCellExecutionState } from '../../common';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
-import { NotebookKernelService } from './notebook-kernel-service';
-import { Disposable } from '@theia/core';
+import { NotebookKernelService, NotebookKernel } from './notebook-kernel-service';
+import { CommandService, Disposable } from '@theia/core';
+import { NotebookKernelQuickPickService, NotebookKernelQuickPickServiceImpl } from './notebook-kernel-quick-pick-service';
+import { NotebookKernelHistoryService } from './notebookKernelHistoryService';
+import { NotebookCommands } from '../contributions/notebook-actions-contribution';
 
 export interface CellExecutionParticipant {
     onWillExecuteCell(executions: CellExecution[]): Promise<void>;
@@ -38,6 +41,15 @@ export class NotebookExecutionService {
 
     @inject(NotebookKernelService)
     protected notebookKernelService: NotebookKernelService;
+
+    @inject(NotebookKernelHistoryService)
+    protected notebookKernelHistoryService: NotebookKernelHistoryService;
+
+    @inject(CommandService)
+    protected commandService: CommandService;
+
+    @inject(NotebookKernelQuickPickService)
+    protected notebookKernelQuickPickService: NotebookKernelQuickPickServiceImpl;
 
     private readonly cellExecutionParticipants = new Set<CellExecutionParticipant>();
 
@@ -59,7 +71,7 @@ export class NotebookExecutionService {
             }
         }
 
-        const kernel = this.notebookKernelService.getSelectedOrSuggestedKernel(notebook);
+        const kernel = await this.resolveKernel(notebook);
 
         if (!kernel) {
             // clear all pending cell executions
@@ -116,5 +128,17 @@ export class NotebookExecutionService {
 
     async cancelNotebookCells(notebook: NotebookModel, cells: Iterable<NotebookCellModel>): Promise<void> {
         this.cancelNotebookCellHandles(notebook, Array.from(cells, cell => cell.handle));
+    }
+
+    async resolveKernel(notebook: NotebookModel): Promise<NotebookKernel | undefined> {
+        const alreadySelected = this.notebookKernelHistoryService.getKernels(notebook);
+
+        if (alreadySelected.selected) {
+            return alreadySelected.selected;
+        }
+
+        await this.commandService.executeCommand(NotebookCommands.SELECT_KERNEL_COMMAND.id, notebook);
+        const { selected } = this.notebookKernelHistoryService.getKernels(notebook);
+        return selected;
     }
 }

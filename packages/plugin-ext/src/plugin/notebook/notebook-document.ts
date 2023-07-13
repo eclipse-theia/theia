@@ -22,9 +22,9 @@ import * as theia from '@theia/plugin';
 import * as rpc from '../../common';
 import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
 import * as notebookCommon from '@theia/notebook/lib/common';
-import { URI } from '@theia/core';
+import { Disposable, URI } from '@theia/core';
 import * as typeConverters from '../type-converters';
-import { ModelAddedData, NotebookCellDto, NotebookCellsChangedEventDto, NotebookOutputDto } from '../../common';
+import { ModelAddedData, NotebookCellDto, NotebookCellsChangedEventDto, NotebookModelAddedData, NotebookOutputDto } from '../../common';
 import { NotebookRange } from '../types-impl';
 import { UriComponents } from '../../common/uri-components';
 
@@ -160,13 +160,13 @@ export class Cell {
 
 }
 
-export class NotebookDocument {
+export class NotebookDocument implements Disposable {
 
-    private readonly cells: Cell[] = [];
+    private readonly cells: Cell[];
 
     private readonly notebookType: string;
 
-    private notebook: theia.NotebookDocument | undefined;
+    private notebook?: theia.NotebookDocument;
     private metadata: Record<string, unknown>;
     private versionId: number = 0;
     private isDirty: boolean = false;
@@ -175,10 +175,13 @@ export class NotebookDocument {
     constructor(
         private readonly proxy: rpc.NotebookDocumentsMain,
         private readonly editorsAndDocuments: EditorsAndDocumentsExtImpl,
-        // private readonly textDocuments: DocumentsExt,
-        public readonly uri: theia.Uri
+        public readonly uri: theia.Uri,
+        notebookData: NotebookModelAddedData
     ) {
-
+        this.notebookType = notebookData.viewType;
+        this.metadata = notebookData.metadata ?? {};
+        this.versionId = notebookData.versionId;
+        this.cells = notebookData.cells.map(cell => new Cell(this, editorsAndDocuments, cell));
     }
 
     get apiNotebook(): theia.NotebookDocument {
@@ -280,17 +283,17 @@ export class NotebookDocument {
                 this.setCellOutputs(rawEvent.index, rawEvent.outputs);
                 relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, outputs: this.cells[rawEvent.index].apiCell.outputs });
 
-                // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.OutputItem) {
-                //     this._setCellOutputItems(rawEvent.index, rawEvent.outputId, rawEvent.append, rawEvent.outputItems);
-                //     relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, outputs: this.cells[rawEvent.index].apiCell.outputs });
-                // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellLanguage) {
-                //     this.changeCellLanguage(rawEvent.index, rawEvent.language);
-                //     relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, document: this.cells[rawEvent.index].apiCell.document });
+            // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.OutputItem) {
+            //     this._setCellOutputItems(rawEvent.index, rawEvent.outputId, rawEvent.append, rawEvent.outputItems);
+            //     relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, outputs: this.cells[rawEvent.index].apiCell.outputs });
+            // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellLanguage) {
+            //     this.changeCellLanguage(rawEvent.index, rawEvent.language);
+            //     relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, document: this.cells[rawEvent.index].apiCell.document });
             } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellContent) {
                 relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, document: this.cells[rawEvent.index].apiCell.document });
 
-                // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellMime) {
-                //     this._changeCellMime(rawEvent.index, rawEvent.mime);
+            // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellMime) {
+            //     this._changeCellMime(rawEvent.index, rawEvent.mime);
             } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellMetadata) {
                 this.changeCellMetadata(rawEvent.index, rawEvent.metadata);
                 relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, metadata: this.cells[rawEvent.index].apiCell.metadata });
@@ -430,4 +433,7 @@ export class NotebookDocument {
         return this.cells.indexOf(cell);
     }
 
+    dispose(): void {
+        this.disposed = true;
+    }
 }

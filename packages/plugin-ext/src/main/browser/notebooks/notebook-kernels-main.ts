@@ -18,15 +18,15 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Emitter, Event, URI } from '@theia/core';
+import { CancellationToken, Disposable, Emitter, Event, URI } from '@theia/core';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { CellExecutionCompleteDto, CellExecutionStateUpdateDto, MAIN_RPC_CONTEXT, NotebookKernelDto, NotebookKernelsExt, NotebookKernelsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { CellExecution, NotebookExecutionStateService, NotebookKernelChangeEvent, NotebookKernelService, NotebookService } from '@theia/notebook/lib/browser';
-import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 import { combinedDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { interfaces } from '@theia/core/shared/inversify';
+import { NotebookKernelSourceAction } from '@theia/notebook/lib/common';
 
 abstract class NotebookKernel {
     private readonly onDidChangeEmitter = new Emitter<NotebookKernelChangeEvent>();
@@ -103,11 +103,26 @@ abstract class NotebookKernel {
     abstract cancelNotebookCellExecution(uri: URI, cellHandles: number[]): Promise<void>;
 }
 
+class KernelDetectionTask {
+    constructor(readonly notebookType: string) { }
+}
+
+export interface KernelSourceActionProvider {
+    readonly viewType: string;
+    onDidChangeSourceActions?: Event<void>;
+    provideKernelSourceActions(): Promise<NotebookKernelSourceAction[]>;
+}
+
 export class NotebookKernelsMainImpl implements NotebookKernelsMain {
 
     private readonly proxy: NotebookKernelsExt;
 
     private readonly kernels = new Map<number, [kernel: NotebookKernel, registraion: Disposable]>();
+
+    private readonly kernelDetectionTasks = new Map<number, [task: KernelDetectionTask, registraion: Disposable]>();
+
+    private readonly kernelSourceActionProviders = new Map<number, [provider: KernelSourceActionProvider, registraion: Disposable]>();
+    private readonly kernelSourceActionProvidersEventRegistrations = new Map<number, Disposable>();
 
     private notebookKernelService: NotebookKernelService;
     private notebookService: NotebookService;
@@ -204,16 +219,53 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
     $completeNotebookExecution(handle: number): void {
         throw new Error('Method not implemented.');
     }
-    $addKernelDetectionTask(handle: number, notebookType: string): Promise<void> {
-        throw new Error('Method not implemented.');
+    async $addKernelDetectionTask(handle: number, notebookType: string): Promise<void> {
+        const kernelDetectionTask = new KernelDetectionTask(notebookType);
+        const registration = this.notebookKernelService.registerNotebookKernelDetectionTask(kernelDetectionTask);
+        this.kernelDetectionTasks.set(handle, [kernelDetectionTask, registration]);
     }
     $removeKernelDetectionTask(handle: number): void {
+        const tuple = this.kernelDetectionTasks.get(handle);
+        if (tuple) {
+            tuple[1].dispose();
+            this.kernelDetectionTasks.delete(handle);
+        }
     }
-    $addKernelSourceActionProvider(handle: number, eventHandle: number, notebookType: string): Promise<void> {
-        return Promise.resolve();
+    async $addKernelSourceActionProvider(handle: number, eventHandle: number, notebookType: string): Promise<void> {
+        const kernelSourceActionProvider: KernelSourceActionProvider = {
+            viewType: notebookType,
+            provideKernelSourceActions: async () => {
+                const actions = await this.proxy.$provideKernelSourceActions(handle, CancellationToken.None);
+
+                return actions.map(action => ({
+                    label: action.label,
+                    command: action.command,
+                    description: action.description,
+                    detail: action.detail,
+                    documentation: action.documentation,
+                }));
+            }
+        };
+
+        if (typeof eventHandle === 'number') {
+            const emitter = new Emitter<void>();
+            this.kernelSourceActionProvidersEventRegistrations.set(eventHandle, emitter);
+            kernelSourceActionProvider.onDidChangeSourceActions = emitter.event;
+        }
+
+        const registration = this.notebookKernelService.registerKernelSourceActionProvider(notebookType, kernelSourceActionProvider);
+        this.kernelSourceActionProviders.set(handle, [kernelSourceActionProvider, registration]);
     }
+
     $removeKernelSourceActionProvider(handle: number, eventHandle: number): void {
-        throw new Error('Method not implemented.');
+        const tuple = this.kernelSourceActionProviders.get(handle);
+        if (tuple) {
+            tuple[1].dispose();
+            this.kernelSourceActionProviders.delete(handle);
+        }
+        if (typeof eventHandle === 'number') {
+            this.kernelSourceActionProvidersEventRegistrations.delete(eventHandle);
+        }
     }
     $emitNotebookKernelSourceActionsChangeEvent(eventHandle: number): void {
     }

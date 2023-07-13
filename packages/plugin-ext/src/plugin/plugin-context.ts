@@ -179,6 +179,7 @@ import {
     NotebookCellStatusBarItem,
     NotebookEdit,
     NotebookKernelSourceAction,
+    NotebookRendererScript,
     TestRunProfileKind,
     TestTag,
     TestRunRequest,
@@ -270,9 +271,9 @@ export function createAPIFactory(
     const notificationExt = rpc.set(MAIN_RPC_CONTEXT.NOTIFICATION_EXT, new NotificationExtImpl(rpc));
     const editors = rpc.set(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, new TextEditorsExtImpl(rpc, editorsAndDocumentsExt));
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocumentsExt));
-    const notebooksExt = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT, new NotebooksExtImpl(rpc));
+    const notebooksExt = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT, new NotebooksExtImpl(rpc, commandRegistry, editorsAndDocumentsExt));
     const notebookRenderers = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT, new NotebookRenderersExtImpl(rpc, notebooksExt));
-    const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt));
+    const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt, commandRegistry));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = rpc.set(MAIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_EXT, new OutputChannelRegistryExtImpl(rpc));
@@ -440,9 +441,9 @@ export function createAPIFactory(
                 return Disposable.NULL;
             },
             get activeNotebookEditor(): theia.NotebookEditor | undefined {
-                return undefined;
+                return notebooksExt.activeApiNotebookEditor;
             }, onDidChangeActiveNotebookEditor(listener, thisArg?, disposables?) {
-                return Disposable.NULL;
+                return notebooksExt.onDidChangeActiveNotebookEditor(listener, thisArg, disposables);
             },
             onDidChangeNotebookEditorSelection(listener, thisArg?, disposables?) {
                 return Disposable.NULL;
@@ -1155,9 +1156,10 @@ export function createAPIFactory(
                 label,
                 handler?: (cells: theia.NotebookCell[],
                     notebook: theia.NotebookDocument,
-                    controller: theia.NotebookController) => void | Thenable<void>
+                    controller: theia.NotebookController) => void | Thenable<void>,
+                rendererScripts?: NotebookRendererScript[]
             ) {
-                return notebookKernels.createNotebookController(plugin.model.id, id, notebookType, label, handler);
+                return notebookKernels.createNotebookController(plugin.model.id, id, notebookType, label, handler, rendererScripts);
             },
             createRendererMessaging(rendererId) {
                 return notebookRenderers.createRendererMessaging(rendererId);
@@ -1341,6 +1343,7 @@ export function createAPIFactory(
             NotebookRange,
             NotebookEdit,
             NotebookKernelSourceAction,
+            NotebookRendererScript,
             TestRunProfileKind,
             TestTag,
             TestRunRequest,
@@ -1393,6 +1396,8 @@ export interface ExtensionPlugin<T> extends theia.Plugin<T> {
 }
 
 export class Plugin<T> implements theia.Plugin<T> {
+    #pluginManager: PluginManager;
+
     id: string;
     pluginPath: string;
     pluginUri: theia.Uri;
@@ -1400,7 +1405,9 @@ export class Plugin<T> implements theia.Plugin<T> {
     packageJSON: any;
     pluginType: theia.PluginType;
 
-    constructor(protected readonly pluginManager: PluginManager, plugin: InternalPlugin) {
+    constructor(pluginManager: PluginManager, plugin: InternalPlugin) {
+        this.#pluginManager = pluginManager;
+
         this.id = plugin.model.id;
         this.pluginPath = plugin.pluginFolder;
         this.packageJSON = plugin.rawModel;
@@ -1415,26 +1422,29 @@ export class Plugin<T> implements theia.Plugin<T> {
     }
 
     get isActive(): boolean {
-        return this.pluginManager.isActive(this.id);
+        return this.#pluginManager.isActive(this.id);
     }
 
     get exports(): T {
-        return <T>this.pluginManager.getPluginExport(this.id);
+        return <T>this.#pluginManager.getPluginExport(this.id);
     }
 
     activate(): PromiseLike<T> {
-        return this.pluginManager.activatePlugin(this.id).then(() => this.exports);
+        return this.#pluginManager.activatePlugin(this.id).then(() => this.exports);
     }
 }
 
 export class PluginExt<T> extends Plugin<T> implements ExtensionPlugin<T> {
+    #pluginManager: PluginManager;
+
     extensionPath: string;
     extensionUri: theia.Uri;
     extensionKind: ExtensionKind;
     isFromDifferentExtensionHost: boolean;
 
-    constructor(protected override readonly pluginManager: PluginManager, plugin: InternalPlugin, isFromDifferentExtensionHost = false) {
+    constructor(pluginManager: PluginManager, plugin: InternalPlugin, isFromDifferentExtensionHost = false) {
         super(pluginManager, plugin);
+        this.#pluginManager = pluginManager;
 
         this.extensionPath = this.pluginPath;
         this.extensionUri = this.pluginUri;
@@ -1443,14 +1453,14 @@ export class PluginExt<T> extends Plugin<T> implements ExtensionPlugin<T> {
     }
 
     override get isActive(): boolean {
-        return this.pluginManager.isActive(this.id);
+        return this.#pluginManager.isActive(this.id);
     }
 
     override get exports(): T {
-        return <T>this.pluginManager.getPluginExport(this.id);
+        return <T>this.#pluginManager.getPluginExport(this.id);
     }
 
     override activate(): PromiseLike<T> {
-        return this.pluginManager.activatePlugin(this.id).then(() => this.exports);
+        return this.#pluginManager.activatePlugin(this.id).then(() => this.exports);
     }
 }

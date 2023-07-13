@@ -106,4 +106,24 @@ export namespace ArrayUtils {
     export function coalesce<T>(array: ReadonlyArray<T | undefined | null>): T[] {
         return <T[]>array.filter(e => !!e);
     }
+
+    /**
+     * groups array elements through a comparator function
+     * @param data array of elements to group
+     * @param compare comparator function: return of 0 means should group, anything above means not group
+     * @returns array of arrays with grouped elements
+     */
+    export function groupBy<T>(data: ReadonlyArray<T>, compare: (a: T, b: T) => number): T[][] {
+        const result: T[][] = [];
+        let currentGroup: T[] | undefined = undefined;
+        for (const element of data.slice(0).sort(compare)) {
+            if (!currentGroup || compare(currentGroup[0], element) !== 0) {
+                currentGroup = [element];
+                result.push(currentGroup);
+            } else {
+                currentGroup.push(element);
+            }
+        }
+        return result;
+    }
 }

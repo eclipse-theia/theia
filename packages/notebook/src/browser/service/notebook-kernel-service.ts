@@ -18,9 +18,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Disposable, Event, URI } from '@theia/core';
+import { Command, CommandRegistry, Disposable, Emitter, Event, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
+import { NotebookKernelSourceAction } from '../../common';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from './notebook-service';
 
@@ -77,6 +77,10 @@ export interface INotebookProxyKernelChangeEvent extends NotebookKernelChangeEve
     connectionState?: true;
 }
 
+export interface NotebookKernelDetectionTask {
+    readonly notebookType: string;
+}
+
 export interface NotebookTextModelLike { uri: URI; viewType: string }
 
 class KernelInfo {
@@ -94,8 +98,60 @@ class KernelInfo {
     }
 }
 
+export interface NotebookSourceActionChangeEvent {
+    notebook?: URI;
+    viewType: string;
+}
+
+export interface KernelSourceActionProvider {
+    readonly viewType: string;
+    onDidChangeSourceActions?: Event<void>;
+    provideKernelSourceActions(): Promise<NotebookKernelSourceAction[]>;
+}
+
+export class SourceCommand implements Disposable {
+    execution: Promise<void> | undefined;
+    private readonly onDidChangeStateEmitter = new Emitter<void>();
+    readonly onDidChangeState = this.onDidChangeStateEmitter.event;
+
+    constructor(
+        readonly commandRegistry: CommandRegistry,
+        readonly command: Command,
+        readonly model: NotebookTextModelLike,
+        readonly isPrimary: boolean
+    ) { }
+
+    async run(): Promise<void> {
+        if (this.execution) {
+            return this.execution;
+        }
+
+        this.execution = this.runCommand();
+        this.onDidChangeStateEmitter.fire();
+        await this.execution;
+        this.execution = undefined;
+        this.onDidChangeStateEmitter.fire();
+    }
+
+    private async runCommand(): Promise<void> {
+        try {
+            await this.commandRegistry.executeCommand(this.command.id, {
+                uri: this.model.uri,
+            });
+
+        } catch (error) {
+            console.warn(`Kernel source command failed: ${error}`);
+        }
+    }
+
+    dispose(): void {
+        this.onDidChangeStateEmitter.dispose();
+    }
+
+}
+
 @injectable()
-export class NotebookKernelService {
+export class NotebookKernelService implements Disposable {
 
     @inject(NotebookService)
     protected notebookService: NotebookService;
@@ -103,6 +159,14 @@ export class NotebookKernelService {
     private readonly kernels = new Map<string, KernelInfo>();
 
     private readonly notebookBindings = new Map<string, string>();
+
+    private readonly kernelDetectionTasks = new Map<string, NotebookKernelDetectionTask[]>();
+    private readonly onDidChangeKernelDetectionTasksEmitter = new Emitter<string>();
+    readonly onDidChangeKernelDetectionTasks = this.onDidChangeKernelDetectionTasksEmitter.event;
+
+    private readonly onDidChangeSourceActionsEmitter = new Emitter<NotebookSourceActionChangeEvent>();
+    private readonly kernelSourceActionProviders = new Map<string, KernelSourceActionProvider[]>();
+    readonly onDidChangeSourceActions: Event<NotebookSourceActionChangeEvent> = this.onDidChangeSourceActionsEmitter.event;
 
     private readonly onDidAddKernelEmitter = new Emitter<NotebookKernel>();
     readonly onDidAddKernel: Event<NotebookKernel> = this.onDidAddKernelEmitter.event;
@@ -151,7 +215,7 @@ export class NotebookKernelService {
         // bound kernel
         const selectedId = this.notebookBindings.get(`${notebook.viewType}/${notebook.uri}`);
         const selected = selectedId ? this.kernels.get(selectedId)?.kernel : undefined;
-        const suggestions = kernels.filter(item => item.instanceAffinity > 1).map(item => item.kernel);
+        const suggestions = kernels.filter(item => item.instanceAffinity > 1).map(item => item.kernel); // TODO implement notebookAffinity
         const hidden = kernels.filter(item => item.instanceAffinity < 0).map(item => item.kernel);
         return { all, selected, suggestions, hidden };
 
@@ -188,4 +252,62 @@ export class NotebookKernelService {
         }
     }
 
+    registerNotebookKernelDetectionTask(task: NotebookKernelDetectionTask): Disposable {
+        const notebookType = task.notebookType;
+        const all = this.kernelDetectionTasks.get(notebookType) ?? [];
+        all.push(task);
+        this.kernelDetectionTasks.set(notebookType, all);
+        this.onDidChangeKernelDetectionTasksEmitter.fire(notebookType);
+        return Disposable.create(() => {
+            const allTasks = this.kernelDetectionTasks.get(notebookType) ?? [];
+            const idx = allTasks.indexOf(task);
+            if (idx >= 0) {
+                allTasks.splice(idx, 1);
+                this.kernelDetectionTasks.set(notebookType, allTasks);
+                this.onDidChangeKernelDetectionTasksEmitter.fire(notebookType);
+            }
+        });
+    }
+
+    getKernelDetectionTasks(notebook: NotebookTextModelLike): NotebookKernelDetectionTask[] {
+        return this.kernelDetectionTasks.get(notebook.viewType) ?? [];
+    }
+
+    registerKernelSourceActionProvider(viewType: string, provider: KernelSourceActionProvider): Disposable {
+        const providers = this.kernelSourceActionProviders.get(viewType) ?? [];
+        providers.push(provider);
+        this.kernelSourceActionProviders.set(viewType, providers);
+        this.onDidChangeSourceActionsEmitter.fire({ viewType: viewType });
+
+        const eventEmitterDisposable = provider.onDidChangeSourceActions?.(() => {
+            this.onDidChangeSourceActionsEmitter.fire({ viewType: viewType });
+        });
+
+        return Disposable.create(() => {
+            const sourceProviders = this.kernelSourceActionProviders.get(viewType) ?? [];
+            const idx = sourceProviders.indexOf(provider);
+            if (idx >= 0) {
+                sourceProviders.splice(idx, 1);
+                this.kernelSourceActionProviders.set(viewType, sourceProviders);
+            }
+
+            eventEmitterDisposable?.dispose();
+        });
+    }
+
+    getKernelSourceActionsFromProviders(notebook: NotebookTextModelLike): Promise<NotebookKernelSourceAction[]> {
+        const viewType = notebook.viewType;
+        const providers = this.kernelSourceActionProviders.get(viewType) ?? [];
+        const promises = providers.map(provider => provider.provideKernelSourceActions());
+        return Promise.all(promises).then(actions => actions.reduce((a, b) => a.concat(b), []));
+    }
+
+    dispose(): void {
+        this.onDidChangeKernelDetectionTasksEmitter.dispose();
+        this.onDidChangeSourceActionsEmitter.dispose();
+        this.onDidAddKernelEmitter.dispose();
+        this.onDidRemoveKernelEmitter.dispose();
+        this.onDidChangeSelectedNotebooksEmitter.dispose();
+        this.onDidChangeNotebookAffinityEmitter.dispose();
+    }
 }

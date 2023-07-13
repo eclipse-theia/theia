@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { CommandRegistry, URI } from '@theia/core';
-import { ReactWidget, Navigatable, SaveableSource, Saveable } from '@theia/core/lib/browser';
+import { ReactWidget, Navigatable, SaveableSource, Saveable, Message } from '@theia/core/lib/browser';
 import { ReactNode } from '@theia/core/shared/react';
 import { CellKind } from '../common';
 import { Cellrenderer as CellRenderer, NotebookCellListView } from './view/notebook-cell-list-view';
@@ -25,6 +25,8 @@ import { NotebookMarkdownCellRenderer } from './view/notebook-markdown-cell-view
 import { NotebookModel } from './view-model/notebook-model';
 import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
+import { NotebookEditorWidgetService } from './service/notebook-editor-service';
 
 export const NotebookEditorContainerFactory = Symbol('NotebookModelFactory');
 
@@ -44,7 +46,7 @@ export interface NotebookEditorProps {
     readonly notebookType: string,
     notebookData: NotebookModel
 }
-
+export const NOTEBOOK_EDITOR_ID_PREFIX = 'notebook:';
 @injectable()
 export class NotebookEditorWidget extends ReactWidget implements Navigatable, SaveableSource {
     static readonly ID = 'notebook';
@@ -57,10 +59,20 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     @inject(CommandRegistry)
     protected commandRegistry: CommandRegistry;
 
+    @inject(NotebookEditorWidgetService)
+    protected notebookEditorService: NotebookEditorWidgetService;
+
+    private readonly onDidChangeModelEmitter = new Emitter<void>();
+    readonly onDidChangeModel = this.onDidChangeModelEmitter.event;
+
     private readonly renderers = new Map<CellKind, CellRenderer>();
 
     get notebookType(): string {
         return this.props.notebookType;
+    }
+
+    get model(): NotebookModel {
+        return this.props.notebookData;
     }
 
     constructor(
@@ -69,7 +81,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         @inject(NotebookEditorProps) private readonly props: NotebookEditorProps) {
         super();
         this.saveable = this.props.notebookData;
-        this.id = 'notebook:' + this.props.uri.toString();
+        this.id = NOTEBOOK_EDITOR_ID_PREFIX + this.props.uri.toString();
 
         this.title.closable = true;
         this.update();
@@ -92,5 +104,15 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
                 toolbarRenderer={this.cellToolbarFactory}
                 commandRegistry={this.commandRegistry}/>
         </div>;
+    }
+
+    protected override onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        this.notebookEditorService.addNotebookEditor(this);
+    }
+
+    protected override onAfterDetach(msg: Message): void {
+        super.onAfterDetach(msg);
+        this.notebookEditorService.removeNotebookEditor(this);
     }
 }

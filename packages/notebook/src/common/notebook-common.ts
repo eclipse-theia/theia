@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, Event, URI } from '@theia/core';
+import { CancellationToken, Command, Event, URI } from '@theia/core';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { CancellationToken } from '@theia/core/shared/vscode-languageserver-protocol';
 import { UriComponents } from '@theia/core/lib/common/uri';
+import { CellRange } from './notebook-range';
 
 export enum CellKind {
     Markup = 1,
@@ -164,6 +164,31 @@ export enum NotebookCellsChangeType {
     Unknown = 100
 }
 
+export enum SelectionStateType {
+    Handle = 0,
+    Index = 1
+}
+export interface SelectionHandleState {
+    kind: SelectionStateType.Handle;
+    primary: number | null;
+    selections: number[];
+}
+
+export interface SelectionIndexState {
+    kind: SelectionStateType.Index;
+    focus: CellRange;
+    selections: CellRange[];
+}
+
+export type SelectionState = SelectionHandleState | SelectionIndexState;
+
+export interface NotebookTextModelChangedEvent {
+    readonly rawEvents: NotebookRawContentEvent[];
+    readonly versionId: number;
+    readonly synchronous: boolean | undefined;
+    readonly endSelectionState: SelectionState | undefined;
+};
+
 export interface NotebookCellsInitializeEvent<T> {
     readonly kind: NotebookCellsChangeType.Initialize;
     readonly changes: NotebookCellTextModelSplice<T>[];
@@ -299,6 +324,14 @@ export interface CellPartialInternalMetadataEditByHandle {
     editType: CellEditType.PartialInternalMetadata;
     handle: number;
     internalMetadata: NullablePartialNotebookCellInternalMetadata;
+}
+
+export interface NotebookKernelSourceAction {
+    readonly label: string;
+    readonly description?: string;
+    readonly detail?: string;
+    readonly command?: string | Command;
+    readonly documentation?: UriComponents | string;
 }
 
 /**

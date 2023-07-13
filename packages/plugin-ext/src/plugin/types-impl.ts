@@ -1370,6 +1370,18 @@ export class NotebookEdit implements theia.NotebookEdit {
     }
 }
 
+export class NotebookRendererScript implements theia.NotebookRendererScript {
+    provides: readonly string[];
+
+    constructor(
+        public uri: theia.Uri,
+        provides?: string | readonly string[]
+    ) {
+        this.provides = Array.isArray(provides) ? provides : [provides];
+    };
+
+}
+
 @es5ClassCompat
 export class ParameterInformation {
     label: string | [number, number];

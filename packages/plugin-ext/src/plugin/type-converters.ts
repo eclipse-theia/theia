@@ -1565,3 +1565,17 @@ export namespace NotebookRange {
         return new types.NotebookRange(range.start, range.end);
     }
 }
+
+export namespace NotebookKernelSourceAction {
+    export function from(item: theia.NotebookKernelSourceAction, commandsConverter: CommandsConverter, disposables: DisposableCollection): rpc.NotebookKernelSourceActionDto {
+        const command = typeof item.command === 'string' ? { title: '', command: item.command } : item.command;
+
+        return {
+            command: commandsConverter.toSafeCommand(command, disposables),
+            label: item.label,
+            description: item.description,
+            detail: item.detail,
+            documentation: item.documentation
+        };
+    }
+}

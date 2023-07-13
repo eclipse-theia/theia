@@ -40,7 +40,7 @@ export class NotebookCellResource implements Resource {
     }
 
     dispose(): void {
-        throw new Error('Method not implemented.');
+        this.didChangeContentsEmitter.dispose();
     }
 
 }

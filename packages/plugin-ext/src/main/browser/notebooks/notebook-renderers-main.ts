@@ -33,7 +33,7 @@ export class NotebookRenderersMainImpl implements NotebookRenderersMain {
     }
 
     $postMessage(editorId: string | undefined, rendererId: string, message: unknown): Promise<boolean> {
-        throw new Error('Method not implemented.');
+        return Promise.resolve(true);
     }
 
     dispose(): void {

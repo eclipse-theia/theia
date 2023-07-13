@@ -20,7 +20,7 @@ import { codicon } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from '../service/notebook-service';
 import { CellKind } from '../../common';
-import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
+import { KernelPickerMRUStrategy, NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
 
 export namespace NotebookCommands {
     export const ADD_NEW_CELL_COMMAND = Command.toDefaultLocalizedCommand({
@@ -42,7 +42,7 @@ export class NotebookActionsContribution implements CommandContribution {
     protected notebookService: NotebookService;
 
     @inject(NotebookKernelQuickPickService)
-    protected notebookKernelQuickPickService: NotebookKernelQuickPickService;
+    protected notebookKernelQuickPickService: KernelPickerMRUStrategy;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(NotebookCommands.ADD_NEW_CELL_COMMAND, {
@@ -53,9 +53,7 @@ export class NotebookActionsContribution implements CommandContribution {
         });
 
         commands.registerCommand(NotebookCommands.SELECT_KERNEL_COMMAND, {
-            execute: (notebookModel: NotebookModel) => {
-                this.notebookKernelQuickPickService.showQuickPick(notebookModel);
-            }
+            execute: (notebookModel: NotebookModel) => this.notebookKernelQuickPickService.showQuickPick(notebookModel)
         });
     }
 

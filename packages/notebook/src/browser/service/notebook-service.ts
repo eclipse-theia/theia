@@ -96,7 +96,7 @@ export class NotebookService implements Disposable {
         });
     }
 
-    createNotebookModel(data: NotebookData, viewType: string, uri: URI): NotebookModel {
+    async createNotebookModel(data: NotebookData, viewType: string, uri: URI): Promise<NotebookModel> {
         const serializer = this.notebookProviders.get(viewType)?.serializer;
         if (!serializer) {
             throw new Error('no notebook serializer for ' + viewType);
@@ -139,5 +139,9 @@ export class NotebookService implements Disposable {
 
     async willOpenNotebook(type: string): Promise<void> {
         return this.willOpenNotebookTypeEmitter.sequence(async listener => listener(type));
+    }
+
+    listNotebookDocuments(): NotebookModel[] {
+        return [...this.notebookModels.values()];
     }
 }

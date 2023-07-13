@@ -29,6 +29,7 @@ import {
     FileOperationOptions,
     TextDocumentChangeReason,
     IndentAction,
+    NotebookRendererScript,
 } from '../plugin/types-impl';
 import { UriComponents } from './uri-components';
 import {
@@ -2103,6 +2104,7 @@ export const PLUGIN_RPC_CONTEXT = {
     NOTEBOOKS_MAIN: createProxyIdentifier<NotebooksMain>('NotebooksMain'),
     NOTEBOOK_DOCUMENTS_MAIN: createProxyIdentifier<NotebookDocumentsMain>('NotebookDocumentsMain'),
     NOTEBOOK_EDITORS_MAIN: createProxyIdentifier<NotebookEditorsMain>('NotebookEditorsMain'),
+    NOTEBOOK_DOCUMENTS_AND_EDITORS_MAIN: createProxyIdentifier<NotebookDocumentsAndEditorsMain>('NotebooksAndEditorsMain'),
     NOTEBOOK_RENDERERS_MAIN: createProxyIdentifier<NotebookRenderersMain>('NotebookRenderersMain'),
     NOTEBOOK_KERNELS_MAIN: createProxyIdentifier<NotebookKernelsMain>('NotebookKernelsMain'),
     STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain'),
@@ -2355,6 +2357,7 @@ export interface NotebookKernelDto {
     supportsInterrupt?: boolean;
     supportsExecutionOrder?: boolean;
     preloads?: { uri: UriComponents; provides: readonly string[] }[];
+    rendererScripts?: NotebookRendererScript[];
 }
 
 export type CellExecuteUpdateDto = CellExecuteOutputEditDto | CellExecuteOutputItemEditDto | CellExecutionStateUpdateDto;
@@ -2391,6 +2394,14 @@ export interface NotebookKernelSourceActionDto {
     readonly detail?: string;
     readonly command?: string | Command;
     readonly documentation?: UriComponents | string;
+}
+
+export interface NotebookEditorAddData {
+    id: string;
+    documentUri: UriComponents;
+    selections: CellRange[];
+    visibleRanges: CellRange[];
+    viewColumn?: number;
 }
 
 export interface NotebooksExt extends NotebookDocumentsAndEditorsExt {
@@ -2455,7 +2466,10 @@ export interface NotebookDocumentsExt {
 }
 
 export interface NotebookDocumentsAndEditorsExt {
-    $acceptDocumentAndEditorsDelta(delta: NotebookDocumentsAndEditorsDelta): void;
+    $acceptDocumentsAndEditorsDelta(delta: NotebookDocumentsAndEditorsDelta): Promise<void>;
+}
+
+export interface NotebookDocumentsAndEditorsMain extends Disposable {
 }
 
 export type NotebookEditorViewColumnInfo = Record<string, number>;
@@ -2465,7 +2479,7 @@ export interface NotebookEditorsExt {
     $acceptEditorViewColumns(data: NotebookEditorViewColumnInfo): void;
 }
 
-export interface NotebookEditorsMain {
+export interface NotebookEditorsMain extends Disposable {
     $tryShowNotebookDocument(uriComponents: UriComponents, viewType: string, options: NotebookDocumentShowOptions): Promise<string>;
     $tryRevealRange(id: string, range: CellRange, revealType: NotebookEditorRevealType): Promise<void>;
     $trySetSelections(id: string, range: CellRange[]): void;

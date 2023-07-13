@@ -22,7 +22,7 @@ import { NotebookRenderersExt, NotebookRenderersMain, PLUGIN_RPC_CONTEXT } from 
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { NotebooksExtImpl } from './notebooks';
 import * as theia from '@theia/plugin';
-import { NotebookEditorExtImpl } from './notebook-editor';
+import { NotebookEditor } from './notebook-editor';
 import { Emitter } from '@theia/core';
 
 export class NotebookRenderersExtImpl implements NotebookRenderersExt {
@@ -44,7 +44,7 @@ export class NotebookRenderersExtImpl implements NotebookRenderersExt {
             onDidReceiveMessage: (listener, thisArg, disposables) => this.getOrCreateEmitterFor(rendererId).event(listener, thisArg, disposables),
             postMessage: (message, editorOrAlias) => {
 
-                const extHostEditor = editorOrAlias && NotebookEditorExtImpl.apiEditorsToExtHost.get(editorOrAlias);
+                const extHostEditor = editorOrAlias && NotebookEditor.apiEditorsToExtHost.get(editorOrAlias);
                 return this.proxy.$postMessage(extHostEditor?.id, rendererId, message);
             },
         };
