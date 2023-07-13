@@ -105,6 +105,7 @@ export class DebugConfigurationManager {
     protected async doInit(): Promise<void> {
         this.debugConfigurationTypeKey = this.contextKeyService.createKey<string>('debugConfigurationType', undefined);
         this.initialized = this.preferences.ready.then(() => {
+            this.workspaceService.onWorkspaceChanged(this.updateModels);
             this.preferences.onPreferenceChanged(e => {
                 if (e.preferenceName === 'launch') {
                     this.updateModels();
@@ -312,7 +313,8 @@ export class DebugConfigurationManager {
     }
 
     async openConfiguration(): Promise<void> {
-        const model = this.getModel();
+        const currentUri = new URI(this.current?.workspaceFolderUri);
+        const model = this.getModel(currentUri);
         if (model) {
             await this.doOpen(model);
         }
