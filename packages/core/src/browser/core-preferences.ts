@@ -84,9 +84,9 @@ export const corePreferenceSchema: PreferenceSchema = {
             type: 'string',
             enum: ['classic', 'enhanced', 'visual'],
             markdownEnumDescriptions: [
-                nls.localize('theia/core/enhancedPreview/classic', 'Display a simple preview about the view, containing the name.'),
-                nls.localize('theia/core/enhancedPreview/enhanced', 'Display an enhanced preview containing the name and a caption.'),
-                nls.localize('theia/core/enhancedPreview/visual', 'Display the enhanced preview together with a visual preview of the view.'),
+                nls.localize('theia/core/enhancedPreview/classic', 'Display a simple preview of the tab with basic information.'),
+                nls.localize('theia/core/enhancedPreview/enhanced', 'Display an enhanced preview of the tab with additional information.'),
+                nls.localize('theia/core/enhancedPreview/visual', 'Display a visual preview of the tab.'),
             ],
             default: 'classic',
             description: nls.localize('theia/core/enhancedPreview', 'Controls what information about the tab should be displayed in horizontal tab bars, when hovering.')
