@@ -14,18 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, URI } from '@theia/core';
-import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
+import { Disposable, Emitter, URI } from '@theia/core';
 import { Saveable, SaveOptions } from '@theia/core/lib/browser';
 import {
     CellEditOperation, CellEditType, CellUri, NotebookCellInternalMetadata,
-    NotebookCellsChangeType, NotebookCellTextModelSplice, NotebookData, NotebookModelWillAddRemoveEvent, NullablePartialNotebookCellInternalMetadata
+    NotebookCellsChangeType, NotebookCellTextModelSplice, NotebookData, NotebookModelWillAddRemoveEvent, NotebookTextModelChangedEvent, NullablePartialNotebookCellInternalMetadata
 } from '../../common';
 import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from './notebook-cell-model';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import { NotebookKernel } from '../service/notebook-kernel-service';
 
 export const NotebookModelFactory = Symbol('NotebookModelFactory');
 
@@ -58,12 +58,17 @@ export class NotebookModel implements Saveable, Disposable {
     private readonly didAddRemoveCellEmitter = new Emitter<NotebookModelWillAddRemoveEvent>();
     readonly onDidAddOrRemoveCell = this.didAddRemoveCellEmitter.event;
 
+    private readonly onDidChangeContentEmitter = new Emitter<NotebookTextModelChangedEvent>();
+    readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
+
     @inject(FileService)
     private readonly fileService: FileService;
 
     readonly autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
     currentLastHandle: number = 0;
+
+    kernel?: NotebookKernel;
 
     dirty: boolean;
     selectedCell?: NotebookCellModel;

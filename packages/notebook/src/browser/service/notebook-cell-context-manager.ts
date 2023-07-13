@@ -16,10 +16,9 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ContextKeyService, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
-import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE } from '../contributions/notebook-context-keys';
-import { DisposableCollection } from '@theia/core';
+import { Disposable, DisposableCollection } from '@theia/core';
 import { CellKind } from '../../common';
 
 @injectable()

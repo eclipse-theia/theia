@@ -66,6 +66,8 @@ import { NotebookRenderersMainImpl } from './notebooks/notebook-renderers-main';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { NotebookEditorsMainImpl } from './notebooks/notebook-editors-main';
 import { NotebookDocumentsMainImpl } from './notebooks/notebook-documents-main';
+import { NotebookKernelsMainImpl } from './notebooks/notebook-kernels-main';
+import { NotebooksAndEditorsMain } from './notebooks/notebook-documents-and-editors-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -104,8 +106,12 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const pluginSupport = container.get(HostedPluginSupport);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, new NotebooksMainImpl(rpc, notebookService, pluginSupport));
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_MAIN, new NotebookRenderersMainImpl(rpc));
-    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN, new NotebookEditorsMainImpl(rpc));
-    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN, new NotebookDocumentsMainImpl(rpc, container));
+    const notebookEditorsMain = new NotebookEditorsMainImpl(rpc);
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN, notebookEditorsMain);
+    const notebookDocumentsMain = new NotebookDocumentsMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN, notebookDocumentsMain);
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_AND_EDITORS_MAIN, new NotebooksAndEditorsMain(rpc, container, notebookDocumentsMain, notebookEditorsMain));
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_KERNELS_MAIN, new NotebookKernelsMainImpl(rpc, container));
 
     const bulkEditService = container.get(MonacoBulkEditService);
     const monacoEditorService = container.get(MonacoEditorService);

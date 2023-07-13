@@ -32,6 +32,7 @@ import './theia.proposed.extensionsAny';
 import './theia.proposed.externalUriOpener';
 import './theia.proposed.notebookCellExecutionState';
 import './theia.proposed.notebookKernelSource';
+import './theia.proposed.notebookMessaging';
 import './theia.proposed.findTextInFiles';
 import './theia.proposed.fsChunks';
 import './theia.proposed.profileContentHandlers';

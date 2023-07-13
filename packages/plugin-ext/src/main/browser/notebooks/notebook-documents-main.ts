@@ -17,17 +17,19 @@
 import { DisposableCollection } from '@theia/core';
 import { URI, UriComponents } from '@theia/core/lib/common/uri';
 import { interfaces } from '@theia/core/shared/inversify';
-import { ResourceMap } from '@theia/monaco-editor-core/esm/vs/base/common/map';
 import { NotebookModelResolverService } from '@theia/notebook/lib/browser';
-import { MAIN_RPC_CONTEXT, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain } from '../../../common';
+import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
+import { NotebookCellsChangeType } from '@theia/notebook/lib/common';
+import { MAIN_RPC_CONTEXT, NotebookCellsChangedEventDto, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
+import { NotebookDto } from './notebookDto';
 
 export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
 
     private readonly disposables = new DisposableCollection();
 
     private readonly proxy: NotebookDocumentsExt;
-    private readonly documentEventListenersMapping = new ResourceMap<DisposableCollection>();
+    private readonly documentEventListenersMapping = new Map<string, DisposableCollection>();
 
     private readonly notebookModelResolverService: NotebookModelResolverService;
 
@@ -50,83 +52,82 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
         this.documentEventListenersMapping.forEach(value => value.dispose());
     }
 
-    // handleNotebooksAdded(notebooks: readonly NotebookTextModel[]): void {
+    handleNotebooksAdded(notebooks: readonly NotebookModel[]): void {
 
-    //     for (const textModel of notebooks) {
-    //         const disposableStore = new DisposableCollection();
-    //         disposableStore.push(textModel.onDidChangeContent(event => {
+        for (const textModel of notebooks) {
+            const disposableStore = new DisposableCollection();
+            disposableStore.push(textModel.onDidChangeContent(event => {
 
-    //             const eventDto: NotebookCellsChangedEventDto = {
-    //                 versionId: event.versionId,
-    //                 rawEvents: []
-    //             };
+                const eventDto: NotebookCellsChangedEventDto = {
+                    versionId: 1, // TODO implement version ID support
+                    rawEvents: []
+                };
 
-    //             for (const e of event.rawEvents) {
+                for (const e of event.rawEvents) {
 
-    //                 switch (e.kind) {
-    //                     case NotebookCellsChangeType.ModelChange:
-    //                         eventDto.rawEvents.push({
-    //                             kind: e.kind,
-    //                             changes: e.changes.map(diff => [diff[0], diff[1], diff[2].map(cell =>
-    //                                         NotebookDto.toNotebookCellDto(cell))] as [number, number, NotebookCellDto[]])
-    //                         });
-    //                         break;
-    //                     case NotebookCellsChangeType.Move:
-    //                         eventDto.rawEvents.push({
-    //                             kind: e.kind,
-    //                             index: e.index,
-    //                             length: e.length,
-    //                             newIdx: e.newIdx,
-    //                         });
-    //                         break;
-    //                     case NotebookCellsChangeType.Output:
-    //                         eventDto.rawEvents.push({
-    //                             kind: e.kind,
-    //                             index: e.index,
-    //                             outputs: e.outputs.map(NotebookDto.toNotebookOutputDto)
-    //                         });
-    //                         break;
-    //                     case NotebookCellsChangeType.OutputItem:
-    //                         eventDto.rawEvents.push({
-    //                             kind: e.kind,
-    //                             index: e.index,
-    //                             outputId: e.outputId,
-    //                             outputItems: e.outputItems.map(NotebookDto.toNotebookOutputItemDto),
-    //                             append: e.append
-    //                         });
-    //                         break;
-    //                     case NotebookCellsChangeType.ChangeCellLanguage:
-    //                     case NotebookCellsChangeType.ChangeCellContent:
-    //                     case NotebookCellsChangeType.ChangeCellMetadata:
-    //                     case NotebookCellsChangeType.ChangeCellInternalMetadata:
-    //                         eventDto.rawEvents.push(e);
-    //                         break;
-    //                 }
-    //             }
+                    switch (e.kind) {
+                        case NotebookCellsChangeType.ModelChange:
+                            eventDto.rawEvents.push({
+                                kind: e.kind,
+                                changes: []// e.changes.map(diff => [diff[0], diff[1], diff[2]] as [number, number, NotebookCellDataDto[]])
+                            });
+                            break;
+                        case NotebookCellsChangeType.Move:
+                            eventDto.rawEvents.push({
+                                kind: e.kind,
+                                index: e.index,
+                                length: e.length,
+                                newIdx: e.newIdx,
+                            });
+                            break;
+                        case NotebookCellsChangeType.Output:
+                            eventDto.rawEvents.push({
+                                kind: e.kind,
+                                index: e.index,
+                                outputs: e.outputs.map(NotebookDto.toNotebookOutputDto)
+                            });
+                            break;
+                        case NotebookCellsChangeType.OutputItem:
+                            eventDto.rawEvents.push({
+                                kind: e.kind,
+                                index: e.index,
+                                outputId: e.outputId,
+                                outputItems: e.outputItems.map(NotebookDto.toNotebookOutputItemDto),
+                                append: e.append
+                            });
+                            break;
+                        case NotebookCellsChangeType.ChangeCellLanguage:
+                        case NotebookCellsChangeType.ChangeCellContent:
+                        case NotebookCellsChangeType.ChangeCellMetadata:
+                        case NotebookCellsChangeType.ChangeCellInternalMetadata:
+                            eventDto.rawEvents.push(e);
+                            break;
+                    }
+                }
 
-    //             const hasDocumentMetadataChangeEvent = event.rawEvents.find(e => e.kind === NotebookCellsChangeType.ChangeDocumentMetadata);
+                const hasDocumentMetadataChangeEvent = event.rawEvents.find(e => e.kind === NotebookCellsChangeType.ChangeDocumentMetadata);
 
-    //             // using the model resolver service to know if the model is dirty or not.
-    //             // assuming this is the first listener it can mean that at first the model
-    //             // is marked as dirty and that another event is fired
-    //             this.proxy.$acceptModelChanged(
-    //                 textModel.uri,
-    //                 eventDto,
-    //                 this.notebookEditorModelResolverService.isDirty(textModel.uri),
-    //                 hasDocumentMetadataChangeEvent ? textModel.metadata : undefined
-    //             );
-    //         }));
+                // using the model resolver service to know if the model is dirty or not.
+                // assuming this is the first listener it can mean that at first the model
+                // is marked as dirty and that another event is fired
+                this.proxy.$acceptModelChanged(
+                    textModel.uri.toComponents(),
+                    eventDto,
+                    textModel.isDirty(),
+                    hasDocumentMetadataChangeEvent ? textModel.data.metadata : undefined
+                );
+            }));
 
-    //         this.documentEventListenersMapping.set(textModel.uri, disposableStore);
-    //     }
-    // }
+            this.documentEventListenersMapping.set(textModel.uri.toString(), disposableStore);
+        }
+    }
 
-    // handleNotebooksRemoved(uris: URI[]): void {
-    //     for (const uri of uris) {
-    //         this.documentEventListenersMapping.get(uri)?.dispose();
-    //         this.documentEventListenersMapping.delete(uri);
-    //     }
-    // }
+    handleNotebooksRemoved(uris: UriComponents[]): void {
+        for (const uri of uris) {
+            this.documentEventListenersMapping.get(uri.toString())?.dispose();
+            this.documentEventListenersMapping.delete(uri.toString());
+        }
+    }
 
     async $tryCreateNotebook(options: { viewType: string; content?: NotebookDataDto }): Promise<UriComponents> {
         const ref = await this.notebookModelResolverService.resolve({ untitledResource: undefined }, options.viewType);

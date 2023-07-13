@@ -14,9 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI } from '@theia/core';
+import { Emitter, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NotebookData } from '../../common';
@@ -47,7 +46,7 @@ export class NotebookModelResolverService {
 
         const notebookData = await this.resolveExistingNotebookData(arg as URI, viewType!);
 
-        const notebookModel = this.notebookService.createNotebookModel(notebookData, viewType, arg as URI);
+        const notebookModel = await this.notebookService.createNotebookModel(notebookData, viewType, arg as URI);
 
         notebookModel.onDirtyChanged(() => this.onDidChangeDirtyEmitter.fire(notebookModel));
         notebookModel.onDidSaveNotebook(() => this.onDidSaveNotebookEmitter.fire(notebookModel.uri.toComponents()));

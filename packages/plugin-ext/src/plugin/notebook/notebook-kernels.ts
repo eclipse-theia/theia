@@ -25,13 +25,14 @@ import {
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
 import * as theia from '@theia/plugin';
-import { CancellationTokenSource, DisposableCollection, Emitter, URI } from '@theia/core';
-import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
+import { CancellationTokenSource, Disposable, DisposableCollection, Emitter, URI } from '@theia/core';
 import { Cell } from './notebook-document';
 import { NotebooksExtImpl } from './notebooks';
-import { NotebookCellOutput, NotebookCellOutputItem } from '../type-converters';
+import { NotebookCellOutput, NotebookCellOutputItem, NotebookKernelSourceAction } from '../type-converters';
 import { timeout, Deferred } from '@theia/core/lib/common/promise-util';
 import { CellExecutionUpdateType, NotebookCellExecutionState } from '@theia/notebook/lib/common';
+import { CommandRegistryImpl } from '../command-registry';
+import { NotebookRendererScript } from '../types-impl';
 
 interface KernelData {
     extensionId: string;
@@ -60,7 +61,8 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
 
     constructor(
         rpc: RPCProtocol,
-        private notebooks: NotebooksExtImpl
+        private readonly notebooks: NotebooksExtImpl,
+        private readonly commands: CommandRegistryImpl
     ) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_KERNELS_MAIN);
     }
@@ -68,7 +70,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
     private currentHandle = 0;
 
     createNotebookController(extensionId: string, id: string, viewType: string, label: string, handler?: (cells: theia.NotebookCell[],
-        notebook: theia.NotebookDocument, controller: theia.NotebookController) => void | Thenable<void>): theia.NotebookController {
+        notebook: theia.NotebookDocument, controller: theia.NotebookController) => void | Thenable<void>, rendererScripts?: NotebookRendererScript[]): theia.NotebookController {
 
         for (const kernelData of this.kernelData.values()) {
             if (kernelData.controller.id === id && extensionId === kernelData.extensionId) {
@@ -94,6 +96,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
             notebookType: viewType,
             extensionId: extensionId,
             label: label || extensionId,
+            rendererScripts
         };
 
         //
@@ -129,6 +132,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
             get id(): string { return id; },
             get notebookType(): string { return data.notebookType; },
             onDidChangeSelectedNotebooks: onDidChangeSelection.event,
+            onDidReceiveMessage: onDidReceiveMessage.event,
             get label(): string {
                 return data.label;
             },
@@ -162,6 +166,13 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
             },
             set supportsExecutionOrder(value) {
                 data.supportsExecutionOrder = value;
+                update();
+            },
+            get rendererScripts(): NotebookRendererScript[] {
+                return data.rendererScripts ?? [];
+            },
+            set rendererScripts(value) {
+                data.rendererScripts = value;
                 update();
             },
             get executeHandler(): (cells: theia.NotebookCell[], notebook: theia.NotebookDocument, controller: theia.NotebookController) => void | Thenable<void> {
@@ -203,7 +214,12 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
             updateNotebookAffinity(notebook, priority): void {
                 that.proxy.$updateNotebookPriority(handle, notebook.uri, priority);
             },
-
+            async postMessage(message: unknown, editor?: theia.NotebookEditor): Promise<boolean> {
+                return Promise.resolve(true); // TODO needs implementation
+            },
+            asWebviewUri(localResource: theia.Uri): theia.Uri {
+                throw new Error('Method not implemented.');
+            }
         };
 
         this.kernelData.set(handle, {
@@ -359,10 +375,18 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
     }
 
     $cellExecutionChanged(uri: UriComponents, cellHandle: number, state: NotebookCellExecutionState | undefined): void {
-        throw new Error('Method not implemented.'); // Proposed Api though seems needed by jupyter
+        // Proposed Api though seems needed by jupyter for telemetry
     }
-    $provideKernelSourceActions(handle: number, token: CancellationToken): Promise<NotebookKernelSourceActionDto[]> {
-        throw new Error('Method not implemented.');
+
+    async $provideKernelSourceActions(handle: number, token: CancellationToken): Promise<NotebookKernelSourceActionDto[]> {
+        const provider = this.kernelSourceActionProviders.get(handle);
+        if (provider) {
+            const disposables = new DisposableCollection();
+            const ret = await provider.provideNotebookKernelSourceActions(token);
+            return (ret ?? []).map(item => NotebookKernelSourceAction.from(item, this.commands.converter, disposables));
+        }
+        return [];
+
     }
 
 }

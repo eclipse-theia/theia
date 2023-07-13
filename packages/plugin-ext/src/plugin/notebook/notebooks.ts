@@ -19,8 +19,13 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { CancellationToken, Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
+import { URI as TheiaURI } from '../types-impl';
 import * as theia from '@theia/plugin';
-import { NotebookCellStatusBarListDto, NotebookDataDto, NotebookDocumentsAndEditorsDelta, NotebooksExt, NotebooksMain, Plugin, PLUGIN_RPC_CONTEXT } from '../../common';
+import {
+    CommandRegistryExt, ModelAddedData, NotebookCellStatusBarListDto, NotebookDataDto,
+    NotebookDocumentsAndEditorsDelta, NotebookDocumentsMain, NotebookEditorAddData, NotebooksExt, NotebooksMain, Plugin,
+    PLUGIN_RPC_CONTEXT
+} from '../../common';
 import { Cache } from '../../common/cache';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
@@ -28,8 +33,9 @@ import { CommandsConverter } from '../command-registry';
 // import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
 import * as typeConverters from '../type-converters';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { NotebookDocument } from './notebook-document';
-import { NotebookEditorExtImpl } from './notebook-editor';
+import { Cell, NotebookDocument } from './notebook-document';
+import { NotebookEditor } from './notebook-editor';
+import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
 
 export class NotebooksExtImpl implements NotebooksExt {
 
@@ -47,23 +53,45 @@ export class NotebooksExtImpl implements NotebooksExt {
     private DidChangeVisibleNotebookEditorsEmitter = new Emitter<theia.NotebookEditor[]>();
     onDidChangeVisibleNotebookEditors = this.DidChangeVisibleNotebookEditorsEmitter.event;
 
-    private readonly documents = new Map<URI, NotebookDocument>();
-    private readonly editors = new Map<string, NotebookEditorExtImpl>();
+    private activeNotebookEditor: NotebookEditor | undefined;
+    get activeApiNotebookEditor(): theia.NotebookEditor | undefined {
+        return this.activeNotebookEditor?.apiEditor;
+    }
+
+    private visibleNotebookEditors: NotebookEditor[] = [];
+    get visibleApiNotebookEditors(): theia.NotebookEditor[] {
+        return this.visibleNotebookEditors.map(editor => editor.apiEditor);
+    }
+
+    private readonly documents = new Map<string, NotebookDocument>();
+    private readonly editors = new Map<string, NotebookEditor>();
     private statusBarRegistry = new Cache<Disposable>('NotebookCellStatusBarCache');
 
     private notebookProxy: NotebooksMain;
+    private notebookDocumentsProxy: NotebookDocumentsMain;
 
     constructor(
         rpc: RPCProtocol,
-        // private editorsAndDocuments: EditorsAndDocumentsExtImpl
+        commands: CommandRegistryExt,
+        private textDocumentsAndEditors: EditorsAndDocumentsExtImpl,
     ) {
         this.notebookProxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN);
+        this.notebookDocumentsProxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN);
+
+        commands.registerArgumentProcessor({
+            processArgument: (arg: { uri: URI }) => {
+                if (arg && arg.uri && this.documents.has(arg.uri.toString())) {
+                    return this.documents.get(arg.uri.toString())?.apiNotebook;
+                }
+                return arg;
+            }
+        });
     }
 
     async $provideNotebookCellStatusBarItems(handle: number, uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarListDto | undefined> {
         const provider = this.notebookStatusBarItemProviders.get(handle);
         const revivedUri = URI.fromComponents(uri);
-        const document = this.documents.get(revivedUri);
+        const document = this.documents.get(revivedUri.toString());
         if (!document || !provider) {
             return;
         }
@@ -153,7 +181,7 @@ export class NotebooksExtImpl implements NotebooksExt {
         });
     }
 
-    getEditorById(editorId: string): NotebookEditorExtImpl {
+    getEditorById(editorId: string): NotebookEditor {
         const editor = this.editors.get(editorId);
         if (!editor) {
             throw new Error(`unknown text editor: ${editorId}. known editors: ${[...this.editors.keys()]} `);
@@ -161,128 +189,143 @@ export class NotebooksExtImpl implements NotebooksExt {
         return editor;
     }
 
-    $acceptDocumentAndEditorsDelta(delta: NotebookDocumentsAndEditorsDelta): void {
+    async $acceptDocumentsAndEditorsDelta(delta: NotebookDocumentsAndEditorsDelta): Promise<void> {
+        if (delta.removedDocuments) {
+            for (const uri of delta.removedDocuments) {
+                const revivedUri = URI.fromComponents(uri);
+                const document = this.documents.get(revivedUri.toString());
 
-        // if (delta.removedDocuments) {
-        //     for (const uri of delta.removedDocuments) {
-        //         const revivedUri = URI.revive(uri);
-        //         const document = this.documents.get(revivedUri);
+                if (document) {
+                    document.dispose();
+                    this.documents.delete(revivedUri.toString());
+                    // this.editorsAndDocuments.$acceptEditorsAndDocumentsDelta({ removedDocuments: document.apiNotebook.getCells().map(cell => cell.document.uri) });
+                    this.DidCloseNotebookDocumentEmitter.fire(document.apiNotebook);
+                }
 
-        //         if (document) {
-        //             document.dispose();
-        //             this.documents.delete(revivedUri);
-        //             this.editorsAndDocuments.$acceptEditorsAndDocumentsDelta({ removedDocuments: document.apiNotebook.getCells().map(cell => cell.document.uri) });
-        //             this.DidCloseNotebookDocumentEmitter.fire(document.apiNotebook);
-        //         }
+                for (const editor of this.editors.values()) {
+                    if (editor.notebookData.uri.toString() === revivedUri.toString()) {
+                        this.editors.delete(editor.id);
+                    }
+                }
+            }
+        }
 
-        //         for (const editor of this._editors.values()) {
-        //             if (editor.notebookData.uri.toString() === revivedUri.toString()) {
-        //                 this._editors.delete(editor.id);
-        //             }
-        //         }
-        //     }
-        // }
+        if (delta.addedDocuments) {
 
-        // if (delta.addedDocuments) {
+            const addedCellDocuments: ModelAddedData[] = [];
 
-        //     const addedCellDocuments: IModelAddedData[] = [];
+            for (const modelData of delta.addedDocuments) {
+                const uri = TheiaURI.from(modelData.uri);
 
-        //     for (const modelData of delta.value.addedDocuments) {
-        //         const uri = URI.revive(modelData.uri);
+                if (this.documents.has(uri.toString())) {
+                    throw new Error(`adding EXISTING notebook ${uri} `);
+                }
 
-        //         if (this.documents.has(uri)) {
-        //             throw new Error(`adding EXISTING notebook ${uri} `);
-        //         }
+                const document = new NotebookDocument(
+                    this.notebookDocumentsProxy,
+                    this.textDocumentsAndEditors,
+                    uri,
+                    modelData
+                );
 
-        //         const document = new ExtHostNotebookDocument(
-        //             this._notebookDocumentsProxy,
-        //             this._textDocumentsAndEditors,
-        //             this.documents,
-        //             uri,
-        //             modelData
-        //         );
+                // add cell document as theia.TextDocument
+                addedCellDocuments.push(...modelData.cells.map(cell => Cell.asModelAddData(document.apiNotebook, cell)));
 
-        //         // add cell document as theia.TextDocument
-        //         addedCellDocuments.push(...modelData.cells.map(cell => ExtHostCell.asModelAddData(document.apiNotebook, cell)));
+                this.documents.get(uri.toString())?.dispose();
+                this.documents.set(uri.toString(), document);
+                this.textDocumentsAndEditors.$acceptEditorsAndDocumentsDelta({ addedDocuments: addedCellDocuments });
 
-        //         this.documents.get(uri)?.dispose();
-        //         this.documents.set(uri, document);
-        //         this._textDocumentsAndEditors.$acceptDocumentsAndEditorsDelta({ addedDocuments: addedCellDocuments });
+                this.DidOpenNotebookDocumentEmitter.fire(document.apiNotebook);
+            }
+        }
 
-        //         this.DidOpenNotebookDocumentEmitter.fire(document.apiNotebook);
-        //     }
-        // }
+        if (delta.addedEditors) {
+            for (const editorModelData of delta.addedEditors) {
+                if (this.editors.has(editorModelData.id)) {
+                    return;
+                }
 
-        // if (delta.addedEditors) {
-        //     for (const editorModelData of delta.value.addedEditors) {
-        //         if (this._editors.has(editorModelData.id)) {
-        //             return;
-        //         }
+                const revivedUri = URI.fromComponents(editorModelData.documentUri);
+                const document = this.documents.get(revivedUri.toString());
 
-        //         const revivedUri = URI.revive(editorModelData.documentUri);
-        //         const document = this.documents.get(revivedUri);
+                if (document) {
+                    this.createExtHostEditor(document, editorModelData.id, editorModelData);
+                }
+            }
+        }
 
-        //         if (document) {
-        //             this._createExtHostEditor(document, editorModelData.id, editorModelData);
-        //         }
-        //     }
-        // }
+        const removedEditors: NotebookEditor[] = [];
 
-        // const removedEditors: ExtHostNotebookEditor[] = [];
+        if (delta.removedEditors) {
+            for (const editorid of delta.removedEditors) {
+                const editor = this.editors.get(editorid);
 
-        // if (delta.removedEditors) {
-        //     for (const editorid of delta.removedEditors) {
-        //         const editor = this._editors.get(editorid);
+                if (editor) {
+                    this.editors.delete(editorid);
 
-        //         if (editor) {
-        //             this._editors.delete(editorid);
+                    if (this.activeNotebookEditor?.id === editor.id) {
+                        this.activeNotebookEditor = undefined;
+                    }
 
-        //             if (this._activeNotebookEditor?.id === editor.id) {
-        //                 this._activeNotebookEditor = undefined;
-        //             }
+                    removedEditors.push(editor);
+                }
+            }
+        }
 
-        //             removedEditors.push(editor);
-        //         }
-        //     }
-        // }
+        if (delta.visibleEditors) {
+            this.visibleNotebookEditors = delta.visibleEditors.map(id => this.editors.get(id)!).filter(editor => !!editor) as NotebookEditor[];
+            const visibleEditorsSet = new Set<string>();
+            this.visibleNotebookEditors.forEach(editor => visibleEditorsSet.add(editor.id));
 
-        // if (delta.visibleEditors) {
-        //     this._visibleNotebookEditors = delta.visibleEditors.map(id => this._editors.get(id)!).filter(editor => !!editor) as ExtHostNotebookEditor[];
-        //     const visibleEditorsSet = new Set<string>();
-        //     this._visibleNotebookEditors.forEach(editor => visibleEditorsSet.add(editor.id));
+            for (const editor of this.editors.values()) {
+                const newValue = visibleEditorsSet.has(editor.id);
+                editor.acceptVisibility(newValue);
+            }
 
-        //     for (const editor of this._editors.values()) {
-        //         const newValue = visibleEditorsSet.has(editor.id);
-        //         editor._acceptVisibility(newValue);
-        //     }
+            this.visibleNotebookEditors = [...this.editors.values()].map(e => e).filter(e => e.visible);
+            this.DidChangeVisibleNotebookEditorsEmitter.fire(this.visibleApiNotebookEditors);
+        }
 
-        //     this._visibleNotebookEditors = [...this._editors.values()].map(e => e).filter(e => e.visible);
-        //     this.DidChangeVisibleNotebookEditorsEmitter.fire(this.visibleNotebookEditors);
-        // }
-
-        // if (delta.value.newActiveEditor === null) {
-        //     // clear active notebook as current active editor is non-notebook editor
-        //     this._activeNotebookEditor = undefined;
-        // } else if (delta.value.newActiveEditor) {
-        //     const activeEditor = this._editors.get(delta.value.newActiveEditor);
-        //     if (!activeEditor) {
-        //         console.error(`FAILED to find active notebook editor ${delta.value.newActiveEditor}`);
-        //     }
-        //     this._activeNotebookEditor = this._editors.get(delta.value.newActiveEditor);
-        // }
-        // if (delta.value.newActiveEditor !== undefined) {
-        //     this.DidChangeActiveNotebookEditorEmitter.fire(this._activeNotebookEditor?.apiEditor);
-        // }
+        if (delta.newActiveEditor === null) {
+            // clear active notebook as current active editor is non-notebook editor
+            this.activeNotebookEditor = undefined;
+        } else if (delta.newActiveEditor) {
+            const activeEditor = this.editors.get(delta.newActiveEditor);
+            if (!activeEditor) {
+                console.error(`FAILED to find active notebook editor ${delta.newActiveEditor}`);
+            }
+            this.activeNotebookEditor = this.editors.get(delta.newActiveEditor);
+        }
+        if (delta.newActiveEditor !== undefined) {
+            this.DidChangeActiveNotebookEditorEmitter.fire(this.activeNotebookEditor?.apiEditor);
+        }
     }
 
     getNotebookDocument(uri: URI, relaxed: true): NotebookDocument | undefined;
     getNotebookDocument(uri: URI): NotebookDocument;
     getNotebookDocument(uri: URI, relaxed?: true): NotebookDocument | undefined {
-        const result = this.documents.get(uri);
+        const result = this.documents.get(uri.toString());
         if (!result && !relaxed) {
             throw new Error(`NO notebook document for '${uri}'`);
         }
         return result;
+    }
+
+    private createExtHostEditor(document: NotebookDocument, editorId: string, data: NotebookEditorAddData): void {
+
+        if (this.editors.has(editorId)) {
+            throw new Error(`editor with id ALREADY EXSIST: ${editorId}`);
+        }
+
+        const editor = new NotebookEditor(
+            editorId,
+            document,
+            data.visibleRanges.map(typeConverters.NotebookRange.to),
+            data.selections.map(typeConverters.NotebookRange.to),
+            typeof data.viewColumn === 'number' ? typeConverters.ViewColumn.to(data.viewColumn) : undefined
+        );
+
+        this.editors.set(editorId, editor);
     }
 
 }

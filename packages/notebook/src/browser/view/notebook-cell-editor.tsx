@@ -33,15 +33,15 @@ export function CellEditor({ textModelService, monacoServices, notebookModel, ce
     React.useEffect(() => {
         (async () => {
             const editorNode = document.getElementById(uri.toString())!;
-            const cellDocument = await textModelService.createModelReference(uri);
+            const cellDocument = textModelService.get(uri.toString()) ?? (await textModelService.createModelReference(cell.uri)).object;
             const editor = new MonacoEditor(uri,
-                cellDocument.object,
+                cellDocument,
                 editorNode,
                 monacoServices,
                 Object.assign(
                 { minHeight: -1,
                     maxHeight: -1,
-                    model: (await cellDocument.object.load()).textEditorModel,
+                    model: (await cellDocument.load()).textEditorModel,
                 }, MonacoEditorProvider.inlineOptions));
             editor.setLanguage(cell.language);
             editor.getControl().onDidContentSizeChange(() => {

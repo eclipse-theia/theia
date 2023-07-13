@@ -20,12 +20,15 @@
 
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { CellRange } from '@theia/notebook/lib/common';
+import { NotebookEditorWidget } from '@theia/notebook/lib/browser';
 import { MAIN_RPC_CONTEXT, NotebookDocumentShowOptions, NotebookEditorRevealType, NotebookEditorsExt, NotebookEditorsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 
 export class NotebookEditorsMainImpl implements NotebookEditorsMain {
 
     protected readonly proxy: NotebookEditorsExt;
+
+    private readonly mainThreadEditors = new Map<string, NotebookEditorWidget>();
 
     constructor(
         rpc: RPCProtocol,
@@ -43,4 +46,19 @@ export class NotebookEditorsMainImpl implements NotebookEditorsMain {
         throw new Error('Method not implemented.');
     }
 
+    handleEditorsAdded(editors: readonly NotebookEditorWidget[]): void {
+        for (const editor of editors) {
+            this.mainThreadEditors.set(editor.id, editor);
+        }
+    }
+
+    handleEditorsRemoved(editorIds: readonly string[]): void {
+        for (const id of editorIds) {
+            this.mainThreadEditors.get(id)?.dispose();
+            this.mainThreadEditors.delete(id);
+        }
+    }
+
+    dispose(): void {
+    }
 }
