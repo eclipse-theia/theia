@@ -163,6 +163,37 @@ export class NotebookCellModel implements Disposable {
         this.requestCellEditChangeEmitter.fire(false);
     }
 
+    spliceNotebookCellOutputs(splice: NotebookCellOutputsSplice): void {
+        if (splice.deleteCount > 0 && splice.newOutputs.length > 0) {
+            const commonLen = Math.min(splice.deleteCount, splice.newOutputs.length);
+            // update
+            for (let i = 0; i < commonLen; i++) {
+                const currentOutput = this.outputs[splice.start + i];
+                const newOutput = splice.newOutputs[i];
+
+                this.replaceOutputItems(currentOutput.outputId, newOutput);
+            }
+
+            this.outputs.splice(splice.start + commonLen, splice.deleteCount - commonLen, ...splice.newOutputs.slice(commonLen).map(op => new NotebookCellOutputModel(op)));
+            this.ChangeOutputsEmitter.fire({ start: splice.start + commonLen, deleteCount: splice.deleteCount - commonLen, newOutputs: splice.newOutputs.slice(commonLen) });
+        } else {
+            this.outputs.splice(splice.start, splice.deleteCount, ...splice.newOutputs.map(op => new NotebookCellOutputModel(op)));
+            this.ChangeOutputsEmitter.fire(splice);
+        }
+    }
+
+    replaceOutputItems(outputId: string, newOutputItem: CellOutput): boolean {
+        const output = this.outputs.find(out => out.outputId === outputId);
+
+        if (!output) {
+            return false;
+        }
+
+        output.replaceData(newOutputItem);
+        this.ChangeOutputItemsEmitter.fire();
+        return true;
+    }
+
     toDto(): CellData {
         return {
             cellKind: this.cellKind,

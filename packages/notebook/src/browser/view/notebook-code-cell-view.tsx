@@ -33,7 +33,20 @@ export class NotebookCodeCellRenderer implements Cellrenderer {
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
             <CellEditor notebookModel={notebookModel} cell={cell} monacoServices={this.monacoServices} textModelService={this.textModelService}/>
-            {/* {cell.outputs && cell.outputs.flatMap(output => output.outputs.map(item => <div>{new TextDecoder().decode(item.data.buffer)}</div>))} */}
+            <NotebookCodeCellOutputs cell={cell}/>
         </div >;
     }
+}
+
+interface NotebookCellOutputPorps {
+    cell: NotebookCellModel;
+}
+
+function NotebookCodeCellOutputs({cell}: NotebookCellOutputPorps): JSX.Element {
+    const [outputs, setOutputs] = React.useState(cell.outputs);
+    React.useEffect(() => {
+        cell.onDidChangeOutputs(() => setOutputs(cell.outputs));
+    }, []);
+    return <>{outputs && <span>{JSON.stringify(outputs.map(output => output.toDto()))}</span>}</>;
+
 }

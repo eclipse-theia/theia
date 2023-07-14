@@ -32,7 +32,8 @@ import { DisposableCollection, isEmptyObject, isObject } from '@theia/core/lib/c
 import * as notebooks from '@theia/notebook/lib/common';
 import { CommandsConverter } from './command-registry';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { CellRange, isTextStreamMime } from '@theia/notebook/lib/common';
+import { CellData, CellExecutionUpdateType, CellOutput, CellOutputItem, CellRange, isTextStreamMime } from '@theia/notebook/lib/common';
+import { CellExecuteUpdate, CellExecutionComplete } from '@theia/notebook/lib/browser';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -1449,7 +1450,7 @@ export namespace NotebookCellData {
             source: data.value,
             // metadata: data.metadata,
             // internalMetadata: NotebookCellExecutionSummary.from(data.executionSummary ?? {}),
-            outputs: data.outputs ? data.outputs.map(NotebookCellOutput.from) : []
+            outputs: data.outputs ? data.outputs.map(NotebookCellOutputConverter.from) : []
         };
     }
 
@@ -1500,9 +1501,10 @@ export namespace NotebookCellOutputItem {
     }
 }
 
-export namespace NotebookCellOutput {
+export namespace NotebookCellOutputConverter {
     export function from(output: types.NotebookCellOutput): rpc.NotebookOutputDto {
         return {
+            outputId: output.outputId,
             items: output.items.map(NotebookCellOutputItem.from),
             metadata: output.metadata
         };
@@ -1510,7 +1512,7 @@ export namespace NotebookCellOutput {
 
     export function to(output: rpc.NotebookOutputDto): types.NotebookCellOutput {
         const items = output.items.map(NotebookCellOutputItem.to);
-        return new types.NotebookCellOutput(items, output.metadata);
+        return new types.NotebookCellOutput(items, output.outputId, output.metadata);
     }
 
     export function ensureUniqueMimeTypes(items: types.NotebookCellOutputItem[], warn: boolean = false): types.NotebookCellOutputItem[] {
@@ -1578,4 +1580,123 @@ export namespace NotebookKernelSourceAction {
             documentation: item.documentation
         };
     }
+}
+
+export namespace NotebookDto {
+
+    export function toNotebookOutputItemDto(item: CellOutputItem): rpc.NotebookOutputItemDto {
+        return {
+            mime: item.mime,
+            valueBytes: item.data
+        };
+    }
+
+    export function toNotebookOutputDto(output: CellOutput): rpc.NotebookOutputDto {
+        return {
+            outputId: output.outputId,
+            metadata: output.metadata,
+            items: output.outputs.map(toNotebookOutputItemDto)
+        };
+    }
+
+    export function toNotebookCellDataDto(cell: CellData): rpc.NotebookCellDataDto {
+        return {
+            cellKind: cell.cellKind,
+            language: cell.language,
+            source: cell.source,
+            internalMetadata: cell.internalMetadata,
+            metadata: cell.metadata,
+            outputs: cell.outputs.map(toNotebookOutputDto)
+        };
+    }
+
+    // export function toNotebookDataDto(data: NotebookData): rpc.NotebookDataDto {
+    //     return {
+    //         metadata: data.metadata,
+    //         cells: data.cells.map(toNotebookCellDataDto)
+    //     };
+    // }
+
+    export function fromNotebookOutputItemDto(item: rpc.NotebookOutputItemDto): CellOutputItem {
+        return {
+            mime: item.mime,
+            data: item.valueBytes
+        };
+    }
+
+    export function fromNotebookOutputDto(output: rpc.NotebookOutputDto): CellOutput {
+        return {
+            outputId: output.outputId,
+            metadata: output.metadata,
+            outputs: output.items.map(fromNotebookOutputItemDto)
+        };
+    }
+
+    export function fromNotebookCellDataDto(cell: rpc.NotebookCellDataDto): CellData {
+        return {
+            cellKind: cell.cellKind,
+            language: cell.language,
+            source: cell.source,
+            outputs: cell.outputs.map(fromNotebookOutputDto),
+            metadata: cell.metadata,
+            internalMetadata: cell.internalMetadata
+        };
+    }
+
+    // export function fromNotebookDataDto(data: rpc.NotebookDataDto): NotebookData {
+    //     return {
+    //         metadata: data.metadata,
+    //         cells: data.cells.map(fromNotebookCellDataDto)
+    //     };
+    // }
+
+    // export function toNotebookCellDto(cell: Cell): rpc.NotebookCellDto {
+    //     return {
+    //         handle: cell.handle,
+    //         uri: cell.uri,
+    //         source: cell.textBuffer.getLinesContent(),
+    //         eol: cell.textBuffer.getEOL(),
+    //         language: cell.language,
+    //         cellKind: cell.cellKind,
+    //         outputs: cell.outputs.map(toNotebookOutputDto),
+    //         metadata: cell.metadata,
+    //         internalMetadata: cell.internalMetadata,
+    //     };
+    // }
+
+    export function fromCellExecuteUpdateDto(data: rpc.CellExecuteUpdateDto): CellExecuteUpdate {
+        if (data.editType === CellExecutionUpdateType.Output) {
+            return {
+                editType: data.editType,
+                cellHandle: data.cellHandle,
+                append: data.append,
+                outputs: data.outputs.map(fromNotebookOutputDto)
+            };
+        } else if (data.editType === CellExecutionUpdateType.OutputItems) {
+            return {
+                editType: data.editType,
+                append: data.append,
+                items: data.items.map(fromNotebookOutputItemDto)
+            };
+        } else {
+            return data;
+        }
+    }
+
+    export function fromCellExecuteCompleteDto(data: rpc.CellExecutionCompleteDto): CellExecutionComplete {
+        return data;
+    }
+
+    // export function fromCellEditOperationDto(edit: rpc.CellEditOperationDto): CellEditOperation {
+    //     if (edit.editType === CellEditType.Replace) {
+    //         return {
+    //             editType: edit.editType,
+    //             index: edit.index,
+    //             count: edit.count,
+    //             cells: edit.cells.map(fromNotebookCellDataDto)
+    //         };
+    //     } else {
+    //         return edit;
+    //     }
+    // }
 }

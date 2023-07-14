@@ -30,6 +30,7 @@ export namespace NotebookDto {
 
     export function toNotebookOutputDto(output: notebookCommon.CellOutput): rpc.NotebookOutputDto {
         return {
+            outputId: output.outputId,
             metadata: output.metadata,
             items: output.outputs.map(toNotebookOutputItemDto)
         };
@@ -62,6 +63,7 @@ export namespace NotebookDto {
 
     export function fromNotebookOutputDto(output: rpc.NotebookOutputDto): notebookCommon.CellOutput {
         return {
+            outputId: output.outputId,
             metadata: output.metadata,
             outputs: output.items.map(fromNotebookOutputItemDto)
         };

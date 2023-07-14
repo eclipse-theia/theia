@@ -83,6 +83,7 @@ export interface CellOutputItem {
 }
 
 export interface CellOutput {
+    outputId: string;
     outputs: CellOutputItem[];
     metadata?: Record<string, unknown>;
 }
@@ -302,6 +303,32 @@ export interface CellExecutionStateUpdateDto {
     isPaused?: boolean;
 }
 
+export interface CellOutputEdit {
+    editType: CellEditType.Output;
+    index: number;
+    outputs: CellOutput[];
+    append?: boolean;
+}
+
+export interface CellOutputEditByHandle {
+    editType: CellEditType.Output;
+    handle: number;
+    outputs: CellOutput[];
+    append?: boolean;
+}
+
+export interface CellOutputItemEdit {
+    editType: CellEditType.OutputItems;
+    items: CellOutputItem[];
+    append?: boolean;
+}
+
+export interface CellMetadataEdit {
+    editType: CellEditType.Metadata;
+    index: number;
+    metadata: NotebookCellMetadata;
+}
+
 export const enum CellEditType {
     Replace = 1,
     Output = 2,
@@ -314,8 +341,8 @@ export const enum CellEditType {
     PartialInternalMetadata = 9,
 }
 
-export type ImmediateCellEditOperation = CellPartialInternalMetadataEditByHandle; // add more later on
-export type CellEditOperation = ImmediateCellEditOperation | CellReplaceEdit; // add more later on
+export type ImmediateCellEditOperation = CellOutputEditByHandle | CellOutputItemEdit | CellPartialInternalMetadataEditByHandle; // add more later on
+export type CellEditOperation = ImmediateCellEditOperation | CellReplaceEdit | CellOutputEdit | CellMetadataEdit; // add more later on
 
 export type NullablePartialNotebookCellInternalMetadata = {
     [Key in keyof Partial<NotebookCellInternalMetadata>]: NotebookCellInternalMetadata[Key] | null
