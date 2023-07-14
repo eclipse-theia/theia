@@ -81,7 +81,7 @@ export class Cell {
         this.handle = cellData.handle;
         this.uri = URI.fromComponents(cellData.uri);
         this.cellKind = cellData.cellKind;
-        this.outputs = cellData.outputs.map(typeConverters.NotebookCellOutput.to);
+        this.outputs = cellData.outputs.map(typeConverters.NotebookCellOutputConverter.to);
         this.internalMetadata = cellData.internalMetadata ?? {};
         this.metadata = Object.freeze(cellData.metadata ?? {});
         this.previousResult = Object.freeze(typeConverters.NotebookCellExecutionSummary.to(cellData.internalMetadata ?? {}));
@@ -109,7 +109,7 @@ export class Cell {
     }
 
     setOutputs(newOutputs: NotebookOutputDto[]): void {
-        this.outputs = newOutputs.map(typeConverters.NotebookCellOutput.to);
+        this.outputs = newOutputs.map(typeConverters.NotebookCellOutputConverter.to);
     }
 
     // setOutputItems(outputId: string, append: boolean, newOutputItems: NotebookOutputItemDto[]): void {
@@ -348,7 +348,7 @@ export class NotebookDocument implements Disposable {
 
         splices.reverse().forEach(splice => {
             const cellDtos = splice[2];
-            const newCells = cellDtos.map(cell => {
+            const newCells = cellDtos.map((cell: NotebookCellDto) => {
 
                 const extCell = new Cell(this, this.editorsAndDocuments, cell);
                 if (!initialization) {

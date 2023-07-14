@@ -293,18 +293,18 @@ class CellExecutionStateChangedEvent {
 
 function updateToEdit(update: CellExecuteUpdate, cellHandle: number): CellEditOperation {
     if (update.editType === CellExecutionUpdateType.Output) {
-        // return {
-        //     editType: CellEditType.Output,
-        //     handle: update.cellHandle,
-        //     append: update.append,
-        //     outputs: update.outputs,
-        // };
+        return {
+            editType: CellEditType.Output,
+            handle: update.cellHandle,
+            append: update.append,
+            outputs: update.outputs,
+        };
     } else if (update.editType === CellExecutionUpdateType.OutputItems) {
-        // return {
-        //     editType: CellEditType.OutputItems,
-        //     items: update.items,
-        //     append: update.append,
-        // };
+        return {
+            editType: CellEditType.OutputItems,
+            items: update.items,
+            append: update.append,
+        };
     } else if (update.editType === CellExecutionUpdateType.ExecutionState) {
         const newInternalMetadata: Partial<NotebookCellInternalMetadata> = {};
         if (typeof update.executionOrder !== 'undefined') {

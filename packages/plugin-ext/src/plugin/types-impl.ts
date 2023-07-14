@@ -1174,14 +1174,21 @@ export class NotebookCellData implements theia.NotebookCellData {
 
 @es5ClassCompat
 export class NotebookCellOutput implements theia.NotebookCellOutput {
+    outputId: string;
     items: theia.NotebookCellOutputItem[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metadata?: { [key: string]: any };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    constructor(items: theia.NotebookCellOutputItem[], metadata?: { [key: string]: any }) {
+    constructor(items: theia.NotebookCellOutputItem[], idOrMetadata?: string | Record<string, any>, metadata?: { [key: string]: any }) {
         this.items = items;
-        this.metadata = metadata;
+        if (typeof idOrMetadata === 'string') {
+            this.outputId = idOrMetadata;
+            this.metadata = metadata;
+        } else {
+            this.outputId = UUID.uuid4();
+            this.metadata = idOrMetadata ?? metadata;
+        }
     }
 }
 
@@ -1348,7 +1355,7 @@ export class NotebookEdit implements theia.NotebookEdit {
     newNotebookMetadata?: { [key: string]: any; } | undefined;
 
     static replaceCells(range: NotebookRange, newCells: NotebookCellData[]): NotebookEdit {
-        return new NotebookEdit();
+        return { range, newCells };
     }
 
     static insertCells(index: number, newCells: NotebookCellData[]): NotebookEdit {

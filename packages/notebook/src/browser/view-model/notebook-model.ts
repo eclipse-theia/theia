@@ -192,13 +192,27 @@ export class NotebookModel implements Saveable, Disposable {
             };
         }).filter(edit => !!edit);
 
-        for (const edit of editsWithDetails) {
-            switch (edit.edit.editType) {
+        for (const { edit, cellIndex } of editsWithDetails) {
+            switch (edit.editType) {
                 case CellEditType.Replace:
                     break;
-                // case CellEditType.Output: {
-                //     break;
-                // }
+                case CellEditType.Output: {
+                    const cell = this.cells[cellIndex];
+                    if (edit.append) {
+                        cell.spliceNotebookCellOutputs({ deleteCount: 0, newOutputs: edit.outputs, start: cell.outputs.length });
+                    } else {
+                        // could definitely be more efficient. See vscode __spliceNotebookCellOutputs2
+                        for (const output of edit.outputs) {
+                            cell.spliceNotebookCellOutputs({
+                                deleteCount: 1,
+                                newOutputs: [output],
+                                start: cell.outputs.findIndex(outputModel => outputModel.outputId === output.outputId)
+                            });
+                        }
+                    }
+
+                    break;
+                }
                 // case CellEditType.OutputItems:
                 //     break;
                 // case CellEditType.Metadata:
@@ -206,7 +220,7 @@ export class NotebookModel implements Saveable, Disposable {
                 // case CellEditType.PartialMetadata:
                 //     break;
                 case CellEditType.PartialInternalMetadata:
-                    this.changeCellInternalMetadataPartial(this.cells[edit.cellIndex], edit.edit.internalMetadata);
+                    this.changeCellInternalMetadataPartial(this.cells[cellIndex], edit.internalMetadata);
                     break;
                 // case CellEditType.CellLanguage:
                 //     break;

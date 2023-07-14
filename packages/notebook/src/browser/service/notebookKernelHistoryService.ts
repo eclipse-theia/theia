@@ -86,7 +86,7 @@ export class NotebookKernelHistoryService implements Disposable {
             notEmpty = notEmpty || Object.entries(kernels).length > 0;
         }
 
-        this.storageService.setData(NotebookKernelHistoryService.STORAGE_KEY, notEmpty ? JSON.stringify(this.mostRecentKernelsMap) : undefined);
+        this.storageService.setData(NotebookKernelHistoryService.STORAGE_KEY, notEmpty ? this.mostRecentKernelsMap : undefined);
     }
 
     private async loadState(): Promise<void> {

@@ -2219,6 +2219,7 @@ export interface NotebookOutputItemDto {
 }
 
 export interface NotebookOutputDto {
+    outputId: string;
     items: NotebookOutputItemDto[];
     metadata?: Record<string, any>;
 }

@@ -21,12 +21,13 @@
 import { CancellationToken, Disposable, Emitter, Event, URI } from '@theia/core';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
-import { CellExecutionCompleteDto, CellExecutionStateUpdateDto, MAIN_RPC_CONTEXT, NotebookKernelDto, NotebookKernelsExt, NotebookKernelsMain } from '../../../common';
+import { CellExecuteUpdateDto, CellExecutionCompleteDto, MAIN_RPC_CONTEXT, NotebookKernelDto, NotebookKernelsExt, NotebookKernelsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { CellExecution, NotebookExecutionStateService, NotebookKernelChangeEvent, NotebookKernelService, NotebookService } from '@theia/notebook/lib/browser';
 import { combinedDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { interfaces } from '@theia/core/shared/inversify';
 import { NotebookKernelSourceAction } from '@theia/notebook/lib/common';
+import { NotebookDto } from '../../../plugin/type-converters';
 
 abstract class NotebookKernel {
     private readonly onDidChangeEmitter = new Emitter<NotebookKernelChangeEvent>();
@@ -158,7 +159,7 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
             }
         }(data, this.languageService);
 
-        const listener = this.notebookKernelService.onDidChangeSelectedNotebooks(e => {
+        const listener = this.notebookKernelService.onDidChangeSelectedKernel(e => {
             if (e.oldKernel === kernel.id) {
                 this.proxy.$acceptNotebookAssociation(handle, e.notebook.toComponents(), false);
             } else if (e.newKernel === kernel.id) {
@@ -189,6 +190,7 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
     $updateNotebookPriority(handle: number, uri: UriComponents, value: number | undefined): void {
         throw new Error('Method not implemented.');
     }
+
     $createExecution(handle: number, controllerId: string, uriComponents: UriComponents, cellHandle: number): void {
         const uri = URI.fromComponents(uriComponents);
         const notebook = this.notebookService.getNotebookEditorModel(uri);
@@ -204,12 +206,23 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
         execution.confirm();
         this.executions.set(handle, execution);
     }
-    $updateExecution(handle: number, data: CellExecutionStateUpdateDto[]): void {
-        throw new Error('Method not implemented.');
+
+    $updateExecution(handle: number, updates: CellExecuteUpdateDto[]): void {
+        const execution = this.executions.get(handle);
+        execution?.update(updates.map(NotebookDto.fromCellExecuteUpdateDto));
+
     }
     $completeExecution(handle: number, data: CellExecutionCompleteDto): void {
-        throw new Error('Method not implemented.');
+        try {
+            const execution = this.executions.get(handle);
+            execution?.complete(NotebookDto.fromCellExecuteCompleteDto(data));
+        } finally {
+            this.executions.delete(handle);
+        }
+
     }
+
+    // TODO implement notebook execution (special api for exectuting full notebook instead of just cells)
     $createNotebookExecution(handle: number, controllerId: string, uri: UriComponents): void {
         throw new Error('Method not implemented.');
     }
@@ -219,6 +232,7 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
     $completeNotebookExecution(handle: number): void {
         throw new Error('Method not implemented.');
     }
+
     async $addKernelDetectionTask(handle: number, notebookType: string): Promise<void> {
         const kernelDetectionTask = new KernelDetectionTask(notebookType);
         const registration = this.notebookKernelService.registerNotebookKernelDetectionTask(kernelDetectionTask);

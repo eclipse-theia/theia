@@ -28,11 +28,11 @@ import * as theia from '@theia/plugin';
 import { CancellationTokenSource, Disposable, DisposableCollection, Emitter, URI } from '@theia/core';
 import { Cell } from './notebook-document';
 import { NotebooksExtImpl } from './notebooks';
-import { NotebookCellOutput, NotebookCellOutputItem, NotebookKernelSourceAction } from '../type-converters';
+import { NotebookCellOutputConverter, NotebookCellOutputItem, NotebookKernelSourceAction } from '../type-converters';
 import { timeout, Deferred } from '@theia/core/lib/common/promise-util';
 import { CellExecutionUpdateType, NotebookCellExecutionState } from '@theia/notebook/lib/common';
 import { CommandRegistryImpl } from '../command-registry';
-import { NotebookRendererScript } from '../types-impl';
+import { NotebookCellOutput, NotebookRendererScript } from '../types-impl';
 
 interface KernelData {
     extensionId: string;
@@ -96,7 +96,6 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
             notebookType: viewType,
             extensionId: extensionId,
             label: label || extensionId,
-            rendererScripts
         };
 
         //
@@ -458,21 +457,21 @@ class NotebookCellExecutionTask implements Disposable {
         return cell.handle;
     }
 
-    private validateAndConvertOutputs(items: theia.NotebookCellOutput[]): NotebookOutputDto[] {
+    private validateAndConvertOutputs(items: NotebookCellOutput[]): NotebookOutputDto[] {
         return items.map(output => {
-            const newOutput = NotebookCellOutput.ensureUniqueMimeTypes(output.items, true);
+            const newOutput = NotebookCellOutputConverter.ensureUniqueMimeTypes(output.items, true);
             if (newOutput === output.items) {
-                return NotebookCellOutput.from(output);
+                return NotebookCellOutputConverter.from(output);
             }
-            return NotebookCellOutput.from({
+            return NotebookCellOutputConverter.from({
                 items: newOutput,
-                // id: output.id,
+                outputId: output.outputId,
                 metadata: output.metadata
             });
         });
     }
 
-    private async updateOutputs(outputs: theia.NotebookCellOutput | theia.NotebookCellOutput[], cell: theia.NotebookCell | undefined, append: boolean): Promise<void> {
+    private async updateOutputs(outputs: NotebookCellOutput | NotebookCellOutput[], cell: theia.NotebookCell | undefined, append: boolean): Promise<void> {
         const handle = this.cellIndexToHandle(cell);
         const outputDtos = this.validateAndConvertOutputs(Array.isArray(outputs) ? outputs : [outputs]);
         return this.updateSoon(
@@ -485,7 +484,7 @@ class NotebookCellExecutionTask implements Disposable {
     }
 
     private async updateOutputItems(items: theia.NotebookCellOutputItem | theia.NotebookCellOutputItem[], output: theia.NotebookCellOutput, append: boolean): Promise<void> {
-        items = NotebookCellOutput.ensureUniqueMimeTypes(Array.isArray(items) ? items : [items], true);
+        items = NotebookCellOutputConverter.ensureUniqueMimeTypes(Array.isArray(items) ? items : [items], true);
         return this.updateSoon({
             editType: CellExecutionUpdateType.OutputItems,
             items: items.map(NotebookCellOutputItem.from),
@@ -544,12 +543,12 @@ class NotebookCellExecutionTask implements Disposable {
                 return that.updateOutputs([], cell, false);
             },
 
-            appendOutput(outputs: theia.NotebookCellOutput | theia.NotebookCellOutput[], cell?: theia.NotebookCell): Promise<void> {
+            appendOutput(outputs: NotebookCellOutput | NotebookCellOutput[], cell?: theia.NotebookCell): Promise<void> {
                 that.verifyStateForOutput();
                 return that.updateOutputs(outputs, cell, true);
             },
 
-            replaceOutput(outputs: theia.NotebookCellOutput | theia.NotebookCellOutput[], cell?: theia.NotebookCell): Promise<void> {
+            replaceOutput(outputs: NotebookCellOutput | NotebookCellOutput[], cell?: theia.NotebookCell): Promise<void> {
                 that.verifyStateForOutput();
                 return that.updateOutputs(outputs, cell, false);
             },

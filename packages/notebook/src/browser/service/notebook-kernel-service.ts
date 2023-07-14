@@ -24,7 +24,7 @@ import { NotebookKernelSourceAction } from '../../common';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from './notebook-service';
 
-export interface SelectedNotebooksChangeEvent {
+export interface SelectedNotebookKernelChangeEvent {
     notebook: URI;
     oldKernel: string | undefined;
     newKernel: string | undefined;
@@ -174,8 +174,8 @@ export class NotebookKernelService implements Disposable {
     private readonly onDidRemoveKernelEmitter = new Emitter<NotebookKernel>();
     readonly onDidRemoveKernel: Event<NotebookKernel> = this.onDidRemoveKernelEmitter.event;
 
-    private readonly onDidChangeSelectedNotebooksEmitter = new Emitter<SelectedNotebooksChangeEvent>();
-    readonly onDidChangeSelectedNotebooks: Event<SelectedNotebooksChangeEvent> = this.onDidChangeSelectedNotebooksEmitter.event;
+    private readonly onDidChangeSelectedNotebookKernelBindingEmitter = new Emitter<SelectedNotebookKernelChangeEvent>();
+    readonly onDidChangeSelectedKernel: Event<SelectedNotebookKernelChangeEvent> = this.onDidChangeSelectedNotebookKernelBindingEmitter.event;
 
     private readonly onDidChangeNotebookAffinityEmitter = new Emitter<void>();
     readonly onDidChangeNotebookAffinity: Event<void> = this.onDidChangeNotebookAffinityEmitter.event;
@@ -230,6 +230,7 @@ export class NotebookKernelService implements Disposable {
             } else {
                 this.notebookBindings.delete(key);
             }
+            this.onDidChangeSelectedNotebookKernelBindingEmitter.fire({ notebook: notebook.uri, oldKernel, newKernel: kernel?.id });
         }
     }
 
@@ -307,7 +308,7 @@ export class NotebookKernelService implements Disposable {
         this.onDidChangeSourceActionsEmitter.dispose();
         this.onDidAddKernelEmitter.dispose();
         this.onDidRemoveKernelEmitter.dispose();
-        this.onDidChangeSelectedNotebooksEmitter.dispose();
+        this.onDidChangeSelectedNotebookKernelBindingEmitter.dispose();
         this.onDidChangeNotebookAffinityEmitter.dispose();
     }
 }
