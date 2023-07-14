@@ -32,6 +32,7 @@ interface CheckDependenciesOptions {
     skipHoisted: boolean,
     skipUniqueness: boolean,
     skipSingleTheiaVersion: boolean,
+    onlyTheiaExtensions: boolean,
     suppress: boolean
 }
 
@@ -46,7 +47,9 @@ interface Package {
     /** Whether the package is hoisted or not, i.e., whether it is contained in the root `node_modules`. */
     hoisted: boolean,
     /** Workspace location in which the package was found. */
-    dependent: string | undefined
+    dependent: string | undefined,
+    /** Whether the package is a Theia extension or not */
+    isTheiaExtension?: boolean,
 }
 
 /** Issue found with a specific package. */
@@ -122,9 +125,14 @@ function findDependencies(workspace: string, options: CheckDependenciesOptions):
                 `[^@]*/*/**/${PACKAGE_JSON}`, // package.json that isn't at the package root (and not in an @org)
                 `@*/*/*/**/${PACKAGE_JSON}`, // package.json that isn't at the package root (and in an @org)
                 ...options.exclude] // user-specified exclude patterns
-        }).forEach(packageJson =>
-            matchingPackageJsons.push(toDependency(packageJson, nodeModulesDir, dependent))
-        )
+        }).forEach(packageJsonPath => {
+            const dependency = toDependency(packageJsonPath, nodeModulesDir, dependent);
+            if (!options.onlyTheiaExtensions || dependency.isTheiaExtension) {
+                matchingPackageJsons.push(dependency);
+            }
+            const childNodeModules: string = path.join(nodeModulesDir, packageJsonPath, '..');
+            matchingPackageJsons.push(...findDependencies(childNodeModules, options));
+        })
     );
     return matchingPackageJsons;
 }
@@ -138,7 +146,8 @@ function toDependency(packageJsonPath: string, nodeModulesDir: string, dependent
         version: version ?? 'unknown',
         path: path.relative(process.cwd(), fullPackageJsonPath),
         hoisted: nodeModulesDir === NODE_MODULES,
-        dependent: dependent
+        dependent: dependent,
+        isTheiaExtension: isTheiaExtension(fullPackageJsonPath)
     };
 }
 
@@ -155,6 +164,15 @@ function getPackageName(fullPackageJsonPath: string): string | undefined {
         return require(fullPackageJsonPath).name;
     } catch (error) {
         return undefined;
+    }
+}
+
+function isTheiaExtension(fullPackageJsonPath: string): boolean {
+    try {
+        const theiaExtension = require(fullPackageJsonPath).theiaExtensions;
+        return theiaExtension ? true : false;
+    } catch (error) {
+        return false;
     }
 }
 

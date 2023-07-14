@@ -201,6 +201,7 @@ async function theiaCli(): Promise<void> {
                     skipHoisted: false,
                     skipUniqueness: true,
                     skipSingleTheiaVersion: true,
+                    onlyTheiaExtensions: false,
                     suppress
                 });
             }
@@ -226,6 +227,33 @@ async function theiaCli(): Promise<void> {
                     skipHoisted: true,
                     skipUniqueness: false,
                     skipSingleTheiaVersion: false,
+                    onlyTheiaExtensions: false,
+                    suppress
+                });
+            }
+        })
+        .command<{
+            suppress: boolean
+        }>({
+            command: 'check:theia-extensions',
+            describe: 'Check uniqueness of Theia extension versions or whether they are hoisted',
+            builder: {
+                'suppress': {
+                    alias: 's',
+                    describe: 'Suppress exiting with failure code',
+                    boolean: true,
+                    default: false
+                }
+            },
+            handler: ({ suppress }) => {
+                checkDependencies({
+                    workspaces: undefined,
+                    include: ['**'],
+                    exclude: [],
+                    skipHoisted: true,
+                    skipUniqueness: false,
+                    skipSingleTheiaVersion: true,
+                    onlyTheiaExtensions: true,
                     suppress
                 });
             }
@@ -237,6 +265,7 @@ async function theiaCli(): Promise<void> {
             skipHoisted: boolean,
             skipUniqueness: boolean,
             skipSingleTheiaVersion: boolean,
+            onlyTheiaExtensions: boolean,
             suppress: boolean
         }>({
             command: 'check:dependencies',
@@ -280,6 +309,12 @@ async function theiaCli(): Promise<void> {
                     boolean: true,
                     default: false
                 },
+                'only-theia-extensions': {
+                    alias: 'o',
+                    describe: 'Only check dependencies which are Theia extensions',
+                    boolean: true,
+                    default: false
+                },
                 'suppress': {
                     alias: 's',
                     describe: 'Suppress exiting with failure code',
@@ -294,6 +329,7 @@ async function theiaCli(): Promise<void> {
                 skipHoisted,
                 skipUniqueness,
                 skipSingleTheiaVersion,
+                onlyTheiaExtensions,
                 suppress
             }) => {
                 checkDependencies({
@@ -303,6 +339,7 @@ async function theiaCli(): Promise<void> {
                     skipHoisted,
                     skipUniqueness,
                     skipSingleTheiaVersion,
+                    onlyTheiaExtensions,
                     suppress
                 });
             }
