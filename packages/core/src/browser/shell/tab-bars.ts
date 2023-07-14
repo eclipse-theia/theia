@@ -535,11 +535,14 @@ export class TabBarRenderer extends TabBar.Renderer {
                         // Use the current visible editor as a fallback if not available
                         const height: number = visualPreview.style.height === '' ? this.tabBar.currentTitle!.owner.node.offsetHeight : parseFloat(visualPreview.style.height);
                         const width: number = visualPreview.style.width === '' ? this.tabBar.currentTitle!.owner.node.offsetWidth : parseFloat(visualPreview.style.width);
+                        const desiredRatio = 9 / 16;
+                        const desiredHeight = desiredWidth * desiredRatio;
                         const ratio = height / width;
                         visualPreviewDiv.style.width = `${desiredWidth}px`;
-                        visualPreviewDiv.style.height = `${desiredWidth * ratio}px`;
+                        visualPreviewDiv.style.height = `${desiredHeight}px`;
 
-                        const scale = desiredWidth / width;
+                        // If the view is wider than the desiredRatio scale the width and crop the height. If the view is longer its the other way around.
+                        const scale = ratio < desiredRatio ? (desiredHeight / height) : (desiredWidth / width);
                         visualPreview.style.transform = `scale(${scale},${scale})`;
                         visualPreview.style.removeProperty('top');
                         visualPreview.style.removeProperty('left');

@@ -474,6 +474,8 @@
   margin: 4px 4px;
   pointer-events: none;
   background: var(--theia-editor-background);
+  position: relative;
+  overflow: hidden;
 }
 
 .enhanced-preview {
