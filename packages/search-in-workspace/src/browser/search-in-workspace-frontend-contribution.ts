@@ -371,6 +371,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         keybindings.registerKeybinding({
             command: SearchInWorkspaceCommands.PREVIOUS_MATCH.id,
             keybinding: 'shift+f4',
+            when: 'searchViewletFocus'
         });
         keybindings.registerKeybinding({
             command: SearchInWorkspaceCommands.DISMISS_RESULT.id,
