@@ -847,11 +847,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     protected renderReplaceButton(node: TreeNode): React.ReactNode {
         const isResultLineNode = SearchInWorkspaceResultLineNode.is(node);
         return <span className={isResultLineNode ? codicon('replace') : codicon('replace-all')}
-                     onClick={e => this.doReplace(node, e)}
-                     title={isResultLineNode
-                         ? nls.localizeByDefault('Replace')
-                         : nls.localizeByDefault('Replace All')
-                     }></span>;
+             onClick={e => this.doReplace(node, e)}
+             title={isResultLineNode
+                 ? nls.localizeByDefault('Replace')
+                 : nls.localizeByDefault('Replace All')
+             }></span>;
     }
 
     protected getFileCount(node: TreeNode): number {
@@ -1082,7 +1082,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return <div className='result'>
             <div className='result-head'>
                 <div className={`result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}`}
-                     title={new URI(node.fileUri).path.fsPath()}>
+                    title={new URI(node.fileUri).path.fsPath()}>
                     <span className={`file-icon ${this.toNodeIcon(node)}`}></span>
                     <div className='noWrapInfo'>
                         <span className={'file-name'}>
