@@ -589,14 +589,112 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         });
     }
 
+    /**
+     * Selects and focuses the first result in the result tree.
+     */
     focusFirstResult(): void {
-        if (SearchInWorkspaceRoot.is(this.model.root) && this.model.root.children.length > 0) {
-            const node = this.model.root.children[0];
-            if (SelectableTreeNode.is(node)) {
-                this.node.focus();
-                this.model.selectNode(node);
+        for (const rootFolderNode of this.resultTree.values()) {
+            for (const fileNode of rootFolderNode.children) {
+                for (const line of fileNode.children) {
+                    if (SearchInWorkspaceResultLineNode.is(line)) {
+                        this.model.selectNode(line);
+                        this.node.focus();
+                        return;
+                    }
+                }
             }
         }
+    }
+
+    /**
+     * Selects and focuses the last result in the result tree.
+     */
+    focusLastResult(): void {
+        for (const rootFolderNode of this.resultTree.values()) {
+            for (let i = rootFolderNode.children.length - 1; i >= 0; i--) {
+                const fileNode = rootFolderNode.children[i];
+                for (let j = fileNode.children.length - 1; j >= 0; j--) {
+                    const line = fileNode.children[j];
+                    if (SearchInWorkspaceResultLineNode.is(line)) {
+                        this.model.selectNode(line);
+                        this.node.focus();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Selects and focuses the next result in the result tree.
+     * If there is no next result, the first result is focused.
+     */
+    focusNextResult(): void {
+        const focusedResultLineNode = this.model.getFocusedNode();
+        if (!focusedResultLineNode) {
+            return this.focusFirstResult();
+        }
+
+        let foundFocusedResultLineNode = false;
+        for (const rootFolderNode of this.resultTree.values()) {
+            for (const fileNode of rootFolderNode.children) {
+                for (const line of fileNode.children) {
+                    if (SearchInWorkspaceResultLineNode.is(line)) {
+                        if (foundFocusedResultLineNode) {
+                            this.expansionService.expandNode(fileNode);
+                            this.model.selectNode(line);
+                            this.node.focus();
+                            return;
+                        }
+                        if (line === focusedResultLineNode) {
+                            foundFocusedResultLineNode = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // the focused node is not in the result tree
+        // or there is no next result
+        this.focusFirstResult();
+    }
+
+    /**
+     * Selects and focuses the previous result in the result tree.
+     * If there is no previous result, the last result is focused.
+     */
+    focusPreviousResult(): void {
+        const focusedResultLineNode = this.model.getFocusedNode();
+        if (!focusedResultLineNode) {
+            return this.focusLastResult();
+        }
+
+        let foundFocusedResultLineNode = false;
+        const rootFolderNodes = Array.from(this.resultTree.values());
+        for (let i = rootFolderNodes.length - 1; i >= 0; i--) {
+            const rootFolderNode = rootFolderNodes[i];
+            for (let j = rootFolderNode.children.length - 1; j >= 0; j--) {
+                const fileNode = rootFolderNode.children[j];
+                for (let k = fileNode.children.length - 1; k >= 0; k--) {
+                    const line = fileNode.children[k];
+                    if (SearchInWorkspaceResultLineNode.is(line)) {
+                        if (foundFocusedResultLineNode) {
+                            this.expansionService.expandNode(fileNode);
+                            this.model.selectNode(line);
+                            this.node.focus();
+                            return;
+                        }
+                        if (line === focusedResultLineNode) {
+                            foundFocusedResultLineNode = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // the focused node is not in the result tree
+        // or there is no previous result
+        this.focusLastResult();
     }
 
     /**
@@ -749,11 +847,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     protected renderReplaceButton(node: TreeNode): React.ReactNode {
         const isResultLineNode = SearchInWorkspaceResultLineNode.is(node);
         return <span className={isResultLineNode ? codicon('replace') : codicon('replace-all')}
-            onClick={e => this.doReplace(node, e)}
-            title={isResultLineNode
-                ? nls.localizeByDefault('Replace')
-                : nls.localizeByDefault('Replace All')
-            }></span>;
+                     onClick={e => this.doReplace(node, e)}
+                     title={isResultLineNode
+                         ? nls.localizeByDefault('Replace')
+                         : nls.localizeByDefault('Replace All')
+                     }></span>;
     }
 
     protected getFileCount(node: TreeNode): number {
@@ -984,7 +1082,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return <div className='result'>
             <div className='result-head'>
                 <div className={`result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}`}
-                    title={new URI(node.fileUri).path.fsPath()}>
+                     title={new URI(node.fileUri).path.fsPath()}>
                     <span className={`file-icon ${this.toNodeIcon(node)}`}></span>
                     <div className='noWrapInfo'>
                         <span className={'file-name'}>

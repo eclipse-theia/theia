@@ -108,6 +108,16 @@ export namespace SearchInWorkspaceCommands {
     export const REPLACE_ALL_RESULTS = Command.toDefaultLocalizedCommand({
         id: 'search.action.replaceAll'
     });
+    export const NEXT_MATCH = Command.toDefaultLocalizedCommand({
+        id: 'search.action.nextMatchFindAction',
+        category: SEARCH_CATEGORY,
+        label: 'Focus Next Search Result',
+    });
+    export const PREVIOUS_MATCH = Command.toDefaultLocalizedCommand({
+        id: 'search.action.previousMatchFindAction',
+        category: SEARCH_CATEGORY,
+        label: 'Focus Previous Search Result',
+    });
 }
 
 @injectable()
@@ -262,6 +272,16 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
                 }
             }),
         });
+        commands.registerCommand(SearchInWorkspaceCommands.NEXT_MATCH, {
+            isEnabled: () => this.withWidget(undefined, widget => widget.hasResultList()),
+            isVisible: () => this.withWidget(undefined, widget => widget.hasResultList()),
+            execute: () => this.withWidget(undefined, widget => widget.resultTreeWidget.focusNextResult())
+        });
+        commands.registerCommand(SearchInWorkspaceCommands.PREVIOUS_MATCH, {
+            isEnabled: () => this.withWidget(undefined, widget => widget.hasResultList()),
+            isVisible: () => this.withWidget(undefined, widget => widget.hasResultList()),
+            execute: () => this.withWidget(undefined, widget => widget.resultTreeWidget.focusPreviousResult())
+        });
         commands.registerCommand(SearchInWorkspaceCommands.COPY_ONE, {
             isEnabled: () => this.withWidget(undefined, widget => {
                 const { selection } = this.selectionService;
@@ -342,6 +362,15 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             command: SearchInWorkspaceCommands.FIND_IN_FOLDER.id,
             keybinding: 'shift+alt+f',
             when: 'explorerResourceIsFolder'
+        });
+        keybindings.registerKeybindings({
+            command: SearchInWorkspaceCommands.NEXT_MATCH.id,
+            keybinding: 'f4',
+            when: 'searchViewletFocus'
+        });
+        keybindings.registerKeybinding({
+            command: SearchInWorkspaceCommands.PREVIOUS_MATCH.id,
+            keybinding: 'shift+f4',
         });
         keybindings.registerKeybinding({
             command: SearchInWorkspaceCommands.DISMISS_RESULT.id,
