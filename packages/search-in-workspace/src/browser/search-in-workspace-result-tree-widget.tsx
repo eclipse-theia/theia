@@ -847,11 +847,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     protected renderReplaceButton(node: TreeNode): React.ReactNode {
         const isResultLineNode = SearchInWorkspaceResultLineNode.is(node);
         return <span className={isResultLineNode ? codicon('replace') : codicon('replace-all')}
-             onClick={e => this.doReplace(node, e)}
-             title={isResultLineNode
-                 ? nls.localizeByDefault('Replace')
-                 : nls.localizeByDefault('Replace All')
-             }></span>;
+            onClick={e => this.doReplace(node, e)}
+            title={isResultLineNode
+                ? nls.localizeByDefault('Replace')
+                : nls.localizeByDefault('Replace All')
+            }></span>;
     }
 
     protected getFileCount(node: TreeNode): number {
