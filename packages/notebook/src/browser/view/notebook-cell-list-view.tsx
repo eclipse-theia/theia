@@ -50,7 +50,7 @@ export class NotebookCellListView extends React.Component<CellListProps, { selec
                     <React.Fragment key={index}>
                         <NotebookCellDivider onAddNewCell={(kind: CellKind) => this.onAddNewCell(kind, index)} />
                         <li className='theia-notebook-cell' key={'cell-' + index}
-                        data-keybinding-context={cell.uri} // needed for contextKey context to work
+                        // data-keybinding-context={cell.uri} // needed for contextKey context to work
                         onClick={() => this.setState({ selectedCell: cell })}
                         ref={(node: HTMLLIElement) => cell.refChanged(node)}>
                             <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
