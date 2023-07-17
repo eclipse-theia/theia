@@ -1475,8 +1475,37 @@ export interface WorkspaceEditMetadataDto {
     isRefactoring?: boolean;
 }
 
+export type CellEditOperationDto =
+    {
+        editType: notebookCommon.CellEditType.Metadata;
+        index: number;
+        metadata: Record<string, unknown>;
+    } |
+    {
+        editType: notebookCommon.CellEditType.DocumentMetadata;
+        metadata: Record<string, unknown>;
+    } |
+    {
+        editType: notebookCommon.CellEditType.Replace;
+        index: number;
+        count: number;
+        cells: NotebookCellDataDto[];
+    };
+
+export interface NotebookWorkspaceEditMetadataDto {
+    needsConfirmation: boolean;
+    label: string;
+    description?: string;
+}
+
+export interface WorkspaceNotebookCellEditDto {
+    metadata?: NotebookWorkspaceEditMetadataDto;
+    resource: UriComponents;
+    cellEdit: CellEditOperationDto;
+}
+
 export interface WorkspaceEditDto {
-    edits: Array<WorkspaceTextEditDto | WorkspaceFileEditDto>;
+    edits: Array<WorkspaceTextEditDto | WorkspaceFileEditDto | WorkspaceNotebookCellEditDto>;
 }
 
 export interface CommandProperties {

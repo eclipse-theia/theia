@@ -38,15 +38,16 @@ export class NotebookCodeCellRenderer implements Cellrenderer {
     }
 }
 
-interface NotebookCellOutputPorps {
+interface NotebookCellOutputProps {
     cell: NotebookCellModel;
 }
 
-function NotebookCodeCellOutputs({cell}: NotebookCellOutputPorps): JSX.Element {
-    const [outputs, setOutputs] = React.useState(cell.outputs);
+function NotebookCodeCellOutputs({cell}: NotebookCellOutputProps): JSX.Element {
+    const outputJson = cell.outputs.length > 0 ? JSON.stringify(cell.outputs.map(output => output.toDto())) : undefined;
+    const [outputs, setOutputs] = React.useState(outputJson);
     React.useEffect(() => {
-        cell.onDidChangeOutputs(() => setOutputs(cell.outputs));
+        cell.onDidChangeOutputs(() => setOutputs(cell.outputs.length > 0 ? JSON.stringify(cell.outputs.map(output => output.toDto())) : undefined));
     }, []);
-    return <>{outputs && <span>{JSON.stringify(outputs.map(output => output.toDto()))}</span>}</>;
+    return <>{outputs && <span>{outputs}</span>}</>;
 
 }

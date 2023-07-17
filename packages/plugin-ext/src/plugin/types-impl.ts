@@ -32,6 +32,7 @@ import { FileSystemProviderErrorCode, markAsFileSystemProviderError } from '@the
 import * as paths from 'path';
 import { es5ClassCompat } from '../common/types';
 import { isObject, isStringArray } from '@theia/core/lib/common';
+import { CellEditType, CellMetadataEdit, NotebookDocumentMetadataEdit } from '@theia/notebook/lib/common';
 
 /**
  * This is an implementation of #theia.Uri based on vscode-uri.
@@ -1294,6 +1295,17 @@ export class NotebookCell implements theia.NotebookCell {
 }
 
 export class NotebookRange implements theia.NotebookRange {
+    static isNotebookRange(thing: unknown): thing is theia.NotebookRange {
+        if (thing instanceof NotebookRange) {
+            return true;
+        }
+        if (!thing) {
+            return false;
+        }
+        return typeof (<NotebookRange>thing).start === 'number'
+            && typeof (<NotebookRange>thing).end === 'number';
+    }
+
     readonly start: number;
     readonly end: number;
     readonly isEmpty: boolean;
@@ -1354,27 +1366,44 @@ export class NotebookEdit implements theia.NotebookEdit {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     newNotebookMetadata?: { [key: string]: any; } | undefined;
 
+    static isNotebookCellEdit(thing: unknown): thing is NotebookEdit {
+        if (thing instanceof NotebookEdit) {
+            return true;
+        }
+        if (!thing) {
+            return false;
+        }
+        return NotebookRange.isNotebookRange((<NotebookEdit>thing))
+            && Array.isArray((<NotebookEdit>thing).newCells);
+    }
+
     static replaceCells(range: NotebookRange, newCells: NotebookCellData[]): NotebookEdit {
-        return { range, newCells };
+        return new NotebookEdit(range, newCells);
     }
 
     static insertCells(index: number, newCells: NotebookCellData[]): NotebookEdit {
-        return new NotebookEdit();
+        return new NotebookEdit(new NotebookRange(index, index), newCells);
     }
 
     static deleteCells(range: NotebookRange): NotebookEdit {
-        return new NotebookEdit();
+        return new NotebookEdit(range, []);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static updateCellMetadata(index: number, newCellMetadata: { [key: string]: any }): NotebookEdit {
-        return new NotebookEdit();
+        return new NotebookEdit(new NotebookRange(index, index), [], newCellMetadata);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static updateNotebookMetadata(newNotebookMetadata: { [key: string]: any }): NotebookEdit {
-        return new NotebookEdit();
+        return new NotebookEdit(new NotebookRange(0, 0), [], undefined, newNotebookMetadata);
     }
+
+    constructor(range: NotebookRange, newCells: NotebookCellData[], newCellMetadata?: { [key: string]: unknown }, newNotebookMetadata?: { [key: string]: unknown }) {
+        this.range = range;
+        this.newCells = newCells;
+    }
+
 }
 
 export class NotebookRendererScript implements theia.NotebookRendererScript {
@@ -1725,6 +1754,9 @@ export interface WorkspaceEditMetadata {
 export const enum FileEditType {
     File = 1,
     Text = 2,
+    // eslint-disable-next-line @typescript-eslint/no-shadow
+    Cell = 3,
+    CellReplace = 5,
     Snippet = 6,
 }
 
@@ -1751,7 +1783,24 @@ export interface FileSnippetTextEdit {
     readonly metadata?: theia.WorkspaceEditEntryMetadata;
 }
 
-type WorkspaceEditEntry = FileOperation | FileTextEdit | FileSnippetTextEdit | undefined;
+export interface FileCellEdit {
+    readonly _type: FileEditType.Cell;
+    readonly uri: URI;
+    readonly edit?: CellMetadataEdit | NotebookDocumentMetadataEdit;
+    readonly notebookMetadata?: Record<string, unknown>;
+    readonly metadata?: theia.WorkspaceEditEntryMetadata;
+}
+
+export interface CellEdit {
+    readonly _type: FileEditType.CellReplace;
+    readonly metadata?: theia.WorkspaceEditEntryMetadata;
+    readonly uri: URI;
+    readonly index: number;
+    readonly count: number;
+    readonly cells: theia.NotebookCellData[];
+}
+
+type WorkspaceEditEntry = FileOperation | FileTextEdit | FileSnippetTextEdit | FileCellEdit | CellEdit | undefined;
 
 @es5ClassCompat
 export class WorkspaceEdit implements theia.WorkspaceEdit {
@@ -1793,8 +1842,12 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
 
     set(uri: URI, edits: ReadonlyArray<TextEdit | SnippetTextEdit>): void;
     set(uri: URI, edits: ReadonlyArray<[TextEdit | SnippetTextEdit, theia.WorkspaceEditEntryMetadata]>): void;
+    set(uri: URI, edits: ReadonlyArray<NotebookEdit>): void;
+    set(uri: URI, edits: ReadonlyArray<[NotebookEdit, theia.WorkspaceEditEntryMetadata]>): void;
 
-    set(uri: URI, edits: ReadonlyArray<TextEdit | SnippetTextEdit | [TextEdit | SnippetTextEdit, theia.WorkspaceEditEntryMetadata]>): void {
+    set(uri: URI, edits: ReadonlyArray<TextEdit | SnippetTextEdit
+        | NotebookEdit | [NotebookEdit, theia.WorkspaceEditEntryMetadata]
+        | [TextEdit | SnippetTextEdit, theia.WorkspaceEditEntryMetadata]>): void {
         if (!edits) {
             // remove all text edits for `uri`
             for (let i = 0; i < this._edits.length; i++) {
@@ -1813,7 +1866,7 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
                     continue;
                 }
 
-                let edit: TextEdit | SnippetTextEdit;
+                let edit: TextEdit | SnippetTextEdit | NotebookEdit;
                 let metadata: theia.WorkspaceEditEntryMetadata | undefined;
                 if (Array.isArray(editOrTuple)) {
                     edit = editOrTuple[0];
@@ -1822,7 +1875,27 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
                     edit = editOrTuple;
                 }
 
-                if (SnippetTextEdit.isSnippetTextEdit(edit)) {
+                if (NotebookEdit.isNotebookCellEdit(edit)) {
+                    if (edit.newCellMetadata) {
+                        this._edits.push({
+                            _type: FileEditType.Cell, metadata, uri,
+                            edit: { editType: CellEditType.Metadata, index: edit.range.start, metadata: edit.newCellMetadata }
+                        });
+                    } else if (edit.newNotebookMetadata) {
+                        this._edits.push({
+                            _type: FileEditType.Cell, metadata, uri,
+                            edit: { editType: CellEditType.DocumentMetadata, metadata: edit.newNotebookMetadata }, notebookMetadata: edit.newNotebookMetadata
+                        });
+                    } else {
+                        const start = edit.range.start;
+                        const end = edit.range.end;
+
+                        if (start !== end || edit.newCells.length > 0) {
+                            this._edits.push({ _type: FileEditType.CellReplace, uri, index: start, count: end - start, cells: edit.newCells, metadata });
+                        }
+                    }
+
+                } else if (SnippetTextEdit.isSnippetTextEdit(edit)) {
                     this._edits.push({ _type: FileEditType.Snippet, uri, range: edit.range, edit, metadata });
                 } else {
                     this._edits.push({ _type: FileEditType.Text, uri, edit });
@@ -1861,19 +1934,23 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
         return result;
     }
 
-    _allEntries(): ([URI, Array<TextEdit | SnippetTextEdit>, theia.WorkspaceEditEntryMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] {
-        const res: ([URI, Array<TextEdit | SnippetTextEdit>, theia.WorkspaceEditEntryMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] = [];
-        for (const edit of this._edits) {
-            if (!edit) {
-                continue;
-            }
-            if (edit._type === FileEditType.File) {
-                res.push([edit.from!, edit.to!, edit.options!, edit.metadata!]);
-            } else {
-                res.push([edit.uri, [edit.edit], edit.metadata!]);
-            }
-        }
-        return res;
+    // _allEntries(): ([URI, Array<TextEdit | SnippetTextEdit>, theia.WorkspaceEditEntryMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] {
+    //     const res: ([URI, Array<TextEdit | SnippetTextEdit>, theia.WorkspaceEditEntryMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] = [];
+    //     for (const edit of this._edits) {
+    //         if (!edit) {
+    //             continue;
+    //         }
+    //         if (edit._type === FileEditType.File) {
+    //             res.push([edit.from!, edit.to!, edit.options!, edit.metadata!]);
+    //         } else {
+    //             res.push([edit.uri, [edit.edit], edit.metadata!]);
+    //         }
+    //     }
+    //     return res;
+    // }
+
+    _allEntries(): ReadonlyArray<WorkspaceEditEntry> {
+        return this._edits;
     }
 
     get size(): number {

@@ -25,10 +25,6 @@ import { NotebookCellsChangedEventDto, NotebookDocumentsExt } from '../../common
 import { NotebooksExtImpl } from './notebooks';
 import { NotebookDocumentMetadata } from '@theia/notebook/lib/common';
 
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
 export class NotebookDocumentsExtImpl implements NotebookDocumentsExt {
 
     private readonly didSaveNotebookDocumentEmitter = new Emitter<theia.NotebookDocument>();

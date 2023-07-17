@@ -576,26 +576,46 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
         edits: []
     };
     for (const entry of (value as types.WorkspaceEdit)._allEntries()) {
-        const [uri, uriOrEdits] = entry;
-        if (Array.isArray(uriOrEdits)) {
+        if (entry?._type === types.FileEditType.Text) {
             // text edits
-            const doc = documents ? documents.getDocument(uri.toString()) : undefined;
+            const doc = documents ? documents.getDocument(entry.uri.toString()) : undefined;
             const workspaceTextEditDto: WorkspaceTextEditDto = {
-                resource: uri,
+                resource: entry.uri,
                 modelVersionId: doc?.version,
-                textEdit: uriOrEdits.map(edit => (edit instanceof types.TextEdit) ? fromTextEdit(edit) : fromSnippetTextEdit(edit))[0],
-                metadata: entry[2] as types.WorkspaceEditMetadata
+                textEdit: (entry.edit instanceof types.TextEdit) ? fromTextEdit(entry.edit) : fromSnippetTextEdit(entry.edit),
+                metadata: entry.metadata
             };
             result.edits.push(workspaceTextEditDto);
-        } else {
+        } else if (entry?._type === types.FileEditType.File) {
             // resource edits
             const workspaceFileEditDto: WorkspaceFileEditDto = {
-                oldResource: uri,
-                newResource: uriOrEdits,
-                options: entry[2] as types.FileOperationOptions,
-                metadata: entry[3]
+                oldResource: entry.from,
+                newResource: entry.to,
+                options: entry.options,
+                metadata: entry.metadata
             };
             result.edits.push(workspaceFileEditDto);
+        } else if (entry?._type === types.FileEditType.Cell) {
+            // cell edit
+            if (entry.edit) {
+                result.edits.push({
+                    metadata: entry.metadata,
+                    resource: entry.uri,
+                    cellEdit: entry.edit,
+                });
+            }
+        } else if (entry?._type === types.FileEditType.CellReplace) {
+            // cell replace
+            result.edits.push({
+                metadata: entry.metadata,
+                resource: entry.uri,
+                cellEdit: {
+                    editType: notebooks.CellEditType.Replace,
+                    index: entry.index,
+                    count: entry.count,
+                    cells: entry.cells.map(NotebookCellData.from)
+                }
+            });
         }
     }
     return result;

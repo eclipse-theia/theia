@@ -81,7 +81,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         const handle = this.currentHandle++;
         const that = this;
 
-        console.trace(`NotebookController[${handle}], CREATED by ${extensionId}, ${id}`);
+        console.debug(`NotebookController[${handle}], CREATED by ${extensionId}, ${id}`);
 
         const defaultExecutHandler = () => console.warn(`NO execute handler from notebook controller '${data.id}' of extension: '${extensionId}'`);
 
@@ -193,7 +193,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
                     throw new Error('notebook controller is DISPOSED');
                 }
                 if (!associatedNotebooks.has(cell.notebook.uri.toString())) {
-                    console.trace(`NotebookController[${handle}] NOT associated to notebook, associated to THESE notebooks:`,
+                    console.debug(`NotebookController[${handle}] NOT associated to notebook, associated to THESE notebooks:`,
                         Array.from(associatedNotebooks.keys()).map(u => u.toString()));
                     throw new Error(`notebook controller is NOT associated to notebook: ${cell.notebook.uri.toString()}`);
                 }
@@ -201,7 +201,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
             },
             dispose: () => {
                 if (!isDisposed) {
-                    console.trace(`NotebookController[${handle}], DISPOSED`);
+                    console.debug(`NotebookController[${handle}], DISPOSED`);
                     isDisposed = true;
                     this.kernelData.delete(handle);
                     commandDisposables.dispose();
@@ -304,7 +304,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
             } else {
                 obj.associatedNotebooks.delete(notebook.uri.toString());
             }
-            console.trace(`NotebookController[${handle}] ASSOCIATE notebook`, notebook.uri.toString(), value);
+            console.debug(`NotebookController[${handle}] ASSOCIATE notebook`, notebook.uri.toString(), value);
             // send event
             obj.onDidChangeSelection.fire({
                 selected: value,
@@ -330,7 +330,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         }
 
         try {
-            console.trace(`NotebookController[${handle}] EXECUTE cells`, document.uri.toString(), cells.length);
+            console.debug(`NotebookController[${handle}] EXECUTE cells`, document.uri.toString(), cells.length);
             await obj.controller.executeHandler.call(obj.controller, cells, document.apiNotebook, obj.controller);
         } catch (err) {
             console.error(`NotebookController[${handle}] execute cells FAILED`, err);
