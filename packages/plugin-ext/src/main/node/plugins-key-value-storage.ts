@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { deepmerge } from '@theia/core/shared/@theia/application-package';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { FileSystemLocking } from '@theia/core/lib/node';
 import * as fs from '@theia/core/shared/fs-extra';
@@ -111,11 +110,9 @@ export class PluginsKeyValueStorage {
 
     private syncStores(): void {
         this.syncStoresTimeout = setTimeout(async () => {
-            await Promise.all(Array.from(this.storesToSync, async store => {
-                await this.fsLocking.lockPath(store.fsPath, async storePath => {
-                    const valuesOnDisk = await this.readFromFile(storePath);
-                    store.values = deepmerge(valuesOnDisk, store.values);
-                    await this.writeToFile(storePath, store.values);
+            await Promise.all(Array.from(this.storesToSync, async ({ fsPath, values }) => {
+                await this.fsLocking.lockPath(fsPath, async storePath => {
+                    await this.writeToFile(storePath, values);
                 });
             }));
             this.storesToSync.clear();
