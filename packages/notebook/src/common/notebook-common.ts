@@ -110,6 +110,11 @@ export interface CellReplaceEdit {
     cells: CellData[];
 }
 
+export interface NotebookDocumentMetadataEdit {
+    editType: CellEditType.DocumentMetadata;
+    metadata: NotebookDocumentMetadata;
+}
+
 export interface NotebookData {
     readonly cells: CellData[];
     readonly metadata: NotebookDocumentMetadata;
