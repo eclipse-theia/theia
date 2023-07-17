@@ -180,18 +180,18 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         });
 
         commands.registerCommand(SearchInWorkspaceCommands.FOCUS_NEXT_RESULT, {
-            isEnabled: () => this.tryGetWidget()?.hasResultList() || false,
+            isEnabled: () => this.tryGetWidget()?.hasResultList() ?? false,
             execute: async () => {
                 const widget = await this.openView({ activate: true });
-                widget.resultTreeWidget.model.selectNextNode();
+                widget.resultTreeWidget.selectNextResult();
             }
         });
 
         commands.registerCommand(SearchInWorkspaceCommands.FOCUS_PREV_RESULT, {
-            isEnabled: () => this.tryGetWidget()?.hasResultList() || false,
+            isEnabled: () => this.tryGetWidget()?.hasResultList() ?? false,
             execute: async () => {
                 const widget = await this.openView({ activate: true });
-                widget.resultTreeWidget.model.selectPrevNode();
+                widget.resultTreeWidget.selectPreviousResult();
             }
         });
 

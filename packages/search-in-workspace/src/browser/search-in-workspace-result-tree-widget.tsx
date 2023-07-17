@@ -281,6 +281,54 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return true;
     }
 
+    selectNextResult(): void {
+        if (!SearchInWorkspaceResultLineNode.is(this.model.getFocusedNode())) {
+            this.selectFirstResult();
+            return;
+        }
+        let foundFocusedNode = false;
+        for (const rootFolderNode of this.resultTree.values()) {
+            for (const fileNode of rootFolderNode.children) {
+                for (const result of fileNode.children) {
+                    if (foundFocusedNode) {
+                        this.model.expandNode(fileNode);
+                        this.model.selectNode(result);
+                        return;
+                    }
+                    if (result.selected) {
+                        foundFocusedNode = true;
+                    }
+                }
+            }
+        }
+        this.selectFirstResult();
+    }
+
+    selectPreviousResult(): void {
+        if (!SearchInWorkspaceResultLineNode.is(this.model.getFocusedNode())) {
+            this.selectLastResult();
+            return;
+        }
+        let foundFocusedNode = false;
+        for (const rootFolderNodes of this.resultTree.values()) {
+            for (let j = rootFolderNodes.children.length - 1; j >= 0; j--) {
+                const fileNode = rootFolderNodes.children[j];
+                for (let k = fileNode.children.length - 1; k >= 0; k--) {
+                    const result = fileNode.children[k];
+                    if (foundFocusedNode) {
+                        this.model.expandNode(fileNode);
+                        this.model.selectNode(result);
+                        return;
+                    }
+                    if (result.selected) {
+                        foundFocusedNode = true;
+                    }
+                }
+            }
+        }
+        this.selectLastResult();
+    }
+
     /**
      * Find matches for the given editor.
      * @param searchTerm the search term.
@@ -595,6 +643,29 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             if (SelectableTreeNode.is(node)) {
                 this.node.focus();
                 this.model.selectNode(node);
+            }
+        }
+    }
+
+    selectFirstResult(): void {
+        const rootFolder = this.resultTree.values();
+        for (const files of rootFolder) {
+            const result = files.children[0].children[0];
+            if (SelectableTreeNode.is(result)) {
+                this.model.expandNode(result.parent);
+                this.model.selectNode(result);
+            }
+        }
+    }
+
+    selectLastResult(): void {
+        const rootFolder = this.resultTree.values();
+        for (const files of rootFolder) {
+            const fileNode = files.children[files.children.length - 1];
+            const result = fileNode.children[fileNode.children.length - 1];
+            if (SelectableTreeNode.is(result)) {
+                this.model.expandNode(result.parent);
+                this.model.selectNode(result);
             }
         }
     }
