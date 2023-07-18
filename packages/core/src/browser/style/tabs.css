@@ -484,7 +484,7 @@
 
 .theia-horizontal-tabBar-hover-title {
   font-weight: bolder;
-  max-width: var(--theia-hover-max-width);
+  max-width: var(--theia-hover-preview-width);
   word-wrap: break-word;
   font-size: medium;
   margin: 0px 0px;
@@ -492,7 +492,7 @@
 
 .theia-horizontal-tabBar-hover-caption {
   font-size: small;
-  max-width: var(--theia-hover-max-width);
+  max-width: var(--theia-hover-preview-width);
   word-wrap: break-word;
   margin: 0px 0px;
   margin-top: 4px;

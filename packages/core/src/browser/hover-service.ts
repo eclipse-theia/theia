@@ -137,7 +137,7 @@ export class HoverService {
         if (request.visualPreview) {
             // If just a string is being rendered use the size of the outer box
             const width = firstChild ? firstChild.offsetWidth : this.hoverHost.offsetWidth;
-            const visualPreview = request.visualPreview(Math.max(250, width));
+            const visualPreview = request.visualPreview(width);
             if (visualPreview) {
                 host.appendChild(visualPreview);
             }
