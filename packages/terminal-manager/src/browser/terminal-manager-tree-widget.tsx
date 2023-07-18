@@ -145,31 +145,31 @@ export class TerminalManagerTreeWidget extends TreeWidget {
 
     // @ts-expect-error 2416 cf. https://github.com/eclipse-theia/theia/issues/11640
     protected override handleLeft(event: KeyboardEvent): boolean | Promise<void> {
-        if ((event.target as HTMLElement).tagName === 'INPUT') { return false };
+        if ((event.target as HTMLElement).tagName === 'INPUT') { return false; };
         return super.handleLeft(event);
     }
 
     // @ts-expect-error 2416 cf. https://github.com/eclipse-theia/theia/issues/11640
     protected override handleRight(event: KeyboardEvent): boolean | Promise<void> {
-        if ((event.target as HTMLElement).tagName === 'INPUT') { return false };
+        if ((event.target as HTMLElement).tagName === 'INPUT') { return false; };
         return super.handleRight(event);
     }
 
     // cf. https://github.com/eclipse-theia/theia/issues/11640
     protected override handleEscape(event: KeyboardEvent): boolean | void {
-        if ((event.target as HTMLElement).tagName === 'INPUT') { return false };
+        if ((event.target as HTMLElement).tagName === 'INPUT') { return false; };
         return super.handleEscape(event);
     }
 
     // cf. https://github.com/eclipse-theia/theia/issues/11640
     protected override handleEnter(event: KeyboardEvent): boolean | void {
-        if ((event.target as HTMLElement).tagName === 'INPUT') { return false };
+        if ((event.target as HTMLElement).tagName === 'INPUT') { return false; };
         return super.handleEnter(event);
     }
 
     // cf. https://github.com/eclipse-theia/theia/issues/11640
     protected override handleSpace(event: KeyboardEvent): boolean | void {
-        if ((event.target as HTMLElement).tagName === 'INPUT') { return false };
+        if ((event.target as HTMLElement).tagName === 'INPUT') { return false; };
         return super.handleSpace(event);
     }
 
