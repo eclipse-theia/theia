@@ -8,5 +8,15 @@
   "include": [
     "src"
   ],
-  "references": []
+  "references": [
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../preferences"
+    },
+    {
+      "path": "../terminal"
+    }
+  ]
 }
