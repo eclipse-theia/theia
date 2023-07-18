@@ -67,6 +67,7 @@
     "@theia/markers": "1.66.0",
     "@theia/memory-inspector": "1.66.0",
     "@theia/messages": "1.66.0",
+    "@theia/terminal-manager": "1.39.0",
     "@theia/metrics": "1.66.0",
     "@theia/mini-browser": "1.66.0",
     "@theia/monaco": "1.66.0",
