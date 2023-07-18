@@ -25,9 +25,9 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/core": "latest",
-    "@theia/preferences": "latest",
-    "@theia/terminal": "latest"
+    "@theia/core": "1.39.0",
+    "@theia/preferences": "1.39.0",
+    "@theia/terminal": "1.39.0"
   },
   "theiaExtensions": [
     {
