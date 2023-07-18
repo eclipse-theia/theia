@@ -9,7 +9,9 @@
     "access": "public"
   },
   "theiaExtensions": [
-    {}
+    {
+      "frontend": "lib/browser/view/test-view-frontend-module"
+    }
   ],
   "keywords": [
     "theia-extension"

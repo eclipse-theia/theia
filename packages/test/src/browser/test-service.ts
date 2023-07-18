@@ -107,6 +107,7 @@ export interface TestController {
 }
 
 export interface TestService {
+    getControllers(): TestController[];
     registerTestController(controller: TestController): Disposable;
     onControllersChanged: Event<CollectionDelta<string, TestController>>;
 }
@@ -116,6 +117,8 @@ export const TestContribution = Symbol('TestContribution');
 export interface TestContribution {
     registerTestControllers(service: TestService): void;
 }
+
+export const TestService = Symbol('TestService');
 
 @injectable()
 export class DefaultTestService implements TestService {
@@ -136,10 +139,15 @@ export class DefaultTestService implements TestService {
         if (this.controllers.has(controller.id)) {
             throw new Error('TestController already registered: ' + controller.id);
         }
+        this.controllers.set(controller.id, controller);
         this.onControllersChangedEmitter.fire({ added: [controller] });
         return Disposable.create(() => {
             this.controllers.delete(controller.id);
             this.onControllersChangedEmitter.fire({ removed: [controller.id] });
         });
+    }
+
+    getControllers(): TestController[] {
+        return Array.from(this.controllers.values());
     }
 }

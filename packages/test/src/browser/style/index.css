@@ -1,0 +1,138 @@
+// *****************************************************************************
+// Copyright (C) 2023 STMicroelectronics and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+#test-view {
+  height: 100%;
+}
+
+#test-view .theia-TreeContainer.empty {
+  overflow: hidden;
+}
+
+.theia-test-container {
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.theia-test-container .theia-ExpansionToggle {
+  padding-right: 4px;
+  min-width: 6px;
+}
+
+.theia-test-container .theia-input {
+  flex: 1;
+  line-height: var(--theia-content-line-height);
+  padding: 3px 0 3px 4px;
+}
+
+.theia-test-container #search-input-field:focus {
+  border: none;
+  outline: none;
+}
+
+.theia-test-container #search-input-field {
+  background: none;
+  border: none;
+}
+
+.theia-test-container .testContainer {
+  height: 100%;
+  margin-left: 13px;
+}
+
+.theia-test-container .controller {
+  overflow: hidden;
+  width: 100%;
+  flex: 1;
+}
+
+.theia-test-container .controller .controller-head {
+  display: flex;
+}
+
+.theia-test-container .controller .controller-head .fa,
+.theia-test-container .controller .controller-head .theia-file-icons-js {
+  margin: 0 3px;
+}
+
+.theia-test-container .controller .controller-head .file-name {
+  margin-right: 5px;
+}
+
+.theia-test-container .controller .controller-head .file-path {
+  font-size: var(--theia-ui-font-size0);
+  margin-left: 3px;
+}
+
+.theia-test-container .resultLine .match {
+  line-height: normal;
+  white-space: pre;
+  background: var(--theia-editor-findMatchHighlightBackground);
+  border: 1px solid var(--theia-editor-findMatchHighlightBorder);
+}
+.theia-hc .theia-test-container .resultLine .match {
+  border-style: dashed;
+}
+
+.theia-test-container .resultLine .match.strike-through {
+  text-decoration: line-through;
+  background: var(--theia-diffEditor-removedTextBackground);
+  border-color: var(--theia-diffEditor-removedTextBorder);
+}
+
+.theia-test-container .resultLine .replace-term {
+  background: var(--theia-diffEditor-insertedTextBackground);
+  border: 1px solid var(--theia-diffEditor-insertedTextBorder);
+}
+.theia-hc .theia-test-container .resultLine .replace-term {
+  border-style: dashed;
+}
+
+.theia-test-container .noWrapInfo {
+  width: 100%;
+}
+
+.theia-test-container .controller-head-info {
+  display: inline-flex;
+  align-items: center;
+}
+
+.controller-node-buttons {
+  display: none;
+}
+
+.theia-TreeNode:hover .controller-node-buttons {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  align-self: center;
+}
+
+.theia-TreeNode:hover .controller-head .notification-count-container {
+  display: none;
+}
+
+.controller-node-buttons > span {
+  width: 15px;
+  height: 15px;
+  margin-left: 2.5px;
+  margin-right: 0.5px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
