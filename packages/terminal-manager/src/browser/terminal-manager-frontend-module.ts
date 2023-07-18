@@ -43,8 +43,8 @@ export default new ContainerModule((bind: interfaces.Bind) => {
         id: TerminalManagerWidget.ID,
         createWidget: async () => {
             const child = container.createChild();
-            const terminalManagerTreeWidget = await container.get(WidgetManager)
-                .getOrCreateWidget<TerminalManagerTreeWidget>(TerminalManagerTreeWidget.ID);
+            const widgetManager = container.get(WidgetManager);
+            const terminalManagerTreeWidget = await widgetManager.getOrCreateWidget<TerminalManagerTreeWidget>(TerminalManagerTreeWidget.ID);
             child.bind(TerminalManagerTreeWidget).toConstantValue(terminalManagerTreeWidget);
             return TerminalManagerWidget.createWidget(child);
         },
