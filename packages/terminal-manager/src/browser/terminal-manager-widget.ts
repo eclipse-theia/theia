@@ -124,8 +124,8 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         return child;
     }
 
-    static createWidget(parent: interfaces.Container): TerminalManagerWidget {
-        return TerminalManagerWidget.createContainer(parent).get(TerminalManagerWidget);
+    static createWidget(parent: interfaces.Container): Promise<TerminalManagerWidget> {
+        return TerminalManagerWidget.createContainer(parent).getAsync(TerminalManagerWidget);
     }
 
     @postConstruct()
