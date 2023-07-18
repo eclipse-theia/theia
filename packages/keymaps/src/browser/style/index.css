@@ -37,7 +37,6 @@
 
 .kb-action-item {
   visibility: hidden;
-  padding-right: 5px;
 }
 
 .kb table {
@@ -172,7 +171,4 @@
 
 .kb-actions-icons {
   display: block;
-  width: 50%;
-  margin-left: auto;
-  margin-right: auto;
 }
