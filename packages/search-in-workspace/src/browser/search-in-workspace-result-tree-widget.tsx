@@ -282,51 +282,84 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     selectNextResult(): void {
-        if (!SearchInWorkspaceResultLineNode.is(this.model.getFocusedNode())) {
+        if (!this.model.getFocusedNode()) {
             this.selectFirstResult();
             return;
         }
-        let foundFocusedNode = false;
-        for (const rootFolderNode of this.resultTree.values()) {
-            for (const fileNode of rootFolderNode.children) {
-                for (const result of fileNode.children) {
-                    if (foundFocusedNode) {
-                        this.model.expandNode(fileNode);
-                        this.model.selectNode(result);
-                        return;
-                    }
-                    if (result.selected) {
-                        foundFocusedNode = true;
-                    }
-                }
+        let foundNextResult = false;
+        while (!foundNextResult) {
+            const nextNode = this.model.getNextNode();
+            if (!nextNode) {
+                this.selectFirstResult();
+                return;
+            } else if (SearchInWorkspaceResultLineNode.is(nextNode)) {
+                foundNextResult = true;
+                this.model.expandNode(nextNode.parent.parent);
+                this.model.expandNode(nextNode.parent);
+                this.model.selectNode(nextNode);
+            } else {
+                this.model.selectNext();
             }
         }
-        this.selectFirstResult();
     }
 
     selectPreviousResult(): void {
-        if (!SearchInWorkspaceResultLineNode.is(this.model.getFocusedNode())) {
+        if (!this.model.getFocusedNode()) {
             this.selectLastResult();
             return;
         }
-        let foundFocusedNode = false;
-        for (const rootFolderNodes of this.resultTree.values()) {
-            for (let j = rootFolderNodes.children.length - 1; j >= 0; j--) {
-                const fileNode = rootFolderNodes.children[j];
-                for (let k = fileNode.children.length - 1; k >= 0; k--) {
-                    const result = fileNode.children[k];
-                    if (foundFocusedNode) {
-                        this.model.expandNode(fileNode);
+        let foundSelectedNode = false;
+        while (!foundSelectedNode) {
+            const prevNode = this.model.getPrevNode();
+            if (!prevNode) {
+                this.selectLastResult();
+                return;
+            } else if (SearchInWorkspaceResultLineNode.is(prevNode)) {
+                foundSelectedNode = true;
+                this.model.expandNode(prevNode.parent.parent);
+                this.model.expandNode(prevNode.parent);
+                this.model.selectNode(prevNode);
+            } else if (prevNode.id === 'ResultTree') {
+                this.selectLastResult();
+                return;
+            } else {
+                this.model.selectPrev();
+            }
+        }
+    }
+
+    protected selectFirstResult(): void {
+        for (const rootFolder of this.resultTree.values()) {
+            for (const file of rootFolder.children) {
+                for (const result of file.children) {
+                    if (SelectableTreeNode.is(result)) {
+                        this.model.expandNode(result.parent.parent);
+                        this.model.expandNode(result.parent);
                         this.model.selectNode(result);
                         return;
-                    }
-                    if (result.selected) {
-                        foundFocusedNode = true;
                     }
                 }
             }
         }
-        this.selectLastResult();
+    }
+
+    protected selectLastResult(): void {
+        const rootFolders = Array.from(this.resultTree.values());
+        for (let i = rootFolders.length - 1; i >= 0; i--) {
+            const rootFolder = rootFolders[i];
+            for (let j = rootFolder.children.length - 1; j >= 0; j--) {
+                const file = rootFolder.children[j];
+                for (let k = file.children.length - 1; k >= 0; k--) {
+                    const result = file.children[k];
+                    if (SelectableTreeNode.is(result)) {
+                        this.model.expandNode(result.parent.parent);
+                        this.model.expandNode(result.parent);
+                        this.model.selectNode(result);
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -643,29 +676,6 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             if (SelectableTreeNode.is(node)) {
                 this.node.focus();
                 this.model.selectNode(node);
-            }
-        }
-    }
-
-    selectFirstResult(): void {
-        const rootFolder = this.resultTree.values();
-        for (const files of rootFolder) {
-            const result = files.children[0].children[0];
-            if (SelectableTreeNode.is(result)) {
-                this.model.expandNode(result.parent);
-                this.model.selectNode(result);
-            }
-        }
-    }
-
-    selectLastResult(): void {
-        const rootFolder = this.resultTree.values();
-        for (const files of rootFolder) {
-            const fileNode = files.children[files.children.length - 1];
-            const result = fileNode.children[fileNode.children.length - 1];
-            if (SelectableTreeNode.is(result)) {
-                this.model.expandNode(result.parent);
-                this.model.selectNode(result);
             }
         }
     }

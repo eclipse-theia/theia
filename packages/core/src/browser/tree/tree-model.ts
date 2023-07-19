@@ -100,9 +100,19 @@ export interface TreeModel extends Tree, TreeSelectionService, TreeExpansionServ
     navigateBackward(): Promise<void>;
 
     /**
+     * Selects the previous tree node, regardless of its selection or visibility state.
+     */
+    selectPrev(): void;
+
+    /**
      * Selects the previous node relatively to the currently selected one. This method takes the expansion state of the tree into consideration.
      */
     selectPrevNode(type?: TreeSelection.SelectionType): void;
+
+    /**
+     * Returns the previous tree node, regardless of its selection or visibility state.
+     */
+    getPrevNode(node?: TreeNode): TreeNode | undefined;
 
     /**
      * Returns the previous selectable tree node.
@@ -110,9 +120,19 @@ export interface TreeModel extends Tree, TreeSelectionService, TreeExpansionServ
     getPrevSelectableNode(node?: TreeNode): SelectableTreeNode | undefined;
 
     /**
+     * Selects the next tree node, regardless of its selection or visibility state.
+     */
+    selectNext(): void;
+
+    /**
      * Selects the next node relatively to the currently selected one. This method takes the expansion state of the tree into consideration.
      */
     selectNextNode(type?: TreeSelection.SelectionType): void;
+
+    /**
+     * Returns the next tree node, regardless of its selection or visibility state.
+     */
+    getNextNode(node?: TreeNode): TreeNode | undefined;
 
     /**
      * Returns the next selectable tree node.
@@ -294,11 +314,21 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         }
     }
 
+    selectPrev(): void {
+        const node = this.getPrevNode();
+        this.selectNodeIfSelectable(node);
+    }
+
     selectPrevNode(type: TreeSelection.SelectionType = TreeSelection.SelectionType.DEFAULT): void {
         const node = this.getPrevSelectableNode();
         if (node) {
             this.addSelection({ node, type });
         }
+    }
+
+    getPrevNode(node: TreeNode | undefined = this.getFocusedNode()): TreeNode | undefined {
+        const iterator = this.createBackwardTreeIterator(node);
+        return iterator && this.doGetNode(iterator);
     }
 
     getPrevSelectableNode(node: TreeNode | undefined = this.getFocusedNode()): SelectableTreeNode | undefined {
@@ -309,6 +339,11 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         return iterator && this.doGetNextNode(iterator, this.isVisibleSelectableNode.bind(this));
     }
 
+    selectNext(): void {
+        const node = this.getNextNode();
+        this.selectNodeIfSelectable(node);
+    }
+
     selectNextNode(type: TreeSelection.SelectionType = TreeSelection.SelectionType.DEFAULT): void {
         const node = this.getNextSelectableNode();
         if (node) {
@@ -316,9 +351,26 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         }
     }
 
+    getNextNode(node: TreeNode | undefined = this.getFocusedNode()): TreeNode | undefined {
+        const iterator = this.createTreeIterator(node);
+        return iterator && this.doGetNode(iterator);
+    }
+
     getNextSelectableNode(node: TreeNode | undefined = this.getFocusedNode() ?? this.root): SelectableTreeNode | undefined {
         const iterator = this.createIterator(node);
         return iterator && this.doGetNextNode(iterator, this.isVisibleSelectableNode.bind(this));
+    }
+
+    protected selectNodeIfSelectable(node: TreeNode | undefined): void {
+        if (SelectableTreeNode.is(node)) {
+            this.addSelection(node);
+        }
+    }
+
+    protected doGetNode(iterator: TreeIterator): TreeNode | undefined {
+        iterator.next();
+        const result = iterator.next();
+        return result.done ? undefined : result.value;
     }
 
     protected doGetNextNode<T extends TreeNode>(iterator: TreeIterator, criterion: (node: TreeNode) => node is T): T | undefined {
@@ -338,6 +390,17 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         return SelectableTreeNode.isVisible(node);
     }
 
+    protected createBackwardTreeIterator(node: TreeNode | undefined): TreeIterator | undefined {
+        const { filteredNodes } = this.treeSearch;
+        if (filteredNodes.length === 0) {
+            return node ? new BottomUpTreeIterator(node!, { pruneCollapsed: false }) : undefined;
+        }
+        if (node && filteredNodes.indexOf(node) === -1) {
+            return undefined;
+        }
+        return Iterators.cycle(filteredNodes.slice().reverse(), node);
+    }
+
     protected createBackwardIterator(node: TreeNode | undefined): TreeIterator | undefined {
         const { filteredNodes } = this.treeSearch;
         if (filteredNodes.length === 0) {
@@ -347,6 +410,17 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
             return undefined;
         }
         return Iterators.cycle(filteredNodes.slice().reverse(), node);
+    }
+
+    protected createTreeIterator(node: TreeNode | undefined): TreeIterator | undefined {
+        const { filteredNodes } = this.treeSearch;
+        if (filteredNodes.length === 0) {
+            return node && new TopDownTreeIterator(node, { pruneCollapsed: false });
+        }
+        if (node && filteredNodes.indexOf(node) === -1) {
+            return undefined;
+        }
+        return Iterators.cycle(filteredNodes, node);
     }
 
     protected createIterator(node: TreeNode | undefined): TreeIterator | undefined {
