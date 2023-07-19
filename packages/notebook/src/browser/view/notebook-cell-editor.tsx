@@ -18,30 +18,28 @@ import * as React from '@theia/core/shared/react';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { MonacoEditor, MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 
 interface EditorProps {
     notebookModel: NotebookModel,
     cell: NotebookCellModel,
-    textModelService: MonacoTextModelService,
     monacoServices: MonacoEditorServices
 }
 
-export function CellEditor({ textModelService, monacoServices, notebookModel, cell }: EditorProps): JSX.Element {
+export function CellEditor({ monacoServices, notebookModel, cell }: EditorProps): JSX.Element {
     const uri = cell.uri;
     React.useEffect(() => {
         (async () => {
             const editorNode = document.getElementById(uri.toString())!;
-            const cellDocument = textModelService.get(uri.toString()) ?? (await textModelService.createModelReference(cell.uri)).object;
+            const editorModel = await cell.resolveTextModel();
             const editor = new MonacoEditor(uri,
-                cellDocument,
+                editorModel,
                 editorNode,
                 monacoServices,
                 Object.assign(
                 { minHeight: -1,
                     maxHeight: -1,
-                    model: (await cellDocument.load()).textEditorModel,
+                    model: editorModel.textEditorModel,
                 }, MonacoEditorProvider.inlineOptions));
             editor.setLanguage(cell.language);
             editor.getControl().onDidContentSizeChange(() => {

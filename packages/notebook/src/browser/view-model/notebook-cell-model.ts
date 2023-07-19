@@ -21,6 +21,7 @@
 import { Disposable, Emitter, Event, URI } from '@theia/core';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
+import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import {
     CellInternalMetadataChangedEvent, CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata, NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput, CellData
 } from '../../common';
@@ -132,6 +133,7 @@ export class NotebookCellModel implements Disposable {
     }
 
     constructor(@inject(NotebookCellModelProps) private props: NotebookCellModelProps,
+        @inject(MonacoTextModelService) private textModelService: MonacoTextModelService,
     ) {
         this.outputs = props.outputs.map(op => new NotebookCellOutputModel(op));
         this.metadata = props.metadata ?? {};
@@ -204,6 +206,16 @@ export class NotebookCellModel implements Disposable {
             internalMetadata: this.internalMetadata,
             metadata: this.metadata
         };
+    }
+
+    async resolveTextModel(): Promise<MonacoEditorModel> {
+        if (this.textModel) {
+            return this.textModel;
+        }
+
+        const ref = await this.textModelService.createModelReference(this.uri);
+        this.textModel = ref.object;
+        return ref.object;
     }
 }
 
