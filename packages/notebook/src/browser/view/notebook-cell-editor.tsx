@@ -26,6 +26,16 @@ interface EditorProps {
     monacoServices: MonacoEditorServices
 }
 
+const DEFAULT_EDITOR_OPTIONS = {
+    ...MonacoEditorProvider.inlineOptions,
+    minHeight: -1,
+    maxHeight: -1,
+    scrollbar: {
+        ...MonacoEditorProvider.inlineOptions.scrollbar,
+        alwaysConsumeMouseWheel: false
+    }
+};
+
 export function CellEditor({ monacoServices, notebookModel, cell }: EditorProps): JSX.Element {
     const uri = cell.uri;
     React.useEffect(() => {
@@ -36,11 +46,11 @@ export function CellEditor({ monacoServices, notebookModel, cell }: EditorProps)
                 editorModel,
                 editorNode,
                 monacoServices,
-                Object.assign(
-                { minHeight: -1,
-                    maxHeight: -1,
+                {
+                    ...DEFAULT_EDITOR_OPTIONS,
                     model: editorModel.textEditorModel,
-                }, MonacoEditorProvider.inlineOptions));
+
+                });
             editor.setLanguage(cell.language);
             editor.getControl().onDidContentSizeChange(() => {
                 editorNode.style.height = editor.getControl().getContentHeight() + 7 + 'px';
