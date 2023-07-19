@@ -35,7 +35,7 @@
         "--remote-debugging-port=9222",
         "--no-app-auto-install",
         "--plugins=local-dir:../../plugins",
-        "--ovsx-router-config=examples/ovsx-router-config.json"
+        "--ovsx-router-config=${workspaceFolder}/examples/ovsx-router-config.json"
       ],
       "env": {
         "NODE_ENV": "development"
@@ -65,7 +65,7 @@
         "--app-project-path=${workspaceFolder}/examples/browser",
         "--plugins=local-dir:plugins",
         "--hosted-plugin-inspect=9339",
-        "--ovsx-router-config=examples/ovsx-router-config.json"
+        "--ovsx-router-config=${workspaceFolder}/examples/ovsx-router-config.json"
       ],
       "env": {
         "NODE_ENV": "development"
