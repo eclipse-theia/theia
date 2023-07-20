@@ -331,6 +331,12 @@ export class TheiaPluginScanner implements PluginScanner {
         }
 
         try {
+            contributions.notebookRenderer = rawPlugin.contributes.notebookRenderer;
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'notebooks'.`, rawPlugin.contributes.authentication, err);
+        }
+
+        try {
             contributions.snippets = this.readSnippets(rawPlugin);
         } catch (err) {
             console.error(`Could not read '${rawPlugin.name}' contribution 'snippets'.`, rawPlugin.contributes!.snippets, err);

@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 Typefox and others.
+// Copyright (C) 2023 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,23 +13,22 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { Disposable } from '@theia/core';
+import { injectable } from '@theia/core/shared/inversify';
+import { NotebookRendererDescriptor } from '../common/notebook-protocol';
 
-export interface NotebookTypeDescriptor {
-    readonly type: string;
-    readonly displayName: string;
-    readonly priority?: string | undefined;
-    readonly selector?: readonly NotebookFileSelector[];
-}
+@injectable()
+export class NotebookRendererRegistry {
+    readonly notebookRenderers: NotebookRendererDescriptor[] = [];
 
-export interface NotebookFileSelector {
-    readonly filenamePattern?: string;
-    readonly excludeFileNamePattern?: string;
-}
+    registerNotebookRenderer(type: NotebookRendererDescriptor): Disposable {
+        this.notebookRenderers.push(type);
+        return Disposable.create(() => {
+            this.notebookRenderers.splice(this.notebookRenderers.indexOf(type), 1);
+        });
+    }
 
-export interface NotebookRendererDescriptor {
-    readonly id: string;
-    readonly displayName: string;
-    readonly mimeTypes: string[];
-    readonly entrypoint: string | { readonly extends: string; readonly path: string };
-    readonly requiresMessaging?: 'always' | 'optional' | 'never'
+    getByMimeType(mimeType: string): NotebookRendererDescriptor[] {
+        return this.notebookRenderers.filter(renderer => renderer.mimeTypes.includes(mimeType));
+    }
 }

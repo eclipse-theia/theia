@@ -20,6 +20,7 @@ import { OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
 import { NotebookOpenHandler } from './notebook-open-handler';
 import { bindContributionProvider, CommandContribution, MenuContribution, ResourceResolver, } from '@theia/core';
 import { NotebookTypeRegistry } from './notebook-type-registry';
+import { NotebookRendererRegistry } from './notebook-renderer-registry';
 import { NotebookService } from './service/notebook-service';
 import { NotebookEditorWidgetFactory } from './notebook-editor-widget-factory';
 import { NotebookCellResourceResolver } from './notebook-cell-resource-resolver';
@@ -38,6 +39,7 @@ import { NotebookKernelService } from './service/notebook-kernel-service';
 import { KernelPickerMRUStrategy, NotebookKernelQuickPickService } from './service/notebook-kernel-quick-pick-service';
 import { NotebookKernelHistoryService } from './service/notebookKernelHistoryService';
 import { NotebookEditorWidgetService } from './service/notebook-editor-service';
+import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Symbol('notebooks'));
@@ -46,6 +48,7 @@ export default new ContainerModule(bind => {
     bind(OpenHandler).toService(NotebookOpenHandler);
 
     bind(NotebookTypeRegistry).toSelf().inSingletonScope();
+    bind(NotebookRendererRegistry).toSelf().inSingletonScope();
 
     bind(WidgetFactory).to(NotebookEditorWidgetFactory).inSingletonScope();
     bind(NotebookCellToolbarFactory).toSelf().inSingletonScope();
@@ -55,6 +58,7 @@ export default new ContainerModule(bind => {
     bind(NotebookExecutionService).toSelf().inSingletonScope();
     bind(NotebookExecutionStateService).toSelf().inSingletonScope();
     bind(NotebookKernelService).toSelf().inSingletonScope();
+    bind(NotebookRendererMessagingService).toSelf().inSingletonScope();
     bind(NotebookKernelHistoryService).toSelf().inSingletonScope();
     bind(NotebookKernelQuickPickService).to(KernelPickerMRUStrategy).inSingletonScope();
 
