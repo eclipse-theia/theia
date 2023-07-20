@@ -121,7 +121,11 @@
   min-height: var(--theia-private-menu-item-height);
   max-height: var(--theia-private-menu-item-height);
   padding: 0px;
-  line-height: var(--theia-private-menu-item-height);
+  /** 
+   * FireFox adds 0.5px to all menu items for some reason
+   * Subtracting that amount fixes the behavior on FireFox and doesn't introduce issues on Chromium
+   */
+  line-height: calc(var(--theia-private-menu-item-height) - 0.5px);
   overflow: hidden;
 }
 
@@ -158,7 +162,7 @@
 .p-Menu-itemIcon {
   width: 21px;
   padding: 0px 2px 0px 4px;
-  margin-top: -2px;
+  height: var(--theia-private-menu-item-height);
 }
 
 .p-Menu-itemLabel {
