@@ -1542,6 +1542,13 @@ export class DocumentLink {
 
 @es5ClassCompat
 export class DocumentDropEdit {
+
+    id?: string;
+
+    priority?: number;
+
+    label?: string;
+
     insertText: string | SnippetString;
 
     additionalEdit?: WorkspaceEdit;

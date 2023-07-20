@@ -494,9 +494,13 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, DocumentDropEditAdapter, adapter => adapter.provideDocumentDropEdits(URI.revive(resource), position, dataTransfer, token), undefined);
     }
 
-    registerDocumentDropEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentDropEditProvider): theia.Disposable {
+    registerDocumentDropEditProvider(
+        selector: theia.DocumentSelector,
+        provider: theia.DocumentDropEditProvider,
+        metadata?: theia.DocumentDropEditProviderMetadata
+    ): theia.Disposable {
         const callId = this.addNewAdapter(new DocumentDropEditAdapter(provider, this.documents, this.filesSystem));
-        this.proxy.$registerDocumentDropEditProvider(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerDocumentDropEditProvider(callId, this.transformDocumentSelector(selector), metadata);
         return this.createDisposable(callId);
     }
     // ### Drop Edit Provider end
