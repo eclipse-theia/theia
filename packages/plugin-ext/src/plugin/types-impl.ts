@@ -3499,11 +3499,16 @@ export class InteractiveWindowInput {
 // #region DocumentPaste
 @es5ClassCompat
 export class DocumentPasteEdit {
-    constructor(insertText: string | SnippetString) {
+    constructor(insertText: string | SnippetString, id: string, label: string) {
         this.insertText = insertText;
+        this.id = id;
+        this.label = label;
     }
     insertText: string | SnippetString;
     additionalEdit?: WorkspaceEdit;
+    id: string;
+    label: string;
+    priority?: number;
 }
 // #endregion
 
