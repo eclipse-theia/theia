@@ -99,6 +99,7 @@ export interface PluginPackageContribution {
     localizations?: PluginPackageLocalization[];
     terminal?: PluginPackageTerminal;
     notebooks?: PluginPackageNotebook[];
+    notebookRenderer?: PluginNotebookRendererContribution[];
 }
 
 export interface PluginPackageNotebook {
@@ -106,6 +107,14 @@ export interface PluginPackageNotebook {
     displayName: string;
     selector?: readonly { filenamePattern?: string; excludeFileNamePattern?: string }[];
     priority?: string;
+}
+
+export interface PluginNotebookRendererContribution {
+    readonly id: string;
+    readonly displayName: string;
+    readonly mimeTypes: string[];
+    readonly entrypoint: string | { readonly extends: string; readonly path: string };
+    readonly requiresMessaging?: 'always' | 'optional' | 'never'
 }
 
 export interface PluginPackageAuthenticationProvider {
@@ -585,6 +594,7 @@ export interface PluginContribution {
     localizations?: Localization[];
     terminalProfiles?: TerminalProfile[];
     notebooks?: NotebookContribution[];
+    notebookRenderer?: NotebookRendererContribution[];
 }
 
 export interface NotebookContribution {
@@ -592,6 +602,14 @@ export interface NotebookContribution {
     displayName: string;
     selector?: readonly { filenamePattern?: string; excludeFileNamePattern?: string }[];
     priority?: string;
+}
+
+export interface NotebookRendererContribution {
+    readonly id: string;
+    readonly displayName: string;
+    readonly mimeTypes: string[];
+    readonly entrypoint: string | { readonly extends: string; readonly path: string };
+    readonly requiresMessaging?: 'always' | 'optional' | 'never'
 }
 
 export interface AuthenticationProviderInformation {
