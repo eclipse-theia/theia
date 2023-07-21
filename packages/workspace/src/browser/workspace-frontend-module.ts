@@ -54,6 +54,7 @@ import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-worki
 import { WorkspaceUserWorkingDirectoryProvider } from './workspace-user-working-directory-provider';
 import { WindowTitleUpdater } from '@theia/core/lib/browser/window/window-title-updater';
 import { WorkspaceWindowTitleUpdater } from './workspace-window-title-updater';
+import { CanonicalUriService } from './canonical-uri-service';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
@@ -61,6 +62,7 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
 
     bind(WorkspaceService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WorkspaceService);
+    bind(CanonicalUriService).toSelf().inSingletonScope();
     bind(WorkspaceServer).toDynamicValue(ctx => {
         const provider = ctx.container.get(WebSocketConnectionProvider);
         return provider.createProxy<WorkspaceServer>(workspacePath);

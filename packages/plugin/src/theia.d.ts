@@ -22,6 +22,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import './theia-extra';
+import './theia.proposed.canonicalUriProvider';
 import './theia.proposed.customEditorMove';
 import './theia.proposed.diffCommand';
 import './theia.proposed.documentPaste';

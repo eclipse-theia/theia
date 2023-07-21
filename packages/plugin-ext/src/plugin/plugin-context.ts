@@ -747,6 +747,12 @@ export function createAPIFactory(
              * that currently use this proposed API.
              */
             onWillCreateEditSessionIdentity: () => Disposable.NULL,
+            registerCanonicalUriProvider(scheme: string, provider: theia.CanonicalUriProvider): theia.Disposable {
+                return workspaceExt.registerCanonicalUriProvider(scheme, provider);
+            },
+            getCanonicalUri(uri: theia.Uri, options: theia.CanonicalUriRequestOptions, token: CancellationToken): theia.ProviderResult<theia.Uri> {
+                return workspaceExt.getCanonicalUri(uri, options, token);
+            }
         };
 
         const onDidChangeLogLevel = new Emitter<theia.LogLevel>();
