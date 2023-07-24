@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-// code copied and modified from https://github.com/microsoft/vscode/blob/main/src/vscode-dts/vscode.proposed.canonicalUriProvider.d.ts
+// code copied and modified from https://github.com/microsoft/vscode/blob/1.79.0/src/vscode-dts/vscode.proposed.canonicalUriProvider.d.ts
 
 export module '@theia/plugin' {
 
