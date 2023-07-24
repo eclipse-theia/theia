@@ -58,12 +58,12 @@ export namespace SearchInWorkspaceCommands {
         label: 'Find in Folder...'
     });
     export const FOCUS_NEXT_RESULT = Command.toDefaultLocalizedCommand({
-        id: 'search-in-workspace.focusNextSearchResult',
+        id: 'search-in-workspace.next-result',
         category: SEARCH_CATEGORY,
         label: 'Focus Next Search Result'
     });
     export const FOCUS_PREV_RESULT = Command.toDefaultLocalizedCommand({
-        id: 'search-in-workspace.focusPreviousSearchResult',
+        id: 'search-in-workspace.prev-result',
         category: SEARCH_CATEGORY,
         label: 'Focus Previous Search Result'
     });
@@ -408,8 +408,16 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             order: '2'
         });
         menus.registerMenuAction(CommonMenus.EDIT_FIND, {
-            commandId: SearchInWorkspaceCommands.REPLACE_IN_FILES.id,
+            commandId: SearchInWorkspaceCommands.FOCUS_NEXT_RESULT.id,
             order: '3'
+        });
+        menus.registerMenuAction(CommonMenus.EDIT_FIND, {
+            commandId: SearchInWorkspaceCommands.FOCUS_PREV_RESULT.id,
+            order: '4'
+        });
+        menus.registerMenuAction(CommonMenus.EDIT_FIND, {
+            commandId: SearchInWorkspaceCommands.REPLACE_IN_FILES.id,
+            order: '5'
         });
         menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.INTERNAL, {
             commandId: SearchInWorkspaceCommands.REPLACE_RESULT.id,
