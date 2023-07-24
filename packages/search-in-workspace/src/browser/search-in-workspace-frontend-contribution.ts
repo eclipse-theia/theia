@@ -57,16 +57,6 @@ export namespace SearchInWorkspaceCommands {
         category: SEARCH_CATEGORY,
         label: 'Find in Folder...'
     });
-    export const FOCUS_NEXT_RESULT = Command.toDefaultLocalizedCommand({
-        id: 'search-in-workspace.next-result',
-        category: SEARCH_CATEGORY,
-        label: 'Focus Next Search Result'
-    });
-    export const FOCUS_PREV_RESULT = Command.toDefaultLocalizedCommand({
-        id: 'search-in-workspace.prev-result',
-        category: SEARCH_CATEGORY,
-        label: 'Focus Previous Search Result'
-    });
     export const REFRESH_RESULTS = Command.toDefaultLocalizedCommand({
         id: 'search-in-workspace.refresh',
         category: SEARCH_CATEGORY,
@@ -176,20 +166,6 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             execute: async () => {
                 const widget = await this.openView({ activate: true });
                 widget.updateSearchTerm(this.getSearchTerm(), true);
-            }
-        });
-
-        commands.registerCommand(SearchInWorkspaceCommands.FOCUS_NEXT_RESULT, {
-            execute: async () => {
-                const widget = await this.openView({ activate: true });
-                widget.resultTreeWidget.model.selectNextNode();
-            }
-        });
-
-        commands.registerCommand(SearchInWorkspaceCommands.FOCUS_PREV_RESULT, {
-            execute: async () => {
-                const widget = await this.openView({ activate: true });
-                widget.resultTreeWidget.model.selectPrevNode();
             }
         });
 
@@ -368,14 +344,6 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             when: 'explorerResourceIsFolder'
         });
         keybindings.registerKeybinding({
-            command: SearchInWorkspaceCommands.FOCUS_NEXT_RESULT.id,
-            keybinding: 'f4',
-        });
-        keybindings.registerKeybinding({
-            command: SearchInWorkspaceCommands.FOCUS_PREV_RESULT.id,
-            keybinding: 'shift+f4',
-        });
-        keybindings.registerKeybinding({
             command: SearchInWorkspaceCommands.DISMISS_RESULT.id,
             keybinding: isOSX ? 'cmd+backspace' : 'del',
             when: 'searchViewletFocus && !inputBoxFocus'
@@ -408,16 +376,8 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             order: '2'
         });
         menus.registerMenuAction(CommonMenus.EDIT_FIND, {
-            commandId: SearchInWorkspaceCommands.FOCUS_NEXT_RESULT.id,
-            order: '3'
-        });
-        menus.registerMenuAction(CommonMenus.EDIT_FIND, {
-            commandId: SearchInWorkspaceCommands.FOCUS_PREV_RESULT.id,
-            order: '4'
-        });
-        menus.registerMenuAction(CommonMenus.EDIT_FIND, {
             commandId: SearchInWorkspaceCommands.REPLACE_IN_FILES.id,
-            order: '5'
+            order: '3'
         });
         menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.INTERNAL, {
             commandId: SearchInWorkspaceCommands.REPLACE_RESULT.id,
