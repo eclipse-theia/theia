@@ -18,14 +18,14 @@ import * as React from '@theia/core/shared/react';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { NotebookModel } from '../view-model/notebook-model';
-import { Cellrenderer } from './notebook-cell-list-view';
+import { CellRenderer } from './notebook-cell-list-view';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { CellEditor } from './notebook-cell-editor';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
 
 @injectable()
-export class NotebookMarkdownCellRenderer implements Cellrenderer {
+export class NotebookMarkdownCellRenderer implements CellRenderer {
 
     @inject(MarkdownRenderer)
     private readonly markdownRenderer: MarkdownRenderer;
@@ -59,7 +59,7 @@ function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel }:
 
     return <div>
         {editMode ?
-            <CellEditor cell={cell} notebookModel={notebookModel} monacoServices={monacoServices}/> :
+            <CellEditor cell={cell} notebookModel={notebookModel} monacoServices={monacoServices} /> :
             <div
                 // This sets the non React HTML node from the markdownrenders output as a child node to this react component
                 // This is currently sadly the best way we have to combine React (Virtual Nodes) and normal dom nodes

@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Disposable, Emitter, Event, URI } from '@theia/core';
+import { Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
@@ -84,6 +84,8 @@ export class NotebookCellModel implements Disposable {
     readonly outputs: NotebookCellOutputModel[];
 
     readonly metadata: NotebookCellMetadata;
+
+    readonly toDispose = new DisposableCollection();
 
     private _internalMetadata: NotebookCellInternalMetadata;
 
@@ -155,6 +157,7 @@ export class NotebookCellModel implements Disposable {
         this.ChangeInternalMetadataEmitter.dispose();
         this.ChangeLanguageEmitter.dispose();
         this.notebookCellContextManager.dispose();
+        this.toDispose.dispose();
     }
 
     requestEdit(): void {

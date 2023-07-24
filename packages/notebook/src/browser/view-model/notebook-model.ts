@@ -66,7 +66,7 @@ export class NotebookModel implements Saveable, Disposable {
 
     readonly autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
-    currentLastHandle: number = 0;
+    nextHandle: number = 0;
 
     kernel?: NotebookKernel;
 
@@ -117,7 +117,7 @@ export class NotebookModel implements Saveable, Disposable {
                 }
             }
         });
-        this.currentLastHandle = this.cells.length - 1;
+        this.nextHandle = this.cells.length;
     }
 
     dispose(): void {

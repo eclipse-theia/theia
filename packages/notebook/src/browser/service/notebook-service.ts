@@ -112,7 +112,7 @@ export class NotebookService implements Disposable {
     createEmptyCellModel(notebookModel: NotebookModel, cellKind: CellKind): NotebookCellModel {
         const firstCodeCell = notebookModel.cells.find(cell => cell.cellKind === CellKind.Code);
 
-        const handle = notebookModel.currentLastHandle++;
+        const handle = notebookModel.nextHandle++;
         return this.notebookCellModelFactory({
             uri: CellUri.generate(notebookModel.uri, handle),
             cellKind,

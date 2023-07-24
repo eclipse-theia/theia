@@ -20,26 +20,26 @@ import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
 import { CellEditor } from './notebook-cell-editor';
-import { Cellrenderer } from './notebook-cell-list-view';
+import { CellRenderer } from './notebook-cell-list-view';
 
 @injectable()
-export class NotebookCodeCellRenderer implements Cellrenderer {
+export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(MonacoEditorServices)
     protected readonly monacoServices: MonacoEditorServices;
 
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
-            <CellEditor notebookModel={notebookModel} cell={cell} monacoServices={this.monacoServices}/>
-            <NotebookCodeCellOutputs cell={cell}/>
+            <CellEditor notebookModel={notebookModel} cell={cell} monacoServices={this.monacoServices} />
+            <NotebookCodeCellOutputs cell={cell} />
         </div >;
     }
 }
 
-interface NotebookCellOutputProps {
+export interface NotebookCellOutputProps {
     cell: NotebookCellModel;
 }
 
-function NotebookCodeCellOutputs({cell}: NotebookCellOutputProps): JSX.Element {
+export function NotebookCodeCellOutputs({ cell }: NotebookCellOutputProps): JSX.Element {
     const outputJson = cell.outputs.length > 0 ? JSON.stringify(cell.outputs.map(output => output.toDto())) : undefined;
     const [outputs, setOutputs] = React.useState(outputJson);
     React.useEffect(() => {

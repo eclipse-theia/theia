@@ -19,7 +19,7 @@ import { CommandRegistry, URI } from '@theia/core';
 import { ReactWidget, Navigatable, SaveableSource, Saveable, Message } from '@theia/core/lib/browser';
 import { ReactNode } from '@theia/core/shared/react';
 import { CellKind } from '../common';
-import { Cellrenderer as CellRenderer, NotebookCellListView } from './view/notebook-cell-list-view';
+import { CellRenderer as CellRenderer, NotebookCellListView } from './view/notebook-cell-list-view';
 import { NotebookCodeCellRenderer } from './view/notebook-code-cell-view';
 import { NotebookMarkdownCellRenderer } from './view/notebook-markdown-cell-view';
 import { NotebookModel } from './view-model/notebook-model';
@@ -102,7 +102,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
             <NotebookCellListView renderers={this.renderers}
                 notebookModel={this.props.notebookData}
                 toolbarRenderer={this.cellToolbarFactory}
-                commandRegistry={this.commandRegistry}/>
+                commandRegistry={this.commandRegistry} />
         </div>;
     }
 
