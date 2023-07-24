@@ -29,6 +29,10 @@ body {
   display: flex;
 }
 
+.text-bold {
+  font-weight: 600;
+}
+
 .gs-action-container {
   line-height: 20px;
 }
@@ -88,4 +92,13 @@ body {
   color: var(--theia-descriptionForeground);
   text-transform: capitalize;
   font-weight: 400;
+}
+
+.gs-preference-container {
+  margin-top: 20px;
+}
+
+.gs-preference {
+  align-items: center;
+  display: flex;
 }

@@ -16,10 +16,11 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { CommandRegistry, MenuModelRegistry } from '@theia/core/lib/common';
-import { CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
+import { CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication, PreferenceService } from '@theia/core/lib/browser';
 import { GettingStartedWidget } from './getting-started-widget';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { WelcomePagePreferences } from './getting-started-preferences';
 
 /**
  * Triggers opening the `GettingStartedWidget`.
@@ -38,6 +39,9 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     constructor() {
         super({
             widgetId: GettingStartedWidget.ID,
@@ -49,11 +53,14 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
     }
 
     async onStart(app: FrontendApplication): Promise<void> {
-        if (!this.workspaceService.opened) {
-            this.stateService.reachedState('ready').then(
-                () => this.openView({ reveal: true, activate: true })
-            );
-        }
+        this.stateService.reachedState('ready').then(
+            () => this.preferenceService.ready.then(() => {
+                const showWelcomePage: boolean = this.preferenceService.get(WelcomePagePreferences.alwaysShowWelcomePage, true);
+                if (showWelcomePage) {
+                    this.openView({ reveal: true, activate: true });
+                }
+            })
+        );
     }
 
     override registerCommands(registry: CommandRegistry): void {

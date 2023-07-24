@@ -20,12 +20,13 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { CommandRegistry, isOSX, environment, Path } from '@theia/core/lib/common';
 import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browser';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
-import { Message, ReactWidget, CommonCommands, LabelProvider, Key, KeyCode, codicon } from '@theia/core/lib/browser';
+import { Message, ReactWidget, CommonCommands, LabelProvider, Key, KeyCode, codicon, PreferenceService } from '@theia/core/lib/browser';
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { nls } from '@theia/core/lib/common/nls';
+import { WelcomePagePreferences } from './getting-started-preferences';
 
 /**
  * Default implementation of the `GettingStartedWidget`.
@@ -47,7 +48,7 @@ export class GettingStartedWidget extends ReactWidget {
     /**
      * The widget `label` which is used for display purposes.
      */
-    static readonly LABEL = nls.localizeByDefault('Get Started');
+    static readonly LABEL = nls.localizeByDefault('Welcome');
 
     /**
      * The `ApplicationInfo` for the application if available.
@@ -96,6 +97,9 @@ export class GettingStartedWidget extends ReactWidget {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     @postConstruct()
     protected init(): void {
@@ -153,6 +157,9 @@ export class GettingStartedWidget extends ReactWidget {
                 <div className='col'>
                     {this.renderVersion()}
                 </div>
+            </div>
+            <div className='gs-preference-container'>
+                {this.renderPreferences()}
             </div>
         </div>;
     }
@@ -364,6 +371,10 @@ export class GettingStartedWidget extends ReactWidget {
         </div>;
     }
 
+    protected renderPreferences(): React.ReactNode {
+        return <WelcomePreferences preferenceService={this.preferenceService}></WelcomePreferences>;
+    }
+
     /**
      * Build the list of workspace paths.
      * @param workspaces {string[]} the list of workspaces.
@@ -477,4 +488,43 @@ export class GettingStartedWidget extends ReactWidget {
     protected isEnterKey(e: React.KeyboardEvent): boolean {
         return Key.ENTER.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode;
     }
+}
+
+export interface PreferencesProps {
+    preferenceService: PreferenceService;
+}
+
+function WelcomePreferences(props: PreferencesProps): JSX.Element {
+    const [alwaysShowWelcomePage, setAlwaysShowWelcomePage] = React.useState<boolean>(
+        props.preferenceService.get(WelcomePagePreferences.alwaysShowWelcomePage, true)
+    );
+    React.useEffect(() => {
+        const prefListener = props.preferenceService.onPreferenceChanged(change => {
+            if (change.preferenceName === WelcomePagePreferences.alwaysShowWelcomePage) {
+                const prefValue = change.newValue;
+                console.info(`Set welcome.alwaysShowWelcomePage checkbox state to ${prefValue}`);
+                setAlwaysShowWelcomePage(prefValue);
+            }
+        });
+        return () => prefListener.dispose();
+    }, [props.preferenceService]);
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newChecked = e.target.checked;
+        console.info(`Set welcome.alwaysShowWelcomePage pref to ${newChecked}`);
+        props.preferenceService.updateValue(WelcomePagePreferences.alwaysShowWelcomePage, newChecked);
+    };
+    return (
+        <div className='gs-preference'>
+            <input
+                type="checkbox"
+                className="theia-input"
+                id="alwaysShowWelcomePage"
+                onChange={handleChange}
+                checked={alwaysShowWelcomePage}
+            />
+            <label className='text-bold' htmlFor="alwaysShowWelcomePage">
+                Show Welcome Page after every start of the application
+            </label>
+        </div>
+    );
 }
