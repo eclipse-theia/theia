@@ -1,6 +1,7 @@
 .theia-notebook-cell-list {
     list-style: none;
     padding-left: 0px;
+    background-color: var(--theia-notebook-editorBackground);
 }
 
 .theia-notebook-cell {
@@ -9,24 +10,29 @@
     margin: 10px 0px;
 }
 
+.theia-notebook-cell:hover .theia-notebook-cell-marker {
+    visibility: visible;
+}
+
 .theia-notebook-cell-marker {
     background-color: gray;
-    width: 4px;
+    width: 3px;
     margin: 0px 8px 0px 4px;
     border-radius: 4px;
+    visibility: hidden;
 }
 
 .theia-notebook-cell-marker-selected {
+    visibility: visible;
     background-color: var(--theia-focusBorder);
 }
 
 .theia-notebook-cell-marker:hover {
-    width: 8px;
-    margin: 0px 4px 0px 4px;
+    width: 5px;
+    margin: 0px 6px 0px 4px;
 }
 
-.theia-notebook-cell-statusbar {
-}
+.theia-notebook-cell-statusbar {}
 
 .theia-notebook-cell-content {
     flex: 1;
@@ -38,8 +44,11 @@
     max-height: 500px;
     margin: 0px 10px;
     padding: 10px;
-    border: 1px solid grey;
-    border-radius: 5px;
+    outline: 1px solid var(--theia-notebook-cellBorderColor);
+}
+
+.theia-notebook-cell.focused .theia-notebook-cell-editor {
+    outline-color: var(--theia-notebook-focusedEditorBorder);
 }
 
 .theia-notebook-cell-toolbar {
@@ -98,4 +107,3 @@
 .theia-notebook-add-cell-button-icon {
     vertical-align: middle;
 }
-

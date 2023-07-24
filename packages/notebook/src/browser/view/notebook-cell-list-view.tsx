@@ -22,12 +22,12 @@ import { codicon } from '@theia/core/lib/browser';
 import { CommandRegistry, nls } from '@theia/core';
 import { NotebookCommands } from '../contributions/notebook-actions-contribution';
 
-export interface Cellrenderer {
+export interface CellRenderer {
     render(notebookData: NotebookModel, cell: NotebookCellModel, index: number): React.ReactNode
 }
 
 interface CellListProps {
-    renderers: Map<CellKind, Cellrenderer>;
+    renderers: Map<CellKind, CellRenderer>;
     notebookModel: NotebookModel;
     toolbarRenderer: NotebookCellToolbarFactory;
     commandRegistry: CommandRegistry
@@ -49,10 +49,10 @@ export class NotebookCellListView extends React.Component<CellListProps, { selec
                 .map((cell, index) =>
                     <React.Fragment key={index}>
                         <NotebookCellDivider onAddNewCell={(kind: CellKind) => this.onAddNewCell(kind, index)} />
-                        <li className='theia-notebook-cell' key={'cell-' + index}
-                        // data-keybinding-context={cell.uri} // needed for contextKey context to work
-                        onClick={() => this.setState({ selectedCell: cell })}
-                        ref={(node: HTMLLIElement) => cell.refChanged(node)}>
+                        <li className={'theia-notebook-cell' + (this.state.selectedCell === cell ? ' focused' : '')} key={'cell-' + cell.handle}
+                            // data-keybinding-context={cell.uri} // needed for contextKey context to work
+                            onClick={() => this.setState({ selectedCell: cell })}
+                            ref={(node: HTMLLIElement) => cell.refChanged(node)}>
                             <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
                             <div className='theia-notebook-cell-statusbar'></div>
                             <div className='theia-notebook-cell-content'>

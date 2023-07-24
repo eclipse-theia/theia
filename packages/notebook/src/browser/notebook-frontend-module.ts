@@ -17,6 +17,7 @@ import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { NotebookOpenHandler } from './notebook-open-handler';
 import { bindContributionProvider, CommandContribution, MenuContribution, ResourceResolver, } from '@theia/core';
 import { NotebookTypeRegistry } from './notebook-type-registry';
@@ -40,9 +41,13 @@ import { KernelPickerMRUStrategy, NotebookKernelQuickPickService } from './servi
 import { NotebookKernelHistoryService } from './service/notebookKernelHistoryService';
 import { NotebookEditorWidgetService } from './service/notebook-editor-service';
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
+import { NotebookColorContribution } from './contributions/notebook-color-contribution';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Symbol('notebooks'));
+
+    bind(NotebookColorContribution).toSelf().inSingletonScope();
+    bind(ColorContribution).toService(NotebookColorContribution);
 
     bind(NotebookOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(NotebookOpenHandler);
