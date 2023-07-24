@@ -403,6 +403,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         if (typeof pluginMain[plugin.lifecycle.startMethod] === 'function') {
             await this.localization.initializeLocalizedMessages(plugin, this.envExt.language);
             const pluginExport = await pluginMain[plugin.lifecycle.startMethod].apply(getGlobal(), [pluginContext]);
+            console.log(`calling activation function on ${id}`);
             this.activatedPlugins.set(plugin.model.id, new ActivatedPlugin(pluginContext, pluginExport, stopFn));
         } else {
             // https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/workbench/api/common/extHostExtensionService.ts#L400-L401
