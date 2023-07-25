@@ -6,9 +6,10 @@
 
 ## v1.40.0 - 
 
-- [workspace] Implement CanonicalUriProvider API #12743 (https://github.com/eclipse-theia/theia/pull/12743 - Contributed on behalf of STMicroelectronics
-- Show command shortcuts in toolbar item tooltips. #12660 (https://github.com/eclipse-theia/theia/pull/12660) - Contributed on behalf of STMicroelectronics
+- [workspace] Implement CanonicalUriProvider API [#12743](https://github.com/eclipse-theia/theia/pull/12743) - Contributed on behalf of STMicroelectronics
+- Show command shortcuts in toolbar item tooltips. [#12660](https://github.com/eclipse-theia/theia/pull/12660) - Contributed on behalf of STMicroelectronics
 - [cli] added `check:theia-extensions` which checks the uniqueness of Theia extension versions [#12596](https://github.com/eclipse-theia/theia/pull/12596) - Contributed on behalf of STMicroelectronics
+- [vscode] Add support for the TaskPresentationOptions close property [#12749](https://github.com/eclipse-theia/theia/pull/12749) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.40.0">[Breaking Changes:](#breaking_changes_1.40.0)</a>
 

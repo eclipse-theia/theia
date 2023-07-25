@@ -93,7 +93,8 @@ export class TaskTerminalWidgetManager {
             for (const terminal of this.getTaskTerminalWidgets()) {
                 if (terminal.taskId === finishedTaskId) {
                     const showReuseMessage = !!event.config && TaskOutputPresentation.shouldShowReuseMessage(event.config);
-                    this.notifyTaskFinished(terminal, showReuseMessage);
+                    const closeOnFinish = !!event.config && TaskOutputPresentation.shouldCloseTerminalOnFinish(event.config);
+                    this.updateTerminalOnTaskExit(terminal, showReuseMessage, closeOnFinish);
                     break;
                 }
             }
@@ -113,11 +114,11 @@ export class TaskTerminalWidgetManager {
                         terminal.taskConfig = taskConfig;
                         terminal.busy = true;
                     } else {
-                        this.notifyTaskFinished(terminal, true);
+                        this.updateTerminalOnTaskExit(terminal, true, false);
                     }
                 });
                 const didConnectFailureListener = terminal.onDidOpenFailure(async () => {
-                    this.notifyTaskFinished(terminal, true);
+                    this.updateTerminalOnTaskExit(terminal, true, false);
                 });
                 terminal.onDidDispose(() => {
                     didConnectListener.dispose();
@@ -211,10 +212,12 @@ export class TaskTerminalWidgetManager {
         return this.terminalService.all.filter(TaskTerminalWidget.is);
     }
 
-    protected notifyTaskFinished(terminal: TaskTerminalWidget, showReuseMessage: boolean): void {
+    protected updateTerminalOnTaskExit(terminal: TaskTerminalWidget, showReuseMessage: boolean, closeOnFinish: boolean): void {
         terminal.busy = false;
-        terminal.scrollToBottom();
-        if (showReuseMessage) {
+        if (closeOnFinish) {
+            terminal.close();
+        } else if (showReuseMessage) {
+            terminal.scrollToBottom();
             terminal.writeLine('\x1b[1m\n\rTerminal will be reused by tasks. \x1b[0m\n');
         }
     }
