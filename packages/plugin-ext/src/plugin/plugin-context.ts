@@ -906,8 +906,8 @@ export function createAPIFactory(
             ): theia.Disposable {
                 return languagesExt.registerOnTypeFormattingEditProvider(selector, provider, [firstTriggerCharacter].concat(moreTriggerCharacters), pluginToPluginInfo(plugin));
             },
-            registerDocumentDropEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentDropEditProvider) {
-                return languagesExt.registerDocumentDropEditProvider(selector, provider);
+            registerDocumentDropEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentDropEditProvider, metadata?: theia.DocumentDropEditProviderMetadata) {
+                return languagesExt.registerDocumentDropEditProvider(selector, provider, metadata);
             },
             registerDocumentLinkProvider(selector: theia.DocumentSelector, provider: theia.DocumentLinkProvider): theia.Disposable {
                 return languagesExt.registerDocumentLinkProvider(selector, provider, pluginToPluginInfo(plugin));

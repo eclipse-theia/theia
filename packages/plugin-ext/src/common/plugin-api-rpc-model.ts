@@ -329,6 +329,10 @@ export interface DocumentDropEdit {
     additionalEdit?: WorkspaceEdit;
 }
 
+export interface DocumentDropEditProviderMetadata {
+    readonly dropMimeTypes: readonly string[];
+}
+
 export interface DataTransferFileDTO {
     readonly name: string;
     readonly uri?: UriComponents;

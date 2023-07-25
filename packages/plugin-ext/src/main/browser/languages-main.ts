@@ -40,7 +40,8 @@ import {
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, RelatedInformation,
-    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto, CodeActionProviderDocumentation, InlayHint, InlayHintLabelPart, CodeActionContext
+    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto,
+    CodeActionProviderDocumentation, InlayHint, InlayHintLabelPart, CodeActionContext, DocumentDropEditProviderMetadata
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from '@theia/monaco/lib/browser/monaco-languages';
@@ -726,12 +727,20 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return this.proxy.$provideOnTypeFormattingEdits(handle, model.uri, position, ch, options, token);
     }
 
-    $registerDocumentDropEditProvider(handle: number, selector: SerializedDocumentFilter[]): void {
-        this.register(handle, (StandaloneServices.get(ILanguageFeaturesService).documentOnDropEditProvider.register(selector, this.createDocumentDropEditProvider(handle))));
+    $registerDocumentDropEditProvider(handle: number, selector: SerializedDocumentFilter[], metadata?: DocumentDropEditProviderMetadata): void {
+        this.register(
+            handle,
+            StandaloneServices
+                .get(ILanguageFeaturesService)
+                .documentOnDropEditProvider
+                .register(selector, this.createDocumentDropEditProvider(handle, metadata))
+        );
     }
 
-    createDocumentDropEditProvider(handle: number): DocumentOnDropEditProvider {
+    createDocumentDropEditProvider(handle: number, _metadata?: DocumentDropEditProviderMetadata): DocumentOnDropEditProvider {
         return {
+            // @monaco-uplift dropMimeTypes should be supported by the monaco drop editor provider after 1.79.0
+            // dropMimeTypes: metadata?.dropMimeTypes ?? ['*/*'],
             provideDocumentOnDropEdits: async (model, position, dataTransfer, token) => this.provideDocumentDropEdits(handle, model, position, dataTransfer, token)
         };
     }
@@ -742,6 +751,10 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         const edit = await this.proxy.$provideDocumentDropEdits(handle, model.uri, position, await DataTransfer.toDataTransferDTO(dataTransfer), token);
         if (edit) {
             return {
+                // @monaco-uplift id, priority and label should be supported by monaco after 1.79.0. The implementation relies on a copy of the plugin data
+                // id: edit.id ? plugin.identifier.value + '.' + edit.id : plugin.identifier.value,
+                // label: edit.label ?? nls.localizeByDefault("Drop using '{0}' extension", plugin.displayName || plugin.name),
+                // priority: edit.priority ?? 0,
                 insertText: edit.insertText instanceof SnippetString ? { snippet: edit.insertText.value } : edit.insertText,
                 additionalEdit: toMonacoWorkspaceEdit(edit?.additionalEdit)
             };
