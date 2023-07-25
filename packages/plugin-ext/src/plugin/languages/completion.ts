@@ -153,13 +153,17 @@ export class CompletionAdapter {
             ? [CompletionItemTag.Deprecated]
             : undefined;
 
+        const documentation = typeof item.documentation !== 'undefined'
+            ? Converter.fromMarkdown(item.documentation)
+            : undefined;
+
         return {
             id,
             parentId,
             label: item.label,
             kind: Converter.fromCompletionItemKind(item.kind),
             detail: item.detail,
-            documentation: item.documentation,
+            documentation,
             filterText: item.filterText,
             sortText: item.sortText,
             preselect: item.preselect,
