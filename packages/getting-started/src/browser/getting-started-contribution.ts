@@ -20,7 +20,7 @@ import { CommonMenus, AbstractViewContribution, FrontendApplicationContribution,
 import { GettingStartedWidget } from './getting-started-widget';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { WelcomePagePreferences } from './getting-started-preferences';
+import { GettingStartedPreferences } from './getting-started-preferences';
 
 /**
  * Triggers opening the `GettingStartedWidget`.
@@ -55,7 +55,7 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
     async onStart(app: FrontendApplication): Promise<void> {
         this.stateService.reachedState('ready').then(
             () => this.preferenceService.ready.then(() => {
-                const showWelcomePage: boolean = this.preferenceService.get(WelcomePagePreferences.alwaysShowWelcomePage, true);
+                const showWelcomePage: boolean = this.preferenceService.get(GettingStartedPreferences.alwaysShowWelcomePage, true);
                 if (showWelcomePage) {
                     this.openView({ reveal: true, activate: true });
                 }

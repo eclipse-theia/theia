@@ -14,9 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { interfaces } from '@theia/core/shared/inversify';
+import { nls } from '@theia/core/lib/common/nls';
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
+import { PreferenceContribution } from '@theia/core/lib/browser';
 
-export namespace WelcomePagePreferences {
+export namespace GettingStartedPreferences {
     export const alwaysShowWelcomePage = 'welcome.alwaysShowWelcomePage';
 }
 
@@ -25,8 +28,12 @@ export const welcomePreferenceSchema: PreferenceSchema = {
     'properties': {
         'welcome.alwaysShowWelcomePage': {
             type: 'boolean',
-            description: 'Show Welcome Page after every start of the application.',
+            description: nls.localizeByDefault('Show welcome page on startup'),
             default: true
         }
     }
 };
+
+export function bindWelcomePreference(bind: interfaces.Bind): void {
+    bind(PreferenceContribution).toConstantValue({ schema: welcomePreferenceSchema });
+}

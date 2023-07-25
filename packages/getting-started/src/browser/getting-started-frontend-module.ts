@@ -17,8 +17,8 @@
 import { GettingStartedContribution } from './getting-started-contribution';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { GettingStartedWidget } from './getting-started-widget';
-import { WidgetFactory, FrontendApplicationContribution, bindViewContribution, PreferenceContribution } from '@theia/core/lib/browser';
-import { welcomePreferenceSchema } from './getting-started-preferences';
+import { WidgetFactory, FrontendApplicationContribution, bindViewContribution } from '@theia/core/lib/browser';
+import { bindWelcomePreference } from './getting-started-preferences';
 import '../../src/browser/style/index.css';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
@@ -29,5 +29,5 @@ export default new ContainerModule((bind: interfaces.Bind) => {
         id: GettingStartedWidget.ID,
         createWidget: () => context.container.get<GettingStartedWidget>(GettingStartedWidget),
     })).inSingletonScope();
-    bind(PreferenceContribution).toConstantValue({ schema: welcomePreferenceSchema });
+    bindWelcomePreference(bind);
 });

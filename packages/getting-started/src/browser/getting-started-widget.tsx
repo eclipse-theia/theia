@@ -26,7 +26,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { nls } from '@theia/core/lib/common/nls';
-import { WelcomePagePreferences } from './getting-started-preferences';
+import { GettingStartedPreferences } from './getting-started-preferences';
 
 /**
  * Default implementation of the `GettingStartedWidget`.
@@ -130,32 +130,34 @@ export class GettingStartedWidget extends ReactWidget {
      * Render the content of the widget.
      */
     protected render(): React.ReactNode {
-        return <div className='gs-container'>
-            {this.renderHeader()}
-            <hr className='gs-hr' />
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderOpen()}
+        return <div>
+            <div className='gs-container'>
+                {this.renderHeader()}
+                <hr className='gs-hr' />
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderOpen()}
+                    </div>
                 </div>
-            </div>
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderRecentWorkspaces()}
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderRecentWorkspaces()}
+                    </div>
                 </div>
-            </div>
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderSettings()}
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderSettings()}
+                    </div>
                 </div>
-            </div>
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderHelp()}
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderHelp()}
+                    </div>
                 </div>
-            </div>
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderVersion()}
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderVersion()}
+                    </div>
                 </div>
             </div>
             <div className='gs-preference-container'>
@@ -496,13 +498,12 @@ export interface PreferencesProps {
 
 function WelcomePreferences(props: PreferencesProps): JSX.Element {
     const [alwaysShowWelcomePage, setAlwaysShowWelcomePage] = React.useState<boolean>(
-        props.preferenceService.get(WelcomePagePreferences.alwaysShowWelcomePage, true)
+        props.preferenceService.get(GettingStartedPreferences.alwaysShowWelcomePage, true)
     );
     React.useEffect(() => {
         const prefListener = props.preferenceService.onPreferenceChanged(change => {
-            if (change.preferenceName === WelcomePagePreferences.alwaysShowWelcomePage) {
+            if (change.preferenceName === GettingStartedPreferences.alwaysShowWelcomePage) {
                 const prefValue = change.newValue;
-                console.info(`Set welcome.alwaysShowWelcomePage checkbox state to ${prefValue}`);
                 setAlwaysShowWelcomePage(prefValue);
             }
         });
@@ -510,8 +511,7 @@ function WelcomePreferences(props: PreferencesProps): JSX.Element {
     }, [props.preferenceService]);
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newChecked = e.target.checked;
-        console.info(`Set welcome.alwaysShowWelcomePage pref to ${newChecked}`);
-        props.preferenceService.updateValue(WelcomePagePreferences.alwaysShowWelcomePage, newChecked);
+        props.preferenceService.updateValue(GettingStartedPreferences.alwaysShowWelcomePage, newChecked);
     };
     return (
         <div className='gs-preference'>
@@ -523,7 +523,7 @@ function WelcomePreferences(props: PreferencesProps): JSX.Element {
                 checked={alwaysShowWelcomePage}
             />
             <label className='text-bold' htmlFor="alwaysShowWelcomePage">
-                Show Welcome Page after every start of the application
+                {nls.localizeByDefault('Show welcome page on startup')}
             </label>
         </div>
     );

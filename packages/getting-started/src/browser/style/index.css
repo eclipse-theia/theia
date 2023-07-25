@@ -95,10 +95,15 @@ body {
 }
 
 .gs-preference-container {
-  margin-top: 20px;
-}
-
-.gs-preference {
-  align-items: center;
   display: flex;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  justify-content: center;
+}
+.gs-preference {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
 }
