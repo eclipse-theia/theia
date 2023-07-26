@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import * as dns from 'dns';
 import * as path from 'path';
 import * as http from 'http';
 import * as https from 'https';
@@ -107,6 +108,7 @@ export class BackendApplicationCliContribution implements CliContribution {
 
     port: number;
     hostname: string | undefined;
+    ipv4first: boolean;
     ssl: boolean | undefined;
     cert: string | undefined;
     certkey: string | undefined;
@@ -115,6 +117,7 @@ export class BackendApplicationCliContribution implements CliContribution {
     configure(conf: yargs.Argv): void {
         conf.option('port', { alias: 'p', description: 'The port the backend server listens on.', type: 'number', default: DEFAULT_PORT });
         conf.option('hostname', { alias: 'h', description: 'The allowed hostname for connections.', type: 'string', default: DEFAULT_HOST });
+        conf.option('ipv4first', { description: 'Configure Node\'s DNS resolver to use ipv4 first', type: 'boolean', default: true });
         conf.option('ssl', { description: 'Use SSL (HTTPS), cert and certkey must also be set', type: 'boolean', default: DEFAULT_SSL });
         conf.option('cert', { description: 'Path to SSL certificate.', type: 'string' });
         conf.option('certkey', { description: 'Path to SSL certificate key.', type: 'string' });
@@ -124,6 +127,7 @@ export class BackendApplicationCliContribution implements CliContribution {
     setArguments(args: yargs.Arguments): void {
         this.port = args.port as number;
         this.hostname = args.hostname as string;
+        this.ipv4first = args.ipv4first as boolean;
         this.ssl = args.ssl as boolean;
         this.cert = args.cert as string;
         this.certkey = args.certkey as string;
@@ -234,9 +238,14 @@ export class BackendApplication {
         this.app.use(...handlers);
     }
 
-    async start(aPort?: number, aHostname?: string): Promise<http.Server | https.Server> {
-        const hostname = aHostname !== undefined ? aHostname : this.cliParams.hostname;
-        const port = aPort !== undefined ? aPort : this.cliParams.port;
+    async start(port?: number, hostname?: string): Promise<http.Server | https.Server> {
+        hostname ??= this.cliParams.hostname;
+        port ??= this.cliParams.port;
+
+        if (this.cliParams.ipv4first) {
+            // Explicitly configure this process DNS module to use ipv4 first:
+            dns.setDefaultResultOrder('ipv4first');
+        }
 
         const deferred = new Deferred<http.Server | https.Server>();
         let server: http.Server | https.Server;
@@ -279,8 +288,10 @@ export class BackendApplication {
         });
 
         server.listen(port, hostname, () => {
-            const scheme = this.cliParams.ssl ? 'https' : 'http';
-            console.info(`Theia app listening on ${scheme}://${hostname || 'localhost'}:${(server.address() as AddressInfo).port}.`);
+            // address should be defined at this point
+            const address = server.address()!;
+            const url = typeof address === 'string' ? address : this.getHttpUrl(address, this.cliParams.ssl);
+            console.info(`Theia app listening on ${url}.`);
             deferred.resolve(server);
         });
 
@@ -299,6 +310,13 @@ export class BackendApplication {
             }
         }
         return this.stopwatch.startAsync('server', 'Finished starting backend application', () => deferred.promise);
+    }
+
+    protected getHttpUrl({ address, port, family }: AddressInfo, ssl?: boolean): string {
+        const scheme = ssl ? 'https' : 'http';
+        return family.toLowerCase() === 'ipv6'
+            ? `${scheme}://[${address}]:${port}`
+            : `${scheme}://${address}:${port}`;
     }
 
     protected onStop(): void {
