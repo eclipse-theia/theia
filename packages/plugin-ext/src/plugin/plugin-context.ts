@@ -589,7 +589,9 @@ export function createAPIFactory(
             /** @stubbed TerminalQuickFixProvider */
             registerTerminalQuickFixProvider(id: string, provider: theia.TerminalQuickFixProvider): theia.Disposable {
                 return terminalExt.registerTerminalQuickFixProvider(id, provider);
-            }
+            },
+            /** @stubbed ShareProvider */
+            registerShareProvider: () => Disposable.NULL,
         };
 
         const workspace: typeof theia.workspace = {

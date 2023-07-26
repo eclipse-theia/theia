@@ -35,6 +35,7 @@ import './theia.proposed.fsChunks';
 import './theia.proposed.profileContentHandlers';
 import './theia.proposed.resolvers';
 import './theia.proposed.scmValidation';
+import './theia.proposed.shareProvider';
 import './theia.proposed.terminalQuickFixProvider';
 import './theia.proposed.textSearchProvider';
 import './theia.proposed.timeline';
