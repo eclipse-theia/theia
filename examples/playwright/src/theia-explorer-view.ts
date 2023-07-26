@@ -265,6 +265,7 @@ export class TheiaExplorerView extends TheiaView {
         const renameDialog = new TheiaRenameDialog(this.app);
         await renameDialog.waitForVisible();
         await renameDialog.enterNewName(newName);
+        await renameDialog.waitUntilMainButtonIsEnabled();
         confirm ? await renameDialog.confirm() : await renameDialog.close();
         await renameDialog.waitForClosed();
         await this.refresh();

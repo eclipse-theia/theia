@@ -105,10 +105,10 @@ export class TheiaDialog extends TheiaPageObject {
     }
 
     async waitUntilMainButtonIsEnabled(): Promise<void> {
-        await this.page.waitForFunction(() => {
-            const button = document.querySelector<HTMLButtonElement>(`${this.controlSelector} > button.theia-button.main`);
+        await this.page.waitForFunction(predicate => {
+            const button = document.querySelector<HTMLButtonElement>(predicate.buttonSelector);
             return !!button && !button.disabled;
-        });
+        }, { buttonSelector: `${this.controlSelector} > button.theia-button.main` });
     }
 
 }
