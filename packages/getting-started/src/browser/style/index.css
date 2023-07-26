@@ -29,10 +29,6 @@ body {
   display: flex;
 }
 
-.text-bold {
-  font-weight: 600;
-}
-
 .gs-action-container {
   line-height: 20px;
 }

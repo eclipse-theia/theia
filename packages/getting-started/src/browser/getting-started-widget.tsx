@@ -522,7 +522,7 @@ function WelcomePreferences(props: PreferencesProps): JSX.Element {
                 onChange={handleChange}
                 checked={alwaysShowWelcomePage}
             />
-            <label className='text-bold' htmlFor="alwaysShowWelcomePage">
+            <label htmlFor="alwaysShowWelcomePage">
                 {nls.localizeByDefault('Show welcome page on startup')}
             </label>
         </div>
