@@ -19,7 +19,8 @@
 import { inject, injectable } from 'inversify';
 import { ILogger, LogLevel } from '../logger';
 import { MaybePromise } from '../types';
-import { Measurement, MeasurementOptions } from './measurement';
+import { Measurement, MeasurementOptions, MeasurementResult } from './measurement';
+import { Emitter, Event } from '../event';
 
 /** The default log level for measurements that are not otherwise configured with a default. */
 const DEFAULT_LOG_LEVEL = LogLevel.INFO;
@@ -49,6 +50,11 @@ export abstract class Stopwatch {
 
     @inject(ILogger)
     protected readonly logger: ILogger;
+
+    protected onMeasurementResultEmitter = new Emitter<MeasurementResult>();
+    get onMeasurementResult(): Event<MeasurementResult> {
+        return this.onMeasurementResultEmitter.event;
+    }
 
     constructor(protected readonly defaultLogOptions: LogOptions) {
         if (!defaultLogOptions.defaultLogLevel) {
@@ -91,14 +97,17 @@ export abstract class Stopwatch {
         return result;
     }
 
-    protected createMeasurement(name: string, measurement: () => number, options?: MeasurementOptions): Measurement {
+    protected createMeasurement(name: string, measurement: () => { startTime: number, duration: number }, options?: MeasurementOptions): Measurement {
         const logOptions = this.mergeLogOptions(options);
 
         const result: Measurement = {
             name,
             stop: () => {
                 if (result.elapsed === undefined) {
-                    result.elapsed = measurement();
+                    const { startTime, duration } = measurement();
+                    result.elapsed = duration;
+                    this.notifyListeners(name, startTime, duration, logOptions);
+
                 }
                 return result.elapsed;
             },
@@ -110,6 +119,16 @@ export abstract class Stopwatch {
         };
 
         return result;
+    }
+
+    protected notifyListeners(name: string, startTime: number, elapsed: number, options: LogOptions): void {
+        this.onMeasurementResultEmitter.fire({
+            name,
+            elapsed,
+            startTime,
+            context: options.context,
+            owner: options.owner
+        });
     }
 
     protected mergeLogOptions(logOptions?: Partial<LogOptions>): LogOptions {

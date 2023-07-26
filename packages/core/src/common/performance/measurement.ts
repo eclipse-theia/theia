@@ -102,3 +102,28 @@ export interface MeasurementOptions {
      */
     thresholdMillis?: number;
 }
+
+/**
+ * Captures the result of a {@link Measurement} in a serializable format.
+ */
+export interface MeasurementResult {
+    /** The measurement name. This may show up in the performance measurement framework appropriate to the application context. */
+    name: string;
+
+    /** The time when the measurement recording has been started */
+    startTime: number
+
+    /**
+     * The elapsed time measured, if it has been {@link stop stopped} and measured, or `NaN` if the platform disabled
+     * performance measurement.
+     */
+    elapsed: number;
+
+    /*
+    * A specific context of the application in which an activity was measured.
+    */
+    context?: string;
+
+    /** An optional label for the application the start of which (in real time) is the basis of all measurements. */
+    owner?: string;
+}

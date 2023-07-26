@@ -33,7 +33,7 @@ export class NodeStopwatch extends Stopwatch {
 
         return this.createMeasurement(name, () => {
             const duration = performance.now() - startTime;
-            return duration;
+            return { duration, startTime };
         }, options);
     }
 
