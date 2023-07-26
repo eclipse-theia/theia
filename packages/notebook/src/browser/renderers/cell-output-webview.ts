@@ -14,13 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Disposable } from '@theia/core';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 
 export const cellOutputWebviewFactory = Symbol('outputWebviewFactory');
 
 export type CellOutputWebviewFactory = (cell: NotebookCellModel) => Promise<CellOutputWebview>;
 
-export interface CellOutputWebview {
+export interface CellOutputWebview extends Disposable {
 
     readonly id: string;
 

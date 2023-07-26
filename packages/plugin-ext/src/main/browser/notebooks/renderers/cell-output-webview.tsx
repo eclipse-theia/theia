@@ -29,6 +29,7 @@ import { outputWebviewPreload, PreloadContext } from './output-webview-internal'
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
 import { FromWebviewMessage, OutputChangedMessage } from './webview-communication';
 import { NotebookCellOutputsSplice } from '@theia/notebook/lib/common';
+import { Disposable } from '@theia/core';
 
 const cellModel = Symbol('CellModel');
 
@@ -40,7 +41,7 @@ export function createCellOutputWebviewContainer(ctx: interfaces.Container, cell
 }
 
 @injectable()
-export class CellOutputWebviewImpl implements CellOutputWebview {
+export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
     @inject(NotebookRendererMessagingService)
     protected readonly messagingService: NotebookRendererMessagingService;
@@ -77,7 +78,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview {
     }
 
     render(): JSX.Element {
-        return <div ref={this.elementref}></div>;
+        return <div style={{padding: '5px px'}} ref={this.elementref}></div>;
     }
 
     attachWebview(): void {
@@ -106,7 +107,6 @@ export class CellOutputWebviewImpl implements CellOutputWebview {
 
             this.webviewWidget.sendMessage(updateOuptutMessage);
         }
-
     }
 
     private handleWebviewMessage(message: FromWebviewMessage): void {
@@ -150,5 +150,9 @@ export class CellOutputWebviewImpl implements CellOutputWebview {
         return `
             const __import = (x) => import(x);
             (${outputWebviewPreload})(JSON.parse(decodeURIComponent("${encodeURIComponent(JSON.stringify(ctx))}")))`;
+    }
+
+    dispose(): void {
+        this.webviewWidget.dispose();
     }
 }

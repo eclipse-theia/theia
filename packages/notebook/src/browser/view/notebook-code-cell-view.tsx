@@ -52,13 +52,22 @@ export function NotebookCodeCellOutputs({cell, outputWebviewFactory}: NotebookCe
     const [outputsWebview, setOutputsWebview] = React.useState<CellOutputWebview | undefined>(undefined);
 
     React.useEffect(() => {
-        // cell.onDidChangeOutputs(() => setOutputs(cell.outputs));
-        (async () => setOutputsWebview(await outputWebviewFactory(cell)))();
+        cell.onDidChangeOutputs(() => {
+            if (!outputsWebview && cell.outputs.length > 0) {
+                (async () => setOutputsWebview(await outputWebviewFactory(cell)))();
+            } else if (outputsWebview && cell.outputs.length === 0) {
+                outputsWebview.dispose();
+                setOutputsWebview(undefined);
+            }
+        });
+        if (cell.outputs.length > 0) {
+            (async () => setOutputsWebview(await outputWebviewFactory(cell)))();
+        }
     }, []);
 
     React.useEffect(() => {
         outputsWebview?.attachWebview();
     }, [outputsWebview]);
-    return <div>{outputsWebview && outputsWebview.render()}</div>;
+    return <>{outputsWebview && outputsWebview.render()}</>;
 
 }
