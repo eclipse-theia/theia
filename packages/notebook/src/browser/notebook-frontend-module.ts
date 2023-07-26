@@ -42,6 +42,8 @@ import { NotebookKernelHistoryService } from './service/notebookKernelHistorySer
 import { NotebookEditorWidgetService } from './service/notebook-editor-service';
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
+import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { notebookCellMonacoTextmodelService } from './view/notebook-cell-editor';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Symbol('notebooks'));
@@ -65,6 +67,8 @@ export default new ContainerModule(bind => {
     bind(NotebookKernelService).toSelf().inSingletonScope();
     bind(NotebookRendererMessagingService).toSelf().inSingletonScope();
     bind(NotebookKernelHistoryService).toSelf().inSingletonScope();
+    // We nned a custom MonacoTextModelService here to avoid the other one trying to update the general documents without updating the notebook documents
+    bind(notebookCellMonacoTextmodelService).to(MonacoTextModelService).inSingletonScope();
     bind(NotebookKernelQuickPickService).to(KernelPickerMRUStrategy).inSingletonScope();
 
     bind(NotebookCellResourceResolver).toSelf().inSingletonScope();

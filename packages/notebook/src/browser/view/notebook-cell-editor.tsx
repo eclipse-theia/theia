@@ -38,6 +38,7 @@ const DEFAULT_EDITOR_OPTIONS = {
     }
 };
 
+export const notebookCellMonacoTextmodelService = Symbol('notebookCellMonacoTextmodelService');
 export class CellEditor extends React.Component<CellEditorProps, {}> {
 
     protected editor?: MonacoCodeEditor;

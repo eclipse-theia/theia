@@ -22,6 +22,7 @@ import { NotebookModel, NotebookModelFactory, NotebookModelProps } from '../view
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from '../view-model/notebook-cell-model';
+import { notebookCellMonacoTextmodelService } from '../view/notebook-cell-editor';
 
 export const NotebookProvider = Symbol('notebook provider');
 
@@ -43,7 +44,7 @@ export class NotebookService implements Disposable {
     @inject(FileService)
     protected fileService: FileService;
 
-    @inject(MonacoTextModelService)
+    @inject(notebookCellMonacoTextmodelService)
     protected modelService: MonacoTextModelService;
 
     @inject(NotebookModelFactory)

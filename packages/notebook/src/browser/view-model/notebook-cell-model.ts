@@ -22,6 +22,7 @@ import { Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/co
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { notebookCellMonacoTextmodelService } from '../view/notebook-cell-editor';
 import {
     CellInternalMetadataChangedEvent, CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata, NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput, CellData
 } from '../../common';
@@ -135,7 +136,7 @@ export class NotebookCellModel implements Disposable {
     }
 
     constructor(@inject(NotebookCellModelProps) private props: NotebookCellModelProps,
-        @inject(MonacoTextModelService) private textModelService: MonacoTextModelService,
+        @inject(notebookCellMonacoTextmodelService) private textModelService: MonacoTextModelService,
     ) {
         this.outputs = props.outputs.map(op => new NotebookCellOutputModel(op));
         this.metadata = props.metadata ?? {};

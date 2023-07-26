@@ -22,7 +22,7 @@ import { CancellationToken, Disposable, DisposableCollection, Emitter, Event, UR
 import { URI as TheiaURI } from '../types-impl';
 import * as theia from '@theia/plugin';
 import {
-    CommandRegistryExt, NotebookCellStatusBarListDto, NotebookDataDto,
+    CommandRegistryExt, ModelAddedData, NotebookCellStatusBarListDto, NotebookDataDto,
     NotebookDocumentsAndEditorsDelta, NotebookDocumentsMain, NotebookEditorAddData, NotebooksExt, NotebooksMain, Plugin,
     PLUGIN_RPC_CONTEXT
 } from '../../common';
@@ -33,7 +33,7 @@ import { CommandsConverter } from '../command-registry';
 // import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
 import * as typeConverters from '../type-converters';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { NotebookDocument } from './notebook-document';
+import { Cell, NotebookDocument } from './notebook-document';
 import { NotebookEditor } from './notebook-editor';
 import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
 
@@ -229,9 +229,9 @@ export class NotebooksExtImpl implements NotebooksExt {
                 // TODO use this optimization. Currently cellDocuments are created one by one by the moanacotTextModel service
                 // This allways creates a new Document when creating a new TextModel Reference. So we need to find a wayto create textmodels from existing documents
 
-                // const addedCellDocuments: ModelAddedData[] = [];
-                // addedCellDocuments.push(...modelData.cells.map(cell => Cell.asModelAddData(document.apiNotebook, cell)));
-                // this.textDocumentsAndEditors.$acceptEditorsAndDocumentsDelta({ addedDocuments: addedCellDocuments });
+                const addedCellDocuments: ModelAddedData[] = [];
+                addedCellDocuments.push(...modelData.cells.map(cell => Cell.asModelAddData(document.apiNotebook, cell)));
+                this.textDocumentsAndEditors.$acceptEditorsAndDocumentsDelta({ addedDocuments: addedCellDocuments });
 
                 this.documents.get(uri.toString())?.dispose();
                 this.documents.set(uri.toString(), document);
