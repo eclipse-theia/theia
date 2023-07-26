@@ -523,7 +523,7 @@ export class TabBarRenderer extends TabBar.Renderer {
                 if (previewNode) {
                     const clonedNode = previewNode.cloneNode(true);
                     const visualPreviewDiv = document.createElement('div');
-                    visualPreviewDiv.classList.add('enhanced-preview-div');
+                    visualPreviewDiv.classList.add('enhanced-preview-container');
                     // Add the clonedNode and get it from the children to have a HTMLElement instead of a Node
                     visualPreviewDiv.append(clonedNode);
                     const visualPreview = visualPreviewDiv.children.item(visualPreviewDiv.children.length - 1);
