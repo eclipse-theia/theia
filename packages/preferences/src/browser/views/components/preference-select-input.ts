@@ -29,13 +29,14 @@ import { escapeInvisibleChars } from '@theia/core/lib/common/strings';
 export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JSONValue, HTMLDivElement> {
 
     protected readonly selectComponent = React.createRef<SelectComponent>();
+    protected readonly selectOptions: SelectOption[] = [];
 
     protected get enumValues(): JSONValue[] {
         return this.preferenceNode.preference.data.enum!;
     }
 
-    protected get selectOptions(): SelectOption[] {
-        const items: SelectOption[] = [];
+    protected updateSelectOptions(): void {
+        this.selectOptions.splice(0);
         const values = this.enumValues;
         const preferenceData = this.preferenceNode.preference.data;
         const defaultValue = preferenceData.default;
@@ -51,7 +52,7 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
                 enumDescription = this.markdownRenderer.renderInline(markdownEnumDescription);
                 markdown = true;
             }
-            items.push({
+            this.selectOptions.push({
                 label,
                 value: stringValue,
                 detail,
@@ -59,10 +60,10 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
                 markdown
             });
         }
-        return items;
     }
 
     protected createInteractable(parent: HTMLElement): void {
+        this.updateSelectOptions();
         const interactable = document.createElement('div');
         const selectComponent = React.createElement(SelectComponent, {
             options: this.selectOptions,
@@ -86,6 +87,7 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
 
     protected doHandleValueChange(): void {
         this.updateInspection();
+        this.updateSelectOptions();
         const newValue = this.getDataValue();
         this.updateModificationStatus(this.getValue());
         if (document.activeElement !== this.interactable && this.selectComponent.current) {

@@ -27,7 +27,7 @@ import {
     LabelProviderContribution,
     PreferenceSchemaProvider
 } from '@theia/core/lib/browser';
-import { PreferenceLanguageOverrideService, PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/browser/preferences';
+import { DefaultOverridesPreferenceSchemaId, PreferenceLanguageOverrideService, PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/browser/preferences';
 import { KeybindingsContributionPointHandler } from './keybindings/keybindings-contribution-handler';
 import { MonacoSnippetSuggestProvider } from '@theia/monaco/lib/browser/monaco-snippet-suggest-provider';
 import { PluginSharedStyle } from './plugin-shared-style';
@@ -487,7 +487,7 @@ export class PluginContributionHandler {
 
     protected updateDefaultOverridesSchema(configurationDefaults: PreferenceSchemaProperties): Disposable {
         const defaultOverrides: PreferenceSchema = {
-            id: 'defaultOverrides',
+            id: DefaultOverridesPreferenceSchemaId,
             title: 'Default Configuration Overrides',
             properties: {}
         };
@@ -495,10 +495,17 @@ export class PluginContributionHandler {
         for (const key in configurationDefaults) {
             const defaultValue = configurationDefaults[key];
             if (this.preferenceOverrideService.testOverrideValue(key, defaultValue)) {
+                // language specific override
                 defaultOverrides.properties[key] = {
                     type: 'object',
                     default: defaultValue,
                     description: `Configure editor settings to be overridden for ${key} language.`
+                };
+            } else {
+                // regular configuration override
+                defaultOverrides.properties[key] = {
+                    default: defaultValue,
+                    description: `Configure default setting for ${key}.`
                 };
             }
         }
