@@ -17,6 +17,8 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
+import { CellOutputWebviewFactory, cellOutputWebviewFactory, CellOutputWebview } from '../renderers/cell-output-webview';
+import { NotebookRendererRegistry } from '../notebook-renderer-registry';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
 import { CellEditor } from './notebook-cell-editor';
@@ -27,24 +29,36 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(MonacoEditorServices)
     protected readonly monacoServices: MonacoEditorServices;
 
+    @inject(NotebookRendererRegistry)
+    protected readonly notebookRendererRegistry: NotebookRendererRegistry;
+
+    @inject(cellOutputWebviewFactory)
+    protected readonly cellOutputWebviewFactory: CellOutputWebviewFactory;
+
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
             <CellEditor notebookModel={notebookModel} cell={cell} monacoServices={this.monacoServices} />
-            <NotebookCodeCellOutputs cell={cell} />
+            <NotebookCodeCellOutputs cell={cell} outputWebviewFactory={this.cellOutputWebviewFactory} />
         </div >;
     }
 }
 
 export interface NotebookCellOutputProps {
     cell: NotebookCellModel;
+    outputWebviewFactory: CellOutputWebviewFactory;
 }
 
-export function NotebookCodeCellOutputs({ cell }: NotebookCellOutputProps): JSX.Element {
-    const outputJson = cell.outputs.length > 0 ? JSON.stringify(cell.outputs.map(output => output.toDto())) : undefined;
-    const [outputs, setOutputs] = React.useState(outputJson);
+export function NotebookCodeCellOutputs({cell, outputWebviewFactory}: NotebookCellOutputProps): JSX.Element {
+    const [outputsWebview, setOutputsWebview] = React.useState<CellOutputWebview | undefined>(undefined);
+
     React.useEffect(() => {
-        cell.onDidChangeOutputs(() => setOutputs(cell.outputs.length > 0 ? JSON.stringify(cell.outputs.map(output => output.toDto())) : undefined));
+        // cell.onDidChangeOutputs(() => setOutputs(cell.outputs));
+        (async () => setOutputsWebview(await outputWebviewFactory(cell)))();
     }, []);
-    return <>{outputs && <span>{outputs}</span>}</>;
+
+    React.useEffect(() => {
+        outputsWebview?.attachWebview();
+    }, [outputsWebview]);
+    return <div>{outputsWebview && outputsWebview.render()}</div>;
 
 }

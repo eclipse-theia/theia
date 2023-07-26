@@ -43,7 +43,8 @@
   "devDependencies": {
     "@theia/ext-scripts": "1.39.0",
     "@theia/filesystem": "1.39.0",
-    "@theia/monaco": "1.39.0"
+    "@theia/monaco": "1.39.0",
+    "@types/vscode-notebook-renderer": "^1.72.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

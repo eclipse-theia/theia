@@ -14,13 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './notebook-type-registry';
-export * from './notebook-renderer-registry';
-export * from './notebook-editor-widget';
-export * from './service/notebook-service';
-export * from './service/notebook-editor-service';
-export * from './service/notebook-kernel-service';
-export * from './service/notebook-execution-state-service';
-export * from './service/notebook-model-resolver-service';
-export * from './service/notebook-renderer-messaging-service';
-export * from './renderers/cell-output-webview';
+import { NotebookCellModel } from '../view-model/notebook-cell-model';
+
+export const cellOutputWebviewFactory = Symbol('outputWebviewFactory');
+
+export type CellOutputWebviewFactory = (cell: NotebookCellModel) => Promise<CellOutputWebview>;
+
+export interface CellOutputWebview {
+
+    readonly id: string;
+
+    render(): JSX.Element;
+
+    attachWebview(): void;
+}

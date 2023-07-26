@@ -21,7 +21,10 @@ import { TextmateRegistry, getEncodedLanguageId, MonacoTextmateService, GrammarD
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginViewRegistry } from './view/plugin-view-registry';
 import { PluginCustomEditorRegistry } from './custom-editors/plugin-custom-editor-registry';
-import { PluginContribution, IndentationRules, FoldingRules, ScopeMap, DeployedPlugin, GrammarsContribution, EnterAction, OnEnterRule, RegExpOptions } from '../../common';
+import {
+    PluginContribution, IndentationRules, FoldingRules, ScopeMap, DeployedPlugin,
+    GrammarsContribution, EnterAction, OnEnterRule, RegExpOptions, getPluginId
+} from '../../common';
 import {
     DefaultUriLabelProviderContribution,
     LabelProviderContribution,
@@ -413,7 +416,7 @@ export class PluginContributionHandler {
         if (contributions.notebookRenderer) {
             for (const renderer of contributions.notebookRenderer) {
                 pushContribution(`notebookRenderer.${renderer.id}`,
-                    () => this.notebookRendererRegistry.registerNotebookRenderer(renderer)
+                    () => this.notebookRendererRegistry.registerNotebookRenderer(renderer, getPluginId(plugin.metadata.model))
                 );
             }
         }
