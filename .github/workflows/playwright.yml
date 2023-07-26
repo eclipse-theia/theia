@@ -36,6 +36,7 @@ jobs:
       - name: Build Browser
         shell: bash
         run: |
+          yarn global add node-gyp
           yarn --skip-integrity-check --network-timeout 100000
           yarn browser build
         env:

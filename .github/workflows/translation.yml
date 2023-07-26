@@ -26,6 +26,7 @@ jobs:
       - name: Install and Build
         shell: bash
         run: |
+          yarn global add node-gyp
           yarn --skip-integrity-check --network-timeout 100000
         env:
           NODE_OPTIONS: --max_old_space_size=4096
