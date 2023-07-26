@@ -199,6 +199,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
             // Try primary renderer first
             if (!(await this.doRender(item, element, primaryRenderer, signal)).continue) {
+                theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight });
                 return;
             }
 
@@ -216,6 +217,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                     const renderer = this.findRenderer(undefined, additionalItem);
                     if (renderer) {
                         if (!(await this.doRender(additionalItem, element, renderer, signal)).continue) {
+                            theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight });
                             return; // We rendered successfully
                         }
                     }

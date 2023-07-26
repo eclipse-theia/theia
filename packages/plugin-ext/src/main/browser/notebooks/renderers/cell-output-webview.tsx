@@ -78,7 +78,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     }
 
     render(): JSX.Element {
-        return <div style={{padding: '5px px'}} ref={this.elementref}></div>;
+        return <div style={{padding: '5px 0px'}} ref={this.elementref}></div>;
     }
 
     attachWebview(): void {
@@ -86,7 +86,12 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
             this.webviewWidget.processMessage(new Message('before-attach'));
             this.elementref.current.appendChild(this.webviewWidget.node);
             this.webviewWidget.processMessage(new Message('after-attach'));
+            this.webviewWidget.setIframeHeight(0);
         }
+    }
+
+    isAttached(): boolean {
+        return this.elementref.current?.contains(this.webviewWidget.node) ?? false;
     }
 
     updateOutput(update: NotebookCellOutputsSplice): void {
@@ -116,6 +121,10 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 break;
             case 'customRendererMessage':
                 this.messagingService.getScoped('').postMessage(message.rendererId, message.message);
+                break;
+            case 'didRenderOutput':
+                this.webviewWidget.setIframeHeight(message.contentHeight);
+                break;
         }
     }
 

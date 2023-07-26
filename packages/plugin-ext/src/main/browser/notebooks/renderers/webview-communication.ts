@@ -48,7 +48,12 @@ export interface WebviewInitialized {
     readonly type: 'initialized';
 }
 
-export type FromWebviewMessage = WebviewInitialized | CustomRendererMessage;
+export interface OnDidRenderOutput {
+    readonly type: 'didRenderOutput';
+    contentHeight: number;
+}
+
+export type FromWebviewMessage = WebviewInitialized | OnDidRenderOutput | CustomRendererMessage;
 
 export interface Output {
     id: string

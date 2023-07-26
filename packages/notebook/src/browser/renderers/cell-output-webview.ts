@@ -28,4 +28,5 @@ export interface CellOutputWebview extends Disposable {
     render(): JSX.Element;
 
     attachWebview(): void;
+    isAttached(): boolean
 }

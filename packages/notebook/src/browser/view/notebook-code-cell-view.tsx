@@ -48,26 +48,40 @@ export interface NotebookCellOutputProps {
     outputWebviewFactory: CellOutputWebviewFactory;
 }
 
-export function NotebookCodeCellOutputs({cell, outputWebviewFactory}: NotebookCellOutputProps): JSX.Element {
-    const [outputsWebview, setOutputsWebview] = React.useState<CellOutputWebview | undefined>(undefined);
+export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputProps> {
 
-    React.useEffect(() => {
-        cell.onDidChangeOutputs(() => {
-            if (!outputsWebview && cell.outputs.length > 0) {
-                (async () => setOutputsWebview(await outputWebviewFactory(cell)))();
-            } else if (outputsWebview && cell.outputs.length === 0) {
-                outputsWebview.dispose();
-                setOutputsWebview(undefined);
+    protected outputsWebview: CellOutputWebview | undefined;
+
+    constructor(props: NotebookCellOutputProps) {
+        super(props);
+    }
+
+    override async componentDidMount(): Promise<void> {
+        const {cell, outputWebviewFactory} = this.props;
+        cell.onDidChangeOutputs(async () => {
+            if (!this.outputsWebview && cell.outputs.length > 0) {
+                this.outputsWebview = await outputWebviewFactory(cell);
+            } else if (this.outputsWebview && cell.outputs.length === 0) {
+                this.outputsWebview.dispose();
+                this.outputsWebview = undefined;
             }
+            this.forceUpdate();
         });
         if (cell.outputs.length > 0) {
-            (async () => setOutputsWebview(await outputWebviewFactory(cell)))();
+            this.outputsWebview = await outputWebviewFactory(cell);
+            this.forceUpdate();
         }
-    }, []);
+    }
 
-    React.useEffect(() => {
-        outputsWebview?.attachWebview();
-    }, [outputsWebview]);
-    return <>{outputsWebview && outputsWebview.render()}</>;
+    override componentDidUpdate(): void {
+        if (!this.outputsWebview?.isAttached()) {
+            this.outputsWebview?.attachWebview();
+        }
+    }
+
+    override render(): React.ReactNode {
+        return <>{this.outputsWebview && this.outputsWebview.render()}</>;
+
+    }
 
 }
