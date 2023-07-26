@@ -23,7 +23,7 @@ import URI from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { nls, Path } from '@theia/core/lib/common';
-import { CommonWorkspaceUtils } from '../common/utils';
+import { UntitledWorkspaceService } from '../common/untitled-workspace-service';
 
 interface RecentlyOpenedPick extends QuickPickItem {
     resource?: URI
@@ -40,7 +40,7 @@ export class QuickOpenWorkspace {
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
     @inject(EnvVariablesServer) protected readonly envServer: EnvVariablesServer;
-    @inject(CommonWorkspaceUtils) protected workspaceUtils: CommonWorkspaceUtils;
+    @inject(UntitledWorkspaceService) protected untitledWorkspaceService: UntitledWorkspaceService;
 
     protected readonly removeRecentWorkspaceButton: QuickInputButton = {
         iconClass: 'codicon-remove-close',
@@ -65,7 +65,7 @@ export class QuickOpenWorkspace {
             try {
                 stat = await this.fileService.resolve(uri);
             } catch { }
-            if (this.workspaceUtils.isUntitledWorkspace(uri) || !stat) {
+            if (this.untitledWorkspaceService.isUntitledWorkspace(uri) || !stat) {
                 continue; // skip the temporary workspace files or an undefined stat.
             }
             const icon = this.labelProvider.getIcon(stat);

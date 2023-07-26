@@ -20,6 +20,7 @@ import { InMemoryResources, isArray, isObject } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import URI from '@theia/core/lib/common/uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { WorkspaceFileService } from '../common';
 
 export interface SchemaUpdateMessage {
     key: string,
@@ -39,6 +40,7 @@ export class WorkspaceSchemaUpdater implements JsonSchemaContribution {
     protected safeToHandleQueue = new Deferred();
 
     @inject(InMemoryResources) protected readonly inmemoryResources: InMemoryResources;
+    @inject(WorkspaceFileService) protected readonly workspaceFileService: WorkspaceFileService;
 
     @postConstruct()
     protected init(): void {
@@ -48,7 +50,7 @@ export class WorkspaceSchemaUpdater implements JsonSchemaContribution {
 
     registerSchemas(context: JsonSchemaRegisterContext): void {
         context.registerSchema({
-            fileMatch: ['*.theia-workspace', '*.code-workspace'],
+            fileMatch: this.workspaceFileService.getWorkspaceFileExtensions(true),
             url: this.uri.toString()
         });
     }

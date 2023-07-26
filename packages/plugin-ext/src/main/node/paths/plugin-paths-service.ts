@@ -24,7 +24,7 @@ import { ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
 import { PluginPaths } from './const';
 import { PluginPathsService } from '../../common/plugin-paths-protocol';
-import { THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '@theia/workspace/lib/common';
+import { UntitledWorkspaceService } from '@theia/workspace/lib/common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { PluginCliContribution } from '../plugin-cli-contribution';
 
@@ -42,6 +42,9 @@ export class PluginPathsServiceImpl implements PluginPathsService {
 
     @inject(PluginCliContribution)
     protected readonly cliContribution: PluginCliContribution;
+
+    @inject(UntitledWorkspaceService)
+    protected readonly untitledWorkspaceService: UntitledWorkspaceService;
 
     async getHostLogPath(): Promise<string> {
         const parentLogsDir = await this.getLogsDirPath();
@@ -78,7 +81,11 @@ export class PluginPathsServiceImpl implements PluginPathsService {
     }
 
     protected async buildWorkspaceId(workspaceUri: string, rootUris: string[]): Promise<string> {
-        const untitledWorkspace = await getTemporaryWorkspaceFileUri(this.envServer);
+        const configDirUri = await this.envServer.getConfigDirUri();
+        const untitledWorkspace = await this.untitledWorkspaceService.getUntitledWorkspaceUri(
+            new URI(configDirUri),
+            async uri => !await fs.pathExists(uri.path.fsPath())
+        );
 
         if (untitledWorkspace.toString() === workspaceUri) {
             // if workspace is temporary
@@ -86,15 +93,6 @@ export class PluginPathsServiceImpl implements PluginPathsService {
             const rootsStr = rootUris.sort().join(',');
             return this.createHash(rootsStr);
         } else {
-            let stat;
-            try {
-                stat = await fs.stat(FileUri.fsPath(workspaceUri));
-            } catch { /* no-op */ }
-            let displayName = new URI(workspaceUri).displayName;
-            if ((!stat || !stat.isDirectory()) && (displayName.endsWith(`.${THEIA_EXT}`) || displayName.endsWith(`.${VSCODE_EXT}`))) {
-                displayName = displayName.slice(0, displayName.lastIndexOf('.'));
-            }
-
             return this.createHash(workspaceUri);
         }
     }
