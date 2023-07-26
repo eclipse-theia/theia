@@ -92,6 +92,8 @@ export class DebugBreakpointWidget implements Disposable {
         }
     }
 
+    private readonly selectComponentRef = React.createRef<SelectComponent>();
+
     @postConstruct()
     protected init(): void {
         this.doInit();
@@ -219,6 +221,10 @@ export class DebugBreakpointWidget implements Disposable {
         if (this._input) {
             this._input.getControl().setValue(this._values[this.context] || '');
         }
+        const selectComponent = this.selectComponentRef.current;
+        if (selectComponent && selectComponent.value !== this.context) {
+            selectComponent.value = this.context;
+        }
         this.selectNodeRoot.render(<SelectComponent
             defaultValue={this.context} onChange={this.updateInput}
             options={[
@@ -226,6 +232,7 @@ export class DebugBreakpointWidget implements Disposable {
                 { value: 'hitCondition', label: nls.localizeByDefault('Hit Count') },
                 { value: 'logMessage', label: nls.localizeByDefault('Log Message') },
             ]}
+            ref={this.selectComponentRef}
         />);
     }
 
