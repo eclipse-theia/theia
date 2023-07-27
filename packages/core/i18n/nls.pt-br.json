@@ -30,7 +30,11 @@
         "showPreviousTabInGroup": "Mudar para a guia Anterior em Grupo",
         "toggleMaximized": "Alternar ao máximo"
       },
-      "enhancedPreview": "Controla se mais informações sobre a guia devem ser exibidas nas barras horizontais da guia.",
+      "enhancedPreview": {
+        "classic": "Exibir uma visualização simples da guia com informações básicas.",
+        "enhanced": "Exibir uma visualização aprimorada da guia com informações adicionais.",
+        "visual": "Exibe uma prévia visual da guia."
+      },
       "file": {
         "browse": "Navegue"
       },
@@ -79,6 +83,7 @@
     "editor": {
       "dirtyEncoding": "O arquivo está sujo. Por favor, salve-o primeiro antes de reabri-lo com outra codificação.",
       "editor.codeActionWidget.showHeaders": "Habilitar/desabilitar mostrar os cabeçalhos de grupo no menu de ação de código.",
+      "editor.experimental.pasteActions.enabled": "Ativar/desativar a execução de edições de extensões ao colar.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tentará formatar modificações apenas (requer controle de fonte). Se o controle da fonte não puder ser usado, então o arquivo inteiro será formatado.",
       "editor.inlayHints.enabled1": "Dicas de Inlay estão mostrando por padrão e se escondem ao segurar `Ctrl+Alt`.",
       "editor.inlayHints.enabled2": "Dicas de Inlay são ocultadas por padrão e mostram quando se segura `Ctrl+Alt`.",
@@ -216,6 +221,7 @@
         "offset-title": "Bytes para compensar a memória de {0}"
       },
       "editable": {
+        "apply": "Aplicar alterações",
         "clear": "Mudanças claras"
       },
       "endianness": "Endianness",
@@ -323,6 +329,9 @@
       "watchMode": "Executar o watcher no plugin em desenvolvimento"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Login"
+      },
       "plugins": "Plugins",
       "webviewTrace": "Controla o rastreamento da comunicação com visualizações na web.",
       "webviewWarnIfUnsecure": "Adverte os usuários de que as visualizações na web são atualmente implantadas de forma insegura."

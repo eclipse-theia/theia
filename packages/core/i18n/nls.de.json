@@ -30,7 +30,11 @@
         "showPreviousTabInGroup": "Zur vorherigen Registerkarte in der Gruppe wechseln",
         "toggleMaximized": "Maximiert umschalten"
       },
-      "enhancedPreview": "Steuert, ob weitere Informationen über die Registerkarte in horizontalen Registerkartenleisten angezeigt werden sollen.",
+      "enhancedPreview": {
+        "classic": "Zeigt eine einfache Vorschau der Registerkarte mit grundlegenden Informationen an.",
+        "enhanced": "Anzeige einer erweiterten Vorschau der Registerkarte mit zusätzlichen Informationen.",
+        "visual": "Zeigen Sie eine visuelle Vorschau der Registerkarte an."
+      },
       "file": {
         "browse": "Durchsuchen"
       },
@@ -79,6 +83,7 @@
     "editor": {
       "dirtyEncoding": "Die Datei ist verschmutzt. Bitte speichern Sie sie zuerst, bevor Sie sie mit einer anderen Kodierung erneut öffnen.",
       "editor.codeActionWidget.showHeaders": "Aktivieren/deaktivieren Sie die Anzeige von Gruppenkopfzeilen im Code-Aktionsmenü.",
+      "editor.experimental.pasteActions.enabled": "Aktivieren/deaktivieren Sie laufende Bearbeitungen von Erweiterungen beim Einfügen.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Es wird versucht, nur Änderungen zu formatieren (erfordert Quellensicherung). Wenn die Versionskontrolle nicht verwendet werden kann, wird die gesamte Datei formatiert.",
       "editor.inlayHints.enabled1": "Inlay-Hinweise werden standardmäßig angezeigt und bei gedrückter Tastenkombination \"Strg+Alt\" ausgeblendet",
       "editor.inlayHints.enabled2": "Inlay-Hinweise sind standardmäßig ausgeblendet und werden angezeigt, wenn die Tastenkombination \"Strg+Alt\" gedrückt wird.",
@@ -216,6 +221,7 @@
         "offset-title": "Bytes zum Versetzen des Speichers von {0}"
       },
       "editable": {
+        "apply": "Änderungen anwenden",
         "clear": "Deutliche Änderungen"
       },
       "endianness": "Endianness",
@@ -323,6 +329,9 @@
       "watchMode": "Watcher auf Plugin in Entwicklung ausführen"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Anmeldung"
+      },
       "plugins": "Plugins",
       "webviewTrace": "Steuert die Kommunikationsverfolgung mit Webviews.",
       "webviewWarnIfUnsecure": "Warnt Benutzer, dass Webviews derzeit unsicher eingesetzt werden."

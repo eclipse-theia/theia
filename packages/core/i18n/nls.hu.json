@@ -30,7 +30,11 @@
         "showPreviousTabInGroup": "Váltás a csoport előző lapjára",
         "toggleMaximized": "Maximált kapcsoló"
       },
-      "enhancedPreview": "Szabályozza, hogy a vízszintes lapszalagokban megjelenjen-e több információ a lapról.",
+      "enhancedPreview": {
+        "classic": "A lap egyszerű előnézetének megjelenítése az alapvető információkkal.",
+        "enhanced": "A lap bővített előnézetének megjelenítése további információkkal.",
+        "visual": "A lap vizuális előnézetének megjelenítése."
+      },
       "file": {
         "browse": "Böngésszen a oldalon."
       },
@@ -79,6 +83,7 @@
     "editor": {
       "dirtyEncoding": "A fájl piszkos. Kérjük, először mentse el, mielőtt más kódolással újra megnyitná.",
       "editor.codeActionWidget.showHeaders": "A csoportfejlécek megjelenítésének engedélyezése/letiltása a kódművelet menüben.",
+      "editor.experimental.pasteActions.enabled": "Beillesztéskor a bővítményekből származó szerkesztések futásának engedélyezése/letiltása.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Csak a módosítások formázására tesz kísérletet (forrásellenőrzés szükséges). Ha a forrásellenőrzés nem használható, akkor a teljes fájl lesz formázva.",
       "editor.inlayHints.enabled1": "Az inlay tippek alapértelmezés szerint megjelennek, és elrejtődnek, ha a \"Ctrl+Alt\" billentyűkombinációt nyomva tartjuk.",
       "editor.inlayHints.enabled2": "Az inlay tippek alapértelmezés szerint el vannak rejtve, és a \"Ctrl+Alt\" billentyűkombináció lenyomásakor jelennek meg.",
@@ -216,6 +221,7 @@
         "offset-title": "Bájtok a memória eltolásához a {0}"
       },
       "editable": {
+        "apply": "Változások alkalmazása",
         "clear": "Tiszta változások"
       },
       "endianness": "Endianness",
@@ -323,6 +329,9 @@
       "watchMode": "Watcher futtatása a fejlesztés alatt álló pluginon"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Bejelentkezés"
+      },
       "plugins": "Plugins",
       "webviewTrace": "Vezérli a kommunikáció nyomon követését a webnézetekkel.",
       "webviewWarnIfUnsecure": "Figyelmezteti a felhasználókat, hogy a webnézetek jelenleg nem biztonságosan vannak telepítve."
