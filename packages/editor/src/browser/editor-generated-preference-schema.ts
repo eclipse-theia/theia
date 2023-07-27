@@ -2297,7 +2297,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     },
     "editor.experimental.pasteActions.enabled": {
         "type": "boolean",
-        "description": nls.localizeByDefault("Enable/disable running edits from extensions on paste."),
+        "description": nls.localize('theia/editor/editor.experimental.pasteActions.enabled', "Enable/disable running edits from extensions on paste."),
         "default": false,
         "scope": "language-overridable",
         "restricted": false
