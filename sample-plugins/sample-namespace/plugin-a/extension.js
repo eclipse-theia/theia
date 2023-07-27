@@ -15,9 +15,19 @@
 // *****************************************************************************
 
 const vscode = require('vscode');
+const customTaskProvider_1 = require("./customTaskProvider");
+
+let customTaskProvider;
 
 exports.activate = function (context) {
     context.subscriptions.push(vscode.commands.registerCommand('plugin-a.hello', () => {
         vscode.window.showInformationMessage('Hello from plugin-a!');
+        customTaskProvider = vscode.tasks.registerTaskProvider(customTaskProvider_1.CustomTaskProvider.type, new customTaskProvider_1.CustomTaskProvider());
     }));
 }
+
+exports.deactivate = function deactivate() {
+    if (customTaskProvider) {
+        customTaskProvider.dispose();
+    }
+};
