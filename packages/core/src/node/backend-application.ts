@@ -38,6 +38,8 @@ const DEFAULT_PORT = environment.electron.is() ? 0 : 3000;
 const DEFAULT_HOST = 'localhost';
 const DEFAULT_SSL = false;
 
+export type DnsResultOrder = 'ipv4first' | 'verbatim' | 'nodeDefault';
+
 export const BackendApplicationServer = Symbol('BackendApplicationServer');
 /**
  * This service is responsible for serving the frontend files.
@@ -108,7 +110,7 @@ export class BackendApplicationCliContribution implements CliContribution {
 
     port: number;
     hostname: string | undefined;
-    ipv4first: boolean;
+    dnsDefaultResultOrder: DnsResultOrder;
     ssl: boolean | undefined;
     cert: string | undefined;
     certkey: string | undefined;
@@ -117,21 +119,26 @@ export class BackendApplicationCliContribution implements CliContribution {
     configure(conf: yargs.Argv): void {
         conf.option('port', { alias: 'p', description: 'The port the backend server listens on.', type: 'number', default: DEFAULT_PORT });
         conf.option('hostname', { alias: 'h', description: 'The allowed hostname for connections.', type: 'string', default: DEFAULT_HOST });
-        conf.option('ipv4first', { description: 'Configure Node\'s DNS resolver to use ipv4 first', type: 'boolean', default: true });
         conf.option('ssl', { description: 'Use SSL (HTTPS), cert and certkey must also be set', type: 'boolean', default: DEFAULT_SSL });
         conf.option('cert', { description: 'Path to SSL certificate.', type: 'string' });
         conf.option('certkey', { description: 'Path to SSL certificate key.', type: 'string' });
         conf.option(APP_PROJECT_PATH, { description: 'Sets the application project directory', default: this.appProjectPath() });
+        conf.option('dnsDefaultResultOrder', {
+            type: 'string',
+            description: 'Configure Node\'s DNS resolver default behavior, see https://nodejs.org/docs/latest-v18.x/api/dns.html#dnssetdefaultresultorderorder',
+            choices: ['ipv4first', 'verbatim', 'nodeDefault'],
+            default: 'ipv4first',
+        });
     }
 
     setArguments(args: yargs.Arguments): void {
         this.port = args.port as number;
         this.hostname = args.hostname as string;
-        this.ipv4first = args.ipv4first as boolean;
         this.ssl = args.ssl as boolean;
         this.cert = args.cert as string;
         this.certkey = args.certkey as string;
         this.projectPath = args[APP_PROJECT_PATH] as string;
+        this.dnsDefaultResultOrder = args.dnsDefaultResultOrder as DnsResultOrder;
     }
 
     protected appProjectPath(): string {
@@ -242,9 +249,8 @@ export class BackendApplication {
         hostname ??= this.cliParams.hostname;
         port ??= this.cliParams.port;
 
-        if (this.cliParams.ipv4first) {
-            // Explicitly configure this process DNS module to use ipv4 first:
-            dns.setDefaultResultOrder('ipv4first');
+        if (this.cliParams.dnsDefaultResultOrder !== 'nodeDefault') {
+            dns.setDefaultResultOrder(this.cliParams.dnsDefaultResultOrder);
         }
 
         const deferred = new Deferred<http.Server | https.Server>();
