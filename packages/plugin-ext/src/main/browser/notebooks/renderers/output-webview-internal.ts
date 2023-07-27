@@ -199,7 +199,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
             // Try primary renderer first
             if (!(await this.doRender(item, element, primaryRenderer, signal)).continue) {
-                theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight });
+                this.onRenderCompleted();
                 return;
             }
 
@@ -217,7 +217,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                     const renderer = this.findRenderer(undefined, additionalItem);
                     if (renderer) {
                         if (!(await this.doRender(additionalItem, element, renderer, signal)).continue) {
-                            theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight });
+                            this.onRenderCompleted();
                             return; // We rendered successfully
                         }
                     }
@@ -226,6 +226,18 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
             // All renderers have failed and there is nothing left to fallback to
             this.showRenderError(item, element, 'No fallback renderers found or all fallback renderers failed.');
+        }
+
+        private onRenderCompleted(): void {
+            // we need to check for all images are loaded. Otherwise we can't determine the correct height of the output
+            const images = Array.from(document.images);
+            if (images.length > 0) {
+                Promise.all(images.filter(img => !img.complete).map(img => new Promise(resolve => { img.onload = img.onerror = resolve; }))).then(() =>
+                    theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight }));
+            } else {
+                theia.postMessage(<webviewCommunication.OnDidRenderOutput>{ type: 'didRenderOutput', contentHeight: document.body.clientHeight });
+            }
+
         }
 
         private async doRender(item: rendererApi.OutputItem, element: HTMLElement, renderer: Renderer, signal: AbortSignal): Promise<{ continue: boolean }> {
