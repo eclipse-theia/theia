@@ -173,6 +173,7 @@ export class HostedPluginSupport {
     readonly onDidChangePlugins = this.onDidChangePluginsEmitter.event;
 
     protected readonly deferredWillStart = new Deferred<void>();
+
     /**
      * Resolves when the initial plugins are loaded and about to be started.
      */
@@ -186,6 +187,12 @@ export class HostedPluginSupport {
      */
     get didStart(): Promise<void> {
         return this.deferredDidStart.promise;
+    }
+
+    protected readonly deferredWillActivate = new Deferred<void>();
+
+    get willActivate(): Promise<void> {
+        return this.deferredWillActivate.promise;
     }
 
     @postConstruct()
@@ -464,6 +471,9 @@ export class HostedPluginSupport {
         }
 
         await Promise.all(thenable);
+
+        this.deferredWillActivate.resolve();
+
         await this.activateByEvent('onStartupFinished');
         if (toDisconnect.disposed) {
             return;
