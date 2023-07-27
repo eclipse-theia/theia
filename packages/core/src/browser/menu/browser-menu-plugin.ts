@@ -108,8 +108,8 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
         }
     }
 
-    createContextMenu(path: MenuPath, args?: unknown[], context?: HTMLElement, contextKeyService?: ContextMatcher): MenuWidget {
-        const menuModel = this.menuProvider.getMenu(path);
+    createContextMenu(path: MenuPath, args?: unknown[], context?: HTMLElement, contextKeyService?: ContextMatcher, skipSingleRootNode?: boolean): MenuWidget {
+        const menuModel = skipSingleRootNode ? this.menuProvider.removeSingleRootNode(this.menuProvider.getMenu(path), path) : this.menuProvider.getMenu(path);
         const menuCommandRegistry = this.createMenuCommandRegistry(menuModel, args).snapshot(path);
         const contextMenu = this.createMenuWidget(menuModel, { commands: menuCommandRegistry, context, rootMenuPath: path, contextKeyService });
         return contextMenu;

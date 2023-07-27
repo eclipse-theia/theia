@@ -281,7 +281,8 @@ export class TabBarToolbar extends ReactWidget {
             args: [this.current],
             anchor,
             context: this.current?.node,
-            onHide: () => toDisposeOnHide.dispose()
+            onHide: () => toDisposeOnHide.dispose(),
+            skipSingleRootNode: true,
         });
     }
 
