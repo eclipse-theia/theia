@@ -6,6 +6,7 @@
 
 ## v1.40.0 - 
 
+- [application-package] bumped the default supported VS Code API from `1.78.0` to `1.79.0` [#12764](https://github.com/eclipse-theia/theia/pull/12764) - Contributed on behalf of STMicroelectronics.
 - [workspace] Implement CanonicalUriProvider API [#12743](https://github.com/eclipse-theia/theia/pull/12743) - Contributed on behalf of STMicroelectronics
 - Show command shortcuts in toolbar item tooltips. [#12660](https://github.com/eclipse-theia/theia/pull/12660) - Contributed on behalf of STMicroelectronics
 - [cli] added `check:theia-extensions` which checks the uniqueness of Theia extension versions [#12596](https://github.com/eclipse-theia/theia/pull/12596) - Contributed on behalf of STMicroelectronics
