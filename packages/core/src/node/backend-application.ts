@@ -30,6 +30,8 @@ import { AddressInfo } from 'net';
 import { ApplicationPackage } from '@theia/application-package';
 import { ProcessUtils } from './process-utils';
 
+export type DnsResultOrder = 'ipv4first' | 'verbatim' | 'nodeDefault';
+
 const APP_PROJECT_PATH = 'app-project-path';
 
 const TIMER_WARNING_THRESHOLD = 50;
@@ -37,8 +39,7 @@ const TIMER_WARNING_THRESHOLD = 50;
 const DEFAULT_PORT = environment.electron.is() ? 0 : 3000;
 const DEFAULT_HOST = 'localhost';
 const DEFAULT_SSL = false;
-
-export type DnsResultOrder = 'ipv4first' | 'verbatim' | 'nodeDefault';
+const DEFAULT_DNS_DEFAULT_RESULT_ORDER: DnsResultOrder = 'ipv4first';
 
 export const BackendApplicationServer = Symbol('BackendApplicationServer');
 /**
@@ -110,7 +111,7 @@ export class BackendApplicationCliContribution implements CliContribution {
 
     port: number;
     hostname: string | undefined;
-    dnsDefaultResultOrder: DnsResultOrder;
+    dnsDefaultResultOrder: DnsResultOrder = DEFAULT_DNS_DEFAULT_RESULT_ORDER;
     ssl: boolean | undefined;
     cert: string | undefined;
     certkey: string | undefined;
@@ -127,7 +128,7 @@ export class BackendApplicationCliContribution implements CliContribution {
             type: 'string',
             description: 'Configure Node\'s DNS resolver default behavior, see https://nodejs.org/docs/latest-v18.x/api/dns.html#dnssetdefaultresultorderorder',
             choices: ['ipv4first', 'verbatim', 'nodeDefault'],
-            default: 'ipv4first',
+            default: DEFAULT_DNS_DEFAULT_RESULT_ORDER
         });
     }
 
