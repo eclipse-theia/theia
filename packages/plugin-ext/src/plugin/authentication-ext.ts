@@ -42,12 +42,12 @@ export class AuthenticationExtImpl implements AuthenticationExt {
     }
 
     async getSession(requestingExtension: InternalPlugin, providerId: string, scopes: readonly string[],
-        options: theia.AuthenticationGetSessionOptions & ({ createIfNone: true } | { forceNewSession: true } | { forceNewSession: { detail: string } })):
+        options: theia.AuthenticationGetSessionOptions & ({ createIfNone: true } | { forceNewSession: true } | { forceNewSession: theia.AuthenticationForceNewSessionOptions })):
         Promise<theia.AuthenticationSession>;
     async getSession(requestingExtension: InternalPlugin, providerId: string, scopes: readonly string[],
         options: theia.AuthenticationGetSessionOptions & { forceNewSession: true }): Promise<theia.AuthenticationSession>;
     async getSession(requestingExtension: InternalPlugin, providerId: string, scopes: readonly string[],
-        options: theia.AuthenticationGetSessionOptions & { forceNewSession: { detail: string } }): Promise<theia.AuthenticationSession>;
+        options: theia.AuthenticationGetSessionOptions & { forceNewSession: theia.AuthenticationForceNewSessionOptions }): Promise<theia.AuthenticationSession>;
     async getSession(requestingExtension: InternalPlugin, providerId: string, scopes: readonly string[],
         options: theia.AuthenticationGetSessionOptions): Promise<theia.AuthenticationSession | undefined>;
     async getSession(requestingExtension: InternalPlugin, providerId: string, scopes: readonly string[],
