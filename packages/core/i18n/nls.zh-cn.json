@@ -30,7 +30,11 @@
         "showPreviousTabInGroup": "切换到组中的上一个标签页",
         "toggleMaximized": "切换最大化面板"
       },
-      "enhancedPreview": "控制是否应在水平标签栏中显示关于标签的更多信息。",
+      "enhancedPreview": {
+        "classic": "显示选项卡的简单预览和基本信息。",
+        "enhanced": "显示选项卡的增强预览,并提供更多信息。",
+        "visual": "显示选项卡的可视化预览。"
+      },
       "file": {
         "browse": "浏览"
       },
@@ -79,6 +83,7 @@
     "editor": {
       "dirtyEncoding": "该文件是脏的。请先保存它,然后用另一种编码重新打开它。",
       "editor.codeActionWidget.showHeaders": "启用/禁用在代码动作菜单中显示组标题。",
+      "editor.experimental.pasteActions.enabled": "启用/禁用粘贴时从扩展程序运行编辑。",
       "editor.formatOnSaveMode.modificationsIfAvailable": "将尝试只对修改部分进行格式化(需要源代码控制)。如果不能使用源码控制,那么整个文件将被格式化。",
       "editor.inlayHints.enabled1": "镶嵌提示默认显示,按住 \"Ctrl+Alt \"时隐藏。",
       "editor.inlayHints.enabled2": "镶嵌提示默认是隐藏的,当按住`Ctrl+Alt`时显示。",
@@ -216,6 +221,7 @@
         "offset-title": "字节,以抵消内存从{0}"
       },
       "editable": {
+        "apply": "应用更改",
         "clear": "清晰的变化"
       },
       "endianness": "内联性",
@@ -323,6 +329,9 @@
       "watchMode": "在开发中的插件上运行观察器"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "登录"
+      },
       "plugins": "插件",
       "webviewTrace": "控制与webviews的通信跟踪。",
       "webviewWarnIfUnsecure": "警告用户,目前网络视图的部署是不安全的。"
