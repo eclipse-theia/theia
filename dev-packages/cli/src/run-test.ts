@@ -79,8 +79,8 @@ export default async function runTest(options: TestOptions): Promise<void> {
             }
         }
     });
-    const { address, port, family } = await start();
-    const url = family.toLowerCase() === 'ipv6'
+    const { address, port } = await start();
+    const url = net.isIPv6(address)
         ? `http://[${address}]:${port}`
         : `http://${address}:${port}`;
     await testPage.goto(url);
