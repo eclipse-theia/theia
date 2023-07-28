@@ -25,7 +25,7 @@ import { MonacoEditorModel } from './monaco-editor-model';
 import { Dimension, EditorMouseEvent, MouseTarget, Position, TextDocumentChangeEvent } from '@theia/editor/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
 import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
-import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
+// import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 
 const standaloneServices = StandaloneServices.initialize({});
 
@@ -79,6 +79,7 @@ export class MonacoCodeEditor extends MonacoEditorServices implements Disposable
             ...options,
             lightbulb: { enabled: true },
             fixedOverflowWidgets: true,
+            automaticLayout: true,
             scrollbar: {
                 useShadows: false,
                 verticalHasArrows: false,
@@ -89,10 +90,6 @@ export class MonacoCodeEditor extends MonacoEditorServices implements Disposable
             }
         };
         const instantiator = this.getInstantiatorWithOverrides(override);
-        /**
-         * @monaco-uplift. Should be guaranteed to work.
-         * Incomparable enums prevent TypeScript from believing that public IStandaloneCodeEditor is satisfied by private StandaloneCodeEditor
-         */
         return this.editor = instantiator.createInstance(CodeEditorWidget, this.node, {
             ...combinedOptions,
             dimension: {
@@ -205,14 +202,7 @@ export class MonacoCodeEditor extends MonacoEditorServices implements Disposable
     }
 
     protected getHeight(hostNode: HTMLElement, boxSizing: ElementExt.IBoxSizing): number {
-        const lineHeight = this.editor.getOption(EditorOption.lineHeight);
-        const lineCount = this.editor.getModel()!.getLineCount();
-        const contentHeight = lineHeight * lineCount;
-
-        const horizontalScrollbarHeight = this.editor.getLayoutInfo().horizontalScrollbarHeight;
-
-        const editorHeight = contentHeight + horizontalScrollbarHeight;
-        return editorHeight;
+        return this.editor.getContentHeight();
     }
 
     dispose(): void {

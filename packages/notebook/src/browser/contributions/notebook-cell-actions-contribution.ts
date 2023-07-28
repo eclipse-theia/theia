@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { NotebookModel } from '../view-model/notebook-model';
@@ -22,6 +22,9 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE, NotebookContextKeys } from './notebook-context-keys';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
+
+export const NOTEBOOK_CELL_ACTIONS_PATH = ['notebook-cell-actions-menu'];
+export const NOTEBOOK_CELL_ADDITIONAL_ACTIONS_PATH = [...NOTEBOOK_CELL_ACTIONS_PATH, 'more'];
 
 export namespace NotebookCellCommands {
     export const EDIT_COMMAND = Command.toDefaultLocalizedCommand({
@@ -61,39 +64,50 @@ export class NotebookCellActionContribution implements MenuContribution, Command
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        // Cell action toolbar menu
-        menus.registerMenuAction([NotebookCellActionContribution.ACTION_MENU_ID], {
+        menus.registerMenuAction(NOTEBOOK_CELL_ACTIONS_PATH, {
             commandId: NotebookCellCommands.EDIT_COMMAND.id,
             icon: NotebookCellCommands.EDIT_COMMAND.iconClass,
             when: `${NOTEBOOK_CELL_TYPE} == 'markdown' && !${NOTEBOOK_CELL_MARKDOWN_EDIT_MODE}`,
+            label: nls.localizeByDefault('Edit Cell'),
             order: '10'
         });
-        menus.registerMenuAction([NotebookCellActionContribution.ACTION_MENU_ID], {
+        menus.registerMenuAction(NOTEBOOK_CELL_ACTIONS_PATH, {
             commandId: NotebookCellCommands.STOP_EDIT_COMMAND.id,
             icon: NotebookCellCommands.STOP_EDIT_COMMAND.iconClass,
             when: `${NOTEBOOK_CELL_TYPE} == 'markdown' && ${NOTEBOOK_CELL_MARKDOWN_EDIT_MODE}`,
+            label: nls.localizeByDefault('Stop Editing Cell'),
             order: '10'
         });
-        menus.registerMenuAction([NotebookCellActionContribution.ACTION_MENU_ID], {
+        menus.registerMenuAction(NOTEBOOK_CELL_ACTIONS_PATH, {
             commandId: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id,
             icon: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.iconClass,
             when: `${NOTEBOOK_CELL_TYPE} == 'code'`,
+            label: nls.localizeByDefault('Execute Cell'),
             order: '10'
         });
-        menus.registerMenuAction([NotebookCellActionContribution.ACTION_MENU_ID], {
+        menus.registerMenuAction(NOTEBOOK_CELL_ACTIONS_PATH, {
             commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
             icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass,
+            label: nls.localizeByDefault('Split Cell'),
             order: '20'
         });
-        menus.registerMenuAction([NotebookCellActionContribution.ACTION_MENU_ID], {
+        menus.registerMenuAction(NOTEBOOK_CELL_ACTIONS_PATH, {
             commandId: NotebookCellCommands.DELETE_COMMAND.id,
             icon: NotebookCellCommands.DELETE_COMMAND.iconClass,
+            label: nls.localizeByDefault('Delete Cell'),
             order: '30'
         });
 
-        const moreMenuPath = [NotebookCellActionContribution.ACTION_MENU_ID, 'more'];
-        menus.registerSubmenu(moreMenuPath, 'more', { icon: codicon('ellipsis'), role: CompoundMenuNodeRole.Submenu, order: '999' });
-        menus.registerMenuAction(moreMenuPath, {
+        menus.registerSubmenu(
+            NOTEBOOK_CELL_ADDITIONAL_ACTIONS_PATH,
+            nls.localizeByDefault('More'),
+            {
+                icon: codicon('ellipsis'),
+                role: CompoundMenuNodeRole.Submenu,
+                order: '999'
+            }
+        );
+        menus.registerMenuAction(NOTEBOOK_CELL_ADDITIONAL_ACTIONS_PATH, {
             commandId: NotebookCellCommands.EDIT_COMMAND.id,
             label: 'test submenu item',
         });

@@ -1,4 +1,24 @@
-.theia-notebook-cell-list {
+/********************************************************************************
+ * Copyright (C) 2023 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+:root {
+    --theia-notebook-markdown-size: 17px;
+}
+
+ .theia-notebook-cell-list {
     list-style: none;
     padding-left: 0px;
     background-color: var(--theia-notebook-editorBackground);
@@ -15,7 +35,7 @@
 }
 
 .theia-notebook-cell-marker {
-    background-color: gray;
+    background-color: var(--theia-notebook-inactiveFocusedCellBorder);
     width: 3px;
     margin: 0px 8px 0px 4px;
     border-radius: 4px;
@@ -24,7 +44,7 @@
 
 .theia-notebook-cell-marker-selected {
     visibility: visible;
-    background-color: var(--theia-focusBorder);
+    background-color: var(--theia-notebook-focusedCellBorder);
 }
 
 .theia-notebook-cell-marker:hover {
@@ -36,7 +56,15 @@
 
 .theia-notebook-cell-content {
     flex: 1;
-    width: 100%;
+    width: calc(100% - 15px);
+}
+
+.theia-notebook-markdown-content {
+    font-size: var(--theia-notebook-markdown-size);
+}
+
+.theia-notebook-empty-markdown {
+    opacity: 0.6;
 }
 
 .theia-notebook-cell-editor {
@@ -52,11 +80,10 @@
 }
 
 .theia-notebook-cell-toolbar {
-    border: 1px solid gray;
+    border: 1px solid var(--theia-notebook-cellToolbarSeparator);
     display: flex;
     position: absolute;
-    right: 0;
-    margin: 10px;
+    margin: -20px 0 0 42px;
     padding: 2px;
     background-color: var(--theia-editor-background);
 }
@@ -71,10 +98,6 @@
 .theia-notebook-cell-toolbar-item {
     height: 18px;
     width: 18px;
-    background-repeat: no-repeat;
-    padding: 2px;
-    border-radius: 5px;
-    cursor: pointer;
 }
 
 .theia-notebook-cell-toolbar-item:hover {
@@ -110,11 +133,13 @@
 }
 
 .theia-notebook-add-cell-button {
-    border: 1px solid gray;
+    border: 1px solid var(--theia-notebook-cellToolbarSeparator);
     background-color: var(--theia-editor-background);
     color: var(--theia-foreground);
     vertical-align: middle;
     text-align: center;
+    height: 24px;
+    margin: 0 8px;
 }
 
 .theia-notebook-add-cell-button:hover {

@@ -48,9 +48,9 @@ export class NotebookCellListView extends React.Component<CellListProps, { selec
         return <ul className='theia-notebook-cell-list'>
             {this.props.notebookModel.cells
                 .map((cell, index) =>
-                    <React.Fragment key={index}>
+                    <React.Fragment key={'cell-' + cell.handle}>
                         <NotebookCellDivider onAddNewCell={(kind: CellKind) => this.onAddNewCell(kind, index)} />
-                        <li className={'theia-notebook-cell' + (this.state.selectedCell === cell ? ' focused' : '')} key={'cell-' + cell.handle}
+                        <li className={'theia-notebook-cell' + (this.state.selectedCell === cell ? ' focused' : '')}
                             // data-keybinding-context={cell.uri} // needed for contextKey context to work
                             onClick={() => this.setState({ selectedCell: cell })}
                             ref={(node: HTMLLIElement) => cell.refChanged(node)}>
@@ -64,10 +64,11 @@ export class NotebookCellListView extends React.Component<CellListProps, { selec
                     </React.Fragment>
                 )
             }
-        </ul >;
+            <NotebookCellDivider onAddNewCell={(kind: CellKind) => this.onAddNewCell(kind, this.props.notebookModel.cells.length)} />
+        </ul>;
     }
 
-    private onAddNewCell(kind: CellKind, index: number): void {
+    protected onAddNewCell(kind: CellKind, index: number): void {
         this.props.commandRegistry.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id,
             this.props.notebookModel,
             kind,
@@ -85,18 +86,22 @@ export class NotebookCellListView extends React.Component<CellListProps, { selec
 
 }
 
-function NotebookCellDivider({ onAddNewCell }: { onAddNewCell: (type: CellKind) => void }): JSX.Element {
+export interface NotebookCellDividerProps {
+    onAddNewCell: (type: CellKind) => void;
+}
+
+export function NotebookCellDivider({ onAddNewCell }: NotebookCellDividerProps): JSX.Element {
     const [hover, setHover] = React.useState(false);
 
     return <li className='theia-notebook-cell-divider' onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
         {hover && <div className='theia-notebook-add-cell-buttons'>
-            <button className='theia-notebook-add-cell-button' onClick={() => onAddNewCell(CellKind.Markup)}>
+            <button className='theia-notebook-add-cell-button' onClick={() => onAddNewCell(CellKind.Code)} title={nls.localizeByDefault('Add Code Cell')}>
                 <div className={codicon('add') + ' theia-notebook-add-cell-button-icon'} />
-                {nls.localize('theia/notebook/markdown', 'markdown')}
+                {nls.localizeByDefault('Code')}
             </button>
-            <button className='theia-notebook-add-cell-button' onClick={() => onAddNewCell(CellKind.Code)}>
+            <button className='theia-notebook-add-cell-button' onClick={() => onAddNewCell(CellKind.Markup)} title={nls.localizeByDefault('Add Markdown Cell')}>
                 <div className={codicon('add') + ' theia-notebook-add-cell-button-icon'} />
-                {nls.localize('theia/notebook/code', 'code')}
+                {nls.localizeByDefault('Markdown')}
             </button>
         </div>}
     </li>;

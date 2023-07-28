@@ -85,32 +85,12 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
         this.container = component;
     };
 
+    protected handleResize = () => {
+        this.editor?.refresh();
+    };
+
     override render(): React.ReactNode {
-        return <div className='theia-notebook-cell-editor' id={this.props.cell.uri.toString()} ref={this.assignRef}></div>;
+        return <div className='theia-notebook-cell-editor' onResize={this.handleResize} id={this.props.cell.uri.toString()} ref={this.assignRef}></div>;
     }
-
-}
-
-export function XCellEditor({ monacoServices, notebookModel, cell }: CellEditorProps): JSX.Element {
-    const uri = cell.uri;
-    React.useEffect(() => {
-        (async () => {
-            const editorNode = document.getElementById(uri.toString())!;
-            const editorModel = await cell.resolveTextModel();
-            const editor = new MonacoCodeEditor(uri,
-                editorModel,
-                editorNode,
-                monacoServices,
-                DEFAULT_EDITOR_OPTIONS);
-            editor.setLanguage(cell.language);
-            editor.getControl().onDidContentSizeChange(() => {
-                editorNode.style.height = editor.getControl().getContentHeight() + 7 + 'px';
-                editor.setSize({ width: -1, height: editor.getControl().getContentHeight() });
-            });
-            editor.document.onDirtyChanged(() => notebookModel.cellDirtyChanged(cell, editor.document.dirty));
-            editor.onDocumentContentChanged(e => cell.source = e.document.getText());
-        })();
-    }, []);
-    return <div className='theia-notebook-cell-editor' id={uri.toString()}></div>;
 
 }
