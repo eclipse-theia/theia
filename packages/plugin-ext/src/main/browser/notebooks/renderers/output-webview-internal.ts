@@ -325,6 +325,9 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             }));
 
             const element = document.createElement('div');
+            // padding for scrollbars
+            element.style.paddingBottom = '10px';
+            element.style.paddingRight = '10px';
             element.id = output.id;
             document.body.appendChild(element);
 
