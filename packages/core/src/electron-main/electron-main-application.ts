@@ -509,7 +509,7 @@ export class ElectronMainApplication {
                 });
                 backendProcess.on('exit', () => {
                     reject(new Error('backend process exited'));
-                })
+                });
                 app.on('quit', () => {
                     // Only issue a kill signal if the backend process is running.
                     // eslint-disable-next-line no-null/no-null
