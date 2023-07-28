@@ -23,6 +23,8 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
 import { CellEditor } from './notebook-cell-editor';
 import { CellRenderer } from './notebook-cell-list-view';
+import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
+import { NotebookCellActionContribution } from '../contributions/notebook-cell-actions-contribution';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {
@@ -35,10 +37,19 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(cellOutputWebviewFactory)
     protected readonly cellOutputWebviewFactory: CellOutputWebviewFactory;
 
+    @inject(NotebookCellToolbarFactory)
+    protected readonly notebookCellToolbarFactory: NotebookCellToolbarFactory;
+
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
-            <CellEditor notebookModel={notebookModel} cell={cell} monacoServices={this.monacoServices} />
-            <NotebookCodeCellOutputs cell={cell} outputWebviewFactory={this.cellOutputWebviewFactory} />
+            <div className='theia-notebook-cell-with-sidebar'>
+                {this.notebookCellToolbarFactory.renderSidebar(notebookModel, cell, NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU_ID)}
+                <CellEditor notebookModel={notebookModel} cell={cell} monacoServices={this.monacoServices} />
+            </div>
+            <div className='theia-notebook-cell-with-sidebar'>
+                <NotebookCodeCellOutputs cell={cell} outputWebviewFactory={this.cellOutputWebviewFactory}
+                    renderSidebar={() => this.notebookCellToolbarFactory.renderSidebar(notebookModel, cell, NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU_ID)}/>
+            </div>
         </div >;
     }
 }
@@ -46,6 +57,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
 export interface NotebookCellOutputProps {
     cell: NotebookCellModel;
     outputWebviewFactory: CellOutputWebviewFactory;
+    renderSidebar: () => React.ReactNode;
 }
 
 export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputProps> {
@@ -80,7 +92,12 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
     }
 
     override render(): React.ReactNode {
-        return <>{this.outputsWebview && this.outputsWebview.render()}</>;
+        return this.outputsWebview ?
+            <>
+            {this.props.renderSidebar()}
+            {this.outputsWebview.render()}
+            </> :
+            <></>;
 
     }
 

@@ -61,6 +61,13 @@
     background-color: var(--theia-editor-background);
 }
 
+.theia-notebook-cell-sidebar {
+    display: flex;
+    flex-direction: column;
+    padding: 2px;
+    background-color: var(--theia-editor-background);
+}
+
 .theia-notebook-cell-toolbar-item {
     height: 18px;
     width: 18px;
@@ -81,6 +88,20 @@
 .theia-notebook-cell-divider {
     height: 20px;
     width: 100%;
+}
+
+.theia-notebook-cell-with-sidebar {
+    display: flex;
+    flex-direction: row;
+}
+
+.theia-notebook-cell-sidebar {
+    display: flex;
+    flex-direction: column;
+}
+
+.theia-notebook-cell-sidebar-button {
+
 }
 
 .theia-notebook-add-cell-buttons {

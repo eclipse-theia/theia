@@ -61,42 +61,61 @@ export class NotebookCellActionContribution implements MenuContribution, Command
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        const menuId = 'notebook-cell-acions-menu';
-        menus.registerMenuAction([menuId], {
+        // Cell action toolbar menu
+        menus.registerMenuAction([NotebookCellActionContribution.ACTION_MENU_ID], {
             commandId: NotebookCellCommands.EDIT_COMMAND.id,
             icon: NotebookCellCommands.EDIT_COMMAND.iconClass,
             when: `${NOTEBOOK_CELL_TYPE} == 'markdown' && !${NOTEBOOK_CELL_MARKDOWN_EDIT_MODE}`,
             order: '10'
         });
-        menus.registerMenuAction([menuId], {
+        menus.registerMenuAction([NotebookCellActionContribution.ACTION_MENU_ID], {
             commandId: NotebookCellCommands.STOP_EDIT_COMMAND.id,
             icon: NotebookCellCommands.STOP_EDIT_COMMAND.iconClass,
             when: `${NOTEBOOK_CELL_TYPE} == 'markdown' && ${NOTEBOOK_CELL_MARKDOWN_EDIT_MODE}`,
             order: '10'
         });
-        menus.registerMenuAction([menuId], {
+        menus.registerMenuAction([NotebookCellActionContribution.ACTION_MENU_ID], {
             commandId: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id,
             icon: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.iconClass,
             when: `${NOTEBOOK_CELL_TYPE} == 'code'`,
             order: '10'
         });
-        menus.registerMenuAction([menuId], {
+        menus.registerMenuAction([NotebookCellActionContribution.ACTION_MENU_ID], {
             commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
             icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass,
             order: '20'
         });
-        menus.registerMenuAction([menuId], {
+        menus.registerMenuAction([NotebookCellActionContribution.ACTION_MENU_ID], {
             commandId: NotebookCellCommands.DELETE_COMMAND.id,
             icon: NotebookCellCommands.DELETE_COMMAND.iconClass,
             order: '30'
         });
 
-        const moreMenuPath = [menuId, 'more'];
+        const moreMenuPath = [NotebookCellActionContribution.ACTION_MENU_ID, 'more'];
         menus.registerSubmenu(moreMenuPath, 'more', { icon: codicon('ellipsis'), role: CompoundMenuNodeRole.Submenu, order: '999' });
         menus.registerMenuAction(moreMenuPath, {
             commandId: NotebookCellCommands.EDIT_COMMAND.id,
             label: 'test submenu item',
         });
+
+        // code cell sidebar menu
+        menus.registerMenuAction([NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU_ID], {
+            commandId: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id,
+            icon: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.iconClass,
+        });
+
+        // code cell output sidebar menu
+        const moreOutputActions = [NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU_ID, 'more'];
+        menus.registerSubmenu(moreOutputActions, 'more', { icon: codicon('ellipsis'), role: CompoundMenuNodeRole.Submenu });
+        menus.registerMenuAction(moreOutputActions, {
+            commandId: '',
+            label: 'clear outputs',
+        });
+        menus.registerMenuAction(moreOutputActions, {
+            commandId: '',
+            label: 'change presentation',
+        });
+
     }
 
     registerCommands(commands: CommandRegistry): void {
@@ -111,4 +130,11 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => this.notebookExecutionService.executeNotebookCells(notebookModel, [cell])
         });
     }
+}
+
+export namespace NotebookCellActionContribution {
+    export const ACTION_MENU_ID = 'notebook-cell-acions-menu';
+    export const CODE_CELL_SIDEBAR_MENU_ID = 'code-cell-sidebar-menu';
+    export const OUTPUT_SIDEBAR_MENU_ID = 'code-cell-output-sidebar-menu';
+
 }

@@ -21,6 +21,7 @@ import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
 import { codicon } from '@theia/core/lib/browser';
 import { CommandRegistry, nls } from '@theia/core';
 import { NotebookCommands } from '../contributions/notebook-actions-contribution';
+import { NotebookCellActionContribution } from '../contributions/notebook-cell-actions-contribution';
 
 export interface CellRenderer {
     render(notebookData: NotebookModel, cell: NotebookCellModel, index: number): React.ReactNode
@@ -54,11 +55,11 @@ export class NotebookCellListView extends React.Component<CellListProps, { selec
                             onClick={() => this.setState({ selectedCell: cell })}
                             ref={(node: HTMLLIElement) => cell.refChanged(node)}>
                             <div className={'theia-notebook-cell-marker' + (this.state.selectedCell === cell ? ' theia-notebook-cell-marker-selected' : '')}></div>
-                            <div className='theia-notebook-cell-statusbar'></div>
                             <div className='theia-notebook-cell-content'>
                                 {this.renderCellContent(cell, index)}
                             </div>
-                            {this.state.selectedCell === cell && this.props.toolbarRenderer.renderToolbar(this.props.notebookModel, cell)}
+                            {this.state.selectedCell === cell &&
+                                this.props.toolbarRenderer.renderToolbar(this.props.notebookModel, cell, NotebookCellActionContribution.ACTION_MENU_ID)}
                         </li>
                     </React.Fragment>
                 )

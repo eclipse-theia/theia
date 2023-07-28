@@ -17,10 +17,18 @@ import * as React from '@theia/core/shared/react';
 import { NotebookCellToolbarItem } from './notebook-cell-toolbar-factory';
 
 export interface NotebookCellToolbarProps {
-    inlineItems: NotebookCellToolbarItem[]
+    inlineItems: NotebookCellToolbarItem[];
 }
 
-export class NotebookCellToolbar extends React.Component<NotebookCellToolbarProps> {
+abstract class NotebookCellActionItems extends React.Component<NotebookCellToolbarProps> {
+
+    protected renderItem(item: NotebookCellToolbarItem): React.ReactNode {
+        return <div key={item.label} onClick={item.onClick} className={item.icon + ' theia-notebook-cell-toolbar-item'} />;
+    }
+
+}
+
+export class NotebookCellToolbar extends NotebookCellActionItems {
 
     constructor(props: NotebookCellToolbarProps) {
         super(props);
@@ -32,7 +40,18 @@ export class NotebookCellToolbar extends React.Component<NotebookCellToolbarProp
         </div>;
     }
 
-    renderItem(item: NotebookCellToolbarItem): React.ReactNode {
-        return <div key={item.label} onClick={item.onClick} className={item.icon + ' theia-notebook-cell-toolbar-item'} />;
+}
+
+export class NotebookCellSidebar extends NotebookCellActionItems {
+
+    constructor(props: NotebookCellToolbarProps) {
+        super(props);
+    }
+
+    override render(): React.ReactNode {
+        return <div className='theia-notebook-cell-sidebar'>
+            {this.props.inlineItems.map(item => this.renderItem(item))}
+        </div>;
     }
 }
+

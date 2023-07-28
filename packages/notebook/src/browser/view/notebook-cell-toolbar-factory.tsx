@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { CommandRegistry, CompoundMenuNodeRole, MenuModelRegistry } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { NotebookCellToolbar } from './notebook-cell-toolbar';
+import { NotebookCellSidebar, NotebookCellToolbar } from './notebook-cell-toolbar';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
@@ -44,10 +44,16 @@ export class NotebookCellToolbarFactory {
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
-    renderToolbar(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
-        const inlineItems: NotebookCellToolbarItem[] = [];
+    renderToolbar(notebookModel: NotebookModel, cell: NotebookCellModel, toolbarMenuId: string): React.ReactNode {
+        return <NotebookCellToolbar inlineItems={this.getMenuItems(notebookModel, cell, toolbarMenuId)} />;
+    }
 
-        const toolbarMenuId = 'notebook-cell-acions-menu';
+    renderSidebar(notebookModel: NotebookModel, cell: NotebookCellModel, toolbarMenuId: string): React.ReactNode {
+        return <NotebookCellSidebar inlineItems={this.getMenuItems(notebookModel, cell, toolbarMenuId)} />;
+    }
+
+    private getMenuItems(notebookModel: NotebookModel, cell: NotebookCellModel, toolbarMenuId: string): NotebookCellToolbarItem[] {
+        const inlineItems: NotebookCellToolbarItem[] = [];
 
         for (const menuNode of this.menuRegistry.getMenu([toolbarMenuId]).children) {
             if (!menuNode.when || this.contextKeyService.match(menuNode.when, cell.context ?? undefined)) {
@@ -60,6 +66,6 @@ export class NotebookCellToolbarFactory {
                 });
             }
         }
-        return <NotebookCellToolbar inlineItems={inlineItems} />;
+        return inlineItems;
     }
 }
