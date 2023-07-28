@@ -16,10 +16,8 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { CommandRegistry, MenuModelRegistry } from '@theia/core/lib/common';
-import { CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication, PreferenceService } from '@theia/core/lib/browser';
-import { EditorManager } from '../../../editor/lib/browser';
+import { CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication, NavigatableWidget, PreferenceService } from '@theia/core/lib/browser';
 import { GettingStartedWidget } from './getting-started-widget';
-import { GettingStartedPreferences } from './getting-started-preferences';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 
@@ -40,9 +38,6 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
-
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
@@ -58,10 +53,10 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
 
     async onStart(app: FrontendApplication): Promise<void> {
         this.stateService.reachedState('ready').then(() => {
-            const lastOpenedEditors = this.editorManager.all;
-            if (lastOpenedEditors.length === 0) {
+            const editors = this.shell.widgets.filter((widget): widget is NavigatableWidget => NavigatableWidget.is(widget));
+            if (editors.length === 0) {
                 this.preferenceService.ready.then(() => {
-                    const showWelcomePage: boolean = this.preferenceService.get(GettingStartedPreferences.alwaysShowWelcomePage, true);
+                    const showWelcomePage: boolean = this.preferenceService.get('welcome.alwaysShowWelcomePage', true);
                     if (showWelcomePage) {
                         this.openView({ reveal: true, activate: true });
                     }

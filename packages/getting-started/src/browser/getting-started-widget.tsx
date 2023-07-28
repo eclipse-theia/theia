@@ -26,7 +26,6 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { nls } from '@theia/core/lib/common/nls';
-import { GettingStartedPreferences } from './getting-started-preferences';
 
 /**
  * Default implementation of the `GettingStartedWidget`.
@@ -498,11 +497,11 @@ export interface PreferencesProps {
 
 function WelcomePreferences(props: PreferencesProps): JSX.Element {
     const [alwaysShowWelcomePage, setAlwaysShowWelcomePage] = React.useState<boolean>(
-        props.preferenceService.get(GettingStartedPreferences.alwaysShowWelcomePage, true)
+        props.preferenceService.get('welcome.alwaysShowWelcomePage', true)
     );
     React.useEffect(() => {
         const prefListener = props.preferenceService.onPreferenceChanged(change => {
-            if (change.preferenceName === GettingStartedPreferences.alwaysShowWelcomePage) {
+            if (change.preferenceName === 'welcome.alwaysShowWelcomePage') {
                 const prefValue = change.newValue;
                 setAlwaysShowWelcomePage(prefValue);
             }
@@ -511,7 +510,7 @@ function WelcomePreferences(props: PreferencesProps): JSX.Element {
     }, [props.preferenceService]);
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newChecked = e.target.checked;
-        props.preferenceService.updateValue(GettingStartedPreferences.alwaysShowWelcomePage, newChecked);
+        props.preferenceService.updateValue('welcome.alwaysShowWelcomePage', newChecked);
     };
     return (
         <div className='gs-preference'>

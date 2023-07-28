@@ -15,17 +15,18 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
+import {
+    createPreferenceProxy,
+    PreferenceProxy,
+    PreferenceService,
+    PreferenceSchema,
+    PreferenceContribution
+} from '@theia/core/lib/browser/preferences';
 import { nls } from '@theia/core/lib/common/nls';
-import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
-import { PreferenceContribution } from '@theia/core/lib/browser';
 
-export namespace GettingStartedPreferences {
-    export const alwaysShowWelcomePage = 'welcome.alwaysShowWelcomePage';
-}
-
-export const welcomePreferenceSchema: PreferenceSchema = {
+export const GettingStartedPreferenceSchema: PreferenceSchema = {
     'type': 'object',
-    'properties': {
+    properties: {
         'welcome.alwaysShowWelcomePage': {
             type: 'boolean',
             description: nls.localizeByDefault('Show welcome page on startup'),
@@ -34,6 +35,24 @@ export const welcomePreferenceSchema: PreferenceSchema = {
     }
 };
 
-export function bindWelcomePreference(bind: interfaces.Bind): void {
-    bind(PreferenceContribution).toConstantValue({ schema: welcomePreferenceSchema });
+export interface GettingStartedConfiguration {
+    'welcome.alwaysShowWelcomePage': boolean;
+}
+
+export const GettingStartedPreferenceContribution = Symbol('GettingStartedPreferenceContribution');
+export const GettingStartedPreferences = Symbol('GettingStartedPreferences');
+export type GettingStartedPreferences = PreferenceProxy<GettingStartedConfiguration>;
+
+export function createGettingStartedPreferences(preferences: PreferenceService, schema: PreferenceSchema = GettingStartedPreferenceSchema): GettingStartedPreferences {
+    return createPreferenceProxy(preferences, schema);
+}
+
+export function bindGettingStartedPreferences(bind: interfaces.Bind): void {
+    bind(GettingStartedPreferences).toDynamicValue(ctx => {
+        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
+        const contribution = ctx.container.get<PreferenceContribution>(GettingStartedPreferenceContribution);
+        return createGettingStartedPreferences(preferences, contribution.schema);
+    }).inSingletonScope();
+    bind(GettingStartedPreferenceContribution).toConstantValue({ schema: GettingStartedPreferenceSchema });
+    bind(PreferenceContribution).toService(GettingStartedPreferenceContribution);
 }
