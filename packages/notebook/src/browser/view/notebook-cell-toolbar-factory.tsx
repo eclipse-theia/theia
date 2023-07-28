@@ -24,6 +24,7 @@ import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 
 export interface NotebookCellToolbarItem {
+    id: string;
     icon?: string;
     label?: string;
     onClick: (e: React.MouseEvent) => void;
@@ -44,24 +45,26 @@ export class NotebookCellToolbarFactory {
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
-    renderToolbar(notebookModel: NotebookModel, cell: NotebookCellModel, toolbarMenuId: string): React.ReactNode {
-        return <NotebookCellToolbar inlineItems={this.getMenuItems(notebookModel, cell, toolbarMenuId)} />;
+    renderToolbar(notebookModel: NotebookModel, cell: NotebookCellModel, menuPath: string[]): React.ReactNode {
+        return <NotebookCellToolbar inlineItems={this.getMenuItems(notebookModel, cell, menuPath)} />;
     }
 
-    renderSidebar(notebookModel: NotebookModel, cell: NotebookCellModel, toolbarMenuId: string): React.ReactNode {
-        return <NotebookCellSidebar inlineItems={this.getMenuItems(notebookModel, cell, toolbarMenuId)} />;
+    renderSidebar(notebookModel: NotebookModel, cell: NotebookCellModel, menuPath: string[]): React.ReactNode {
+        return <NotebookCellSidebar inlineItems={this.getMenuItems(notebookModel, cell, menuPath)} />;
     }
 
-    private getMenuItems(notebookModel: NotebookModel, cell: NotebookCellModel, toolbarMenuId: string): NotebookCellToolbarItem[] {
+    private getMenuItems(notebookModel: NotebookModel, cell: NotebookCellModel, menuItemPath: string[]): NotebookCellToolbarItem[] {
         const inlineItems: NotebookCellToolbarItem[] = [];
 
-        for (const menuNode of this.menuRegistry.getMenu([toolbarMenuId]).children) {
+        for (const menuNode of this.menuRegistry.getMenu(menuItemPath).children) {
             if (!menuNode.when || this.contextKeyService.match(menuNode.when, cell.context ?? undefined)) {
+                const menuPath = menuNode.role === CompoundMenuNodeRole.Submenu ? this.menuRegistry.getPath(menuNode) : undefined;
                 inlineItems.push({
+                    id: menuNode.id,
                     icon: menuNode.icon,
                     label: menuNode.label,
-                    onClick: menuNode.role === CompoundMenuNodeRole.Submenu ?
-                        e => this.contextMenuRenderer.render({ anchor: e.nativeEvent, menuPath: [toolbarMenuId, menuNode.id] }) :
+                    onClick: menuPath ?
+                        e => this.contextMenuRenderer.render({ anchor: e.nativeEvent, menuPath }) :
                         () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell)
                 });
             }

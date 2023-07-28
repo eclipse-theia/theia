@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { CommandRegistry, URI } from '@theia/core';
-import { ReactWidget, Navigatable, SaveableSource, Saveable, Message } from '@theia/core/lib/browser';
+import { ReactWidget, Navigatable, SaveableSource, Message, SaveableDelegate } from '@theia/core/lib/browser';
 import { ReactNode } from '@theia/core/shared/react';
 import { CellKind } from '../common';
 import { CellRenderer as CellRenderer, NotebookCellListView } from './view/notebook-cell-list-view';
@@ -44,14 +44,14 @@ const NotebookEditorProps = Symbol('NotebookEditorProps');
 export interface NotebookEditorProps {
     uri: URI,
     readonly notebookType: string,
-    notebookData: NotebookModel
+    notebookData: Promise<NotebookModel>
 }
 export const NOTEBOOK_EDITOR_ID_PREFIX = 'notebook:';
 @injectable()
 export class NotebookEditorWidget extends ReactWidget implements Navigatable, SaveableSource {
     static readonly ID = 'notebook';
 
-    readonly saveable: Saveable;
+    readonly saveable = new SaveableDelegate();
 
     @inject(NotebookCellToolbarFactory)
     protected readonly cellToolbarFactory: NotebookCellToolbarFactory;
@@ -62,17 +62,18 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     @inject(NotebookEditorWidgetService)
     protected notebookEditorService: NotebookEditorWidgetService;
 
-    private readonly onDidChangeModelEmitter = new Emitter<void>();
+    protected readonly onDidChangeModelEmitter = new Emitter<void>();
     readonly onDidChangeModel = this.onDidChangeModelEmitter.event;
 
-    private readonly renderers = new Map<CellKind, CellRenderer>();
+    protected readonly renderers = new Map<CellKind, CellRenderer>();
+    protected _model?: NotebookModel;
 
     get notebookType(): string {
         return this.props.notebookType;
     }
 
-    get model(): NotebookModel {
-        return this.props.notebookData;
+    get model(): NotebookModel | undefined {
+        return this._model;
     }
 
     constructor(
@@ -80,7 +81,6 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         @inject(NotebookMarkdownCellRenderer) markdownCellRenderer: NotebookMarkdownCellRenderer,
         @inject(NotebookEditorProps) private readonly props: NotebookEditorProps) {
         super();
-        this.saveable = this.props.notebookData;
         this.id = NOTEBOOK_EDITOR_ID_PREFIX + this.props.uri.toString();
 
         this.title.closable = true;
@@ -88,22 +88,34 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
         this.renderers.set(CellKind.Markup, markdownCellRenderer);
         this.renderers.set(CellKind.Code, codeCellRenderer);
+        this.waitForData();
+    }
+
+    protected async waitForData(): Promise<void> {
+        this._model = await this.props.notebookData;
+        this.saveable.set(this._model);
+        this.update();
     }
 
     getResourceUri(): URI | undefined {
         return this.props.uri;
     }
+
     createMoveToUri(resourceUri: URI): URI | undefined {
         return this.props.uri;
     }
 
     protected render(): ReactNode {
-        return <div>
-            <NotebookCellListView renderers={this.renderers}
-                notebookModel={this.props.notebookData}
-                toolbarRenderer={this.cellToolbarFactory}
-                commandRegistry={this.commandRegistry} />
-        </div>;
+        if (this._model) {
+            return <div>
+                <NotebookCellListView renderers={this.renderers}
+                    notebookModel={this._model}
+                    toolbarRenderer={this.cellToolbarFactory}
+                    commandRegistry={this.commandRegistry} />
+            </div>;
+        } else {
+            return <div></div>;
+        }
     }
 
     protected override onAfterAttach(msg: Message): void {

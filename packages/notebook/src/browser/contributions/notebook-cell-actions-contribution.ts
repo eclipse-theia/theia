@@ -23,9 +23,6 @@ import { NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE, NotebookContextKe
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 
-export const NOTEBOOK_CELL_ACTIONS_PATH = ['notebook-cell-actions-menu'];
-export const NOTEBOOK_CELL_ADDITIONAL_ACTIONS_PATH = [...NOTEBOOK_CELL_ACTIONS_PATH, 'more'];
-
 export namespace NotebookCellCommands {
     export const EDIT_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.edit',
@@ -64,34 +61,34 @@ export class NotebookCellActionContribution implements MenuContribution, Command
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        menus.registerMenuAction(NOTEBOOK_CELL_ACTIONS_PATH, {
+        menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
             commandId: NotebookCellCommands.EDIT_COMMAND.id,
             icon: NotebookCellCommands.EDIT_COMMAND.iconClass,
             when: `${NOTEBOOK_CELL_TYPE} == 'markdown' && !${NOTEBOOK_CELL_MARKDOWN_EDIT_MODE}`,
             label: nls.localizeByDefault('Edit Cell'),
             order: '10'
         });
-        menus.registerMenuAction(NOTEBOOK_CELL_ACTIONS_PATH, {
+        menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
             commandId: NotebookCellCommands.STOP_EDIT_COMMAND.id,
             icon: NotebookCellCommands.STOP_EDIT_COMMAND.iconClass,
             when: `${NOTEBOOK_CELL_TYPE} == 'markdown' && ${NOTEBOOK_CELL_MARKDOWN_EDIT_MODE}`,
             label: nls.localizeByDefault('Stop Editing Cell'),
             order: '10'
         });
-        menus.registerMenuAction(NOTEBOOK_CELL_ACTIONS_PATH, {
+        menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
             commandId: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id,
             icon: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.iconClass,
             when: `${NOTEBOOK_CELL_TYPE} == 'code'`,
             label: nls.localizeByDefault('Execute Cell'),
             order: '10'
         });
-        menus.registerMenuAction(NOTEBOOK_CELL_ACTIONS_PATH, {
+        menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
             commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
             icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass,
             label: nls.localizeByDefault('Split Cell'),
             order: '20'
         });
-        menus.registerMenuAction(NOTEBOOK_CELL_ACTIONS_PATH, {
+        menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
             commandId: NotebookCellCommands.DELETE_COMMAND.id,
             icon: NotebookCellCommands.DELETE_COMMAND.iconClass,
             label: nls.localizeByDefault('Delete Cell'),
@@ -99,7 +96,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         });
 
         menus.registerSubmenu(
-            NOTEBOOK_CELL_ADDITIONAL_ACTIONS_PATH,
+            NotebookCellActionContribution.ADDITIONAL_ACTION_MENU,
             nls.localizeByDefault('More'),
             {
                 icon: codicon('ellipsis'),
@@ -107,27 +104,33 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 order: '999'
             }
         );
-        menus.registerMenuAction(NOTEBOOK_CELL_ADDITIONAL_ACTIONS_PATH, {
+        menus.registerMenuAction(NotebookCellActionContribution.ADDITIONAL_ACTION_MENU, {
             commandId: NotebookCellCommands.EDIT_COMMAND.id,
             label: 'test submenu item',
         });
 
         // code cell sidebar menu
-        menus.registerMenuAction([NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU_ID], {
+        menus.registerMenuAction(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, {
             commandId: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id,
             icon: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.iconClass,
+            label: nls.localizeByDefault('Execute Cell')
         });
 
         // code cell output sidebar menu
-        const moreOutputActions = [NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU_ID, 'more'];
-        menus.registerSubmenu(moreOutputActions, 'more', { icon: codicon('ellipsis'), role: CompoundMenuNodeRole.Submenu });
-        menus.registerMenuAction(moreOutputActions, {
+        menus.registerSubmenu(
+            NotebookCellActionContribution.ADDITIONAL_OUTPUT_SIDEBAR_MENU,
+            nls.localizeByDefault('More'),
+            {
+                icon: codicon('ellipsis'),
+                role: CompoundMenuNodeRole.Submenu
+            });
+        menus.registerMenuAction(NotebookCellActionContribution.ADDITIONAL_OUTPUT_SIDEBAR_MENU, {
             commandId: '',
-            label: 'clear outputs',
+            label: nls.localizeByDefault('Clear Cell Outputs'),
         });
-        menus.registerMenuAction(moreOutputActions, {
+        menus.registerMenuAction(NotebookCellActionContribution.ADDITIONAL_OUTPUT_SIDEBAR_MENU, {
             commandId: '',
-            label: 'change presentation',
+            label: nls.localizeByDefault('Change Presentation'),
         });
 
     }
@@ -147,8 +150,10 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 }
 
 export namespace NotebookCellActionContribution {
-    export const ACTION_MENU_ID = 'notebook-cell-acions-menu';
-    export const CODE_CELL_SIDEBAR_MENU_ID = 'code-cell-sidebar-menu';
-    export const OUTPUT_SIDEBAR_MENU_ID = 'code-cell-output-sidebar-menu';
+    export const ACTION_MENU = ['notebook-cell-actions-menu'];
+    export const ADDITIONAL_ACTION_MENU = [...ACTION_MENU, 'more'];
+    export const CODE_CELL_SIDEBAR_MENU = ['code-cell-sidebar-menu'];
+    export const OUTPUT_SIDEBAR_MENU = ['code-cell-output-sidebar-menu'];
+    export const ADDITIONAL_OUTPUT_SIDEBAR_MENU = [...OUTPUT_SIDEBAR_MENU, 'more'];
 
 }

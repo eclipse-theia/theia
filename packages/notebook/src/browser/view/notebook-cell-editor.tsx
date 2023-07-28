@@ -76,8 +76,10 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
                 editorNode.style.height = this.editor!.getControl().getContentHeight() + 7 + 'px';
                 this.editor!.setSize({ width: -1, height: this.editor!.getControl().getContentHeight() });
             }));
-            this.toDispose.push(this.editor.document.onDirtyChanged(() => notebookModel.cellDirtyChanged(cell, this.editor!.document.dirty)));
-            this.toDispose.push(this.editor.onDocumentContentChanged(e => cell.source = e.document.getText()));
+            this.toDispose.push(this.editor.onDocumentContentChanged(e => {
+                notebookModel.cellDirtyChanged(cell, true);
+                cell.source = e.document.getText();
+            }));
         }
     }
 

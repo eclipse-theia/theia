@@ -60,7 +60,12 @@
 }
 
 .theia-notebook-markdown-content {
+    padding: 8px 16px 8px 36px;
     font-size: var(--theia-notebook-markdown-size);
+}
+
+.theia-notebook-markdown-content > p {
+    margin: 0;
 }
 
 .theia-notebook-empty-markdown {
@@ -75,6 +80,10 @@
     outline: 1px solid var(--theia-notebook-cellBorderColor);
 }
 
+.theia-notebook-cell-editor:first-child {
+    margin-left: 36px;
+}
+
 .theia-notebook-cell.focused .theia-notebook-cell-editor {
     outline-color: var(--theia-notebook-focusedEditorBorder);
 }
@@ -83,7 +92,7 @@
     border: 1px solid var(--theia-notebook-cellToolbarSeparator);
     display: flex;
     position: absolute;
-    margin: -20px 0 0 42px;
+    margin: -20px 0 0 66px;
     padding: 2px;
     background-color: var(--theia-editor-background);
 }

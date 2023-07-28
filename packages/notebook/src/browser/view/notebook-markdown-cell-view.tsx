@@ -49,17 +49,17 @@ interface MarkdownCellProps {
 }
 
 function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel }: MarkdownCellProps): JSX.Element {
-    let markdownContent = markdownRenderer.render(new MarkdownStringImpl(cell.source)).element.innerHTML;
-    if (markdownContent.length === 0) {
-        markdownContent = `<i class="theia-notebook-empty-markdown">${nls.localizeByDefault('Empty markdown cell, double-click or press enter to edit.')}</i>`;
-    }
-
     const [editMode, setEditMode] = React.useState(false);
 
     React.useEffect(() => {
         const listener = cell.onRequestCellEditChange(cellEdit => setEditMode(cellEdit));
         return () => listener.dispose();
     }, [editMode]);
+
+    let markdownContent = React.useMemo(() => markdownRenderer.render(new MarkdownStringImpl(cell.source)).element.innerHTML, [cell, editMode]);
+    if (markdownContent.length === 0) {
+        markdownContent = `<i class="theia-notebook-empty-markdown">${nls.localizeByDefault('Empty markdown cell, double-click or press enter to edit.')}</i>`;
+    }
 
     return editMode ?
         <CellEditor cell={cell} notebookModel={notebookModel} monacoServices={monacoServices} /> :

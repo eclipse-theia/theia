@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
+import { ACTION_ITEM } from '@theia/core/lib/browser';
 import { NotebookCellToolbarItem } from './notebook-cell-toolbar-factory';
 
 export interface NotebookCellToolbarProps {
@@ -23,7 +24,7 @@ export interface NotebookCellToolbarProps {
 abstract class NotebookCellActionItems extends React.Component<NotebookCellToolbarProps> {
 
     protected renderItem(item: NotebookCellToolbarItem): React.ReactNode {
-        return <div key={item.label} onClick={item.onClick} className={item.icon + ' theia-notebook-cell-toolbar-item'} />;
+        return <div key={item.id} title={item.label} onClick={item.onClick} className={`${item.icon} ${ACTION_ITEM} theia-notebook-cell-toolbar-item`} />;
     }
 
 }

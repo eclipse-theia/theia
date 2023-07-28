@@ -23,6 +23,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from '../view-model/notebook-cell-model';
 import { notebookCellMonacoTextmodelService } from '../view/notebook-cell-editor';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export const NotebookProvider = Symbol('notebook provider');
 
@@ -53,7 +54,7 @@ export class NotebookService implements Disposable {
     @inject(NotebookCellModelFactory)
     protected notebookCellModelFactory: (props: NotebookCellModelProps) => NotebookCellModel;
 
-    private notebookSerializerEmitter = new Emitter<string>();
+    protected notebookSerializerEmitter = new Emitter<string>();
     readonly onNotebookSerializer = this.notebookSerializerEmitter.event;
 
     protected readonly disposables = new DisposableCollection();
@@ -61,26 +62,35 @@ export class NotebookService implements Disposable {
     protected readonly notebookProviders = new Map<string, SimpleNotebookProviderInfo>();
     protected readonly notebookModels = new Map<string, NotebookModel>();
 
-    private readonly didAddViewTypeEmitter = new Emitter<string>();
+    protected readonly didAddViewTypeEmitter = new Emitter<string>();
     readonly onDidAddViewType = this.didAddViewTypeEmitter.event;
 
-    private readonly didRemoveViewTypeEmitter = new Emitter<string>();
+    protected readonly didRemoveViewTypeEmitter = new Emitter<string>();
     readonly onDidRemoveViewType = this.didRemoveViewTypeEmitter.event;
 
-    private readonly willOpenNotebookTypeEmitter = new Emitter<string>();
+    protected readonly willOpenNotebookTypeEmitter = new Emitter<string>();
     readonly onWillOpenNotebook = this.willOpenNotebookTypeEmitter.event;
 
-    private readonly willAddNotebookDocumentEmitter = new Emitter<URI>();
+    protected readonly willAddNotebookDocumentEmitter = new Emitter<URI>();
     readonly onWillAddNotebookDocument = this.willAddNotebookDocumentEmitter.event;
-    private readonly didAddNotebookDocumentEmitter = new Emitter<NotebookModel>();
+    protected readonly didAddNotebookDocumentEmitter = new Emitter<NotebookModel>();
     readonly onDidAddNotebookDocument = this.didAddNotebookDocumentEmitter.event;
-    private readonly willRemoveNotebookDocumentEmitter = new Emitter<NotebookModel>();
+    protected readonly willRemoveNotebookDocumentEmitter = new Emitter<NotebookModel>();
     readonly onWillRemoveNotebookDocument = this.willRemoveNotebookDocumentEmitter.event;
-    private readonly didRemoveNotebookDocumentEmitter = new Emitter<NotebookModel>();
+    protected readonly didRemoveNotebookDocumentEmitter = new Emitter<NotebookModel>();
     readonly onDidRemoveNotebookDocument = this.didRemoveNotebookDocumentEmitter.event;
 
     dispose(): void {
         this.disposables.dispose();
+    }
+
+    protected readonly ready = new Deferred();
+
+    /**
+     * Marks the notebook service as ready. From this point on, the service will start dispatching the `onNotebookSerializer` event.
+     */
+    markReady(): void {
+        this.ready.resolve();
     }
 
     registerNotebookSerializer(notebookType: string, extensionData: NotebookExtensionDescription, serializer: NotebookSerializer): Disposable {
@@ -125,13 +135,41 @@ export class NotebookService implements Disposable {
     }
 
     async getNotebookDataProvider(viewType: string): Promise<SimpleNotebookProviderInfo> {
+        await this.ready.promise;
         await this.notebookSerializerEmitter.sequence(async listener => listener(`onNotebookSerializer:${viewType}`));
 
-        const result = this.notebookProviders.get(viewType);
+        const result = await this.waitForNotebookProvider(viewType);
         if (!result) {
             throw new Error(`No provider registered for view type: '${viewType}'`);
         }
         return result;
+    }
+
+    /**
+     * When the application starts up, notebook providers from plugins are not registered yet.
+     * It takes a few seconds for the plugin host to start so that notebook data providers can be registered.
+     * This methods waits until the notebook provider is registered.
+     */
+    protected async waitForNotebookProvider(type: string): Promise<SimpleNotebookProviderInfo | undefined> {
+        if (this.notebookProviders.has(type)) {
+            return this.notebookProviders.get(type);
+        }
+        const deferred = new Deferred<SimpleNotebookProviderInfo | undefined>();
+        // 20 seconds of timeout
+        const timeoutDuration = 20_000;
+        const disposable = this.onDidAddViewType(viewType => {
+            if (viewType === type) {
+                clearTimeout(timeout);
+                disposable.dispose();
+                deferred.resolve(this.notebookProviders.get(type));
+            }
+        });
+        const timeout = setTimeout(() => {
+            clearTimeout(timeout);
+            disposable.dispose();
+            deferred.reject();
+        }, timeoutDuration);
+        return deferred.promise;
     }
 
     getNotebookEditorModel(uri: URI): NotebookModel | undefined {

@@ -63,7 +63,7 @@ export class NotebookEditorWidgetFactory implements WidgetFactory {
         return this.createNotebookEditorWidget({
             uri,
             notebookType,
-            notebookData: await this.notebookModelResolver.resolve(uri, notebookType),
+            notebookData: this.notebookModelResolver.resolve(uri, notebookType),
         });
     }
 
