@@ -53,7 +53,13 @@ export interface OnDidRenderOutput {
     contentHeight: number;
 }
 
-export type FromWebviewMessage = WebviewInitialized | OnDidRenderOutput | CustomRendererMessage;
+export interface WheelMessage {
+    readonly type: 'did-scroll-wheel';
+    readonly deltaY: number;
+    readonly deltaX: number;
+}
+
+export type FromWebviewMessage = WebviewInitialized | OnDidRenderOutput | WheelMessage | CustomRendererMessage;
 
 export interface Output {
     id: string

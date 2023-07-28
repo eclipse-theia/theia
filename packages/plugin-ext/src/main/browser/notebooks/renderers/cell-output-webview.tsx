@@ -20,7 +20,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
-import { NotebookRendererMessagingService, CellOutputWebview, NotebookRendererRegistry } from '@theia/notebook/lib/browser';
+import { NotebookRendererMessagingService, CellOutputWebview, NotebookRendererRegistry, NotebookEditorWidgetService } from '@theia/notebook/lib/browser';
 import { v4 } from 'uuid';
 import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import { WebviewWidget } from '../../webview/webview';
@@ -28,7 +28,7 @@ import { Message, WidgetManager } from '@theia/core/lib/browser';
 import { outputWebviewPreload, PreloadContext } from './output-webview-internal';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
 import { FromWebviewMessage, OutputChangedMessage } from './webview-communication';
-import { NotebookCellOutputsSplice } from '@theia/notebook/lib/common';
+import { CellUri, NotebookCellOutputsSplice } from '@theia/notebook/lib/common';
 import { Disposable } from '@theia/core';
 
 const cellModel = Symbol('CellModel');
@@ -57,6 +57,9 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
     @inject(NotebookRendererRegistry)
     protected readonly notebookRendererRegistry: NotebookRendererRegistry;
+
+    @inject(NotebookEditorWidgetService)
+    protected readonly notebookEditorWidgetService: NotebookEditorWidgetService;
 
     readonly id: string = v4();
 
@@ -124,6 +127,9 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 break;
             case 'didRenderOutput':
                 this.webviewWidget.setIframeHeight(message.contentHeight + 5);
+                break;
+            case 'did-scroll-wheel':
+                this.notebookEditorWidgetService.getNotebookEditor(`notebook:${CellUri.parse(this.cell.uri)?.notebook}`)?.node.scrollBy(message.deltaX, message.deltaY);
                 break;
         }
     }

@@ -332,6 +332,42 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         }
     }
 
+    function scrollParent(event: WheelEvent): boolean {
+        for (let node = event.target as Node | null; node; node = node.parentNode) {
+            if (!(node instanceof Element)) {
+                continue;
+            }
+
+            // scroll up
+            if (event.deltaY < 0 && node.scrollTop > 0) {
+                // there is still some content to scroll
+                return false;
+            }
+
+            // scroll down
+            if (event.deltaY > 0 && node.scrollTop + node.clientHeight < node.scrollHeight) {
+                // per https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollHeight
+                // scrollTop is not rounded but scrollHeight and clientHeight are
+                // so we need to check if the difference is less than some threshold
+                if (node.scrollHeight - node.scrollTop - node.clientHeight > 2) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    const handleWheel = (event: WheelEvent & { wheelDeltaX?: number; wheelDeltaY?: number; wheelDelta?: number }) => {
+        if (scrollParent(event)) {
+            theia.postMessage({
+                type: 'did-scroll-wheel',
+                deltaY: event.deltaY,
+                deltaX: event.deltaX,
+            });
+        }
+    };
+
     window.addEventListener('message', async rawEvent => {
         const event = rawEvent as ({ data: webviewCommunication.ToWebviewMessage });
 
@@ -346,6 +382,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 break;
         }
     });
+    window.addEventListener('wheel', handleWheel);
 
     theia.postMessage(<webviewCommunication.WebviewInitialized>{ type: 'initialized' });
 }
