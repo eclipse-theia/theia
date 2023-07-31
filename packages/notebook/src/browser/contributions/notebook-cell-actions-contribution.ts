@@ -135,11 +135,11 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 role: CompoundMenuNodeRole.Submenu
             });
         menus.registerMenuAction(NotebookCellActionContribution.ADDITIONAL_OUTPUT_SIDEBAR_MENU, {
-            commandId: '',
+            commandId: NotebookCellCommands.CLEAR_OUTPUTS_COMMAND.id,
             label: nls.localizeByDefault('Clear Cell Outputs'),
         });
         menus.registerMenuAction(NotebookCellActionContribution.ADDITIONAL_OUTPUT_SIDEBAR_MENU, {
-            commandId: '',
+            commandId: NotebookCellCommands.CHANGE_OUTPUT_PRESENTATION_COMMAND.id,
             label: nls.localizeByDefault('Change Presentation'),
         });
 
