@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import nsfw = require('@theia/core/shared/nsfw');
 import path = require('path');
 import { promises as fsp } from 'fs';
 import { IMinimatch, Minimatch } from 'minimatch';
@@ -24,19 +23,20 @@ import {
 } from '../../common/filesystem-watcher-protocol';
 import { FileChangeCollection } from '../file-change-collection';
 import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
+import { subscribe, Options, AsyncSubscription, Event } from '@theia/core/shared/@parcel/watcher';
 
-export interface NsfwWatcherOptions {
+export interface ParcelWatcherOptions {
     ignored: IMinimatch[]
 }
 
-export const NsfwFileSystemWatcherServerOptions = Symbol('NsfwFileSystemWatcherServerOptions');
-export interface NsfwFileSystemWatcherServerOptions {
+export const ParcelFileSystemWatcherServerOptions = Symbol('ParcelFileSystemWatcherServerOptions');
+export interface ParcelFileSystemWatcherServerOptions {
     verbose: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     info: (message: string, ...args: any[]) => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     error: (message: string, ...args: any[]) => void;
-    nsfwOptions: nsfw.Options;
+    parcelOptions: Options;
 }
 
 /**
@@ -54,7 +54,7 @@ export const WatcherDisposal = Symbol('WatcherDisposal');
  * Once there are no more references the handle
  * will wait for some time before destroying its resources.
  */
-export class NsfwWatcher {
+export class ParcelWatcher {
 
     protected static debugIdSequence = 0;
 
@@ -63,12 +63,12 @@ export class NsfwWatcher {
     /**
      * Used for debugging to keep track of the watchers.
      */
-    protected debugId = NsfwWatcher.debugIdSequence++;
+    protected debugId = ParcelWatcher.debugIdSequence++;
 
     /**
-     * When this field is set, it means the nsfw instance was successfully started.
+     * When this field is set, it means the watcher instance was successfully started.
      */
-    protected nsfw: nsfw.NSFW | undefined;
+    protected watcher: AsyncSubscription | undefined;
 
     /**
      * When the ref count hits zero, we schedule this watch handle to be disposed.
@@ -93,7 +93,7 @@ export class NsfwWatcher {
      * Ensures that events are processed in the order they are emitted,
      * despite being processed async.
      */
-    protected nsfwEventProcessingQueue: Promise<void> = Promise.resolve();
+    protected parcelEventProcessingQueue: Promise<void> = Promise.resolve();
 
     /**
      * Resolves once this handle disposed itself and its resources. Never throws.
@@ -115,9 +115,9 @@ export class NsfwWatcher {
         /** Filesystem path to be watched. */
         readonly fsPath: string,
         /** Watcher-specific options */
-        readonly watcherOptions: NsfwWatcherOptions,
-        /** Logging and Nsfw options */
-        protected readonly nsfwFileSystemWatchServerOptions: NsfwFileSystemWatcherServerOptions,
+        readonly watcherOptions: ParcelWatcherOptions,
+        /** Logging and parcel watcher options */
+        protected readonly parcelFileSystemWatchServerOptions: ParcelFileSystemWatcherServerOptions,
         /** The client to forward events to. */
         protected readonly fileSystemWatcherClient: FileSystemWatcherServiceClient,
         /** Amount of time in ms to wait once this handle is not referenced anymore. */
@@ -207,7 +207,7 @@ export class NsfwWatcher {
 
     /**
      * When starting a watcher, we'll first check and wait for the path to exists
-     * before running an NSFW watcher.
+     * before running a parcel watcher.
      */
     protected async start(): Promise<void> {
         while (await fsp.stat(this.fsPath).then(() => false, () => true)) {
@@ -215,71 +215,61 @@ export class NsfwWatcher {
             this.assertNotDisposed();
         }
         this.assertNotDisposed();
-        const watcher = await this.createNsfw();
+        const watcher = await this.createWatcher();
         this.assertNotDisposed();
-        await watcher.start();
         this.debug('STARTED', `disposed=${this.disposed}`);
         // The watcher could be disposed while it was starting, make sure to check for this:
         if (this.disposed) {
-            await this.stopNsfw(watcher);
+            await this.stopWatcher(watcher);
             throw WatcherDisposal;
         }
-        this.nsfw = watcher;
+        this.watcher = watcher;
     }
 
     /**
-     * Given a started nsfw instance, gracefully shut it down.
+     * Given a started parcel watcher instance, gracefully shut it down.
      */
-    protected async stopNsfw(watcher: nsfw.NSFW): Promise<void> {
-        await watcher.stop()
+    protected async stopWatcher(watcher: AsyncSubscription): Promise<void> {
+        await watcher.unsubscribe()
             .then(() => 'success=true', error => error)
             .then(status => this.debug('STOPPED', status));
     }
 
-    protected async createNsfw(): Promise<nsfw.NSFW> {
-        const fsPath = await fsp.realpath(this.fsPath);
-        return nsfw(fsPath, events => this.handleNsfwEvents(events), {
-            ...this.nsfwFileSystemWatchServerOptions.nsfwOptions,
-            // The errorCallback is called whenever NSFW crashes *while* watching.
-            // See https://github.com/atom/github/issues/342
-            errorCallback: error => {
-                console.error(`NSFW service error on "${fsPath}":`, error);
+    protected async createWatcher(): Promise<AsyncSubscription> {
+        let fsPath = await fsp.realpath(this.fsPath);
+        if ((await fsp.stat(fsPath)).isFile()) {
+            fsPath = path.dirname(fsPath);
+        }
+        return subscribe(fsPath, (err, events) => {
+            if (err) {
+                console.error(`Watcher service error on "${fsPath}":`, err);
                 this._dispose();
                 this.fireError();
-                // Make sure to call user's error handling code:
-                if (this.nsfwFileSystemWatchServerOptions.nsfwOptions.errorCallback) {
-                    this.nsfwFileSystemWatchServerOptions.nsfwOptions.errorCallback(error);
-                }
-            },
+                return;
+            }
+            this.handleWatcherEvents(events);
+        }, {
+            ...this.parcelFileSystemWatchServerOptions.parcelOptions
         });
     }
 
-    protected handleNsfwEvents(events: nsfw.FileChangeEvent[]): void {
+    protected handleWatcherEvents(events: Event[]): void {
         // Only process events if someone is listening.
         if (this.isInUse()) {
-            // This callback is async, but nsfw won't wait for it to finish before firing the next one.
+            // This callback is async, but parcel won't wait for it to finish before firing the next one.
             // We will use a lock/queue to make sure everything is processed in the order it arrives.
-            this.nsfwEventProcessingQueue = this.nsfwEventProcessingQueue.then(async () => {
+            this.parcelEventProcessingQueue = this.parcelEventProcessingQueue.then(async () => {
                 const fileChangeCollection = new FileChangeCollection();
-                await Promise.all(events.map(async event => {
-                    if (event.action === nsfw.actions.RENAMED) {
-                        const [oldPath, newPath] = await Promise.all([
-                            this.resolveEventPath(event.directory, event.oldFile),
-                            this.resolveEventPath(event.newDirectory, event.newFile),
-                        ]);
-                        this.pushFileChange(fileChangeCollection, FileChangeType.DELETED, oldPath);
-                        this.pushFileChange(fileChangeCollection, FileChangeType.ADDED, newPath);
-                    } else {
-                        const filePath = await this.resolveEventPath(event.directory, event.file!);
-                        if (event.action === nsfw.actions.CREATED) {
-                            this.pushFileChange(fileChangeCollection, FileChangeType.ADDED, filePath);
-                        } else if (event.action === nsfw.actions.DELETED) {
-                            this.pushFileChange(fileChangeCollection, FileChangeType.DELETED, filePath);
-                        } else if (event.action === nsfw.actions.MODIFIED) {
-                            this.pushFileChange(fileChangeCollection, FileChangeType.UPDATED, filePath);
-                        }
+                for (const event of events) {
+                    const filePath = event.path;
+                    if (event.type === 'create') {
+                        this.pushFileChange(fileChangeCollection, FileChangeType.ADDED, filePath);
+                    } else if (event.type === 'delete') {
+                        this.pushFileChange(fileChangeCollection, FileChangeType.DELETED, filePath);
+                    } else if (event.type === 'update') {
+                        this.pushFileChange(fileChangeCollection, FileChangeType.UPDATED, filePath);
                     }
-                }));
+                }
                 const changes = fileChangeCollection.values();
                 // If all changes are part of the ignored files, the collection will be empty.
                 if (changes.length > 0) {
@@ -293,7 +283,7 @@ export class NsfwWatcher {
     }
 
     protected async resolveEventPath(directory: string, file: string): Promise<string> {
-        // nsfw already resolves symlinks, the paths should be clean already:
+        // parcel already resolves symlinks, the paths should be clean already:
         return path.resolve(directory, file);
     }
 
@@ -344,9 +334,9 @@ export class NsfwWatcher {
         if (!this.disposed) {
             this.disposed = true;
             this.deferredDisposalDeferred.reject(WatcherDisposal);
-            if (this.nsfw) {
-                this.stopNsfw(this.nsfw);
-                this.nsfw = undefined;
+            if (this.watcher) {
+                this.stopWatcher(this.watcher);
+                this.watcher = undefined;
             }
             this.debug('DISPOSED');
         }
@@ -354,12 +344,12 @@ export class NsfwWatcher {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected info(prefix: string, ...params: any[]): void {
-        this.nsfwFileSystemWatchServerOptions.info(`${prefix} NsfwWatcher(${this.debugId} at "${this.fsPath}"):`, ...params);
+        this.parcelFileSystemWatchServerOptions.info(`${prefix} ParcelWatcher(${this.debugId} at "${this.fsPath}"):`, ...params);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected debug(prefix: string, ...params: any[]): void {
-        if (this.nsfwFileSystemWatchServerOptions.verbose) {
+        if (this.parcelFileSystemWatchServerOptions.verbose) {
             this.info(prefix, ...params);
         }
     }
@@ -370,20 +360,20 @@ export class NsfwWatcher {
  *
  * This watcherId will map to this handle type which keeps track of the clientId that made the request.
  */
-export interface NsfwWatcherHandle {
+export interface PacelWatcherHandle {
     clientId: number;
-    watcher: NsfwWatcher;
+    watcher: ParcelWatcher;
 }
 
-export class NsfwFileSystemWatcherService implements FileSystemWatcherService {
+export class ParcelFileSystemWatcherService implements FileSystemWatcherService {
 
     protected client: FileSystemWatcherServiceClient | undefined;
 
     protected watcherId = 0;
-    protected readonly watchers = new Map<string, NsfwWatcher>();
-    protected readonly watcherHandles = new Map<number, NsfwWatcherHandle>();
+    protected readonly watchers = new Map<string, ParcelWatcher>();
+    protected readonly watcherHandles = new Map<number, PacelWatcherHandle>();
 
-    protected readonly options: NsfwFileSystemWatcherServerOptions;
+    protected readonly options: ParcelFileSystemWatcherServerOptions;
 
     /**
      * `this.client` is undefined until someone sets it.
@@ -393,9 +383,9 @@ export class NsfwFileSystemWatcherService implements FileSystemWatcherService {
         onError: event => this.client?.onError(event),
     };
 
-    constructor(options?: Partial<NsfwFileSystemWatcherServerOptions>) {
+    constructor(options?: Partial<ParcelFileSystemWatcherServerOptions>) {
         this.options = {
-            nsfwOptions: {},
+            parcelOptions: {},
             verbose: false,
             info: (message, ...args) => console.info(message, ...args),
             error: (message, ...args) => console.error(message, ...args),
@@ -430,12 +420,12 @@ export class NsfwFileSystemWatcherService implements FileSystemWatcherService {
         return watcherId;
     }
 
-    protected createWatcher(clientId: number, fsPath: string, options: WatchOptions): NsfwWatcher {
-        const watcherOptions: NsfwWatcherOptions = {
+    protected createWatcher(clientId: number, fsPath: string, options: WatchOptions): ParcelWatcher {
+        const watcherOptions: ParcelWatcherOptions = {
             ignored: options.ignored
                 .map(pattern => new Minimatch(pattern, { dot: true })),
         };
-        return new NsfwWatcher(clientId, fsPath, watcherOptions, this.options, this.maybeClient);
+        return new ParcelWatcher(clientId, fsPath, watcherOptions, this.options, this.maybeClient);
     }
 
     async unwatchFileChanges(watcherId: number): Promise<void> {

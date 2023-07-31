@@ -43,7 +43,6 @@
     "lerna": "^6.0.1",
     "mkdirp": "^0.5.0",
     "node-gyp": "^9.0.0",
-    "nsfw": "^2.2.4",
     "nyc": "^15.0.0",
     "puppeteer": "^19.7.2",
     "puppeteer-core": "^19.7.2",

@@ -29,6 +29,7 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
+    "detect-libc": "^2.0.2",
     "temp": "^0.9.1",
     "webpack": "^5.76.0"
   }

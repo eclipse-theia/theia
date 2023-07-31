@@ -17,7 +17,7 @@
 import * as yargs from '@theia/core/shared/yargs';
 import { RpcProxyFactory } from '@theia/core';
 import { FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol';
-import { NsfwFileSystemWatcherService } from './nsfw-filesystem-service';
+import { ParcelFileSystemWatcherService } from './parcel-filesystem-service';
 import { IPCEntryPoint } from '@theia/core/lib/node/messaging/ipc-protocol';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -30,7 +30,7 @@ const options: {
         alias: 'v',
         type: 'boolean'
     })
-    .option('nsfwOptions', {
+    .option('watchOptions', {
         alias: 'o',
         type: 'string',
         coerce: JSON.parse
@@ -38,7 +38,7 @@ const options: {
     .argv as any;
 
 export default <IPCEntryPoint>(connection => {
-    const server = new NsfwFileSystemWatcherService(options);
+    const server = new ParcelFileSystemWatcherService(options);
     const factory = new RpcProxyFactory<FileSystemWatcherServiceClient>(server);
     server.setClient(factory.createProxy());
     factory.listen(connection);

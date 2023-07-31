@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.41.0 - 08/31/2023
+
+<a name="breaking_changes_1.41.0">[Breaking Changes:](#breaking_changes_1.41.0)</a>
+
+- [core/filesystem] The `nsfw` package has been replaced with `@parcel/watcher`. Services that used `nsfw` previously, such as the `NsfwWatcher` (now `ParcelWatcher`), have been renamed to reflect this change.
+
 ## v1.40.0 - 07/27/2023
 
 - [application-package] bumped the default supported VS Code API from `1.78.0` to `1.79.0` [#12764](https://github.com/eclipse-theia/theia/pull/12764) - Contributed on behalf of STMicroelectronics.

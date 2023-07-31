@@ -107,8 +107,8 @@ existing loggers.  However, each log message specifies from which logger it
 comes from, which can give an idea, without having to read the code:
 
 ```
-root INFO [nsfw-watcher: 10734] Started watching: /Users/captain.future/git/theia/CONTRIBUTING.md
-^^^^ ^^^^  ^^^^^^^^^^^^^^^^^^^
+root INFO [parcel-watcher: 10734] Started watching: /Users/captain.future/git/theia/CONTRIBUTING.md
+^^^^ ^^^^  ^^^^^^^^^^^^^^^^^^^^^
 ```
 Where `root` is the name of the logger and `INFO` is the log level. These are optionally followed by the name of a child process and the process ID.
 
