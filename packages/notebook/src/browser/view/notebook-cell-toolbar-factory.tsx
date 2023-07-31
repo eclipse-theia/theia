@@ -46,15 +46,15 @@ export class NotebookCellToolbarFactory {
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
-    renderToolbar(toolbarMenuId: string, notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
-        return <NotebookCellToolbar inlineItems={this.getMenuItems(toolbarMenuId, notebookModel, cell)} />;
+    renderToolbar(menuPath: string[], notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
+        return <NotebookCellToolbar inlineItems={this.getMenuItems(menuPath, notebookModel, cell)} />;
     }
 
-    renderSidebar(toolbarMenuId: string, notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel): React.ReactNode {
-        return <NotebookCellSidebar inlineItems={this.getMenuItems(toolbarMenuId, notebookModel, cell, output)} />;
+    renderSidebar(menuPath: string[], notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel): React.ReactNode {
+        return <NotebookCellSidebar inlineItems={this.getMenuItems(menuPath, notebookModel, cell, output)} />;
     }
 
-    private getMenuItems(toolbarMenuId: string, notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel): NotebookCellToolbarItem[] {
+    private getMenuItems(menuItemPath: string[], notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel): NotebookCellToolbarItem[] {
         const inlineItems: NotebookCellToolbarItem[] = [];
 
         for (const menuNode of this.menuRegistry.getMenu(menuItemPath).children) {
@@ -64,10 +64,10 @@ export class NotebookCellToolbarFactory {
                     id: menuNode.id,
                     icon: menuNode.icon,
                     label: menuNode.label,
-                    onClick: menuNode.role === CompoundMenuNodeRole.Submenu ?
+                    onClick: menuPath ?
                         e => this.contextMenuRenderer.render(
                             { anchor: e.nativeEvent,
-                                menuPath: [toolbarMenuId, menuNode.id],
+                                menuPath,
                                 includeAnchorArg: false,
                                 args: [notebookModel, cell, output] }) :
                         () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell, output)
