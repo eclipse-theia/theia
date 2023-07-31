@@ -107,6 +107,32 @@ export namespace Keybinding {
     export function is(arg: unknown): arg is Keybinding {
         return isObject(arg) && 'command' in arg && 'keybinding' in arg;
     }
+
+    export function replaceKeybinding(keybindings: Keybinding[], oldKeybinding: Keybinding, newKeybinding: Keybinding): boolean {
+        const indexOld = keybindings.findIndex(keybinding => Keybinding.equals(keybinding, oldKeybinding, false, true));
+        if (indexOld >= 0) {
+            const indexNew = keybindings.findIndex(keybinding => Keybinding.equals(keybinding, newKeybinding, false, true));
+            if (indexNew >= 0 && indexNew !== indexOld) {
+                // if keybindings already contain the new keybinding, remove the old keybinding and update the new one
+                keybindings.splice(indexOld, 1);
+                keybindings[indexNew] = newKeybinding;
+            } else {
+                keybindings[indexOld] = newKeybinding;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    export function addKeybinding(keybindings: Keybinding[], newKeybinding: Keybinding): void {
+        const index = keybindings.findIndex(keybinding => Keybinding.equals(keybinding, newKeybinding, false, true));
+        if (index >= 0) {
+            // if keybindings already contain the new keybinding, update it
+            keybindings[index] = newKeybinding;
+        } else {
+            keybindings.push(newKeybinding);
+        }
+    }
 }
 
 /**
