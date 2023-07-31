@@ -90,6 +90,12 @@ const plugins = [
                 from: path.join(resolvePackagePath('@theia/plugin-ext', __dirname), '..', 'src', 'main', 'browser', 'webview', 'pre'),
                 to: path.resolve(__dirname, 'lib', 'webview', 'pre')
             }`)}
+            ${this.ifPackage('@theia/plugin-ext-vscode', `,
+            {
+                // copy frontend plugin host files
+                from: path.join(resolvePackagePath('@theia/plugin-ext-vscode', __dirname), '..', 'lib', 'node', 'context', 'plugin-vscode-init-fe.js'),
+                to: path.resolve(__dirname, 'lib', 'frontend', 'context', 'plugin-vscode-init-fe.js')
+            }`)}
         ]
     }),
     new webpack.ProvidePlugin({
