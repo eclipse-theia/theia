@@ -48,7 +48,7 @@ describe('parcel-filesystem-watcher', function (): void {
         root = FileUri.create(fs.realpathSync(tempPath));
         watcherService = createParcelFileSystemWatcherService();
         watcherId = await watcherService.watchFileChanges(0, root.toString());
-        await sleep(2000);
+        await sleep(200);
     });
 
     afterEach(async () => {
@@ -76,15 +76,15 @@ describe('parcel-filesystem-watcher', function (): void {
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo'))).isDirectory()).to.be.true;
-        await sleep(2000);
+        await sleep(200);
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo').resolve('bar')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo').resolve('bar'))).isDirectory()).to.be.true;
-        await sleep(2000);
+        await sleep(200);
 
         fs.writeFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'baz');
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
-        await sleep(2000);
+        await sleep(200);
 
         assert.deepStrictEqual([...actualUris], expectedUris);
     });
@@ -106,20 +106,20 @@ describe('parcel-filesystem-watcher', function (): void {
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo'))).isDirectory()).to.be.true;
-        await sleep(2000);
+        await sleep(200);
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo').resolve('bar')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo').resolve('bar'))).isDirectory()).to.be.true;
-        await sleep(2000);
+        await sleep(200);
 
         fs.writeFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'baz');
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
-        await sleep(2000);
+        await sleep(200);
 
         assert.deepStrictEqual(actualUris.size, 0);
     });
 
-    it('Renaming should emit a DELETED change followed by ADDED', async function (): Promise<void> {
+    it('Renaming should emit a DELETED and ADDED event', async function (): Promise<void> {
         const file_txt = root.resolve('file.txt');
         const FILE_txt = root.resolve('FILE.txt');
         const changes: FileChange[] = [];
@@ -131,31 +131,29 @@ describe('parcel-filesystem-watcher', function (): void {
             FileUri.fsPath(file_txt),
             'random content\n'
         );
-        await sleep(1000);
+        await sleep(200);
         await fs.promises.rename(
             FileUri.fsPath(file_txt),
             FileUri.fsPath(FILE_txt)
         );
-        await sleep(1000);
+        await sleep(200);
+        // The order of DELETED and ADDED is not deterministic
         try {
             expect(changes).deep.eq([
                 // initial file creation change event:
                 { type: FileChangeType.ADDED, uri: file_txt.toString() },
                 // rename change events:
                 { type: FileChangeType.DELETED, uri: file_txt.toString() },
-                { type: FileChangeType.ADDED, uri: FILE_txt.toString() }
+                { type: FileChangeType.ADDED, uri: FILE_txt.toString() },
             ]);
-        } catch (error) {
-            // On macOS we only get ADDED events for some reason
+        } catch {
             expect(changes).deep.eq([
                 // initial file creation change event:
                 { type: FileChangeType.ADDED, uri: file_txt.toString() },
                 // rename change events:
-                { type: FileChangeType.ADDED, uri: file_txt.toString() },
-                { type: FileChangeType.ADDED, uri: FILE_txt.toString() }
+                { type: FileChangeType.ADDED, uri: FILE_txt.toString() },
+                { type: FileChangeType.DELETED, uri: file_txt.toString() },
             ]);
-            // Mark the test case as skipped so it stands out that the bogus branch got tested
-            this.skip();
         }
     });
 
