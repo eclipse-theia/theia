@@ -162,3 +162,9 @@
 .theia-notebook-add-cell-button-icon {
     vertical-align: middle;
 }
+
+.theia-notebook-cell-output-webview {
+    padding: '5px 0px';
+    margin: '0px 10px';
+    width: 100%;
+}

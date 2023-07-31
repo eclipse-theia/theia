@@ -86,7 +86,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     }
 
     render(): JSX.Element {
-        return <div style={{padding: '5px 0px', margin: '0px 10px'}} ref={this.elementref}></div>;
+        return <div className='theia-notebook-cell-output-webview' ref={this.elementref}></div>;
     }
 
     attachWebview(): void {
