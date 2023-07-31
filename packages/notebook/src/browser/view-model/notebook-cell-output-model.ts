@@ -20,7 +20,10 @@ import { CellOutput, CellOutputItem } from '../../common';
 export class NotebookCellOutputModel implements Disposable {
 
     private didChangeDataEmitter = new Emitter<void>();
-    onDidChangeData = this.didChangeDataEmitter.event;
+    readonly onDidChangeData = this.didChangeDataEmitter.event;
+
+    private requestOutputPresentationChangeEmitter = new Emitter<void>();
+    readonly onRequestOutputPresentationChange = this.requestOutputPresentationChangeEmitter.event;
 
     get outputId(): string {
         return this.rawOutput.outputId;
@@ -48,6 +51,10 @@ export class NotebookCellOutputModel implements Disposable {
 
     dispose(): void {
         this.didChangeDataEmitter.dispose();
+    }
+
+    requestOutputPresentationUpdate(): void {
+        this.requestOutputPresentationChangeEmitter.fire();
     }
 
     toDto(): CellOutput {

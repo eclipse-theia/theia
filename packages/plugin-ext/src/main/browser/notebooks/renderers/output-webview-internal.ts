@@ -21,6 +21,7 @@
 // only type imports are allowed here since this runs in an iframe. All other code is not accessible
 import type * as webviewCommunication from './webview-communication';
 import type * as rendererApi from 'vscode-notebook-renderer';
+import type { Disposable, Event } from '@theia/core';
 
 declare const acquireVsCodeApi: () => ({
     getState(): { [key: string]: unknown };
@@ -30,10 +31,26 @@ declare const acquireVsCodeApi: () => ({
 
 declare function __import(path: string): Promise<unknown>;
 
+interface Listener<T> { fn: (evt: T) => void; thisArg: unknown };
+
+interface EmitterLike<T> {
+    fire(data: T): void;
+    event: Event<T>;
+}
+
+// export interface Event<T> {
+//     (listener: (e: T) => any, thisArgs?: any, disposables?: IDisposable[] | DisposableStore): IDisposable;
+// }
+
 interface RendererContext extends rendererApi.RendererContext<unknown> {
-    readonly onDidChangeSettings: unknown; // Event<RenderOptions>;
+    readonly onDidChangeSettings: Event<RenderOptions>;
     readonly settings: RenderOptions;
 }
+
+interface NotebookRendererEntrypoint {
+    readonly path: string;
+    readonly extends?: string
+};
 
 export interface RenderOptions {
     readonly lineLimit: number;
@@ -51,10 +68,77 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
     const theia = acquireVsCodeApi();
     const renderFallbackErrorName = 'vscode.fallbackToNextRenderer';
 
-    interface NotebookRendererEntrypoint {
-        readonly path: string;
-        readonly extends?: string
+    function createEmitter<T>(listenerChange: (listeners: Set<Listener<T>>) => void = () => undefined): EmitterLike<T> {
+        const listeners = new Set<Listener<T>>();
+        return {
+            fire(data: T): void {
+                for (const listener of [...listeners]) {
+                    listener.fn.call(listener.thisArg, data);
+                }
+            },
+            event(fn, thisArg, disposables): Disposable {
+                const listenerObj = { fn, thisArg };
+                const disposable: Disposable = {
+                    dispose: () => {
+                        listeners.delete(listenerObj);
+                        listenerChange(listeners);
+                    },
+                };
+
+                listeners.add(listenerObj);
+                listenerChange(listeners);
+
+                if (disposables) {
+                    if ('push' in disposables) {
+                        disposables.push(disposable);
+                    } else {
+                        disposables.add(disposable);
+                    }
+                }
+                return disposable;
+            }
+        };
     };
+
+    const settingChange: EmitterLike<RenderOptions> = createEmitter<RenderOptions>();
+
+    class Output {
+        readonly outputId: string;
+        rendererdItem?: rendererApi.OutputItem;
+        allItems: rendererApi.OutputItem[];
+
+        renderer: Renderer;
+
+        element: HTMLElement;
+
+        constructor(output: webviewCommunication.Output, items: rendererApi.OutputItem[]) {
+            this.element = document.createElement('div');
+            // padding for scrollbars
+            this.element.style.paddingBottom = '10px';
+            this.element.style.paddingRight = '10px';
+            this.element.id = output.id;
+            document.body.appendChild(this.element);
+
+            this.allItems = items;
+        }
+
+        findItemToRender(preferredMimetype?: string): rendererApi.OutputItem {
+            if (preferredMimetype) {
+                const itemToRender = this.allItems.find(item => item.mime === preferredMimetype);
+                if (itemToRender) {
+                    return itemToRender;
+                }
+            }
+            return this.rendererdItem ?? this.allItems[0];
+        }
+
+        clear(): void {
+            this.renderer?.disposeOutputItem?.(this.rendererdItem?.id);
+            this.element.innerHTML = '';
+        }
+    }
+
+    const outputs = new Map</* outputId */string, Output>();
 
     class Renderer {
 
@@ -62,18 +146,19 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
         private rendererApi?: rendererApi.RendererApi;
 
+        private onMessageEvent: EmitterLike<unknown> = createEmitter();
+
         constructor(
             public readonly data: webviewCommunication.RendererMetadata
-        ) {
+        ) { }
+
+        public receiveMessage(message: unknown): void {
+            this.onMessageEvent.fire(message);
         }
 
-        // matchesMimeTypeOnly(mimeType: string): boolean {
-        //     if (this.entrypoint.extends) { // We're extending another renderer
-        //         return false;
-        //     }
-
-        //     return this.mimeTypeGlobs.some(pattern => pattern(mimeType)) || this.mimeTypes.some(pattern => pattern === mimeType);
-        // }
+        public disposeOutputItem(id?: string): void {
+            this.rendererApi?.disposeOutputItem?.(id);
+        }
 
         async getOrLoad(): Promise<rendererApi.RendererApi | undefined> {
             if (this.rendererApi) {
@@ -110,12 +195,12 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                     get outputScrolling(): boolean { return ctx.renderOptions.outputScrolling; },
                     get outputWordWrap(): boolean { return ctx.renderOptions.outputWordWrap; },
                 },
-                get onDidChangeSettings(): () => unknown { return () => undefined; }
+                get onDidChangeSettings(): Event<RenderOptions> { return settingChange.event; },
             };
 
             if (this.data.requiresMessaging) {
-                // context.onDidReceiveMessage = this.onMessageEvent.event;
-                // context.postMessage = message => postNotebookMessage('customRendererMessage', { rendererId: this.data.id, message });
+                context.onDidReceiveMessage = this.onMessageEvent.event;
+                context.postMessage = message => theia.postMessage({ type: 'customRendererMessage', rendererId: this.data.id, message });
             }
 
             return Object.freeze(context);
@@ -177,34 +262,34 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             this.renderers.set(renderer.id, new Renderer(renderer));
         }
 
-        // public clearAll() {
-        //     outputRunner.cancelAll();
-        //     for (const renderer of this.renderers.values()) {
-        //         renderer.disposeOutputItem();
-        //     }
-        // }
+        public clearAll(): void {
+            for (const renderer of this.renderers.values()) {
+                renderer.disposeOutputItem();
+            }
+        }
 
-        // public clearOutput(rendererId: string, outputId: string) {
-        //     outputRunner.cancelOutput(outputId);
-        //     this.renderers.get(rendererId)?.disposeOutputItem(outputId);
-        // }
+        public clearOutput(rendererId: string, outputId: string): void {
+            // outputRunner.cancelOutput(outputId);
+            this.renderers.get(rendererId)?.disposeOutputItem(outputId);
+        }
 
-        public async render(item: rendererApi.OutputItem, allOutputItems: rendererApi.OutputItem[],
-            preferredRendererId: string | undefined, element: HTMLElement, signal: AbortSignal): Promise<void> {
+        public async render(output: Output, preferredMimeType: string | undefined, preferredRendererId: string | undefined, signal: AbortSignal): Promise<void> {
+            const item = output.findItemToRender(preferredMimeType);
             const primaryRenderer = this.findRenderer(preferredRendererId, item);
             if (!primaryRenderer) {
-                this.showRenderError(item, element, 'No renderer found for output type.');
+                this.showRenderError(item, output.element, 'No renderer found for output type.');
                 return;
             }
 
             // Try primary renderer first
-            if (!(await this.doRender(item, element, primaryRenderer, signal)).continue) {
+            if (!(await this.doRender(item, output.element, primaryRenderer, signal)).continue) {
+                output.renderer = primaryRenderer;
                 this.onRenderCompleted();
                 return;
             }
 
             // Primary renderer failed in an expected way. Fallback to render the next mime types
-            for (const additionalItem of allOutputItems) {
+            for (const additionalItem of output.allItems) {
                 if (additionalItem.mime === item.mime) {
                     continue;
                 }
@@ -216,7 +301,8 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 if (additionalItem) {
                     const renderer = this.findRenderer(undefined, additionalItem);
                     if (renderer) {
-                        if (!(await this.doRender(additionalItem, element, renderer, signal)).continue) {
+                        if (!(await this.doRender(additionalItem, output.element, renderer, signal)).continue) {
+                            output.renderer = renderer;
                             this.onRenderCompleted();
                             return; // We rendered successfully
                         }
@@ -225,7 +311,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             }
 
             // All renderers have failed and there is nothing left to fallback to
-            this.showRenderError(item, element, 'No fallback renderers found or all fallback renderers failed.');
+            this.showRenderError(item, output.element, 'No fallback renderers found or all fallback renderers failed.');
         }
 
         private onRenderCompleted(): void {
@@ -296,19 +382,20 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         }
     }();
 
-    function outputChanged(changedEvent: webviewCommunication.OutputChangedMessage): void {
+    function clearOuptut(outputId: string): void {
+        outputs.get(outputId)?.clear();
+    }
+
+    function outputsChanged(changedEvent: webviewCommunication.OutputChangedMessage): void {
         for (const outputId of changedEvent.deletedOutputIds ?? []) {
-            const element = document.getElementById(outputId);
-            if (element) {
-                element.remove();
-            }
+            clearOuptut(outputId);
         }
 
-        for (const output of changedEvent.newOutputs ?? []) {
-            const apiItems: rendererApi.OutputItem[] = output.items.map((item, index) => ({
-                id: `${output.id}-${index}`,
+        for (const outputData of changedEvent.newOutputs ?? []) {
+            const apiItems: rendererApi.OutputItem[] = outputData.items.map((item, index) => ({
+                id: `${outputData.id}-${index}`,
                 mime: item.mime,
-                metadata: output.metadata,
+                metadata: outputData.metadata,
                 data(): Uint8Array {
                     return item.data;
                 },
@@ -324,14 +411,10 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
             }));
 
-            const element = document.createElement('div');
-            // padding for scrollbars
-            element.style.paddingBottom = '10px';
-            element.style.paddingRight = '10px';
-            element.id = output.id;
-            document.body.appendChild(element);
+            const output = new Output(outputData, apiItems);
+            outputs.set(outputData.id, output);
 
-            renderers.render(apiItems[0], apiItems, undefined, element, new AbortController().signal);
+            renderers.render(output, undefined, undefined, new AbortController().signal);
         }
     }
 
@@ -379,9 +462,14 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 renderers.updateRendererData(event.data.rendererData);
                 break;
             case 'outputChanged':
-                outputChanged(event.data);
+                outputsChanged(event.data);
                 break;
             case 'customRendererMessage':
+                renderers.getRenderer(event.data.rendererId)?.receiveMessage(event.data.message);
+                break;
+            case 'changePreferredMimetype':
+                clearOuptut(event.data.outputId);
+                renderers.render(outputs.get(event.data.outputId)!, event.data.mimeType, undefined, new AbortController().signal);
                 break;
         }
     });

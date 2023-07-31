@@ -22,6 +22,7 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE, NotebookContextKeys } from './notebook-context-keys';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
+import { NotebookCellOutputModel } from '../view-model/notebook-cell-output-model';
 
 export namespace NotebookCellCommands {
     export const EDIT_COMMAND = Command.toDefaultLocalizedCommand({
@@ -43,6 +44,15 @@ export namespace NotebookCellCommands {
     export const EXECUTE_SINGLE_CELL_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.execute-cell',
         iconClass: codicon('play'),
+    });
+
+    export const CLEAR_OUTPUTS_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.clear-outputs',
+        label: 'Clear Cell Outputs',
+    });
+    export const CHANGE_OUTPUT_PRESENTATION_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.change-presentation',
+        label: 'Change Presenetation',
     });
 }
 
@@ -145,6 +155,12 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
         commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND, {
             execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => this.notebookExecutionService.executeNotebookCells(notebookModel, [cell])
+        });
+        commands.registerCommand(NotebookCellCommands.CLEAR_OUTPUTS_COMMAND, {
+            execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => cell.spliceNotebookCellOutputs({ start: 0, deleteCount: cell.outputs.length, newOutputs: [] })
+        });
+        commands.registerCommand(NotebookCellCommands.CHANGE_OUTPUT_PRESENTATION_COMMAND, {
+            execute: (_, __, output: NotebookCellOutputModel) => output.requestOutputPresentationUpdate()
         });
     }
 }

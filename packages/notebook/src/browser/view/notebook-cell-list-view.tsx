@@ -59,7 +59,7 @@ export class NotebookCellListView extends React.Component<CellListProps, { selec
                                 {this.renderCellContent(cell, index)}
                             </div>
                             {this.state.selectedCell === cell &&
-                                this.props.toolbarRenderer.renderToolbar(this.props.notebookModel, cell, NotebookCellActionContribution.ACTION_MENU)}
+                                this.props.toolbarRenderer.renderToolbar(NotebookCellActionContribution.ACTION_MENU, this.props.notebookModel, cell)}
                         </li>
                     </React.Fragment>
                 )

@@ -27,9 +27,10 @@ import { WebviewWidget } from '../../webview/webview';
 import { Message, WidgetManager } from '@theia/core/lib/browser';
 import { outputWebviewPreload, PreloadContext } from './output-webview-internal';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
-import { FromWebviewMessage, OutputChangedMessage } from './webview-communication';
+import { ChangePreferredMimetypeMessage, FromWebviewMessage, OutputChangedMessage } from './webview-communication';
 import { CellUri, NotebookCellOutputsSplice } from '@theia/notebook/lib/common';
-import { Disposable } from '@theia/core';
+import { Disposable, DisposableCollection, nls, QuickPickService } from '@theia/core';
+import { NotebookCellOutputModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-output-model';
 
 const cellModel = Symbol('CellModel');
 
@@ -61,9 +62,13 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     @inject(NotebookEditorWidgetService)
     protected readonly notebookEditorWidgetService: NotebookEditorWidgetService;
 
+    @inject(QuickPickService)
+    protected readonly quickPickService: QuickPickService;
+
     readonly id: string = v4();
 
     protected readonly elementref = React.createRef<HTMLDivElement>();
+    protected outputPresentationListeners: DisposableCollection = new DisposableCollection();
 
     protected webviewWidget: WebviewWidget;
 
@@ -103,6 +108,11 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 this.webviewWidget.show();
             }
 
+            this.outputPresentationListeners.dispose();
+            this.outputPresentationListeners = new DisposableCollection();
+            this.cell.outputs.forEach(output =>
+                this.outputPresentationListeners.push(output.onRequestOutputPresentationChange(() => this.requestOuptutPresenetationUpdate(output))));
+
             const updateOuptutMessage: OutputChangedMessage = {
                 type: 'outputChanged',
                 newOutputs: update.newOutputs.map(output => ({
@@ -114,6 +124,19 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
             };
 
             this.webviewWidget.sendMessage(updateOuptutMessage);
+        }
+    }
+
+    private async requestOuptutPresenetationUpdate(output: NotebookCellOutputModel): Promise<void> {
+        const selectedMime = await this.quickPickService.show(
+            output.outputs.map(item => ({label: item.mime})),
+            {description: nls.localizeByDefault('Select mimetype to render for current output' )});
+        if (selectedMime) {
+            this.webviewWidget.sendMessage({
+                type: 'changePreferredMimetype',
+                outputId: output.outputId,
+                mimeType: selectedMime.label
+            } as ChangePreferredMimetypeMessage);
         }
     }
 
@@ -168,6 +191,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     }
 
     dispose(): void {
+        this.outputPresentationListeners.dispose();
         this.webviewWidget.dispose();
     }
 }

@@ -42,7 +42,13 @@ export interface OutputChangedMessage {
     readonly deletedOutputIds?: string[];
 }
 
-export type ToWebviewMessage = UpdateRenderersMessage | OutputChangedMessage | CustomRendererMessage;
+export interface ChangePreferredMimetypeMessage {
+    readonly type: 'changePreferredMimetype';
+    readonly outputId: string;
+    readonly mimeType: string;
+}
+
+export type ToWebviewMessage = UpdateRenderersMessage | OutputChangedMessage | ChangePreferredMimetypeMessage | CustomRendererMessage;
 
 export interface WebviewInitialized {
     readonly type: 'initialized';

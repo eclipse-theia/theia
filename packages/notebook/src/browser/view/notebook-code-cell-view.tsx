@@ -43,12 +43,13 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
             <div className='theia-notebook-cell-with-sidebar'>
-                {this.notebookCellToolbarFactory.renderSidebar(notebookModel, cell, NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU)}
+                {this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU_ID, notebookModel, cell)}
                 <CellEditor notebookModel={notebookModel} cell={cell} monacoServices={this.monacoServices} />
             </div>
             <div className='theia-notebook-cell-with-sidebar'>
                 <NotebookCodeCellOutputs cell={cell} outputWebviewFactory={this.cellOutputWebviewFactory}
-                    renderSidebar={() => this.notebookCellToolbarFactory.renderSidebar(notebookModel, cell, NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU)} />
+                    renderSidebar={() =>
+                        this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU_ID, notebookModel, cell, cell.outputs[0])}/>
             </div>
         </div >;
     }

@@ -22,6 +22,7 @@ import { NotebookCellSidebar, NotebookCellToolbar } from './notebook-cell-toolba
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
+import { NotebookCellOutputModel } from '../view-model/notebook-cell-output-model';
 
 export interface NotebookCellToolbarItem {
     id: string;
@@ -45,15 +46,15 @@ export class NotebookCellToolbarFactory {
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
-    renderToolbar(notebookModel: NotebookModel, cell: NotebookCellModel, menuPath: string[]): React.ReactNode {
-        return <NotebookCellToolbar inlineItems={this.getMenuItems(notebookModel, cell, menuPath)} />;
+    renderToolbar(toolbarMenuId: string, notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
+        return <NotebookCellToolbar inlineItems={this.getMenuItems(toolbarMenuId, notebookModel, cell)} />;
     }
 
-    renderSidebar(notebookModel: NotebookModel, cell: NotebookCellModel, menuPath: string[]): React.ReactNode {
-        return <NotebookCellSidebar inlineItems={this.getMenuItems(notebookModel, cell, menuPath)} />;
+    renderSidebar(toolbarMenuId: string, notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel): React.ReactNode {
+        return <NotebookCellSidebar inlineItems={this.getMenuItems(toolbarMenuId, notebookModel, cell, output)} />;
     }
 
-    private getMenuItems(notebookModel: NotebookModel, cell: NotebookCellModel, menuItemPath: string[]): NotebookCellToolbarItem[] {
+    private getMenuItems(toolbarMenuId: string, notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel): NotebookCellToolbarItem[] {
         const inlineItems: NotebookCellToolbarItem[] = [];
 
         for (const menuNode of this.menuRegistry.getMenu(menuItemPath).children) {
@@ -63,9 +64,13 @@ export class NotebookCellToolbarFactory {
                     id: menuNode.id,
                     icon: menuNode.icon,
                     label: menuNode.label,
-                    onClick: menuPath ?
-                        e => this.contextMenuRenderer.render({ anchor: e.nativeEvent, menuPath }) :
-                        () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell)
+                    onClick: menuNode.role === CompoundMenuNodeRole.Submenu ?
+                        e => this.contextMenuRenderer.render(
+                            { anchor: e.nativeEvent,
+                                menuPath: [toolbarMenuId, menuNode.id],
+                                includeAnchorArg: false,
+                                args: [notebookModel, cell, output] }) :
+                        () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell, output)
                 });
             }
         }
