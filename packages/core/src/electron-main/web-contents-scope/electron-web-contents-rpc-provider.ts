@@ -37,7 +37,7 @@ export class WebContentsRpcProvider implements RpcProvider {
 
     getRpc(proxyPath: string): { client: RpcClient, handler?: RpcHandler } {
         const { port1, port2 } = new MessageChannelMain();
-        this.ipcMain.postMessageTo(this.scopedWebContents, ipc.create, { proxyPath }, [port1]);
+        this.ipcMain.postMessageTo(this.scopedWebContents, ipc.createSync, { proxyPath }, [port1]);
         const channels = this.channelHandlerFactory<void>();
         const rpc = new ElectronRpcImpl(port2, channels);
         port2.on('message', event => channels.handleMessage(event.data));

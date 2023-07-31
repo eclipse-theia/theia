@@ -14,23 +14,28 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { session } from '@theia/electron/shared/electron';
 import { inject, injectable } from 'inversify';
-import { ElectronKeyboardLayout, NativeKeyboardLayout } from '../electron-common';
-import { ElectronMainApplicationContribution } from './electron-main-application';
-import { onDidChangeKeyboardLayout, getCurrentKeyboardLayout, getKeyMap } from '@theia/electron/shared/native-keymap';
-import { RpcServer, RpcEvent } from '../common';
+import { RpcServer, RpcContext } from '../../common';
+import { ElectronSecurityToken, ElectronSecurityTokenApi } from '../../electron-common';
 
 @injectable()
-export class ElectronKeyboardLayoutMain implements RpcServer<ElectronKeyboardLayout>, ElectronMainApplicationContribution {
+export class ElectronSecurityTokenServiceServer implements RpcServer<ElectronSecurityTokenApi> {
 
-    @inject(RpcEvent) $onKeyboardLayoutChanged: RpcEvent<NativeKeyboardLayout>;
+    @inject(ElectronSecurityToken)
+    protected token: ElectronSecurityToken;
 
-    onStart(): void {
-        onDidChangeKeyboardLayout(() => {
-            this.$onKeyboardLayoutChanged.sendAll({
-                info: getCurrentKeyboardLayout(),
-                mapping: getKeyMap()
-            });
+    $getSecurityTokenSync(ctx: RpcContext): ElectronSecurityToken {
+        return this.token;
+    }
+
+    async $attachSecurityToken(ctx: RpcContext, endpoint: string): Promise<void> {
+        await session.defaultSession.cookies.set({
+            url: endpoint,
+            name: ElectronSecurityToken,
+            value: JSON.stringify(this.token),
+            httpOnly: true,
+            sameSite: 'no_restriction'
         });
     }
 }

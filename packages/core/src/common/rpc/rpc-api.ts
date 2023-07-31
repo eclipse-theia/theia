@@ -20,16 +20,16 @@ import type { CancellationToken } from '../cancellation';
  * Execute remote functions.
  */
 export interface RpcClient {
-    sendNotification?(method: string, params?: unknown[]): void
-    sendRequest?(method: string, params?: unknown[], cancel?: CancellationToken): Promise<unknown>
-    sendRequestSync?(method: string, params?: unknown[]): unknown
+    sendNotification(method: string, params?: unknown[]): void;
+    sendRequest(method: string, params?: unknown[], cancel?: CancellationToken): Promise<unknown>;
+    sendRequestSync?(method: string, params?: unknown[]): unknown;
 }
 
 /**
  * Handle remote function calls.
  */
 export interface RpcHandler {
-    handleNotification?(handler: (method: string, params?: unknown[]) => void): void
-    handleRequest?(handler: (method: string, params: unknown[] | undefined, cancel: CancellationToken) => unknown): void
-    handleRequestSync?(handler: (method: string, params?: unknown[]) => unknown): void
+    handleNotification(handler: (method: string, params?: unknown[]) => void): void;
+    handleRequest(handler: (method: string, params: unknown[] | undefined, cancel: CancellationToken) => unknown): void;
+    handleRequestSync?(handler: (method: string, params?: unknown[]) => unknown): void;
 }

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { IpcRenderer, IpcRendererEvent } from '@theia/electron/shared/electron';
+import type { IpcRendererEvent } from '@theia/electron/shared/electron';
 import type { interfaces } from 'inversify';
 import type { AnyFunction, ChannelDescriptor, Listener, ToPromise } from '../common';
 

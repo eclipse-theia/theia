@@ -14,19 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { getCurrentKeyboardLayout, getKeyMap, onDidChangeKeyboardLayout } from '@theia/electron/shared/native-keymap';
 import { inject, injectable } from 'inversify';
-import type { RpcContext, RpcServer } from '../common';
-import type { ElectronApplication } from '../electron-common';
-import { ElectronMainApplication } from './electron-main-application';
-import { SenderWebContents } from './electron-main-rpc-context';
+import { RpcEvent, RpcServer } from '../../common';
+import { ElectronKeyboardLayout, NativeKeyboardLayout } from '../../electron-common';
+import { ElectronMainApplicationContribution } from '../electron-main-application';
 
 @injectable()
-export class ElectronFrontendApplicationMain implements RpcServer<ElectronApplication> {
+export class ElectronKeyboardLayoutServer implements RpcServer<ElectronKeyboardLayout>, ElectronMainApplicationContribution {
 
-    @inject(ElectronMainApplication)
-    protected application: ElectronMainApplication;
+    @inject(RpcEvent) $onKeyboardLayoutChanged: RpcEvent<NativeKeyboardLayout>;
 
-    $restart(ctx: RpcContext): void {
-        this.application!.restart(ctx.require(SenderWebContents));
+    onStart(): void {
+        onDidChangeKeyboardLayout(() => {
+            this.$onKeyboardLayoutChanged.sendAll({
+                info: getCurrentKeyboardLayout(),
+                mapping: getKeyMap()
+            });
+        });
     }
 }

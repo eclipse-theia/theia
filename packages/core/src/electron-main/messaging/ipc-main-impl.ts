@@ -18,7 +18,7 @@
 
 import { ipcMain, WebContents, webContents as electronWebContents, MessagePortMain } from '@theia/electron/shared/electron';
 import { inject, injectable } from 'inversify';
-import { AnyFunction, ChannelDescriptor, FunctionUtils } from '../../common';
+import { AnyFunction, ChannelDescriptor, FunctionUtils, isPromiseLike } from '../../common';
 import { TheiaIpcMain, TheiaIpcMainEvent } from './ipc-main';
 
 @injectable()
@@ -84,8 +84,8 @@ export class TheiaIpcMainImpl implements TheiaIpcMain {
      */
     protected mapSyncHandler(callbackfn: (event: TheiaIpcMainEvent, ...args: unknown[]) => unknown): (event: TheiaIpcMainEvent, ...args: unknown[]) => void {
         return (event, ...args) => {
-            const result = callbackfn(event, ...args);
-            if (result !== undefined) {
+            const result = callbackfn.call(undefined, event, ...args);
+            if (result !== undefined && !isPromiseLike(result)) {
                 event.returnValue = result;
             }
         };

@@ -14,15 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { shell } from '@theia/electron/shared/electron';
-import { injectable } from 'inversify';
-import { RpcServer, RpcContext } from '../common';
-import { ElectronShell } from '../electron-common';
+import { ContainerModule } from 'inversify';
+import { FunctionUtils } from './function-utils';
+import { ChannelHandler, ChannelHandlerFactory } from './messaging/channels';
+import { RpcEvent } from './rpc';
+import { RpcEventImpl } from './rpc/rpc-event-impl';
 
-@injectable()
-export class ElectronShellMain implements RpcServer<ElectronShell> {
-
-    $showItemInFolder(ctx: RpcContext, fsPath: string): void {
-        shell.showItemInFolder(fsPath);
-    }
-}
+export default new ContainerModule(bind => {
+    bind(FunctionUtils).toConstantValue(new FunctionUtils());
+    bind(ChannelHandlerFactory).toDynamicValue(ctx => () => new ChannelHandler(ctx.container.get(FunctionUtils)));
+    bind(RpcEvent).to(RpcEventImpl);
+});

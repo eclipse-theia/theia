@@ -14,9 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { CancellationToken, CancellationTokenSource } from '../cancellation';
+import { ChannelHandler } from '../messaging';
+import { iterPrototypes, PostMessage } from '../types';
 import { RpcContextImpl } from './rpc-context';
-// eslint-disable-next-line max-len
-import { CancellationToken, CancellationTokenSource, ChannelHandler, PostMessage, RpcCancelMessage, RpcContext, RpcEvent, RpcNotificationMessage, RpcRequestMessage, RpcServer, THEIA_RPC_CHANNELS as ipc, iterPrototypes } from '../../common';
+import { RpcCancelMessage, RpcNotificationMessage, RpcRequestMessage, THEIA_RPC_CHANNELS as ipc } from './rpc-messaging';
+import { kOnSendAll, kOnSendTo, RpcContext, RpcEvent, SendAllEvent, SendToEvent } from './rpc-server';
 
 export interface PortEvent {
     port: PostMessage
@@ -24,17 +27,21 @@ export interface PortEvent {
 }
 
 /**
- * Reflect on {@link RpcServer} instances and setup wiring to do RPC.
+ * Reflect on {@link RpcServer} instances and setup wiring to do RPC over
+ * {@link MessagePort}.
  */
 export class RpcServerWrap {
 
+    /** sender -> ports open from that sender */
     protected readonly ports = new Map<unknown, Set<PostMessage>>();
+    /** request id -> cancellation token source for that request */
     protected readonly requests = new Map<unknown, CancellationTokenSource>();
 
     constructor(
-        protected readonly rpcServer: Record<string | symbol, unknown>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        protected readonly rpcServer: any,
         protected readonly channels: ChannelHandler<PortEvent>,
-        protected readonly contributeBindings: (bindings: Map<string | symbol, unknown>, sender: unknown) => void
+        protected readonly contributeBindings?: (bindings: Map<string | symbol, unknown>, sender: unknown) => void
     ) {
         this.channels.on(ipc.cancel, this.handleCancelMessage, this);
         this.channels.on(ipc.request, this.handleRequestMessage, this);
@@ -50,7 +57,7 @@ export class RpcServerWrap {
     callMethod(sender: unknown, method: string, params: unknown[] = []): unknown {
         const $method = this.toRpcMethodName(method);
         const ctx = this.createRpcContext(sender);
-        return (this.rpcServer[$method] as CallableFunction)(ctx, ...params);
+        return this.rpcServer[$method](ctx, ...params);
     }
 
     handleMessage(sender: unknown, port: PostMessage, message: unknown): void {
@@ -73,16 +80,16 @@ export class RpcServerWrap {
     }
 
     protected forwardEvents(rpcServer: Record<string, unknown>): void {
-        this.collectEvents(rpcServer).forEach($eventName => {
+        this.collectEventNames(rpcServer).forEach($eventName => {
             const rpcEvent = rpcServer[$eventName];
             if (RpcEvent.is(rpcEvent)) {
-                rpcEvent.onSendAll(event => this.sendAll($eventName, event));
-                rpcEvent.onSendTo(event => this.sendTo($eventName, event));
+                rpcEvent[kOnSendAll](event => this.sendAll($eventName, event));
+                rpcEvent[kOnSendTo](event => this.sendTo($eventName, event));
             }
         });
     }
 
-    protected collectEvents(rpcServer: Record<string, unknown>): Set<string> {
+    protected collectEventNames(rpcServer: Record<string, unknown>): Set<string> {
         const events = new Set<string>();
         function collect(value: object): void {
             Object.getOwnPropertyNames(value).forEach(name => {
@@ -98,7 +105,7 @@ export class RpcServerWrap {
         return events;
     }
 
-    protected sendAll(eventName: string, event: RpcEvent.SendAllEvent<unknown>): void {
+    protected sendAll(eventName: string, event: SendAllEvent<unknown>): void {
         const notification: RpcNotificationMessage = { method: eventName };
         if (event.value !== undefined) {
             notification.params = [event.value];
@@ -111,7 +118,7 @@ export class RpcServerWrap {
         });
     }
 
-    protected sendTo(eventName: string, event: RpcEvent.SendToEvent<unknown>): void {
+    protected sendTo(eventName: string, event: SendToEvent<unknown>): void {
         const notification: RpcNotificationMessage = { method: eventName };
         if (event.value !== undefined) {
             notification.params = [event.value];
@@ -134,7 +141,7 @@ export class RpcServerWrap {
         }
         const ctx = this.createRpcContext(event.sender);
         try {
-            await (this.rpcServer[$method] as CallableFunction)(ctx, ...params);
+            await this.rpcServer[$method](ctx, ...params);
         } catch (error) {
             console.error(error);
         }
@@ -164,7 +171,7 @@ export class RpcServerWrap {
 
     protected createRpcContext(sender: unknown, cancel?: CancellationToken): RpcContext {
         const bindings = new Map<string | symbol, unknown>();
-        this.contributeBindings(bindings, sender);
+        this.contributeBindings?.(bindings, sender);
         return new RpcContextImpl(bindings, sender, cancel);
     }
 

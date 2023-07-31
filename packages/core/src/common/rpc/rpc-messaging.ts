@@ -52,7 +52,8 @@ export interface RpcCancelMessage {
 }
 
 export const THEIA_RPC_CHANNELS = createChannelNamespace('theia-rpc', channel => ({
-    create: channel<(message: RpcCreateMessage) => void>(),
+    create: channel<(message: RpcCreateMessage) => Promise<number>>(),
+    createSync: channel<(message: RpcCreateMessage) => number>(),
     portForward: channel<(message: RpcPortForwardMessage) => void>(),
     notification: channel<(message: RpcNotificationMessage) => void>(),
     request: channel<(message: RpcRequestMessage) => void>(),

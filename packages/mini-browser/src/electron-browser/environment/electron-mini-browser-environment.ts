@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import { Endpoint } from '@theia/core/lib/browser';
-import { ElectronSecurityTokenService } from '@theia/core/lib/electron-common/electron-token';
+import { ElectronSecurityTokenApi } from '@theia/core/lib/electron-common/electron-token';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MiniBrowserEnvironment } from '../../browser/environment/mini-browser-environment';
 
 @injectable()
 export class ElectronMiniBrowserEnvironment extends MiniBrowserEnvironment {
 
-    @inject(ElectronSecurityTokenService)
-    protected electronSecurityTokenService: ElectronSecurityTokenService;
+    @inject(ElectronSecurityTokenApi)
+    protected electronSecurityTokenService: ElectronSecurityTokenApi;
 
     override getEndpoint(uuid: string, hostname?: string): Endpoint {
         const endpoint = super.getEndpoint(uuid, hostname);
@@ -33,7 +33,7 @@ export class ElectronMiniBrowserEnvironment extends MiniBrowserEnvironment {
 
     protected override getDefaultHostname(): string {
         const query = self.location.search
-            .substr(1) // remove leading `?`
+            .slice(1) // remove leading `?`
             .split('&')
             .map(entry => entry
                 .split('=', 2)

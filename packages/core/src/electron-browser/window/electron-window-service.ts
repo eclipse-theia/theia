@@ -17,7 +17,6 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import { NewWindowOptions } from '../../common/window';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
-import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
 import { ElectronWindowPreferences } from './electron-window-preferences';
 import { ElectronWindow } from '../../electron-common';
 
@@ -34,8 +33,8 @@ export class ElectronWindowService extends DefaultWindowService {
      */
     protected closeOnUnload: boolean = false;
 
-    @inject(ElectronMainWindowService)
-    protected readonly delegate: ElectronMainWindowService;
+    @inject(ElectronWindow)
+    protected readonly delegate: ElectronWindow;
 
     @inject(ElectronWindowPreferences)
     protected readonly electronWindowPreferences: ElectronWindowPreferences;

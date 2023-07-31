@@ -14,30 +14,40 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
-import { SampleUpdater, SampleUpdaterClient, UpdateStatus } from '../../common/updater/sample-updater';
+import { SampleUpdater, UpdateStatus } from '../../common/updater/sample-updater';
+import { RpcContext, RpcEvent, RpcServer } from '@theia/core';
 
 @injectable()
-export class SampleUpdaterImpl implements SampleUpdater, ElectronMainApplicationContribution {
+export class SampleUpdaterImpl implements RpcServer<SampleUpdater>, ElectronMainApplicationContribution {
 
-    protected clients: Array<SampleUpdaterClient> = [];
-    protected inProgressTimer: NodeJS.Timer | undefined;
+    protected inProgressTimer?: NodeJS.Timer;
     protected available = false;
 
-    async checkForUpdates(): Promise<{ status: UpdateStatus }> {
+    @inject(RpcEvent) $onReadyToInstall: RpcEvent<void>;
+
+    onStart(application: ElectronMainApplication): void {
+        // Called when the contribution is starting. You can use both async and sync code from here.
+    }
+
+    onStop(application: ElectronMainApplication): void {
+        // Invoked when the contribution is stopping. You can clean up things here. You are not allowed call async code from here.
+    }
+
+    $updateAndRestart(): void {
+        console.info("'Update and restart' was requested by the frontend.");
+        // Here comes your install and restart implementation. For example: `autoUpdater.quitAndInstall();`
+    }
+
+    async $checkForUpdates(): Promise<{ status: UpdateStatus }> {
         if (this.inProgressTimer) {
             return { status: UpdateStatus.InProgress };
         }
         return { status: this.available ? UpdateStatus.Available : UpdateStatus.NotAvailable };
     }
 
-    onRestartToUpdateRequested(): void {
-        console.info("'Update to Restart' was requested by the frontend.");
-        // Here comes your install and restart implementation. For example: `autoUpdater.quitAndInstall();`
-    }
-
-    async setUpdateAvailable(available: boolean): Promise<void> {
+    async $setUpdateAvailable(ctx: RpcContext, available: boolean): Promise<void> {
         if (this.inProgressTimer) {
             clearTimeout(this.inProgressTimer);
         }
@@ -48,44 +58,8 @@ export class SampleUpdaterImpl implements SampleUpdater, ElectronMainApplication
             this.inProgressTimer = setTimeout(() => {
                 this.inProgressTimer = undefined;
                 this.available = true;
-                for (const client of this.clients) {
-                    client.notifyReadyToInstall();
-                }
+                this.$onReadyToInstall.sendAll();
             }, 5000);
         }
     }
-
-    onStart(application: ElectronMainApplication): void {
-        // Called when the contribution is starting. You can use both async and sync code from here.
-    }
-
-    onStop(application: ElectronMainApplication): void {
-        // Invoked when the contribution is stopping. You can clean up things here. You are not allowed call async code from here.
-    }
-
-    setClient(client: SampleUpdaterClient | undefined): void {
-        if (client) {
-            this.clients.push(client);
-            console.info('Registered a new sample updater client.');
-        } else {
-            console.warn("Couldn't register undefined client.");
-        }
-    }
-
-    disconnectClient(client: SampleUpdaterClient): void {
-        const index = this.clients.indexOf(client);
-        if (index !== -1) {
-            this.clients.splice(index, 1);
-            console.info('Disposed a sample updater client.');
-        } else {
-            console.warn("Couldn't dispose client; it was not registered.");
-        }
-    }
-
-    dispose(): void {
-        console.info('>>> Disposing sample updater service...');
-        this.clients.forEach(this.disconnectClient.bind(this));
-        console.info('>>> Disposed sample updater service.');
-    }
-
 }

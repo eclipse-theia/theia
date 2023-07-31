@@ -15,22 +15,18 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging/proxy-factory';
 import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
-import { ElectronConnectionHandler } from '@theia/core/lib/electron-common/messaging/electron-connection-handler';
-import { SampleUpdaterPath, SampleUpdater, SampleUpdaterClient } from '../../common/updater/sample-updater';
+import { SampleUpdater } from '../../common/updater/sample-updater';
 import { SampleUpdaterImpl } from './sample-updater-impl';
+import { ElectronMainContext, RpcServerProvider } from '@theia/core';
 
 export default new ContainerModule(bind => {
     bind(SampleUpdaterImpl).toSelf().inSingletonScope();
+    bind(RpcServerProvider)
+        .toDynamicValue(ctx => path => path === SampleUpdater && ctx.container.get(SampleUpdaterImpl))
+        .inSingletonScope()
+        .whenTargetNamed(ElectronMainContext);
     bind(SampleUpdater).toService(SampleUpdaterImpl);
     bind(ElectronMainApplicationContribution).toService(SampleUpdater);
-    bind(ElectronConnectionHandler).toDynamicValue(context =>
-        new JsonRpcConnectionHandler<SampleUpdaterClient>(SampleUpdaterPath, client => {
-            const server = context.container.get<SampleUpdater>(SampleUpdater);
-            server.setClient(client);
-            client.onDidCloseConnection(() => server.disconnectClient(client));
-            return server;
-        })
-    ).inSingletonScope();
+    // TODO: BIND RPC HANDLER FOR SAMPLE UPDATER
 });

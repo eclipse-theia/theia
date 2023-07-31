@@ -26,10 +26,10 @@ interface $ElectronWindow {
     onUnmaximize: Event<void>;
     onMenuClosed: Event<{ menuId: number }>;
     onMenuClicked: Event<{ menuId: number, handlerId: number }>;
-    isMaximizedSync(): boolean;
     minimize(): void;
     maximize(): void;
     unMaximize(): void;
+    isMaximizedSync(): boolean;
     close(): void;
     setMenu(menu?: MenuDto[]): void;
     toggleDevTools(): void;
@@ -43,10 +43,8 @@ interface $ElectronWindow {
     reload(): void;
     getTitleBarStyle(): Promise<string>;
     setTitleBarStyle(style: string): Promise<void>;
-
     setMenuBarVisible(visible: boolean, windowName?: string): void;
     focusWindow(windowName: string): void;
-
     openNewWindow(url: string, options?: NewWindowOptions): void;
     openNewDefaultWindow(): void;
 }

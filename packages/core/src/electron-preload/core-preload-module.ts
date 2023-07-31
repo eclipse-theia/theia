@@ -15,9 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { TheiaIpcWindow } from '../browser';
+import { TheiaIpcWindow } from '../browser/messaging/ipc-window';
 import { TheiaIpcWindowImpl } from '../browser/messaging/ipc-window-impl';
-import { FunctionUtils } from '../common';
 import { TheiaContextBridgeImpl } from './context-bridge-impl';
 import { ElectronPreloadRpcSync } from './electron-preload-rpc-sync';
 import { TheiaIpcRendererImpl } from './ipc-renderer-impl';
@@ -27,7 +26,6 @@ import { ElectronPreloadContribution } from './preload-contribution';
 import { ElectronPreloadRpcBroker } from './electron-preload-rpc-broker';
 
 export default new ContainerModule(bind => {
-    bind(FunctionUtils).toSelf().inSingletonScope();
     bind(TheiaIpcWindow).to(TheiaIpcWindowImpl).inSingletonScope();
     bind(TheiaIpcRenderer).to(TheiaIpcRendererImpl).inSingletonScope();
     bind(TheiaContextBridge).to(TheiaContextBridgeImpl).inSingletonScope();

@@ -14,11 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { ElectronMainContext, ProxyProvider } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FileDialogService } from '../../browser/file-dialog/file-dialog-service';
+import { ElectronFileDialog } from '../../electron-common';
 import { ElectronFileDialogService } from './electron-file-dialog-service';
 
 export default new ContainerModule(bind => {
     bind(ElectronFileDialogService).toSelf().inSingletonScope();
     bind(FileDialogService).toService(ElectronFileDialogService);
+    bind(ElectronFileDialog)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, ElectronMainContext).getProxy(ElectronFileDialog))
+        .inSingletonScope();
 });

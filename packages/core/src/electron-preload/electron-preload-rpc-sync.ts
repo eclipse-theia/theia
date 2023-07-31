@@ -36,7 +36,7 @@ export class ElectronPreloadRpcSync implements ElectronPreloadContribution {
 
     preload(): void {
         this.contextBridge.exposeInMainWorld<ElectronRpcSync>('electronRpcSync', {
-            createProxy: proxyPath => this.ipcRenderer.sendSync(rpc.create, { proxyPath }),
+            createProxySync: proxyPath => this.ipcRenderer.sendSync(rpc.createSync, { proxyPath }),
             requestSync: (proxyId, method, params) => this.ipcRenderer.sendSync(rpc.requestSync, { proxyId, method, params })
         });
     }

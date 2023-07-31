@@ -22,7 +22,7 @@ import {
 } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { ContextMenuContext } from '../../browser/menu/context-menu-context';
-import { MenuPath, MenuContribution, MenuModelRegistry } from '../../common';
+import { MenuPath, MenuContribution, MenuModelRegistry, CancellationTokenSource } from '../../common';
 import { BrowserContextMenuRenderer } from '../../browser/menu/browser-context-menu-renderer';
 import { ElectronWindow } from '../../electron-common';
 
@@ -96,14 +96,16 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
             const { menuPath, anchor, args, onHide, context, contextKeyService } = options;
             const menu = this.electronMenuFactory.createElectronContextMenu(menuPath, args, context, contextKeyService);
             const { x, y } = coordinateFromAnchor(anchor);
-            const handlePromise = this.electronWindow.popup(menu, x, y, () => {
+            const cancellation = new CancellationTokenSource();
+            this.electronWindow.popup(menu, x, y, cancellation.token).then(() => {
                 onHide?.();
             });
             // native context menu stops the event loop, so there is no keyboard events
             this.context.resetAltPressed();
             return new ElectronContextMenuAccess({
                 dispose: () => {
-                    handlePromise.then(handle => this.electronWindow.closePopup(handle));
+                    // handlePromise.then(handle => this.electronWindow.closePopup(handle));
+                    cancellation.cancel();
                 }
             });
         }

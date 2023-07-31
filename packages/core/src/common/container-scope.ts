@@ -38,8 +38,8 @@ export interface ContainerScopeContribution {
 
 export const ContainerScopeManager = Symbol('ContainerScopeManager') as symbol & interfaces.Abstract<ContainerScopeManager<unknown>>;
 export interface ContainerScopeManager<T = unknown> {
-    get(key: T): ContainerScope | undefined;
-    getAll(): ReadonlyMap<T, ContainerScope>;
-    create(key: T): Promise<ContainerScope>;
-    getOrCreate(key: T): Promise<ContainerScope>;
+    createScope(key: T): Promise<ContainerScope>;
+    getScope(key: T): Promise<ContainerScope> | undefined;
+    getAllScopes(): ReadonlyMap<T, Promise<ContainerScope>>;
+    hasScope(key: T): boolean
 }

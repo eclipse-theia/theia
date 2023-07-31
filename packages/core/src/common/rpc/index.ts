@@ -17,8 +17,8 @@
 /* eslint-disable max-len */
 
 export { RpcClient, RpcHandler } from './rpc-api';
+export { RpcCancelMessage, RpcCreateMessage, RpcNotificationMessage, RpcPortForwardMessage, RpcRequestMessage, RpcRequestSyncMessage, RpcResponseMessage, THEIA_RPC_CHANNELS } from './rpc-messaging';
 export { Proxyable } from './rpc-proxy';
 export { RpcProxyHandler } from './rpc-proxy-handler';
 export { RpcProvider, RpcProxyProvider } from './rpc-proxy-provider';
-export { RpcServer, RpcContext, RpcContextKey, RpcEvent, RpcServerProvider } from './rpc-server';
-export { RpcCancelMessage, RpcCreateMessage, RpcNotificationMessage, RpcPortForwardMessage, RpcRequestMessage, RpcRequestSyncMessage, RpcResponseMessage, THEIA_RPC_CHANNELS } from './rpc-messaging';
+export { kOnSendAll, kOnSendTo, RpcContext, RpcContextKey, RpcEvent, RpcServer, RpcServerProvider, SendAllEvent, SendToEvent } from './rpc-server';

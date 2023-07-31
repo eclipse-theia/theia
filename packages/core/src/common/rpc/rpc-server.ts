@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { interfaces } from 'inversify';
-import { isFunction, isObject } from '../types';
+import { isFunction, isObject, MaybePromise } from '../types';
 import type { CancellationToken } from '../cancellation';
 import type { Event } from '../event';
 
@@ -35,9 +35,36 @@ type WithoutCancellationToken<T extends unknown[]> =
     T extends [...infer U, CancellationToken?] ? U :
     T;
 
+/**
+ * Function that takes the requested proxy path to serve and returns a
+ * corresponding {@link RpcServer} instance for it.
+ *
+ * Will accept anything that is an actual object, and ignore the rest.
+ *
+ * @param proxyPath Requested proxy API to handle.
+ * @param originContext Where the request is coming from.
+ * @returns A RpcServer object to handle the proxy request, or anything else to refuse.
+ */
 export const RpcServerProvider = Symbol('RpcServerProvider') as symbol & interfaces.Abstract<RpcServerProvider>;
-export interface RpcServerProvider {
-    <T extends object = any>(proxyPath: unknown): T;
+export type RpcServerProvider = (proxyPath: unknown) => unknown;
+
+export const kOnSendAll = Symbol.for('onSendAll');
+export const kOnSendTo = Symbol.for('onSendTo');
+
+/**
+ * Emitted when {@link RpcEvent.sendAll} is called.
+ */
+export interface SendAllEvent<T> {
+    value: T;
+    exceptions?: unknown[]
+}
+
+/**
+ * Emitted when {@link RpcEvent.sendTo} is called.
+ */
+export interface SendToEvent<T> {
+    value: T
+    targets: unknown[]
 }
 
 /**
@@ -45,32 +72,18 @@ export interface RpcServerProvider {
  *
  * Dispatch events to every client or only specific targets.
  */
-export interface RpcEvent<T> {
-    onSendAll: Event<RpcEvent.SendAllEvent<T>>;
-    onSendTo: Event<RpcEvent.SendToEvent<T>>;
-    sendAll(event: T, exceptions?: unknown[]): void;
-    sendTo(event: T, targets: unknown[]): void;
-}
-export abstract class RpcEvent<T> { }
-export namespace RpcEvent {
-
-    export interface SendAllEvent<T> {
-        value: T;
-        exceptions?: unknown[]
-    }
-
-    export interface SendToEvent<T> {
-        value: T
-        targets: unknown[]
-    }
-
-    export function is(value: unknown): value is RpcEvent<any> {
+export abstract class RpcEvent<T> {
+    static is(value: unknown): value is RpcEvent<any> {
         return isObject<RpcEvent<any>>(value)
-            && isFunction(value.onSendAll)
-            && isFunction(value.onSendTo)
+            && isFunction(value[kOnSendAll])
+            && isFunction(value[kOnSendTo])
             && isFunction(value.sendAll)
             && isFunction(value.sendTo);
     }
+    abstract [kOnSendAll]: Event<SendAllEvent<T>>;
+    abstract [kOnSendTo]: Event<SendToEvent<T>>;
+    abstract sendAll(event: T, exceptions?: unknown[]): void;
+    abstract sendTo(event: T, targets: unknown[]): void;
 }
 
 /**
@@ -145,6 +158,8 @@ export interface RpcContext {
 export type RpcServer<T> = {
     [K in keyof T as EnsurePrefix<'$', K>]-?:
     T[K] extends Event<infer U> ? RpcEvent<U> :
-    T[K] extends (...params: infer U) => infer V ? (ctx: RpcContext, ...params: WithoutCancellationToken<U>) => V :
+    T[K] extends (...params: infer U) => infer V ? (
+        (ctx: RpcContext, ...params: WithoutCancellationToken<U>) => (V extends PromiseLike<infer W> ? MaybePromise<W> : V)
+    ) :
     undefined;
 };

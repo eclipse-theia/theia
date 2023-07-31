@@ -16,21 +16,23 @@
 
 import { ContainerModule, interfaces } from 'inversify';
 import { v4 } from 'uuid';
-import { ContainerScopeContribution, ContainerScopeManager, ElectronMainContext, ElectronWebContentsScope, FunctionUtils } from '../common';
+import { ContainerScopeContribution, ContainerScopeManager, ElectronMainContext, ElectronWebContentsScope, RpcServerProvider } from '../common';
 import { ContainerScopeManagerImpl } from '../common/container-scope-manager';
 import { bindContributionProvider } from '../common/contribution-provider';
-import { ElectronClipboardService, ElectronFrontendApplication, ElectronKeyboardLayout, ElectronSecurityTokenApi, ElectronShell, ElectronWindow } from '../electron-common';
+// eslint-disable-next-line max-len
+import { ElectronApplication, ElectronClipboardService, ElectronKeyboardLayout, ElectronSecurityTokenApi, ElectronShell, ElectronWindow } from '../electron-common';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
-import { ElectronFrontendApplicationMain } from './electron-application-main';
-import { ElectronClipboardMain } from './electron-clipboard-main';
-import { ElectronKeyboardLayoutMain } from './electron-keyboard-layout';
 import { ElectronMainApplication, ElectronMainApplicationContribution, ElectronMainProcessArgv } from './electron-main-application';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
-import { ElectronShellMain } from './electron-shell-main';
-import { ElectronSecurityTokenServiceMain } from './electron-token-main';
-import { ElectronWindowMain } from './electron-window-main';
-import { TheiaIpcMain } from './messaging';
+import { ElectronMainRpcContribution } from './messaging/electron-main-rpc-contribution';
+import { TheiaIpcMain } from './messaging/ipc-main';
 import { TheiaIpcMainImpl } from './messaging/ipc-main-impl';
+import { ElectronApplicationServer } from './rpc-servers/electron-application-server';
+import { ElectronClipboardServer } from './rpc-servers/electron-clipboard-server';
+import { ElectronKeyboardLayoutServer } from './rpc-servers/electron-keyboard-layout-server';
+import { ElectronShellServer } from './rpc-servers/electron-shell-server';
+import { ElectronSecurityTokenServiceServer } from './rpc-servers/electron-token-server';
+import { ElectronWindowServer } from './rpc-servers/electron-window-server';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory, WindowApplicationConfig } from './theia-electron-window';
 
 const electronSecurityToken: ElectronSecurityToken = { value: v4() };
@@ -38,7 +40,6 @@ const electronSecurityToken: ElectronSecurityToken = { value: v4() };
 (global as any)[ElectronSecurityToken] = electronSecurityToken;
 
 export default new ContainerModule(bind => {
-    bind(FunctionUtils).toSelf().inSingletonScope();
     bind(TheiaIpcMain).to(TheiaIpcMainImpl).inSingletonScope();
     bind(ElectronMainApplication).toSelf().inSingletonScope();
     bind(ElectronSecurityToken).toConstantValue(electronSecurityToken);
@@ -46,28 +47,24 @@ export default new ContainerModule(bind => {
 
     bindContributionProvider(bind, ElectronMainApplicationContribution);
 
-    function bindProxyHandler(context: symbol, expectedProxyId: string, targetBinding: interfaces.ServiceIdentifier<unknown>): void {
-        bind(ProxyHandler)
-            .toDynamicValue(ctx => proxyId => {
-                if (proxyId === expectedProxyId) {
-                    return ctx.container.get(targetBinding);
-                }
-            })
+    bind(ElectronMainRpcContribution).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(ElectronMainRpcContribution);
+
+    // #region rpc servers
+    function bindRpcServer(context: symbol, proxyId: string, injectableRpcServer: interfaces.Newable<object>): void {
+        bind(injectableRpcServer).toSelf().inSingletonScope();
+        bind(RpcServerProvider)
+            .toDynamicValue(ctx => path => path === proxyId && ctx.container.get(injectableRpcServer))
             .inSingletonScope()
             .whenTargetNamed(context);
     }
-    bind(ElectronClipboardMain).toSelf().inSingletonScope();
-    bindProxyHandler(ElectronMainContext, ElectronClipboardService, ElectronClipboardMain);
-    bind(ElectronFrontendApplicationMain).toSelf().inSingletonScope();
-    bindProxyHandler(ElectronMainContext, ElectronFrontendApplication, ElectronFrontendApplicationMain);
-    bind(ElectronKeyboardLayoutMain).toSelf().inSingletonScope();
-    bindProxyHandler(ElectronMainContext, ElectronKeyboardLayout, ElectronKeyboardLayoutMain);
-    bind(ElectronSecurityTokenServiceMain).toSelf().inSingletonScope();
-    bindProxyHandler(ElectronMainContext, ElectronSecurityTokenApi, ElectronSecurityTokenServiceMain);
-    bind(ElectronShellMain).toSelf().inSingletonScope();
-    bindProxyHandler(ElectronMainContext, ElectronShell, ElectronShellMain);
-    bind(ElectronWindowMain).toSelf().inSingletonScope();
-    bindProxyHandler(ElectronMainContext, ElectronWindow, ElectronWindowMain);
+    bindRpcServer(ElectronMainContext, ElectronApplication, ElectronApplicationServer);
+    bindRpcServer(ElectronMainContext, ElectronClipboardService, ElectronClipboardServer);
+    bindRpcServer(ElectronMainContext, ElectronKeyboardLayout, ElectronKeyboardLayoutServer);
+    bindRpcServer(ElectronMainContext, ElectronSecurityTokenApi, ElectronSecurityTokenServiceServer);
+    bindRpcServer(ElectronMainContext, ElectronShell, ElectronShellServer);
+    bindRpcServer(ElectronMainContext, ElectronWindow, ElectronWindowServer);
+    // #endregion
 
     bind(ElectronMainProcessArgv).toSelf().inSingletonScope();
 

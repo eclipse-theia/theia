@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import { TheiaIpcWindow } from './ipc-window';
-import { AnyFunction, ChannelDescriptor, FunctionUtils } from '../common';
+import { AnyFunction, ChannelDescriptor, FunctionUtils } from '../../common';
 
 @injectable()
 export class TheiaIpcWindowImpl implements TheiaIpcWindow {

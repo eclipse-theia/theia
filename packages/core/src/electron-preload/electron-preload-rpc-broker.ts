@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { TheiaIpcWindow } from '../browser';
+import { TheiaIpcWindow } from '../browser/messaging/ipc-window';
 import { RpcPortForwardMessage, THEIA_RPC_CHANNELS as ipc } from '../common';
 import { TheiaIpcRenderer } from './ipc-renderer';
 import { ElectronPreloadContribution } from './preload-contribution';
@@ -34,10 +34,12 @@ export class ElectronPreloadRpcBroker implements ElectronPreloadContribution {
     protected ipcWindow: TheiaIpcWindow;
 
     preload(): void {
+        // webContents -> main
         this.ipcWindow.on(ipc.portForward, this.handlePortForward, this);
     }
 
     protected handlePortForward(event: MessageEvent, message: RpcPortForwardMessage): void {
+        // main -> webContents
         this.ipcRenderer.postMessage(ipc.portForward, message, event.ports);
     }
 }

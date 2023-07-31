@@ -16,20 +16,11 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { CommonMenus } from '@theia/core/lib/browser';
-import {
-    Emitter,
-    Command,
-    MenuPath,
-    MessageService,
-    MenuModelRegistry,
-    MenuContribution,
-    CommandRegistry,
-    CommandContribution
-} from '@theia/core/lib/common';
+import { Command, MenuPath, MessageService, MenuModelRegistry, MenuContribution, CommandRegistry, CommandContribution } from '@theia/core/lib/common';
 import { ElectronMainMenuFactory } from '@theia/core/lib/electron-browser/menu/electron-main-menu-factory';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-import { SampleUpdater, UpdateStatus, SampleUpdaterClient } from '../../common/updater/sample-updater';
-import { ElectronWindows } from '@theia/core/lib/electron-common';
+import { SampleUpdater, UpdateStatus } from '../../common/updater/sample-updater';
+import { ElectronWindow } from '@theia/core/lib/electron-common';
 
 export namespace SampleUpdaterCommands {
 
@@ -66,18 +57,6 @@ export namespace SampleUpdaterMenu {
     export const MENU_PATH: MenuPath = [...CommonMenus.FILE_SETTINGS_SUBMENU, '3_settings_submenu_update'];
 }
 
-@injectable()
-export class SampleUpdaterClientImpl implements SampleUpdaterClient {
-
-    protected readonly onReadyToInstallEmitter = new Emitter<void>();
-    readonly onReadyToInstall = this.onReadyToInstallEmitter.event;
-
-    notifyReadyToInstall(): void {
-        this.onReadyToInstallEmitter.fire();
-    }
-
-}
-
 // Dynamic menus aren't yet supported by electron: https://github.com/eclipse-theia/theia/issues/446
 @injectable()
 export class ElectronMenuUpdater {
@@ -85,15 +64,15 @@ export class ElectronMenuUpdater {
     @inject(ElectronMainMenuFactory)
     protected readonly factory: ElectronMainMenuFactory;
 
-    @inject(ElectronWindows)
-    protected electronWindows: ElectronWindows;
+    @inject(ElectronWindow)
+    protected electronWindow: ElectronWindow;
 
     public update(): void {
         this.setMenu();
     }
 
     private setMenu(): void {
-        this.electronWindows.currentWindow.setMenu(this.factory.createElectronMenuBar());
+        this.electronWindow.setMenu(this.factory.createElectronMenuBar());
     }
 
 }
@@ -110,14 +89,11 @@ export class SampleUpdaterFrontendContribution implements CommandContribution, M
     @inject(SampleUpdater)
     protected readonly updater: SampleUpdater;
 
-    @inject(SampleUpdaterClientImpl)
-    protected readonly updaterClient: SampleUpdaterClientImpl;
-
     protected readyToUpdate = false;
 
     @postConstruct()
     protected init(): void {
-        this.updaterClient.onReadyToInstall(async () => {
+        this.updater.onReadyToInstall(() => {
             this.readyToUpdate = true;
             this.menuUpdater.update();
             this.handleUpdatesAvailable();
@@ -149,7 +125,7 @@ export class SampleUpdaterFrontendContribution implements CommandContribution, M
             isVisible: () => !this.readyToUpdate
         });
         registry.registerCommand(SampleUpdaterCommands.RESTART_TO_UPDATE, {
-            execute: () => this.updater.onRestartToUpdateRequested(),
+            execute: () => this.updater.updateAndRestart(),
             isEnabled: () => this.readyToUpdate,
             isVisible: () => this.readyToUpdate
         });
@@ -173,7 +149,7 @@ export class SampleUpdaterFrontendContribution implements CommandContribution, M
     protected async handleUpdatesAvailable(): Promise<void> {
         const answer = await this.messageService.info('[Available]: Found updates, do you want update now?', 'No', 'Yes');
         if (answer === 'Yes') {
-            this.updater.onRestartToUpdateRequested();
+            this.updater.updateAndRestart();
         }
     }
 

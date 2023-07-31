@@ -16,7 +16,7 @@
 
 import { session } from '@theia/electron/shared/electron';
 import { inject, injectable } from 'inversify';
-import { ElectronSecurityToken } from '../electron-common/electron-token';
+import { ElectronSecurityToken } from '../electron-common';
 
 @injectable()
 export class ElectronSecurityTokenService {

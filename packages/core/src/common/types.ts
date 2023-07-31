@@ -185,13 +185,13 @@ export function unreachable(_never: never, message: string = 'unhandled case'): 
  * Doesn't handle async functions.
  */
 export function logError<A extends unknown[], R extends unknown>(callbackfn: (...params: A) => R, logger?: ErrorLogger): (...params: A) => R | undefined;
-export function logError(callbackfn: (...params: unknown[]) => unknown, logger: ErrorLogger = console): (...params: unknown[]) => unknown {
+export function logError(callbackfn: AnyFunction, logger: ErrorLogger = console): AnyFunction {
+    'use-strict';
     return function (this: unknown): unknown {
-        'use strict';
         try {
             return callbackfn.apply(this, arguments);
         } catch (error) {
-            logger!.error(error);
+            logger.error(error);
         }
     };
 }

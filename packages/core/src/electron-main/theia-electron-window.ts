@@ -23,7 +23,7 @@ import { ContainerScope, ContainerScopeManager, DisposableCollection, ElectronWe
 import { createDisposableListener } from './event-utils';
 import { URI } from '../common/uri';
 import { FileUri } from '../node/file-uri';
-import { ElectronFrontendApplication } from 'src/electron-common';
+import { ElectronFrontendApplication } from '../electron-common';
 
 export const WindowApplicationConfig = Symbol('WindowApplicationConfig');
 export type WindowApplicationConfig = FrontendApplicationConfig;
@@ -78,7 +78,7 @@ export class TheiaElectronWindow {
         this.attachReadyToShow();
         this.restoreMaximizedState();
         this.attachCloseListeners();
-        this.windowScope = this.createWindowScope();
+        this.windowScope = this.createWindowScope(this._window.webContents);
     }
 
     get window(): BrowserWindow {
@@ -126,8 +126,8 @@ export class TheiaElectronWindow {
         }, this.toDispose);
     }
 
-    protected async createWindowScope(): Promise<ContainerScope> {
-        const scope = await this.scopes.create(this._window.webContents);
+    protected async createWindowScope(webContents: WebContents): Promise<ContainerScope> {
+        const scope = await this.scopes.createScope(webContents);
         this._window.webContents.once('destroyed', () => scope.dispose());
         const frontend = scope.container.get(ElectronFrontendApplication);
         this.toDispose.push(frontend.onDidUpdateApplicationState(state => this.applicationState = state));

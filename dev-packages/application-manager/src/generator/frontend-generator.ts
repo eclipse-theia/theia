@@ -124,8 +124,7 @@ module.exports = preloader.preload().then(() => {
     }
 
     function start() {
-        (window['theia'] = window['theia'] || {}).container = container;${this.ifElectron(`
-        container.get(TheiaPreloadApiLoader).loadAndBind(exposedTheiaPreloadContext, container);`)}
+        (window['theia'] = window['theia'] || {}).container = container;
         return container.get(FrontendApplication).start();
     }
 });
@@ -276,7 +275,7 @@ module.exports = Promise.resolve().then(() => {
 // @ts-check
 require('reflect-metadata');
 const { Container } = require('inversify');
-const { TheiaContextBridge, TheiaPreloadContext, ElectronPreloadContribution } = require('@theia/core/lib/electron-common');
+const { ElectronPreloadContribution } = require('@theia/core/lib/electron-preload');
 
 function load(container, importedModule) {
     if (importedModule.default) {
@@ -287,7 +286,6 @@ function load(container, importedModule) {
 const container = new Container();
 ${Array.from(this.pck.preloadModules.values()).map(preloadModule => `load(container, require('${preloadModule}'));`).join('\n')}
 container.getAll(ElectronPreloadContribution).forEach(contribution => contribution.preload());
-container.get(TheiaContextBridge).exposeInMainWorld('exposedTheiaPreloadContext', container.get(TheiaPreloadContext));
 `;
     }
 }

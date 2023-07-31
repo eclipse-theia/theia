@@ -14,13 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from 'inversify';
-import { FrontendApplicationContribution, TheiaIpcWindow } from '../browser';
-import { ElectronMainContext, Emitter, FunctionUtils, ProxyProvider, RpcEvent, RpcProxyProvider } from '../common';
+import { ContainerModule, interfaces } from 'inversify';
+import { TheiaIpcWindow } from '../browser';
+import { ElectronMainContext, FrontendContext, ProxyProvider, RpcProxyProvider, RpcServerProvider } from '../common';
 // eslint-disable-next-line max-len
-import { ElectronApplication, ElectronClipboardService, ElectronKeyboardLayout, ElectronRpcSync, ElectronSecurityTokenApi, ElectronShell, ElectronWindow } from '../electron-common';
+import { ElectronApplication, ElectronClipboardService, ElectronFrontendApplication, ElectronKeyboardLayout, ElectronRpcSync, ElectronSecurityTokenApi, ElectronShell, ElectronWindow } from '../electron-common';
 import { TheiaIpcWindowImpl } from '../browser/messaging/ipc-window-impl';
 import { ElectronBrowserRpcProvider } from './messaging/electron-browser-rpc-provider';
+import { ElectronBrowserRpcContribution } from './messaging/electron-browser-rpc-contribution';
+import { ElectronFrontendApplicationServer } from './rpc-servers/electron-frontend-application-server';
 
 /**
  * This symbol should be exposed from the preload context.
@@ -28,25 +30,15 @@ import { ElectronBrowserRpcProvider } from './messaging/electron-browser-rpc-pro
 declare const electronRpcSync: ElectronRpcSync;
 
 export default new ContainerModule(bind => {
-    // Transients
-    bind(RpcEvent).toDynamicValue(() => {
-        const emitter = new Emitter();
-        return Object.assign(emitter.event, {
-            emit: (e: unknown) => emitter.fire(e),
-            dispose: () => emitter.dispose()
-        });
-    });
     // Singletons
     bind(ElectronRpcSync).toConstantValue(electronRpcSync);
-    bind(FunctionUtils).toSelf().inSingletonScope();
     bind(TheiaIpcWindow).to(TheiaIpcWindowImpl).inSingletonScope();
+    bind(ElectronBrowserRpcContribution).toSelf().inSingletonScope();
     bind(ElectronBrowserRpcProvider).toSelf().inSingletonScope();
     bind(ProxyProvider)
         .toDynamicValue(ctx => new RpcProxyProvider(ctx.container.get(ElectronBrowserRpcProvider)))
         .inSingletonScope()
         .whenTargetNamed(ElectronMainContext);
-    bind(ElectronWebContentsRpc).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(ElectronWebContentsRpc);
     // Proxies
     function bindProxy(context: symbol, proxyId: string): void {
         bind(proxyId)
@@ -59,4 +51,13 @@ export default new ContainerModule(bind => {
     bindProxy(ElectronMainContext, ElectronShell);
     bindProxy(ElectronMainContext, ElectronSecurityTokenApi);
     bindProxy(ElectronMainContext, ElectronWindow);
+    // Servers
+    function bindRpcServer(context: symbol, proxyId: string, injectableRpcServer: interfaces.Newable<object>): void {
+        bind(injectableRpcServer).toSelf().inSingletonScope();
+        bind(RpcServerProvider)
+            .toDynamicValue(ctx => path => path === proxyId && ctx.container.get(injectableRpcServer))
+            .inSingletonScope()
+            .whenTargetNamed(context);
+    }
+    bindRpcServer(FrontendContext, ElectronFrontendApplication, ElectronFrontendApplicationServer);
 });

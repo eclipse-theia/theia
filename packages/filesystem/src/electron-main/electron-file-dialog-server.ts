@@ -14,24 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { BrowserWindow, dialog, OpenDialogOptions as ElectronOpenDialogOptions, SaveDialogOptions as ElectronSaveDialogOptions } from '@theia/core/electron-shared/electron';
-import { TheiaIpcMain, TheiaIpcMainInvokeEvent } from '@theia/core/lib/electron-common';
-import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { ELECTRON_FILE_DIALOG_IPC as ipc, OpenDialogOptions, SaveDialogOptions } from '../electron-common';
+import { RpcContext, RpcServer } from '@theia/core';
+// eslint-disable-next-line max-len
+import { BrowserWindow, dialog, OpenDialogOptions as ElectronOpenDialogOptions, SaveDialogOptions as ElectronSaveDialogOptions, WebContents } from '@theia/core/electron-shared/electron';
+import { SenderWebContents } from '@theia/core/lib/electron-main';
+import { injectable } from '@theia/core/shared/inversify';
+import { ElectronFileDialog, OpenDialogOptions, SaveDialogOptions } from '../electron-common';
 
 @injectable()
-export class ElectronFileDialogMain implements ElectronMainApplicationContribution {
+export class ElectronFileDialogServer implements RpcServer<ElectronFileDialog> {
 
-    @inject(TheiaIpcMain)
-    protected ipcMain: TheiaIpcMain;
-
-    onStart(): void {
-        this.ipcMain.handle(ipc.showOpenDialog, this.handleShowOpenDialog, this);
-        this.ipcMain.handle(ipc.showSaveDialog, this.handleSaveOpenDialog, this);
-    }
-
-    protected async handleShowOpenDialog(event: TheiaIpcMainInvokeEvent, cwd: string, options?: OpenDialogOptions): Promise<string[] | undefined> {
+    async $showOpenDialog(ctx: RpcContext, cwd: string, options?: OpenDialogOptions): Promise<string[] | undefined> {
         const properties: ElectronOpenDialogOptions['properties'] = [];
         // checking proper combination of file/dir opening is done on the renderer side
         if (options?.openFiles) {
@@ -51,7 +44,7 @@ export class ElectronFileDialogMain implements ElectronMainApplicationContributi
             properties: properties
         };
         if (options?.modal) {
-            const win = BrowserWindow.fromWebContents(event.sender);
+            const win = BrowserWindow.fromWebContents(this.getWebContents(ctx));
             if (win) {
                 return (await dialog.showOpenDialog(win, dialogOpts)).filePaths;
             }
@@ -59,7 +52,7 @@ export class ElectronFileDialogMain implements ElectronMainApplicationContributi
         return (await dialog.showOpenDialog(dialogOpts)).filePaths;
     }
 
-    protected async handleSaveOpenDialog(event: TheiaIpcMainInvokeEvent, cwd: string, options?: SaveDialogOptions): Promise<string | undefined> {
+    async $showSaveDialog(ctx: RpcContext, cwd: string, options?: SaveDialogOptions): Promise<string | undefined> {
         const dialogOpts: ElectronSaveDialogOptions = {
             defaultPath: cwd,
             buttonLabel: options?.buttonLabel,
@@ -67,11 +60,15 @@ export class ElectronFileDialogMain implements ElectronMainApplicationContributi
             title: options?.title
         };
         if (options?.modal) {
-            const win = BrowserWindow.fromWebContents(event.sender);
+            const win = BrowserWindow.fromWebContents(this.getWebContents(ctx));
             if (win) {
                 return (await dialog.showSaveDialog(win, dialogOpts)).filePath;
             }
         }
         return (await dialog.showSaveDialog(dialogOpts)).filePath;
-    };
+    }
+
+    protected getWebContents(ctx: RpcContext): WebContents {
+        return ctx.require(SenderWebContents);
+    }
 }

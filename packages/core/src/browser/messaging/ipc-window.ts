@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import type { interfaces } from 'inversify';
-import type { AnyFunction, ChannelDescriptor, Listener } from '../common';
+import type { AnyFunction, ChannelDescriptor, Listener } from '../../common';
 
 /**
  * {@link postMessage} doesn't support channels by default so this component

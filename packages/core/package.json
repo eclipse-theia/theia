@@ -130,6 +130,12 @@
   },
   "theiaExtensions": [
     {
+      "backend": "lib/common/common-module",
+      "electronMain": "lib/common/common-module",
+      "frontend": "lib/common/common-module",
+      "preload": "lib/common/common-module"
+    },
+    {
       "preload": "lib/electron-preload/core-preload-module",
       "frontendElectron": "lib/electron-browser/core-electron-frontend-module"
     },

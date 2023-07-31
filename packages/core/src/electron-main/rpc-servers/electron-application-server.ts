@@ -14,11 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { bindPreloadApi } from '@theia/core/lib/electron-common';
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { ElectronFileDialog } from '../electron-common';
-import { ElectronFileDialogImpl } from './electron-file-dialog-impl';
+import { inject, injectable } from 'inversify';
+import type { RpcContext, RpcServer } from '../../common';
+import type { ElectronApplication } from '../../electron-common';
+import { ElectronMainApplication } from '../electron-main-application';
+import { SenderWebContents } from '../electron-main-rpc-context';
 
-export default new ContainerModule(bind => {
-    bindPreloadApi(bind, ElectronFileDialog).to(ElectronFileDialogImpl).inSingletonScope();
-});
+@injectable()
+export class ElectronApplicationServer implements RpcServer<ElectronApplication> {
+
+    @inject(ElectronMainApplication)
+    protected application: ElectronMainApplication;
+
+    $restart(ctx: RpcContext): void {
+        this.application!.restart(ctx.require(SenderWebContents));
+    }
+}

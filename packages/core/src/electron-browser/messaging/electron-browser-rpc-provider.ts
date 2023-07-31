@@ -38,7 +38,7 @@ export class ElectronBrowserRpcProvider implements RpcProvider {
     protected channelHandlerFactory: ChannelHandlerFactory;
 
     getRpc(proxyPath: string): { client: RpcClient, handler?: RpcHandler } {
-        const proxyId = this.rpcSync.createProxy(proxyPath);
+        const proxyId = this.rpcSync.createProxySync(proxyPath);
         const { port1, port2 } = new MessageChannel();
         this.ipcWindow.postMessage(origin, ipc.portForward, { proxyId }, [port1]);
         const channels = this.channelHandlerFactory<void>();

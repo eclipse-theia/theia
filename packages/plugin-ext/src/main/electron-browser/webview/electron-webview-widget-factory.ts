@@ -18,7 +18,7 @@ import { WebviewWidgetFactory } from '../../browser/webview/webview-widget-facto
 import { WebviewWidgetIdentifier, WebviewWidget } from '../../browser/webview/webview';
 import { CustomEditorWidgetFactory } from '../../browser/custom-editors/custom-editor-widget-factory';
 import { CustomEditorWidget } from '../../browser/custom-editors/custom-editor-widget';
-import { ElectronSecurityTokenService } from '@theia/core/lib/electron-common';
+import { ElectronSecurityTokenApi } from '@theia/core/lib/electron-common';
 
 export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
 
@@ -34,7 +34,7 @@ export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
      * @param endpoint cookie's target url
      */
     protected attachElectronSecurityCookie(endpoint: string): Promise<void> {
-        return this.container.get(ElectronSecurityTokenService).attachSecurityToken(endpoint);
+        return this.container.get(ElectronSecurityTokenApi).attachSecurityToken(endpoint);
     }
 
 }
@@ -53,7 +53,7 @@ export class ElectronCustomEditorWidgetFactory extends CustomEditorWidgetFactory
      * @param endpoint cookie's target url
      */
     protected async attachElectronSecurityCookie(endpoint: string): Promise<void> {
-        return this.container.get(ElectronSecurityTokenService).attachSecurityToken(endpoint);
+        return this.container.get(ElectronSecurityTokenApi).attachSecurityToken(endpoint);
     }
 
 }

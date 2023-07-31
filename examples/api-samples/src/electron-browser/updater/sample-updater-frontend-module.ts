@@ -15,19 +15,15 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ElectronIpcConnectionProvider } from '@theia/core/lib/electron-browser/messaging/electron-ipc-connection-provider';
-import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { SampleUpdater, SampleUpdaterPath, SampleUpdaterClient } from '../../common/updater/sample-updater';
-import { SampleUpdaterFrontendContribution, ElectronMenuUpdater, SampleUpdaterClientImpl } from './sample-updater-frontend-contribution';
+import { CommandContribution, ElectronMainContext, MenuContribution, ProxyProvider } from '@theia/core/lib/common';
+import { SampleUpdater } from '../../common/updater/sample-updater';
+import { SampleUpdaterFrontendContribution, ElectronMenuUpdater } from './sample-updater-frontend-contribution';
 
 export default new ContainerModule(bind => {
     bind(ElectronMenuUpdater).toSelf().inSingletonScope();
-    bind(SampleUpdaterClientImpl).toSelf().inSingletonScope();
-    bind(SampleUpdaterClient).toService(SampleUpdaterClientImpl);
-    bind(SampleUpdater).toDynamicValue(context => {
-        const client = context.container.get(SampleUpdaterClientImpl);
-        return ElectronIpcConnectionProvider.createProxy(context.container, SampleUpdaterPath, client);
-    }).inSingletonScope();
+    bind(SampleUpdater)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, ElectronMainContext).getProxy(SampleUpdater))
+        .inSingletonScope();
     bind(SampleUpdaterFrontendContribution).toSelf().inSingletonScope();
     bind(MenuContribution).toService(SampleUpdaterFrontendContribution);
     bind(CommandContribution).toService(SampleUpdaterFrontendContribution);

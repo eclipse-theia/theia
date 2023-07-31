@@ -14,11 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
+import { ElectronMainContext, RpcServerProvider } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ElectronFileDialogMain } from './electron-file-dialog-main';
+import { ElectronFileDialog } from '../electron-common';
+import { ElectronFileDialogServer } from './electron-file-dialog-server';
 
 export default new ContainerModule(bind => {
-    bind(ElectronFileDialogMain).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronFileDialogMain);
+    bind(ElectronFileDialogServer).toSelf().inSingletonScope();
+    bind(RpcServerProvider)
+        .toDynamicValue(ctx => path => path === ElectronFileDialog && ctx.container.get(ElectronFileDialogServer))
+        .inSingletonScope()
+        .whenTargetNamed(ElectronMainContext);
 });

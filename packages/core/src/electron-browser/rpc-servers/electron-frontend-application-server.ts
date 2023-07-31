@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { RpcServer, RpcEvent, RpcContext, RpcNewClient } from '../common';
-import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
-import { ElectronFrontendApplication } from '../electron-common';
 import { inject, injectable, postConstruct } from 'inversify';
-import { FrontendApplicationStateService } from '../browser/frontend-application-state';
-import { WindowService } from 'src/browser/window/window-service';
+import { FrontendApplicationStateService } from '../../browser/frontend-application-state';
+import { WindowService } from '../../browser/window/window-service';
+import { RpcContext, RpcEvent, RpcServer } from '../../common';
+import { FrontendApplicationState, StopReason } from '../../common/frontend-application-state';
+import { ElectronFrontendApplication } from '../../electron-common';
 
 @injectable()
 export class ElectronFrontendApplicationServer implements RpcServer<ElectronFrontendApplication> {
@@ -37,9 +37,9 @@ export class ElectronFrontendApplicationServer implements RpcServer<ElectronFron
         this.frontendApplicationStateService.onStateChanged(state => this.$onDidUpdateApplicationState.sendAll(state));
     }
 
-    [RpcNewClient](client: unknown): void {
-        this.$onDidUpdateApplicationState.sendTo(this.frontendApplicationStateService.state, [client]);
-    }
+    // [RpcNewClient](client: unknown): void {
+    //     this.$onDidUpdateApplicationState.sendTo(this.frontendApplicationStateService.state, [client]);
+    // }
 
     $canClose(ctx: RpcContext, reason: StopReason): Promise<boolean> {
         return this.windowService.isSafeToShutDown(reason);

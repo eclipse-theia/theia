@@ -16,17 +16,17 @@
 
 import { BrowserWindow, Menu, MenuItemConstructorOptions, WebContents, shell } from '@theia/electron/shared/electron';
 import { inject, injectable, postConstruct } from 'inversify';
-import { RpcContext, RpcEvent, RpcServer, isOSX } from '../common';
-import { NewWindowOptions } from '../common/window';
-import { ElectronWindow } from '../electron-common';
-import { InternalMenuDto, MenuDto } from '../electron-common/electron-menu';
-import { ElectronMainApplication } from './electron-main-application';
-import { SenderWebContents } from './electron-main-rpc-context';
+import { RpcContext, RpcEvent, RpcServer, isOSX } from '../../common';
+import { NewWindowOptions } from '../../common/window';
+import { ElectronWindow } from '../../electron-common';
+import { InternalMenuDto, MenuDto } from '../../electron-common/electron-menu';
+import { ElectronMainApplication } from '../electron-main-application';
+import { SenderWebContents } from '../electron-main-rpc-context';
 
 type MenuId = number;
 
 @injectable()
-export class ElectronWindowMain implements RpcServer<ElectronWindow> {
+export class ElectronWindowServer implements RpcServer<ElectronWindow> {
 
     protected menuId = 1;
     protected openPopups = new Map<MenuId, Menu>();

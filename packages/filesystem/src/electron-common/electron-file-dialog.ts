@@ -14,15 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { createIpcNamespace, preloadServiceIdentifier } from '@theia/core/lib/electron-common';
+import { Extends, Proxyable, ProxyId } from '@theia/core';
 
-export const ELECTRON_FILE_DIALOG_IPC = createIpcNamespace('theia-electron-file-dialog', channel => ({
-    showOpenDialog: channel<(cwd: string, options?: OpenDialogOptions) => Promise<string[] | undefined>>(),
-    showSaveDialog: channel<(cwd: string, options?: SaveDialogOptions) => Promise<string | undefined>>()
-}));
-
-export const ElectronFileDialog = preloadServiceIdentifier<ElectronFileDialog>('ElectronFileDialog');
-export interface ElectronFileDialog {
+export const ElectronFileDialog = ProxyId<ElectronFileDialog>('ElectronFileDialog');
+export type ElectronFileDialog = Extends<$ElectronFileDialog, Proxyable<$ElectronFileDialog>>;
+export interface $ElectronFileDialog {
     showOpenDialog(cwd: string, options?: OpenDialogOptions): Promise<string[] | undefined>;
     showSaveDialog(cwd: string, options?: SaveDialogOptions): Promise<string | undefined>;
 }

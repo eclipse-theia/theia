@@ -14,28 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { session } from '@theia/electron/shared/electron';
-import { inject, injectable } from 'inversify';
-import { RpcServer, RpcContext } from '../common';
-import { ElectronSecurityToken, ElectronSecurityTokenService } from '../electron-common';
+import { clipboard } from '@theia/electron/shared/electron';
+import { injectable } from 'inversify';
+import { RpcContext, RpcServer } from '../../common';
+import { ElectronClipboardService } from '../../electron-common';
 
 @injectable()
-export class ElectronSecurityTokenServiceMain implements RpcServer<ElectronSecurityTokenService> {
+export class ElectronClipboardServer implements RpcServer<ElectronClipboardService> {
 
-    @inject(ElectronSecurityToken)
-    protected token: ElectronSecurityToken;
-
-    $getSecurityTokenSync(ctx: RpcContext): ElectronSecurityToken {
-        return this.token;
+    async $readText(ctx: RpcContext): Promise<string> {
+        return clipboard.readText();
     }
 
-    async $attachSecurityToken(ctx: RpcContext, endpoint: string): Promise<void> {
-        await session.defaultSession.cookies.set({
-            url: endpoint,
-            name: ElectronSecurityToken,
-            value: JSON.stringify(this.token),
-            httpOnly: true,
-            sameSite: 'no_restriction'
-        });
+    async $writeText(ctx: RpcContext, value: string): Promise<void> {
+        clipboard.writeText(value);
     }
 }

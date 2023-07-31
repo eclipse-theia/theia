@@ -14,21 +14,29 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { proxy, proxyable, TheiaIpcRenderer } from '@theia/core/lib/electron-common';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { ElectronFileDialog, ELECTRON_FILE_DIALOG_IPC as ipc, OpenDialogOptions, SaveDialogOptions } from '../electron-common';
+import { injectable } from 'inversify';
+import { Emitter, Event } from '../event';
+import { kOnSendAll, kOnSendTo, RpcEvent, SendAllEvent, SendToEvent } from './rpc-server';
 
-@injectable() @proxyable()
-export class ElectronFileDialogImpl implements ElectronFileDialog {
+@injectable()
+export class RpcEventImpl<T> implements RpcEvent<T> {
 
-    @inject(TheiaIpcRenderer)
-    protected ipcRenderer: TheiaIpcRenderer;
+    #sendAllEmitter = new Emitter<SendAllEvent<T>>();
+    #sendToEmitter = new Emitter<SendToEvent<T>>();
 
-    @proxy() showOpenDialog(cwd: string, options?: OpenDialogOptions): Promise<string[] | undefined> {
-        return this.ipcRenderer.invoke(ipc.showOpenDialog, cwd, options);
+    get [kOnSendAll](): Event<SendAllEvent<T>> {
+        return this.#sendAllEmitter.event;
     }
 
-    @proxy() showSaveDialog(cwd: string, options?: SaveDialogOptions): Promise<string | undefined> {
-        return this.ipcRenderer.invoke(ipc.showSaveDialog, cwd, options);
+    get [kOnSendTo](): Event<SendToEvent<T>> {
+        return this.#sendToEmitter.event;
+    }
+
+    sendAll(value: T, exceptions?: unknown[] | undefined): void {
+        this.#sendAllEmitter.fire({ value, exceptions });
+    }
+
+    sendTo(value: T, targets: unknown[]): void {
+        this.#sendToEmitter.fire({ value, targets });
     }
 }

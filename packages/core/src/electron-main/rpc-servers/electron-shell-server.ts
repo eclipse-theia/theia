@@ -14,19 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { clipboard } from '@theia/electron/shared/electron';
+import { shell } from '@theia/electron/shared/electron';
 import { injectable } from 'inversify';
-import { RpcServer, RpcContext } from '../common';
-import { ElectronClipboardService } from '../electron-common';
+import { RpcServer, RpcContext } from '../../common';
+import { ElectronShell } from '../../electron-common';
 
 @injectable()
-export class ElectronClipboardMain implements RpcServer<ElectronClipboardService> {
+export class ElectronShellServer implements RpcServer<ElectronShell> {
 
-    async $readText(ctx: RpcContext): Promise<string> {
-        return clipboard.readText();
-    }
-
-    async $writeText(ctx: RpcContext, value: string): Promise<void> {
-        clipboard.writeText(value);
+    $showItemInFolder(ctx: RpcContext, fsPath: string): void {
+        shell.showItemInFolder(fsPath);
     }
 }
