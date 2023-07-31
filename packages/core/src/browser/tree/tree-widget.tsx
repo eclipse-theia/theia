@@ -29,7 +29,7 @@ import { ExpandableTreeNode } from './tree-expansion';
 import { SelectableTreeNode, TreeSelection } from './tree-selection';
 import { TreeDecoratorService, TreeDecoration, DecoratedTreeNode } from './tree-decorator';
 import { notEmpty } from '../../common/objects';
-import { isOSX, isWindows } from '../../common/os';
+import { isOSX } from '../../common/os';
 import { ReactWidget } from '../widgets/react-widget';
 import * as React from 'react';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
