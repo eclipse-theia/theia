@@ -74,6 +74,8 @@ export class NotebookModel implements Saveable, Disposable {
     selectedCell?: NotebookCellModel;
     private dirtyCells: NotebookCellModel[] = [];
 
+    private cellListeners: Map<string, Disposable> = new Map();
+
     cells: NotebookCellModel[];
 
     get data(): NotebookData {
@@ -105,6 +107,8 @@ export class NotebookModel implements Saveable, Disposable {
             collapseState: cell.collapseState
         }));
 
+        this.addCellOutputListeners(this.cells);
+
         modelService.onDidCreate(editorModel => {
             const modelUri = new URI(editorModel.uri);
             if (modelUri.scheme === CellUri.scheme) {
@@ -124,6 +128,7 @@ export class NotebookModel implements Saveable, Disposable {
         this.dirtyChangedEmitter.dispose();
         this.saveEmitter.dispose();
         this.didAddRemoveCellEmitter.dispose();
+        this.cellListeners.forEach(listener => listener.dispose());
     }
 
     async save(options: SaveOptions): Promise<void> {
@@ -165,13 +170,19 @@ export class NotebookModel implements Saveable, Disposable {
     insertNewCell(index: number, cells: NotebookCellModel[]): void {
         const changes: NotebookCellTextModelSplice<NotebookCellModel>[] = [[index, 0, cells]];
         this.cells.splice(index, 0, ...cells);
+        this.addCellOutputListeners(cells);
         this.didAddRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes } });
         return;
     }
 
     removeCell(index: number, count: number): void {
         const changes: NotebookCellTextModelSplice<NotebookCellModel>[] = [[index, count, []]];
-        this.cells.splice(index, count);
+        const deletedCells = this.cells.splice(index, count);
+        deletedCells.forEach(cell => {
+            this.cellListeners.get(cell.uri.toString())?.dispose();
+            this.cellListeners.delete(cell.uri.toString());
+
+        });
         this.didAddRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes } });
     }
 
@@ -231,6 +242,16 @@ export class NotebookModel implements Saveable, Disposable {
 
             }
         }
+    }
+
+    private addCellOutputListeners(cells: NotebookCellModel[]): void {
+        cells.forEach(cell => {
+            const listener = cell.onDidChangeOutputs(() => {
+                this.dirty = true;
+                this.dirtyChangedEmitter.fire();
+            });
+            this.cellListeners.set(cell.uri.toString(), listener);
+        });
     }
 
     private changeCellInternalMetadataPartial(cell: NotebookCellModel, internalMetadata: NullablePartialNotebookCellInternalMetadata): void {

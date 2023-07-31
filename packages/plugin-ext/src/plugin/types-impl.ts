@@ -1166,10 +1166,14 @@ export class NotebookCellData implements theia.NotebookCellData {
     metadata?: { [key: string]: any };
     executionSummary?: theia.NotebookCellExecutionSummary;
 
-    constructor(kind: NotebookCellKind, value: string, languageId: string) {
+    constructor(kind: NotebookCellKind, value: string, languageId: string,
+        outputs?: theia.NotebookCellOutput[], metadata?: Record<string, unknown>, executionSummary?: theia.NotebookCellExecutionSummary) {
         this.kind = kind;
         this.value = value;
         this.languageId = languageId;
+        this.outputs = outputs ?? [];
+        this.metadata = metadata;
+        this.executionSummary = executionSummary;
     }
 }
 

@@ -1479,9 +1479,9 @@ export namespace NotebookCellData {
             NotebookCellKind.to(data.cellKind),
             data.source,
             data.language,
-            // data.outputs ? data.outputs.map(NotebookCellOutput.to) : undefined,
-            // data.metadata,
-            // data.internalMetadata ? NotebookCellExecutionSummary.to(data.internalMetadata) : undefined
+            data.outputs ? data.outputs.map(NotebookCellOutput.to) : undefined,
+            data.metadata,
+            data.internalMetadata ? NotebookCellExecutionSummary.to(data.internalMetadata) : undefined
         );
     }
 }
@@ -1505,6 +1505,21 @@ export namespace NotebookCellKind {
             default:
                 return types.NotebookCellKind.Code;
         }
+    }
+}
+
+export namespace NotebookCellOutput {
+    export function from(output: theia.NotebookCellOutput & { outputId: string }): rpc.NotebookOutputDto {
+        return {
+            outputId: output.outputId,
+            items: output.items.map(NotebookCellOutputItem.from),
+            metadata: output.metadata
+        };
+    }
+
+    export function to(output: rpc.NotebookOutputDto): theia.NotebookCellOutput {
+        const items = output.items.map(NotebookCellOutputItem.to);
+        return new types.NotebookCellOutput(items, output.outputId, output.metadata);
     }
 }
 
