@@ -21,16 +21,16 @@ import * as fs from '@theia/core/shared/fs-extra';
 import * as assert from 'assert';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
-import { NsfwFileSystemWatcherService } from './nsfw-filesystem-service';
+import { ParcelFileSystemWatcherService } from './parcel-filesystem-service';
 import { DidFilesChangedParams, FileChange, FileChangeType } from '../../common/filesystem-watcher-protocol';
 
 const expect = chai.expect;
 const track = temp.track();
 
-describe('nsfw-filesystem-watcher', function (): void {
+describe('parcel-filesystem-watcher', function (): void {
 
     let root: URI;
-    let watcherService: NsfwFileSystemWatcherService;
+    let watcherService: ParcelFileSystemWatcherService;
     let watcherId: number;
 
     this.timeout(100000);
@@ -38,7 +38,7 @@ describe('nsfw-filesystem-watcher', function (): void {
     beforeEach(async () => {
         let tempPath = temp.mkdirSync('node-fs-root');
         // Sometimes tempPath will use some Windows 8.3 short name in its path. This is a problem
-        // since NSFW always returns paths with long names. We need to convert here.
+        // since parcel always returns paths with long names. We need to convert here.
         // See: https://stackoverflow.com/a/34473971/7983255
         if (process.platform === 'win32') {
             tempPath = cp.execSync(`powershell "(Get-Item -LiteralPath '${tempPath}').FullName"`, {
@@ -46,7 +46,7 @@ describe('nsfw-filesystem-watcher', function (): void {
             }).trim();
         }
         root = FileUri.create(fs.realpathSync(tempPath));
-        watcherService = createNsfwFileSystemWatcherService();
+        watcherService = createParcelFileSystemWatcherService();
         watcherId = await watcherService.watchFileChanges(0, root.toString());
         await sleep(2000);
     });
@@ -146,11 +146,6 @@ describe('nsfw-filesystem-watcher', function (): void {
                 { type: FileChangeType.ADDED, uri: FILE_txt.toString() }
             ]);
         } catch (error) {
-            // TODO: remove this try/catch once the bug on macOS is fixed.
-            // See https://github.com/Axosoft/nsfw/issues/146
-            if (process.platform !== 'darwin') {
-                throw error;
-            }
             // On macOS we only get ADDED events for some reason
             expect(changes).deep.eq([
                 // initial file creation change event:
@@ -164,8 +159,8 @@ describe('nsfw-filesystem-watcher', function (): void {
         }
     });
 
-    function createNsfwFileSystemWatcherService(): NsfwFileSystemWatcherService {
-        return new NsfwFileSystemWatcherService({
+    function createParcelFileSystemWatcherService(): ParcelFileSystemWatcherService {
+        return new ParcelFileSystemWatcherService({
             verbose: true
         });
     }
