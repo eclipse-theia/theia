@@ -1251,7 +1251,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      */
     protected handleAuxClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         this.model.openNode(node);
-        this.tapNode(node);
+        if (SelectableTreeNode.is(node)) {
+            this.model.selectNode(node);
+        }
         event.stopPropagation();
     }
 
