@@ -243,13 +243,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 }),
             ]);
         }
-        if (isWindows) {
-            this.node.addEventListener('mousedown', (event: MouseEvent) => {
-                if (event.button === 1) {
-                    event.preventDefault();
-                }
-            });
-        }
         this.toDispose.pushAll([
             this.model,
             this.model.onChanged(() => this.updateRows()),
