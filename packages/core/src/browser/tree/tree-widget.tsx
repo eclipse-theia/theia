@@ -29,7 +29,7 @@ import { ExpandableTreeNode } from './tree-expansion';
 import { SelectableTreeNode, TreeSelection } from './tree-selection';
 import { TreeDecoratorService, TreeDecoration, DecoratedTreeNode } from './tree-decorator';
 import { notEmpty } from '../../common/objects';
-import { isOSX } from '../../common/os';
+import { isOSX, isWindows } from '../../common/os';
 import { ReactWidget } from '../widgets/react-widget';
 import * as React from 'react';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
@@ -243,11 +243,13 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 }),
             ]);
         }
-        this.node.addEventListener('mousedown', (event: MouseEvent) => {
-            if (event.button === 1) {
-                event.preventDefault();
-            }
-        });
+        if (isWindows) {
+            this.node.addEventListener('mousedown', (event: MouseEvent) => {
+                if (event.button === 1) {
+                    event.preventDefault();
+                }
+            });
+        }
         this.toDispose.pushAll([
             this.model,
             this.model.onChanged(() => this.updateRows()),
