@@ -390,6 +390,12 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
     ): void {
         if (associations.folder) {
             accept(associations.folder, this.folderIcon);
+            if (associations.folderExpanded === undefined) {
+                // Use the same icon for expanded state (issue #12727). Check for
+                // undefined folderExpanded property to allow for
+                // "folderExpanded": null in case a developer really wants that
+                accept(associations.folder, this.folderExpandedIcon);
+            }
             this.hasFolderIcons = true;
         }
         if (associations.folderExpanded) {
