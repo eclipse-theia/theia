@@ -73,20 +73,44 @@
 }
 
 .theia-notebook-cell-editor {
-    flex: 1;
+    padding: 10px 10px 0 10px;
     max-height: 500px;
-    margin: 0px 10px;
-    padding: 10px;
+}
+
+.theia-notebook-cell-editor-container {
+    flex: 1;
     outline: 1px solid var(--theia-notebook-cellBorderColor);
+    margin: 0px 10px;
 }
 
-.theia-notebook-cell-editor:first-child {
-    margin-left: 36px;
-}
-
-.theia-notebook-cell.focused .theia-notebook-cell-editor {
+.theia-notebook-cell.focused .theia-notebook-cell-editor-container {
     outline-color: var(--theia-notebook-focusedEditorBorder);
 }
+
+.notebook-cell-status {
+    display: flex;
+    flex-direction: row;
+    font-size: 12px;
+    height: 16px;
+}
+
+.notebook-cell-status-left {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.notebook-cell-status-right {
+    margin: 0 5px;
+}
+
+.notebook-cell-status-item {
+    margin: 0 3px;
+    padding: 0 3px;
+    display: flex;
+    align-items: center;
+}
+
 
 .theia-notebook-cell-toolbar {
     border: 1px solid var(--theia-notebook-cellToolbarSeparator);
@@ -168,3 +192,7 @@
     margin: 0px 10px;
     width: 100%;
 }
+
+/* .theia-notebook-code-cell-execution-count {
+
+} */

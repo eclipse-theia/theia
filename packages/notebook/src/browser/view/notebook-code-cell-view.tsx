@@ -25,6 +25,9 @@ import { CellEditor } from './notebook-cell-editor';
 import { CellRenderer } from './notebook-cell-list-view';
 import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
 import { NotebookCellActionContribution } from '../contributions/notebook-cell-actions-contribution';
+import { CellExecution, NotebookExecutionStateService } from '../service/notebook-execution-state-service';
+import { codicon } from '@theia/core/lib/browser';
+import { NotebookCellExecutionState } from '../../common';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {
@@ -40,11 +43,20 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(NotebookCellToolbarFactory)
     protected readonly notebookCellToolbarFactory: NotebookCellToolbarFactory;
 
+    @inject(NotebookExecutionStateService)
+    protected readonly executionStateService: NotebookExecutionStateService;
+
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div>
             <div className='theia-notebook-cell-with-sidebar'>
-                {this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, notebookModel, cell)}
-                <CellEditor notebookModel={notebookModel} cell={cell} monacoServices={this.monacoServices} />
+                <div>
+                    {this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, notebookModel, cell)}
+                    {/* needs an own component. Could be a little more complicated <p className='theia-notebook-code-cell-execution-order'>{`[${cell.exec ?? ' '}]`}</p> */}
+                </div>
+                <div className='theia-notebook-cell-editor-container'>
+                    <CellEditor notebookModel={notebookModel} cell={cell} monacoServices={this.monacoServices} />
+                    <NotebookCodeCellStatus cell={cell} executionStateService={this.executionStateService}></NotebookCodeCellStatus>
+                </div>
             </div>
             <div className='theia-notebook-cell-with-sidebar'>
                 <NotebookCodeCellOutputs cell={cell} outputWebviewFactory={this.cellOutputWebviewFactory}
@@ -55,7 +67,72 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     }
 }
 
-export interface NotebookCellOutputProps {
+export interface NotebookCodeCellStatusProps {
+    cell: NotebookCellModel;
+    executionStateService: NotebookExecutionStateService
+
+    currentExecution?: CellExecution
+}
+
+export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStatusProps> {
+
+    constructor(props: NotebookCodeCellStatusProps) {
+        super(props);
+
+        props.executionStateService.onDidChangeExecution(event => {
+            if (event.affectsCell(this.props.cell.uri)) {
+                this.setState({...this.state, currentExecution: event.changed });
+            }
+        });
+    }
+
+    override render(): React.ReactNode {
+        return <div className='notebook-cell-status'>
+            <div className='notebook-cell-status-left'>
+                {this.renderExecutionState()}
+            </div>
+            <div className='notebook-cell-status-right'>
+                <span>{this.props.cell.language}</span>
+            </div>
+        </div>;
+    }
+
+    private renderExecutionState(): React.ReactNode {
+        const state = this.props.currentExecution?.state;
+        const { lastRunSuccess } = this.props.cell.internalMetadata;
+
+        let icon;
+        let color;
+        if (!state && lastRunSuccess) {
+            icon = codicon('check');
+            color = 'green';
+        } else if (!state && lastRunSuccess === false) {
+            icon = codicon('error');
+            color = 'red';
+        } else if (state === NotebookCellExecutionState.Pending || state === NotebookCellExecutionState.Unconfirmed) {
+            icon = codicon('clock');
+        } else if (state === NotebookCellExecutionState.Executing) {
+            icon = codicon('sync');
+        }
+        return <>
+            {icon && // TODO implement time
+            <>
+                <span className={`${icon} notebook-cell-status-item`} style={{color}}></span>
+                <div className='notebook-cell-status-item'>{this.getExecutionTime()}</div>
+            </>}
+        </>;
+    }
+
+    private getExecutionTime(): string {
+        const {runStartTime, runEndTime} = this.props.cell.internalMetadata;
+        if (runStartTime && runEndTime) {
+            return `${((runEndTime - runStartTime) / 1000).toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1}) }s`;
+        }
+        return '0.0s';
+    }
+}
+
+interface NotebookCellOutputProps {
     cell: NotebookCellModel;
     outputWebviewFactory: CellOutputWebviewFactory;
     renderSidebar: () => React.ReactNode;

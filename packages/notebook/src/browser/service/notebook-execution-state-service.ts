@@ -283,7 +283,7 @@ class CellExecutionStateChangedEvent {
 
     affectsCell(cell: URI): boolean {
         const parsedUri = CellUri.parse(cell);
-        return !!parsedUri && this.notebook.toString() === parsedUri.notebook.toString() && this.cellHandle === parsedUri.handle;
+        return !!parsedUri && this.notebook.isEqual(parsedUri.notebook) && this.cellHandle === parsedUri.handle;
     }
 
     affectsNotebook(notebook: URI): boolean {
