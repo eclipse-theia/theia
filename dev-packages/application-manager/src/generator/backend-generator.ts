@@ -90,6 +90,7 @@ module.exports = Promise.resolve()${this.compileElectronMainModuleImports(electr
         if (reason) {
             console.error(reason);
         }
+        app.quit();
     });
 `;
     }
