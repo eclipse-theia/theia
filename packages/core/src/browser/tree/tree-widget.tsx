@@ -243,6 +243,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 }),
             ]);
         }
+        this.node.addEventListener('mousedown', this.handleMiddleClickEvent.bind(this));
+        this.node.addEventListener('mouseup', this.handleMiddleClickEvent.bind(this));
         this.toDispose.pushAll([
             this.model,
             this.model.onChanged(() => this.updateRows()),
@@ -1250,6 +1252,16 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.model.selectNode(node);
         }
         event.stopPropagation();
+    }
+
+    /**
+     * Handle the middle-click mouse event.
+     * @param event the middle-click mouse event.
+     */
+    protected handleMiddleClickEvent(event: MouseEvent): void {
+        if (event.button === 1) {
+            event.preventDefault();
+        }
     }
 
     /**
