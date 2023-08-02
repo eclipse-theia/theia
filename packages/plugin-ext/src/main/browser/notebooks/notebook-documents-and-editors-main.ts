@@ -104,7 +104,7 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         this.notebookeditorService = container.get(NotebookEditorWidgetService);
         this.WidgetManager = container.get(WidgetManager);
 
-        this.notebookService.onWillAddNotebookDocument(async () => this.updateState(), this, this.disposables);
+        this.notebookService.onDidAddNotebookDocument(async () => this.updateState(), this, this.disposables);
         this.notebookService.onDidRemoveNotebookDocument(async () => this.updateState(), this, this.disposables);
         // this.WidgetManager.onActiveEditorChanged(() => this.updateState(), this, this.disposables);
         this.notebookeditorService.onDidAddNotebookEditor(this.handleEditorAdd, this, this.disposables);
