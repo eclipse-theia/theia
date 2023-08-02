@@ -182,7 +182,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         commands.registerCommand(SearchInWorkspaceCommands.FOCUS_NEXT_RESULT, {
             isEnabled: () => this.tryGetWidget()?.hasResultList() ?? false,
             execute: async () => {
-                const widget = await this.openView({ activate: true });
+                const widget = await this.openView({ reveal: true });
                 widget.resultTreeWidget.selectNextResult();
             }
         });
@@ -190,7 +190,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         commands.registerCommand(SearchInWorkspaceCommands.FOCUS_PREV_RESULT, {
             isEnabled: () => this.tryGetWidget()?.hasResultList() ?? false,
             execute: async () => {
-                const widget = await this.openView({ activate: true });
+                const widget = await this.openView({ reveal: true });
                 widget.resultTreeWidget.selectPreviousResult();
             }
         });

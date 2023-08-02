@@ -283,20 +283,16 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     selectNextResult(): void {
         if (!this.model.getFocusedNode()) {
-            this.selectFirstResult();
-            return;
+            return this.selectFirstResult();
         }
         let foundNextResult = false;
         while (!foundNextResult) {
             const nextNode = this.model.getNextNode();
             if (!nextNode) {
-                this.selectFirstResult();
-                return;
+                return this.selectFirstResult();
             } else if (SearchInWorkspaceResultLineNode.is(nextNode)) {
                 foundNextResult = true;
-                this.model.expandNode(nextNode.parent.parent);
-                this.model.expandNode(nextNode.parent);
-                this.model.selectNode(nextNode);
+                this.selectExpandOpenResultNode(nextNode);
             } else {
                 this.model.selectNext();
             }
@@ -305,27 +301,29 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     selectPreviousResult(): void {
         if (!this.model.getFocusedNode()) {
-            this.selectLastResult();
-            return;
+            return this.selectLastResult();
         }
         let foundSelectedNode = false;
         while (!foundSelectedNode) {
             const prevNode = this.model.getPrevNode();
             if (!prevNode) {
-                this.selectLastResult();
-                return;
+                return this.selectLastResult();
             } else if (SearchInWorkspaceResultLineNode.is(prevNode)) {
                 foundSelectedNode = true;
-                this.model.expandNode(prevNode.parent.parent);
-                this.model.expandNode(prevNode.parent);
-                this.model.selectNode(prevNode);
+                this.selectExpandOpenResultNode(prevNode);
             } else if (prevNode.id === 'ResultTree') {
-                this.selectLastResult();
-                return;
+                return this.selectLastResult();
             } else {
                 this.model.selectPrev();
             }
         }
+    }
+
+    protected selectExpandOpenResultNode(node: SearchInWorkspaceResultLineNode): void {
+        this.model.expandNode(node.parent.parent);
+        this.model.expandNode(node.parent);
+        this.model.selectNode(node);
+        this.model.openNode(node);
     }
 
     protected selectFirstResult(): void {
@@ -333,10 +331,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             for (const file of rootFolder.children) {
                 for (const result of file.children) {
                     if (SelectableTreeNode.is(result)) {
-                        this.model.expandNode(result.parent.parent);
-                        this.model.expandNode(result.parent);
-                        this.model.selectNode(result);
-                        return;
+                        return this.selectExpandOpenResultNode(result);
                     }
                 }
             }
@@ -352,10 +347,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 for (let k = file.children.length - 1; k >= 0; k--) {
                     const result = file.children[k];
                     if (SelectableTreeNode.is(result)) {
-                        this.model.expandNode(result.parent.parent);
-                        this.model.expandNode(result.parent);
-                        this.model.selectNode(result);
-                        return;
+                        return this.selectExpandOpenResultNode(result);
                     }
                 }
             }
