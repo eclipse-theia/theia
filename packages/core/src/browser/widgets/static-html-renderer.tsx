@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2017 TypeFox and others.
+// Copyright (C) 2023 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,8 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './widget';
-export * from './react-renderer';
-export * from './react-widget';
-export * from './extractable-widget';
-export * from './static-html-renderer';
+import * as React from 'react';
+
+export interface StaticHtmlProps {
+    element: HTMLElement
+}
+
+export class StaticHtml extends React.Component<StaticHtmlProps> {
+
+    override render(): React.ReactNode {
+        return <div ref={element => element?.appendChild(this.props.element)} />;
+    }
+
+}

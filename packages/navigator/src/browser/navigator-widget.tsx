@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService } from '@theia/core/lib/common';
-import { Key, TreeModel, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode } from '@theia/core/lib/browser';
+import { Key, TreeModel, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode, StaticHtml } from '@theia/core/lib/browser';
 import { DirNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { WorkspaceNode, WorkspaceRootNode } from './navigator-tree';
@@ -28,6 +28,7 @@ import * as React from '@theia/core/shared/react';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { AbstractNavigatorTreeWidget } from './abstract-navigator-tree-widget';
+import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 
 export const FILE_NAVIGATOR_ID = 'files';
 export const LABEL = nls.localizeByDefault('No Folder Opened');
@@ -39,6 +40,7 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
     @inject(CommandService) protected readonly commandService: CommandService;
     @inject(NavigatorContextKeyService) protected readonly contextKeyService: NavigatorContextKeyService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(MarkdownRenderer) protected readonly markdownRenderer: MarkdownRenderer;
 
     constructor(
         @inject(TreeProps) props: TreeProps,
@@ -175,17 +177,13 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
      * Instead of displaying an empty navigator tree, this will show a button to add more folders.
      */
     protected renderEmptyMultiRootWorkspace(): React.ReactNode {
-        // TODO: @msujew Implement a markdown renderer and use vscode/explorerViewlet/noFolderHelp
-        return <div className='theia-navigator-container'>
-            <div className='center'>You have not yet added a folder to the workspace.</div>
-            <div className='open-workspace-button-container'>
-                <button className='theia-button open-workspace-button' title='Add a folder to your workspace'
-                    onClick={this.addFolder}
-                    onKeyUp={this.keyUpHandler}>
-                    Add Folder
-                </button>
-            </div>
-        </div>;
+        const openFolder = nls.localizeByDefault('Open Folder');
+        const addRootFolderButton = `[${openFolder}](command:${WorkspaceCommands.ADD_FOLDER.id})`;
+        const content = this.markdownRenderer.render({
+            value: nls.localizeByDefault('You have not yet added a folder to the workspace.\n{0}', addRootFolderButton),
+            isTrusted: true
+        });
+        return <StaticHtml element={content.element} />;
     }
 
     protected isEmptyMultiRootWorkspace(model: TreeModel): boolean {
