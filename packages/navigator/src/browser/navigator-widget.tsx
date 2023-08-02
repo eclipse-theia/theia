@@ -28,7 +28,6 @@ import * as React from '@theia/core/shared/react';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { AbstractNavigatorTreeWidget } from './abstract-navigator-tree-widget';
-import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 
 export const FILE_NAVIGATOR_ID = 'files';
 export const LABEL = nls.localizeByDefault('No Folder Opened');
@@ -40,7 +39,6 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
     @inject(CommandService) protected readonly commandService: CommandService;
     @inject(NavigatorContextKeyService) protected readonly contextKeyService: NavigatorContextKeyService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(MarkdownRenderer) protected readonly markdownRenderer: MarkdownRenderer;
 
     constructor(
         @inject(TreeProps) props: TreeProps,
