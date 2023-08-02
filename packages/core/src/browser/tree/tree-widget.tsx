@@ -245,6 +245,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         }
         this.node.addEventListener('mousedown', this.handleMiddleClickEvent.bind(this));
         this.node.addEventListener('mouseup', this.handleMiddleClickEvent.bind(this));
+        this.node.addEventListener('auxclick', this.handleMiddleClickEvent.bind(this));
         this.toDispose.pushAll([
             this.model,
             this.model.onChanged(() => this.updateRows()),
