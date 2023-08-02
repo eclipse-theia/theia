@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService } from '@theia/core/lib/common';
-import { Key, TreeModel, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode, StaticHtml } from '@theia/core/lib/browser';
+import { Key, TreeModel, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode } from '@theia/core/lib/browser';
 import { DirNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { WorkspaceNode, WorkspaceRootNode } from './navigator-tree';
@@ -177,13 +177,16 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
      * Instead of displaying an empty navigator tree, this will show a button to add more folders.
      */
     protected renderEmptyMultiRootWorkspace(): React.ReactNode {
-        const openFolder = nls.localizeByDefault('Open Folder');
-        const addRootFolderButton = `[${openFolder}](command:${WorkspaceCommands.ADD_FOLDER.id})`;
-        const content = this.markdownRenderer.render({
-            value: nls.localizeByDefault('You have not yet added a folder to the workspace.\n{0}', addRootFolderButton),
-            isTrusted: true
-        });
-        return <StaticHtml element={content.element} />;
+        return <div className='theia-navigator-container'>
+            <div className='center'>{nls.localizeByDefault('You have not yet added a folder to the workspace.\n{0}', '')}</div>
+            <div className='open-workspace-button-container'>
+                <button className='theia-button open-workspace-button' title={nls.localizeByDefault('Add Folder to Workspace')}
+                    onClick={this.addFolder}
+                    onKeyUp={this.keyUpHandler}>
+                    {nls.localizeByDefault('Open Folder')}
+                </button>
+            </div>
+        </div>;
     }
 
     protected isEmptyMultiRootWorkspace(model: TreeModel): boolean {
