@@ -51,7 +51,8 @@ export class NotebookCodeCellRenderer implements CellRenderer {
             <div className='theia-notebook-cell-with-sidebar'>
                 <div>
                     {this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, notebookModel, cell)}
-                    {/* needs an own component. Could be a little more complicated <p className='theia-notebook-code-cell-execution-order'>{`[${cell.exec ?? ' '}]`}</p> */}
+                    {/* cell-execution-order needs an own component. Could be a little more complicated
+                    <p className='theia-notebook-code-cell-execution-order'>{`[${cell.exec ?? ' '}]`}</p> */}
                 </div>
                 <div className='theia-notebook-cell-editor-container'>
                     <CellEditor notebookModel={notebookModel} cell={cell} monacoServices={this.monacoServices} />
@@ -70,18 +71,18 @@ export class NotebookCodeCellRenderer implements CellRenderer {
 export interface NotebookCodeCellStatusProps {
     cell: NotebookCellModel;
     executionStateService: NotebookExecutionStateService
-
-    currentExecution?: CellExecution
 }
 
-export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStatusProps> {
+export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStatusProps, {currentExecution?: CellExecution}> {
 
     constructor(props: NotebookCodeCellStatusProps) {
         super(props);
 
+        this.state = {};
+
         props.executionStateService.onDidChangeExecution(event => {
             if (event.affectsCell(this.props.cell.uri)) {
-                this.setState({...this.state, currentExecution: event.changed });
+                this.setState({currentExecution: event.changed });
             }
         });
     }
@@ -98,26 +99,26 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
     }
 
     private renderExecutionState(): React.ReactNode {
-        const state = this.props.currentExecution?.state;
+        const state = this.state.currentExecution?.state;
         const { lastRunSuccess } = this.props.cell.internalMetadata;
 
-        let icon;
-        let color;
+        let iconClasses: string | undefined = undefined;
+        let color: string | undefined = undefined;
         if (!state && lastRunSuccess) {
-            icon = codicon('check');
+            iconClasses = codicon('check');
             color = 'green';
         } else if (!state && lastRunSuccess === false) {
-            icon = codicon('error');
+            iconClasses = codicon('error');
             color = 'red';
         } else if (state === NotebookCellExecutionState.Pending || state === NotebookCellExecutionState.Unconfirmed) {
-            icon = codicon('clock');
+            iconClasses = codicon('clock');
         } else if (state === NotebookCellExecutionState.Executing) {
-            icon = codicon('sync');
+            iconClasses = `${codicon('sync')} theia-animation-spin`;
         }
         return <>
-            {icon && // TODO implement time
+            {iconClasses &&
             <>
-                <span className={`${icon} notebook-cell-status-item`} style={{color}}></span>
+                <span className={`${iconClasses} notebook-cell-status-item`} style={{color}}></span>
                 <div className='notebook-cell-status-item'>{this.getExecutionTime()}</div>
             </>}
         </>;
