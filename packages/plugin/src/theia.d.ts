@@ -22,9 +22,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 import './theia-extra';
+import './theia.proposed.canonicalUriProvider';
 import './theia.proposed.customEditorMove';
 import './theia.proposed.diffCommand';
 import './theia.proposed.documentPaste';
+import './theia.proposed.dropMetadata';
 import './theia.proposed.editSessionIdentityProvider';
 import './theia.proposed.extensionsAny';
 import './theia.proposed.externalUriOpener';
@@ -33,6 +35,7 @@ import './theia.proposed.fsChunks';
 import './theia.proposed.profileContentHandlers';
 import './theia.proposed.resolvers';
 import './theia.proposed.scmValidation';
+import './theia.proposed.shareProvider';
 import './theia.proposed.terminalQuickFixProvider';
 import './theia.proposed.textSearchProvider';
 import './theia.proposed.timeline';
@@ -12627,6 +12630,9 @@ export module '@theia/plugin' {
 
         /** Controls whether the terminal is cleared before executing the task. */
         clear?: boolean;
+
+        /** Controls whether the terminal is closed after executing the task. */
+        close?: boolean;
     }
 
     /**
@@ -13666,6 +13672,17 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Optional options to be used when calling {@link authentication.getSession} with the flag `forceNewSession`.
+     */
+    export interface AuthenticationForceNewSessionOptions {
+        /**
+         * An optional message that will be displayed to the user when we ask to re-authenticate. Providing additional context
+         * as to why you are asking a user to re-authenticate can help increase the odds that they will accept.
+         */
+        detail?: string;
+    }
+
+    /**
      * Options to be used when getting an {@link AuthenticationSession AuthenticationSession} from an {@link AuthenticationProvider AuthenticationProvider}.
      */
     export interface AuthenticationGetSessionOptions {
@@ -13699,7 +13716,7 @@ export module '@theia/plugin' {
          *
          * Defaults to false.
          */
-        forceNewSession?: boolean | { detail: string };
+        forceNewSession?: boolean | AuthenticationForceNewSessionOptions;
 
         /**
          * Whether we should show the indication to sign in in the Accounts menu.

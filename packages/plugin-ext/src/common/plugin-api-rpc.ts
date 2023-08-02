@@ -87,7 +87,8 @@ import {
     InlineCompletions,
     InlineCompletionContext,
     DocumentDropEdit,
-    DataTransferDTO
+    DataTransferDTO,
+    DocumentDropEditProviderMetadata
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -694,6 +695,9 @@ export interface WorkspaceMain {
     $getWorkspace(): Promise<files.FileStat | undefined>;
     $requestWorkspaceTrust(options?: theia.WorkspaceTrustRequestOptions): Promise<boolean | undefined>;
     $resolveProxy(url: string): Promise<string | undefined>;
+    $registerCanonicalUriProvider(scheme: string): Promise<void | undefined>;
+    $unregisterCanonicalUriProvider(scheme: string): void;
+    $getCanonicalUri(uri: string, targetScheme: string, token: theia.CancellationToken): Promise<string | undefined>;
 }
 
 export interface WorkspaceExt {
@@ -703,6 +707,10 @@ export interface WorkspaceExt {
     $onTextSearchResult(searchRequestId: number, done: boolean, result?: SearchInWorkspaceResult): void;
     $onWorkspaceTrustChanged(trust: boolean | undefined): void;
     $registerEditSessionIdentityProvider(scheme: string, provider: theia.EditSessionIdentityProvider): theia.Disposable;
+    registerCanonicalUriProvider(scheme: string, provider: theia.CanonicalUriProvider): theia.Disposable;
+    $disposeCanonicalUriProvider(scheme: string): void;
+    getCanonicalUri(uri: theia.Uri, options: theia.CanonicalUriRequestOptions, token: CancellationToken): theia.ProviderResult<theia.Uri>;
+    $provideCanonicalUri(uri: string, targetScheme: string, token: CancellationToken): Promise<string | undefined>;
 }
 
 export interface TimelineExt {
@@ -1510,6 +1518,7 @@ export interface TaskPresentationOptionsDTO {
     panel?: number;
     showReuseMessage?: boolean;
     clear?: boolean;
+    close?: boolean;
 }
 
 export interface TaskExecutionDto {
@@ -1657,7 +1666,7 @@ export interface LanguagesMain {
     $clearDiagnostics(id: string): void;
     $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void;
     $registerDocumentFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
-    $registerDocumentDropEditProvider(handle: number, selector: SerializedDocumentFilter[]): void
+    $registerDocumentDropEditProvider(handle: number, selector: SerializedDocumentFilter[], metadata?: DocumentDropEditProviderMetadata): void
     $registerRangeFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerOnTypeFormattingProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void;
     $registerDocumentLinkProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;

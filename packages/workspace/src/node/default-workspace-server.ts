@@ -22,7 +22,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { FileUri, BackendApplicationContribution } from '@theia/core/lib/node';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { WorkspaceServer, CommonWorkspaceUtils } from '../common';
+import { WorkspaceServer, UntitledWorkspaceService } from '../common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
 
@@ -30,7 +30,7 @@ import URI from '@theia/core/lib/common/uri';
 export class WorkspaceCliContribution implements CliContribution {
 
     @inject(EnvVariablesServer) protected readonly envVariablesServer: EnvVariablesServer;
-    @inject(CommonWorkspaceUtils) protected readonly workspaceUtils: CommonWorkspaceUtils;
+    @inject(UntitledWorkspaceService) protected readonly untitledWorkspaceService: UntitledWorkspaceService;
 
     workspaceRoot = new Deferred<string | undefined>();
 
@@ -66,7 +66,7 @@ export class WorkspaceCliContribution implements CliContribution {
             if (folders.length < 2) {
                 return folders[0]?.path;
             }
-            const untitledWorkspaceUri = await this.workspaceUtils.getUntitledWorkspaceUri(
+            const untitledWorkspaceUri = await this.untitledWorkspaceService.getUntitledWorkspaceUri(
                 new URI(await this.envVariablesServer.getConfigDirUri()),
                 async uri => !await fs.pathExists(uri.path.fsPath()),
             );
@@ -97,8 +97,8 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
     @inject(EnvVariablesServer)
     protected readonly envServer: EnvVariablesServer;
 
-    @inject(CommonWorkspaceUtils)
-    protected readonly utils: CommonWorkspaceUtils;
+    @inject(UntitledWorkspaceService)
+    protected readonly untitledWorkspaceService: UntitledWorkspaceService;
 
     @postConstruct()
     protected init(): void {
@@ -217,7 +217,9 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
      */
     protected async removeOldUntitledWorkspaces(): Promise<void> {
         const recents = (await this.getRecentWorkspaces()).map(FileUri.fsPath);
-        const olderUntitledWorkspaces = recents.slice(this.untitledWorkspaceStaleThreshold).filter(workspace => this.utils.isUntitledWorkspace(FileUri.create(workspace)));
+        const olderUntitledWorkspaces = recents
+            .slice(this.untitledWorkspaceStaleThreshold)
+            .filter(workspace => this.untitledWorkspaceService.isUntitledWorkspace(FileUri.create(workspace)));
         await Promise.all(olderUntitledWorkspaces.map(workspace => fs.promises.unlink(FileUri.fsPath(workspace)).catch(() => { })));
         if (olderUntitledWorkspaces.length > 0) {
             await this.writeToUserHome({ recentRoots: await this.getRecentWorkspaces() });

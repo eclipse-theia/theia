@@ -30,7 +30,11 @@
         "showPreviousTabInGroup": "Passa alla scheda precedente nel gruppo",
         "toggleMaximized": "Toggle Massimizzato"
       },
-      "enhancedPreview": "Controlla se visualizzare ulteriori informazioni sulla scheda nelle barre orizzontali delle schede.",
+      "enhancedPreview": {
+        "classic": "Visualizza una semplice anteprima della scheda con le informazioni di base.",
+        "enhanced": "Visualizza un'anteprima migliorata della scheda con informazioni aggiuntive.",
+        "visual": "Visualizza un'anteprima visiva della scheda."
+      },
       "file": {
         "browse": "Sfogliare"
       },
@@ -79,6 +83,7 @@
     "editor": {
       "dirtyEncoding": "Il file è sporco. Salvarlo prima di riaprirlo con un'altra codifica.",
       "editor.codeActionWidget.showHeaders": "Abilita/disabilita la visualizzazione delle intestazioni dei gruppi nel menu delle azioni del codice.",
+      "editor.experimental.pasteActions.enabled": "Abilita/disabilita l'esecuzione di modifiche da parte delle estensioni in fase di incollaggio.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tenterà di formattare solo le modifiche (richiede il controllo della fonte). Se il controllo della fonte non può essere usato, allora l'intero file sarà formattato.",
       "editor.inlayHints.enabled1": "I suggerimenti per l'intarsio sono visualizzati per impostazione predefinita e si nascondono quando si tiene premuto `Ctrl+Alt`.",
       "editor.inlayHints.enabled2": "I suggerimenti per l'intarsio sono nascosti per impostazione predefinita e vengono visualizzati quando si tiene premuto `Ctrl+Alt`.",
@@ -216,6 +221,7 @@
         "offset-title": "Byte da cui spostare la memoria {0}"
       },
       "editable": {
+        "apply": "Applicare le modifiche",
         "clear": "Cambiamenti evidenti"
       },
       "endianness": "Endianità",
@@ -323,6 +329,9 @@
       "watchMode": "Eseguire il watcher sul plugin in sviluppo"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Accesso"
+      },
       "plugins": "Plugin",
       "webviewTrace": "Controlla la tracciabilità della comunicazione con le webview.",
       "webviewWarnIfUnsecure": "Avverte gli utenti che le webview sono attualmente distribuite in modo non sicuro."

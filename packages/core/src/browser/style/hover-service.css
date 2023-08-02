@@ -18,6 +18,7 @@
 
 :root {
   --theia-hover-max-width: 500px;
+  --theia-hover-preview-width: 300px;
 }
 
 .theia-hover {
@@ -96,4 +97,5 @@
 
 .theia-hover.extended-tab-preview {
   border-radius: 10px;
+  width: var(--theia-hover-preview-width);
 }

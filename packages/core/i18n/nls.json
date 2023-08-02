@@ -30,7 +30,11 @@
         "showPreviousTabInGroup": "Switch to Previous Tab in Group",
         "toggleMaximized": "Toggle Maximized"
       },
-      "enhancedPreview": "Controls whether more information about the tab should be displayed in horizontal tab bars.",
+      "enhancedPreview": {
+        "classic": "Display a simple preview of the tab with basic information.",
+        "enhanced": "Display an enhanced preview of the tab with additional information.",
+        "visual": "Display a visual preview of the tab."
+      },
       "file": {
         "browse": "Browse"
       },
@@ -79,6 +83,7 @@
     "editor": {
       "dirtyEncoding": "The file is dirty. Please save it first before reopening it with another encoding.",
       "editor.codeActionWidget.showHeaders": "Enable/disable showing group headers in the code action menu.",
+      "editor.experimental.pasteActions.enabled": "Enable/disable running edits from extensions on paste.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Will attempt to format modifications only (requires source control). If source control can't be used, then the whole file will be formatted.",
       "editor.inlayHints.enabled1": "Inlay hints are showing by default and hide when holding Ctrl+Alt",
       "editor.inlayHints.enabled2": "Inlay hints are hidden by default and show when holding Ctrl+Alt",
@@ -216,6 +221,7 @@
         "offset-title": "Bytes to offset the memory from {0}"
       },
       "editable": {
+        "apply": "Apply Changes",
         "clear": "Clear Changes"
       },
       "endianness": "Endianness",
@@ -323,6 +329,9 @@
       "watchMode": "Run watcher on plugin under development"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Login"
+      },
       "plugins": "Plugins",
       "webviewTrace": "Controls communication tracing with webviews.",
       "webviewWarnIfUnsecure": "Warns users that webviews are currently deployed unsecurely."

@@ -97,6 +97,10 @@ export class PreferencesWidget extends Panel implements StatefulWidget {
         this.update();
     }
 
+    getPreviewNode(): Node | undefined {
+        return this.node;
+    }
+
     storeState(): PreferencesWidgetState {
         return {
             scopeTabBarState: this.tabBarWidget.storeState(),

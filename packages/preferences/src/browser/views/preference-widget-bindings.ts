@@ -30,6 +30,7 @@ import {
 import { PreferenceNumberInputRenderer, PreferenceNumberInputRendererContribution } from './components/preference-number-input';
 import { PreferenceSelectInputRenderer, PreferenceSelectInputRendererContribution } from './components/preference-select-input';
 import { PreferenceStringInputRenderer, PreferenceStringInputRendererContribution } from './components/preference-string-input';
+import { PreferenceMarkdownRenderer } from './components/preference-markdown-renderer';
 import { PreferencesEditorWidget } from './preference-editor-widget';
 import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget';
 import { PreferencesSearchbarWidget } from './preference-searchbar-widget';
@@ -94,6 +95,8 @@ export function createPreferencesWidgetContainer(parent: interfaces.Container): 
         const creator = registry.getPreferenceNodeRendererCreator(node);
         return creator.createRenderer(node, container);
     });
+
+    child.bind(PreferenceMarkdownRenderer).toSelf().inSingletonScope();
 
     return child;
 }

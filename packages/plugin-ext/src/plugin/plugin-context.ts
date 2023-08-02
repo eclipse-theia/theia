@@ -589,7 +589,9 @@ export function createAPIFactory(
             /** @stubbed TerminalQuickFixProvider */
             registerTerminalQuickFixProvider(id: string, provider: theia.TerminalQuickFixProvider): theia.Disposable {
                 return terminalExt.registerTerminalQuickFixProvider(id, provider);
-            }
+            },
+            /** @stubbed ShareProvider */
+            registerShareProvider: () => Disposable.NULL,
         };
 
         const workspace: typeof theia.workspace = {
@@ -747,6 +749,12 @@ export function createAPIFactory(
              * that currently use this proposed API.
              */
             onWillCreateEditSessionIdentity: () => Disposable.NULL,
+            registerCanonicalUriProvider(scheme: string, provider: theia.CanonicalUriProvider): theia.Disposable {
+                return workspaceExt.registerCanonicalUriProvider(scheme, provider);
+            },
+            getCanonicalUri(uri: theia.Uri, options: theia.CanonicalUriRequestOptions, token: CancellationToken): theia.ProviderResult<theia.Uri> {
+                return workspaceExt.getCanonicalUri(uri, options, token);
+            }
         };
 
         const onDidChangeLogLevel = new Emitter<theia.LogLevel>();
@@ -900,8 +908,8 @@ export function createAPIFactory(
             ): theia.Disposable {
                 return languagesExt.registerOnTypeFormattingEditProvider(selector, provider, [firstTriggerCharacter].concat(moreTriggerCharacters), pluginToPluginInfo(plugin));
             },
-            registerDocumentDropEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentDropEditProvider) {
-                return languagesExt.registerDocumentDropEditProvider(selector, provider);
+            registerDocumentDropEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentDropEditProvider, metadata?: theia.DocumentDropEditProviderMetadata) {
+                return languagesExt.registerDocumentDropEditProvider(selector, provider, metadata);
             },
             registerDocumentLinkProvider(selector: theia.DocumentSelector, provider: theia.DocumentLinkProvider): theia.Disposable {
                 return languagesExt.registerDocumentLinkProvider(selector, provider, pluginToPluginInfo(plugin));

@@ -445,6 +445,10 @@ export class ScmTreeWidget extends TreeWidget {
         return super.getPaddingLeft(node, props);
     }
 
+    protected override getDepthPadding(depth: number): number {
+        return super.getDepthPadding(depth) + 5;
+    }
+
     protected isCurrentThemeLight(): boolean {
         const type = this.themeService.getCurrentTheme().type;
         return type.toLocaleLowerCase().includes('light');

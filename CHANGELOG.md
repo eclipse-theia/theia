@@ -3,13 +3,47 @@
 ## History
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
+## v1.41.0 -
+- [application-package] Quit Electron app when back end fails to start [#12778](https://github.com/eclipse-theia/theia/pull/12778) - Contributed on behalf of STMicroelectronics.
 
-## v1.40.0 - 
+## v1.40.0 - 07/27/2023
 
--  Show command shortcuts in toolbar item tooltips. #12660 (https://github.com/eclipse-theia/theia/pull/12660) - Contributed on behalf of STMicroelectronics
+- [application-package] bumped the default supported VS Code API from `1.78.0` to `1.79.0` [#12764](https://github.com/eclipse-theia/theia/pull/12764) - Contributed on behalf of STMicroelectronics.
+- [application-package] fixed ignored resource in backend bundling [#12681](https://github.com/eclipse-theia/theia/pull/12681)
+- [cli] added `check:theia-extensions` to facilitate checking the uniqueness of `@theia` extension versions [#12596](https://github.com/eclipse-theia/theia/pull/12596) - Contributed on behalf of STMicroelectronics
+- [core] added functionality to display command shortcuts in toolbar item tooltips [#12660](https://github.com/eclipse-theia/theia/pull/12660) - Contributed on behalf of STMicroelectronics
+- [core] added support to render a visual preview of a tab while hovering [#12648](https://github.com/eclipse-theia/theia/pull/12648) - Contributed on behalf of STMicroelectronics
+- [core] fixed regression when rendering icons in menus [#12739](https://github.com/eclipse-theia/theia/pull/12739)
+- [core] fixed tabbar icon flickering when resizing views [#12629](https://github.com/eclipse-theia/theia/pull/12629)
+- [core] updated localization data with respect to VS Code `1.79.0` [#12765](https://github.com/eclipse-theia/theia/pull/12765)
+- [debug] fixed issue where the `DebugBreakpointWidget` did not have the proper value [#12567](https://github.com/eclipse-theia/theia/pull/12567)
+- [debug] improved multi-root experience for launch configurations [#12674](https://github.com/eclipse-theia/theia/pull/12674)
+- [dialog] added support for the `maxWidth` attribute [#12642](https://github.com/eclipse-theia/theia/pull/12642)
+- [documentation] added policy on VS Code usage [#11537](https://github.com/eclipse-theia/theia/pull/11537)
+- [filesystem] fixed readonly permissions with disk filesystem provider [#12354](https://github.com/eclipse-theia/theia/pull/12354)
+- [keymaps] improved display of action buttons in the keyboard shortcuts view [#12675](https://github.com/eclipse-theia/theia/pull/12675)
+- [playwright] fixed issue with `TheiaDialog` page object [#12753](https://github.com/eclipse-theia/theia/pull/12753)
+- [plugin] added stubbing for the `ShareProvider` VS Code API [#12747](https://github.com/eclipse-theia/theia/pull/12474)
+- [plugin] fixed `MarkdownString` support for `documentation` [#12685](https://github.com/eclipse-theia/theia/pull/12685)
+- [plugin] improved handling when writing stores [#12717](https://github.com/eclipse-theia/theia/pull/12717)
+- [preferences] improved preference file button rendering [#12586](https://github.com/eclipse-theia/theia/pull/12586)
+- [repo] fixed launch configurations for ovsx [#12731](https://github.com/eclipse-theia/theia/pull/12731)
+- [scm] improved tree selection styling [#12470](https://github.com/eclipse-theia/theia/pull/12670)
+- [search-in-workspace] improved styling of search options [#12697](https://github.com/eclipse-theia/theia/pull/12697)
+- [search-in-workspace] improved tree selection styling [#12470](https://github.com/eclipse-theia/theia/pull/12470)
+- [vscode] added support for `AuthenticationForceNewSessionOptions` and `detail` message [#12752](https://github.com/eclipse-theia/theia/pull/12752) - Contributed on behalf of STMicroelectronics
+- [vscode] added support for the `TaskPresentationOptions` close property [#12749](https://github.com/eclipse-theia/theia/pull/12749) - Contributed on behalf of STMicroelectronics
+- [workspace] added support for workspace file extension customization [#12420](https://github.com/eclipse-theia/theia/pull/12420)
+- [workspace] implemented `CanonicalUriProvider` VS Code API [#12743](https://github.com/eclipse-theia/theia/pull/12743) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.40.0">[Breaking Changes:](#breaking_changes_1.40.0)</a>
 
+- [preferences] changed the `window.tabbar.enhancedPreview` preference from boolean to enum: [#12648](https://github.com/eclipse-theia/theia/pull/12648) - Contributed on behalf of STMicroelectronics
+    - `classic`: Display a simple preview of the tab with basic information.
+    - `enhanced`: Display an enhanced preview of the tab with additional information. (The behavior introduced in [#12350](https://github.com/eclipse-theia/theia/pull/12350))
+    - `visual`: Display a visual preview of the tab. (The preview support was added with this PR)
+- [repo] updated GitHub workflow to stop publishing `next` versions [#12699](https://github.com/eclipse-theia/theia/pull/12699)
+- [workspace] split `CommonWorkspaceUtils` into `WorkspaceFileService` and `UntitledWorkspaceService` [#12420](https://github.com/eclipse-theia/theia/pull/12420)
 
 ## v1.39.0 - 06/29/2023
 

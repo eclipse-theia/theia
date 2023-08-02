@@ -54,7 +54,7 @@ import {
     FileSystemProviderError,
     FileChange,
     WatchOptions,
-    FileUpdateOptions, FileUpdateResult, FileReadStreamOptions
+    FileUpdateOptions, FileUpdateResult, FileReadStreamOptions, FilePermission
 } from '../common/files';
 import { FileSystemWatcherServer } from '../common/filesystem-watcher-protocol';
 import trash = require('trash');
@@ -65,6 +65,7 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ReadableStreamEvents, newWriteableStream } from '@theia/core/lib/common/stream';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { readFileIntoStream } from '../common/io';
+import { Mode } from 'stat-mode';
 
 export namespace DiskFileSystemProvider {
     export interface StatAndLink {
@@ -151,12 +152,13 @@ export class DiskFileSystemProvider implements Disposable,
     async stat(resource: URI): Promise<Stat> {
         try {
             const { stat, symbolicLink } = await this.statLink(this.toFilePath(resource)); // cannot use fs.stat() here to support links properly
-
+            const mode = new Mode(stat);
             return {
                 type: this.toType(stat, symbolicLink),
                 ctime: stat.birthtime.getTime(), // intentionally not using ctime here, we want the creation time
                 mtime: stat.mtime.getTime(),
-                size: stat.size
+                size: stat.size,
+                permissions: !mode.owner.write ? FilePermission.Readonly : undefined,
             };
         } catch (error) {
             throw this.toFileSystemProviderError(error);

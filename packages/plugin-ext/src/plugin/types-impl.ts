@@ -1542,6 +1542,13 @@ export class DocumentLink {
 
 @es5ClassCompat
 export class DocumentDropEdit {
+
+    id?: string;
+
+    priority?: number;
+
+    label?: string;
+
     insertText: string | SnippetString;
 
     additionalEdit?: WorkspaceEdit;
@@ -3499,11 +3506,16 @@ export class InteractiveWindowInput {
 // #region DocumentPaste
 @es5ClassCompat
 export class DocumentPasteEdit {
-    constructor(insertText: string | SnippetString) {
+    constructor(insertText: string | SnippetString, id: string, label: string) {
         this.insertText = insertText;
+        this.id = id;
+        this.label = label;
     }
     insertText: string | SnippetString;
     additionalEdit?: WorkspaceEdit;
+    id: string;
+    label: string;
+    priority?: number;
 }
 // #endregion
 

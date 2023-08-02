@@ -30,7 +30,11 @@
         "showPreviousTabInGroup": "Přepnutí na předchozí kartu ve skupině",
         "toggleMaximized": "Přepínání Maximalizováno"
       },
-      "enhancedPreview": "Určuje, zda se mají na vodorovných pásech karet zobrazovat další informace o kartě.",
+      "enhancedPreview": {
+        "classic": "Zobrazí jednoduchý náhled karty se základními informacemi.",
+        "enhanced": "Zobrazení rozšířeného náhledu karty s dalšími informacemi.",
+        "visual": "Zobrazení vizuálního náhledu karty."
+      },
       "file": {
         "browse": "Procházet"
       },
@@ -79,6 +83,7 @@
     "editor": {
       "dirtyEncoding": "Soubor je znečištěný. Než jej znovu otevřete v jiném kódování, nejprve jej uložte.",
       "editor.codeActionWidget.showHeaders": "Povolení/zakázání zobrazování záhlaví skupin v nabídce akcí kódu.",
+      "editor.experimental.pasteActions.enabled": "Povolení/zakázání spouštění úprav z rozšíření při vkládání.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Pokusí se formátovat pouze změny (vyžaduje kontrolu zdrojů). Pokud nelze použít kontrolu zdrojů, bude formátován celý soubor.",
       "editor.inlayHints.enabled1": "Vložené nápovědy se zobrazují ve výchozím nastavení a skrývají se při podržení `Ctrl+Alt`",
       "editor.inlayHints.enabled2": "Vložené nápovědy jsou ve výchozím nastavení skryté a zobrazí se při podržení `Ctrl+Alt`.",
@@ -216,6 +221,7 @@
         "offset-title": "Bajty pro odsazení paměti od {0}"
       },
       "editable": {
+        "apply": "Použít změny",
         "clear": "Jasné změny"
       },
       "endianness": "Endianness",
@@ -323,6 +329,9 @@
       "watchMode": "Spuštění sledovacího nástroje na vyvíjeném zásuvném modulu"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Přihlášení"
+      },
       "plugins": "Zásuvné moduly",
       "webviewTrace": "Řídí sledování komunikace s webovými pohledy.",
       "webviewWarnIfUnsecure": "Upozorňuje uživatele, že webové náhledy jsou v současné době nasazeny nezabezpečeně."

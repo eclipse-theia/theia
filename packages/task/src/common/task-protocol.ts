@@ -48,6 +48,7 @@ export interface TaskOutputPresentation {
     panel?: PanelKind;
     showReuseMessage?: boolean;
     clear?: boolean;
+    close?: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [name: string]: any;
 }
@@ -59,7 +60,8 @@ export namespace TaskOutputPresentation {
             focus: false,
             panel: PanelKind.Shared,
             showReuseMessage: true,
-            clear: false
+            clear: false,
+            close: false
         };
     }
 
@@ -90,7 +92,8 @@ export namespace TaskOutputPresentation {
                 echo: task.presentation.echo === undefined || task.presentation.echo,
                 focus: shouldSetFocusToTerminal(task),
                 showReuseMessage: shouldShowReuseMessage(task),
-                clear: shouldClearTerminalBeforeRun(task)
+                clear: shouldClearTerminalBeforeRun(task),
+                close: shouldCloseTerminalOnFinish(task)
             };
         }
         return outputPresentation;
@@ -106,6 +109,10 @@ export namespace TaskOutputPresentation {
 
     export function shouldClearTerminalBeforeRun(task: TaskCustomization): boolean {
         return !!task.presentation && !!task.presentation.clear;
+    }
+
+    export function shouldCloseTerminalOnFinish(task: TaskCustomization): boolean {
+        return !!task.presentation && !!task.presentation.close;
     }
 
     export function shouldShowReuseMessage(task: TaskCustomization): boolean {

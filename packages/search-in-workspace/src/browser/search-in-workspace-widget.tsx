@@ -563,7 +563,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected renderOptionElement(opt: SearchFieldState): React.ReactNode {
         return <span
-            className={`${opt.className} option ${opt.enabled ? 'enabled' : ''}`}
+            className={`${opt.className} option action-label ${opt.enabled ? 'enabled' : ''}`}
             title={opt.title}
             onClick={() => this.handleOptionClick(opt)}></span>;
     }
