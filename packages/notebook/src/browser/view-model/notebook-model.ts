@@ -137,7 +137,7 @@ export class NotebookModel implements Saveable, Disposable {
         this.dirtyChangedEmitter.fire();
 
         const serializedNotebook = await this.props.serializer.notebookToData({
-            cells: this.cells.map(cell => cell.toDto()),
+            cells: this.cells.map(cell => cell.getData()),
             metadata: this.data.metadata
         });
         this.fileService.writeFile(this.uri, serializedNotebook);

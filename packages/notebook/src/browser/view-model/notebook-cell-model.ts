@@ -200,11 +200,11 @@ export class NotebookCellModel implements Disposable {
         return true;
     }
 
-    toDto(): CellData {
+    getData(): CellData {
         return {
             cellKind: this.cellKind,
             language: this.language,
-            outputs: this.outputs.map(output => output.toDto()),
+            outputs: this.outputs.map(output => output.getData()),
             source: this.textBuffer,
             collapseState: this.props.collapseState,
             internalMetadata: this.internalMetadata,

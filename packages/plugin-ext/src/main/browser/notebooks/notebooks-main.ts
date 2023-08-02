@@ -57,13 +57,11 @@ export class NotebooksMainImpl implements NotebooksMain {
             options,
             dataToNotebook: async (data: BinaryBuffer): Promise<NotebookData> => {
                 const dto = await this.proxy.$dataToNotebook(handle, data, CancellationToken.None);
-                const result = NotebookDto.fromNotebookDataDto(dto);
-                return result;
+                return NotebookDto.fromNotebookDataDto(dto);
             },
-            notebookToData: (data: NotebookData): Promise<BinaryBuffer> => {
-                const result = this.proxy.$notebookToData(handle, NotebookDto.toNotebookDataDto(data), CancellationToken.None);
-                return result;
-            }
+            notebookToData: (data: NotebookData): Promise<BinaryBuffer> =>
+                this.proxy.$notebookToData(handle, NotebookDto.toNotebookDataDto(data), CancellationToken.None)
+
         }));
 
         this.notebookSerializer.set(handle, disposables);

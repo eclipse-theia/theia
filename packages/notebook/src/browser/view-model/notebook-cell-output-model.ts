@@ -57,7 +57,7 @@ export class NotebookCellOutputModel implements Disposable {
         this.requestOutputPresentationChangeEmitter.fire();
     }
 
-    toDto(): CellOutput {
+    getData(): CellOutput {
         return {
             outputs: this.outputs,
             metadata: this.metadata,
