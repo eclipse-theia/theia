@@ -1256,10 +1256,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     /**
-     * Prevents auto-scrolling behavior when middle-clicking.
+     * Handle the middle-click mouse event.
      * @param event the middle-click mouse event.
      */
     protected handleMiddleClickEvent(event: MouseEvent): void {
+        // Prevents auto-scrolling behavior when middle-clicking.
         if (event.button === 1) {
             event.preventDefault();
         }
