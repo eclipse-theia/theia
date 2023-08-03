@@ -44,6 +44,7 @@
     - `visual`: Display a visual preview of the tab. (The preview support was added with this PR)
 - [repo] updated GitHub workflow to stop publishing `next` versions [#12699](https://github.com/eclipse-theia/theia/pull/12699)
 - [workspace] split `CommonWorkspaceUtils` into `WorkspaceFileService` and `UntitledWorkspaceService` [#12420](https://github.com/eclipse-theia/theia/pull/12420)
+- [plugin] Removed synchronous `fs` calls from the backend application and plugins. The plugin scanner, directory and file handlers, and the plugin deploy entry has async API now. Internal `protected` APIs have been affected. [#12798](https://github.com/eclipse-theia/theia/pull/12798)
 
 ## v1.39.0 - 06/29/2023
 

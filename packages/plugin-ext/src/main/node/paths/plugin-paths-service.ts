@@ -18,7 +18,8 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import * as path from 'path';
 import * as fs from '@theia/core/shared/fs-extra';
-import { readdir, remove } from '@theia/core/shared/fs-extra';
+import { readdir } from 'fs/promises';
+import { remove } from '@theia/core/shared/fs-extra';
 import * as crypto from 'crypto';
 import { ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
@@ -139,15 +140,9 @@ export class PluginPathsServiceImpl implements PluginPathsService {
     }
 
     private async cleanupOldLogs(parentLogsDir: string): Promise<void> {
-        // @ts-ignore - fs-extra types (Even latest version) is not updated with the `withFileTypes` option.
-        const dirEntries = await readdir(parentLogsDir, { withFileTypes: true }) as string[];
-        // `Dirent` type is defined in @types/node since 10.10.0
-        // However, upgrading the @types/node in theia to 10.11 (as defined in engine field)
-        // Causes other packages to break in compilation, so we are using the infamous `any` type...
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const subDirEntries = dirEntries.filter((dirent: any) => dirent.isDirectory());
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const subDirNames = subDirEntries.map((dirent: any) => dirent.name);
+        const dirEntries = await readdir(parentLogsDir, { withFileTypes: true }) as fs.Dirent[];
+        const subDirEntries = dirEntries.filter((dirent: fs.Dirent) => dirent.isDirectory());
+        const subDirNames = subDirEntries.map((dirent: fs.Dirent) => dirent.name);
         // We never clean a folder that is not a Theia logs session folder.
         // Even if it does appears under the `parentLogsDir`...
         const sessionSubDirNames = subDirNames.filter((dirName: string) => SESSION_TIMESTAMP_PATTERN.test(dirName));

@@ -131,15 +131,15 @@ export class HostedPluginsManagerImpl implements HostedPluginsManager {
      *
      * @param pluginPath path to plugin's root directory
      */
-    protected checkWatchScript(pluginPath: string): boolean {
+    protected async checkWatchScript(pluginPath: string): Promise<boolean> {
         const pluginPackageJsonPath = path.join(pluginPath, 'package.json');
-        if (fs.existsSync(pluginPackageJsonPath)) {
-            const packageJson = fs.readJSONSync(pluginPackageJsonPath);
+        try {
+            const packageJson = await fs.readJSON(pluginPackageJsonPath);
             const scripts = packageJson['scripts'];
             if (scripts && scripts['watch']) {
                 return true;
             }
-        }
+        } catch { }
         return false;
     }
 
