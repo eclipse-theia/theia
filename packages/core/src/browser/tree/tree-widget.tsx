@@ -243,6 +243,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 }),
             ]);
         }
+        this.node.addEventListener('mousedown', this.handleMiddleClickEvent.bind(this));
+        this.node.addEventListener('mouseup', this.handleMiddleClickEvent.bind(this));
+        this.node.addEventListener('auxclick', this.handleMiddleClickEvent.bind(this));
         this.toDispose.pushAll([
             this.model,
             this.model.onChanged(() => this.updateRows()),
@@ -924,6 +927,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             style,
             onClick: event => this.handleClickEvent(node, event),
             onDoubleClick: event => this.handleDblClickEvent(node, event),
+            onAuxClick: event => this.handleAuxClickEvent(node, event),
             onContextMenu: event => this.handleContextMenuEvent(node, event),
         };
     }
@@ -1236,6 +1240,30 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected handleDblClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         this.model.openNode(node);
         event.stopPropagation();
+    }
+
+    /**
+     * Handle the middle-click mouse event.
+     * @param node the tree node if available.
+     * @param event the middle-click mouse event.
+     */
+    protected handleAuxClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+        this.model.openNode(node);
+        if (SelectableTreeNode.is(node)) {
+            this.model.selectNode(node);
+        }
+        event.stopPropagation();
+    }
+
+    /**
+     * Handle the middle-click mouse event.
+     * @param event the middle-click mouse event.
+     */
+    protected handleMiddleClickEvent(event: MouseEvent): void {
+        // Prevents auto-scrolling behavior when middle-clicking.
+        if (event.button === 1) {
+            event.preventDefault();
+        }
     }
 
     /**
