@@ -500,6 +500,27 @@
   background: var(--theia-icon-close) no-repeat;
 }
 
+/** Configure layout of a toolbar item that shows a pop-up menu. */
+.p-TabBar-toolbar .item.menu {
+  display: grid;
+}
+
+/** The elements of the item that shows a pop-up menu are stack atop one other. */
+.p-TabBar-toolbar .item.menu > div {
+  grid-area: 1 / 1;
+}
+
+/**
+ * The chevron for the pop-up menu indication is shrunk and
+ * stuffed in the bottom-right corner.
+ */
+.p-TabBar-toolbar .item.menu > .chevron {
+  scale: 50%;
+  align-self: end;
+  justify-self: end;
+  translate: 5px 3px;
+}
+
 #theia-main-content-panel
   .p-TabBar:not(.theia-tabBar-active)
   .p-TabBar-toolbar {

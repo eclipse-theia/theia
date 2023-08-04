@@ -22,7 +22,7 @@ import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../../context-me
 import { LabelIcon, LabelParser } from '../../label-parser';
 import { ACTION_ITEM, codicon, ReactWidget, Widget } from '../../widgets';
 import { TabBarToolbarRegistry } from './tab-bar-toolbar-registry';
-import { AnyToolbarItem, ReactTabBarToolbarItem, TabBarDelegator, TabBarToolbarItem, TAB_BAR_TOOLBAR_CONTEXT_MENU } from './tab-bar-toolbar-types';
+import { AnyToolbarItem, ReactTabBarToolbarItem, TabBarDelegator, TabBarToolbarItem, TAB_BAR_TOOLBAR_CONTEXT_MENU, MenuToolbarItem } from './tab-bar-toolbar-types';
 import { KeybindingRegistry } from '../..//keybinding';
 
 /**
@@ -149,7 +149,9 @@ export class TabBarToolbar extends ReactWidget {
         this.keybindingContextKeys.clear();
         return <React.Fragment>
             {this.renderMore()}
-            {[...this.inline.values()].map(item => TabBarToolbarItem.is(item) ? this.renderItem(item) : item.render(this.current))}
+            {[...this.inline.values()].map(item => TabBarToolbarItem.is(item)
+                ? (MenuToolbarItem.is(item) ? this.renderMenuItem(item) : this.renderItem(item))
+                : item.render(this.current))}
         </React.Fragment>;
     }
 
@@ -287,6 +289,59 @@ export class TabBarToolbar extends ReactWidget {
             context: this.current?.node,
             onHide: () => toDisposeOnHide.dispose(),
             skipSingleRootNode: true,
+        });
+    }
+
+    /**
+     * Renders a toolbar item that is a menu, presenting it as a button with a little
+     * chevron decoration that pops up a floating menu when clicked.
+     *
+     * @param item a toolbar item that is a menu item
+     * @returns the rendered toolbar item
+     */
+    protected renderMenuItem(item: TabBarToolbarItem & MenuToolbarItem): React.ReactNode {
+        const icon = typeof item.icon === 'function' ? item.icon() : item.icon ?? 'ellipsis';
+        return <div key={item.id}
+                    className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}
+                    onClick={this.showPopupMenu.bind(this, item.menuPath)}>
+            <div id={item.id} className={codicon(icon, true)}
+                title={item.text} />
+            <div className={codicon('chevron-down') + ' chevron'} />
+        </div >;
+    }
+
+    /**
+     * Presents the menu to popup on the `event` that is the clicking of
+     * a menu toolbar item.
+     *
+     * @param menuPath the path of the registered menu to show
+     * @param event the mouse event triggering the menu
+     */
+    protected showPopupMenu = (menuPath: MenuPath, event: React.MouseEvent) => {
+        event.stopPropagation();
+        event.preventDefault();
+        const anchor = this.toAnchor(event);
+        this.renderPopupMenu(menuPath, anchor);
+    };
+
+    /**
+     * Renders the menu popped up on a menu toolbar item.
+     *
+     * @param menuPath the path of the registered menu to render
+     * @param anchor a description of where to render the menu
+     * @returns platform-specific access to the rendered context menu
+     */
+    protected renderPopupMenu(menuPath: MenuPath, anchor: Anchor): ContextMenuAccess {
+        const toDisposeOnHide = new DisposableCollection();
+        this.addClass('menu-open');
+        toDisposeOnHide.push(Disposable.create(() => this.removeClass('menu-open')));
+
+        return this.contextMenuRenderer.render({
+            menuPath,
+            args: [this.current],
+            anchor,
+            context: this.current?.node,
+            onHide: () => toDisposeOnHide.dispose()
         });
     }
 
