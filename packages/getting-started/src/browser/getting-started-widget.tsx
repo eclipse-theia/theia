@@ -20,7 +20,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { CommandRegistry, isOSX, environment, Path } from '@theia/core/lib/common';
 import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browser';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
-import { Message, ReactWidget, CommonCommands, LabelProvider, Key, KeyCode, codicon } from '@theia/core/lib/browser';
+import { Message, ReactWidget, CommonCommands, LabelProvider, Key, KeyCode, codicon, PreferenceService } from '@theia/core/lib/browser';
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -47,7 +47,7 @@ export class GettingStartedWidget extends ReactWidget {
     /**
      * The widget `label` which is used for display purposes.
      */
-    static readonly LABEL = nls.localizeByDefault('Get Started');
+    static readonly LABEL = nls.localizeByDefault('Welcome');
 
     /**
      * The `ApplicationInfo` for the application if available.
@@ -97,6 +97,9 @@ export class GettingStartedWidget extends ReactWidget {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     @postConstruct()
     protected init(): void {
         this.doInit();
@@ -126,33 +129,38 @@ export class GettingStartedWidget extends ReactWidget {
      * Render the content of the widget.
      */
     protected render(): React.ReactNode {
-        return <div className='gs-container'>
-            {this.renderHeader()}
-            <hr className='gs-hr' />
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderOpen()}
+        return <div>
+            <div className='gs-container'>
+                {this.renderHeader()}
+                <hr className='gs-hr' />
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderOpen()}
+                    </div>
+                </div>
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderRecentWorkspaces()}
+                    </div>
+                </div>
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderSettings()}
+                    </div>
+                </div>
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderHelp()}
+                    </div>
+                </div>
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderVersion()}
+                    </div>
                 </div>
             </div>
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderRecentWorkspaces()}
-                </div>
-            </div>
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderSettings()}
-                </div>
-            </div>
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderHelp()}
-                </div>
-            </div>
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderVersion()}
-                </div>
+            <div className='gs-preference-container'>
+                {this.renderPreferences()}
             </div>
         </div>;
     }
@@ -364,6 +372,10 @@ export class GettingStartedWidget extends ReactWidget {
         </div>;
     }
 
+    protected renderPreferences(): React.ReactNode {
+        return <WelcomePreferences preferenceService={this.preferenceService}></WelcomePreferences>;
+    }
+
     /**
      * Build the list of workspace paths.
      * @param workspaces {string[]} the list of workspaces.
@@ -477,4 +489,41 @@ export class GettingStartedWidget extends ReactWidget {
     protected isEnterKey(e: React.KeyboardEvent): boolean {
         return Key.ENTER.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode;
     }
+}
+
+export interface PreferencesProps {
+    preferenceService: PreferenceService;
+}
+
+function WelcomePreferences(props: PreferencesProps): JSX.Element {
+    const [alwaysShowWelcomePage, setAlwaysShowWelcomePage] = React.useState<boolean>(
+        props.preferenceService.get('welcome.alwaysShowWelcomePage', true)
+    );
+    React.useEffect(() => {
+        const prefListener = props.preferenceService.onPreferenceChanged(change => {
+            if (change.preferenceName === 'welcome.alwaysShowWelcomePage') {
+                const prefValue = change.newValue;
+                setAlwaysShowWelcomePage(prefValue);
+            }
+        });
+        return () => prefListener.dispose();
+    }, [props.preferenceService]);
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newChecked = e.target.checked;
+        props.preferenceService.updateValue('welcome.alwaysShowWelcomePage', newChecked);
+    };
+    return (
+        <div className='gs-preference'>
+            <input
+                type="checkbox"
+                className="theia-input"
+                id="alwaysShowWelcomePage"
+                onChange={handleChange}
+                checked={alwaysShowWelcomePage}
+            />
+            <label htmlFor="alwaysShowWelcomePage">
+                {nls.localizeByDefault('Show welcome page on startup')}
+            </label>
+        </div>
+    );
 }
