@@ -25,6 +25,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WorkspaceServer, UntitledWorkspaceService } from '../common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
+import { notEmpty } from '@theia/core';
 
 @injectable()
 export class WorkspaceCliContribution implements CliContribution {
@@ -150,22 +151,21 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
     }
 
     async getRecentWorkspaces(): Promise<string[]> {
-        const listUri: string[] = [];
         const data = await this.readRecentWorkspacePathsFromUserHome();
         if (data && data.recentRoots) {
-            data.recentRoots.forEach(element => {
-                if (element.length > 0) {
-                    if (this.workspaceStillExist(element)) {
-                        listUri.push(element);
-                    }
+            const allRootUris = await Promise.all(data.recentRoots.map(element => new Promise<string | undefined>(async resolve => {
+                if (element && await this.workspaceStillExist(element)) {
+                    resolve(element);
                 }
-            });
+                resolve(undefined);
+            })));
+            return allRootUris.filter(notEmpty);
         }
-        return listUri;
+        return [];
     }
 
-    protected workspaceStillExist(workspaceRootUri: string): boolean {
-        return fs.pathExistsSync(FileUri.fsPath(workspaceRootUri));
+    protected async workspaceStillExist(workspaceRootUri: string): Promise<boolean> {
+        return fs.pathExists(FileUri.fsPath(workspaceRootUri));
     }
 
     protected async getWorkspaceURIFromCli(): Promise<string | undefined> {
