@@ -4,6 +4,13 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.43.0 - Unreleased
+
+<a name="breaking_changes_1.43.0">[Breaking Changes:](#breaking_changes_1.43.0)</a>
+
+- [core] removed `SETTINGS_OPEN` menupath constant - replaced by `MANAGE_GENERAL` [#12803](https://github.com/eclipse-theia/theia/pull/12803)
+- [core] removed `SETTINGS__THEME` menupath constant - replaced by `MANAGE_SETTINGS` [#12803](https://github.com/eclipse-theia/theia/pull/12803)
+
 ## v1.42.0 - 09/28/2023
 
 - [core] added `inversify` support in the frontend preload script [#12590](https://github.com/eclipse-theia/theia/pull/12590)

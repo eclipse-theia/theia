@@ -146,7 +146,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
             label: nls.localizeByDefault('Settings'),
             order: 'a10',
         });
-        menus.registerMenuAction(CommonMenus.SETTINGS_OPEN, {
+        menus.registerMenuAction(CommonMenus.MANAGE_SETTINGS, {
             commandId: CommonCommands.OPEN_PREFERENCES.id,
             label: nls.localizeByDefault('Settings'),
             order: 'a10',

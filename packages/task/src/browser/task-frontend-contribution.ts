@@ -19,7 +19,7 @@ import { ILogger, ContributionProvider, CommandContribution, Command, CommandReg
 import { QuickOpenTask, TaskTerminateQuickOpen, TaskRunningQuickOpen, TaskRestartRunningQuickOpen } from './quick-open-task';
 import {
     FrontendApplication, FrontendApplicationContribution, QuickAccessContribution,
-    KeybindingRegistry, KeybindingContribution, StorageService, StatusBar, StatusBarAlignment
+    KeybindingRegistry, KeybindingContribution, StorageService, StatusBar, StatusBarAlignment, CommonMenus
 } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { TaskContribution, TaskResolverRegistry, TaskProviderRegistry } from './task-contribution';
@@ -379,6 +379,12 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS_CONFIG, {
             commandId: TaskCommands.TASK_CONFIGURE.id,
             order: '0'
+        });
+
+        menus.registerMenuAction(CommonMenus.MANAGE_SETTINGS, {
+            commandId: TaskCommands.TASK_OPEN_USER.id,
+            label: nls.localizeByDefault('User Tasks'),
+            order: 'a40'
         });
     }
 
