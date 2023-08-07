@@ -19,7 +19,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Command, CommandRegistry, Disposable, Emitter, Event, URI } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { StorageService } from '@theia/core/lib/browser';
 import { NotebookKernelSourceAction } from '../../common';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from './notebook-service';
@@ -150,15 +151,19 @@ export class SourceCommand implements Disposable {
 
 }
 
+const NOTEBOOK_KERNEL_BINDING_STORAGE_KEY = 'notebook.kernel.bindings';
 @injectable()
 export class NotebookKernelService implements Disposable {
 
     @inject(NotebookService)
     protected notebookService: NotebookService;
 
+    @inject(StorageService)
+    protected storageService: StorageService;
+
     private readonly kernels = new Map<string, KernelInfo>();
 
-    private readonly notebookBindings = new Map<string, string>();
+    private notebookBindings: { [key: string]: string } = {};
 
     private readonly kernelDetectionTasks = new Map<string, NotebookKernelDetectionTask[]>();
     private readonly onDidChangeKernelDetectionTasksEmitter = new Emitter<string>();
@@ -179,6 +184,15 @@ export class NotebookKernelService implements Disposable {
 
     private readonly onDidChangeNotebookAffinityEmitter = new Emitter<void>();
     readonly onDidChangeNotebookAffinity: Event<void> = this.onDidChangeNotebookAffinityEmitter.event;
+
+    @postConstruct()
+    init(): void {
+        this.storageService.getData(NOTEBOOK_KERNEL_BINDING_STORAGE_KEY).then((value: { [key: string]: string } | undefined) => {
+            if (value) {
+                this.notebookBindings = value;
+            }
+        });
+    }
 
     registerKernel(kernel: NotebookKernel): Disposable {
         if (this.kernels.has(kernel.id)) {
@@ -213,7 +227,7 @@ export class NotebookKernelService implements Disposable {
         const all = kernels.map(obj => obj.kernel);
 
         // bound kernel
-        const selectedId = this.notebookBindings.get(`${notebook.viewType}/${notebook.uri}`);
+        const selectedId = this.notebookBindings[`${notebook.viewType}/${notebook.uri}`];
         const selected = selectedId ? this.kernels.get(selectedId)?.kernel : undefined;
         const suggestions = kernels.filter(item => item.instanceAffinity > 1).map(item => item.kernel); // TODO implement notebookAffinity
         const hidden = kernels.filter(item => item.instanceAffinity < 0).map(item => item.kernel);
@@ -223,13 +237,14 @@ export class NotebookKernelService implements Disposable {
 
     selectKernelForNotebook(kernel: NotebookKernel | undefined, notebook: NotebookTextModelLike): void {
         const key = `${notebook.viewType}/${notebook.uri}`;
-        const oldKernel = this.notebookBindings.get(key);
+        const oldKernel = this.notebookBindings[key];
         if (oldKernel !== kernel?.id) {
             if (kernel) {
-                this.notebookBindings.set(key, kernel.id);
+                this.notebookBindings[key] = kernel.id;
             } else {
-                this.notebookBindings.delete(key);
+                delete this.notebookBindings[key];
             }
+            this.storageService.setData(NOTEBOOK_KERNEL_BINDING_STORAGE_KEY, this.notebookBindings);
             this.onDidChangeSelectedNotebookKernelBindingEmitter.fire({ notebook: notebook.uri, oldKernel, newKernel: kernel?.id });
         }
     }

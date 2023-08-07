@@ -38,6 +38,12 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
                 this.setState({selectedKernelLabel: props.notebookKernelService.getKernel(event.newKernel ?? '')?.label});
             }
         });
+        // in case the selected kernel is added after the notebook is loaded
+        props.notebookKernelService.onDidAddKernel(() => {
+            if (!this.state.selectedKernelLabel) {
+                this.setState({selectedKernelLabel: props.notebookKernelService.getSelectedOrSuggestedKernel(props.notebookModel)?.label});
+            }
+        });
     }
 
     override render(): React.ReactNode {

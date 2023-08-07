@@ -26,7 +26,7 @@ import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookKernelService, NotebookKernel } from './notebook-kernel-service';
 import { CommandService, Disposable } from '@theia/core';
 import { NotebookKernelQuickPickService, NotebookKernelQuickPickServiceImpl } from './notebook-kernel-quick-pick-service';
-import { NotebookKernelHistoryService } from './notebookKernelHistoryService';
+import { NotebookKernelHistoryService } from './notebook-kernel-history-service';
 import { NotebookCommands } from '../contributions/notebook-actions-contribution';
 
 export interface CellExecutionParticipant {

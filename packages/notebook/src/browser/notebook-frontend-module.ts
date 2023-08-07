@@ -38,7 +38,7 @@ import { NotebookExecutionService } from './service/notebook-execution-service';
 import { NotebookExecutionStateService } from './service/notebook-execution-state-service';
 import { NotebookKernelService } from './service/notebook-kernel-service';
 import { KernelPickerMRUStrategy, NotebookKernelQuickPickService } from './service/notebook-kernel-quick-pick-service';
-import { NotebookKernelHistoryService } from './service/notebookKernelHistoryService';
+import { NotebookKernelHistoryService } from './service/notebook-kernel-history-service';
 import { NotebookEditorWidgetService } from './service/notebook-editor-service';
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
