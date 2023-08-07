@@ -67,6 +67,8 @@ export interface IBaseTerminalExitEvent {
     code?: number;
     reason?: TerminalExitReason;
     signal?: string;
+
+    attached?: boolean;
 }
 
 export enum TerminalExitReason {
@@ -79,7 +81,8 @@ export enum TerminalExitReason {
 
 export interface IBaseTerminalErrorEvent {
     terminalId: number;
-    error: Error
+    error: Error;
+    attached?: boolean;
 }
 
 export interface IBaseTerminalClient {

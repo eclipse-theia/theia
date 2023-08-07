@@ -21,10 +21,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { URI } from '@theia/core';
 import { Severity } from '@theia/core/lib/common/severity';
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
-// TODO use URI from `@theia/core` instead
-import { URI } from '@theia/core/shared/vscode-uri';
 
 export enum ApplyToKind {
     allDocuments,

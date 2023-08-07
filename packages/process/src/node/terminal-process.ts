@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { isWindows } from '@theia/core';
+import { Disposable, DisposableCollection, Emitter, Event, isWindows } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common';
 import { Process, ProcessType, ProcessOptions, /* ProcessErrorEvent */ } from './process';
 import { ProcessManager } from './process-manager';
@@ -54,6 +54,8 @@ export enum NodePtyErrors {
 export class TerminalProcess extends Process {
 
     protected readonly terminal: IPty | undefined;
+    private _delayedResizer: DelayedResizer | undefined;
+    private _exitCode: number | undefined;
 
     readonly outputStream = this.createOutputStream();
     readonly errorStream = new DevNullStream({ autoDestroy: true });
@@ -78,6 +80,19 @@ export class TerminalProcess extends Process {
             throw new Error('terminal processes cannot be forked as of today');
         }
         this.logger.debug('Starting terminal process', JSON.stringify(options, undefined, 2));
+
+        // Delay resizes to avoid conpty not respecting very early resize calls
+        // see https://github.com/microsoft/vscode/blob/a1c783c/src/vs/platform/terminal/node/terminalProcess.ts#L177
+        if (isWindows) {
+            this._delayedResizer = new DelayedResizer();
+            this._delayedResizer.onTrigger(dimensions => {
+                this._delayedResizer?.dispose();
+                this._delayedResizer = undefined;
+                if (dimensions.cols && dimensions.rows) {
+                    this.resize(dimensions.cols, dimensions.rows);
+                }
+            });
+        }
 
         const startTerminal = (command: string): { terminal: IPty | undefined, inputStream: Writable } => {
             try {
@@ -148,6 +163,7 @@ export class TerminalProcess extends Process {
             // signal value).  If it was terminated because of a signal, the
             // signal parameter will hold the signal number and code should
             // be ignored.
+            this._exitCode = exitCode;
             if (signal === undefined || signal === 0) {
                 this.onTerminalExit(exitCode, undefined);
             } else {
@@ -208,8 +224,32 @@ export class TerminalProcess extends Process {
     }
 
     resize(cols: number, rows: number): void {
+        if (typeof cols !== 'number' || typeof rows !== 'number' || isNaN(cols) || isNaN(rows)) {
+            return;
+        }
         this.checkTerminal();
-        this.terminal!.resize(cols, rows);
+        try {
+            // Ensure that cols and rows are always >= 1, this prevents a native exception in winpty.
+            cols = Math.max(cols, 1);
+            rows = Math.max(rows, 1);
+
+            // Delay resize if needed
+            if (this._delayedResizer) {
+                this._delayedResizer.cols = cols;
+                this._delayedResizer.rows = rows;
+                return;
+            }
+
+            this.terminal!.resize(cols, rows);
+        } catch (error) {
+            // swallow error if the pty has already exited
+            // see also https://github.com/microsoft/vscode/blob/a1c783c/src/vs/platform/terminal/node/terminalProcess.ts#L549
+            if (this._exitCode !== undefined &&
+                error.message !== 'ioctl(2) failed, EBADF' &&
+                error.message !== 'Cannot resize a pty that has already exited') {
+                throw error;
+            }
+        }
     }
 
     write(data: string): void {
@@ -223,4 +263,28 @@ export class TerminalProcess extends Process {
         }
     }
 
+}
+
+/**
+ * Tracks the latest resize event to be trigger at a later point.
+ */
+class DelayedResizer extends DisposableCollection {
+    rows: number | undefined;
+    cols: number | undefined;
+    private _timeout: NodeJS.Timeout;
+
+    private readonly _onTrigger = new Emitter<{ rows?: number; cols?: number }>();
+    get onTrigger(): Event<{ rows?: number; cols?: number }> { return this._onTrigger.event; }
+
+    constructor() {
+        super();
+        this.push(this._onTrigger);
+        this._timeout = setTimeout(() => this._onTrigger.fire({ rows: this.rows, cols: this.cols }), 1000);
+        this.push(Disposable.create(() => clearTimeout(this._timeout)));
+    }
+
+    override dispose(): void {
+        super.dispose();
+        clearTimeout(this._timeout);
+    }
 }

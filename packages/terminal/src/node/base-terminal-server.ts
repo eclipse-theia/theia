@@ -77,6 +77,8 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
                 // Didn't execute `unregisterProcess` on terminal `exit` event to enable attaching task output to terminal,
                 // Fixes https://github.com/eclipse-theia/theia/issues/2961
                 terminal.unregisterProcess();
+            } else {
+                this.postAttachAttempted(terminal);
             }
         }
     }
@@ -142,7 +144,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         this.client.updateTerminalEnvVariables();
     }
 
-    protected postCreate(term: TerminalProcess): void {
+    protected notifyClientOnExit(term: TerminalProcess): DisposableCollection {
         const toDispose = new DisposableCollection();
 
         toDispose.push(term.onError(error => {
@@ -150,8 +152,9 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
 
             if (this.client !== undefined) {
                 this.client.onTerminalError({
-                    'terminalId': term.id,
-                    'error': new Error(`Failed to execute terminal process (${error.code})`),
+                    terminalId: term.id,
+                    error: new Error(`Failed to execute terminal process (${error.code})`),
+                    attached: term instanceof TaskTerminalProcess && term.attachmentAttempted
                 });
             }
         }));
@@ -159,14 +162,24 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         toDispose.push(term.onExit(event => {
             if (this.client !== undefined) {
                 this.client.onTerminalExitChanged({
-                    'terminalId': term.id,
-                    'code': event.code,
-                    'reason': TerminalExitReason.Process,
-                    'signal': event.signal
+                    terminalId: term.id,
+                    code: event.code,
+                    reason: TerminalExitReason.Process,
+                    signal: event.signal,
+                    attached: term instanceof TaskTerminalProcess && term.attachmentAttempted
                 });
             }
         }));
+        return toDispose;
+    }
 
+    protected postCreate(term: TerminalProcess): void {
+        const toDispose = this.notifyClientOnExit(term);
+        this.terminalToDispose.set(term.id, toDispose);
+    }
+
+    protected postAttachAttempted(term: TaskTerminalProcess): void {
+        const toDispose = this.notifyClientOnExit(term);
         this.terminalToDispose.set(term.id, toDispose);
     }
 

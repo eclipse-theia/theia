@@ -206,21 +206,25 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         });
         this.toDispose.push(titleChangeListenerDispose);
 
-        this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
+        this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error, attached }) => {
             if (terminalId === this.terminalId) {
                 this.exitStatus = { code: undefined, reason: TerminalExitReason.Process };
-                this.dispose();
                 this.logger.error(`The terminal process terminated. Cause: ${error}`);
+                if (!attached) {
+                    this.dispose();
+                }
             }
         }));
-        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId, code, reason }) => {
+        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId, code, reason, attached }) => {
             if (terminalId === this.terminalId) {
                 if (reason) {
                     this.exitStatus = { code, reason };
                 } else {
                     this.exitStatus = { code, reason: TerminalExitReason.Process };
                 }
-                this.dispose();
+                if (!attached) {
+                    this.dispose();
+                }
             }
         }));
         this.toDispose.push(this.toDisposeOnConnect);
@@ -502,6 +506,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected async attachTerminal(id: number): Promise<number> {
         const terminalId = await this.shellTerminalServer.attach(id);
         if (IBaseTerminalServer.validateId(terminalId)) {
+            // reset exit status if a new terminal process is attached
+            this.exitStatus = undefined;
             return terminalId;
         }
         this.logger.warn(`Failed attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
@@ -776,7 +782,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return;
         }
         if (!IBaseTerminalServer.validateId(this.terminalId)
-            || !this.terminalService.getById(this.id)) {
+            || this.exitStatus
+            || !this.terminalService.getById(this.id)
+        ) {
             return;
         }
         const { cols, rows } = this.term;

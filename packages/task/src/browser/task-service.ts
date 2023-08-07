@@ -249,7 +249,7 @@ export class TaskService implements TaskConfigurationClient {
                                 }
                             }
                         }
-                        const uri = new URI(problem.resource.path).withScheme(problem.resource.scheme);
+                        const uri = problem.resource.withScheme(problem.resource.scheme);
                         const document = this.monacoWorkspace.getTextDocument(uri.toString());
                         if (problem.description.applyTo === ApplyToKind.openDocuments && !!document ||
                             problem.description.applyTo === ApplyToKind.closedDocuments && !document ||
