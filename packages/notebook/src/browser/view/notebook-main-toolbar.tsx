@@ -13,22 +13,44 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommandRegistry, CompoundMenuNodeRole, MenuModelRegistry, MenuNode } from '@theia/core';
+import { CommandRegistry, CompoundMenuNodeRole, MenuModelRegistry, MenuNode, nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
-import { NotebookMenus } from '../contributions/notebook-actions-contribution';
+import { codicon } from '@theia/core/lib/browser';
+import { NotebookCommands, NotebookMenus } from '../contributions/notebook-actions-contribution';
 import { NotebookModel } from '../view-model/notebook-model';
+import { NotebookKernelService } from '../service/notebook-kernel-service';
 
 export interface NotebookMainToolbarProps {
     notebookModel: NotebookModel
     menuRegistry: MenuModelRegistry;
+    notebookKernelService: NotebookKernelService;
     commandRegistry: CommandRegistry;
 }
 
-export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProps> {
+export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProps, {selectedKernelLabel?: string}> {
+
+    constructor(props: NotebookMainToolbarProps) {
+        super(props);
+
+        this.state = {selectedKernelLabel: props.notebookKernelService.getSelectedOrSuggestedKernel(props.notebookModel)?.label};
+        props.notebookKernelService.onDidChangeSelectedKernel(event => {
+            if (props.notebookModel.uri.isEqual(event.notebook)) {
+                this.setState({selectedKernelLabel: props.notebookKernelService.getKernel(event.newKernel ?? '')?.label});
+            }
+        });
+    }
 
     override render(): React.ReactNode {
         return <div className='theia-notebook-main-toolbar'>
             {this.getMenuItems().map(item => this.renderMenuItem(item))}
+            <div style={{flexGrow: 1}}></div>
+            <div className='theia-notebook-main-toolbar-item'
+                onClick={() => this.props.commandRegistry.executeCommand(NotebookCommands.SELECT_KERNEL_COMMAND.id, this.props.notebookModel)}>
+                <span className={codicon('server-environment')}/>
+                <span className=' theia-notebook-main-toolbar-item-text'>
+                    {this.state.selectedKernelLabel ?? nls.localizeByDefault('Select Kernel')}
+                </span>
+            </div>
         </div>;
     }
 

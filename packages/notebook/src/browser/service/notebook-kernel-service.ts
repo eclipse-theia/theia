@@ -243,6 +243,10 @@ export class NotebookKernelService implements Disposable {
         return info.all.length === 1 ? info.all[0] : undefined;
     }
 
+    getKernel(id: string): NotebookKernel | undefined {
+        return this.kernels.get(id)?.kernel;
+    }
+
     private static score(kernel: NotebookKernel, notebook: NotebookTextModelLike): number {
         if (kernel.viewType === '*') {
             return 5;
