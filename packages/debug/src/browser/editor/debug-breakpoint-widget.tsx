@@ -157,6 +157,7 @@ export class DebugBreakpointWidget implements Disposable {
             this.zone.layout(heightInLines);
             this.updatePlaceholder();
         }));
+        this._input.getControl().createContextKey<boolean>('breakpointWidgetFocus', true);
     }
 
     dispose(): void {
@@ -198,10 +199,12 @@ export class DebugBreakpointWidget implements Disposable {
         this.zone.show({ afterLineNumber, afterColumn, heightInLines, frameWidth: 1 });
         editor.setPosition(editor.getModel()!.getPositionAt(editor.getModel()!.getValueLength()));
         this._input.focus();
+        this.editor.getControl().createContextKey<boolean>('isBreakpointWidgetVisible', true);
     }
 
     hide(): void {
         this.zone.hide();
+        this.editor.getControl().createContextKey<boolean>('isBreakpointWidgetVisible', false);
         this.editor.focus();
     }
 
