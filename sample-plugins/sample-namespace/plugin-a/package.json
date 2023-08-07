@@ -12,7 +12,7 @@
     "vscode": "^1.50.0"
   },
   "activationEvents": [
-    "onCommand:plugin-a.hello"
+    "onStartupFinished"
   ],
   "devDependencies": {
     "@types/vscode": "^1.50.0"
@@ -26,6 +26,27 @@
       {
         "command": "plugin-a.hello",
         "title": "Hello from plugin-a"
+      }
+    ],
+    "problemPatterns": [
+      {
+        "name": "myproblempattern",
+        "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+        "file": 1,
+        "line": 2,
+        "column": 3,
+        "severity": 4,
+        "message": 5
+      }
+    ],
+    "problemMatchers": [
+      {
+        "name": "myproblemmatcher",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": "$myproblempattern"
       }
     ]
   }
