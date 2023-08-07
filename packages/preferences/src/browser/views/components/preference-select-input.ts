@@ -29,14 +29,15 @@ import { escapeInvisibleChars } from '@theia/core/lib/common/strings';
 export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JSONValue, HTMLDivElement> {
 
     protected readonly selectComponent = React.createRef<SelectComponent>();
-    protected readonly selectOptions: SelectOption[] = [];
+
+    protected selectOptions: SelectOption[] = [];
 
     protected get enumValues(): JSONValue[] {
         return this.preferenceNode.preference.data.enum!;
     }
 
     protected updateSelectOptions(): void {
-        this.selectOptions.splice(0);
+        const updatedSelectOptions: SelectOption[] = [];
         const values = this.enumValues;
         const preferenceData = this.preferenceNode.preference.data;
         const defaultValue = preferenceData.default;
@@ -52,7 +53,7 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
                 enumDescription = this.markdownRenderer.renderInline(markdownEnumDescription);
                 markdown = true;
             }
-            this.selectOptions.push({
+            updatedSelectOptions.push({
                 label,
                 value: stringValue,
                 detail,
@@ -60,6 +61,7 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
                 markdown
             });
         }
+        this.selectOptions = updatedSelectOptions;
     }
 
     protected createInteractable(parent: HTMLElement): void {
