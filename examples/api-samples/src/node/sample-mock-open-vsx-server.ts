@@ -21,6 +21,9 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { OVSXMockClient, VSXExtensionRaw } from '@theia/ovsx-client';
 import * as path from 'path';
 import { SampleAppInfo } from '../common/vsx/sample-app-info';
+import * as http from 'http';
+import * as https from 'https';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 type VersionedId = `${string}.${string}@${string}`;
 
@@ -35,6 +38,16 @@ export class SampleMockOpenVsxServer implements BackendApplicationContribution {
     @inject(SampleAppInfo)
     protected appInfo: SampleAppInfo;
 
+    protected mockClient: OVSXMockClient;
+    protected staticFileHandlers: Map<string, express.RequestHandler<{
+        namespace: string;
+        name: string;
+        version: string;
+    }, express.Response>>;
+
+    private readyDeferred = new Deferred<void>();
+    private ready = this.readyDeferred.promise;
+
     get mockServerPath(): string {
         return '/mock-open-vsx';
     }
@@ -43,23 +56,30 @@ export class SampleMockOpenVsxServer implements BackendApplicationContribution {
         return '../../sample-plugins';
     }
 
-    async configure(app: express.Application): Promise<void> {
+    async onStart?(server: http.Server | https.Server): Promise<void> {
         const selfOrigin = await this.appInfo.getSelfOrigin();
         const baseUrl = `${selfOrigin}${this.mockServerPath}`;
         const pluginsDb = await this.findMockPlugins(this.pluginsDbPath, baseUrl);
-        const staticFileHandlers = new Map(Array.from(pluginsDb.entries(), ([key, value]) => [key, express.static(value.path)]));
-        const mockClient = new OVSXMockClient(Array.from(pluginsDb.values(), value => value.data));
+        this.staticFileHandlers = new Map(Array.from(pluginsDb.entries(), ([key, value]) => [key, express.static(value.path)]));
+        this.mockClient = new OVSXMockClient(Array.from(pluginsDb.values(), value => value.data));
+        this.readyDeferred.resolve();
+    }
+
+    async configure(app: express.Application): Promise<void> {
         app.use(
             this.mockServerPath + '/api',
             express.Router()
                 .get('/-/query', async (req, res) => {
-                    res.json(await mockClient.query(this.sanitizeQuery(req.query)));
+                    await this.ready;
+                    res.json(await this.mockClient.query(this.sanitizeQuery(req.query)));
                 })
                 .get('/-/search', async (req, res) => {
-                    res.json(await mockClient.search(this.sanitizeQuery(req.query)));
+                    await this.ready;
+                    res.json(await this.mockClient.search(this.sanitizeQuery(req.query)));
                 })
                 .get('/:namespace', async (req, res) => {
-                    const extensions = mockClient.extensions
+                    await this.ready;
+                    const extensions = this.mockClient.extensions
                         .filter(ext => req.params.namespace === ext.namespace)
                         .map(ext => `${ext.namespaceUrl}/${ext.name}`);
                     if (extensions.length === 0) {
@@ -72,15 +92,17 @@ export class SampleMockOpenVsxServer implements BackendApplicationContribution {
                     }
                 })
                 .get('/:namespace/:name', async (req, res) => {
-                    res.json(mockClient.extensions.find(ext => req.params.namespace === ext.namespace && req.params.name === ext.name));
+                    await this.ready;
+                    res.json(this.mockClient.extensions.find(ext => req.params.namespace === ext.namespace && req.params.name === ext.name));
                 })
                 .get('/:namespace/:name/reviews', async (req, res) => {
                     res.json([]);
                 })
                 // implicitly GET/HEAD because of the express.static handlers
                 .use('/:namespace/:name/:version/file', async (req, res, next) => {
+                    await this.ready;
                     const versionedId = this.getVersionedId(req.params.namespace, req.params.name, req.params.version);
-                    const staticFileHandler = staticFileHandlers.get(versionedId);
+                    const staticFileHandler = this.staticFileHandlers.get(versionedId);
                     if (!staticFileHandler) {
                         return next();
                     }

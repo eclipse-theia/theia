@@ -35,7 +35,7 @@ export class CliManager {
     constructor(@inject(ContributionProvider) @named(CliContribution)
     protected readonly contributionsProvider: ContributionProvider<CliContribution>) { }
 
-    async initializeCli(argv: string[]): Promise<void> {
+    async initializeCli<T>(argv: string[], postSetArguments: () => Promise<void>, defaultCommand: () => Promise<void>): Promise<void> {
         const pack = require('../../package.json');
         const version = pack.version;
         const command = yargs.version(version);
@@ -43,14 +43,18 @@ export class CliManager {
         for (const contrib of this.contributionsProvider.getContributions()) {
             contrib.configure(command);
         }
-        const args = command
+        await command
             .detectLocale(false)
             .showHelpOnFail(false, 'Specify --help for available options')
             .help('help')
+            .middleware(async args => {
+                for (const contrib of this.contributionsProvider.getContributions()) {
+                    await contrib.setArguments(args);
+                }
+                await postSetArguments();
+            })
+            .command('$0', false, () => { }, defaultCommand)
             .parse(argv);
-        for (const contrib of this.contributionsProvider.getContributions()) {
-            await contrib.setArguments(args);
-        }
     }
 
     protected isExit(): boolean {

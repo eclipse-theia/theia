@@ -41,6 +41,7 @@ import { WebviewBackendSecurityWarnings } from './webview-backend-security-warni
 import { PluginUninstallationManager } from './plugin-uninstallation-manager';
 import { LocalizationServerImpl } from '@theia/core/lib/node/i18n/localization-server';
 import { PluginLocalizationServer } from './plugin-localization-server';
+import { PluginMgmtCliContribution } from './plugin-mgmt-cli-contribution';
 
 export function bindMainBackend(bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
@@ -84,6 +85,9 @@ export function bindMainBackend(bind: interfaces.Bind, unbind: interfaces.Unbind
 
     bind(PluginCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(PluginCliContribution);
+
+    bind(PluginMgmtCliContribution).toSelf().inSingletonScope();
+    bind(CliContribution).toService(PluginMgmtCliContribution);
 
     bind(WebviewBackendSecurityWarnings).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(WebviewBackendSecurityWarnings);

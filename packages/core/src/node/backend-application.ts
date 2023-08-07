@@ -170,6 +170,8 @@ export class BackendApplication {
     @inject(Stopwatch)
     protected readonly stopwatch: Stopwatch;
 
+    private _configured: Promise<void>;
+
     constructor(
         @inject(ContributionProvider) @named(BackendApplicationContribution)
         protected readonly contributionsProvider: ContributionProvider<BackendApplicationContribution>,
@@ -198,7 +200,7 @@ export class BackendApplication {
     }
 
     protected async initialize(): Promise<void> {
-        for (const contribution of this.contributionsProvider.getContributions()) {
+        await Promise.all(this.contributionsProvider.getContributions().map(async contribution => {
             if (contribution.initialize) {
                 try {
                     await this.measure(contribution.constructor.name + '.initialize',
@@ -208,18 +210,20 @@ export class BackendApplication {
                     console.error('Could not initialize contribution', error);
                 }
             }
-        }
+        }));
+    }
+
+    get configured(): Promise<void> {
+        return this._configured;
     }
 
     @postConstruct()
     protected init(): void {
-        this.configure();
+        this._configured = this.configure();
     }
 
     protected async configure(): Promise<void> {
-        // Do not await the initialization because contributions are expected to handle
-        // concurrent initialize/configure in undefined order if they provide both
-        this.initialize();
+        await this.initialize();
 
         this.app.get('*.js', this.serveGzipped.bind(this, 'text/javascript'));
         this.app.get('*.js.map', this.serveGzipped.bind(this, 'application/json'));
@@ -233,17 +237,16 @@ export class BackendApplication {
         this.app.get('*.woff', this.serveGzipped.bind(this, 'font/woff'));
         this.app.get('*.woff2', this.serveGzipped.bind(this, 'font/woff2'));
 
-        for (const contribution of this.contributionsProvider.getContributions()) {
+        await Promise.all(this.contributionsProvider.getContributions().map(async contribution => {
             if (contribution.configure) {
                 try {
-                    await this.measure(contribution.constructor.name + '.configure',
-                        () => contribution.configure!(this.app)
-                    );
+                    await contribution.configure!(this.app);
                 } catch (error) {
                     console.error('Could not configure contribution', error);
                 }
             }
-        }
+        }));
+        console.info('configured all backend app contributions');
     }
 
     use(...handlers: express.Handler[]): void {

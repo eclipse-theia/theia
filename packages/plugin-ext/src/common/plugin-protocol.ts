@@ -428,7 +428,7 @@ export interface PluginDeployerStartContext {
 export const PluginDeployer = Symbol('PluginDeployer');
 export interface PluginDeployer {
 
-    start(): void;
+    start(): Promise<void>;
 
 }
 
