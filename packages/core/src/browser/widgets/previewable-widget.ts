@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2022 Arm and others.
+// Copyright (C) 2023 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,15 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as path from 'path';
-import { injectable } from '@theia/core/shared/inversify';
-import { Application, static as ExpressStatic } from '@theia/core/shared/express';
-import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
+import { isFunction, isObject } from '../../common';
 
-@injectable()
-export class HostedPluginReader implements BackendApplicationContribution {
+export interface PreviewableWidget {
+    loaded?: boolean;
+    getPreviewNode(): Node | undefined;
+}
 
-    configure(app: Application): void {
-        app.use('/context', ExpressStatic(path.join(__dirname, 'context')));
+export namespace PreviewableWidget {
+    export function is(arg: unknown): arg is PreviewableWidget {
+        return isObject<PreviewableWidget>(arg) && isFunction(arg.getPreviewNode);
+    }
+    export function isPreviewable(arg: unknown): arg is PreviewableWidget {
+        return isObject<PreviewableWidget>(arg) && isFunction(arg.getPreviewNode) && arg.loaded === true;
     }
 }

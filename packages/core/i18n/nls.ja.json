@@ -30,7 +30,11 @@
         "showPreviousTabInGroup": "グループ内の前のタブに切り替える",
         "toggleMaximized": "トグル・マキシマイズ"
       },
-      "enhancedPreview": "水平タブバーにタブに関する詳細情報を表示するかどうかを制御します。",
+      "enhancedPreview": {
+        "classic": "タブの基本情報を含む簡単なプレビューを表示する。",
+        "enhanced": "追加情報を含むタブの拡張プレビューを表示します。",
+        "visual": "タブのビジュアルプレビューを表示する。"
+      },
       "file": {
         "browse": "ブラウズ"
       },
@@ -79,6 +83,7 @@
     "editor": {
       "dirtyEncoding": "ファイルが汚れています。別のエンコーディングで開き直す前に、まず保存してください。",
       "editor.codeActionWidget.showHeaders": "コードアクションメニューにグループヘッダを表示するかどうかを設定します。",
+      "editor.experimental.pasteActions.enabled": "ペースト時に拡張機能からの編集を実行するかどうかを設定します。",
       "editor.formatOnSaveMode.modificationsIfAvailable": "変更点のみをフォーマットしようとします(ソースコントロールが必要です)。ソースコントロールが使用できない場合は、ファイル全体がフォーマットされます。",
       "editor.inlayHints.enabled1": "インレイのヒントはデフォルトで表示され、`Ctrl+Alt`を押すと隠れます。",
       "editor.inlayHints.enabled2": "インレイのヒントはデフォルトでは非表示で、`Ctrl+Alt`を押したときに表示されます。",
@@ -216,6 +221,7 @@
         "offset-title": "からメモリをオフセットするバイト数{0}"
       },
       "editable": {
+        "apply": "変更を適用する",
         "clear": "クリアランス"
       },
       "endianness": "エンディアン",
@@ -323,6 +329,9 @@
       "watchMode": "開発中のプラグインにウォッチャーを実行"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "ログイン"
+      },
       "plugins": "プラグイン",
       "webviewTrace": "ウェブビューによる通信のトレースを制御します。",
       "webviewWarnIfUnsecure": "現在、ウェブビューが安全でない状態で展開されていることをユーザーに警告します。"

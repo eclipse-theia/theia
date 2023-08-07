@@ -81,9 +81,15 @@ export const corePreferenceSchema: PreferenceSchema = {
             markdownDescription: nls.localizeByDefault('Controls the dispatching logic for key presses to use either `code` (recommended) or `keyCode`.')
         },
         'window.tabbar.enhancedPreview': {
-            type: 'boolean',
-            default: false,
-            description: nls.localize('theia/core/enhancedPreview', 'Controls whether more information about the tab should be displayed in horizontal tab bars.')
+            type: 'string',
+            enum: ['classic', 'enhanced', 'visual'],
+            markdownEnumDescriptions: [
+                nls.localize('theia/core/enhancedPreview/classic', 'Display a simple preview of the tab with basic information.'),
+                nls.localize('theia/core/enhancedPreview/enhanced', 'Display an enhanced preview of the tab with additional information.'),
+                nls.localize('theia/core/enhancedPreview/visual', 'Display a visual preview of the tab.'),
+            ],
+            default: 'classic',
+            description: nls.localize('theia/core/enhancedPreview', 'Controls what information about the tab should be displayed in horizontal tab bars, when hovering.')
         },
         'window.menuBarVisibility': {
             type: 'string',
@@ -263,7 +269,7 @@ export interface CoreConfiguration {
     'breadcrumbs.enabled': boolean;
     'files.encoding': string;
     'keyboard.dispatch': 'code' | 'keyCode';
-    'window.tabbar.enhancedPreview': boolean;
+    'window.tabbar.enhancedPreview': 'classic' | 'enhanced' | 'visual';
     'window.menuBarVisibility': 'classic' | 'visible' | 'hidden' | 'compact';
     'window.title': string;
     'window.titleSeparator': string;

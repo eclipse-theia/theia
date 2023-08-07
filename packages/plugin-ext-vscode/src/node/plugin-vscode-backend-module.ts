@@ -22,11 +22,10 @@ import { PluginVsCodeFileHandler } from './plugin-vscode-file-handler';
 import { PluginVsCodeDirectoryHandler } from './plugin-vscode-directory-handler';
 import { VsCodePluginScanner } from './scanner-vscode';
 import { PluginVsCodeCliContribution } from './plugin-vscode-cli-contribution';
-import { BackendApplicationContribution, CliContribution } from '@theia/core/lib/node';
+import { CliContribution } from '@theia/core/lib/node';
 import { PluginHostEnvironmentVariable } from '@theia/plugin-ext/lib/common';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
 import { PluginVSCodeDeployerParticipant } from './plugin-vscode-deployer-participant';
-import { HostedPluginReader } from './plugin-reader';
 import { LocalVSIXFilePluginDeployerResolver } from './local-vsix-file-plugin-deployer-resolver';
 
 export default new ContainerModule(bind => {
@@ -42,9 +41,6 @@ export default new ContainerModule(bind => {
     bind(PluginVsCodeCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(PluginVsCodeCliContribution);
     bind(PluginHostEnvironmentVariable).toService(PluginVsCodeCliContribution);
-
-    bind(HostedPluginReader).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toService(HostedPluginReader);
 
     bind(PluginDeployerResolver).to(LocalVSIXFilePluginDeployerResolver).inSingletonScope();
 });

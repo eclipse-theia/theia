@@ -23,6 +23,7 @@ import { Emitter, Event, Disposable, DisposableCollection, MaybePromise, isObjec
 import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
 
 import PerfectScrollbar from 'perfect-scrollbar';
+import { PreviewableWidget } from '../widgets/previewable-widget';
 
 decorate(injectable(), Widget);
 decorate(unmanaged(), Widget, 0);
@@ -93,7 +94,7 @@ export namespace UnsafeWidgetUtilities {
 }
 
 @injectable()
-export class BaseWidget extends Widget {
+export class BaseWidget extends Widget implements PreviewableWidget {
 
     protected readonly onScrollYReachEndEmitter = new Emitter<void>();
     readonly onScrollYReachEnd: Event<void> = this.onScrollYReachEndEmitter.event;
@@ -214,6 +215,10 @@ export class BaseWidget extends Widget {
 
     protected addClipboardListener<K extends 'cut' | 'copy' | 'paste'>(element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject<K>): void {
         this.toDisposeOnDetach.push(addClipboardListener(element, type, listener));
+    }
+
+    getPreviewNode(): Node | undefined {
+        return this.node;
     }
 
     override setFlag(flag: Widget.Flag): void {

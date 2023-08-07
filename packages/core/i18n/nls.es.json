@@ -30,7 +30,11 @@
         "showPreviousTabInGroup": "Pasar a la pestaña anterior del grupo",
         "toggleMaximized": "Alternar maximizado"
       },
-      "enhancedPreview": "Controla si se debe mostrar más información sobre la pestaña en las barras de pestañas horizontales.",
+      "enhancedPreview": {
+        "classic": "Muestra una vista previa sencilla de la ficha con información básica.",
+        "enhanced": "Mostrar una vista previa mejorada de la ficha con información adicional.",
+        "visual": "Muestra una vista previa visual de la pestaña."
+      },
       "file": {
         "browse": "Visite"
       },
@@ -79,6 +83,7 @@
     "editor": {
       "dirtyEncoding": "El archivo está sucio. Por favor, guárdelo primero antes de volver a abrirlo con otra codificación.",
       "editor.codeActionWidget.showHeaders": "Activar/desactivar la visualización de las cabeceras de los grupos en el menú de acción del código.",
+      "editor.experimental.pasteActions.enabled": "Activar/desactivar la ejecución de ediciones desde extensiones al pegar.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Intentará formatear sólo las modificaciones (requiere control de origen). Si no se puede utilizar el control de origen, se formateará todo el archivo.",
       "editor.inlayHints.enabled1": "Los consejos de incrustación se muestran por defecto y se ocultan cuando se mantiene `Ctrl+Alt`.",
       "editor.inlayHints.enabled2": "Los consejos de incrustación están ocultos por defecto y se muestran cuando se mantiene pulsado `Ctrl+Alt`.",
@@ -216,6 +221,7 @@
         "offset-title": "Bytes para compensar la memoria de {0}"
       },
       "editable": {
+        "apply": "Aplicar cambios",
         "clear": "Cambios claros"
       },
       "endianness": "Endiosamiento",
@@ -323,6 +329,9 @@
       "watchMode": "Ejecutar el vigilante en el plugin en desarrollo"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Inicio de sesión"
+      },
       "plugins": "Plugins",
       "webviewTrace": "Controla el rastreo de la comunicación con los webviews.",
       "webviewWarnIfUnsecure": "Advierte a los usuarios de que las vistas web se despliegan actualmente de forma insegura."

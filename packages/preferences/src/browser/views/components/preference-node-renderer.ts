@@ -27,9 +27,9 @@ import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { PreferenceTreeModel } from '../../preference-tree-model';
 import { PreferencesSearchbarWidget } from '../preference-searchbar-widget';
-import * as markdownit from '@theia/core/shared/markdown-it';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import URI from '@theia/core/lib/common/uri';
+import { PreferenceMarkdownRenderer } from './preference-markdown-renderer';
 
 export const PreferenceNodeRendererFactory = Symbol('PreferenceNodeRendererFactory');
 export type PreferenceNodeRendererFactory = (node: Preference.TreeNode) => PreferenceNodeRenderer;
@@ -163,13 +163,13 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     @inject(PreferenceTreeModel) protected readonly model: PreferenceTreeModel;
     @inject(PreferencesSearchbarWidget) protected readonly searchbar: PreferencesSearchbarWidget;
     @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(PreferenceMarkdownRenderer) protected readonly markdownRenderer: PreferenceMarkdownRenderer;
 
     protected headlineWrapper: HTMLDivElement;
     protected gutter: HTMLDivElement;
     protected interactable: InteractableType;
     protected inspection: PreferenceInspection<ValueType> | undefined;
     protected isModifiedFromDefault = false;
-    protected markdownRenderer: markdownit;
 
     get schema(): PreferenceDataProperty {
         return this.preferenceNode.preference.data;
@@ -179,39 +179,12 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     protected override init(): void {
         this.setId();
         this.updateInspection();
-        this.markdownRenderer = this.buildMarkdownRenderer();
         this.domNode = this.createDomNode();
         this.updateModificationStatus();
     }
 
     protected updateInspection(): void {
         this.inspection = this.preferenceService.inspect<ValueType>(this.id, this.scopeTracker.currentScope.uri);
-    }
-
-    protected buildMarkdownRenderer(): markdownit {
-        const engine = markdownit();
-        const inlineCode = engine.renderer.rules.code_inline;
-
-        engine.renderer.rules.code_inline = (tokens, idx, options, env, self) => {
-            const token = tokens[idx];
-            const content = token.content;
-            if (content.startsWith('#') && content.endsWith('#')) {
-                const preferenceId = content.substring(1, content.length - 1);
-                const preferenceNode = this.model.getNodeFromPreferenceId(preferenceId);
-                if (preferenceNode) {
-                    let name = this.labelProvider.getName(preferenceNode);
-                    const prefix = this.labelProvider.getPrefix(preferenceNode, true);
-                    if (prefix) {
-                        name = prefix + name;
-                    }
-                    return `<a title="${preferenceId}" href="preference:${preferenceId}">${name}</a>`;
-                } else {
-                    console.warn(`Linked preference "${preferenceId}" not found. Source: "${this.preferenceNode.preferenceId}"`);
-                }
-            }
-            return inlineCode ? inlineCode(tokens, idx, options, env, self) : '';
-        };
-        return engine;
     }
 
     protected openLink(event: MouseEvent): void {

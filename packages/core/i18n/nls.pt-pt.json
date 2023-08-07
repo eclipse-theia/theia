@@ -30,7 +30,11 @@
         "showPreviousTabInGroup": "Mudar para o separador Anterior em Grupo",
         "toggleMaximized": "Alternar Maximizado"
       },
-      "enhancedPreview": "Controla se devem ser apresentadas mais informações sobre o separador nas barras de separadores horizontais.",
+      "enhancedPreview": {
+        "classic": "Apresenta uma pré-visualização simples do separador com informações básicas.",
+        "enhanced": "Apresentar uma pré-visualização melhorada do separador com informações adicionais.",
+        "visual": "Apresenta uma pré-visualização visual do separador."
+      },
       "file": {
         "browse": "Navegar"
       },
@@ -79,6 +83,7 @@
     "editor": {
       "dirtyEncoding": "O ficheiro está sujo. Por favor guardá-lo primeiro antes de o reabrir com outra codificação.",
       "editor.codeActionWidget.showHeaders": "Activar/desactivar mostrar os cabeçalhos de grupo no menu de acção de código.",
+      "editor.experimental.pasteActions.enabled": "Ativar/desativar a execução de edições de extensões ao colar.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tentará apenas formatar modificações (requer controlo da fonte). Se o controlo da fonte não puder ser utilizado, então o ficheiro inteiro será formatado.",
       "editor.inlayHints.enabled1": "Dicas de Inlay estão a mostrar por defeito e escondem-se quando se segura \"Ctrl+Alt\".",
       "editor.inlayHints.enabled2": "Dicas de Inlay são ocultadas por defeito e mostram quando se mantém 'Ctrl+Alt'.",
@@ -216,6 +221,7 @@
         "offset-title": "Bytes para compensar a memória de {0}"
       },
       "editable": {
+        "apply": "Aplicar alterações",
         "clear": "Mudanças claras"
       },
       "endianness": "Endianness",
@@ -323,6 +329,9 @@
       "watchMode": "Executar o watcher em plugin em desenvolvimento"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Iniciar sessão"
+      },
       "plugins": "Plugins",
       "webviewTrace": "Controla o rastreio da comunicação com visualizações na web.",
       "webviewWarnIfUnsecure": "Adverte os utilizadores de que as visualizações da web estão actualmente implantadas de forma insegura."
