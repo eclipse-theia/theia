@@ -124,4 +124,42 @@ describe('StatusBarEntryUtility', () => {
         expect((iconArr[3] as LabelIcon).name).equals('icon3');
     });
 
+    it('should strip nothing from an empty string', () => {
+        text = '';
+        const stripped: string = statusBarEntryUtility.stripIcons(text);
+        expect(stripped).to.be.equal(text);
+    });
+
+    it('should strip nothing from an string containing no icons', () => {
+        // Deliberate double space to verify not concatenating these words
+        text = 'foo  bar';
+        const stripped: string = statusBarEntryUtility.stripIcons(text);
+        expect(stripped).to.be.equal(text);
+    });
+
+    it("should strip a medial '$(icon)' from a string", () => {
+        text = 'foo $(icon) bar';
+        const stripped: string = statusBarEntryUtility.stripIcons(text);
+        expect(stripped).to.be.equal('foo bar');
+    });
+
+    it("should strip a terminal '$(icon)' from a string", () => {
+        // Deliberate double space to verify not concatenating these words
+        text = 'foo  bar $(icon)';
+        const stripped: string = statusBarEntryUtility.stripIcons(text);
+        expect(stripped).to.be.equal('foo  bar');
+    });
+
+    it("should strip an initial '$(icon)' from a string", () => {
+        // Deliberate double space to verify not concatenating these words
+        text = '$(icon) foo  bar';
+        const stripped: string = statusBarEntryUtility.stripIcons(text);
+        expect(stripped).to.be.equal('foo  bar');
+    });
+
+    it("should strip multiple '$(icon)' specifiers from a string", () => {
+        text = '$(icon1) foo $(icon2)$(icon3)  bar $(icon4) $(icon5)';
+        const stripped: string = statusBarEntryUtility.stripIcons(text);
+        expect(stripped).to.be.equal('foo bar');
+    });
 });
