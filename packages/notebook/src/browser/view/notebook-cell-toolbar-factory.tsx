@@ -46,7 +46,7 @@ export class NotebookCellToolbarFactory {
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
-    renderToolbar(menuPath: string[], notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
+    renderCellToolbar(menuPath: string[], notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
         return <NotebookCellToolbar inlineItems={this.getMenuItems(menuPath, notebookModel, cell)} />;
     }
 

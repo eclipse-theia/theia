@@ -26,19 +26,26 @@ import { notebookCellMonacoTextmodelService } from '../view/notebook-cell-editor
 import {
     CellInternalMetadataChangedEvent, CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata, NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput, CellData
 } from '../../common';
-import { NotebookCellContextManager } from '../service/notebook-cell-context-manager';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
 
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
 
-export function createNotebookCellModelContainer(parent: interfaces.Container, props: NotebookCellModelProps): interfaces.Container {
+export function createNotebookCellModelContainer(parent: interfaces.Container, props: NotebookCellModelProps,
+    notebookCellContextManager: new (...args: never[]) => unknown): interfaces.Container {
     const child = parent.createChild();
 
     child.bind(NotebookCellModelProps).toConstantValue(props);
-    child.bind(NotebookCellContextManager).toSelf().inSingletonScope();
+    // We need the constructor as property here to avoid circular dependencies for the context manager
+    child.bind(NotebookCellContextManagerSymbol).to(notebookCellContextManager).inSingletonScope();
     child.bind(NotebookCellModel).toSelf();
 
     return child;
+}
+
+const NotebookCellContextManagerSymbol = Symbol('NotebookCellContextManager');
+interface NotebookCellContextManager {
+    updateCellContext(cell: NotebookCellModel, context: HTMLElement): void;
+    dispose(): void;
 }
 
 const NotebookCellModelProps = Symbol('NotebookModelProps');
@@ -79,7 +86,7 @@ export class NotebookCellModel implements Disposable {
     private readonly requestCellEditChangeEmitter = new Emitter<boolean>();
     readonly onRequestCellEditChange = this.requestCellEditChangeEmitter.event;
 
-    @inject(NotebookCellContextManager)
+    @inject(NotebookCellContextManagerSymbol)
     protected notebookCellContextManager: NotebookCellContextManager;
 
     readonly outputs: NotebookCellOutputModel[];

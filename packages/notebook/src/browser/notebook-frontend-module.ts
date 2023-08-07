@@ -44,6 +44,7 @@ import { NotebookRendererMessagingService } from './service/notebook-renderer-me
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { notebookCellMonacoTextmodelService } from './view/notebook-cell-editor';
+import { NotebookCellContextManager } from './service/notebook-cell-context-manager';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Symbol('notebooks'));
@@ -81,6 +82,7 @@ export default new ContainerModule(bind => {
 
     bind(NotebookActionsContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(NotebookActionsContribution);
+    bind(MenuContribution).toService(NotebookActionsContribution);
 
     bind(NotebookCodeCellRenderer).toSelf().inSingletonScope();
     bind(NotebookMarkdownCellRenderer).toSelf().inSingletonScope();
@@ -92,6 +94,6 @@ export default new ContainerModule(bind => {
         createNotebookModelContainer(ctx.container, props).get(NotebookModel)
     );
     bind(NotebookCellModelFactory).toFactory(ctx => (props: NotebookCellModelProps) =>
-        createNotebookCellModelContainer(ctx.container, props).get(NotebookCellModel)
+        createNotebookCellModelContainer(ctx.container, props, NotebookCellContextManager).get(NotebookCellModel)
     );
 });

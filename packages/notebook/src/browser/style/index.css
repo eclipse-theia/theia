@@ -19,6 +19,7 @@
 }
 
  .theia-notebook-cell-list {
+    overflow-y: auto;
     list-style: none;
     padding-left: 0px;
     background-color: var(--theia-notebook-editorBackground);
@@ -156,8 +157,38 @@
     flex-direction: column;
 }
 
-.theia-notebook-cell-sidebar-button {
+.theia-notebook-main-toolbar {
+    position: sticky;
+    top: 0;
+    background: var(--theia-editor-background);
+    display: flex;
+    flex-direction: row;
+    z-index: 1; /*needed to be on rendered on top of monaco editors*/
+}
 
+.theia-notebook-main-toolbar-item {
+    height: 22px;
+    display: flex;
+    align-items: center;
+    margin: 0 4px;
+    padding: 2px;
+    text-align: center;
+    color: var(--theia-foreground) !important;
+    cursor: pointer;
+}
+
+.theia-notebook-main-toolbar-item:hover {
+    background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-notebook-main-toolbar-item-text {
+    padding: 0 4px;
+}
+
+.theia-notebook-toolbar-seperator {
+    width: 1px;
+    background-color: var(--theia-notebook-cellToolbarSeparator);
+    margin: 0 4px;
 }
 
 .theia-notebook-add-cell-buttons {

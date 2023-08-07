@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { CommandRegistry, URI } from '@theia/core';
+import { CommandRegistry, MenuModelRegistry, URI } from '@theia/core';
 import { ReactWidget, Navigatable, SaveableSource, Message, SaveableDelegate } from '@theia/core/lib/browser';
 import { ReactNode } from '@theia/core/shared/react';
 import { CellKind } from '../common';
@@ -27,6 +27,7 @@ import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 import { NotebookEditorWidgetService } from './service/notebook-editor-service';
+import { NotebookMainToolbar } from './view/notebook-main-toolbar';
 
 export const NotebookEditorContainerFactory = Symbol('NotebookModelFactory');
 
@@ -58,6 +59,9 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     @inject(CommandRegistry)
     protected commandRegistry: CommandRegistry;
+
+    @inject(MenuModelRegistry)
+    protected menuRegistry: MenuModelRegistry;
 
     @inject(NotebookEditorWidgetService)
     protected notebookEditorService: NotebookEditorWidgetService;
@@ -108,6 +112,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected render(): ReactNode {
         if (this._model) {
             return <div>
+                <NotebookMainToolbar commandRegistry={this.commandRegistry} menuRegistry={this.menuRegistry} notebookModel={this._model}/>
                 <NotebookCellListView renderers={this.renderers}
                     notebookModel={this._model}
                     toolbarRenderer={this.cellToolbarFactory}

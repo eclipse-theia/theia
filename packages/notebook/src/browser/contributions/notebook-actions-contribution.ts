@@ -14,17 +14,28 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { codicon } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from '../service/notebook-service';
 import { CellKind } from '../../common';
 import { KernelPickerMRUStrategy, NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
+import { NotebookExecutionService } from '../service/notebook-execution-service';
 
 export namespace NotebookCommands {
     export const ADD_NEW_CELL_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.add-new-cell',
+        iconClass: codicon('add')
+    });
+
+    export const ADD_NEW_MARKDOWN_CELL_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.add-new-markdown-cell',
+        iconClass: codicon('add')
+    });
+
+    export const ADD_NEW_CODE_CELL_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.add-new-code-cell',
         iconClass: codicon('add')
     });
 
@@ -33,10 +44,28 @@ export namespace NotebookCommands {
         category: 'Notebook',
         iconClass: codicon('server-environment')
     });
+
+    export const EXECUTE_NOTEBOOK_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.execute',
+        category: 'Notebook',
+        iconClass: codicon('run-all')
+    });
+
+    export const RESTART_NOTEBOOK_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.restart',
+        category: 'Notebook',
+        iconClass: codicon('debug-restart')
+    });
+
+    export const CLEAR_ALL_OUTPUTS_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.clear-all-outputs',
+        category: 'Notebook',
+        iconClass: codicon('clear-all')
+    });
 }
 
 @injectable()
-export class NotebookActionsContribution implements CommandContribution {
+export class NotebookActionsContribution implements CommandContribution, MenuContribution {
 
     @inject(NotebookService)
     protected notebookService: NotebookService;
@@ -44,17 +73,81 @@ export class NotebookActionsContribution implements CommandContribution {
     @inject(NotebookKernelQuickPickService)
     protected notebookKernelQuickPickService: KernelPickerMRUStrategy;
 
+    @inject(NotebookExecutionService)
+    protected notebookExecutionService: NotebookExecutionService;
+
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(NotebookCommands.ADD_NEW_CELL_COMMAND, {
             execute: (notebookModel: NotebookModel, cellKind: CellKind, index?: number) => {
-                notebookModel.insertNewCell(index ?? notebookModel.cells.length,
+                const insertIndex = index ?? (notebookModel.selectedCell ? notebookModel.cells.indexOf(notebookModel.selectedCell) : 0);
+                notebookModel.insertNewCell(insertIndex,
                     [this.notebookService.createEmptyCellModel(notebookModel, cellKind)]);
             }
+        });
+
+        commands.registerCommand(NotebookCommands.ADD_NEW_MARKDOWN_CELL_COMMAND, {
+            execute: (notebookModel: NotebookModel) => commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, notebookModel, CellKind.Markup)
+        });
+
+        commands.registerCommand(NotebookCommands.ADD_NEW_CODE_CELL_COMMAND, {
+            execute: (notebookModel: NotebookModel) => commands.executeCommand(NotebookCommands.ADD_NEW_CELL_COMMAND.id, notebookModel, CellKind.Code)
         });
 
         commands.registerCommand(NotebookCommands.SELECT_KERNEL_COMMAND, {
             execute: (notebookModel: NotebookModel) => this.notebookKernelQuickPickService.showQuickPick(notebookModel)
         });
+
+        commands.registerCommand(NotebookCommands.EXECUTE_NOTEBOOK_COMMAND, {
+            execute: (notebookModel: NotebookModel) => this.notebookExecutionService.executeNotebookCells(notebookModel, notebookModel.cells)
+        });
+
+        commands.registerCommand(NotebookCommands.CLEAR_ALL_OUTPUTS_COMMAND, {
+            execute: (notebookModel: NotebookModel) =>
+                notebookModel.cells.forEach(cell => cell.spliceNotebookCellOutputs({ start: 0, deleteCount: cell.outputs.length, newOutputs: [] }))
+        });
     }
 
+    registerMenus(menus: MenuModelRegistry): void {
+        // Add Notebook Cell items
+        menus.registerSubmenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP, 'Add Notebook Cell', { role: CompoundMenuNodeRole.Group });
+        menus.registerMenuAction(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP, {
+            commandId: NotebookCommands.ADD_NEW_CODE_CELL_COMMAND.id,
+            label: nls.localizeByDefault('Code'),
+            icon: codicon('add'),
+        });
+        menus.registerMenuAction(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP, {
+            commandId: NotebookCommands.ADD_NEW_MARKDOWN_CELL_COMMAND.id,
+            label: nls.localizeByDefault('Markdown'),
+            icon: codicon('add'),
+        });
+
+        // Execution related items
+        menus.registerSubmenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP, 'Cell Execution', { role: CompoundMenuNodeRole.Group });
+        menus.registerMenuAction(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP, {
+            commandId: NotebookCommands.EXECUTE_NOTEBOOK_COMMAND.id,
+            label: nls.localizeByDefault('Run All'),
+            icon: codicon('run-all'),
+            order: '10'
+        });
+        menus.registerMenuAction(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP, {
+            commandId: NotebookCommands.RESTART_NOTEBOOK_COMMAND.id,
+            label: nls.localizeByDefault('Restart'),
+            icon: codicon('debug-restart'),
+            order: '20'
+        });
+        menus.registerMenuAction(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP, {
+            commandId: NotebookCommands.CLEAR_ALL_OUTPUTS_COMMAND.id,
+            label: nls.localizeByDefault('Clear All Outputs'),
+            icon: codicon('clear-all'),
+            order: '30'
+        });
+        // other items
+    }
+
+}
+
+export namespace NotebookMenus {
+    export const NOTEBOOK_MAIN_TOOLBAR = ['notebook-main-toolbar'];
+    export const NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP = [...NOTEBOOK_MAIN_TOOLBAR, 'cell-add-group'];
+    export const NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP = [...NOTEBOOK_MAIN_TOOLBAR, 'cell-execution-group'];
 }

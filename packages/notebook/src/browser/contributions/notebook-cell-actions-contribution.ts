@@ -19,7 +19,7 @@ import { codicon } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
-import { NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE, NotebookContextKeys } from './notebook-context-keys';
+import { NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE, NotebookContextKeys, NOTEBOOK_CELL_EXECUTING } from './notebook-context-keys';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookCellOutputModel } from '../view-model/notebook-cell-output-model';
@@ -44,6 +44,10 @@ export namespace NotebookCellCommands {
     export const EXECUTE_SINGLE_CELL_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.execute-cell',
         iconClass: codicon('play'),
+    });
+    export const STOP_CELL_EXECUTION_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'notebook.cell.stop-cell-execution',
+        iconClass: codicon('stop'),
     });
 
     export const CLEAR_OUTPUTS_COMMAND = Command.toDefaultLocalizedCommand({
@@ -92,6 +96,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             label: nls.localizeByDefault('Execute Cell'),
             order: '10'
         });
+
         menus.registerMenuAction(NotebookCellActionContribution.ACTION_MENU, {
             commandId: NotebookCellCommands.SPLIT_CELL_COMMAND.id,
             icon: NotebookCellCommands.SPLIT_CELL_COMMAND.iconClass,
@@ -123,7 +128,15 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         menus.registerMenuAction(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, {
             commandId: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id,
             icon: NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.iconClass,
-            label: nls.localizeByDefault('Execute Cell')
+            label: nls.localizeByDefault('Execute Cell'),
+            when: `!${NOTEBOOK_CELL_EXECUTING}`
+        });
+        menus.registerMenuAction(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, {
+            commandId: NotebookCellCommands.STOP_CELL_EXECUTION_COMMAND.id,
+            icon: NotebookCellCommands.STOP_CELL_EXECUTION_COMMAND.iconClass,
+            label: nls.localizeByDefault('Stop Cell Execution'),
+            when: NOTEBOOK_CELL_EXECUTING
+
         });
 
         // code cell output sidebar menu
@@ -155,6 +168,9 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
         commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND, {
             execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => this.notebookExecutionService.executeNotebookCells(notebookModel, [cell])
+        });
+        commands.registerCommand(NotebookCellCommands.STOP_CELL_EXECUTION_COMMAND, {
+            execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => this.notebookExecutionService.cancelNotebookCells(notebookModel, [cell])
         });
         commands.registerCommand(NotebookCellCommands.CLEAR_OUTPUTS_COMMAND, {
             execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => cell.spliceNotebookCellOutputs({ start: 0, deleteCount: cell.outputs.length, newOutputs: [] })

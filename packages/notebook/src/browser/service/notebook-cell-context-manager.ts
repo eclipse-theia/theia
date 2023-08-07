@@ -17,13 +17,17 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ContextKeyService, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
-import { NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE } from '../contributions/notebook-context-keys';
+import { NOTEBOOK_CELL_EXECUTING, NOTEBOOK_CELL_EXECUTION_STATE, NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE } from '../contributions/notebook-context-keys';
 import { Disposable, DisposableCollection } from '@theia/core';
 import { CellKind } from '../../common';
+import { NotebookExecutionStateService } from '../service/notebook-execution-state-service';
 
 @injectable()
 export class NotebookCellContextManager implements Disposable {
     @inject(ContextKeyService) protected contextKeyService: ContextKeyService;
+
+    @inject(NotebookExecutionStateService)
+    protected readonly executionStateService: NotebookExecutionStateService;
 
     private readonly disposables = new DisposableCollection();
 
@@ -40,6 +44,12 @@ export class NotebookCellContextManager implements Disposable {
             this.currentStore.setContext(NOTEBOOK_CELL_TYPE, cell.cellKind === CellKind.Code ? 'code' : 'markdown');
 
             this.disposables.push(cell.onRequestCellEditChange(cellEdit => this.currentStore?.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cellEdit)));
+            this.disposables.push(this.executionStateService.onDidChangeExecution(e => {
+                if (e.affectsCell(cell.uri)) {
+                    this.currentStore?.setContext(NOTEBOOK_CELL_EXECUTING, !!e.changed);
+                    this.currentStore?.setContext(NOTEBOOK_CELL_EXECUTION_STATE, e.changed?.state ?? 'idle');
+                }
+            }));
         }
     }
 

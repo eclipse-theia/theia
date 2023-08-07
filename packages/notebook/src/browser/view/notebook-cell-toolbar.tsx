@@ -31,10 +31,6 @@ abstract class NotebookCellActionItems extends React.Component<NotebookCellToolb
 
 export class NotebookCellToolbar extends NotebookCellActionItems {
 
-    constructor(props: NotebookCellToolbarProps) {
-        super(props);
-    }
-
     override render(): React.ReactNode {
         return <div className='theia-notebook-cell-toolbar'>
             {this.props.inlineItems.map(item => this.renderItem(item))}
@@ -44,10 +40,6 @@ export class NotebookCellToolbar extends NotebookCellActionItems {
 }
 
 export class NotebookCellSidebar extends NotebookCellActionItems {
-
-    constructor(props: NotebookCellToolbarProps) {
-        super(props);
-    }
 
     override render(): React.ReactNode {
         return <div className='theia-notebook-cell-sidebar'>
