@@ -19,7 +19,8 @@
 import { inject, injectable } from 'inversify';
 import { ILogger, LogLevel } from '../logger';
 import { MaybePromise } from '../types';
-import { Measurement, MeasurementOptions } from './measurement';
+import { Measurement, MeasurementOptions, MeasurementResult } from './measurement';
+import { Emitter, Event } from '../event';
 
 /** The default log level for measurements that are not otherwise configured with a default. */
 const DEFAULT_LOG_LEVEL = LogLevel.INFO;
@@ -50,9 +51,19 @@ export abstract class Stopwatch {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
+    protected cachedResults: MeasurementResult[] = [];
+
+    protected onMeasurementResultEmitter = new Emitter<MeasurementResult>();
+    get onMeasurementResult(): Event<MeasurementResult> {
+        return this.onMeasurementResultEmitter.event;
+    }
+
     constructor(protected readonly defaultLogOptions: LogOptions) {
         if (!defaultLogOptions.defaultLogLevel) {
             defaultLogOptions.defaultLogLevel = DEFAULT_LOG_LEVEL;
+        }
+        if (defaultLogOptions.cacheResults === undefined) {
+            defaultLogOptions.cacheResults = true;
         }
     }
 
@@ -91,14 +102,17 @@ export abstract class Stopwatch {
         return result;
     }
 
-    protected createMeasurement(name: string, measurement: () => number, options?: MeasurementOptions): Measurement {
+    protected createMeasurement(name: string, measurement: () => { startTime: number, duration: number }, options?: MeasurementOptions): Measurement {
         const logOptions = this.mergeLogOptions(options);
 
         const result: Measurement = {
             name,
             stop: () => {
                 if (result.elapsed === undefined) {
-                    result.elapsed = measurement();
+                    const { startTime, duration } = measurement();
+                    result.elapsed = duration;
+                    this.handleCompletedMeasurement(name, startTime, duration, logOptions);
+
                 }
                 return result.elapsed;
             },
@@ -110,6 +124,19 @@ export abstract class Stopwatch {
         };
 
         return result;
+    }
+
+    protected handleCompletedMeasurement(name: string, startTime: number, elapsed: number, options: LogOptions): void {
+        const result: MeasurementResult = {
+            name,
+            elapsed,
+            startTime,
+            owner: options.owner
+        };
+        if (options.cacheResults) {
+            this.cachedResults.push(result);
+        }
+        this.onMeasurementResultEmitter.fire(result);
     }
 
     protected mergeLogOptions(logOptions?: Partial<LogOptions>): LogOptions {
@@ -152,6 +179,10 @@ export abstract class Stopwatch {
         const timeFromStart = `Finished ${(options.now() / 1000).toFixed(3)} s after ${start}`;
         const whatWasMeasured = options.context ? `[${options.context}] ${activity}` : activity;
         this.logger.log(level, `${whatWasMeasured}: ${elapsed.toFixed(1)} ms [${timeFromStart}]`, ...(options.arguments ?? []));
+    }
+
+    getCachedResults(): MeasurementResult[] {
+        return [...this.cachedResults];
     }
 
 }

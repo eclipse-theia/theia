@@ -101,4 +101,30 @@ export interface MeasurementOptions {
      * @see {@link thresholdLogLevel}
      */
     thresholdMillis?: number;
+
+    /**
+     * Flag to indicate whether the stopwatch should cache measurement results for later retrieval.
+     * For example the cache can be used to retrieve measurements which were taken during startup before a listener had a chance to register.
+     */
+    cacheResults?: boolean
+}
+
+/**
+ * Captures the result of a {@link Measurement} in a serializable format.
+ */
+export interface MeasurementResult {
+    /** The measurement name. This may show up in the performance measurement framework appropriate to the application context. */
+    name: string;
+
+    /** The time when the measurement recording has been started */
+    startTime: number;
+
+    /**
+     * The elapsed time measured, if it has been {@link stop stopped} and measured, or `NaN` if the platform disabled
+     * performance measurement.
+     */
+    elapsed: number;
+
+    /** An optional label for the application the start of which (in real time) is the basis of all measurements. */
+    owner?: string;
 }
