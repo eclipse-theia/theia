@@ -153,7 +153,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplicationContribution).toService(MonacoStatusBarContribution);
 
     bind(MonacoCommandRegistry).toSelf().inSingletonScope();
-    bind(CommandContribution).to(MonacoEditorCommandHandlers).inSingletonScope();
+    bind(MonacoEditorCommandHandlers).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(MonacoEditorCommandHandlers);
     bind(MonacoEditorMenuContribution).toSelf().inSingletonScope();
     bind(MenuContribution).toService(MonacoEditorMenuContribution);
     bind(MonacoKeybindingContribution).toSelf().inSingletonScope();
