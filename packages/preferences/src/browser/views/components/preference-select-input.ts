@@ -30,12 +30,14 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
 
     protected readonly selectComponent = React.createRef<SelectComponent>();
 
+    protected selectOptions: SelectOption[] = [];
+
     protected get enumValues(): JSONValue[] {
         return this.preferenceNode.preference.data.enum!;
     }
 
-    protected get selectOptions(): SelectOption[] {
-        const items: SelectOption[] = [];
+    protected updateSelectOptions(): void {
+        const updatedSelectOptions: SelectOption[] = [];
         const values = this.enumValues;
         const preferenceData = this.preferenceNode.preference.data;
         const defaultValue = preferenceData.default;
@@ -51,7 +53,7 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
                 enumDescription = this.markdownRenderer.renderInline(markdownEnumDescription);
                 markdown = true;
             }
-            items.push({
+            updatedSelectOptions.push({
                 label,
                 value: stringValue,
                 detail,
@@ -59,10 +61,11 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
                 markdown
             });
         }
-        return items;
+        this.selectOptions = updatedSelectOptions;
     }
 
     protected createInteractable(parent: HTMLElement): void {
+        this.updateSelectOptions();
         const interactable = document.createElement('div');
         const selectComponent = React.createElement(SelectComponent, {
             options: this.selectOptions,
@@ -86,6 +89,7 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
 
     protected doHandleValueChange(): void {
         this.updateInspection();
+        this.updateSelectOptions();
         const newValue = this.getDataValue();
         this.updateModificationStatus(this.getValue());
         if (document.activeElement !== this.interactable && this.selectComponent.current) {
