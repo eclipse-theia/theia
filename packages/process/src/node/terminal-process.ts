@@ -79,72 +79,100 @@ export class TerminalProcess extends Process {
         }
         this.logger.debug('Starting terminal process', JSON.stringify(options, undefined, 2));
 
-        try {
-            this.terminal = spawn(
-                options.command,
-                (isWindows && options.commandLine) || options.args || [],
-                options.options || {}
-            );
+        const startTerminal = (command: string): { terminal: IPty | undefined, inputStream: Writable } => {
+            try {
+                return this.createPseudoTerminal(command, options, ringBuffer);
+            } catch (error) {
+                // Normalize the error to make it as close as possible as what
+                // node's child_process.spawn would generate in the same
+                // situation.
+                const message: string = error.message;
 
-            process.nextTick(() => this.emitOnStarted());
-
-            // node-pty actually wait for the underlying streams to be closed before emitting exit.
-            // We should emulate the `exit` and `close` sequence.
-            this.terminal.on('exit', (code, signal) => {
-                // Make sure to only pass either code or signal as !undefined, not
-                // both.
-                //
-                // node-pty quirk: On Linux/macOS, if the process exited through the
-                // exit syscall (with an exit code), signal will be 0 (an invalid
-                // signal value).  If it was terminated because of a signal, the
-                // signal parameter will hold the signal number and code should
-                // be ignored.
-                if (signal === undefined || signal === 0) {
-                    this.onTerminalExit(code, undefined);
-                } else {
-                    this.onTerminalExit(undefined, signame(signal));
-                }
-                process.nextTick(() => {
-                    if (signal === undefined || signal === 0) {
-                        this.emitOnClose(code, undefined);
-                    } else {
-                        this.emitOnClose(undefined, signame(signal));
+                if (message.startsWith('File not found: ') || message.endsWith(NodePtyErrors.ENOENT)) {
+                    if (isWindows && command && !command.toLowerCase().endsWith('.exe')) {
+                        const commandExe = command + '.exe';
+                        this.logger.debug(`Trying terminal command '${commandExe}' because '${command}' was not found.`);
+                        return startTerminal(commandExe);
                     }
-                });
-            });
 
-            this.terminal.on('data', (data: string) => {
-                ringBuffer.enq(data);
-            });
+                    // Proceed with failure, reporting the original command because it was
+                    // the intended command and it was not found
+                    error.errno = 'ENOENT';
+                    error.code = 'ENOENT';
+                    error.path = options.command;
+                } else if (message.endsWith(NodePtyErrors.EACCES)) {
+                    // The shell program exists but was not accessible, so just fail
+                    error.errno = 'EACCES';
+                    error.code = 'EACCES';
+                    error.path = options.command;
+                }
 
-            this.inputStream = new Writable({
-                write: (chunk: string) => {
-                    this.write(chunk);
-                },
-            });
+                // node-pty throws exceptions on Windows.
+                // Call the client error handler, but first give them a chance to register it.
+                this.emitOnErrorAsync(error);
 
-        } catch (error) {
-            this.inputStream = new DevNullStream({ autoDestroy: true });
-
-            // Normalize the error to make it as close as possible as what
-            // node's child_process.spawn would generate in the same
-            // situation.
-            const message: string = error.message;
-
-            if (message.startsWith('File not found: ') || message.endsWith(NodePtyErrors.ENOENT)) {
-                error.errno = 'ENOENT';
-                error.code = 'ENOENT';
-                error.path = options.command;
-            } else if (message.endsWith(NodePtyErrors.EACCES)) {
-                error.errno = 'EACCES';
-                error.code = 'EACCES';
-                error.path = options.command;
+                return { terminal: undefined, inputStream: new DevNullStream({ autoDestroy: true }) };
             }
+        };
 
-            // node-pty throws exceptions on Windows.
-            // Call the client error handler, but first give them a chance to register it.
-            this.emitOnErrorAsync(error);
-        }
+        const { terminal, inputStream } = startTerminal(options.command);
+        this.terminal = terminal;
+        this.inputStream = inputStream;
+    }
+
+    /**
+     * Helper for the constructor to attempt to create the pseudo-terminal encapsulating the shell process.
+     *
+     * @param command the shell command to launch
+     * @param options options for the shell process
+     * @param ringBuffer a ring buffer in which to collect terminal output
+     * @returns the terminal PTY and a stream by which it may be sent input
+     */
+    private createPseudoTerminal(command: string, options: TerminalProcessOptions, ringBuffer: MultiRingBuffer): { terminal: IPty | undefined, inputStream: Writable } {
+        const terminal = spawn(
+            command,
+            (isWindows && options.commandLine) || options.args || [],
+            options.options || {}
+        );
+
+        process.nextTick(() => this.emitOnStarted());
+
+        // node-pty actually wait for the underlying streams to be closed before emitting exit.
+        // We should emulate the `exit` and `close` sequence.
+        terminal.onExit(({ exitCode, signal }) => {
+            // Make sure to only pass either code or signal as !undefined, not
+            // both.
+            //
+            // node-pty quirk: On Linux/macOS, if the process exited through the
+            // exit syscall (with an exit code), signal will be 0 (an invalid
+            // signal value).  If it was terminated because of a signal, the
+            // signal parameter will hold the signal number and code should
+            // be ignored.
+            if (signal === undefined || signal === 0) {
+                this.onTerminalExit(exitCode, undefined);
+            } else {
+                this.onTerminalExit(undefined, signame(signal));
+            }
+            process.nextTick(() => {
+                if (signal === undefined || signal === 0) {
+                    this.emitOnClose(exitCode, undefined);
+                } else {
+                    this.emitOnClose(undefined, signame(signal));
+                }
+            });
+        });
+
+        terminal.onData((data: string) => {
+            ringBuffer.enq(data);
+        });
+
+        const inputStream = new Writable({
+            write: (chunk: string) => {
+                this.write(chunk);
+            },
+        });
+
+        return { terminal, inputStream };
     }
 
     createOutputStream(): MultiRingBufferReadableStream {
