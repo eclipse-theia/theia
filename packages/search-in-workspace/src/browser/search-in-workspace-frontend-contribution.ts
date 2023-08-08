@@ -180,7 +180,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         });
 
         commands.registerCommand(SearchInWorkspaceCommands.FOCUS_NEXT_RESULT, {
-            isEnabled: () => this.tryGetWidget()?.hasResultList() ?? false,
+            isEnabled: () => this.withWidget(undefined, widget => widget.hasResultList()),
             execute: async () => {
                 const widget = await this.openView({ reveal: true });
                 widget.resultTreeWidget.selectNextResult();
@@ -188,7 +188,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         });
 
         commands.registerCommand(SearchInWorkspaceCommands.FOCUS_PREV_RESULT, {
-            isEnabled: () => this.tryGetWidget()?.hasResultList() ?? false,
+            isEnabled: () => this.withWidget(undefined, widget => widget.hasResultList()),
             execute: async () => {
                 const widget = await this.openView({ reveal: true });
                 widget.resultTreeWidget.selectPreviousResult();
@@ -372,10 +372,12 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         keybindings.registerKeybinding({
             command: SearchInWorkspaceCommands.FOCUS_NEXT_RESULT.id,
             keybinding: 'f4',
+            when: 'hasSearchResult'
         });
         keybindings.registerKeybinding({
             command: SearchInWorkspaceCommands.FOCUS_PREV_RESULT.id,
             keybinding: 'shift+f4',
+            when: 'hasSearchResult'
         });
         keybindings.registerKeybinding({
             command: SearchInWorkspaceCommands.DISMISS_RESULT.id,
