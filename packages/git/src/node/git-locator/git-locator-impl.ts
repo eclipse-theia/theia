@@ -77,7 +77,7 @@ export class GitLocatorImpl implements GitLocator {
                 }
             });
             if (context.maxCount >= 0 && paths.length >= context.maxCount) {
-                return Promise.all(paths.slice(0, context.maxCount).map(GitLocatorImpl.map));
+                return await Promise.all(paths.slice(0, context.maxCount).map(GitLocatorImpl.map));
             }
             const repositoryPaths = await Promise.all(paths.map(GitLocatorImpl.map));
             return this.locateFrom(
