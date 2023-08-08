@@ -36,6 +36,7 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Cell, NotebookDocument } from './notebook-document';
 import { NotebookEditor } from './notebook-editor';
 import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
+import { DocumentsExtImpl } from '../documents';
 
 export class NotebooksExtImpl implements NotebooksExt {
 
@@ -74,6 +75,7 @@ export class NotebooksExtImpl implements NotebooksExt {
         rpc: RPCProtocol,
         commands: CommandRegistryExt,
         private textDocumentsAndEditors: EditorsAndDocumentsExtImpl,
+        private textDocuments: DocumentsExtImpl
     ) {
         this.notebookProxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN);
         this.notebookDocumentsProxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN);
@@ -221,6 +223,7 @@ export class NotebooksExtImpl implements NotebooksExt {
                 const document = new NotebookDocument(
                     this.notebookDocumentsProxy,
                     this.textDocumentsAndEditors,
+                    this.textDocuments,
                     uri,
                     modelData
                 );

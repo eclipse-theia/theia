@@ -248,6 +248,7 @@ import { NotebooksExtImpl } from './notebook/notebooks';
 import { TelemetryExtImpl } from './telemetry-ext';
 import { NotebookRenderersExtImpl } from './notebook/notebook-renderers';
 import { NotebookKernelsExtImpl } from './notebook/notebook-kernels';
+import { NotebookDocumentsExtImpl } from './notebook/notebook-documents';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -271,9 +272,10 @@ export function createAPIFactory(
     const notificationExt = rpc.set(MAIN_RPC_CONTEXT.NOTIFICATION_EXT, new NotificationExtImpl(rpc));
     const editors = rpc.set(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, new TextEditorsExtImpl(rpc, editorsAndDocumentsExt));
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocumentsExt));
-    const notebooksExt = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT, new NotebooksExtImpl(rpc, commandRegistry, editorsAndDocumentsExt));
+    const notebooksExt = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT, new NotebooksExtImpl(rpc, commandRegistry, editorsAndDocumentsExt, documents));
     const notebookRenderers = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT, new NotebookRenderersExtImpl(rpc, notebooksExt));
     const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt, commandRegistry));
+    const notebookDocuments = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT, new NotebookDocumentsExtImpl(notebooksExt));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = rpc.set(MAIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_EXT, new OutputChannelRegistryExtImpl(rpc));
@@ -636,19 +638,19 @@ export function createAPIFactory(
                 return documents.onDidRemoveDocument(listener, thisArg, disposables);
             },
             onDidOpenNotebookDocument(listener, thisArg?, disposables?) {
-                return Disposable.NULL;
+                return notebooksExt.onDidOpenNotebookDocument(listener, thisArg, disposables);
             },
             onDidCloseNotebookDocument(listener, thisArg?, disposables?) {
-                return Disposable.NULL;
-            },
-            onDidChangeNotebookDocument(listener, thisArg?, disposables?) {
-                return Disposable.NULL;
+                return notebooksExt.onDidCloseNotebookDocument(listener, thisArg, disposables);
             },
             onWillSaveNotebookDocument(listener, thisArg?, disposables?) {
                 return Disposable.NULL;
             },
-            onDidSaveNotebookDocument(listener, thisArg?, disposables?) {
-                return Disposable.NULL;
+            onDidSaveNotebookDocument(listener, thisArg, disposables) {
+                return notebookDocuments.onDidSaveNotebookDocument(listener, thisArg, disposables);
+            },
+            onDidChangeNotebookDocument(listener, thisArg, disposables) {
+                return notebookDocuments.onDidChangeNotebookDocument(listener, thisArg, disposables);
             },
             onDidOpenTextDocument(listener, thisArg?, disposables?) {
                 return documents.onDidAddDocument(listener, thisArg, disposables);

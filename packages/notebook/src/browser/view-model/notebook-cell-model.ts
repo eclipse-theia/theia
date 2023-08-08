@@ -24,7 +24,8 @@ import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { notebookCellMonacoTextmodelService } from '../view/notebook-cell-editor';
 import {
-    CellInternalMetadataChangedEvent, CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata, NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput, CellData
+    CellInternalMetadataChangedEvent, CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata,
+    NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput, CellData, NotebookCell
 } from '../../common';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
 
@@ -63,25 +64,25 @@ export interface NotebookCellModelProps {
 }
 
 @injectable()
-export class NotebookCellModel implements Disposable {
+export class NotebookCellModel implements NotebookCell, Disposable {
 
-    private readonly ChangeOutputsEmitter = new Emitter<NotebookCellOutputsSplice>();
-    readonly onDidChangeOutputs: Event<NotebookCellOutputsSplice> = this.ChangeOutputsEmitter.event;
+    private readonly didChangeOutputsEmitter = new Emitter<NotebookCellOutputsSplice>();
+    readonly onDidChangeOutputs: Event<NotebookCellOutputsSplice> = this.didChangeOutputsEmitter.event;
 
-    private readonly ChangeOutputItemsEmitter = new Emitter<void>();
-    readonly onDidChangeOutputItems: Event<void> = this.ChangeOutputItemsEmitter.event;
+    private readonly didChangeOutputItemsEmitter = new Emitter<void>();
+    readonly onDidChangeOutputItems: Event<void> = this.didChangeOutputItemsEmitter.event;
 
-    private readonly ChangeContentEmitter = new Emitter<'content' | 'language' | 'mime'>();
-    readonly onDidChangeContent: Event<'content' | 'language' | 'mime'> = this.ChangeContentEmitter.event;
+    private readonly didChangeContentEmitter = new Emitter<'content' | 'language' | 'mime'>();
+    readonly onDidChangeContent: Event<'content' | 'language' | 'mime'> = this.didChangeContentEmitter.event;
 
-    private readonly ChangeMetadataEmitter = new Emitter<void>();
-    readonly onDidChangeMetadata: Event<void> = this.ChangeMetadataEmitter.event;
+    private readonly didChangeMetadataEmitter = new Emitter<void>();
+    readonly onDidChangeMetadata: Event<void> = this.didChangeMetadataEmitter.event;
 
-    private readonly ChangeInternalMetadataEmitter = new Emitter<CellInternalMetadataChangedEvent>();
-    readonly onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent> = this.ChangeInternalMetadataEmitter.event;
+    private readonly didChangeInternalMetadataEmitter = new Emitter<CellInternalMetadataChangedEvent>();
+    readonly onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent> = this.didChangeInternalMetadataEmitter.event;
 
-    private readonly ChangeLanguageEmitter = new Emitter<string>();
-    readonly onDidChangeLanguage: Event<string> = this.ChangeLanguageEmitter.event;
+    private readonly didChangeLanguageEmitter = new Emitter<string>();
+    readonly onDidChangeLanguage: Event<string> = this.didChangeLanguageEmitter.event;
 
     private readonly requestCellEditChangeEmitter = new Emitter<boolean>();
     readonly onRequestCellEditChange = this.requestCellEditChangeEmitter.event;
@@ -108,7 +109,7 @@ export class NotebookCellModel implements Disposable {
             ...{ runStartTimeAdjustment: computeRunStartTimeAdjustment(this._internalMetadata, newInternalMetadata) }
         };
         this._internalMetadata = newInternalMetadata;
-        this.ChangeInternalMetadataEmitter.fire({ lastRunSuccessChanged });
+        this.didChangeInternalMetadataEmitter.fire({ lastRunSuccessChanged });
 
     }
 
@@ -132,6 +133,22 @@ export class NotebookCellModel implements Disposable {
     get language(): string {
         return this.props.language;
     }
+
+    set language(newLanguage: string) {
+        if (this.language === newLanguage) {
+            return;
+        }
+
+        this.props.language = newLanguage;
+        if (this.textModel) {
+            this.textModel.setLanguageId(newLanguage);
+        }
+
+        this.language = newLanguage;
+        this.didChangeLanguageEmitter.fire(newLanguage);
+        this.didChangeContentEmitter.fire('language');
+    }
+
     get uri(): URI {
         return this.props.uri;
     }
@@ -158,12 +175,12 @@ export class NotebookCellModel implements Disposable {
     }
 
     dispose(): void {
-        this.ChangeOutputsEmitter.dispose();
-        this.ChangeOutputItemsEmitter.dispose();
-        this.ChangeContentEmitter.dispose();
-        this.ChangeMetadataEmitter.dispose();
-        this.ChangeInternalMetadataEmitter.dispose();
-        this.ChangeLanguageEmitter.dispose();
+        this.didChangeOutputsEmitter.dispose();
+        this.didChangeOutputItemsEmitter.dispose();
+        this.didChangeContentEmitter.dispose();
+        this.didChangeMetadataEmitter.dispose();
+        this.didChangeInternalMetadataEmitter.dispose();
+        this.didChangeLanguageEmitter.dispose();
         this.notebookCellContextManager.dispose();
         this.toDispose.dispose();
     }
@@ -188,10 +205,10 @@ export class NotebookCellModel implements Disposable {
             }
 
             this.outputs.splice(splice.start + commonLen, splice.deleteCount - commonLen, ...splice.newOutputs.slice(commonLen).map(op => new NotebookCellOutputModel(op)));
-            this.ChangeOutputsEmitter.fire({ start: splice.start + commonLen, deleteCount: splice.deleteCount - commonLen, newOutputs: splice.newOutputs.slice(commonLen) });
+            this.didChangeOutputsEmitter.fire({ start: splice.start + commonLen, deleteCount: splice.deleteCount - commonLen, newOutputs: splice.newOutputs.slice(commonLen) });
         } else {
             this.outputs.splice(splice.start, splice.deleteCount, ...splice.newOutputs.map(op => new NotebookCellOutputModel(op)));
-            this.ChangeOutputsEmitter.fire(splice);
+            this.didChangeOutputsEmitter.fire(splice);
         }
     }
 
@@ -203,7 +220,7 @@ export class NotebookCellModel implements Disposable {
         }
 
         output.replaceData(newOutputItem);
-        this.ChangeOutputItemsEmitter.fire();
+        this.didChangeOutputItemsEmitter.fire();
         return true;
     }
 

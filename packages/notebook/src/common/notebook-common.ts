@@ -93,6 +93,23 @@ export interface NotebookCellCollapseState {
     outputCollapsed?: boolean;
 }
 
+export interface NotebookCell {
+    readonly uri: URI;
+    handle: number;
+    language: string;
+    cellKind: CellKind;
+    outputs: CellOutput[];
+    metadata: NotebookCellMetadata;
+    internalMetadata: NotebookCellInternalMetadata;
+    textBuffer: string;
+    onDidChangeOutputs?: Event<NotebookCellOutputsSplice>;
+    onDidChangeOutputItems?: Event<void>;
+    onDidChangeLanguage: Event<string>;
+    onDidChangeMetadata: Event<void>;
+    onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent>;
+
+}
+
 export interface CellData {
     source: string;
     language: string;
@@ -190,9 +207,9 @@ export type SelectionState = SelectionHandleState | SelectionIndexState;
 
 export interface NotebookTextModelChangedEvent {
     readonly rawEvents: NotebookRawContentEvent[];
-    readonly versionId: number;
-    readonly synchronous: boolean | undefined;
-    readonly endSelectionState: SelectionState | undefined;
+    // readonly versionId: number;
+    readonly synchronous?: boolean;
+    readonly endSelectionState?: SelectionState;
 };
 
 export interface NotebookCellsInitializeEvent<T> {
@@ -259,10 +276,10 @@ export interface NotebookCellContentChangeEvent {
     readonly index: number;
 }
 
-export type NotebookRawContentEvent = (NotebookCellsInitializeEvent<CellData> | NotebookDocumentChangeMetadataEvent | NotebookCellContentChangeEvent |
-    NotebookCellsModelChangedEvent<CellData> | NotebookCellsModelMoveEvent<CellData> | NotebookOutputChangedEvent | NotebookOutputItemChangedEvent |
+export type NotebookRawContentEvent = (NotebookCellsInitializeEvent<NotebookCell> | NotebookDocumentChangeMetadataEvent | NotebookCellContentChangeEvent |
+    NotebookCellsModelChangedEvent<NotebookCell> | NotebookCellsModelMoveEvent<NotebookCell> | NotebookOutputChangedEvent | NotebookOutputItemChangedEvent |
     NotebookCellsChangeLanguageEvent | NotebookCellsChangeMetadataEvent |
-    NotebookCellsChangeInternalMetadataEvent | NotebookDocumentUnknownChangeEvent) & { transient: boolean };
+    NotebookCellsChangeInternalMetadataEvent | NotebookDocumentUnknownChangeEvent); // & { transient: boolean };
 
 export interface NotebookModelChangedEvent {
     readonly rawEvents: NotebookRawContentEvent[];
@@ -334,6 +351,24 @@ export interface CellMetadataEdit {
     metadata: NotebookCellMetadata;
 }
 
+export interface CellLanguageEdit {
+    editType: CellEditType.CellLanguage;
+    index: number;
+    language: string;
+}
+
+export interface DocumentMetadataEdit {
+    editType: CellEditType.DocumentMetadata;
+    metadata: NotebookDocumentMetadata;
+}
+
+export interface CellMoveEdit {
+    editType: CellEditType.Move;
+    index: number;
+    length: number;
+    newIdx: number;
+}
+
 export const enum CellEditType {
     Replace = 1,
     Output = 2,
@@ -347,7 +382,8 @@ export const enum CellEditType {
 }
 
 export type ImmediateCellEditOperation = CellOutputEditByHandle | CellOutputItemEdit | CellPartialInternalMetadataEditByHandle; // add more later on
-export type CellEditOperation = ImmediateCellEditOperation | CellReplaceEdit | CellOutputEdit | CellMetadataEdit; // add more later on
+export type CellEditOperation = ImmediateCellEditOperation | CellReplaceEdit | CellOutputEdit |
+    CellMetadataEdit | CellLanguageEdit | DocumentMetadataEdit | CellMoveEdit; // add more later on
 
 export type NullablePartialNotebookCellInternalMetadata = {
     [Key in keyof Partial<NotebookCellInternalMetadata>]: NotebookCellInternalMetadata[Key] | null

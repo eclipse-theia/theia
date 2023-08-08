@@ -1275,6 +1275,7 @@ export interface ModelAddedData {
     uri: UriComponents;
     versionId: number;
     lines: string[];
+    languageId?: string;
     EOL: string;
     modeId: string;
     isDirty: boolean;

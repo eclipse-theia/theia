@@ -18,7 +18,9 @@ import { Disposable, Emitter, URI } from '@theia/core';
 import { Saveable, SaveOptions } from '@theia/core/lib/browser';
 import {
     CellEditOperation, CellEditType, CellUri, NotebookCellInternalMetadata,
-    NotebookCellsChangeType, NotebookCellTextModelSplice, NotebookData, NotebookModelWillAddRemoveEvent, NotebookTextModelChangedEvent, NullablePartialNotebookCellInternalMetadata
+    NotebookCellsChangeType, NotebookCellTextModelSplice, NotebookData,
+    NotebookDocumentMetadata, NotebookModelWillAddRemoveEvent,
+    NotebookTextModelChangedEvent, NullablePartialNotebookCellInternalMetadata
 } from '../../common';
 import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -78,10 +80,6 @@ export class NotebookModel implements Saveable, Disposable {
 
     cells: NotebookCellModel[];
 
-    get data(): NotebookData {
-        return this.props.data;
-    }
-
     get uri(): URI {
         return this.props.uri;
     }
@@ -89,6 +87,8 @@ export class NotebookModel implements Saveable, Disposable {
     get viewType(): string {
         return this.props.viewType;
     }
+
+    metadata: NotebookDocumentMetadata = {};
 
     constructor(@inject(NotebookModelProps) private props: NotebookModelProps,
         @inject(MonacoTextModelService) modelService: MonacoTextModelService,
@@ -108,6 +108,8 @@ export class NotebookModel implements Saveable, Disposable {
         }));
 
         this.addCellOutputListeners(this.cells);
+
+        this.metadata = this.metadata;
 
         modelService.onDidCreate(editorModel => {
             const modelUri = new URI(editorModel.uri);
@@ -138,7 +140,7 @@ export class NotebookModel implements Saveable, Disposable {
 
         const serializedNotebook = await this.props.serializer.notebookToData({
             cells: this.cells.map(cell => cell.getData()),
-            metadata: this.data.metadata
+            metadata: this.metadata
         });
         this.fileService.writeFile(this.uri, serializedNotebook);
 
@@ -172,7 +174,7 @@ export class NotebookModel implements Saveable, Disposable {
         this.cells.splice(index, 0, ...cells);
         this.addCellOutputListeners(cells);
         this.didAddRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes } });
-        return;
+        this.onDidChangeContentEmitter.fire({ rawEvents: [{ kind: NotebookCellsChangeType.ModelChange, changes }] });
     }
 
     removeCell(index: number, count: number): void {
@@ -184,6 +186,7 @@ export class NotebookModel implements Saveable, Disposable {
 
         });
         this.didAddRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes } });
+        this.onDidChangeContentEmitter.fire({ rawEvents: [{ kind: NotebookCellsChangeType.ModelChange, changes }] });
     }
 
     applyEdits(rawEdits: CellEditOperation[]): void {
@@ -224,21 +227,22 @@ export class NotebookModel implements Saveable, Disposable {
 
                     break;
                 }
-                // case CellEditType.OutputItems:
-                //     break;
-                // case CellEditType.Metadata:
-                //     break;
-                // case CellEditType.PartialMetadata:
-                //     break;
+                case CellEditType.OutputItems:
+                    break;
+                case CellEditType.Metadata:
+                    this.updateNotebookMetadata(edit.metadata);
+                    break;
                 case CellEditType.PartialInternalMetadata:
                     this.changeCellInternalMetadataPartial(this.cells[cellIndex], edit.internalMetadata);
                     break;
-                // case CellEditType.CellLanguage:
-                //     break;
-                // case CellEditType.DocumentMetadata:
-                //     break;
-                // case CellEditType.Move:
-                //     break;
+                case CellEditType.CellLanguage:
+                    this.changeCellLanguage(this.cells[cellIndex], edit.language);
+                    break;
+                case CellEditType.DocumentMetadata:
+                    break;
+                case CellEditType.Move:
+                    this.moveCellToIndex(cellIndex, edit.length, edit.index);
+                    break;
 
             }
         }
@@ -265,6 +269,45 @@ export class NotebookModel implements Saveable, Disposable {
         }
 
         cell.internalMetadata = newInternalMetadata;
+        this.onDidChangeContentEmitter.fire({
+            rawEvents: [
+                { kind: NotebookCellsChangeType.ChangeCellInternalMetadata, index: this.cells.indexOf(cell), internalMetadata: newInternalMetadata }
+            ]
+        });
+    }
+
+    private updateNotebookMetadata(metadata: NotebookDocumentMetadata): void {
+        // const oldMetadata = this.metadata;
+
+        this.metadata = metadata;
+        this.onDidChangeContentEmitter.fire({
+            rawEvents: [{ kind: NotebookCellsChangeType.ChangeDocumentMetadata, metadata: this.metadata }],
+            synchronous: true,
+        });
+    }
+
+    private changeCellLanguage(cell: NotebookCellModel, languageId: string): void {
+        if (cell.language === languageId) {
+            return;
+        }
+
+        cell.language = languageId;
+
+        this.onDidChangeContentEmitter.fire({
+            rawEvents: [{ kind: NotebookCellsChangeType.ChangeCellLanguage, index: this.cells.indexOf(cell), language: languageId }],
+            synchronous: true,
+        });
+    }
+
+    private moveCellToIndex(index: number, length: number, newIdx: number): boolean {
+
+        const cells = this.cells.splice(index, length);
+        this.cells.splice(newIdx, 0, ...cells);
+        this.onDidChangeContentEmitter.fire({
+            rawEvents: [{ kind: NotebookCellsChangeType.Move, index, length, newIdx, cells }],
+        });
+
+        return true;
     }
 
     private getCellIndexByHandle(handle: number): number {

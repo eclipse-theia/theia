@@ -222,7 +222,7 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         return {
             viewType: e.viewType,
             uri: e.uri.toComponents(),
-            metadata: e.data.metadata,
+            metadata: e.metadata,
             versionId: 1, // TODO implement versionID support
             cells: e.cells.map(NotebookDto.toNotebookCellDto)
         };
