@@ -153,12 +153,8 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
     async getRecentWorkspaces(): Promise<string[]> {
         const data = await this.readRecentWorkspacePathsFromUserHome();
         if (data && data.recentRoots) {
-            const allRootUris = await Promise.all(data.recentRoots.map(element => new Promise<string | undefined>(async resolve => {
-                if (element && await this.workspaceStillExist(element)) {
-                    resolve(element);
-                }
-                resolve(undefined);
-            })));
+            const allRootUris = await Promise.all(data.recentRoots.map(async element =>
+                element && await this.workspaceStillExist(element) ? element : undefined));
             return allRootUris.filter(notEmpty);
         }
         return [];
