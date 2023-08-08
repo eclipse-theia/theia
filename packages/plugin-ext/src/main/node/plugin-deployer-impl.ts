@@ -295,39 +295,33 @@ export class PluginDeployerImpl implements PluginDeployer {
     /**
      * If there are some single files, try to see if we can work on these files (like unpacking it, etc)
      */
-    public async applyFileHandlers(pluginDeployerEntries: PluginDeployerEntry[]): Promise<any> {
-        const waitPromises = pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isResolved()).map(pluginDeployerEntry =>
-            this.pluginDeployerFileHandlers.reduce((acc, pluginFileHandler) => {
+    public async applyFileHandlers(pluginDeployerEntries: PluginDeployerEntry[]): Promise<void> {
+        const waitPromises = pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isResolved()).flatMap(pluginDeployerEntry =>
+            this.pluginDeployerFileHandlers.map(async pluginFileHandler => {
                 const proxyPluginDeployerEntry = new ProxyPluginDeployerEntry(pluginFileHandler, (pluginDeployerEntry) as PluginDeployerEntryImpl);
-                acc.push(async () => {
-                    if (await pluginFileHandler.accept(proxyPluginDeployerEntry)) {
-                        const pluginDeployerFileHandlerContext = new PluginDeployerFileHandlerContextImpl(proxyPluginDeployerEntry);
-                        await pluginFileHandler.handle(pluginDeployerFileHandlerContext);
-                    }
-                });
-                return acc;
-            }, [] as (() => Promise<void>)[])
-        ).reduce((left, right) => left.concat(right), []);
-        return Promise.all(waitPromises.map(promise => promise()));
+                if (await pluginFileHandler.accept(proxyPluginDeployerEntry)) {
+                    const pluginDeployerFileHandlerContext = new PluginDeployerFileHandlerContextImpl(proxyPluginDeployerEntry);
+                    await pluginFileHandler.handle(pluginDeployerFileHandlerContext);
+                }
+            })
+        );
+        return Promise.all(waitPromises) as Promise<unknown> as Promise<void>;
     }
 
     /**
      * Check for all registered directories to see if there are some plugins that can be accepted to be deployed.
      */
-    public async applyDirectoryFileHandlers(pluginDeployerEntries: PluginDeployerEntry[]): Promise<any> {
-        const waitPromises = pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isResolved()).map(pluginDeployerEntry =>
-            this.pluginDeployerDirectoryHandlers.reduce((acc, pluginDirectoryHandler) => {
+    public async applyDirectoryFileHandlers(pluginDeployerEntries: PluginDeployerEntry[]): Promise<void> {
+        const waitPromises = pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isResolved()).flatMap(pluginDeployerEntry =>
+            this.pluginDeployerDirectoryHandlers.map(async pluginDirectoryHandler => {
                 const proxyPluginDeployerEntry = new ProxyPluginDeployerEntry(pluginDirectoryHandler, (pluginDeployerEntry) as PluginDeployerEntryImpl);
-                acc.push(async () => {
-                    if (await pluginDirectoryHandler.accept(proxyPluginDeployerEntry)) {
-                        const pluginDeployerDirectoryHandlerContext = new PluginDeployerDirectoryHandlerContextImpl(proxyPluginDeployerEntry);
-                        await pluginDirectoryHandler.handle(pluginDeployerDirectoryHandlerContext);
-                    }
-                });
-                return acc;
-            }, [] as (() => Promise<void>)[])
-        ).reduce((left, right) => left.concat(right), []);
-        return Promise.all(waitPromises.map(promise => promise()));
+                if (await pluginDirectoryHandler.accept(proxyPluginDeployerEntry)) {
+                    const pluginDeployerDirectoryHandlerContext = new PluginDeployerDirectoryHandlerContextImpl(proxyPluginDeployerEntry);
+                    await pluginDirectoryHandler.handle(pluginDeployerDirectoryHandlerContext);
+                }
+            })
+        );
+        return Promise.all(waitPromises) as Promise<unknown> as Promise<void>;
     }
 
     /**
