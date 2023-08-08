@@ -19,7 +19,7 @@ import * as filenamify from 'filenamify';
 import * as fs from '@theia/core/shared/fs-extra';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import type { RecursivePartial, URI } from '@theia/core';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { Deferred, firstTrue } from '@theia/core/lib/common/promise-util';
 import { getTempDirPathAsync } from '@theia/plugin-ext/lib/main/node/temp-dir-util';
 import {
     PluginDeployerDirectoryHandler, PluginDeployerEntry, PluginDeployerDirectoryHandlerContext,
@@ -54,10 +54,10 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
     }
 
     protected async deriveMetadata(plugin: PluginDeployerEntry): Promise<boolean> {
-        return (
-            (await this.resolveFromSources(plugin)) ||
-            (await this.resolveFromVSIX(plugin)) ||
-            (this.resolveFromNpmTarball(plugin))
+        return firstTrue(
+            this.resolveFromSources(plugin),
+            this.resolveFromVSIX(plugin),
+            this.resolveFromNpmTarball(plugin)
         );
     }
 
