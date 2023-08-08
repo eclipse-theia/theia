@@ -140,9 +140,9 @@ export class PluginPathsServiceImpl implements PluginPathsService {
     }
 
     private async cleanupOldLogs(parentLogsDir: string): Promise<void> {
-        const dirEntries = await readdir(parentLogsDir, { withFileTypes: true }) as fs.Dirent[];
-        const subDirEntries = dirEntries.filter((dirent: fs.Dirent) => dirent.isDirectory());
-        const subDirNames = subDirEntries.map((dirent: fs.Dirent) => dirent.name);
+        const dirEntries = await readdir(parentLogsDir, { withFileTypes: true });
+        const subDirEntries = dirEntries.filter(dirent => dirent.isDirectory());
+        const subDirNames = subDirEntries.map(dirent => dirent.name);
         // We never clean a folder that is not a Theia logs session folder.
         // Even if it does appears under the `parentLogsDir`...
         const sessionSubDirNames = subDirNames.filter((dirName: string) => SESSION_TIMESTAMP_PATTERN.test(dirName));
