@@ -4,7 +4,10 @@
   "description": "Theia - GettingStarted Extension",
   "dependencies": {
     "@theia/core": "1.40.0",
+    "@theia/editor": "1.40.0",
+    "@theia/filesystem": "1.40.0",
     "@theia/keymaps": "1.40.0",
+    "@theia/preview": "1.40.0",
     "@theia/workspace": "1.40.0"
   },
   "publishConfig": {

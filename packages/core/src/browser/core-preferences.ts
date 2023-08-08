@@ -225,6 +225,19 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: isOSX ? 1500 : 500,
             description: nls.localizeByDefault('Controls the delay in milliseconds after which the hover is shown.')
         },
+        'workbench.startupEditor': {
+            type: 'string',
+            enum: ['none', 'welcomePage', 'readme', 'newUntitledFile', 'welcomePageInEmptyWorkbench'],
+            enumDescriptions: [
+                nls.localizeByDefault('Start without an editor.'),
+                nls.localize('theia/getting-started/startup-editor/welcomePage', 'Open the Welcome page, with content to aid in getting started with {0} and extensions.', FrontendApplicationConfigProvider.get().applicationName),
+                nls.localizeByDefault('Open the README when opening a folder that contains one, fallback to \'welcomePage\' otherwise. Note: This is only observed as a global configuration, it will be ignored if set in a workspace or folder configuration.'),
+                nls.localizeByDefault('Open a new untitled text file (only applies when opening an empty window).'),
+                nls.localizeByDefault('Open the Welcome page when opening an empty workbench.'),
+            ],
+            default: 'welcomePage',
+            description: nls.localizeByDefault('Controls which editor is shown at startup, if none are restored from the previous session.')
+        },
         'workbench.sash.hoverDelay': {
             type: 'number',
             default: 300,
@@ -285,6 +298,7 @@ export interface CoreConfiguration {
     'workbench.statusBar.visible': boolean;
     'workbench.tree.renderIndentGuides': 'onHover' | 'none' | 'always';
     'workbench.hover.delay': number;
+    'workbench.startupEditor': string;
     'workbench.sash.hoverDelay': number;
     'workbench.sash.size': number;
     'workbench.tab.maximize': boolean;
