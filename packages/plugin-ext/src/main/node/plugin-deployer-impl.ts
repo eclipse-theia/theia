@@ -321,7 +321,7 @@ export class PluginDeployerImpl implements PluginDeployer {
                 }
             })
         );
-        return Promise.all(waitPromises) as Promise<unknown> as Promise<void>;
+        await Promise.all(waitPromises);
     }
 
     /**
