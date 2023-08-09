@@ -18,7 +18,7 @@
 
 import debounce = require('lodash.debounce');
 import { injectable, inject, optional } from 'inversify';
-import { MAIN_MENU_BAR, SETTINGS_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU } from '../common/menu';
+import { MAIN_MENU_BAR, SETTINGS_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU, CompoundMenuNodeRole } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { FrontendApplication, FrontendApplicationContribution, OnWillStopAction } from './frontend-application';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
@@ -52,7 +52,7 @@ import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
 import { FormatType, Saveable, SaveOptions } from './saveable';
-import { QuickInputService, QuickPickItem, QuickPickItemOrSeparator } from './quick-input';
+import { QuickInputService, QuickPickItem, QuickPickItemOrSeparator, QuickPickSeparator } from './quick-input';
 import { AsyncLocalizationProvider } from '../common/i18n/localization';
 import { nls } from '../common/nls';
 import { CurrentWidgetCommandAdapter } from './shell/current-widget-command-adapter';
@@ -69,6 +69,7 @@ import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
 export namespace CommonMenus {
 
     export const FILE = [...MAIN_MENU_BAR, '1_file'];
+    export const FILE_NEW_TEXT = [...FILE, '1_new_text'];
     export const FILE_NEW = [...FILE, '1_new'];
     export const FILE_OPEN = [...FILE, '2_open'];
     export const FILE_SAVE = [...FILE, '3_save'];
@@ -78,6 +79,8 @@ export namespace CommonMenus {
     export const FILE_SETTINGS_SUBMENU_OPEN = [...FILE_SETTINGS_SUBMENU, '1_settings_submenu_open'];
     export const FILE_SETTINGS_SUBMENU_THEME = [...FILE_SETTINGS_SUBMENU, '2_settings_submenu_theme'];
     export const FILE_CLOSE = [...FILE, '6_close'];
+
+    export const FILE_NEW_CONTRIBUTIONS = 'file/newFile';
 
     export const EDIT = [...MAIN_MENU_BAR, '2_edit'];
     export const EDIT_UNDO = [...EDIT, '1_undo'];
@@ -272,10 +275,15 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Toggle Menu Bar'
     });
+    export const NEW_UNTITLED_TEXT_FILE = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.files.newUntitledTextFile',
+        category: FILE_CATEGORY,
+        label: 'New Untitled Text File'
+    });
     export const NEW_UNTITLED_FILE = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.files.newUntitledFile',
         category: FILE_CATEGORY,
-        label: 'New Untitled Text File'
+        label: 'New Untitled File'
     });
     export const SAVE = Command.toDefaultLocalizedCommand({
         id: 'core.save',
@@ -370,6 +378,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
+
+    @inject(MenuModelRegistry)
+    protected readonly menuRegistry: MenuModelRegistry;
 
     @inject(StorageService)
     protected readonly storageService: StorageService;
@@ -545,6 +556,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         registry.registerSubmenu(CommonMenus.VIEW, nls.localizeByDefault('View'));
         registry.registerSubmenu(CommonMenus.HELP, nls.localizeByDefault('Help'));
 
+        // For plugins contributing create new file commands/menu-actions
+        registry.registerIndependentSubmenu(CommonMenus.FILE_NEW_CONTRIBUTIONS, nls.localizeByDefault('New File...'));
+
         registry.registerMenuAction(CommonMenus.FILE_SAVE, {
             commandId: CommonCommands.SAVE.id
         });
@@ -693,10 +707,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
         registry.registerSubmenu(CommonMenus.VIEW_APPEARANCE_SUBMENU, nls.localizeByDefault('Appearance'));
 
-        registry.registerMenuAction(CommonMenus.FILE_NEW, {
+        registry.registerMenuAction(CommonMenus.FILE_NEW_TEXT, {
+            commandId: CommonCommands.NEW_UNTITLED_TEXT_FILE.id,
+            label: nls.localizeByDefault('New Text File'),
+            order: 'a'
+        });
+
+        registry.registerMenuAction(CommonMenus.FILE_NEW_TEXT, {
             commandId: CommonCommands.NEW_UNTITLED_FILE.id,
             label: nls.localizeByDefault('New File...'),
-            order: 'a'
+            order: 'a1'
         });
     }
 
@@ -941,12 +961,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: () => this.toggleBreadcrumbs(),
             isToggled: () => this.isBreadcrumbsEnabled(),
         });
-        commandRegistry.registerCommand(CommonCommands.NEW_UNTITLED_FILE, {
+        commandRegistry.registerCommand(CommonCommands.NEW_UNTITLED_TEXT_FILE, {
             execute: async () => {
                 const untitledUri = this.untitledResourceResolver.createUntitledURI('', await this.workingDirProvider.getUserWorkingDir());
                 this.untitledResourceResolver.resolve(untitledUri);
                 return open(this.openerService, untitledUri);
             }
+        });
+        commandRegistry.registerCommand(CommonCommands.NEW_UNTITLED_FILE, {
+            execute: async () => this.showNewFilePicker()
         });
         for (const [index, ordinal] of this.getOrdinalNumbers().entries()) {
             commandRegistry.registerCommand({ id: `workbench.action.focus${ordinal}EditorGroup`, label: index === 0 ? nls.localizeByDefault('Focus First Editor Group') : '', category: nls.localize(CommonCommands.VIEW_CATEGORY_KEY, CommonCommands.VIEW_CATEGORY) }, {
@@ -1097,7 +1120,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 when: 'activeEditorIsPinned'
             },
             {
-                command: CommonCommands.NEW_UNTITLED_FILE.id,
+                command: CommonCommands.NEW_UNTITLED_TEXT_FILE.id,
                 keybinding: this.isElectron() ? 'ctrlcmd+n' : 'alt+n',
             }
         );
@@ -1292,6 +1315,36 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     }
                 }
             });
+    }
+
+    protected async showNewFilePicker(): Promise<void> {
+        const newFileContributions = this.menuRegistry.getMenuNode(CommonMenus.FILE_NEW_CONTRIBUTIONS); // Add menus
+        const items: QuickPickItemOrSeparator[] = [
+            {
+                label: nls.localizeByDefault('New Text File'),
+                execute: async () => this.commandRegistry.executeCommand(CommonCommands.NEW_UNTITLED_TEXT_FILE.id)
+            },
+            ...newFileContributions.children
+                .flatMap(node => {
+                    if (node.children && node.children.length > 0) {
+                        return node.role === CompoundMenuNodeRole.Group || node.role === CompoundMenuNodeRole.Submenu ? [node, ...node.children] : node.children;
+                    }
+                    return node;
+                })
+                .filter(node => node.role || node.command)
+                .map(node => {
+                    if (node.role) {
+                        return { type: 'separator' } as QuickPickSeparator;
+                    }
+                    const command = this.commandRegistry.getCommand(node.command!);
+                    return {
+                        label: command!.label!,
+                        execute: async () => this.commandRegistry.executeCommand(command!.id!)
+                    };
+
+                })
+        ];
+        this.quickInputService.showQuickPick(items, { canSelectMany: false });
     }
 
     registerColors(colors: ColorRegistry): void {
