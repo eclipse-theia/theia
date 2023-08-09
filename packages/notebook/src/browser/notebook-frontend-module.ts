@@ -45,6 +45,7 @@ import { NotebookColorContribution } from './contributions/notebook-color-contri
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { notebookCellMonacoTextmodelService } from './view/notebook-cell-editor';
 import { NotebookCellContextManager } from './service/notebook-cell-context-manager';
+import { NotebookMainToolbarRenderer } from './view/notebook-main-toolbar';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Symbol('notebooks'));
@@ -86,6 +87,7 @@ export default new ContainerModule(bind => {
 
     bind(NotebookCodeCellRenderer).toSelf().inSingletonScope();
     bind(NotebookMarkdownCellRenderer).toSelf().inSingletonScope();
+    bind(NotebookMainToolbarRenderer).toSelf().inSingletonScope();
 
     bind(NotebookEditorContainerFactory).toFactory(ctx => (props: NotebookEditorProps) =>
         createNotebookEditorWidgetContainer(ctx.container, props).get(NotebookEditorWidget)

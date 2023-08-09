@@ -202,6 +202,12 @@ export class NotebookKernelService implements Disposable {
         this.kernels.set(kernel.id, new KernelInfo(kernel));
         this.onDidAddKernelEmitter.fire(kernel);
 
+        // auto associate the new kernel to existing notebooks it was
+        // associated to in the past.
+        for (const notebook of this.notebookService.getNotebookModels()) {
+            this.tryAutoBindNotebook(notebook, kernel);
+        }
+
         return Disposable.create(() => {
             if (this.kernels.delete(kernel.id)) {
                 this.onDidRemoveKernelEmitter.fire(kernel);
@@ -269,6 +275,23 @@ export class NotebookKernelService implements Disposable {
             return 10;
         } else {
             return 0;
+        }
+    }
+
+    private tryAutoBindNotebook(notebook: NotebookModel, onlyThisKernel?: NotebookKernel): void {
+
+        const id = this.notebookBindings[`${notebook.viewType}/${notebook.uri}`];
+        if (!id) {
+            // no kernel associated
+            return;
+        }
+        const existingKernel = this.kernels.get(id);
+        if (!existingKernel || !NotebookKernelService.score(existingKernel.kernel, notebook)) {
+            // associated kernel not known, not matching
+            return;
+        }
+        if (!onlyThisKernel || existingKernel.kernel === onlyThisKernel) {
+            this.onDidChangeSelectedNotebookKernelBindingEmitter.fire({ notebook: notebook.uri, oldKernel: undefined, newKernel: existingKernel.kernel.id });
         }
     }
 

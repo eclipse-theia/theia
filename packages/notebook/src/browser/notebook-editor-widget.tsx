@@ -27,8 +27,7 @@ import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 import { NotebookEditorWidgetService } from './service/notebook-editor-service';
-import { NotebookMainToolbar } from './view/notebook-main-toolbar';
-import { NotebookKernelService } from './service/notebook-kernel-service';
+import { NotebookMainToolbarRenderer } from './view/notebook-main-toolbar';
 
 export const NotebookEditorContainerFactory = Symbol('NotebookModelFactory');
 
@@ -67,8 +66,8 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     @inject(NotebookEditorWidgetService)
     protected notebookEditorService: NotebookEditorWidgetService;
 
-    @inject(NotebookKernelService)
-    protected notebookKernelService: NotebookKernelService;
+    @inject(NotebookMainToolbarRenderer)
+    protected notebookMainToolbarRenderer: NotebookMainToolbarRenderer;
 
     protected readonly onDidChangeModelEmitter = new Emitter<void>();
     readonly onDidChangeModel = this.onDidChangeModelEmitter.event;
@@ -116,8 +115,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected render(): ReactNode {
         if (this._model) {
             return <div>
-                <NotebookMainToolbar notebookModel={this._model}
-                    commandRegistry={this.commandRegistry} menuRegistry={this.menuRegistry}  notebookKernelService={this.notebookKernelService}/>
+                {this.notebookMainToolbarRenderer.render(this._model)}
                 <NotebookCellListView renderers={this.renderers}
                     notebookModel={this._model}
                     toolbarRenderer={this.cellToolbarFactory}

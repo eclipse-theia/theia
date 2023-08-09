@@ -107,7 +107,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             commandId: NotebookCellCommands.DELETE_COMMAND.id,
             icon: NotebookCellCommands.DELETE_COMMAND.iconClass,
             label: nls.localizeByDefault('Delete Cell'),
-            order: '30'
+            order: '999'
         });
 
         menus.registerSubmenu(
@@ -116,13 +116,13 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             {
                 icon: codicon('ellipsis'),
                 role: CompoundMenuNodeRole.Submenu,
-                order: '999'
+                order: '30'
             }
         );
-        menus.registerMenuAction(NotebookCellActionContribution.ADDITIONAL_ACTION_MENU, {
-            commandId: NotebookCellCommands.EDIT_COMMAND.id,
-            label: 'test submenu item',
-        });
+
+        menus.registerIndependentSubmenu(NotebookCellActionContribution.CONTRIBUTED_CELL_ACTION_MENU, '', { role: CompoundMenuNodeRole.Flat });
+        // since contributions are adding to an independent submenu we have to manually add it to the more submenu
+        menus.getMenu(NotebookCellActionContribution.ADDITIONAL_ACTION_MENU).addNode(menus.getMenuNode(NotebookCellActionContribution.CONTRIBUTED_CELL_ACTION_MENU));
 
         // code cell sidebar menu
         menus.registerMenuAction(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, {
@@ -136,8 +136,13 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             icon: NotebookCellCommands.STOP_CELL_EXECUTION_COMMAND.iconClass,
             label: nls.localizeByDefault('Stop Cell Execution'),
             when: NOTEBOOK_CELL_EXECUTING
-
         });
+
+        // Notebook Cell extra execution options
+        menus.registerIndependentSubmenu(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU,
+            nls.localizeByDefault('More...'),
+            { role: CompoundMenuNodeRole.Flat, icon: codicon('chevron-down') });
+        menus.getMenu(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU).addNode(menus.getMenuNode(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU));
 
         // code cell output sidebar menu
         menus.registerSubmenu(
@@ -184,6 +189,8 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 export namespace NotebookCellActionContribution {
     export const ACTION_MENU = ['notebook-cell-actions-menu'];
     export const ADDITIONAL_ACTION_MENU = [...ACTION_MENU, 'more'];
+    export const CONTRIBUTED_CELL_ACTION_MENU = 'notebook/cell/title';
+    export const CONTRIBUTED_CELL_EXECUTION_MENU = 'notebook/cell/execute';
     export const CODE_CELL_SIDEBAR_MENU = ['code-cell-sidebar-menu'];
     export const OUTPUT_SIDEBAR_MENU = ['code-cell-output-sidebar-menu'];
     export const ADDITIONAL_OUTPUT_SIDEBAR_MENU = [...OUTPUT_SIDEBAR_MENU, 'more'];

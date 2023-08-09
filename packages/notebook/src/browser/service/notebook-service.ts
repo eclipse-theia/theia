@@ -176,6 +176,10 @@ export class NotebookService implements Disposable {
         return this.notebookModels.get(uri.toString());
     }
 
+    getNotebookModels(): Iterable<NotebookModel> {
+        return this.notebookModels.values();
+    }
+
     async willOpenNotebook(type: string): Promise<void> {
         return this.willOpenNotebookTypeEmitter.sequence(async listener => listener(type));
     }

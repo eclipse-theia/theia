@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { CommandRegistry, CompoundMenuNodeRole, MenuModelRegistry } from '@theia/core';
+import { CommandRegistry, CompoundMenuNodeRole, MenuModelRegistry, MenuNode } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookCellSidebar, NotebookCellToolbar } from './notebook-cell-toolbar';
@@ -59,21 +59,30 @@ export class NotebookCellToolbarFactory {
 
         for (const menuNode of this.menuRegistry.getMenu(menuItemPath).children) {
             if (!menuNode.when || this.contextKeyService.match(menuNode.when, cell.context ?? undefined)) {
-                const menuPath = menuNode.role === CompoundMenuNodeRole.Submenu ? this.menuRegistry.getPath(menuNode) : undefined;
-                inlineItems.push({
-                    id: menuNode.id,
-                    icon: menuNode.icon,
-                    label: menuNode.label,
-                    onClick: menuPath ?
-                        e => this.contextMenuRenderer.render(
-                            { anchor: e.nativeEvent,
-                                menuPath,
-                                includeAnchorArg: false,
-                                args: [notebookModel, cell, output] }) :
-                        () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell, output)
-                });
+
+                if (menuNode.role === CompoundMenuNodeRole.Flat) {
+                    inlineItems.push(...menuNode.children?.map(child => this.createToolbarItem(child, notebookModel, cell, output)) ?? []);
+                } else {
+                    inlineItems.push(this.createToolbarItem(menuNode, notebookModel, cell, output));
+                }
             }
         }
         return inlineItems;
+    }
+
+    private createToolbarItem(menuNode: MenuNode, notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel): NotebookCellToolbarItem {
+        const menuPath = menuNode.role === CompoundMenuNodeRole.Submenu ? this.menuRegistry.getPath(menuNode) : undefined;
+        return {
+            id: menuNode.id,
+            icon: menuNode.icon,
+            label: menuNode.label,
+            onClick: menuPath ?
+                e => this.contextMenuRenderer.render(
+                    { anchor: e.nativeEvent,
+                        menuPath,
+                        includeAnchorArg: false,
+                        args: [notebookModel, cell, output] }) :
+                () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell, output)
+        };
     }
 }

@@ -51,12 +51,6 @@ export namespace NotebookCommands {
         iconClass: codicon('run-all')
     });
 
-    export const RESTART_NOTEBOOK_COMMAND = Command.toDefaultLocalizedCommand({
-        id: 'notebook.restart',
-        category: 'Notebook',
-        iconClass: codicon('debug-restart')
-    });
-
     export const CLEAR_ALL_OUTPUTS_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.clear-all-outputs',
         category: 'Notebook',
@@ -108,6 +102,8 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
     }
 
     registerMenus(menus: MenuModelRegistry): void {
+        // independent submenu for plugins to add commands
+        menus.registerIndependentSubmenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR, 'Notebook Main Toolbar');
         // Add Notebook Cell items
         menus.registerSubmenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP, 'Add Notebook Cell', { role: CompoundMenuNodeRole.Group });
         menus.registerMenuAction(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP, {
@@ -130,12 +126,6 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             order: '10'
         });
         menus.registerMenuAction(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP, {
-            commandId: NotebookCommands.RESTART_NOTEBOOK_COMMAND.id,
-            label: nls.localizeByDefault('Restart'),
-            icon: codicon('debug-restart'),
-            order: '20'
-        });
-        menus.registerMenuAction(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP, {
             commandId: NotebookCommands.CLEAR_ALL_OUTPUTS_COMMAND.id,
             label: nls.localizeByDefault('Clear All Outputs'),
             icon: codicon('clear-all'),
@@ -147,7 +137,7 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
 }
 
 export namespace NotebookMenus {
-    export const NOTEBOOK_MAIN_TOOLBAR = ['notebook-main-toolbar'];
-    export const NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP = [...NOTEBOOK_MAIN_TOOLBAR, 'cell-add-group'];
-    export const NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP = [...NOTEBOOK_MAIN_TOOLBAR, 'cell-execution-group'];
+    export const NOTEBOOK_MAIN_TOOLBAR = 'notebook/toolbar';
+    export const NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP = [NOTEBOOK_MAIN_TOOLBAR, 'cell-add-group'];
+    export const NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP = [NOTEBOOK_MAIN_TOOLBAR, 'cell-execution-group'];
 }

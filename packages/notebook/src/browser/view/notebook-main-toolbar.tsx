@@ -19,12 +19,32 @@ import { codicon } from '@theia/core/lib/browser';
 import { NotebookCommands, NotebookMenus } from '../contributions/notebook-actions-contribution';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookKernelService } from '../service/notebook-kernel-service';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 export interface NotebookMainToolbarProps {
     notebookModel: NotebookModel
     menuRegistry: MenuModelRegistry;
     notebookKernelService: NotebookKernelService;
     commandRegistry: CommandRegistry;
+    contextKeyService: ContextKeyService;
+}
+
+@injectable()
+export class NotebookMainToolbarRenderer {
+    @inject(NotebookKernelService) protected readonly notebookKernelService: NotebookKernelService;
+    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
+    @inject(MenuModelRegistry) protected readonly menuRegistry: MenuModelRegistry;
+    @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
+
+    render(notebookModel: NotebookModel): React.ReactNode {
+        return <NotebookMainToolbar notebookModel={notebookModel}
+            menuRegistry={this.menuRegistry}
+            notebookKernelService={this.notebookKernelService}
+            commandRegistry={this.commandRegistry}
+            contextKeyService={this.contextKeyService}
+            />;
+    }
 }
 
 export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProps, {selectedKernelLabel?: string}> {
@@ -62,11 +82,12 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
 
     private renderMenuItem(item: MenuNode): React.ReactNode {
         if (item.role === CompoundMenuNodeRole.Group) {
+            const itemNodes = item.children?.map(child => this.renderMenuItem(child)).filter(child => !!child);
             return <>
-                {item.children?.map(child => this.renderMenuItem(child))}
-                <span className='theia-notebook-toolbar-seperator'></span>
+                {itemNodes}
+                {itemNodes && itemNodes?.length > 0 && <span className='theia-notebook-toolbar-seperator'></span>}
             </>;
-        } else {
+        } else if (!item.when || this.props.contextKeyService.match(item.when)) {
             return <div key={item.id} className='theia-notebook-main-toolbar-item'
                 onClick={() => {
                     if (item.command) {
@@ -77,11 +98,12 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
                 <span className='theia-notebook-main-toolbar-item-text'>{item.label}</span>
                 </div>;
         }
-;
+        return undefined;
     }
 
     private getMenuItems(): readonly MenuNode[] {
         const menuPath = NotebookMenus.NOTEBOOK_MAIN_TOOLBAR;
-        return this.props.menuRegistry.getMenu(menuPath).children;
+        const pluginCommands = this.props.menuRegistry.getMenuNode(menuPath).children;
+        return this.props.menuRegistry.getMenu([menuPath]).children.concat(pluginCommands);
     }
 }
