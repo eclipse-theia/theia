@@ -89,6 +89,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         @inject(NotebookEditorProps) private readonly props: NotebookEditorProps) {
         super();
         this.id = NOTEBOOK_EDITOR_ID_PREFIX + this.props.uri.toString();
+        this.node.tabIndex = -1;
 
         this.title.closable = true;
         this.update();
@@ -102,6 +103,11 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this._model = await this.props.notebookData;
         this.saveable.set(this._model);
         this.update();
+    }
+
+    protected override onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.node.focus();
     }
 
     getResourceUri(): URI | undefined {
