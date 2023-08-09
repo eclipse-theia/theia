@@ -23,6 +23,7 @@ import { NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE, NotebookContextKe
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookCellOutputModel } from '../view-model/notebook-cell-output-model';
+import { CellEditType } from '../../common';
 
 export namespace NotebookCellCommands {
     export const EDIT_COMMAND = Command.toDefaultLocalizedCommand({
@@ -167,7 +168,12 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => cell.requestEdit() });
         commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => cell.requestStopEdit() });
         commands.registerCommand(NotebookCellCommands.DELETE_COMMAND, {
-            execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => notebookModel.removeCell(notebookModel.cells.indexOf(cell), 1)
+            execute: (notebookModel: NotebookModel, cell: NotebookCellModel) => notebookModel.applyEdits([{
+                editType: CellEditType.Replace,
+                index: notebookModel.cells.indexOf(cell),
+                count: 1,
+                cells: []
+            }], true)
         });
         commands.registerCommand(NotebookCellCommands.SPLIT_CELL_COMMAND);
 

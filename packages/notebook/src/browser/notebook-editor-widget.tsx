@@ -112,6 +112,14 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         return this.props.uri;
     }
 
+    undo(): void {
+        this.model?.undo();
+    }
+
+    redo(): void {
+        this.model?.redo();
+    }
+
     protected render(): ReactNode {
         if (this._model) {
             return <div>

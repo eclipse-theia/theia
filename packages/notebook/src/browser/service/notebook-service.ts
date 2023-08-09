@@ -17,7 +17,7 @@
 import { Disposable, DisposableCollection, Emitter, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { CellKind, CellUri, NotebookData, NotebookExtensionDescription, TransientOptions } from '../../common';
+import { NotebookData, NotebookExtensionDescription, TransientOptions } from '../../common';
 import { NotebookModel, NotebookModelFactory, NotebookModelProps } from '../view-model/notebook-model';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
@@ -118,20 +118,6 @@ export class NotebookService implements Disposable {
         this.notebookModels.set(uri.toString(), model);
         this.didAddNotebookDocumentEmitter.fire(model);
         return model;
-    }
-
-    createEmptyCellModel(notebookModel: NotebookModel, cellKind: CellKind): NotebookCellModel {
-        const firstCodeCell = notebookModel.cells.find(cell => cell.cellKind === CellKind.Code);
-
-        const handle = notebookModel.nextHandle++;
-        return this.notebookCellModelFactory({
-            uri: CellUri.generate(notebookModel.uri, handle),
-            cellKind,
-            handle,
-            language: firstCodeCell?.language ?? '', // TODO if no code cell use kernel default language
-            outputs: [],
-            source: '',
-        });
     }
 
     async getNotebookDataProvider(viewType: string): Promise<SimpleNotebookProviderInfo> {

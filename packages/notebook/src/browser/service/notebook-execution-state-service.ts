@@ -269,7 +269,7 @@ export class CellExecution implements Disposable {
     }
 
     private applyExecutionEdits(edits: CellEditOperation[]): void {
-        this.notebook.applyEdits(edits);
+        this.notebook.applyEdits(edits, false);
     }
 }
 

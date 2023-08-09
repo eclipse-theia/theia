@@ -72,7 +72,6 @@ import { PluginCustomEditorRegistry } from './custom-editors/plugin-custom-edito
 import { CustomEditorWidgetFactory } from '../browser/custom-editors/custom-editor-widget-factory';
 import { CustomEditorWidget } from './custom-editors/custom-editor-widget';
 import { CustomEditorService } from './custom-editors/custom-editor-service';
-import { UndoRedoService } from './custom-editors/undo-redo-service';
 import { WebviewFrontendSecurityWarnings } from './webview/webview-frontend-security-warnings';
 import { PluginAuthenticationServiceImpl } from './plugin-authentication-service';
 import { AuthenticationService } from '@theia/core/lib/browser/authentication-service';
@@ -195,8 +194,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CustomEditorWidget).toSelf();
     bind(CustomEditorWidgetFactory).toDynamicValue(ctx => new CustomEditorWidgetFactory(ctx.container)).inSingletonScope();
     bind(WidgetFactory).toService(CustomEditorWidgetFactory);
-
-    bind(UndoRedoService).toSelf().inSingletonScope();
 
     bind(PluginViewWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({

@@ -16,12 +16,13 @@
 
 import { Command, CommandContribution, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { codicon } from '@theia/core/lib/browser';
+import { ApplicationShell, codicon, CommonCommands } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from '../service/notebook-service';
-import { CellKind } from '../../common';
+import { CellEditType, CellKind } from '../../common';
 import { KernelPickerMRUStrategy, NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
+import { NotebookEditorWidget } from '../notebook-editor-widget';
 
 export namespace NotebookCommands {
     export const ADD_NEW_CELL_COMMAND = Command.toDefaultLocalizedCommand({
@@ -70,12 +71,27 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
     @inject(NotebookExecutionService)
     protected notebookExecutionService: NotebookExecutionService;
 
+    @inject(ApplicationShell)
+    protected shell: ApplicationShell;
+
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(NotebookCommands.ADD_NEW_CELL_COMMAND, {
             execute: (notebookModel: NotebookModel, cellKind: CellKind, index?: number) => {
                 const insertIndex = index ?? (notebookModel.selectedCell ? notebookModel.cells.indexOf(notebookModel.selectedCell) : 0);
-                notebookModel.insertNewCell(insertIndex,
-                    [this.notebookService.createEmptyCellModel(notebookModel, cellKind)]);
+                const firstCodeCell = notebookModel.cells.find(cell => cell.cellKind === CellKind.Code);
+
+                notebookModel.applyEdits([{
+                    editType: CellEditType.Replace,
+                    index: insertIndex,
+                    count: 0,
+                    cells: [{
+                        cellKind,
+                        language: firstCodeCell?.language ?? 'markdown',
+                        source: '',
+                        outputs: [],
+                        metadata: {},
+                    }]
+                }], true);
             }
         });
 
@@ -98,6 +114,15 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
         commands.registerCommand(NotebookCommands.CLEAR_ALL_OUTPUTS_COMMAND, {
             execute: (notebookModel: NotebookModel) =>
                 notebookModel.cells.forEach(cell => cell.spliceNotebookCellOutputs({ start: 0, deleteCount: cell.outputs.length, newOutputs: [] }))
+        });
+
+        commands.registerHandler(CommonCommands.UNDO.id, {
+            isEnabled: () => this.shell.activeWidget instanceof NotebookEditorWidget,
+            execute: () => (this.shell.activeWidget as NotebookEditorWidget).undo()
+        });
+        commands.registerHandler(CommonCommands.REDO.id, {
+            isEnabled: () => this.shell.activeWidget instanceof NotebookEditorWidget,
+            execute: () => (this.shell.activeWidget as NotebookEditorWidget).redo()
         });
     }
 
