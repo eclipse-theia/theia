@@ -25,200 +25,110 @@ import { ExpandableTreeNode } from './tree-expansion';
 
 describe('Selectable Tree', () => {
     let model: TreeModel;
-    beforeEach(() => {
-        model = createTreeModel();
-        model.root = MockSelectableTreeModel.HIERARCHICAL_MOCK_ROOT();
-    });
-    describe('Get Nodes Methods', () => {
+    function assertNodeRetrieval(method: () => TreeNode | undefined, sequence: string[]): void {
+        for (const expectedNodeId of sequence) {
+            const actualNode = method();
+            const expectedNode = retrieveNode<SelectableTreeNode>(expectedNodeId);
+            expect(actualNode?.id).to.be.equal(expectedNode.id);
+            model.addSelection(expectedNode);
+        }
+    }
+    function assertNodeSelection(method: () => void, sequence: string[]): void {
+        for (const expectedNodeId of sequence) {
+            method();
+            const node = retrieveNode<SelectableTreeNode>(expectedNodeId);
+            expect(node.selected).to.be.true;
+        }
+    }
+    describe('Get and Set Next Nodes Methods', () => {
+        const uncollapsedSelectionOrder = ['1.1', '1.1.1', '1.1.2', '1.2', '1.2.1', '1.2.1.1', '1.2.1.2', '1.2.2', '1.2.3', '1.3'];
+        const collapsedSelectionOrder = ['1.1', '1.2', '1.2.1', '1.2.2', '1.2.3', '1.3'];
+        beforeEach(() => {
+            model = createTreeModel();
+            model.root = MockSelectableTreeModel.HIERARCHICAL_MOCK_ROOT();
+            model.addSelection(retrieveNode<SelectableTreeNode>('1'));
+
+        });
         it('`getNextNode()` should select each node in sequence (uncollapsed)', done => {
-            const expectedSelectionOrder = ['1.1', '1.1.1', '1.1.2', '1.2', '1.2.1', '1.2.1.1', '1.2.1.2', '1.2.2', '1.2.3', '1.3'];
-            const rootNode = retrieveNode<SelectableTreeNode>('1');
-            model.addSelection(rootNode);
-            for (const expectedNodeId of expectedSelectionOrder) {
-                const actualNode = model.getNextNode();
-                const expectedNode = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(actualNode?.id).to.be.equal(expectedNode.id);
-                model.addSelection(expectedNode);
-            }
+            assertNodeRetrieval(model.getNextNode.bind(model), uncollapsedSelectionOrder);
             done();
         });
         it('`getNextNode()` should select each node in sequence (collapsed)', done => {
             collapseNode('1.1', '1.2.1');
-            const expectedSelectionOrder = ['1.1', '1.1.1', '1.1.2', '1.2', '1.2.1', '1.2.1.1', '1.2.1.2', '1.2.2', '1.2.3', '1.3'];
-            const rootNode = retrieveNode<SelectableTreeNode>('1');
-            model.addSelection(rootNode);
-            for (const expectedNodeId of expectedSelectionOrder) {
-                const actualNode = model.getNextNode();
-                const expectedNode = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(actualNode?.id).to.be.equal(expectedNode.id);
-                model.addSelection(expectedNode);
-            }
+            assertNodeRetrieval(model.getNextNode.bind(model), uncollapsedSelectionOrder);
             done();
         });
         it('`getNextSelectableNode()` should select each node in sequence (uncollapsed)', done => {
-            const expectedSelectionOrder = ['1.1', '1.1.1', '1.1.2', '1.2', '1.2.1', '1.2.1.1', '1.2.1.2', '1.2.2', '1.2.3', '1.3'];
-            const rootNode = retrieveNode<SelectableTreeNode>('1');
-            model.addSelection(rootNode);
-            for (const expectedNodeId of expectedSelectionOrder) {
-                const actualNode = model.getNextSelectableNode();
-                const expectedNode = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(actualNode?.id).to.be.equal(expectedNode.id);
-                model.addSelection(expectedNode);
-            }
+            assertNodeRetrieval(model.getNextSelectableNode.bind(model), uncollapsedSelectionOrder);
             done();
         });
         it('`getNextSelectableNode()` should select each node in sequence (collapsed)', done => {
             collapseNode('1.1', '1.2.1');
-            const expectedSelectionOrder = ['1.1', '1.2', '1.2.1', '1.2.2', '1.2.3', '1.3'];
-            const rootNode = retrieveNode<SelectableTreeNode>('1');
-            model.addSelection(rootNode);
-            for (const expectedNodeId of expectedSelectionOrder) {
-                const actualNode = model.getNextSelectableNode();
-                const expectedNode = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(actualNode?.id).to.be.equal(expectedNode.id);
-                model.addSelection(expectedNode);
-            }
+            assertNodeRetrieval(model.getNextSelectableNode.bind(model), collapsedSelectionOrder);
             done();
         });
-        it('`getPrevNode()` should select each node in reverse sequence (uncollapsed)', done => {
-            const expectedSelectionOrder = ['1.2.3', '1.2.2', '1.2.1.2', '1.2.1.1', '1.2.1', '1.2', '1.1.2', '1.1.1', '1.1'];
-            const rootNode = retrieveNode<SelectableTreeNode>('1.3');
-            model.addSelection(rootNode);
-            for (const expectedNodeId of expectedSelectionOrder) {
-                const actualNode = model.getPrevNode();
-                const expectedNode = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(actualNode?.id).to.be.equal(expectedNode.id);
-                model.addSelection(expectedNode);
-            }
-            done();
-        });
-        it('`getPrevNode()` should select each node in reverse sequence (collapsed)', done => {
-            collapseNode('1.1', '1.2.1');
-            const expectedSelectionOrder = ['1.2.3', '1.2.2', '1.2.1.2', '1.2.1.1', '1.2.1', '1.2', '1.1.2', '1.1.1', '1.1'];
-            const rootNode = retrieveNode<SelectableTreeNode>('1.3');
-            model.addSelection(rootNode);
-            for (const expectedNodeId of expectedSelectionOrder) {
-                const actualNode = model.getPrevNode();
-                const expectedNode = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(actualNode?.id).to.be.equal(expectedNode.id);
-                model.addSelection(expectedNode);
-            }
-            done();
-        });
-        it('`getPrevSelectableNode()` should select each node in reverse sequence (uncollapsed)', done => {
-            const expectedSelectionOrder = ['1.2.3', '1.2.2', '1.2.1.2', '1.2.1.1', '1.2.1', '1.2', '1.1.2', '1.1.1', '1.1'];
-            const rootNode = retrieveNode<SelectableTreeNode>('1.3');
-            model.addSelection(rootNode);
-            for (const expectedNodeId of expectedSelectionOrder) {
-                const actualNode = model.getPrevSelectableNode();
-                const expectedNode = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(actualNode?.id).to.be.equal(expectedNode.id);
-                model.addSelection(expectedNode);
-            }
-            done();
-        });
-        it('`getPrevSelectableNode()` should select each node in reverse sequence (collapsed)', done => {
-            collapseNode('1.1', '1.2.1');
-            const expectedSelectionOrder = ['1.2.3', '1.2.2', '1.2.1', '1.2', '1.1'];
-            const rootNode = retrieveNode<SelectableTreeNode>('1.3');
-            model.addSelection(rootNode);
-            for (const expectedNodeId of expectedSelectionOrder) {
-                const actualNode = model.getPrevSelectableNode();
-                const expectedNode = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(actualNode?.id).to.be.equal(expectedNode.id);
-                model.addSelection(expectedNode);
-            }
-            done();
-        });
-    });
-
-    describe('Selection Methods', () => {
         it('`selectNext()` should select each node in sequence (uncollapsed)', done => {
-            const expectedSelectionOrder = ['1.1', '1.1.1', '1.1.2', '1.2', '1.2.1', '1.2.1.1', '1.2.1.2', '1.2.2', '1.2.3', '1.3'];
-            const rootNode = retrieveNode<SelectableTreeNode>('1');
-            model.addSelection(rootNode);
-            for (const expectedNodeId of expectedSelectionOrder) {
-                model.selectNext();
-                const node = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(node.selected).to.be.true;
-            }
+            assertNodeSelection(model.selectNext.bind(model), uncollapsedSelectionOrder);
             done();
         });
         it('`selectNext()` should select each node in sequence (collapsed)', done => {
             collapseNode('1.1', '1.2.1');
-            const expectedSelectionOrder = ['1.1', '1.1.1', '1.1.2', '1.2', '1.2.1', '1.2.1.1', '1.2.1.2', '1.2.2', '1.2.3', '1.3'];
-            const rootNode = retrieveNode<SelectableTreeNode>('1');
-            model.addSelection(rootNode);
-            for (const expectedNodeId of expectedSelectionOrder) {
-                model.selectNext();
-                const node = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(node.selected).to.be.true;
-            }
+            assertNodeSelection(model.selectNext.bind(model), uncollapsedSelectionOrder);
             done();
         });
         it('`selectNextNode()` should select each node in sequence (uncollapsed)', done => {
-            const expectedSelectionOrder = ['1.1', '1.1.1', '1.1.2', '1.2', '1.2.1', '1.2.1.1', '1.2.1.2', '1.2.2', '1.2.3', '1.3'];
-            for (const expectedNodeId of expectedSelectionOrder) {
-                model.selectNextNode();
-                const node = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(node.selected).to.be.true;
-            }
+            assertNodeSelection(model.selectNextNode.bind(model), uncollapsedSelectionOrder);
             done();
         });
         it('`selectNextNode()` should select each node in sequence (collapsed)', done => {
             collapseNode('1.1', '1.2.1');
-            const expectedSelectionOrder = ['1.1', '1.2', '1.2.1', '1.2.2', '1.2.3', '1.3'];
-            for (const expectedNodeId of expectedSelectionOrder) {
-                model.selectNextNode();
-                const node = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(node.selected).to.be.true;
-            }
+            assertNodeSelection(model.selectNextNode.bind(model), collapsedSelectionOrder);
+            done();
+        });
+    });
+
+    describe('Get and Set Previous Nodes Methods', () => {
+        const uncollapsedSelectionOrder = ['1.2.3', '1.2.2', '1.2.1.2', '1.2.1.1', '1.2.1', '1.2', '1.1.2', '1.1.1', '1.1'];
+        const collapsedSelectionOrder = ['1.2.3', '1.2.2', '1.2.1', '1.2', '1.1'];
+        beforeEach(() => {
+            model = createTreeModel();
+            model.root = MockSelectableTreeModel.HIERARCHICAL_MOCK_ROOT();
+            model.addSelection(retrieveNode<SelectableTreeNode>('1.3'));
+        });
+        it('`getPrevNode()` should select each node in reverse sequence (uncollapsed)', done => {
+            assertNodeRetrieval(model.getPrevNode.bind(model), uncollapsedSelectionOrder);
+            done();
+        });
+        it('`getPrevNode()` should select each node in reverse sequence (collapsed)', done => {
+            collapseNode('1.1', '1.2.1');
+            assertNodeRetrieval(model.getPrevNode.bind(model), uncollapsedSelectionOrder);
+            done();
+        });
+        it('`getPrevSelectableNode()` should select each node in reverse sequence (uncollapsed)', done => {
+            assertNodeRetrieval(model.getPrevSelectableNode.bind(model), uncollapsedSelectionOrder);
+            done();
+        });
+        it('`getPrevSelectableNode()` should select each node in reverse sequence (collapsed)', done => {
+            collapseNode('1.1', '1.2.1');
+            assertNodeRetrieval(model.getPrevSelectableNode.bind(model), collapsedSelectionOrder);
             done();
         });
         it('`selectPrev()` should select each node in reverse sequence (uncollapsed)', done => {
-            const expectedSelectionOrder = ['1.2.3', '1.2.2', '1.2.1.2', '1.2.1.1', '1.2.1', '1.2', '1.1.2', '1.1.1', '1.1'];
-            const rootNode = retrieveNode<SelectableTreeNode>('1.3');
-            model.addSelection(rootNode);
-            for (const expectedNodeId of expectedSelectionOrder) {
-                model.selectPrev();
-                const node = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(node.selected).to.be.true;
-            }
+            assertNodeSelection(model.selectPrev.bind(model), uncollapsedSelectionOrder);
             done();
         });
         it('`selectPrev()` should select each node in reverse sequence (collapsed)', done => {
             collapseNode('1.1', '1.2.1');
-            const expectedSelectionOrder = ['1.2.3', '1.2.2', '1.2.1.2', '1.2.1.1', '1.2.1', '1.2', '1.1.2', '1.1.1', '1.1'];
-            const rootNode = retrieveNode<SelectableTreeNode>('1.3');
-            model.addSelection(rootNode);
-            for (const expectedNodeId of expectedSelectionOrder) {
-                model.selectPrev();
-                const node = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(node.selected).to.be.true;
-            }
+            assertNodeSelection(model.selectPrev.bind(model), uncollapsedSelectionOrder);
             done();
         });
         it('`selectPrevNode()` should select each node in reverse sequence (uncollapsed)', done => {
-            const expectedSelectionOrder = ['1.2.3', '1.2.2', '1.2.1.2', '1.2.1.1', '1.2.1', '1.2', '1.1.2', '1.1.1', '1.1'];
-            const rootNode = retrieveNode<SelectableTreeNode>('1.3');
-            model.addSelection(rootNode);
-            for (const expectedNodeId of expectedSelectionOrder) {
-                model.selectPrevNode();
-                const node = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(node.selected).to.be.true;
-            }
+            assertNodeSelection(model.selectPrevNode.bind(model), uncollapsedSelectionOrder);
             done();
         });
         it('`selectPrevNode()` should select each node in reverse sequence (collapsed)', done => {
             collapseNode('1.1', '1.2.1');
-            const expectedSelectionOrder = ['1.2.3', '1.2.2', '1.2.1', '1.2', '1.1'];
-            const rootNode = retrieveNode<SelectableTreeNode>('1.3');
-            model.addSelection(rootNode);
-            for (const expectedNodeId of expectedSelectionOrder) {
-                model.selectPrevNode();
-                const node = retrieveNode<SelectableTreeNode>(expectedNodeId);
-                expect(node.selected).to.be.true;
-            }
+            assertNodeSelection(model.selectPrevNode.bind(model), collapsedSelectionOrder);
             done();
         });
     });
