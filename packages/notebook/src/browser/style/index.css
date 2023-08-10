@@ -224,6 +224,8 @@
     width: 100%;
 }
 
-/* .theia-notebook-code-cell-execution-count {
-
-} */
+.theia-notebook-cell-drop-indicator {
+    height: 2px;
+    background-color: var(--theia-notebook-focusedCellBorder);
+    width: 100%;
+}

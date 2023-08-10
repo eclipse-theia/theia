@@ -247,7 +247,7 @@ export class NotebookModel implements Saveable, Disposable {
                 case CellEditType.DocumentMetadata:
                     break;
                 case CellEditType.Move:
-                    this.moveCellToIndex(cellIndex, edit.length, edit.index, computeUndoRedo);
+                    this.moveCellToIndex(cellIndex, edit.length, edit.newIdx, computeUndoRedo);
                     break;
 
             }
