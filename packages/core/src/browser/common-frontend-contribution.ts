@@ -1122,6 +1122,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 command: CommonCommands.NEW_UNTITLED_TEXT_FILE.id,
                 keybinding: this.isElectron() ? 'ctrlcmd+n' : 'alt+n',
+            },
+            {
+                command: CommonCommands.NEW_UNTITLED_FILE.id,
+                keybinding: 'ctrlcmd+alt+n'
             }
         );
         for (const [index, ordinal] of this.getOrdinalNumbers().entries()) {
