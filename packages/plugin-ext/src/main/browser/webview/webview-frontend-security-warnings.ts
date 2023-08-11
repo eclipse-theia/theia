@@ -40,6 +40,7 @@ export class WebviewFrontendSecurityWarnings implements FrontendApplicationContr
     }
 
     protected async checkHostPattern(): Promise<void> {
+        console.log('**** alvs, WebviewFrontendSecurityWarnings checkHostPattern');
         if (FrontendApplicationConfigProvider.get()['warnOnPotentiallyInsecureHostPattern'] === false) {
             return;
         }

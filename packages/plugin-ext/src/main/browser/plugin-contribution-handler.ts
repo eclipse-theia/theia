@@ -21,7 +21,17 @@ import { TextmateRegistry, getEncodedLanguageId, MonacoTextmateService, GrammarD
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginViewRegistry } from './view/plugin-view-registry';
 import { PluginCustomEditorRegistry } from './custom-editors/plugin-custom-editor-registry';
-import { PluginContribution, IndentationRules, FoldingRules, ScopeMap, DeployedPlugin, GrammarsContribution, EnterAction, OnEnterRule, RegExpOptions } from '../../common';
+import {
+    PluginContribution,
+    IndentationRules,
+    FoldingRules,
+    ScopeMap,
+    DeployedPlugin,
+    GrammarsContribution,
+    EnterAction,
+    OnEnterRule,
+    RegExpOptions,
+    IconContribution } from '../../common';
 import {
     DefaultUriLabelProviderContribution,
     LabelProviderContribution,
@@ -39,6 +49,7 @@ import { PluginDebugService } from './debug/plugin-debug-service';
 import { DebugSchemaUpdater } from '@theia/debug/lib/browser/debug-schema-updater';
 import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-service';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { PluginIconService } from './plugin-icon-service';
 import { PluginIconThemeService } from './plugin-icon-theme-service';
 import { ContributionProvider } from '@theia/core/lib/common';
 import * as monaco from '@theia/monaco-editor-core';
@@ -107,6 +118,9 @@ export class PluginContributionHandler {
 
     @inject(ColorRegistry)
     protected readonly colors: ColorRegistry;
+
+    @inject(PluginIconService)
+    protected readonly iconService: PluginIconService;
 
     @inject(PluginIconThemeService)
     protected readonly iconThemeService: PluginIconThemeService;
@@ -319,6 +333,19 @@ export class PluginContributionHandler {
         if (contributions.iconThemes && contributions.iconThemes.length) {
             for (const iconTheme of contributions.iconThemes) {
                 pushContribution(`iconThemes.${iconTheme.uri}`, () => this.iconThemeService.register(iconTheme, plugin));
+            }
+        }
+
+        if (contributions.icons && contributions.icons.length) {
+            for (const icon of contributions.icons) {
+                const defaultIcon = icon.defaults;
+                let key: string;
+                if (IconContribution.isIconDefinition(defaultIcon)) {
+                    key = defaultIcon.location;
+                } else {
+                    key = defaultIcon.id;
+                }
+                pushContribution(`icons.${key}`, () => this.iconService.register(icon, plugin));
             }
         }
 

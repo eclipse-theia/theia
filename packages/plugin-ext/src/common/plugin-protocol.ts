@@ -17,7 +17,7 @@ import { RpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { RPCProtocol } from './rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { LogPart, KeysToAnyValues, KeysToKeysToAnyValue } from './types';
-import { CharacterPair, CommentRule, PluginAPIFactory, Plugin } from './plugin-api-rpc';
+import { CharacterPair, CommentRule, PluginAPIFactory, Plugin, ThemeIcon } from './plugin-api-rpc';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { RecursivePartial } from '@theia/core/lib/common/types';
@@ -90,6 +90,7 @@ export interface PluginPackageContribution {
     snippets?: PluginPackageSnippetsContribution[];
     themes?: PluginThemeContribution[];
     iconThemes?: PluginIconThemeContribution[];
+    icons?: PluginIconContribution[];
     colors?: PluginColorContribution[];
     taskDefinitions?: PluginTaskDefinitionContribution[];
     problemMatchers?: PluginProblemMatcherContribution[];
@@ -251,6 +252,13 @@ export interface PluginIconThemeContribution {
     description?: string;
     path?: string;
     uiTheme?: PluginUiTheme;
+}
+
+export interface PluginIconContribution {
+    [id: string]: {
+        description: string;
+        default: { fontPath: string; fontCharacter: string } | string;
+    };
 }
 
 export interface PlatformSpecificAdapterContribution {
@@ -577,6 +585,7 @@ export interface PluginContribution {
     snippets?: SnippetContribution[];
     themes?: ThemeContribution[];
     iconThemes?: IconThemeContribution[];
+    icons?: IconContribution[];
     colors?: ColorDefinition[];
     taskDefinitions?: TaskDefinition[];
     problemMatchers?: ProblemMatcherContribution[];
@@ -642,6 +651,26 @@ export interface IconThemeContribution {
     description?: string;
     uri: string;
     uiTheme?: UiTheme;
+}
+
+export interface IconDefinition {
+    fontCharacter: string;
+    location: string;
+}
+
+export type IconDefaults = ThemeIcon | IconDefinition;
+
+export interface IconContribution {
+    id: string;
+    extensionId: string;
+    description: string | undefined;
+    defaults: IconDefaults;
+}
+
+export namespace IconContribution {
+    export function isIconDefinition(defaults: IconDefaults): defaults is IconDefinition {
+        return 'fontCharacter' in defaults;
+    }
 }
 
 export interface GrammarsContribution {
