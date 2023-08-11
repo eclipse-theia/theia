@@ -1322,6 +1322,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             });
     }
 
+    /**
+     * @todo https://github.com/eclipse-theia/theia/issues/12824
+     */
     protected async showNewFilePicker(): Promise<void> {
         const newFileContributions = this.menuRegistry.getMenuNode(CommonMenus.FILE_NEW_CONTRIBUTIONS); // Add menus
         const items: QuickPickItemOrSeparator[] = [
