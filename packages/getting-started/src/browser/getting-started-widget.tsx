@@ -129,8 +129,8 @@ export class GettingStartedWidget extends ReactWidget {
      * Render the content of the widget.
      */
     protected render(): React.ReactNode {
-        return <div>
-            <div className='gs-container'>
+        return <div className='gs-container'>
+            <div className='gs-content-container'>
                 {this.renderHeader()}
                 <hr className='gs-hr' />
                 <div className='flex-grid'>
