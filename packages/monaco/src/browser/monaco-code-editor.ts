@@ -25,9 +25,6 @@ import { MonacoEditorModel } from './monaco-editor-model';
 import { Dimension, EditorMouseEvent, MouseTarget, Position, TextDocumentChangeEvent } from '@theia/editor/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
 import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
-// import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
-
-const standaloneServices = StandaloneServices.initialize({});
 
 export class MonacoCodeEditor extends MonacoEditorServices implements Disposable {
 
@@ -139,11 +136,12 @@ export class MonacoCodeEditor extends MonacoEditorServices implements Disposable
     }
 
     protected getInstantiatorWithOverrides(override?: EditorServiceOverrides): IInstantiationService {
+        const instantiator = StandaloneServices.initialize({});
         if (override) {
             const overrideServices = new ServiceCollection(...override);
-            return standaloneServices.createChild(overrideServices);
+            return instantiator.createChild(overrideServices);
         }
-        return standaloneServices;
+        return instantiator;
     }
 
     protected mapModelContentChange(change: monaco.editor.IModelContentChange): TextDocumentContentChangeDelta {
