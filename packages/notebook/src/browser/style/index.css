@@ -18,7 +18,7 @@
     --theia-notebook-markdown-size: 17px;
 }
 
- .theia-notebook-cell-list {
+.theia-notebook-cell-list {
     overflow-y: auto;
     list-style: none;
     padding-left: 0px;
@@ -65,7 +65,7 @@
     font-size: var(--theia-notebook-markdown-size);
 }
 
-.theia-notebook-markdown-content > p {
+.theia-notebook-markdown-content>p {
     margin: 0;
 }
 
@@ -79,6 +79,7 @@
 }
 
 .theia-notebook-cell-editor-container {
+    width: calc(100% - 46px);
     flex: 1;
     outline: 1px solid var(--theia-notebook-cellBorderColor);
     margin: 0px 10px;
@@ -163,7 +164,8 @@
     background: var(--theia-editor-background);
     display: flex;
     flex-direction: row;
-    z-index: 1; /*needed to be on rendered on top of monaco editors*/
+    z-index: 1;
+    /*needed to be on rendered on top of monaco editors*/
 }
 
 .theia-notebook-main-toolbar-item {
