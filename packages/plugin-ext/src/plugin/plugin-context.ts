@@ -174,7 +174,6 @@ import {
     NotebookCellOutput,
     NotebookCellOutputItem,
     NotebookData,
-    NotebookDocument,
     NotebookRange,
     NotebookCellStatusBarItem,
     NotebookEdit,
@@ -246,6 +245,7 @@ import { TabsExtImpl } from './tabs';
 import { LocalizationExtImpl } from './localization-ext';
 import { NotebooksExtImpl } from './notebook/notebooks';
 import { TelemetryExtImpl } from './telemetry-ext';
+import { NotebookDocument } from './notebook/notebook-document';
 import { NotebookRenderersExtImpl } from './notebook/notebook-renderers';
 import { NotebookKernelsExtImpl } from './notebook/notebook-kernels';
 import { NotebookDocumentsExtImpl } from './notebook/notebook-documents';
@@ -455,7 +455,7 @@ export function createAPIFactory(
             onDidChangeNotebookEditorVisibleRanges(listener, thisArg?, disposables?) {
                 return notebookEditors.onDidChangeNotebookEditorVisibleRanges(listener, thisArg, disposables);
             },
-            showNotebookDocument(document: NotebookDocument, options?: theia.NotebookDocumentShowOptions) {
+            showNotebookDocument(document: theia.NotebookDocument, options?: theia.NotebookDocumentShowOptions) {
                 return notebooksExt.showNotebookDocument(document, options);
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

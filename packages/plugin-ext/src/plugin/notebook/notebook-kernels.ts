@@ -25,14 +25,14 @@ import {
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
 import * as theia from '@theia/plugin';
-import { CancellationTokenSource, Disposable, DisposableCollection, Emitter, URI } from '@theia/core';
+import { CancellationTokenSource, Disposable, DisposableCollection, Emitter } from '@theia/core';
 import { Cell } from './notebook-document';
 import { NotebooksExtImpl } from './notebooks';
 import { NotebookCellOutputConverter, NotebookCellOutputItem, NotebookKernelSourceAction } from '../type-converters';
 import { timeout, Deferred } from '@theia/core/lib/common/promise-util';
 import { CellExecutionUpdateType, NotebookCellExecutionState } from '@theia/notebook/lib/common';
 import { CommandRegistryImpl } from '../command-registry';
-import { NotebookCellOutput, NotebookRendererScript } from '../types-impl';
+import { NotebookCellOutput, NotebookRendererScript, URI } from '../types-impl';
 
 interface KernelData {
     extensionId: string;
@@ -235,7 +235,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         if (cell.index < 0) {
             throw new Error('CANNOT execute cell that has been REMOVED from notebook');
         }
-        const notebook = this.notebooks.getNotebookDocument(new URI(cell.notebook.uri));
+        const notebook = this.notebooks.getNotebookDocument(URI.from(cell.notebook.uri));
         const cellObj = notebook.getCellFromApiCell(cell);
         if (!cellObj) {
             throw new Error('invalid cell');
@@ -298,7 +298,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         const obj = this.kernelData.get(handle);
         if (obj) {
             // update data structure
-            const notebook = this.notebooks.getNotebookDocument(URI.fromComponents(uri))!;
+            const notebook = this.notebooks.getNotebookDocument(URI.from(uri))!;
             if (value) {
                 obj.associatedNotebooks.set(notebook.uri.toString(), true);
             } else {
@@ -320,7 +320,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
             // extension can dispose kernels in the meantime
             return Promise.resolve();
         }
-        const document = this.notebooks.getNotebookDocument(URI.fromComponents(uri));
+        const document = this.notebooks.getNotebookDocument(URI.from(uri));
         const cells: theia.NotebookCell[] = [];
         for (const cellHandle of handles) {
             const cell = document.getCell(cellHandle);
@@ -348,7 +348,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
 
         // cancel or interrupt depends on the controller. When an interrupt handler is used we
         // don't trigger the cancelation token of executions.N
-        const document = this.notebooks.getNotebookDocument(URI.fromComponents(uri));
+        const document = this.notebooks.getNotebookDocument(URI.from(uri));
         if (obj.controller.interruptHandler) {
             await obj.controller.interruptHandler.call(obj.controller, document.apiNotebook);
 
