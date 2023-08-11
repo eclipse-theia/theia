@@ -51,7 +51,7 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
         }
 
         const [notebookType, priority] = this.notebookTypeRegistry.notebookTypes.
-            filter(notebook => notebook.selector && this.matches(notebook.selector, uri))
+            filter(notebook => notebook.selectors && this.matches(notebook.selectors, uri))
             .map(notebook => [notebook, this.calculatePriority(notebook)] as [NotebookTypeDescriptor, number])
             .reduce((notebook, current) => current[1] > notebook[1] ? current : notebook);
         if (priority >= 0) {
