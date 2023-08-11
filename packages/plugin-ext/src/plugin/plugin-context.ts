@@ -249,6 +249,7 @@ import { TelemetryExtImpl } from './telemetry-ext';
 import { NotebookRenderersExtImpl } from './notebook/notebook-renderers';
 import { NotebookKernelsExtImpl } from './notebook/notebook-kernels';
 import { NotebookDocumentsExtImpl } from './notebook/notebook-documents';
+import { NotebookEditorsExtImpl } from './notebook/notebook-editors';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -273,6 +274,7 @@ export function createAPIFactory(
     const editors = rpc.set(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, new TextEditorsExtImpl(rpc, editorsAndDocumentsExt));
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocumentsExt));
     const notebooksExt = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT, new NotebooksExtImpl(rpc, commandRegistry, editorsAndDocumentsExt, documents));
+    const notebookEditors = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_EDITORS_EXT, new NotebookEditorsExtImpl(notebooksExt));
     const notebookRenderers = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT, new NotebookRenderersExtImpl(rpc, notebooksExt));
     const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt, commandRegistry));
     const notebookDocuments = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT, new NotebookDocumentsExtImpl(notebooksExt));
@@ -437,10 +439,10 @@ export function createAPIFactory(
                 }
             },
             get visibleNotebookEditors(): theia.NotebookEditor[] {
-                return [] as theia.NotebookEditor[];
+                return notebooksExt.visibleApiNotebookEditors;
             },
             onDidChangeVisibleNotebookEditors(listener, thisArg?, disposables?) {
-                return Disposable.NULL;
+                return notebooksExt.onDidChangeVisibleNotebookEditors(listener, thisArg, disposables);
             },
             get activeNotebookEditor(): theia.NotebookEditor | undefined {
                 return notebooksExt.activeApiNotebookEditor;
@@ -448,13 +450,13 @@ export function createAPIFactory(
                 return notebooksExt.onDidChangeActiveNotebookEditor(listener, thisArg, disposables);
             },
             onDidChangeNotebookEditorSelection(listener, thisArg?, disposables?) {
-                return Disposable.NULL;
+                return notebookEditors.onDidChangeNotebookEditorSelection(listener, thisArg, disposables);
             },
             onDidChangeNotebookEditorVisibleRanges(listener, thisArg?, disposables?) {
-                return Disposable.NULL;
+                return notebookEditors.onDidChangeNotebookEditorVisibleRanges(listener, thisArg, disposables);
             },
             showNotebookDocument(document: NotebookDocument, options?: theia.NotebookDocumentShowOptions) {
-                return Promise.resolve({} as theia.NotebookEditor);
+                return notebooksExt.showNotebookDocument(document, options);
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             showQuickPick(items: any, options?: theia.QuickPickOptions, token?: theia.CancellationToken): any {
@@ -626,7 +628,7 @@ export function createAPIFactory(
                 return workspaceExt.onDidChangeWorkspaceFolders(listener, thisArg, disposables);
             },
             get notebookDocuments(): theia.NotebookDocument[] {
-                return [] as theia.NotebookDocument[];
+                return notebooksExt.getAllApiDocuments();
             },
             get textDocuments(): theia.TextDocument[] {
                 return documents.getAllDocumentData().map(data => data.document);
@@ -696,8 +698,18 @@ export function createAPIFactory(
                 const data = await documents.openDocument(uri);
                 return data && data.document;
             },
-            openNotebookDocument(uriOrString: theia.Uri | string, content?: NotebookData): Promise<theia.NotebookDocument | undefined> {
-                return Promise.reject(new Error('Notebook API is stubbed'));
+            async openNotebookDocument(uriOrType: theia.Uri | string, content?: NotebookData): Promise<theia.NotebookDocument | undefined> {
+                let uri: URI;
+                if (URI.isUri(uriOrType)) {
+                    uri = uriOrType;
+                    await notebooksExt.openNotebookDocument(uriOrType as URI);
+                } else if (typeof uriOrType === 'string') {
+                    uri = URI.revive(await notebooksExt.createNotebookDocument({ viewType: uriOrType, content }));
+                } else {
+                    throw new Error('Invalid arguments');
+                }
+                return notebooksExt.getNotebookDocument(uri).apiNotebook;
+
             },
             createFileSystemWatcher: (pattern, ignoreCreate, ignoreChange, ignoreDelete): theia.FileSystemWatcher =>
                 extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern), ignoreCreate, ignoreChange, ignoreDelete),

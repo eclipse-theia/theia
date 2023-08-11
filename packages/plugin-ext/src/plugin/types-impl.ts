@@ -1264,40 +1264,6 @@ export class NotebookData implements theia.NotebookData {
     }
 }
 
-export class NotebookDocument implements theia.NotebookDocument {
-    readonly uri: theia.Uri;
-    readonly notebookType: string;
-    readonly version: number;
-    readonly isDirty: boolean;
-    readonly isUntitled: boolean;
-    readonly isClosed: boolean;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    readonly metadata: { [key: string]: any };
-    readonly cellCount: number;
-
-    cellAt(index: number): theia.NotebookCell {
-        return {} as theia.NotebookCell;
-    }
-    save(): theia.Thenable<boolean> {
-        return Promise.resolve(false);
-    }
-
-    getCells(range?: theia.NotebookRange | undefined): theia.NotebookCell[] {
-        return [] as NotebookCell[];
-    }
-}
-export class NotebookCell implements theia.NotebookCell {
-    readonly index: number;
-    readonly notebook: theia.NotebookDocument;
-    readonly kind: theia.NotebookCellKind;
-    readonly document: theia.TextDocument;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    readonly metadata: { readonly [key: string]: any; };
-    readonly outputs: readonly theia.NotebookCellOutput[];
-    readonly executionSummary: theia.NotebookCellExecutionSummary | undefined;
-
-}
-
 export class NotebookRange implements theia.NotebookRange {
     static isNotebookRange(thing: unknown): thing is theia.NotebookRange {
         if (thing instanceof NotebookRange) {
@@ -1406,6 +1372,8 @@ export class NotebookEdit implements theia.NotebookEdit {
     constructor(range: NotebookRange, newCells: NotebookCellData[], newCellMetadata?: { [key: string]: unknown }, newNotebookMetadata?: { [key: string]: unknown }) {
         this.range = range;
         this.newCells = newCells;
+        this.newCellMetadata = newCellMetadata;
+        this.newNotebookMetadata = newNotebookMetadata;
     }
 
 }

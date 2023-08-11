@@ -4944,14 +4944,12 @@ export module '@theia/plugin' {
 
         /**
          * The currently visible {@link NotebookEditor notebook editors} or an empty array.
-         * @stubbed
          */
         export const visibleNotebookEditors: readonly NotebookEditor[];
 
         /**
          * An {@link Event} which fires when the {@link window.visibleNotebookEditors visible notebook editors}
          * has changed.
-         * @stubbed
          */
         export const onDidChangeVisibleNotebookEditors: Event<readonly NotebookEditor[]>;
 
@@ -4959,7 +4957,6 @@ export module '@theia/plugin' {
          * The currently active {@link NotebookEditor notebook editor} or `undefined`. The active editor is the one
          * that currently has focus or, when none has focus, the one that has changed
          * input most recently.
-         * @stubbed
          */
         export const activeNotebookEditor: NotebookEditor | undefined;
 
@@ -4967,21 +4964,18 @@ export module '@theia/plugin' {
          * An {@link Event} which fires when the {@link window.activeNotebookEditor active notebook editor}
          * has changed. *Note* that the event also fires when the active editor changes
          * to `undefined`.
-         * @stubbed
          */
         export const onDidChangeActiveNotebookEditor: Event<NotebookEditor | undefined>;
 
         /**
          * An {@link Event} which fires when the {@link NotebookEditor.selections notebook editor selections}
          * have changed.
-         * @stubbed
          */
         export const onDidChangeNotebookEditorSelection: Event<NotebookEditorSelectionChangeEvent>;
 
         /**
          * An {@link Event} which fires when the {@link NotebookEditor.visibleRanges notebook editor visible ranges}
          * have changed.
-         * @stubbed
          */
         export const onDidChangeNotebookEditorVisibleRanges: Event<NotebookEditorVisibleRangesChangeEvent>;
 
@@ -4992,7 +4986,6 @@ export module '@theia/plugin' {
          * @param options {@link NotebookDocumentShowOptions Editor options} to configure the behavior of showing the {@link NotebookEditor notebook editor}.
          *
          * @return A promise that resolves to an {@link NotebookEditor notebook editor}.
-         * @stubbed
          */
         export function showNotebookDocument(document: NotebookDocument, options?: NotebookDocumentShowOptions): Thenable<NotebookEditor>;
 
@@ -7082,7 +7075,6 @@ export module '@theia/plugin' {
          * All notebook documents currently known to the editor.
          *
          * @readonly
-         * @stubbed
          */
         export let notebookDocuments: readonly NotebookDocument[];
 
@@ -7099,7 +7091,6 @@ export module '@theia/plugin' {
 
         /**
          * An event that is emitted when a {@link NotebookDocument notebook} is opened.
-         * @stubbed
          */
         export const onDidOpenNotebookDocument: Event<NotebookDocument>;
 
@@ -7109,13 +7100,11 @@ export module '@theia/plugin' {
          * Note 1: There is no guarantee that this event fires when an editor tab is closed.
          *
          * Note 2: A notebook can be open but not shown in an editor which means this event can fire for a notebook that has not been shown in an editor.
-         * @stubbed
          */
         export const onDidCloseNotebookDocument: Event<NotebookDocument>;
 
         /**
          * An event that is emitted when a {@link NotebookDocument notebook} is saved.
-         * @stubbed
          */
         export const onDidSaveNotebookDocument: Event<NotebookDocument>;
 
@@ -7127,7 +7116,6 @@ export module '@theia/plugin' {
          * @param serializer a notebook serializer.
          * @param options Optional context options that define what parts of a notebook should be persisted
          * @return A {@link Disposable disposable} that unregisters this serializer when being disposed.
-         * @stubbed
          */
         export function registerNotebookSerializer(notebookType: string, serializer: NotebookSerializer, options?: NotebookDocumentContentOptions): Disposable;
 
@@ -7181,7 +7169,6 @@ export module '@theia/plugin' {
 
         /**
          * An event that is emitted when a {@link Notebook notebook} has changed.
-         * @stubbed
          */
         export const onDidChangeNotebookDocument: Event<NotebookDocumentChangeEvent>;
 
@@ -7320,7 +7307,6 @@ export module '@theia/plugin' {
          *
          * @param uri The resource to open.
          * @return A promise that resolves to a {@link NotebookDocument notebook}.
-         * @stubbed
          */
         export function openNotebookDocument(uri: Uri): Thenable<NotebookDocument> | undefined;
 
@@ -7330,7 +7316,6 @@ export module '@theia/plugin' {
          * @param notebookType The notebook type that should be used.
          * @param content The initial contents of the notebook.
          * @return A promise that resolves to a {@link NotebookDocument notebook}.
-         * @stubbed
          */
         export function openNotebookDocument(notebookType: string, content?: NotebookData): Thenable<NotebookDocument> | undefined;
 
@@ -14465,13 +14450,11 @@ export module '@theia/plugin' {
 
         /**
          * The {@link NotebookDocument notebook document} associated with this notebook editor.
-         * @stubbed
          */
         readonly notebook: NotebookDocument;
 
         /**
          * The primary selection in this notebook editor.
-         * @stubbed
          */
         selection: NotebookRange;
 
@@ -14479,19 +14462,16 @@ export module '@theia/plugin' {
          * All selections in this notebook editor.
          *
          * The primary selection (or focused range) is `selections[0]`. When the document has no cells, the primary selection is empty `{ start: 0, end: 0 }`;
-         * @stubbed
          */
         selections: readonly NotebookRange[];
 
         /**
          * The current visible ranges in the editor (vertically).
-         * @stubbed
          */
         readonly visibleRanges: readonly NotebookRange[];
 
         /**
          * The column in which this editor shows.
-         * @stubbed
          */
         readonly viewColumn?: ViewColumn;
 
@@ -14511,7 +14491,6 @@ export module '@theia/plugin' {
     export interface NotebookRendererMessaging {
         /**
          * An event that fires when a message is received from a renderer.
-         * @stubbed
          */
         readonly onDidReceiveMessage: Event<{
             readonly editor: NotebookEditor;
@@ -14526,7 +14505,6 @@ export module '@theia/plugin' {
          * message is sent to all renderers.
          * @returns a boolean indicating whether the message was successfully
          * delivered to any renderer.
-         * @stubbed
          */
         postMessage(message: any, editor?: NotebookEditor): Thenable<boolean>;
     }
@@ -14560,7 +14538,6 @@ export module '@theia/plugin' {
          * The index of this cell in its {@link NotebookDocument.cellAt containing notebook}. The
          * index is updated when a cell is moved within its notebook. The index is `-1`
          * when the cell has been removed from its notebook.
-         * @stubbed
          */
         readonly index: number;
 
@@ -14571,31 +14548,26 @@ export module '@theia/plugin' {
 
         /**
          * The kind of this cell.
-         * @stubbed
          */
         readonly kind: NotebookCellKind;
 
         /**
          * The {@link TextDocument text} of this cell, represented as text document.
-         * @stubbed
          */
         readonly document: TextDocument;
 
         /**
          * The metadata of this cell. Can be anything but must be JSON-stringifyable.
-         * @stubbed
          */
         readonly metadata: { readonly [key: string]: any };
 
         /**
          * The outputs of this cell.
-         * @stubbed
          */
         readonly outputs: readonly NotebookCellOutput[];
 
         /**
          * The most recent {@link NotebookCellExecutionSummary execution summary} for this cell.
-         * @stubbed
          */
         readonly executionSummary: NotebookCellExecutionSummary | undefined;
     }
@@ -14611,7 +14583,6 @@ export module '@theia/plugin' {
          *
          * *Note* that most notebooks use the `file`-scheme, which means they are files on disk. However, **not** all notebooks are
          * saved on disk and therefore the `scheme` must be checked before trying to access the underlying file or siblings on disk.
-         * @stubbed
          *
          * @see {@link FileSystemProvider}
          */
@@ -14619,7 +14590,6 @@ export module '@theia/plugin' {
 
         /**
          * The type of notebook.
-         * @stubbed
          */
         readonly notebookType: string;
 
@@ -14647,13 +14617,11 @@ export module '@theia/plugin' {
 
         /**
          * Arbitrary metadata for this notebook. Can be anything but must be JSON-stringifyable.
-         * @stubbed
          */
         readonly metadata: { [key: string]: any };
 
         /**
          * The number of cells in the notebook.
-         * @stubbed
          */
         readonly cellCount: number;
 
@@ -14662,7 +14630,6 @@ export module '@theia/plugin' {
          *
          * @param index - The index of the cell to retrieve.
          * @return A {@link NotebookCell cell}.
-         * @stubbed
          */
         cellAt(index: number): NotebookCell;
 
@@ -14672,7 +14639,6 @@ export module '@theia/plugin' {
          *
          * @param range A notebook range.
          * @returns The cells contained by the range or all cells.
-         * @stubbed
          */
         getCells(range?: NotebookRange): NotebookCell[];
 
@@ -14681,7 +14647,6 @@ export module '@theia/plugin' {
          *
          * @return A promise that will resolve to true when the document
          * has been saved. Will return false if the file was not dirty or when save failed.
-         * @stubbed
          */
         save(): Thenable<boolean>;
     }
@@ -14695,7 +14660,6 @@ export module '@theia/plugin' {
 
         /**
          * The affected cell.
-         * @stubbed
          */
         readonly cell: NotebookCell;
 
@@ -14704,25 +14668,21 @@ export module '@theia/plugin' {
          *
          * *Note* that you should use the {@link workspace.onDidChangeTextDocument onDidChangeTextDocument}-event
          * for detailed change information, like what edits have been performed.
-         * @stubbed
          */
         readonly document: TextDocument | undefined;
 
         /**
          * The new metadata of the cell or `undefined` when it did not change.
-         * @stubbed
          */
         readonly metadata: { [key: string]: any } | undefined;
 
         /**
          * The new outputs of the cell or `undefined` when they did not change.
-         * @stubbed
          */
         readonly outputs: readonly NotebookCellOutput[] | undefined;
 
         /**
          * The new execution summary of the cell or `undefined` when it did not change.
-         * @stubbed
          */
         readonly executionSummary: NotebookCellExecutionSummary | undefined;
     }
@@ -14739,19 +14699,16 @@ export module '@theia/plugin' {
          *
          * Note that no cells have been {@link NotebookDocumentContentChange.removedCells removed}
          * when this range is {@link NotebookRange.isEmpty empty}.
-         * @stubbed
          */
         readonly range: NotebookRange;
 
         /**
          * Cells that have been added to the document.
-         * @stubbed
          */
         readonly addedCells: readonly NotebookCell[];
 
         /**
          * Cells that have been removed from the document.
-         * @stubbed
          */
         readonly removedCells: readonly NotebookCell[];
     }
@@ -14763,25 +14720,21 @@ export module '@theia/plugin' {
 
         /**
          * The affected notebook.
-         * @stubbed
          */
         readonly notebook: NotebookDocument;
 
         /**
          * The new metadata of the notebook or `undefined` when it did not change.
-         * @stubbed
          */
         readonly metadata: { [key: string]: any } | undefined;
 
         /**
          * An array of content changes describing added or removed {@link NotebookCell cells}.
-         * @stubbed
          */
         readonly contentChanges: readonly NotebookDocumentContentChange[];
 
         /**
          * An array of {@link NotebookDocumentCellChange cell changes}.
-         * @stubbed
          */
         readonly cellChanges: readonly NotebookDocumentCellChange[];
     }
@@ -14796,7 +14749,6 @@ export module '@theia/plugin' {
     export interface NotebookDocumentWillSaveEvent {
         /**
          * A cancellation token.
-         * @stubbed
          */
         readonly token: CancellationToken;
 
@@ -14853,19 +14805,16 @@ export module '@theia/plugin' {
 
         /**
          * The order in which the execution happened.
-         * @stubbed
          */
         readonly executionOrder?: number;
 
         /**
          * If the execution finished successfully.
-         * @stubbed
          */
         readonly success?: boolean;
 
         /**
          * The times at which execution started and ended, as unix timestamps
-         * @stubbed
          */
         readonly timing?: { readonly startTime: number; readonly endTime: number };
     }
@@ -14878,19 +14827,16 @@ export module '@theia/plugin' {
 
         /**
          * The zero-based start index of this range.
-         * @stubbed
          */
         readonly start: number;
 
         /**
          * The exclusive end index of this range (zero-based).
-         * @stubbed
          */
         readonly end: number;
 
         /**
          * `true` if `start` and `end` are equal.
-         * @stubbed
          */
         readonly isEmpty: boolean;
 
@@ -14900,7 +14846,6 @@ export module '@theia/plugin' {
          *
          * @param start start index
          * @param end end index.
-         * @stubbed
          */
         constructor(start: number, end: number);
 
@@ -14910,7 +14855,6 @@ export module '@theia/plugin' {
          * @param change An object that describes a change to this range.
          * @return A range that reflects the given change. Will return `this` range if the change
          * is not changing anything.
-         * @stubbed
          */
         with(change: { start?: number; end?: number }): NotebookRange;
     }
@@ -15014,13 +14958,11 @@ export module '@theia/plugin' {
          *  vscode.NotebookCellOutputItem.text('Hey', 'text/plain'), // INVALID: repeated type, editor will pick just one
          * ])
          * ```
-         * @stubbed
          */
         items: NotebookCellOutputItem[];
 
         /**
          * Arbitrary metadata for this cell output. Can be anything but must be JSON-stringifyable.
-         * @stubbed
          */
         metadata?: { [key: string]: any };
 
@@ -15029,7 +14971,6 @@ export module '@theia/plugin' {
          *
          * @param items Notebook output items.
          * @param metadata Optional metadata.
-         * @stubbed
          */
         constructor(items: NotebookCellOutputItem[], metadata?: { [key: string]: any });
     }
@@ -15041,26 +14982,22 @@ export module '@theia/plugin' {
 
         /**
          * The {@link NotebookCellKind kind} of this cell data.
-         * @stubbed
          */
         kind: NotebookCellKind;
 
         /**
          * The source value of this cell data - either source code or formatted text.
-         * @stubbed
          */
         value: string;
 
         /**
          * The language identifier of the source value of this cell data. Any value from
          * {@linkcode languages.getLanguages getLanguages} is possible.
-         * @stubbed
          */
         languageId: string;
 
         /**
          * The outputs of this cell data.
-         * @stubbed
          */
         outputs?: NotebookCellOutput[];
 
@@ -15071,7 +15008,6 @@ export module '@theia/plugin' {
 
         /**
          * The execution summary of this cell data.
-         * @stubbed
          */
         executionSummary?: NotebookCellExecutionSummary;
 
@@ -15082,7 +15018,6 @@ export module '@theia/plugin' {
          * @param kind The kind.
          * @param value The source value.
          * @param languageId The language identifier of the source value.
-         * @stubbed
          */
         constructor(kind: NotebookCellKind, value: string, languageId: string);
     }
@@ -15098,13 +15033,11 @@ export module '@theia/plugin' {
     export class NotebookData {
         /**
          * The cell data of this notebook data.
-         * @stubbed
          */
         cells: NotebookCellData[];
 
         /**
          * Arbitrary metadata of notebook data.
-         * @stubbed
          */
         metadata?: { [key: string]: any };
 
@@ -15112,7 +15045,6 @@ export module '@theia/plugin' {
          * Create new notebook data.
          *
          * @param cells An array of cell data.
-         * @stubbed
          */
         constructor(cells: NotebookCellData[]);
     }
@@ -15133,7 +15065,6 @@ export module '@theia/plugin' {
          * @param content Contents of a notebook file.
          * @param token A cancellation token.
          * @return Notebook data or a thenable that resolves to such.
-         * @stubbed
          */
         deserializeNotebook(content: Uint8Array, token: CancellationToken): NotebookData | Thenable<NotebookData>;
 
@@ -15143,7 +15074,6 @@ export module '@theia/plugin' {
          * @param data A notebook data structure.
          * @param token A cancellation token.
          * @returns An array of bytes or a thenable that resolves to such.
-         * @stubbed
          */
         serializeNotebook(data: NotebookData, token: CancellationToken): Uint8Array | Thenable<Uint8Array>;
     }
@@ -15159,7 +15089,6 @@ export module '@theia/plugin' {
          * Controls if output change events will trigger notebook document content change events and
          * if it will be used in the diff editor, defaults to false. If the content provider doesn't
          * persist the outputs in the file document, this should be set to true.
-         * @stubbed
          */
         transientOutputs?: boolean;
 
@@ -15168,7 +15097,6 @@ export module '@theia/plugin' {
          * change events and if it will be used in the diff editor, defaults to false. If the
          * content provider doesn't persist a metadata property in the file document, it should be
          * set to true.
-         * @stubbed
          */
         transientCellMetadata?: { [key: string]: boolean | undefined };
 
@@ -15177,7 +15105,6 @@ export module '@theia/plugin' {
          * content change event and if it will be used in the diff editor, defaults to false. If the
          * content provider doesn't persist a metadata property in the file document, it should be
          * set to true.
-         * @stubbed
          */
         transientDocumentMetadata?: { [key: string]: boolean | undefined };
     }
@@ -15192,13 +15119,11 @@ export module '@theia/plugin' {
          * will be created as needed up to the maximum of {@linkcode ViewColumn.Nine}.
          * Use {@linkcode ViewColumn.Beside} to open the editor to the side of the currently
          * active one.
-         * @stubbed
          */
         readonly viewColumn?: ViewColumn;
 
         /**
          * An optional flag that when `true` will stop the {@link NotebookEditor notebook editor} from taking focus.
-         * @stubbed
          */
         readonly preserveFocus?: boolean;
 
@@ -15206,13 +15131,11 @@ export module '@theia/plugin' {
          * An optional flag that controls if an {@link NotebookEditor notebook editor}-tab shows as preview. Preview tabs will
          * be replaced and reused until set to stay - either explicitly or through editing. The default behaviour depends
          * on the `workbench.editor.enablePreview`-setting.
-         * @stubbed
          */
         readonly preview?: boolean;
 
         /**
          * An optional selection to apply for the document in the {@link NotebookEditor notebook editor}.
-         * @stubbed
          */
         readonly selections?: readonly NotebookRange[];
     }
@@ -15275,7 +15198,6 @@ export module '@theia/plugin' {
          *
          * @param range The range of cells to replace
          * @param newCells The new notebook cells.
-         * @stubbed
          */
         static replaceCells(range: NotebookRange, newCells: NotebookCellData[]): NotebookEdit;
 
@@ -15284,7 +15206,6 @@ export module '@theia/plugin' {
          *
          * @param index The index to insert cells at.
          * @param newCells The new notebook cells.
-         * @stubbed
          */
         static insertCells(index: number, newCells: NotebookCellData[]): NotebookEdit;
 
@@ -15292,7 +15213,6 @@ export module '@theia/plugin' {
          * Utility to create an edit that deletes cells in a notebook.
          *
          * @param range The range of cells to delete.
-         * @stubbed
          */
         static deleteCells(range: NotebookRange): NotebookEdit;
 
@@ -15301,7 +15221,6 @@ export module '@theia/plugin' {
          *
          * @param index The index of the cell to update.
          * @param newCellMetadata The new metadata for the cell.
-         * @stubbed
          */
         static updateCellMetadata(index: number, newCellMetadata: { [key: string]: any }): NotebookEdit;
 
@@ -15309,31 +15228,26 @@ export module '@theia/plugin' {
          * Utility to create an edit that updates the notebook's metadata.
          *
          * @param newNotebookMetadata The new metadata for the notebook.
-         * @stubbed
          */
         static updateNotebookMetadata(newNotebookMetadata: { [key: string]: any }): NotebookEdit;
 
         /**
          * Range of the cells being edited. May be empty.
-         * @stubbed
          */
         range: NotebookRange;
 
         /**
          * New cells being inserted. May be empty.
-         * @stubbed
          */
         newCells: NotebookCellData[];
 
         /**
          * Optional new metadata for the cells.
-         * @stubbed
          */
         newCellMetadata?: { [key: string]: any };
 
         /**
          * Optional new metadata for the notebook.
-         * @stubbed
          */
         newNotebookMetadata?: { [key: string]: any };
 
@@ -15346,13 +15260,11 @@ export module '@theia/plugin' {
     export interface NotebookEditorSelectionChangeEvent {
         /**
          * The {@link NotebookEditor notebook editor} for which the selections have changed.
-         * @stubbed
          */
         readonly notebookEditor: NotebookEditor;
 
         /**
          * The new value for the {@link NotebookEditor.selections notebook editor's selections}.
-         * @stubbed
          */
         readonly selections: readonly NotebookRange[];
     }
@@ -15363,13 +15275,11 @@ export module '@theia/plugin' {
     export interface NotebookEditorVisibleRangesChangeEvent {
         /**
          * The {@link NotebookEditor notebook editor} for which the visible ranges have changed.
-         * @stubbed
          */
         readonly notebookEditor: NotebookEditor;
 
         /**
          * The new value for the {@link NotebookEditor.visibleRanges notebook editor's visibleRanges}.
-         * @stubbed
          */
         readonly visibleRanges: readonly NotebookRange[];
     }
@@ -15410,13 +15320,11 @@ export module '@theia/plugin' {
          *
          * _Note_ that controllers are remembered by their identifier and that extensions should use
          * stable identifiers across sessions.
-         * @stubbed
          */
         readonly id: string;
 
         /**
          * The notebook type this controller is for.
-         * @stubbed
          */
         readonly notebookType: string;
 
@@ -15434,32 +15342,27 @@ export module '@theia/plugin' {
          * myController.supportedLanguages = undefined; // falsy
          * myController.supportedLanguages = []; // falsy
          * ```
-         * @stubbed
          */
         supportedLanguages?: string[];
 
         /**
          * The human-readable label of this notebook controller.
-         * @stubbed
          */
         label: string;
 
         /**
          * The human-readable description which is rendered less prominent.
-         * @stubbed
          */
         description?: string;
 
         /**
          * The human-readable detail which is rendered less prominent.
-         * @stubbed
          */
         detail?: string;
 
         /**
          * Whether this controller supports execution order so that the
          * editor can render placeholders for them.
-         * @stubbed
          */
         supportsExecutionOrder?: boolean;
 
@@ -15475,14 +15378,12 @@ export module '@theia/plugin' {
          *
          * @param cell The notebook cell for which to create the execution.
          * @returns A notebook cell execution.
-         * @stubbed
          */
         createNotebookCellExecution(cell: NotebookCell): NotebookCellExecution;
 
         /**
          * The execute handler is invoked when the run gestures in the UI are selected, e.g Run Cell, Run All,
          * Run Selection etc. The execute handler is responsible for creating and managing {@link NotebookCellExecution execution}-objects.
-         * @stubbed
          */
         executeHandler: (cells: NotebookCell[], notebook: NotebookDocument, controller: NotebookController) => void | Thenable<void>;
 
@@ -15497,7 +15398,6 @@ export module '@theia/plugin' {
          *
          * _Note_ that supporting {@link NotebookCellExecution.token cancellation tokens} is preferred and that interrupt handlers should
          * only be used when tokens cannot be supported.
-         * @stubbed
          */
         interruptHandler?: (notebook: NotebookDocument) => void | Thenable<void>;
 
@@ -15510,7 +15410,6 @@ export module '@theia/plugin' {
          *
          * _Note_ that controller selection is persisted (by the controllers {@link NotebookController.id id}) and restored as soon as a
          * controller is re-created or as a notebook is {@link workspace.onDidOpenNotebookDocument opened}.
-         * @stubbed
          */
         readonly onDidChangeSelectedNotebooks: Event<{ readonly notebook: NotebookDocument; readonly selected: boolean }>;
 
@@ -15520,13 +15419,11 @@ export module '@theia/plugin' {
          *
          * @param notebook The notebook for which a priority is set.
          * @param affinity A controller affinity
-         * @stubbed
          */
         updateNotebookAffinity(notebook: NotebookDocument, affinity: NotebookControllerAffinity): void;
 
         /**
          * Dispose and free associated resources.
-         * @stubbed
          */
         dispose(): void;
     }
@@ -15543,7 +15440,6 @@ export module '@theia/plugin' {
 
         /**
          * The {@link NotebookCell cell} for which this execution has been created.
-         * @stubbed
          */
         readonly cell: NotebookCell;
 
@@ -15553,13 +15449,11 @@ export module '@theia/plugin' {
          *
          * _Note_ that the cancellation token will not be triggered when the {@link NotebookController controller}
          * that created this execution uses an {@link NotebookController.interruptHandler interrupt-handler}.
-         * @stubbed
          */
         readonly token: CancellationToken;
 
         /**
          * Set and unset the order of this cell execution.
-         * @stubbed
          */
         executionOrder: number | undefined;
 
@@ -15568,7 +15462,6 @@ export module '@theia/plugin' {
          *
          * @param startTime The time that execution began, in milliseconds in the Unix epoch. Used to drive the clock
          * that shows for how long a cell has been running. If not given, the clock won't be shown.
-         * @stubbed
          */
         start(startTime?: number): void;
 
@@ -15579,7 +15472,6 @@ export module '@theia/plugin' {
          * If false, a red X is shown.
          * If undefined, no check or X icon is shown.
          * @param endTime The time that execution finished, in milliseconds in the Unix epoch.
-         * @stubbed
          */
         end(success: boolean | undefined, endTime?: number): void;
 
@@ -15589,7 +15481,6 @@ export module '@theia/plugin' {
          * @param cell Cell for which output is cleared. Defaults to the {@link NotebookCellExecution.cell cell} of
          * this execution.
          * @return A thenable that resolves when the operation finished.
-         * @stubbed
          */
         clearOutput(cell?: NotebookCell): Thenable<void>;
 
@@ -15600,7 +15491,6 @@ export module '@theia/plugin' {
          * @param cell Cell for which output is cleared. Defaults to the {@link NotebookCellExecution.cell cell} of
          * this execution.
          * @return A thenable that resolves when the operation finished.
-         * @stubbed
          */
         replaceOutput(out: NotebookCellOutput | readonly NotebookCellOutput[], cell?: NotebookCell): Thenable<void>;
 
@@ -15611,7 +15501,6 @@ export module '@theia/plugin' {
          * @param cell Cell for which output is cleared. Defaults to the {@link NotebookCellExecution.cell cell} of
          * this execution.
          * @return A thenable that resolves when the operation finished.
-         * @stubbed
          */
         appendOutput(out: NotebookCellOutput | readonly NotebookCellOutput[], cell?: NotebookCell): Thenable<void>;
 
@@ -15621,7 +15510,6 @@ export module '@theia/plugin' {
          * @param items Output items that replace the items of existing output.
          * @param output Output object that already exists.
          * @return A thenable that resolves when the operation finished.
-         * @stubbed
          */
         replaceOutputItems(items: NotebookCellOutputItem | readonly NotebookCellOutputItem[], output: NotebookCellOutput): Thenable<void>;
 
@@ -15631,7 +15519,6 @@ export module '@theia/plugin' {
          * @param items Output items that are append to existing output.
          * @param output Output object that already exists.
          * @return A thenable that resolves when the operation finished.
-         * @stubbed
          */
         appendOutputItems(items: NotebookCellOutputItem | readonly NotebookCellOutputItem[], output: NotebookCellOutput): Thenable<void>;
     }
@@ -15658,7 +15545,6 @@ export module '@theia/plugin' {
     export class NotebookCellStatusBarItem {
         /**
          * The text to show for the item.
-         * @stubbed
          */
         text: string;
 
@@ -15675,25 +15561,21 @@ export module '@theia/plugin' {
          *
          * Note that if this is a {@linkcode Command} object, only the {@linkcode Command.command command} and {@linkcode Command.arguments arguments}
          * are used by the editor.
-         * @stubbed
          */
         command?: string | Command;
 
         /**
          * A tooltip to show when the item is hovered.
-         * @stubbed
          */
         tooltip?: string;
 
         /**
          * The priority of the item. A higher value item will be shown more to the left.
-         * @stubbed
          */
         priority?: number;
 
         /**
          * Accessibility information used when a screen reader interacts with this item.
-         * @stubbed
          */
         accessibilityInformation?: AccessibilityInformation;
 
@@ -15701,7 +15583,6 @@ export module '@theia/plugin' {
          * Creates a new NotebookCellStatusBarItem.
          * @param text The text to show for the item.
          * @param alignment Whether the item is aligned to the left or right.
-         * @stubbed
          */
         constructor(text: string, alignment: NotebookCellStatusBarAlignment);
     }
@@ -15712,7 +15593,6 @@ export module '@theia/plugin' {
     export interface NotebookCellStatusBarItemProvider {
         /**
          * An optional event to signal that statusbar items have changed. The provide method will be called again.
-         * @stubbed
          */
         onDidChangeCellStatusBarItems?: Event<void>;
 
@@ -15721,7 +15601,6 @@ export module '@theia/plugin' {
          * @param cell The cell for which to return items.
          * @param token A token triggered if this request should be cancelled.
          * @return One or more {@link NotebookCellStatusBarItem cell statusbar items}
-         * @stubbed
          */
         provideCellStatusBarItems(cell: NotebookCell, token: CancellationToken): ProviderResult<NotebookCellStatusBarItem | NotebookCellStatusBarItem[]>;
     }
@@ -15742,8 +15621,9 @@ export module '@theia/plugin' {
          * @param notebookType A notebook type for which this controller is for.
          * @param label The label of the controller.
          * @param handler The execute-handler of the controller.
-         * @returns a new instance of {@link NotebookController}
-         * @stubbed
+        * @returns a new instance of {
+    @link NotebookController
+    }
          */
         export function createNotebookController(
             id: string,
@@ -15759,7 +15639,6 @@ export module '@theia/plugin' {
          * - Note 2: A renderer only has access to messaging if requiresMessaging is set to always or optional in its notebookRenderer contribution.
          * @param rendererId The renderer ID to communicate with
          * @returns A new notebook renderer messaging object.
-         * @stubbed
          */
         export function createRendererMessaging(rendererId: string): NotebookRendererMessaging;
 
@@ -15768,7 +15647,6 @@ export module '@theia/plugin' {
          * @param notebookType The notebook type to register for.
          * @param provider A cell status bar provider.
          * @returns A Disposable that unregisters this provider when being disposed.
-         * @stubbed
          */
         export function registerNotebookCellStatusBarItemProvider(notebookType: string, provider: NotebookCellStatusBarItemProvider): Disposable;
     }

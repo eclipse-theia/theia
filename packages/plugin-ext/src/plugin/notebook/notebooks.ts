@@ -23,7 +23,7 @@ import { URI as TheiaURI } from '../types-impl';
 import * as theia from '@theia/plugin';
 import {
     CommandRegistryExt, ModelAddedData, NotebookCellStatusBarListDto, NotebookDataDto,
-    NotebookDocumentsAndEditorsDelta, NotebookDocumentsMain, NotebookEditorAddData, NotebooksExt, NotebooksMain, Plugin,
+    NotebookDocumentsAndEditorsDelta, NotebookDocumentShowOptions, NotebookDocumentsMain, NotebookEditorAddData, NotebookEditorsMain, NotebooksExt, NotebooksMain, Plugin,
     PLUGIN_RPC_CONTEXT
 } from '../../common';
 import { Cache } from '../../common/cache';
@@ -70,6 +70,7 @@ export class NotebooksExtImpl implements NotebooksExt {
 
     private notebookProxy: NotebooksMain;
     private notebookDocumentsProxy: NotebookDocumentsMain;
+    private notebookEditors: NotebookEditorsMain;
 
     constructor(
         rpc: RPCProtocol,
@@ -79,6 +80,7 @@ export class NotebooksExtImpl implements NotebooksExt {
     ) {
         this.notebookProxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN);
         this.notebookDocumentsProxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN);
+        this.notebookEditors = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN);
 
         commands.registerArgumentProcessor({
             processArgument: (arg: { uri: URI }) => {
@@ -189,6 +191,10 @@ export class NotebooksExtImpl implements NotebooksExt {
             throw new Error(`unknown text editor: ${editorId}. known editors: ${[...this.editors.keys()]} `);
         }
         return editor;
+    }
+
+    getAllApiDocuments(): theia.NotebookDocument[] {
+        return [...this.documents.values()].map(doc => doc.apiNotebook);
     }
 
     async $acceptDocumentsAndEditorsDelta(delta: NotebookDocumentsAndEditorsDelta): Promise<void> {
@@ -305,9 +311,9 @@ export class NotebooksExtImpl implements NotebooksExt {
         }
     }
 
-    getNotebookDocument(uri: URI, relaxed: true): NotebookDocument | undefined;
-    getNotebookDocument(uri: URI): NotebookDocument;
-    getNotebookDocument(uri: URI, relaxed?: true): NotebookDocument | undefined {
+    getNotebookDocument(uri: TheiaURI, relaxed: true): NotebookDocument | undefined;
+    getNotebookDocument(uri: TheiaURI): NotebookDocument;
+    getNotebookDocument(uri: TheiaURI, relaxed?: true): NotebookDocument | undefined {
         const result = this.documents.get(uri.toString());
         if (!result && !relaxed) {
             throw new Error(`NO notebook document for '${uri}'`);
@@ -330,6 +336,60 @@ export class NotebooksExtImpl implements NotebooksExt {
         );
 
         this.editors.set(editorId, editor);
+    }
+
+    async createNotebookDocument(options: { viewType: string; content?: theia.NotebookData }): Promise<TheiaURI> {
+        const canonicalUri = await this.notebookDocumentsProxy.$tryCreateNotebook({
+            viewType: options.viewType,
+            content: options.content && typeConverters.NotebookData.from(options.content)
+        });
+        return TheiaURI.from(canonicalUri);
+    }
+
+    async openNotebookDocument(uri: TheiaURI): Promise<theia.NotebookDocument> {
+        const cached = this.documents.get(uri.toString());
+        if (cached) {
+            return cached.apiNotebook;
+        }
+        const canonicalUri = await this.notebookDocumentsProxy.$tryOpenNotebook(uri);
+        const document = this.documents.get(URI.fromComponents(canonicalUri).toString());
+        return document?.apiNotebook!;
+    }
+
+    async showNotebookDocument(notebookOrUri: theia.NotebookDocument | TheiaURI, options?: theia.NotebookDocumentShowOptions): Promise<theia.NotebookEditor> {
+
+        if (URI.isUri(notebookOrUri)) {
+            notebookOrUri = await this.openNotebookDocument(notebookOrUri as TheiaURI);
+        }
+
+        const notebook = notebookOrUri as theia.NotebookDocument;
+
+        let resolvedOptions: NotebookDocumentShowOptions;
+        if (typeof options === 'object') {
+            resolvedOptions = {
+                position: typeConverters.ViewColumn.from(options.viewColumn),
+                preserveFocus: options.preserveFocus,
+                selections: options.selections && options.selections.map(typeConverters.NotebookRange.from),
+                pinned: typeof options.preview === 'boolean' ? !options.preview : undefined
+            };
+        } else {
+            resolvedOptions = {
+                preserveFocus: false
+            };
+        }
+
+        const editorId = await this.notebookEditors.$tryShowNotebookDocument(notebook.uri, notebook.notebookType, resolvedOptions);
+        const editor = editorId && this.editors.get(editorId)?.apiEditor;
+
+        if (editor) {
+            return editor;
+        }
+
+        if (editorId) {
+            throw new Error(`Could NOT open editor for "${notebook.uri.toString()}" because another editor opened in the meantime.`);
+        } else {
+            throw new Error(`Could NOT open editor for "${notebook.uri.toString()}".`);
+        }
     }
 
 }
