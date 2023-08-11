@@ -66,25 +66,25 @@ export interface NotebookCellModelProps {
 @injectable()
 export class NotebookCellModel implements NotebookCell, Disposable {
 
-    private readonly didChangeOutputsEmitter = new Emitter<NotebookCellOutputsSplice>();
+    protected readonly didChangeOutputsEmitter = new Emitter<NotebookCellOutputsSplice>();
     readonly onDidChangeOutputs: Event<NotebookCellOutputsSplice> = this.didChangeOutputsEmitter.event;
 
-    private readonly didChangeOutputItemsEmitter = new Emitter<void>();
+    protected readonly didChangeOutputItemsEmitter = new Emitter<void>();
     readonly onDidChangeOutputItems: Event<void> = this.didChangeOutputItemsEmitter.event;
 
-    private readonly didChangeContentEmitter = new Emitter<'content' | 'language' | 'mime'>();
+    protected readonly didChangeContentEmitter = new Emitter<'content' | 'language' | 'mime'>();
     readonly onDidChangeContent: Event<'content' | 'language' | 'mime'> = this.didChangeContentEmitter.event;
 
-    private readonly didChangeMetadataEmitter = new Emitter<void>();
+    protected readonly didChangeMetadataEmitter = new Emitter<void>();
     readonly onDidChangeMetadata: Event<void> = this.didChangeMetadataEmitter.event;
 
-    private readonly didChangeInternalMetadataEmitter = new Emitter<CellInternalMetadataChangedEvent>();
+    protected readonly didChangeInternalMetadataEmitter = new Emitter<CellInternalMetadataChangedEvent>();
     readonly onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent> = this.didChangeInternalMetadataEmitter.event;
 
-    private readonly didChangeLanguageEmitter = new Emitter<string>();
+    protected readonly didChangeLanguageEmitter = new Emitter<string>();
     readonly onDidChangeLanguage: Event<string> = this.didChangeLanguageEmitter.event;
 
-    private readonly requestCellEditChangeEmitter = new Emitter<boolean>();
+    protected readonly requestCellEditChangeEmitter = new Emitter<boolean>();
     readonly onRequestCellEditChange = this.requestCellEditChangeEmitter.event;
 
     @inject(NotebookCellContextManagerSymbol)
@@ -96,7 +96,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
 
     readonly toDispose = new DisposableCollection();
 
-    private _internalMetadata: NotebookCellInternalMetadata;
+    protected _internalMetadata: NotebookCellInternalMetadata;
 
     get internalMetadata(): NotebookCellInternalMetadata {
         return this._internalMetadata;
@@ -115,7 +115,8 @@ export class NotebookCellModel implements NotebookCell, Disposable {
 
     textModel: MonacoEditorModel;
 
-    private htmlContext: HTMLLIElement;
+    protected htmlContext: HTMLLIElement;
+
     get context(): HTMLLIElement {
         return this.htmlContext;
     }
