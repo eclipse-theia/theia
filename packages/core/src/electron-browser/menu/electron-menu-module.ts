@@ -16,7 +16,7 @@
 
 import { ContainerModule } from 'inversify';
 import { CommandContribution, MenuContribution } from '../../common';
-import { FrontendApplicationContribution, ContextMenuRenderer, KeybindingContribution, KeybindingContext } from '../../browser';
+import { FrontendApplicationContribution, ContextMenuRenderer, KeybindingContribution } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { ElectronContextMenuRenderer, ElectronTextInputContextMenuContribution } from './electron-context-menu-renderer';
 import { CustomTitleWidget, CustomTitleWidgetFactory, ElectronMenuContribution } from './electron-menu-contribution';
@@ -24,10 +24,6 @@ import { CustomTitleWidget, CustomTitleWidgetFactory, ElectronMenuContribution }
 export default new ContainerModule(bind => {
     bind(ElectronMainMenuFactory).toSelf().inSingletonScope();
     bind(ContextMenuRenderer).to(ElectronContextMenuRenderer).inSingletonScope();
-    bind(KeybindingContext).toConstantValue({
-        id: 'theia.context',
-        isEnabled: true
-    });
 
     bind(ElectronMenuContribution).toSelf().inSingletonScope();
     for (const serviceIdentifier of [FrontendApplicationContribution, KeybindingContribution, CommandContribution, MenuContribution]) {
