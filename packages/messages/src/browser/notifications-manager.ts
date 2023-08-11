@@ -137,7 +137,7 @@ export class NotificationManager extends MessageClient {
         }
         this.deferredResults.delete(messageId);
         if ((this.centerVisible && !this.notifications.size) || (this.toastsVisible && !this.toasts.size)) {
-            this.visibilityState = 'hidden';
+            this.setVisibilityState('hidden');
         }
         result.resolve(action);
         this.fireUpdatedEvent();
