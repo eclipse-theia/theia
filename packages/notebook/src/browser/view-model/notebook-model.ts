@@ -212,12 +212,15 @@ export class NotebookModel implements Saveable, Disposable {
         }).filter(edit => !!edit);
 
         for (const { edit, cellIndex } of editsWithDetails) {
+            const cell = this.cells[cellIndex];
+            if (cell) {
+                this.cellDirtyChanged(cell, true);
+            }
             switch (edit.editType) {
                 case CellEditType.Replace:
                     this.replaceCells(edit.index, edit.count, edit.cells, computeUndoRedo);
                     break;
                 case CellEditType.Output: {
-                    const cell = this.cells[cellIndex];
                     if (edit.append) {
                         cell.spliceNotebookCellOutputs({ deleteCount: 0, newOutputs: edit.outputs, start: cell.outputs.length });
                     } else {
