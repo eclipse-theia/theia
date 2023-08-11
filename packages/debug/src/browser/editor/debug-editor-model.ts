@@ -407,16 +407,7 @@ export class DebugEditorModel implements Disposable {
 
     protected handleMouseDown(event: monaco.editor.IEditorMouseEvent): void {
         if (event.target && event.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) {
-            if (event.event.rightButton) {
-                this.editor.focus();
-                setTimeout(() => {
-                    this.contextMenu.render({
-                        menuPath: DebugEditorModel.CONTEXT_MENU,
-                        anchor: event.event.browserEvent,
-                        args: [event.target.position!]
-                    });
-                });
-            } else {
+            if (!event.event.rightButton) {
                 this.toggleBreakpoint(event.target.position!);
             }
         }
