@@ -18,7 +18,7 @@
 
 import debounce = require('lodash.debounce');
 import { injectable, inject, optional } from 'inversify';
-import { MAIN_MENU_BAR, SETTINGS_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU, CompoundMenuNodeRole } from '../common/menu';
+import { MAIN_MENU_BAR, SETTINGS_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { FrontendApplication, FrontendApplicationContribution, OnWillStopAction } from './frontend-application';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
@@ -971,6 +971,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.NEW_UNTITLED_FILE, {
             execute: async () => this.showNewFilePicker()
         });
+
         for (const [index, ordinal] of this.getOrdinalNumbers().entries()) {
             commandRegistry.registerCommand({ id: `workbench.action.focus${ordinal}EditorGroup`, label: index === 0 ? nls.localizeByDefault('Focus First Editor Group') : '', category: nls.localize(CommonCommands.VIEW_CATEGORY_KEY, CommonCommands.VIEW_CATEGORY) }, {
                 isEnabled: () => this.shell.mainAreaTabBars.length > index,
@@ -1331,7 +1332,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             ...newFileContributions.children
                 .flatMap(node => {
                     if (node.children && node.children.length > 0) {
-                        return node.role === CompoundMenuNodeRole.Group || node.role === CompoundMenuNodeRole.Submenu ? [node, ...node.children] : node.children;
+                        return node.children;
                     }
                     return node;
                 })
