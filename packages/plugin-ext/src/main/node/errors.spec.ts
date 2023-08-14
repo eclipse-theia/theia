@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Red Hat, Inc. and others.
+// Copyright (C) 2023 Arduino SA and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,24 +13,25 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import * as os from 'os';
-import * as path from 'path';
-import { realpathSync, promises as fs } from 'fs';
 
-export function getTempDir(name: string): string {
-    let tempDir = os.tmpdir();
-    // for mac os 'os.tmpdir()' return symlink, but we need real path
-    if (process.platform === 'darwin') {
-        tempDir = realpathSync(tempDir);
-    }
-    return path.resolve(tempDir, name);
-}
+import { rejects } from 'assert';
+import { strictEqual } from 'assert/strict';
+import { promises as fs } from 'fs';
+import { v4 } from 'uuid';
+import { isENOENT } from '../../common/errors';
 
-export async function getTempDirPathAsync(name: string): Promise<string> {
-    let tempDir = os.tmpdir();
-    // for mac os 'os.tmpdir()' return symlink, but we need real path
-    if (process.platform === 'darwin') {
-        tempDir = await fs.realpath(tempDir);
-    }
-    return path.resolve(tempDir, name);
-}
+describe('errors', () => {
+    describe('errno-exception', () => {
+        it('should be ENOENT error', async () => {
+            await rejects(fs.readFile(v4()), reason => isENOENT(reason));
+        });
+
+        it('should not be ENOENT error (no code)', () => {
+            strictEqual(isENOENT(new Error('I am not ENOENT')), false);
+        });
+
+        it('should not be ENOENT error (other code)', async () => {
+            await rejects(fs.readdir(__filename), reason => !isENOENT(reason));
+        });
+    });
+});

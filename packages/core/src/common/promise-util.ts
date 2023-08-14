@@ -129,3 +129,15 @@ export function waitForEvent<T>(event: Event<T>, ms: number, thisArg?: any, disp
 export function isThenable<T>(obj: unknown): obj is Promise<T> {
     return isObject<Promise<unknown>>(obj) && isFunction(obj.then);
 }
+
+/**
+ * Returns with a promise that waits until the first promise resolves to `true`.
+ */
+// Based on https://stackoverflow.com/a/51160727/5529090
+export function firstTrue(...promises: readonly Promise<boolean>[]): Promise<boolean> {
+    const newPromises = promises.map(promise => new Promise<boolean>(
+        (resolve, reject) => promise.then(result => result && resolve(true), reject)
+    ));
+    newPromises.push(Promise.all(promises).then(() => false));
+    return Promise.race(newPromises);
+}

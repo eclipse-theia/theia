@@ -21,8 +21,8 @@ import * as semver from 'semver';
 import {
     PluginDeployerResolver, PluginDeployerFileHandler, PluginDeployerDirectoryHandler,
     PluginDeployerEntry, PluginDeployer, PluginDeployerParticipant, PluginDeployerStartContext,
-    PluginDeployerResolverInit, PluginDeployerFileHandlerContext,
-    PluginDeployerDirectoryHandlerContext, PluginDeployerEntryType, PluginDeployerHandler, PluginType, UnresolvedPluginEntry, PluginIdentifiers, PluginDeployOptions
+    PluginDeployerResolverInit,
+    PluginDeployerEntryType, PluginDeployerHandler, PluginType, UnresolvedPluginEntry, PluginIdentifiers, PluginDeployOptions
 } from '../../common/plugin-protocol';
 import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl';
 import {
@@ -295,41 +295,33 @@ export class PluginDeployerImpl implements PluginDeployer {
     /**
      * If there are some single files, try to see if we can work on these files (like unpacking it, etc)
      */
-    public async applyFileHandlers(pluginDeployerEntries: PluginDeployerEntry[]): Promise<any> {
-        const waitPromises: Array<Promise<any>> = [];
-
-        pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isResolved()).map(pluginDeployerEntry => {
-            this.pluginDeployerFileHandlers.map(pluginFileHandler => {
+    public async applyFileHandlers(pluginDeployerEntries: PluginDeployerEntry[]): Promise<void> {
+        const waitPromises = pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isResolved()).flatMap(pluginDeployerEntry =>
+            this.pluginDeployerFileHandlers.map(async pluginFileHandler => {
                 const proxyPluginDeployerEntry = new ProxyPluginDeployerEntry(pluginFileHandler, (pluginDeployerEntry) as PluginDeployerEntryImpl);
-                if (pluginFileHandler.accept(proxyPluginDeployerEntry)) {
-                    const pluginDeployerFileHandlerContext: PluginDeployerFileHandlerContext = new PluginDeployerFileHandlerContextImpl(proxyPluginDeployerEntry);
-                    const promise: Promise<void> = pluginFileHandler.handle(pluginDeployerFileHandlerContext);
-                    waitPromises.push(promise);
+                if (await pluginFileHandler.accept(proxyPluginDeployerEntry)) {
+                    const pluginDeployerFileHandlerContext = new PluginDeployerFileHandlerContextImpl(proxyPluginDeployerEntry);
+                    await pluginFileHandler.handle(pluginDeployerFileHandlerContext);
                 }
-            });
-
-        });
-        return Promise.all(waitPromises);
+            })
+        );
+        await Promise.all(waitPromises);
     }
 
     /**
      * Check for all registered directories to see if there are some plugins that can be accepted to be deployed.
      */
-    public async applyDirectoryFileHandlers(pluginDeployerEntries: PluginDeployerEntry[]): Promise<any> {
-        const waitPromises: Array<Promise<any>> = [];
-
-        pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isResolved()).map(pluginDeployerEntry => {
-            this.pluginDeployerDirectoryHandlers.map(pluginDirectoryHandler => {
+    public async applyDirectoryFileHandlers(pluginDeployerEntries: PluginDeployerEntry[]): Promise<void> {
+        const waitPromises = pluginDeployerEntries.filter(pluginDeployerEntry => pluginDeployerEntry.isResolved()).flatMap(pluginDeployerEntry =>
+            this.pluginDeployerDirectoryHandlers.map(async pluginDirectoryHandler => {
                 const proxyPluginDeployerEntry = new ProxyPluginDeployerEntry(pluginDirectoryHandler, (pluginDeployerEntry) as PluginDeployerEntryImpl);
-                if (pluginDirectoryHandler.accept(proxyPluginDeployerEntry)) {
-                    const pluginDeployerDirectoryHandlerContext: PluginDeployerDirectoryHandlerContext = new PluginDeployerDirectoryHandlerContextImpl(proxyPluginDeployerEntry);
-                    const promise: Promise<void> = pluginDirectoryHandler.handle(pluginDeployerDirectoryHandlerContext);
-                    waitPromises.push(promise);
+                if (await pluginDirectoryHandler.accept(proxyPluginDeployerEntry)) {
+                    const pluginDeployerDirectoryHandlerContext = new PluginDeployerDirectoryHandlerContextImpl(proxyPluginDeployerEntry);
+                    await pluginDirectoryHandler.handle(pluginDeployerDirectoryHandlerContext);
                 }
-            });
-
-        });
-        return Promise.all(waitPromises);
+            })
+        );
+        await Promise.all(waitPromises);
     }
 
     /**

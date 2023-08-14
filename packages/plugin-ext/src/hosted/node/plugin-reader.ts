@@ -118,7 +118,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
         return pluginMetadata;
     }
 
-    readContribution(plugin: PluginPackage): PluginContribution | undefined {
+    async readContribution(plugin: PluginPackage): Promise<PluginContribution | undefined> {
         const scanner = this.scanner.getScanner(plugin);
         return scanner.getContribution(plugin);
     }

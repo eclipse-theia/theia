@@ -766,7 +766,8 @@ export class DugiteGit implements Git {
         const out = result.stdout;
         if (out && out.length !== 0) {
             try {
-                return fs.realpathSync(out.trim());
+                const realpath = await fs.realpath(out.trim());
+                return realpath;
             } catch (e) {
                 this.logger.error(e);
                 return undefined;
