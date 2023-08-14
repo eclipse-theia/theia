@@ -341,7 +341,9 @@ export class DebugEditorModel implements Disposable {
                 const line = range.startLineNumber;
                 const column = range.startColumn;
                 const oldBreakpoint = this.breakpointRanges.get(decoration)?.[1];
-                const breakpoint = SourceBreakpoint.create(uri, { line, column }, oldBreakpoint);
+                const isLineBreakpoint = oldBreakpoint?.raw.line !== undefined && oldBreakpoint?.raw.column === undefined;
+                const change = isLineBreakpoint ? { line } : { line, column };
+                const breakpoint = SourceBreakpoint.create(uri, change, oldBreakpoint);
                 breakpoints.push(breakpoint);
                 lines.add(line);
             }
