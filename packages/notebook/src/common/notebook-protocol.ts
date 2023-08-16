@@ -18,7 +18,7 @@ export interface NotebookTypeDescriptor {
     readonly type: string;
     readonly displayName: string;
     readonly priority?: string | undefined;
-    readonly selectors?: readonly NotebookFileSelector[];
+    readonly selector?: readonly NotebookFileSelector[];
 }
 
 export interface NotebookFileSelector {

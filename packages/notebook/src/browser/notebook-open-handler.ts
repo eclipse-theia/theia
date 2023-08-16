@@ -13,6 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
 import { URI, MaybePromise } from '@theia/core';
 import { NavigatableWidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -24,11 +25,6 @@ import { NotebookEditorWidgetOptions } from './notebook-editor-widget-factory';
 
 @injectable()
 export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEditorWidget> {
-    /**
-     * flag for activating notebook support
-     * TODO remove when notbook support is functional
-     */
-    private static readonly EXPERIMENTAL_NOTEBOOK_SUPPORT_ACTIVE = true;
 
     id: string = 'notebook';
 
@@ -41,17 +37,13 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
     }
 
     canHandle(uri: URI, options?: WidgetOpenerOptions | undefined): MaybePromise<number> {
-        if (!NotebookOpenHandler.EXPERIMENTAL_NOTEBOOK_SUPPORT_ACTIVE) {
-            return -1;
-        }
-
         const cachedNotebookType = this.matchedNotebookTypes.get(uri.toString());
         if (cachedNotebookType) {
             return this.calculatePriority(cachedNotebookType);
         }
 
         const [notebookType, priority] = this.notebookTypeRegistry.notebookTypes.
-            filter(notebook => notebook.selectors && this.matches(notebook.selectors, uri))
+            filter(notebook => notebook.selector && this.matches(notebook.selector, uri))
             .map(notebook => [notebook, this.calculatePriority(notebook)] as [NotebookTypeDescriptor, number])
             .reduce((notebook, current) => current[1] > notebook[1] ? current : notebook);
         if (priority >= 0) {

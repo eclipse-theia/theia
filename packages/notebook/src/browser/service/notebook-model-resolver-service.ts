@@ -50,8 +50,8 @@ export class NotebookModelResolverService {
     async resolve(arg: URI | UntitledResource, viewType: string): Promise<NotebookModel> {
         let resource: URI;
         // let hasAssociatedFilePath = false;
-        if (URI.isUri(arg)) {
-            resource = arg as URI;
+        if (arg instanceof URI) {
+            resource = arg;
         } else {
             arg = arg as UntitledResource;
             if (!arg.untitledResource) {
@@ -60,7 +60,7 @@ export class NotebookModelResolverService {
                     throw new Error('UNKNOWN view type: ' + viewType);
                 }
 
-                const suffix = this.getPossibleFileEndings(notebookTypeInfo.selectors!) ?? '';
+                const suffix = this.getPossibleFileEndings(notebookTypeInfo.selector ?? []) ?? '';
                 for (let counter = 1; ; counter++) {
                     const candidate = new URI()
                         .withScheme('untitled')
