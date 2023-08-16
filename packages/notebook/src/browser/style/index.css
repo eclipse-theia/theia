@@ -65,8 +65,15 @@
     font-size: var(--theia-notebook-markdown-size);
 }
 
-.theia-notebook-markdown-content>p {
-    margin: 0;
+.theia-notebook-markdown-content > *:first-child {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.theia-notebook-markdown-content > *:only-child,
+.theia-notebook-markdown-content > *:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
 .theia-notebook-empty-markdown {

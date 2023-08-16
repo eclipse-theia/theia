@@ -28,28 +28,33 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
 
     id: string = 'notebook';
 
-    // chache is mostly important because we need the contribution again in createWidgetOptions.
-    // This way we don't have to go through all selectors again.
-    private readonly matchedNotebookTypes: Map<string, NotebookTypeDescriptor> = new Map();
-
     constructor(@inject(NotebookTypeRegistry) private notebookTypeRegistry: NotebookTypeRegistry) {
         super();
     }
 
     canHandle(uri: URI, options?: WidgetOpenerOptions | undefined): MaybePromise<number> {
-        const cachedNotebookType = this.matchedNotebookTypes.get(uri.toString());
-        if (cachedNotebookType) {
-            return this.calculatePriority(cachedNotebookType);
-        }
+        const priorities = this.notebookTypeRegistry.notebookTypes
+            .filter(notebook => notebook.selector && this.matches(notebook.selector, uri))
+            .map(notebook => this.calculatePriority(notebook));
+        return Math.max(...priorities);
+    }
 
-        const [notebookType, priority] = this.notebookTypeRegistry.notebookTypes.
-            filter(notebook => notebook.selector && this.matches(notebook.selector, uri))
-            .map(notebook => [notebook, this.calculatePriority(notebook)] as [NotebookTypeDescriptor, number])
-            .reduce((notebook, current) => current[1] > notebook[1] ? current : notebook);
-        if (priority >= 0) {
-            this.matchedNotebookTypes.set(uri.toString(), notebookType);
+    protected findHighestPriorityType(uri: URI): NotebookTypeDescriptor | undefined {
+        const matchingTypes = this.notebookTypeRegistry.notebookTypes
+            .filter(notebookType => notebookType.selector && this.matches(notebookType.selector, uri))
+            .map(notebookType => ({ descriptor: notebookType, priority: this.calculatePriority(notebookType) }));
+
+        if (matchingTypes.length === 0) {
+            return undefined;
         }
-        return priority;
+        let type = matchingTypes[0];
+        for (let i = 1; i < matchingTypes.length; i++) {
+            const notebookType = matchingTypes[i];
+            if (notebookType.priority > type.priority) {
+                type = notebookType;
+            }
+        }
+        return type.descriptor;
     }
 
     protected calculatePriority(notebookType: NotebookTypeDescriptor | undefined): number {
@@ -61,7 +66,10 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
 
     protected override createWidgetOptions(uri: URI, options?: WidgetOpenerOptions | undefined): NotebookEditorWidgetOptions {
         const widgetOptions = super.createWidgetOptions(uri, options);
-        const notebookType = this.matchedNotebookTypes.get(uri.toString())!;
+        const notebookType = this.findHighestPriorityType(uri);
+        if (!notebookType) {
+            throw new Error('No notebook types registered for uri: ' + uri.toString());
+        }
         return {
             notebookType: notebookType.type,
             ...widgetOptions
