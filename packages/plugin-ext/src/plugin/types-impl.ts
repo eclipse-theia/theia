@@ -1908,6 +1908,9 @@ export class TreeItem {
 
     contextValue?: string;
 
+    checkboxState?: theia.TreeItemCheckboxState | { readonly state: theia.TreeItemCheckboxState; readonly tooltip?: string; readonly accessibilityInformation?: AccessibilityInformation };
+
+
     constructor(label: string | theia.TreeItemLabel, collapsibleState?: theia.TreeItemCollapsibleState)
     constructor(resourceUri: URI, collapsibleState?: theia.TreeItemCollapsibleState)
     constructor(arg1: string | theia.TreeItemLabel | URI, public collapsibleState: theia.TreeItemCollapsibleState = TreeItemCollapsibleState.None) {
@@ -1923,6 +1926,11 @@ export enum TreeItemCollapsibleState {
     None = 0,
     Collapsed = 1,
     Expanded = 2
+}
+
+export enum TreeItemCheckboxState {
+    Unchecked = 0,
+    Checked = 1
 }
 
 export enum SymbolTag {

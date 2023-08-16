@@ -63,6 +63,7 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
         this.treeViewProviders.set(treeViewId, this.viewRegistry.registerViewDataProvider(treeViewId, async ({ state, viewInfo }) => {
             const options: TreeViewWidgetOptions = {
                 id: treeViewId,
+                manageCheckboxStateManually: $options.manageCheckboxStateManually,
                 showCollapseAll: $options.showCollapseAll,
                 multiSelect: $options.canSelectMany,
                 dragMimeTypes: $options.dragMimeTypes,
@@ -181,6 +182,15 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
             viewPanel.badge = badge?.value;
             viewPanel.badgeTooltip = badge?.tooltip;
         }
+    }
+
+    async setChecked(treeViewWidget: TreeViewWidget, changedNodes: TreeViewNode[]) {
+        this.proxy.$checkStateChanged(treeViewWidget.id, changedNodes.map(node => {
+            return {
+                id: node.id,
+                checked: !!node.checkboxInfo?.checked
+            }
+        }));
     }
 
     protected handleTreeEvents(treeViewId: string, treeViewWidget: TreeViewWidget): void {
