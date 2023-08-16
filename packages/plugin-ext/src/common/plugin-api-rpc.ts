@@ -404,7 +404,8 @@ export interface TerminalServiceMain {
      */
     $disposeByTerminalId(id: number, waitOnExit?: boolean | string): void;
 
-    $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined): void;
+    $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined,
+        description: string | MarkdownString | undefined): void;
 
     /**
      * Set the terminal widget name.

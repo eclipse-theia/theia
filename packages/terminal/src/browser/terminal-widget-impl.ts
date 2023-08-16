@@ -43,6 +43,7 @@ import { Key } from '@theia/core/lib/browser/keys';
 import { nls } from '@theia/core/lib/common/nls';
 import { TerminalMenus } from './terminal-frontend-contribution';
 import debounce = require('p-debounce');
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -420,6 +421,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return Promise.reject(new Error('terminal is not started'));
         }
         return this.shellTerminalServer.getProcessInfo(this.terminalId);
+    }
+
+    get contributingExtensions(): Promise<Map<string, string | MarkdownString | undefined>> {
+        if (!IBaseTerminalServer.validateId(this.terminalId)) {
+            return Promise.reject(new Error('terminal is not started'));
+        }
+        return this.shellTerminalServer.getContributingExtensions(this.terminalId);
     }
 
     get terminalId(): number {

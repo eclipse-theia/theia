@@ -14,16 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
-import { Terminal, TerminalOptions, PseudoTerminalOptions, ExtensionTerminalOptions, TerminalState, MarkdownString } from '@theia/plugin';
+import { Terminal, TerminalOptions, PseudoTerminalOptions, ExtensionTerminalOptions, TerminalState } from '@theia/plugin';
 import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as theia from '@theia/plugin';
+import * as Converter from './type-converters';
 import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIcon } from './types-impl';
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ProvidedTerminalLink } from '../common/plugin-api-rpc-model';
 import { ThemeIcon as MonacoThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
+import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
 
 export function getIconUris(iconPath: theia.TerminalOptions['iconPath']): { id: string } | undefined {
     if (ThemeIcon.is(iconPath)) {
@@ -313,7 +315,18 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
 
     private syncEnvironmentVariableCollection(extensionIdentifier: string, collection: EnvironmentVariableCollection): void {
         const serialized = [...collection.map.entries()];
-        this.proxy.$setEnvironmentVariableCollection(extensionIdentifier, collection.persistent, serialized.length === 0 ? undefined : serialized);
+        this.proxy.$setEnvironmentVariableCollection(extensionIdentifier, collection.persistent, serialized.length === 0 ? undefined : serialized,
+            this.descriptionToDTO(collection.description));
+    }
+
+    private descriptionToDTO(value: string | theia.MarkdownString | undefined): string | MarkdownStringDTO | undefined {
+        if (value === undefined) {
+            return undefined;
+        } else if (typeof value === 'string') {
+            return value;
+        } else {
+            return Converter.fromMarkdown(value);
+        }
     }
 
     private setEnvironmentVariableCollection(extensionIdentifier: string, collection: EnvironmentVariableCollection): void {
@@ -339,11 +352,11 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
 
 export class EnvironmentVariableCollection implements theia.EnvironmentVariableCollection {
     readonly map: Map<string, theia.EnvironmentVariableMutator> = new Map();
-    private _description?: string | MarkdownString;
+    private _description?: string | theia.MarkdownString;
     private _persistent: boolean = true;
 
-    public get description(): string | MarkdownString | undefined { return this._description; }
-    public set description(value: string | MarkdownString | undefined) {
+    public get description(): string | theia.MarkdownString | undefined { return this._description; }
+    public set description(value: string | theia.MarkdownString | undefined) {
         this._description = value;
         this.onDidChangeCollectionEmitter.fire();
     }

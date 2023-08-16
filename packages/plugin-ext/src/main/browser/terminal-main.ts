@@ -16,7 +16,7 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { TerminalEditorLocationOptions, TerminalOptions } from '@theia/plugin';
+import { MarkdownString, TerminalEditorLocationOptions, TerminalOptions } from '@theia/plugin';
 import { TerminalLocation, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
@@ -75,9 +75,10 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         return this.extProxy.$startProfile(id, CancellationToken.None);
     }
 
-    $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined): void {
+    $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined,
+        description: string | MarkdownString | undefined): void {
         if (collection) {
-            this.shellTerminalServer.setCollection(extensionIdentifier, persistent, collection);
+            this.shellTerminalServer.setCollection(extensionIdentifier, persistent, collection, description);
         } else {
             this.shellTerminalServer.deleteCollection(extensionIdentifier);
         }

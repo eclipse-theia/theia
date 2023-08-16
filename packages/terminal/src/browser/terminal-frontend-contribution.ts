@@ -32,7 +32,7 @@ import {
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager, PreferenceService,
     KeybindingRegistry, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService,
-    codicon, CommonCommands, FrontendApplicationContribution, OnWillStopAction, Dialog, ConfirmDialog, FrontendApplication, PreferenceScope, Widget
+    codicon, CommonCommands, FrontendApplicationContribution, OnWillStopAction, Dialog, ConfirmDialog, FrontendApplication, PreferenceScope, Widget, HoverService
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl } from './terminal-widget-impl';
@@ -60,6 +60,8 @@ import { nls } from '@theia/core/lib/common/nls';
 import { Profiles, TerminalPreferences } from './terminal-preferences';
 import { ShellTerminalProfile } from './shell-terminal-profile';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
+import { TerminalInfoToolbarItem } from './terminal-info-toolbar-item';
+import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -216,6 +218,17 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     @inject(TerminalPreferences)
     protected terminalPreferences: TerminalPreferences;
 
+    @inject(HoverService)
+    protected readonly hoverService: HoverService;
+
+    @inject(MarkdownRendererFactory) protected readonly markdownRendererFactory: MarkdownRendererFactory;
+
+    protected _markdownRenderer: MarkdownRenderer | undefined;
+    protected get markdownRenderer(): MarkdownRenderer {
+        this._markdownRenderer ||= this.markdownRendererFactory();
+        return this._markdownRenderer;
+    }
+
     protected mergePreferencesPromise: Promise<void> = Promise.resolve();
 
     protected readonly onDidCreateTerminalEmitter = new Emitter<TerminalWidget>();
@@ -250,7 +263,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             this.storageService.getData<string>(ENVIRONMENT_VARIABLE_COLLECTIONS_KEY).then(data => {
                 if (data) {
                     const collectionsJson: SerializableExtensionEnvironmentVariableCollection[] = JSON.parse(data);
-                    collectionsJson.forEach(c => this.shellTerminalServer.setCollection(c.extensionIdentifier, true, c.collection));
+                    collectionsJson.forEach(c => this.shellTerminalServer.setCollection(c.extensionIdentifier, true, c.collection, undefined));
                 }
             });
         });
@@ -731,6 +744,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     }
 
     registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
+        toolbar.registerItem(new TerminalInfoToolbarItem(this.hoverService, this.markdownRenderer));
         toolbar.registerItem({
             id: TerminalCommands.SPLIT.id,
             command: TerminalCommands.SPLIT.id,
