@@ -213,6 +213,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                             avatarUrl = avatarCache.get(commit.authorEmail)!;
                         } else {
                             avatarUrl = await this.avatarService.getAvatar(commit.authorEmail);
+                            avatarCache.set(commit.authorEmail, avatarUrl);
                         }
 
                         commits.push({
