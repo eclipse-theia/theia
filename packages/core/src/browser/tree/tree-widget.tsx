@@ -597,11 +597,10 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             aria-label={node.checkboxInfo.accessibilityInformation?.label}
             role={node.checkboxInfo.accessibilityInformation?.role}
             className='theia-input'
-            onClick={event => this.toggleChecked(event)} />
-
+            onClick={event => this.toggleChecked(event)} />;
     }
 
-    protected toggleChecked(event: React.MouseEvent<HTMLElement>) {
+    protected toggleChecked(event: React.MouseEvent<HTMLElement>): void {
         const nodeId = event.currentTarget.getAttribute('data-node-id');
         if (nodeId) {
             const node = this.model.getNode(nodeId);

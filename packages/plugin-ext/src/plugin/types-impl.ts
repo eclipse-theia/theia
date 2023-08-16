@@ -1908,8 +1908,11 @@ export class TreeItem {
 
     contextValue?: string;
 
-    checkboxState?: theia.TreeItemCheckboxState | { readonly state: theia.TreeItemCheckboxState; readonly tooltip?: string; readonly accessibilityInformation?: AccessibilityInformation };
-
+    checkboxState?: theia.TreeItemCheckboxState | {
+        readonly state: theia.TreeItemCheckboxState;
+        readonly tooltip?: string;
+        readonly accessibilityInformation?: AccessibilityInformation
+    };
 
     constructor(label: string | theia.TreeItemLabel, collapsibleState?: theia.TreeItemCollapsibleState)
     constructor(resourceUri: URI, collapsibleState?: theia.TreeItemCollapsibleState)

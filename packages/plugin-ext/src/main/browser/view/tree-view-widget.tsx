@@ -302,7 +302,7 @@ export class PluginTree extends TreeImpl {
             findChildrenToChange(node, nodesToChange);
 
         }
-        nodesToChange.forEach(n => n.checkboxInfo!.checked = checked)
+        nodesToChange.forEach(n => n.checkboxInfo!.checked = checked);
         this.onDidUpdateEmitter.fire(nodesToChange);
         this.proxy?.$checkStateChanged(this.options.id, [{ id: node.id, checked: checked }]);
     }
@@ -532,7 +532,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
                 ...attrs,
                 onMouseLeave: () => source?.cancel(),
                 onMouseEnter: async event => {
-                    const target = event.currentTarget; // event.currentTarget will be null after awaiting node resolve() 
+                    const target = event.currentTarget; // event.currentTarget will be null after awaiting node resolve()
                     if (configuredTip) {
                         if (MarkdownString.is(node.tooltip)) {
                             this.hoverService.requestHover({

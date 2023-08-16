@@ -184,13 +184,11 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
         }
     }
 
-    async setChecked(treeViewWidget: TreeViewWidget, changedNodes: TreeViewNode[]) {
-        this.proxy.$checkStateChanged(treeViewWidget.id, changedNodes.map(node => {
-            return {
-                id: node.id,
-                checked: !!node.checkboxInfo?.checked
-            }
-        }));
+    async setChecked(treeViewWidget: TreeViewWidget, changedNodes: TreeViewNode[]): Promise<void> {
+        await this.proxy.$checkStateChanged(treeViewWidget.id, changedNodes.map(node => ({
+            id: node.id,
+            checked: !!node.checkboxInfo?.checked
+        })));
     }
 
     protected handleTreeEvents(treeViewId: string, treeViewWidget: TreeViewWidget): void {

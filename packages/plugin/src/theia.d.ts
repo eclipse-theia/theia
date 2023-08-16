@@ -5956,7 +5956,7 @@ export module '@theia/plugin' {
          *
          * 2. A tree item's parent is checked. The tree item and all of it's siblings will be checked.
          *   - [ ] Parent
-             *     - [ ] Child 1
+         *     - [ ] Child 1
          *     - [ ] Child 2
          *   When the user checks Parent, the tree will look like this:
          *   - [x] Parent
@@ -6200,11 +6200,10 @@ export module '@theia/plugin' {
      */
     export interface TreeCheckboxChangeEvent<T> {
         /**
-        * The items that were checked or unchecked.
-        */
+         * The items that were checked or unchecked.
+         */
         readonly items: ReadonlyArray<[T, TreeItemCheckboxState]>;
     }
-
 
     /**
      * Represents a Tree view
@@ -6241,10 +6240,9 @@ export module '@theia/plugin' {
          */
         readonly onDidChangeVisibility: Event<TreeViewVisibilityChangeEvent>;
 
-
         /**
-        * An event to signal that an element or root has either been checked or unchecked.
-        */
+         * An event to signal that an element or root has either been checked or unchecked.
+         */
         readonly onDidChangeCheckboxState: Event<TreeCheckboxChangeEvent<T>>;
 
         /**
@@ -6419,7 +6417,6 @@ export module '@theia/plugin' {
          */
         accessibilityInformation?: AccessibilityInformation;
 
-
         /**
          * {@link TreeItemCheckboxState TreeItemCheckboxState} of the tree item.
          * {@link TreeDataProvider.onDidChangeTreeData onDidChangeTreeData} should be fired when {@link TreeItem.checkboxState checkboxState} changes.
@@ -6427,9 +6424,9 @@ export module '@theia/plugin' {
         checkboxState?: TreeItemCheckboxState | { readonly state: TreeItemCheckboxState; readonly tooltip?: string; readonly accessibilityInformation?: AccessibilityInformation };
 
         /**
-        * @param label A human-readable string describing this item
-        * @param collapsibleState {@link TreeItemCollapsibleState TreeItemCollapsibleState} of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
-        */
+         * @param label A human-readable string describing this item
+         * @param collapsibleState {@link TreeItemCollapsibleState TreeItemCollapsibleState} of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
+         */
         constructor(label: string | TreeItemLabel, collapsibleState?: TreeItemCollapsibleState);
 
         /**
@@ -6475,8 +6472,8 @@ export module '@theia/plugin' {
     }
 
     /**
-    * Checkbox state of the tree item
-    */
+     * Checkbox state of the tree item
+     */
     export enum TreeItemCheckboxState {
         /**
          * Determines an item is unchecked

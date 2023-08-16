@@ -136,7 +136,7 @@ export interface TreeNode {
     readonly busy?: number;
 
     /**
-     * Whether this node is checked. 
+     * Whether this node is checked.
      */
     readonly checkboxInfo?: TreeViewItemCheckboxInfo;
 }
@@ -390,7 +390,7 @@ export class TreeImpl implements Tree {
         }
     }
 
-    markAsChecked(node: Mutable<TreeNode>, checked: boolean) {
+    markAsChecked(node: Mutable<TreeNode>, checked: boolean): void {
         node.checkboxInfo!.checked = checked;
         this.onDidUpdateEmitter.fire([node]);
     }

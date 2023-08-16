@@ -55,7 +55,7 @@ export class TreeViewsExtImpl implements TreeViewsExt {
             }
         });
     }
-    $checkStateChanged(treeViewId: string, itemIds: { id: string; checked: boolean; }[]): unknown {
+    $checkStateChanged(treeViewId: string, itemIds: { id: string; checked: boolean; }[]): Promise<void> {
         return this.getTreeView(treeViewId).checkStateChanged(itemIds);
     }
     $dragStarted(treeViewId: string, treeItemIds: string[], token: CancellationToken): Promise<UriComponents[] | undefined> {
@@ -244,7 +244,12 @@ class TreeViewExtImpl<T> implements Disposable {
         // make copies of optionally provided MIME types:
         const dragMimeTypes = options.dragAndDropController?.dragMimeTypes?.slice();
         const dropMimeTypes = options.dragAndDropController?.dropMimeTypes?.slice();
-        proxy.$registerTreeDataProvider(treeViewId, { manageCheckboxStateManually: options.manageCheckboxStateManually, showCollapseAll: options.showCollapseAll, canSelectMany: options.canSelectMany, dragMimeTypes, dropMimeTypes });
+        proxy.$registerTreeDataProvider(treeViewId, {
+            manageCheckboxStateManually: options.manageCheckboxStateManually,
+            showCollapseAll: options.showCollapseAll,
+            canSelectMany: options.canSelectMany,
+            dragMimeTypes, dropMimeTypes
+        });
         this.toDispose.push(Disposable.create(() => this.proxy.$unregisterTreeDataProvider(treeViewId)));
         options.treeDataProvider.onDidChangeTreeData?.(() => {
             this.pendingRefresh = proxy.$refresh(treeViewId);
@@ -451,11 +456,11 @@ class TreeViewExtImpl<T> implements Disposable {
                         checked: treeItem.checkboxState.state === TreeItemCheckboxState.Checked,
                         tooltip: treeItem.checkboxState.tooltip,
                         accessibilityInformation: treeItem.accessibilityInformation
-                    }
+                    };
                 } else {
                     checkboxInfo = {
                         checked: treeItem.checkboxState === TreeItemCheckboxState.Checked
-                    }
+                    };
                 }
 
                 const treeViewItem: TreeViewItem = {
@@ -537,7 +542,7 @@ class TreeViewExtImpl<T> implements Disposable {
         }
     }
 
-    checkStateChanged(items: readonly { id: string; checked: boolean; }[]): void {
+    async checkStateChanged(items: readonly { id: string; checked: boolean; }[]): Promise<void> {
         const transformed: [T, TreeItemCheckboxState][] = [];
         items.forEach(item => {
             const node = this.nodes.get(item.id);

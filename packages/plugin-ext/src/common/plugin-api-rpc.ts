@@ -770,7 +770,7 @@ export class DataTransferFileDTO {
 }
 
 export interface TreeViewsExt {
-    $checkStateChanged(treeViewId: string, itemIds: { id: string, checked: boolean }[]): unknown;
+    $checkStateChanged(treeViewId: string, itemIds: { id: string, checked: boolean }[]): Promise<void>;
     $dragStarted(treeViewId: string, treeItemIds: string[], token: CancellationToken): Promise<UriComponents[] | undefined>;
     $dragEnd(treeViewId: string): Promise<void>;
     $drop(treeViewId: string, treeItemId: string | undefined, dataTransferItems: [string, string | DataTransferFileDTO][], token: CancellationToken): Promise<void>;
