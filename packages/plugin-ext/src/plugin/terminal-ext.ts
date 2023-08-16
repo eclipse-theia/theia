@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
-import { Terminal, TerminalOptions, PseudoTerminalOptions, ExtensionTerminalOptions, TerminalState } from '@theia/plugin';
+import { Terminal, TerminalOptions, PseudoTerminalOptions, ExtensionTerminalOptions, TerminalState, MarkdownString } from '@theia/plugin';
 import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
@@ -339,7 +339,14 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
 
 export class EnvironmentVariableCollection implements theia.EnvironmentVariableCollection {
     readonly map: Map<string, theia.EnvironmentVariableMutator> = new Map();
+    private _description?: string | MarkdownString;
     private _persistent: boolean = true;
+
+    public get description(): string | MarkdownString | undefined { return this._description; }
+    public set description(value: string | MarkdownString | undefined) {
+        this._description = value;
+        this.onDidChangeCollectionEmitter.fire();
+    }
 
     public get persistent(): boolean { return this._persistent; }
     public set persistent(value: boolean) {
