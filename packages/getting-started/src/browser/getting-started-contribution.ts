@@ -14,9 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as path from 'path';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { ArrayUtils, CommandRegistry, MenuModelRegistry, URI, UntitledResourceResolver } from '@theia/core/lib/common';
+import { ArrayUtils, CommandRegistry, MenuModelRegistry, UntitledResourceResolver } from '@theia/core/lib/common';
 import { CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication, PreferenceService } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { GettingStartedWidget } from './getting-started-widget';
@@ -78,48 +77,49 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
     async onStart(app: FrontendApplication): Promise<void> {
         this.stateService.reachedState('ready').then(async () => {
             if (this.editorManager.all.length === 0) {
+                await this.preferenceService.ready;
                 const startupEditor = this.preferenceService.get('workbench.startupEditor');
                 switch (startupEditor) {
                     case 'welcomePage':
-                        return this.openWelcomePage();
+                        this.openWelcomePage();
+                        break;
                     case 'welcomePageInEmptyWorkbench':
                         if (!this.workspaceService.opened) {
-                            return this.openWelcomePage();
+                            this.openWelcomePage();
                         }
                         break;
                     case 'newUntitledFile':
                         const untitledUri = this.untitledResourceResolver.createUntitledURI('', await this.workingDirProvider.getUserWorkingDir());
                         this.untitledResourceResolver.resolve(untitledUri);
-                        return open(this.openerService, untitledUri);
+                        await open(this.openerService, untitledUri);
+                        break;
                     case 'readme':
-                        return this.openReadme();
+                        await this.openReadme();
+                        break;
                 }
             }
         });
     }
 
     protected openWelcomePage(): void {
-        this.preferenceService.ready.then(() => {
-            const showWelcomePage: boolean = this.preferenceService.get('welcome.alwaysShowWelcomePage', true);
-            if (showWelcomePage) {
-                this.openView({ reveal: true, activate: true });
-            }
-        });
+        const showWelcomePage: boolean = this.preferenceService.get('welcome.alwaysShowWelcomePage', true);
+        if (showWelcomePage) {
+            this.openView({ reveal: true, activate: true });
+        }
     }
 
     protected async openReadme(): Promise<void> {
-        const readmes = await Promise.all(this.workspaceService.tryGetRoots().map(async folder => {
-            const folderUri = folder.resource;
-            const folderStat = await this.fileService.resolve(folderUri);
-            const fileArr = folderStat?.children?.map(child => child.name).sort() || [];
-            const filePath = fileArr.find(file => file.toLowerCase() === 'readme.md') || fileArr.find(file => file.toLowerCase().startsWith('readme'));
-            return filePath ? path.join(folderUri.toString(), filePath) : undefined;
+        const roots = await this.workspaceService.roots;
+        const readmes = await Promise.all(roots.map(async folder => {
+            const folderStat = await this.fileService.resolve(folder.resource);
+            const fileArr = folderStat?.children?.sort((a, b) => a.name.localeCompare(b.name)) || [];
+            const filePath = fileArr.find(file => file.name.toLowerCase() === 'readme.md') || fileArr.find(file => file.name.toLowerCase().startsWith('readme'));
+            return filePath?.resource;
         }));
         const validReadmes = ArrayUtils.coalesce(readmes);
         if (validReadmes.length) {
             for (const readme of validReadmes) {
-                const fileURI = new URI(readme);
-                await this.previewContributon.open(fileURI);
+                await this.previewContributon.open(readme);
             }
         } else {
             // If no readme is found, show the welcome page.
