@@ -1248,9 +1248,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param event the middle-click mouse event.
      */
     protected handleAuxClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
-        this.model.openNode(node);
-        if (SelectableTreeNode.is(node)) {
-            this.model.selectNode(node);
+        if (event.button === 1) {
+            this.model.openNode(node);
+            if (SelectableTreeNode.is(node)) {
+                this.model.selectNode(node);
+            }
         }
         event.stopPropagation();
     }
