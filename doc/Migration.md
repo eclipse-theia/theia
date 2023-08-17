@@ -9,6 +9,21 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ### General
 
+_Builtin Extension Pack_:
+
+If you are using the [`eclipse-theia.builtin-extension-pack@1.79.0`](https://open-vsx.org/extension/eclipse-theia/builtin-extension-pack) extension pack you may need to include the [`ms-vscode.js-debug`](https://open-vsx.org/extension/ms-vscode/js-debug) and [`ms-vscode.js-debug-companion`](https://open-vsx.org/extension/ms-vscode/js-debug-companion) plugins for JavaScript debug support.
+There was an issue when the publishing of the pack which excluded these necessary builtins.
+
+For example, in your application's `package.json`:
+
+```json
+"theiaPlugins": {
+  "eclipse-theia.builtin-extension-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.79.0/file/eclipse-theia.builtin-extension-pack-1.79.0.vsix",
+  "ms-vscode.js-debug": "https://open-vsx.org/api/ms-vscode/js-debug/1.78.0/file/ms-vscode.js-debug-1.78.0.vsix",
+  "ms-vscode.js-debug-companion": "https://open-vsx.org/api/ms-vscode/js-debug-companion/1.1.2/file/ms-vscode.js-debug-companion-1.1.2.vsix"
+}
+```
+
 _msgpackr_:
 
 If you're experiencing [`maximum callstack exceeded`](https://github.com/eclipse-theia/theia/issues/12499) errors you may need to downgrade the version of `msgpackr` pulled using a [yarn resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/).
@@ -72,15 +87,15 @@ For 2., `@postConstruct` methods can be refactored into a sync and an async meth
 ```diff
 -@postConstruct()
 -protected async init(): Promise<void> {
--  await longRunningOperation(); 
+-  await longRunningOperation();
 -}
 +@postConstruct()
 +protected init(): void {
-+  this.doInit();   
++  this.doInit();
 +}
 +
 +protected async doInit(): Promise<void> {
-+  await longRunningOperation();    
++  await longRunningOperation();
 +}
 ```
 
