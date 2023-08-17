@@ -278,6 +278,10 @@ export class MenuModelRegistry {
             }
         }
 
+        if (CompoundMenuNode.is(nonEmptyNode) && nonEmptyNode.children.length === 1 && CompoundMenuNode.is(nonEmptyNode.children[0])) {
+            nonEmptyNode = nonEmptyNode.children[0];
+        }
+
         return CompoundMenuNode.is(nonEmptyNode) ? nonEmptyNode : fullMenuModel;
     }
 

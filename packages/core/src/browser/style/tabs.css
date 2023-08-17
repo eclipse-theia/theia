@@ -459,6 +459,10 @@
   cursor: pointer;
 }
 
+.p-TabBar-toolbar .item.enabled .action-label::before {
+  display: flex;
+}
+
 .p-TabBar-toolbar :not(.item.enabled) .action-label {
   background: transparent;
   cursor: default;
