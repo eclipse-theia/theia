@@ -19,6 +19,7 @@
 import * as theia from '@theia/plugin';
 import { BackendInitializationFn, PluginAPIFactory, Plugin, emptyPlugin } from '@theia/plugin-ext';
 import { VSCODE_DEFAULT_API_VERSION } from '../common/plugin-vscode-types';
+import { realpathSync } from 'fs';
 
 process.env['VSCODE_PID'] = process.env['THEIA_PARENT_PID'];
 
@@ -30,7 +31,7 @@ let pluginApiFactory: PluginAPIFactory;
 
 export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIFactory, plugin: Plugin) => {
     pluginsApiImpl.set(plugin.model.id, createVSCodeAPI(apiFactory, plugin));
-    plugins.push(plugin);
+    plugins.push({ ...plugin, pluginFolder: realpathSync(plugin.pluginFolder) });
     pluginApiFactory = apiFactory;
 
     if (!isLoadOverride) {
