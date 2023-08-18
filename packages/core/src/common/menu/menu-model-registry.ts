@@ -269,7 +269,7 @@ export class MenuModelRegistry {
         }
         let nonEmptyNode = undefined;
         for (const child of fullMenuModel.children) {
-            if (!this.isEmpty(child.children!)) {
+            if (!this.isEmpty(child.children || [])) {
                 if (nonEmptyNode === undefined) {
                     nonEmptyNode = child;
                 } else {
@@ -285,16 +285,11 @@ export class MenuModelRegistry {
         return CompoundMenuNode.is(nonEmptyNode) ? nonEmptyNode : fullMenuModel;
     }
 
-    private allChildrenCompound(children: ReadonlyArray<MenuNode>): boolean {
-        for (const child of children) {
-            if (!CompoundMenuNode.is(child)) {
-                return false;
-            }
-        }
-        return true;
+    protected allChildrenCompound(children: ReadonlyArray<MenuNode>): boolean {
+        return children.every(CompoundMenuNode.is);
     }
 
-    private isEmpty(children: ReadonlyArray<MenuNode>): boolean {
+    protected isEmpty(children: ReadonlyArray<MenuNode>): boolean {
         if (children.length === 0) {
             return true;
         }
@@ -302,7 +297,7 @@ export class MenuModelRegistry {
             return false;
         }
         for (const child of children) {
-            if (!this.isEmpty(child.children!)) {
+            if (!this.isEmpty(child.children || [])) {
                 return false;
             }
         }
