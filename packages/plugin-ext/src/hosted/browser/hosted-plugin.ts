@@ -788,13 +788,13 @@ export class HostedPluginSupport {
 
     protected preserveWebview(webview: WebviewWidget): void {
         if (!this.webviewsToRestore.has(webview.viewType)) {
+            this.activateByEvent(`onWebviewPanel:${webview.viewType}`);
             this.webviewsToRestore.set(webview.viewType, webview);
             webview.disposed.connect(() => this.webviewsToRestore.delete(webview.viewType));
         }
     }
 
     protected async restoreWebview(webview: WebviewWidget): Promise<void> {
-        await this.activateByEvent(`onWebviewPanel:${webview.viewType}`);
         const restore = this.webviewRevivers.get(webview.viewType);
         if (restore) {
             try {
