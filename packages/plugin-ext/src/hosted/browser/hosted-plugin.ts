@@ -304,8 +304,6 @@ export class HostedPluginSupport {
         await this.startPlugins(contributionsByHost, toDisconnect);
 
         this.deferredDidStart.resolve();
-
-        this.restoreWebviews();
     }
 
     /**
@@ -757,7 +755,7 @@ export class HostedPluginSupport {
         return `${plugins} plugin${plugins === 1 ? '' : 's'}`;
     }
 
-    protected readonly webviewsToRestore = new Set<WebviewWidget>();
+    protected readonly webviewsToRestore = new Map<string, WebviewWidget>();
     protected readonly webviewRevivers = new Map<string, (webview: WebviewWidget) => Promise<void>>();
 
     registerWebviewReviver(viewType: string, reviver: (webview: WebviewWidget) => Promise<void>): void {
@@ -765,6 +763,10 @@ export class HostedPluginSupport {
             throw new Error(`Reviver for ${viewType} already registered`);
         }
         this.webviewRevivers.set(viewType, reviver);
+
+        if (this.webviewsToRestore.has(viewType)) {
+            this.restoreWebview(this.webviewsToRestore.get(viewType) as WebviewWidget);
+        }
     }
 
     unregisterWebviewReviver(viewType: string): void {
@@ -785,17 +787,10 @@ export class HostedPluginSupport {
     }
 
     protected preserveWebview(webview: WebviewWidget): void {
-        if (!this.webviewsToRestore.has(webview)) {
-            this.webviewsToRestore.add(webview);
-            webview.disposed.connect(() => this.webviewsToRestore.delete(webview));
+        if (!this.webviewsToRestore.has(webview.viewType)) {
+            this.webviewsToRestore.set(webview.viewType, webview);
+            webview.disposed.connect(() => this.webviewsToRestore.delete(webview.viewType));
         }
-    }
-
-    protected restoreWebviews(): void {
-        for (const webview of this.webviewsToRestore) {
-            this.restoreWebview(webview);
-        }
-        this.webviewsToRestore.clear();
     }
 
     protected async restoreWebview(webview: WebviewWidget): Promise<void> {
