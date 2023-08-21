@@ -224,6 +224,10 @@ export class TabBarToolbar extends ReactWidget {
             if (this.commandIsToggled(item.command)) {
                 classNames.push('toggled');
             }
+        } else {
+            if (this.isEnabled(item)) {
+                classNames.push('enabled');
+            }
         }
         return classNames;
     }
@@ -281,7 +285,8 @@ export class TabBarToolbar extends ReactWidget {
             args: [this.current],
             anchor,
             context: this.current?.node,
-            onHide: () => toDisposeOnHide.dispose()
+            onHide: () => toDisposeOnHide.dispose(),
+            skipSingleRootNode: true,
         });
     }
 
