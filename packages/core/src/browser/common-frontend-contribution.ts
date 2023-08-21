@@ -111,6 +111,7 @@ export namespace CommonCommands {
 
     export const FILE_CATEGORY = 'File';
     export const VIEW_CATEGORY = 'View';
+    export const CREATE_CATEGORY = 'Create';
     export const PREFERENCES_CATEGORY = 'Preferences';
     export const FILE_CATEGORY_KEY = nls.getDefaultKey(FILE_CATEGORY);
     export const VIEW_CATEGORY_KEY = nls.getDefaultKey(VIEW_CATEGORY);
@@ -282,8 +283,8 @@ export namespace CommonCommands {
     });
     export const NEW_UNTITLED_FILE = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.files.newUntitledFile',
-        category: FILE_CATEGORY,
-        label: 'New Untitled File'
+        category: CREATE_CATEGORY,
+        label: 'New File...'
     });
     export const SAVE = Command.toDefaultLocalizedCommand({
         id: 'core.save',
@@ -1352,7 +1353,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
                 })
         ];
-        this.quickInputService.showQuickPick(items, { canSelectMany: false });
+        this.quickInputService.showQuickPick(items, {
+            title: nls.localizeByDefault('New File...'),
+            placeholder: nls.localizeByDefault('Select File Type or Enter File Name...'),
+            canSelectMany: false
+        });
     }
 
     registerColors(colors: ColorRegistry): void {

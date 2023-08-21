@@ -41,14 +41,14 @@ test.describe('Theia Main Menu', () => {
         expect(await mainMenu.isOpen()).toBe(true);
     });
 
-    test("should show the menu items 'New File' and 'New Folder'", async () => {
+    test("should show the menu items 'New Text File' and 'New Folder'", async () => {
         const mainMenu = await menuBar.openMenu('File');
         const menuItems = await mainMenu.visibleMenuItems();
         expect(menuItems).toContain('New Text File');
         expect(menuItems).toContain('New Folder...');
     });
 
-    test("should return menu item by name 'New File'", async () => {
+    test("should return menu item by name 'New Text File'", async () => {
         const mainMenu = await menuBar.openMenu('File');
         const menuItem = await mainMenu.menuItemByName('New Text File');
         expect(menuItem).toBeDefined();
