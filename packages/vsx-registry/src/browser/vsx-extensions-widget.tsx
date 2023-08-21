@@ -143,9 +143,10 @@ export class VSXExtensionsWidget extends SourceTreeWidget implements BadgeWidget
             const searchError = this.extensionsSource.getModel().searchError;
             if (!!searchError) {
                 const message = nls.localize('theia/vsx-registry/errorFetching', 'Error fetching extensions.');
+                const hint = nls.localize('theia/vsx-registry/errorFetchingHint', 'This could be caused by network configuration issues.');
                 return <AlertMessage
                     type='ERROR'
-                    header={`${message} ${searchError}`}
+                    header={`${message} ${searchError} ${hint}`}
                 />;
             }
         }
