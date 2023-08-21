@@ -81,11 +81,11 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
                 const startupEditor = this.preferenceService.get('workbench.startupEditor');
                 switch (startupEditor) {
                     case 'welcomePage':
-                        this.openWelcomePage();
+                        this.openView({ reveal: true, activate: true });
                         break;
                     case 'welcomePageInEmptyWorkbench':
                         if (!this.workspaceService.opened) {
-                            this.openWelcomePage();
+                            this.openView({ reveal: true, activate: true });
                         }
                         break;
                     case 'newUntitledFile':
@@ -99,13 +99,6 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
                 }
             }
         });
-    }
-
-    protected openWelcomePage(): void {
-        const showWelcomePage: boolean = this.preferenceService.get('welcome.alwaysShowWelcomePage', true);
-        if (showWelcomePage) {
-            this.openView({ reveal: true, activate: true });
-        }
     }
 
     protected async openReadme(): Promise<void> {
@@ -123,7 +116,7 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
             }
         } else {
             // If no readme is found, show the welcome page.
-            this.openWelcomePage();
+            this.openView({ reveal: true, activate: true });
         }
     }
 
