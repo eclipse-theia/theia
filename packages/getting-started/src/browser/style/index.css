@@ -39,10 +39,17 @@ body {
 }
 
 .gs-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.gs-content-container {
   padding: 20px;
 }
 
-.gs-container a {
+.gs-content-container a {
   cursor: pointer;
 }
 
@@ -92,14 +99,10 @@ body {
 
 .gs-preference-container {
   display: flex;
-  position: absolute;
-  bottom: 0;
-  width: 100%;
   justify-content: center;
 }
 
 .gs-preference {
-  margin-top: 20px;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
