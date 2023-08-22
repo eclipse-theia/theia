@@ -91,6 +91,7 @@ export class NativeWebpackPlugin {
             }
         );
         compiler.hooks.afterEmit.tapAsync(NativeWebpackPlugin.name, async () => {
+            await this.copyTrashHelper(compiler);
             if (this.options.ripgrep) {
                 await this.copyRipgrep(compiler);
             }
@@ -123,6 +124,21 @@ export class NativeWebpackPlugin {
         } else {
             const sourceFile = require.resolve('node-pty/build/Release/spawn-helper');
             const targetFile = path.join(targetDirectory, 'spawn-helper');
+            await this.copyExecutable(sourceFile, targetFile);
+        }
+    }
+
+    protected async copyTrashHelper(compiler: Compiler): Promise<void> {
+        let sourceFile: string | undefined;
+        let targetFile: string | undefined;
+        if (process.platform === 'win32') {
+            sourceFile = require.resolve('trash/lib/windows-trash.exe');
+            targetFile = path.join(compiler.outputPath, 'windows-trash.exe');
+        } else if (process.platform === 'darwin') {
+            sourceFile = require.resolve('trash/lib/macos-trash');
+            targetFile = path.join(compiler.outputPath, 'macos-trash');
+        }
+        if (sourceFile && targetFile) {
             await this.copyExecutable(sourceFile, targetFile);
         }
     }
