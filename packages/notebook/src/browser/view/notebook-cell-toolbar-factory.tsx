@@ -47,11 +47,13 @@ export class NotebookCellToolbarFactory {
     protected readonly commandRegistry: CommandRegistry;
 
     renderCellToolbar(menuPath: string[], notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
-        return <NotebookCellToolbar inlineItems={this.getMenuItems(menuPath, notebookModel, cell)} />;
+        return <NotebookCellToolbar getMenuItems={() => this.getMenuItems(menuPath, notebookModel, cell)}
+            onContextKeysChanged={cell.notebookCellContextManager.onDidChangeContext}/>;
     }
 
     renderSidebar(menuPath: string[], notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel): React.ReactNode {
-        return <NotebookCellSidebar inlineItems={this.getMenuItems(menuPath, notebookModel, cell, output)} />;
+        return <NotebookCellSidebar getMenuItems={() => this.getMenuItems(menuPath, notebookModel, cell, output)}
+            onContextKeysChanged={cell.notebookCellContextManager.onDidChangeContext} />;
     }
 
     private getMenuItems(menuItemPath: string[], notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel): NotebookCellToolbarItem[] {
@@ -59,7 +61,6 @@ export class NotebookCellToolbarFactory {
 
         for (const menuNode of this.menuRegistry.getMenu(menuItemPath).children) {
             if (!menuNode.when || this.contextKeyService.match(menuNode.when, cell.context ?? undefined)) {
-
                 if (menuNode.role === CompoundMenuNodeRole.Flat) {
                     inlineItems.push(...menuNode.children?.map(child => this.createToolbarItem(child, notebookModel, cell, output)) ?? []);
                 } else {

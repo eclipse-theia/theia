@@ -21,6 +21,7 @@ import { NOTEBOOK_CELL_EXECUTING, NOTEBOOK_CELL_EXECUTION_STATE, NOTEBOOK_CELL_M
 import { Disposable, DisposableCollection } from '@theia/core';
 import { CellKind } from '../../common';
 import { NotebookExecutionStateService } from '../service/notebook-execution-state-service';
+import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 
 @injectable()
 export class NotebookCellContextManager implements Disposable {
@@ -29,10 +30,13 @@ export class NotebookCellContextManager implements Disposable {
     @inject(NotebookExecutionStateService)
     protected readonly executionStateService: NotebookExecutionStateService;
 
-    private readonly disposables = new DisposableCollection();
+    protected readonly disposables = new DisposableCollection();
 
-    private currentStore: ScopedValueStore;
-    private currentContext: HTMLLIElement;
+    protected currentStore: ScopedValueStore;
+    protected currentContext: HTMLLIElement;
+
+    protected readonly onDidChangeContextEmitter = new Emitter<void>();
+    readonly onDidChangeContext = this.onDidChangeContextEmitter.event;
 
     updateCellContext(cell: NotebookCellModel, newHtmlContext: HTMLLIElement): void {
         if (newHtmlContext !== this.currentContext) {
@@ -43,18 +47,24 @@ export class NotebookCellContextManager implements Disposable {
 
             this.currentStore.setContext(NOTEBOOK_CELL_TYPE, cell.cellKind === CellKind.Code ? 'code' : 'markdown');
 
-            this.disposables.push(cell.onRequestCellEditChange(cellEdit => this.currentStore?.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cellEdit)));
+            this.disposables.push(cell.onRequestCellEditChange(cellEdit => {
+                this.currentStore?.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cellEdit);
+                this.onDidChangeContextEmitter.fire();
+            }));
             this.disposables.push(this.executionStateService.onDidChangeExecution(e => {
                 if (e.affectsCell(cell.uri)) {
                     this.currentStore?.setContext(NOTEBOOK_CELL_EXECUTING, !!e.changed);
                     this.currentStore?.setContext(NOTEBOOK_CELL_EXECUTION_STATE, e.changed?.state ?? 'idle');
+                    this.onDidChangeContextEmitter.fire();
                 }
             }));
+            this.onDidChangeContextEmitter.fire();
         }
     }
 
     dispose(): void {
         this.disposables.dispose();
         this.currentStore?.dispose();
+        this.onDidChangeContextEmitter.dispose();
     }
 }

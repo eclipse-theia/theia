@@ -78,7 +78,10 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
         commands.registerCommand(NotebookCommands.ADD_NEW_CELL_COMMAND, {
             execute: (notebookModel: NotebookModel, cellKind: CellKind, index?: number) => {
                 const insertIndex = index ?? (notebookModel.selectedCell ? notebookModel.cells.indexOf(notebookModel.selectedCell) : 0);
-                const firstCodeCell = notebookModel.cells.find(cell => cell.cellKind === CellKind.Code);
+                let firstCodeCell;
+                if (cellKind === CellKind.Code) {
+                    firstCodeCell = notebookModel.cells.find(cell => cell.cellKind === CellKind.Code);
+                }
 
                 notebookModel.applyEdits([{
                     editType: CellEditType.Replace,

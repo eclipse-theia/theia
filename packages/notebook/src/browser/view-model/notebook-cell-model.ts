@@ -47,6 +47,7 @@ const NotebookCellContextManagerSymbol = Symbol('NotebookCellContextManager');
 interface NotebookCellContextManager {
     updateCellContext(cell: NotebookCellModel, context: HTMLElement): void;
     dispose(): void;
+    onDidChangeContext: Event<void>;
 }
 
 const NotebookCellModelProps = Symbol('NotebookModelProps');
@@ -88,7 +89,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     readonly onRequestCellEditChange = this.requestCellEditChangeEmitter.event;
 
     @inject(NotebookCellContextManagerSymbol)
-    protected notebookCellContextManager: NotebookCellContextManager;
+    notebookCellContextManager: NotebookCellContextManager;
 
     readonly outputs: NotebookCellOutputModel[];
 

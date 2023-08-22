@@ -85,7 +85,7 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
             const itemNodes = item.children?.map(child => this.renderMenuItem(child)).filter(child => !!child);
             return <>
                 {itemNodes}
-                {itemNodes && itemNodes?.length > 0 && <span className='theia-notebook-toolbar-seperator'></span>}
+                {itemNodes && itemNodes?.length > 0 && <span key={`${item.id}-sperator`} className='theia-notebook-toolbar-seperator'></span>}
             </>;
         } else if (!item.when || this.props.contextKeyService.match(item.when)) {
             return <div key={item.id} className='theia-notebook-main-toolbar-item'
