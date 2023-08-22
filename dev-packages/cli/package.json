@@ -44,6 +44,7 @@
     "decompress": "^4.2.1",
     "escape-string-regexp": "4.0.0",
     "glob": "^8.0.3",
+    "http-server": "^14.1.1",
     "limiter": "^2.1.0",
     "log-update": "^4.0.0",
     "mocha": "^10.1.0",

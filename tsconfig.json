@@ -43,6 +43,9 @@
       "path": "examples/browser"
     },
     {
+      "path": "examples/browser-only"
+    },
+    {
       "path": "examples/electron"
     },
     {

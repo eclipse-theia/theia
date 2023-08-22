@@ -62,8 +62,9 @@
   "scripts": {
     "all": "yarn -s install && yarn -s lint && yarn -s build",
     "browser": "yarn -s --cwd examples/browser",
+    "browser-only": "yarn -s --cwd examples/browser-only",
     "build": "yarn -s compile && yarn -s build:examples",
-    "build:examples": "yarn browser build && yarn electron build",
+    "build:examples": "yarn browser build && yarn electron build && yarn browser-only build",
     "clean": "yarn -s rebuild:clean && yarn -s lint:clean && node scripts/run-reverse-topo.js yarn -s clean",
     "compile": "echo Compiling TypeScript sources... && yarn -s compile:clean && yarn -s compile:tsc",
     "compile:clean": "ts-clean dev-packages/* packages/*",

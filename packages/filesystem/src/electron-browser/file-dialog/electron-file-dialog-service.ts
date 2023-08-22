@@ -28,7 +28,7 @@ import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } fr
 // solution.
 //
 // eslint-disable-next-line @theia/runtime-import-check
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { FileUri } from '@theia/core/lib/common/file-uri';
 import { OpenDialogOptions, SaveDialogOptions } from '../../electron-common/electron-api';
 
 import '@theia/core/lib/electron-common/electron-api';

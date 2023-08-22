@@ -241,10 +241,11 @@ export interface ApplicationProps extends NpmRegistryProps {
     };
 }
 export namespace ApplicationProps {
-    export type Target = keyof typeof ApplicationTarget;
+    export type Target = `${ApplicationTarget}`;
     export enum ApplicationTarget {
         browser = 'browser',
-        electron = 'electron'
+        electron = 'electron',
+        browserOnly = 'browser-only'
     };
     export const DEFAULT: ApplicationProps = {
         ...NpmRegistryProps.DEFAULT,

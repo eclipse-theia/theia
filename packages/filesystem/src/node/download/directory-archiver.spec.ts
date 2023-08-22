@@ -21,7 +21,7 @@ import { extract } from 'tar-fs';
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
 import { MockDirectoryArchiver } from './test/mock-directory-archiver';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { FileUri } from '@theia/core/lib/common/file-uri';
 
 const track = temp.track();
 

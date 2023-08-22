@@ -16,6 +16,9 @@
     {
       "frontend": "lib/browser/workspace-frontend-module",
       "backend": "lib/node/workspace-backend-module"
+    },
+    {
+      "frontendOnly": "lib/browser-only/workspace-frontend-only-module"
     }
   ],
   "keywords": [

@@ -16,7 +16,7 @@
 
 import * as temp from 'temp';
 import { expect } from 'chai';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { FileUri } from '@theia/core/lib/common/file-uri';
 import { GitFileStatus } from '../common';
 import { createGit } from './test/binding-helper';
 

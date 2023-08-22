@@ -45,6 +45,7 @@
     "css-loader": "^6.2.0",
     "electron-rebuild": "^3.2.7",
     "fs-extra": "^4.0.2",
+    "http-server": "^14.1.1",
     "ignore-loader": "^0.1.2",
     "less": "^3.0.3",
     "mini-css-extract-plugin": "^2.6.1",

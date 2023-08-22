@@ -346,7 +346,6 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     });
     bind(FrontendConnectionStatusService).toSelf().inSingletonScope();
     bind(ConnectionStatusService).toService(FrontendConnectionStatusService);
-    bind(FrontendApplicationContribution).toService(FrontendConnectionStatusService);
     bind(ApplicationConnectionStatusContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ApplicationConnectionStatusContribution);
 
