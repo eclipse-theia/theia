@@ -28,7 +28,7 @@ import { nls } from '@theia/core/lib/common/nls';
 export const GettingStartedPreferenceSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
-        'welcome.startupEditor': {
+        'workbench.startupEditor': {
             type: 'string',
             enum: ['none', 'welcomePage', 'readme', 'newUntitledFile', 'welcomePageInEmptyWorkbench'],
             enumDescriptions: [
@@ -47,7 +47,7 @@ export const GettingStartedPreferenceSchema: PreferenceSchema = {
 };
 
 export interface GettingStartedConfiguration {
-    'welcome.startupEditor': string;
+    'workbench.startupEditor': string;
 }
 
 export const GettingStartedPreferenceContribution = Symbol('GettingStartedPreferenceContribution');

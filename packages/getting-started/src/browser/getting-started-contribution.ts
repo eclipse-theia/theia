@@ -15,15 +15,13 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { ArrayUtils, CommandRegistry, MenuModelRegistry, UntitledResourceResolver } from '@theia/core/lib/common';
+import { ArrayUtils, CommandRegistry, MenuModelRegistry } from '@theia/core/lib/common';
 import { CommonCommands, CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication, PreferenceService } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { GettingStartedWidget } from './getting-started-widget';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
-import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { PreviewContribution } from '@theia/preview/lib/browser/preview-contribution';
-import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 /**
@@ -46,23 +44,14 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    @inject(OpenerService)
-    protected readonly openerService: OpenerService;
-
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
     @inject(PreviewContribution)
-    protected readonly previewContributon: PreviewContribution;
+    protected readonly previewContribution: PreviewContribution;
 
     @inject(FrontendApplicationStateService)
     protected readonly stateService: FrontendApplicationStateService;
-
-    @inject(UntitledResourceResolver)
-    protected readonly untitledResourceResolver: UntitledResourceResolver;
-
-    @inject(UserWorkingDirectoryProvider)
-    protected readonly workingDirProvider: UserWorkingDirectoryProvider;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
@@ -81,7 +70,7 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
         this.stateService.reachedState('ready').then(async () => {
             if (this.editorManager.all.length === 0) {
                 await this.preferenceService.ready;
-                const startupEditor = this.preferenceService.get('welcome.startupEditor');
+                const startupEditor = this.preferenceService.get('workbench.startupEditor');
                 switch (startupEditor) {
                     case 'welcomePage':
                         this.openView({ reveal: true, activate: true });
@@ -92,7 +81,7 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
                         }
                         break;
                     case 'newUntitledFile':
-                        this.commandRegistry.executeCommand(CommonCommands.NEW_UNTITLED_FILE.id);
+                        this.commandRegistry.executeCommand(CommonCommands.NEW_UNTITLED_TEXT_FILE.id);
                         break;
                     case 'readme':
                         await this.openReadme();
@@ -113,7 +102,7 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
         const validReadmes = ArrayUtils.coalesce(readmes);
         if (validReadmes.length) {
             for (const readme of validReadmes) {
-                await this.previewContributon.open(readme);
+                await this.previewContribution.open(readme);
             }
         } else {
             // If no readme is found, show the welcome page.

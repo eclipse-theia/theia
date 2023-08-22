@@ -497,11 +497,11 @@ export interface PreferencesProps {
 
 function WelcomePreferences(props: PreferencesProps): JSX.Element {
     const [startupEditor, setStartupEditor] = React.useState<string>(
-        props.preferenceService.get('welcome.startupEditor', 'welcomePage')
+        props.preferenceService.get('workbench.startupEditor', 'welcomePage')
     );
     React.useEffect(() => {
         const prefListener = props.preferenceService.onPreferenceChanged(change => {
-            if (change.preferenceName === 'welcome.startupEditor') {
+            if (change.preferenceName === 'workbench.startupEditor') {
                 const prefValue = change.newValue;
                 setStartupEditor(prefValue);
             }
@@ -510,7 +510,7 @@ function WelcomePreferences(props: PreferencesProps): JSX.Element {
     }, [props.preferenceService]);
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.checked ? 'welcomePage' : 'none';
-        props.preferenceService.updateValue('welcome.startupEditor', newValue);
+        props.preferenceService.updateValue('workbench.startupEditor', newValue);
     };
     return (
         <div className='gs-preference'>
