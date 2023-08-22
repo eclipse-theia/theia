@@ -6,7 +6,7 @@ on:
 jobs:
   publish:
     name: Publish to NPM and GitHub pages
-    needs: build
+    # needs: build
     runs-on: ubuntu-latest
 
     # The current approach is silly. We should be smarter and use `actions/upload-artifact` and `actions/download-artifact` instead of rebuilding
