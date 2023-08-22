@@ -16,12 +16,12 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ArrayUtils, CommandRegistry, MenuModelRegistry, UntitledResourceResolver } from '@theia/core/lib/common';
-import { CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication, PreferenceService } from '@theia/core/lib/browser';
+import { CommonCommands, CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication, PreferenceService } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { GettingStartedWidget } from './getting-started-widget';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
-import { OpenerService, open } from '@theia/core/lib/browser/opener-service';
+import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { PreviewContribution } from '@theia/preview/lib/browser/preview-contribution';
 import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -36,6 +36,9 @@ export const GettingStartedCommand = {
 
 @injectable()
 export class GettingStartedContribution extends AbstractViewContribution<GettingStartedWidget> implements FrontendApplicationContribution {
+
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
@@ -78,7 +81,7 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
         this.stateService.reachedState('ready').then(async () => {
             if (this.editorManager.all.length === 0) {
                 await this.preferenceService.ready;
-                const startupEditor = this.preferenceService.get('workbench.startupEditor');
+                const startupEditor = this.preferenceService.get('welcome.startupEditor');
                 switch (startupEditor) {
                     case 'welcomePage':
                         this.openView({ reveal: true, activate: true });
@@ -89,9 +92,7 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
                         }
                         break;
                     case 'newUntitledFile':
-                        const untitledUri = this.untitledResourceResolver.createUntitledURI('', await this.workingDirProvider.getUserWorkingDir());
-                        this.untitledResourceResolver.resolve(untitledUri);
-                        await open(this.openerService, untitledUri);
+                        this.commandRegistry.executeCommand(CommonCommands.NEW_UNTITLED_FILE.id);
                         break;
                     case 'readme':
                         await this.openReadme();

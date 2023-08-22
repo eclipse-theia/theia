@@ -18,6 +18,7 @@ import { GettingStartedContribution } from './getting-started-contribution';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { GettingStartedWidget } from './getting-started-widget';
 import { WidgetFactory, FrontendApplicationContribution, bindViewContribution } from '@theia/core/lib/browser';
+import { bindGettingStartedPreferences } from './getting-started-preferences';
 import '../../src/browser/style/index.css';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
@@ -28,4 +29,5 @@ export default new ContainerModule((bind: interfaces.Bind) => {
         id: GettingStartedWidget.ID,
         createWidget: () => context.container.get<GettingStartedWidget>(GettingStartedWidget),
     })).inSingletonScope();
+    bindGettingStartedPreferences(bind);
 });
