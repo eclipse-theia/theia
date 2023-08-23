@@ -29,7 +29,7 @@ export interface IBaseTerminalServer extends RpcServer<IBaseTerminalClient> {
     create(IBaseTerminalServerOptions: object): Promise<number>;
     getProcessId(id: number): Promise<number>;
     getProcessInfo(id: number): Promise<TerminalProcessInfo>;
-    getContributingExtensions(id: number): Promise<Map<string, string | MarkdownString | undefined>>;
+    getEnvVarCollectionDescriptionsByExtension(id: number): Promise<Map<string, string | MarkdownString | undefined>>;
     getCwdURI(id: number): Promise<string>;
     resize(id: number, cols: number, rows: number): Promise<void>;
     attach(id: number): Promise<number>;
@@ -189,7 +189,8 @@ export interface MergedEnvironmentVariableCollection {
 
 export interface SerializableExtensionEnvironmentVariableCollection {
     extensionIdentifier: string,
-    collection: SerializableEnvironmentVariableCollection
+    collection: SerializableEnvironmentVariableCollection | undefined,
+    description: string | MarkdownString | undefined
 }
 
 export type SerializableEnvironmentVariableCollection = [string, EnvironmentVariableMutator][];

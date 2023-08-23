@@ -51,7 +51,7 @@ export class TerminalInfoToolbarItem implements ReactTabBarToolbarItem {
     ): Promise<void> {
         const currentTarget = event.currentTarget;
         if (currentTerminal instanceof TerminalWidget) {
-            const extensions = await currentTerminal.contributingExtensions;
+            const extensions = await currentTerminal.envVarCollectionDescriptionsByExtension;
             const processId = await currentTerminal.processId;
             const processInfo = await currentTerminal.processInfo;
 
@@ -107,7 +107,7 @@ export class TerminalInfoToolbarItem implements ReactTabBarToolbarItem {
         }
     }
 
-    protected async onMouseLeave(toDispose: DisposableCollection): Promise<void> {
-        toDispose.dispose();
+    protected async onMouseLeave(hoverResources: DisposableCollection): Promise<void> {
+        hoverResources.dispose();
     }
 }

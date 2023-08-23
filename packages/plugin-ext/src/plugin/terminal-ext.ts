@@ -25,7 +25,6 @@ import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIc
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ProvidedTerminalLink } from '../common/plugin-api-rpc-model';
 import { ThemeIcon as MonacoThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
-import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
 
 export function getIconUris(iconPath: theia.TerminalOptions['iconPath']): { id: string } | undefined {
     if (ThemeIcon.is(iconPath)) {
@@ -315,18 +314,11 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
 
     private syncEnvironmentVariableCollection(extensionIdentifier: string, collection: EnvironmentVariableCollection): void {
         const serialized = [...collection.map.entries()];
-        this.proxy.$setEnvironmentVariableCollection(extensionIdentifier, collection.persistent, serialized.length === 0 ? undefined : serialized,
-            this.descriptionToDTO(collection.description));
-    }
-
-    private descriptionToDTO(value: string | theia.MarkdownString | undefined): string | MarkdownStringDTO | undefined {
-        if (value === undefined) {
-            return undefined;
-        } else if (typeof value === 'string') {
-            return value;
-        } else {
-            return Converter.fromMarkdown(value);
-        }
+        this.proxy.$setEnvironmentVariableCollection(collection.persistent, {
+            extensionIdentifier,
+            collection: serialized.length === 0 ? undefined : serialized,
+            description: Converter.fromMarkdownOrString(collection.description)
+        });
     }
 
     private setEnvironmentVariableCollection(extensionIdentifier: string, collection: EnvironmentVariableCollection): void {

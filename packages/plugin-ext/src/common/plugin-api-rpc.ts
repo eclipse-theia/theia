@@ -111,7 +111,7 @@ import type {
     TimelineChangeEvent,
     TimelineProviderDescriptor
 } from '@theia/timeline/lib/common/timeline-model';
-import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
+import { SerializableEnvironmentVariableCollection, SerializableExtensionEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ThemeType } from '@theia/core/lib/common/theme';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { isString, isObject, PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
@@ -404,8 +404,7 @@ export interface TerminalServiceMain {
      */
     $disposeByTerminalId(id: number, waitOnExit?: boolean | string): void;
 
-    $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined,
-        description: string | MarkdownString | undefined): void;
+    $setEnvironmentVariableCollection(persistent: boolean, collection: SerializableExtensionEnvironmentVariableCollection): void;
 
     /**
      * Set the terminal widget name.

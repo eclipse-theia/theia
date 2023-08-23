@@ -423,11 +423,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.shellTerminalServer.getProcessInfo(this.terminalId);
     }
 
-    get contributingExtensions(): Promise<Map<string, string | MarkdownString | undefined>> {
+    get envVarCollectionDescriptionsByExtension(): Promise<Map<string, string | MarkdownString | undefined>> {
         if (!IBaseTerminalServer.validateId(this.terminalId)) {
             return Promise.reject(new Error('terminal is not started'));
         }
-        return this.shellTerminalServer.getContributingExtensions(this.terminalId);
+        return this.shellTerminalServer.getEnvVarCollectionDescriptionsByExtension(this.terminalId);
     }
 
     get terminalId(): number {

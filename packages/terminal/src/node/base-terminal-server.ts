@@ -101,7 +101,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         };
     }
 
-    async getContributingExtensions(id: number): Promise<Map<string, string | MarkdownString | undefined>> {
+    async getEnvVarCollectionDescriptionsByExtension(id: number): Promise<Map<string, string | MarkdownString | undefined>> {
         const terminal = this.processManager.get(id);
         if (!(terminal instanceof TerminalProcess)) {
             throw new Error(`terminal "${id}" does not exist`);
@@ -211,7 +211,8 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
             if (collection.persistent) {
                 collectionsJson.push({
                     extensionIdentifier,
-                    collection: [...this.collections.get(extensionIdentifier)!.map.entries()]
+                    collection: [...this.collections.get(extensionIdentifier)!.map.entries()],
+                    description: collection.description
                 });
             }
         });
