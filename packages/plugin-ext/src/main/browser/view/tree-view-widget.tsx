@@ -275,13 +275,10 @@ export class PluginTree extends TreeImpl {
 
     override markAsChecked(node: Mutable<TreeNode>, checked: boolean): void {
         function findParentsToChange(child: TreeNode, nodes: TreeNode[]): void {
-            if (child.parent) {
-                if (child.parent.checkboxInfo !== undefined && child.parent.checkboxInfo.checked !== checked) {
-                    if (!checked || child.parent.children.every(candidate => candidate.checkboxInfo?.checked || candidate.checkboxInfo === undefined || candidate === child)) {
-                        nodes.push(child.parent);
-                        findParentsToChange(child.parent, nodes);
-                    }
-                }
+            if ((child.parent?.checkboxInfo !== undefined && child.parent.checkboxInfo.checked !== checked) &&
+                (!checked || !child.parent.children.some(candidate => candidate !== child && candidate.checkboxInfo?.checked === false))) {
+                nodes.push(child.parent);
+                findParentsToChange(child.parent, nodes);
             }
         }
 
