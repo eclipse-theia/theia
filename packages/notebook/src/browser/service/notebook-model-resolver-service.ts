@@ -18,12 +18,11 @@ import { Emitter, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { NotebookData } from '../../common';
+import { CellKind, NotebookData } from '../../common';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from './notebook-service';
 import { NotebookTypeRegistry } from '../notebook-type-registry';
 import { NotebookFileSelector } from '../../common/notebook-protocol';
-import { isRelativePattern } from '@theia/core/lib/common/glob';
 
 export interface UntitledResource {
     untitledResource: URI | undefined
@@ -64,10 +63,11 @@ export class NotebookModelResolverService {
                 for (let counter = 1; ; counter++) {
                     const candidate = new URI()
                         .withScheme('untitled')
-                        .withPath(`Untitled-${counter}${suffix}`)
+                        .withPath(`Untitled-notebook-${counter}${suffix}`)
                         .withQuery(viewType);
                     if (!this.notebookService.getNotebookEditorModel(candidate)) {
                         resource = candidate;
+                        break;
                     }
                 }
             } else if (arg.untitledResource.scheme === 'untitled') {
@@ -80,7 +80,7 @@ export class NotebookModelResolverService {
 
         const notebookData = await this.resolveExistingNotebookData(resource, viewType!);
 
-        const notebookModel = await this.notebookService.createNotebookModel(notebookData, viewType, arg as URI);
+        const notebookModel = await this.notebookService.createNotebookModel(notebookData, viewType, resource);
 
         notebookModel.onDirtyChanged(() => this.onDidChangeDirtyEmitter.fire(notebookModel));
         notebookModel.onDidSaveNotebook(() => this.onDidSaveNotebookEmitter.fire(notebookModel.uri.toComponents()));
@@ -89,12 +89,27 @@ export class NotebookModelResolverService {
     }
 
     protected async resolveExistingNotebookData(resource: URI, viewType: string): Promise<NotebookData> {
-        const file = await this.fileService.readFile(resource);
+        if (resource.scheme === 'untitled') {
 
-        const dataProvider = await this.notebookService.getNotebookDataProvider(viewType);
-        const notebook = await dataProvider.serializer.dataToNotebook(file.value);
+            return {
+                cells: [
+                    {
+                        cellKind: CellKind.Markup,
+                        language: 'markdown',
+                        outputs: [],
+                        source: ''
+                    }
+                ],
+                metadata: {}
+            };
+        } else {
+            const file = await this.fileService.readFile(resource);
 
-        return notebook;
+            const dataProvider = await this.notebookService.getNotebookDataProvider(viewType);
+            const notebook = await dataProvider.serializer.dataToNotebook(file.value);
+
+            return notebook;
+        }
     }
 
     protected getPossibleFileEndings(selectors: readonly NotebookFileSelector[]): string | undefined {
@@ -111,13 +126,7 @@ export class NotebookModelResolverService {
 
         const pattern = /^.*(\.[a-zA-Z0-9_-]+)$/;
 
-        let candidate: string | undefined;
-
-        if (typeof selector === 'string') {
-            candidate = selector;
-        } else if (isRelativePattern(selector)) {
-            candidate = selector.filenamePattern;
-        }
+        const candidate: string | undefined = typeof selector === 'string' ? selector : selector.filenamePattern;
 
         if (candidate) {
             const match = pattern.exec(candidate);

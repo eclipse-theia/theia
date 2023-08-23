@@ -106,7 +106,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const pluginSupport = container.get(HostedPluginSupport);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, new NotebooksMainImpl(rpc, notebookService, pluginSupport));
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_MAIN, new NotebookRenderersMainImpl(rpc, container));
-    const notebookEditorsMain = new NotebookEditorsMainImpl(rpc);
+    const notebookEditorsMain = new NotebookEditorsMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN, notebookEditorsMain);
     const notebookDocumentsMain = new NotebookDocumentsMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN, notebookDocumentsMain);
