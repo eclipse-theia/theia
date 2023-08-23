@@ -152,6 +152,23 @@ export class NotebookModel implements Saveable, Disposable {
         this.saveEmitter.fire();
     }
 
+    createSnapshot(): Saveable.Snapshot {
+        const model = this;
+        return {
+            read(): string {
+                return JSON.stringify({
+                    cells: model.cells.map(cell => cell.getData()),
+                    metadata: model.metadata
+                });
+            }
+        };
+    }
+
+    async revert(options?: Saveable.RevertOptions): Promise<void> {
+        this.dirty = false;
+        this.dirtyChangedEmitter.fire();
+    }
+
     isDirty(): boolean {
         return this.dirty;
     }
