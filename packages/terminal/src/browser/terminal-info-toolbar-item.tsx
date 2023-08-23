@@ -30,6 +30,10 @@ export class TerminalInfoToolbarItem implements ReactTabBarToolbarItem {
         protected readonly markdownRenderer: MarkdownRenderer
     ) {}
 
+    isVisible(widget?: Widget): boolean {
+        return widget instanceof TerminalWidget;
+    }
+
     render(widget?: Widget): ReactNode {
         const toDispose = new DisposableCollection();
         return (
