@@ -270,8 +270,8 @@ export class GettingStartedWidget extends ReactWidget {
                 <a
                     role={'button'}
                     tabIndex={0}
-                    onClick={this.doOpenWorkspace}
-                    onKeyDown={this.doOpenWorkspaceEnter}>
+                    onClick={this.doOpenFolder}
+                    onKeyDown={this.doOpenFolderEnter}>
                     {nls.localizeByDefault('open a folder')}
                 </a>
                 {' ' + nls.localizeByDefault('to start.')}
