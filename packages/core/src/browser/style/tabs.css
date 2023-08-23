@@ -254,8 +254,8 @@
 }
 
 .p-TabBar.theia-app-centers
-  .p-TabBar-tab:hover.p-mod-closable
-  > .p-TabBar-tabCloseIcon {
+  .p-TabBar-tab.p-mod-closable
+  > .p-TabBar-tabCloseIcon:hover {
   border-radius: 5px;
   background-color: rgba(50%, 50%, 50%, 0.2);
 }
@@ -457,6 +457,10 @@
 .p-TabBar-toolbar .item.enabled {
   opacity: 1;
   cursor: pointer;
+}
+
+.p-TabBar-toolbar .item.enabled .action-label::before {
+  display: flex;
 }
 
 .p-TabBar-toolbar :not(.item.enabled) .action-label {

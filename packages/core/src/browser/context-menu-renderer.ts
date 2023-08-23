@@ -120,4 +120,9 @@ export interface RenderContextMenuOptions {
     context?: HTMLElement;
     contextKeyService?: ContextMatcher;
     onHide?: () => void;
+    /**
+     * If true a single submenu in the context menu is not rendered but its children are rendered on the top level.
+     * Default is `false`.
+     */
+    skipSingleRootNode?: boolean;
 }

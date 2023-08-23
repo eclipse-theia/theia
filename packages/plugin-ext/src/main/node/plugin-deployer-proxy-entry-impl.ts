@@ -54,11 +54,11 @@ export class ProxyPluginDeployerEntry<T> implements PluginDeployerEntry {
         return this.delegate.getChanges();
     }
 
-    isFile(): boolean {
+    isFile(): Promise<boolean> {
         return this.delegate.isFile();
     }
 
-    isDirectory(): boolean {
+    isDirectory(): Promise<boolean> {
         return this.delegate.isDirectory();
     }
     isResolved(): boolean {

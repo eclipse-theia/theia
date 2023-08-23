@@ -125,8 +125,8 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         return undefined;
     }
 
-    createElectronContextMenu(menuPath: MenuPath, args?: any[], context?: HTMLElement, contextKeyService?: ContextMatcher): MenuDto[] {
-        const menuModel = this.menuProvider.getMenu(menuPath);
+    createElectronContextMenu(menuPath: MenuPath, args?: any[], context?: HTMLElement, contextKeyService?: ContextMatcher, skipSingleRootNode?: boolean): MenuDto[] {
+        const menuModel = skipSingleRootNode ? this.menuProvider.removeSingleRootNode(this.menuProvider.getMenu(menuPath), menuPath) : this.menuProvider.getMenu(menuPath);
         return this.fillMenuTemplate([], menuModel, args, { showDisabled: true, context, rootMenuPath: menuPath, contextKeyService });
     }
 

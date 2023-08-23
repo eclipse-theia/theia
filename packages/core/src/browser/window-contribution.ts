@@ -51,7 +51,7 @@ export class WindowContribution implements CommandContribution, KeybindingContri
     }
 
     registerMenus(registry: MenuModelRegistry): void {
-        registry.registerMenuAction(CommonMenus.FILE_NEW, {
+        registry.registerMenuAction(CommonMenus.FILE_NEW_TEXT, {
             commandId: WindowCommands.NEW_WINDOW.id,
             order: 'c'
         });

@@ -110,7 +110,8 @@ export class PluginSharedStyle {
         const lightIconUrl = PluginSharedStyle.toExternalIconUrl(`${typeof iconUrl === 'object' ? iconUrl.light : iconUrl}`);
         const iconClass = 'plugin-icon-' + this.iconSequence++;
         const toDispose = new DisposableCollection();
-        toDispose.push(this.insertRule('.' + iconClass, theme => `
+        toDispose.push(this.insertRule('.' + iconClass + '::before', theme => `
+                content: "";
                 background-position: 2px;
                 width: ${size}px;
                 height: ${size}px;
