@@ -14,13 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { asCSSPropertyValue } from '@theia/monaco-editor-core/esm/vs/base/browser/dom';
+import { Endpoint, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { Disposable } from '@theia/core/lib/common/disposable';
+import { getIconRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/iconRegistry';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { IconRegistry, IconStyleSheetService } from '@theia/monaco/lib/browser/monaco-icon-registry-types';
+import { IconFontDefinition, IconContribution as Icon, IconRegistry, IconStyleSheetService } from '@theia/monaco/lib/browser/monaco-icon-registry-types';
 import * as path from 'path';
 import { IconContribution, DeployedPlugin } from '../../common/plugin-protocol';
+import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
+import { UnthemedProductIconTheme } from '@theia/monaco-editor-core/esm/vs/platform/theme/browser/iconsStyleSheet';
 
 @injectable()
 export class PluginIconService implements Disposable, FrontendApplicationContribution {
@@ -61,14 +65,14 @@ export class PluginIconService implements Disposable, FrontendApplicationContrib
                 }
             }, contribution.description);
         } else {
-            this.iconRegistry.registerIcon(contribution.id, { id: defaultIcon.id}, contribution.description);
+            this.iconRegistry.registerIcon(contribution.id, { id: defaultIcon.id }, contribution.description);
         }
         console.warn('**** alvs, iconContributionr registered: ', contribution.id);
-        this.updateStyle();
+        this.updateStyle(contribution);
         return Disposable.NULL;
     }
 
-    updateStyle(): void {
+    updateStyle(contribution: IconContribution): void {
         if (!this.styleElement) {
             const styleElement = document.createElement('style');
             styleElement.type = 'text/css';
@@ -77,14 +81,73 @@ export class PluginIconService implements Disposable, FrontendApplicationContrib
             document.head.appendChild(styleElement);
             this.styleElement = styleElement;
         }
-
-        this.styleElement.innerText = this.iconStyleSheetService.getIconsStyleSheet().getCSS();
-        // const toRemoveStyleElement = Disposable.create(() => styleElement.remove());
+        const css = this.getCSS(contribution);
+        if (css) {
+            this.styleElement.innerText = css;
+        }
+        // const toRemoveStyleElement = Disposable.create(() => this.styleElement.remove());
     }
 
     dispose(): void {
         // Implement me
     }
+
+    protected getCSS(iconContribution: IconContribution, themeService?: IThemeService): string | undefined {
+        const iconRegistry = getIconRegistry();
+        const productIconTheme = themeService ? themeService.getProductIconTheme() : new UnthemedProductIconTheme();
+        const usedFontIds: { [id: string]: IconFontDefinition } = {};
+        const formatIconRule = (contribution: Icon): string | undefined => {
+            const definition = productIconTheme.getIcon(contribution);
+            if (!definition) {
+                return undefined;
+            }
+            const fontContribution = definition.font;
+            if (fontContribution) {
+                usedFontIds[fontContribution.id] = fontContribution.definition;
+                return `.codicon-${contribution.id}:before { content: '${definition.fontCharacter}'; font-family: ${asCSSPropertyValue(iconContribution.extensionId)}; }`;
+            }
+            // default font (codicon)
+            return `.codicon-${contribution.id}:before { content: '${definition.fontCharacter}'; }`;
+        };
+
+        const rules = [];
+        for (const contribution of iconRegistry.getIcons()) {
+            const rule = formatIconRule(contribution);
+            if (rule) {
+                rules.push(rule);
+            }
+        }
+        for (const id in usedFontIds) {
+            if (id) {
+                const definition = usedFontIds[id];
+                const fontWeight = definition.weight ? `font-weight: ${definition.weight};` : '';
+                const fontStyle = definition.style ? `font-style: ${definition.style};` : '';
+                const src = definition.src.map(icon =>
+                    `${this.toPluginUrl(iconContribution.extensionId, getIconRelativePath(icon.location.path))} format('${icon.format}')`)
+                    .join(', ');
+                rules.push(`@font-face { src: ${src}; font-family: ${asCSSPropertyValue(iconContribution.extensionId)};${fontWeight}${fontStyle} font-display: block; }`);
+            }
+        }
+        return rules.join('\n');
+    }
+
+    protected toPluginUrl(id: string, relativePath: string): string {
+        return `url('${new Endpoint({
+            path: `hostedPlugin/${this.formatExtensionId(id)}/${encodeURIComponent(relativePath)}`
+        }).getRestUrl().toString()}')`;
+    }
+
+    protected formatExtensionId(id: string): string {
+        return id.replace(/\W/g, '_');
+    }
+}
+
+function getIconRelativePath(iconPath: string): string {
+    const index = iconPath.indexOf('extension');
+    if (index === -1) {
+        return '';
+    }
+    return iconPath.substring(index + 'extension'.length + 1);
 }
 
 function getFontId(extensionId: string, fontPath: string): string {
