@@ -1171,23 +1171,26 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     onWillStop(): OnWillStopAction | undefined {
-        try {
-            if (this.shouldPreventClose || this.shell.canSaveAll()) {
-                return {
-                    reason: 'Dirty editors present',
-                    action: async () => {
-                        const captionsToSave = this.unsavedTabsCaptions();
-                        const untitledCaptionsToSave = this.unsavedUntitledTabsCaptions();
-                        const result = await confirmExitWithOrWithoutSaving(captionsToSave, async () => {
-                            await this.saveDirty(untitledCaptionsToSave);
-                            await this.shell.saveAll();
-                        });
+        if (this.shouldPreventClose || this.shell.canSaveAll()) {
+            return {
+                reason: 'Dirty editors present',
+                action: async () => {
+                    const captionsToSave = this.unsavedTabsCaptions();
+                    const untitledCaptionsToSave = this.unsavedUntitledTabsCaptions();
+                    const result = await confirmExitWithOrWithoutSaving(captionsToSave, async () => {
+                        await this.saveDirty(untitledCaptionsToSave);
+                        await this.shell.saveAll();
+                    });
+                    if (this.shell.canSaveAll()) {
+                        this.shouldPreventClose = true;
+                        return false;
+                    } else {
+                        this.shouldPreventClose = false;
                         return result;
                     }
-                };
-            }
-        } finally {
-            this.shouldPreventClose = false;
+
+                }
+            };
         }
     }
     protected unsavedTabsCaptions(): string[] {
