@@ -164,8 +164,12 @@ export namespace Saveable {
                 if (typeof result === 'boolean') {
                     if (result) {
                         await (doSave?.(this) ?? Saveable.save(this));
+                        if (!isDirty(this)) {
+                            await this.closeWithoutSaving();
+                        }
+                    } else {
+                        await this.closeWithoutSaving();
                     }
-                    await this.closeWithoutSaving();
                 }
             } finally {
                 closing = false;
