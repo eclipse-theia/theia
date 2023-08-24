@@ -178,9 +178,9 @@ export interface TerminalWidgetOptions {
     readonly title?: string;
 
     /**
-     * icon class
+     * icon class with or without color modifier
      */
-    readonly iconClass?: string;
+    readonly iconClass?: string | {icon: string, color: string};
 
     /**
      * Path to the executable shell. For example: `/bin/bash`, `bash`, `sh`.

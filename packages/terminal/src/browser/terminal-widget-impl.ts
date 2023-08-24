@@ -19,7 +19,7 @@ import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, Channel, OS } from '@theia/core';
 import {
-    Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon, ExtractableWidget, ContextMenuRenderer
+    Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, ExtractableWidget, ContextMenuRenderer
 } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -138,9 +138,19 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.setTitle(this.options.title || TerminalWidgetImpl.LABEL);
 
         if (this.options.iconClass) {
-            this.title.iconClass = this.options.iconClass;
-        } else {
-            this.title.iconClass = codicon('terminal');
+            const iconClass = this.options.iconClass;
+            if (typeof iconClass === 'object' && 'color' in iconClass) {
+                const iconClasses: string[] = [];
+                iconClasses.push(iconClass.icon);
+                // TODO: Build different handling for URI icons.
+                if (this.isTerminalAnsiColor(iconClass.color)) {
+                    const color = this.getCodiconColor(iconClass.color);
+                    iconClasses.push(color ? color : '');
+                }
+                this.title.iconClass = iconClasses.join(' ');
+            } else {
+                this.title.iconClass = iconClass;
+            }
         }
 
         if (this.options.kind) {
@@ -320,6 +330,28 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     private getCursorStyle(): CursorStyle {
         const value = this.preferences['terminal.integrated.cursorStyle'];
         return value === 'line' ? 'bar' : value;
+    }
+
+    private isTerminalAnsiColor(color: string): boolean {
+        const colorId = color.substring(13);
+        const colorName = colorId.charAt(0).toLowerCase() + colorId.slice(1);
+        return colorName in this.themeService.theme;
+    }
+
+    /**
+     * Returns the object class required to paint a codicon to a theme appropiate color.
+     * Does not give URI icons color.
+     *
+     * @param colorId the ThemeColor id
+     * @returns the corresponding ansi class for the color.
+     */
+    private getCodiconColor(colorId: string): string | undefined {
+        if (colorId?.startsWith('terminal.ansi')) {
+            const colorClass = colorId.split('.')[1].split(/(?=[A-Z])/).join('-').toLocaleLowerCase();
+            return colorClass + '-fg';
+        }
+        // TODO: implement for other cases in color.
+        return undefined;
     }
 
     /**

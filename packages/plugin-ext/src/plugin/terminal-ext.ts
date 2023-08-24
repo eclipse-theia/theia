@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { Terminal, TerminalOptions, PseudoTerminalOptions, ExtensionTerminalOptions, TerminalState } from '@theia/plugin';
-import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
+import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT, Plugin } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -24,21 +24,42 @@ import * as Converter from './type-converters';
 import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIcon } from './types-impl';
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ProvidedTerminalLink } from '../common/plugin-api-rpc-model';
-import { ThemeIcon as MonacoThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
+import { ThemeIcon as MonacoThemeIcon, ThemeColor as MonacoThemeColor } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
+import { PluginSharedStyle } from '../main/browser/plugin-shared-style';
+import { PluginIconPath } from './plugin-icon-path';
+import { IconUrl } from '../common';
+import { DisposableCollection } from '@theia/core';
 
-export function getIconUris(iconPath: theia.TerminalOptions['iconPath']): { id: string } | undefined {
+export function getIconUris(iconPath: theia.TerminalOptions['iconPath']): MonacoThemeIcon | IconUrl | undefined {
     if (ThemeIcon.is(iconPath)) {
         return { id: iconPath.id };
+    } else if (typeof iconPath === 'object' && 'light' in iconPath) {
+        return { light: iconPath.light.toString(), dark: iconPath.dark.toString() };
+    } else if (typeof iconPath === 'string') {
+        return iconPath;
     }
     return undefined;
 }
 
-export function getIconClass(options: theia.TerminalOptions | theia.ExtensionTerminalOptions): string | undefined {
-    const iconClass = getIconUris(options.iconPath);
-    if (iconClass) {
-        return MonacoThemeIcon.asClassName(iconClass);
+export function getIconClass(
+    options: theia.TerminalOptions | theia.ExtensionTerminalOptions,
+    sharedStyle: PluginSharedStyle, disposables: DisposableCollection
+): string | { icon: string, color: string } | undefined {
+    const iconUriOrCodicon = getIconUris(options.iconPath);
+    const iconColor = MonacoThemeColor.isThemeColor(options.color) ? options.color : undefined;
+    let iconClass;
+    if (iconUriOrCodicon) {
+        if (MonacoThemeIcon.isThemeIcon(iconUriOrCodicon)) {
+            iconClass = MonacoThemeIcon.asClassName(iconUriOrCodicon);
+        } else {
+            const iconReference = sharedStyle.toIconClass(iconUriOrCodicon);
+            disposables.push(iconReference);
+            iconClass = iconReference.object.iconClass;
+        }
+    } else {
+        iconClass = (MonacoThemeIcon.asClassName({ id: 'terminal' }));
     }
-    return undefined;
+    return iconColor ? { icon: iconClass, color: iconColor.id } : iconClass;
 }
 
 /**
@@ -79,6 +100,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
     }
 
     createTerminal(
+        extension: Plugin,
         nameOrOptions: TerminalOptions | PseudoTerminalOptions | ExtensionTerminalOptions | (string | undefined),
         shellPath?: string, shellArgs?: string[] | string
     ): Terminal {
@@ -115,6 +137,19 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
                     }
                 }
             }
+        }
+
+        if (typeof nameOrOptions === 'object' && 'iconPath' in nameOrOptions) {
+            const iconPath = nameOrOptions.iconPath;
+            if (ThemeIcon.is(iconPath)) {
+                options.iconPath = iconPath;
+            } else if (typeof iconPath === 'string' || (typeof iconPath === 'object' && ('light' in iconPath || 'path' in iconPath))) {
+                options.iconPath = PluginIconPath.toUrl(iconPath, extension);
+            }
+        }
+
+        if (typeof nameOrOptions === 'object' && 'color' in nameOrOptions) {
+            options.color = nameOrOptions.color;
         }
 
         this.proxy.$createTerminal(id, options, parentId, !!pseudoTerminal);
