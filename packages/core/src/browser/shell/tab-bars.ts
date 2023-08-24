@@ -170,8 +170,8 @@ export class TabBarRenderer extends TabBar.Renderer {
         const hover = this.tabBar && (this.tabBar.orientation === 'horizontal' && this.corePreferences?.['window.tabbar.enhancedPreview'] === 'classic')
             ? { title: title.caption }
             : {
-                onmouseenter: this.handleMouseEnterEvent
-            };
+            onmouseenter: this.handleMouseEnterEvent
+        };
 
         return h.li(
             {
