@@ -118,6 +118,7 @@ import { isString, isObject, PickOptions, QuickInputButtonHandle } from '@theia/
 import { Severity } from '@theia/core/lib/common/severity';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
 import { LanguagePackBundle } from './language-pack-service';
+import { AccessibilityInformation } from '@theia/core/lib/common/accessibility';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -736,6 +737,7 @@ export interface DialogsMain {
 }
 
 export interface RegisterTreeDataProviderOptions {
+    manageCheckboxStateManually?: boolean;
     showCollapseAll?: boolean
     canSelectMany?: boolean
     dragMimeTypes?: string[]
@@ -768,6 +770,7 @@ export class DataTransferFileDTO {
 }
 
 export interface TreeViewsExt {
+    $checkStateChanged(treeViewId: string, itemIds: { id: string, checked: boolean }[]): Promise<void>;
     $dragStarted(treeViewId: string, treeItemIds: string[], token: CancellationToken): Promise<UriComponents[] | undefined>;
     $dragEnd(treeViewId: string): Promise<void>;
     $drop(treeViewId: string, treeItemId: string | undefined, dataTransferItems: [string, string | DataTransferFileDTO][], token: CancellationToken): Promise<void>;
@@ -777,6 +780,12 @@ export interface TreeViewsExt {
     $setExpanded(treeViewId: string, treeItemId: string, expanded: boolean): Promise<any>;
     $setSelection(treeViewId: string, treeItemIds: string[]): Promise<void>;
     $setVisible(treeViewId: string, visible: boolean): Promise<void>;
+}
+
+export interface TreeViewItemCheckboxInfo {
+    checked: boolean;
+    tooltip?: string;
+    accessibilityInformation?: AccessibilityInformation
 }
 
 export interface TreeViewItem {
@@ -800,6 +809,8 @@ export interface TreeViewItem {
     tooltip?: string | MarkdownString;
 
     collapsibleState?: TreeViewItemCollapsibleState;
+
+    checkboxInfo?: TreeViewItemCheckboxInfo;
 
     contextValue?: string;
 
