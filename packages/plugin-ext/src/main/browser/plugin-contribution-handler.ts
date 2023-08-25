@@ -416,7 +416,7 @@ export class PluginContributionHandler {
         if (contributions.notebookRenderer) {
             for (const renderer of contributions.notebookRenderer) {
                 pushContribution(`notebookRenderer.${renderer.id}`,
-                    () => this.notebookRendererRegistry.registerNotebookRenderer(renderer, getPluginId(plugin.metadata.model))
+                    () => this.notebookRendererRegistry.registerNotebookRenderer(renderer, `/hostedPlugin/${getPluginId(plugin.metadata.model)}`)
                 );
             }
         }

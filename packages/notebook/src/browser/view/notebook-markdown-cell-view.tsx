@@ -48,11 +48,11 @@ interface MarkdownCellProps {
     notebookModel: NotebookModel
 }
 
-function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel }: MarkdownCellProps): JSX.Element {
+function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel }: MarkdownCellProps): React.JSX.Element {
     const [editMode, setEditMode] = React.useState(false);
 
     React.useEffect(() => {
-        const listener = cell.onRequestCellEditChange(cellEdit => setEditMode(cellEdit));
+        const listener = cell.onDidRequestCellEditChange(cellEdit => setEditMode(cellEdit));
         return () => listener.dispose();
     }, [editMode]);
 
@@ -65,7 +65,7 @@ function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel }:
         <CellEditor cell={cell} notebookModel={notebookModel} monacoServices={monacoServices} /> :
         <div className='theia-notebook-markdown-content'
             onDoubleClick={() => cell.requestEdit()}
-            // This sets the non React HTML node from the markdownrenders output as a child node to this react component
+            // This sets the non React HTML node from the markdown renderers output as a child node to this react component
             // This is currently sadly the best way we have to combine React (Virtual Nodes) and normal dom nodes
             // the HTML is allready sanitized by the markdown renderer, so we don't need to sanitize it again
             dangerouslySetInnerHTML={{ __html: markdownContent }} // eslint-disable-line react/no-danger

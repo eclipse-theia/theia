@@ -118,11 +118,11 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
 
     private readonly proxy: NotebookKernelsExt;
 
-    private readonly kernels = new Map<number, [kernel: NotebookKernel, registraion: Disposable]>();
+    private readonly kernels = new Map<number, [kernel: NotebookKernel, registration: Disposable]>();
 
-    private readonly kernelDetectionTasks = new Map<number, [task: KernelDetectionTask, registraion: Disposable]>();
+    private readonly kernelDetectionTasks = new Map<number, [task: KernelDetectionTask, registration: Disposable]>();
 
-    private readonly kernelSourceActionProviders = new Map<number, [provider: KernelSourceActionProvider, registraion: Disposable]>();
+    private readonly kernelSourceActionProviders = new Map<number, [provider: KernelSourceActionProvider, registration: Disposable]>();
     private readonly kernelSourceActionProvidersEventRegistrations = new Map<number, Disposable>();
 
     private notebookKernelService: NotebookKernelService;
@@ -222,7 +222,7 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
 
     }
 
-    // TODO implement notebook execution (special api for exectuting full notebook instead of just cells)
+    // TODO implement notebook execution (special api for executing full notebook instead of just cells)
     $createNotebookExecution(handle: number, controllerId: string, uri: UriComponents): void {
         throw new Error('Method not implemented.');
     }

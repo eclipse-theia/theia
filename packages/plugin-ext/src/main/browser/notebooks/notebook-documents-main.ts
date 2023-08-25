@@ -22,7 +22,7 @@ import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-m
 import { NotebookCellsChangeType } from '@theia/notebook/lib/common';
 import { MAIN_RPC_CONTEXT, NotebookCellDto, NotebookCellsChangedEventDto, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
-import { NotebookDto } from './notebookDto';
+import { NotebookDto } from './notebook-dto';
 
 export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
 

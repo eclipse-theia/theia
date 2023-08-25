@@ -370,11 +370,6 @@ export class NotebookDocument implements Disposable {
             contentChangeEvents.push(changeEvent);
         });
 
-        this.editorsAndDocuments.$acceptEditorsAndDocumentsDelta({
-            addedDocuments: addedCellDocuments,
-            removedDocuments: removedCellDocuments
-        });
-
         if (bucket) {
             for (const changeEvent of contentChangeEvents) {
                 bucket.push(changeEvent.asApiEvent());

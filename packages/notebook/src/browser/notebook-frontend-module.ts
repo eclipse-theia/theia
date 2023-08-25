@@ -19,7 +19,7 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { NotebookOpenHandler } from './notebook-open-handler';
-import { bindContributionProvider, CommandContribution, MenuContribution, ResourceResolver, } from '@theia/core';
+import { CommandContribution, MenuContribution, ResourceResolver, } from '@theia/core';
 import { NotebookTypeRegistry } from './notebook-type-registry';
 import { NotebookRendererRegistry } from './notebook-renderer-registry';
 import { NotebookService } from './service/notebook-service';
@@ -42,14 +42,10 @@ import { NotebookKernelHistoryService } from './service/notebook-kernel-history-
 import { NotebookEditorWidgetService } from './service/notebook-editor-service';
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import { notebookCellMonacoTextmodelService } from './view/notebook-cell-editor';
 import { NotebookCellContextManager } from './service/notebook-cell-context-manager';
 import { NotebookMainToolbarRenderer } from './view/notebook-main-toolbar';
 
 export default new ContainerModule(bind => {
-    bindContributionProvider(bind, Symbol('notebooks'));
-
     bind(NotebookColorContribution).toSelf().inSingletonScope();
     bind(ColorContribution).toService(NotebookColorContribution);
 
@@ -69,8 +65,6 @@ export default new ContainerModule(bind => {
     bind(NotebookKernelService).toSelf().inSingletonScope();
     bind(NotebookRendererMessagingService).toSelf().inSingletonScope();
     bind(NotebookKernelHistoryService).toSelf().inSingletonScope();
-    // We nned a custom MonacoTextModelService here to avoid the other one trying to update the general documents without updating the notebook documents
-    bind(notebookCellMonacoTextmodelService).to(MonacoTextModelService).inSingletonScope();
     bind(NotebookKernelQuickPickService).to(KernelPickerMRUStrategy).inSingletonScope();
 
     bind(NotebookCellResourceResolver).toSelf().inSingletonScope();

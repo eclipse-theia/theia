@@ -29,7 +29,7 @@ import { open, OpenerService } from '@theia/core/lib/browser';
 export class NotebookEditorsMainImpl implements NotebookEditorsMain {
 
     protected readonly proxy: NotebookEditorsExt;
-    protected readonly openerSerivce: OpenerService;
+    protected readonly openerService: OpenerService;
 
     protected readonly mainThreadEditors = new Map<string, NotebookEditorWidget>();
 
@@ -38,11 +38,11 @@ export class NotebookEditorsMainImpl implements NotebookEditorsMain {
         container: interfaces.Container
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOK_EDITORS_EXT);
-        this.openerSerivce = container.get(OpenerService);
+        this.openerService = container.get(OpenerService);
     }
 
     async $tryShowNotebookDocument(uriComponents: UriComponents, viewType: string, options: NotebookDocumentShowOptions): Promise<string> {
-        const editor = await open(this.openerSerivce, URI.fromComponents(uriComponents), {});
+        const editor = await open(this.openerService, URI.fromComponents(uriComponents), {});
         return (editor as NotebookEditorWidget).id;
     }
     $tryRevealRange(id: string, range: CellRange, revealType: NotebookEditorRevealType): Promise<void> {

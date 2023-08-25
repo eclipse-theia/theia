@@ -40,16 +40,16 @@ export class NotebookEditorWidgetService implements Disposable {
     private readonly onFocusedEditorChangedEmitter = new Emitter<NotebookEditorWidget>();
     readonly onFocusedEditorChanged = this.onFocusedEditorChangedEmitter.event;
 
-    private readonly listeners = new DisposableCollection();
+    private readonly toDispose = new DisposableCollection();
 
-    currentfocusedEditor?: NotebookEditorWidget = undefined;
+    currentFocusedEditor?: NotebookEditorWidget = undefined;
 
     @postConstruct()
     protected init(): void {
-        this.listeners.push(this.applicationShell.onDidChangeActiveWidget(event => {
-            if (event.newValue?.id.startsWith(NOTEBOOK_EDITOR_ID_PREFIX) && event.newValue !== this.currentfocusedEditor) {
-                this.currentfocusedEditor = event.newValue as NotebookEditorWidget;
-                this.onFocusedEditorChangedEmitter.fire(this.currentfocusedEditor);
+        this.toDispose.push(this.applicationShell.onDidChangeActiveWidget(event => {
+            if (event.newValue?.id.startsWith(NOTEBOOK_EDITOR_ID_PREFIX) && event.newValue !== this.currentFocusedEditor) {
+                this.currentFocusedEditor = event.newValue as NotebookEditorWidget;
+                this.onFocusedEditorChangedEmitter.fire(this.currentFocusedEditor);
             }
         }));
     }
@@ -57,7 +57,8 @@ export class NotebookEditorWidgetService implements Disposable {
     dispose(): void {
         this.onNotebookEditorAddEmitter.dispose();
         this.onNotebookEditorsRemoveEmitter.dispose();
-        this.listeners.dispose();
+        this.onFocusedEditorChangedEmitter.dispose();
+        this.toDispose.dispose();
     }
 
     // --- editor management

@@ -38,10 +38,6 @@ interface EmitterLike<T> {
     event: Event<T>;
 }
 
-// export interface Event<T> {
-//     (listener: (e: T) => any, thisArgs?: any, disposables?: IDisposable[] | DisposableStore): IDisposable;
-// }
-
 interface RendererContext extends rendererApi.RendererContext<unknown> {
     readonly onDidChangeSettings: Event<RenderOptions>;
     readonly settings: RenderOptions;
@@ -104,7 +100,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
 
     class Output {
         readonly outputId: string;
-        rendererdItem?: rendererApi.OutputItem;
+        renderedItem?: rendererApi.OutputItem;
         allItems: rendererApi.OutputItem[];
 
         renderer: Renderer;
@@ -129,11 +125,11 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                     return itemToRender;
                 }
             }
-            return this.rendererdItem ?? this.allItems[0];
+            return this.renderedItem ?? this.allItems[0];
         }
 
         clear(): void {
-            this.renderer?.disposeOutputItem?.(this.rendererdItem?.id);
+            this.renderer?.disposeOutputItem?.(this.renderedItem?.id);
             this.element.innerHTML = '';
         }
     }
@@ -382,13 +378,14 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
         }
     }();
 
-    function clearOuptut(outputId: string): void {
+    function clearOutput(outputId: string): void {
         outputs.get(outputId)?.clear();
+        outputs.delete(outputId);
     }
 
     function outputsChanged(changedEvent: webviewCommunication.OutputChangedMessage): void {
         for (const outputId of changedEvent.deletedOutputIds ?? []) {
-            clearOuptut(outputId);
+            clearOutput(outputId);
         }
 
         for (const outputData of changedEvent.newOutputs ?? []) {
@@ -468,7 +465,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                 renderers.getRenderer(event.data.rendererId)?.receiveMessage(event.data.message);
                 break;
             case 'changePreferredMimetype':
-                clearOuptut(event.data.outputId);
+                clearOutput(event.data.outputId);
                 renderers.render(outputs.get(event.data.outputId)!, event.data.mimeType, undefined, new AbortController().signal);
                 break;
         }

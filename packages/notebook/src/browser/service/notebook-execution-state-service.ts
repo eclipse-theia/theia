@@ -125,7 +125,6 @@ export class NotebookExecutionStateService implements Disposable {
     private onCellExecutionDidComplete(notebookUri: URI, cellHandle: number, exe: CellExecution, lastRunSuccess?: boolean): void {
         const notebookExecutions = this.executions.get(`${notebookUri}/${cellHandle}`);
         if (!notebookExecutions) {
-            console.debug(`NotebookExecutionStateService#_onCellExecutionDidComplete - unknown notebook ${notebookUri.toString()}`);
             return;
         }
 
@@ -207,7 +206,6 @@ export class CellExecution implements Disposable {
     }
 
     confirm(): void {
-        console.debug(`CellExecution#confirm ${this.getCellLog()}`);
         this._state = NotebookCellExecutionState.Pending;
         this.onDidUpdateEmitter.fire();
     }
@@ -273,7 +271,7 @@ export class CellExecution implements Disposable {
     }
 }
 
-class CellExecutionStateChangedEvent {
+export class CellExecutionStateChangedEvent {
     readonly type = NotebookExecutionType.cell;
     constructor(
         readonly notebook: URI,
@@ -291,7 +289,7 @@ class CellExecutionStateChangedEvent {
     }
 }
 
-function updateToEdit(update: CellExecuteUpdate, cellHandle: number): CellEditOperation {
+export function updateToEdit(update: CellExecuteUpdate, cellHandle: number): CellEditOperation {
     if (update.editType === CellExecutionUpdateType.Output) {
         return {
             editType: CellEditType.Output,

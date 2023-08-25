@@ -34,6 +34,7 @@
     "@types/mime": "^2.0.1",
     "@vscode/debugprotocol": "^1.51.0",
     "@vscode/proxy-agent": "^0.13.2",
+    "async-mutex": "^0.4.0",
     "decompress": "^4.2.1",
     "escape-html": "^1.0.3",
     "filenamify": "^4.1.0",

@@ -32,11 +32,11 @@ import { CellUri, NotebookCellOutputsSplice } from '@theia/notebook/lib/common';
 import { Disposable, DisposableCollection, nls, QuickPickService } from '@theia/core';
 import { NotebookCellOutputModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-output-model';
 
-const cellModel = Symbol('CellModel');
+const CellModel = Symbol('CellModel');
 
 export function createCellOutputWebviewContainer(ctx: interfaces.Container, cell: NotebookCellModel): interfaces.Container {
     const child = ctx.createChild();
-    child.bind(cellModel).toConstantValue(cell);
+    child.bind(CellModel).toConstantValue(cell);
     child.bind(CellOutputWebviewImpl).toSelf().inSingletonScope();
     return child;
 }
@@ -47,7 +47,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     @inject(NotebookRendererMessagingService)
     protected readonly messagingService: NotebookRendererMessagingService;
 
-    @inject(cellModel)
+    @inject(CellModel)
     protected readonly cell: NotebookCellModel;
 
     @inject(WidgetManager)
@@ -65,9 +65,9 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     @inject(QuickPickService)
     protected readonly quickPickService: QuickPickService;
 
-    readonly id: string = v4();
+    readonly id = v4();
 
-    protected readonly elementref = React.createRef<HTMLDivElement>();
+    protected readonly elementRef = React.createRef<HTMLDivElement>();
     protected outputPresentationListeners: DisposableCollection = new DisposableCollection();
 
     protected webviewWidget: WebviewWidget;
@@ -76,8 +76,8 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     protected async init(): Promise<void> {
         this.cell.onDidChangeOutputs(outputChange => this.updateOutput(outputChange));
 
-        this.webviewWidget = await this.widgetManager.getOrCreateWidget(WebviewWidget.FACTORY_ID, {id: this.id});
-        this.webviewWidget.setContentOptions({allowScripts: true});
+        this.webviewWidget = await this.widgetManager.getOrCreateWidget(WebviewWidget.FACTORY_ID, { id: this.id });
+        this.webviewWidget.setContentOptions({ allowScripts: true });
         this.webviewWidget.setHTML(await this.createWebviewContent());
 
         this.webviewWidget.onMessage((message: FromWebviewMessage) => {
@@ -85,21 +85,21 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
         });
     }
 
-    render(): JSX.Element {
-        return <div className='theia-notebook-cell-output-webview' ref={this.elementref}></div>;
+    render(): React.JSX.Element {
+        return <div className='theia-notebook-cell-output-webview' ref={this.elementRef}></div>;
     }
 
     attachWebview(): void {
-        if (this.elementref.current) {
+        if (this.elementRef.current) {
             this.webviewWidget.processMessage(new Message('before-attach'));
-            this.elementref.current.appendChild(this.webviewWidget.node);
+            this.elementRef.current.appendChild(this.webviewWidget.node);
             this.webviewWidget.processMessage(new Message('after-attach'));
             this.webviewWidget.setIframeHeight(0);
         }
     }
 
     isAttached(): boolean {
-        return this.elementref.current?.contains(this.webviewWidget.node) ?? false;
+        return this.elementRef.current?.contains(this.webviewWidget.node) ?? false;
     }
 
     updateOutput(update: NotebookCellOutputsSplice): void {
@@ -110,10 +110,11 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
 
             this.outputPresentationListeners.dispose();
             this.outputPresentationListeners = new DisposableCollection();
-            this.cell.outputs.forEach(output =>
-                this.outputPresentationListeners.push(output.onRequestOutputPresentationChange(() => this.requestOuptutPresenetationUpdate(output))));
+            for (const output of this.cell.outputs) {
+                this.outputPresentationListeners.push(output.onRequestOutputPresentationChange(() => this.requestOutputPresentationUpdate(output)));
+            }
 
-            const updateOuptutMessage: OutputChangedMessage = {
+            const updateOutputMessage: OutputChangedMessage = {
                 type: 'outputChanged',
                 newOutputs: update.newOutputs.map(output => ({
                     id: output.outputId,
@@ -123,11 +124,11 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
                 deletedOutputIds: this.cell.outputs.slice(update.start, update.start + update.deleteCount).map(output => output.outputId)
             };
 
-            this.webviewWidget.sendMessage(updateOuptutMessage);
+            this.webviewWidget.sendMessage(updateOutputMessage);
         }
     }
 
-    private async requestOuptutPresenetationUpdate(output: NotebookCellOutputModel): Promise<void> {
+    private async requestOutputPresentationUpdate(output: NotebookCellOutputModel): Promise<void> {
         const selectedMime = await this.quickPickService.show(
             output.outputs.map(item => ({label: item.mime})),
             {description: nls.localizeByDefault('Select mimetype to render for current output' )});

@@ -53,9 +53,6 @@
   margin: 0px 6px 0px 4px;
 }
 
-.theia-notebook-cell-statusbar {
-}
-
 .theia-notebook-cell-content {
   flex: 1;
   width: calc(100% - 15px);
@@ -193,7 +190,7 @@
   padding: 0 4px;
 }
 
-.theia-notebook-toolbar-seperator {
+.theia-notebook-toolbar-separator {
   width: 1px;
   background-color: var(--theia-notebook-cellToolbarSeparator);
   margin: 0 4px;

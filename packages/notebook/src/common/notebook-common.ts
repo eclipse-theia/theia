@@ -448,34 +448,6 @@ export namespace CellUri {
         };
     }
 
-    // export function generateCellOutputUri(notebook: URI, outputId?: string) {
-    //     return notebook.with({
-    //         scheme: NOTEBOOK_CELL_URI_SCHEME,
-    //         fragment: `op${outputId ?? ''},${notebook.scheme !== Schemas.file ? notebook.scheme : ''} `
-    //     });
-    // }
-
-    // export function parseCellOutputUri(uri: URI): { notebook: URI; outputId?: string } | undefined {
-    //     if (uri.scheme !== NOTEBOOK_CELL_URI_SCHEME) {
-    //         return;
-    //     }
-
-    //     const match = /^op([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?\,(.*)$/i.exec(uri.fragment);
-    //     if (!match) {
-    //         return undefined;
-    //     }
-
-    //     const outputId = (match[1] && match[1] !== '') ? match[1] : undefined;
-    //     const scheme = match[2];
-    //     return {
-    //         outputId,
-    //         notebook: uri.with({
-    //             scheme: scheme || Schemas.file,
-    //             fragment: null
-    //         })
-    //     };
-    // }
-
     export function generateCellPropertyUri(notebook: URI, handle: number, cellScheme: string): URI {
         return CellUri.generate(notebook, handle).withScheme(cellScheme);
     }

@@ -19,10 +19,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
-import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import { notebookCellMonacoTextmodelService } from '../view/notebook-cell-editor';
 import {
     CellInternalMetadataChangedEvent, CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata,
     NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput, CellData, NotebookCell
@@ -37,13 +36,13 @@ export function createNotebookCellModelContainer(parent: interfaces.Container, p
 
     child.bind(NotebookCellModelProps).toConstantValue(props);
     // We need the constructor as property here to avoid circular dependencies for the context manager
-    child.bind(NotebookCellContextManagerSymbol).to(notebookCellContextManager).inSingletonScope();
+    child.bind(NotebookCellContextManager).to(notebookCellContextManager).inSingletonScope();
     child.bind(NotebookCellModel).toSelf();
 
     return child;
 }
 
-const NotebookCellContextManagerSymbol = Symbol('NotebookCellContextManager');
+const NotebookCellContextManager = Symbol('NotebookCellContextManager');
 interface NotebookCellContextManager {
     updateCellContext(cell: NotebookCellModel, context: HTMLElement): void;
     dispose(): void;
@@ -67,35 +66,48 @@ export interface NotebookCellModelProps {
 @injectable()
 export class NotebookCellModel implements NotebookCell, Disposable {
 
-    protected readonly didChangeOutputsEmitter = new Emitter<NotebookCellOutputsSplice>();
-    readonly onDidChangeOutputs: Event<NotebookCellOutputsSplice> = this.didChangeOutputsEmitter.event;
+    protected readonly onDidChangeOutputsEmitter = new Emitter<NotebookCellOutputsSplice>();
+    readonly onDidChangeOutputs: Event<NotebookCellOutputsSplice> = this.onDidChangeOutputsEmitter.event;
 
-    protected readonly didChangeOutputItemsEmitter = new Emitter<void>();
-    readonly onDidChangeOutputItems: Event<void> = this.didChangeOutputItemsEmitter.event;
+    protected readonly onDidChangeOutputItemsEmitter = new Emitter<void>();
+    readonly onDidChangeOutputItems: Event<void> = this.onDidChangeOutputItemsEmitter.event;
 
-    protected readonly didChangeContentEmitter = new Emitter<'content' | 'language' | 'mime'>();
-    readonly onDidChangeContent: Event<'content' | 'language' | 'mime'> = this.didChangeContentEmitter.event;
+    protected readonly onDidChangeContentEmitter = new Emitter<'content' | 'language' | 'mime'>();
+    readonly onDidChangeContent: Event<'content' | 'language' | 'mime'> = this.onDidChangeContentEmitter.event;
 
-    protected readonly didChangeMetadataEmitter = new Emitter<void>();
-    readonly onDidChangeMetadata: Event<void> = this.didChangeMetadataEmitter.event;
+    protected readonly onDidChangeMetadataEmitter = new Emitter<void>();
+    readonly onDidChangeMetadata: Event<void> = this.onDidChangeMetadataEmitter.event;
 
-    protected readonly didChangeInternalMetadataEmitter = new Emitter<CellInternalMetadataChangedEvent>();
-    readonly onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent> = this.didChangeInternalMetadataEmitter.event;
+    protected readonly onDidChangeInternalMetadataEmitter = new Emitter<CellInternalMetadataChangedEvent>();
+    readonly onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent> = this.onDidChangeInternalMetadataEmitter.event;
 
-    protected readonly didChangeLanguageEmitter = new Emitter<string>();
-    readonly onDidChangeLanguage: Event<string> = this.didChangeLanguageEmitter.event;
+    protected readonly onDidChangeLanguageEmitter = new Emitter<string>();
+    readonly onDidChangeLanguage: Event<string> = this.onDidChangeLanguageEmitter.event;
 
-    protected readonly requestCellEditChangeEmitter = new Emitter<boolean>();
-    readonly onRequestCellEditChange = this.requestCellEditChangeEmitter.event;
+    protected readonly onDidRequestCellEditChangeEmitter = new Emitter<boolean>();
+    readonly onDidRequestCellEditChange = this.onDidRequestCellEditChangeEmitter.event;
 
-    @inject(NotebookCellContextManagerSymbol)
-    notebookCellContextManager: NotebookCellContextManager;
+    @inject(NotebookCellContextManager)
+    readonly notebookCellContextManager: NotebookCellContextManager;
 
-    readonly outputs: NotebookCellOutputModel[];
+    @inject(NotebookCellModelProps)
+    protected readonly props: NotebookCellModelProps;
+    @inject(MonacoTextModelService)
+    protected readonly textModelService: MonacoTextModelService;
 
-    readonly metadata: NotebookCellMetadata;
+    get outputs(): NotebookCellOutputModel[] {
+        return this._outputs;
+    }
 
-    readonly toDispose = new DisposableCollection();
+    protected _outputs: NotebookCellOutputModel[];
+
+    get metadata(): NotebookCellMetadata {
+        return this._metadata;
+    }
+
+    protected _metadata: NotebookCellMetadata;
+
+    protected toDispose = new DisposableCollection();
 
     protected _internalMetadata: NotebookCellInternalMetadata;
 
@@ -110,7 +122,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
             ...{ runStartTimeAdjustment: computeRunStartTimeAdjustment(this._internalMetadata, newInternalMetadata) }
         };
         this._internalMetadata = newInternalMetadata;
-        this.didChangeInternalMetadataEmitter.fire({ lastRunSuccessChanged });
+        this.onDidChangeInternalMetadataEmitter.fire({ lastRunSuccessChanged });
 
     }
 
@@ -147,8 +159,8 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         }
 
         this.language = newLanguage;
-        this.didChangeLanguageEmitter.fire(newLanguage);
-        this.didChangeContentEmitter.fire('language');
+        this.onDidChangeLanguageEmitter.fire(newLanguage);
+        this.onDidChangeContentEmitter.fire('language');
     }
 
     get uri(): URI {
@@ -161,12 +173,11 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         return this.props.cellKind;
     }
 
-    constructor(@inject(NotebookCellModelProps) private props: NotebookCellModelProps,
-        @inject(notebookCellMonacoTextmodelService) private textModelService: MonacoTextModelService,
-    ) {
-        this.outputs = props.outputs.map(op => new NotebookCellOutputModel(op));
-        this.metadata = props.metadata ?? {};
-        this._internalMetadata = props.internalMetadata ?? {};
+    @postConstruct()
+    protected init(): void {
+        this._outputs = this.props.outputs.map(op => new NotebookCellOutputModel(op));
+        this._metadata = this.props.metadata ?? {};
+        this._internalMetadata = this.props.internalMetadata ?? {};
     }
 
     refChanged(node: HTMLLIElement): void {
@@ -177,22 +188,23 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     }
 
     dispose(): void {
-        this.didChangeOutputsEmitter.dispose();
-        this.didChangeOutputItemsEmitter.dispose();
-        this.didChangeContentEmitter.dispose();
-        this.didChangeMetadataEmitter.dispose();
-        this.didChangeInternalMetadataEmitter.dispose();
-        this.didChangeLanguageEmitter.dispose();
+        this.onDidChangeOutputsEmitter.dispose();
+        this.onDidChangeOutputItemsEmitter.dispose();
+        this.onDidChangeContentEmitter.dispose();
+        this.onDidChangeMetadataEmitter.dispose();
+        this.onDidChangeInternalMetadataEmitter.dispose();
+        this.onDidChangeLanguageEmitter.dispose();
         this.notebookCellContextManager.dispose();
+        this.textModel.dispose();
         this.toDispose.dispose();
     }
 
     requestEdit(): void {
-        this.requestCellEditChangeEmitter.fire(true);
+        this.onDidRequestCellEditChangeEmitter.fire(true);
     }
 
     requestStopEdit(): void {
-        this.requestCellEditChangeEmitter.fire(false);
+        this.onDidRequestCellEditChangeEmitter.fire(false);
     }
 
     spliceNotebookCellOutputs(splice: NotebookCellOutputsSplice): void {
@@ -207,10 +219,10 @@ export class NotebookCellModel implements NotebookCell, Disposable {
             }
 
             this.outputs.splice(splice.start + commonLen, splice.deleteCount - commonLen, ...splice.newOutputs.slice(commonLen).map(op => new NotebookCellOutputModel(op)));
-            this.didChangeOutputsEmitter.fire({ start: splice.start + commonLen, deleteCount: splice.deleteCount - commonLen, newOutputs: splice.newOutputs.slice(commonLen) });
+            this.onDidChangeOutputsEmitter.fire({ start: splice.start + commonLen, deleteCount: splice.deleteCount - commonLen, newOutputs: splice.newOutputs.slice(commonLen) });
         } else {
             this.outputs.splice(splice.start, splice.deleteCount, ...splice.newOutputs.map(op => new NotebookCellOutputModel(op)));
-            this.didChangeOutputsEmitter.fire(splice);
+            this.onDidChangeOutputsEmitter.fire(splice);
         }
     }
 
@@ -222,7 +234,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         }
 
         output.replaceData(newOutputItem);
-        this.didChangeOutputItemsEmitter.fire();
+        this.onDidChangeOutputItemsEmitter.fire();
         return true;
     }
 

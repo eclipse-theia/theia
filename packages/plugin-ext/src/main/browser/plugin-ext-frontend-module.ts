@@ -84,7 +84,7 @@ import { DnDFileContentStore } from './view/dnd-file-content-store';
 import { WebviewContextKeys } from './webview/webview-context-keys';
 import { LanguagePackService, languagePackServicePath } from '../../common/language-pack-service';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { cellOutputWebviewFactory } from '@theia/notebook/lib/browser';
+import { CellOutputWebviewFactory } from '@theia/notebook/lib/browser';
 import { CellOutputWebviewImpl, createCellOutputWebviewContainer } from './notebooks/renderers/cell-output-webview';
 import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 
@@ -258,7 +258,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         return provider.createProxy<LanguagePackService>(languagePackServicePath);
     }).inSingletonScope();
 
-    bind(cellOutputWebviewFactory).toFactory(ctx => async (cell: NotebookCellModel) =>
+    bind(CellOutputWebviewFactory).toFactory(ctx => async (cell: NotebookCellModel) =>
         createCellOutputWebviewContainer(ctx.container, cell).getAsync(CellOutputWebviewImpl)
     );
 });

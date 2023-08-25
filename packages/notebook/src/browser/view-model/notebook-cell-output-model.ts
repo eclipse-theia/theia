@@ -51,6 +51,7 @@ export class NotebookCellOutputModel implements Disposable {
 
     dispose(): void {
         this.didChangeDataEmitter.dispose();
+        this.requestOutputPresentationChangeEmitter.dispose();
     }
 
     requestOutputPresentationUpdate(): void {

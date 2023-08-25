@@ -21,7 +21,7 @@ import { NotebookService } from '@theia/notebook/lib/browser';
 import { Disposable } from '@theia/plugin';
 import { MAIN_RPC_CONTEXT, NotebooksExt, NotebooksMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
-import { NotebookDto } from './notebookDto';
+import { NotebookDto } from './notebook-dto';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 

@@ -112,7 +112,7 @@ export interface KernelSourceActionProvider {
 
 export class SourceCommand implements Disposable {
     execution: Promise<void> | undefined;
-    private readonly onDidChangeStateEmitter = new Emitter<void>();
+    protected readonly onDidChangeStateEmitter = new Emitter<void>();
     readonly onDidChangeState = this.onDidChangeStateEmitter.event;
 
     constructor(
@@ -303,9 +303,9 @@ export class NotebookKernelService implements Disposable {
         this.onDidChangeKernelDetectionTasksEmitter.fire(notebookType);
         return Disposable.create(() => {
             const allTasks = this.kernelDetectionTasks.get(notebookType) ?? [];
-            const idx = allTasks.indexOf(task);
-            if (idx >= 0) {
-                allTasks.splice(idx, 1);
+            const taskIndex = allTasks.indexOf(task);
+            if (taskIndex >= 0) {
+                allTasks.splice(taskIndex, 1);
                 this.kernelDetectionTasks.set(notebookType, allTasks);
                 this.onDidChangeKernelDetectionTasksEmitter.fire(notebookType);
             }
@@ -328,9 +328,9 @@ export class NotebookKernelService implements Disposable {
 
         return Disposable.create(() => {
             const sourceProviders = this.kernelSourceActionProviders.get(viewType) ?? [];
-            const idx = sourceProviders.indexOf(provider);
-            if (idx >= 0) {
-                sourceProviders.splice(idx, 1);
+            const providerIndex = sourceProviders.indexOf(provider);
+            if (providerIndex >= 0) {
+                sourceProviders.splice(providerIndex, 1);
                 this.kernelSourceActionProviders.set(viewType, sourceProviders);
             }
 
@@ -338,11 +338,12 @@ export class NotebookKernelService implements Disposable {
         });
     }
 
-    getKernelSourceActionsFromProviders(notebook: NotebookTextModelLike): Promise<NotebookKernelSourceAction[]> {
+    async getKernelSourceActionsFromProviders(notebook: NotebookTextModelLike): Promise<NotebookKernelSourceAction[]> {
         const viewType = notebook.viewType;
         const providers = this.kernelSourceActionProviders.get(viewType) ?? [];
         const promises = providers.map(provider => provider.provideKernelSourceActions());
-        return Promise.all(promises).then(actions => actions.reduce((a, b) => a.concat(b), []));
+        const allActions = await Promise.all(promises);
+        return allActions.flat();
     }
 
     dispose(): void {

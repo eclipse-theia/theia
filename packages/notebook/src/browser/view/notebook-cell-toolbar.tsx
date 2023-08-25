@@ -29,18 +29,18 @@ interface NotebookCellToolbarState {
 
 abstract class NotebookCellActionItems extends React.Component<NotebookCellToolbarProps, NotebookCellToolbarState> {
 
-    protected disposables = new DisposableCollection();
+    protected toDispose = new DisposableCollection();
 
     constructor(props: NotebookCellToolbarProps) {
         super(props);
-        this.disposables.push(props.onContextKeysChanged(e => {
+        this.toDispose.push(props.onContextKeysChanged(e => {
             this.setState({ inlineItems: this.props.getMenuItems() });
         }));
         this.state = { inlineItems: this.props.getMenuItems() };
     }
 
     override componentWillUnmount(): void {
-        this.disposables.dispose();
+        this.toDispose.dispose();
     }
 
     protected renderItem(item: NotebookCellToolbarItem): React.ReactNode {

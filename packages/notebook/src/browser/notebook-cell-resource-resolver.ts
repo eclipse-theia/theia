@@ -58,19 +58,19 @@ export class NotebookCellResourceResolver implements ResourceResolver {
 
         const parsedUri = CellUri.parse(uri);
         if (!parsedUri) {
-            throw new Error(`cant parse uri ${uri.toString()}`);
+            throw new Error(`Cannot parse uri '${uri.toString()}'`);
         }
 
         const notebookModel = this.notebookService.getNotebookEditorModel(parsedUri.notebook);
 
         if (!notebookModel) {
-            throw new Error(`no notebook found for uri ${parsedUri.notebook}`);
+            throw new Error(`No notebook found for uri '${parsedUri.notebook}'`);
         }
 
         const notebookCellModel = notebookModel.cells.find(cell => cell.handle === parsedUri.handle);
 
         if (!notebookCellModel) {
-            throw new Error(`no cell found with hanlde ${parsedUri.handle} in ${parsedUri.notebook}`);
+            throw new Error(`No cell found with handle '${parsedUri.handle}' in '${parsedUri.notebook}'`);
         }
 
         return new NotebookCellResource(uri, notebookCellModel);

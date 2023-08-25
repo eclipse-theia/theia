@@ -17,7 +17,7 @@
 import { Disposable } from '@theia/core';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 
-export const cellOutputWebviewFactory = Symbol('outputWebviewFactory');
+export const CellOutputWebviewFactory = Symbol('outputWebviewFactory');
 
 export type CellOutputWebviewFactory = (cell: NotebookCellModel) => Promise<CellOutputWebview>;
 
@@ -25,7 +25,7 @@ export interface CellOutputWebview extends Disposable {
 
     readonly id: string;
 
-    render(): JSX.Element;
+    render(): React.JSX.Element;
 
     attachWebview(): void;
     isAttached(): boolean

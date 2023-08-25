@@ -57,7 +57,7 @@ export namespace NotebookCellCommands {
     });
     export const CHANGE_OUTPUT_PRESENTATION_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.change-presentation',
-        label: 'Change Presenetation',
+        label: 'Change Presentation',
     });
 }
 

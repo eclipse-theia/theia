@@ -28,24 +28,22 @@ export interface NotebookRendererInfo {
     readonly mimeTypes: string[];
     readonly entrypoint: { readonly extends?: string; readonly uri: string };
     readonly requiresMessaging: boolean;
-    pluginId: string;
 }
-const PLUGINS_BASE_PATH = new Path('/hostedPlugin');
 
 @injectable()
 export class NotebookRendererRegistry {
 
     readonly notebookRenderers: NotebookRendererInfo[] = [];
 
-    registerNotebookRenderer(type: NotebookRendererDescriptor, pluginId: string): Disposable {
+    registerNotebookRenderer(type: NotebookRendererDescriptor, basePath: string): Disposable {
         let entrypoint;
         if (typeof type.entrypoint === 'string') {
             entrypoint = {
-                uri: PLUGINS_BASE_PATH.join(pluginId, type.entrypoint).toString()
+                uri: new Path(basePath).join(type.entrypoint).toString()
             };
         } else {
             entrypoint = {
-                uri: PLUGINS_BASE_PATH.join(pluginId, type.entrypoint.path).toString(),
+                uri: new Path(basePath).join(type.entrypoint.path).toString(),
                 extends: type.entrypoint.extends
             };
         }
@@ -54,7 +52,6 @@ export class NotebookRendererRegistry {
             ...type,
             mimeTypes: type.mimeTypes || [],
             requiresMessaging: type.requiresMessaging === 'always' || type.requiresMessaging === 'optional',
-            pluginId,
             entrypoint
         });
         return Disposable.create(() => {

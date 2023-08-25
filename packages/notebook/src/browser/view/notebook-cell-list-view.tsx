@@ -19,7 +19,7 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellToolbarFactory } from './notebook-cell-toolbar-factory';
 import { codicon } from '@theia/core/lib/browser';
-import { CommandRegistry, nls } from '@theia/core';
+import { CommandRegistry, DisposableCollection, nls } from '@theia/core';
 import { NotebookCommands } from '../contributions/notebook-actions-contribution';
 import { NotebookCellActionContribution } from '../contributions/notebook-cell-actions-contribution';
 
@@ -41,12 +41,18 @@ interface NotebookCellListState {
 
 export class NotebookCellListView extends React.Component<CellListProps, NotebookCellListState> {
 
+    protected toDispose = new DisposableCollection();
+
     constructor(props: CellListProps) {
         super(props);
         this.state = { selectedCell: undefined, dragOverIndicator: undefined };
-        props.notebookModel.onDidAddOrRemoveCell(e => {
+        this.toDispose.push(props.notebookModel.onDidAddOrRemoveCell(e => {
             this.setState({ selectedCell: undefined });
-        });
+        }));
+    }
+
+    override componentWillUnmount(): void {
+        this.toDispose.dispose();
     }
 
     override render(): React.ReactNode {

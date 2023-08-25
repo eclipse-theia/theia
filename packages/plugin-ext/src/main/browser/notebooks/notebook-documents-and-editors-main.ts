@@ -25,11 +25,12 @@ import { NotebookEditorWidget, NotebookService, NotebookEditorWidgetService } fr
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { MAIN_RPC_CONTEXT, NotebookDocumentsAndEditorsDelta, NotebookDocumentsAndEditorsMain, NotebookModelAddedData, NotebooksExt } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
-import { NotebookDto } from './notebookDto';
+import { NotebookDto } from './notebook-dto';
 import { WidgetManager } from '@theia/core/lib/browser';
 import { NotebookEditorsMainImpl } from './notebook-editors-main';
 import { NotebookDocumentsMainImpl } from './notebook-documents-main';
 import { diffMaps, diffSets } from '../../../common/collections';
+import { Mutex } from 'async-mutex';
 
 interface NotebookAndEditorDelta {
     removedDocuments: UriComponents[];
@@ -87,45 +88,48 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
     protected readonly editorListeners = new Map<string, Disposable[]>();
 
     protected currentState?: NotebookAndEditorState;
+    protected readonly updateMutex = new Mutex();
 
     protected readonly notebookService: NotebookService;
-    protected readonly notebookeditorService: NotebookEditorWidgetService;
+    protected readonly notebookEditorService: NotebookEditorWidgetService;
     protected readonly WidgetManager: WidgetManager;
 
     constructor(
         rpc: RPCProtocol,
         container: interfaces.Container,
-        protected readonly notebookDocumentsmain: NotebookDocumentsMainImpl,
+        protected readonly notebookDocumentsMain: NotebookDocumentsMainImpl,
         protected readonly notebookEditorsMain: NotebookEditorsMainImpl
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT);
 
         this.notebookService = container.get(NotebookService);
-        this.notebookeditorService = container.get(NotebookEditorWidgetService);
+        this.notebookEditorService = container.get(NotebookEditorWidgetService);
         this.WidgetManager = container.get(WidgetManager);
 
         this.notebookService.onDidAddNotebookDocument(async () => this.updateState(), this, this.disposables);
         this.notebookService.onDidRemoveNotebookDocument(async () => this.updateState(), this, this.disposables);
         // this.WidgetManager.onActiveEditorChanged(() => this.updateState(), this, this.disposables);
-        this.notebookeditorService.onDidAddNotebookEditor(this.handleEditorAdd, this, this.disposables);
-        this.notebookeditorService.onDidRemoveNotebookEditor(this.handleEditorRemove, this, this.disposables);
-        this.notebookeditorService.onFocusedEditorChanged(async editor => this.updateState(editor), this, this.disposables);
-
-        this.updateState();
+        this.notebookEditorService.onDidAddNotebookEditor(async editor => this.handleEditorAdd(editor), this, this.disposables);
+        this.notebookEditorService.onDidRemoveNotebookEditor(async editor => this.handleEditorRemove(editor), this, this.disposables);
+        this.notebookEditorService.onFocusedEditorChanged(async editor => this.updateState(editor), this, this.disposables);
     }
 
     dispose(): void {
-        this.notebookDocumentsmain.dispose();
+        this.notebookDocumentsMain.dispose();
         this.notebookEditorsMain.dispose();
         this.disposables.dispose();
         this.editorListeners.forEach(listeners => listeners.forEach(listener => listener.dispose()));
     }
 
-    private handleEditorAdd(editor: NotebookEditorWidget): void {
-        this.editorListeners.set(editor.id, [
-            editor.onDidChangeModel(() => this.updateState()),
-        ]);
-        this.updateState();
+    private async handleEditorAdd(editor: NotebookEditorWidget): Promise<void> {
+        const listeners = this.editorListeners.get(editor.id);
+        const disposable = editor.onDidChangeModel(() => this.updateState());
+        if (listeners) {
+            listeners.push(disposable);
+        } else {
+            this.editorListeners.set(editor.id, [disposable]);
+        }
+        await this.updateState();
     }
 
     private handleEditorRemove(editor: NotebookEditorWidget): void {
@@ -136,17 +140,21 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
     }
 
     private async updateState(focusedEditor?: NotebookEditorWidget): Promise<void> {
+        await this.updateMutex.runExclusive(async () => this.doUpdateState(focusedEditor));
+    }
+
+    private async doUpdateState(focusedEditor?: NotebookEditorWidget): Promise<void> {
 
         const editors = new Map<string, NotebookEditorWidget>();
         const visibleEditorsMap = new Map<string, NotebookEditorWidget>();
 
-        for (const editor of this.notebookeditorService.listNotebookEditors()) {
+        for (const editor of this.notebookEditorService.listNotebookEditors()) {
             if (editor.model) {
                 editors.set(editor.id, editor);
             }
         }
 
-        const activeNotebookEditor = this.notebookeditorService.currentfocusedEditor;
+        const activeNotebookEditor = this.notebookEditorService.currentFocusedEditor;
         let activeEditor: string | null = null;
         if (activeNotebookEditor) {
             activeEditor = activeNotebookEditor.id;
@@ -191,8 +199,8 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
 
         // handle internally
         this.notebookEditorsMain.handleEditorsRemoved(delta.removedEditors);
-        this.notebookDocumentsmain.handleNotebooksRemoved(delta.removedDocuments);
-        this.notebookDocumentsmain.handleNotebooksAdded(delta.addedDocuments);
+        this.notebookDocumentsMain.handleNotebooksRemoved(delta.removedDocuments);
+        this.notebookDocumentsMain.handleNotebooksAdded(delta.addedDocuments);
         this.notebookEditorsMain.handleEditorsAdded(delta.addedEditors);
     }
 
@@ -227,17 +235,4 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
             cells: e.cells.map(NotebookDto.toNotebookCellDto)
         };
     }
-
-    // private asEditorAddData(add: NotebookEditorWidget): NotebookEditorAddData {
-
-    //     const pane = this.editorManager.visibleEditorPanes.find(pane => getNotebookEditorFromEditorPane(pane) === add);
-
-    //     return {
-    //         id: add.id,
-    //         documentUri: add.textModel.uri,
-    //         selections: add.getSelections(),
-    //         visibleRanges: add.visibleRanges,
-    //         viewColumn: pane && editorGroupToColumn(this._editorGroupService, pane.group)
-    //     };
-    // }
 }

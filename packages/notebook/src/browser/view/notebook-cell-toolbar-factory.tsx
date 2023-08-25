@@ -48,7 +48,7 @@ export class NotebookCellToolbarFactory {
 
     renderCellToolbar(menuPath: string[], notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
         return <NotebookCellToolbar getMenuItems={() => this.getMenuItems(menuPath, notebookModel, cell)}
-            onContextKeysChanged={cell.notebookCellContextManager.onDidChangeContext}/>;
+            onContextKeysChanged={cell.notebookCellContextManager.onDidChangeContext} />;
     }
 
     renderSidebar(menuPath: string[], notebookModel: NotebookModel, cell: NotebookCellModel, output?: NotebookCellOutputModel): React.ReactNode {
@@ -79,10 +79,12 @@ export class NotebookCellToolbarFactory {
             label: menuNode.label,
             onClick: menuPath ?
                 e => this.contextMenuRenderer.render(
-                    { anchor: e.nativeEvent,
+                    {
+                        anchor: e.nativeEvent,
                         menuPath,
                         includeAnchorArg: false,
-                        args: [notebookModel, cell, output] }) :
+                        args: [notebookModel, cell, output]
+                    }) :
                 () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell, output)
         };
     }

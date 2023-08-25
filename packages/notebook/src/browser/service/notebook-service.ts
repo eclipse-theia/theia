@@ -22,7 +22,6 @@ import { NotebookModel, NotebookModelFactory, NotebookModelProps } from '../view
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from '../view-model/notebook-cell-model';
-import { notebookCellMonacoTextmodelService } from '../view/notebook-cell-editor';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export const NotebookProvider = Symbol('notebook provider');
@@ -45,7 +44,7 @@ export class NotebookService implements Disposable {
     @inject(FileService)
     protected fileService: FileService;
 
-    @inject(notebookCellMonacoTextmodelService)
+    @inject(MonacoTextModelService)
     protected modelService: MonacoTextModelService;
 
     @inject(NotebookModelFactory)
@@ -116,6 +115,9 @@ export class NotebookService implements Disposable {
         this.willAddNotebookDocumentEmitter.fire(uri);
         const model = this.notebookModelFactory({ data, uri, viewType, serializer });
         this.notebookModels.set(uri.toString(), model);
+        // Resolve cell text models right after creating the notebook model
+        // This ensures that all text models are available in the plugin host
+        await Promise.all(model.cells.map(e => e.resolveTextModel()));
         this.didAddNotebookDocumentEmitter.fire(model);
         return model;
     }

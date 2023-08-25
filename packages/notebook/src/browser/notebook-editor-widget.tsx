@@ -48,6 +48,7 @@ export interface NotebookEditorProps {
     notebookData: Promise<NotebookModel>
 }
 export const NOTEBOOK_EDITOR_ID_PREFIX = 'notebook:';
+
 @injectable()
 export class NotebookEditorWidget extends ReactWidget implements Navigatable, SaveableSource {
     static readonly ID = 'notebook';
@@ -94,6 +95,8 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this.title.closable = true;
         this.update();
 
+        this.toDispose.push(this.onDidChangeModelEmitter);
+
         this.renderers.set(CellKind.Markup, markdownCellRenderer);
         this.renderers.set(CellKind.Code, codeCellRenderer);
         this.waitForData();
@@ -102,6 +105,9 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected async waitForData(): Promise<void> {
         this._model = await this.props.notebookData;
         this.saveable.set(this._model);
+        this.toDispose.push(this._model);
+        // Ensure that the model is loaded before adding the editor
+        this.notebookEditorService.addNotebookEditor(this);
         this.update();
     }
 
@@ -142,7 +148,6 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        this.notebookEditorService.addNotebookEditor(this);
     }
 
     protected override onAfterDetach(msg: Message): void {

@@ -22,7 +22,7 @@ import { CancellationToken, Disposable, DisposableCollection, Emitter, Event, UR
 import { URI as TheiaURI } from '../types-impl';
 import * as theia from '@theia/plugin';
 import {
-    CommandRegistryExt, ModelAddedData, NotebookCellStatusBarListDto, NotebookDataDto,
+    CommandRegistryExt, NotebookCellStatusBarListDto, NotebookDataDto,
     NotebookDocumentsAndEditorsDelta, NotebookDocumentShowOptions, NotebookDocumentsMain, NotebookEditorAddData, NotebookEditorsMain, NotebooksExt, NotebooksMain, Plugin,
     PLUGIN_RPC_CONTEXT
 } from '../../common';
@@ -30,10 +30,9 @@ import { Cache } from '../../common/cache';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
 import { CommandsConverter } from '../command-registry';
-// import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
 import * as typeConverters from '../type-converters';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { Cell, NotebookDocument } from './notebook-document';
+import { NotebookDocument } from './notebook-document';
 import { NotebookEditor } from './notebook-editor';
 import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
 import { DocumentsExtImpl } from '../documents';
@@ -43,16 +42,16 @@ export class NotebooksExtImpl implements NotebooksExt {
     private readonly notebookStatusBarItemProviders = new Map<number, theia.NotebookCellStatusBarItemProvider>();
     private readonly commandsConverter: CommandsConverter;
 
-    private readonly DidChangeActiveNotebookEditorEmitter = new Emitter<theia.NotebookEditor | undefined>();
-    readonly onDidChangeActiveNotebookEditor = this.DidChangeActiveNotebookEditorEmitter.event;
+    private readonly onDidChangeActiveNotebookEditorEmitter = new Emitter<theia.NotebookEditor | undefined>();
+    readonly onDidChangeActiveNotebookEditor = this.onDidChangeActiveNotebookEditorEmitter.event;
 
-    private DidOpenNotebookDocumentEmitter = new Emitter<theia.NotebookDocument>();
-    onDidOpenNotebookDocument: Event<theia.NotebookDocument> = this.DidOpenNotebookDocumentEmitter.event;
-    private DidCloseNotebookDocumentEmitter = new Emitter<theia.NotebookDocument>();
-    onDidCloseNotebookDocument: Event<theia.NotebookDocument> = this.DidCloseNotebookDocumentEmitter.event;
+    private readonly onDidOpenNotebookDocumentEmitter = new Emitter<theia.NotebookDocument>();
+    onDidOpenNotebookDocument: Event<theia.NotebookDocument> = this.onDidOpenNotebookDocumentEmitter.event;
+    private readonly onDidCloseNotebookDocumentEmitter = new Emitter<theia.NotebookDocument>();
+    onDidCloseNotebookDocument: Event<theia.NotebookDocument> = this.onDidCloseNotebookDocumentEmitter.event;
 
-    private DidChangeVisibleNotebookEditorsEmitter = new Emitter<theia.NotebookEditor[]>();
-    onDidChangeVisibleNotebookEditors = this.DidChangeVisibleNotebookEditorsEmitter.event;
+    private readonly onDidChangeVisibleNotebookEditorsEmitter = new Emitter<theia.NotebookEditor[]>();
+    onDidChangeVisibleNotebookEditors = this.onDidChangeVisibleNotebookEditorsEmitter.event;
 
     private activeNotebookEditor: NotebookEditor | undefined;
     get activeApiNotebookEditor(): theia.NotebookEditor | undefined {
@@ -206,8 +205,7 @@ export class NotebooksExtImpl implements NotebooksExt {
                 if (document) {
                     document.dispose();
                     this.documents.delete(revivedUri.toString());
-                    // this.editorsAndDocuments.$acceptEditorsAndDocumentsDelta({ removedDocuments: document.apiNotebook.getCells().map(cell => cell.document.uri) });
-                    this.DidCloseNotebookDocumentEmitter.fire(document.apiNotebook);
+                    this.onDidCloseNotebookDocumentEmitter.fire(document.apiNotebook);
                 }
 
                 for (const editor of this.editors.values()) {
@@ -234,18 +232,10 @@ export class NotebooksExtImpl implements NotebooksExt {
                     modelData
                 );
 
-                // add cell document as theia.TextDocument
-                // TODO use this optimization. Currently cellDocuments are created one by one by the moanacotTextModel service
-                // This allways creates a new Document when creating a new TextModel Reference. So we need to find a wayto create textmodels from existing documents
-
-                const addedCellDocuments: ModelAddedData[] = [];
-                addedCellDocuments.push(...modelData.cells.map(cell => Cell.asModelAddData(document.apiNotebook, cell)));
-                this.textDocumentsAndEditors.$acceptEditorsAndDocumentsDelta({ addedDocuments: addedCellDocuments });
-
                 this.documents.get(uri.toString())?.dispose();
                 this.documents.set(uri.toString(), document);
 
-                this.DidOpenNotebookDocumentEmitter.fire(document.apiNotebook);
+                this.onDidOpenNotebookDocumentEmitter.fire(document.apiNotebook);
             }
         }
 
@@ -267,11 +257,11 @@ export class NotebooksExtImpl implements NotebooksExt {
         const removedEditors: NotebookEditor[] = [];
 
         if (delta.removedEditors) {
-            for (const editorid of delta.removedEditors) {
-                const editor = this.editors.get(editorid);
+            for (const editorId of delta.removedEditors) {
+                const editor = this.editors.get(editorId);
 
                 if (editor) {
-                    this.editors.delete(editorid);
+                    this.editors.delete(editorId);
 
                     if (this.activeNotebookEditor?.id === editor.id) {
                         this.activeNotebookEditor = undefined;
@@ -293,7 +283,7 @@ export class NotebooksExtImpl implements NotebooksExt {
             }
 
             this.visibleNotebookEditors = [...this.editors.values()].map(e => e).filter(e => e.visible);
-            this.DidChangeVisibleNotebookEditorsEmitter.fire(this.visibleApiNotebookEditors);
+            this.onDidChangeVisibleNotebookEditorsEmitter.fire(this.visibleApiNotebookEditors);
         }
 
         if (delta.newActiveEditor === null) {
@@ -307,7 +297,7 @@ export class NotebooksExtImpl implements NotebooksExt {
             this.activeNotebookEditor = this.editors.get(delta.newActiveEditor);
         }
         if (delta.newActiveEditor !== undefined) {
-            this.DidChangeActiveNotebookEditorEmitter.fire(this.activeNotebookEditor?.apiEditor);
+            this.onDidChangeActiveNotebookEditorEmitter.fire(this.activeNotebookEditor?.apiEditor);
         }
     }
 
@@ -324,7 +314,7 @@ export class NotebooksExtImpl implements NotebooksExt {
     private createExtHostEditor(document: NotebookDocument, editorId: string, data: NotebookEditorAddData): void {
 
         if (this.editors.has(editorId)) {
-            throw new Error(`editor with id ALREADY EXSIST: ${editorId}`);
+            throw new Error(`editor with id ALREADY EXISTS: ${editorId}`);
         }
 
         const editor = new NotebookEditor(

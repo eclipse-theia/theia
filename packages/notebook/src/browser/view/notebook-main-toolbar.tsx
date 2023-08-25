@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommandRegistry, CompoundMenuNodeRole, MenuModelRegistry, MenuNode, nls } from '@theia/core';
+import { CommandRegistry, CompoundMenuNodeRole, DisposableCollection, MenuModelRegistry, MenuNode, nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 import { codicon } from '@theia/core/lib/browser';
 import { NotebookCommands, NotebookMenus } from '../contributions/notebook-actions-contribution';
@@ -43,36 +43,42 @@ export class NotebookMainToolbarRenderer {
             notebookKernelService={this.notebookKernelService}
             commandRegistry={this.commandRegistry}
             contextKeyService={this.contextKeyService}
-            />;
+        />;
     }
 }
 
-export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProps, {selectedKernelLabel?: string}> {
+export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProps, { selectedKernelLabel?: string }> {
+
+    protected toDispose = new DisposableCollection();
 
     constructor(props: NotebookMainToolbarProps) {
         super(props);
 
-        this.state = {selectedKernelLabel: props.notebookKernelService.getSelectedOrSuggestedKernel(props.notebookModel)?.label};
-        props.notebookKernelService.onDidChangeSelectedKernel(event => {
+        this.state = { selectedKernelLabel: props.notebookKernelService.getSelectedOrSuggestedKernel(props.notebookModel)?.label };
+        this.toDispose.push(props.notebookKernelService.onDidChangeSelectedKernel(event => {
             if (props.notebookModel.uri.isEqual(event.notebook)) {
-                this.setState({selectedKernelLabel: props.notebookKernelService.getKernel(event.newKernel ?? '')?.label});
+                this.setState({ selectedKernelLabel: props.notebookKernelService.getKernel(event.newKernel ?? '')?.label });
             }
-        });
+        }));
         // in case the selected kernel is added after the notebook is loaded
-        props.notebookKernelService.onDidAddKernel(() => {
+        this.toDispose.push(props.notebookKernelService.onDidAddKernel(() => {
             if (!this.state.selectedKernelLabel) {
-                this.setState({selectedKernelLabel: props.notebookKernelService.getSelectedOrSuggestedKernel(props.notebookModel)?.label});
+                this.setState({ selectedKernelLabel: props.notebookKernelService.getSelectedOrSuggestedKernel(props.notebookModel)?.label });
             }
-        });
+        }));
+    }
+
+    override componentWillUnmount(): void {
+        this.toDispose.dispose();
     }
 
     override render(): React.ReactNode {
         return <div className='theia-notebook-main-toolbar'>
             {this.getMenuItems().map(item => this.renderMenuItem(item))}
-            <div style={{flexGrow: 1}}></div>
+            <div style={{ flexGrow: 1 }}></div>
             <div className='theia-notebook-main-toolbar-item'
                 onClick={() => this.props.commandRegistry.executeCommand(NotebookCommands.SELECT_KERNEL_COMMAND.id, this.props.notebookModel)}>
-                <span className={codicon('server-environment')}/>
+                <span className={codicon('server-environment')} />
                 <span className=' theia-notebook-main-toolbar-item-text'>
                     {this.state.selectedKernelLabel ?? nls.localizeByDefault('Select Kernel')}
                 </span>
@@ -83,20 +89,20 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
     private renderMenuItem(item: MenuNode): React.ReactNode {
         if (item.role === CompoundMenuNodeRole.Group) {
             const itemNodes = item.children?.map(child => this.renderMenuItem(child)).filter(child => !!child);
-            return <>
+            return <React.Fragment key={item.id}>
                 {itemNodes}
-                {itemNodes && itemNodes?.length > 0 && <span key={`${item.id}-sperator`} className='theia-notebook-toolbar-seperator'></span>}
-            </>;
+                {itemNodes?.length && <span key={`${item.id}-separator`} className='theia-notebook-toolbar-separator'></span>}
+            </React.Fragment>;
         } else if (!item.when || this.props.contextKeyService.match(item.when)) {
-            return <div key={item.id} className='theia-notebook-main-toolbar-item'
+            return <div key={item.id} title={item.id} className='theia-notebook-main-toolbar-item'
                 onClick={() => {
                     if (item.command) {
                         this.props.commandRegistry.executeCommand(item.command, this.props.notebookModel);
                     }
                 }}>
-                <span className={item.icon}/>
+                <span className={item.icon} />
                 <span className='theia-notebook-main-toolbar-item-text'>{item.label}</span>
-                </div>;
+            </div>;
         }
         return undefined;
     }

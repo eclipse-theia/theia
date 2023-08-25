@@ -70,13 +70,13 @@ export class NotebookKernelHistoryService implements Disposable {
 
     addMostRecentKernel(kernel: NotebookKernel): void {
         const viewType = kernel.viewType;
-        const recentKeynels = this.mostRecentKernelsMap[viewType] ?? [kernel.id];
+        const recentKernels = this.mostRecentKernelsMap[viewType] ?? [kernel.id];
 
-        if (recentKeynels.length > MAX_KERNELS_IN_HISTORY) {
-            recentKeynels.splice(MAX_KERNELS_IN_HISTORY);
+        if (recentKernels.length > MAX_KERNELS_IN_HISTORY) {
+            recentKernels.splice(MAX_KERNELS_IN_HISTORY);
         }
 
-        this.mostRecentKernelsMap[viewType] = recentKeynels;
+        this.mostRecentKernelsMap[viewType] = recentKernels;
         this.saveState();
     }
 

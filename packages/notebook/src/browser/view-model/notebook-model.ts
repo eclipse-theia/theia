@@ -53,14 +53,14 @@ export interface NotebookModelProps {
 @injectable()
 export class NotebookModel implements Saveable, Disposable {
 
-    private readonly dirtyChangedEmitter = new Emitter<void>();
-    readonly onDirtyChanged = this.dirtyChangedEmitter.event;
+    private readonly onDirtyChangedEmitter = new Emitter<void>();
+    readonly onDirtyChanged = this.onDirtyChangedEmitter.event;
 
-    private readonly saveEmitter = new Emitter<void>();
-    readonly onDidSaveNotebook = this.saveEmitter.event;
+    private readonly onDidSaveNotebookEmitter = new Emitter<void>();
+    readonly onDidSaveNotebook = this.onDidSaveNotebookEmitter.event;
 
-    private readonly didAddRemoveCellEmitter = new Emitter<NotebookModelWillAddRemoveEvent>();
-    readonly onDidAddOrRemoveCell = this.didAddRemoveCellEmitter.event;
+    private readonly onDidAddOrRemoveCellEmitter = new Emitter<NotebookModelWillAddRemoveEvent>();
+    readonly onDidAddOrRemoveCell = this.onDidAddOrRemoveCellEmitter.event;
 
     private readonly onDidChangeContentEmitter = new Emitter<NotebookTextModelChangedEvent>();
     readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
@@ -80,8 +80,6 @@ export class NotebookModel implements Saveable, Disposable {
     dirty: boolean;
     selectedCell?: NotebookCellModel;
     private dirtyCells: NotebookCellModel[] = [];
-
-    private cellListeners: Map<string, Disposable> = new Map();
 
     cells: NotebookCellModel[];
 
@@ -132,16 +130,17 @@ export class NotebookModel implements Saveable, Disposable {
     }
 
     dispose(): void {
-        this.dirtyChangedEmitter.dispose();
-        this.saveEmitter.dispose();
-        this.didAddRemoveCellEmitter.dispose();
-        this.cellListeners.forEach(listener => listener.dispose());
+        this.onDirtyChangedEmitter.dispose();
+        this.onDidSaveNotebookEmitter.dispose();
+        this.onDidAddOrRemoveCellEmitter.dispose();
+        this.onDidChangeContentEmitter.dispose();
+        this.cells.forEach(cell => cell.dispose());
     }
 
     async save(options: SaveOptions): Promise<void> {
         this.dirtyCells = [];
         this.dirty = false;
-        this.dirtyChangedEmitter.fire();
+        this.onDirtyChangedEmitter.fire();
 
         const serializedNotebook = await this.props.serializer.notebookToData({
             cells: this.cells.map(cell => cell.getData()),
@@ -149,7 +148,7 @@ export class NotebookModel implements Saveable, Disposable {
         });
         this.fileService.writeFile(this.uri, serializedNotebook);
 
-        this.saveEmitter.fire();
+        this.onDidSaveNotebookEmitter.fire();
     }
 
     createSnapshot(): Saveable.Snapshot {
@@ -166,7 +165,7 @@ export class NotebookModel implements Saveable, Disposable {
 
     async revert(options?: Saveable.RevertOptions): Promise<void> {
         this.dirty = false;
-        this.dirtyChangedEmitter.fire();
+        this.onDirtyChangedEmitter.fire();
     }
 
     isDirty(): boolean {
@@ -183,7 +182,7 @@ export class NotebookModel implements Saveable, Disposable {
         const oldDirtyState = this.dirty;
         this.dirty = this.dirtyCells.length > 0;
         if (this.dirty !== oldDirtyState) {
-            this.dirtyChangedEmitter.fire();
+            this.onDirtyChangedEmitter.fire();
         }
     }
 
@@ -202,13 +201,12 @@ export class NotebookModel implements Saveable, Disposable {
     }
 
     private addCellOutputListeners(cells: NotebookCellModel[]): void {
-        cells.forEach(cell => {
-            const listener = cell.onDidChangeOutputs(() => {
+        for (const cell of cells) {
+            cell.onDidChangeOutputs(() => {
                 this.dirty = true;
-                this.dirtyChangedEmitter.fire();
+                this.onDirtyChangedEmitter.fire();
             });
-            this.cellListeners.set(cell.uri.toString(), listener);
-        });
+        }
     }
 
     applyEdits(rawEdits: CellEditOperation[], computeUndoRedo: boolean): void {
@@ -242,13 +240,8 @@ export class NotebookModel implements Saveable, Disposable {
                         cell.spliceNotebookCellOutputs({ deleteCount: 0, newOutputs: edit.outputs, start: cell.outputs.length });
                     } else {
                         // could definitely be more efficient. See vscode __spliceNotebookCellOutputs2
-                        for (const output of edit.outputs) {
-                            cell.spliceNotebookCellOutputs({
-                                deleteCount: 1,
-                                newOutputs: [output],
-                                start: cell.outputs.findIndex(outputModel => outputModel.outputId === output.outputId)
-                            });
-                        }
+                        // For now, just replace the whole existing output with the new output
+                        cell.spliceNotebookCellOutputs({ start: 0, deleteCount: cell.outputs.length, newOutputs: edit.outputs });
                     }
 
                     break;
@@ -295,11 +288,9 @@ export class NotebookModel implements Saveable, Disposable {
 
         const deletedCells = this.cells.splice(start, deleteCount, ...cells);
 
-        deletedCells.forEach(cell => {
-            this.cellListeners.get(cell.uri.toString())?.dispose();
-            this.cellListeners.delete(cell.uri.toString());
-
-        });
+        for (const cell of deletedCells) {
+            cell.dispose();
+        }
 
         if (computeUndoRedo) {
             this.undoRedoService.pushElement(this.uri,
@@ -307,7 +298,7 @@ export class NotebookModel implements Saveable, Disposable {
                 async () => this.replaceCells(start, deleteCount, newCells, false));
         }
 
-        this.didAddRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes } });
+        this.onDidAddOrRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes } });
         this.onDidChangeContentEmitter.fire({ rawEvents: [{ kind: NotebookCellsChangeType.ModelChange, changes }] });
     }
 
@@ -333,8 +324,8 @@ export class NotebookModel implements Saveable, Disposable {
         const oldMetadata = this.metadata;
         if (computeUndoRedo) {
             this.undoRedoService.pushElement(this.uri,
-                async () => { this.updateNotebookMetadata(oldMetadata, false); },
-                async () => { this.updateNotebookMetadata(metadata, false); }
+                async () => this.updateNotebookMetadata(oldMetadata, false),
+                async () => this.updateNotebookMetadata(metadata, false)
             );
         }
 

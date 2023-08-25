@@ -60,8 +60,6 @@ export class NotebookExecutionService {
             return;
         }
 
-        console.debug(`NotebookExecutionService#executeNotebookCells ${JSON.stringify(cellsArr.map(c => c.handle))}`);
-
         // create cell executions
         const cellExecutions: [NotebookCellModel, CellExecution][] = [];
         for (const cell of cellsArr) {
@@ -98,7 +96,6 @@ export class NotebookExecutionService {
             // the connecting state can change before the kernel resolves executeNotebookCellsRequest
             const unconfirmed = validCellExecutions.filter(exe => exe.state === NotebookCellExecutionState.Unconfirmed);
             if (unconfirmed.length) {
-                console.debug(`NotebookExecutionService#executeNotebookCells completing unconfirmed executions ${JSON.stringify(unconfirmed.map(exe => exe.cellHandle))}`);
                 unconfirmed.forEach(exe => exe.complete({}));
             }
         }
@@ -118,11 +115,9 @@ export class NotebookExecutionService {
 
     async cancelNotebookCellHandles(notebook: NotebookModel, cells: Iterable<number>): Promise<void> {
         const cellsArr = Array.from(cells);
-        console.debug(`NotebookExecutionService#cancelNotebookCellHandles ${JSON.stringify(cellsArr)}`);
         const kernel = this.notebookKernelService.getSelectedOrSuggestedKernel(notebook);
         if (kernel) {
             await kernel.cancelNotebookCellExecution(notebook.uri, cellsArr);
-
         }
     }
 

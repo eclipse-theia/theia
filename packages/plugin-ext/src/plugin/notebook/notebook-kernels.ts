@@ -51,7 +51,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
     private readonly proxy: NotebookKernelsMain;
 
     private kernelDetectionTasks = new Map<number, theia.NotebookControllerDetectionTask>();
-    private currentkernelDetectionTaskHandle = 0;
+    private currentKernelDetectionTaskHandle = 0;
 
     private kernelSourceActionProviders = new Map<number, theia.NotebookKernelSourceActionProvider>();
     private currentSourceActionProviderHandle = 0;
@@ -83,7 +83,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
 
         console.debug(`NotebookController[${handle}], CREATED by ${extensionId}, ${id}`);
 
-        const defaultExecutHandler = () => console.warn(`NO execute handler from notebook controller '${data.id}' of extension: '${extensionId}'`);
+        const defaultExecuteHandler = () => console.warn(`NO execute handler from notebook controller '${data.id}' of extension: '${extensionId}'`);
 
         let isDisposed = false;
         const commandDisposables = new DisposableCollection();
@@ -99,7 +99,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
         };
 
         //
-        let executeHandler = handler ?? defaultExecutHandler;
+        let executeHandler = handler ?? defaultExecuteHandler;
         let interruptHandler: ((this: theia.NotebookController, notebook: theia.NotebookDocument) => void | Thenable<void>) | undefined;
 
         this.proxy.$addKernel(handle, data).catch(err => {
@@ -178,7 +178,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
                 return executeHandler;
             },
             set executeHandler(value) {
-                executeHandler = value ?? defaultExecutHandler;
+                executeHandler = value ?? defaultExecuteHandler;
             },
             get interruptHandler(): ((this: theia.NotebookController, notebook: theia.NotebookDocument) => void | Thenable<void>) | undefined {
                 return interruptHandler;
@@ -256,7 +256,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
     }
 
     createNotebookControllerDetectionTask(viewType: string): theia.NotebookControllerDetectionTask {
-        const handle = this.currentkernelDetectionTaskHandle++;
+        const handle = this.currentKernelDetectionTaskHandle++;
         const that = this;
 
         this.proxy.$addKernelDetectionTask(handle, viewType);

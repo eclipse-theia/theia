@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
-import { CellOutputWebviewFactory, cellOutputWebviewFactory, CellOutputWebview } from '../renderers/cell-output-webview';
+import { CellOutputWebviewFactory, CellOutputWebview } from '../renderers/cell-output-webview';
 import { NotebookRendererRegistry } from '../notebook-renderer-registry';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
@@ -28,6 +28,7 @@ import { NotebookCellActionContribution } from '../contributions/notebook-cell-a
 import { CellExecution, NotebookExecutionStateService } from '../service/notebook-execution-state-service';
 import { codicon } from '@theia/core/lib/browser';
 import { NotebookCellExecutionState } from '../../common';
+import { DisposableCollection } from '@theia/core';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {
@@ -37,7 +38,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(NotebookRendererRegistry)
     protected readonly notebookRendererRegistry: NotebookRendererRegistry;
 
-    @inject(cellOutputWebviewFactory)
+    @inject(CellOutputWebviewFactory)
     protected readonly cellOutputWebviewFactory: CellOutputWebviewFactory;
 
     @inject(NotebookCellToolbarFactory)
@@ -62,7 +63,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
             <div className='theia-notebook-cell-with-sidebar'>
                 <NotebookCodeCellOutputs cell={cell} outputWebviewFactory={this.cellOutputWebviewFactory}
                     renderSidebar={() =>
-                        this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU, notebookModel, cell, cell.outputs[0])}/>
+                        this.notebookCellToolbarFactory.renderSidebar(NotebookCellActionContribution.OUTPUT_SIDEBAR_MENU, notebookModel, cell, cell.outputs[0])} />
             </div>
         </div >;
     }
@@ -73,18 +74,24 @@ export interface NotebookCodeCellStatusProps {
     executionStateService: NotebookExecutionStateService
 }
 
-export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStatusProps, {currentExecution?: CellExecution}> {
+export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStatusProps, { currentExecution?: CellExecution }> {
+
+    protected toDispose = new DisposableCollection();
 
     constructor(props: NotebookCodeCellStatusProps) {
         super(props);
 
         this.state = {};
 
-        props.executionStateService.onDidChangeExecution(event => {
+        this.toDispose.push(props.executionStateService.onDidChangeExecution(event => {
             if (event.affectsCell(this.props.cell.uri)) {
-                this.setState({currentExecution: event.changed });
+                this.setState({ currentExecution: event.changed });
             }
-        });
+        }));
+    }
+
+    override componentWillUnmount(): void {
+        this.toDispose.dispose();
     }
 
     override render(): React.ReactNode {
@@ -117,17 +124,17 @@ export class NotebookCodeCellStatus extends React.Component<NotebookCodeCellStat
         }
         return <>
             {iconClasses &&
-            <>
-                <span className={`${iconClasses} notebook-cell-status-item`} style={{color}}></span>
-                <div className='notebook-cell-status-item'>{this.getExecutionTime()}</div>
-            </>}
+                <>
+                    <span className={`${iconClasses} notebook-cell-status-item`} style={{ color }}></span>
+                    <div className='notebook-cell-status-item'>{this.getExecutionTime()}</div>
+                </>}
         </>;
     }
 
     private getExecutionTime(): string {
-        const {runStartTime, runEndTime} = this.props.cell.internalMetadata;
+        const { runStartTime, runEndTime } = this.props.cell.internalMetadata;
         if (runStartTime && runEndTime) {
-            return `${((runEndTime - runStartTime) / 1000).toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1}) }s`;
+            return `${((runEndTime - runStartTime) / 1000).toLocaleString(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 1 })}s`;
         }
         return '0.0s';
     }
@@ -148,7 +155,7 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
     }
 
     override async componentDidMount(): Promise<void> {
-        const {cell, outputWebviewFactory} = this.props;
+        const { cell, outputWebviewFactory } = this.props;
         cell.onDidChangeOutputs(async () => {
             if (!this.outputsWebview && cell.outputs.length > 0) {
                 this.outputsWebview = await outputWebviewFactory(cell);
@@ -173,8 +180,8 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
     override render(): React.ReactNode {
         return this.outputsWebview ?
             <>
-            {this.props.renderSidebar()}
-            {this.outputsWebview.render()}
+                {this.props.renderSidebar()}
+                {this.outputsWebview.render()}
             </> :
             <></>;
 
