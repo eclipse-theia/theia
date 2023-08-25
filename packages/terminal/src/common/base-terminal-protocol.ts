@@ -16,6 +16,7 @@
 
 import { RpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { Disposable } from '@theia/core';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 
 export interface TerminalProcessInfo {
     executable: string
@@ -28,6 +29,7 @@ export interface IBaseTerminalServer extends RpcServer<IBaseTerminalClient> {
     create(IBaseTerminalServerOptions: object): Promise<number>;
     getProcessId(id: number): Promise<number>;
     getProcessInfo(id: number): Promise<TerminalProcessInfo>;
+    getEnvVarCollectionDescriptionsByExtension(id: number): Promise<Map<string, string | MarkdownString | undefined>>;
     getCwdURI(id: number): Promise<string>;
     resize(id: number, cols: number, rows: number): Promise<void>;
     attach(id: number): Promise<number>;
@@ -48,7 +50,7 @@ export interface IBaseTerminalServer extends RpcServer<IBaseTerminalClient> {
     /**
      * Sets an extension's environment variable collection.
      */
-    setCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection): void;
+    setCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection, description: string | MarkdownString | undefined): void;
     /**
      * Deletes an extension's environment variable collection.
      */
@@ -157,6 +159,7 @@ export interface EnvironmentVariableCollection {
 
 export interface EnvironmentVariableCollectionWithPersistence extends EnvironmentVariableCollection {
     readonly persistent: boolean;
+    readonly description: string | MarkdownString | undefined;
 }
 
 export enum EnvironmentVariableMutatorType {
@@ -189,7 +192,8 @@ export interface MergedEnvironmentVariableCollection {
 
 export interface SerializableExtensionEnvironmentVariableCollection {
     extensionIdentifier: string,
-    collection: SerializableEnvironmentVariableCollection
+    collection: SerializableEnvironmentVariableCollection | undefined,
+    description: string | MarkdownString | undefined
 }
 
 export type SerializableEnvironmentVariableCollection = [string, EnvironmentVariableMutator][];

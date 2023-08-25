@@ -3585,6 +3585,12 @@ export module '@theia/plugin' {
      * A collection of mutations that an extension can apply to a process environment.
      */
     export interface EnvironmentVariableCollection {
+
+        /**
+         * A description for the environment variable collection, this will be used to describe the changes in the UI.
+         */
+        description: string | MarkdownString | undefined;
+
         /**
          * Whether the collection should be cached for the workspace and applied to the terminal
          * across window reloads. When true the collection will be active immediately such when the

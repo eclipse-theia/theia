@@ -201,6 +201,16 @@ export function fromMarkdown(markup: theia.MarkdownString | theia.MarkedString):
     }
 }
 
+export function fromMarkdownOrString(value: string | theia.MarkdownString | undefined): string | MarkdownStringDTO | undefined {
+    if (value === undefined) {
+        return undefined;
+    } else if (typeof value === 'string') {
+        return value;
+    } else {
+        return fromMarkdown(value);
+    }
+}
+
 export function toMarkdown(value: MarkdownStringDTO): PluginMarkdownStringImpl {
     const implemented = new PluginMarkdownStringImpl(value.value, value.supportThemeIcons);
     implemented.isTrusted = value.isTrusted;
