@@ -48,7 +48,8 @@ import {
     TaskInfo,
     TaskOutputPresentation,
     TaskOutputProcessedEvent,
-    TaskServer
+    TaskServer,
+    asVariableName
 } from '../common';
 import { TaskWatcher } from '../common/task-watcher';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
@@ -908,13 +909,9 @@ export class TaskService implements TaskConfigurationClient {
     async updateTaskConfiguration(token: number, task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
         if (update.problemMatcher) {
             if (Array.isArray(update.problemMatcher)) {
-                update.problemMatcher.forEach((name, index) => {
-                    if (!name.startsWith('$')) {
-                        update.problemMatcher[index] = `$${update.problemMatcher[index]}`;
-                    }
-                });
-            } else if (!update.problemMatcher.startsWith('$')) {
-                update.problemMatcher = `$${update.problemMatcher}`;
+                update.problemMatcher.forEach((_name, index) => update.problemMatcher[index] = asVariableName(update.problemMatcher[index]));
+            } else {
+                update.problemMatcher = asVariableName(update.problemMatcher);
             }
         }
         this.taskConfigurations.updateTaskConfig(token, task, update);
@@ -1041,7 +1038,7 @@ export class TaskService implements TaskConfigurationClient {
         ({
             label: matcher.label,
             value: { problemMatchers: [matcher] },
-            description: matcher.name.startsWith('$') ? matcher.name : `$${matcher.name}`
+            description: asVariableName(matcher.name)
         })
         ));
         return items;

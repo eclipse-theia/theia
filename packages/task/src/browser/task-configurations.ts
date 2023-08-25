@@ -21,7 +21,8 @@ import {
     TaskDefinition,
     TaskOutputPresentation,
     TaskConfigurationScope,
-    TaskScope
+    TaskScope,
+    asVariableName
 } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
@@ -349,7 +350,7 @@ export class TaskConfigurations implements Disposable {
             } else if (task.problemMatcher) {
                 problemMatcher.push(task.problemMatcher.name!);
             }
-            customization.problemMatcher = problemMatcher.map(name => name.startsWith('$') ? name : `$${name}`);
+            customization.problemMatcher = problemMatcher.map(asVariableName);
         }
         if (task.group) {
             customization.group = task.group;
