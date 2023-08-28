@@ -86,12 +86,12 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
         </div>;
     }
 
-    private renderMenuItem(item: MenuNode): React.ReactNode {
+    protected renderMenuItem(item: MenuNode): React.ReactNode {
         if (item.role === CompoundMenuNodeRole.Group) {
             const itemNodes = item.children?.map(child => this.renderMenuItem(child)).filter(child => !!child);
             return <React.Fragment key={item.id}>
                 {itemNodes}
-                {itemNodes?.length && <span key={`${item.id}-separator`} className='theia-notebook-toolbar-separator'></span>}
+                {itemNodes && itemNodes.length > 0 && <span key={`${item.id}-separator`} className='theia-notebook-toolbar-separator'></span>}
             </React.Fragment>;
         } else if (!item.when || this.props.contextKeyService.match(item.when)) {
             return <div key={item.id} title={item.id} className='theia-notebook-main-toolbar-item'
