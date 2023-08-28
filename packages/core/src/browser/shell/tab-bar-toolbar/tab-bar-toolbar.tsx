@@ -150,7 +150,7 @@ export class TabBarToolbar extends ReactWidget {
         return <React.Fragment>
             {this.renderMore()}
             {[...this.inline.values()].map(item => TabBarToolbarItem.is(item)
-                ? (MenuToolbarItem.is(item) ? this.renderMenuItem(item) : this.renderItem(item))
+                ? (MenuToolbarItem.is(item) && !item.command ? this.renderMenuItem(item) : this.renderItem(item))
                 : item.render(this.current))}
         </React.Fragment>;
     }
