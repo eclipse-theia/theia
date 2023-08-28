@@ -50,6 +50,7 @@
 .t-siw-search-container #search-input-field {
   background: none;
   border: none;
+  width: 100%;
 }
 
 .t-siw-search-container .searchHeader {
