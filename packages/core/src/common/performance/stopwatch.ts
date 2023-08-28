@@ -51,19 +51,19 @@ export abstract class Stopwatch {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    protected cachedResults: MeasurementResult[] = [];
+    protected _storedMeasurements: MeasurementResult[] = [];
 
-    protected onMeasurementResultEmitter = new Emitter<MeasurementResult>();
-    get onMeasurementResult(): Event<MeasurementResult> {
-        return this.onMeasurementResultEmitter.event;
+    protected onDidAddMeasurementResultEmitter = new Emitter<MeasurementResult>();
+    get onDidAddMeasurementResult(): Event<MeasurementResult> {
+        return this.onDidAddMeasurementResultEmitter.event;
     }
 
     constructor(protected readonly defaultLogOptions: LogOptions) {
         if (!defaultLogOptions.defaultLogLevel) {
             defaultLogOptions.defaultLogLevel = DEFAULT_LOG_LEVEL;
         }
-        if (defaultLogOptions.cacheResults === undefined) {
-            defaultLogOptions.cacheResults = true;
+        if (defaultLogOptions.storeResults === undefined) {
+            defaultLogOptions.storeResults = true;
         }
     }
 
@@ -102,41 +102,36 @@ export abstract class Stopwatch {
         return result;
     }
 
-    protected createMeasurement(name: string, measurement: () => { startTime: number, duration: number }, options?: MeasurementOptions): Measurement {
+    protected createMeasurement(name: string, measure: () => { startTime: number, duration: number }, options?: MeasurementOptions): Measurement {
         const logOptions = this.mergeLogOptions(options);
 
-        const result: Measurement = {
+        const measurement: Measurement = {
             name,
             stop: () => {
-                if (result.elapsed === undefined) {
-                    const { startTime, duration } = measurement();
-                    result.elapsed = duration;
-                    this.handleCompletedMeasurement(name, startTime, duration, logOptions);
-
+                if (measurement.elapsed === undefined) {
+                    const { startTime, duration } = measure();
+                    measurement.elapsed = duration;
+                    const result: MeasurementResult = {
+                        name,
+                        elapsed: duration,
+                        startTime,
+                        owner: logOptions.owner
+                    };
+                    if (logOptions.storeResults) {
+                        this._storedMeasurements.push(result);
+                    }
+                    this.onDidAddMeasurementResultEmitter.fire(result);
                 }
-                return result.elapsed;
+                return measurement.elapsed;
             },
-            log: (activity: string, ...optionalArgs: any[]) => this.log(result, activity, this.atLevel(logOptions, undefined, optionalArgs)),
-            debug: (activity: string, ...optionalArgs: any[]) => this.log(result, activity, this.atLevel(logOptions, LogLevel.DEBUG, optionalArgs)),
-            info: (activity: string, ...optionalArgs: any[]) => this.log(result, activity, this.atLevel(logOptions, LogLevel.INFO, optionalArgs)),
-            warn: (activity: string, ...optionalArgs: any[]) => this.log(result, activity, this.atLevel(logOptions, LogLevel.WARN, optionalArgs)),
-            error: (activity: string, ...optionalArgs: any[]) => this.log(result, activity, this.atLevel(logOptions, LogLevel.ERROR, optionalArgs)),
+            log: (activity: string, ...optionalArgs: any[]) => this.log(measurement, activity, this.atLevel(logOptions, undefined, optionalArgs)),
+            debug: (activity: string, ...optionalArgs: any[]) => this.log(measurement, activity, this.atLevel(logOptions, LogLevel.DEBUG, optionalArgs)),
+            info: (activity: string, ...optionalArgs: any[]) => this.log(measurement, activity, this.atLevel(logOptions, LogLevel.INFO, optionalArgs)),
+            warn: (activity: string, ...optionalArgs: any[]) => this.log(measurement, activity, this.atLevel(logOptions, LogLevel.WARN, optionalArgs)),
+            error: (activity: string, ...optionalArgs: any[]) => this.log(measurement, activity, this.atLevel(logOptions, LogLevel.ERROR, optionalArgs)),
         };
 
-        return result;
-    }
-
-    protected handleCompletedMeasurement(name: string, startTime: number, elapsed: number, options: LogOptions): void {
-        const result: MeasurementResult = {
-            name,
-            elapsed,
-            startTime,
-            owner: options.owner
-        };
-        if (options.cacheResults) {
-            this.cachedResults.push(result);
-        }
-        this.onMeasurementResultEmitter.fire(result);
+        return measurement;
     }
 
     protected mergeLogOptions(logOptions?: Partial<LogOptions>): LogOptions {
@@ -181,8 +176,8 @@ export abstract class Stopwatch {
         this.logger.log(level, `${whatWasMeasured}: ${elapsed.toFixed(1)} ms [${timeFromStart}]`, ...(options.arguments ?? []));
     }
 
-    getCachedResults(): MeasurementResult[] {
-        return [...this.cachedResults];
+    get storedMeasurements(): ReadonlyArray<MeasurementResult> {
+        return this._storedMeasurements;
     }
 
 }

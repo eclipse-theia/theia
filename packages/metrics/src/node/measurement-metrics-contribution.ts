@@ -31,7 +31,7 @@ export class MeasurementMetricsBackendContribution implements MetricsContributio
     protected logLevelCli: LogLevelCliContribution;
 
     protected metrics = '';
-    protected frontendCounter = new Map<string, string>();
+    protected frontendCounters = new Map<string, string>();
 
     startCollecting(): void {
         if (this.logLevelCli.defaultLogLevel !== LogLevel.DEBUG) {
@@ -39,8 +39,8 @@ export class MeasurementMetricsBackendContribution implements MetricsContributio
         }
         this.metrics += `# HELP ${metricsName} Theia stopwatch measurement results.\n`;
         this.metrics += `# TYPE ${metricsName} gauge\n`;
-        this.backendStopwatch.getCachedResults().forEach(result => this.onBackendMeasurement(result));
-        this.backendStopwatch.onMeasurementResult(result => this.onBackendMeasurement(result));
+        this.backendStopwatch.storedMeasurements.forEach(result => this.onBackendMeasurement(result));
+        this.backendStopwatch.onDidAddMeasurementResult(result => this.onBackendMeasurement(result));
     }
 
     getMetrics(): string {
@@ -59,13 +59,13 @@ export class MeasurementMetricsBackendContribution implements MetricsContributio
     }
 
     protected createFrontendCounterId(frontendId: string): string {
-        const counterId = `frontend-${this.frontendCounter.size + 1}`;
-        this.frontendCounter.set(frontendId, counterId);
+        const counterId = `frontend-${this.frontendCounters.size + 1}`;
+        this.frontendCounters.set(frontendId, counterId);
         return counterId;
     }
 
     protected toCounterId(frontendId: string): string {
-        return this.frontendCounter.get(frontendId) ?? this.createFrontendCounterId(frontendId);
+        return this.frontendCounters.get(frontendId) ?? this.createFrontendCounterId(frontendId);
     }
 
     onFrontendMeasurement(frontendId: string, result: MeasurementResult): void {

@@ -103,10 +103,10 @@ export interface MeasurementOptions {
     thresholdMillis?: number;
 
     /**
-     * Flag to indicate whether the stopwatch should cache measurement results for later retrieval.
+     * Flag to indicate whether the stopwatch should store measurement results for later retrieval.
      * For example the cache can be used to retrieve measurements which were taken during startup before a listener had a chance to register.
      */
-    cacheResults?: boolean
+    storeResults?: boolean
 }
 
 /**

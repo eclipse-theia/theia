@@ -41,8 +41,8 @@ export class MetricsFrontendApplicationContribution implements FrontendApplicati
         if (logLevel !== LogLevel.DEBUG) {
             return;
         }
-        this.stopwatch.getCachedResults().forEach(result => this.notify(result));
-        this.stopwatch.onMeasurementResult(result => this.notify(result));
+        this.stopwatch.storedMeasurements.forEach(result => this.notify(result));
+        this.stopwatch.onDidAddMeasurementResult(result => this.notify(result));
     }
 
     protected notify(result: MeasurementResult): void {
