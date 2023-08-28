@@ -1036,19 +1036,22 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             wordBreak.lastIndex++;
         }
 
-        const before = lineText.slice(start, character - 1).trimLeft();
-        const multiline = lineText.includes('\n');
+        const before = lineText.slice(start, character - 1).trimStart();
+        const lineCount = lineText.split('\n').length;
 
-        return <div className={`resultLine noWrapInfo noselect ${node.selected ? 'selected' : ''}`} title={lineText.trim()}>
-            {this.searchInWorkspacePreferences['search.lineNumbers'] && <span className='theia-siw-lineNumber'>{node.line}</span>}
-            <span>
-                {before}
-            </span>
-            {this.renderMatchLinePart(node)}
-            {multiline || <span>
-                {lineText.slice(node.character + node.length - 1, 250 - before.length + node.length)}
-            </span>}
-        </div>;
+        return <>
+            <div className={`resultLine noWrapInfo noselect ${node.selected ? 'selected' : ''}`} title={lineText.trim()}>
+                {this.searchInWorkspacePreferences['search.lineNumbers'] && <span className='theia-siw-lineNumber'>{node.line}</span>}
+                <span>
+                    {before}
+                </span>
+                {this.renderMatchLinePart(node)}
+                {lineCount > 1 || <span>
+                    {lineText.slice(node.character + node.length - 1, 250 - before.length + node.length)}
+                </span>}
+            </div>
+            {lineCount > 1 && <div className='match-line-num'>+{lineCount - 1}</div>}
+        </>;
     }
 
     protected renderMatchLinePart(node: SearchInWorkspaceResultLineNode): React.ReactNode {
@@ -1056,13 +1059,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const replaceTerm = this.isReplacing ? <span className='replace-term'>{replaceTermLines[0]}</span> : '';
         const className = `match${this.isReplacing ? ' strike-through' : ''}`;
         const text = typeof node.lineText === 'string' ? node.lineText : node.lineText.text;
-        const match = text.substr(node.character - 1, node.length + node.character - 1);
+        const match = text.substring(node.character - 1, node.character + node.length - 1);
         const matchLines = match.split('\n');
-        const matchLineNum = matchLines.length > 1 ? <span className='match-line-num'>+{matchLines.length + node.character - 1}</span> : '';
         return <React.Fragment>
             <span className={className}>{matchLines[0]}</span>
             {replaceTerm}
-            {matchLineNum}
         </React.Fragment>;
     }
 

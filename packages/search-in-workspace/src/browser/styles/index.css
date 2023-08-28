@@ -237,7 +237,6 @@
 }
 
 .t-siw-search-container .resultLine .match {
-  line-height: normal;
   white-space: pre;
   background: var(--theia-editor-findMatchHighlightBackground);
   border: 1px solid var(--theia-editor-findMatchHighlightBorder);
@@ -260,20 +259,17 @@
   border-style: dashed;
 }
 
-.t-siw-search-container .resultLine .match-line-num {
+.t-siw-search-container .match-line-num {
     font-size: .9em;
     margin-left: 7px;
     margin-right: 4px;
     opacity: .7;
 }
 
-.t-siw-search-container .noWrapInfo {
-  width: 100%;
-}
-
 .t-siw-search-container .result-head-info {
-  display: inline-flex;
   align-items: center;
+  display: inline-flex;
+  flex-grow: 1;
 }
 
 .search-in-workspace-editor-match {
@@ -297,6 +293,7 @@
   justify-content: flex-end;
   align-items: center;
   align-self: center;
+  flex-grow: 1;
 }
 
 .theia-TreeNode:hover .result-head .notification-count-container {
@@ -304,13 +301,18 @@
 }
 
 .result-node-buttons > span {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   margin-left: 2.5px;
   margin-right: 0.5px;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
+  border-radius: 3px;
+}
+
+.result-node-buttons > span:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
 }
 
 .search-and-replace-container {
