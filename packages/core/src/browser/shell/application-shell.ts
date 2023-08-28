@@ -246,6 +246,9 @@ export class ApplicationShell extends Widget {
     protected readonly onDidChangeCurrentWidgetEmitter = new Emitter<FocusTracker.IChangedArgs<Widget>>();
     readonly onDidChangeCurrentWidget = this.onDidChangeCurrentWidgetEmitter.event;
 
+    protected readonly onDidRequestNewUntitledTextFileEmitter = new Emitter<void>();
+    readonly onDidRequestNewUntitledTextFile = this.onDidRequestNewUntitledTextFileEmitter.event;
+
     @inject(TheiaDockPanel.Factory)
     protected readonly dockPanelFactory: TheiaDockPanel.Factory;
 
@@ -578,6 +581,14 @@ export class ApplicationShell extends Widget {
                 }
             }
         });
+
+        dockPanel.node.addEventListener('dblclick', event => {
+            const el = event.target as Element;
+            if (el.id === MAIN_AREA_ID || el.classList.contains('p-TabBar-content')) {
+                this.onDidRequestNewUntitledTextFileEmitter.fire();
+            }
+        });
+
         const handler = (e: DragEvent) => {
             if (e.dataTransfer) {
                 e.dataTransfer.dropEffect = 'link';

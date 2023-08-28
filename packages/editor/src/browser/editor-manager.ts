@@ -16,8 +16,8 @@
 
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { RecursivePartial, Emitter, Event, MaybePromise } from '@theia/core/lib/common';
-import { WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget, PreferenceService } from '@theia/core/lib/browser';
+import { RecursivePartial, Emitter, Event, MaybePromise, CommandService } from '@theia/core/lib/common';
+import { WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget, PreferenceService, CommonCommands } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { Range, Position, Location, TextEditor } from './editor';
 import { EditorWidgetFactory } from './editor-widget-factory';
@@ -54,13 +54,16 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
      */
     readonly onCurrentEditorChanged: Event<EditorWidget | undefined> = this.onCurrentEditorChangedEmitter.event;
 
+    @inject(CommandService) protected readonly commands: CommandService;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
 
     @postConstruct()
     protected override init(): void {
         super.init();
         this.shell.onDidChangeActiveWidget(() => this.updateActiveEditor());
-        this.shell.onDidChangeCurrentWidget(() => this.updateCurrentEditor());
+        this.shell.onDidRequestNewUntitledTextFile(() =>
+            this.commands.executeCommand(CommonCommands.NEW_UNTITLED_TEXT_FILE.id)
+        );
         this.onCreated(widget => {
             widget.onDidChangeVisibility(() => {
                 if (widget.isVisible) {
