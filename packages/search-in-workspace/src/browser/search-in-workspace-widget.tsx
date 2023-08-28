@@ -27,7 +27,8 @@ import { CancellationTokenSource } from '@theia/core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
-import { SearchInWorkspaceTextArea } from './components/search-in-workspace-input';
+import { SearchInWorkspaceInput } from './components/search-in-workspace-input';
+import { SearchInWorkspaceTextArea } from './components/search-in-workspace-textarea';
 import { nls } from '@theia/core/lib/common/nls';
 
 export interface SearchFieldState {
@@ -67,8 +68,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     private searchRef = React.createRef<SearchInWorkspaceTextArea>();
     private replaceRef = React.createRef<SearchInWorkspaceTextArea>();
-    private includeRef = React.createRef<SearchInWorkspaceTextArea>();
-    private excludeRef = React.createRef<SearchInWorkspaceTextArea>();
+    private includeRef = React.createRef<SearchInWorkspaceInput>();
+    private excludeRef = React.createRef<SearchInWorkspaceInput>();
 
     protected _showReplaceField = false;
     protected get showReplaceField(): boolean {
@@ -610,8 +611,10 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         const value = currentValue && currentValue.join(', ') || '';
         return <div className='glob-field'>
             <div className='label'>{nls.localizeByDefault('files to ' + kind)}</div>
-            <SearchInWorkspaceTextArea
+            <SearchInWorkspaceInput
                 className='theia-input'
+                type='text'
+                size={1}
                 defaultValue={value}
                 autoComplete='off'
                 id={kind + '-glob-field'}

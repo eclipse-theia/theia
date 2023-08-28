@@ -22,14 +22,15 @@ interface HistoryState {
     history: string[];
     index: number;
 };
-type InputAttributes = React.InputHTMLAttributes<HTMLInputElement>;
+type TextareaAttributes = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
-export class SearchInWorkspaceInput extends React.Component<InputAttributes, HistoryState> {
+export class SearchInWorkspaceTextArea extends React.Component<TextareaAttributes, HistoryState> {
     static LIMIT = 100;
+    static MAX_ROWS = 7;
 
-    private input = React.createRef<HTMLInputElement>();
+    private textarea = React.createRef<HTMLTextAreaElement>();
 
-    constructor(props: InputAttributes) {
+    constructor(props: TextareaAttributes) {
         super(props);
         this.state = {
             history: [],
@@ -52,31 +53,58 @@ export class SearchInWorkspaceInput extends React.Component<InputAttributes, His
     }
 
     get value(): string {
-        return this.input.current?.value ?? '';
+        return this.textarea.current?.value ?? '';
     }
 
     set value(value: string) {
-        if (this.input.current) {
-            this.input.current.value = value;
+        if (this.textarea.current) {
+            this.textarea.current.value = value;
+            this.resizeTextarea();
         }
     }
+
+    protected resizeTextarea(): void {
+        if (this.textarea.current) {
+            const computedStyle = window.getComputedStyle(this.textarea.current);
+            const lineHeight = parseInt(computedStyle.getPropertyValue('line-height'));
+            // Since the minimum scrollHeight of a textarea is always going to be its current height, we have
+            // to set the height to its minimum first to get an accurate scrollHeight value afterwards.
+            this.textarea.current.style.height = `${lineHeight}px`;
+            const textHeight = Math.min(
+                SearchInWorkspaceTextArea.MAX_ROWS * lineHeight,
+                this.textarea.current.scrollHeight
+                    - parseInt(computedStyle.getPropertyValue('border-bottom-width'))
+                    - parseInt(computedStyle.getPropertyValue('border-top-width'))
+                    - parseInt(computedStyle.getPropertyValue('padding-bottom'))
+                    - parseInt(computedStyle.getPropertyValue('padding-top'))
+            );
+            this.textarea.current.style.height = `${textHeight}px`;
+        }
+    };
 
     /**
      * Handle history navigation without overriding the parent's onKeyDown handler, if any.
      */
-    protected readonly onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
-        if (Key.ARROW_UP.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
+    protected readonly onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+        // Navigate history only when cursor is at first or last position of the textarea
+        if (Key.ARROW_UP.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode && e.currentTarget.selectionStart === 0) {
             e.preventDefault();
             this.previousValue();
-        } else if (Key.ARROW_DOWN.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
+        } else if (Key.ARROW_DOWN.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode && e.currentTarget.selectionEnd === e.currentTarget.value.length) {
             e.preventDefault();
             this.nextValue();
         }
+
+        // Prevent newline on enter
+        if (Key.ENTER.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode && !e.nativeEvent.shiftKey) {
+            e.preventDefault();
+        }
+
         this.props.onKeyDown?.(e);
     };
 
     /**
-     * Switch the input's text to the previous value, if any.
+     * Switch the textarea's text to the previous value, if any.
      */
     previousValue(): void {
         const { history, index } = this.state;
@@ -88,7 +116,7 @@ export class SearchInWorkspaceInput extends React.Component<InputAttributes, His
     }
 
     /**
-     * Switch the input's text to the next value, if any.
+     * Switch the textarea's text to the next value, if any.
      */
     nextValue(): void {
         const { history, index } = this.state;
@@ -102,10 +130,11 @@ export class SearchInWorkspaceInput extends React.Component<InputAttributes, His
     }
 
     /**
-     * Handle history collection without overriding the parent's onChange handler, if any.
+     * Handle history collection and textarea resizing without overriding the parent's onChange handler, if any.
      */
-    protected readonly onChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    protected readonly onChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
         this.addToHistory();
+        this.resizeTextarea();
         this.props.onChange?.(e);
     };
 
@@ -121,18 +150,21 @@ export class SearchInWorkspaceInput extends React.Component<InputAttributes, His
         const history = this.state.history
             .filter(term => term !== this.value)
             .concat(this.value)
-            .slice(-SearchInWorkspaceInput.LIMIT);
+            .slice(-SearchInWorkspaceTextArea.LIMIT);
         this.updateState(history.length - 1, history);
     }
 
     override render(): React.ReactNode {
         return (
-            <input
+            <textarea
                 {...this.props}
                 onKeyDown={this.onKeyDown}
                 onChange={this.onChange}
+                rows={Math.min(SearchInWorkspaceTextArea.MAX_ROWS, this.value.split('\n').length)}
                 spellCheck={false}
-                ref={this.input}
+                autoCorrect="off"
+                autoCapitalize="off"
+                ref={this.textarea}
             />
         );
     }
