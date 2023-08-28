@@ -39,7 +39,7 @@
     "is-electron": "^2.2.0",
     "jsonc-parser": "^2.2.0",
     "lodash.clonedeep": "^4.5.0",
-    "macaddress": "^0.2.9",
+    "macaddress": "^0.5.3",
     "mime": "^2.4.4",
     "ps-tree": "^1.2.0",
     "semver": "^7.5.4",
