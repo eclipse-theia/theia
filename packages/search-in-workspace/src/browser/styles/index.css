@@ -40,6 +40,7 @@
   line-height: var(--theia-content-line-height);
   padding: 3px 0 3px 4px;
   resize: none;
+  width: 100%;
 }
 
 .t-siw-search-container #search-input-field:focus {
@@ -50,7 +51,6 @@
 .t-siw-search-container #search-input-field {
   background: none;
   border: none;
-  width: 100%;
 }
 
 .t-siw-search-container .searchHeader {

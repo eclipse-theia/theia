@@ -38,6 +38,14 @@ export class SearchInWorkspaceTextArea extends React.Component<TextareaAttribute
         };
     }
 
+    override componentDidMount(): void {
+        this.resizeTextarea();
+    }
+
+    override componentDidUpdate(prevProps: Readonly<TextareaAttributes>, prevState: Readonly<HistoryState>): void {
+        this.resizeTextarea();
+    }
+
     updateState(index: number, history?: string[]): void {
         this.value = history ? history[index] : this.state.history[index];
         this.setState(prevState => {
@@ -160,7 +168,6 @@ export class SearchInWorkspaceTextArea extends React.Component<TextareaAttribute
                 {...this.props}
                 onKeyDown={this.onKeyDown}
                 onChange={this.onChange}
-                rows={Math.min(SearchInWorkspaceTextArea.MAX_ROWS, this.value.split('\n').length)}
                 spellCheck={false}
                 autoCorrect="off"
                 autoCapitalize="off"

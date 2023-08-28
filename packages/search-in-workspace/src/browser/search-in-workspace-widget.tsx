@@ -325,6 +325,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
+        this.searchRef.current?.forceUpdate();
+        this.replaceRef.current?.forceUpdate();
         MessageLoop.sendMessage(this.resultTreeWidget, Widget.ResizeMessage.UnknownSize);
     }
 
