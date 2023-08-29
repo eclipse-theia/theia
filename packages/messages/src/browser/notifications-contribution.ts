@@ -98,7 +98,7 @@ export class NotificationsContribution implements FrontendApplicationContributio
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: NotificationsCommands.HIDE.id,
-            context: NotificationsKeybindingContext.notificationsVisible,
+            when: 'notificationsVisible',
             keybinding: 'esc'
         });
     }
