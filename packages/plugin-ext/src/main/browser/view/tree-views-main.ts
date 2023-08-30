@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
@@ -63,6 +63,8 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
         this.treeViewProviders.set(treeViewId, this.viewRegistry.registerViewDataProvider(treeViewId, async ({ state, viewInfo }) => {
             const options: TreeViewWidgetOptions = {
                 id: treeViewId,
+                manageCheckboxStateManually: $options.manageCheckboxStateManually,
+                showCollapseAll: $options.showCollapseAll,
                 multiSelect: $options.canSelectMany,
                 dragMimeTypes: $options.dragMimeTypes,
                 dropMimeTypes: $options.dropMimeTypes
@@ -180,6 +182,13 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
             viewPanel.badge = badge?.value;
             viewPanel.badgeTooltip = badge?.tooltip;
         }
+    }
+
+    async setChecked(treeViewWidget: TreeViewWidget, changedNodes: TreeViewNode[]): Promise<void> {
+        await this.proxy.$checkStateChanged(treeViewWidget.id, changedNodes.map(node => ({
+            id: node.id,
+            checked: !!node.checkboxInfo?.checked
+        })));
     }
 
     protected handleTreeEvents(treeViewId: string, treeViewWidget: TreeViewWidget): void {

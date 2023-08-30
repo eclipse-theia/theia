@@ -11,21 +11,21 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
     TreeDataProvider, TreeView, TreeViewExpansionEvent, TreeItem, TreeItemLabel,
-    TreeViewSelectionChangeEvent, TreeViewVisibilityChangeEvent, CancellationToken, DataTransferFile, TreeViewOptions, ViewBadge
+    TreeViewSelectionChangeEvent, TreeViewVisibilityChangeEvent, CancellationToken, DataTransferFile, TreeViewOptions, ViewBadge, TreeCheckboxChangeEvent
 } from '@theia/plugin';
 // TODO: extract `@theia/util` for event, disposable, cancellation and common types
 // don't use @theia/core directly from plugin host
 import { Emitter } from '@theia/core/lib/common/event';
 import { basename } from '@theia/core/lib/common/paths';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { DataTransfer, DataTransferItem, Disposable as PluginDisposable, ThemeIcon } from '../types-impl';
+import { DataTransfer, DataTransferItem, Disposable as PluginDisposable, ThemeIcon, TreeItemCheckboxState } from '../types-impl';
 import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem, TreeViewRevealOptions, DataTransferFileDTO } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { CommandRegistryImpl, CommandsConverter } from '../command-registry';
@@ -33,6 +33,7 @@ import { TreeViewItemReference } from '../../common';
 import { PluginIconPath } from '../plugin-icon-path';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '@theia/core/lib/common/uri';
+import { isObject } from '@theia/core';
 
 export class TreeViewsExtImpl implements TreeViewsExt {
     private proxy: TreeViewsMain;
@@ -54,8 +55,15 @@ export class TreeViewsExtImpl implements TreeViewsExt {
             }
         });
     }
+    $checkStateChanged(treeViewId: string, itemIds: { id: string; checked: boolean; }[]): Promise<void> {
+        return this.getTreeView(treeViewId).checkStateChanged(itemIds);
+    }
     $dragStarted(treeViewId: string, treeItemIds: string[], token: CancellationToken): Promise<UriComponents[] | undefined> {
         return this.getTreeView(treeViewId).onDragStarted(treeItemIds, token);
+    }
+
+    $dragEnd(treeViewId: string): Promise<void> {
+        return this.getTreeView(treeViewId).dragEnd();
     }
 
     $drop(treeViewId: string, treeItemId: string | undefined, dataTransferItems: [string, string | DataTransferFileDTO][], token: CancellationToken): Promise<void> {
@@ -102,6 +110,9 @@ export class TreeViewsExtImpl implements TreeViewsExt {
             },
             get onDidChangeVisibility() {
                 return treeView.onDidChangeVisibility;
+            },
+            get onDidChangeCheckboxState() {
+                return treeView.onDidChangeCheckboxState;
             },
             get message(): string {
                 return treeView.message;
@@ -207,6 +218,9 @@ class TreeViewExtImpl<T> implements Disposable {
     private readonly onDidChangeVisibilityEmitter = new Emitter<TreeViewVisibilityChangeEvent>();
     readonly onDidChangeVisibility = this.onDidChangeVisibilityEmitter.event;
 
+    private readonly onDidChangeCheckboxStateEmitter = new Emitter<TreeCheckboxChangeEvent<T>>();
+    readonly onDidChangeCheckboxState = this.onDidChangeCheckboxStateEmitter.event;
+
     private readonly nodes = new Map<string, TreeExtNode<T>>();
     private pendingRefresh = Promise.resolve();
 
@@ -230,7 +244,12 @@ class TreeViewExtImpl<T> implements Disposable {
         // make copies of optionally provided MIME types:
         const dragMimeTypes = options.dragAndDropController?.dragMimeTypes?.slice();
         const dropMimeTypes = options.dragAndDropController?.dropMimeTypes?.slice();
-        proxy.$registerTreeDataProvider(treeViewId, { canSelectMany: options.canSelectMany, dragMimeTypes, dropMimeTypes });
+        proxy.$registerTreeDataProvider(treeViewId, {
+            manageCheckboxStateManually: options.manageCheckboxStateManually,
+            showCollapseAll: options.showCollapseAll,
+            canSelectMany: options.canSelectMany,
+            dragMimeTypes, dropMimeTypes
+        });
         this.toDispose.push(Disposable.create(() => this.proxy.$unregisterTreeDataProvider(treeViewId)));
         options.treeDataProvider.onDidChangeTreeData?.(() => {
             this.pendingRefresh = proxy.$refresh(treeViewId);
@@ -243,11 +262,14 @@ class TreeViewExtImpl<T> implements Disposable {
 
     async reveal(element: T, options?: Partial<TreeViewRevealOptions>): Promise<void> {
         await this.pendingRefresh;
+        const select = options?.select !== false; // default to true
+        const focus = !!options?.focus;
+        const expand = typeof options?.expand === 'undefined' ? false : options!.expand;
 
         const elementParentChain = await this.calculateRevealParentChain(element);
         if (elementParentChain) {
             return this.proxy.$reveal(this.treeViewId, elementParentChain, {
-                select: true, focus: false, expand: false, ...options
+                select, focus, expand, ...options
             });
         }
     }
@@ -304,37 +326,16 @@ class TreeViewExtImpl<T> implements Disposable {
      *
      * @param element element to reveal
      */
-    private async calculateRevealParentChain(element: T | undefined): Promise<string[] | undefined> {
+    private async calculateRevealParentChain(element: T | undefined): Promise<string[]> {
         if (!element) {
             // root
             return [];
         }
         const parent = await this.options.treeDataProvider.getParent?.(element) ?? undefined;
         const chain = await this.calculateRevealParentChain(parent);
-        if (!chain) {
-            // parents are inconsistent
-            return undefined;
-        }
         const parentId = chain.length ? chain[chain.length - 1] : '';
         const treeItem = await this.options.treeDataProvider.getTreeItem(element);
-        if (treeItem.id) {
-            return chain.concat(treeItem.id);
-        }
-        const cachedParentNode = this.nodes.get(parentId);
-        // first try to get children length from cache since getChildren disposes old nodes, which can cause a race
-        // condition if command is executed together with reveal.
-        // If not in cache, getChildren fills this.nodes and generate ids for them which are needed later
-        const children = cachedParentNode?.children || await this.getChildren(parentId);
-        if (!children) {
-            // parent is inconsistent
-            return undefined;
-        }
-        const candidateId = this.buildTreeItemId(parentId, treeItem, false);
-        if (this.nodes.has(candidateId)) {
-            return chain.concat(candidateId);
-        }
-        // couldn't calculate consistent parent chain and id
-        return undefined;
+        return chain.concat(this.buildTreeItemId(parentId, treeItem, false));
     }
 
     private getTreeItemLabel(treeItem: TreeItem): string | undefined {
@@ -413,7 +414,7 @@ class TreeViewExtImpl<T> implements Disposable {
                 const treeItem = await this.options.treeDataProvider.getTreeItem(value);
                 // Convert theia.TreeItem to the TreeViewItem
 
-                const label = this.getItemLabel(treeItem);
+                const label = this.getItemLabel(treeItem) || '';
                 const highlights = this.getTreeItemLabelHighlights(treeItem);
 
                 // Generate the ID
@@ -447,7 +448,22 @@ class TreeViewExtImpl<T> implements Disposable {
                     iconUrl = PluginIconPath.toUrl(<PluginIconPath | undefined>iconPath, this.plugin);
                 }
 
-                const treeViewItem = {
+                let checkboxInfo;
+                if (treeItem.checkboxState === undefined) {
+                    checkboxInfo = undefined;
+                } else if (isObject(treeItem.checkboxState)) {
+                    checkboxInfo = {
+                        checked: treeItem.checkboxState.state === TreeItemCheckboxState.Checked,
+                        tooltip: treeItem.checkboxState.tooltip,
+                        accessibilityInformation: treeItem.accessibilityInformation
+                    };
+                } else {
+                    checkboxInfo = {
+                        checked: treeItem.checkboxState === TreeItemCheckboxState.Checked
+                    };
+                }
+
+                const treeViewItem: TreeViewItem = {
                     id,
                     label,
                     highlights,
@@ -457,11 +473,12 @@ class TreeViewExtImpl<T> implements Disposable {
                     description: treeItem.description,
                     resourceUri: treeItem.resourceUri,
                     tooltip: treeItem.tooltip,
-                    collapsibleState: treeItem.collapsibleState,
+                    collapsibleState: treeItem.collapsibleState?.valueOf(),
+                    checkboxInfo: checkboxInfo,
                     contextValue: treeItem.contextValue,
                     command: this.commandsConverter.toSafeCommand(treeItem.command, toDisposeElement),
                     accessibilityInformation: treeItem.accessibilityInformation
-                } as TreeViewItem;
+                };
                 node.treeViewItem = treeViewItem;
 
                 return treeViewItem;
@@ -523,6 +540,25 @@ class TreeViewExtImpl<T> implements Disposable {
                 element: cachedElement
             });
         }
+    }
+
+    async checkStateChanged(items: readonly { id: string; checked: boolean; }[]): Promise<void> {
+        const transformed: [T, TreeItemCheckboxState][] = [];
+        items.forEach(item => {
+            const node = this.nodes.get(item.id);
+            if (node) {
+                if (node.value) {
+                    transformed.push([node.value, item.checked ? TreeItemCheckboxState.Checked : TreeItemCheckboxState.Unchecked]);
+                }
+                if (node.treeViewItem) {
+                    node.treeViewItem.checkboxInfo!.checked = item.checked;
+                }
+            }
+        });
+
+        this.onDidChangeCheckboxStateEmitter.fire({
+            items: transformed
+        });
     }
 
     async resolveTreeItem(treeItemId: string, token: CancellationToken): Promise<TreeViewItem | undefined> {
@@ -604,6 +640,10 @@ class TreeViewExtImpl<T> implements Disposable {
             }
         }
         return undefined;
+    }
+
+    async dragEnd(): Promise<void> {
+        this.localDataTransfer.clear();
     }
 
     async handleDrop(treeItemId: string | undefined, dataTransferItems: [string, string | DataTransferFileDTO][], token: CancellationToken): Promise<void> {

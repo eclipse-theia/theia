@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
@@ -79,7 +79,7 @@ export class MonacoTextModelService implements ITextModelService {
     protected readonly fileService: FileService;
 
     @postConstruct()
-    public init(): void {
+    protected init(): void {
         const resourcePropertiesService = StandaloneServices.get(ITextResourcePropertiesService);
 
         if (resourcePropertiesService) {
@@ -88,7 +88,7 @@ export class MonacoTextModelService implements ITextModelService {
                 if (eol && eol !== 'auto') {
                     return eol;
                 }
-                return OS.backend.isWindows ? '\r\n' : '\n';
+                return OS.backend.EOL;
             };
         }
     }

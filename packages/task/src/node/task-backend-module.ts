@@ -11,12 +11,12 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { bindContributionProvider } from '@theia/core';
-import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging';
+import { ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common/messaging';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { bindProcessTaskRunnerModule } from './process/process-task-runner-backend-module';
 import { bindCustomTaskRunnerModule } from './custom/custom-task-runner-backend-module';
@@ -34,7 +34,7 @@ export default new ContainerModule(bind => {
 
     bind(TaskServer).to(TaskServerImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<TaskClient>(taskPath, client => {
+        new RpcConnectionHandler<TaskClient>(taskPath, client => {
             const taskServer = ctx.container.get<TaskServer>(TaskServer);
             taskServer.setClient(client);
             // when connection closes, cleanup that client of task-server

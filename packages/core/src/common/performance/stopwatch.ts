@@ -11,7 +11,7 @@
 * with the GNU Classpath Exception which is available at
 * https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 *******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -19,7 +19,8 @@
 import { inject, injectable } from 'inversify';
 import { ILogger, LogLevel } from '../logger';
 import { MaybePromise } from '../types';
-import { Measurement, MeasurementOptions } from './measurement';
+import { Measurement, MeasurementOptions, MeasurementResult } from './measurement';
+import { Emitter, Event } from '../event';
 
 /** The default log level for measurements that are not otherwise configured with a default. */
 const DEFAULT_LOG_LEVEL = LogLevel.INFO;
@@ -50,9 +51,19 @@ export abstract class Stopwatch {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    protected constructor(protected readonly defaultLogOptions: LogOptions) {
+    protected _storedMeasurements: MeasurementResult[] = [];
+
+    protected onDidAddMeasurementResultEmitter = new Emitter<MeasurementResult>();
+    get onDidAddMeasurementResult(): Event<MeasurementResult> {
+        return this.onDidAddMeasurementResultEmitter.event;
+    }
+
+    constructor(protected readonly defaultLogOptions: LogOptions) {
         if (!defaultLogOptions.defaultLogLevel) {
             defaultLogOptions.defaultLogLevel = DEFAULT_LOG_LEVEL;
+        }
+        if (defaultLogOptions.storeResults === undefined) {
+            defaultLogOptions.storeResults = true;
         }
     }
 
@@ -91,25 +102,36 @@ export abstract class Stopwatch {
         return result;
     }
 
-    protected createMeasurement(name: string, measurement: () => number, options?: MeasurementOptions): Measurement {
+    protected createMeasurement(name: string, measure: () => { startTime: number, duration: number }, options?: MeasurementOptions): Measurement {
         const logOptions = this.mergeLogOptions(options);
 
-        const result: Measurement = {
+        const measurement: Measurement = {
             name,
             stop: () => {
-                if (result.elapsed === undefined) {
-                    result.elapsed = measurement();
+                if (measurement.elapsed === undefined) {
+                    const { startTime, duration } = measure();
+                    measurement.elapsed = duration;
+                    const result: MeasurementResult = {
+                        name,
+                        elapsed: duration,
+                        startTime,
+                        owner: logOptions.owner
+                    };
+                    if (logOptions.storeResults) {
+                        this._storedMeasurements.push(result);
+                    }
+                    this.onDidAddMeasurementResultEmitter.fire(result);
                 }
-                return result.elapsed;
+                return measurement.elapsed;
             },
-            log: (activity: string, ...optionalArgs: any[]) => this.log(result, activity, this.atLevel(logOptions, undefined, optionalArgs)),
-            debug: (activity: string, ...optionalArgs: any[]) => this.log(result, activity, this.atLevel(logOptions, LogLevel.DEBUG, optionalArgs)),
-            info: (activity: string, ...optionalArgs: any[]) => this.log(result, activity, this.atLevel(logOptions, LogLevel.INFO, optionalArgs)),
-            warn: (activity: string, ...optionalArgs: any[]) => this.log(result, activity, this.atLevel(logOptions, LogLevel.WARN, optionalArgs)),
-            error: (activity: string, ...optionalArgs: any[]) => this.log(result, activity, this.atLevel(logOptions, LogLevel.ERROR, optionalArgs)),
+            log: (activity: string, ...optionalArgs: any[]) => this.log(measurement, activity, this.atLevel(logOptions, undefined, optionalArgs)),
+            debug: (activity: string, ...optionalArgs: any[]) => this.log(measurement, activity, this.atLevel(logOptions, LogLevel.DEBUG, optionalArgs)),
+            info: (activity: string, ...optionalArgs: any[]) => this.log(measurement, activity, this.atLevel(logOptions, LogLevel.INFO, optionalArgs)),
+            warn: (activity: string, ...optionalArgs: any[]) => this.log(measurement, activity, this.atLevel(logOptions, LogLevel.WARN, optionalArgs)),
+            error: (activity: string, ...optionalArgs: any[]) => this.log(measurement, activity, this.atLevel(logOptions, LogLevel.ERROR, optionalArgs)),
         };
 
-        return result;
+        return measurement;
     }
 
     protected mergeLogOptions(logOptions?: Partial<LogOptions>): LogOptions {
@@ -152,6 +174,10 @@ export abstract class Stopwatch {
         const timeFromStart = `Finished ${(options.now() / 1000).toFixed(3)} s after ${start}`;
         const whatWasMeasured = options.context ? `[${options.context}] ${activity}` : activity;
         this.logger.log(level, `${whatWasMeasured}: ${elapsed.toFixed(1)} ms [${timeFromStart}]`, ...(options.arguments ?? []));
+    }
+
+    get storedMeasurements(): ReadonlyArray<MeasurementResult> {
+        return this._storedMeasurements;
     }
 
 }

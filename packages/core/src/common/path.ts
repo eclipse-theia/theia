@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /**
@@ -51,12 +51,12 @@ export class Path {
         if (path.length >= 3 && path.charCodeAt(0) === 47 /* '/' */ && path.charCodeAt(2) === 58 /* ':' */) {
             const code = path.charCodeAt(1);
             if (code >= 65 /* A */ && code <= 90 /* Z */) {
-                path = `/${String.fromCharCode(code + 32)}:${path.substr(3)}`; // "/c:".length === 3
+                path = `/${String.fromCharCode(code + 32)}:${path.substring(3)}`; // "/c:".length === 3
             }
         } else if (path.length >= 2 && path.charCodeAt(1) === 58 /* ':' */) {
             const code = path.charCodeAt(0);
             if (code >= 65 /* A */ && code <= 90 /* Z */) {
-                path = `${String.fromCharCode(code + 32)}:${path.substr(2)}`; // "c:".length === 2
+                path = `${String.fromCharCode(code + 32)}:${path.substring(2)}`; // "c:".length === 2
             }
             if (path.charCodeAt(0) !== 47 /* '/' */) {
                 path = `${String.fromCharCode(47)}${path}`;
@@ -147,13 +147,13 @@ export class Path {
         const firstIndex = this.raw.indexOf(Path.separator);
         const lastIndex = this.raw.lastIndexOf(Path.separator);
         this.isAbsolute = firstIndex === 0;
-        this.base = lastIndex === -1 ? this.raw : this.raw.substr(lastIndex + 1);
+        this.base = lastIndex === -1 ? this.raw : this.raw.substring(lastIndex + 1);
         this.isRoot = this.isAbsolute && firstIndex === lastIndex && (!this.base || Path.isDrive(this.base));
         this.root = this.computeRoot();
 
         const extIndex = this.base.lastIndexOf('.');
-        this.name = extIndex === -1 ? this.base : this.base.substr(0, extIndex);
-        this.ext = extIndex === -1 ? '' : this.base.substr(extIndex);
+        this.name = extIndex === -1 ? this.base : this.base.substring(0, extIndex);
+        this.ext = extIndex === -1 ? '' : this.base.substring(extIndex);
     }
 
     protected computeRoot(): Path | undefined {
@@ -173,7 +173,7 @@ export class Path {
         }
         // '/c:/foo/bar' -> '/c:'
         // '/foo/bar' -> '/'
-        return new Path(this.raw.substr(0, index)).root;
+        return new Path(this.raw.substring(0, index)).root;
     }
 
     /**
@@ -204,10 +204,10 @@ export class Path {
         if (this.isAbsolute) {
             const firstIndex = this.raw.indexOf(Path.separator);
             if (firstIndex === lastIndex) {
-                return new Path(this.raw.substr(0, firstIndex + 1));
+                return new Path(this.raw.substring(0, firstIndex + 1));
             }
         }
-        return new Path(this.raw.substr(0, lastIndex));
+        return new Path(this.raw.substring(0, lastIndex));
     }
 
     join(...paths: string[]): Path {
@@ -274,7 +274,7 @@ export class Path {
         if (!path.raw.startsWith(raw)) {
             return undefined;
         }
-        const relativePath = path.raw.substr(raw.length);
+        const relativePath = path.raw.substring(raw.length);
         return new Path(relativePath);
     }
 

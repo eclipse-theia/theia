@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /*---------------------------------------------------------------------------------------------
@@ -98,9 +98,14 @@ export class DebugConfigurationManager {
     protected recentDynamicOptionsTracker: DynamicDebugConfigurationSessionOptions[] = [];
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.debugConfigurationTypeKey = this.contextKeyService.createKey<string>('debugConfigurationType', undefined);
         this.initialized = this.preferences.ready.then(() => {
+            this.workspaceService.onWorkspaceChanged(this.updateModels);
             this.preferences.onPreferenceChanged(e => {
                 if (e.preferenceName === 'launch') {
                     this.updateModels();
@@ -178,8 +183,8 @@ export class DebugConfigurationManager {
 
         // Refresh a dynamic configuration from the provider.
         // This allow providers to update properties before the execution e.g. program
-        const { providerType, configuration: { name } } = this._currentOptions;
-        const configuration = await this.fetchDynamicDebugConfiguration(name, providerType);
+        const { providerType, workspaceFolderUri, configuration: { name } } = this._currentOptions;
+        const configuration = await this.fetchDynamicDebugConfiguration(name, providerType, workspaceFolderUri);
 
         if (!configuration) {
             const message = nls.localize(
@@ -188,7 +193,7 @@ export class DebugConfigurationManager {
             throw new Error(message);
         }
 
-        return { name, configuration, providerType };
+        return { name, configuration, providerType, workspaceFolderUri };
     }
 
     set current(option: DebugSessionOptions | undefined) {
@@ -215,7 +220,8 @@ export class DebugConfigurationManager {
     protected dynamicOptionsMatch(one: DynamicDebugConfigurationSessionOptions, other: DynamicDebugConfigurationSessionOptions): boolean {
         return one.providerType !== undefined
             && one.configuration.name === other.configuration.name
-            && one.providerType === other.providerType;
+            && one.providerType === other.providerType
+            && one.workspaceFolderUri === other.workspaceFolderUri;
     }
 
     get recentDynamicOptions(): readonly DynamicDebugConfigurationSessionOptions[] {
@@ -307,7 +313,8 @@ export class DebugConfigurationManager {
     }
 
     async openConfiguration(): Promise<void> {
-        const model = this.getModel();
+        const currentUri = new URI(this.current?.workspaceFolderUri);
+        const model = this.getModel(currentUri);
         if (model) {
             await this.doOpen(model);
         }
@@ -388,7 +395,6 @@ export class DebugConfigurationManager {
         }
         const root = await this.quickPickService.show(items, {
             placeholder: nls.localize('theia/debug/addConfigurationPlaceholder', 'Select workspace root to add configuration to'),
-            ignoreFocusOut: true
         });
         return root?.value;
     }
@@ -462,14 +468,40 @@ export class DebugConfigurationManager {
         await WaitUntilEvent.fire(this.onWillProvideDebugConfigurationEmitter, {});
     }
 
-    async provideDynamicDebugConfigurations(): Promise<Record<string, DebugConfiguration[]>> {
+    async provideDynamicDebugConfigurations(): Promise<Record<string, DynamicDebugConfigurationSessionOptions[]>> {
         await this.fireWillProvideDynamicDebugConfiguration();
-        return this.debug.provideDynamicDebugConfigurations!();
+        const roots = this.workspaceService.tryGetRoots();
+        const promises = roots.map(async root => {
+            const configsMap = await this.debug.provideDynamicDebugConfigurations!(root.resource.toString());
+            const optionsMap = Object.fromEntries(Object.entries(configsMap).map(([type, configs]) => {
+                const options = configs.map(config => ({
+                    name: config.name,
+                    providerType: type,
+                    configuration: config,
+                    workspaceFolderUri: root.resource.toString()
+                }));
+                return [type, options];
+            }));
+            return optionsMap;
+        });
+
+        const typesToOptionsRecords = await Promise.all(promises);
+        const consolidatedTypesToOptions: Record<string, DynamicDebugConfigurationSessionOptions[]> = {};
+
+        for (const typesToOptionsInstance of typesToOptionsRecords) {
+            for (const [providerType, configurationsOptions] of Object.entries(typesToOptionsInstance)) {
+                if (!consolidatedTypesToOptions[providerType]) {
+                    consolidatedTypesToOptions[providerType] = [];
+                }
+                consolidatedTypesToOptions[providerType].push(...configurationsOptions);
+            }
+        }
+        return consolidatedTypesToOptions;
     }
 
-    async fetchDynamicDebugConfiguration(name: string, type: string): Promise<DebugConfiguration | undefined> {
+    async fetchDynamicDebugConfiguration(name: string, type: string, folder?: string): Promise<DebugConfiguration | undefined> {
         await this.fireWillProvideDynamicDebugConfiguration();
-        return this.debug.fetchDynamicDebugConfiguration(name, type);
+        return this.debug.fetchDynamicDebugConfiguration(name, type, folder);
     }
 
     protected async fireWillProvideDynamicDebugConfiguration(): Promise<void> {

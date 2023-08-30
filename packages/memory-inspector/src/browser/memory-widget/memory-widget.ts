@@ -11,7 +11,7 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 import { nls } from '@theia/core';
@@ -25,7 +25,7 @@ import { MemoryTableWidget } from './memory-table-widget';
 export class MemoryWidget<
     O extends MemoryOptionsWidget = MemoryOptionsWidget,
     T extends MemoryTableWidget = MemoryTableWidget
-    >
+>
     extends BaseWidget {
     static readonly ID = 'memory-view-wrapper';
     static readonly LABEL = nls.localize('theia/memory-inspector/memoryTitle', 'Memory');
@@ -78,7 +78,11 @@ export class MemoryWidget<
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.id = MemoryWidget.getIdentifier(this.memoryWidgetOptions.identifier.toString());
         this.addClass(MemoryWidget.ID);
 

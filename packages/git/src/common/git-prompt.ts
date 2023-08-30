@@ -11,19 +11,19 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { JsonRpcProxy, JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
+import { RpcProxy, RpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export const GitPromptServer = Symbol('GitPromptServer');
-export interface GitPromptServer extends JsonRpcServer<GitPromptClient> {
+export interface GitPromptServer extends RpcServer<GitPromptClient> {
 }
 
 export const GitPromptServerProxy = Symbol('GitPromptServerProxy');
-export interface GitPromptServerProxy extends JsonRpcProxy<GitPromptServer> {
+export interface GitPromptServerProxy extends RpcProxy<GitPromptServer> {
 }
 
 @injectable()

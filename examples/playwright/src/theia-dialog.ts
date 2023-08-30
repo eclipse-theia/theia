@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ElementHandle } from '@playwright/test';
@@ -25,6 +25,7 @@ export class TheiaDialog extends TheiaPageObject {
     protected titleSelector = this.titleBarSelector + ' > div';
     protected contentSelector = this.blockSelector + ' .dialogContent > div';
     protected controlSelector = this.blockSelector + ' .dialogControl';
+    protected errorSelector = this.blockSelector + ' .dialogContent';
 
     async waitForVisible(): Promise<void> {
         await this.page.waitForSelector(`${this.blockSelector}`, { state: 'visible' });
@@ -64,7 +65,7 @@ export class TheiaDialog extends TheiaPageObject {
     }
 
     protected async validationElement(): Promise<ElementHandle<SVGElement | HTMLElement>> {
-        return this.page.waitForSelector(`${this.controlSelector} div.error`);
+        return this.page.waitForSelector(`${this.errorSelector} div.error`, { state: 'attached' });
     }
 
     async getValidationText(): Promise<string | null> {
@@ -104,10 +105,10 @@ export class TheiaDialog extends TheiaPageObject {
     }
 
     async waitUntilMainButtonIsEnabled(): Promise<void> {
-        await this.page.waitForFunction(() => {
-            const button = document.querySelector<HTMLButtonElement>(`${this.controlSelector} > button.theia-button.main`);
+        await this.page.waitForFunction(predicate => {
+            const button = document.querySelector<HTMLButtonElement>(predicate.buttonSelector);
             return !!button && !button.disabled;
-        });
+        }, { buttonSelector: `${this.controlSelector} > button.theia-button.main` });
     }
 
 }

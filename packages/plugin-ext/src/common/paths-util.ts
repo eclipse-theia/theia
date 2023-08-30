@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 // file copied from https://github.com/wjordan/browser-path/blob/master/src/node_path.ts
@@ -61,7 +61,7 @@ export function resolve(...paths: string[]): string {
 
     const resolved = normalize(processed.join(sep));
     if (resolved.length > 1 && resolved.charAt(resolved.length - 1) === sep) {
-        return resolved.substr(0, resolved.length - 1);
+        return resolved.substring(0, resolved.length - 1);
     }
 
     return resolved;
@@ -108,7 +108,7 @@ export function relative(from: string, to: string): string {
     rv += downSegments.join(sep);
 
     if (rv.length > 1 && rv.charAt(rv.length - 1) === sep) {
-        rv = rv.substr(0, rv.length - 1);
+        rv = rv.substring(0, rv.length - 1);
     }
     return rv;
 }

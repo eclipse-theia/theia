@@ -11,12 +11,11 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as electron from '../../../electron-shared/electron';
 import { inject, injectable, postConstruct } from 'inversify';
 import {
     ContextMenuRenderer, RenderContextMenuOptions, ContextMenuAccess, FrontendApplicationContribution, CommonCommands, coordinateFromAnchor, PreferenceService
@@ -25,12 +24,11 @@ import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { ContextMenuContext } from '../../browser/menu/context-menu-context';
 import { MenuPath, MenuContribution, MenuModelRegistry } from '../../common';
 import { BrowserContextMenuRenderer } from '../../browser/menu/browser-context-menu-renderer';
-import { RequestTitleBarStyle, TitleBarStyleAtStartup } from '../../electron-common/messaging/electron-messages';
 
 export class ElectronContextMenuAccess extends ContextMenuAccess {
-    constructor(readonly menu: electron.Menu) {
+    constructor(readonly menuHandle: Promise<number>) {
         super({
-            dispose: () => menu.closePopup()
+            dispose: () => menuHandle.then(handle => window.electronTheiaCore.closePopup(handle))
         });
     }
 }
@@ -92,29 +90,28 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
-        electron.ipcRenderer.on(TitleBarStyleAtStartup, (_event, style: string) => {
-            this.useNativeStyle = style === 'native';
-        });
-        electron.ipcRenderer.send(RequestTitleBarStyle);
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
+        this.useNativeStyle = await window.electronTheiaCore.getTitleBarStyleAtStartup() === 'native';
     }
 
     protected override doRender(options: RenderContextMenuOptions): ContextMenuAccess {
         if (this.useNativeStyle) {
-            const { menuPath, anchor, args, onHide, context, contextKeyService } = options;
-            const menu = this.electronMenuFactory.createElectronContextMenu(menuPath, args, context, contextKeyService);
+            const { menuPath, anchor, args, onHide, context, contextKeyService, skipSingleRootNode } = options;
+            const menu = this.electronMenuFactory.createElectronContextMenu(menuPath, args, context, contextKeyService, skipSingleRootNode);
             const { x, y } = coordinateFromAnchor(anchor);
-            const zoom = electron.webFrame.getZoomFactor();
-            // TODO: Remove the offset once Electron fixes https://github.com/electron/electron/issues/31641
-            const offset = process.platform === 'win32' ? 0 : 2;
-            // x and y values must be Ints or else there is a conversion error
-            menu.popup({ x: Math.round(x * zoom) + offset, y: Math.round(y * zoom) + offset });
+
+            const menuHandle = window.electronTheiaCore.popup(menu, x, y, () => {
+                if (onHide) {
+                    onHide();
+                }
+            });
             // native context menu stops the event loop, so there is no keyboard events
             this.context.resetAltPressed();
-            if (onHide) {
-                menu.once('menu-will-close', () => onHide());
-            }
-            return new ElectronContextMenuAccess(menu);
+            return new ElectronContextMenuAccess(menuHandle);
         } else {
             return super.doRender(options);
         }

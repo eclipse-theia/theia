@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { expect } from 'chai';
@@ -137,7 +137,7 @@ describe('log-level-cli-contribution', () => {
 
         const args: yargs.Arguments = yargs.parse(['--log-config', file.path]);
         await cli.setArguments(args);
-        sinon.assert.calledWithMatch(consoleErrorSpy, 'Unexpected token { in JSON at position 1');
+        sinon.assert.calledWithMatch(consoleErrorSpy, 'Error reading log config file');
     });
 
     // Skip this test because it is flaky, sometimes we don't receive the event.

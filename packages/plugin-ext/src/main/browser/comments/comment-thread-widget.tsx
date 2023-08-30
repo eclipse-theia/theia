@@ -11,13 +11,14 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
 import {
     Comment,
     CommentMode,
     CommentThread,
+    CommentThreadState,
     CommentThreadCollapsibleState
 } from '../../../common/plugin-api-rpc-model';
 import { CommentGlyphWidget } from './comment-glyph-widget';
@@ -96,6 +97,9 @@ export class CommentThreadWidget extends BaseWidget {
             if (commentForm) {
                 commentForm.update();
             }
+        }));
+        this.toDispose.push(this._commentThread.onDidChangeState(_state => {
+            this.update();
         }));
         this.contextMenu = this.menus.getMenu(COMMENT_THREAD_CONTEXT);
         this.contextMenu.children.map(node => node instanceof ActionMenuNode && node.when).forEach(exp => {
@@ -231,7 +235,8 @@ export class CommentThreadWidget extends BaseWidget {
             if (this._commentThread.comments && this._commentThread.comments.length) {
                 const onlyUnique = (value: Comment, index: number, self: Comment[]) => self.indexOf(value) === index;
                 const participantsList = this._commentThread.comments.filter(onlyUnique).map(comment => `@${comment.userName}`).join(', ');
-                label = `Participants: ${participantsList}`;
+                const resolutionState = this._commentThread.state === CommentThreadState.Resolved ? '(Resolved)' : '(Unresolved)';
+                label = `Participants: ${participantsList} ${resolutionState}`;
             } else {
                 label = 'Start discussion';
             }

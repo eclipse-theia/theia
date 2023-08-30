@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable, named, postConstruct } from 'inversify';
@@ -222,7 +222,7 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
 
         // convert \c:\something => C:\something
         if (formatting.normalizeDriveLetter && this.hasDriveLetter(label)) {
-            label = label.charAt(1).toUpperCase() + label.substr(2);
+            label = label.charAt(1).toUpperCase() + label.substring(2);
         }
 
         if (formatting.tildify) {

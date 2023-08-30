@@ -11,11 +11,11 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { ConnectionHandler, JsonRpcConnectionHandler } from '../../common/messaging';
+import { ConnectionHandler, RpcConnectionHandler } from '../../common/messaging';
 import { KeyboardLayoutProvider, keyboardPath } from '../../common/keyboard/keyboard-layout-provider';
 import { ElectronKeyboardLayoutProvider } from './electron-keyboard-layout-provider';
 
@@ -23,7 +23,7 @@ export default new ContainerModule(bind => {
     bind(ElectronKeyboardLayoutProvider).toSelf().inSingletonScope();
     bind(KeyboardLayoutProvider).toService(ElectronKeyboardLayoutProvider);
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(keyboardPath, () =>
+        new RpcConnectionHandler(keyboardPath, () =>
             ctx.container.get(KeyboardLayoutProvider)
         )
     ).inSingletonScope();

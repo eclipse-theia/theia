@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Edit Condition...",
   "terminal:new:profile": "Create New Integrated Terminal from a Profile",
   "terminal:profile:default": "Choose the default Terminal Profile",
   "theia": {
@@ -29,6 +30,11 @@
         "showPreviousTabInGroup": "Switch to Previous Tab in Group",
         "toggleMaximized": "Toggle Maximized"
       },
+      "enhancedPreview": {
+        "classic": "Display a simple preview of the tab with basic information.",
+        "enhanced": "Display an enhanced preview of the tab with additional information.",
+        "visual": "Display a visual preview of the tab."
+      },
       "file": {
         "browse": "Browse"
       },
@@ -43,6 +49,10 @@
         "pc": "PC Keyboards",
         "tryDetect": "Try to detect the keyboard layout from browser information and pressed keys."
       },
+      "navigator": {
+        "clipboardWarn": "Access to the clipboard is denied. Check your browser's permission.",
+        "clipboardWarnFirefox": "Clipboard API is not available. It can be enabled by '{0}' preference on '{1}' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard."
+      },
       "offline": "Offline",
       "quitMessage": "Any unsaved changes will not be saved.",
       "resetWorkbenchLayout": "Reset Workbench Layout",
@@ -52,7 +62,10 @@
         "previous": "Previous (Up)"
       },
       "silentNotifications": "Controls whether to suppress notification popups.",
-      "tabMaximize": "Controls whether to maximize tabs on double click."
+      "tabDefaultSize": "Specifies the default size for tabs.",
+      "tabMaximize": "Controls whether to maximize tabs on double click.",
+      "tabMinimumSize": "Specifies the minimum size for tabs.",
+      "tabShrinkToFit": "Shrink tabs to fit available space."
     },
     "debug": {
       "addConfigurationPlaceholder": "Select workspace root to add configuration to",
@@ -68,15 +81,13 @@
       "toggleTracing": "Enable/disable tracing communications with debug adapters"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "Uses an experimental diffing algorithm.",
-      "diffEditor.diffAlgorithm.smart": "Uses the default diffing algorithm.",
       "dirtyEncoding": "The file is dirty. Please save it first before reopening it with another encoding.",
       "editor.codeActionWidget.showHeaders": "Enable/disable showing group headers in the code action menu.",
+      "editor.experimental.pasteActions.enabled": "Enable/disable running edits from extensions on paste.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Will attempt to format modifications only (requires source control). If source control can't be used, then the whole file will be formatted.",
       "editor.inlayHints.enabled1": "Inlay hints are showing by default and hide when holding Ctrl+Alt",
       "editor.inlayHints.enabled2": "Inlay hints are hidden by default and show when holding Ctrl+Alt",
       "editor.quickSuggestions": "Controls whether suggestions should automatically show up while typing. This can be controlled for typing in comments, strings, and other code. Quick suggestion can be configured to show as ghost text or with the suggest widget. Also be aware of the '#editor.suggestOnTriggerCharacters#'-setting which controls if suggestions are triggered by special characters.",
-      "editor.stickyScroll.maxLineCount": "Defines the maximum number of sticky lines to show.",
       "editor.suggest.matchOnWordStartOnly": "When enabled IntelliSense filtering requires that the first character matches on a word start, e.g `c` on `Console` or `WebContext` but _not_ on `description`. When disabled IntelliSense will show more results but still sorts them by match quality.",
       "files.autoSave": "Controls [auto save](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) of editors that have unsaved changes.",
       "files.autoSave.afterDelay": "An editor with changes is automatically saved after the configured `#files.autoSaveDelay#`.",
@@ -153,11 +164,15 @@
       "gitDecorationsColors": "Use color decoration in the navigator.",
       "mergeQuickPickPlaceholder": "Pick a branch to merge into the currently active {0} branch:",
       "missingUserInfo": "Make sure you configure your 'user.name' and 'user.email' in git.",
+      "noHistoryForError": "There is no history available for {0}",
       "noPreviousCommit": "No previous commit to amend",
       "noRepositoriesSelected": "No repositories were selected.",
+      "prepositionIn": "in",
       "repositoryNotInitialized": "Repository {0} is not yet initialized.",
       "stashChanges": "Stash changes. Press 'Enter' to confirm or 'Escape' to cancel.",
       "stashChangesWithMessage": "Stash changes with message: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
+      "tabTitleIndex": "{0} (Index)",
+      "tabTitleWorkingTree": "{0} (Working tree)",
       "toggleBlameAnnotations": "Toggle Blame Annotations"
     },
     "keybinding-schema-updater": {
@@ -268,6 +283,8 @@
     },
     "navigator": {
       "autoReveal": "Auto Reveal",
+      "clipboardWarn": "Access to the clipboard is denied. Check your browser's permission.",
+      "clipboardWarnFirefox": "Clipboard API is not available. It can be enabled by '{0}' preference on '{1}' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard.",
       "refresh": "Refresh in Explorer",
       "reveal": "Reveal in Explorer",
       "toggleHiddenFiles": "Toggle Hidden Files"
@@ -278,6 +295,7 @@
       "hiddenChannels": "Hidden Channels",
       "hideOutputChannel": "Hide Output Channel...",
       "maxChannelHistory": "The maximum number of entries in an output channel.",
+      "outputChannels": "Output Channels",
       "showOutputChannel": "Show Output Channel..."
     },
     "plugin": {
@@ -311,6 +329,9 @@
       "watchMode": "Run watcher on plugin under development"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Login"
+      },
       "plugins": "Plugins",
       "webviewTrace": "Controls communication tracing with webviews.",
       "webviewWarnIfUnsecure": "Warns users that webviews are currently deployed unsecurely."
@@ -358,6 +379,7 @@
     "task": {
       "attachTask": "Attach Task...",
       "clearHistory": "Clear History",
+      "noTaskToRun": "No task to run found. Configure Tasks...",
       "openUserTasks": "Open User Tasks"
     },
     "terminal": {
@@ -370,7 +392,6 @@
       "profileIcon": "A codicon ID to associate with the terminal icon.\nterminal-tmux:\"$(terminal-tmux)\"",
       "profileNew": "New Terminal (With Profile)...",
       "profilePath": "The path of the shell that this profile uses.",
-      "profileSource": "A profile source that will auto detect the paths to the shell. Note that non-standard executable locations are not supported and must be created manually in a new profile.",
       "profiles": "The profiles to present when creating a new terminal. Set the path property manually with optional args.\nSet an existing profile to `null` to hide the profile from the list, for example: `\"{0}\": null`.",
       "rendererType": "Controls how the terminal is rendered.",
       "selectProfile": "Select a profile for the new terminal",
@@ -412,8 +433,9 @@
       "failedInstallingVSIX": "Failed to install {0} from VSIX.",
       "invalidVSIX": "The selected file is not a valid \"*.vsix\" plugin.",
       "license": "License: {0}",
-      "recommendedExtensions": "A list of the names of extensions recommended for use in this workspace.",
+      "recommendedExtensions": "Do you want to install the recommended extensions for this repository?",
       "searchPlaceholder": "Search Extensions in {0}",
+      "showInstalled": "Show Installed Extensions",
       "showRecommendedExtensions": "Controls whether notifications are shown for extension recommendations.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Error while removing the extension: {0}.",

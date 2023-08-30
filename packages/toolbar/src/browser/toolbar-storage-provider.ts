@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as jsoncParser from 'jsonc-parser';
@@ -68,7 +68,11 @@ export class ToolbarStorageProvider implements Disposable {
     toolbarItems: DeflatedToolbarTree | undefined;
 
     @postConstruct()
-    async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const reference = await this.textModelService.createModelReference(this.USER_TOOLBAR_URI);
         this.model = reference.object;
         this.toDispose.push(reference);

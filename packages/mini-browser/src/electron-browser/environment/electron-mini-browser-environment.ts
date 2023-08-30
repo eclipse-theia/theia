@@ -11,14 +11,16 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { Endpoint } from '@theia/core/lib/browser';
+
 import { ElectronSecurityToken } from '@theia/core/lib/electron-common/electron-token';
-import * as electronRemote from '@theia/core/electron-shared/@electron/remote';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MiniBrowserEnvironment } from '../../browser/environment/mini-browser-environment';
+
+import '@theia/core/lib/electron-common/electron-api';
 
 @injectable()
 export class ElectronMiniBrowserEnvironment extends MiniBrowserEnvironment {
@@ -28,19 +30,14 @@ export class ElectronMiniBrowserEnvironment extends MiniBrowserEnvironment {
 
     override getEndpoint(uuid: string, hostname?: string): Endpoint {
         const endpoint = super.getEndpoint(uuid, hostname);
-        // Note: This call is async, but clients expect sync logic.
-        electronRemote.session.defaultSession.cookies.set({
-            url: endpoint.getRestUrl().toString(true),
-            name: ElectronSecurityToken,
-            value: JSON.stringify(this.electronSecurityToken),
-            httpOnly: true,
-        });
+
+        window.electronTheiaCore.attachSecurityToken(endpoint.getRestUrl().toString(true));
         return endpoint;
     }
 
     protected override getDefaultHostname(): string {
         const query = self.location.search
-            .substr(1) // remove leading `?`
+            .substring(1) // remove leading `?`
             .split('&')
             .map(entry => entry
                 .split('=', 2)

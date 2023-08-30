@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import URI from '../common/uri';
@@ -47,7 +47,7 @@ export class Endpoint {
             return '';
         }
         if (this.location.pathname.endsWith('/')) {
-            return this.location.pathname.substr(0, this.location.pathname.length - 1);
+            return this.location.pathname.substring(0, this.location.pathname.length - 1);
         }
         return this.location.pathname;
     }
@@ -75,10 +75,10 @@ export class Endpoint {
         if (!search) {
             return defaultValue;
         }
-        return search.substr(1).split('&')
+        return search.substring(1).split('&')
             .filter(value => value.startsWith(name + '='))
             .map(value => {
-                const encoded = value.substr(name.length + 1);
+                const encoded = value.substring(name.length + 1);
                 return decodeURIComponent(encoded);
             })[0] || defaultValue;
     }

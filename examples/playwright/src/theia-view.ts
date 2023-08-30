@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ElementHandle } from '@playwright/test';
@@ -144,7 +144,7 @@ export class TheiaView extends TheiaPageObject {
             throw Error(`Unable to determine side of invisible view tab '${this.tabSelector}'`);
         }
         const tab = await this.tabElement();
-        let appAreaElement = tab?.$('xpath=../..');
+        const appAreaElement = tab?.$('xpath=../../../..');
         if (await containsClass(appAreaElement, 'theia-app-left')) {
             return 'left';
         }
@@ -152,7 +152,6 @@ export class TheiaView extends TheiaPageObject {
             return 'right';
         }
 
-        appAreaElement = (await appAreaElement)?.$('xpath=../..');
         if (await containsClass(appAreaElement, 'theia-app-bottom')) {
             return 'bottom';
         }

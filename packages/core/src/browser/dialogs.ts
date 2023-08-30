@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject } from 'inversify';
@@ -84,10 +84,9 @@ export class DialogOverlayService implements FrontendApplicationContribution {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected readonly dialogs: AbstractDialog<any>[] = [];
+    protected readonly documents: Document[] = [];
 
     constructor() {
-        addKeyListener(document.body, Key.ENTER, e => this.handleEnter(e));
-        addKeyListener(document.body, Key.ESCAPE, e => this.handleEscape(e));
     }
 
     initialize(): void {
@@ -101,6 +100,11 @@ export class DialogOverlayService implements FrontendApplicationContribution {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     push(dialog: AbstractDialog<any>): Disposable {
+        if (this.documents.findIndex(document => document === dialog.node.ownerDocument) < 0) {
+            addKeyListener(dialog.node.ownerDocument.body, Key.ENTER, e => this.handleEnter(e));
+            addKeyListener(dialog.node.ownerDocument.body, Key.ESCAPE, e => this.handleEscape(e));
+            this.documents.push(dialog.node.ownerDocument);
+        }
         this.dialogs.unshift(dialog);
         return Disposable.create(() => {
             const index = this.dialogs.indexOf(dialog);
@@ -147,9 +151,10 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     protected activeElement: HTMLElement | undefined;
 
     constructor(
-        @inject(DialogProps) protected readonly props: DialogProps
+        protected readonly props: DialogProps,
+        options?: Widget.IOptions
     ) {
-        super();
+        super(options);
         this.id = 'theia-dialog-shell';
         this.addClass('dialogOverlay');
         this.toDispose.push(Disposable.create(() => {
@@ -157,40 +162,42 @@ export abstract class AbstractDialog<T> extends BaseWidget {
                 Widget.detach(this);
             }
         }));
-        const container = document.createElement('div');
+        const container = this.node.ownerDocument.createElement('div');
         container.classList.add('dialogBlock');
         if (props.maxWidth === undefined) {
             container.setAttribute('style', 'max-width: none');
-        } else {
+        } else if (props.maxWidth < 400) {
             container.setAttribute('style', `max-width: ${props.maxWidth}px; min-width: 0px`);
+        } else {
+            container.setAttribute('style', `max-width: ${props.maxWidth}px`);
         }
         this.node.appendChild(container);
 
-        const titleContentNode = document.createElement('div');
+        const titleContentNode = this.node.ownerDocument.createElement('div');
         titleContentNode.classList.add('dialogTitle');
         container.appendChild(titleContentNode);
 
-        this.titleNode = document.createElement('div');
+        this.titleNode = this.node.ownerDocument.createElement('div');
         this.titleNode.textContent = props.title;
         titleContentNode.appendChild(this.titleNode);
 
-        this.closeCrossNode = document.createElement('i');
-        this.closeCrossNode.classList.add(...codiconArray('close'));
+        this.closeCrossNode = this.node.ownerDocument.createElement('i');
+        this.closeCrossNode.classList.add(...codiconArray('close', true));
         this.closeCrossNode.classList.add('closeButton');
         titleContentNode.appendChild(this.closeCrossNode);
 
-        this.contentNode = document.createElement('div');
+        this.contentNode = this.node.ownerDocument.createElement('div');
         this.contentNode.classList.add('dialogContent');
         if (props.wordWrap !== undefined) {
             this.contentNode.setAttribute('style', `word-wrap: ${props.wordWrap}`);
         }
         container.appendChild(this.contentNode);
 
-        this.controlPanel = document.createElement('div');
+        this.controlPanel = this.node.ownerDocument.createElement('div');
         this.controlPanel.classList.add('dialogControl');
         container.appendChild(this.controlPanel);
 
-        this.errorMessageNode = document.createElement('div');
+        this.errorMessageNode = this.node.ownerDocument.createElement('div');
         this.errorMessageNode.classList.add('error');
         this.errorMessageNode.setAttribute('style', 'flex: 2');
         this.controlPanel.appendChild(this.errorMessageNode);
@@ -199,17 +206,18 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     }
 
     protected appendCloseButton(text: string = Dialog.CANCEL): HTMLButtonElement {
-        this.closeButton = this.createButton(text);
-        this.controlPanel.appendChild(this.closeButton);
-        this.closeButton.classList.add('secondary');
-        return this.closeButton;
+        return this.closeButton = this.appendButton(text, false);
     }
 
     protected appendAcceptButton(text: string = Dialog.OK): HTMLButtonElement {
-        this.acceptButton = this.createButton(text);
-        this.controlPanel.appendChild(this.acceptButton);
-        this.acceptButton.classList.add('main');
-        return this.acceptButton;
+        return this.acceptButton = this.appendButton(text, true);
+    }
+
+    protected appendButton(text: string, primary: boolean): HTMLButtonElement {
+        const button = this.createButton(text);
+        this.controlPanel.appendChild(button);
+        button.classList.add(primary ? 'main' : 'secondary');
+        return button;
     }
 
     protected createButton(text: string): HTMLButtonElement {
@@ -254,7 +262,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         if (this.resolve) {
             return Promise.reject(new Error('The dialog is already opened.'));
         }
-        this.activeElement = window.document.activeElement as HTMLElement;
+        this.activeElement = this.node.ownerDocument.activeElement as HTMLElement;
         return new Promise<T | undefined>((resolve, reject) => {
             this.resolve = resolve;
             this.reject = reject;
@@ -263,7 +271,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
                 this.reject = undefined;
             }));
 
-            Widget.attach(this, document.body);
+            Widget.attach(this, this.node.ownerDocument.body);
             this.activate();
         });
     }
@@ -351,8 +359,12 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 }
 
 @injectable()
-export class ConfirmDialogProps extends DialogProps {
+export class MessageDialogProps extends DialogProps {
     readonly msg: string | HTMLElement;
+}
+
+@injectable()
+export class ConfirmDialogProps extends MessageDialogProps {
     readonly cancel?: string;
     readonly ok?: string;
 }
@@ -383,7 +395,7 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
 
     protected createMessageNode(msg: string | HTMLElement): HTMLElement {
         if (typeof msg === 'string') {
-            const messageNode = document.createElement('div');
+            const messageNode = this.node.ownerDocument.createElement('div');
             messageNode.textContent = msg;
             return messageNode;
         }
@@ -401,48 +413,52 @@ export async function confirmExit(): Promise<boolean> {
     return safeToExit === true;
 }
 
-export class ConfirmSaveDialogProps extends ConfirmDialogProps {
+export class ConfirmSaveDialogProps extends MessageDialogProps {
+    readonly cancel: string;
+    readonly dontSave: string;
     readonly save: string;
-    performSave: () => Promise<void>;
 }
 
-export class ConfirmSaveDialog extends ConfirmDialog {
+// Dialog prompting the user to confirm whether they wish to save changes or not
+export class ConfirmSaveDialog extends AbstractDialog<boolean | undefined> {
+    protected result?: boolean = false;
 
-    protected saveButton: HTMLButtonElement | undefined;
     constructor(
         @inject(ConfirmSaveDialogProps) protected override readonly props: ConfirmSaveDialogProps
     ) {
         super(props);
+        // Append message and buttons to the dialog
         this.contentNode.appendChild(this.createMessageNode(this.props.msg));
-        // reorder buttons
-        this.controlPanel.childNodes.forEach(child => this.controlPanel.removeChild(child));
-        [this.acceptButton, this.closeButton].forEach(child => {
-            if (typeof child !== 'undefined') {
-                this.controlPanel.appendChild(child);
-            }
-        });
-        this.appendSaveButton(props.save).addEventListener('click', async () => {
-            await props.performSave();
-            this.acceptButton?.click();
-        });
+        this.closeButton = this.appendButtonAndSetResult(props.cancel, false);
+        this.appendButtonAndSetResult(props.dontSave, false, false);
+        this.acceptButton = this.appendButtonAndSetResult(props.save, true, true);
     }
 
-    protected appendSaveButton(text: string = Dialog.OK): HTMLButtonElement {
-        this.saveButton = this.createButton(text);
-        this.controlPanel.appendChild(this.saveButton);
-        this.saveButton.classList.add('main');
-        return this.saveButton;
+    get value(): boolean | undefined {
+        return this.result;
     }
 
-    protected override onActivateRequest(msg: Message): void {
-        super.onActivateRequest(msg);
-        if (this.saveButton) {
-            this.saveButton.focus();
+    protected createMessageNode(msg: string | HTMLElement): HTMLElement {
+        if (typeof msg === 'string') {
+            const messageNode = document.createElement('div');
+            messageNode.textContent = msg;
+            return messageNode;
         }
+        return msg;
+    }
+
+    protected appendButtonAndSetResult(text: string, primary: boolean, result?: boolean): HTMLButtonElement {
+        const button = this.appendButton(text, primary);
+        button.addEventListener('click', () => {
+            this.result = result;
+            this.accept();
+        });
+        return button;
     }
 
 }
 
+// Asks the user to confirm whether they want to exit with or without saving the changes
 export async function confirmExitWithOrWithoutSaving(captionsToSave: string[], performSave: () => Promise<void>): Promise<boolean> {
     const div: HTMLElement = document.createElement('div');
     div.innerText = nls.localizeByDefault("Your changes will be lost if you don't save them.");
@@ -458,15 +474,18 @@ export async function confirmExitWithOrWithoutSaving(captionsToSave: string[], p
         });
         span.appendChild(document.createElement('br'));
         div.appendChild(span);
-        const safeToExit = await new ConfirmSaveDialog({
+        const result = await new ConfirmSaveDialog({
             title: nls.localizeByDefault('Do you want to save the changes to the following {0} files?', captionsToSave.length),
             msg: div,
-            ok: nls.localizeByDefault("Don't Save"),
+            dontSave: nls.localizeByDefault("Don't Save"),
             save: nls.localizeByDefault('Save All'),
-            cancel: Dialog.CANCEL,
-            performSave: performSave
+            cancel: Dialog.CANCEL
         }).open();
-        return safeToExit === true;
+
+        if (result) {
+            await performSave();
+        }
+        return result !== undefined;
     } else {
         // fallback if not passed with an empty caption-list.
         return confirmExit();
@@ -511,7 +530,10 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         } else {
             this.inputField.select();
         }
+
         this.contentNode.appendChild(this.inputField);
+        this.controlPanel.removeChild(this.errorMessageNode);
+        this.contentNode.appendChild(this.errorMessageNode);
 
         this.appendAcceptButton(props.confirmButtonLabel);
     }

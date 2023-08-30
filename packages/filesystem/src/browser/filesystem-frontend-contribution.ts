@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -324,7 +324,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
             toClose.set(uriString, widgets);
         } else if (event.contains(uri, FileChangeType.ADDED)) {
             if (deleted) {
-                widget.title.label = widget.title.label.substr(0, label.length - this.deletedSuffix.length);
+                widget.title.label = widget.title.label.substring(0, label.length - this.deletedSuffix.length);
                 this.onDidChangeEditorFileEmitter.fire({ editor: widget, type: FileChangeType.ADDED });
             }
         }

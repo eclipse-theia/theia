@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import debounce = require('@theia/core/shared/lodash.debounce');
@@ -53,7 +53,11 @@ export class GitRepositoryProvider {
     protected readonly fileService: FileService;
 
     @postConstruct()
-    protected async initialize(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const [selectedRepository, allRepositories] = await Promise.all([
             this.storageService.getData<Repository | undefined>(this.selectedRepoStorageKey),
             this.storageService.getData<Repository[]>(this.allRepoStorageKey)

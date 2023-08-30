@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { Widget, Message, BaseWidget, Key, StatefulWidget, MessageLoop, KeyCode, codicon } from '@theia/core/lib/browser';
@@ -507,7 +507,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         if (e.target) {
             this.replaceTerm = (e.target as HTMLInputElement).value;
             this.resultTreeWidget.replaceTerm = this.replaceTerm;
-            this.performSearch();
+            if (KeyCode.createKeyCode(e.nativeEvent).key?.keyCode === Key.ENTER.keyCode) { this.performSearch(); }
             this.update();
         }
     }
@@ -563,7 +563,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected renderOptionElement(opt: SearchFieldState): React.ReactNode {
         return <span
-            className={`${opt.className} option ${opt.enabled ? 'enabled' : ''}`}
+            className={`${opt.className} option action-label ${opt.enabled ? 'enabled' : ''}`}
             title={opt.title}
             onClick={() => this.handleOptionClick(opt)}></span>;
     }

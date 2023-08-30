@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import React = require('@theia/core/shared/react');
@@ -399,7 +399,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
         return <a title='Edit Keybinding' href='#' onClick={e => {
             e.preventDefault();
             this.editKeybinding(item);
-        }}><i className={`${codicon('edit')} kb-action-item`}></i></a>;
+        }}><i className={`${codicon('edit', true)} kb-action-item`}></i></a>;
     }
 
     /**
@@ -412,7 +412,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             ? <a title='Reset Keybinding' href='#' onClick={e => {
                 e.preventDefault();
                 this.resetKeybinding(item);
-            }}><i className={`${codicon('discard')} kb-action-item`}></i></a> : '';
+            }}><i className={`${codicon('discard', true)} kb-action-item`}></i></a> : '';
     }
 
     /**
@@ -577,6 +577,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
         const oldKeybinding = item.keybinding;
         const dialog = new EditKeybindingDialog({
             title: nls.localize('theia/keymaps/editKeybindingTitle', 'Edit Keybinding for {0}', command),
+            maxWidth: 400,
             initialValue: oldKeybinding?.keybinding,
             validate: newKeybinding => this.validateKeybinding(command, oldKeybinding?.keybinding, newKeybinding),
         }, this.keymapsService, item);
@@ -640,7 +641,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             const binding = { command, keybinding };
             KeySequence.parse(keybinding);
             if (oldKeybinding === keybinding) {
-                return ' '; // if old and new keybindings match, quietly reject update
+                return ''; // if old and new keybindings match, quietly reject update
             }
             if (this.keybindingRegistry.containsKeybindingInScope(binding)) {
                 return nls.localize('theia/keymaps/keybindingCollidesValidation', 'keybinding currently collides');

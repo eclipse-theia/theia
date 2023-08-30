@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -98,6 +98,7 @@ import {
     DataTransfer,
     TreeItem,
     TreeItemCollapsibleState,
+    TreeItemCheckboxState,
     DocumentSymbol,
     SymbolTag,
     WorkspaceEdit,
@@ -131,6 +132,7 @@ import {
     WebviewPanelTargetArea,
     UIKind,
     FileSystemError,
+    CommentThreadState,
     CommentThreadCollapsibleState,
     QuickInputButtons,
     QuickPickItemKind,
@@ -159,9 +161,11 @@ import {
     TerminalLocation,
     TerminalExitReason,
     TerminalProfile,
+    TerminalQuickFixType,
     InlayHint,
     InlayHintKind,
     InlayHintLabelPart,
+    TelemetryTrustedValue,
     NotebookCell,
     NotebookCellKind,
     NotebookCellStatusBarAlignment,
@@ -190,7 +194,11 @@ import {
     TerminalEditorTabInput,
     TextDiffTabInput,
     TextMergeTabInput,
-    WebviewEditorTabInput
+    WebviewEditorTabInput,
+    DocumentPasteEdit,
+    ExternalUriOpenerPriority,
+    EditSessionIdentityMatch,
+    TerminalOutputAnchor
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -234,6 +242,8 @@ import { PluginPackage } from '../common';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FilePermission } from '@theia/filesystem/lib/common/files';
 import { TabsExtImpl } from './tabs';
+import { LocalizationExtImpl } from './localization-ext';
+import { TelemetryExtImpl } from './telemetry-ext';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -245,7 +255,8 @@ export function createAPIFactory(
     workspaceExt: WorkspaceExtImpl,
     messageRegistryExt: MessageRegistryExt,
     clipboard: ClipboardExt,
-    webviewExt: WebviewsExtImpl
+    webviewExt: WebviewsExtImpl,
+    localizationExt: LocalizationExtImpl
 ): PluginAPIFactory {
 
     const authenticationExt = rpc.set(MAIN_RPC_CONTEXT.AUTHENTICATION_EXT, new AuthenticationExtImpl(rpc));
@@ -274,6 +285,7 @@ export function createAPIFactory(
     const tabsExt = rpc.set(MAIN_RPC_CONTEXT.TABS_EXT, new TabsExtImpl(rpc));
     const customEditorExt = rpc.set(MAIN_RPC_CONTEXT.CUSTOM_EDITORS_EXT, new CustomEditorsExtImpl(rpc, documents, webviewExt, workspaceExt));
     const webviewViewsExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEW_VIEWS_EXT, new WebviewViewsExtImpl(rpc, webviewExt));
+    const telemetryExt = rpc.set(MAIN_RPC_CONTEXT.TELEMETRY_EXT, new TelemetryExtImpl());
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -481,8 +493,10 @@ export function createAPIFactory(
 
                 return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority, id);
             },
-            createOutputChannel(name: string): theia.OutputChannel {
-                return outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin));
+            createOutputChannel(name: string, options?: { log: true }): any {
+                return !options
+                    ? outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin))
+                    : outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin), options);
             },
             createWebviewPanel(viewType: string,
                 title: string,
@@ -564,7 +578,21 @@ export function createAPIFactory(
             },
             get tabGroups(): theia.TabGroups {
                 return tabsExt.tabGroups;
-            }
+            },
+            /** @stubbed ExternalUriOpener */
+            registerExternalUriOpener(id: string, opener: theia.ExternalUriOpener, metadata: theia.ExternalUriOpenerMetadata): theia.Disposable {
+                return Disposable.NULL;
+            },
+            /** @stubbed ProfileContentHandler */
+            registerProfileContentHandler(id: string, profileContentHandler: theia.ProfileContentHandler): theia.Disposable {
+                return Disposable.NULL;
+            },
+            /** @stubbed TerminalQuickFixProvider */
+            registerTerminalQuickFixProvider(id: string, provider: theia.TerminalQuickFixProvider): theia.Disposable {
+                return terminalExt.registerTerminalQuickFixProvider(id, provider);
+            },
+            /** @stubbed ShareProvider */
+            registerShareProvider: () => Disposable.NULL,
         };
 
         const workspace: typeof theia.workspace = {
@@ -607,6 +635,9 @@ export function createAPIFactory(
                 return Disposable.NULL;
             },
             onDidChangeNotebookDocument(listener, thisArg?, disposables?) {
+                return Disposable.NULL;
+            },
+            onWillSaveNotebookDocument(listener, thisArg?, disposables?) {
                 return Disposable.NULL;
             },
             onDidSaveNotebookDocument(listener, thisArg?, disposables?) {
@@ -709,6 +740,21 @@ export function createAPIFactory(
             },
             get onDidGrantWorkspaceTrust(): theia.Event<void> {
                 return workspaceExt.onDidGrantWorkspaceTrust;
+            },
+            registerEditSessionIdentityProvider(scheme: string, provider: theia.EditSessionIdentityProvider) {
+                return workspaceExt.$registerEditSessionIdentityProvider(scheme, provider);
+            },
+            /**
+             * @stubbed
+             * This is a stub implementation, that should minimally satisfy vscode built-in extensions
+             * that currently use this proposed API.
+             */
+            onWillCreateEditSessionIdentity: () => Disposable.NULL,
+            registerCanonicalUriProvider(scheme: string, provider: theia.CanonicalUriProvider): theia.Disposable {
+                return workspaceExt.registerCanonicalUriProvider(scheme, provider);
+            },
+            getCanonicalUri(uri: theia.Uri, options: theia.CanonicalUriRequestOptions, token: CancellationToken): theia.ProviderResult<theia.Uri> {
+                return workspaceExt.getCanonicalUri(uri, options, token);
             }
         };
 
@@ -719,9 +765,12 @@ export function createAPIFactory(
             get appHost(): string { return envExt.appHost; },
             get language(): string { return envExt.language; },
             get isNewAppInstall(): boolean { return envExt.isNewAppInstall; },
-            get isTelemetryEnabled(): boolean { return envExt.isTelemetryEnabled; },
+            get isTelemetryEnabled(): boolean { return telemetryExt.isTelemetryEnabled; },
             get onDidChangeTelemetryEnabled(): theia.Event<boolean> {
-                return envExt.onDidChangeTelemetryEnabled;
+                return telemetryExt.onDidChangeTelemetryEnabled;
+            },
+            createTelemetryLogger(sender: theia.TelemetrySender, options?: theia.TelemetryLoggerOptions): theia.TelemetryLogger {
+                return telemetryExt.createTelemetryLogger(sender, options);
             },
             get remoteName(): string | undefined { return envExt.remoteName; },
             get machineId(): string { return envExt.machineId; },
@@ -860,8 +909,8 @@ export function createAPIFactory(
             ): theia.Disposable {
                 return languagesExt.registerOnTypeFormattingEditProvider(selector, provider, [firstTriggerCharacter].concat(moreTriggerCharacters), pluginToPluginInfo(plugin));
             },
-            registerDocumentDropEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentDropEditProvider) {
-                return languagesExt.registerDocumentDropEditProvider(selector, provider);
+            registerDocumentDropEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentDropEditProvider, metadata?: theia.DocumentDropEditProviderMetadata) {
+                return languagesExt.registerDocumentDropEditProvider(selector, provider, metadata);
             },
             registerDocumentLinkProvider(selector: theia.DocumentSelector, provider: theia.DocumentLinkProvider): theia.Disposable {
                 return languagesExt.registerDocumentLinkProvider(selector, provider, pluginToPluginInfo(plugin));
@@ -913,6 +962,11 @@ export function createAPIFactory(
             },
             createLanguageStatusItem(id: string, selector: theia.DocumentSelector): theia.LanguageStatusItem {
                 return languagesExt.createLanguageStatusItem(plugin, id, selector);
+            },
+            registerDocumentPasteEditProvider(
+                selector: theia.DocumentSelector, provider: theia.DocumentPasteEditProvider, metadata: theia.DocumentPasteProviderMetadata
+            ): theia.Disposable {
+                return languagesExt.registerDocumentPasteEditProvider(plugin, selector, provider, metadata);
             }
         };
 
@@ -1073,6 +1127,27 @@ export function createAPIFactory(
             }
         };
 
+        const l10n: typeof theia.l10n = {
+            // eslint-disable-next-line max-len
+            t(...params: [message: string, ...args: Array<string | number | boolean>] | [message: string, args: Record<string, any>] | [{ message: string; args?: Array<string | number | boolean> | Record<string, any>; comment: string | string[] }]): string {
+                if (typeof params[0] === 'string') {
+                    const key = params.shift() as string;
+
+                    // We have either rest args which are Array<string | number | boolean> or an array with a single Record<string, any>.
+                    // This ensures we get a Record<string | number, any> which will be formatted correctly.
+                    const argsFormatted = !params || typeof params[0] !== 'object' ? params : params[0];
+                    return localizationExt.translateMessage(plugin.model.id, { message: key, args: argsFormatted as Record<string | number, any> | undefined });
+                }
+                return localizationExt.translateMessage(plugin.model.id, params[0]);
+            },
+            get bundle() {
+                return localizationExt.getBundle(plugin.model.id);
+            },
+            get uri() {
+                return localizationExt.getBundleUri(plugin.model.id);
+            }
+        };
+
         // notebooks API (@stubbed)
         // The following implementation is temporarily `@stubbed` and marked as such under `theia.d.ts`
         const notebooks: typeof theia.notebooks = {
@@ -1148,6 +1223,7 @@ export function createAPIFactory(
             tasks,
             scm,
             notebooks,
+            l10n,
             tests,
             // Types
             StatusBarAlignment: StatusBarAlignment,
@@ -1216,6 +1292,7 @@ export function createAPIFactory(
             DataTransfer,
             TreeItem,
             TreeItemCollapsibleState,
+            TreeItemCheckboxState,
             SymbolKind,
             SymbolTag,
             DocumentSymbol,
@@ -1252,6 +1329,7 @@ export function createAPIFactory(
             WebviewPanelTargetArea,
             UIKind,
             FileSystemError,
+            CommentThreadState,
             CommentThreadCollapsibleState,
             QuickInputButtons,
             CommentMode,
@@ -1279,6 +1357,7 @@ export function createAPIFactory(
             InlayHint,
             InlayHintKind,
             InlayHintLabelPart,
+            TelemetryTrustedValue,
             NotebookCellData,
             NotebookCellKind,
             NotebookCellOutput,
@@ -1308,7 +1387,12 @@ export function createAPIFactory(
             TabInputWebview: WebviewEditorTabInput,
             TabInputTerminal: TerminalEditorTabInput,
             TerminalLocation,
-            TerminalExitReason
+            TerminalOutputAnchor,
+            TerminalExitReason,
+            DocumentPasteEdit,
+            ExternalUriOpenerPriority,
+            TerminalQuickFixType,
+            EditSessionIdentityMatch
         };
     };
 }

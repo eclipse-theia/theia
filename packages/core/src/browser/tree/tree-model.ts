@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from 'inversify';
@@ -470,6 +470,14 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
 
     markAsBusy(node: Readonly<TreeNode>, ms: number, token: CancellationToken): Promise<void> {
         return this.tree.markAsBusy(node, ms, token);
+    }
+
+    get onDidUpdate(): Event<TreeNode[]> {
+        return this.tree.onDidUpdate;
+    }
+
+    markAsChecked(node: TreeNode, checked: boolean): void {
+        this.tree.markAsChecked(node, checked);
     }
 
 }

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
@@ -61,7 +61,12 @@ export interface HoverRequest {
      * Additional css classes that should be added to the hover box.
      * Used to style certain boxes different e.g. for the extended tab preview.
      */
-    cssClasses?: string []
+    cssClasses?: string[]
+    /**
+     * A function to render a visual preview on the hover.
+     * Function that takes the desired width and returns a HTMLElement to be rendered.
+     */
+    visualPreview?: (width: number) => HTMLElement | undefined;
 }
 
 @injectable()
@@ -106,6 +111,7 @@ export class HoverService {
 
     protected async renderHover(request: HoverRequest): Promise<void> {
         const host = this.hoverHost;
+        let firstChild: HTMLElement | undefined;
         const { target, content, position, cssClasses } = request;
         if (cssClasses) {
             host.classList.add(...cssClasses);
@@ -113,18 +119,30 @@ export class HoverService {
         this.hoverTarget = target;
         if (content instanceof HTMLElement) {
             host.appendChild(content);
+            firstChild = content;
         } else if (typeof content === 'string') {
             host.textContent = content;
         } else {
             const renderedContent = this.markdownRenderer.render(content);
             this.disposeOnHide.push(renderedContent);
             host.appendChild(renderedContent.element);
+            firstChild = renderedContent.element;
         }
         // browsers might insert linebreaks when the hover appears at the edge of the window
         // resetting the position prevents that
         host.style.left = '0px';
         host.style.top = '0px';
         document.body.append(host);
+
+        if (request.visualPreview) {
+            // If just a string is being rendered use the size of the outer box
+            const width = firstChild ? firstChild.offsetWidth : this.hoverHost.offsetWidth;
+            const visualPreview = request.visualPreview(width);
+            if (visualPreview) {
+                host.appendChild(visualPreview);
+            }
+        }
+
         await animationFrame(); // Allow the browser to size the host
         const updatedPosition = this.setHostPosition(target, host, position);
 

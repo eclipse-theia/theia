@@ -11,8 +11,12 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './ovsx-client';
+export { OVSXApiFilter, OVSXApiFilterImpl } from './ovsx-api-filter';
+export { OVSXHttpClient } from './ovsx-http-client';
+export { OVSXMockClient } from './ovsx-mock-client';
+export { OVSXRouterClient, OVSXRouterConfig, OVSXRouterFilterFactory as FilterFactory } from './ovsx-router-client';
+export * from './ovsx-router-filters';
 export * from './ovsx-types';

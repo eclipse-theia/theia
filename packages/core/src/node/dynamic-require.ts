@@ -11,8 +11,12 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
+declare const __non_webpack_require__: NodeJS.Require;
+
+const nodeRequire = typeof __non_webpack_require__ !== 'undefined' ? __non_webpack_require__ : require;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function dynamicRequire<T = any>(id: string): T {
@@ -22,6 +26,31 @@ export function dynamicRequire<T = any>(id: string): T {
     if (id.startsWith('.')) {
         throw new Error(`module id cannot be a relative path, id: "${id}"`);
     }
-    // eslint-disable-next-line import/no-dynamic-require
-    return require(/* webpackIgnore: true */ id);
+    return nodeRequire(id);
+}
+
+/**
+ * Remove all references to a module from Node's module cache.
+ * @param filter callback to filter modules from the cache: return `true` to remove the module from the cache.
+ */
+export function removeFromCache(filter: (mod: NodeJS.Module) => boolean): void {
+    Object.entries(nodeRequire.cache).forEach(([key, mod]) => {
+        if (!mod || mod.id.endsWith('.node')) {
+            return;
+        }
+        if (filter(mod)) {
+            delete nodeRequire.cache[key];
+            delete mod.exports;
+            mod.children.length = 0;
+            return;
+        }
+        mod.children.splice(0, mod.children.length, ...mod.children.filter(child => {
+            if (filter(child)) {
+                delete child.exports;
+                child.children.length = 0;
+                return false;
+            }
+            return true;
+        }));
+    });
 }

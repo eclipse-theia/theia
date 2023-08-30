@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
@@ -908,7 +908,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             const signOff = `\n\nSigned-off-by: ${username} <${email}>`;
             const value = scmRepository.input.value;
             if (value.endsWith(signOff)) {
-                scmRepository.input.value = value.substr(0, value.length - signOff.length);
+                scmRepository.input.value = value.substring(0, value.length - signOff.length);
             } else {
                 scmRepository.input.value = `${value}${signOff}`;
             }

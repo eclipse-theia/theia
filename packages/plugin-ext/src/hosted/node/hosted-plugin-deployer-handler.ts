@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as fs from '@theia/core/shared/fs-extra';
@@ -133,7 +133,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             if (await this.deployPlugin(plugin, 'backend')) { successes++; }
         }
         // rebuild translation config after deployment
-        this.localizationService.buildTranslationConfig([...this.deployedBackendPlugins.values()]);
+        await this.localizationService.buildTranslationConfig([...this.deployedBackendPlugins.values()]);
         // resolve on first deploy
         this.backendPluginsMetadataDeferred.resolve(undefined);
         return successes;
@@ -173,8 +173,8 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
 
             const { type } = entry;
             const deployed: DeployedPlugin = { metadata, type };
-            deployed.contributes = this.reader.readContribution(manifest);
-            this.localizationService.deployLocalizations(deployed);
+            deployed.contributes = await this.reader.readContribution(manifest);
+            await this.localizationService.deployLocalizations(deployed);
             deployedPlugins.set(id, deployed);
             deployPlugin.debug(`Deployed ${entryPoint} plugin "${id}" from "${metadata.model.entryPoint[entryPoint] || pluginPath}"`);
         } catch (e) {

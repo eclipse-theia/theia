@@ -1,0 +1,16 @@
+{
+  "registries": {
+    "public": "https://open-vsx.org/",
+    "mock": "${self}/mock-open-vsx/"
+  },
+  "use": [
+    "mock",
+    "public"
+  ],
+  "rules": [
+    {
+      "ifRequestContains": "\\bsample-namespace\\b",
+      "use": "mock"
+    }
+  ]
+}

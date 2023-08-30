@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -33,7 +33,7 @@ import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 import {
     Disposable, DisposableCollection, Emitter, isCancelled,
     ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent,
-    CancellationTokenSource, JsonRpcProxy, ProgressService, nls
+    CancellationTokenSource, RpcProxy, ProgressService, nls
 } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -49,7 +49,8 @@ import { WaitUntilEvent } from '@theia/core/lib/common/event';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { PluginViewRegistry } from '../../main/browser/view/plugin-view-registry';
-import { TaskProviderRegistry, TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
+import { WillResolveTaskProvider, TaskProviderRegistry, TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
+import { TaskDefinitionRegistry } from '@theia/task/lib/browser/task-definition-registry';
 import { WebviewEnvironment } from '../../main/browser/webview/webview-environment';
 import { WebviewWidget } from '../../main/browser/webview/webview';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
@@ -73,6 +74,7 @@ export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
 
 export const PluginProgressLocation = 'plugin';
+export const ALL_ACTIVATION_EVENT = '*';
 
 @injectable()
 export class HostedPluginSupport {
@@ -85,7 +87,7 @@ export class HostedPluginSupport {
     protected readonly logger: ILogger;
 
     @inject(HostedPluginServer)
-    protected readonly server: JsonRpcProxy<HostedPluginServer>;
+    protected readonly server: RpcProxy<HostedPluginServer>;
 
     @inject(HostedPluginWatcher)
     protected readonly watcher: HostedPluginWatcher;
@@ -138,6 +140,9 @@ export class HostedPluginSupport {
 
     @inject(TaskResolverRegistry)
     protected readonly taskResolverRegistry: TaskResolverRegistry;
+
+    @inject(TaskDefinitionRegistry)
+    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
     @inject(ProgressService)
     protected readonly progressService: ProgressService;
@@ -205,7 +210,7 @@ export class HostedPluginSupport {
         this.debugSessionManager.onWillResolveDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugResolve', event.debugType));
         this.debugConfigurationManager.onWillProvideDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugInitialConfigurations'));
         // Activate all providers of dynamic configurations, i.e. Let the user pick a configuration from all the available ones.
-        this.debugConfigurationManager.onWillProvideDynamicDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugDynamicConfigurations', '*'));
+        this.debugConfigurationManager.onWillProvideDynamicDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugDynamicConfigurations', ALL_ACTIVATION_EVENT));
         this.viewRegistry.onDidExpandView(id => this.activateByView(id));
         this.taskProviderRegistry.onWillProvideTaskProvider(event => this.ensureTaskActivation(event));
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
@@ -299,8 +304,6 @@ export class HostedPluginSupport {
         await this.startPlugins(contributionsByHost, toDisconnect);
 
         this.deferredDidStart.resolve();
-
-        this.restoreWebviews();
     }
 
     /**
@@ -510,7 +513,7 @@ export class HostedPluginSupport {
                 workspaceState,
                 env: {
                     queryParams: getQueryParameters(),
-                    language: nls.locale || 'en',
+                    language: nls.locale || nls.defaultLocale,
                     shell: defaultShell,
                     uiKind: isElectron ? UIKind.Desktop : UIKind.Web,
                     appName: FrontendApplicationConfigProvider.get().applicationName,
@@ -610,6 +613,10 @@ export class HostedPluginSupport {
         await this.activateByEvent(`onCommand:${commandId}`);
     }
 
+    async activateByTaskType(taskType: string): Promise<void> {
+        await this.activateByEvent(`onTaskType:${taskType}`);
+    }
+
     async activateByCustomEditor(viewType: string): Promise<void> {
         await this.activateByEvent(`onCustomEditor:${viewType}`);
     }
@@ -648,8 +655,20 @@ export class HostedPluginSupport {
         event.waitUntil(p);
     }
 
-    protected ensureTaskActivation(event: WaitUntilEvent): void {
-        event.waitUntil(this.activateByCommand('workbench.action.tasks.runTask'));
+    protected ensureTaskActivation(event: WillResolveTaskProvider): void {
+        const promises = [this.activateByCommand('workbench.action.tasks.runTask')];
+        const taskType = event.taskType;
+        if (taskType) {
+            if (taskType === ALL_ACTIVATION_EVENT) {
+                for (const taskDefinition of this.taskDefinitionRegistry.getAll()) {
+                    promises.push(this.activateByTaskType(taskDefinition.taskType));
+                }
+            } else {
+                promises.push(this.activateByTaskType(taskType));
+            }
+        }
+
+        event.waitUntil(Promise.all(promises));
     }
 
     protected ensureDebugActivation(event: WaitUntilEvent, activationEvent?: DebugActivationEvent, debugType?: string): void {
@@ -677,8 +696,8 @@ export class HostedPluginSupport {
         // should be aligned with https://github.com/microsoft/vscode/blob/da5fb7d5b865aa522abc7e82c10b746834b98639/src/vs/workbench/api/node/extHostExtensionService.ts#L460-L469
         for (const activationEvent of activationEvents) {
             if (/^workspaceContains:/.test(activationEvent)) {
-                const fileNameOrGlob = activationEvent.substr('workspaceContains:'.length);
-                if (fileNameOrGlob.indexOf('*') >= 0 || fileNameOrGlob.indexOf('?') >= 0) {
+                const fileNameOrGlob = activationEvent.substring('workspaceContains:'.length);
+                if (fileNameOrGlob.indexOf(ALL_ACTIVATION_EVENT) >= 0 || fileNameOrGlob.indexOf('?') >= 0) {
                     includePatterns.push(fileNameOrGlob);
                 } else {
                     paths.push(fileNameOrGlob);
@@ -736,7 +755,7 @@ export class HostedPluginSupport {
         return `${plugins} plugin${plugins === 1 ? '' : 's'}`;
     }
 
-    protected readonly webviewsToRestore = new Set<WebviewWidget>();
+    protected readonly webviewsToRestore = new Map<string, WebviewWidget>();
     protected readonly webviewRevivers = new Map<string, (webview: WebviewWidget) => Promise<void>>();
 
     registerWebviewReviver(viewType: string, reviver: (webview: WebviewWidget) => Promise<void>): void {
@@ -744,6 +763,10 @@ export class HostedPluginSupport {
             throw new Error(`Reviver for ${viewType} already registered`);
         }
         this.webviewRevivers.set(viewType, reviver);
+
+        if (this.webviewsToRestore.has(viewType)) {
+            this.restoreWebview(this.webviewsToRestore.get(viewType) as WebviewWidget);
+        }
     }
 
     unregisterWebviewReviver(viewType: string): void {
@@ -764,21 +787,14 @@ export class HostedPluginSupport {
     }
 
     protected preserveWebview(webview: WebviewWidget): void {
-        if (!this.webviewsToRestore.has(webview)) {
-            this.webviewsToRestore.add(webview);
-            webview.disposed.connect(() => this.webviewsToRestore.delete(webview));
+        if (!this.webviewsToRestore.has(webview.viewType)) {
+            this.activateByEvent(`onWebviewPanel:${webview.viewType}`);
+            this.webviewsToRestore.set(webview.viewType, webview);
+            webview.disposed.connect(() => this.webviewsToRestore.delete(webview.viewType));
         }
-    }
-
-    protected restoreWebviews(): void {
-        for (const webview of this.webviewsToRestore) {
-            this.restoreWebview(webview);
-        }
-        this.webviewsToRestore.clear();
     }
 
     protected async restoreWebview(webview: WebviewWidget): Promise<void> {
-        await this.activateByEvent(`onWebviewPanel:${webview.viewType}`);
         const restore = this.webviewRevivers.get(webview.viewType);
         if (restore) {
             try {

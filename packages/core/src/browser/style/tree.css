@@ -11,210 +11,222 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 :root {
-    --theia-welcomeView-horizontal-padding: 20px;
-    --theia-welcomeView-elements-margin: 13px;
-    --theia-welcomeView-button-maxWidth: 260px;
+  --theia-welcomeView-horizontal-padding: 20px;
+  --theia-welcomeView-elements-margin: 13px;
+  --theia-welcomeView-button-maxWidth: 260px;
 }
 
 .theia-Tree {
-    overflow: hidden;
-    font-size: var(--theia-ui-font-size1);
-    max-height: calc(100% - var(--theia-border-width));
-    position: relative;
+  overflow: hidden;
+  font-size: var(--theia-ui-font-size1);
+  max-height: calc(100% - var(--theia-border-width));
+  position: relative;
 }
 
 .theia-Tree:focus .theia-TreeContainer.empty::before,
 .theia-Tree:focus .theia-TreeContainer.focused::before {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 10;
-    content: "";
-    outline-width: 1px;
-    outline-style: solid;
-    outline-offset: -1px;
-    opacity: 1 !important;
-    outline-color: var(--theia-focusBorder);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  content: "";
+  outline-width: 1px;
+  outline-style: solid;
+  outline-offset: -1px;
+  opacity: 1 !important;
+  outline-color: var(--theia-focusBorder);
 }
 
 .theia-Tree:focus,
 .theia-TreeContainer .ReactVirtualized__List:focus {
-    outline: 0;
-    box-shadow: none;
-    border: none;
+  outline: 0;
+  box-shadow: none;
+  border: none;
 }
 
 .theia-TreeContainer .ReactVirtualized__Grid__innerScrollContainer {
-    margin-bottom: calc(var(--theia-ui-padding) * 3);
+  margin-bottom: calc(var(--theia-ui-padding) * 3);
 }
 
 .theia-TreeContainer {
-    height: 100%;
+  height: 100%;
 }
 
 .theia-TreeNode {
-    line-height: var(--theia-content-line-height);
-    display: flex;
+  line-height: var(--theia-content-line-height);
+  display: flex;
 }
 
 .theia-TreeNode:hover {
-    background: var(--theia-list-hoverBackground);
-    color: var(--theia-list-hoverForeground);
-    cursor: pointer;
+  background: var(--theia-list-hoverBackground);
+  color: var(--theia-list-hoverForeground);
+  cursor: pointer;
 }
 
 .theia-TreeNodeContent {
-    display: flex;
-    align-items: center;
-    width: calc(100% - var(--theia-scrollbar-rail-width));
+  display: flex;
+  align-items: center;
+  width: calc(100% - var(--theia-scrollbar-rail-width));
 }
 
 .theia-ExpansionToggle {
-    display: flex;
-    justify-content: center;
-    padding-left: calc(var(--theia-ui-padding)/2);
-    padding-right: calc(var(--theia-ui-padding)/2);
-    min-width: var(--theia-icon-size);
-    min-height: var(--theia-icon-size);
+  display: flex;
+  justify-content: center;
+  padding-left: calc(var(--theia-ui-padding) / 2);
+  padding-right: calc(var(--theia-ui-padding) / 2);
+  min-width: var(--theia-icon-size);
+  min-height: var(--theia-icon-size);
 }
 
 .theia-ExpansionToggle.theia-mod-busy {
-    animation: theia-spin 1.25s linear infinite;
+  animation: theia-spin 1.25s linear infinite;
 }
 
 .theia-ExpansionToggle:not(.theia-mod-busy):hover {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .theia-ExpansionToggle.theia-mod-collapsed:not(.theia-mod-busy) {
-    transform: rotate(-90deg);
+  transform: rotate(-90deg);
 }
 
 .theia-Tree:focus-within .theia-TreeNode.theia-mod-selected {
-    background: var(--theia-list-activeSelectionBackground);
-    color: var(--theia-list-activeSelectionForeground) !important;
-    outline: var(--theia-focusBorder) solid 1px;
-    outline-offset: -1px;
+  background: var(--theia-list-activeSelectionBackground);
+  color: var(--theia-list-activeSelectionForeground) !important;
+  outline: var(--theia-focusBorder) solid 1px;
+  outline-offset: -1px;
 }
 
 .theia-Tree:focus-within .theia-TreeNode.theia-mod-selected .theia-TreeNodeTail,
-.theia-Tree:focus-within .theia-TreeNode.theia-mod-selected .theia-caption-suffix,
+.theia-Tree:focus-within
+  .theia-TreeNode.theia-mod-selected
+  .theia-caption-suffix,
 .theia-Tree:focus-within .theia-TreeNode.theia-mod-selected .theia-TreeNodeInfo,
-.theia-Tree:focus-within .theia-TreeNode.theia-mod-selected .theia-TreeNodeSegment {
-    color: var(--theia-list-activeSelectionForeground) !important;
+.theia-Tree:focus-within
+  .theia-TreeNode.theia-mod-selected
+  .theia-TreeNodeSegment {
+  color: var(--theia-list-activeSelectionForeground) !important;
 }
 
 .theia-Tree:focus .theia-TreeNode.theia-mod-focus,
 .theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-focus {
-    outline-width: 1px;
-    outline-style: solid;
-    outline-offset: -1px;
-    outline-color: var(--theia-focusBorder);
+  outline-width: 1px;
+  outline-style: solid;
+  outline-offset: -1px;
+  outline-color: var(--theia-focusBorder);
 }
 
 .theia-TreeNodeInfo {
-    color: var(--theia-foreground);
-    opacity: 0.7;
+  color: var(--theia-foreground);
+  opacity: 0.7;
 }
 
 .theia-Tree .theia-TreeNode.theia-mod-selected {
-    background: var(--theia-list-inactiveSelectionBackground);
-    color: var(--theia-list-inactiveSelectionForeground);
+  background: var(--theia-list-inactiveSelectionBackground);
+  color: var(--theia-list-inactiveSelectionForeground);
 }
 
 .theia-TreeNode.theia-mod-not-selectable {
-    color: var(--theia-descriptionForeground);
+  color: var(--theia-descriptionForeground);
 }
 
 .theia-TreeNode.theia-mod-not-selectable:hover {
-    background: none;
-    cursor: default;
+  background: none;
+  cursor: default;
 }
 
 .theia-TreeNodeSegment {
-    align-items: center;
-    flex-grow: 0;
-    user-select: none;
-    white-space: nowrap;
+  align-items: center;
+  flex-grow: 0;
+  user-select: none;
+  white-space: nowrap;
 }
 
 .theia-TreeNodeSegment.flex {
-    display: flex;
+  display: flex;
 }
 
 .theia-TreeNodeSegmentGrow {
-    flex-grow: 1 !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  flex-grow: 1 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .theia-TreeNodeTail {
-    min-width: 1rem;
-    text-align: center;
-    justify-content: center;
+  min-width: 1rem;
+  text-align: center;
+  justify-content: center;
+}
+
+.open-editors-node-row .theia-TreeNode .theia-TreeNodeContent .noWrapInfo > * {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline;
 }
 
 .theia-TreeNodeSegment mark {
-    background-color: var(--theia-list-filterMatchBackground);
-    color: var(--theia-list-inactiveSelectionForeground);
+  background-color: var(--theia-list-filterMatchBackground);
+  color: var(--theia-list-inactiveSelectionForeground);
 }
 
 .theia-tree-source-node-placeholder {
-    text-align: center;
-    font-style: italic;
-    opacity: var(--theia-mod-disabled-opacity);
+  text-align: center;
+  font-style: italic;
+  opacity: var(--theia-mod-disabled-opacity);
 }
 
 .theia-tree-node-indent {
-    position: absolute;
-    height: var(--theia-content-line-height);
-    border-right: var(--theia-border-width) solid transparent;
+  position: absolute;
+  height: var(--theia-content-line-height);
+  border-right: var(--theia-border-width) solid transparent;
+  pointer-events: none;
 }
 
 .theia-tree-node-indent.always,
 .theia-TreeContainer:hover .theia-tree-node-indent.hover {
-    border-color: var(--theia-tree-inactiveIndentGuidesStroke);
+  border-color: var(--theia-tree-inactiveIndentGuidesStroke);
 }
 
 .theia-tree-node-indent.active {
-    border-color: var(--theia-tree-indentGuidesStroke);
+  border-color: var(--theia-tree-indentGuidesStroke);
 }
 
 .theia-TreeContainer .theia-WelcomeView {
-    padding-top: var(--theia-ui-padding);
-    padding-right: var(--theia-welcomeView-horizontal-padding);
-    padding-left: var(--theia-welcomeView-horizontal-padding);
+  padding-top: var(--theia-ui-padding);
+  padding-right: var(--theia-welcomeView-horizontal-padding);
+  padding-left: var(--theia-welcomeView-horizontal-padding);
 }
 
 .theia-TreeContainer .theia-WelcomeView > * {
-    margin: var(--theia-welcomeView-elements-margin) 0;
+  margin: var(--theia-welcomeView-elements-margin) 0;
 }
 
 .theia-TreeContainer .theia-WelcomeView .theia-WelcomeViewButtonWrapper {
-    display: flex;
-    padding: 0 var(--theia-ui-padding);
+  display: flex;
+  padding: 0 var(--theia-ui-padding);
 }
 
 .theia-TreeContainer .theia-WelcomeView .theia-WelcomeViewButton {
-    width: 100%;
-    max-width: var(--theia-welcomeView-button-maxWidth);
-    margin: auto;
+  width: 100%;
+  max-width: var(--theia-welcomeView-button-maxWidth);
+  margin: auto;
 }
 
 .theia-TreeContainer .theia-WelcomeView .theia-WelcomeViewCommandLink {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .theia-TreeContainer .theia-WelcomeView .theia-WelcomeViewCommandLink.disabled {
-    pointer-events: none;
-    cursor: default;
-    opacity: var(--theia-mod-disabled-opacity);
+  pointer-events: none;
+  cursor: default;
+  opacity: var(--theia-mod-disabled-opacity);
 }

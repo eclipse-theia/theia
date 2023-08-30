@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 // This file is heavily inspired by VSCode 'vscode.d.ts' - https://github.com/Microsoft/vscode/blob/master/src/vs/vscode.d.ts
@@ -20,8 +20,25 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
 import './theia-extra';
-import './theia-proposed';
+import './theia.proposed.canonicalUriProvider';
+import './theia.proposed.customEditorMove';
+import './theia.proposed.diffCommand';
+import './theia.proposed.documentPaste';
+import './theia.proposed.dropMetadata';
+import './theia.proposed.editSessionIdentityProvider';
+import './theia.proposed.extensionsAny';
+import './theia.proposed.externalUriOpener';
+import './theia.proposed.findTextInFiles';
+import './theia.proposed.fsChunks';
+import './theia.proposed.profileContentHandlers';
+import './theia.proposed.resolvers';
+import './theia.proposed.scmValidation';
+import './theia.proposed.shareProvider';
+import './theia.proposed.terminalQuickFixProvider';
+import './theia.proposed.textSearchProvider';
+import './theia.proposed.timeline';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable max-len */
@@ -2702,6 +2719,9 @@ export module '@theia/plugin' {
 
     /**
      * An output channel is a container for readonly textual information.
+     *
+     * To get an instance of an `OutputChannel` use
+     * {@link window.createOutputChannel createOutputChannel}.
      */
     export interface OutputChannel {
 
@@ -2763,6 +2783,106 @@ export module '@theia/plugin' {
          * Dispose and free associated resources.
          */
         dispose(): void;
+    }
+
+    /**
+     * Log levels
+     */
+    export enum LogLevel {
+
+        /**
+         * No messages are logged with this level.
+         */
+        Off = 0,
+
+        /**
+         * All messages are logged with this level.
+         */
+        Trace = 1,
+
+        /**
+         * Messages with debug and higher log level are logged with this level.
+         */
+        Debug = 2,
+
+        /**
+         * Messages with info and higher log level are logged with this level.
+         */
+        Info = 3,
+
+        /**
+         * Messages with warning and higher log level are logged with this level.
+         */
+        Warning = 4,
+
+        /**
+         * Only error messages are logged with this level.
+         */
+        Error = 5
+    }
+
+    /**
+     * A channel for containing log output.
+     *
+     * To get an instance of a `LogOutputChannel` use
+     * {@link window.createOutputChannel createOutputChannel}.
+     */
+    export interface LogOutputChannel extends OutputChannel {
+
+        /**
+         * The current log level of the channel. Defaults to {@link env.logLevel editor log level}.
+         */
+        readonly logLevel: LogLevel;
+
+        /**
+         * An {@link Event} which fires when the log level of the channel changes.
+         */
+        readonly onDidChangeLogLevel: Event<LogLevel>;
+
+        /**
+         * Outputs the given trace message to the channel. Use this method to log verbose information.
+         *
+         * The message is only logged if the channel is configured to display {@link LogLevel.Trace trace} log level.
+         *
+         * @param message trace message to log
+         */
+        trace(message: string, ...args: any[]): void;
+
+        /**
+         * Outputs the given debug message to the channel.
+         *
+         * The message is only logged if the channel is configured to display {@link LogLevel.Debug debug} log level or lower.
+         *
+         * @param message debug message to log
+         */
+        debug(message: string, ...args: any[]): void;
+
+        /**
+         * Outputs the given information message to the channel.
+         *
+         * The message is only logged if the channel is configured to display {@link LogLevel.Info info} log level or lower.
+         *
+         * @param message info message to log
+         */
+        info(message: string, ...args: any[]): void;
+
+        /**
+         * Outputs the given warning message to the channel.
+         *
+         * The message is only logged if the channel is configured to display {@link LogLevel.Warning warning} log level or lower.
+         *
+         * @param message warning message to log
+         */
+        warn(message: string, ...args: any[]): void;
+
+        /**
+         * Outputs the given error or error message to the channel.
+         *
+         * The message is only logged if the channel is configured to display {@link LogLevel.Error error} log level or lower.
+         *
+         * @param error Error or error message to log
+         */
+        error(error: string | Error, ...args: any[]): void;
     }
 
     /**
@@ -3465,6 +3585,12 @@ export module '@theia/plugin' {
      * A collection of mutations that an extension can apply to a process environment.
      */
     export interface EnvironmentVariableCollection {
+
+        /**
+         * A description for the environment variable collection, this will be used to describe the changes in the UI.
+         */
+        description: string | MarkdownString | undefined;
+
         /**
          * Whether the collection should be cached for the workspace and applied to the terminal
          * across window reloads. When true the collection will be active immediately such when the
@@ -5251,6 +5377,14 @@ export module '@theia/plugin' {
         export function createOutputChannel(name: string): OutputChannel;
 
         /**
+         * Creates a new {@link LogOutputChannel log output channel} with the given name.
+         *
+         * @param name Human-readable string which will be used to represent the channel in the UI.
+         * @param options Options for the log output channel.
+         */
+        export function createOutputChannel(name: string, options: { log: true }): LogOutputChannel;
+
+        /**
          * Create new terminal.
          * @param name - terminal name to display on the UI.
          * @param shellPath - path to the executable shell. For example "/bin/bash", "bash", "sh".
@@ -5816,6 +5950,44 @@ export module '@theia/plugin' {
          * array containing all selected tree items.
          */
         canSelectMany?: boolean;
+
+        /**
+         * By default, when the children of a tree item have already been fetched, child checkboxes are automatically managed based on the checked state of the parent tree item.
+         * If the tree item is collapsed by default (meaning that the children haven't yet been fetched) then child checkboxes will not be updated.
+         * To override this behavior and manage child and parent checkbox state in the extension, set this to `true`.
+         *
+         * Examples where {@link TreeViewOptions.manageCheckboxStateManually} is false, the default behavior:
+         *
+         * 1. A tree item is checked, then its children are fetched. The children will be checked.
+         *
+         * 2. A tree item's parent is checked. The tree item and all of it's siblings will be checked.
+         *   - [ ] Parent
+         *     - [ ] Child 1
+         *     - [ ] Child 2
+         *   When the user checks Parent, the tree will look like this:
+         *   - [x] Parent
+         *     - [x] Child 1
+         *     - [x] Child 2
+         *
+         * 3. A tree item and all of it's siblings are checked. The parent will be checked.
+         *   - [ ] Parent
+         *     - [ ] Child 1
+         *     - [ ] Child 2
+         *   When the user checks Child 1 and Child 2, the tree will look like this:
+         *   - [x] Parent
+         *     - [x] Child 1
+         *     - [x] Child 2
+         *
+         * 4. A tree item is unchecked. The parent will be unchecked.
+         *   - [x] Parent
+         *     - [x] Child 1
+         *     - [x] Child 2
+         *   When the user unchecks Child 1, the tree will look like this:
+         *   - [ ] Parent
+         *     - [ ] Child 1
+         *     - [x] Child 2
+         */
+        manageCheckboxStateManually?: boolean;
     }
 
     /**
@@ -6030,6 +6202,16 @@ export module '@theia/plugin' {
     }
 
     /**
+     * An event describing the change in a tree item's checkbox state.
+     */
+    export interface TreeCheckboxChangeEvent<T> {
+        /**
+         * The items that were checked or unchecked.
+         */
+        readonly items: ReadonlyArray<[T, TreeItemCheckboxState]>;
+    }
+
+    /**
      * Represents a Tree view
      */
     export interface TreeView<T> extends Disposable {
@@ -6063,6 +6245,11 @@ export module '@theia/plugin' {
          * Event that is fired when {@link TreeView.visible visibility} has changed
          */
         readonly onDidChangeVisibility: Event<TreeViewVisibilityChangeEvent>;
+
+        /**
+         * An event to signal that an element or root has either been checked or unchecked.
+         */
+        readonly onDidChangeCheckboxState: Event<TreeCheckboxChangeEvent<T>>;
 
         /**
          * An optional human-readable message that will be rendered in the view.
@@ -6237,6 +6424,12 @@ export module '@theia/plugin' {
         accessibilityInformation?: AccessibilityInformation;
 
         /**
+         * {@link TreeItemCheckboxState TreeItemCheckboxState} of the tree item.
+         * {@link TreeDataProvider.onDidChangeTreeData onDidChangeTreeData} should be fired when {@link TreeItem.checkboxState checkboxState} changes.
+         */
+        checkboxState?: TreeItemCheckboxState | { readonly state: TreeItemCheckboxState; readonly tooltip?: string; readonly accessibilityInformation?: AccessibilityInformation };
+
+        /**
          * @param label A human-readable string describing this item
          * @param collapsibleState {@link TreeItemCollapsibleState TreeItemCollapsibleState} of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
          */
@@ -6282,6 +6475,20 @@ export module '@theia/plugin' {
          * first is the inclusive start index and the second the exclusive end index
          */
         highlights?: [number, number][];
+    }
+
+    /**
+     * Checkbox state of the tree item
+     */
+    export enum TreeItemCheckboxState {
+        /**
+         * Determines an item is unchecked
+         */
+        Unchecked = 0,
+        /**
+         * Determines an item is checked
+         */
+        Checked = 1
     }
 
     /**
@@ -7055,6 +7262,22 @@ export module '@theia/plugin' {
         export const onDidChangeNotebookDocument: Event<NotebookDocumentChangeEvent>;
 
         /**
+         * An event that is emitted when a {@link NotebookDocument notebook document} will be saved to disk.
+         *
+         * *Note 1:* Subscribers can delay saving by registering asynchronous work. For the sake of data integrity the editor
+         * might save without firing this event. For instance when shutting down with dirty files.
+         *
+         * *Note 2:* Subscribers are called sequentially and they can {@link NotebookDocumentWillSaveEvent.waitUntil delay} saving
+         * by registering asynchronous work. Protection against misbehaving listeners is implemented as such:
+         *  * there is an overall time budget that all listeners share and if that is exhausted no further listener is called
+         *  * listeners that take a long time or produce errors frequently will not be called anymore
+         *
+         * The current thresholds are 1.5 seconds as overall time budget and a listener can misbehave 3 times before being ignored.
+         * @stubbed
+         */
+        export const onWillSaveNotebookDocument: Event<NotebookDocumentWillSaveEvent>;
+
+        /**
          * An event that is emitted when files are being created.
          *
          * *Note 1:* This event is triggered by user gestures, like creating a file from the
@@ -7455,6 +7678,15 @@ export module '@theia/plugin' {
         export const onDidChangeTelemetryEnabled: Event<boolean>;
 
         /**
+         * Creates a new {@link TelemetryLogger telemetry logger}.
+         *
+         * @param sender The telemetry sender that is used by the telemetry logger.
+         * @param options Options for the telemetry logger.
+         * @returns A new telemetry logger
+         */
+        export function createTelemetryLogger(sender: TelemetrySender, options?: TelemetryLoggerOptions): TelemetryLogger;
+
+        /**
          * The name of a remote. Defined by extensions, popular samples are `wsl` for the Windows
          * Subsystem for Linux or `ssh-remote` for remotes using a secure shell.
          *
@@ -7527,6 +7759,15 @@ export module '@theia/plugin' {
          */
         export function asExternalUri(target: Uri): Thenable<Uri>;
 
+        /**
+         * The current log level of the editor.
+         */
+        export const logLevel: LogLevel;
+
+        /**
+         * An {@link Event} which fires when the log level of the editor changes.
+         */
+        export const onDidChangeLogLevel: Event<LogLevel>;
     }
 
     /**
@@ -11248,7 +11489,7 @@ export module '@theia/plugin' {
          * The icon path for a specific
          * {@link SourceControlResourceState source control resource state}.
          */
-        readonly iconPath?: string | Uri;
+        readonly iconPath?: string | Uri | ThemeIcon;
     }
 
     /**
@@ -12468,6 +12709,9 @@ export module '@theia/plugin' {
 
         /** Controls whether the terminal is cleared before executing the task. */
         clear?: boolean;
+
+        /** Controls whether the terminal is closed after executing the task. */
+        close?: boolean;
     }
 
     /**
@@ -12865,6 +13109,11 @@ export module '@theia/plugin' {
         label?: string;
 
         /**
+         * The optional state of a comment thread, which may affect how the comment is displayed.
+         */
+        state?: CommentThreadState;
+
+        /**
          * Dispose this comment thread.
          *
          * Once disposed, this comment thread will be removed from visible editors and Comment Panel when appropriate.
@@ -12875,6 +13124,14 @@ export module '@theia/plugin' {
          * Whether the thread supports reply. Defaults to true.
          */
         canReply: boolean;
+    }
+
+    /**
+     * The state of a comment thread.
+     */
+    export enum CommentThreadState {
+        Unresolved = 0,
+        Resolved = 1
     }
 
     /**
@@ -13494,6 +13751,17 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Optional options to be used when calling {@link authentication.getSession} with the flag `forceNewSession`.
+     */
+    export interface AuthenticationForceNewSessionOptions {
+        /**
+         * An optional message that will be displayed to the user when we ask to re-authenticate. Providing additional context
+         * as to why you are asking a user to re-authenticate can help increase the odds that they will accept.
+         */
+        detail?: string;
+    }
+
+    /**
      * Options to be used when getting an {@link AuthenticationSession AuthenticationSession} from an {@link AuthenticationProvider AuthenticationProvider}.
      */
     export interface AuthenticationGetSessionOptions {
@@ -13527,7 +13795,7 @@ export module '@theia/plugin' {
          *
          * Defaults to false.
          */
-        forceNewSession?: boolean | { detail: string };
+        forceNewSession?: boolean | AuthenticationForceNewSessionOptions;
 
         /**
          * Whether we should show the indication to sign in in the Accounts menu.
@@ -13710,6 +13978,82 @@ export module '@theia/plugin' {
          * @return A {@link Disposable} that unregisters this provider when being disposed.
          */
         export function registerAuthenticationProvider(id: string, label: string, provider: AuthenticationProvider, options?: AuthenticationProviderOptions): Disposable;
+    }
+
+    /**
+     * Namespace for localization-related functionality in the extension API. To use this properly,
+     * you must have `l10n` defined in your extension manifest and have bundle.l10n.<language>.json files.
+     * For more information on how to generate bundle.l10n.<language>.json files, check out the
+     * [vscode-l10n repo](https://github.com/microsoft/vscode-l10n).
+     *
+     * Note: Built-in extensions (for example, Git, TypeScript Language Features, GitHub Authentication)
+     * are excluded from the `l10n` property requirement. In other words, they do not need to specify
+     * a `l10n` in the extension manifest because their translated strings come from Language Packs.
+     */
+    export namespace l10n {
+        /**
+         * Marks a string for localization. If a localized bundle is available for the language specified by
+         * {@link env.language} and the bundle has a localized value for this message, then that localized
+         * value will be returned (with injected {@link args} values for any templated values).
+         * @param message - The message to localize. Supports index templating where strings like `{0}` and `{1}` are
+         * replaced by the item at that index in the {@link args} array.
+         * @param args - The arguments to be used in the localized string. The index of the argument is used to
+         * match the template placeholder in the localized string.
+         * @returns localized string with injected arguments.
+         * @example `l10n.t('Hello {0}!', 'World');`
+         */
+        export function t(message: string, ...args: Array<string | number | boolean>): string;
+
+        /**
+         * Marks a string for localization. If a localized bundle is available for the language specified by
+         * {@link env.language} and the bundle has a localized value for this message, then that localized
+         * value will be returned (with injected {@link args} values for any templated values).
+         * @param message The message to localize. Supports named templating where strings like `{foo}` and `{bar}` are
+         * replaced by the value in the Record for that key (foo, bar, etc).
+         * @param args The arguments to be used in the localized string. The name of the key in the record is used to
+         * match the template placeholder in the localized string.
+         * @returns localized string with injected arguments.
+         * @example `l10n.t('Hello {name}', { name: 'Erich' });`
+         */
+        export function t(message: string, args: Record<string, any>): string;
+        /**
+         * Marks a string for localization. If a localized bundle is available for the language specified by
+         * {@link env.language} and the bundle has a localized value for this message, then that localized
+         * value will be returned (with injected args values for any templated values).
+         * @param options The options to use when localizing the message.
+         * @returns localized string with injected arguments.
+         */
+        export function t(options: {
+            /**
+             * The message to localize. If {@link args} is an array, this message supports index templating where strings like
+             * `{0}` and `{1}` are replaced by the item at that index in the {@link args} array. If `args` is a `Record<string, any>`,
+             * this supports named templating where strings like `{foo}` and `{bar}` are replaced by the value in
+             * the Record for that key (foo, bar, etc).
+             */
+            message: string;
+            /**
+             * The arguments to be used in the localized string. As an array, the index of the argument is used to
+             * match the template placeholder in the localized string. As a Record, the key is used to match the template
+             * placeholder in the localized string.
+             */
+            args?: Array<string | number | boolean> | Record<string, any>;
+            /**
+             * A comment to help translators understand the context of the message.
+             */
+            comment: string | string[];
+        }): string;
+        /**
+         * The bundle of localized strings that have been loaded for the extension.
+         * It's undefined if no bundle has been loaded. The bundle is typically not loaded if
+         * there was no bundle found or when we are running with the default language.
+         */
+        export const bundle: { [key: string]: string } | undefined;
+        /**
+         * The URI of the localization bundle that has been loaded for the extension.
+         * It's undefined if no bundle has been loaded. The bundle is typically not loaded if
+         * there was no bundle found or when we are running with the default language.
+         */
+        export const uri: Uri | undefined;
     }
 
     /**
@@ -13929,7 +14273,7 @@ export module '@theia/plugin' {
          * Whether or not the group is currently active.
          *
          * *Note* that only one tab group is active at a time, but that multiple tab
-         * groups can have an {@link TabGroup.aciveTab active tab}.
+         * groups can have an {@link TabGroup.isActive active tab}.
          *
          * @see {@link Tab.isActive}
          */
@@ -13956,7 +14300,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Represents the main editor area which consists of multple groups which contain tabs.
+     * Represents the main editor area which consists of multiple groups which contain tabs.
      */
     export interface TabGroups {
         /**
@@ -13998,6 +14342,144 @@ export module '@theia/plugin' {
          * @returns A promise that resolves to `true` when all tab groups have been closed.
          */
         close(tabGroup: TabGroup | readonly TabGroup[], preserveFocus?: boolean): Thenable<boolean>;
+    }
+
+    /**
+     * A special value wrapper denoting a value that is safe to not clean.
+     * This is to be used when you can guarantee no identifiable information is contained in the value and the cleaning is improperly redacting it.
+     */
+    export class TelemetryTrustedValue<T = any> {
+        readonly value: T;
+
+        constructor(value: T);
+    }
+
+    /**
+     * A telemetry logger which can be used by extensions to log usage and error telemetry.
+     *
+     * A logger wraps around a {@link TelemetrySender sender} but it guarantees that
+     * - user settings to disable or tweak telemetry are respected, and that
+     * - potential sensitive data is removed
+     *
+     * It also enables an "echo UI" that prints whatever data is send and it allows the editor
+     * to forward unhandled errors to the respective extensions.
+     *
+     * To get an instance of a `TelemetryLogger`, use
+     * {@link env.createTelemetryLogger `createTelemetryLogger`}.
+     */
+    export interface TelemetryLogger {
+
+        /**
+         * An {@link Event} which fires when the enablement state of usage or error telemetry changes.
+         */
+        readonly onDidChangeEnableStates: Event<TelemetryLogger>;
+
+        /**
+         * Whether or not usage telemetry is enabled for this logger.
+         */
+        readonly isUsageEnabled: boolean;
+
+        /**
+         * Whether or not error telemetry is enabled for this logger.
+         */
+        readonly isErrorsEnabled: boolean;
+
+        /**
+         * Log a usage event.
+         *
+         * After completing cleaning, telemetry setting checks, and data mix-in calls `TelemetrySender.sendEventData` to log the event.
+         * Automatically supports echoing to extension telemetry output channel.
+         * @param eventName The event name to log
+         * @param data The data to log
+         */
+        logUsage(eventName: string, data?: Record<string, any | TelemetryTrustedValue>): void;
+
+        /**
+         * Log an error event.
+         *
+         * After completing cleaning, telemetry setting checks, and data mix-in calls `TelemetrySender.sendEventData` to log the event. Differs from `logUsage` in that it will log the event if the telemetry setting is Error+.
+         * Automatically supports echoing to extension telemetry output channel.
+         * @param eventName The event name to log
+         * @param data The data to log
+         */
+        logError(eventName: string, data?: Record<string, any | TelemetryTrustedValue>): void;
+
+        /**
+         * Log an error event.
+         *
+         * Calls `TelemetrySender.sendErrorData`. Does cleaning, telemetry checks, and data mix-in.
+         * Automatically supports echoing to extension telemetry output channel.
+         * Will also automatically log any exceptions thrown within the extension host process.
+         * @param error The error object which contains the stack trace cleaned of PII
+         * @param data Additional data to log alongside the stack trace
+         */
+        logError(error: Error, data?: Record<string, any | TelemetryTrustedValue>): void;
+
+        /**
+         * Dispose this object and free resources.
+         */
+        dispose(): void;
+    }
+
+    /**
+     * The telemetry sender is the contract between a telemetry logger and some telemetry service. **Note** that extensions must NOT
+     * call the methods of their sender directly as the logger provides extra guards and cleaning.
+     *
+     * ```js
+     * const sender: vscode.TelemetrySender = {...};
+     * const logger = vscode.env.createTelemetryLogger(sender);
+     *
+     * // GOOD - uses the logger
+     * logger.logUsage('myEvent', { myData: 'myValue' });
+     *
+     * // BAD - uses the sender directly: no data cleansing, ignores user settings, no echoing to the telemetry output channel etc
+     * sender.logEvent('myEvent', { myData: 'myValue' });
+     * ```
+     */
+    export interface TelemetrySender {
+        /**
+         * Function to send event data without a stacktrace. Used within a {@link TelemetryLogger}
+         *
+         * @param eventName The name of the event which you are logging
+         * @param data A serializable key value pair that is being logged
+         */
+        sendEventData(eventName: string, data?: Record<string, any>): void;
+
+        /**
+         * Function to send an error. Used within a {@link TelemetryLogger}
+         *
+         * @param error The error being logged
+         * @param data Any additional data to be collected with the exception
+         */
+        sendErrorData(error: Error, data?: Record<string, any>): void;
+
+        /**
+         * Optional flush function which will give this sender a chance to send any remaining events
+         * as its {@link TelemetryLogger} is being disposed
+         */
+        flush?(): void | Thenable<void>;
+    }
+
+    /**
+     * Options for creating a {@link TelemetryLogger}
+     */
+    export interface TelemetryLoggerOptions {
+        /**
+         * Whether or not you want to avoid having the built-in common properties such as os, extension name, etc injected into the data object.
+         * Defaults to `false` if not defined.
+         */
+        readonly ignoreBuiltInCommonProperties?: boolean;
+
+        /**
+         * Whether or not unhandled errors on the extension host caused by your extension should be logged to your sender.
+         * Defaults to `false` if not defined.
+         */
+        readonly ignoreUnhandledErrors?: boolean;
+
+        /**
+         * Any additional common properties which should be injected into the data object.
+         */
+        readonly additionalCommonProperties?: Record<string, any>;
     }
 
     /**
@@ -14354,6 +14836,66 @@ export module '@theia/plugin' {
          * @stubbed
          */
         readonly cellChanges: readonly NotebookDocumentCellChange[];
+    }
+
+    /**
+     * An event that is fired when a {@link NotebookDocument notebook document} will be saved.
+     *
+     * To make modifications to the document before it is being saved, call the
+     * {@linkcode NotebookDocumentWillSaveEvent.waitUntil waitUntil}-function with a thenable
+     * that resolves to a {@link WorkspaceEdit workspace edit}.
+     */
+    export interface NotebookDocumentWillSaveEvent {
+        /**
+         * A cancellation token.
+         * @stubbed
+         */
+        readonly token: CancellationToken;
+
+        /**
+         * The {@link NotebookDocument notebook document} that will be saved.
+         * @stubbed
+         */
+        readonly notebook: NotebookDocument;
+
+        /**
+         * The reason why save was triggered.
+         * @stubbed
+         */
+        readonly reason: TextDocumentSaveReason;
+
+        /**
+         * Allows to pause the event loop and to apply {@link WorkspaceEdit workspace edit}.
+         * Edits of subsequent calls to this function will be applied in order. The
+         * edits will be *ignored* if concurrent modifications of the notebook document happened.
+         *
+         * *Note:* This function can only be called during event dispatch and not
+         * in an asynchronous manner:
+         *
+         * ```ts
+         * workspace.onWillSaveNotebookDocument(event => {
+         * // async, will *throw* an error
+         * setTimeout(() => event.waitUntil(promise));
+         *
+         * // sync, OK
+         * event.waitUntil(promise);
+         * })
+         * ```
+         *
+         * @param thenable A thenable that resolves to {@link WorkspaceEdit workspace edit}.
+         * @stubbed
+         */
+        waitUntil(thenable: Thenable<WorkspaceEdit>): void;
+
+        /**
+         * Allows to pause the event loop until the provided thenable resolved.
+         *
+         * *Note:* This function can only be called during event dispatch.
+         *
+         * @param thenable A thenable that delays saving.
+         * @stubbed
+         */
+        waitUntil(thenable: Thenable<any>): void;
     }
 
     /**
@@ -15364,6 +15906,14 @@ export interface TestRunProfile {
     isDefault: boolean;
 
     /**
+     * Whether this profile supports continuous running of requests. If so,
+     * then {@link TestRunRequest.continuous} may be set to `true`. Defaults
+     * to false.
+     * @stubbed
+     */
+    supportsContinuousRun: boolean;
+
+    /**
      * Associated tag for the profile. If this is set, only {@link TestItem}
      * instances with the same tag will be eligible to execute in this profile.
      * @stubbed
@@ -15384,6 +15934,11 @@ export interface TestRunProfile {
      * {@link TestController.createTestRun} at least once, and all test runs
      * associated with the request should be created before the function returns
      * or the returned promise is resolved.
+     *
+     * If {@link supportsContinuousRun} is set, then {@link TestRunRequest.continuous}
+     * may be `true`. In this case, the profile should observe changes to
+     * source code and create new test runs by calling {@link TestController.createTestRun},
+     * until the cancellation is requested on the `token`.
      *
      * @param request Request information for the test run.
      * @param cancellationToken Token that signals the used asked to abort the
@@ -15444,11 +15999,12 @@ export interface TestController {
      * @param runHandler Function called to start a test run.
      * @param isDefault Whether this is the default action for its kind.
      * @param tag Profile test tag.
+     * @param supportsContinuousRun Whether the profile supports continuous running.
      * @returns An instance of a {@link TestRunProfile}, which is automatically
      * associated with this controller.
      * @stubbed
      */
-    createRunProfile(label: string, kind: TestRunProfileKind, runHandler: (request: TestRunRequest, token: CancellationToken) => Thenable<void> | void, isDefault?: boolean, tag?: TestTag): TestRunProfile;
+    createRunProfile(label: string, kind: TestRunProfileKind, runHandler: (request: TestRunRequest, token: CancellationToken) => Thenable<void> | void, isDefault?: boolean, tag?: TestTag, supportsContinuousRun?: boolean): TestRunProfile;
 
     /**
      * A function provided by the extension that the editor may call to request
@@ -15569,11 +16125,18 @@ export class TestRunRequest {
     readonly profile: TestRunProfile | undefined;
 
     /**
+     * Whether the profile should run continuously as source code changes. Only
+     * relevant for profiles that set {@link TestRunProfile.supportsContinuousRun}.
+     */
+    readonly continuous?: boolean;
+
+    /**
      * @param include Array of specific tests to run, or undefined to run all tests
      * @param exclude An array of tests to exclude from the run.
      * @param profile The run profile used for this request.
+     * @param continuous Whether to run tests continuously as source changes.
      */
-    constructor(include?: readonly TestItem[], exclude?: readonly TestItem[], profile?: TestRunProfile);
+    constructor(include?: readonly TestItem[], exclude?: readonly TestItem[], profile?: TestRunProfile, continuous?: boolean);
 }
 
 /**

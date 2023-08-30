@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
@@ -119,7 +119,7 @@ describe('GitRepositoryProvider', () => {
         (<sinon.SinonStub>mockFilesystem.exists).resolves(true);
         (<sinon.SinonStub>mockGit.repositories).withArgs(folderA.resource.toString(), {}).resolves(allRepos);
 
-        await gitRepositoryProvider['initialize']();
+        await gitRepositoryProvider['doInit']();
         expect(gitRepositoryProvider.allRepositories.length).to.eq(allRepos.length);
         expect(gitRepositoryProvider.allRepositories[0].localUri).to.eq(allRepos[0].localUri);
         expect(gitRepositoryProvider.allRepositories[1].localUri).to.eq(allRepos[1].localUri);
@@ -153,7 +153,7 @@ describe('GitRepositoryProvider', () => {
                 done();
             }
         });
-        gitRepositoryProvider['initialize']().then(() => {
+        gitRepositoryProvider['doInit']().then(() => {
             const newRoots = [folderA, folderB];
             stubWsRoots.returns(newRoots);
             sinon.stub(mockWorkspaceService, 'roots').resolves(newRoots);
@@ -195,7 +195,7 @@ describe('GitRepositoryProvider', () => {
                 done();
             }
         });
-        gitRepositoryProvider['initialize']().then(() =>
+        gitRepositoryProvider['doInit']().then(() =>
             mockFileChangeEmitter.fire(new FileChangesEvent([]))
         ).catch(e =>
             done(new Error('gitRepositoryProvider.initialize() throws an error'))
@@ -215,7 +215,7 @@ describe('GitRepositoryProvider', () => {
         (<sinon.SinonStub>mockFilesystem.exists).withArgs(folderB.resource.toString()).resolves(false); // folderB does not exist
         (<sinon.SinonStub>mockGit.repositories).withArgs(folderA.resource.toString(), {}).resolves(allReposA);
 
-        await gitRepositoryProvider['initialize']();
+        await gitRepositoryProvider['doInit']();
         expect(gitRepositoryProvider.allRepositories.length).to.eq(allReposA.length);
         expect(gitRepositoryProvider.allRepositories[0].localUri).to.eq(allReposA[0].localUri);
         expect(gitRepositoryProvider.allRepositories[1].localUri).to.eq(allReposA[1].localUri);
@@ -237,7 +237,7 @@ describe('GitRepositoryProvider', () => {
         (<sinon.SinonStub>mockGit.repositories).withArgs(folderB.resource.toString(), {}).resolves(allReposB);
         (<sinon.SinonStub>mockGit.repositories).withArgs(folderB.resource.toString(), { maxCount: 1 }).resolves([allReposB[0]]);
 
-        await gitRepositoryProvider['initialize']();
+        await gitRepositoryProvider['doInit']();
         expect(gitRepositoryProvider.selectedRepository && gitRepositoryProvider.selectedRepository.localUri).to.eq(allReposA[0].localUri);
     });
 });

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as path from 'path';
@@ -22,15 +22,16 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { FileUri, BackendApplicationContribution } from '@theia/core/lib/node';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { WorkspaceServer, CommonWorkspaceUtils } from '../common';
+import { WorkspaceServer, UntitledWorkspaceService } from '../common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
+import { notEmpty } from '@theia/core';
 
 @injectable()
 export class WorkspaceCliContribution implements CliContribution {
 
     @inject(EnvVariablesServer) protected readonly envVariablesServer: EnvVariablesServer;
-    @inject(CommonWorkspaceUtils) protected readonly workspaceUtils: CommonWorkspaceUtils;
+    @inject(UntitledWorkspaceService) protected readonly untitledWorkspaceService: UntitledWorkspaceService;
 
     workspaceRoot = new Deferred<string | undefined>();
 
@@ -66,7 +67,7 @@ export class WorkspaceCliContribution implements CliContribution {
             if (folders.length < 2) {
                 return folders[0]?.path;
             }
-            const untitledWorkspaceUri = await this.workspaceUtils.getUntitledWorkspaceUri(
+            const untitledWorkspaceUri = await this.untitledWorkspaceService.getUntitledWorkspaceUri(
                 new URI(await this.envVariablesServer.getConfigDirUri()),
                 async uri => !await fs.pathExists(uri.path.fsPath()),
             );
@@ -97,11 +98,15 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
     @inject(EnvVariablesServer)
     protected readonly envServer: EnvVariablesServer;
 
-    @inject(CommonWorkspaceUtils)
-    protected readonly utils: CommonWorkspaceUtils;
+    @inject(UntitledWorkspaceService)
+    protected readonly untitledWorkspaceService: UntitledWorkspaceService;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const root = await this.getRoot();
         this.root.resolve(root);
     }
@@ -146,22 +151,17 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
     }
 
     async getRecentWorkspaces(): Promise<string[]> {
-        const listUri: string[] = [];
         const data = await this.readRecentWorkspacePathsFromUserHome();
         if (data && data.recentRoots) {
-            data.recentRoots.forEach(element => {
-                if (element.length > 0) {
-                    if (this.workspaceStillExist(element)) {
-                        listUri.push(element);
-                    }
-                }
-            });
+            const allRootUris = await Promise.all(data.recentRoots.map(async element =>
+                element && await this.workspaceStillExist(element) ? element : undefined));
+            return allRootUris.filter(notEmpty);
         }
-        return listUri;
+        return [];
     }
 
-    protected workspaceStillExist(workspaceRootUri: string): boolean {
-        return fs.pathExistsSync(FileUri.fsPath(workspaceRootUri));
+    protected async workspaceStillExist(workspaceRootUri: string): Promise<boolean> {
+        return fs.pathExists(FileUri.fsPath(workspaceRootUri));
     }
 
     protected async getWorkspaceURIFromCli(): Promise<string | undefined> {
@@ -213,7 +213,9 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
      */
     protected async removeOldUntitledWorkspaces(): Promise<void> {
         const recents = (await this.getRecentWorkspaces()).map(FileUri.fsPath);
-        const olderUntitledWorkspaces = recents.slice(this.untitledWorkspaceStaleThreshold).filter(workspace => this.utils.isUntitledWorkspace(FileUri.create(workspace)));
+        const olderUntitledWorkspaces = recents
+            .slice(this.untitledWorkspaceStaleThreshold)
+            .filter(workspace => this.untitledWorkspaceService.isUntitledWorkspace(FileUri.create(workspace)));
         await Promise.all(olderUntitledWorkspaces.map(workspace => fs.promises.unlink(FileUri.fsPath(workspace)).catch(() => { })));
         if (olderUntitledWorkspaces.length > 0) {
             await this.writeToUserHome({ recentRoots: await this.getRecentWorkspaces() });

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as path from 'path';
@@ -24,7 +24,7 @@ export async function loadManifest(pluginPath: string): Promise<PluginPackage> {
     // translate vscode builtins, as they are published with a prefix. See https://github.com/theia-ide/vscode-builtin-extensions/blob/master/src/republish.js#L50
     const built_prefix = '@theia/vscode-builtin-';
     if (manifest && manifest.name && manifest.name.startsWith(built_prefix)) {
-        manifest.name = manifest.name.substr(built_prefix.length);
+        manifest.name = manifest.name.substring(built_prefix.length);
     }
     manifest.publisher ??= PluginIdentifiers.UNPUBLISHED;
     updateActivationEvents(manifest);

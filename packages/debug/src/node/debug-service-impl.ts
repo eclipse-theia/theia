@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -71,7 +71,7 @@ export class DebugServiceImpl implements DebugService {
         // TODO: Support dynamic debug configurations through Theia extensions?
         return {};
     }
-    fetchDynamicDebugConfiguration(name: string, type: string): Promise<DebugConfiguration | undefined> {
+    fetchDynamicDebugConfiguration(name: string, type: string, folder?: string): Promise<DebugConfiguration | undefined> {
         // TODO: Support dynamic debug configurations through Theia extensions?
         return Promise.resolve(undefined);
     }

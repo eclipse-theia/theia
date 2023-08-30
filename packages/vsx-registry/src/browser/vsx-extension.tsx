@@ -11,12 +11,12 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
 import * as DOMPurify from '@theia/core/shared/dompurify';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { TreeElement, TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { OpenerService, open, OpenerOptions } from '@theia/core/lib/browser/opener-service';
@@ -134,6 +134,13 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     readonly commandRegistry: CommandRegistry;
 
     protected readonly data: Partial<VSXExtensionData> = {};
+
+    protected registryUri: Promise<string>;
+
+    @postConstruct()
+    protected postConstruct(): void {
+        this.registryUri = this.environment.getRegistryUri();
+    }
 
     get uri(): URI {
         return VSCodeExtensionUri.toUri(this.id);
@@ -333,8 +340,14 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
      * @returns the registry link for the given extension at the path.
      */
     async getRegistryLink(path = ''): Promise<URI> {
-        const uri = new URI(await this.environment.getRegistryUri());
-        return uri.resolve('extension/' + this.id.replace('.', '/')).resolve(path);
+        const registryUri = new URI(await this.registryUri);
+        if (this.downloadUrl) {
+            const downloadUri = new URI(this.downloadUrl);
+            if (downloadUri.authority !== registryUri.authority) {
+                throw new Error('cannot generate a valid URL');
+            }
+        }
+        return registryUri.resolve('extension/' + this.id.replace('.', '/')).resolve(path);
     }
 
     async serialize(): Promise<string> {

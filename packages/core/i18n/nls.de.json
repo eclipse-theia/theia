@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Edit Bedingung...",
   "terminal:new:profile": "Neues integriertes Terminal aus einem Profil erstellen",
   "terminal:profile:default": "Wählen Sie das Standard-Terminalprofil",
   "theia": {
@@ -29,6 +30,11 @@
         "showPreviousTabInGroup": "Zur vorherigen Registerkarte in der Gruppe wechseln",
         "toggleMaximized": "Maximiert umschalten"
       },
+      "enhancedPreview": {
+        "classic": "Zeigt eine einfache Vorschau der Registerkarte mit grundlegenden Informationen an.",
+        "enhanced": "Anzeige einer erweiterten Vorschau der Registerkarte mit zusätzlichen Informationen.",
+        "visual": "Zeigen Sie eine visuelle Vorschau der Registerkarte an."
+      },
       "file": {
         "browse": "Durchsuchen"
       },
@@ -43,6 +49,10 @@
         "pc": "PC-Tastaturen",
         "tryDetect": "Versuchen Sie, das Tastaturlayout anhand der Browserinformationen und der gedrückten Tasten zu ermitteln."
       },
+      "navigator": {
+        "clipboardWarn": "Der Zugriff auf die Zwischenablage wird verweigert. Überprüfen Sie die Berechtigung Ihres Browsers.",
+        "clipboardWarnFirefox": "Die Zwischenablage-API ist nicht verfügbar. Sie kann durch die Einstellung '{0}' auf der Seite '{1}' aktiviert werden. Dann laden Sie Theia neu. Beachten Sie, dass FireFox dadurch vollen Zugriff auf die Zwischenablage des Systems erhält."
+      },
       "offline": "Offline",
       "quitMessage": "Alle nicht gespeicherten Änderungen werden nicht gespeichert.",
       "resetWorkbenchLayout": "Workbench-Layout zurücksetzen",
@@ -52,7 +62,10 @@
         "previous": "Zurück (Oben)"
       },
       "silentNotifications": "Legt fest, ob Benachrichtigungs-Popups unterdrückt werden sollen.",
-      "tabMaximize": "Steuert, ob die Registerkarten bei einem Doppelklick maximiert werden sollen."
+      "tabDefaultSize": "Gibt die Standardgröße für Registerkarten an.",
+      "tabMaximize": "Steuert, ob die Registerkarten bei einem Doppelklick maximiert werden sollen.",
+      "tabMinimumSize": "Gibt die Mindestgröße für Tabulatoren an.",
+      "tabShrinkToFit": "Schrumpfen Sie die Registerkarten auf den verfügbaren Platz."
     },
     "debug": {
       "addConfigurationPlaceholder": "Wählen Sie das Stammverzeichnis des Arbeitsbereichs, dem Sie die Konfiguration hinzufügen möchten",
@@ -68,15 +81,13 @@
       "toggleTracing": "Aktivieren/Deaktivieren der Verfolgung der Kommunikation mit Debug-Adaptern"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "Verwendet einen experimentellen Diffing-Algorithmus.",
-      "diffEditor.diffAlgorithm.smart": "Verwendet den Standard-Diffing-Algorithmus.",
       "dirtyEncoding": "Die Datei ist verschmutzt. Bitte speichern Sie sie zuerst, bevor Sie sie mit einer anderen Kodierung erneut öffnen.",
       "editor.codeActionWidget.showHeaders": "Aktivieren/deaktivieren Sie die Anzeige von Gruppenkopfzeilen im Code-Aktionsmenü.",
+      "editor.experimental.pasteActions.enabled": "Aktivieren/deaktivieren Sie laufende Bearbeitungen von Erweiterungen beim Einfügen.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Es wird versucht, nur Änderungen zu formatieren (erfordert Quellensicherung). Wenn die Versionskontrolle nicht verwendet werden kann, wird die gesamte Datei formatiert.",
       "editor.inlayHints.enabled1": "Inlay-Hinweise werden standardmäßig angezeigt und bei gedrückter Tastenkombination \"Strg+Alt\" ausgeblendet",
       "editor.inlayHints.enabled2": "Inlay-Hinweise sind standardmäßig ausgeblendet und werden angezeigt, wenn die Tastenkombination \"Strg+Alt\" gedrückt wird.",
       "editor.quickSuggestions": "Legt fest, ob während der Eingabe automatisch Vorschläge angezeigt werden sollen. Dies kann für die Eingabe von Kommentaren, Strings und anderem Code gesteuert werden. Schnellvorschläge können so konfiguriert werden, dass sie als Ghosttext oder mit dem Suggest-Widget angezeigt werden. Beachten Sie auch die '#editor.suggestOnTriggerCharacters#'-Einstellung, die steuert, ob Vorschläge durch Sonderzeichen ausgelöst werden.",
-      "editor.stickyScroll.maxLineCount": "Legt die maximale Anzahl der anzuzeigenden Sticky Lines fest.",
       "editor.suggest.matchOnWordStartOnly": "Wenn die IntelliSense-Filterung aktiviert ist, muss das erste Zeichen am Wortanfang übereinstimmen, z. B. \"c\" bei \"Konsole\" oder \"Webkontext\", aber _nicht_ bei \"Beschreibung\". Wenn IntelliSense deaktiviert ist, werden mehr Ergebnisse angezeigt, aber immer noch nach der Qualität der Übereinstimmung sortiert.",
       "files.autoSave": "Steuert das [automatische Speichern](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) von Editoren, die ungespeicherte Änderungen haben.",
       "files.autoSave.afterDelay": "Ein Editor mit Änderungen wird automatisch nach der konfigurierten `#files.autoSaveDelay#` gespeichert.",
@@ -153,11 +164,15 @@
       "gitDecorationsColors": "Farbdekoration im Navigator verwenden.",
       "mergeQuickPickPlaceholder": "Wählen Sie einen Zweig, der mit dem derzeit aktiven {0}-Zweig zusammengeführt werden soll:",
       "missingUserInfo": "Stellen Sie sicher, dass Sie Ihren 'user.name' und 'user.email' in git konfigurieren.",
+      "noHistoryForError": "Es ist keine Historie verfügbar für {0}",
       "noPreviousCommit": "Kein früherer Commit zur Änderung",
       "noRepositoriesSelected": "Es wurden keine Repositories ausgewählt.",
+      "prepositionIn": "in",
       "repositoryNotInitialized": "Das Repository {0} ist noch nicht initialisiert.",
       "stashChanges": "Versteckte Änderungen. Drücken Sie \"Enter\" zur Bestätigung oder \"Escape\" zum Abbrechen.",
       "stashChangesWithMessage": "Stash-Änderungen mit Meldung: {0}. Drücken Sie \"Enter\" zur Bestätigung oder \"Escape\" zum Abbrechen.",
+      "tabTitleIndex": "{0} (Index)",
+      "tabTitleWorkingTree": "{0} (Arbeitsbaum)",
       "toggleBlameAnnotations": "Blame Annotationen umschalten"
     },
     "keybinding-schema-updater": {
@@ -268,6 +283,8 @@
     },
     "navigator": {
       "autoReveal": "Auto-Enthüllung",
+      "clipboardWarn": "Der Zugriff auf die Zwischenablage wird verweigert. Überprüfen Sie die Berechtigung Ihres Browsers.",
+      "clipboardWarnFirefox": "Die Zwischenablage-API ist nicht verfügbar. Sie kann durch die Einstellung '{0}' auf der Seite '{1}' aktiviert werden. Dann laden Sie Theia neu. Beachten Sie, dass FireFox dadurch vollen Zugriff auf die Systemzwischenablage erhält.",
       "refresh": "Aktualisieren im Explorer",
       "reveal": "Enthüllen im Explorer",
       "toggleHiddenFiles": "Versteckte Dateien umschalten"
@@ -278,6 +295,7 @@
       "hiddenChannels": "Versteckte Kanäle",
       "hideOutputChannel": "Ausgangskanal ausblenden...",
       "maxChannelHistory": "Die maximale Anzahl der Einträge in einem Ausgabekanal.",
+      "outputChannels": "Ausgangskanäle",
       "showOutputChannel": "Ausgangskanal anzeigen..."
     },
     "plugin": {
@@ -311,6 +329,9 @@
       "watchMode": "Watcher auf Plugin in Entwicklung ausführen"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Anmeldung"
+      },
       "plugins": "Plugins",
       "webviewTrace": "Steuert die Kommunikationsverfolgung mit Webviews.",
       "webviewWarnIfUnsecure": "Warnt Benutzer, dass Webviews derzeit unsicher eingesetzt werden."
@@ -358,6 +379,7 @@
     "task": {
       "attachTask": "Aufgabe anhängen...",
       "clearHistory": "Geschichte löschen",
+      "noTaskToRun": "Keine Aufgabe zur Ausführung gefunden. Aufgaben konfigurieren...",
       "openUserTasks": "Nutzertasks öffnen"
     },
     "terminal": {
@@ -370,7 +392,6 @@
       "profileIcon": "Eine codicon ID zur Verwendung mit diesem Terminal.  \nterminal-tmux:\"$(terminal-tmux)\"",
       "profileNew": "Neues Terminal (mit Profil)...",
       "profilePath": "Der Pfad der Shell, den dieses Profil benutzt.",
-      "profileSource": "Eine Profilquelle, die Shellpfade automatisch erkennt. Unübliche Installationsorte werden nicht unterstützt und müssen manuell erfasst werden",
       "profiles": "Die Profile welche zur Erzeugung eines Terminals verwendet werden können. Setzen Sie den Pfad von Hand mit optionalen Parametern.\n\nSezen Sie ein Profile auf `null` um es zu verbergen, z.B.: `{0}: null`.",
       "rendererType": "Steuert, wie das Terminal gerendert wird.",
       "selectProfile": "Wählen Sie ein Profil für das neue Terminal",
@@ -414,6 +435,7 @@
       "license": "Lizenz: {0}",
       "recommendedExtensions": "Eine Liste mit den Namen der Erweiterungen, die für die Verwendung in diesem Arbeitsbereich empfohlen werden.",
       "searchPlaceholder": "Erweiterungen suchen in {0}",
+      "showInstalled": "Installierte Erweiterungen anzeigen",
       "showRecommendedExtensions": "Steuert, ob Benachrichtigungen für Erweiterungsempfehlungen angezeigt werden.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Fehler beim Entfernen der Erweiterung: {0}.",

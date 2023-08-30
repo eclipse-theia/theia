@@ -11,11 +11,11 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 import { Key, KeyCode } from '@theia/core/lib/browser';
-import { inject, postConstruct } from '@theia/core/shared/inversify';
+import { inject } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { DebugVariable } from '@theia/debug/lib/browser/console/debug-console-items';
 import { EMPTY_MEMORY } from '../memory-widget/memory-options-widget';
@@ -69,8 +69,7 @@ export class RegisterTableWidget extends MemoryTableWidget {
     protected override options: RegisterOptions;
     protected override memory: Interfaces.WidgetMemoryState = { ...EMPTY_MEMORY, variables: [] };
 
-    @postConstruct()
-    protected override async init(): Promise<void> {
+    protected override async doInit(): Promise<void> {
         this.id = RegisterTableWidget.ID;
         this.addClass(RegisterTableWidget.ID);
         this.scrollOptions = { ...this.scrollOptions, suppressScrollX: false };

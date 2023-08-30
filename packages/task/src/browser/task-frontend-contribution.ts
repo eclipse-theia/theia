@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
@@ -167,7 +167,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     protected readonly workspaceService: WorkspaceService;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
         this.taskWatcher.onTaskCreated(() => this.updateRunningTasksItem());
         this.taskWatcher.onTaskExit(() => this.updateRunningTasksItem());
     }

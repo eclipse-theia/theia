@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as paths from 'path';
@@ -96,6 +96,7 @@ export class ApplicationPackage {
     protected _backendModules: Map<string, string> | undefined;
     protected _backendElectronModules: Map<string, string> | undefined;
     protected _electronMainModules: Map<string, string> | undefined;
+    protected _preloadModules: Map<string, string> | undefined;
     protected _extensionPackages: ReadonlyArray<ExtensionPackage> | undefined;
 
     /**
@@ -176,6 +177,13 @@ export class ApplicationPackage {
         return this._electronMainModules;
     }
 
+    get preloadModules(): Map<string, string> {
+        if (!this._preloadModules) {
+            this._preloadModules = this.computeModules('preload');
+        }
+        return this._preloadModules;
+    }
+
     protected computeModules<P extends keyof Extension, S extends keyof Extension = P>(primary: P, secondary?: S): Map<string, string> {
         const result = new Map<string, string>();
         let moduleIndex = 1;
@@ -217,6 +225,10 @@ export class ApplicationPackage {
 
     backend(...segments: string[]): string {
         return this.srcGen('backend', ...segments);
+    }
+
+    bundledBackend(...segments: string[]): string {
+        return this.path('backend', 'bundle', ...segments);
     }
 
     frontend(...segments: string[]): string {

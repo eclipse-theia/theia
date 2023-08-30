@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /*---------------------------------------------------------------------------------------------
@@ -101,7 +101,7 @@ export namespace Severity {
         } else if (severity === Severity.Log || severity === log) {
             return nls.localize('theia/core/severity/log', 'Log');
         } else {
-            return nls.localize('theia/core/severity/all', 'All');
+            return nls.localizeByDefault('All');
         }
     }
 

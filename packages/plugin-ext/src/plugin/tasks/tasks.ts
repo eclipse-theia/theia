@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import {
@@ -158,37 +158,42 @@ export class TasksExtImpl implements TasksExt {
         throw new Error('Task was not successfully transformed into a task config');
     }
 
-    $provideTasks(handle: number): Promise<TaskDto[] | undefined> {
+    async $provideTasks(handle: number): Promise<TaskDto[]> {
         const adapter = this.adaptersMap.get(handle);
         if (adapter) {
             return adapter.provideTasks(CancellationToken.None).then(tasks => {
-                if (tasks) {
-                    for (const task of tasks) {
-                        if (task.taskType === 'customExecution') {
-                            task.executionId = this.addCustomExecution(task.callback);
-                            task.callback = undefined;
-                        }
+                for (const task of tasks) {
+                    if (task.taskType === 'customExecution') {
+                        this.applyCustomExecution(task);
                     }
                 }
                 return tasks;
             });
         } else {
-            return Promise.reject(new Error('No adapter found to provide tasks'));
+            throw new Error('No adapter found to provide tasks');
         }
     }
 
-    $resolveTask(handle: number, task: TaskDto, token: theia.CancellationToken): Promise<TaskDto | undefined> {
+    async $resolveTask(handle: number, task: TaskDto, token: theia.CancellationToken): Promise<TaskDto> {
         const adapter = this.adaptersMap.get(handle);
         if (adapter) {
             return adapter.resolveTask(task, token).then(resolvedTask => {
-                if (resolvedTask && resolvedTask.taskType === 'customExecution') {
-                    resolvedTask.executionId = this.addCustomExecution(resolvedTask.callback);
-                    resolvedTask.callback = undefined;
+                // ensure we do not lose task type and execution id during resolution as we need it for custom execution
+                resolvedTask.taskType = resolvedTask.taskType ?? task.taskType;
+                if (resolvedTask.taskType === 'customExecution') {
+                    this.applyCustomExecution(resolvedTask);
                 }
                 return resolvedTask;
             });
         } else {
-            return Promise.reject(new Error('No adapter found to resolve task'));
+            throw new Error('No adapter found to resolve task');
+        }
+    }
+
+    private applyCustomExecution(task: TaskDto): void {
+        if (task.callback) {
+            task.executionId = this.addCustomExecution(task.callback);
+            task.callback = undefined;
         }
     }
 

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ContainerModule, Container, interfaces } from '@theia/core/shared/inversify';
@@ -19,7 +19,7 @@ import { Git, GitPath } from '../common/git';
 import { GitWatcherPath, GitWatcherClient, GitWatcherServer } from '../common/git-watcher';
 import { DugiteGit, OutputParser, NameStatusParser, CommitDetailsParser, GitBlameParser } from './dugite-git';
 import { DugiteGitWatcherServer } from './dugite-git-watcher';
-import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from '@theia/core/lib/common';
+import { ConnectionHandler, RpcConnectionHandler, ILogger } from '@theia/core/lib/common';
 import { GitRepositoryManager } from './git-repository-manager';
 import { GitRepositoryWatcherFactory, GitRepositoryWatcherOptions, GitRepositoryWatcher } from './git-repository-watcher';
 import { GitLocator } from './git-locator/git-locator-protocol';
@@ -101,7 +101,7 @@ export default new ContainerModule(bind => {
 
     bindRepositoryWatcher(bind);
     bind(ConnectionHandler).toDynamicValue(context =>
-        new JsonRpcConnectionHandler<GitWatcherClient>(GitWatcherPath, client => {
+        new RpcConnectionHandler<GitWatcherClient>(GitWatcherPath, client => {
             const server = context.container.get<GitWatcherServer>(GitWatcherServer);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
@@ -111,7 +111,7 @@ export default new ContainerModule(bind => {
 
     bindPrompt(bind);
     bind(ConnectionHandler).toDynamicValue(context =>
-        new JsonRpcConnectionHandler<GitPromptClient>(GitPrompt.WS_PATH, client => {
+        new RpcConnectionHandler<GitPromptClient>(GitPrompt.WS_PATH, client => {
             const server = context.container.get<GitPromptServer>(GitPromptServer);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());

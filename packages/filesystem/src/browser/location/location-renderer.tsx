@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import URI from '@theia/core/lib/common/uri';
@@ -112,7 +112,11 @@ export class LocationListRenderer extends ReactRenderer {
     }
 
     @postConstruct()
-    async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         const homeDirWithPrefix = await this.variablesServer.getHomeDirUri();
         this.homeDir = (new URI(homeDirWithPrefix)).path.toString();
     }

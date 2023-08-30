@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "编辑条件...",
   "terminal:new:profile": "从配置文件中创建新的集成终端",
   "terminal:profile:default": "选择默认的终端配置文件",
   "theia": {
@@ -29,6 +30,11 @@
         "showPreviousTabInGroup": "切换到组中的上一个标签页",
         "toggleMaximized": "切换最大化面板"
       },
+      "enhancedPreview": {
+        "classic": "显示选项卡的简单预览和基本信息。",
+        "enhanced": "显示选项卡的增强预览,并提供更多信息。",
+        "visual": "显示选项卡的可视化预览。"
+      },
       "file": {
         "browse": "浏览"
       },
@@ -43,6 +49,10 @@
         "pc": "电脑键盘",
         "tryDetect": "尝试从浏览器信息和按下的按键中检测键盘布局。"
       },
+      "navigator": {
+        "clipboardWarn": "对剪贴板的访问被拒绝了。检查你的浏览器的权限。",
+        "clipboardWarnFirefox": "剪贴板API是不可用的。它可以通过'{0}'页面上的'{1}'偏好启用。然后重新加载Theia。注意,这将允许FireFox获得对系统剪贴板的完全访问。"
+      },
       "offline": "离线",
       "quitMessage": "任何未保存的修改都不会被保存。",
       "resetWorkbenchLayout": "重置工作台面布局",
@@ -52,7 +62,10 @@
         "previous": "上一页 (向上)"
       },
       "silentNotifications": "控制是否抑制弹出通知。",
-      "tabMaximize": "控制是否在双击时最大化标签。"
+      "tabDefaultSize": "指定标签的默认尺寸。",
+      "tabMaximize": "控制是否在双击时最大化标签。",
+      "tabMinimumSize": "指定标签的最小尺寸。",
+      "tabShrinkToFit": "收缩标签以适应可用空间。"
     },
     "debug": {
       "addConfigurationPlaceholder": "选择要添加配置的工作区根",
@@ -68,15 +81,13 @@
       "toggleTracing": "启用/禁用与调试适配器的跟踪通信"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "使用一种实验性的扩散算法。",
-      "diffEditor.diffAlgorithm.smart": "使用默认的差分算法。",
       "dirtyEncoding": "该文件是脏的。请先保存它,然后用另一种编码重新打开它。",
       "editor.codeActionWidget.showHeaders": "启用/禁用在代码动作菜单中显示组标题。",
+      "editor.experimental.pasteActions.enabled": "启用/禁用粘贴时从扩展程序运行编辑。",
       "editor.formatOnSaveMode.modificationsIfAvailable": "将尝试只对修改部分进行格式化(需要源代码控制)。如果不能使用源码控制,那么整个文件将被格式化。",
       "editor.inlayHints.enabled1": "镶嵌提示默认显示,按住 \"Ctrl+Alt \"时隐藏。",
       "editor.inlayHints.enabled2": "镶嵌提示默认是隐藏的,当按住`Ctrl+Alt`时显示。",
       "editor.quickSuggestions": "控制在输入时是否应该自动显示建议。这可以在输入评论、字符串和其他代码时加以控制。快速建议可以被配置为显示为幽灵文本或建议小部件。还要注意'#editor.suggestOnTriggerCharacters#'设置,它控制建议是否被特殊字符触发。",
-      "editor.stickyScroll.maxLineCount": "定义要显示的最大粘性线数。",
       "editor.suggest.matchOnWordStartOnly": "当启用IntelliSense过滤功能时,需要在一个词的开头匹配第一个字符,例如在 \"Console \"或 \"WebContext \"上的 \"c\",但在 \"description \"上_不需要。当禁用IntelliSense时,将显示更多的结果,但仍然按照匹配质量进行排序。",
       "files.autoSave": "控制有未保存的修改的编辑器的[自动保存](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save)。",
       "files.autoSave.afterDelay": "在配置的 `#files.autoSaveDelay#`之后,有改动的编辑器会自动保存。",
@@ -153,11 +164,15 @@
       "gitDecorationsColors": "在导航器中使用颜色装饰。",
       "mergeQuickPickPlaceholder": "挑选一个分支来合并到当前活动的{0}分支。",
       "missingUserInfo": "确保你在git中配置了'user.name'和'user.email'。",
+      "noHistoryForError": "没有任何历史记录可用于{0}",
       "noPreviousCommit": "没有以前的承诺可以修改",
       "noRepositoriesSelected": "没有选择存储库。",
+      "prepositionIn": "在",
       "repositoryNotInitialized": "存储库{0}还没有被初始化。",
       "stashChanges": "储藏室的变化。按'Enter'键确认,或按'Escape'键取消。",
       "stashChangesWithMessage": "储藏室的变化与信息。{0}.按'Enter'键确认或按'Escape'键取消。",
+      "tabTitleIndex": "{0} (索引)",
+      "tabTitleWorkingTree": "{0} (工作树)",
       "toggleBlameAnnotations": "切换指责注释"
     },
     "keybinding-schema-updater": {
@@ -206,7 +221,7 @@
         "offset-title": "字节,以抵消内存从{0}"
       },
       "editable": {
-        "apply": "申请变更",
+        "apply": "应用更改",
         "clear": "清晰的变化"
       },
       "endianness": "内联性",
@@ -268,6 +283,8 @@
     },
     "navigator": {
       "autoReveal": "自动显示",
+      "clipboardWarn": "对剪贴板的访问被拒绝了。检查你的浏览器的权限。",
+      "clipboardWarnFirefox": "剪贴板API是不可用的。它可以通过'{0}'页面上的'{1}'偏好启用。然后重新加载Theia。注意,这将允许FireFox获得对系统剪贴板的完全访问。",
       "refresh": "在资源管理器中刷新",
       "reveal": "在资源管理器中显示",
       "toggleHiddenFiles": "切换隐藏文件"
@@ -278,6 +295,7 @@
       "hiddenChannels": "隐蔽通道",
       "hideOutputChannel": "隐藏输出通道...",
       "maxChannelHistory": "一个输出通道中的最大条目数。",
+      "outputChannels": "输出通道",
       "showOutputChannel": "显示输出通道..."
     },
     "plugin": {
@@ -311,6 +329,9 @@
       "watchMode": "在开发中的插件上运行观察器"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "登录"
+      },
       "plugins": "插件",
       "webviewTrace": "控制与webviews的通信跟踪。",
       "webviewWarnIfUnsecure": "警告用户,目前网络视图的部署是不安全的。"
@@ -358,6 +379,7 @@
     "task": {
       "attachTask": "附加任务...",
       "clearHistory": "清除历史",
+      "noTaskToRun": "没有发现要运行的任务。配置任务...",
       "openUserTasks": "打开用户的任务"
     },
     "terminal": {
@@ -370,7 +392,6 @@
       "profileIcon": "一个与终端图标相关联的codicon ID。\nterminal-tmux:\"$(terminal-tmux)\"",
       "profileNew": "新终端(含简介)...",
       "profilePath": "此配置文件使用的shell的路径。",
-      "profileSource": "一个将自动检测到shell的路径的配置文件源。注意,不支持非标准的可执行位置,必须在一个新的配置文件中手动创建。",
       "profiles": "创建一个新的终端时要呈现的配置文件。用可选的args手动设置路径属性。\n将现有的配置文件设置为`null'以从列表中隐藏该配置文件,例如:`\"{0}\": null`。",
       "rendererType": "控制终端的渲染方式。",
       "selectProfile": "为新终端选择一个配置文件",
@@ -414,6 +435,7 @@
       "license": "许可证: {0}",
       "recommendedExtensions": "建议在该工作区使用的扩展名称的列表。",
       "searchPlaceholder": "在{0}中搜索扩展",
+      "showInstalled": "显示已安装的扩展程序",
       "showRecommendedExtensions": "控制是否显示扩展建议的通知。",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "删除扩展名时出错:{0}.",

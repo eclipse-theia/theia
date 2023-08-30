@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import {
@@ -494,9 +494,13 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, DocumentDropEditAdapter, adapter => adapter.provideDocumentDropEdits(URI.revive(resource), position, dataTransfer, token), undefined);
     }
 
-    registerDocumentDropEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentDropEditProvider): theia.Disposable {
+    registerDocumentDropEditProvider(
+        selector: theia.DocumentSelector,
+        provider: theia.DocumentDropEditProvider,
+        metadata?: theia.DocumentDropEditProviderMetadata
+    ): theia.Disposable {
         const callId = this.addNewAdapter(new DocumentDropEditAdapter(provider, this.documents, this.filesSystem));
-        this.proxy.$registerDocumentDropEditProvider(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerDocumentDropEditProvider(callId, this.transformDocumentSelector(selector), metadata);
         return this.createDisposable(callId);
     }
     // ### Drop Edit Provider end
@@ -997,6 +1001,16 @@ export class LanguagesExtImpl implements LanguagesExt {
         };
         updateAsync();
         return result;
+    }
+    // #endregion
+
+    // region DocumentPaste
+
+    /** @stubbed */
+    registerDocumentPasteEditProvider(
+        extension: Plugin, selector: theia.DocumentSelector, provider: theia.DocumentPasteEditProvider, metadata: theia.DocumentPasteProviderMetadata
+    ): theia.Disposable {
+        return Disposable.NULL;
     }
     // #endregion
 }

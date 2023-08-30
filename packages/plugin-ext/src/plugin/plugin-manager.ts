@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import {
@@ -26,7 +26,8 @@ import {
     ConfigStorage,
     PluginManagerInitializeParams,
     PluginManagerStartParams,
-    TerminalServiceExt
+    TerminalServiceExt,
+    LocalizationExt
 } from '../common/plugin-api-rpc';
 import { PluginMetadata, PluginJsonValidationContribution } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
@@ -86,6 +87,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         'onDebugResolve',
         'onDebugAdapterProtocolTracker',
         'onDebugDynamicConfigurations',
+        'onTaskType',
         'workspaceContains',
         'onView',
         'onUri',
@@ -122,6 +124,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         private readonly secrets: SecretsExtImpl,
         private readonly preferencesManager: PreferenceRegistryExtImpl,
         private readonly webview: WebviewsExtImpl,
+        private readonly localization: LocalizationExt,
         private readonly rpc: RPCProtocol
     ) {
         this.messageRegistryProxy = this.rpc.getProxy(PLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN);
@@ -398,7 +401,9 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         }
         const id = plugin.model.displayName || plugin.model.id;
         if (typeof pluginMain[plugin.lifecycle.startMethod] === 'function') {
+            await this.localization.initializeLocalizedMessages(plugin, this.envExt.language);
             const pluginExport = await pluginMain[plugin.lifecycle.startMethod].apply(getGlobal(), [pluginContext]);
+            console.log(`calling activation function on ${id}`);
             this.activatedPlugins.set(plugin.model.id, new ActivatedPlugin(pluginContext, pluginExport, stopFn));
         } else {
             // https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/workbench/api/common/extHostExtensionService.ts#L400-L401

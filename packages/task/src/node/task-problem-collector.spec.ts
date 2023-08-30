@@ -11,14 +11,14 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect } from 'chai';
-import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
-import { ProblemCollector } from './task-problem-collector';
-import { ApplyToKind, FileLocationKind, ProblemLocationKind, ProblemMatch, ProblemMatchData, ProblemMatcher } from '../common/problem-matcher-protocol';
 import { Severity } from '@theia/core/lib/common/severity';
+import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
+import { expect } from 'chai';
+import { ApplyToKind, FileLocationKind, ProblemLocationKind, ProblemMatch, ProblemMatchData, ProblemMatcher } from '../common/problem-matcher-protocol';
+import { ProblemCollector } from './task-problem-collector';
 
 const startStopMatcher1: ProblemMatcher = {
     owner: 'test1',
@@ -130,7 +130,7 @@ describe('ProblemCollector', () => {
 
         expect(allMatches.length).to.eq(3);
 
-        expect((allMatches[0] as ProblemMatchData).resource!.path).eq('/home/test/hello.go');
+        expect((allMatches[0] as ProblemMatchData).resource!.path.toString()).eq('/home/test/hello.go');
         expect((allMatches[0] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 8, character: 1 }, end: { line: 8, character: 1 } },
             severity: DiagnosticSeverity.Error,
@@ -138,7 +138,7 @@ describe('ProblemCollector', () => {
             message: 'undefined: fmt.Pntln'
         });
 
-        expect((allMatches[1] as ProblemMatchData).resource!.path).eq('/home/test/hello.go');
+        expect((allMatches[1] as ProblemMatchData).resource!.path.toString()).eq('/home/test/hello.go');
         expect((allMatches[1] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 9, character: 5 }, end: { line: 9, character: 5 } },
             severity: DiagnosticSeverity.Error,
@@ -146,7 +146,7 @@ describe('ProblemCollector', () => {
             message: 'undefined: numb'
         });
 
-        expect((allMatches[2] as ProblemMatchData).resource!.path).eq('/home/test/hello.go');
+        expect((allMatches[2] as ProblemMatchData).resource!.path.toString()).eq('/home/test/hello.go');
         expect((allMatches[2] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 14, character: 8 }, end: { line: 14, character: 8 } },
             severity: DiagnosticSeverity.Error,
@@ -176,7 +176,7 @@ describe('ProblemCollector', () => {
 
         expect(allMatches.length).to.eq(4);
 
-        expect((allMatches[0] as ProblemMatchData).resource!.path).eq('/home/test/test-dir.js');
+        expect((allMatches[0] as ProblemMatchData).resource!.path.toString()).eq('/home/test/test-dir.js');
         expect((allMatches[0] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 13, character: 20 }, end: { line: 13, character: 20 } },
             severity: DiagnosticSeverity.Warning,
@@ -185,7 +185,7 @@ describe('ProblemCollector', () => {
             code: 'semi'
         });
 
-        expect((allMatches[1] as ProblemMatchData).resource!.path).eq('/home/test/test-dir.js');
+        expect((allMatches[1] as ProblemMatchData).resource!.path.toString()).eq('/home/test/test-dir.js');
         expect((allMatches[1] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 14, character: 22 }, end: { line: 14, character: 22 } },
             severity: DiagnosticSeverity.Warning,
@@ -194,7 +194,7 @@ describe('ProblemCollector', () => {
             code: 'semi'
         });
 
-        expect((allMatches[2] as ProblemMatchData).resource!.path).eq('/home/test/test-dir.js');
+        expect((allMatches[2] as ProblemMatchData).resource!.path.toString()).eq('/home/test/test-dir.js');
         expect((allMatches[2] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 102, character: 8 }, end: { line: 102, character: 8 } },
             severity: DiagnosticSeverity.Error,
@@ -202,7 +202,7 @@ describe('ProblemCollector', () => {
             message: 'Parsing error: Unexpected token inte'
         });
 
-        expect((allMatches[3] as ProblemMatchData).resource!.path).eq('/home/test/more-test.js');
+        expect((allMatches[3] as ProblemMatchData).resource!.path.toString()).eq('/home/test/more-test.js');
         expect((allMatches[3] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 12, character: 8 }, end: { line: 12, character: 8 } },
             severity: DiagnosticSeverity.Error,
@@ -232,7 +232,7 @@ describe('ProblemCollector', () => {
 
         expect(allMatches.length).to.eq(4);
 
-        expect((allMatches[0] as ProblemMatchData).resource?.path).eq('/home/test/test-dir.js');
+        expect((allMatches[0] as ProblemMatchData).resource?.path.toString()).eq('/home/test/test-dir.js');
         expect((allMatches[0] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
             severity: DiagnosticSeverity.Warning,
@@ -241,7 +241,7 @@ describe('ProblemCollector', () => {
             code: 'semi'
         });
 
-        expect((allMatches[1] as ProblemMatchData).resource?.path).eq('/home/test/test-dir.js');
+        expect((allMatches[1] as ProblemMatchData).resource?.path.toString()).eq('/home/test/test-dir.js');
         expect((allMatches[1] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
             severity: DiagnosticSeverity.Warning,
@@ -250,7 +250,7 @@ describe('ProblemCollector', () => {
             code: 'semi'
         });
 
-        expect((allMatches[2] as ProblemMatchData).resource?.path).eq('/home/test/test-dir.js');
+        expect((allMatches[2] as ProblemMatchData).resource?.path.toString()).eq('/home/test/test-dir.js');
         expect((allMatches[2] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
             severity: DiagnosticSeverity.Error,
@@ -258,7 +258,7 @@ describe('ProblemCollector', () => {
             message: 'Parsing error: Unexpected token inte'
         });
 
-        expect((allMatches[3] as ProblemMatchData).resource?.path).eq('/home/test/more-test.js');
+        expect((allMatches[3] as ProblemMatchData).resource?.path.toString()).eq('/home/test/more-test.js');
         expect((allMatches[3] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
             severity: DiagnosticSeverity.Error,

@@ -1,11 +1,11 @@
 {
   "name": "@theia/ovsx-client",
-  "version": "1.36.0",
+  "version": "1.40.0",
   "description": "Theia Open-VSX Client",
   "publishConfig": {
     "access": "public"
   },
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -29,7 +29,7 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/request": "1.36.0",
-    "semver": "^5.4.1"
+    "@theia/request": "1.40.0",
+    "semver": "^7.5.4"
   }
 }

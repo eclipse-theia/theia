@@ -11,15 +11,15 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
+import { RpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { PluginMetadata } from '@theia/plugin-ext/lib/common/plugin-protocol';
 
 export const pluginDevServicePath = '/services/plugin-dev';
 export const PluginDevServer = Symbol('PluginDevServer');
-export interface PluginDevServer extends JsonRpcServer<PluginDevClient> {
+export interface PluginDevServer extends RpcServer<PluginDevClient> {
     getHostedPlugin(): Promise<PluginMetadata | undefined>;
     runHostedPluginInstance(uri: string): Promise<string>;
     runDebugHostedPluginInstance(uri: string, debugConfig: PluginDebugConfiguration): Promise<string>;

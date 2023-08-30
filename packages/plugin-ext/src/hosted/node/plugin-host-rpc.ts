@@ -11,12 +11,12 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { dynamicRequire } from '@theia/core/lib/node/dynamic-require';
+import { dynamicRequire, removeFromCache } from '@theia/core/lib/node/dynamic-require';
 import { PluginManagerExtImpl } from '../../plugin/plugin-manager';
-import { MAIN_RPC_CONTEXT, Plugin, PluginAPIFactory } from '../../common/plugin-api-rpc';
+import { LocalizationExt, MAIN_RPC_CONTEXT, Plugin, PluginAPIFactory } from '../../common/plugin-api-rpc';
 import { PluginMetadata } from '../../common/plugin-protocol';
 import { createAPIFactory } from '../../plugin/plugin-context';
 import { EnvExtImpl } from '../../plugin/env';
@@ -35,6 +35,7 @@ import { TerminalServiceExtImpl } from '../../plugin/terminal-ext';
 import { SecretsExtImpl } from '../../plugin/secrets-ext';
 import { BackendInitializationFn } from '../../common';
 import { connectProxyResolver } from './plugin-host-proxy';
+import { LocalizationExtImpl } from '../../plugin/localization-ext';
 
 /**
  * Handle the RPC calls.
@@ -61,7 +62,8 @@ export class PluginHostRPC {
         const webviewExt = new WebviewsExtImpl(this.rpc, workspaceExt);
         const terminalService = new TerminalServiceExtImpl(this.rpc);
         const secretsExt = new SecretsExtImpl(this.rpc);
-        this.pluginManager = this.createPluginManager(envExt, terminalService, storageProxy, preferenceRegistryExt, webviewExt, secretsExt, this.rpc);
+        const localizationExt = new LocalizationExtImpl(this.rpc);
+        this.pluginManager = this.createPluginManager(envExt, terminalService, storageProxy, preferenceRegistryExt, webviewExt, secretsExt, localizationExt, this.rpc);
         this.rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, this.pluginManager);
         this.rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, editorsAndDocumentsExt);
         this.rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt);
@@ -80,7 +82,8 @@ export class PluginHostRPC {
             workspaceExt,
             messageRegistryExt,
             clipboardExt,
-            webviewExt
+            webviewExt,
+            localizationExt
         );
         connectProxyResolver(workspaceExt, preferenceRegistryExt);
     }
@@ -102,7 +105,7 @@ export class PluginHostRPC {
 
     createPluginManager(
         envExt: EnvExtImpl, terminalService: TerminalServiceExtImpl, storageProxy: KeyValueStorageProxy,
-        preferencesManager: PreferenceRegistryExtImpl, webview: WebviewsExtImpl, secretsExt: SecretsExtImpl,
+        preferencesManager: PreferenceRegistryExtImpl, webview: WebviewsExtImpl, secretsExt: SecretsExtImpl, localization: LocalizationExt,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         rpc: any
     ): PluginManagerExtImpl {
@@ -113,40 +116,10 @@ export class PluginHostRPC {
             loadPlugin(plugin: Plugin): any {
                 console.debug('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/loadPlugin(' + plugin.pluginPath + ')');
                 // cleaning the cache for all files of that plug-in.
-                Object.keys(require.cache).forEach(function (key): void {
-                    const mod: NodeJS.Module = require.cache[key]!;
-
-                    // attempting to reload a native module will throw an error, so skip them
-                    if (mod.id.endsWith('.node')) {
-                        return;
-                    }
-
-                    // remove children that are part of the plug-in
-                    let i = mod.children.length;
-                    while (i--) {
-                        const childMod: NodeJS.Module = mod.children[i];
-                        // ensure the child module is not null, is in the plug-in folder, and is not a native module (see above)
-                        if (childMod && childMod.id.startsWith(plugin.pluginFolder) && !childMod.id.endsWith('.node')) {
-                            // cleanup exports - note that some modules (e.g. ansi-styles) define their
-                            // exports in an immutable manner, so overwriting the exports throws an error
-                            delete childMod.exports;
-                            mod.children.splice(i, 1);
-                            for (let j = 0; j < childMod.children.length; j++) {
-                                delete childMod.children[j];
-                            }
-                        }
-                    }
-
-                    if (key.startsWith(plugin.pluginFolder)) {
-                        // delete entry
-                        delete require.cache[key];
-                        const ix = mod.parent!.children.indexOf(mod);
-                        if (ix >= 0) {
-                            mod.parent!.children.splice(ix, 1);
-                        }
-                    }
-
-                });
+                // this prevents a memory leak on plugin host restart. See for reference:
+                // https://github.com/eclipse-theia/theia/pull/4931
+                // https://github.com/nodejs/node/issues/8443
+                removeFromCache(mod => mod.id.startsWith(plugin.pluginFolder));
                 if (plugin.pluginPath) {
                     return dynamicRequire(plugin.pluginPath);
                 }
@@ -239,7 +212,7 @@ export class PluginHostRPC {
                     `Path ${extensionTestsPath} does not point to a valid extension test runner.`
                 );
             } : undefined
-        }, envExt, terminalService, storageProxy, secretsExt, preferencesManager, webview, rpc);
+        }, envExt, terminalService, storageProxy, secretsExt, preferencesManager, webview, localization, rpc);
         return pluginManager;
     }
 }

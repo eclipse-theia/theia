@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 // copied from https://github.com/Microsoft/vscode/blob/bf7ac9201e7a7d01741d4e6e64b5dc9f3197d97b/src/vs/base/common/glob.ts
 /*---------------------------------------------------------------------------------------------
@@ -329,7 +329,7 @@ function parsePattern(arg1: string | IRelativePattern, options: IGlobOptions): P
     // Check for Trivias
     let match: RegExpExecArray;
     if (T1.test(pattern)) { // common pattern: **/*.txt just need endsWith check
-        const base = pattern.substr(4); // '**/*'.length === 4
+        const base = pattern.substring(4); // '**/*'.length === 4
         parsedPattern = function (path, basename): string {
             return path && strings.endsWith(path, base) ? pattern : null!;
         };
@@ -338,7 +338,7 @@ function parsePattern(arg1: string | IRelativePattern, options: IGlobOptions): P
     } else if ((options.trimForExclusions ? T3_2 : T3).test(pattern)) { // repetition of common patterns (see above) {**/*.txt,**/*.png}
         parsedPattern = trivia3(pattern, options);
     } else if (match = T4.exec(trimForExclusions(pattern, options))!) { // common pattern: **/something/else just need endsWith check
-        parsedPattern = trivia4and5(match[1].substr(1), pattern, true);
+        parsedPattern = trivia4and5(match[1].substring(1), pattern, true);
     } else if (match = T5.exec(trimForExclusions(pattern, options))!) { // common pattern: something/else just need equals check
         parsedPattern = trivia4and5(match[1], pattern, false);
     }
@@ -370,7 +370,7 @@ function wrapRelativePattern(parsedPattern: ParsedStringPattern, arg2: string | 
 }
 
 function trimForExclusions(pattern: string, options: IGlobOptions): string {
-    return options.trimForExclusions && strings.endsWith(pattern, '/**') ? pattern.substr(0, pattern.length - 2) : pattern; // dropping **, tailing / is dropped later
+    return options.trimForExclusions && strings.endsWith(pattern, '/**') ? pattern.substring(0, pattern.length - 2) : pattern; // dropping **, tailing / is dropped later
 }
 
 // common pattern: **/some.txt just need basename check
@@ -632,7 +632,7 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
                     basename = paths.basename(path);
                 }
                 if (!name) {
-                    name = basename.substr(0, basename.length - paths.extname(path).length);
+                    name = basename.substring(0, basename.length - paths.extname(path).length);
                 }
             }
             const result = parsedPattern(path, basename, name, hasSibling!);
@@ -726,7 +726,7 @@ function aggregateBasenameMatches(parsedPatterns: (ParsedStringPattern | ParsedE
                     break;
                 }
             }
-            basename = path.substr(i);
+            basename = path.substring(i);
         }
         const index = basenames.indexOf(basename);
         return index !== -1 ? patterns[index] : null!;

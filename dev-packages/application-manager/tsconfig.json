@@ -14,6 +14,9 @@
     },
     {
       "path": "../ffmpeg"
+    },
+    {
+      "path": "../native-webpack-plugin"
     }
   ]
 }

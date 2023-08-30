@@ -11,22 +11,24 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemManager } from './problem-manager';
 import { ProblemCompositeTreeNode } from './problem-composite-tree-node';
-import { MarkerNode, MarkerTree, MarkerOptions, MarkerInfoNode } from '../marker-tree';
+import { MarkerNode, MarkerTree, MarkerOptions, MarkerInfoNode, MarkerRootNode } from '../marker-tree';
 import { MarkerTreeModel } from '../marker-tree-model';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { OpenerOptions, TreeNode } from '@theia/core/lib/browser';
 import { Marker } from '../../common/marker';
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ProblemUtils } from './problem-utils';
+import debounce = require('@theia/core/shared/lodash.debounce');
 
 @injectable()
 export class ProblemTree extends MarkerTree<Diagnostic> {
+    protected markers: { node: MarkerInfoNode, markers: Marker<Diagnostic>[] }[] = [];
 
     constructor(
         @inject(ProblemManager) markerManager: ProblemManager,
@@ -77,12 +79,21 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
     }
 
     protected override insertNodeWithMarkers(node: MarkerInfoNode, markers: Marker<Diagnostic>[]): void {
-        ProblemCompositeTreeNode.addChild(node.parent, node, markers);
-        const children = this.getMarkerNodes(node, markers);
-        node.numberOfMarkers = markers.length;
-        this.setChildren(node, children);
+        this.markers.push({ node, markers });
+        this.doInsertNodesWithMarkers();
     }
 
+    protected doInsertNodesWithMarkers = debounce(() => {
+        ProblemCompositeTreeNode.addChildren(this.root as MarkerRootNode, this.markers);
+
+        for (const { node, markers } of this.markers) {
+            const children = this.getMarkerNodes(node, markers);
+            node.numberOfMarkers = markers.length;
+            this.setChildren(node, children);
+        }
+
+        this.markers.length = 0;
+    }, 50);
 }
 
 @injectable()

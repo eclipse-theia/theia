@@ -52,7 +52,7 @@ For Windows instructions [click here](#building-on-windows).
 
 ## Prerequisites
 
- - Node.js `>= 16.14.0` and `< 17`.
+ - Node.js `>= 18.17.0` and `< 21`.
    - If you are interested in Theia's VS Code Extension support then you should use a Node version at least compatible with the one included in the version of Electron used by [VS Code](https://github.com/microsoft/vscode).
  - [Yarn package manager](https://yarnpkg.com/en/docs/install)  `>= 1.7.0` **AND** `< 2.x.x`.
  - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
@@ -371,7 +371,7 @@ You should be able to see message of `[${server-name}: ${server-PID}]: IPC start
 ### Debug the plugin host
 
   - Pass `--hosted-plugin-inspect=9339` arg to the backend server from the command line.
-    - Instead you can run `Launch Browser Backend` launch configuration which is already pre-configured.
+    - Instead, you can run `Launch Browser Backend` launch configuration which is already pre-configured.
   - Open the debug view and run the `Attach to Plugin Host` launch configuration.
     - It connects to the plugin host if at least one extension is detected, otherwise it timeouts after 60s.
     - If you want to debug the activation then enable `stopOnEntry` flag.
@@ -382,7 +382,7 @@ You should be able to see message of `[${server-name}: ${server-PID}]: IPC start
 
 [click for base article](https://github.com/eclipse-theia/theia/issues/3251#issuecomment-468166533)
 
-The following launch configuration is meant to be used when the Theia project is opened as the main project in vscode, the following launch configuration is added inside .vscode/launch.json.
+The following launch configuration is meant to be used when the Theia project is opened as the main project in VS Code, the following launch configuration is added inside .vscode/launch.json.
 - The source repository of your plugin is expected under your `${workspaceFolder}/plugins` folder
 - You can start the frontend from URL: http://localhost:3030
 - It's suggested to update your frontend launch configuration URL to open your favorite target project in a second launch
@@ -508,7 +508,7 @@ etc.) by opening `packages/<package name>/coverage/index.html`.
 
  - Install [`scoop`](https://github.com/lukesampson/scoop#installation).
  - Install [`nvm`](https://github.com/coreybutler/nvm-windows) with scoop: `scoop install nvm`.
- - Install Node.js with `nvm`: `nvm install 16.15.1`, then use it: `nvm use 16.15.1`. You can list all available Node.js versions with `nvm list available` if you want to pick another version.
+ - Install Node.js with `nvm`: `nvm install 18.17.0`, then use it: `nvm use 18.17.0`. You can list all available Node.js versions with `nvm list available` if you want to pick another version.
  - Install `yarn`: `scoop install yarn`.
  - If you need to install `windows-build-tools`, see [`Installing Windows Build Tools`](#installing-windows-build-tools).
  - If you run into problems with installing the required build tools, the `node-gyp` documentation offers a useful [guide](https://github.com/nodejs/node-gyp#on-windows) how to install the dependencies manually. The versions required for building Theia are:
@@ -566,10 +566,10 @@ errors while building, testing or running the application then;
  try to disable (or uninstall) your anti-malware software.
  See [here](https://github.com/npm/npm/issues/13461#issuecomment-282556281).
  - Still having issues on Windows? File a [bug]. We are working on Linux or OS X
- operating systems. Hence we are more than happy to receive any Windows-related
+ operating systems. Hence, we are more than happy to receive any Windows-related
  feedbacks, [bug](https://github.com/eclipse-theia/theia/issues) reports.
 
-If you're still struggling with the build but you use Windows 10, the you can enable the `Windows Subsystem for Linux` and you can get a Linux distro for free.
+If you're still struggling with the build, but you use Windows 10, then you can enable the `Windows Subsystem for Linux` and you can get a Linux distro for free.
 
 ### macOS
 

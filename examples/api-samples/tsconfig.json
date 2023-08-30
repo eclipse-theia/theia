@@ -10,6 +10,9 @@
   ],
   "references": [
     {
+      "path": "../../dev-packages/ovsx-client"
+    },
+    {
       "path": "../../packages/core"
     },
     {

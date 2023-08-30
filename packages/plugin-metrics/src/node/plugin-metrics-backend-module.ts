@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { MetricsContribution } from '@theia/metrics/lib/node/metrics-contribution';
@@ -19,7 +19,7 @@ import { PluginMetricsContribution } from './plugin-metrics';
 import { PluginMetrics, metricsJsonRpcPath } from '../common/metrics-protocol';
 import { PluginMetricsImpl } from './plugin-metrics-impl';
 import { ConnectionHandler } from '@theia/core/lib/common/messaging/handler';
-import { JsonRpcConnectionHandler } from '@theia/core';
+import { RpcConnectionHandler } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { PluginMetricsContributor } from './metrics-contributor';
 import { PluginMetricTimeSum } from './metric-output/plugin-metrics-time-sum';
@@ -34,7 +34,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(PluginMetricsContributor).toSelf().inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx => {
         const clients = ctx.container.get(PluginMetricsContributor);
-        return new JsonRpcConnectionHandler(metricsJsonRpcPath, client => {
+        return new RpcConnectionHandler(metricsJsonRpcPath, client => {
             const pluginMetricsHandler: PluginMetrics = ctx.container.get(PluginMetrics);
             clients.clients.add(pluginMetricsHandler);
             client.onDidCloseConnection(() => {

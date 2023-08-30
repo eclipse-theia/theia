@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -131,15 +131,15 @@ export class HostedPluginsManagerImpl implements HostedPluginsManager {
      *
      * @param pluginPath path to plugin's root directory
      */
-    protected checkWatchScript(pluginPath: string): boolean {
+    protected async checkWatchScript(pluginPath: string): Promise<boolean> {
         const pluginPackageJsonPath = path.join(pluginPath, 'package.json');
-        if (fs.existsSync(pluginPackageJsonPath)) {
-            const packageJson = fs.readJSONSync(pluginPackageJsonPath);
+        try {
+            const packageJson = await fs.readJSON(pluginPackageJsonPath);
             const scripts = packageJson['scripts'];
             if (scripts && scripts['watch']) {
                 return true;
             }
-        }
+        } catch { }
         return false;
     }
 

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 /*---------------------------------------------------------------------------------------------
 *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -47,21 +47,21 @@ class RequestStore {
         this.map = new Map();
     }
 
-	/**
-	 * @param {string} webviewId
-	 * @param {string} path
-	 * @return {Promise<T> | undefined}
-	 */
+    /**
+     * @param {string} webviewId
+     * @param {string} path
+     * @return {Promise<T> | undefined}
+     */
     get(webviewId, path) {
         const entry = this.map.get(this._key(webviewId, path));
         return entry && entry.promise;
     }
 
-	/**
-	 * @param {string} webviewId
-	 * @param {string} path
-	 * @returns {Promise<T>}
-	 */
+    /**
+     * @param {string} webviewId
+     * @param {string} path
+     * @returns {Promise<T>}
+     */
     create(webviewId, path) {
         const existing = this.get(webviewId, path);
         if (existing) {
@@ -84,12 +84,12 @@ class RequestStore {
         return promise;
     }
 
-	/**
-	 * @param {string} webviewId
-	 * @param {string} path
-	 * @param {T} result
-	 * @return {boolean}
-	 */
+    /**
+     * @param {string} webviewId
+     * @param {string} path
+     * @param {T} result
+     * @return {boolean}
+     */
     resolve(webviewId, path, result) {
         const entry = this.map.get(this._key(webviewId, path));
         if (!entry) {
@@ -99,11 +99,11 @@ class RequestStore {
         return true;
     }
 
-	/**
-	 * @param {string} webviewId
-	 * @param {string} path
-	 * @return {string}
-	 */
+    /**
+     * @param {string} webviewId
+     * @param {string} path
+     * @return {string}
+     */
     _key(webviewId, path) {
         return `${webviewId}@@@${path}`;
     }

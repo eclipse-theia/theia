@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
@@ -23,7 +23,7 @@ import { MonacoTextmateService } from './monaco-textmate-service';
 import { MonacoThemeRegistry } from './monaco-theme-registry';
 import { loadWASM, createOnigScanner, OnigScanner, createOnigString, OnigString } from 'vscode-oniguruma';
 import { IOnigLib, IRawGrammar, parseRawGrammar, Registry } from 'vscode-textmate';
-import { OnigasmPromise, TextmateRegistryFactory, ThemeMix } from './monaco-theme-types';
+import { OnigasmProvider, TextmateRegistryFactory, ThemeMix } from './monaco-theme-types';
 
 export class OnigasmLib implements IOnigLib {
     createOnigScanner(sources: string[]): OnigScanner {
@@ -35,17 +35,18 @@ export class OnigasmLib implements IOnigLib {
 }
 
 export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
-    bind(OnigasmPromise).toDynamicValue(dynamicOnigasmLib).inSingletonScope();
+    const onigLib = createOnigasmLib();
+    bind(OnigasmProvider).toConstantValue(() => onigLib);
     bind(MonacoTextmateService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MonacoTextmateService);
     bindContributionProvider(bind, LanguageGrammarDefinitionContribution);
     bind(TextmateRegistry).toSelf().inSingletonScope();
     bind(MonacoThemeRegistry).toSelf().inSingletonScope();
     bind(TextmateRegistryFactory).toFactory(({ container }) => (theme?: ThemeMix) => {
-        const onigLib = container.get<OnigasmPromise>(OnigasmPromise);
+        const onigProvider = container.get<OnigasmProvider>(OnigasmProvider);
         const textmateRegistry = container.get(TextmateRegistry);
         return new Registry({
-            onigLib,
+            onigLib: onigProvider(),
             theme,
             loadGrammar: async (scopeName: string) => {
                 const provider = textmateRegistry.getProvider(scopeName);
@@ -71,10 +72,6 @@ export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: inter
         });
     });
 };
-
-export async function dynamicOnigasmLib(ctx: interfaces.Context): Promise<IOnigLib> {
-    return createOnigasmLib();
-}
 
 export async function createOnigasmLib(): Promise<IOnigLib> {
     if (!isBasicWasmSupported) {

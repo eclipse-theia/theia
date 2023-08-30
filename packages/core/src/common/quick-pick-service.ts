@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import URI from './uri';
@@ -67,6 +67,7 @@ export interface QuickPickSeparator {
 }
 
 export type QuickPickItemOrSeparator = QuickPickItem | QuickPickSeparator;
+export type QuickPickInput<T = QuickPickItem> = T | QuickPickSeparator;
 
 export namespace QuickPickItem {
     export function is(item: QuickPickSeparator | QuickPickItem): item is QuickPickItem {
@@ -216,7 +217,7 @@ export interface InputOptions {
     placeHolder?: string;
     password?: boolean;
     ignoreFocusLost?: boolean;
-    validateInput?(input: string): Promise<string | { content: string; severity: number; }  | null | undefined> | undefined;
+    validateInput?(input: string): Promise<string | { content: string; severity: number; } | null | undefined> | undefined;
 }
 
 export interface QuickPickItemButtonEvent<T extends QuickPickItemOrSeparator> {
@@ -278,7 +279,7 @@ export interface QuickInputService {
     open(filter: string): void;
     createInputBox(): InputBox;
     input(options?: InputOptions, token?: CancellationToken): Promise<string | undefined>;
-    pick<T extends QuickPickItem, O extends PickOptions<T>>(picks: Promise<T[]> | T[], options?: O, token?: CancellationToken):
+    pick<T extends QuickPickItem, O extends PickOptions<T>>(picks: Promise<QuickPickInput<T>[]> | QuickPickInput<T>[], options?: O, token?: CancellationToken):
         Promise<(O extends { canPickMany: true } ? T[] : T) | undefined>;
     showQuickPick<T extends QuickPickItem>(items: Array<T | QuickPickSeparator>, options?: QuickPickOptions<T>): Promise<T | undefined>;
     hide(): void;

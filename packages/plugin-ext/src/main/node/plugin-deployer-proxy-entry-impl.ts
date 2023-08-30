@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { injectable } from '@theia/core/shared/inversify';
 import { PluginDeployerEntry, PluginDeployerEntryType, PluginType } from '../../common/plugin-protocol';
@@ -54,11 +54,11 @@ export class ProxyPluginDeployerEntry<T> implements PluginDeployerEntry {
         return this.delegate.getChanges();
     }
 
-    isFile(): boolean {
+    isFile(): Promise<boolean> {
         return this.delegate.isFile();
     }
 
-    isDirectory(): boolean {
+    isDirectory(): Promise<boolean> {
         return this.delegate.isDirectory();
     }
     isResolved(): boolean {

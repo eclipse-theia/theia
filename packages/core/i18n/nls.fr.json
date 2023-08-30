@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Edit Condition...",
   "terminal:new:profile": "Créer un nouveau terminal intégré à partir d'un profil",
   "terminal:profile:default": "Choisissez le profil du terminal par défaut",
   "theia": {
@@ -29,6 +30,11 @@
         "showPreviousTabInGroup": "Passer à l'onglet précédent dans le groupe",
         "toggleMaximized": "Toggle Maximisé"
       },
+      "enhancedPreview": {
+        "classic": "Affiche un simple aperçu de l'onglet avec des informations de base.",
+        "enhanced": "Affiche un aperçu amélioré de l'onglet avec des informations supplémentaires.",
+        "visual": "Affiche un aperçu visuel de l'onglet."
+      },
       "file": {
         "browse": "Parcourir"
       },
@@ -43,6 +49,10 @@
         "pc": "Claviers pour PC",
         "tryDetect": "Essayez de détecter la disposition du clavier à partir des informations du navigateur et des touches pressées."
       },
+      "navigator": {
+        "clipboardWarn": "L'accès au presse-papiers est refusé. Vérifiez les autorisations de votre navigateur.",
+        "clipboardWarnFirefox": "L'API Presse-papiers n'est pas disponible. Elle peut être activée par la préférence '{0}' sur la page '{1}'. Rechargez ensuite Theia. Notez que cela permettra à FireFox d'avoir un accès complet au presse-papiers du système."
+      },
       "offline": "Hors ligne",
       "quitMessage": "Les modifications non sauvegardées ne seront pas enregistrées.",
       "resetWorkbenchLayout": "Réinitialisation de la disposition de l'établi",
@@ -52,7 +62,10 @@
         "previous": "Précédent (en haut)"
       },
       "silentNotifications": "Contrôle la suppression des popups de notification.",
-      "tabMaximize": "Contrôle si les onglets doivent être maximisés lors d'un double-clic."
+      "tabDefaultSize": "Spécifie la taille par défaut des onglets.",
+      "tabMaximize": "Contrôle si les onglets doivent être maximisés lors d'un double-clic.",
+      "tabMinimumSize": "Spécifie la taille minimale des onglets.",
+      "tabShrinkToFit": "Réduire les onglets pour les adapter à l'espace disponible."
     },
     "debug": {
       "addConfigurationPlaceholder": "Sélectionnez la racine de l'espace de travail pour y ajouter la configuration",
@@ -68,15 +81,13 @@
       "toggleTracing": "Activer/désactiver le traçage des communications avec les adaptateurs de débogage"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "Utilise un algorithme de différenciation expérimental.",
-      "diffEditor.diffAlgorithm.smart": "Utilise l'algorithme de différenciation par défaut.",
       "dirtyEncoding": "Le fichier est sale. Veuillez le sauvegarder avant de le rouvrir avec un autre encodage.",
       "editor.codeActionWidget.showHeaders": "Activez/désactivez l'affichage des en-têtes de groupe dans le menu d'action du code.",
+      "editor.experimental.pasteActions.enabled": "Activer/désactiver l'exécution des modifications des extensions lors du collage.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tentera de formater uniquement les modifications (nécessite le contrôle de la source). Si le contrôle de la source ne peut pas être utilisé, alors le fichier entier sera formaté.",
       "editor.inlayHints.enabled1": "Les conseils d'incrustation sont affichés par défaut et sont masqués lorsque vous maintenez les touches `Ctrl+Alt`.",
       "editor.inlayHints.enabled2": "Les indices d'incrustation sont cachés par défaut et s'affichent en maintenant les touches `Ctrl+Alt`.",
       "editor.quickSuggestions": "Contrôle si les suggestions doivent s'afficher automatiquement pendant la saisie. Cela peut être contrôlé pour la saisie de commentaires, de chaînes de caractères et d'autres codes. La suggestion rapide peut être configurée pour s'afficher sous forme de texte fantôme ou avec le widget de suggestion. Tenez également compte du paramètre '#editor.suggestOnTriggerCharacters#' qui contrôle si les suggestions sont déclenchées par des caractères spéciaux.",
-      "editor.stickyScroll.maxLineCount": "Définit le nombre maximum de lignes adhésives à afficher.",
       "editor.suggest.matchOnWordStartOnly": "Lorsqu'il est activé, le filtrage IntelliSense exige que le premier caractère corresponde au début d'un mot, par exemple `c` sur `Console` ou `WebContext` mais _pas_ sur `description`. Lorsqu'il est désactivé, IntelliSense affiche plus de résultats mais les trie toujours par qualité de correspondance.",
       "files.autoSave": "Contrôle la [sauvegarde automatique](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) des éditeurs dont les modifications n'ont pas été sauvegardées.",
       "files.autoSave.afterDelay": "Un éditeur avec des modifications est automatiquement enregistré après le `#files.autoSaveDelay#` configuré.",
@@ -153,11 +164,15 @@
       "gitDecorationsColors": "Utilisez la décoration par couleur dans le navigateur.",
       "mergeQuickPickPlaceholder": "Choisissez une branche à fusionner avec la branche {0} actuellement active :",
       "missingUserInfo": "Assurez-vous de configurer votre 'user.name' et 'user.email' dans git.",
+      "noHistoryForError": "Il n'y a pas d'historique disponible pour {0}",
       "noPreviousCommit": "Aucun engagement antérieur à modifier",
       "noRepositoriesSelected": "Aucun dépôt n'a été sélectionné.",
+      "prepositionIn": "en",
       "repositoryNotInitialized": "Le référentiel {0} n'est pas encore initialisé.",
       "stashChanges": "Modifications de la cachette. Appuyez sur \" Enter \" pour confirmer ou sur \" Escape \" pour annuler.",
       "stashChangesWithMessage": "Changements de cachette avec message : {0}. Appuyez sur 'Enter' pour confirmer ou 'Escape' pour annuler.",
+      "tabTitleIndex": "{0} (index)",
+      "tabTitleWorkingTree": "{0} (Arbre de travail)",
       "toggleBlameAnnotations": "Annotations sur le blâme"
     },
     "keybinding-schema-updater": {
@@ -268,6 +283,8 @@
     },
     "navigator": {
       "autoReveal": "Révélation automobile",
+      "clipboardWarn": "L'accès au presse-papiers est refusé. Vérifiez les autorisations de votre navigateur.",
+      "clipboardWarnFirefox": "L'API Presse-papiers n'est pas disponible. Elle peut être activée par la préférence '{0}' sur la page '{1}'. Rechargez ensuite Theia. Notez que cela permettra à FireFox d'avoir un accès complet au presse-papiers du système.",
       "refresh": "Rafraîchir dans l'Explorateur",
       "reveal": "Révéler dans Explorer",
       "toggleHiddenFiles": "Basculer les fichiers cachés"
@@ -278,6 +295,7 @@
       "hiddenChannels": "Canaux cachés",
       "hideOutputChannel": "Cacher le canal de sortie...",
       "maxChannelHistory": "Le nombre maximum d'entrées dans un canal de sortie.",
+      "outputChannels": "Canaux de sortie",
       "showOutputChannel": "Afficher le canal de sortie..."
     },
     "plugin": {
@@ -311,6 +329,9 @@
       "watchMode": "Lancer le watcher sur le plugin en cours de développement"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Connexion"
+      },
       "plugins": "Plugins",
       "webviewTrace": "Contrôle le traçage de la communication avec les webviews.",
       "webviewWarnIfUnsecure": "Avertit les utilisateurs que les webviews sont actuellement déployés de manière non sécurisée."
@@ -358,6 +379,7 @@
     "task": {
       "attachTask": "Attacher la tâche...",
       "clearHistory": "Histoire claire",
+      "noTaskToRun": "Aucune tâche à exécuter n'a été trouvée. Configurer les tâches...",
       "openUserTasks": "Tâches d'utilisateur ouvertes"
     },
     "terminal": {
@@ -370,7 +392,6 @@
       "profileIcon": "Un ID de codicon à associer à l'icône du terminal.\nterminal-tmux :\"$(terminal-tmux)\"",
       "profileNew": "Nouveau terminal (avec profil)...",
       "profilePath": "Le chemin du shell que ce profil utilise.",
-      "profileSource": "Un profil source qui détectera automatiquement les chemins vers l'interpréteur de commandes. Notez que les emplacements non standard des exécutables ne sont pas pris en charge et doivent être créés manuellement dans un nouveau profil.",
       "profiles": "Les profils à présenter lors de la création d'un nouveau terminal. Définissez manuellement la propriété path avec des args optionnels.\nDonnez la valeur `null` à un profil existant pour le masquer dans la liste, par exemple : `\"{0}\" : null`.",
       "rendererType": "Contrôle la façon dont le terminal est rendu.",
       "selectProfile": "Sélectionnez un profil pour le nouveau terminal",
@@ -414,6 +435,7 @@
       "license": "Licence : {0}",
       "recommendedExtensions": "Une liste des noms des extensions dont l'utilisation est recommandée dans cet espace de travail.",
       "searchPlaceholder": "Rechercher les extensions dans {0}",
+      "showInstalled": "Afficher les extensions installées",
       "showRecommendedExtensions": "Contrôle si les notifications sont affichées pour les recommandations d'extension.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Erreur lors de la suppression de l'extension : {0}.",

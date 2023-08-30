@@ -14,6 +14,7 @@
 		"input.placeholderForeground": "#A6A6A6",
 		"menu.background": "#252526",
 		"menu.foreground": "#CCCCCC",
+		"menu.border": "#454545",
 		"statusBarItem.remoteForeground": "#FFF",
 		"statusBarItem.remoteBackground": "#16825D",
 		"ports.iconRunningProcessForeground": "#369432",

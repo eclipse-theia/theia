@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { expect } from '@playwright/test';
@@ -41,20 +41,20 @@ test.describe('Theia Main Menu', () => {
         expect(await mainMenu.isOpen()).toBe(true);
     });
 
-    test("should show the menu items 'New File' and 'New Folder'", async () => {
+    test("should show the menu items 'New Text File' and 'New Folder'", async () => {
         const mainMenu = await menuBar.openMenu('File');
         const menuItems = await mainMenu.visibleMenuItems();
-        expect(menuItems).toContain('New File');
-        expect(menuItems).toContain('New Folder');
+        expect(menuItems).toContain('New Text File');
+        expect(menuItems).toContain('New Folder...');
     });
 
-    test("should return menu item by name 'New File'", async () => {
+    test("should return menu item by name 'New Text File'", async () => {
         const mainMenu = await menuBar.openMenu('File');
-        const menuItem = await mainMenu.menuItemByName('New File');
+        const menuItem = await mainMenu.menuItemByName('New Text File');
         expect(menuItem).toBeDefined();
 
         const label = await menuItem?.label();
-        expect(label).toBe('New File');
+        expect(label).toBe('New Text File');
 
         const shortCut = await menuItem?.shortCut();
         expect(shortCut).toBe(OSUtil.isMacOS ? '⌥ N' : 'Alt+N');
@@ -65,7 +65,7 @@ test.describe('Theia Main Menu', () => {
 
     test('should detect whether menu item has submenu', async () => {
         const mainMenu = await menuBar.openMenu('File');
-        const newFileItem = await mainMenu.menuItemByName('New File');
+        const newFileItem = await mainMenu.menuItemByName('New Text File');
         const settingsItem = await mainMenu.menuItemByName('Preferences');
 
         expect(await newFileItem?.hasSubmenu()).toBe(false);

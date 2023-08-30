@@ -1,12 +1,12 @@
 {
   "name": "@theia/preview",
-  "version": "1.36.0",
+  "version": "1.40.0",
   "description": "Theia - Preview Extension",
   "dependencies": {
-    "@theia/core": "1.36.0",
-    "@theia/editor": "1.36.0",
-    "@theia/mini-browser": "1.36.0",
-    "@theia/monaco": "1.36.0",
+    "@theia/core": "1.40.0",
+    "@theia/editor": "1.40.0",
+    "@theia/mini-browser": "1.40.0",
+    "@theia/monaco": "1.40.0",
     "@types/highlight.js": "^10.1.0",
     "@types/markdown-it-anchor": "^4.0.1",
     "highlight.js": "10.4.1",
@@ -23,7 +23,7 @@
   "keywords": [
     "theia-extension"
   ],
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -45,7 +45,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.36.0"
+    "@theia/ext-scripts": "1.40.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

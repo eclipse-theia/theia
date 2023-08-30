@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 // This file is inspired by VSCode and partially copied from https://github.com/Microsoft/vscode/blob/1.33.1/src/vs/workbench/contrib/tasks/common/problemMatcher.ts
 // 'problemMatcher.ts' copyright:
@@ -30,7 +30,7 @@ import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-inpu
 import URI from '@theia/core/lib/common/uri';
 import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
 import { TaskDefinitionRegistry } from './task-definition-registry';
-import { TaskServer } from '../common';
+import { TaskServer, asVariableName } from '../common';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { JSONObject } from '@theia/core/shared/@phosphor/coreutils';
@@ -213,7 +213,7 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
 
     /** Gets the most up-to-date names of problem matchers from the registry and update the task schema */
     private updateProblemMatcherNames(): void {
-        const matcherNames = this.problemMatcherRegistry.getAll().map(m => m.name.startsWith('$') ? m.name : `$${m.name}`);
+        const matcherNames = this.problemMatcherRegistry.getAll().map(m => asVariableName(m.name));
         problemMatcherNames.length = 0;
         problemMatcherNames.push(...matcherNames);
         this.update();

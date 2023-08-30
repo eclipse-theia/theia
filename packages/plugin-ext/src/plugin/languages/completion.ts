@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { URI } from '@theia/core/shared/vscode-uri';
@@ -153,13 +153,17 @@ export class CompletionAdapter {
             ? [CompletionItemTag.Deprecated]
             : undefined;
 
+        const documentation = typeof item.documentation !== 'undefined'
+            ? Converter.fromMarkdown(item.documentation)
+            : undefined;
+
         return {
             id,
             parentId,
             label: item.label,
             kind: Converter.fromCompletionItemKind(item.kind),
             detail: item.detail,
-            documentation: item.documentation,
+            documentation,
             filterText: item.filterText,
             sortText: item.sortText,
             preselect: item.preselect,

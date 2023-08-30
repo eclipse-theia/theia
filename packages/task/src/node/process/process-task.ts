@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /*---------------------------------------------------------------------------------------------
@@ -27,21 +27,18 @@ import { TaskManager } from '../task-manager';
 import { ProcessType, ProcessTaskInfo } from '../../common/process/task-protocol';
 import { TaskExitedEvent } from '../../common/task-protocol';
 
-// copied from https://github.com/Microsoft/vscode/blob/1.33.1/src/vs/base/common/strings.ts
-// Escape codes
-// http://en.wikipedia.org/wiki/ANSI_escape_code
-const EL = /\x1B\x5B[12]?K/g; // Erase in line
-const COLOR_START = /\x1b\[\d+(;\d+)*m/g; // Color
-const COLOR_END = /\x1b\[0?m/g; // Color
+// copied from https://github.com/microsoft/vscode/blob/1.79.0/src/vs/base/common/strings.ts#L736
+const CSI_SEQUENCE = /(:?\x1b\[|\x9B)[=?>!]?[\d;:]*["$#'* ]?[a-zA-Z@^`{}|~]/g;
+
+// Plus additional markers for custom `\x1b]...\x07` instructions.
+const CSI_CUSTOM_SEQUENCE = /\x1b\].*?\x07/g;
 
 export function removeAnsiEscapeCodes(str: string): string {
     if (str) {
-        str = str.replace(EL, '');
-        str = str.replace(COLOR_START, '');
-        str = str.replace(COLOR_END, '');
+        str = str.replace(CSI_SEQUENCE, '').replace(CSI_CUSTOM_SEQUENCE, '');
     }
 
-    return str.trimRight();
+    return str.trimEnd();
 }
 
 export const TaskProcessOptions = Symbol('TaskProcessOptions');

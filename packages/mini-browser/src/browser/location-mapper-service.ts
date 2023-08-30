@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
@@ -142,7 +142,7 @@ export class FileLocationMapper implements LocationMapper {
         }
         let rawLocation = uri.path.toString();
         if (rawLocation.charAt(0) === '/') {
-            rawLocation = rawLocation.substr(1);
+            rawLocation = rawLocation.substring(1);
         }
         return this.miniBrowserEnvironment.getRandomEndpoint().getRestUrl().resolve(rawLocation).toString();
     }

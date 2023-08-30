@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { Terminal, RendererType } from 'xterm';
@@ -42,6 +42,10 @@ import { CommandLineOptions, ShellCommandBuilder } from '@theia/process/lib/comm
 import { Key } from '@theia/core/lib/browser/keys';
 import { nls } from '@theia/core/lib/common/nls';
 import { TerminalMenus } from './terminal-frontend-contribution';
+import debounce = require('p-debounce');
+import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
+import { EnhancedPreviewWidget } from '@theia/core/lib/browser/widgets/enhanced-preview-widget';
+import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -56,7 +60,7 @@ export interface TerminalContribution {
 }
 
 @injectable()
-export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget, ExtractableWidget {
+export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget, ExtractableWidget, EnhancedPreviewWidget {
     readonly isExtractable: boolean = true;
     secondaryWindow: Window | undefined;
     location: TerminalLocationOptions;
@@ -80,6 +84,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected lastMousePosition: { x: number, y: number } | undefined;
     protected isAttachedCloseListener: boolean = false;
     protected shown = false;
+    protected enhancedPreviewNode: Node | undefined;
     override lastCwd = new URI();
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
@@ -97,6 +102,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(TerminalThemeService) protected readonly themeService: TerminalThemeService;
     @inject(ShellCommandBuilder) protected readonly shellCommandBuilder: ShellCommandBuilder;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
+    @inject(MarkdownRendererFactory) protected readonly markdownRendererFactory: MarkdownRendererFactory;
+
+    protected _markdownRenderer: MarkdownRenderer | undefined;
+    protected get markdownRenderer(): MarkdownRenderer {
+        this._markdownRenderer ||= this.markdownRendererFactory();
+        return this._markdownRenderer;
+    }
 
     protected readonly onDidOpenEmitter = new Emitter<void>();
     readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;
@@ -171,7 +183,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             const lastSeparator = change.preferenceName.lastIndexOf('.');
             if (lastSeparator > 0) {
-                let preferenceName = change.preferenceName.substr(lastSeparator + 1);
+                let preferenceName = change.preferenceName.substring(lastSeparator + 1);
                 let preferenceValue = change.newValue;
 
                 if (preferenceName === 'rendererType') {
@@ -205,21 +217,25 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         });
         this.toDispose.push(titleChangeListenerDispose);
 
-        this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
+        this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error, attached }) => {
             if (terminalId === this.terminalId) {
                 this.exitStatus = { code: undefined, reason: TerminalExitReason.Process };
-                this.dispose();
                 this.logger.error(`The terminal process terminated. Cause: ${error}`);
+                if (!attached) {
+                    this.dispose();
+                }
             }
         }));
-        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId, code, reason }) => {
+        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId, code, reason, attached }) => {
             if (terminalId === this.terminalId) {
                 if (reason) {
                     this.exitStatus = { code, reason };
                 } else {
                     this.exitStatus = { code, reason: TerminalExitReason.Process };
                 }
-                this.dispose();
+                if (!attached) {
+                    this.dispose();
+                }
             }
         }));
         this.toDispose.push(this.toDisposeOnConnect);
@@ -421,6 +437,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.shellTerminalServer.getProcessInfo(this.terminalId);
     }
 
+    get envVarCollectionDescriptionsByExtension(): Promise<Map<string, string | MarkdownString | undefined>> {
+        if (!IBaseTerminalServer.validateId(this.terminalId)) {
+            return Promise.reject(new Error('terminal is not started'));
+        }
+        return this.shellTerminalServer.getEnvVarCollectionDescriptionsByExtension(this.terminalId);
+    }
+
     get terminalId(): number {
         return this._terminalId;
     }
@@ -501,6 +524,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected async attachTerminal(id: number): Promise<number> {
         const terminalId = await this.shellTerminalServer.attach(id);
         if (IBaseTerminalServer.validateId(terminalId)) {
+            // reset exit status if a new terminal process is attached
+            this.exitStatus = undefined;
             return terminalId;
         }
         this.logger.warn(`Failed attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
@@ -705,7 +730,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     async executeCommand(commandOptions: CommandLineOptions): Promise<void> {
-        this.sendText(this.shellCommandBuilder.buildCommand(await this.processInfo, commandOptions) + '\n');
+        this.sendText(this.shellCommandBuilder.buildCommand(await this.processInfo, commandOptions) + OS.backend.EOL);
     }
 
     scrollLineUp(): void {
@@ -755,10 +780,19 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (this.exitStatus) {
             this.onTermDidClose.fire(this);
         }
+        if (this.enhancedPreviewNode) {
+            // don't use preview node anymore. rendered markdown will be disposed on super call
+            this.enhancedPreviewNode = undefined;
+        }
         super.dispose();
     }
 
-    protected resizeTerminal(): void {
+    protected resizeTerminal = debounce(() => this.doResizeTerminal(), 50);
+
+    protected doResizeTerminal(): void {
+        if (this.isDisposed) {
+            return;
+        }
         const geo = this.fitAddon.proposeDimensions();
         const cols = geo.cols;
         const rows = geo.rows - 1; // subtract one row for margin
@@ -770,7 +804,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return;
         }
         if (!IBaseTerminalServer.validateId(this.terminalId)
-            || !this.terminalService.getById(this.id)) {
+            || this.exitStatus
+            || !this.terminalService.getById(this.id)
+        ) {
             return;
         }
         const { cols, rows } = this.term;
@@ -852,5 +888,47 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     private disableEnterWhenAttachCloseListener(): boolean {
         return this.isAttachedCloseListener;
+    }
+
+    getEnhancedPreviewNode(): Node | undefined {
+        if (this.enhancedPreviewNode) {
+            return this.enhancedPreviewNode;
+        }
+
+        this.enhancedPreviewNode = document.createElement('div');
+
+        Promise.all([this.envVarCollectionDescriptionsByExtension, this.processId, this.processInfo])
+            .then((values: [Map<string, string | MarkdownString | undefined>, number, TerminalProcessInfo]) => {
+                const extensions = values[0];
+                const processId = values[1];
+                const processInfo = values[2];
+
+                const markdown = new MarkdownStringImpl();
+                markdown.appendMarkdown('Process ID: ' + processId + '\\\n');
+                markdown.appendMarkdown('Command line: ' +
+                    processInfo.executable +
+                    ' ' +
+                    processInfo.arguments.join(' ') +
+                    '\n\n---\n\n');
+                markdown.appendMarkdown('The following extensions have contributed to this terminal\'s environment:\n');
+                extensions.forEach((value, key) => {
+                    if (value === undefined) {
+                        markdown.appendMarkdown('* ' + key + '\n');
+                    } else if (typeof value === 'string') {
+                        markdown.appendMarkdown('* ' + key + ': ' + value + '\n');
+                    } else {
+                        markdown.appendMarkdown('* ' + key + ': ' + value.value + '\n');
+                    }
+                });
+
+                const enhancedPreviewNode = this.enhancedPreviewNode;
+                if (!this.isDisposed && enhancedPreviewNode) {
+                    const result = this.markdownRenderer.render(markdown);
+                    this.toDispose.push(result);
+                    enhancedPreviewNode.appendChild(result.element);
+                }
+            });
+
+        return this.enhancedPreviewNode;
     }
 }

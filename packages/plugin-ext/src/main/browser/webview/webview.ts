@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 /*---------------------------------------------------------------------------------------------
 *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -479,7 +479,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
             const linkAsString = link.toString();
             for (const resourceRoot of [this.externalEndpoint + '/theia-resource', this.externalEndpoint + '/vscode-resource']) {
                 if (linkAsString.startsWith(resourceRoot + '/')) {
-                    return this.normalizeRequestUri(linkAsString.substr(resourceRoot.length));
+                    return this.normalizeRequestUri(linkAsString.substring(resourceRoot.length));
                 }
             }
             return link;

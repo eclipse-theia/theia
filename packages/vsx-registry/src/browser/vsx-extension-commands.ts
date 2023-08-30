@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
@@ -50,11 +50,11 @@ export namespace VSXExtensionsCommands {
         label: 'Show Built-in Extensions',
         category: EXTENSIONS_CATEGORY,
     });
-    export const SHOW_INSTALLED = Command.toDefaultLocalizedCommand({
+    export const SHOW_INSTALLED = Command.toLocalizedCommand({
         id: 'vsxExtension.showInstalled',
         label: 'Show Installed Extensions',
         category: EXTENSIONS_CATEGORY,
-    });
+    }, 'theia/vsx-registry/showInstalled');
     export const SHOW_RECOMMENDATIONS = Command.toDefaultLocalizedCommand({
         id: 'vsxExtension.showRecommendations',
         label: 'Show Recommended Extensions',

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
@@ -33,6 +33,7 @@ import {
 } from '../common/base-terminal-protocol';
 import { TerminalProcess, ProcessManager, TaskTerminalProcess } from '@theia/process/lib/node';
 import { ShellProcess } from './shell-process';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 
 @injectable()
 export abstract class BaseTerminalServer implements IBaseTerminalServer {
@@ -77,6 +78,8 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
                 // Didn't execute `unregisterProcess` on terminal `exit` event to enable attaching task output to terminal,
                 // Fixes https://github.com/eclipse-theia/theia/issues/2961
                 terminal.unregisterProcess();
+            } else {
+                this.postAttachAttempted(terminal);
             }
         }
     }
@@ -98,6 +101,18 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
             executable: terminal.executable,
             arguments: terminal.arguments,
         };
+    }
+
+    async getEnvVarCollectionDescriptionsByExtension(id: number): Promise<Map<string, string | MarkdownString | undefined>> {
+        const terminal = this.processManager.get(id);
+        if (!(terminal instanceof TerminalProcess)) {
+            throw new Error(`terminal "${id}" does not exist`);
+        }
+        const result = new Map<string, string | MarkdownString | undefined>();
+        this.collections.forEach((value, key) => {
+            result.set(key, value.description);
+        });
+        return result;
     }
 
     async getCwdURI(id: number): Promise<string> {
@@ -142,7 +157,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         this.client.updateTerminalEnvVariables();
     }
 
-    protected postCreate(term: TerminalProcess): void {
+    protected notifyClientOnExit(term: TerminalProcess): DisposableCollection {
         const toDispose = new DisposableCollection();
 
         toDispose.push(term.onError(error => {
@@ -150,8 +165,9 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
 
             if (this.client !== undefined) {
                 this.client.onTerminalError({
-                    'terminalId': term.id,
-                    'error': new Error(`Failed to execute terminal process (${error.code})`),
+                    terminalId: term.id,
+                    error: new Error(`Failed to execute terminal process (${error.code})`),
+                    attached: term instanceof TaskTerminalProcess && term.attachmentAttempted
                 });
             }
         }));
@@ -159,14 +175,24 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         toDispose.push(term.onExit(event => {
             if (this.client !== undefined) {
                 this.client.onTerminalExitChanged({
-                    'terminalId': term.id,
-                    'code': event.code,
-                    'reason': TerminalExitReason.Process,
-                    'signal': event.signal
+                    terminalId: term.id,
+                    code: event.code,
+                    reason: TerminalExitReason.Process,
+                    signal: event.signal,
+                    attached: term instanceof TaskTerminalProcess && term.attachmentAttempted
                 });
             }
         }));
+        return toDispose;
+    }
 
+    protected postCreate(term: TerminalProcess): void {
+        const toDispose = this.notifyClientOnExit(term);
+        this.terminalToDispose.set(term.id, toDispose);
+    }
+
+    protected postAttachAttempted(term: TaskTerminalProcess): void {
+        const toDispose = this.notifyClientOnExit(term);
         this.terminalToDispose.set(term.id, toDispose);
     }
 
@@ -176,8 +202,8 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
      *--------------------------------------------------------------------------------------------*/
     // some code copied and modified from https://github.com/microsoft/vscode/blob/1.49.0/src/vs/workbench/contrib/terminal/common/environmentVariableService.ts
 
-    setCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection): void {
-        const translatedCollection = { persistent, map: new Map<string, EnvironmentVariableMutator>(collection) };
+    setCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection, description: string | MarkdownString | undefined): void {
+        const translatedCollection = { persistent, description, map: new Map<string, EnvironmentVariableMutator>(collection) };
         this.collections.set(extensionIdentifier, translatedCollection);
         this.updateCollections();
     }
@@ -198,7 +224,8 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
             if (collection.persistent) {
                 collectionsJson.push({
                     extensionIdentifier,
-                    collection: [...this.collections.get(extensionIdentifier)!.map.entries()]
+                    collection: [...this.collections.get(extensionIdentifier)!.map.entries()],
+                    description: collection.description
                 });
             }
         });

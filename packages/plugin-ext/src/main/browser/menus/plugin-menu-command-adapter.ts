@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { CommandRegistry, Disposable, MenuCommandAdapter, MenuPath, SelectionService, UriSelection } from '@theia/core';
@@ -94,6 +94,7 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
             ['editor/context', selectedResource],
             ['editor/title', widgetURI],
             ['editor/title/context', selectedResource],
+            ['editor/title/run', widgetURI],
             ['explorer/context', selectedResource],
             ['scm/resourceFolder/context', toScmArgs],
             ['scm/resourceGroup/context', toScmArgs],

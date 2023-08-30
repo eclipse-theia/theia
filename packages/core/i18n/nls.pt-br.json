@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Editar condição...",
   "terminal:new:profile": "Criar um novo terminal integrado a partir de um perfil",
   "terminal:profile:default": "Escolha o Perfil do Terminal padrão",
   "theia": {
@@ -29,6 +30,11 @@
         "showPreviousTabInGroup": "Mudar para a guia Anterior em Grupo",
         "toggleMaximized": "Alternar ao máximo"
       },
+      "enhancedPreview": {
+        "classic": "Exibir uma visualização simples da guia com informações básicas.",
+        "enhanced": "Exibir uma visualização aprimorada da guia com informações adicionais.",
+        "visual": "Exibe uma prévia visual da guia."
+      },
       "file": {
         "browse": "Navegue"
       },
@@ -43,6 +49,10 @@
         "pc": "Teclados de PC",
         "tryDetect": "Tente detectar o layout do teclado a partir das informações do navegador e pressione as teclas."
       },
+      "navigator": {
+        "clipboardWarn": "O acesso à área de transferência foi negado. Verifique a permissão de seu navegador.",
+        "clipboardWarnFirefox": "A API da área de transferência não está disponível. Ela pode ser ativada pela preferência '{0}' na página '{1}'. Em seguida, recarregue o Theia. Observe que isso permitirá que o FireFox obtenha acesso total à área de transferência do sistema."
+      },
       "offline": "Offline",
       "quitMessage": "Quaisquer mudanças não salvas não serão salvas.",
       "resetWorkbenchLayout": "Restabelecer o layout do Workbench",
@@ -52,7 +62,10 @@
         "previous": "Anterior (Para cima)"
       },
       "silentNotifications": "Controla se devem ser suprimidas as popups de notificação.",
-      "tabMaximize": "Controla se é necessário maximizar as abas com duplo clique."
+      "tabDefaultSize": "Especifica o tamanho padrão das guias.",
+      "tabMaximize": "Controla se é necessário maximizar as abas com duplo clique.",
+      "tabMinimumSize": "Especifica o tamanho mínimo das guias.",
+      "tabShrinkToFit": "Reduzir as guias para que se ajustem ao espaço disponível."
     },
     "debug": {
       "addConfigurationPlaceholder": "Selecione a raiz do espaço de trabalho para adicionar configuração a",
@@ -68,15 +81,13 @@
       "toggleTracing": "Habilitar/desabilitar as comunicações de rastreamento com adaptadores de depuração"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "Utiliza um algoritmo de difusão experimental.",
-      "diffEditor.diffAlgorithm.smart": "Utiliza o algoritmo de difusão padrão.",
       "dirtyEncoding": "O arquivo está sujo. Por favor, salve-o primeiro antes de reabri-lo com outra codificação.",
       "editor.codeActionWidget.showHeaders": "Habilitar/desabilitar mostrar os cabeçalhos de grupo no menu de ação de código.",
+      "editor.experimental.pasteActions.enabled": "Ativar/desativar a execução de edições de extensões ao colar.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tentará formatar modificações apenas (requer controle de fonte). Se o controle da fonte não puder ser usado, então o arquivo inteiro será formatado.",
       "editor.inlayHints.enabled1": "Dicas de Inlay estão mostrando por padrão e se escondem ao segurar `Ctrl+Alt`.",
       "editor.inlayHints.enabled2": "Dicas de Inlay são ocultadas por padrão e mostram quando se segura `Ctrl+Alt`.",
       "editor.quickSuggestions": "Controla se as sugestões devem aparecer automaticamente durante a digitação. Isto pode ser controlado para digitação de comentários, strings, e outros códigos. A sugestão rápida pode ser configurada para aparecer como texto fantasma ou com o widget de sugestão. Esteja ciente também do '#editor.suggestOnTriggerCharacters#'-setting que controla se as sugestões são acionadas por caracteres especiais.",
-      "editor.stickyScroll.maxLineCount": "Define o número máximo de linhas pegajosas a serem mostradas.",
       "editor.suggest.matchOnWordStartOnly": "Quando ativada, a filtragem IntelliSense requer que o primeiro caractere corresponda em um início de palavra, por exemplo `c` em `Console` ou `Contexto Web` mas _não_ em `descrição`. Quando desabilitado, o IntelliSense mostrará mais resultados, mas ainda assim os classifica pela qualidade da correspondência.",
       "files.autoSave": "Controles [auto save](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) de editores que não salvaram mudanças.",
       "files.autoSave.afterDelay": "Um editor com mudanças é automaticamente salvo após o `#files.autoSaveDelay#` configurado.",
@@ -153,11 +164,15 @@
       "gitDecorationsColors": "Use a decoração colorida no navegador.",
       "mergeQuickPickPlaceholder": "Escolha uma filial para fundir-se na filial atualmente ativa {0}:",
       "missingUserInfo": "Certifique-se de configurar seu 'user.name' e 'user.email' em 'git'.",
+      "noHistoryForError": "Não há histórico disponível para {0}",
       "noPreviousCommit": "Nenhum compromisso anterior de emendar",
       "noRepositoriesSelected": "Não foram selecionados repositórios.",
+      "prepositionIn": "em",
       "repositoryNotInitialized": "O Repositório {0} ainda não foi inicializado.",
       "stashChanges": "Mudanças de estoque. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
       "stashChangesWithMessage": "Mudanças de estoque com mensagem: {0}. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
+      "tabTitleIndex": "{0} (índice)",
+      "tabTitleWorkingTree": "{0} (Árvore de trabalho)",
       "toggleBlameAnnotations": "Troca de anotações de culpa"
     },
     "keybinding-schema-updater": {
@@ -206,7 +221,7 @@
         "offset-title": "Bytes para compensar a memória de {0}"
       },
       "editable": {
-        "apply": "Aplicar mudanças",
+        "apply": "Aplicar alterações",
         "clear": "Mudanças claras"
       },
       "endianness": "Endianness",
@@ -268,6 +283,8 @@
     },
     "navigator": {
       "autoReveal": "Auto Revelação",
+      "clipboardWarn": "O acesso à área de transferência foi negado. Verifique a permissão de seu navegador.",
+      "clipboardWarnFirefox": "A API da área de transferência não está disponível. Ela pode ser ativada pela preferência '{0}' na página '{1}'. Em seguida, recarregue o Theia. Observe que isso permitirá que o FireFox obtenha acesso total à área de transferência do sistema.",
       "refresh": "Refrescar no Explorer",
       "reveal": "Revelar no Explorer",
       "toggleHiddenFiles": "Alternar arquivos ocultos"
@@ -278,6 +295,7 @@
       "hiddenChannels": "Canais ocultos",
       "hideOutputChannel": "Esconder canal de saída...",
       "maxChannelHistory": "O número máximo de entradas em um canal de saída.",
+      "outputChannels": "Canais de saída",
       "showOutputChannel": "Mostrar canal de saída..."
     },
     "plugin": {
@@ -311,6 +329,9 @@
       "watchMode": "Executar o watcher no plugin em desenvolvimento"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Login"
+      },
       "plugins": "Plugins",
       "webviewTrace": "Controla o rastreamento da comunicação com visualizações na web.",
       "webviewWarnIfUnsecure": "Adverte os usuários de que as visualizações na web são atualmente implantadas de forma insegura."
@@ -358,6 +379,7 @@
     "task": {
       "attachTask": "Anexar Tarefa...",
       "clearHistory": "Histórico claro",
+      "noTaskToRun": "Nenhuma tarefa a ser executada foi encontrada. Configurar tarefas...",
       "openUserTasks": "Tarefas abertas para o usuário"
     },
     "terminal": {
@@ -370,7 +392,6 @@
       "profileIcon": "Um codicon ID para associar com o ícone do terminal.\nterminal-tmux: \"$(terminal-tmux)\".",
       "profileNew": "Novo Terminal (Com Perfil)...",
       "profilePath": "O caminho da casca que este perfil utiliza.",
-      "profileSource": "Uma fonte de perfil que detectará automaticamente os caminhos para a casca. Note que os locais executáveis não padrão não são suportados e devem ser criados manualmente em um novo perfil.",
       "profiles": "Os perfis a serem apresentados ao criar um novo terminal. Definir a propriedade do caminho manualmente com args opcionais.\nDefinir um perfil existente para 'nulo' para ocultar o perfil da lista, por exemplo: `\"{0}\": nulo'.",
       "rendererType": "Controla como o terminal é renderizado.",
       "selectProfile": "Selecione um perfil para o novo terminal",
@@ -414,6 +435,7 @@
       "license": "Licença: {0}",
       "recommendedExtensions": "Uma lista dos nomes das extensões recomendadas para uso neste espaço de trabalho.",
       "searchPlaceholder": "Pesquisar extensões em {0}",
+      "showInstalled": "Mostrar extensões instaladas",
       "showRecommendedExtensions": "Controla se as notificações são mostradas para recomendações de extensão.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Erro ao remover a extensão: {0}.",

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
@@ -111,7 +111,7 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
     }
 
     getTrackableWidgets(): Widget[] {
-        return this.viewContainer.getTrackableWidgets();
+        return [this.viewContainer];
     }
 
     storeState(): object {

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
@@ -99,9 +99,10 @@ export class DefaultJsonSchemaContribution implements JsonSchemaContribution {
     @inject(RequestService)
     protected readonly requestService: RequestService;
 
+    protected readonly jsonSchemaUrl = `${new Endpoint().httpScheme}//schemastore.org/api/json/catalog.json`;
+
     async registerSchemas(context: JsonSchemaRegisterContext): Promise<void> {
-        const url = `${new Endpoint().httpScheme}//schemastore.azurewebsites.net/api/json/catalog.json`;
-        const response = await this.requestService.request({ url });
+        const response = await this.requestService.request({ url: this.jsonSchemaUrl });
         const schemas = RequestContext.asJson<{ schemas: DefaultJsonSchemaContribution.SchemaData[] }>(response).schemas;
         for (const s of schemas) {
             if (s.fileMatch) {

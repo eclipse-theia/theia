@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
@@ -434,17 +434,18 @@ export class KeybindingRegistry {
      */
     getKeybindingsForCommand(commandId: string): ScopedKeybinding[] {
         const result: ScopedKeybinding[] = [];
-        const disabledBindings: ScopedKeybinding[] = [];
+        const disabledBindings = new Set<string>();
         for (let scope = KeybindingScope.END - 1; scope >= KeybindingScope.DEFAULT; scope--) {
             this.keymaps[scope].forEach(binding => {
                 if (binding.command?.startsWith('-')) {
-                    disabledBindings.push(binding);
-                }
-                const command = this.commandRegistry.getCommand(binding.command);
-                if (command
-                    && command.id === commandId
-                    && !disabledBindings.some(disabled => common.Keybinding.equals(disabled, { ...binding, command: '-' + binding.command }, false, true))) {
-                    result.push({ ...binding, scope });
+                    disabledBindings.add(JSON.stringify({ command: binding.command.substring(1), binding: binding.keybinding, context: binding.context, when: binding.when }));
+                } else {
+                    const command = this.commandRegistry.getCommand(binding.command);
+                    if (command
+                        && command.id === commandId
+                        && !disabledBindings.has(JSON.stringify({ command: binding.command, binding: binding.keybinding, context: binding.context, when: binding.when }))) {
+                        result.push({ ...binding, scope });
+                    }
                 }
             });
         }
@@ -491,11 +492,15 @@ export class KeybindingRegistry {
      * Only execute if it has no context (global context) or if we're in that context.
      */
     protected isEnabled(binding: common.Keybinding, event: KeyboardEvent): boolean {
+        return this.isEnabledInScope(binding, <HTMLElement>event.target);
+    }
+
+    isEnabledInScope(binding: common.Keybinding, target: HTMLElement | undefined): boolean {
         const context = binding.context && this.contexts[binding.context];
         if (context && !context.isEnabled(binding)) {
             return false;
         }
-        if (binding.when && !this.whenContextService.match(binding.when, <HTMLElement>event.target)) {
+        if (binding.when && !this.whenContextService.match(binding.when, target)) {
             return false;
         }
         return true;
@@ -620,7 +625,7 @@ export class KeybindingRegistry {
             const { command, context, when, keybinding } = binding;
             if (!this.isUsable(binding)) {
                 disabled = disabled || new Set<string>();
-                disabled.add(JSON.stringify({ command: command.substr(1), context, when, keybinding }));
+                disabled.add(JSON.stringify({ command: command.substring(1), context, when, keybinding }));
                 return false;
             }
             return !disabled?.has(JSON.stringify({ command, context, when, keybinding }));

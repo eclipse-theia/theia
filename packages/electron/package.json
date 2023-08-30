@@ -1,25 +1,22 @@
 {
   "name": "@theia/electron",
-  "version": "1.36.0",
+  "version": "1.40.0",
   "description": "Theia - Electron utility package",
   "dependencies": {
-    "@electron/remote": "^2.0.1 <2.0.4 || >2.0.4",
     "electron-store": "^8.0.0",
     "fix-path": "^3.0.0",
     "native-keymap": "^2.2.1"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.36.0",
-    "@theia/re-exports": "1.36.0"
+    "@theia/ext-scripts": "1.40.0",
+    "@theia/re-exports": "1.40.0"
   },
   "peerDependencies": {
-    "electron": "^15.3.5"
+    "electron": "^23.2.4"
   },
   "theiaReExports": {
     "shared": {
       "export *": [
-        "@electron/remote",
-        "@electron/remote/main",
         "native-keymap"
       ],
       "export =": [
@@ -36,7 +33,7 @@
   "keywords": [
     "theia-extension"
   ],
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { FormatType, Localization } from './i18n/localization';
@@ -19,6 +19,8 @@ import { FormatType, Localization } from './i18n/localization';
 export namespace nls {
 
     export let localization: Localization | undefined;
+
+    export const defaultLocale = 'en';
 
     export const localeId = 'localeId';
 
@@ -57,7 +59,7 @@ export namespace nls {
     }
 
     export function isSelectedLocale(id: string): boolean {
-        if (locale === undefined && id === 'en') {
+        if (locale === undefined && id === defaultLocale) {
             return true;
         }
         return locale === id;

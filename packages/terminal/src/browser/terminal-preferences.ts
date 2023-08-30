@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /* eslint-disable max-len */
@@ -83,7 +83,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
         },
         'terminal.integrated.fontFamily': {
             type: 'string',
-            markdownDescription: nls.localizeByDefault("Controls the font family of the terminal, this defaults to {0}'s value.", '`#editor.fontFamily#`'),
+            markdownDescription: nls.localizeByDefault('Controls the font family of the terminal. Defaults to {0}\'s value.', '`#editor.fontFamily#`'),
             default: editorGeneratedPreferenceProperties['editor.fontFamily'].default,
         },
         'terminal.integrated.fontSize': {
@@ -110,18 +110,18 @@ export const TerminalConfigSchema: PreferenceSchema = {
             default: true,
         },
         'terminal.integrated.letterSpacing': {
-            description: nls.localizeByDefault('Controls the letter spacing of the terminal, this is an integer value which represents the amount of additional pixels to add between characters.'),
+            description: nls.localizeByDefault('Controls the letter spacing of the terminal. This is an integer value which represents the number of additional pixels to add between characters.'),
             type: 'number',
             default: 1
         },
         'terminal.integrated.lineHeight': {
-            description: nls.localizeByDefault('Controls the line height of the terminal, this number is multiplied by the terminal font size to get the actual line-height in pixels.'),
+            description: nls.localizeByDefault('Controls the line height of the terminal. This number is multiplied by the terminal font size to get the actual line-height in pixels.'),
             type: 'number',
             minimum: 1,
             default: 1
         },
         'terminal.integrated.scrollback': {
-            description: nls.localizeByDefault('Controls the maximum amount of lines the terminal keeps in its buffer.'),
+            description: nls.localizeByDefault('Controls the maximum number of lines the terminal keeps in its buffer. We pre-allocate memory based on this value in order to ensure a smooth experience. As such, as the value increases, so will the amount of memory.'),
             type: 'number',
             default: 1000
         },
@@ -253,7 +253,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
                             properties: {
                                 source: {
                                     type: 'string',
-                                    description: nls.localize('theia/terminal/profileSource', 'A profile source that will auto detect the paths to the shell. Note that non-standard executable locations are not supported and must be created manually in a new profile.')
+                                    description: nls.localizeByDefault('A profile source that will auto detect the paths to the shell. Note that non-standard executable locations are not supported and must be created manually in a new profile.')
                                 },
                                 args: {
                                     ...stringOrStringArray,

@@ -11,7 +11,7 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 import URI from '@theia/core/lib/common/uri';
@@ -22,7 +22,7 @@ import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/s
 import { QuickInputService } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 
-interface DynamicPickItem { label: string, configurationType: string, request: string, providerType: string }
+interface DynamicPickItem { label: string, configurationType: string, request: string, providerType: string, workspaceFolderUri?: string }
 
 export interface DebugConfigurationSelectProps {
     manager: DebugConfigurationManager,
@@ -57,6 +57,13 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         this.manager.onDidChangeConfigurationProviders(() => {
             this.refreshDebugConfigurations();
         });
+    }
+
+    override componentDidUpdate(): void {
+        // synchronize the currentValue with the selectComponent value
+        if (this.selectRef.current?.value !== this.currentValue) {
+            this.refreshDebugConfigurations();
+        }
     }
 
     override componentDidMount(): void {
@@ -103,7 +110,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         if (!value) {
             return false;
         } else if (value === DebugConfigurationSelect.ADD_CONFIGURATION) {
-            this.manager.addConfiguration();
+            setTimeout(() => this.manager.addConfiguration());
         } else if (value.startsWith(DebugConfigurationSelect.PICK)) {
             const providerType = this.parsePickValue(value);
             this.selectDynamicConfigFromQuickPick(providerType);
@@ -130,11 +137,13 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
             return [];
         }
 
-        return configurationsOfProviderType.map(configuration => ({
-            label: configuration.name,
-            configurationType: configuration.type,
-            request: configuration.request,
-            providerType
+        return configurationsOfProviderType.map(options => ({
+            label: options.configuration.name,
+            configurationType: options.configuration.type,
+            request: options.configuration.request,
+            providerType: options.providerType,
+            description: this.toBaseName(options.workspaceFolderUri),
+            workspaceFolderUri: options.workspaceFolderUri
         }));
     }
 
@@ -161,15 +170,15 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
             type: selected.configurationType,
             request: selected.request
         };
-        this.manager.current = this.manager.find(selectedConfiguration, undefined, selected.providerType);
+        this.manager.current = this.manager.find(selectedConfiguration, selected.workspaceFolderUri, selected.providerType);
         this.refreshDebugConfigurations();
     }
 
     protected refreshDebugConfigurations = async () => {
-        const configsPerType = await this.manager.provideDynamicDebugConfigurations();
+        const configsOptionsPerType = await this.manager.provideDynamicDebugConfigurations();
         const providerTypes = [];
-        for (const [type, configurations] of Object.entries(configsPerType)) {
-            if (configurations.length > 0) {
+        for (const [type, configurationsOptions] of Object.entries(configsOptionsPerType)) {
+            if (configurationsOptions.length > 0) {
                 providerTypes.push(type);
             }
         }
@@ -251,6 +260,10 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         if (!options.workspaceFolderUri || !multiRoot) {
             return name;
         }
-        return `${name} (${new URI(options.workspaceFolderUri).path.base})`;
+        return `${name} (${this.toBaseName(options.workspaceFolderUri)})`;
+    }
+
+    protected toBaseName(uri: string | undefined): string {
+        return uri ? new URI(uri).path.base : '';
     }
 }

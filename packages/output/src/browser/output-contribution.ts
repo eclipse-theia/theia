@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
@@ -257,7 +257,7 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
 
     protected async pick({ channels, placeholder }: { channels: OutputChannel[], placeholder: string }): Promise<OutputChannel | undefined> {
         const items: Array<QuickPickValue<OutputChannel> | QuickPickItem | QuickPickSeparator> = [];
-        const outputChannels = nls.localizeByDefault('Output Channels');
+        const outputChannels = nls.localize('theia/output/outputChannels', 'Output Channels');
         const hiddenChannels = nls.localize('theia/output/hiddenChannels', 'Hidden Channels');
         for (let i = 0; i < channels.length; i++) {
             const channel = channels[i];

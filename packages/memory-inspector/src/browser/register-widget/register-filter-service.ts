@@ -11,7 +11,7 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -50,13 +50,12 @@ export class RegisterFilterServiceImpl implements RegisterFilterService {
     }
 
     @postConstruct()
-    protected init(): Promise<void> {
+    protected init(): void {
         this.filters.set(AllOrCustom.All, undefined);
         this.filters.set(AllOrCustom.Custom, new Set());
         for (const [key, values] of Object.entries(this.options)) {
             this.filters.set(key, new Set(values));
         }
-        return Promise.resolve();
     }
 
     setFilter(filterLabel: string): void {

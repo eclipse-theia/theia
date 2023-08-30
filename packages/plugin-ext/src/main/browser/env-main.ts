@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
@@ -50,7 +50,7 @@ export class EnvMainImpl implements EnvMain {
 export function getQueryParameters(): QueryParameters {
     const queryParameters: QueryParameters = {};
     if (window.location.search !== '') {
-        const queryParametersString = window.location.search.substr(1); // remove question mark
+        const queryParametersString = window.location.search.substring(1); // remove question mark
         const params = queryParametersString.split('&');
         for (const pair of params) {
             if (pair === '') {

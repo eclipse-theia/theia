@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
@@ -198,6 +198,16 @@ export function fromMarkdown(markup: theia.MarkdownString | theia.MarkedString):
         return { value: markup };
     } else {
         return { value: '' };
+    }
+}
+
+export function fromMarkdownOrString(value: string | theia.MarkdownString | undefined): string | MarkdownStringDTO | undefined {
+    if (value === undefined) {
+        return undefined;
+    } else if (typeof value === 'string') {
+        return value;
+    } else {
+        return fromMarkdown(value);
     }
 }
 
@@ -835,10 +845,12 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     if ('detail' in task) {
         taskDto.detail = task.detail;
     }
-    if (typeof task.scope === 'object') {
-        taskDto.scope = task.scope.uri.toString();
-    } else if (typeof task.scope === 'number') {
+    if (typeof task.scope === 'number') {
         taskDto.scope = task.scope;
+    } else if (task.scope !== undefined) {
+        taskDto.scope = task.scope.uri.toString();
+    } else {
+        taskDto.scope = types.TaskScope.Workspace;
     }
 
     if (task.presentationOptions) {

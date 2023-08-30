@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as fs from '@theia/core/shared/fs-extra';
@@ -266,7 +266,7 @@ export namespace GitBlameParser {
         } else if (firstPart === 'summary') {
             let summary = parts.slice(1).join(' ');
             if (summary.startsWith('"') && summary.endsWith('"')) {
-                summary = summary.substr(1, summary.length - 2);
+                summary = summary.substring(1, summary.length - 1);
             }
             entry.summary = uncommitted ? 'uncommitted' : summary;
         } else if (firstPart === 'previous') {
@@ -726,7 +726,7 @@ export class DugiteGit implements Git {
             if (nl > 0) {
                 nl = revOutput.indexOf('\n', nl + 1);
             }
-            return revOutput.substr(Math.max(0, nl)).trim();
+            return revOutput.substring(Math.max(0, nl)).trim();
         };
         const blame = await this.blameParser.parse(uri, output, commitBodyReader);
         return blame;
@@ -766,7 +766,8 @@ export class DugiteGit implements Git {
         const out = result.stdout;
         if (out && out.length !== 0) {
             try {
-                return fs.realpathSync(out.trim());
+                const realpath = await fs.realpath(out.trim());
+                return realpath;
             } catch (e) {
                 this.logger.error(e);
                 return undefined;

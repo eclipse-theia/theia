@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -23,6 +23,7 @@ import { Emitter, Event, Disposable, DisposableCollection, MaybePromise, isObjec
 import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
 
 import PerfectScrollbar from 'perfect-scrollbar';
+import { PreviewableWidget } from '../widgets/previewable-widget';
 
 decorate(injectable(), Widget);
 decorate(unmanaged(), Widget, 0);
@@ -93,7 +94,7 @@ export namespace UnsafeWidgetUtilities {
 }
 
 @injectable()
-export class BaseWidget extends Widget {
+export class BaseWidget extends Widget implements PreviewableWidget {
 
     protected readonly onScrollYReachEndEmitter = new Emitter<void>();
     readonly onScrollYReachEnd: Event<void> = this.onScrollYReachEndEmitter.event;
@@ -114,6 +115,10 @@ export class BaseWidget extends Widget {
     protected readonly toDisposeOnDetach = new DisposableCollection();
     protected scrollBar?: PerfectScrollbar;
     protected scrollOptions?: PerfectScrollbar.Options;
+
+    constructor(options?: Widget.IOptions) {
+        super(options);
+    }
 
     override dispose(): void {
         if (this.isDisposed) {
@@ -210,6 +215,10 @@ export class BaseWidget extends Widget {
 
     protected addClipboardListener<K extends 'cut' | 'copy' | 'paste'>(element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject<K>): void {
         this.toDisposeOnDetach.push(addClipboardListener(element, type, listener));
+    }
+
+    getPreviewNode(): Node | undefined {
+        return this.node;
     }
 
     override setFlag(flag: Widget.Flag): void {

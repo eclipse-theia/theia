@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ElementHandle } from '@playwright/test';
@@ -47,8 +47,8 @@ export class TheiaExplorerFileStatNode extends TheiaTreeNode {
         return elementContainsClass(this.elementHandle, 'theia-DirNode');
     }
 
-    async getMenuItemByNamePath(...names: string[]): Promise<TheiaMenuItem> {
-        const contextMenu = await this.openContextMenu();
+    async getMenuItemByNamePath(names: string[], nodeSegmentLabel?: string): Promise<TheiaMenuItem> {
+        const contextMenu = nodeSegmentLabel ? await this.openContextMenuOnSegment(nodeSegmentLabel) : await this.openContextMenu();
         const menuItem = await contextMenu.menuItemByNamePath(...names);
         if (!menuItem) { throw Error('MenuItem could not be retrieved by path'); }
         return menuItem;
@@ -106,8 +106,8 @@ export class TheiaExplorerView extends TheiaView {
         return [];
     }
 
-    async getFileStatNodeByLabel(label: string): Promise<TheiaExplorerFileStatNode> {
-        const file = await this.fileStatNode(label);
+    async getFileStatNodeByLabel(label: string, compact = false): Promise<TheiaExplorerFileStatNode> {
+        const file = await this.fileStatNode(label, compact);
         if (!file) { throw Error('File stat node could not be retrieved by path fragments'); }
         return file;
     }
@@ -202,11 +202,11 @@ export class TheiaExplorerView extends TheiaView {
         return nodeId;
     }
 
-    async clickContextMenuItem(file: string, path: string[]): Promise<void> {
+    async clickContextMenuItem(file: string, path: string[], nodeSegmentLabel?: string): Promise<void> {
         await this.activate();
-        const fileStatNode = await this.fileStatNode(file);
+        const fileStatNode = await this.fileStatNode(file, !!nodeSegmentLabel);
         if (!fileStatNode) { throw Error('File stat node could not be retrieved by path fragments'); }
-        const menuItem = await fileStatNode.getMenuItemByNamePath(...path);
+        const menuItem = await fileStatNode.getMenuItemByNamePath(path, nodeSegmentLabel);
         await menuItem.click();
     }
 
@@ -248,9 +248,9 @@ export class TheiaExplorerView extends TheiaView {
         return fileStatElements.length;
     }
 
-    async deleteNode(path: string, confirm = true): Promise<void> {
+    async deleteNode(path: string, confirm = true, nodeSegmentLabel?: string): Promise<void> {
         await this.activate();
-        await this.clickContextMenuItem(path, ['Delete']);
+        await this.clickContextMenuItem(path, ['Delete'], nodeSegmentLabel);
 
         const confirmDialog = new TheiaDialog(this.app);
         await confirmDialog.waitForVisible();
@@ -258,13 +258,14 @@ export class TheiaExplorerView extends TheiaView {
         await confirmDialog.waitForClosed();
     }
 
-    async renameNode(path: string, newName: string, confirm = true): Promise<void> {
+    async renameNode(path: string, newName: string, confirm = true, nodeSegmentLabel?: string): Promise<void> {
         await this.activate();
-        await this.clickContextMenuItem(path, ['Rename']);
+        await this.clickContextMenuItem(path, ['Rename'], nodeSegmentLabel);
 
         const renameDialog = new TheiaRenameDialog(this.app);
         await renameDialog.waitForVisible();
         await renameDialog.enterNewName(newName);
+        await renameDialog.waitUntilMainButtonIsEnabled();
         confirm ? await renameDialog.confirm() : await renameDialog.close();
         await renameDialog.waitForClosed();
         await this.refresh();
@@ -282,6 +283,28 @@ export class TheiaExplorerView extends TheiaView {
         while ((await this.visibleFileStatNodes(DOT_FILES_FILTER)).length === 0) {
             console.debug('Awaiting for tree nodes to appear');
         }
+    }
+
+    async waitForFileNodesToIncrease(numberBefore: number): Promise<void> {
+        const fileStatNodesSelector = `${this.viewSelector} .theia-FileStatNode`;
+        await this.page.waitForFunction(
+            (predicate: { selector: string; numberBefore: number; }) => {
+                const elements = document.querySelectorAll(predicate.selector);
+                return !!elements && elements.length > predicate.numberBefore;
+            },
+            { selector: fileStatNodesSelector, numberBefore }
+        );
+    }
+
+    async waitForFileNodesToDecrease(numberBefore: number): Promise<void> {
+        const fileStatNodesSelector = `${this.viewSelector} .theia-FileStatNode`;
+        await this.page.waitForFunction(
+            (predicate: { selector: string; numberBefore: number; }) => {
+                const elements = document.querySelectorAll(predicate.selector);
+                return !!elements && elements.length < predicate.numberBefore;
+            },
+            { selector: fileStatNodesSelector, numberBefore }
+        );
     }
 
 }

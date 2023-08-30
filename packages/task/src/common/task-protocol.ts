@@ -11,11 +11,11 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { Event } from '@theia/core';
-import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
+import { RpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { ProblemMatcher, ProblemMatch, WatchingMatcherContribution, ProblemMatcherContribution, ProblemPatternContribution } from './problem-matcher-protocol';
 export { WatchingMatcherContribution, ProblemMatcherContribution, ProblemPatternContribution };
@@ -48,6 +48,7 @@ export interface TaskOutputPresentation {
     panel?: PanelKind;
     showReuseMessage?: boolean;
     clear?: boolean;
+    close?: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [name: string]: any;
 }
@@ -59,7 +60,8 @@ export namespace TaskOutputPresentation {
             focus: false,
             panel: PanelKind.Shared,
             showReuseMessage: true,
-            clear: false
+            clear: false,
+            close: false
         };
     }
 
@@ -90,7 +92,8 @@ export namespace TaskOutputPresentation {
                 echo: task.presentation.echo === undefined || task.presentation.echo,
                 focus: shouldSetFocusToTerminal(task),
                 showReuseMessage: shouldShowReuseMessage(task),
-                clear: shouldClearTerminalBeforeRun(task)
+                clear: shouldClearTerminalBeforeRun(task),
+                close: shouldCloseTerminalOnFinish(task)
             };
         }
         return outputPresentation;
@@ -106,6 +109,10 @@ export namespace TaskOutputPresentation {
 
     export function shouldClearTerminalBeforeRun(task: TaskCustomization): boolean {
         return !!task.presentation && !!task.presentation.clear;
+    }
+
+    export function shouldCloseTerminalOnFinish(task: TaskCustomization): boolean {
+        return !!task.presentation && !!task.presentation.close;
     }
 
     export function shouldShowReuseMessage(task: TaskCustomization): boolean {
@@ -203,7 +210,7 @@ export interface TaskInfo {
     readonly [key: string]: any;
 }
 
-export interface TaskServer extends JsonRpcServer<TaskClient> {
+export interface TaskServer extends RpcServer<TaskClient> {
     /** Run a task. Optionally pass a context.  */
     run(task: TaskConfiguration, ctx?: string, option?: RunTaskOption): Promise<TaskInfo>;
     /** Kill a task, by id. */

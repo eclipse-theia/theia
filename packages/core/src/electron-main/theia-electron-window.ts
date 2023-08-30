@@ -11,19 +11,19 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { FrontendApplicationConfig } from '@theia/application-package';
-import { FrontendApplicationState } from '../common/frontend-application-state';
-import { APPLICATION_STATE_CHANGE_SIGNAL, CLOSE_REQUESTED_SIGNAL, RELOAD_REQUESTED_SIGNAL, StopReason } from '../electron-common/messaging/electron-messages';
-import { BrowserWindow, BrowserWindowConstructorOptions, ipcMain, IpcMainEvent } from '../../electron-shared/electron';
+import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
+import { BrowserWindow, BrowserWindowConstructorOptions } from '../../electron-shared/electron';
 import { inject, injectable, postConstruct } from '../../shared/inversify';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
 import { DisposableCollection, Emitter, Event } from '../common';
 import { createDisposableListener } from './event-utils';
 import { URI } from '../common/uri';
 import { FileUri } from '../node/file-uri';
+import { TheiaRendererAPI } from './electron-api-main';
 
 /**
  * Theia tracks the maximized state of Electron Browser Windows.
@@ -43,6 +43,12 @@ export const TheiaBrowserWindowOptions = Symbol('TheiaBrowserWindowOptions');
 
 export const WindowApplicationConfig = Symbol('WindowApplicationConfig');
 export type WindowApplicationConfig = FrontendApplicationConfig;
+
+enum ClosingState {
+    initial,
+    inProgress,
+    readyToClose
+}
 
 @injectable()
 export class TheiaElectronWindow {
@@ -75,8 +81,32 @@ export class TheiaElectronWindow {
         this.attachCloseListeners();
         this.trackApplicationState();
         this.attachReloadListener();
+        this.attachSecondaryWindowListener();
     }
 
+    protected attachSecondaryWindowListener(): void {
+        createDisposableListener(this._window.webContents, 'did-create-window', (newWindow: BrowserWindow) => {
+            let closingState = ClosingState.initial;
+            newWindow.on('close', event => {
+                if (closingState === ClosingState.initial) {
+                    closingState = ClosingState.inProgress;
+                    event.preventDefault();
+                    TheiaRendererAPI.requestSecondaryClose(this._window.webContents, newWindow.webContents).then(shouldClose => {
+                        if (shouldClose) {
+                            closingState = ClosingState.readyToClose;
+                            newWindow.close();
+                        } else {
+                            closingState = ClosingState.initial;
+                        }
+                    });
+                } else if (closingState === ClosingState.inProgress) {
+                    // When the extracted widget is disposed programmatically, a dispose listener on it will try to close the window.
+                    // if we dispose the widget because of closing the window, we'll get a recursive call to window.close()
+                    event.preventDefault();
+                }
+            });
+        });
+    }
     /**
      * Only show the window when the content is ready.
      */
@@ -138,22 +168,7 @@ export class TheiaElectronWindow {
     }
 
     protected checkSafeToStop(reason: StopReason): Promise<boolean> {
-        const confirmChannel = `safe-to-close-${this._window.id}`;
-        const cancelChannel = `notSafeToClose-${this._window.id}`;
-        const temporaryDisposables = new DisposableCollection();
-        return new Promise<boolean>(resolve => {
-            this._window.webContents.send(CLOSE_REQUESTED_SIGNAL, { confirmChannel, cancelChannel, reason });
-            createDisposableListener(ipcMain, confirmChannel, (e: IpcMainEvent) => {
-                if (this.isSender(e)) {
-                    resolve(true);
-                }
-            }, temporaryDisposables);
-            createDisposableListener(ipcMain, cancelChannel, (e: IpcMainEvent) => {
-                if (this.isSender(e)) {
-                    resolve(false);
-                }
-            }, temporaryDisposables);
-        }).finally(() => temporaryDisposables.dispose());
+        return TheiaRendererAPI.requestClose(this.window.webContents, reason);
     }
 
     protected restoreMaximizedState(): void {
@@ -165,23 +180,13 @@ export class TheiaElectronWindow {
     }
 
     protected trackApplicationState(): void {
-        createDisposableListener(ipcMain, APPLICATION_STATE_CHANGE_SIGNAL, (e: IpcMainEvent, state: FrontendApplicationState) => {
-            if (this.isSender(e)) {
-                this.applicationState = state;
-            }
-        }, this.toDispose);
+        this.toDispose.push(TheiaRendererAPI.onApplicationStateChanged(this.window.webContents, state => {
+            this.applicationState = state;
+        }));
     }
 
     protected attachReloadListener(): void {
-        createDisposableListener(ipcMain, RELOAD_REQUESTED_SIGNAL, (e: IpcMainEvent) => {
-            if (this.isSender(e)) {
-                this.reload();
-            }
-        }, this.toDispose);
-    }
-
-    protected isSender(e: IpcMainEvent): boolean {
-        return BrowserWindow.fromId(e.sender.id) === this._window;
+        this.toDispose.push(TheiaRendererAPI.onRequestReload(this.window.webContents, () => this.reload()));
     }
 
     dispose(): void {

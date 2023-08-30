@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -232,7 +232,7 @@
                     if (node.getAttribute('href') === '#') {
                         event.view.scrollTo(0, 0);
                     } else if (node.hash && (node.getAttribute('href') === node.hash || (baseElement && node.href.indexOf(baseElement.href) >= 0))) {
-                        let scrollTarget = event.view.document.getElementById(node.hash.substr(1, node.hash.length - 1));
+                        let scrollTarget = event.view.document.getElementById(node.hash.substring(1, node.hash.length));
                         if (scrollTarget) {
                             scrollTarget.scrollIntoView();
                         }

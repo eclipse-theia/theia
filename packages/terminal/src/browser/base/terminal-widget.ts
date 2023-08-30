@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { Event, ViewColumn } from '@theia/core';
@@ -20,6 +20,7 @@ import { CommandLineOptions } from '@theia/process/lib/common/shell-command-buil
 import { TerminalSearchWidget } from '../search/terminal-search-widget';
 import { TerminalProcessInfo, TerminalExitReason } from '../../common/base-terminal-protocol';
 import URI from '@theia/core/lib/common/uri';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 
 export interface TerminalDimensions {
     cols: number;
@@ -57,6 +58,9 @@ export abstract class TerminalWidget extends BaseWidget {
      * Get the current executable and arguments.
      */
     abstract processInfo: Promise<TerminalProcessInfo>;
+
+    /** The ids of extensions contributing to the environment of this terminal mapped to the provided description for their changes. */
+    abstract envVarCollectionDescriptionsByExtension: Promise<Map<string, string | MarkdownString | undefined>>;
 
     /** Terminal kind that indicates whether a terminal is created by a user or by some extension for a user */
     abstract readonly kind: 'user' | string;

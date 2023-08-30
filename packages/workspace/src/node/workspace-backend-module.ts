@@ -11,12 +11,12 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common';
-import { WorkspaceServer, workspacePath, CommonWorkspaceUtils } from '../common';
+import { ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common';
+import { WorkspaceServer, workspacePath, UntitledWorkspaceService, WorkspaceFileService } from '../common';
 import { DefaultWorkspaceServer, WorkspaceCliContribution } from './default-workspace-server';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
@@ -27,10 +27,11 @@ export default new ContainerModule(bind => {
     bind(DefaultWorkspaceServer).toSelf().inSingletonScope();
     bind(WorkspaceServer).toService(DefaultWorkspaceServer);
     bind(BackendApplicationContribution).toService(WorkspaceServer);
-    bind(CommonWorkspaceUtils).toSelf().inSingletonScope();
+    bind(UntitledWorkspaceService).toSelf().inSingletonScope();
+    bind(WorkspaceFileService).toSelf().inSingletonScope();
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(workspacePath, () =>
+        new RpcConnectionHandler(workspacePath, () =>
             ctx.container.get(WorkspaceServer)
         )
     ).inSingletonScope();

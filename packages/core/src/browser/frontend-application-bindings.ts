@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
@@ -49,7 +49,7 @@ export function bindPreferenceService(bind: interfaces.Bind): void {
     bind(PreferenceProxyFactory).toFactory(({ container }) => (schema: MaybePromise<PreferenceSchema>, options: PreferenceProxyOptions = {}) => {
         const child = container.createChild();
         child.bind(PreferenceProxyOptions).toConstantValue(options ?? {});
-        child.bind(PreferenceProxySchema).toConstantValue(schema);
+        child.bind(PreferenceProxySchema).toConstantValue(() => schema);
         const handler = child.get(InjectablePreferenceProxy);
         return new Proxy(Object.create(null), handler); // eslint-disable-line no-null/no-null
     });

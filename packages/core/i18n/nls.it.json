@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Modifica della condizione...",
   "terminal:new:profile": "Creare un nuovo terminale integrato da un profilo",
   "terminal:profile:default": "Scegliere il profilo del terminale predefinito",
   "theia": {
@@ -29,6 +30,11 @@
         "showPreviousTabInGroup": "Passa alla scheda precedente nel gruppo",
         "toggleMaximized": "Toggle Massimizzato"
       },
+      "enhancedPreview": {
+        "classic": "Visualizza una semplice anteprima della scheda con le informazioni di base.",
+        "enhanced": "Visualizza un'anteprima migliorata della scheda con informazioni aggiuntive.",
+        "visual": "Visualizza un'anteprima visiva della scheda."
+      },
       "file": {
         "browse": "Sfogliare"
       },
@@ -43,6 +49,10 @@
         "pc": "Tastiere per PC",
         "tryDetect": "Prova a rilevare il layout della tastiera dalle informazioni del browser e dai tasti premuti."
       },
+      "navigator": {
+        "clipboardWarn": "L'accesso agli appunti è negato. Controllare i permessi del browser.",
+        "clipboardWarnFirefox": "L'API Appunti non è disponibile. È possibile abilitarla tramite la preferenza '{0}' nella pagina '{1}'. Quindi ricaricare Theia. Ciò consentirà a FireFox di avere pieno accesso agli appunti di sistema."
+      },
       "offline": "Non in linea",
       "quitMessage": "Qualsiasi modifica non salvata non sarà salvata.",
       "resetWorkbenchLayout": "Ripristinare il layout del banco di lavoro",
@@ -52,7 +62,10 @@
         "previous": "Precedente (Up)"
       },
       "silentNotifications": "Controlla se sopprimere i popup di notifica.",
-      "tabMaximize": "Controlla se massimizzare le schede al doppio clic."
+      "tabDefaultSize": "Specifica la dimensione predefinita delle schede.",
+      "tabMaximize": "Controlla se massimizzare le schede al doppio clic.",
+      "tabMinimumSize": "Specifica la dimensione minima delle schede.",
+      "tabShrinkToFit": "Restringere le schede per adattarle allo spazio disponibile."
     },
     "debug": {
       "addConfigurationPlaceholder": "Selezionare lo spazio di lavoro principale a cui aggiungere la configurazione",
@@ -68,15 +81,13 @@
       "toggleTracing": "Abilita/disabilita il tracciamento delle comunicazioni con gli adattatori di debug"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "Utilizza un algoritmo di diffing sperimentale.",
-      "diffEditor.diffAlgorithm.smart": "Utilizza l'algoritmo di differenziazione predefinito.",
       "dirtyEncoding": "Il file è sporco. Salvarlo prima di riaprirlo con un'altra codifica.",
       "editor.codeActionWidget.showHeaders": "Abilita/disabilita la visualizzazione delle intestazioni dei gruppi nel menu delle azioni del codice.",
+      "editor.experimental.pasteActions.enabled": "Abilita/disabilita l'esecuzione di modifiche da parte delle estensioni in fase di incollaggio.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tenterà di formattare solo le modifiche (richiede il controllo della fonte). Se il controllo della fonte non può essere usato, allora l'intero file sarà formattato.",
       "editor.inlayHints.enabled1": "I suggerimenti per l'intarsio sono visualizzati per impostazione predefinita e si nascondono quando si tiene premuto `Ctrl+Alt`.",
       "editor.inlayHints.enabled2": "I suggerimenti per l'intarsio sono nascosti per impostazione predefinita e vengono visualizzati quando si tiene premuto `Ctrl+Alt`.",
       "editor.quickSuggestions": "Controlla se i suggerimenti devono essere visualizzati automaticamente durante la digitazione. Questo può essere controllato per la digitazione di commenti, stringhe e altro codice. Il suggerimento rapido può essere configurato per essere visualizzato come testo fantasma o con il widget Suggerimento. Si tenga presente anche l'impostazione '#editor.suggestOnTriggerCharacters#', che controlla se i suggerimenti vengono attivati da caratteri speciali.",
-      "editor.stickyScroll.maxLineCount": "Definisce il numero massimo di righe appiccicose da mostrare.",
       "editor.suggest.matchOnWordStartOnly": "Se abilitato, il filtro IntelliSense richiede che il primo carattere corrisponda all'inizio di una parola, ad esempio `c` su `Console` o `WebContext` ma _non_ su `description`. Quando è disattivato, IntelliSense mostra più risultati, ma li ordina comunque in base alla qualità della corrispondenza.",
       "files.autoSave": "Controlla il [salvataggio automatico](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) degli editor che hanno modifiche non salvate.",
       "files.autoSave.afterDelay": "Un editor con modifiche viene salvato automaticamente dopo il `#files.autoSaveDelay#` configurato.",
@@ -153,11 +164,15 @@
       "gitDecorationsColors": "Usa la decorazione a colori nel navigatore.",
       "mergeQuickPickPlaceholder": "Scegli un ramo da unire al ramo attualmente attivo {0}:",
       "missingUserInfo": "Assicurati di configurare il tuo 'user.name' e 'user.email' in git.",
+      "noHistoryForError": "Non è disponibile uno storico per {0}",
       "noPreviousCommit": "Nessun impegno precedente da modificare",
       "noRepositoriesSelected": "Nessun deposito è stato selezionato.",
+      "prepositionIn": "in",
       "repositoryNotInitialized": "Il deposito {0} non è ancora inizializzato.",
       "stashChanges": "Modifiche alla scorta. Premi 'Enter' per confermare o 'Escape' per annullare.",
       "stashChangesWithMessage": "Stash cambia con il messaggio: {0}. Premi 'Enter' per confermare o 'Escape' per annullare.",
+      "tabTitleIndex": "{0} (indice)",
+      "tabTitleWorkingTree": "{0} (Albero di lavoro)",
       "toggleBlameAnnotations": "Allineare le annotazioni di colpa"
     },
     "keybinding-schema-updater": {
@@ -268,6 +283,8 @@
     },
     "navigator": {
       "autoReveal": "Rivelazione auto",
+      "clipboardWarn": "L'accesso agli appunti è negato. Controllare i permessi del browser.",
+      "clipboardWarnFirefox": "L'API Appunti non è disponibile. È possibile abilitarla tramite la preferenza '{0}' nella pagina '{1}'. Quindi ricaricare Theia. Ciò consentirà a FireFox di avere pieno accesso agli appunti di sistema.",
       "refresh": "Aggiorna in Explorer",
       "reveal": "Rivelare in Explorer",
       "toggleHiddenFiles": "Toggle Hidden Files"
@@ -278,6 +295,7 @@
       "hiddenChannels": "Canali nascosti",
       "hideOutputChannel": "Nascondere il canale di uscita...",
       "maxChannelHistory": "Il numero massimo di voci in un canale di uscita.",
+      "outputChannels": "Canali di uscita",
       "showOutputChannel": "Mostra il canale di uscita..."
     },
     "plugin": {
@@ -311,6 +329,9 @@
       "watchMode": "Eseguire il watcher sul plugin in sviluppo"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Accesso"
+      },
       "plugins": "Plugin",
       "webviewTrace": "Controlla la tracciabilità della comunicazione con le webview.",
       "webviewWarnIfUnsecure": "Avverte gli utenti che le webview sono attualmente distribuite in modo non sicuro."
@@ -358,6 +379,7 @@
     "task": {
       "attachTask": "Allegare il compito...",
       "clearHistory": "Storia chiara",
+      "noTaskToRun": "Non è stata trovata alcuna attività da eseguire. Configura attività...",
       "openUserTasks": "Aprire le attività dell'utente"
     },
     "terminal": {
@@ -370,7 +392,6 @@
       "profileIcon": "Un ID di codifica da associare all'icona del terminale.\nterminale-tmux: \"$(terminale-tmux)\"",
       "profileNew": "Nuovo terminale (con profilo)...",
       "profilePath": "Il percorso della shell utilizzata da questo profilo.",
-      "profileSource": "Un'origine profilo che rileverà automaticamente i percorsi della shell. Si noti che i percorsi degli eseguibili non standard non sono supportati e devono essere creati manualmente in un nuovo profilo.",
       "profiles": "I profili da presentare quando si crea un nuovo terminale. Impostare manualmente la proprietà path con gli argomenti opzionali.\nImpostare un profilo esistente a `null` per nasconderlo dall'elenco, ad esempio: `\"{0}\": null`.",
       "rendererType": "Controlla il modo in cui il terminale viene reso.",
       "selectProfile": "Selezionare un profilo per il nuovo terminale",
@@ -414,6 +435,7 @@
       "license": "Licenza: {0}",
       "recommendedExtensions": "Una lista dei nomi delle estensioni raccomandate per l'uso in questo spazio di lavoro.",
       "searchPlaceholder": "Estensioni di ricerca in {0}",
+      "showInstalled": "Mostra le estensioni installate",
       "showRecommendedExtensions": "Controlla se le notifiche sono mostrate per le raccomandazioni di estensione.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Errore durante la rimozione dell'estensione: {0}.",

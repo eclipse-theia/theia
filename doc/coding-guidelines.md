@@ -30,7 +30,7 @@ const terminalWidgetId = 1;
 * [7.](#file-name) Name files after the main type it exports.
 > Why? It should be easy to find a type by a file name.
 <a name="one-large-class-per-file"></a>
-* [7.1](#one-large-class-per-file) Avoid one file with many large classes; put each class in its own file. 
+* [7.1](#one-large-class-per-file) Avoid one file with many large classes; put each class in its own file.
 > Why? It should be easy to find a class by a file name.
 <a name="unique-names"></a>
 * [8.](#unique-names) Give unique names to types and files. Use specific names to achieve it.
@@ -124,7 +124,7 @@ Use `undefined`; do not use `null`.
 <a name="nls-localize"></a>
 * [1.](#nls-localize) Always localize user-facing text with the `nls.localize(key, defaultValue, ...args)` function.
 
-> What is user-facing text? Any strings that are hardcoded (not calculated) that could be in any way visible to the user, be it labels for commands and menus, messages/notifications/dialogs, quick-input placeholders or preferences. 
+> What is user-facing text? Any strings that are hard-coded (not calculated) that could be in any way visible to the user, be it labels for commands and menus, messages/notifications/dialogs, quick-input placeholders or preferences.
 
 <a name="nls-localize-args"></a>
 * [1.1.](#nls-localize-args) Parameters for messages should be passed as the `args` of the `localize` function. They are inserted at the location of the placeholders - in the form of `{\d+}` - in the localized text. E.g. `{0}` will be replaced with the first `arg`, `{1}` with the second, etc.
@@ -138,7 +138,7 @@ nls.localize('hello', 'Hello there {0}.', name);
 ```
 
 <a name="nls-localize-by-default"></a>
-* [1.2.](#nls-localize-by-default) The `nls.localizeByDefault` function automatically finds the translation key for vscode's language packs just by using the default value as its argument and translates it into the currently used locale. If the `nls.localizeByDefault` function is not able to find a key for the supplied default value, a warning will be shown in the browser console. If there is no appropriate translation in VSCode, just use the `nls.localize` function with a new key using the syntax `theia/<package>/<id>`.
+* [1.2.](#nls-localize-by-default) The `nls.localizeByDefault` function automatically finds the translation key for VS Code's language packs just by using the default value as its argument and translates it into the currently used locale. If the `nls.localizeByDefault` function is not able to find a key for the supplied default value, a warning will be shown in the browser console. If there is no appropriate translation in VSCode, just use the `nls.localize` function with a new key using the syntax `theia/<package>/<id>`.
 
 ```ts
 // bad
@@ -160,7 +160,7 @@ command = Command.toLocalizedCommand({ id: key, label: defaultValue });
 
 ## Style
 * Use arrow functions `=>` over anonymous function expressions.
-* Only surround arrow function parameters when necessary. For example, `(x) => x + x` is wrong but the following are correct:
+* Only surround arrow function parameters when necessary. For example, `(x) => x + x` is wrong, but the following are correct:
 
 ```javascript
 x => x + x
@@ -216,7 +216,7 @@ bind(CommandContribution).to(LoggerFrontendContribution).inSingletonScope();
 ```ts
 // bad
 export function createWebSocket(url: string): WebSocket {
-   ...  
+   ...
 }
 
 // good
@@ -301,11 +301,11 @@ export namespace DirtyDiffModel {
 }
 ```
 <a name="no-multi-inject"></a>
-* [5.](#no-multi-inject) Don't use multi-inject, use `ContributionProvider` to inject multiple instances. 
+* [5.](#no-multi-inject) Don't use multi-inject, use `ContributionProvider` to inject multiple instances.
 > Why?
 > - `ContributionProvider` is a documented way to introduce contribution points. See `Contribution-Points`: https://www.theia-ide.org/docs/services_and_contributions
 > - If nothing is bound to an identifier, multi-inject resolves to `undefined`, not an empty array. `ContributionProvider` provides an empty array.
-> - Multi-inject does not guarantee the same instances are injected if an extender does not use `inSingletonScope`. `ContributionProvider` caches instances to ensure uniqueness. 
+> - Multi-inject does not guarantee the same instances are injected if an extender does not use `inSingletonScope`. `ContributionProvider` caches instances to ensure uniqueness.
 
 
 ## CSS
@@ -321,9 +321,9 @@ export namespace DirtyDiffModel {
 <a name="theming-no-css-color-variables"></a>
 * [1.](#theming-no-css-color-variables) Do not introduce CSS color variables. Implement `ColorContribution` and use `ColorRegistry.register` to register new colors.
 <a name="theming-no-css-color-values"></a>
-* [2.](#theming-no-css-color-values) Do not introduce hardcoded color values in CSS. Instead refer to [VS Code colors](https://code.visualstudio.com/api/references/theme-color) in CSS by prefixing them with `--theia` and replacing all dots with dashes. For example `widget.shadow` color can be referred to in CSS with `var(--theia-widget-shadow)`.
+* [2.](#theming-no-css-color-values) Do not introduce hard-coded color values in CSS. Instead, refer to [VS Code colors](https://code.visualstudio.com/api/references/theme-color) in CSS by prefixing them with `--theia` and replacing all dots with dashes. For example `widget.shadow` color can be referred to in CSS with `var(--theia-widget-shadow)`.
 <a name="theming-derive-colors-from-vscode"></a>
-* [3.](#theming-derive-colors-from-vscode) Always derive new colors from existing [VS Code colors](https://code.visualstudio.com/api/references/theme-color). New colors can be derived from an existing color by plain reference, e.g. `dark: 'widget.shadow'`, or transformation, e.g. `dark: Color.lighten('widget.shadow', 0.4)`. 
+* [3.](#theming-derive-colors-from-vscode) Always derive new colors from existing [VS Code colors](https://code.visualstudio.com/api/references/theme-color). New colors can be derived from an existing color by plain reference, e.g. `dark: 'widget.shadow'`, or transformation, e.g. `dark: Color.lighten('widget.shadow', 0.4)`.
 > Why? Otherwise, there is no guarantee that new colors will fit well into new VSCode color themes.
 <a name="theming-theia-colors"></a>
 * [4.](#theming-theia-colors) Apply different color values only in concrete Theia themes, see [Light (Theia)](https://github.com/eclipse-theia/theia/blob/master/packages/monaco/data/monaco-themes/vscode/light_theia.json), [Dark (Theia)](https://github.com/eclipse-theia/theia/blob/master/packages/monaco/data/monaco-themes/vscode/dark_theia.json) and [High Contrast (Theia)](https://github.com/eclipse-theia/theia/blob/master/packages/monaco/data/monaco-themes/vscode/hc_theia.json) themes.
@@ -344,7 +344,7 @@ export namespace DirtyDiffModel {
 * [1.](#no-bind-fn-in-event-handlers) Do not bind functions in event handlers.
   - Extract a React component if you want to pass state to an event handler function.
 
-> Why? Because doing so creates a new instance of the event handler function on each render and breaks React element caching leading to rerendering and bad performance.
+> Why? Because doing so creates a new instance of the event handler function on each render and breaks React element caching leading to re-rendering and bad performance.
 
 ```ts
 // bad
@@ -401,7 +401,7 @@ class MyWidget extends ReactWidget {
 <a name="backend-fs-path"></a>
 * [3.](#backend-fs-path) Use `FileUri.fsPath` to get a path on the backend from a URI. Never use it on the frontend.
 <a name="uri-scheme"></a>
-* [4.](#explicit-uri-scheme) Always define an explicit scheme for a URI. 
+* [4.](#explicit-uri-scheme) Always define an explicit scheme for a URI.
 > Why? A URI without scheme will fall back to `file` scheme for now; in the future it will lead to a runtime error.
 <a name="frontend-path"></a>
 * [5.](#frontend-path) Use `Path` Theia API to manipulate paths on the frontend. Don't use Node.js APIs like `path` module. Also see [the code organization guideline](code-organization.md).

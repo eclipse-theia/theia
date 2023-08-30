@@ -11,11 +11,11 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /**
  * The default supported API version the framework supports.
  * The version should be in the format `x.y.z`.
  */
-export const DEFAULT_SUPPORTED_API_VERSION = '1.72.2';
+export const DEFAULT_SUPPORTED_API_VERSION = '1.80.0';

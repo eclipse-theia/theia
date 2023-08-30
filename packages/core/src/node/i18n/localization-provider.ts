@@ -11,17 +11,18 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable } from 'inversify';
+import { nls } from '../../common/nls';
 import { LanguageInfo, Localization } from '../../common/i18n/localization';
 
 @injectable()
 export class LocalizationProvider {
 
     protected localizations: Localization[] = [];
-    protected currentLanguage = 'en';
+    protected currentLanguage = nls.defaultLocale;
 
     addLocalizations(...localizations: Localization[]): void {
         this.localizations.push(...localizations);

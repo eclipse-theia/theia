@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
@@ -21,7 +21,7 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { TreeViewWidget } from './tree-view-widget';
-import { BadgeWidget, DescriptionWidget } from '@theia/core/lib/browser/view-container';
+import { BadgeWidget, DescriptionWidget, DynamicToolbarWidget } from '@theia/core/lib/browser/view-container';
 import { DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
@@ -32,7 +32,7 @@ export class PluginViewWidgetIdentifier {
 }
 
 @injectable()
-export class PluginViewWidget extends Panel implements StatefulWidget, DescriptionWidget, BadgeWidget {
+export class PluginViewWidget extends Panel implements StatefulWidget, DescriptionWidget, BadgeWidget, DynamicToolbarWidget {
 
     currentViewContainerId?: string;
 
@@ -46,6 +46,11 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
     protected onDidChangeBadgeEmitter = new Emitter<void>();
     protected onDidChangeBadgeTooltipEmitter = new Emitter<void>();
     protected toDispose = new DisposableCollection(this.onDidChangeDescriptionEmitter, this.onDidChangeBadgeEmitter, this.onDidChangeBadgeTooltipEmitter);
+    protected readonly onDidChangeToolbarItemsEmitter = new Emitter<void>();
+
+    get onDidChangeToolbarItems(): Event<void> {
+        return this.onDidChangeToolbarItemsEmitter.event;
+    }
 
     @inject(MenuModelRegistry)
     protected readonly menus: MenuModelRegistry;
@@ -192,11 +197,13 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
             widget.onDidChangeBadgeTooltip(() => this.onDidChangeBadgeTooltipEmitter.fire());
         }
         this.updateWidgetMessage();
+        this.onDidChangeToolbarItemsEmitter.fire();
     }
 
     override insertWidget(index: number, widget: Widget): void {
         super.insertWidget(index, widget);
         this.updateWidgetMessage();
+        this.onDidChangeToolbarItemsEmitter.fire();
     }
 
     override dispose(): void {

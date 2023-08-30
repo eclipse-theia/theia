@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -167,7 +167,7 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
 
     protected async moveFileToTrash(uri: URI, options: FileDeleteOptions): Promise<void> {
         try {
-            this.fileService.delete(uri, { ...options, useTrash: true });
+            await this.fileService.delete(uri, { ...options, useTrash: true });
         } catch (error) {
             console.error('Error deleting with trash:', error);
             if (await this.confirmDeletePermanently(uri)) {

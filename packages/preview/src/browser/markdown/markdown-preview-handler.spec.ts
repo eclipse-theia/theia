@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /* eslint-disable no-unsanitized/property */
@@ -39,7 +39,7 @@ before(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (previewHandler as any).linkNormalizer = {
         normalizeLink: (documentUri: URI, link: string) =>
-            'endpoint/' + documentUri.parent.resolve(link).path.toString().substr(1)
+            'endpoint/' + documentUri.parent.resolve(link).path.toString().substring(1)
     };
 });
 

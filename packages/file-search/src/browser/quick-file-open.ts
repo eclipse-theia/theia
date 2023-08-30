@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
@@ -168,7 +168,10 @@ export class QuickFileOpenService implements QuickAccessProvider {
 
             if (location.uri.scheme === 'file' && !alreadyCollected.has(uriString) && fuzzy.test(fileFilter, uriString)) {
                 if (recentlyUsedItems.length === 0) {
-                    recentlyUsedItems.push({ type: 'separator', label: 'recently opened' });
+                    recentlyUsedItems.push({
+                        type: 'separator',
+                        label: nls.localizeByDefault('recently opened')
+                    });
                 }
                 const item = this.toItem(fileFilter, location.uri);
                 recentlyUsedItems.push(item);
@@ -198,7 +201,10 @@ export class QuickFileOpenService implements QuickAccessProvider {
                 sortedResults.sort((a, b) => this.compareItems(a, b));
 
                 if (sortedResults.length > 0) {
-                    result.push({ type: 'separator', label: 'file results' });
+                    result.push({
+                        type: 'separator',
+                        label: nls.localizeByDefault('file results')
+                    });
                     result.push(...sortedResults);
                 }
 
@@ -347,7 +353,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
                 const startColumn = Number.isFinite(column) && column > 0 ? column - 1 : 0;
                 const position = Position.create(lineNumber, startColumn);
 
-                filter = expression.substr(0, patternMatch.index);
+                filter = expression.substring(0, patternMatch.index);
                 range = Range.create(position, position);
             }
         }

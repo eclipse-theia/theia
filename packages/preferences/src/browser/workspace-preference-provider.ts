@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -38,7 +38,7 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
     protected readonly toDisposeOnEnsureDelegateUpToDate = new DisposableCollection();
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
         this.workspaceService.ready.then(() => {
             // If there is no workspace after the workspace service is initialized, then no more work is needed for this provider to be ready.
             // If there is a workspace, then we wait for the new delegate to be ready before declaring this provider ready.

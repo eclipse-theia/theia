@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
@@ -30,7 +30,7 @@ import {
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { VariableContribution } from '@theia/variable-resolver/lib/browser';
-import { WorkspaceServer, workspacePath, CommonWorkspaceUtils } from '../common';
+import { WorkspaceServer, workspacePath, UntitledWorkspaceService, WorkspaceFileService } from '../common';
 import { WorkspaceFrontendContribution } from './workspace-frontend-contribution';
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceCommandContribution, FileMenuContribution, EditMenuContribution } from './workspace-commands';
@@ -54,6 +54,7 @@ import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-worki
 import { WorkspaceUserWorkingDirectoryProvider } from './workspace-user-working-directory-provider';
 import { WindowTitleUpdater } from '@theia/core/lib/browser/window/window-title-updater';
 import { WorkspaceWindowTitleUpdater } from './workspace-window-title-updater';
+import { CanonicalUriService } from './canonical-uri-service';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
@@ -61,6 +62,7 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
 
     bind(WorkspaceService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WorkspaceService);
+    bind(CanonicalUriService).toSelf().inSingletonScope();
     bind(WorkspaceServer).toDynamicValue(ctx => {
         const provider = ctx.container.get(WebSocketConnectionProvider);
         return provider.createProxy<WorkspaceServer>(workspacePath);
@@ -102,7 +104,8 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(QuickOpenWorkspace).toSelf().inSingletonScope();
 
     bind(WorkspaceUtils).toSelf().inSingletonScope();
-    bind(CommonWorkspaceUtils).toSelf().inSingletonScope();
+    bind(WorkspaceFileService).toSelf().inSingletonScope();
+    bind(UntitledWorkspaceService).toSelf().inSingletonScope();
 
     bind(WorkspaceSchemaUpdater).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(WorkspaceSchemaUpdater);

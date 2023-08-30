@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -264,7 +264,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
     }
 
     /**
-     * Creates a new object and assigns those keys of raw to it that are not likely to cause prototype polution.
+     * Creates a new object and assigns those keys of raw to it that are not likely to cause prototype pollution.
      * Also preprocesses override identifiers so that they take the form [identifier]: {...contents}.
      */
     private sanitize<T = unknown>(raw: T): T {

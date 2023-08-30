@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -73,7 +73,7 @@ export class EditorWidgetFactory implements WidgetFactory {
     private setLabels(editor: EditorWidget, uri: URI): void {
         editor.title.caption = uri.path.fsPath();
         if (editor.editor.isReadonly) {
-            editor.title.caption += ` • ${nls.localizeByDefault('Read Only')}`;
+            editor.title.caption += ` • ${nls.localizeByDefault('Read-only')}`;
         }
         const icon = this.labelProvider.getIcon(uri);
         editor.title.label = this.labelProvider.getName(uri);

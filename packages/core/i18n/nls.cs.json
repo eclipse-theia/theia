@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Upravit stav...",
   "terminal:new:profile": "Vytvoření nového integrovaného terminálu z profilu",
   "terminal:profile:default": "Zvolte výchozí profil terminálu",
   "theia": {
@@ -29,6 +30,11 @@
         "showPreviousTabInGroup": "Přepnutí na předchozí kartu ve skupině",
         "toggleMaximized": "Přepínání Maximalizováno"
       },
+      "enhancedPreview": {
+        "classic": "Zobrazí jednoduchý náhled karty se základními informacemi.",
+        "enhanced": "Zobrazení rozšířeného náhledu karty s dalšími informacemi.",
+        "visual": "Zobrazení vizuálního náhledu karty."
+      },
       "file": {
         "browse": "Procházet"
       },
@@ -43,6 +49,10 @@
         "pc": "Klávesnice PC",
         "tryDetect": "Pokuste se zjistit rozložení klávesnice z informací o prohlížeči a stisknutých klávesách."
       },
+      "navigator": {
+        "clipboardWarn": "Přístup do schránky je odepřen. Zkontrolujte oprávnění prohlížeče.",
+        "clipboardWarnFirefox": "Rozhraní API schránky není k dispozici. Lze ji povolit pomocí předvolby '{0}' na stránce '{1}'. Poté znovu načtěte aplikaci Theia. Všimněte si, že to umožní FireFoxu získat plný přístup k systémové schránce."
+      },
       "offline": "Offline",
       "quitMessage": "Neuložené změny se neuloží.",
       "resetWorkbenchLayout": "Obnovení rozložení pracovního stolu",
@@ -52,7 +62,10 @@
         "previous": "Předchozí (Nahoru)"
       },
       "silentNotifications": "Řídí, zda se mají potlačit vyskakovací okna s oznámeními.",
-      "tabMaximize": "Ovládá, zda se mají karty maximalizovat při dvojím kliknutí."
+      "tabDefaultSize": "Určuje výchozí velikost karet s ouškem.",
+      "tabMaximize": "Ovládá, zda se mají karty maximalizovat při dvojím kliknutí.",
+      "tabMinimumSize": "Určuje minimální velikost oušek.",
+      "tabShrinkToFit": "Zmenšete karty tak, aby se vešly do dostupného prostoru."
     },
     "debug": {
       "addConfigurationPlaceholder": "Vyberte kořenový pracovní prostor, do kterého chcete přidat konfiguraci",
@@ -68,15 +81,13 @@
       "toggleTracing": "Povolení/zakázání sledování komunikace s ladicími adaptéry"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "Používá experimentální algoritmus diffing.",
-      "diffEditor.diffAlgorithm.smart": "Používá výchozí algoritmus porovnávání.",
       "dirtyEncoding": "Soubor je znečištěný. Než jej znovu otevřete v jiném kódování, nejprve jej uložte.",
       "editor.codeActionWidget.showHeaders": "Povolení/zakázání zobrazování záhlaví skupin v nabídce akcí kódu.",
+      "editor.experimental.pasteActions.enabled": "Povolení/zakázání spouštění úprav z rozšíření při vkládání.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Pokusí se formátovat pouze změny (vyžaduje kontrolu zdrojů). Pokud nelze použít kontrolu zdrojů, bude formátován celý soubor.",
       "editor.inlayHints.enabled1": "Vložené nápovědy se zobrazují ve výchozím nastavení a skrývají se při podržení `Ctrl+Alt`",
       "editor.inlayHints.enabled2": "Vložené nápovědy jsou ve výchozím nastavení skryté a zobrazí se při podržení `Ctrl+Alt`.",
       "editor.quickSuggestions": "Ovládá, zda se mají při psaní automaticky zobrazovat návrhy. To lze ovládat při psaní komentářů, řetězců a dalšího kódu. Rychlé návrhy lze nakonfigurovat tak, aby se zobrazovaly jako text ducha nebo s widgetem návrhu. Mějte také na paměti nastavení '#editor.suggestOnTriggerCharacters#', které řídí, zda se návrhy spouštějí pomocí speciálních znaků.",
-      "editor.stickyScroll.maxLineCount": "Definuje maximální počet lepicích řádků, které se mají zobrazit.",
       "editor.suggest.matchOnWordStartOnly": "Je-li zapnuto filtrování IntelliSense, vyžaduje, aby první znak odpovídal začátku slova, např. `c` u `Console` nebo `WebContext`, ale _ne_ u `description`. Když je funkce IntelliSense vypnutá, zobrazí více výsledků, ale stále je třídí podle kvality shody.",
       "files.autoSave": "Ovládá [automatické ukládání](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) editorů, které mají neuložené změny.",
       "files.autoSave.afterDelay": "Editor se změnami se automaticky uloží po uplynutí nastavené doby `#files.autoSaveDelay#`.",
@@ -153,11 +164,15 @@
       "gitDecorationsColors": "Použití barevné dekorace v navigátoru.",
       "mergeQuickPickPlaceholder": "Vyberte větev, kterou chcete sloučit s aktuálně aktivní větví {0}:",
       "missingUserInfo": "Ujistěte se, že jste v systému git nakonfigurovali položky 'user.name' a 'user.email'.",
+      "noHistoryForError": "Není k dispozici žádná historie {0}",
       "noPreviousCommit": "Žádný předchozí závazek ke změně",
       "noRepositoriesSelected": "Nebyla vybrána žádná úložiště.",
+      "prepositionIn": "na adrese",
       "repositoryNotInitialized": "Úložiště {0} ještě není inicializováno.",
       "stashChanges": "Změny v úložišti. Stisknutím klávesy \"Enter\" potvrďte nebo klávesou \"Escape\" zrušte zadání.",
       "stashChangesWithMessage": "Úschovna se mění se zprávou: {0}. Stisknutím klávesy 'Enter' potvrďte nebo klávesou 'Escape' zrušte.",
+      "tabTitleIndex": "{0} (rejstřík)",
+      "tabTitleWorkingTree": "{0} (pracovní strom)",
       "toggleBlameAnnotations": "Přepínání Anotace obvinění"
     },
     "keybinding-schema-updater": {
@@ -268,6 +283,8 @@
     },
     "navigator": {
       "autoReveal": "Automatické odhalení",
+      "clipboardWarn": "Přístup do schránky je odepřen. Zkontrolujte oprávnění prohlížeče.",
+      "clipboardWarnFirefox": "Rozhraní API schránky není k dispozici. Lze ji povolit pomocí předvolby '{0}' na stránce '{1}'. Poté znovu načtěte aplikaci Theia. Všimněte si, že to umožní FireFoxu získat plný přístup k systémové schránce.",
       "refresh": "Obnovení v Průzkumníku",
       "reveal": "Odhalení v Průzkumníkovi",
       "toggleHiddenFiles": "Přepínání skrytých souborů"
@@ -278,6 +295,7 @@
       "hiddenChannels": "Skryté kanály",
       "hideOutputChannel": "Skrýt výstupní kanál...",
       "maxChannelHistory": "Maximální počet záznamů ve výstupním kanálu.",
+      "outputChannels": "Výstupní kanály",
       "showOutputChannel": "Zobrazit výstupní kanál..."
     },
     "plugin": {
@@ -311,6 +329,9 @@
       "watchMode": "Spuštění sledovacího nástroje na vyvíjeném zásuvném modulu"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Přihlášení"
+      },
       "plugins": "Zásuvné moduly",
       "webviewTrace": "Řídí sledování komunikace s webovými pohledy.",
       "webviewWarnIfUnsecure": "Upozorňuje uživatele, že webové náhledy jsou v současné době nasazeny nezabezpečeně."
@@ -358,6 +379,7 @@
     "task": {
       "attachTask": "Připojte úkol...",
       "clearHistory": "Vymazat historii",
+      "noTaskToRun": "Nebyla nalezena žádná úloha ke spuštění. Konfigurace úloh...",
       "openUserTasks": "Otevřené uživatelské úlohy"
     },
     "terminal": {
@@ -370,7 +392,6 @@
       "profileIcon": "ID kodikonu, které se přiřadí k ikoně terminálu.\nterminal-tmux:\"$(terminal-tmux)\"",
       "profileNew": "Nový terminál (s profilem)...",
       "profilePath": "Cesta k shellu, který tento profil používá.",
-      "profileSource": "Zdroj profilu, který automaticky detekuje cesty k shellu. Všimněte si, že nestandardní umístění spustitelných souborů nejsou podporována a musí být vytvořena ručně v novém profilu.",
       "profiles": "Profily, které se mají zobrazit při vytváření nového terminálu. Vlastnost path nastavte ručně pomocí nepovinných argumentů.\nNastavením existujícího profilu na `null` jej skryjete ze seznamu, například: `\"{0}\": null`.",
       "rendererType": "Ovládá způsob vykreslování terminálu.",
       "selectProfile": "Výběr profilu pro nový terminál",
@@ -414,6 +435,7 @@
       "license": "Licence: {0}",
       "recommendedExtensions": "Seznam názvů rozšíření doporučených pro použití v tomto pracovním prostoru.",
       "searchPlaceholder": "Hledat rozšíření v {0}",
+      "showInstalled": "Zobrazit nainstalovaná rozšíření",
       "showRecommendedExtensions": "Řídí, zda se mají zobrazovat oznámení pro doporučení rozšíření.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Chyba při odstraňování rozšíření: {0}.",

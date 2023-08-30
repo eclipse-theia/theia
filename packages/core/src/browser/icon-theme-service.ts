@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from 'inversify';
@@ -168,9 +168,9 @@ export class IconThemeService {
      */
     setCurrent(newCurrent: IconTheme, persistSetting = true): void {
         if (newCurrent !== this.getCurrent()) {
+            this.activeTheme = newCurrent;
             this.toDeactivate.dispose();
             this.toDeactivate.push(newCurrent.activate());
-            this.activeTheme = newCurrent;
             this.onDidChangeCurrentEmitter.fire(newCurrent.id);
         }
         if (persistSetting) {

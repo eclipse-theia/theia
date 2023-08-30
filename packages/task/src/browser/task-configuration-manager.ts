@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as jsoncparser from 'jsonc-parser';
@@ -87,7 +87,7 @@ export class TaskConfigurationManager {
     protected workspaceDelegate: PreferenceProvider;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
         this.createModels();
         this.folderPreferences.onDidPreferencesChanged(e => {
             if (e['tasks']) {

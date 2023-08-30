@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /**
@@ -284,7 +284,7 @@ export namespace WidgetDecoration {
                         result.push({ data });
                     }
                     const { length } = ranges.splice(containerIndex, 1).shift()!;
-                    result.push({ data: caption.substr(i, length), highlight: true });
+                    result.push({ data: caption.substring(i, i + length), highlight: true });
                     data = '';
                     i = i + length - 1;
                 }

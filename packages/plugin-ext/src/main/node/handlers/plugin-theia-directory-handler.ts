@@ -11,33 +11,41 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as path from 'path';
 import * as filenamify from 'filenamify';
 import * as fs from '@theia/core/shared/fs-extra';
+import type { URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileUri } from '@theia/core/lib/node';
 import {
     PluginDeployerDirectoryHandler, PluginDeployerEntry, PluginPackage, PluginDeployerDirectoryHandlerContext, PluginDeployerEntryType, PluginType, PluginIdentifiers
 } from '../../../common/plugin-protocol';
 import { PluginCliContribution } from '../plugin-cli-contribution';
-import { getTempDir } from '../temp-dir-util';
+import { getTempDirPathAsync } from '../temp-dir-util';
 
 @injectable()
 export class PluginTheiaDirectoryHandler implements PluginDeployerDirectoryHandler {
 
-    protected readonly deploymentDirectory = FileUri.create(getTempDir('theia-copied'));
+    protected readonly deploymentDirectory: Deferred<URI>;
 
     @inject(PluginCliContribution) protected readonly pluginCli: PluginCliContribution;
 
-    accept(resolvedPlugin: PluginDeployerEntry): boolean {
+    constructor() {
+        this.deploymentDirectory = new Deferred();
+        getTempDirPathAsync('theia-copied')
+            .then(deploymentDirectory => this.deploymentDirectory.resolve(FileUri.create(deploymentDirectory)));
+    }
+
+    async accept(resolvedPlugin: PluginDeployerEntry): Promise<boolean> {
 
         console.debug('PluginTheiaDirectoryHandler: accepting plugin with path', resolvedPlugin.path());
 
         // handle only directories
-        if (resolvedPlugin.isFile()) {
+        if (await resolvedPlugin.isFile()) {
             return false;
         }
 
@@ -47,7 +55,7 @@ export class PluginTheiaDirectoryHandler implements PluginDeployerDirectoryHandl
         try {
             let packageJson = resolvedPlugin.getValue<PluginPackage>('package.json');
             if (!packageJson) {
-                packageJson = fs.readJSONSync(packageJsonPath);
+                packageJson = await fs.readJSON(packageJsonPath);
                 packageJson.publisher ??= PluginIdentifiers.UNPUBLISHED;
                 resolvedPlugin.storeValue('package.json', packageJson);
             }
@@ -81,11 +89,12 @@ export class PluginTheiaDirectoryHandler implements PluginDeployerDirectoryHandl
             const origin = entry.originalPath();
             const targetDir = await this.getExtensionDir(context);
             try {
-                if (fs.existsSync(targetDir) || !entry.path().startsWith(origin)) {
+                if (await fs.pathExists(targetDir) || !entry.path().startsWith(origin)) {
                     console.log(`[${id}]: already copied.`);
                 } else {
                     console.log(`[${id}]: copying to "${targetDir}"`);
-                    await fs.mkdirp(FileUri.fsPath(this.deploymentDirectory));
+                    const deploymentDirectory = await this.deploymentDirectory.promise;
+                    await fs.mkdirp(FileUri.fsPath(deploymentDirectory));
                     await context.copy(origin, targetDir);
                     entry.updatePath(targetDir);
                     if (!this.accept(entry)) {
@@ -100,6 +109,7 @@ export class PluginTheiaDirectoryHandler implements PluginDeployerDirectoryHandl
     }
 
     protected async getExtensionDir(context: PluginDeployerDirectoryHandlerContext): Promise<string> {
-        return FileUri.fsPath(this.deploymentDirectory.resolve(filenamify(context.pluginEntry().id(), { replacement: '_' })));
+        const deploymentDirectory = await this.deploymentDirectory.promise;
+        return FileUri.fsPath(deploymentDirectory.resolve(filenamify(context.pluginEntry().id(), { replacement: '_' })));
     }
 }

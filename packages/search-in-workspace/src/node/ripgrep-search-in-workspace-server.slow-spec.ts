@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { Container } from '@theia/core/shared/inversify';
@@ -449,7 +449,7 @@ describe('ripgrep-search-in-workspace-server', function (): void {
             if (typeof match.lineText === 'string') {
                 done(new Error('unexpected lineText'));
             } else {
-                expect(match.lineText.text.substr(match.lineText.character - 1, pattern.length)).eq(pattern);
+                expect(match.lineText.text.substring(match.lineText.character - 1, pattern.length + match.lineText.character - 1)).eq(pattern);
                 done();
             }
         });
@@ -957,10 +957,10 @@ describe('ripgrep-search-in-workspace-server', function (): void {
 
 describe('#extractSearchPathsFromIncludes', function (): void {
     this.timeout(10000);
-    it('should not resolve paths from a not absolute / relative pattern', function (): void {
+    it('should not resolve paths from a not absolute / relative pattern', async () => {
         const pattern = 'carrots';
         const options = { include: [pattern] };
-        const searchPaths = ripgrepServer['extractSearchPathsFromIncludes']([rootDirA], options);
+        const searchPaths = await ripgrepServer['extractSearchPathsFromIncludes']([rootDirA], options);
         // Same root directory
         expect(searchPaths.length).equal(1);
         expect(searchPaths[0]).equal(rootDirA);
@@ -970,21 +970,21 @@ describe('#extractSearchPathsFromIncludes', function (): void {
         expect(options.include[0]).equals(pattern);
     });
 
-    it('should resolve pattern to path for relative filename', function (): void {
+    it('should resolve pattern to path for relative filename', async () => {
         const filename = 'carrots';
         const pattern = `./${filename}`;
-        checkResolvedPathForPattern(pattern, path.join(rootDirA, filename));
+        await checkResolvedPathForPattern(pattern, path.join(rootDirA, filename));
     });
 
-    it('should resolve relative pattern with sub-folders glob', function (): void {
+    it('should resolve relative pattern with sub-folders glob', async () => {
         const filename = 'carrots';
         const pattern = `./${filename}/**`;
-        checkResolvedPathForPattern(pattern, path.join(rootDirA, filename));
+        await checkResolvedPathForPattern(pattern, path.join(rootDirA, filename));
     });
 
-    it('should resolve absolute path pattern', function (): void {
+    it('should resolve absolute path pattern', async () => {
         const pattern = `${rootDirA}/carrots`;
-        checkResolvedPathForPattern(pattern, pattern);
+        await checkResolvedPathForPattern(pattern, pattern);
     });
 });
 
@@ -1064,9 +1064,9 @@ describe('#addGlobArgs', function (): void {
     });
 });
 
-function checkResolvedPathForPattern(pattern: string, expectedPath: string): void {
+async function checkResolvedPathForPattern(pattern: string, expectedPath: string): Promise<void> {
     const options = { include: [pattern] };
-    const searchPaths = ripgrepServer['extractSearchPathsFromIncludes']([rootDirA], options);
+    const searchPaths = await ripgrepServer['extractSearchPathsFromIncludes']([rootDirA], options);
     expect(searchPaths.length).equal(1, 'searchPath result should contain exactly one element');
     expect(options.include.length).equals(0, 'options.include should be empty');
     expect(searchPaths[0]).equal(path.normalize(expectedPath));

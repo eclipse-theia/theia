@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { Widget } from '@phosphor/widgets';
@@ -287,14 +287,16 @@ export class ShouldSaveDialog extends AbstractDialog<boolean> {
     constructor(widget: Widget) {
         super({
             title: nls.localizeByDefault('Do you want to save the changes you made to {0}?', widget.title.label || widget.title.caption)
+        }, {
+            node: widget.node.ownerDocument.createElement('div')
         });
 
-        const messageNode = document.createElement('div');
+        const messageNode = this.node.ownerDocument.createElement('div');
         messageNode.textContent = nls.localizeByDefault("Your changes will be lost if you don't save them.");
         messageNode.setAttribute('style', 'flex: 1 100%; padding-bottom: calc(var(--theia-ui-padding)*3);');
         this.contentNode.appendChild(messageNode);
-        this.dontSaveButton = this.appendDontSaveButton();
         this.appendCloseButton();
+        this.dontSaveButton = this.appendDontSaveButton();
         this.appendAcceptButton(nls.localizeByDefault('Save'));
     }
 

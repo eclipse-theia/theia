@@ -1,12 +1,12 @@
 {
   "name": "@theia/memory-inspector",
-  "version": "1.36.0",
+  "version": "1.40.0",
   "description": "Theia - Memory Inspector",
   "keywords": [
     "theia-extension"
   ],
   "homepage": "https://github.com/eclipse-theia/theia",
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -27,8 +27,8 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/core": "1.36.0",
-    "@theia/debug": "1.36.0",
+    "@theia/core": "1.40.0",
+    "@theia/debug": "1.40.0",
     "@vscode/debugprotocol": "^1.51.0",
     "long": "^4.0.0"
   },

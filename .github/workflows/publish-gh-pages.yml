@@ -1,0 +1,64 @@
+name: Publish GitHub Pages
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish to NPM and GitHub pages
+    needs: build
+    runs-on: ubuntu-latest
+
+    # The current approach is silly. We should be smarter and use `actions/upload-artifact` and `actions/download-artifact` instead of rebuilding
+    # everything from scratch again. (git checkout, Node.js install, yarn, etc.) It was not possible to share artifacts on Travis CI without an
+    # external storage (such as S3), so we did rebuild everything before the npm publish. We should overcome this limitation with GH Actions.
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # To fetch all history for all branches and tags. (Will be required for caching with lerna: https://github.com/markuplint/markuplint/pull/111)
+
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Use Python 3.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Pre-npm-Publish
+        run: |
+          yarn global add node-gyp
+          yarn --skip-integrity-check --network-timeout 100000
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+
+      - name: Pre-docs-Publish
+        run: |
+          yarn docs
+        env:
+          NODE_OPTIONS: --max_old_space_size=9216
+
+      - name: Publish GH Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./gh-pages
+          force_orphan: true    # will only keep latest commit on branch gh-pages
+
+      - name: Publish NPM
+        uses: nick-invision/retry@v2
+        with:
+          timeout_minutes: 5
+          retry_wait_seconds: 30
+          max_attempts: 3
+          retry_on: error
+          command: yarn publish:next
+          on_retry_command: git reset --hard
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }} # The variable name comes from here: https://github.com/actions/setup-node/blob/70b9252472eee7495c93bb1588261539c3c2b98d/src/authutil.ts#L48

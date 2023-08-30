@@ -11,12 +11,12 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, MessageService, isWindows, MaybeArray } from '@theia/core/lib/common';
-import { isOSX, environment, OS } from '@theia/core';
+import { isOSX, environment } from '@theia/core';
 import {
     open, OpenerService, CommonMenus, KeybindingRegistry, KeybindingContribution,
     FrontendApplicationContribution, SHELL_TABBAR_CONTEXT_COPY, OnWillStopAction, Navigatable, SaveableSource, Widget
@@ -24,10 +24,9 @@ import {
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { WorkspaceService } from './workspace-service';
-import { THEIA_EXT, VSCODE_EXT } from '../common';
+import { WorkspaceFileService, THEIA_EXT, VSCODE_EXT } from '../common';
 import { WorkspaceCommands } from './workspace-commands';
 import { QuickOpenWorkspace } from './quick-open-workspace';
-import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
@@ -40,6 +39,7 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { UntitledWorkspaceExitDialog } from './untitled-workspace-exit-dialog';
 import { FilesystemSaveResourceService } from '@theia/filesystem/lib/browser/filesystem-save-resource-service';
 import { StopReason } from '@theia/core/lib/common/frontend-application-state';
+import * as monaco from '@theia/monaco-editor-core';
 
 export enum WorkspaceStates {
     /**
@@ -70,15 +70,25 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(QuickOpenWorkspace) protected readonly quickOpenWorkspace: QuickOpenWorkspace;
     @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
-    @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
     @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
     @inject(EncodingRegistry) protected readonly encodingRegistry: EncodingRegistry;
     @inject(PreferenceConfigurations) protected readonly preferenceConfigurations: PreferenceConfigurations;
     @inject(FilesystemSaveResourceService) protected readonly saveService: FilesystemSaveResourceService;
+    @inject(WorkspaceFileService) protected readonly workspaceFileService: WorkspaceFileService;
 
     configure(): void {
-        this.encodingRegistry.registerOverride({ encoding: UTF8, extension: THEIA_EXT });
-        this.encodingRegistry.registerOverride({ encoding: UTF8, extension: VSCODE_EXT });
+        const workspaceExtensions = this.workspaceFileService.getWorkspaceFileExtensions();
+        monaco.languages.register({
+            id: 'jsonc',
+            'aliases': [
+                'JSON with Comments'
+            ],
+            'extensions': workspaceExtensions.map(ext => `.${ext}`)
+        });
+        for (const extension of workspaceExtensions) {
+            this.encodingRegistry.registerOverride({ encoding: UTF8, extension });
+        }
+
         this.updateEncodingOverrides();
 
         const workspaceFolderCountKey = this.contextKeyService.createKey<number>('workspaceFolderCount', 0);
@@ -362,49 +372,24 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     /**
      * Opens a workspace after raising the `Open Workspace` dialog. Resolves to the URI of the recently opened workspace,
      * if it was successful. Otherwise, resolves to `undefined`.
-     *
-     * **Caveat**: this behaves differently on different platforms
-     * and `electron`/`browser` version has impact too. See [here](https://github.com/eclipse-theia/theia/pull/3202#issuecomment-430884195) for more details.
-     *
-     * Legend:
-     *  - Folders only: => `F`
-     *  - Workspace files only: => `W`
-     *  - Folders and workspace files: => `FW`
-     *
-     * -----
-     *
-     * |---------|-----------|-----------|------------|------------|
-     * |         | browser Y | browser N | electron Y | electron N |
-     * |---------|-----------|-----------|------------|------------|
-     * | Linux   |     FW    |     F     |     W      |     F      |
-     * | Windows |     FW    |     F     |     W      |     F      |
-     * | OS X    |     FW    |     F     |     FW     |     FW     |
-     * |---------|-----------|-----------|------------|------------|
-     *
      */
     protected async doOpenWorkspace(): Promise<URI | undefined> {
-        const props = await this.openWorkspaceOpenFileDialogProps();
+        const props = {
+            title: WorkspaceCommands.OPEN_WORKSPACE.dialogLabel,
+            canSelectFiles: true,
+            canSelectFolders: false,
+            filters: this.getWorkspaceDialogFileFilters()
+        };
         const [rootStat] = await this.workspaceService.roots;
-        const workspaceFolderOrWorkspaceFileUri = await this.fileDialogService.showOpenDialog(props, rootStat);
-        if (workspaceFolderOrWorkspaceFileUri &&
-            this.getCurrentWorkspaceUri()?.toString() !== workspaceFolderOrWorkspaceFileUri.toString()) {
-            const destinationFolder = await this.fileService.exists(workspaceFolderOrWorkspaceFileUri);
-            if (destinationFolder) {
-                this.workspaceService.open(workspaceFolderOrWorkspaceFileUri);
-                return workspaceFolderOrWorkspaceFileUri;
+        const workspaceFileUri = await this.fileDialogService.showOpenDialog(props, rootStat);
+        if (workspaceFileUri &&
+            this.getCurrentWorkspaceUri()?.toString() !== workspaceFileUri.toString()) {
+            if (await this.fileService.exists(workspaceFileUri)) {
+                this.workspaceService.open(workspaceFileUri);
+                return workspaceFileUri;
             }
         }
         return undefined;
-    }
-
-    protected async openWorkspaceOpenFileDialogProps(): Promise<OpenFileDialogProps> {
-        await this.preferences.ready;
-        const type = OS.type();
-        const electron = this.isElectron();
-        return WorkspaceFrontendContribution.createOpenWorkspaceOpenFileDialogProps({
-            type,
-            electron,
-        });
     }
 
     protected async closeWorkspace(): Promise<void> {
@@ -421,12 +406,14 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         do {
             selected = await this.fileDialogService.showSaveDialog({
                 title: WorkspaceCommands.SAVE_WORKSPACE_AS.label!,
-                filters: WorkspaceFrontendContribution.DEFAULT_FILE_FILTER
+                filters: this.getWorkspaceDialogFileFilters()
             });
             if (selected) {
                 const displayName = selected.displayName;
-                if (!displayName.endsWith(`.${THEIA_EXT}`) && !displayName.endsWith(`.${VSCODE_EXT}`)) {
-                    selected = selected.parent.resolve(`${displayName}.${THEIA_EXT}`);
+                const extensions = this.workspaceFileService.getWorkspaceFileExtensions(true);
+                if (!extensions.some(ext => displayName.endsWith(ext))) {
+                    const defaultExtension = extensions[this.workspaceFileService.defaultFileTypeIndex];
+                    selected = selected.parent.resolve(`${displayName}${defaultExtension}`);
                 }
                 exist = await this.fileService.exists(selected);
                 if (exist) {
@@ -467,6 +454,14 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             return this.workspaceService.isMultiRootWorkspaceOpened ? 'workspace' : 'folder';
         }
         return 'empty';
+    }
+
+    protected getWorkspaceDialogFileFilters(): FileDialogTreeFilters {
+        const filters: FileDialogTreeFilters = {};
+        for (const fileType of this.workspaceFileService.getWorkspaceFileTypes()) {
+            filters[`${nls.localizeByDefault('{0} workspace', fileType.name)} (*.${fileType.extension})`] = [fileType.extension];
+        }
+        return filters;
     }
 
     private isElectron(): boolean {
@@ -514,45 +509,11 @@ export namespace WorkspaceFrontendContribution {
 
     /**
      * File filter for all Theia and VS Code workspace file types.
+     *
+     * @deprecated Since 1.39.0 Use `WorkspaceFrontendContribution#getWorkspaceDialogFileFilters` instead.
      */
     export const DEFAULT_FILE_FILTER: FileDialogTreeFilters = {
         'Theia Workspace (*.theia-workspace)': [THEIA_EXT],
         'VS Code Workspace (*.code-workspace)': [VSCODE_EXT]
     };
-
-    /**
-     * Returns with an `OpenFileDialogProps` for opening the `Open Workspace` dialog.
-     */
-    export function createOpenWorkspaceOpenFileDialogProps(options: Readonly<{ type: OS.Type, electron: boolean }>): OpenFileDialogProps {
-        const { electron, type } = options;
-        const title = WorkspaceCommands.OPEN_WORKSPACE.dialogLabel;
-        // If browser
-        if (!electron) {
-            return {
-                title,
-                canSelectFiles: true,
-                canSelectFolders: true,
-                filters: DEFAULT_FILE_FILTER
-            };
-        }
-
-        // If electron
-        if (OS.Type.OSX === type) {
-            // `Finder` can select folders and files at the same time. We allow folders and workspace files.
-            return {
-                title,
-                canSelectFiles: true,
-                canSelectFolders: true,
-                filters: DEFAULT_FILE_FILTER
-            };
-        }
-
-        return {
-            title,
-            canSelectFiles: true,
-            canSelectFolders: false,
-            filters: DEFAULT_FILE_FILTER
-        };
-    }
-
 }

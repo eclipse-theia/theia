@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import {
@@ -184,8 +184,8 @@ export class TasksMainImpl implements TasksMain, Disposable {
     protected createTaskProvider(handle: number): TaskProvider {
         return {
             provideTasks: () =>
-                this.proxy.$provideTasks(handle).then(v =>
-                    v!.map(taskDto =>
+                this.proxy.$provideTasks(handle).then(tasks =>
+                    tasks.map(taskDto =>
                         this.toTaskConfiguration(taskDto)
                     )
                 )
@@ -195,8 +195,8 @@ export class TasksMainImpl implements TasksMain, Disposable {
     protected createTaskResolver(handle: number): TaskResolver {
         return {
             resolveTask: taskConfig =>
-                this.proxy.$resolveTask(handle, this.fromTaskConfiguration(taskConfig)).then(v =>
-                    this.toTaskConfiguration(v!)
+                this.proxy.$resolveTask(handle, this.fromTaskConfiguration(taskConfig)).then(task =>
+                    this.toTaskConfiguration(task)
                 )
         };
     }

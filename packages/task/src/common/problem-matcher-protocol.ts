@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 // This file is inspired by VSCode https://github.com/Microsoft/vscode/blob/1.33.1/src/vs/workbench/contrib/tasks/common/problemMatcher.ts
@@ -21,10 +21,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { URI } from '@theia/core';
 import { Severity } from '@theia/core/lib/common/severity';
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
-// TODO use URI from `@theia/core` instead
-import { URI } from '@theia/core/shared/vscode-uri';
 
 export enum ApplyToKind {
     allDocuments,

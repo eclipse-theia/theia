@@ -1,11 +1,12 @@
 {
   "name": "@theia/workspace",
-  "version": "1.36.0",
+  "version": "1.40.0",
   "description": "Theia - Workspace Extension",
   "dependencies": {
-    "@theia/core": "1.36.0",
-    "@theia/filesystem": "1.36.0",
-    "@theia/variable-resolver": "1.36.0",
+    "@theia/core": "1.40.0",
+    "@theia/filesystem": "1.40.0",
+    "@theia/monaco-editor-core": "1.72.3",
+    "@theia/variable-resolver": "1.40.0",
     "jsonc-parser": "^2.2.0",
     "valid-filename": "^2.0.1"
   },
@@ -21,7 +22,7 @@
   "keywords": [
     "theia-extension"
   ],
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -43,7 +44,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.36.0"
+    "@theia/ext-scripts": "1.40.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -79,7 +79,9 @@ export default async function runTest(options: TestOptions): Promise<void> {
             }
         }
     });
-
-    const server = await start();
-    await testPage.goto(`http://${server.address}:${server.port}`);
+    const { address, port } = await start();
+    const url = net.isIPv6(address)
+        ? `http://[${address}]:${port}`
+        : `http://${address}:${port}`;
+    await testPage.goto(url);
 }

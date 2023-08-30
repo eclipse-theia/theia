@@ -11,11 +11,11 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as yargs from '@theia/core/shared/yargs';
-import { JsonRpcProxyFactory } from '@theia/core';
+import { RpcProxyFactory } from '@theia/core';
 import { FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol';
 import { NsfwFileSystemWatcherService } from './nsfw-filesystem-service';
 import { IPCEntryPoint } from '@theia/core/lib/node/messaging/ipc-protocol';
@@ -39,7 +39,7 @@ const options: {
 
 export default <IPCEntryPoint>(connection => {
     const server = new NsfwFileSystemWatcherService(options);
-    const factory = new JsonRpcProxyFactory<FileSystemWatcherServiceClient>(server);
+    const factory = new RpcProxyFactory<FileSystemWatcherServiceClient>(server);
     server.setClient(factory.createProxy());
     factory.listen(connection);
 });

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
@@ -32,6 +32,10 @@ export const CLEAR_COMMAND_HISTORY = Command.toDefaultLocalizedCommand({
     id: 'clear.command.history',
     label: 'Clear Command History'
 });
+
+export const CLOSE_QUICK_OPEN: Command = {
+    id: 'workbench.action.closeQuickOpen'
+};
 
 @injectable()
 export class QuickCommandService implements QuickAccessContribution, QuickAccessProvider {

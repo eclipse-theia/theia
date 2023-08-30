@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as path from 'path';
@@ -118,7 +118,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
         return pluginMetadata;
     }
 
-    readContribution(plugin: PluginPackage): PluginContribution | undefined {
+    async readContribution(plugin: PluginPackage): Promise<PluginContribution | undefined> {
         const scanner = this.scanner.getScanner(plugin);
         return scanner.getContribution(plugin);
     }

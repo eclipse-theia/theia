@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
@@ -34,7 +34,7 @@ export const debugPreferencesSchema: PreferenceSchema = {
         'debug.internalConsoleOptions': {
             enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart'],
             default: 'openOnFirstSessionStart',
-            description: nls.localizeByDefault('Controls when the internal debug console should open.')
+            description: nls.localizeByDefault('Controls when the internal Debug Console should open.')
         },
         'debug.inlineValues': {
             type: 'boolean',
@@ -44,11 +44,11 @@ export const debugPreferencesSchema: PreferenceSchema = {
         'debug.showInStatusBar': {
             enum: ['never', 'always', 'onFirstSessionStart'],
             enumDescriptions: [
-                nls.localizeByDefault('Never show debug in status bar'),
-                nls.localizeByDefault('Always show debug in status bar'),
-                nls.localizeByDefault('Show debug in status bar only after debug was started for the first time')
+                nls.localizeByDefault('Never show debug in Status bar'),
+                nls.localizeByDefault('Always show debug in Status bar'),
+                nls.localizeByDefault('Show debug in Status bar only after debug was started for the first time')
             ],
-            description: nls.localizeByDefault('Controls when the debug status bar should be visible.'),
+            description: nls.localizeByDefault('Controls when the debug Status bar should be visible.'),
             default: 'onFirstSessionStart'
         },
         'debug.confirmOnExit': {

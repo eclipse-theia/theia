@@ -11,18 +11,18 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 .theia-tooltip {
-    color: var(--theia-editorHoverWidget-foreground) !important;
-    background: var(--theia-editorHoverWidget-background) !important;
-    border: 1px solid !important;
-    border-color: var(--theia-editorHoverWidget-border) !important;
+  color: var(--theia-editorHoverWidget-foreground) !important;
+  background: var(--theia-editorHoverWidget-background) !important;
+  border: 1px solid !important;
+  border-color: var(--theia-editorHoverWidget-border) !important;
 }
 
 /* Hide tooltip arrow */
 .theia-tooltip::before,
 .theia-tooltip::after {
-    border: none !important;
+  border: none !important;
 }

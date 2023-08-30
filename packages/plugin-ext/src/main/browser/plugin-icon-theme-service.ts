@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -362,7 +362,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
     protected fileNameIcon(fileName: string): string[] {
         fileName = fileName.toLowerCase();
         const extIndex = fileName.indexOf('.');
-        const icons = extIndex !== -1 ? this.fileExtensionIcon(fileName.substr(extIndex + 1)) : [];
+        const icons = extIndex !== -1 ? this.fileExtensionIcon(fileName.substring(extIndex + 1)) : [];
         icons.unshift('theia-plugin-' + this.escapeCSS(fileName) + '-file-name-icon');
         return icons;
     }
@@ -390,6 +390,12 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
     ): void {
         if (associations.folder) {
             accept(associations.folder, this.folderIcon);
+            if (associations.folderExpanded === undefined) {
+                // Use the same icon for expanded state (issue #12727). Check for
+                // undefined folderExpanded property to allow for
+                // "folderExpanded": null in case a developer really wants that
+                accept(associations.folder, this.folderExpandedIcon);
+            }
             this.hasFolderIcons = true;
         }
         if (associations.folderExpanded) {

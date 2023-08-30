@@ -11,13 +11,13 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
 import { v4 } from 'uuid';
 import { bindContributionProvider } from '../common/contribution-provider';
-import { JsonRpcConnectionHandler } from '../common/messaging/proxy-factory';
+import { RpcConnectionHandler } from '../common/messaging/proxy-factory';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import { ElectronMainWindowService, electronMainWindowServicePath } from '../electron-common/electron-main-window-service';
 import { ElectronMainApplication, ElectronMainApplicationContribution, ElectronMainProcessArgv } from './electron-main-application';
@@ -27,7 +27,7 @@ import { ElectronMessagingService } from './messaging/electron-messaging-service
 import { ElectronConnectionHandler } from '../electron-common/messaging/electron-connection-handler';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory, WindowApplicationConfig } from './theia-electron-window';
-import { ElectronNativeKeymap } from './electron-native-keymap';
+import { TheiaMainApi } from './electron-api-main';
 
 const electronSecurityToken: ElectronSecurityToken = { value: v4() };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,10 +44,12 @@ export default new ContainerModule(bind => {
     bindContributionProvider(bind, ElectronMainApplicationContribution);
 
     bind(ElectronMainApplicationContribution).toService(ElectronMessagingContribution);
+    bind(TheiaMainApi).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(TheiaMainApi);
 
     bind(ElectronMainWindowService).to(ElectronMainWindowServiceImpl).inSingletonScope();
     bind(ElectronConnectionHandler).toDynamicValue(context =>
-        new JsonRpcConnectionHandler(electronMainWindowServicePath,
+        new RpcConnectionHandler(electronMainWindowServicePath,
             () => context.container.get(ElectronMainWindowService))
     ).inSingletonScope();
 
@@ -60,7 +62,4 @@ export default new ContainerModule(bind => {
         child.bind(WindowApplicationConfig).toConstantValue(config);
         return child.get(TheiaElectronWindow);
     });
-
-    bind(ElectronNativeKeymap).toSelf().inSingletonScope();
-    bind(ElectronMainApplicationContribution).toService(ElectronNativeKeymap);
 });

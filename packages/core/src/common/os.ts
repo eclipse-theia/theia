@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 function is(userAgent: string, platform: string): boolean {
@@ -28,6 +28,8 @@ function is(userAgent: string, platform: string): boolean {
 
 export const isWindows = is('Windows', 'win32');
 export const isOSX = is('Mac', 'darwin');
+
+export const EOL = isWindows ? '\r\n' : '\n';
 
 export type CMD = [string, string[]];
 export function cmd(command: string, ...args: string[]): CMD {
@@ -65,7 +67,8 @@ export namespace OS {
     export const backend = {
         type,
         isWindows,
-        isOSX
+        isOSX,
+        EOL
     };
 
 }

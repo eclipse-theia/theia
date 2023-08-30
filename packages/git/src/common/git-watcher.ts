@@ -11,11 +11,11 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { JsonRpcServer, JsonRpcProxy, isObject } from '@theia/core';
+import { RpcServer, RpcProxy, isObject } from '@theia/core';
 import { Repository, WorkingDirectoryStatus } from './git-model';
 import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 
@@ -73,7 +73,7 @@ export const GitWatcherServer = Symbol('GitWatcherServer');
 /**
  * Service representation communicating between the backend and the frontend.
  */
-export interface GitWatcherServer extends JsonRpcServer<GitWatcherClient> {
+export interface GitWatcherServer extends RpcServer<GitWatcherClient> {
 
     /**
      * Watches status changes in the given repository.
@@ -89,7 +89,7 @@ export interface GitWatcherServer extends JsonRpcServer<GitWatcherClient> {
 }
 
 export const GitWatcherServerProxy = Symbol('GitWatcherServerProxy');
-export type GitWatcherServerProxy = JsonRpcProxy<GitWatcherServer>;
+export type GitWatcherServerProxy = RpcProxy<GitWatcherServer>;
 
 @injectable()
 export class ReconnectingGitWatcherServer implements GitWatcherServer {

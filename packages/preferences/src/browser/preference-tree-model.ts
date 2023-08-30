@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -97,7 +97,11 @@ export class PreferenceTreeModel extends TreeModelImpl {
     }
 
     @postConstruct()
-    protected override async init(): Promise<void> {
+    protected override init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         super.init();
         this.toDispose.pushAll([
             this.treeGenerator.onSchemaChanged(newTree => this.handleNewSchema(newTree)),

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { readJsonFile } from './json-file';
@@ -62,7 +62,7 @@ export class ExtensionPackageCollector {
         try {
             packagePath = this.resolveModule(name);
         } catch {
-            console.warn(`Failed to resolve module: ${name}`);
+            console.debug(`Failed to resolve module: ${name}`);
         }
         if (!packagePath) {
             return;

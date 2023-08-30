@@ -11,11 +11,11 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { JsonRpcProxyFactory, JsonRpcProxy } from './proxy-factory';
+import { RpcProxyFactory, RpcProxy } from './proxy-factory';
 import { ChannelPipe } from '../message-rpc/channel.spec';
 
 const expect = chai.expect;
@@ -84,19 +84,19 @@ describe('Proxy-Factory', () => {
 
 function getSetup(): {
     client: TestClient;
-    clientProxy: JsonRpcProxy<TestClient>;
+    clientProxy: RpcProxy<TestClient>;
     server: TestServer;
-    serverProxy: JsonRpcProxy<TestServer>;
+    serverProxy: RpcProxy<TestServer>;
 } {
     const client = new TestClient();
     const server = new TestServer();
 
-    const serverProxyFactory = new JsonRpcProxyFactory<TestServer>(client);
+    const serverProxyFactory = new RpcProxyFactory<TestServer>(client);
     const pipe = new ChannelPipe();
     serverProxyFactory.listen(pipe.right);
     const serverProxy = serverProxyFactory.createProxy();
 
-    const clientProxyFactory = new JsonRpcProxyFactory<TestClient>(server);
+    const clientProxyFactory = new RpcProxyFactory<TestClient>(server);
     clientProxyFactory.listen(pipe.left);
     const clientProxy = clientProxyFactory.createProxy();
     return {

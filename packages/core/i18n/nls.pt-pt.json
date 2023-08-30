@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "Editar condição...",
   "terminal:new:profile": "Criar Novo Terminal Integrado a partir de um Perfil",
   "terminal:profile:default": "Escolha o Perfil Terminal padrão",
   "theia": {
@@ -29,6 +30,11 @@
         "showPreviousTabInGroup": "Mudar para o separador Anterior em Grupo",
         "toggleMaximized": "Alternar Maximizado"
       },
+      "enhancedPreview": {
+        "classic": "Apresenta uma pré-visualização simples do separador com informações básicas.",
+        "enhanced": "Apresentar uma pré-visualização melhorada do separador com informações adicionais.",
+        "visual": "Apresenta uma pré-visualização visual do separador."
+      },
       "file": {
         "browse": "Navegar"
       },
@@ -43,6 +49,10 @@
         "pc": "Teclados de PC",
         "tryDetect": "Tente detectar a disposição do teclado a partir da informação do browser e prima as teclas."
       },
+      "navigator": {
+        "clipboardWarn": "O acesso à área de transferência foi negado. Verifique a permissão do seu browser.",
+        "clipboardWarnFirefox": "A API da área de transferência não está disponível. Pode ser activada através da preferência '{0}' na página '{1}'. Em seguida, recarregue o Theia. Note que isso permitirá ao FireFox obter acesso total à área de transferência do sistema."
+      },
       "offline": "Offline",
       "quitMessage": "Quaisquer alterações não guardadas não serão salvas.",
       "resetWorkbenchLayout": "Repor o layout da bancada de trabalho",
@@ -52,7 +62,10 @@
         "previous": "Anterior (Para cima)"
       },
       "silentNotifications": "Controla se deve suprimir popups de notificação.",
-      "tabMaximize": "Controla se pretende maximizar os separadores com um duplo clique."
+      "tabDefaultSize": "Especifica o tamanho predefinido dos separadores.",
+      "tabMaximize": "Controla se pretende maximizar os separadores com um duplo clique.",
+      "tabMinimumSize": "Especifica o tamanho mínimo dos separadores.",
+      "tabShrinkToFit": "Encolher os separadores de acordo com o espaço disponível."
     },
     "debug": {
       "addConfigurationPlaceholder": "Seleccione a raiz do espaço de trabalho para adicionar configuração a",
@@ -68,15 +81,13 @@
       "toggleTracing": "Activar/desactivar as comunicações de rastreio com adaptadores de depuração"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "Utiliza um algoritmo de difusão experimental.",
-      "diffEditor.diffAlgorithm.smart": "Utiliza o algoritmo de difusão padrão.",
       "dirtyEncoding": "O ficheiro está sujo. Por favor guardá-lo primeiro antes de o reabrir com outra codificação.",
       "editor.codeActionWidget.showHeaders": "Activar/desactivar mostrar os cabeçalhos de grupo no menu de acção de código.",
+      "editor.experimental.pasteActions.enabled": "Ativar/desativar a execução de edições de extensões ao colar.",
       "editor.formatOnSaveMode.modificationsIfAvailable": "Tentará apenas formatar modificações (requer controlo da fonte). Se o controlo da fonte não puder ser utilizado, então o ficheiro inteiro será formatado.",
       "editor.inlayHints.enabled1": "Dicas de Inlay estão a mostrar por defeito e escondem-se quando se segura \"Ctrl+Alt\".",
       "editor.inlayHints.enabled2": "Dicas de Inlay são ocultadas por defeito e mostram quando se mantém 'Ctrl+Alt'.",
       "editor.quickSuggestions": "Controla se as sugestões devem aparecer automaticamente durante a dactilografia. Isto pode ser controlado para digitação de comentários, strings, e outros códigos. A sugestão rápida pode ser configurada para aparecer como texto fantasma ou com o widget de sugestão. Esteja também ciente do '#editor.suggestOnTriggerCharacters#'-setting que controla se as sugestões são accionadas por caracteres especiais.",
-      "editor.stickyScroll.maxLineCount": "Define o número máximo de linhas pegajosas a mostrar.",
       "editor.suggest.matchOnWordStartOnly": "Quando activada, a filtragem IntelliSense requer que o primeiro caractere corresponda num início de palavra, por exemplo `c` em `Console` ou `Contexto Web` mas _não_ em `descrição`. Quando desactivado, o IntelliSense mostrará mais resultados, mas ainda os classifica pela qualidade da correspondência.",
       "files.autoSave": "Controla [auto guardar](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) de editores que tenham alterações não guardadas.",
       "files.autoSave.afterDelay": "Um editor com alterações é automaticamente guardado após a configuração `#files.autoSaveDelay#``.",
@@ -153,11 +164,15 @@
       "gitDecorationsColors": "Utilizar decoração a cores no navegador.",
       "mergeQuickPickPlaceholder": "Escolher um ramo para se fundir no ramo actualmente activo {0}:",
       "missingUserInfo": "Certifique-se de configurar o seu 'user.name' e 'user.email' em git.",
+      "noHistoryForError": "Não existe um historial disponível para {0}",
       "noPreviousCommit": "Nenhum compromisso anterior para emendar",
       "noRepositoriesSelected": "Não foram seleccionados repositórios.",
+      "prepositionIn": "em",
       "repositoryNotInitialized": "Repositório {0} ainda não foi inicializado.",
       "stashChanges": "Mudanças de stock. Prima 'Enter' para confirmar ou 'Escape' para cancelar.",
       "stashChangesWithMessage": "Mudanças de stock com mensagem: {0}. Prima 'Enter' para confirmar ou 'Escape' para cancelar.",
+      "tabTitleIndex": "{0} (índice)",
+      "tabTitleWorkingTree": "{0} (Árvore de trabalho)",
       "toggleBlameAnnotations": "Anotações de culpa alternadas"
     },
     "keybinding-schema-updater": {
@@ -206,7 +221,7 @@
         "offset-title": "Bytes para compensar a memória de {0}"
       },
       "editable": {
-        "apply": "Aplicar Alterações",
+        "apply": "Aplicar alterações",
         "clear": "Mudanças claras"
       },
       "endianness": "Endianness",
@@ -268,6 +283,8 @@
     },
     "navigator": {
       "autoReveal": "Auto Revelação",
+      "clipboardWarn": "O acesso à área de transferência foi negado. Verifique a permissão do seu browser.",
+      "clipboardWarnFirefox": "A API da área de transferência não está disponível. Pode ser activada através da preferência '{0}' na página '{1}'. Em seguida, recarregue o Theia. Note que isso permitirá ao FireFox obter acesso total à área de transferência do sistema.",
       "refresh": "Actualizar no Explorer",
       "reveal": "Revelar no Explorer",
       "toggleHiddenFiles": "Alternar ficheiros escondidos"
@@ -278,6 +295,7 @@
       "hiddenChannels": "Canais ocultos",
       "hideOutputChannel": "Esconder canal de saída...",
       "maxChannelHistory": "O número máximo de entradas num canal de saída.",
+      "outputChannels": "Canais de saída",
       "showOutputChannel": "Mostrar canal de saída..."
     },
     "plugin": {
@@ -311,6 +329,9 @@
       "watchMode": "Executar o watcher em plugin em desenvolvimento"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "Iniciar sessão"
+      },
       "plugins": "Plugins",
       "webviewTrace": "Controla o rastreio da comunicação com visualizações na web.",
       "webviewWarnIfUnsecure": "Adverte os utilizadores de que as visualizações da web estão actualmente implantadas de forma insegura."
@@ -358,6 +379,7 @@
     "task": {
       "attachTask": "Anexar Tarefa...",
       "clearHistory": "História clara",
+      "noTaskToRun": "Não foi encontrada nenhuma tarefa para executar. Configurar tarefas...",
       "openUserTasks": "Tarefas de utilizador aberto"
     },
     "terminal": {
@@ -370,7 +392,6 @@
       "profileIcon": "Um código de identificação para associar com o ícone do terminal.\nterminal-tmux: \"$(terminal-tmux)\".",
       "profileNew": "Novo Terminal (Com Perfil)...",
       "profilePath": "O caminho da concha que este perfil utiliza.",
-      "profileSource": "Uma fonte de perfil que detectará automaticamente os caminhos para a concha. Note-se que os locais executáveis não standard não são suportados e devem ser criados manualmente num novo perfil.",
       "profiles": "Os perfis a apresentar aquando da criação de um novo terminal. Definir manualmente a propriedade do caminho com args opcionais.\nDefinir um perfil existente para `nulo` para ocultar o perfil da lista, por exemplo: `\"{0}\": nulo`.",
       "rendererType": "Controla a forma como o terminal é renderizado.",
       "selectProfile": "Seleccionar um perfil para o novo terminal",
@@ -414,6 +435,7 @@
       "license": "Licença: {0}",
       "recommendedExtensions": "Uma lista dos nomes das extensões recomendadas para utilização neste espaço de trabalho.",
       "searchPlaceholder": "Pesquisar extensões em {0}",
+      "showInstalled": "Mostrar extensões instaladas",
       "showRecommendedExtensions": "Controla se as notificações são mostradas para recomendações de extensão.",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "Erro ao retirar a extensão: {0}.",

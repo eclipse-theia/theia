@@ -11,14 +11,14 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject, postConstruct, optional } from '@theia/core/shared/inversify';
 import {
     ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager, QuickViewService,
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
-    StatefulWidget, CommonMenus, BaseWidget, TreeViewWelcomeWidget, codicon, ViewContainerPart
+    StatefulWidget, CommonMenus, TreeViewWelcomeWidget, codicon, ViewContainerPart, BaseWidget
 } from '@theia/core/lib/browser';
 import { ViewContainer, View, ViewWelcome, PluginViewType } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
@@ -32,12 +32,11 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ViewContextKeyService } from './view-context-key-service';
 import { PROBLEMS_WIDGET_ID } from '@theia/markers/lib/browser/problem/problem-widget';
 import { OutputWidget } from '@theia/output/lib/browser/output-widget';
 import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug-console-contribution';
-import { TERMINAL_WIDGET_FACTORY_ID } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TreeViewWidget } from './tree-view-widget';
 import { SEARCH_VIEW_CONTAINER_ID } from '@theia/search-in-workspace/lib/browser/search-in-workspace-factory';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
@@ -46,6 +45,7 @@ import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { v4 } from 'uuid';
 import { nls } from '@theia/core';
+import { TheiaDockPanel } from '@theia/core/lib/browser/shell/theia-dock-panel';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -103,20 +103,24 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     private readonly webviewViewResolvers = new Map<string, WebviewViewResolver>();
 
+    private static readonly ID_MAPPINGS: Map<string, string> = new Map([
+        // VS Code Viewlets
+        [EXPLORER_VIEW_CONTAINER_ID, 'workbench.view.explorer'],
+        [SCM_VIEW_CONTAINER_ID, 'workbench.view.scm'],
+        [SEARCH_VIEW_CONTAINER_ID, 'workbench.view.search'],
+        [DebugWidget.ID, 'workbench.view.debug'],
+        ['vsx-extensions-view-container', 'workbench.view.extensions'], // cannot use the id from 'vsx-registry' package because of circular dependency
+        [PROBLEMS_WIDGET_ID, 'workbench.panel.markers'],
+        [OutputWidget.ID, 'workbench.panel.output'],
+        [DebugConsoleContribution.options.id, 'workbench.panel.repl'],
+        // Theia does not have a single terminal widget, but instead each terminal gets its own widget. Therefore "the terminal widget is active" doesn't make sense in Theia
+        // [TERMINAL_WIDGET_FACTORY_ID, 'workbench.panel.terminal'],
+        // [?? , 'workbench.panel.comments'] not sure what this mean: we don't show comments in sidebars nor the bottom
+    ]);
+
     @postConstruct()
     protected init(): void {
-        // VS Code Viewlets
-        this.trackVisibleWidget(EXPLORER_VIEW_CONTAINER_ID, { viewletId: 'workbench.view.explorer' });
-        this.trackVisibleWidget(SCM_VIEW_CONTAINER_ID, { viewletId: 'workbench.view.scm' });
-        this.trackVisibleWidget(SEARCH_VIEW_CONTAINER_ID, { viewletId: 'workbench.view.search' });
-        this.trackVisibleWidget(DebugWidget.ID, { viewletId: 'workbench.view.debug' });
-        // TODO workbench.view.extensions - Theia does not have a proper extension view yet
 
-        // VS Code Panels
-        this.trackVisibleWidget(PROBLEMS_WIDGET_ID, { panelId: 'workbench.panel.markers' });
-        this.trackVisibleWidget(OutputWidget.ID, { panelId: 'workbench.panel.output' });
-        this.trackVisibleWidget(DebugConsoleContribution.options.id, { panelId: 'workbench.panel.repl' });
-        this.trackVisibleWidget(TERMINAL_WIDGET_FACTORY_ID, { panelId: 'workbench.panel.terminal' });
         // TODO workbench.panel.comments - Theia does not have a proper comments view yet
 
         this.updateFocusedView();
@@ -179,6 +183,39 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 }
             }
         });
+
+        const hookDockPanelKey = (panel: TheiaDockPanel, key: ContextKey<string>) => {
+            let toDisposeOnActivate = new DisposableCollection();
+            panel.onDidChangeCurrent(title => {
+                toDisposeOnActivate.dispose();
+                toDisposeOnActivate = new DisposableCollection();
+                if (title && title.owner instanceof BaseWidget) {
+                    const widget = title.owner;
+                    let value = PluginViewRegistry.ID_MAPPINGS.get(widget.id);
+                    if (!value) {
+                        if (widget.id.startsWith(PLUGIN_VIEW_CONTAINER_FACTORY_ID)) {
+                            value = this.toViewContainerId({ id: widget.id });
+                        }
+                    }
+                    const setKey = () => {
+                        if (widget.isVisible && value) {
+                            key.set(value);
+                        } else {
+                            key.reset();
+                        }
+                    };
+                    toDisposeOnActivate.push(widget.onDidChangeVisibility(() => {
+                        setKey();
+                    }));
+                    setKey();
+
+                }
+            });
+        };
+
+        hookDockPanelKey(this.shell.leftPanelHandler.dockPanel, this.viewContextKeys.activeViewlet);
+        hookDockPanelKey(this.shell.rightPanelHandler.dockPanel, this.viewContextKeys.activeAuxiliary);
+        hookDockPanelKey(this.shell.bottomPanel, this.viewContextKeys.activePanel);
     }
 
     protected async updateViewWelcomeVisibility(viewId: string): Promise<void> {
@@ -715,7 +752,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return { id: PLUGIN_VIEW_CONTAINER_FACTORY_ID + ':' + viewContainerId, progressLocationId: viewContainerId };
     }
     protected toViewContainerId(identifier: ViewContainerIdentifier): string {
-        return identifier.id.substr(PLUGIN_VIEW_CONTAINER_FACTORY_ID.length + 1);
+        return identifier.id.substring(PLUGIN_VIEW_CONTAINER_FACTORY_ID.length + 1);
     }
 
     protected toPluginViewWidgetIdentifier(viewId: string): PluginViewWidgetIdentifier {
@@ -813,66 +850,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         };
     }
 
-    protected trackVisibleWidget(factoryId: string, view: PluginViewRegistry.VisibleView): void {
-        this.doTrackVisibleWidget(this.widgetManager.tryGetWidget(factoryId), view);
-        this.widgetManager.onDidCreateWidget(event => {
-            if (factoryId === event.factoryId) {
-                const { widget } = event;
-                this.doTrackVisibleWidget(widget, view);
-            }
-        });
-    }
-
-    protected doTrackVisibleWidget(widget: Widget | undefined, view: PluginViewRegistry.VisibleView): void {
-        if (widget instanceof BaseWidget) {
-            widget.onDidChangeVisibility(() => this.updateVisibleWidget(widget, view));
-            const toDispose = new DisposableCollection(
-                Disposable.create(() => this.updateVisibleWidget(widget, view)),
-                this.shell.onDidChangeActiveWidget(() => {
-                    if (this.shell.activeWidget === widget) {
-                        this.updateVisibleWidget(widget, view);
-                    }
-                })
-            );
-            if (view.sideArea !== undefined) {
-                toDispose.pushAll([
-                    this.shell.onDidAddWidget(w => {
-                        if (w === widget) {
-                            this.updateVisibleWidget(widget, view);
-                        }
-                    })
-                ]);
-            }
-            widget.disposed.connect(() => toDispose.dispose());
-        }
-    }
-
-    protected readonly visiblePanels = new Set<string>();
-    protected readonly visibleViewlets = new Set<string>();
-
-    protected updateVisibleWidget(widget: BaseWidget, view: PluginViewRegistry.VisibleView): void {
-        const visibleViews = 'viewletId' in view ? this.visibleViewlets : this.visiblePanels;
-        const viewId = 'viewletId' in view ? view.viewletId : view.panelId;
-        const visibleView = 'viewletId' in view ? this.viewContextKeys.activeViewlet : this.viewContextKeys.activePanel;
-        visibleViews.delete(viewId);
-        if (this.isVisibleWidget(widget, view)) {
-            visibleView.set(viewId);
-            visibleViews.add(viewId);
-        } else {
-            const lastVisibleView = [...visibleViews.values()][visibleViews.size - 1];
-            visibleView.set(lastVisibleView);
-        }
-    }
-
-    protected isVisibleWidget(widget: BaseWidget, view: PluginViewRegistry.VisibleView): boolean {
-        if (widget.isDisposed || !widget.isVisible) {
-            return false;
-        }
-        if (view.sideArea === undefined) {
-            return true;
-        }
-        const area = this.shell.getAreaFor(widget);
-        return view.sideArea === (area === 'left' || area === 'right');
+    protected isVisibleWidget(widget: Widget): boolean {
+        return !widget.isDisposed && widget.isVisible;
     }
 
     protected updateFocusedView(): void {
@@ -883,11 +862,5 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             this.viewContextKeys.focusedView.reset();
         }
     }
+}
 
-}
-export namespace PluginViewRegistry {
-    export type VisibleView = ({ viewletId: string } | { panelId: string }) & {
-        /** `undefined` means any area */
-        sideArea?: boolean
-    };
-}

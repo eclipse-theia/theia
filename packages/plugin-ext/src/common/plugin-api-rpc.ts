@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -72,6 +72,7 @@ import {
     CallHierarchyOutgoingCall,
     Comment,
     CommentOptions,
+    CommentThreadState,
     CommentThreadCollapsibleState,
     CommentThread,
     CommentThreadChangedEvent,
@@ -86,7 +87,8 @@ import {
     InlineCompletions,
     InlineCompletionContext,
     DocumentDropEdit,
-    DataTransferDTO
+    DataTransferDTO,
+    DocumentDropEditProviderMetadata
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -109,12 +111,14 @@ import type {
     TimelineChangeEvent,
     TimelineProviderDescriptor
 } from '@theia/timeline/lib/common/timeline-model';
-import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
+import { SerializableEnvironmentVariableCollection, SerializableExtensionEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ThemeType } from '@theia/core/lib/common/theme';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { isString, isObject, PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
 import { Severity } from '@theia/core/lib/common/severity';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
+import { LanguagePackBundle } from './language-pack-service';
+import { AccessibilityInformation } from '@theia/core/lib/common/accessibility';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -286,7 +290,8 @@ export interface TerminalServiceExt {
     getEnvironmentVariableCollection(extensionIdentifier: string): theia.EnvironmentVariableCollection;
 }
 export interface OutputChannelRegistryExt {
-    createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel
+    createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel,
+    createOutputChannel(name: string, pluginInfo: PluginInfo, options: { log: true }): theia.LogOutputChannel
 }
 
 export interface ConnectionMain {
@@ -400,7 +405,7 @@ export interface TerminalServiceMain {
      */
     $disposeByTerminalId(id: number, waitOnExit?: boolean | string): void;
 
-    $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined): void;
+    $setEnvironmentVariableCollection(persistent: boolean, collection: SerializableExtensionEnvironmentVariableCollection): void;
 
     /**
      * Set the terminal widget name.
@@ -691,6 +696,9 @@ export interface WorkspaceMain {
     $getWorkspace(): Promise<files.FileStat | undefined>;
     $requestWorkspaceTrust(options?: theia.WorkspaceTrustRequestOptions): Promise<boolean | undefined>;
     $resolveProxy(url: string): Promise<string | undefined>;
+    $registerCanonicalUriProvider(scheme: string): Promise<void | undefined>;
+    $unregisterCanonicalUriProvider(scheme: string): void;
+    $getCanonicalUri(uri: string, targetScheme: string, token: theia.CancellationToken): Promise<string | undefined>;
 }
 
 export interface WorkspaceExt {
@@ -699,6 +707,11 @@ export interface WorkspaceExt {
     $provideTextDocumentContent(uri: string): Promise<string | undefined | null>;
     $onTextSearchResult(searchRequestId: number, done: boolean, result?: SearchInWorkspaceResult): void;
     $onWorkspaceTrustChanged(trust: boolean | undefined): void;
+    $registerEditSessionIdentityProvider(scheme: string, provider: theia.EditSessionIdentityProvider): theia.Disposable;
+    registerCanonicalUriProvider(scheme: string, provider: theia.CanonicalUriProvider): theia.Disposable;
+    $disposeCanonicalUriProvider(scheme: string): void;
+    getCanonicalUri(uri: theia.Uri, options: theia.CanonicalUriRequestOptions, token: CancellationToken): theia.ProviderResult<theia.Uri>;
+    $provideCanonicalUri(uri: string, targetScheme: string, token: CancellationToken): Promise<string | undefined>;
 }
 
 export interface TimelineExt {
@@ -724,6 +737,8 @@ export interface DialogsMain {
 }
 
 export interface RegisterTreeDataProviderOptions {
+    manageCheckboxStateManually?: boolean;
+    showCollapseAll?: boolean
     canSelectMany?: boolean
     dragMimeTypes?: string[]
     dropMimeTypes?: string[]
@@ -755,7 +770,9 @@ export class DataTransferFileDTO {
 }
 
 export interface TreeViewsExt {
+    $checkStateChanged(treeViewId: string, itemIds: { id: string, checked: boolean }[]): Promise<void>;
     $dragStarted(treeViewId: string, treeItemIds: string[], token: CancellationToken): Promise<UriComponents[] | undefined>;
+    $dragEnd(treeViewId: string): Promise<void>;
     $drop(treeViewId: string, treeItemId: string | undefined, dataTransferItems: [string, string | DataTransferFileDTO][], token: CancellationToken): Promise<void>;
     $getChildren(treeViewId: string, treeItemId: string | undefined): Promise<TreeViewItem[] | undefined>;
     $hasResolveTreeItem(treeViewId: string): Promise<boolean>;
@@ -763,6 +780,12 @@ export interface TreeViewsExt {
     $setExpanded(treeViewId: string, treeItemId: string, expanded: boolean): Promise<any>;
     $setSelection(treeViewId: string, treeItemIds: string[]): Promise<void>;
     $setVisible(treeViewId: string, visible: boolean): Promise<void>;
+}
+
+export interface TreeViewItemCheckboxInfo {
+    checked: boolean;
+    tooltip?: string;
+    accessibilityInformation?: AccessibilityInformation
 }
 
 export interface TreeViewItem {
@@ -786,6 +809,8 @@ export interface TreeViewItem {
     tooltip?: string | MarkdownString;
 
     collapsibleState?: TreeViewItemCollapsibleState;
+
+    checkboxInfo?: TreeViewItemCheckboxInfo;
 
     contextValue?: string;
 
@@ -958,7 +983,7 @@ export interface SourceControlGroupFeatures {
 export interface ScmRawResource {
     handle: number,
     sourceUri: UriComponents,
-    icons: UriComponents[],
+    icons: (IconUrl | ThemeIcon | undefined)[], /* icons: light, dark */
     tooltip: string,
     strikeThrough: boolean,
     faded: boolean,
@@ -1504,6 +1529,7 @@ export interface TaskPresentationOptionsDTO {
     panel?: number;
     showReuseMessage?: boolean;
     clear?: boolean;
+    close?: boolean;
 }
 
 export interface TaskExecutionDto {
@@ -1651,7 +1677,7 @@ export interface LanguagesMain {
     $clearDiagnostics(id: string): void;
     $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void;
     $registerDocumentFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
-    $registerDocumentDropEditProvider(handle: number, selector: SerializedDocumentFilter[]): void
+    $registerDocumentDropEditProvider(handle: number, selector: SerializedDocumentFilter[], metadata?: DocumentDropEditProviderMetadata): void
     $registerRangeFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerOnTypeFormattingProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void;
     $registerDocumentLinkProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
@@ -1941,6 +1967,7 @@ export type CommentThreadChanges = Partial<{
     contextValue: string,
     comments: Comment[],
     collapseState: CommentThreadCollapsibleState;
+    state: CommentThreadState;
     canReply: boolean;
 }>;
 
@@ -2074,6 +2101,12 @@ export interface TabsMain {
     $closeGroup(groupIds: number[], preserveFocus?: boolean): Promise<boolean>;
 }
 
+export interface TelemetryMain {
+}
+
+export interface TelemetryExt {
+}
+
 // endregion
 
 export const PLUGIN_RPC_CONTEXT = {
@@ -2110,7 +2143,9 @@ export const PLUGIN_RPC_CONTEXT = {
     TIMELINE_MAIN: <ProxyIdentifier<TimelineMain>>createProxyIdentifier<TimelineMain>('TimelineMain'),
     THEMING_MAIN: <ProxyIdentifier<ThemingMain>>createProxyIdentifier<ThemingMain>('ThemingMain'),
     COMMENTS_MAIN: <ProxyIdentifier<CommentsMain>>createProxyIdentifier<CommentsMain>('CommentsMain'),
-    TABS_MAIN: <ProxyIdentifier<TabsMain>>createProxyIdentifier<TabsMain>('TabsMain')
+    TABS_MAIN: <ProxyIdentifier<TabsMain>>createProxyIdentifier<TabsMain>('TabsMain'),
+    TELEMETRY_MAIN: <ProxyIdentifier<TelemetryMain>>createProxyIdentifier<TelemetryMain>('TelemetryMain'),
+    LOCALIZATION_MAIN: <ProxyIdentifier<LocalizationMain>>createProxyIdentifier<LocalizationMain>('LocalizationMain'),
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -2145,13 +2180,14 @@ export const MAIN_RPC_CONTEXT = {
     TIMELINE_EXT: createProxyIdentifier<TimelineExt>('TimeLineExt'),
     THEMING_EXT: createProxyIdentifier<ThemingExt>('ThemingExt'),
     COMMENTS_EXT: createProxyIdentifier<CommentsExt>('CommentsExt'),
-    TABS_EXT: createProxyIdentifier<TabsExt>('TabsExt')
+    TABS_EXT: createProxyIdentifier<TabsExt>('TabsExt'),
+    TELEMETRY_EXT: createProxyIdentifier<TelemetryExt>('TelemetryExt)')
 };
 
 export interface TasksExt {
     $initLoadedTasks(executions: TaskExecutionDto[]): Promise<void>;
-    $provideTasks(handle: number): Promise<TaskDto[] | undefined>;
-    $resolveTask(handle: number, task: TaskDto, token?: CancellationToken): Promise<TaskDto | undefined>;
+    $provideTasks(handle: number): Promise<TaskDto[]>;
+    $resolveTask(handle: number, task: TaskDto, token?: CancellationToken): Promise<TaskDto>;
     $onDidStartTask(execution: TaskExecutionDto, terminalId: number): void;
     $onDidEndTask(id: number): void;
     $onDidStartTaskProcess(processId: number | undefined, execution: TaskExecutionDto): void;
@@ -2216,4 +2252,21 @@ export interface IdentifiableInlineCompletions extends InlineCompletions<Identif
 
 export interface IdentifiableInlineCompletion extends InlineCompletion {
     idx: number;
+}
+
+export interface LocalizationExt {
+    translateMessage(pluginId: string, details: StringDetails): string;
+    getBundle(pluginId: string): Record<string, string> | undefined;
+    getBundleUri(pluginId: string): theia.Uri | undefined;
+    initializeLocalizedMessages(plugin: Plugin, currentLanguage: string): Promise<void>;
+}
+
+export interface StringDetails {
+    message: string;
+    args?: Record<string | number, any>;
+    comment?: string | string[];
+}
+
+export interface LocalizationMain {
+    $fetchBundle(id: string): Promise<LanguagePackBundle | undefined>;
 }

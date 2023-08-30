@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
@@ -36,7 +36,7 @@ export class GitCommitDetailHeaderWidget extends ReactWidget {
     ) {
         super();
         this.id = 'commit-header' + commitDetailOptions.commitSha;
-        this.title.label = commitDetailOptions.commitSha.substr(0, 8);
+        this.title.label = commitDetailOptions.commitSha.substring(0, 8);
         this.options = {
             range: {
                 fromRevision: commitDetailOptions.commitSha + '~1',
@@ -48,7 +48,11 @@ export class GitCommitDetailHeaderWidget extends ReactWidget {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.authorAvatar = await this.avatarService.getAvatar(this.commitDetailOptions.authorEmail);
     }
 

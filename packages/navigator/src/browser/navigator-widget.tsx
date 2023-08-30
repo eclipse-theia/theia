@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
@@ -175,14 +175,13 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
      * Instead of displaying an empty navigator tree, this will show a button to add more folders.
      */
     protected renderEmptyMultiRootWorkspace(): React.ReactNode {
-        // TODO: @msujew Implement a markdown renderer and use vscode/explorerViewlet/noFolderHelp
         return <div className='theia-navigator-container'>
-            <div className='center'>You have not yet added a folder to the workspace.</div>
+            <div className='center'>{nls.localizeByDefault('You have not yet added a folder to the workspace.\n{0}', '')}</div>
             <div className='open-workspace-button-container'>
-                <button className='theia-button open-workspace-button' title='Add a folder to your workspace'
+                <button className='theia-button open-workspace-button' title={nls.localizeByDefault('Add Folder to Workspace')}
                     onClick={this.addFolder}
                     onKeyUp={this.keyUpHandler}>
-                    Add Folder
+                    {nls.localizeByDefault('Open Folder')}
                 </button>
             </div>
         </div>;

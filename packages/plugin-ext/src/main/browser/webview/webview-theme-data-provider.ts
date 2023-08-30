@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -84,8 +84,8 @@ export class WebviewThemeDataProvider {
         const addStyle = (id: string, rawValue: any) => {
             if (rawValue) {
                 const value = typeof rawValue === 'number' || typeof rawValue === 'string' ? rawValue : String(rawValue);
-                styles[this.colors.toCssVariableName(id).substr(2)] = value;
-                styles[this.colors.toCssVariableName(id, 'vscode').substr(2)] = value;
+                styles[this.colors.toCssVariableName(id).substring(2)] = value;
+                styles[this.colors.toCssVariableName(id, 'vscode').substring(2)] = value;
             }
         };
 

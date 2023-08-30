@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ElementHandle } from '@playwright/test';
@@ -23,6 +23,7 @@ import { TheiaMenu } from './theia-menu';
 export class TheiaTreeNode {
 
     labelElementCssClass = '.theia-TreeNodeSegmentGrow';
+    nodeSegmentLabelCssClass = '.theia-tree-compressed-label-part';
     expansionToggleCssClass = '.theia-ExpansionToggle';
     collapsedCssClass = '.theia-mod-collapsed';
 
@@ -64,6 +65,17 @@ export class TheiaTreeNode {
 
     async openContextMenu(): Promise<TheiaMenu> {
         return TheiaContextMenu.open(this.app, () => this.elementHandle.waitForSelector(this.labelElementCssClass));
+    }
+
+    async openContextMenuOnSegment(nodeSegmentLabel: string): Promise<TheiaMenu> {
+        const treeNodeLabel = await this.elementHandle.waitForSelector(this.labelElementCssClass);
+        const treeNodeLabelSegments = await treeNodeLabel.$$(`span${this.nodeSegmentLabelCssClass}`);
+        for (const segmentLabel of treeNodeLabelSegments) {
+            if (await segmentLabel.textContent() === nodeSegmentLabel) {
+                return TheiaContextMenu.open(this.app, () => Promise.resolve(segmentLabel));
+            }
+        }
+        throw new Error('Could not find tree node segment label "' + nodeSegmentLabel + '"');
     }
 
 }

@@ -11,10 +11,10 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import * as React from 'react';
 import { ContextKeyService } from '../../context-key-service';
 import { CommandRegistry, Disposable, DisposableCollection, MenuCommandExecutor, MenuModelRegistry, MenuPath, nls } from '../../../common';
@@ -22,7 +22,8 @@ import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../../context-me
 import { LabelIcon, LabelParser } from '../../label-parser';
 import { ACTION_ITEM, codicon, ReactWidget, Widget } from '../../widgets';
 import { TabBarToolbarRegistry } from './tab-bar-toolbar-registry';
-import { AnyToolbarItem, ReactTabBarToolbarItem, TabBarDelegator, TabBarToolbarItem, TAB_BAR_TOOLBAR_CONTEXT_MENU } from './tab-bar-toolbar-types';
+import { AnyToolbarItem, ReactTabBarToolbarItem, TabBarDelegator, TabBarToolbarItem, TAB_BAR_TOOLBAR_CONTEXT_MENU, MenuToolbarItem } from './tab-bar-toolbar-types';
+import { KeybindingRegistry } from '../..//keybinding';
 
 /**
  * Factory for instantiating tab-bar toolbars.
@@ -43,6 +44,9 @@ export class TabBarToolbar extends ReactWidget {
     protected more = new Map<string, TabBarToolbarItem>();
 
     protected contextKeyListener: Disposable | undefined;
+    protected toDisposeOnUpdateItems: DisposableCollection = new DisposableCollection();
+
+    protected keybindingContextKeys = new Set<string>();
 
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
     @inject(LabelParser) protected readonly labelParser: LabelParser;
@@ -51,6 +55,7 @@ export class TabBarToolbar extends ReactWidget {
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
     @inject(TabBarToolbarRegistry) protected readonly toolbarRegistry: TabBarToolbarRegistry;
     @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
+    @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry;
 
     constructor() {
         super();
@@ -58,12 +63,32 @@ export class TabBarToolbar extends ReactWidget {
         this.hide();
     }
 
+    @postConstruct()
+    protected init(): void {
+        this.toDispose.push(this.keybindings.onKeybindingsChanged(() => this.update()));
+
+        this.toDispose.push(this.contextKeyService.onDidChange(e => {
+            if (e.affects(this.keybindingContextKeys)) {
+                this.update();
+            }
+        }));
+    }
+
     updateItems(items: Array<TabBarToolbarItem | ReactTabBarToolbarItem>, current: Widget | undefined): void {
+        this.toDisposeOnUpdateItems.dispose();
+        this.toDisposeOnUpdateItems = new DisposableCollection();
         this.inline.clear();
         this.more.clear();
 
         const contextKeys = new Set<string>();
         for (const item of items.sort(TabBarToolbarItem.PRIORITY_COMPARATOR).reverse()) {
+            if ('command' in item) {
+                this.commands.getAllHandlers(item.command).forEach(handler => {
+                    if (handler.onDidChangeEnabled) {
+                        this.toDisposeOnUpdateItems.push(handler.onDidChangeEnabled(() => this.update()));
+                    }
+                });
+            }
             if ('render' in item || item.group === undefined || item.group === 'navigation') {
                 this.inline.set(item.id, item);
             } else {
@@ -121,10 +146,33 @@ export class TabBarToolbar extends ReactWidget {
     }
 
     protected render(): React.ReactNode {
+        this.keybindingContextKeys.clear();
         return <React.Fragment>
             {this.renderMore()}
-            {[...this.inline.values()].map(item => TabBarToolbarItem.is(item) ? this.renderItem(item) : item.render(this.current))}
+            {[...this.inline.values()].map(item => TabBarToolbarItem.is(item)
+                ? (MenuToolbarItem.is(item) && !item.command ? this.renderMenuItem(item) : this.renderItem(item))
+                : item.render(this.current))}
         </React.Fragment>;
+    }
+
+    protected resolveKeybindingForCommand(command: string | undefined): string {
+        let result = '';
+        if (command) {
+            const bindings = this.keybindings.getKeybindingsForCommand(command);
+            let found = false;
+            if (bindings && bindings.length > 0) {
+                bindings.forEach(binding => {
+                    if (binding.when) {
+                        this.contextKeyService.parseKeys(binding.when)?.forEach(key => this.keybindingContextKeys.add(key));
+                    }
+                    if (!found && this.keybindings.isEnabledInScope(binding, this.current?.node)) {
+                        found = true;
+                        result = ` (${this.keybindings.acceleratorFor(binding, '+')})`;
+                    }
+                });
+            }
+        }
+        return result;
     }
 
     protected renderItem(item: AnyToolbarItem): React.ReactNode {
@@ -146,10 +194,9 @@ export class TabBarToolbar extends ReactWidget {
             iconClass += ` ${ACTION_ITEM}`;
             classNames.push(iconClass);
         }
-        const tooltip = item.tooltip || (command && command.label);
+        const tooltip = `${item.tooltip || (command && command.label) || ''}${this.resolveKeybindingForCommand(command?.id)}`;
 
         const toolbarItemClassNames = this.getToolbarItemClassNames(item);
-        if (item.menuPath && !item.command) { toolbarItemClassNames.push('enabled'); }
         return <div key={item.id}
             className={toolbarItemClassNames.join(' ')}
             onMouseDown={this.onMouseDownEvent}
@@ -162,14 +209,26 @@ export class TabBarToolbar extends ReactWidget {
         </div>;
     }
 
+    protected isEnabled(item: AnyToolbarItem): boolean {
+        if (!!item.command) {
+            return this.commandIsEnabled(item.command) && this.evaluateWhenClause(item.when);
+        } else {
+            return !!item.menuPath;
+        }
+    }
+
     protected getToolbarItemClassNames(item: AnyToolbarItem): string[] {
         const classNames = [TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM];
         if (item.command) {
-            if (this.commandIsEnabled(item.command) && this.evaluateWhenClause(item.when)) {
+            if (this.isEnabled(item)) {
                 classNames.push('enabled');
             }
             if (this.commandIsToggled(item.command)) {
                 classNames.push('toggled');
+            }
+        } else {
+            if (this.isEnabled(item)) {
+                classNames.push('enabled');
             }
         }
         return classNames;
@@ -228,6 +287,60 @@ export class TabBarToolbar extends ReactWidget {
             args: [this.current],
             anchor,
             context: this.current?.node,
+            onHide: () => toDisposeOnHide.dispose(),
+            skipSingleRootNode: true,
+        });
+    }
+
+    /**
+     * Renders a toolbar item that is a menu, presenting it as a button with a little
+     * chevron decoration that pops up a floating menu when clicked.
+     *
+     * @param item a toolbar item that is a menu item
+     * @returns the rendered toolbar item
+     */
+    protected renderMenuItem(item: TabBarToolbarItem & MenuToolbarItem): React.ReactNode {
+        const icon = typeof item.icon === 'function' ? item.icon() : item.icon ?? 'ellipsis';
+        return <div key={item.id}
+                    className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}
+                    onClick={this.showPopupMenu.bind(this, item.menuPath)}>
+            <div id={item.id} className={codicon(icon, true)}
+                title={item.text} />
+            <div className={codicon('chevron-down') + ' chevron'} />
+        </div >;
+    }
+
+    /**
+     * Presents the menu to popup on the `event` that is the clicking of
+     * a menu toolbar item.
+     *
+     * @param menuPath the path of the registered menu to show
+     * @param event the mouse event triggering the menu
+     */
+    protected showPopupMenu = (menuPath: MenuPath, event: React.MouseEvent) => {
+        event.stopPropagation();
+        event.preventDefault();
+        const anchor = this.toAnchor(event);
+        this.renderPopupMenu(menuPath, anchor);
+    };
+
+    /**
+     * Renders the menu popped up on a menu toolbar item.
+     *
+     * @param menuPath the path of the registered menu to render
+     * @param anchor a description of where to render the menu
+     * @returns platform-specific access to the rendered context menu
+     */
+    protected renderPopupMenu(menuPath: MenuPath, anchor: Anchor): ContextMenuAccess {
+        const toDisposeOnHide = new DisposableCollection();
+        this.addClass('menu-open');
+        toDisposeOnHide.push(Disposable.create(() => this.removeClass('menu-open')));
+
+        return this.contextMenuRenderer.render({
+            menuPath,
+            args: [this.current],
+            anchor,
+            context: this.current?.node,
             onHide: () => toDisposeOnHide.dispose()
         });
     }
@@ -254,15 +367,15 @@ export class TabBarToolbar extends ReactWidget {
 
         const item: AnyToolbarItem | undefined = this.inline.get(e.currentTarget.id);
 
-        if (!this.evaluateWhenClause(item?.when)) {
+        if (!item || !this.isEnabled(item)) {
             return;
         }
 
-        if (item?.command && item.menuPath) {
+        if (item.command && item.menuPath) {
             this.menuCommandExecutor.executeCommand(item.menuPath, item.command, this.current);
-        } else if (item?.command) {
+        } else if (item.command) {
             this.commands.executeCommand(item.command, this.current);
-        } else if (item?.menuPath) {
+        } else if (item.menuPath) {
             this.renderMoreContextMenu(this.toAnchor(e), item.menuPath);
         }
         this.update();

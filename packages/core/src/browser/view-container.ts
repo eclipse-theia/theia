@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { interfaces, injectable, inject, postConstruct } from 'inversify';
@@ -73,6 +73,20 @@ export namespace DescriptionWidget {
 export namespace BadgeWidget {
     export function is(arg: unknown): arg is BadgeWidget {
         return isObject(arg) && 'onDidChangeBadge' in arg && 'onDidChangeBadgeTooltip' in arg;
+    }
+}
+
+/**
+ * A widget that may change it's internal structure dynamically.
+ * Current use is to update the toolbar when a contributed view is constructed "lazily".
+ */
+export interface DynamicToolbarWidget {
+    onDidChangeToolbarItems: CommonEvent<void>;
+}
+
+export namespace DynamicToolbarWidget {
+    export function is(arg: unknown): arg is DynamicToolbarWidget {
+        return isObject(arg) && 'onDidChangeToolbarItems' in arg;
     }
 }
 
@@ -970,6 +984,13 @@ export class ViewContainerPart extends BaseWidget {
             this.wrapped.onDidChangeBadgeTooltip(() => this.onDidChangeBadgeTooltipEmitter.fire(), undefined, this.toDispose);
         }
 
+        if (DynamicToolbarWidget.is(this.wrapped)) {
+            this.wrapped.onDidChangeToolbarItems(() => {
+                this.toolbar.updateTarget(this.wrapped);
+                this.viewContainer?.update();
+            });
+        }
+
         const { header, body, disposable } = this.createContent();
         this.header = header;
         this.body = body;
@@ -1213,7 +1234,19 @@ export class ViewContainerPart extends BaseWidget {
         };
     }
 
+    protected handleResize(): void {
+        const handleMouseEnter = () => {
+            this.node?.classList.add('no-pointer-events');
+            setTimeout(() => {
+                this.node?.classList.remove('no-pointer-events');
+                this.node?.removeEventListener('mouseenter', handleMouseEnter);
+            }, 100);
+        };
+        this.node?.addEventListener('mouseenter', handleMouseEnter);
+    }
+
     protected override onResize(msg: Widget.ResizeMessage): void {
+        this.handleResize();
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, Widget.ResizeMessage.UnknownSize);
         }

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as MonacoNls from '@theia/monaco-editor-core/esm/vs/nls';
@@ -38,7 +38,7 @@ import {
     PreferenceService, PreferenceSchemaProvider, createPreferenceProxy,
     PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService, StylingParticipant
 } from '@theia/core/lib/browser';
-import { TextEditorProvider, DiffNavigatorProvider } from '@theia/editor/lib/browser';
+import { TextEditorProvider, DiffNavigatorProvider, TextEditor } from '@theia/editor/lib/browser';
 import { StrictEditorTextFocusContext } from '@theia/editor/lib/browser/editor-keybinding-contexts';
 import { MonacoEditorProvider, MonacoEditorFactory } from './monaco-editor-provider';
 import { MonacoEditorMenuContribution } from './monaco-menu';
@@ -138,7 +138,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoDiffNavigatorFactory).toSelf().inSingletonScope();
     bind(DiffNavigatorProvider).toFactory(context =>
-        editor => context.container.get(MonacoEditorProvider).getDiffNavigator(editor)
+        (editor: TextEditor) => context.container.get(MonacoEditorProvider).getDiffNavigator(editor)
     );
 
     bind(MonacoOutlineContribution).toSelf().inSingletonScope();
@@ -153,7 +153,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplicationContribution).toService(MonacoStatusBarContribution);
 
     bind(MonacoCommandRegistry).toSelf().inSingletonScope();
-    bind(CommandContribution).to(MonacoEditorCommandHandlers).inSingletonScope();
+    bind(MonacoEditorCommandHandlers).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(MonacoEditorCommandHandlers);
     bind(MonacoEditorMenuContribution).toSelf().inSingletonScope();
     bind(MenuContribution).toService(MonacoEditorMenuContribution);
     bind(MonacoKeybindingContribution).toSelf().inSingletonScope();

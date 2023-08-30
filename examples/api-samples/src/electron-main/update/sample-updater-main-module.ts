@@ -11,11 +11,11 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging/proxy-factory';
+import { RpcConnectionHandler } from '@theia/core/lib/common/messaging/proxy-factory';
 import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
 import { ElectronConnectionHandler } from '@theia/core/lib/electron-common/messaging/electron-connection-handler';
 import { SampleUpdaterPath, SampleUpdater, SampleUpdaterClient } from '../../common/updater/sample-updater';
@@ -26,7 +26,7 @@ export default new ContainerModule(bind => {
     bind(SampleUpdater).toService(SampleUpdaterImpl);
     bind(ElectronMainApplicationContribution).toService(SampleUpdater);
     bind(ElectronConnectionHandler).toDynamicValue(context =>
-        new JsonRpcConnectionHandler<SampleUpdaterClient>(SampleUpdaterPath, client => {
+        new RpcConnectionHandler<SampleUpdaterClient>(SampleUpdaterPath, client => {
             const server = context.container.get<SampleUpdater>(SampleUpdater);
             server.setClient(client);
             client.onDidCloseConnection(() => server.disconnectClient(client));

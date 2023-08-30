@@ -1,6 +1,6 @@
 {
   "name": "@theia/core",
-  "version": "1.36.0",
+  "version": "1.40.0",
   "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
@@ -16,8 +16,8 @@
     "@phosphor/signaling": "1",
     "@phosphor/virtualdom": "1",
     "@phosphor/widgets": "1",
-    "@theia/application-package": "1.36.0",
-    "@theia/request": "1.36.0",
+    "@theia/application-package": "1.40.0",
+    "@theia/request": "1.40.0",
     "@types/body-parser": "^1.16.4",
     "@types/cookie": "^0.3.3",
     "@types/dompurify": "^2.2.2",
@@ -34,6 +34,7 @@
     "@types/yargs": "^15",
     "@vscode/codicons": "*",
     "ajv": "^6.5.3",
+    "async-mutex": "^0.4.0",
     "body-parser": "^1.17.2",
     "cookie": "^0.4.0",
     "dompurify": "^2.2.9",
@@ -48,13 +49,13 @@
     "http-proxy-agent": "^5.0.0",
     "https-proxy-agent": "^5.0.0",
     "iconv-lite": "^0.6.0",
-    "inversify": "^5.1.1",
+    "inversify": "^6.0.1",
     "jschardet": "^2.1.1",
     "keytar": "7.2.0",
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
     "markdown-it": "^12.3.2",
-    "msgpackr": "^1.6.1",
+    "msgpackr": "1.6.1",
     "nsfw": "^2.2.4",
     "p-debounce": "^2.1.0",
     "perfect-scrollbar": "^1.3.0",
@@ -130,6 +131,9 @@
   },
   "theiaExtensions": [
     {
+      "preload": "lib/electron-browser/preload"
+    },
+    {
       "frontend": "lib/browser/i18n/i18n-frontend-module",
       "backend": "lib/node/i18n/i18n-backend-module"
     },
@@ -166,7 +170,7 @@
   "keywords": [
     "theia-extension"
   ],
-  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
@@ -195,8 +199,8 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.36.0",
-    "@theia/re-exports": "1.36.0",
+    "@theia/ext-scripts": "1.40.0",
+    "@theia/re-exports": "1.40.0",
     "minimist": "^1.2.0"
   },
   "nyc": {

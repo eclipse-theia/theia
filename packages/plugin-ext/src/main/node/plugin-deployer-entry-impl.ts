@@ -11,11 +11,11 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { PluginDeployerEntry, PluginDeployerEntryType, PluginType } from '../../common/plugin-protocol';
-import * as fs from 'fs';
+import { promises as fs } from 'fs';
 
 export class PluginDeployerEntryImpl implements PluginDeployerEntry {
 
@@ -73,17 +73,19 @@ export class PluginDeployerEntryImpl implements PluginDeployerEntry {
     getChanges(): string[] {
         return this.changes;
     }
-    isFile(): boolean {
+    async isFile(): Promise<boolean> {
         try {
-            return fs.statSync(this.currentPath).isFile();
-        } catch (e) {
+            const stat = await fs.stat(this.currentPath);
+            return stat.isFile();
+        } catch {
             return false;
         }
     }
-    isDirectory(): boolean {
+    async isDirectory(): Promise<boolean> {
         try {
-            return fs.statSync(this.currentPath).isDirectory();
-        } catch (e) {
+            const stat = await fs.stat(this.currentPath);
+            return stat.isDirectory();
+        } catch {
             return false;
         }
     }

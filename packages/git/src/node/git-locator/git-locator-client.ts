@@ -11,12 +11,12 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as paths from 'path';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { JsonRpcProxyFactory, DisposableCollection } from '@theia/core';
+import { RpcProxyFactory, DisposableCollection } from '@theia/core';
 import { IPCConnectionProvider } from '@theia/core/lib/node';
 import { GitLocator, GitLocateOptions } from './git-locator-protocol';
 
@@ -38,7 +38,7 @@ export class GitLocatorClient implements GitLocator {
                 serverName: 'git-locator',
                 entryPoint: paths.join(__dirname, 'git-locator-host'),
             }, async connection => {
-                const proxyFactory = new JsonRpcProxyFactory<GitLocator>();
+                const proxyFactory = new RpcProxyFactory<GitLocator>();
                 const remote = proxyFactory.createProxy();
                 proxyFactory.listen(connection);
                 try {

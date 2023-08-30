@@ -11,7 +11,7 @@
  * with the GNU Classpath Exception which is available at
  * https://www.gnu.org/software/classpath/license.html.
  *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
 import { ContextMenuRenderer, ReactWidget, Widget } from '@theia/core/lib/browser';
@@ -113,7 +113,11 @@ export class MemoryTableWidget extends ReactWidget {
     protected deferredScrollContainer = new Deferred<HTMLDivElement>();
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.id = MemoryTableWidget.ID;
         this.addClass(MemoryTableWidget.ID);
         this.scrollOptions = { ...this.scrollOptions, suppressScrollX: false };

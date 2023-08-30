@@ -11,21 +11,21 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
-import * as Converter from '../type-converters';
 import { TaskDto } from '../../common';
+import * as Converter from '../type-converters';
 
 export class TaskProviderAdapter {
 
     constructor(private readonly provider: theia.TaskProvider) { }
 
-    provideTasks(token: theia.CancellationToken): Promise<TaskDto[] | undefined> {
+    provideTasks(token: theia.CancellationToken): Promise<TaskDto[]> {
         return Promise.resolve(this.provider.provideTasks(token)).then(tasks => {
             if (!Array.isArray(tasks)) {
-                return undefined;
+                return [];
             }
             const result: TaskDto[] = [];
             for (const task of tasks) {
@@ -40,21 +40,18 @@ export class TaskProviderAdapter {
         });
     }
 
-    resolveTask(task: TaskDto, token: theia.CancellationToken): Promise<TaskDto | undefined> {
+    async resolveTask(task: TaskDto, token: theia.CancellationToken): Promise<TaskDto> {
         if (typeof this.provider.resolveTask !== 'function') {
-            return Promise.resolve(undefined);
+            return task;
         }
 
         const item = Converter.toTask(task);
         if (!item) {
-            return Promise.resolve(undefined);
+            return task;
         }
 
-        return Promise.resolve(this.provider.resolveTask(item, token)).then(value => {
-            if (value) {
-                return Converter.fromTask(value);
-            }
-            return undefined;
-        });
+        const resolved = await this.provider.resolveTask(item, token);
+        const converted = resolved ? Converter.fromTask(resolved) : Converter.fromTask(item);
+        return converted ?? task;
     }
 }

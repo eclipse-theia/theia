@@ -11,20 +11,21 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import * as path from 'path';
 import * as fs from '@theia/core/shared/fs-extra';
-import { readdir, remove } from '@theia/core/shared/fs-extra';
+import { readdir } from 'fs/promises';
+import { remove } from '@theia/core/shared/fs-extra';
 import * as crypto from 'crypto';
 import { ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
 import { PluginPaths } from './const';
 import { PluginPathsService } from '../../common/plugin-paths-protocol';
-import { THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '@theia/workspace/lib/common';
+import { UntitledWorkspaceService } from '@theia/workspace/lib/common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { PluginCliContribution } from '../plugin-cli-contribution';
 
@@ -42,6 +43,9 @@ export class PluginPathsServiceImpl implements PluginPathsService {
 
     @inject(PluginCliContribution)
     protected readonly cliContribution: PluginCliContribution;
+
+    @inject(UntitledWorkspaceService)
+    protected readonly untitledWorkspaceService: UntitledWorkspaceService;
 
     async getHostLogPath(): Promise<string> {
         const parentLogsDir = await this.getLogsDirPath();
@@ -78,7 +82,11 @@ export class PluginPathsServiceImpl implements PluginPathsService {
     }
 
     protected async buildWorkspaceId(workspaceUri: string, rootUris: string[]): Promise<string> {
-        const untitledWorkspace = await getTemporaryWorkspaceFileUri(this.envServer);
+        const configDirUri = await this.envServer.getConfigDirUri();
+        const untitledWorkspace = await this.untitledWorkspaceService.getUntitledWorkspaceUri(
+            new URI(configDirUri),
+            async uri => !await fs.pathExists(uri.path.fsPath())
+        );
 
         if (untitledWorkspace.toString() === workspaceUri) {
             // if workspace is temporary
@@ -86,15 +94,6 @@ export class PluginPathsServiceImpl implements PluginPathsService {
             const rootsStr = rootUris.sort().join(',');
             return this.createHash(rootsStr);
         } else {
-            let stat;
-            try {
-                stat = await fs.stat(FileUri.fsPath(workspaceUri));
-            } catch { /* no-op */ }
-            let displayName = new URI(workspaceUri).displayName;
-            if ((!stat || !stat.isDirectory()) && (displayName.endsWith(`.${THEIA_EXT}`) || displayName.endsWith(`.${VSCODE_EXT}`))) {
-                displayName = displayName.slice(0, displayName.lastIndexOf('.'));
-            }
-
             return this.createHash(workspaceUri);
         }
     }
@@ -141,15 +140,9 @@ export class PluginPathsServiceImpl implements PluginPathsService {
     }
 
     private async cleanupOldLogs(parentLogsDir: string): Promise<void> {
-        // @ts-ignore - fs-extra types (Even latest version) is not updated with the `withFileTypes` option.
-        const dirEntries = await readdir(parentLogsDir, { withFileTypes: true }) as string[];
-        // `Dirent` type is defined in @types/node since 10.10.0
-        // However, upgrading the @types/node in theia to 10.11 (as defined in engine field)
-        // Causes other packages to break in compilation, so we are using the infamous `any` type...
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const subDirEntries = dirEntries.filter((dirent: any) => dirent.isDirectory());
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const subDirNames = subDirEntries.map((dirent: any) => dirent.name);
+        const dirEntries = await readdir(parentLogsDir, { withFileTypes: true });
+        const subDirEntries = dirEntries.filter(dirent => dirent.isDirectory());
+        const subDirNames = subDirEntries.map(dirent => dirent.name);
         // We never clean a folder that is not a Theia logs session folder.
         // Even if it does appears under the `parentLogsDir`...
         const sessionSubDirNames = subDirNames.filter((dirName: string) => SESSION_TIMESTAMP_PATTERN.test(dirName));

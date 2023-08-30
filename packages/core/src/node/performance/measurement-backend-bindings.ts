@@ -11,12 +11,12 @@
 * with the GNU Classpath Exception which is available at
 * https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 *******************************************************************************/
 
 import { interfaces } from 'inversify';
 import {
-    ConnectionHandler, DefaultBackendStopwatch, BackendStopwatch, JsonRpcConnectionHandler,
+    ConnectionHandler, DefaultBackendStopwatch, BackendStopwatch, RpcConnectionHandler,
     Stopwatch, stopwatchPath
 } from '../../common';
 import { NodeStopwatch } from './node-stopwatch';
@@ -27,7 +27,7 @@ export function bindNodeStopwatch(bind: interfaces.Bind): interfaces.BindingWhen
 
 export function bindBackendStopwatchServer(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<unknown> {
     bind(ConnectionHandler).toDynamicValue(({ container }) =>
-        new JsonRpcConnectionHandler<never>(stopwatchPath, () => container.get<BackendStopwatch>(BackendStopwatch))
+        new RpcConnectionHandler<never>(stopwatchPath, () => container.get<BackendStopwatch>(BackendStopwatch))
     ).inSingletonScope();
 
     bind(DefaultBackendStopwatch).toSelf().inSingletonScope();

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
@@ -34,7 +34,7 @@ const windowTitleDescription = [
     '`${activeFolderLong}`: the full path of the folder the file is contained in (e.g. /Users/Development/myFolder/myFileFolder).',
     '`${folderName}`: name of the workspace folder the file is contained in (e.g. myFolder).',
     '`${folderPath}`: file path of the workspace folder the file is contained in (e.g. /Users/Development/myFolder).',
-    '`${rootName}`: name of the opened workspace or folder (e.g. myFolder or myWorkspace).',
+    '`${rootName}`: name of the workspace with optional remote name and workspace indicator if applicable (e.g. myFolder, myRemoteFolder [SSH] or myWorkspace (Workspace)).',
     '`${rootPath}`: file path of the opened workspace or folder (e.g. /Users/Development/myWorkspace).',
     '`${appName}`: e.g. VS Code.',
     '`${remoteName}`: e.g. SSH',
@@ -81,9 +81,15 @@ export const corePreferenceSchema: PreferenceSchema = {
             markdownDescription: nls.localizeByDefault('Controls the dispatching logic for key presses to use either `code` (recommended) or `keyCode`.')
         },
         'window.tabbar.enhancedPreview': {
-            type: 'boolean',
-            default: false,
-            description: nls.localize('theia/core/enhancedPreview', 'Controls whether more information about the tab should be displayed in horizontal tab bars.')
+            type: 'string',
+            enum: ['classic', 'enhanced', 'visual'],
+            markdownEnumDescriptions: [
+                nls.localize('theia/core/enhancedPreview/classic', 'Display a simple preview of the tab with basic information.'),
+                nls.localize('theia/core/enhancedPreview/enhanced', 'Display an enhanced preview of the tab with additional information.'),
+                nls.localize('theia/core/enhancedPreview/visual', 'Display a visual preview of the tab.'),
+            ],
+            default: 'classic',
+            description: nls.localize('theia/core/enhancedPreview', 'Controls what information about the tab should be displayed in horizontal tab bars, when hovering.')
         },
         'window.menuBarVisibility': {
             type: 'string',
@@ -175,7 +181,7 @@ export const corePreferenceSchema: PreferenceSchema = {
         },
         'workbench.editor.revealIfOpen': {
             'type': 'boolean',
-            'description': nls.localizeByDefault('Controls whether an editor is revealed in any of the visible groups if opened. If disabled, an editor will prefer to open in the currently active editor group. If enabled, an already opened editor will be revealed instead of opened again in the currently active editor group. Note that there are some cases where this setting is ignored, e.g. when forcing an editor to open in a specific group or to the side of the currently active group.'),
+            'description': nls.localizeByDefault('Controls whether an editor is revealed in any of the visible groups if opened. If disabled, an editor will prefer to open in the currently active editor group. If enabled, an already opened editor will be revealed instead of opened again in the currently active editor group. Note that there are some cases where this setting is ignored, such as when forcing an editor to open in a specific group or to the side of the currently active group.'),
             'default': false
         },
         'workbench.commandPalette.history': {
@@ -263,7 +269,7 @@ export interface CoreConfiguration {
     'breadcrumbs.enabled': boolean;
     'files.encoding': string;
     'keyboard.dispatch': 'code' | 'keyCode';
-    'window.tabbar.enhancedPreview': boolean;
+    'window.tabbar.enhancedPreview': 'classic' | 'enhanced' | 'visual';
     'window.menuBarVisibility': 'classic' | 'visible' | 'hidden' | 'compact';
     'window.title': string;
     'window.titleSeparator': string;

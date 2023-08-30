@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { Container } from '@theia/core/shared/inversify';
@@ -19,7 +19,7 @@ import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-en
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
-import { CommonWorkspaceUtils } from '../common';
+import { WorkspaceFileService, UntitledWorkspaceService } from '../common';
 import { DefaultWorkspaceServer, WorkspaceCliContribution } from './default-workspace-server';
 import { expect } from 'chai';
 import * as temp from 'temp';
@@ -41,8 +41,9 @@ describe('DefaultWorkspaceServer', function (): void {
             // create a container with the necessary bindings for the DefaultWorkspaceServer
             const container = new Container();
             container.bind(WorkspaceCliContribution).toSelf().inSingletonScope();
-            container.bind(CommonWorkspaceUtils).toSelf().inSingletonScope();
             container.bind(DefaultWorkspaceServer).toSelf().inSingletonScope();
+            container.bind(WorkspaceFileService).toSelf().inSingletonScope();
+            container.bind(UntitledWorkspaceService).toSelf().inSingletonScope();
             container.bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(tmpConfigDir));
 
             workspaceServer = container.get(DefaultWorkspaceServer);

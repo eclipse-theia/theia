@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as React from 'react';
@@ -34,11 +34,12 @@ export interface SelectOption {
 }
 
 export interface SelectComponentProps {
-    options: SelectOption[]
+    options: readonly SelectOption[]
     defaultValue?: string | number
     onChange?: (option: SelectOption, index: number) => void,
     onBlur?: () => void,
-    onFocus?: () => void
+    onFocus?: () => void,
+    alignment?: 'left' | 'right';
 }
 
 export interface SelectComponentState {
@@ -81,7 +82,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         this.dropdownElement = list;
     }
 
-    get options(): SelectOption[] {
+    get options(): readonly SelectOption[] {
         return this.props.options;
     }
 
@@ -103,6 +104,10 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 hover: index
             });
         }
+    }
+
+    protected get alignLeft(): boolean {
+        return this.props.alignment !== 'right';
     }
 
     protected getOptimalWidth(): number {
@@ -168,7 +173,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         if (options[selected]?.separator) {
             selected = this.nextNotSeparator('forwards');
         }
-        const selectedItemLabel = options[selected].label ?? options[selected].value;
+        const selectedItemLabel = options[selected]?.label ?? options[selected]?.value;
         return <>
             <div
                 key="select-component"
@@ -279,6 +284,9 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         if (!this.state.dimensions) {
             return;
         }
+
+        const shellArea = document.getElementById('theia-app-shell')!.getBoundingClientRect();
+        const maxWidth = this.alignLeft ? shellArea.width - this.state.dimensions.left : this.state.dimensions.right;
         if (this.mountedListeners.size === 0) {
             // Only attach our listeners once we render our dropdown menu
             this.attachListeners();
@@ -286,11 +294,11 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             this.optimalWidth = this.getOptimalWidth();
             this.optimalHeight = this.getOptimalHeight(Math.max(this.state.dimensions.width, this.optimalWidth));
         }
-        const clientRect = document.getElementById('theia-app-shell')!.getBoundingClientRect();
-        const availableTop = this.state.dimensions.top - clientRect.top;
-        const availableBottom = clientRect.top + clientRect.height - this.state.dimensions.bottom;
+        const availableTop = this.state.dimensions.top - shellArea.top;
+        const availableBottom = shellArea.top + shellArea.height - this.state.dimensions.bottom;
         // prefer rendering to the bottom unless there is not enough space and more content can be shown to the top
         const invert = availableBottom < this.optimalHeight && (availableBottom - this.optimalHeight) < (availableTop - this.optimalHeight);
+
         const { options } = this.props;
         const { hover } = this.state;
         const description = options[hover].description;
@@ -313,14 +321,14 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 items.push(descriptionNode);
             }
         }
-        const calculatedWidth = Math.max(this.state.dimensions.width, this.optimalWidth);
-        const maxWidth = clientRect.width - this.state.dimensions.left;
+
         return <div key="dropdown" className="theia-select-component-dropdown" style={{
             top: invert ? 'none' : this.state.dimensions.bottom,
-            bottom: invert ? clientRect.top + clientRect.height - this.state.dimensions.top : 'none',
-            left: this.state.dimensions.left,
-            width: Math.min(calculatedWidth, maxWidth),
-            maxHeight: clientRect.height - (invert ? clientRect.height - this.state.dimensions.bottom : this.state.dimensions.top) - this.state.dimensions.height,
+            bottom: invert ? shellArea.top + shellArea.height - this.state.dimensions.top : 'none',
+            left: this.alignLeft ? this.state.dimensions.left : 'none',
+            right: this.alignLeft ? 'none' : shellArea.width - this.state.dimensions.right,
+            width: Math.min(Math.max(this.state.dimensions.width, this.optimalWidth), maxWidth),
+            maxHeight: shellArea.height - (invert ? shellArea.height - this.state.dimensions.bottom : this.state.dimensions.top) - this.state.dimensions.height,
             position: 'absolute'
         }} ref={this.dropdownRef}>
             {items}

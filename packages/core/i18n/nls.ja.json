@@ -1,4 +1,5 @@
 {
+  "debug.breakpoint.editCondition": "編集条件...",
   "terminal:new:profile": "プロファイルから新しい統合端末を作成する",
   "terminal:profile:default": "デフォルトの端末プロファイルを選択",
   "theia": {
@@ -29,6 +30,11 @@
         "showPreviousTabInGroup": "グループ内の前のタブに切り替える",
         "toggleMaximized": "トグル・マキシマイズ"
       },
+      "enhancedPreview": {
+        "classic": "タブの基本情報を含む簡単なプレビューを表示する。",
+        "enhanced": "追加情報を含むタブの拡張プレビューを表示します。",
+        "visual": "タブのビジュアルプレビューを表示する。"
+      },
       "file": {
         "browse": "ブラウズ"
       },
@@ -43,6 +49,10 @@
         "pc": "PCキーボード",
         "tryDetect": "ブラウザの情報や押されたキーからキーボードの配列を検出してみてください。"
       },
+      "navigator": {
+        "clipboardWarn": "クリップボードへのアクセスが拒否されました。ブラウザのアクセス許可を確認してください。",
+        "clipboardWarnFirefox": "クリップボードAPIは使用できません。これは、'{1}' ページの '{0}' 環境設定によって有効にすることができます。その後Theiaをリロードしてください。これにより、FireFoxがシステムクリップボードにフルアクセスできるようになります。"
+      },
       "offline": "オフライン",
       "quitMessage": "保存されていない変更は、保存されません。",
       "resetWorkbenchLayout": "ワークベンチレイアウトのリセット",
@@ -52,7 +62,10 @@
         "previous": "前へ (上)"
       },
       "silentNotifications": "通知のポップアップを抑制するかどうかを制御します。",
-      "tabMaximize": "ダブルクリック時にタブを最大化するかどうかを制御します。"
+      "tabDefaultSize": "タブのデフォルトサイズを指定します。",
+      "tabMaximize": "ダブルクリック時にタブを最大化するかどうかを制御します。",
+      "tabMinimumSize": "タブの最小サイズを指定します。",
+      "tabShrinkToFit": "タブを縮小して、空きスペースに合わせる。"
     },
     "debug": {
       "addConfigurationPlaceholder": "設定を追加するワークスペース・ルートを選択します。",
@@ -68,15 +81,13 @@
       "toggleTracing": "デバッグアダプタとの通信のトレースの有効化/無効化"
     },
     "editor": {
-      "diffEditor.diffAlgorithm.experimental": "実験的な差分アルゴリズムを使用。",
-      "diffEditor.diffAlgorithm.smart": "デフォルトの diffing アルゴリズムを使用します。",
       "dirtyEncoding": "ファイルが汚れています。別のエンコーディングで開き直す前に、まず保存してください。",
       "editor.codeActionWidget.showHeaders": "コードアクションメニューにグループヘッダを表示するかどうかを設定します。",
+      "editor.experimental.pasteActions.enabled": "ペースト時に拡張機能からの編集を実行するかどうかを設定します。",
       "editor.formatOnSaveMode.modificationsIfAvailable": "変更点のみをフォーマットしようとします(ソースコントロールが必要です)。ソースコントロールが使用できない場合は、ファイル全体がフォーマットされます。",
       "editor.inlayHints.enabled1": "インレイのヒントはデフォルトで表示され、`Ctrl+Alt`を押すと隠れます。",
       "editor.inlayHints.enabled2": "インレイのヒントはデフォルトでは非表示で、`Ctrl+Alt`を押したときに表示されます。",
       "editor.quickSuggestions": "入力中に自動的にサジェストを表示するかどうかを制御します。コメント、文字列、その他のコードを入力する際に制御できます。クイックサジェストは、ゴーストテキストとして表示するか、サジェストウィジェットで表示するかを設定できます。また、'#editor.suggestOnTriggerCharacters#'設定は、特殊な文字でサジェストが発生するかどうかを制御します。",
-      "editor.stickyScroll.maxLineCount": "表示する付箋の最大数を定義します。",
       "editor.suggest.matchOnWordStartOnly": "インテリセンスのフィルタリングを有効にすると、最初の文字が単語の先頭にマッチする必要があります。例えば、`Console` や `WebContext` では `c` ですが、`description` では _not_ です。無効化すると、インテリセンスはより多くの結果を表示しますが、マッチの質でソートされます。",
       "files.autoSave": "未保存の変更があるエディターの[自動保存](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save)を制御します。",
       "files.autoSave.afterDelay": "変更されたエディターは、設定された `#files.autoSaveDelay#` の後に自動的に保存されます。",
@@ -153,11 +164,15 @@
       "gitDecorationsColors": "ナビゲーターに色の装飾を施す。",
       "mergeQuickPickPlaceholder": "現在アクティブな{0}ブランチにマージするブランチを選びます。",
       "missingUserInfo": "gitで「user.name」と「user.email」を設定していることを確認してください。",
+      "noHistoryForError": "の履歴はありません。{0}",
       "noPreviousCommit": "修正する前のコミットがない",
       "noRepositoriesSelected": "リポジトリが選択されていません。",
+      "prepositionIn": "で",
       "repositoryNotInitialized": "リポジトリ {0} はまだ初期化されていません。",
       "stashChanges": "スタッシュの変更確定するには「Enter」を、キャンセルするには「Escape」を押します。",
       "stashChangesWithMessage": "メッセージでスタッシュが変わります。{0}.確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
+      "tabTitleIndex": "{0} (インデックス)",
+      "tabTitleWorkingTree": "{0} (ワーキングツリー)",
       "toggleBlameAnnotations": "トグル・ブレイム・アノテーション"
     },
     "keybinding-schema-updater": {
@@ -268,6 +283,8 @@
     },
     "navigator": {
       "autoReveal": "オートリヴェール",
+      "clipboardWarn": "クリップボードへのアクセスが拒否されました。ブラウザのアクセス許可を確認してください。",
+      "clipboardWarnFirefox": "クリップボードAPIは使用できません。これは、'{1}' ページの '{0}' 環境設定によって有効にすることができます。その後Theiaをリロードしてください。これにより、FireFoxがシステムクリップボードにフルアクセスできるようになります。",
       "refresh": "エクスプローラーでの更新",
       "reveal": "エクスプローラーでの表示",
       "toggleHiddenFiles": "隠しファイルのトグル"
@@ -278,6 +295,7 @@
       "hiddenChannels": "隠しチャンネル",
       "hideOutputChannel": "出力チャンネルを隠す...",
       "maxChannelHistory": "1つの出力チャネルの最大エントリ数。",
+      "outputChannels": "出力チャンネル",
       "showOutputChannel": "出力チャンネルを表示..."
     },
     "plugin": {
@@ -311,6 +329,9 @@
       "watchMode": "開発中のプラグインにウォッチャーを実行"
     },
     "plugin-ext": {
+      "authentication-main": {
+        "loginTitle": "ログイン"
+      },
       "plugins": "プラグイン",
       "webviewTrace": "ウェブビューによる通信のトレースを制御します。",
       "webviewWarnIfUnsecure": "現在、ウェブビューが安全でない状態で展開されていることをユーザーに警告します。"
@@ -358,6 +379,7 @@
     "task": {
       "attachTask": "タスクの添付...",
       "clearHistory": "明確な歴史",
+      "noTaskToRun": "実行するタスクが見つかりません。タスクの設定...",
       "openUserTasks": "ユーザータスクを開く"
     },
     "terminal": {
@@ -370,7 +392,6 @@
       "profileIcon": "ターミナルアイコンに関連付けるコーディコンIDです。\nterminal-tmux:\"$(terminal-tmux)\" とする。",
       "profileNew": "新端末(プロフィール付き)...",
       "profilePath": "このプロファイルが使用するシェルのパス。",
-      "profileSource": "シェルへのパスを自動検出するプロファイルソースです。非標準の実行可能位置はサポートされていないので、新しいプロファイルで手動で作成する必要があることに注意してください。",
       "profiles": "新しいターミナルを作成するときに提示するプロファイル。オプションのアーギュメントを使用して、手動でパスプロパティを設定します。\n既存のプロファイルを `null` に設定すると、リストからプロファイルを隠すことができます。 例: `\"{0}\": null`.",
       "rendererType": "端末のレンダリング方法を制御する。",
       "selectProfile": "新規端末のプロファイルを選択する",
@@ -414,6 +435,7 @@
       "license": "ライセンス{0}",
       "recommendedExtensions": "このワークスペースでの使用が推奨される拡張機能の名前のリストです。",
       "searchPlaceholder": "{0}で拡張子を検索",
+      "showInstalled": "インストールされている拡張機能を表示する",
       "showRecommendedExtensions": "拡張機能の推奨事項について、通知を表示するかどうかを制御します。",
       "vsx-extensions-contribution": {
         "update-version-uninstall-error": "拡張子の削除中にエラーが発生しました。{0}.",

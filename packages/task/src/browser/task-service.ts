@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ApplicationShell, FrontendApplication, QuickPickValue, WidgetManager, WidgetOpenMode } from '@theia/core/lib/browser';
@@ -48,7 +48,8 @@ import {
     TaskInfo,
     TaskOutputPresentation,
     TaskOutputProcessedEvent,
-    TaskServer
+    TaskServer,
+    asVariableName
 } from '../common';
 import { TaskWatcher } from '../common/task-watcher';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
@@ -98,7 +99,7 @@ export class TaskService implements TaskConfigurationClient {
     /**
      * The last executed task.
      */
-    protected lastTask: LastRunTaskInfo = {resolvedTask: undefined, option: undefined};
+    protected lastTask: LastRunTaskInfo = { resolvedTask: undefined, option: undefined };
     protected cachedRecentTasks: TaskConfiguration[] = [];
     protected runningTasks = new Map<number, {
         exitCode: Deferred<number | undefined>,
@@ -249,7 +250,7 @@ export class TaskService implements TaskConfigurationClient {
                                 }
                             }
                         }
-                        const uri = new URI(problem.resource.path).withScheme(problem.resource.scheme);
+                        const uri = problem.resource.withScheme(problem.resource.scheme);
                         const document = this.monacoWorkspace.getTextDocument(uri.toString());
                         if (problem.description.applyTo === ApplyToKind.openDocuments && !!document ||
                             problem.description.applyTo === ApplyToKind.closedDocuments && !document ||
@@ -403,11 +404,14 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     /**
-     * Returns an array of the task configurations which are provided by the extensions.
+     * Returns an array that contains the task configurations provided by the task providers for the specified task type.
      * @param token  The cache token for the user interaction in progress
+     * @param type The task type (filter) associated to the returning TaskConfigurations
+     *
+     * '*' indicates all tasks regardless of the type
      */
-    getProvidedTasks(token: number): Promise<TaskConfiguration[]> {
-        return this.providedTaskConfigurations.getTasks(token);
+    getProvidedTasks(token: number, type?: string): Promise<TaskConfiguration[]> {
+        return this.providedTaskConfigurations.getTasks(token, type);
     }
 
     addRecentTasks(tasks: TaskConfiguration | TaskConfiguration[]): void {
@@ -905,13 +909,9 @@ export class TaskService implements TaskConfigurationClient {
     async updateTaskConfiguration(token: number, task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
         if (update.problemMatcher) {
             if (Array.isArray(update.problemMatcher)) {
-                update.problemMatcher.forEach((name, index) => {
-                    if (!name.startsWith('$')) {
-                        update.problemMatcher[index] = `$${update.problemMatcher[index]}`;
-                    }
-                });
-            } else if (!update.problemMatcher.startsWith('$')) {
-                update.problemMatcher = `$${update.problemMatcher}`;
+                update.problemMatcher.forEach((_name, index) => update.problemMatcher[index] = asVariableName(update.problemMatcher[index]));
+            } else {
+                update.problemMatcher = asVariableName(update.problemMatcher);
             }
         }
         this.taskConfigurations.updateTaskConfig(token, task, update);
@@ -994,7 +994,7 @@ export class TaskService implements TaskConfigurationClient {
         let taskInfo: TaskInfo | undefined;
         try {
             taskInfo = await this.taskServer.run(resolvedTask, this.getContext(), option);
-            this.lastTask = {resolvedTask, option };
+            this.lastTask = { resolvedTask, option };
             this.logger.debug(`Task created. Task id: ${taskInfo.taskId}`);
 
             /**
@@ -1038,7 +1038,7 @@ export class TaskService implements TaskConfigurationClient {
         ({
             label: matcher.label,
             value: { problemMatchers: [matcher] },
-            description: matcher.name.startsWith('$') ? matcher.name : `$${matcher.name}`
+            description: asVariableName(matcher.name)
         })
         ));
         return items;

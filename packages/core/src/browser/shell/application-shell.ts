@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { injectable, inject, optional, postConstruct } from 'inversify';
@@ -43,6 +43,7 @@ import { nls } from '../../common/nls';
 import { SecondaryWindowHandler } from '../secondary-window-handler';
 import URI from '../../common/uri';
 import { OpenerService } from '../opener-service';
+import { PreviewableWidget } from '../widgets/previewable-widget';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -1153,9 +1154,11 @@ export class ApplicationShell extends Widget {
                     tabBar.revealTab(index);
                 }
             }
-            const panel = this.getAreaPanelFor(newValue);
-            if (panel instanceof TheiaDockPanel) {
-                panel.markAsCurrent(newValue.title);
+            const widget = this.toTrackedStack(newValue.id).pop();
+            const panel = this.findPanel(widget);
+            if (panel) {
+                // if widget was undefined, we wouldn't have gotten a panel back before
+                panel.markAsCurrent(widget!.title);
             }
             // Add checks to ensure that the 'sash' for left panel is displayed correctly
             if (newValue.node.className === 'p-Widget theia-view-container p-DockPanel-widget') {
@@ -1184,6 +1187,9 @@ export class ApplicationShell extends Widget {
                 newValue['onCloseRequest'](msg);
             };
             this.toDisposeOnActiveChanged.push(Disposable.create(() => newValue['onCloseRequest'] = onCloseRequest));
+            if (PreviewableWidget.is(newValue)) {
+                newValue.loaded = true;
+            }
         }
         this.onDidChangeActiveWidgetEmitter.fire(args);
     }
@@ -1734,6 +1740,16 @@ export class ApplicationShell extends Widget {
 
     protected getAreaPanelFor(input: Widget): DockPanel | undefined {
         const widget = this.toTrackedStack(input.id).pop();
+        if (!widget) {
+            return undefined;
+        }
+        return this.findPanel(widget);
+    }
+
+    /**
+     * Find the shell panel this top-level widget is part of
+     */
+    protected findPanel(widget: Widget | undefined): TheiaDockPanel | undefined {
         if (!widget) {
             return undefined;
         }

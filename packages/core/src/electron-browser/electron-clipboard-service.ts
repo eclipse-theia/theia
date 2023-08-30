@@ -11,11 +11,10 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 // eslint-disable-next-line import/no-extraneous-dependencies
-import { clipboard } from 'electron';
 import { injectable } from 'inversify';
 import { ClipboardService } from '../browser/clipboard-service';
 
@@ -23,11 +22,11 @@ import { ClipboardService } from '../browser/clipboard-service';
 export class ElectronClipboardService implements ClipboardService {
 
     readText(): string {
-        return clipboard.readText();
+        return window.electronTheiaCore.readClipboard();
     }
 
     writeText(value: string): void {
-        clipboard.writeText(value);
+        window.electronTheiaCore.writeClipboard(value);
     }
 
 }

@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
@@ -118,9 +118,11 @@ export class OpenEditorsWidget extends AbstractNavigatorTreeWidget {
             {this.renderExpansionToggle(node, props)}
             {isEditorNode && this.renderPrefixIcon(node)}
             {this.decorateIcon(node, this.renderIcon(node, props))}
-            {this.renderCaptionAffixes(node, props, 'captionPrefixes')}
-            {this.renderCaption(node, props)}
-            {this.renderCaptionAffixes(node, props, 'captionSuffixes')}
+            <div className='noWrapInfo theia-TreeNodeSegmentGrow'>
+                {this.renderCaptionAffixes(node, props, 'captionPrefixes')}
+                {this.renderCaption(node, props)}
+                {this.renderCaptionAffixes(node, props, 'captionSuffixes')}
+            </div>
             {this.renderTailDecorations(node, props)}
             {(this.isGroupNode(node) || this.isAreaNode(node)) && this.renderInteractables(node, props)}
         </div>;

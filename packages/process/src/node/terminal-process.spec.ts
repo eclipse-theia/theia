@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import * as chai from 'chai';
 import * as process from 'process';
@@ -46,6 +46,23 @@ describe('TerminalProcess', function (): void {
         });
 
         expect(error.code).eq('ENOENT');
+    });
+
+    it('test implicit .exe (Windows only)', async function (): Promise<void> {
+        const match = /^(.+)\.exe$/.exec(process.execPath);
+        if (!isWindows || !match) {
+            this.skip();
+        }
+
+        const command = match[1];
+        const args = ['--version'];
+        const terminal = await new Promise<IProcessExitEvent>((resolve, reject) => {
+            const proc = terminalProcessFactory({ command, args });
+            proc.onExit(resolve);
+            proc.onError(reject);
+        });
+
+        expect(terminal.code).to.exist;
     });
 
     it('test error on trying to execute a directory', async function (): Promise<void> {

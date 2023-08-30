@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
@@ -68,7 +68,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     });
 
     @postConstruct()
-    protected initialize(): void {
+    protected init(): void {
         this.handleDebugStatusBarVisibility();
         this.preference.onPreferenceChanged(e => {
             if (e.preferenceName === 'debug.showInStatusBar') {
@@ -107,6 +107,12 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         });
     }
 
+    protected resolveRootFolderName(uri: string | undefined): string | undefined {
+        return uri && this.workspaceService.isMultiRootWorkspaceOpened
+            ? this.labelProvider.getName(new URI(uri))
+            : '';
+    }
+
     async getPicks(filter: string, token: CancellationToken): Promise<QuickPicks> {
         const items: QuickPickItemOrSeparator[] = [];
         const configurations = this.debugConfigurationManager.all;
@@ -114,27 +120,26 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         for (const config of configurations) {
             items.push({
                 label: config.name,
-                description: this.workspaceService.isMultiRootWorkspaceOpened
-                    ? this.labelProvider.getName(new URI(config.workspaceFolderUri))
-                    : '',
+                description: this.resolveRootFolderName(config.workspaceFolderUri),
                 execute: () => this.runConfiguration(config)
             });
         }
 
         // Resolve dynamic configurations from providers
         const record = await this.debugConfigurationManager.provideDynamicDebugConfigurations();
-        for (const [providerType, dynamicConfigurations] of Object.entries(record)) {
-            if (dynamicConfigurations.length > 0) {
+        for (const [providerType, configurationOptions] of Object.entries(record)) {
+            if (configurationOptions.length > 0) {
                 items.push({
                     label: providerType,
                     type: 'separator'
                 });
             }
 
-            for (const configuration of dynamicConfigurations) {
+            for (const options of configurationOptions) {
                 items.push({
-                    label: configuration.name,
-                    execute: () => this.runConfiguration({ name: configuration.name, configuration, providerType })
+                    label: options.name,
+                    description: this.resolveRootFolderName(options.workspaceFolderUri),
+                    execute: () => this.runConfiguration({ name: options.name, configuration: options.configuration, providerType, workspaceFolderUri: options.workspaceFolderUri })
                 });
             }
         }

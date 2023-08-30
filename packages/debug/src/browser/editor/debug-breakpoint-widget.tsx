@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
@@ -92,8 +92,14 @@ export class DebugBreakpointWidget implements Disposable {
         }
     }
 
+    private readonly selectComponentRef = React.createRef<SelectComponent>();
+
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.toDispose.push(this.zone = new MonacoEditorZoneWidget(this.editor.getControl()));
         this.zone.containerNode.classList.add('theia-debug-breakpoint-widget');
 
@@ -215,6 +221,10 @@ export class DebugBreakpointWidget implements Disposable {
         if (this._input) {
             this._input.getControl().setValue(this._values[this.context] || '');
         }
+        const selectComponent = this.selectComponentRef.current;
+        if (selectComponent && selectComponent.value !== this.context) {
+            selectComponent.value = this.context;
+        }
         this.selectNodeRoot.render(<SelectComponent
             defaultValue={this.context} onChange={this.updateInput}
             options={[
@@ -222,6 +232,7 @@ export class DebugBreakpointWidget implements Disposable {
                 { value: 'hitCondition', label: nls.localizeByDefault('Hit Count') },
                 { value: 'logMessage', label: nls.localizeByDefault('Log Message') },
             ]}
+            ref={this.selectComponentRef}
         />);
     }
 

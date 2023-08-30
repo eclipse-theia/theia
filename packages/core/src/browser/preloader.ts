@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { nls } from '../common/nls';
@@ -55,6 +55,7 @@ async function loadBackendOS(): Promise<void> {
     OS.backend.isOSX = isOSX;
     OS.backend.isWindows = isWindows;
     OS.backend.type = () => osType;
+    OS.backend.EOL = isWindows ? '\r\n' : '\n';
 }
 
 function initBackground(): void {

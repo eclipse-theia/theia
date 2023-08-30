@@ -9,6 +9,45 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ### General
 
+_Builtin Extension Pack_:
+
+If you are using the [`eclipse-theia.builtin-extension-pack@1.79.0`](https://open-vsx.org/extension/eclipse-theia/builtin-extension-pack) extension pack you may need to include the [`ms-vscode.js-debug`](https://open-vsx.org/extension/ms-vscode/js-debug) and [`ms-vscode.js-debug-companion`](https://open-vsx.org/extension/ms-vscode/js-debug-companion) plugins for JavaScript debug support.
+There was an issue when the publishing of the pack which excluded these necessary builtins.
+
+For example, in your application's `package.json`:
+
+```json
+"theiaPlugins": {
+  "eclipse-theia.builtin-extension-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.79.0/file/eclipse-theia.builtin-extension-pack-1.79.0.vsix",
+  "ms-vscode.js-debug": "https://open-vsx.org/api/ms-vscode/js-debug/1.78.0/file/ms-vscode.js-debug-1.78.0.vsix",
+  "ms-vscode.js-debug-companion": "https://open-vsx.org/api/ms-vscode/js-debug-companion/1.1.2/file/ms-vscode.js-debug-companion-1.1.2.vsix"
+}
+```
+
+_msgpackr_:
+
+If you're experiencing [`maximum callstack exceeded`](https://github.com/eclipse-theia/theia/issues/12499) errors you may need to downgrade the version of `msgpackr` pulled using a [yarn resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/).
+
+```
+rpc-message-encoder.ts:151 Uncaught (in promise) Error: Error during encoding: 'Maximum call stack size exceeded'
+    at MsgPackMessageEncoder.encode (rpc-message-encoder.ts:151:23)
+    at MsgPackMessageEncoder.request (rpc-message-encoder.ts:137:14)
+    at RpcProtocol.sendRequest (rpc-protocol.ts:161:22)
+    at proxy-handler.ts:74:45
+```
+
+For the best results follow the version used and tested by the framework.
+
+For example:
+
+```json
+"resolutions": {
+    "**/msgpackr": "1.8.3"
+}
+```
+
+_socket.io-parser_:
+
 Prior to [`v1.31.1`](https://github.com/eclipse-theia/theia/releases/tag/v1.31.1), a [resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/) might be necessary to work-around a recently discovered [critical vulnerability](https://security.snyk.io/vuln/SNYK-JS-SOCKETIOPARSER-3091012) in one of our runtime dependencies [socket.io-parser](https://github.com/socketio/socket.io-parser).
 
 For example:
@@ -19,6 +58,77 @@ For example:
     "**/socket.io-client": "^4.5.3"
 }
 ```
+
+### v1.38.0
+
+#### Inversify 6.0
+
+With Inversify 6, the library has introduced a strict split between sync and async dependency injection contexts.
+Theia uses the sync dependency injection context, and therefore no async dependencies cannot be used as dependencies in Theia.
+
+This might require a few changes in your Theia extensions, if you've been using async dependencies before. These include:
+1. Injecting promises directly into services
+2. Classes with `@postConstruct` methods which return a `Promise` instance.
+
+In order to work around 1., you can just wrap the promise inside of a function:
+
+```diff
+const PromiseSymbol = Symbol();
+const promise = startLongRunningOperation();
+
+-bind(PromiseSymbol).toConstantValue(promise);
++bind(PromiseSymbol).toConstantValue(() => promise);
+```
+
+The newly bound function needs to be handled appropriately at the injection side.
+
+For 2., `@postConstruct` methods can be refactored into a sync and an async method:
+
+```diff
+-@postConstruct()
+-protected async init(): Promise<void> {
+-  await longRunningOperation();
+-}
++@postConstruct()
++protected init(): void {
++  this.doInit();
++}
++
++protected async doInit(): Promise<void> {
++  await longRunningOperation();
++}
+```
+
+Note that this release includes a few breaking changes that also perform this refactoring on our own classes.
+If you've been overriding some of these `init()` methods, it might make sense to override `doInit()` instead.
+
+### v1.37.0
+
+#### Disabled node integration and added context isolation flag in Electron renderer
+
+This also means that `electron-remote` can no longer be used in components in `electron-frontend` or `electron-common`. In order to use electron-related functionality from the browser, you need to expose an API via a preload script (see https://www.electronjs.org/docs/latest/tutorial/context-isolation). To achieve this from a Theia extension, you need to follow these steps:
+
+1. Define the API interface and declare an API variable on the global `window` variable. See `packages/filesystem/electron-common/electron-api.ts` for an example
+2. Write a preload script module that implements the API on the renderer ("browser") side and exposes the API via `exposeInMainWorld`. You'll need to expose the API in an exported function called `preload()`. See `packages/filesystem/electron-browser/preload.ts` for an example.
+3. Declare a `theiaExtensions` entry pointing to the preload script like so:
+```
+"theiaExtensions": [
+    {
+      "preload": "lib/electron-browser/preload",
+```
+See `/packages/filesystem/package.json` for an example
+
+4. Implement the API on the electron-main side by contributing a `ElectronMainApplicationContribution`. See `packages/filesystem/electron-main/electron-api-main.ts` for an example. If you don't have a module contributing to the electron-main application, you may have to declare it in your package.json.
+```
+"theiaExtensions": [
+  {
+    "preload": "lib/electron-browser/preload",
+    "electronMain": "lib/electron-main/electron-main-module"
+  }
+```
+
+If you are using NodeJS API in your electron browser-side code you will also have to move the code outside of the renderer process, for example
+by setting up an API like described above, or, for example, by using a back-end service.
 
 ### v1.35.0
 
@@ -133,7 +243,7 @@ For more details, see the socket.io documentation about [using multiple nodes](h
 
 #### Resolutions
 
-Due to a [colors.js](https://github.com/Marak/colors.js) issue, a [resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/) may be necessary for your application in order to workaround the problem:
+Due to a [colors.js](https://github.com/Marak/colors.js) issue, a [resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/) may be necessary for your application in order to work around the problem:
 
 For example:
 
@@ -214,7 +324,7 @@ You can delete this whole block and replace it by the following:
 
 #### Keytar
 
-- [`keytar`](https://github.com/atom/node-keytar) was added as a dependency for the secrets API. and may require `libsecret` in your particular distribution to be functional:
+- [`keytar`](https://github.com/atom/node-keytar) was added as a dependency for the secrets API. It may require `libsecret` in your particular distribution to be functional:
   - Debian/Ubuntu: `sudo apt-get install libsecret-1-dev`
   - Red Hat-based: `sudo yum install libsecret-devel`
   - Arch Linux: `sudo pacman -S libsecret`

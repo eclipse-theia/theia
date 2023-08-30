@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { Terminal, TerminalOptions, PseudoTerminalOptions, ExtensionTerminalOptions, TerminalState } from '@theia/plugin';
@@ -20,6 +20,7 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as theia from '@theia/plugin';
+import * as Converter from './type-converters';
 import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIcon } from './types-impl';
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ProvidedTerminalLink } from '../common/plugin-api-rpc-model';
@@ -246,6 +247,11 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         });
     }
 
+    /** @stubbed */
+    registerTerminalQuickFixProvider(id: string, provider: theia.TerminalQuickFixProvider): theia.Disposable {
+        return Disposable.NULL;
+    }
+
     protected isExtensionTerminalOptions(options: theia.TerminalOptions | theia.ExtensionTerminalOptions): options is theia.ExtensionTerminalOptions {
         return 'pty' in options;
     }
@@ -308,7 +314,11 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
 
     private syncEnvironmentVariableCollection(extensionIdentifier: string, collection: EnvironmentVariableCollection): void {
         const serialized = [...collection.map.entries()];
-        this.proxy.$setEnvironmentVariableCollection(extensionIdentifier, collection.persistent, serialized.length === 0 ? undefined : serialized);
+        this.proxy.$setEnvironmentVariableCollection(collection.persistent, {
+            extensionIdentifier,
+            collection: serialized.length === 0 ? undefined : serialized,
+            description: Converter.fromMarkdownOrString(collection.description)
+        });
     }
 
     private setEnvironmentVariableCollection(extensionIdentifier: string, collection: EnvironmentVariableCollection): void {
@@ -334,7 +344,14 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
 
 export class EnvironmentVariableCollection implements theia.EnvironmentVariableCollection {
     readonly map: Map<string, theia.EnvironmentVariableMutator> = new Map();
+    private _description?: string | theia.MarkdownString;
     private _persistent: boolean = true;
+
+    public get description(): string | theia.MarkdownString | undefined { return this._description; }
+    public set description(value: string | theia.MarkdownString | undefined) {
+        this._description = value;
+        this.onDidChangeCollectionEmitter.fire();
+    }
 
     public get persistent(): boolean { return this._persistent; }
     public set persistent(value: boolean) {

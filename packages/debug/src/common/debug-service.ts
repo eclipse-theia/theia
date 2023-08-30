@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { Channel, Disposable, Emitter, Event } from '@theia/core';
@@ -80,12 +80,12 @@ export interface DebugService extends Disposable {
     /**
      * @returns A Record of debug configuration provider types and a corresponding dynamic debug configurations array
      */
-    provideDynamicDebugConfigurations?(): Promise<Record<string, DebugConfiguration[]>>;
+    provideDynamicDebugConfigurations?(folder?: string): Promise<Record<string, DebugConfiguration[]>>;
 
     /**
      * Provides a dynamic debug configuration matching the name and the provider debug type
      */
-    fetchDynamicDebugConfiguration(name: string, type: string): Promise<DebugConfiguration | undefined>;
+    fetchDynamicDebugConfiguration(name: string, type: string, folder?: string): Promise<DebugConfiguration | undefined>;
 
     /**
      * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values

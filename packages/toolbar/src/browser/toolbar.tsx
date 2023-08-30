@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
@@ -51,7 +51,12 @@ export class ToolbarImpl extends TabBarToolbar {
     protected isBusyDeferred = new Deferred<void>();
 
     @postConstruct()
-    async init(): Promise<void> {
+    protected override init(): void {
+        super.init();
+        this.doInit();
+    }
+
+    protected async doInit(): Promise<void> {
         this.hide();
         await this.model.ready.promise;
 
@@ -306,20 +311,6 @@ export class ToolbarImpl extends TabBarToolbar {
                 title={itemTooltip}
             />
         );
-    }
-
-    protected resolveKeybindingForCommand(commandID: string | undefined): string {
-        if (!commandID) {
-            return '';
-        }
-        const keybindings = this.keybindingRegistry.getKeybindingsForCommand(commandID);
-        if (keybindings.length > 0) {
-            const binding = keybindings[0];
-            const bindingKeySequence = this.keybindingRegistry.resolveKeybinding(binding);
-            const keyCode = bindingKeySequence[0];
-            return ` (${this.keybindingRegistry.acceleratorForKeyCode(keyCode, '+')})`;
-        }
-        return '';
     }
 
     protected handleOnDragStart = (e: React.DragEvent<HTMLDivElement>): void => this.doHandleOnDragStart(e);
