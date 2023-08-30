@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { KeybindingContribution, KeybindingContext } from '@theia/core/lib/browser';
+import { KeybindingContribution } from '@theia/core/lib/browser';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { BlameContribution, BlameAnnotationsKeybindingContext } from './blame-contribution';
+import { BlameContribution } from './blame-contribution';
 import { BlameDecorator } from './blame-decorator';
 import { BlameManager } from './blame-manager';
 
@@ -28,6 +28,4 @@ export function bindBlame(bind: interfaces.Bind): void {
     for (const serviceIdentifier of [CommandContribution, KeybindingContribution, MenuContribution]) {
         bind(serviceIdentifier).toService(BlameContribution);
     }
-    bind(BlameAnnotationsKeybindingContext).toSelf().inSingletonScope();
-    bind(KeybindingContext).toService(BlameAnnotationsKeybindingContext);
 }

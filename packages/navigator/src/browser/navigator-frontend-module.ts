@@ -19,12 +19,11 @@ import '../../src/browser/open-editors-widget/open-editors.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
-    KeybindingContext, bindViewContribution,
+    bindViewContribution,
     FrontendApplicationContribution,
     ApplicationShellLayoutMigration
 } from '@theia/core/lib/browser';
 import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from './navigator-widget';
-import { NavigatorActiveContext } from './navigator-keybinding-context';
 import { FileNavigatorContribution } from './navigator-contribution';
 import { createFileNavigatorWidget } from './navigator-container';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
@@ -54,8 +53,6 @@ export default new ContainerModule(bind => {
     bindViewContribution(bind, FileNavigatorContribution);
     bind(FrontendApplicationContribution).toService(FileNavigatorContribution);
     bind(TabBarToolbarContribution).toService(FileNavigatorContribution);
-
-    bind(KeybindingContext).to(NavigatorActiveContext).inSingletonScope();
 
     bind(FileNavigatorWidget).toDynamicValue(ctx =>
         createFileNavigatorWidget(ctx.container)

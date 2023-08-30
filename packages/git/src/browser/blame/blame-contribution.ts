@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, DisposableCollection } from '@theia/core/lib/common';
 import { BlameDecorator } from './blame-decorator';
-import { EditorManager, EditorWidget, EditorTextFocusContext, StrictEditorTextFocusContext } from '@theia/editor/lib/browser';
+import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { BlameManager } from './blame-manager';
 import URI from '@theia/core/lib/common/uri';
 import { EDITOR_CONTEXT_MENU_SCM } from '@theia/scm-extra/lib/browser/scm-extra-contribution';
@@ -184,24 +184,4 @@ export class BlameContribution implements CommandContribution, KeybindingContrib
         });
     }
 
-}
-
-@injectable()
-export class BlameAnnotationsKeybindingContext extends EditorTextFocusContext {
-
-    @inject(BlameContribution)
-    protected readonly blameContribution: BlameContribution;
-
-    @inject(StrictEditorTextFocusContext)
-    protected readonly base: StrictEditorTextFocusContext;
-
-    override id = BlameAnnotationsKeybindingContext.showsBlameAnnotations;
-
-    protected override canHandle(widget: EditorWidget): boolean {
-        return this.base.isEnabled() && this.blameContribution.showsBlameAnnotations(widget.editor.uri);
-    }
-}
-
-export namespace BlameAnnotationsKeybindingContext {
-    export const showsBlameAnnotations = 'showsBlameAnnotations';
 }

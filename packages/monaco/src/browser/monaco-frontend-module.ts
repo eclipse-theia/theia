@@ -39,7 +39,6 @@ import {
     PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService, StylingParticipant
 } from '@theia/core/lib/browser';
 import { TextEditorProvider, DiffNavigatorProvider, TextEditor } from '@theia/editor/lib/browser';
-import { StrictEditorTextFocusContext } from '@theia/editor/lib/browser/editor-keybinding-contexts';
 import { MonacoEditorProvider, MonacoEditorFactory } from './monaco-editor-provider';
 import { MonacoEditorMenuContribution } from './monaco-menu';
 import { MonacoEditorCommandHandlers } from './monaco-command';
@@ -54,7 +53,6 @@ import { MonacoStatusBarContribution } from './monaco-status-bar-contribution';
 import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
-import { MonacoStrictEditorTextFocusContext } from './monaco-keybinding-contexts';
 import { MonacoFrontendApplicationContribution } from './monaco-frontend-application-contribution';
 import MonacoTextmateModuleBinder from './textmate/monaco-textmate-frontend-bindings';
 import { MonacoBulkEditService } from './monaco-bulk-edit-service';
@@ -159,7 +157,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MenuContribution).toService(MonacoEditorMenuContribution);
     bind(MonacoKeybindingContribution).toSelf().inSingletonScope();
     bind(KeybindingContribution).toService(MonacoKeybindingContribution);
-    rebind(StrictEditorTextFocusContext).to(MonacoStrictEditorTextFocusContext).inSingletonScope();
 
     bind(MonacoQuickInputImplementation).toSelf().inSingletonScope();
     bind(MonacoQuickInputService).toSelf().inSingletonScope();

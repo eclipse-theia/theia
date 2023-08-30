@@ -17,9 +17,8 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     FrontendApplicationContribution, StatusBar, FrontendApplication, StatusBarAlignment,
-    KeybindingContribution, KeybindingRegistry, KeybindingContext, StylingParticipant, ColorTheme, CssStyleCollector
+    KeybindingContribution, KeybindingRegistry, StylingParticipant, ColorTheme, CssStyleCollector
 } from '@theia/core/lib/browser';
-import { Keybinding } from '@theia/core/lib/common/keybinding';
 import { NotificationsCommands } from './notifications-commands';
 import { CommandContribution, CommandRegistry } from '@theia/core';
 import { NotificationManager } from './notifications-manager';
@@ -216,20 +215,4 @@ export class NotificationsContribution implements FrontendApplicationContributio
             `);
         }
     }
-}
-
-@injectable()
-export class NotificationsKeybindingContext implements KeybindingContext {
-
-    @inject(NotificationManager)
-    protected readonly manager: NotificationManager;
-
-    readonly id = NotificationsKeybindingContext.notificationsVisible;
-    isEnabled(_arg: Keybinding): boolean {
-        return this.manager.centerVisible || this.manager.toastsVisible;
-    }
-
-}
-export namespace NotificationsKeybindingContext {
-    export const notificationsVisible = 'notificationsVisible';
 }
