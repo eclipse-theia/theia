@@ -30,7 +30,8 @@ export class GitRepositoryManager {
 
     run<T>(repository: Repository, op: () => Promise<T>): Promise<T> {
         const result = op();
-        result.then(() => this.sync(repository)).catch(e => console.log(e));
+        result.then(() => this.sync(repository).catch(e => console.log(e)));
+
         return result;
     }
 
