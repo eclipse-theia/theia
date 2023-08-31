@@ -34,6 +34,11 @@ export interface TabBarToolbarFactory {
 }
 
 /**
+ * Class name indicating rendering of a toolbar item without an icon but instead with a text label.
+ */
+const NO_ICON_CLASS = 'no-icon';
+
+/**
  * Tab-bar toolbar widget representing the active [tab-bar toolbar items](TabBarToolbarItem).
  */
 @injectable()
@@ -178,8 +183,12 @@ export class TabBarToolbar extends ReactWidget {
     protected renderItem(item: AnyToolbarItem): React.ReactNode {
         let innerText = '';
         const classNames = [];
-        if (item.text) {
-            for (const labelPart of this.labelParser.parse(item.text)) {
+        const command = item.command ? this.commands.getCommand(item.command) : undefined;
+        // Fall back to the item ID in extremis so there is _something_ to render in the
+        // case that there is neither an icon nor a title
+        const itemText = item.text || command?.label || command?.id || item.id;
+        if (itemText) {
+            for (const labelPart of this.labelParser.parse(itemText)) {
                 if (LabelIcon.is(labelPart)) {
                     const className = `fa fa-${labelPart.name}${labelPart.animation ? ' fa-' + labelPart.animation : ''}`;
                     classNames.push(...className.split(' '));
@@ -188,13 +197,23 @@ export class TabBarToolbar extends ReactWidget {
                 }
             }
         }
-        const command = item.command ? this.commands.getCommand(item.command) : undefined;
-        let iconClass = (typeof item.icon === 'function' && item.icon()) || item.icon as string || (command && command.iconClass);
+        const iconClass = (typeof item.icon === 'function' && item.icon()) || item.icon as string || (command && command.iconClass);
         if (iconClass) {
-            iconClass += ` ${ACTION_ITEM}`;
             classNames.push(iconClass);
         }
-        const tooltip = `${item.tooltip || (command && command.label) || ''}${this.resolveKeybindingForCommand(command?.id)}`;
+        const tooltipText = item.tooltip || (command && command.label) || '';
+        const tooltip = `${this.labelParser.stripIcons(tooltipText)}${this.resolveKeybindingForCommand(command?.id)}`;
+
+        // Only present text if there is no icon
+        if (classNames.length) {
+            innerText = '';
+        } else if (innerText) {
+            // Make room for the label text
+            classNames.push(NO_ICON_CLASS);
+        }
+
+        // In any case, this is an action item, with or without icon.
+        classNames.push(ACTION_ITEM);
 
         const toolbarItemClassNames = this.getToolbarItemClassNames(item);
         return <div key={item.id}

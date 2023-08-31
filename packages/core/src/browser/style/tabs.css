@@ -480,6 +480,11 @@
   line-height: 18px;
 }
 
+.p-TabBar-toolbar .item > div.no-icon {
+  /* Make room for a text label instead of an icon. */
+  width: 100%;
+}
+
 .p-TabBar-toolbar .item .collapse-all {
   background: var(--theia-icon-collapse-all) no-repeat;
 }

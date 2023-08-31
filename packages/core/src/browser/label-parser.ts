@@ -90,4 +90,19 @@ export class LabelParser {
         return parserArray;
     }
 
+    /**
+     * Strips icon specifiers from the given `text`, leaving only a
+     * space-separated concatenation of the non-icon segments.
+     *
+     * @param text text to be stripped of icon specifiers
+     * @returns the `text` with icon specifiers stripped out
+     */
+    stripIcons(text: string): string {
+        return this.parse(text)
+            .filter(item => !LabelIcon.is(item))
+            .map(s => (s as string).trim())
+            .filter(s => s.length)
+            .join(' ');
+    }
+
 }
