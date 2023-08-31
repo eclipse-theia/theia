@@ -21,7 +21,7 @@ import { ApplicationShell, NavigatableWidget, Saveable, SaveableSource, SaveOpti
 import { SaveResourceService } from '@theia/core/lib/browser/save-resource-service';
 import { Reference } from '@theia/core/lib/common/reference';
 import { WebviewWidget } from '../webview/webview';
-import { UndoRedoService } from './undo-redo-service';
+import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
 import { CustomEditorModel } from './custom-editors-main';
 
 @injectable()

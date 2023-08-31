@@ -94,16 +94,16 @@ export class ResourceEditStack {
         this.past.push(element);
     }
 
-    getClosestPastElement(): StackElement | null {
+    getClosestPastElement(): StackElement | undefined {
         if (this.past.length === 0) {
-            return null;
+            return undefined;
         }
         return this.past[this.past.length - 1];
     }
 
-    getClosestFutureElement(): StackElement | null {
+    getClosestFutureElement(): StackElement | undefined {
         if (this.future.length === 0) {
-            return null;
+            return undefined;
         }
         return this.future[this.future.length - 1];
     }

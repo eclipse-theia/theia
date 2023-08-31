@@ -113,7 +113,6 @@
     "vscode.git-base",
     "vscode.github",
     "vscode.github-authentication",
-    "vscode.ipynb",
     "vscode.microsoft-authentication",
     "ms-vscode.references-view"
   ]

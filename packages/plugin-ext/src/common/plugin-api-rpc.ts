@@ -29,6 +29,7 @@ import {
     FileOperationOptions,
     TextDocumentChangeReason,
     IndentAction,
+    NotebookRendererScript,
 } from '../plugin/types-impl';
 import { UriComponents } from './uri-components';
 import {
@@ -117,6 +118,8 @@ import { Disposable } from '@theia/core/lib/common/disposable';
 import { isString, isObject, PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
 import { Severity } from '@theia/core/lib/common/severity';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
+import * as notebookCommon from '@theia/notebook/lib/common';
+import { CellExecutionUpdateType, CellRange, NotebookCellExecutionState } from '@theia/notebook/lib/common';
 import { LanguagePackBundle } from './language-pack-service';
 import { AccessibilityInformation } from '@theia/core/lib/common/accessibility';
 
@@ -1283,6 +1286,7 @@ export interface ModelAddedData {
     uri: UriComponents;
     versionId: number;
     lines: string[];
+    languageId?: string;
     EOL: string;
     modeId: string;
     isDirty: boolean;
@@ -1483,8 +1487,37 @@ export interface WorkspaceEditMetadataDto {
     isRefactoring?: boolean;
 }
 
+export type CellEditOperationDto =
+    {
+        editType: notebookCommon.CellEditType.Metadata;
+        index: number;
+        metadata: Record<string, unknown>;
+    } |
+    {
+        editType: notebookCommon.CellEditType.DocumentMetadata;
+        metadata: Record<string, unknown>;
+    } |
+    {
+        editType: notebookCommon.CellEditType.Replace;
+        index: number;
+        count: number;
+        cells: NotebookCellDataDto[];
+    };
+
+export interface NotebookWorkspaceEditMetadataDto {
+    needsConfirmation: boolean;
+    label: string;
+    description?: string;
+}
+
+export interface WorkspaceNotebookCellEditDto {
+    metadata?: NotebookWorkspaceEditMetadataDto;
+    resource: UriComponents;
+    cellEdit: CellEditOperationDto;
+}
+
 export interface WorkspaceEditDto {
-    edits: Array<WorkspaceTextEditDto | WorkspaceFileEditDto>;
+    edits: Array<WorkspaceTextEditDto | WorkspaceFileEditDto | WorkspaceNotebookCellEditDto>;
 }
 
 export interface CommandProperties {
@@ -2118,6 +2151,12 @@ export const PLUGIN_RPC_CONTEXT = {
     MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<MessageRegistryMain>>createProxyIdentifier<MessageRegistryMain>('MessageRegistryMain'),
     TEXT_EDITORS_MAIN: createProxyIdentifier<TextEditorsMain>('TextEditorsMain'),
     DOCUMENTS_MAIN: createProxyIdentifier<DocumentsMain>('DocumentsMain'),
+    NOTEBOOKS_MAIN: createProxyIdentifier<NotebooksMain>('NotebooksMain'),
+    NOTEBOOK_DOCUMENTS_MAIN: createProxyIdentifier<NotebookDocumentsMain>('NotebookDocumentsMain'),
+    NOTEBOOK_EDITORS_MAIN: createProxyIdentifier<NotebookEditorsMain>('NotebookEditorsMain'),
+    NOTEBOOK_DOCUMENTS_AND_EDITORS_MAIN: createProxyIdentifier<NotebookDocumentsAndEditorsMain>('NotebooksAndEditorsMain'),
+    NOTEBOOK_RENDERERS_MAIN: createProxyIdentifier<NotebookRenderersMain>('NotebookRenderersMain'),
+    NOTEBOOK_KERNELS_MAIN: createProxyIdentifier<NotebookKernelsMain>('NotebookKernelsMain'),
     STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain'),
     ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain'),
     NOTIFICATION_MAIN: createProxyIdentifier<NotificationMain>('NotificationMain'),
@@ -2159,6 +2198,11 @@ export const MAIN_RPC_CONTEXT = {
     TEXT_EDITORS_EXT: createProxyIdentifier<TextEditorsExt>('TextEditorsExt'),
     EDITORS_AND_DOCUMENTS_EXT: createProxyIdentifier<EditorsAndDocumentsExt>('EditorsAndDocumentsExt'),
     DOCUMENTS_EXT: createProxyIdentifier<DocumentsExt>('DocumentsExt'),
+    NOTEBOOKS_EXT: createProxyIdentifier<NotebooksExt>('NotebooksExt'),
+    NOTEBOOK_DOCUMENTS_EXT: createProxyIdentifier<NotebookDocumentsExt>('NotebookDocumentsExt'),
+    NOTEBOOK_EDITORS_EXT: createProxyIdentifier<NotebookEditorsExt>('NotebookEditorsExt'),
+    NOTEBOOK_RENDERERS_EXT: createProxyIdentifier<NotebookRenderersExt>('NotebooksExt'),
+    NOTEBOOK_KERNELS_EXT: createProxyIdentifier<NotebookKernelsExt>('NotebookKernelsExt'),
     TERMINAL_EXT: createProxyIdentifier<TerminalServiceExt>('TerminalServiceExt'),
     OUTPUT_CHANNEL_REGISTRY_EXT: createProxyIdentifier<OutputChannelRegistryExt>('OutputChannelRegistryExt'),
     TREE_VIEWS_EXT: createProxyIdentifier<TreeViewsExt>('TreeViewsExt'),
@@ -2217,6 +2261,286 @@ export interface AuthenticationMain {
     $onDidChangeSessions(providerId: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent): void;
     $getSession(providerId: string, scopes: readonly string[], extensionId: string, extensionName: string,
         options: theia.AuthenticationGetSessionOptions): Promise<theia.AuthenticationSession | undefined>;
+}
+
+export interface NotebookOutputItemDto {
+    readonly mime: string;
+    readonly valueBytes: BinaryBuffer;
+}
+
+export interface NotebookOutputDto {
+    outputId: string;
+    items: NotebookOutputItemDto[];
+    metadata?: Record<string, any>;
+}
+
+export interface NotebookCellDataDto {
+    source: string;
+    language: string;
+    cellKind: notebookCommon.CellKind;
+    outputs: NotebookOutputDto[];
+    metadata?: notebookCommon.NotebookCellMetadata;
+    internalMetadata?: notebookCommon.NotebookCellInternalMetadata;
+}
+
+export interface NotebookDataDto {
+    readonly cells: NotebookCellDataDto[];
+    readonly metadata: notebookCommon.NotebookDocumentMetadata;
+}
+
+export interface NotebookCellDto {
+    handle: number;
+    uri: UriComponents;
+    eol: string;
+    source: string[];
+    language: string;
+    mime?: string;
+    cellKind: notebookCommon.CellKind;
+    outputs: NotebookOutputDto[];
+    metadata?: notebookCommon.NotebookCellMetadata;
+    internalMetadata?: notebookCommon.NotebookCellInternalMetadata;
+}
+
+export interface NotebookModelAddedData {
+    uri: UriComponents;
+    versionId: number;
+    cells: NotebookCellDto[];
+    viewType: string;
+    metadata?: notebookCommon.NotebookDocumentMetadata;
+}
+
+export interface NotebookEditorAddData {
+    id: string;
+    documentUri: UriComponents;
+    selections: CellRange[];
+    visibleRanges: CellRange[];
+    viewColumn?: number;
+}
+
+export interface NotebookDocumentsAndEditorsDelta {
+    removedDocuments?: UriComponents[];
+    addedDocuments?: NotebookModelAddedData[];
+    removedEditors?: string[];
+    addedEditors?: NotebookEditorAddData[];
+    newActiveEditor?: string | null;
+    visibleEditors?: string[];
+}
+
+export type NotebookCellStatusBarEntryDto = notebookCommon.NotebookCellStatusBarItem;
+
+export interface NotebookCellStatusBarListDto {
+    items: NotebookCellStatusBarEntryDto[];
+    cacheId: number;
+}
+
+export type NotebookRawContentEventDto =
+    // notebookCommon.NotebookCellsInitializeEvent<NotebookCellDto>
+    | {
+
+        readonly kind: notebookCommon.NotebookCellsChangeType.ModelChange;
+        readonly changes: notebookCommon.NotebookCellTextModelSplice<NotebookCellDto>[];
+    }
+    | {
+        readonly kind: notebookCommon.NotebookCellsChangeType.Move;
+        readonly index: number;
+        readonly length: number;
+        readonly newIdx: number;
+    }
+    | {
+        readonly kind: notebookCommon.NotebookCellsChangeType.Output;
+        readonly index: number;
+        readonly outputs: NotebookOutputDto[];
+    }
+    | {
+        readonly kind: notebookCommon.NotebookCellsChangeType.OutputItem;
+        readonly index: number;
+        readonly outputId: string;
+        readonly outputItems: NotebookOutputItemDto[];
+        readonly append: boolean;
+    }
+    | notebookCommon.NotebookCellsChangeLanguageEvent
+    | notebookCommon.NotebookCellsChangeMetadataEvent
+    | notebookCommon.NotebookCellsChangeInternalMetadataEvent
+    | notebookCommon.NotebookCellContentChangeEvent
+    ;
+
+export interface NotebookCellsChangedEventDto {
+    readonly rawEvents: NotebookRawContentEventDto[];
+    readonly versionId: number;
+};
+
+export interface NotebookSelectionChangeEvent {
+    selections: CellRange[];
+}
+
+export interface NotebookVisibleRangesEvent {
+    ranges: CellRange[];
+}
+
+export interface NotebookEditorPropertiesChangeData {
+    visibleRanges?: NotebookVisibleRangesEvent;
+    selections?: NotebookSelectionChangeEvent;
+}
+
+export enum NotebookEditorRevealType {
+    Default = 0,
+    InCenter = 1,
+    InCenterIfOutsideViewport = 2,
+    AtTop = 3
+}
+
+export interface NotebookDocumentShowOptions {
+    position?: EditorGroupColumn;
+    preserveFocus?: boolean;
+    pinned?: boolean;
+    selections?: CellRange[];
+}
+
+export interface NotebookKernelDto {
+    id: string;
+    notebookType: string;
+    extensionId: string;
+    // extensionLocation: UriComponents;
+    label: string;
+    detail?: string;
+    description?: string;
+    supportedLanguages?: string[];
+    supportsInterrupt?: boolean;
+    supportsExecutionOrder?: boolean;
+    preloads?: { uri: UriComponents; provides: readonly string[] }[];
+    rendererScripts?: NotebookRendererScript[];
+}
+
+export type CellExecuteUpdateDto = CellExecuteOutputEditDto | CellExecuteOutputItemEditDto | CellExecutionStateUpdateDto;
+
+export interface CellExecuteOutputEditDto {
+    editType: CellExecutionUpdateType.Output;
+    cellHandle: number;
+    append?: boolean;
+    outputs: NotebookOutputDto[];
+}
+
+export interface CellExecuteOutputItemEditDto {
+    editType: CellExecutionUpdateType.OutputItems;
+    append?: boolean;
+    items: NotebookOutputItemDto[];
+}
+
+export interface CellExecutionStateUpdateDto {
+    editType: CellExecutionUpdateType.ExecutionState;
+    executionOrder?: number;
+    runStartTime?: number;
+    didPause?: boolean;
+    isPaused?: boolean;
+}
+
+export interface CellExecutionCompleteDto {
+    runEndTime?: number;
+    lastRunSuccess?: boolean;
+}
+
+export interface NotebookKernelSourceActionDto {
+    readonly label: string;
+    readonly description?: string;
+    readonly detail?: string;
+    readonly command?: string | Command;
+    readonly documentation?: UriComponents | string;
+}
+
+export interface NotebookEditorAddData {
+    id: string;
+    documentUri: UriComponents;
+    selections: CellRange[];
+    visibleRanges: CellRange[];
+    viewColumn?: number;
+}
+
+export interface NotebooksExt extends NotebookDocumentsAndEditorsExt {
+    $provideNotebookCellStatusBarItems(handle: number, uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarListDto | undefined>;
+    $releaseNotebookCellStatusBarItems(id: number): void;
+
+    $dataToNotebook(handle: number, data: BinaryBuffer, token: CancellationToken): Promise<NotebookDataDto>;
+    $notebookToData(handle: number, data: NotebookDataDto, token: CancellationToken): Promise<BinaryBuffer>;
+}
+
+export interface NotebooksMain extends Disposable {
+    $registerNotebookSerializer(handle: number, extension: notebookCommon.NotebookExtensionDescription, viewType: string, options: notebookCommon.TransientOptions): void;
+    $unregisterNotebookSerializer(handle: number): void;
+
+    $registerNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined, viewType: string): Promise<void>;
+    $unregisterNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined): Promise<void>;
+    $emitCellStatusBarEvent(eventHandle: number): void;
+}
+
+export interface NotebookKernelsExt {
+    $acceptNotebookAssociation(handle: number, uri: UriComponents, value: boolean): void;
+    $executeCells(handle: number, uri: UriComponents, handles: number[]): Promise<void>;
+    $cancelCells(handle: number, uri: UriComponents, handles: number[]): Promise<void>;
+    $acceptKernelMessageFromRenderer(handle: number, editorId: string, message: any): void;
+    $cellExecutionChanged(uri: UriComponents, cellHandle: number, state: NotebookCellExecutionState | undefined): void;
+    $provideKernelSourceActions(handle: number, token: CancellationToken): Promise<NotebookKernelSourceActionDto[]>;
+}
+
+export interface NotebookKernelsMain extends Disposable {
+    $postMessage(handle: number, editorId: string | undefined, message: any): Promise<boolean>;
+    $addKernel(handle: number, data: NotebookKernelDto): Promise<void>;
+    $updateKernel(handle: number, data: Partial<NotebookKernelDto>): void;
+    $removeKernel(handle: number): void;
+    $updateNotebookPriority(handle: number, uri: UriComponents, value: number | undefined): void;
+
+    $createExecution(handle: number, controllerId: string, uri: UriComponents, cellHandle: number): void;
+    $updateExecution(handle: number, data: CellExecuteUpdateDto[]): void;
+    $completeExecution(handle: number, data: CellExecutionCompleteDto): void;
+
+    $createNotebookExecution(handle: number, controllerId: string, uri: UriComponents): void;
+    $beginNotebookExecution(handle: number): void;
+    $completeNotebookExecution(handle: number): void;
+
+    $addKernelDetectionTask(handle: number, notebookType: string): Promise<void>;
+    $removeKernelDetectionTask(handle: number): void;
+
+    $addKernelSourceActionProvider(handle: number, eventHandle: number, notebookType: string): Promise<void>;
+    $removeKernelSourceActionProvider(handle: number, eventHandle: number): void;
+    $emitNotebookKernelSourceActionsChangeEvent(eventHandle: number): void;
+}
+
+export interface NotebookDocumentsMain extends Disposable {
+    $tryCreateNotebook(options: { viewType: string; content?: NotebookDataDto }): Promise<UriComponents>;
+    $tryOpenNotebook(uriComponents: UriComponents): Promise<UriComponents>;
+    $trySaveNotebook(uri: UriComponents): Promise<boolean>;
+}
+
+export interface NotebookDocumentsExt {
+    $acceptModelChanged(uriComponents: UriComponents, event: NotebookCellsChangedEventDto, isDirty: boolean, newMetadata?: notebookCommon.NotebookDocumentMetadata): void;
+    $acceptDirtyStateChanged(uriComponents: UriComponents, isDirty: boolean): void;
+    $acceptModelSaved(uriComponents: UriComponents): void;
+}
+
+export interface NotebookDocumentsAndEditorsExt {
+    $acceptDocumentsAndEditorsDelta(delta: NotebookDocumentsAndEditorsDelta): Promise<void>;
+}
+
+export interface NotebookDocumentsAndEditorsMain extends Disposable {
+}
+
+export type NotebookEditorViewColumnInfo = Record<string, number>;
+
+export interface NotebookEditorsExt {
+    $acceptEditorPropertiesChanged(id: string, data: NotebookEditorPropertiesChangeData): void;
+    $acceptEditorViewColumns(data: NotebookEditorViewColumnInfo): void;
+}
+
+export interface NotebookEditorsMain extends Disposable {
+    $tryShowNotebookDocument(uriComponents: UriComponents, viewType: string, options: NotebookDocumentShowOptions): Promise<string>;
+    $tryRevealRange(id: string, range: CellRange, revealType: NotebookEditorRevealType): Promise<void>;
+    $trySetSelections(id: string, range: CellRange[]): void;
+}
+export interface NotebookRenderersExt {
+    $postRendererMessage(editorId: string, rendererId: string, message: unknown): void;
+}
+
+export interface NotebookRenderersMain extends Disposable {
+    $postMessage(editorId: string | undefined, rendererId: string, message: unknown): Promise<boolean>;
 }
 
 export interface RawColorInfo {

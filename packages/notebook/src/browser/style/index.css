@@ -1,0 +1,236 @@
+/********************************************************************************
+ * Copyright (C) 2023 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+:root {
+  --theia-notebook-markdown-size: 17px;
+}
+
+.theia-notebook-cell-list {
+  overflow-y: auto;
+  list-style: none;
+  padding-left: 0px;
+  background-color: var(--theia-notebook-editorBackground);
+}
+
+.theia-notebook-cell {
+  cursor: grab;
+  display: flex;
+  margin: 10px 0px;
+}
+
+.theia-notebook-cell:hover .theia-notebook-cell-marker {
+  visibility: visible;
+}
+
+.theia-notebook-cell-marker {
+  background-color: var(--theia-notebook-inactiveFocusedCellBorder);
+  width: 3px;
+  margin: 0px 8px 0px 4px;
+  border-radius: 4px;
+  visibility: hidden;
+}
+
+.theia-notebook-cell-marker-selected {
+  visibility: visible;
+  background-color: var(--theia-notebook-focusedCellBorder);
+}
+
+.theia-notebook-cell-marker:hover {
+  width: 5px;
+  margin: 0px 6px 0px 4px;
+}
+
+.theia-notebook-cell-content {
+  flex: 1;
+  width: calc(100% - 15px);
+}
+
+.theia-notebook-markdown-content {
+  padding: 8px 16px 8px 36px;
+  font-size: var(--theia-notebook-markdown-size);
+}
+
+.theia-notebook-markdown-content > *:first-child {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.theia-notebook-markdown-content > *:only-child,
+.theia-notebook-markdown-content > *:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.theia-notebook-empty-markdown {
+  opacity: 0.6;
+}
+
+.theia-notebook-cell-editor {
+  padding: 10px 10px 0 10px;
+}
+
+.theia-notebook-cell-editor-container {
+  width: calc(100% - 46px);
+  flex: 1;
+  outline: 1px solid var(--theia-notebook-cellBorderColor);
+  margin: 0px 10px;
+}
+
+.theia-notebook-cell.focused .theia-notebook-cell-editor-container {
+  outline-color: var(--theia-notebook-focusedEditorBorder);
+}
+
+.notebook-cell-status {
+  display: flex;
+  flex-direction: row;
+  font-size: 12px;
+  height: 16px;
+}
+
+.notebook-cell-status-left {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 1;
+}
+
+.notebook-cell-status-right {
+  margin: 0 5px;
+}
+
+.notebook-cell-status-item {
+  margin: 0 3px;
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+}
+
+.theia-notebook-cell-toolbar {
+  border: 1px solid var(--theia-notebook-cellToolbarSeparator);
+  display: flex;
+  position: absolute;
+  margin: -20px 0 0 66px;
+  padding: 2px;
+  background-color: var(--theia-editor-background);
+}
+
+.theia-notebook-cell-sidebar {
+  display: flex;
+  flex-direction: column;
+  padding: 2px;
+  background-color: var(--theia-editor-background);
+}
+
+.theia-notebook-cell-toolbar-item {
+  height: 18px;
+  width: 18px;
+}
+
+.theia-notebook-cell-toolbar-item:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-notebook-cell-toolbar-item:active {
+  background-color: var(--theia-toolbar-active);
+}
+
+.theia-notebook-cell-divider {
+  height: 20px;
+  width: 100%;
+}
+
+.theia-notebook-cell-with-sidebar {
+  display: flex;
+  flex-direction: row;
+}
+
+.theia-notebook-cell-sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+.theia-notebook-main-toolbar {
+  position: sticky;
+  top: 0;
+  background: var(--theia-editor-background);
+  display: flex;
+  flex-direction: row;
+  z-index: 1;
+  /*needed to be on rendered on top of monaco editors*/
+}
+
+.theia-notebook-main-toolbar-item {
+  height: 22px;
+  display: flex;
+  align-items: center;
+  margin: 0 4px;
+  padding: 2px;
+  text-align: center;
+  color: var(--theia-foreground) !important;
+  cursor: pointer;
+}
+
+.theia-notebook-main-toolbar-item:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-notebook-main-toolbar-item-text {
+  padding: 0 4px;
+}
+
+.theia-notebook-toolbar-separator {
+  width: 1px;
+  background-color: var(--theia-notebook-cellToolbarSeparator);
+  margin: 0 4px;
+}
+
+.theia-notebook-add-cell-buttons {
+  justify-content: center;
+  display: flex;
+}
+
+.theia-notebook-add-cell-button {
+  border: 1px solid var(--theia-notebook-cellToolbarSeparator);
+  background-color: var(--theia-editor-background);
+  color: var(--theia-foreground);
+  vertical-align: middle;
+  text-align: center;
+  height: 24px;
+  margin: 0 8px;
+}
+
+.theia-notebook-add-cell-button:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-notebook-add-cell-button:active {
+  background-color: var(--theia-toolbar-active);
+}
+
+.theia-notebook-add-cell-button-icon {
+  vertical-align: middle;
+}
+
+.theia-notebook-cell-output-webview {
+  padding: 5px 0px;
+  margin: 0px 10px;
+  width: 100%;
+}
+
+.theia-notebook-cell-drop-indicator {
+  height: 2px;
+  background-color: var(--theia-notebook-focusedCellBorder);
+  width: 100%;
+}
