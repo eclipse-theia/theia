@@ -113,6 +113,7 @@
       }
     },
     "filesystem": {
+      "copiedToClipboard": "Zkopírujte odkaz ke stažení do schránky.",
       "copyDownloadLink": "Kopírovat odkaz ke stažení",
       "dialog": {
         "initialLocation": "Přejít na počáteční umístění",
@@ -142,7 +143,10 @@
     "getting-started": {
       "apiComparator": "{0} Kompatibilita API",
       "newExtension": "Budování nového rozšíření",
-      "newPlugin": "Vytvoření nového pluginu"
+      "newPlugin": "Vytvoření nového pluginu",
+      "startup-editor": {
+        "welcomePage": "Otevřete úvodní stránku s obsahem, který vám pomůže začít pracovat s webem {0} a rozšířeními."
+      }
     },
     "git": {
       "aFewSecondsAgo": "před několika sekundami",
