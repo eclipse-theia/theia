@@ -36,7 +36,7 @@ import { OS, isOSX, isWindows, EOL } from '../common/os';
 import { ResourceContextKey } from './resource-context-key';
 import { UriSelection } from '../common/selection';
 import { StorageService } from './storage-service';
-import { Navigatable } from './navigatable';
+import { Navigatable, NavigatableWidget } from './navigatable';
 import { QuickViewService } from './quick-input/quick-view-service';
 import { environment } from '@theia/application-package/lib/environment';
 import { IconTheme, IconThemeService } from './icon-theme-service';
@@ -63,7 +63,7 @@ import { DecorationStyle } from './decoration-style';
 import { isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveResourceService } from './save-resource-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
-import { UntitledResourceResolver } from '../common';
+import { UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
 import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
 
 export namespace CommonMenus {
@@ -1171,20 +1171,37 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     onWillStop(): OnWillStopAction | undefined {
-        try {
-            if (this.shouldPreventClose || this.shell.canSaveAll()) {
-                const captionsToSave = this.unsavedTabsCaptions();
+        if (this.shouldPreventClose || this.shell.canSaveAll()) {
+            return {
+                reason: 'Dirty editors present',
+                action: async () => {
+                    const captionsToSave = this.unsavedTabsCaptions();
+                    const untitledCaptionsToSave = this.unsavedUntitledTabsCaptions();
+                    const result = await confirmExitWithOrWithoutSaving(captionsToSave, async () => {
+                        await this.saveDirty(untitledCaptionsToSave);
+                        await this.shell.saveAll();
+                    });
+                    if (this.shell.canSaveAll()) {
+                        this.shouldPreventClose = true;
+                        return false;
+                    } else {
+                        this.shouldPreventClose = false;
+                        return result;
+                    }
 
-                return { reason: 'Dirty editors present', action: async () => confirmExitWithOrWithoutSaving(captionsToSave, async () => this.shell.saveAll()) };
-            }
-        } finally {
-            this.shouldPreventClose = false;
+                }
+            };
         }
     }
     protected unsavedTabsCaptions(): string[] {
         return this.shell.widgets
             .filter(widget => this.saveResourceService.canSave(widget))
             .map(widget => widget.title.label);
+    }
+    protected unsavedUntitledTabsCaptions(): Widget[] {
+        return this.shell.widgets.filter(widget =>
+            NavigatableWidget.getUri(widget)?.scheme === UNTITLED_SCHEME && this.saveResourceService.canSaveAs(widget)
+        );
     }
     protected async configureDisplayLanguage(): Promise<void> {
         const languageInfo = await this.languageQuickPickService.pickDisplayLanguage();
@@ -1196,7 +1213,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             this.windowService.reload();
         }
     }
-
+    protected async saveDirty(toSave: Widget[]): Promise<void> {
+        for (const widget of toSave) {
+            const saveable = Saveable.get(widget);
+            if (saveable?.dirty) {
+                await this.saveResourceService.save(widget);
+            }
+        }
+    }
     protected toggleBreadcrumbs(): void {
         const value: boolean | undefined = this.preferenceService.get('breadcrumbs.enabled');
         this.preferenceService.set('breadcrumbs.enabled', !value, PreferenceScope.User);
