@@ -113,6 +113,7 @@
       }
     },
     "filesystem": {
+      "copiedToClipboard": "Copied the download link to the clipboard.",
       "copyDownloadLink": "Copy Download Link",
       "dialog": {
         "initialLocation": "Go To Initial Location",
@@ -142,7 +143,10 @@
     "getting-started": {
       "apiComparator": "{0} API Compatibility",
       "newExtension": "Building a New Extension",
-      "newPlugin": "Building a New Plugin"
+      "newPlugin": "Building a New Plugin",
+      "startup-editor": {
+        "welcomePage": "Open the Welcome page, with content to aid in getting started with {0} and extensions."
+      }
     },
     "git": {
       "aFewSecondsAgo": "a few seconds ago",

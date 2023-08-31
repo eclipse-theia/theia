@@ -113,6 +113,7 @@
       }
     },
     "filesystem": {
+      "copiedToClipboard": "Copie du lien de téléchargement dans le presse-papiers.",
       "copyDownloadLink": "Copier le lien de téléchargement",
       "dialog": {
         "initialLocation": "Aller à l'emplacement initial",
@@ -142,7 +143,10 @@
     "getting-started": {
       "apiComparator": "{0} Compatibilité avec l'API",
       "newExtension": "Construire une nouvelle extension",
-      "newPlugin": "Créer un nouveau plugin"
+      "newPlugin": "Créer un nouveau plugin",
+      "startup-editor": {
+        "welcomePage": "Ouvrez la page d'accueil, dont le contenu vous aidera à démarrer avec {0} et les extensions."
+      }
     },
     "git": {
       "aFewSecondsAgo": "il y a quelques secondes",
