@@ -253,7 +253,7 @@ export class KeyCode {
         }
         /* If duplicates i.e ctrl+ctrl+a or alt+alt+b or b+alt+b it is invalid */
         if (keys.length !== new Set(keys).size) {
-            throw new Error(nls.localize('theia/core/keybinding/error.duplicateModifier', "Can't parse keybinding {0} Duplicate modifiers", keybinding));
+            throw new Error(nls.localize('theia/core/keybinding/duplicateModifierError', "Can't parse keybinding {0} Duplicate modifiers", keybinding));
         }
 
         for (let keyString of keys) {
