@@ -289,7 +289,7 @@ export class KeyCode {
                     schema.key = key;
                 }
             } else {
-                throw new Error(nls.localize('theia/core/keybinding/error.unrecognizedKey', 'Unrecognized key {0} in {1}', keyString, keybinding));
+                throw new Error(nls.localize('theia/core/keybinding/unrecognizedKeyError', 'Unrecognized key {0} in {1}', keyString, keybinding));
             }
         }
 
