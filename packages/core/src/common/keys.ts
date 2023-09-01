@@ -267,7 +267,7 @@ export class KeyCode {
                 if (isOSX) {
                     schema.meta = true;
                 } else {
-                    throw new Error(nls.localize('theia/core/keybinding/error.OsxOnly', "Can't parse keybinding {0} meta is for OSX only", keybinding));
+                    throw new Error(nls.localize('theia/core/keybinding/metaError', "Can't parse keybinding {0} meta is for OSX only", keybinding));
                 }
                 /* ctrlcmd for M1 keybindings that work on both macOS and other platforms */
             } else if (keyString === SpecialCases.CTRLCMD) {
