@@ -359,6 +359,7 @@ export class TheiaPluginScanner implements PluginScanner {
             contributions.localizations = localizationsResult.value;
         } else {
             console.error(`Could not read '${rawPlugin.name}' contribution 'localizations'.`, rawPlugin.contributes.localizations, localizationsResult.reason);
+            console.error('Error is ', localizationsResult.reason);
         }
 
         if (rawPlugin.contributes.languages) {
