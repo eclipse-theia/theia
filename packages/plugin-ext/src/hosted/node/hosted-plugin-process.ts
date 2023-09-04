@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ConnectionErrorHandler, ContributionProvider, ILogger, MessageService } from '@theia/core/lib/common';
+import { ConnectionErrorHandler, ContributionProvider, ILogger, MessageService, nls } from '@theia/core/lib/common';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
@@ -217,11 +217,11 @@ export class HostedPluginProcess implements ServerPluginRunner {
         }
         this.logger.error(`[${serverName}: ${pid}] IPC exited, with signal: ${signal}, and exit code: ${code}`);
 
-        const message = 'Plugin runtime crashed unexpectedly, all plugins are not working, please reload the page.';
-        let hintMessage: string = 'If it doesn\'t help, please check Theia server logs.';
+        const message = nls.localize('theia/plugin-ext/runtimeErrorMessage', 'Plugin runtime crashed unexpectedly, all plugins are not working, please reload the page.');
+        let hintMessage: string = nls.localize('theia/plugin-ext/runtimeErrorHintMessage', 'If it doesn\'t help, please check Theia server logs.');
         if (signal && signal.toUpperCase() === 'SIGKILL') {
             // May happen in case of OOM or manual force stop.
-            hintMessage = 'Probably there is not enough memory for the plugins. ' + hintMessage;
+            hintMessage = nls.localize('theia/plugin-ext/runtimeErrorAddHingMessage', 'Probably there is not enough memory for the plugins. ') + hintMessage;
         }
 
         this.messageService.error(message + ' ' + hintMessage, { timeout: 15 * 60 * 1000 });
