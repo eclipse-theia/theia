@@ -15,16 +15,15 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { DeltaKind, TreeDeltaBuilder } from './tree-delta';
-import { TestItem } from './test-service';
 import { TestItemImpl } from './test-controller';
 import { URI } from '@theia/core';
+import { DeltaKind, TreeDeltaBuilderImpl } from '@theia/test/lib/common/tree-delta';
 
 const expect = chai.expect;
 
 describe('TestItem tests', () => {
     it('should notify property changes', () => {
-        const deltaBuilder = new TreeDeltaBuilder<string, TestItem>();
+        const deltaBuilder = new TreeDeltaBuilderImpl<string, TestItemImpl>();
         const item = new TestItemImpl(new URI('https://foo/bar'), 'b');
         item._deltaBuilder = deltaBuilder;
         item._path = ['a', 'b'];

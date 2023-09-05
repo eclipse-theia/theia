@@ -200,13 +200,8 @@ import {
     EditSessionIdentityMatch,
     TerminalOutputAnchor,
     TerminalQuickFixExecuteTerminalCommand,
-    TerminalQuickFixOpener
-    TestResultState,
-    CoveredCount,
-    FileCoverage,
-    StatementCoverage,
-    BranchCoverage,
-    FunctionCoverage
+    TerminalQuickFixOpener,
+    TestResultState
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -235,13 +230,6 @@ import { ClipboardExt } from './clipboard-ext';
 import { WebviewsExtImpl } from './webviews';
 import { ExtHostFileSystemEventService } from './file-system-event-service-ext-impl';
 import { LabelServiceExtImpl } from '../plugin/label-service';
-import {
-    createRunProfile,
-    createTestRun,
-    testItemCollection,
-    createTestItem,
-    invalidateTestResults
-} from './stubs/tests-api';
 import { TimelineExtImpl } from './timeline';
 import { ThemingExtImpl } from './theming';
 import { CommentsExtImpl } from './comments';
@@ -307,7 +295,7 @@ export function createAPIFactory(
     const customEditorExt = rpc.set(MAIN_RPC_CONTEXT.CUSTOM_EDITORS_EXT, new CustomEditorsExtImpl(rpc, documents, webviewExt, workspaceExt));
     const webviewViewsExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEW_VIEWS_EXT, new WebviewViewsExtImpl(rpc, webviewExt));
     const telemetryExt = rpc.set(MAIN_RPC_CONTEXT.TELEMETRY_EXT, new TelemetryExtImpl());
-    const testingExt = rpc.set(MAIN_RPC_CONTEXT.TESTING_EXT, new TestingExtImpl(rpc, commandRegistry, editorsAndDocumentsExt));
+    const testingExt = rpc.set(MAIN_RPC_CONTEXT.TESTING_EXT, new TestingExtImpl(rpc, commandRegistry));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -1002,42 +990,9 @@ export function createAPIFactory(
             }
         };
 
-        // Tests API (@stubbed)
-        // The following implementation is temporarily `@stubbed` and marked as such under `theia.d.ts`
         const tests: typeof theia.tests = {
-            // createTestController(provider: string, label: string, refreshHandler?: (token: theia.CancellationToken) => Thenable<void> | void) {
-            //     return testingExt.createTestController(provider, label, refreshHandler);
-            // },
-            createTestController(
-                provider,
-                controllerLabel: string,
-                refreshHandler?: (
-                    token: theia.CancellationToken
-                ) => Thenable<void> | void
-            ) {
-                return {
-                    id: provider,
-                    label: controllerLabel,
-                    items: testItemCollection,
-                    refreshHandler,
-                    createRunProfile,
-                    createTestRun,
-                    createTestItem,
-                    invalidateTestResults,
-                    dispose: () => undefined,
-                };
-            },
-            createTestObserver() {
-                return testingExt.createTestObserver();
-            },
-            runTests(provider: theia.TestRunRequest) {
-                return testingExt.runTests(provider);
-            },
-            get onDidChangeTestResults() {
-                return testingExt.onResultsChanged;
-            },
-            get testResults() {
-                return testingExt.results;
+            createTestController(id, label: string) {
+                return testingExt.createTestController(id, label);
             }
         };
         /* End of Tests API */
@@ -1417,13 +1372,8 @@ export function createAPIFactory(
             ExternalUriOpenerPriority,
             TerminalQuickFixExecuteTerminalCommand,
             TerminalQuickFixOpener,
-            EditSessionIdentityMatch
-            TestResultState,
-            CoveredCount,
-            FileCoverage,
-            StatementCoverage,
-            BranchCoverage,
-            FunctionCoverage
+            EditSessionIdentityMatch,
+            TestResultState
         };
     };
 }

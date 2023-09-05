@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import debounce = require('@theia/core/shared/lodash.debounce');
-import { Emitter } from '@theia/core/';
+import { Emitter, Event } from '@theia/core';
+import { ChangeBatcher } from './collections';
 
 export interface CollectionDelta<K, T> {
     added?: T[];
@@ -33,7 +33,26 @@ export interface TreeDelta<K, T> {
     childDeltas?: TreeDelta<K, T>[];
 }
 
-export class TreeDeltaBuilder<K, T> {
+export interface TreeDeltaBuilder<K, T> {
+    reportAdded(path: K[], added: T): void;
+    reportRemoved(path: K[]): void;
+    reportChanged(path: K[], change: Partial<T>): void;
+}
+
+export class MappingTreeDeltaBuilder<K, T, V> implements TreeDeltaBuilder<K, V> {
+    constructor(private readonly wrapped: TreeDeltaBuilder<K, T>, private readonly map: (value: V) => T, private readonly mapPartial: (value: Partial<V>) => Partial<T>) { }
+    reportAdded(path: K[], added: V): void {
+        this.wrapped.reportAdded(path, this.map(added));
+    }
+    reportRemoved(path: K[]): void {
+        this.wrapped.reportRemoved(path);
+    }
+    reportChanged(path: K[], change: Partial<V>): void {
+        this.wrapped.reportChanged(path, this.mapPartial(change));
+    }
+}
+
+export class TreeDeltaBuilderImpl<K, T> {
     protected _currentDelta: TreeDelta<K, T>[] = [];
 
     get currentDelta(): TreeDelta<K, T>[] {
@@ -91,9 +110,9 @@ export class TreeDeltaBuilder<K, T> {
                 const child = parentCollection[nodeIndex];
                 if (child.type === DeltaKind.NONE) {
                     child.type = DeltaKind.CHANGED;
-                }
-                if (child.type !== DeltaKind.REMOVED) {
-                    child.value = { ...child.value, ...change };
+                    child.value = change;
+                } else if (child.type === DeltaKind.CHANGED) {
+                    Object.assign(child.value!, change);
                 }
             } else {
                 this.insert(parentCollection, nodeIndex, {
@@ -113,16 +132,32 @@ export class TreeDeltaBuilder<K, T> {
             const child = parentCollection[nodeIndex];
             const prefixLength = computePrefixLength(delta.path, child.path);
 
-            const newNode: TreeDelta<K, T> = {
-                path: child.path.slice(0, prefixLength),
-                type: DeltaKind.NONE,
-                childDeltas: []
-            };
-            parentCollection[nodeIndex] = newNode;
-            delta.path = delta.path.slice(prefixLength);
-            newNode.childDeltas!.push(delta);
-            child.path = child.path.slice(prefixLength);
-            newNode.childDeltas!.push(child);
+            if (prefixLength === delta.path.length) {
+                child.path = child.path.slice(prefixLength);
+                delta.childDeltas = [child];
+                parentCollection[nodeIndex] = delta;
+            } else {
+                const newNode: TreeDelta<K, T> = {
+                    path: child.path.slice(0, prefixLength),
+                    type: DeltaKind.NONE,
+                    childDeltas: []
+                };
+                parentCollection[nodeIndex] = newNode;
+                delta.path = delta.path.slice(prefixLength);
+                newNode.childDeltas!.push(delta);
+                child.path = child.path.slice(prefixLength);
+                newNode.childDeltas!.push(child);
+                if (newNode.path.length === 0) {
+                    console.log('newNode');
+                }
+            }
+            if (delta.path.length === 0) {
+                console.log('delta');
+            }
+
+            if (child.path.length === 0) {
+                console.log('child');
+            }
         }
     }
 
@@ -133,6 +168,11 @@ export class TreeDeltaBuilder<K, T> {
 
 function doFindNode<K, T>(rootCollection: TreeDelta<K, T>[], path: K[],
     handler: (parentCollection: TreeDelta<K, T>[], nodeIndex: number, residualPath: K[]) => void): void {
+    // handler parameters:
+    // parent collection: the collection the node index refers to, if valid
+    // nodeIndex: the index of the node that has a common path prefix with the path of the path we're searching
+    // residual path: the path that has not been consumed looking for the path: if empty, we found the exact node
+
     let commonPrefixLength = 0;
     const childIndex = rootCollection.findIndex(delta => {
         commonPrefixLength = computePrefixLength(delta.path, path);
@@ -141,6 +181,7 @@ function doFindNode<K, T>(rootCollection: TreeDelta<K, T>[], path: K[],
     if (childIndex >= 0) {
         // we know which child to insert into
         const child = rootCollection[childIndex];
+
         if (commonPrefixLength === child.path.length) {
             // we matched a child
             if (commonPrefixLength === path.length) {
@@ -175,33 +216,44 @@ function computePrefixLength<K>(left: K[], right: K[]): number {
     return i;
 }
 
-export class AccumulatingTreeDeltaEmitter<K, T> extends TreeDeltaBuilder<K, T> {
-    emitDelta: () => void;
-
-    emitter: Emitter<TreeDelta<K, T>[]> = new Emitter();
+export class AccumulatingTreeDeltaEmitter<K, T> extends TreeDeltaBuilderImpl<K, T> {
+    private batcher: ChangeBatcher;
+    private onDidFlushEmitter: Emitter<TreeDelta<K, T>[]> = new Emitter();
+    ondDidFlush: Event<TreeDelta<K, T>[]> = this.onDidFlushEmitter.event;
 
     constructor(timeoutMillis: number) {
         super();
-        this.emitDelta = debounce(() => this.doEmitDelta(), timeoutMillis);
+        this.batcher = new ChangeBatcher(() => this.doEmitDelta(), timeoutMillis);
+    }
+
+    flush(): void {
+        this.batcher.flush();
     }
 
     doEmitDelta(): void {
-        this.emitter.fire(this._currentDelta);
+        const batch = this._currentDelta;
         this._currentDelta = [];
+        this.onDidFlushEmitter.fire(batch);
     }
 
     override reportAdded(path: K[], added: T): void {
         super.reportAdded(path, added);
-        this.emitDelta();
+        // console.debug(`reported added, now: ${JSON.stringify(path, undefined, 3)}`);
+        // logging levels don't work in plugin host: https://github.com/eclipse-theia/theia/issues/12234
+        this.batcher.changeOccurred();
     }
 
     override reportChanged(path: K[], change: Partial<T>): void {
         super.reportChanged(path, change);
-        this.emitDelta();
+        // console.debug(`reported changed, now: ${JSON.stringify(path, undefined, 3)}`);
+        // logging levels don't work in plugin host: https://github.com/eclipse-theia/theia/issues/12234
+        this.batcher.changeOccurred();
     }
 
     override reportRemoved(path: K[]): void {
         super.reportRemoved(path);
-        this.emitDelta();
+        // console.debug(`reported removed, now: ${JSON.stringify(path, undefined, 3)}`);
+        // logging levels don't work in plugin host: https://github.com/eclipse-theia/theia/issues/12234
+        this.batcher.changeOccurred();
     }
 }

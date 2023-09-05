@@ -22,21 +22,38 @@ import {
     WidgetFactory, ViewContainer,
     WidgetManager, createTreeContainer
 } from '@theia/core/lib/browser';
-import { TestWidget } from './test-widget';
-import { TestTreeWidget } from './test-tree-widget';
-import { TestViewContribution, TEST_VIEW_CONTAINER_ID, TEST_VIEW_CONTAINER_TITLE_OPTIONS, TEST_WIDGET_FACTORY_ID } from './test-view-contribution';
+import { TestTree, TestTreeWidget } from './test-tree-widget';
+import { TestViewContribution, TEST_VIEW_CONTAINER_ID, TEST_VIEW_CONTAINER_TITLE_OPTIONS, TEST_VIEW_CONTEXT_MENU } from './test-view-contribution';
 import { TestService, TestContribution, DefaultTestService } from '../test-service';
 import { bindContributionProvider } from '@theia/core';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { TestExecutionStateManager } from './test-execution-state-manager';
+import { TestResultWidget } from './test-result-widget';
+import { TestOutputWidget } from './test-output-widget';
+import { TestOutputViewContribution } from './test-output-view-contribution';
+import { TestOutputUIModel } from './test-output-ui-model';
+import { TestRunTree, TestRunTreeWidget } from './test-run-widget';
+import { TestResultViewContribution } from './test-result-view-contribution';
+import { TEST_RUNS_CONTEXT_MENU, TestRunViewContribution } from './test-run-view-contribution';
+
 export default new ContainerModule(bind => {
 
     bindContributionProvider(bind, TestContribution);
     bind(TestService).to(DefaultTestService).inSingletonScope();
 
-    bind(TestWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
-        id: TEST_WIDGET_FACTORY_ID,
-        createWidget: () => container.get(TestWidget)
+        id: TestOutputWidget.ID,
+        createWidget: () => container.get<TestOutputWidget>(TestOutputWidget)
     })).inSingletonScope();
+
+    bind(TestOutputWidget).toSelf();
+
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: TestResultWidget.ID,
+        createWidget: () => container.get<TestResultWidget>(TestResultWidget)
+    })).inSingletonScope();
+
+    bind(TestResultWidget).toSelf();
 
     bind(TestTreeWidget).toDynamicValue(({ container }) => {
         const child = createTestTreeContainer(container);
@@ -47,6 +64,15 @@ export default new ContainerModule(bind => {
         createWidget: () => container.get<TestTreeWidget>(TestTreeWidget)
     })).inSingletonScope();
 
+    bind(TestRunTreeWidget).toDynamicValue(({ container }) => {
+        const child = createTestRunContainer(container);
+        return child.get(TestRunTreeWidget);
+    });
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: TestRunTreeWidget.ID,
+        createWidget: () => container.get<TestRunTreeWidget>(TestRunTreeWidget)
+    })).inSingletonScope();
+
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: TEST_VIEW_CONTAINER_ID,
         createWidget: async () => {
@@ -55,34 +81,52 @@ export default new ContainerModule(bind => {
                 progressLocationId: 'test'
             });
             viewContainer.setTitleOptions(TEST_VIEW_CONTAINER_TITLE_OPTIONS);
-            const widget = await container.get(WidgetManager).getOrCreateWidget(TEST_WIDGET_FACTORY_ID);
+            let widget = await container.get(WidgetManager).getOrCreateWidget(TestTreeWidget.ID);
             viewContainer.addWidget(widget, {
                 canHide: false,
                 initiallyCollapsed: false
             });
-            return viewContainer;
+            widget = await container.get(WidgetManager).getOrCreateWidget(TestRunTreeWidget.ID);
+            viewContainer.addWidget(widget, {
+                canHide: true,
+                initiallyCollapsed: false,
+            }); return viewContainer;
         }
     })).inSingletonScope();
 
-
-
     bindViewContribution(bind, TestViewContribution);
+    bindViewContribution(bind, TestRunViewContribution);
+    bindViewContribution(bind, TestResultViewContribution);
+    bindViewContribution(bind, TestOutputViewContribution);
     bind(FrontendApplicationContribution).toService(TestViewContribution);
+    bind(TabBarToolbarContribution).toService(TestViewContribution);
+    bind(TabBarToolbarContribution).toService(TestRunViewContribution);
+    bind(TestExecutionStateManager).toSelf().inSingletonScope();
+    bind(TestOutputUIModel).toSelf().inSingletonScope();
 
 });
 
 export function createTestTreeContainer(parent: interfaces.Container): Container {
-    const child = createTreeContainer(parent, {
+    return createTreeContainer(parent, {
+        tree: TestTree,
         props: {
-            virtualized: true,
-            search: true
+            virtualized: false,
+            search: true,
+            contextMenuPath: TEST_VIEW_CONTEXT_MENU
         },
         widget: TestTreeWidget,
     });
-    return child;
 }
 
-export function createTestWidgetContainer(parent: interfaces.Container): Container {
-    const child = createTestTreeContainer(parent);
-    return child;
+export function createTestRunContainer(parent: interfaces.Container): Container {
+    return createTreeContainer(parent, {
+        tree: TestRunTree,
+        props: {
+            virtualized: false,
+            search: true,
+            multiSelect: false,
+            contextMenuPath: TEST_RUNS_CONTEXT_MENU
+        },
+        widget: TestRunTreeWidget
+    });
 }

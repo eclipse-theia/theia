@@ -27,36 +27,15 @@ import { MarkdownString as PluginMarkdownStringImpl } from './markdown-string';
 import * as types from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { isReadonlyArray } from '../common/arrays';
-import { DisposableCollection, isEmptyObject, isObject } from '@theia/core/lib/common';
+import { DisposableCollection, Mutable, isEmptyObject, isObject } from '@theia/core/lib/common';
 import * as notebooks from '@theia/notebook/lib/common';
 import { CommandsConverter } from './command-registry';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { CellData, CellExecutionUpdateType, CellOutput, CellOutputItem, CellRange, isTextStreamMime } from '@theia/notebook/lib/common';
 import { CellExecuteUpdate, CellExecutionComplete } from '@theia/notebook/lib/browser';
-import { MarkdownString as MarkdownStringDTO, parseHrefAndDimensions } from '@theia/core/lib/common/markdown-rendering';
-import * as RangeTest from '@theia/testing/lib/common/range';
-import {
-    denamespaceTestTag,
-    ITestErrorMessage,
-    ITestItem,
-    ITestTag,
-    namespaceTestTag,
-    TestMessageType,
-    TestResultItem,
-    ISerializedTestResults,
-    ICoveredCount,
-    CoverageDetails,
-    DetailType,
-    IFileCoverage
-} from '@theia/testing/lib/common/test-types';
-import { TestId, TestPosition } from '@theia/testing/lib/common/test-id';
-import { getPrivateApiFor } from './testing-private-api';
-import { parse } from '@theia/testing/lib/common/marshalling';
-import { cloneAndChange } from '@theia/core/lib/common/objects';
-import * as languages from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
-import { Location } from '../common/plugin-api-rpc-model';
-import { IPosition } from '@theia/testing/lib/common/position';
-import * as marked from 'marked';
+import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
+
+import { TestItemDTO, TestMessageDTO } from '../common/test-types';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -483,7 +462,12 @@ export function toInlineValueContext(inlineValueContext: model.InlineValueContex
 }
 
 // eslint-disable-next-line @typescript-eslint/no-shadow
-export function fromLocation(location: theia.Location): model.Location {
+export function fromLocation(location: theia.Location): model.Location;
+export function fromLocation(location: theia.Location | undefined): model.Location | undefined;
+export function fromLocation(location: theia.Location | undefined): model.Location | undefined {
+    if (!location) {
+        return undefined;
+    }
     return <model.Location>{
         uri: location.uri,
         range: fromRange(location.range)
@@ -1772,352 +1756,77 @@ export namespace NotebookDto {
     // }
 }
 
-// Added namespaces for tests API start here
-
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation and others. All rights reserved.
- *  Licensed under the MIT License. See https://github.com/Microsoft/vscode/blob/master/LICENSE.txt for license information.
- *--------------------------------------------------------------------------------------------*/
-
-// some code copied and modified from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/workbench/api/common/extHostTypeConverters.ts
-export interface PositionLike {
-    line: number;
-    character: number;
-}
-
-export interface RangeLike {
-    start: PositionLike;
-    end: PositionLike;
-}
-
-export namespace Range {
-
-    export function from(range: undefined): undefined;
-    export function from(range: RangeLike): RangeTest.IRange;
-    export function from(range: RangeLike | undefined): RangeTest.IRange | undefined;
-    export function from(range: RangeLike | undefined): RangeTest.IRange | undefined {
-        if (!range) {
-            return undefined;
-        }
-        const { start, end } = range;
-        return {
-            startLineNumber: start.line + 1,
-            startColumn: start.character + 1,
-            endLineNumber: end.line + 1,
-            endColumn: end.character + 1
-        };
-    }
-
-    export function to(range: undefined): types.Range;
-    export function to(range: RangeTest.IRange): types.Range;
-    export function to(range: RangeTest.IRange | undefined): types.Range | undefined;
-    export function to(range: RangeTest.IRange | undefined): types.Range | undefined {
-        if (!range) {
-            return undefined;
-        }
-        const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
-        return new types.Range(startLineNumber - 1, startColumn - 1, endLineNumber - 1, endColumn - 1);
-    }
-}
-
-export namespace MarkdownString {
-
-    export function fromMany(markup: (theia.MarkdownString | theia.MarkedString)[]): MarkdownStringDTO[] {
-        return markup.map(MarkdownString.from);
-    }
-
-    // interface Codeblock {
-    //     language: string;
-    //     value: string;
-    // }
-
-    // function isCodeblock(thing: any): thing is Codeblock {
-    //     return thing && typeof thing === 'object'
-    //         && typeof (<Codeblock>thing).language === 'string'
-    //         && typeof (<Codeblock>thing).value === 'string';
-    // }
-
-    export function from(markup: theia.MarkdownString | theia.MarkedString): MarkdownStringDTO {
-        let res: MarkdownStringDTO;
-        if (isCodeblock(markup)) {
-            const { language, value } = markup;
-            res = { value: '```' + language + '\n' + value + '\n```\n' };
-        } else if (PluginMarkdownStringImpl.isMarkdownString(markup)) {
-            res = { value: markup.value, isTrusted: markup.isTrusted, supportThemeIcons: markup.supportThemeIcons, supportHtml: markup.supportHtml, baseUri: markup.baseUri };
-        } else if (typeof markup === 'string') {
-            res = { value: markup };
-        } else {
-            res = { value: '' };
-        }
-
-        // extract uris into a separate object
-        const resUris: { [href: string]: UriComponents } = Object.create(null);
-        res.uris = resUris;
-
-        const collectUri = (href: string): string => {
-            try {
-                let uri = URI.parse(href, true);
-                uri = uri.with({ query: _uriMassage(uri.query, resUris) });
-                resUris[href] = uri;
-            } catch (e) {
-                // ignore
-            }
-            return '';
-        };
-        const renderer = new marked.Renderer();
-        renderer.link = collectUri;
-        renderer.image = href => typeof href === 'string' ? collectUri(parseHrefAndDimensions(href).href) : '';
-
-        marked.marked(res.value, { renderer });
-
-        return res;
-    }
-
-    function _uriMassage(part: string, bucket: { [n: string]: UriComponents }): string {
-        if (!part) {
-            return part;
-        }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let data: any;
-        try {
-            data = parse(part);
-        } catch (e) {
-            // ignore
-        }
-        if (!data) {
-            return part;
-        }
-        let changed = false;
-        data = cloneAndChange(data, value => {
-            if (URI.isUri(value)) {
-                const key = `__uri_${Math.random().toString(16).slice(2, 8)}`;
-                bucket[key] = value;
-                changed = true;
-                return key;
-            } else {
-                return undefined;
-            }
-        });
-
-        if (!changed) {
-            return part;
-        }
-
-        return JSON.stringify(data);
-    }
-
-    export function to(value: MarkdownStringDTO): theia.MarkdownString {
-        const result = new PluginMarkdownStringImpl(value.value, value.supportThemeIcons);
-        result.isTrusted = value.isTrusted;
-        result.supportHtml = value.supportHtml;
-        result.baseUri = value.baseUri ? URI.from(value.baseUri) : undefined;
-        return result;
-    }
-
-    export function fromStrict(value: string | theia.MarkdownString | undefined | undefined): undefined | string | MarkdownStringDTO {
-        if (!value) {
-            return undefined;
-        }
-        return typeof value === 'string' ? value : MarkdownString.from(value);
-    }
-}
-
-export namespace location {
-    export function from(value: theia.Location): languages.Location {
-        return {
-            range: value.range && Range.from(value.range),
-            uri: value.uri
-        };
-    }
-
-    export function to(value: Location): types.Location {
-        return new types.Location(URI.revive(value.uri), Range.to(value.range));
-    }
-}
-
 export namespace TestMessage {
-    export function from(message: theia.TestMessage): ITestErrorMessage.Serialized {
-        return {
-            message: MarkdownString.fromStrict(message.message) || '',
-            type: TestMessageType.Error,
+    export function from(message: theia.TestMessage | readonly theia.TestMessage[]): TestMessageDTO[] {
+        if (isReadonlyArray(message)) {
+            return message.map(msg => TestMessage.from(msg)[0]);
+        }
+        return [{
+            location: fromLocation(message.location),
+            message: fromMarkdown(message.message)!,
             expected: message.expectedOutput,
-            actual: message.actualOutput,
-            location: message.location && ({ range: Range.from(message.location.range), uri: message.location.uri }),
-        };
+            actual: message.actualOutput
+        }];
     }
-
-    export function to(item: ITestErrorMessage.Serialized): theia.TestMessage {
-        const message = new types.TestMessage(typeof item.message === 'string' ? item.message : MarkdownString.to(item.message));
-        message.actualOutput = item.actual;
-        message.expectedOutput = item.expected;
-        message.location = item.location ? location.to(item.location) : undefined;
-        return message;
-    }
-}
-
-export namespace TestTag {
-    export const namespace = namespaceTestTag;
-
-    export const denamespace = denamespaceTestTag;
 }
 
 export namespace TestItem {
-    export type Raw = theia.TestItem;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function getITestItem(item: theia.TestItem, ctrlId: string, rangeReturn: any): ITestItem {
-        return {
-            extId: TestId.fromExtHostTestItem(item, ctrlId).toString(),
-            label: item.label,
-            uri: URI.revive(item.uri),
-            busy: item.busy,
-            tags: item.tags.map(t => TestTag.namespace(ctrlId, t.id)),
-            range: rangeReturn,
-            description: item.description || undefined,
-            sortText: item.sortText || undefined,
-            error: item.error ? (MarkdownString.fromStrict(item.error) || undefined) : undefined,
-        };
+    export function from(test: theia.TestItem): TestItemDTO {
+        return <TestItemDTO>TestItem.fromPartial(test);
     }
 
-    export function from(item: theia.TestItem): ITestItem {
-        const ctrlId = getPrivateApiFor(item).controllerId;
-        const rangeReturn = RangeTest.Range.lift(Range.from(item.range));
-        // eslint-disable-next-line  @typescript-eslint/no-non-null-assertion
-        if (rangeReturn === null) {
-            return getITestItem(item, ctrlId, undefined);
+    export function fromPartial(test: Partial<theia.TestItem>): Partial<TestItemDTO> {
+        const result: Partial<Mutable<TestItemDTO>> = {};
+
+        if ('id' in test) {
+            result.id = test.id;
         }
-        return getITestItem(item, ctrlId, rangeReturn);
+
+        if ('uri' in test) {
+            result.uri = test.uri;
+        }
+
+        if ('label' in test) {
+            result.label = test.label;
+        }
+
+        if ('range' in test) {
+            result.range = fromRange(test.range);
+        }
+
+        if ('sortKey' in test) {
+            result.sortKey = test.sortText;
+        }
+
+        if ('tags' in test) {
+            result.tags = test.tags ? test.tags.map(tag => tag.id) : [];
+        }
+        if ('busy' in test) {
+            result.busy = test.busy!;
+        }
+        if ('sortKey' in test) {
+            result.sortKey = test.sortText;
+        }
+        if ('canResolveChildren' in test) {
+            result.canResolveChildren = test.canResolveChildren!;
+        }
+        if ('description' in test) {
+            result.description = test.description;
+        }
+
+        if ('description' in test) {
+            result.error = test.error;
+        }
+
+        if (test.children) {
+            const children: TestItemDTO[] = [];
+            test.children.forEach(item => {
+                children.push(TestItem.from(item));
+            });
+            result.children = children;
+        }
+
+        return result;
+
     }
-
-    export function toPlain(item: ITestItem.Serialized): theia.TestItem {
-        return {
-            parent: undefined,
-            error: undefined,
-            id: TestId.fromString(item.extId).localId,
-            label: item.label,
-            uri: URI.revive(item.uri),
-            tags: (item.tags || []).map(t => {
-                const { tagId } = TestTag.denamespace(t);
-                return new types.TestTag(tagId);
-            }),
-            children: {
-                add: () => { },
-                delete: () => { },
-                forEach: () => { },
-                // eslint-disable-next-line @typescript-eslint/tslint/config
-                *[Symbol.iterator]() { },
-                get: () => undefined,
-                replace: () => { },
-                size: 0,
-            },
-            range: Range.to(item.range || undefined),
-            canResolveChildren: false,
-            busy: item.busy,
-            description: item.description || undefined,
-            sortText: item.sortText || undefined,
-            export namespace TestTag {
-            export function from(tag: theia.TestTag): ITestTag {
-                return { id: tag.id };
-            }
-
-            export function to(tag: ITestTag): theia.TestTag {
-                return new types.TestTag(tag.id);
-            }
-        }
-
-        export namespace TestResults {
-            const convertTestResultItem = (item: TestResultItem.Serialized, byInternalId: Map<string, TestResultItem.Serialized>): theia.TestResultSnapshot => {
-                const children: TestResultItem.Serialized[] = [];
-                for (const [id, itemInternalId] of byInternalId) {
-                    if (TestId.compare(itemInternalId.item.extId, id) === TestPosition.IsChild) {
-                        byInternalId.delete(id);
-                        children.push(itemInternalId);
-                    }
-                }
-
-                const snapshot: theia.TestResultSnapshot = ({
-                    ...TestItem.toPlain(item.item),
-                    parent: undefined,
-                    taskStates: item.tasks.map(t => ({
-                        state: t.state as number as types.TestResultState,
-                        duration: t.duration,
-                        messages: t.messages
-                            .filter((m): m is ITestErrorMessage.Serialized => m.type === TestMessageType.Error)
-                            .map(TestMessage.to),
-                    })),
-                    children: children.map(c => convertTestResultItem(c, byInternalId))
-                });
-
-                for (const child of snapshot.children) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (child as any).parent = snapshot;
-                }
-
-                return snapshot;
-            };
-
-            export function to(serialized: ISerializedTestResults): theia.TestRunResult {
-                const roots: TestResultItem.Serialized[] = [];
-                const byInternalId = new Map<string, TestResultItem.Serialized>();
-                for (const item of serialized.items) {
-                    byInternalId.set(item.item.extId, item);
-                    if (serialized.request.targets.some(t => t.controllerId === item.controllerId && t.testIds.includes(item.item.extId))) {
-                        roots.push(item);
-                    }
-                }
-
-                return {
-                    completedAt: serialized.completedAt,
-                    results: roots.map(r => convertTestResultItem(r, byInternalId)),
-                };
-            }
-        }
-
-        export namespace PositionCoverage {
-            export function to(position: IPosition): types.Position {
-                return new types.Position(position.lineNumber - 1, position.column - 1);
-            }
-            export function from(position: types.Position | theia.Position): IPosition {
-                return { lineNumber: position.line + 1, column: position.character + 1 };
-            }
-        }
-
-        export namespace TestCoverage {
-            function fromCoveredCount(count: theia.CoveredCount): ICoveredCount {
-                return { covered: count.covered, total: count.covered };
-            }
-
-            function fromLocationCoverage(locationRange: theia.Range | theia.Position): RangeTest.IRange | IPosition {
-                return 'line' in locationRange ? PositionCoverage.from(locationRange) : Range.from(locationRange);
-            }
-
-            export function fromDetailed(coverage: theia.DetailedCoverage): CoverageDetails {
-                if ('branches' in coverage) {
-                    return {
-                        count: coverage.executionCount,
-                        location: fromLocationCoverage(coverage.location),
-                        type: DetailType.Statement,
-                        branches: coverage.branches.length
-                            ? coverage.branches.map(b => ({ count: b.executionCount, location: b.location && fromLocationCoverage(b.location) }))
-                            : undefined,
-                    };
-                } else {
-                    return {
-                        type: DetailType.Function,
-                        count: coverage.executionCount,
-                        location: fromLocationCoverage(coverage.location),
-                    };
-                }
-            }
-
-            export function fromFile(coverage: theia.FileCoverage): IFileCoverage {
-                return {
-                    uri: coverage.uri,
-                    statement: fromCoveredCount(coverage.statementCoverage),
-                    branch: coverage.branchCoverage && fromCoveredCount(coverage.branchCoverage),
-                    function: coverage.functionCoverage && fromCoveredCount(coverage.functionCoverage),
-                    details: coverage.detailedCoverage?.map(fromDetailed),
-                };
-            }
-        }
-            // End of tests API additions
+}
