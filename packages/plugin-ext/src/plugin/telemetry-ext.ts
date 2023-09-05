@@ -294,5 +294,5 @@ export function cleanData(data: Record<string, any>, cleanUpPatterns: RegExp[]):
             return updatedProperty;
         }
         return undefined;
-    }, new Set());
+    });
 }

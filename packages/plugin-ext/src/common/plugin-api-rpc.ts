@@ -102,7 +102,6 @@ import {
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-protocol';
-import { ArgumentProcessor } from '../plugin/command-registry';
 import * as files from '@theia/filesystem/lib/common/files';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
@@ -123,20 +122,9 @@ import { CellExecutionUpdateType, CellRange, NotebookCellExecutionState } from '
 import { LanguagePackBundle } from './language-pack-service';
 import { AccessibilityInformation } from '@theia/core/lib/common/accessibility';
 
-import {
-    CoverageDetails,
-    IFileCoverage,
-    ISerializedTestResults,
-    RunTestForControllerRequest,
-    TestsDiffOp,
-    ITestRunProfile,
-    ResolvedTestRunRequest,
-    ITestItem,
-    TestResultState,
-    ITestMessage,
-    ITestRunTask,
-    ExtensionRunTestsRequest,
-} from '@theia/testing/lib/common/test-types';
+import { TreeDelta } from '@theia/test/lib/common/tree-delta';
+import { TestItemDTO, TestOutputDTO, TestRunDTO, TestRunProfileDTO, TestRunRequestDTO, TestStateChangeDTO } from './test-types';
+import { ArgumentProcessor } from './commands';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -285,6 +273,8 @@ export interface CommandRegistryMain {
     $executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined>;
     $getCommands(): PromiseLike<string[]>;
     $getKeyBinding(commandId: string): PromiseLike<theia.CommandKeyBinding[] | undefined>;
+
+    registerArgumentProcessor(processor: ArgumentProcessor): void;
 }
 
 export interface CommandRegistryExt {
@@ -2165,31 +2155,22 @@ export const enum TestingResourceExt {
 
 // based from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/workbench/api/common/extHostTesting.ts
 export interface TestingExt {
-    $runControllerTests(req: RunTestForControllerRequest[], token: CancellationToken): Promise<{ error?: string }[]>;
-    $cancelExtensionTestRun(runId: string | undefined): void;
-    /** Handles a diff of tests, as a result of a subscribeToDiffs() call */
-    $acceptDiff(diff: TestsDiffOp.Serialized[]): void;
-    /** Publishes that a test run finished. */
-    $publishTestResults(results: ISerializedTestResults[]): void;
-    /** Expands a test item's children, by the given number of levels. */
-    $expandTest(testId: string, levels: number): Promise<void>;
-    /** Requests file coverage for a test run. Errors if not available. */
-    $provideFileCoverage(runId: string, taskId: string, token: CancellationToken): Promise<IFileCoverage[]>;
-    /**
-     * Requests coverage details for the file index in coverage data for the run.
-     * Requires file coverage to have been previously requested via $provideFileCoverage.
-     */
-    $resolveFileCoverage(runId: string, taskId: string, fileIndex: number, token: CancellationToken): Promise<CoverageDetails[]>;
+    $onCancelTestRun(controllerId: string, runId: string): void;
     /** Configures a test run config. */
-    $configureRunProfile(controllerId: string, configId: number): void;
+    $onConfigureRunProfile(controllerId: string, profileId: string): void;
+
+    $onRunControllerTests(reqs: TestRunRequestDTO[]): void;
+
     /** Asks the controller to refresh its tests */
     $refreshTests(controllerId: string, token: CancellationToken): Promise<void>;
+
+    $onResolveChildren(controllerId: string, path: string[]): void;
 }
 
-// based from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/workbench/api/common/extHostTesting.ts
-export interface ITestControllerPatch {
-    label?: string;
-    canRefresh?: boolean;
+export interface TestControllerUpdate {
+    label: string;
+    canRefresh: boolean;
+    canResolve: boolean;
 }
 
 // based from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/workbench/api/common/extHostTesting.ts
@@ -2197,52 +2178,27 @@ export interface TestingMain {
     // --- test lifecycle:
 
     /** Registers that there's a test controller with the given ID */
-    $registerTestController(controllerId: string, label: string, canRefresh: boolean): void;
+    $registerTestController(controllerId: string, label: string): void;
     /** Updates the label of an existing test controller. */
-    $updateController(controllerId: string, patch: ITestControllerPatch): void;
+    $updateController(controllerId: string, patch: Partial<TestControllerUpdate>): void;
     /** Diposes of the test controller with the given ID */
     $unregisterTestController(controllerId: string): void;
-    /** Requests tests published to VS Code. */
-    $subscribeToDiffs(): void;
-    /** Stops requesting tests published to VS Code. */
-    $unsubscribeFromDiffs(): void;
-    /** Publishes that new tests were available on the given source. */
-    $publishDiff(controllerId: string, diff: TestsDiffOp.Serialized[]): void;
+    $notifyDelta(controllerId: string, diff: TreeDelta<string, TestItemDTO>[]): void;
 
     // --- test run configurations:
 
-    /** Called when a new test run configuration is available */
-    $publishTestRunProfile(config: ITestRunProfile): void;
-    /** Updates an existing test run configuration */
-    $updateTestRunConfig(controllerId: string, configId: number, update: Partial<ITestRunProfile>): void;
-    /** Removes a previously-published test run config */
-    $removeTestProfile(controllerId: string, configId: number): void;
+    /** Called when a new test run profile is available */
+    $notifyTestRunProfileCreated(controllerId: string, profile: TestRunProfileDTO): void;
+    /** Updates an existing test run profile */
+    $updateTestRunProfile(controllerId: string, profileId: string, update: Partial<TestRunProfileDTO>): void;
+    /** Removes a previously-published test run profile */
+    $removeTestRunProfile(controllerId: string, profileId: string): void;
 
-    // --- test run handling:
+    // Test runs
 
-    /** Request by an extension to run tests. */
-    $runTests(req: ResolvedTestRunRequest, token: CancellationToken): Promise<string>;
-    /**
-     * Adds tests to the run. The tests are given in descending depth. The first
-     * item will be a previously-known test, or a test root.
-     */
-    $addTestsToRun(controllerId: string, runId: string, tests: ITestItem.Serialized[]): void;
-    /** Updates the state of a test run in the given run. */
-    $updateTestStateInRun(runId: string, taskId: string, testId: string, state: TestResultState, duration?: number): void;
-    /** Appends a message to a test in the run. */
-    $appendTestMessagesInRun(runId: string, taskId: string, testId: string, messages: ITestMessage.Serialized[]): void;
-    /** Appends raw output to the test run.. */
-    $appendOutputToRun(runId: string, taskId: string, output: BinaryBuffer, location?: Location, testId?: string): void;
-    /** Triggered when coverage is added to test results. */
-    $signalCoverageAvailable(runId: string, taskId: string): void;
-    /** Signals a task in a test run started. */
-    $startedTestRunTask(runId: string, task: ITestRunTask): void;
-    /** Signals a task in a test run ended. */
-    $finishedTestRunTask(runId: string, taskId: string): void;
-    /** Start a new extension-provided test run. */
-    $startedExtensionTestRun(req: ExtensionRunTestsRequest): void;
-    /** Signals that an extension-provided test run finished. */
-    $finishedExtensionTestRun(runId: string): void;
+    $notifyTestRunCreated(controllerId: string, run: TestRunDTO): void;
+    $notifyTestStateChanged(controllerId: string, runId: string, stateChanges: TestStateChangeDTO[], outputChanges: TestOutputDTO[]): void;
+    $notifyTestRunEnded(controllerId: string, runId: string): void;
 }
 
 export const PLUGIN_RPC_CONTEXT = {

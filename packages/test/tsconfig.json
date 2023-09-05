@@ -11,6 +11,18 @@
   "references": [
     {
       "path": "../core"
+    },
+    {
+      "path": "../editor"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
+      "path": "../navigator"
+    },
+    {
+      "path": "../terminal"
     }
   ]
 }

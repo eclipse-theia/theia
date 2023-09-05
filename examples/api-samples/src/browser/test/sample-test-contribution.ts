@@ -15,14 +15,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TestContribution, TestService } from '@theia/test/lib/browser/test-service';
-import { TestControllerImpl, TestItemImpl } from '@theia/test/lib/browser/test-controller';
+import { TestContribution, TestItem, TestRunProfileKind, TestService } from '@theia/test/lib/browser/test-service';
 import { CommandContribution, CommandRegistry, Path, URI } from '@theia/core';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { FileStatWithMetadata } from '@theia/filesystem/lib/common/files';
+import { TestControllerImpl, TestItemImpl, TestRunImpl } from './test-controller';
 
 const testController = new TestControllerImpl('SampleTestController', 'Sample Test Controller');
 testController.onItemsChanged(e => {
@@ -43,7 +43,7 @@ function stringifyTransformer(key: string, value: any): any {
             uri: value.uri,
             busy: value.busy,
             canResolveChildren: value.canResolveChildren,
-            children: value.children,
+            children: value.tests,
             description: value.description,
             error: value.error
         };
@@ -63,6 +63,8 @@ export class SampleTestContribution implements TestContribution, CommandContribu
     private fileService: FileService;
 
     private usedUris = new Set<string>();
+    private nextTestId = 0;
+    private nextRunId = 0;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand({ id: 'testController.addSomeTests', label: 'Add Some Tests', category: 'Tests Sample' }, {
@@ -85,12 +87,14 @@ export class SampleTestContribution implements TestContribution, CommandContribu
                         let item = collection.get(name);
                         if (!item) {
                             item = new TestItemImpl(dirUri, name);
+                            item.label = name;
                             collection.add(item);
                         }
                         collection = item._children;
                     });
                     const meta: FileStatWithMetadata = await this.fileService.resolve(fileUri, { resolveMetadata: true });
-                    const testItem = new TestItemImpl(fileUri, 'first test');
+                    const testItem = new TestItemImpl(fileUri, `test-id-${this.nextTestId}`);
+                    testItem.label = `Test number ${this.nextTestId++}`;
                     testItem.range = {
                         start: { line: 0, character: 0 },
                         end: { line: 0, character: Math.min(10, meta.size) }
@@ -108,6 +112,34 @@ export class SampleTestContribution implements TestContribution, CommandContribu
     }
 
     registerTestControllers(service: TestService): void {
+        testController.addProfile({
+            kind: TestRunProfileKind.Run,
+            label: 'Sample run profile #1',
+            isDefault: false,
+            canConfigure: true,
+            tag: '',
+            run: (name: string, included: readonly TestItem[], excluded: readonly TestItem[]) => {
+                testController.addRun(new TestRunImpl(testController, `sample-run-id-${this.nextRunId}`, `sample-profile-1-${this.nextRunId++}`));
+            },
+            configure: function (): void {
+                console.log('configuring the sample profile 1');
+            }
+        });
+
+        testController.addProfile({
+            kind: TestRunProfileKind.Run,
+            label: 'Sample run profile #2',
+            isDefault: false,
+            canConfigure: true,
+            tag: '',
+            run: (name: string, included: readonly TestItem[], excluded: readonly TestItem[]) => {
+                testController.addRun(new TestRunImpl(testController, `sample-run-id-${this.nextRunId}`, `sample-profile-2-${this.nextRunId++}`));
+            },
+            configure: function (): void {
+                console.log('configuring the sample profile 2');
+            }
+        });
+
         service.registerTestController(testController);
     }
 }

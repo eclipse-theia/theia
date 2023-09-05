@@ -1,6 +1,6 @@
 {
   "extends": "./configs/base.tsconfig.json",
-  "include": [],
+  "include": [ ],
   "compilerOptions": {
     "composite": true,
     "allowJs": true
@@ -164,9 +164,6 @@
     },
     {
       "path": "packages/test"
-    },
-    {
-      "path": "packages/testing"
     },
     {
       "path": "packages/timeline"

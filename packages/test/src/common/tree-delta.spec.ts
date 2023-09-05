@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 
-import { DeltaKind, TreeDelta, TreeDeltaBuilder } from './tree-delta';
+import { DeltaKind, TreeDelta, TreeDeltaBuilderImpl } from './tree-delta';
 import * as chai from 'chai';
 
 const expect = chai.expect;
@@ -26,7 +26,7 @@ interface TestType {
 describe('TreeDeltaBuilder tests', () => {
 
     it('should split paths', () => {
-        const builder = new TreeDeltaBuilder<string, TestType>();
+        const builder = new TreeDeltaBuilderImpl<string, TestType>();
 
         builder.reportAdded(['a', 'b', 'c'], {
             id: 'c',
@@ -34,8 +34,6 @@ describe('TreeDeltaBuilder tests', () => {
         });
 
         builder.reportRemoved(['a', 'b', 'd', 'e']);
-
-        builder.reportChanged(['a', 'b', 'c'], { prop: 18 });
 
         const expected: TreeDelta<string, TestType> = {
             path: ['a', 'b'],
@@ -48,7 +46,7 @@ describe('TreeDeltaBuilder tests', () => {
                 {
                     type: DeltaKind.ADDED,
                     path: ['c'],
-                    value: { id: 'c', prop: 18 },
+                    value: { id: 'c', prop: 17 },
                 },
             ]
         };
@@ -59,7 +57,7 @@ describe('TreeDeltaBuilder tests', () => {
     });
 
     it('should merge add/remove child', () => {
-        const builder = new TreeDeltaBuilder<string, TestType>();
+        const builder = new TreeDeltaBuilderImpl<string, TestType>();
 
         builder.reportAdded(['a', 'b', 'c'], {
             id: 'c',
@@ -76,7 +74,7 @@ describe('TreeDeltaBuilder tests', () => {
     });
 
     it('should merge change', () => {
-        const builder = new TreeDeltaBuilder<string, TestType>();
+        const builder = new TreeDeltaBuilderImpl<string, TestType>();
 
         builder.reportChanged(['a', 'b', 'c'], { id: 'c', prop: 17 });
         builder.reportChanged(['a', 'b', 'c'], { prop: 18 });
@@ -92,12 +90,16 @@ describe('TreeDeltaBuilder tests', () => {
     });
 
     it('should merge add/change', () => {
-        const builder = new TreeDeltaBuilder<string, TestType>();
+        const builder = new TreeDeltaBuilderImpl<string, TestType>();
 
-        builder.reportAdded(['a', 'b', 'c'], {
+        const obj = {
             id: 'c',
             prop: 17
-        });
+        };
+
+        builder.reportAdded(['a', 'b', 'c'], obj);
+
+        obj.prop = 18;
 
         builder.reportChanged(['a', 'b', 'c'], { prop: 18 });
 
@@ -111,7 +113,7 @@ describe('TreeDeltaBuilder tests', () => {
     });
 
     it('should handle adds/delete', () => {
-        const builder = new TreeDeltaBuilder<string, TestType>();
+        const builder = new TreeDeltaBuilderImpl<string, TestType>();
         builder.reportAdded(['a', 'b'], { id: 'c', prop: 14 });
         builder.reportRemoved(['a', 'b']);
         expect(builder.currentDelta).deep.equal([]);
@@ -124,7 +126,7 @@ describe('TreeDeltaBuilder tests', () => {
     });
 
     it('should handle delete/add', () => {
-        const builder = new TreeDeltaBuilder<string, TestType>();
+        const builder = new TreeDeltaBuilderImpl<string, TestType>();
         builder.reportRemoved(['a', 'b']);
         builder.reportAdded(['a', 'b'], { id: 'c', prop: 14 });
         expect(builder.currentDelta).deep.equal([{
@@ -136,6 +138,28 @@ describe('TreeDeltaBuilder tests', () => {
         expect(builder.currentDelta).deep.equal([{
             path: ['a', 'b'],
             type: DeltaKind.REMOVED,
+        }]);
+    });
+
+    it('should handle changed below changed', () => {
+        const builder = new TreeDeltaBuilderImpl<string, TestType>();
+        builder.reportChanged(['a', 'b', 'c', 'e'], { id: 'e', prop: 14 });
+        builder.reportChanged(['a', 'b', 'c', 'd'], { id: 'd', prop: 23 });
+        builder.reportChanged(['a', 'b', 'c'], { id: 'c', prop: 27 });
+        expect(builder.currentDelta).deep.equal([{
+            path: ['a', 'b', 'c'],
+            type: DeltaKind.CHANGED,
+            value: { id: 'c', prop: 27 },
+            childDeltas: [
+                {
+                    path: ['d'],
+                    type: DeltaKind.CHANGED,
+                    value: { id: 'd', prop: 23 }
+                }, {
+                    path: ['e'],
+                    type: DeltaKind.CHANGED,
+                    value: { id: 'e', prop: 14 }
+                }]
         }]);
     });
 

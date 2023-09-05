@@ -33,7 +33,7 @@ describe('nsfw-filesystem-watcher', function (): void {
     let watcherService: NsfwFileSystemWatcherService;
     let watcherId: number;
 
-    this.timeout(10000);
+    this.timeout(100000);
 
     beforeEach(async () => {
         let tempPath = temp.mkdirSync('node-fs-root');

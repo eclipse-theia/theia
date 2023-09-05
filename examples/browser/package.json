@@ -51,6 +51,7 @@
     "@theia/secondary-window": "1.42.0",
     "@theia/task": "1.42.0",
     "@theia/terminal": "1.42.0",
+    "@theia/test": "1.42.0",
     "@theia/timeline": "1.42.0",
     "@theia/toolbar": "1.42.0",
     "@theia/typehierarchy": "1.42.0",

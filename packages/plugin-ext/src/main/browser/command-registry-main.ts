@@ -22,6 +22,7 @@ import { CommandRegistryMain, CommandRegistryExt, MAIN_RPC_CONTEXT } from '../..
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { KeybindingRegistry } from '@theia/core/lib/browser';
 import { PluginContributionHandler } from './plugin-contribution-handler';
+import { ArgumentProcessor } from '../../common/commands';
 
 export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable {
     private readonly proxy: CommandRegistryExt;
@@ -30,6 +31,8 @@ export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable 
     private readonly delegate: CommandRegistry;
     private readonly keyBinding: KeybindingRegistry;
     private readonly contributions: PluginContributionHandler;
+
+    private readonly argumentProcessors: ArgumentProcessor[] = [];
 
     protected readonly toDispose = new DisposableCollection();
 
@@ -42,6 +45,16 @@ export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable 
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    registerArgumentProcessor(processor: ArgumentProcessor): Disposable {
+        this.argumentProcessors.push(processor);
+        return Disposable.create(() => {
+            const index = this.argumentProcessors.lastIndexOf(processor);
+            if (index >= 0) {
+                this.argumentProcessors.splice(index, 1);
+            }
+        });
     }
 
     $registerCommand(command: theia.CommandDescription): void {
@@ -59,7 +72,7 @@ export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable 
 
     $registerHandler(id: string): void {
         this.handlers.set(id, this.contributions.registerCommandHandler(id, (...args) =>
-            this.proxy.$executeCommand(id, ...args)
+            this.proxy.$executeCommand(id, ...args.map(arg => this.argumentProcessors.reduce((currentValue, processor) => processor.processArgument(currentValue), arg)))
         ));
         this.toDispose.push(Disposable.create(() => this.$unregisterHandler(id)));
     }
