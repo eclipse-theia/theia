@@ -221,7 +221,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
         let hintMessage: string = nls.localize('theia/plugin-ext/runtimeErrorHintMessage', 'If it doesn\'t help, please check Theia server logs.');
         if (signal && signal.toUpperCase() === 'SIGKILL') {
             // May happen in case of OOM or manual force stop.
-            hintMessage = nls.localize('theia/plugin-ext/runtimeErrorAddHingMessage', 'Probably there is not enough memory for the plugins. ') + hintMessage;
+            hintMessage = nls.localize('theia/plugin-ext/runtimeMemoryError', 'Probably there is not enough memory for the plugins. ') + hintMessage;
         }
 
         this.messageService.error(message + ' ' + hintMessage, { timeout: 15 * 60 * 1000 });
