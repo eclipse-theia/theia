@@ -25,8 +25,28 @@ let toolbar: TheiaToolbar;
 test.describe('Theia Toolbar', () => {
 
     test.beforeAll(async ({ playwright, browser }) => {
-        app = await TheiaAppLoader.load({ playwright, browser });
+        let args;
+        if (process.env.USE_ELECTRON === 'true') {
+            args = {
+                playwright: playwright,
+                browser: browser,
+                useElectron: {
+                    electronAppPath: '../electron',
+                    pluginsPath: '../../plugins'
+                }
+            };
+        } else {
+            args = {
+                playwright: playwright,
+                browser: browser
+            };
+        }
+        app = await TheiaAppLoader.load(args);
         toolbar = new TheiaToolbar(app);
+    });
+
+    test.afterAll(async () => {
+        await app.page.close();
     });
 
     test('should toggle the toolbar and check visibility', async () => {

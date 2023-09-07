@@ -16,11 +16,33 @@
 
 import { expect, test } from '@playwright/test';
 import { TheiaAppLoader } from '../theia-app-loader';
+import { TheiaApp } from '../theia-app';
 
 test.describe('Theia Application', () => {
+    let app: TheiaApp;
+
+    test.afterAll(async () => {
+        await app.page.close();
+    });
 
     test('should load and should show main content panel', async ({ playwright, browser }) => {
-        const app = await TheiaAppLoader.load({ playwright, browser });
+        let args;
+        if (process.env.USE_ELECTRON === 'true') {
+            args = {
+                playwright: playwright,
+                browser: browser,
+                useElectron: {
+                    electronAppPath: '../electron',
+                    pluginsPath: '../../plugins'
+                }
+            };
+        } else {
+            args = {
+                playwright: playwright,
+                browser: browser
+            };
+        }
+        app = await TheiaAppLoader.load(args);
         expect(await app.isMainContentPanelVisible()).toBe(true);
     });
 

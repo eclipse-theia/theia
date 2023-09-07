@@ -19,7 +19,7 @@ import { PlaywrightTestConfig } from '@playwright/test';
 const config: PlaywrightTestConfig = {
     testDir: '../lib/tests',
     testMatch: ['**/*.js'],
-    workers: 2,
+    workers: 1,
     // Timeout for each test in milliseconds.
     timeout: 60 * 1000,
     use: {
@@ -32,7 +32,13 @@ const config: PlaywrightTestConfig = {
     reporter: [
         ['list'],
         ['allure-playwright']
-    ]
+    ],
+    // Reuse Theia backend on port 3000 or start instance before executing the tests
+    webServer: {
+        command: 'yarn theia:start',
+        port: 3000,
+        reuseExistingServer: true
+    }
 };
 
 export default config;

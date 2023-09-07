@@ -23,62 +23,83 @@ import { TheiaNotificationIndicator } from '../theia-notification-indicator';
 import { TheiaNotificationOverlay } from '../theia-notification-overlay';
 import { TheiaQuickCommandPalette } from '../theia-quick-command-palette';
 
-// the tests in this file reuse a page to run faster and thus are executed serially
-test.describe.configure({ mode: 'serial' });
-test.describe('Theia Quick Command', () => {
+if (process.env.USE_ELECTRON === 'true') {
+    // TODO: remove this once the test is stable enough with electron
+    test.describe.skip('Theia Quick Command', () => {});
+} else {
+    // the tests in this file reuse a page to run faster and thus are executed serially
+    test.describe.configure({ mode: 'serial' });
+    test.describe('Theia Quick Command', () => {
 
-    let app: TheiaApp;
-    let quickCommand: TheiaQuickCommandPalette;
+        let app: TheiaApp;
+        let quickCommand: TheiaQuickCommandPalette;
 
-    test.beforeAll(async ({ playwright, browser }) => {
-        app = await TheiaAppLoader.load({ playwright, browser });
-        quickCommand = app.quickCommandPalette;
+        test.beforeAll(async ({ playwright, browser }) => {
+            let args;
+            if (process.env.USE_ELECTRON === 'true') {
+                args = {
+                    playwright: playwright,
+                    browser: browser,
+                    useElectron: {
+                        electronAppPath: '../electron',
+                        pluginsPath: '../../plugins'
+                    }
+                };
+            } else {
+                args = {
+                    playwright: playwright,
+                    browser: browser
+                };
+            }
+            app = await TheiaAppLoader.load(args);
+            quickCommand = app.quickCommandPalette;
+        });
+
+        test.afterAll(async () => {
+            await app.page.close();
+        });
+
+        test('should show quick command palette', async () => {
+            await quickCommand.open();
+            expect(await quickCommand.isOpen()).toBe(true);
+            await quickCommand.hide();
+            expect(await quickCommand.isOpen()).toBe(false);
+            await quickCommand.open();
+            expect(await quickCommand.isOpen()).toBe(true);
+        });
+
+        test('should trigger \'About\' command after typing', async () => {
+            await quickCommand.open();
+            await quickCommand.type('About');
+            await quickCommand.trigger('About');
+            expect(await quickCommand.isOpen()).toBe(false);
+            const aboutDialog = new TheiaAboutDialog(app);
+            expect(await aboutDialog.isVisible()).toBe(true);
+            await aboutDialog.close();
+            expect(await aboutDialog.isVisible()).toBe(false);
+
+            await quickCommand.type('Select All');
+            await quickCommand.trigger('Select All');
+            expect(await quickCommand.isOpen()).toBe(false);
+        });
+
+        test('should trigger \'Toggle Explorer View\' command after typing', async () => {
+            await quickCommand.open();
+            await quickCommand.type('Toggle Explorer');
+            await quickCommand.trigger('Toggle Explorer View');
+            expect(await quickCommand.isOpen()).toBe(false);
+            const explorerView = new TheiaExplorerView(app);
+            expect(await explorerView.isDisplayed()).toBe(true);
+        });
+
+        test('should trigger \'Quick Input: Test Positive Integer\' command by confirming via Enter', async () => {
+            await quickCommand.type('Test Positive', true);
+            expect(await quickCommand.isOpen()).toBe(true);
+            await quickCommand.type('6', true);
+            const notificationIndicator = new TheiaNotificationIndicator(app);
+            const notification = new TheiaNotificationOverlay(app, notificationIndicator);
+            expect(await notification.isEntryVisible('Positive Integer: 6')).toBe(true);
+        });
+
     });
-
-    test.afterAll(async () => {
-        await app.page.close();
-    });
-
-    test('should show quick command palette', async () => {
-        await quickCommand.open();
-        expect(await quickCommand.isOpen()).toBe(true);
-        await quickCommand.hide();
-        expect(await quickCommand.isOpen()).toBe(false);
-        await quickCommand.open();
-        expect(await quickCommand.isOpen()).toBe(true);
-    });
-
-    test('should trigger \'About\' command after typing', async () => {
-        await quickCommand.open();
-        await quickCommand.type('About');
-        await quickCommand.trigger('About');
-        expect(await quickCommand.isOpen()).toBe(false);
-        const aboutDialog = new TheiaAboutDialog(app);
-        expect(await aboutDialog.isVisible()).toBe(true);
-        await aboutDialog.close();
-        expect(await aboutDialog.isVisible()).toBe(false);
-
-        await quickCommand.type('Select All');
-        await quickCommand.trigger('Select All');
-        expect(await quickCommand.isOpen()).toBe(false);
-    });
-
-    test('should trigger \'Toggle Explorer View\' command after typing', async () => {
-        await quickCommand.open();
-        await quickCommand.type('Toggle Explorer');
-        await quickCommand.trigger('Toggle Explorer View');
-        expect(await quickCommand.isOpen()).toBe(false);
-        const explorerView = new TheiaExplorerView(app);
-        expect(await explorerView.isDisplayed()).toBe(true);
-    });
-
-    test('should trigger \'Quick Input: Test Positive Integer\' command by confirming via Enter', async () => {
-        await quickCommand.type('Test Positive', true);
-        expect(await quickCommand.isOpen()).toBe(true);
-        await quickCommand.type('6', true);
-        const notificationIndicator = new TheiaNotificationIndicator(app);
-        const notification = new TheiaNotificationOverlay(app, notificationIndicator);
-        expect(await notification.isEntryVisible('Positive Integer: 6')).toBe(true);
-    });
-
-});
+}

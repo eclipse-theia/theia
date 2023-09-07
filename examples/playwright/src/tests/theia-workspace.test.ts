@@ -14,33 +14,57 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect, test } from '@playwright/test';
-import { TheiaAppLoader } from '../theia-app-loader';
+import { PlaywrightWorkerArgs, expect, test } from '@playwright/test';
+import { TheiaAppLoader, TheiaPlaywrightTestConfig } from '../theia-app-loader';
 import { DOT_FILES_FILTER, TheiaExplorerView } from '../theia-explorer-view';
 import { TheiaWorkspace } from '../theia-workspace';
 
 test.describe('Theia Workspace', () => {
+    let args: TheiaPlaywrightTestConfig & PlaywrightWorkerArgs;
+    let isElectron: boolean;
+    test.beforeAll(async ({ playwright, browser }) => {
+        isElectron = process.env.USE_ELECTRON === 'true';
+        if (isElectron) {
+            args = {
+                playwright: playwright,
+                browser: browser,
+                useElectron: {
+                    electronAppPath: '../electron',
+                    pluginsPath: '../../plugins'
+                }
+            };
+        } else {
+            args = {
+                playwright: playwright,
+                browser: browser
+            };
+        }
+    });
 
     test('should be initialized empty by default', async ({ playwright, browser }) => {
-        const app = await TheiaAppLoader.load({ playwright, browser });
-        const explorer = await app.openView(TheiaExplorerView);
-        const fileStatElements = await explorer.visibleFileStatNodes(DOT_FILES_FILTER);
-        expect(fileStatElements.length).toBe(0);
+        if (!isElectron) {
+            const app = await TheiaAppLoader.load(args);
+            const explorer = await app.openView(TheiaExplorerView);
+            const fileStatElements = await explorer.visibleFileStatNodes(DOT_FILES_FILTER);
+            expect(fileStatElements.length).toBe(0);
+            await app.page.close();
+        }
     });
 
     test('should be initialized with the contents of a file location', async ({ playwright, browser }) => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
-        const app = await TheiaAppLoader.load({ playwright, browser }, ws);
+        const app = await TheiaAppLoader.load(args, ws);
         const explorer = await app.openView(TheiaExplorerView);
         // resources/sample-files1 contains two folders and one file
         expect(await explorer.existsDirectoryNode('sampleFolder')).toBe(true);
         expect(await explorer.existsDirectoryNode('sampleFolderCompact')).toBe(true);
         expect(await explorer.existsFileNode('sample.txt')).toBe(true);
+        await app.page.close();
     });
 
     test('should be initialized with the contents of multiple file locations', async ({ playwright, browser }) => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1', 'src/tests/resources/sample-files2']);
-        const app = await TheiaAppLoader.load({ playwright, browser }, ws);
+        const app = await TheiaAppLoader.load(args, ws);
         const explorer = await app.openView(TheiaExplorerView);
         // resources/sample-files1 contains two folders and one file
         expect(await explorer.existsDirectoryNode('sampleFolder')).toBe(true);
@@ -48,12 +72,13 @@ test.describe('Theia Workspace', () => {
         expect(await explorer.existsFileNode('sample.txt')).toBe(true);
         // resources/sample-files2 contains one file
         expect(await explorer.existsFileNode('another-sample.txt')).toBe(true);
+        await app.page.close();
     });
 
     test('open sample.txt via file menu', async ({ playwright, browser }) => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
-        const app = await TheiaAppLoader.load({ playwright, browser }, ws);
-        const menuEntry = 'Open...';
+        const app = await TheiaAppLoader.load(args, ws);
+        const menuEntry = isElectron ? 'Open File...' : 'Open...';
 
         await (await app.menuBar.openMenu('File')).clickMenuItem(menuEntry);
         const fileDialog = await app.page.waitForSelector('div[class="dialogBlock"]');
@@ -61,10 +86,11 @@ test.describe('Theia Workspace', () => {
 
         const fileEntry = app.page.getByText('sample.txt');
         await fileEntry.click();
-        await app.page.getByRole('button', { name: 'Open' }).click();
+        await app.page.locator('#theia-dialog-shell').getByRole('button', { name: 'Open' }).click();
 
         const span = await app.page.waitForSelector('span:has-text("content line 2")');
         expect(await span.isVisible()).toBe(true);
+        await app.page.close();
     });
 
 });

@@ -264,7 +264,15 @@ export class ElectronMainApplication {
         if (browserWindow) {
             this.saveWindowState(browserWindow);
         } else {
-            console.warn(`no BrowserWindow with id: ${webContents.id}`);
+            console.warn(`no BrowserWindow wit  "theia": {
+                "frontend": {
+                  "config": {
+                    "electron": {
+                      "showWindowEarly": false
+                    }
+                  }
+                }
+              },h id: ${webContents.id}`);
         }
     }
 
@@ -277,7 +285,9 @@ export class ElectronMainApplication {
     }
 
     protected showInitialWindow(): void {
-        if (this.config.electron.showWindowEarly) {
+        if (this.config.electron.showWindowEarly &&
+            !('THEIA_ELECTRON_NO_EARLY_WINDOW' in process.env && process.env.THEIA_ELECTRON_NO_EARLY_WINDOW === '1')) {
+            console.log('Showing main window early');
             app.whenReady().then(async () => {
                 const options = await this.getLastWindowOptions();
                 this.initialWindow = await this.createWindow({ ...options });

@@ -132,6 +132,7 @@ export class ElectronLaunchOptions {
             args.push(workspace.path);
         }
         process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS = '1';
+        process.env.THEIA_ELECTRON_NO_EARLY_WINDOW = '1';
         console.log(`Launching Electron: ${executablePath} ${args.join(' ')}`);
         return { executablePath, args };
     }
@@ -139,7 +140,7 @@ export class ElectronLaunchOptions {
 
 // TODO this is just a sketch, we need a proper way to configure tests and pass this configuration to the `TheiaAppLoader`:
 
-interface TheiaPlaywrightTestConfig {
+export interface TheiaPlaywrightTestConfig {
     useElectron?: {
         /** Path to the Theia Electron app package (absolute or relative to this package). */
         electronAppPath?: string,

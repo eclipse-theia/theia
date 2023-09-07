@@ -43,7 +43,23 @@ test.describe('Theia Sample Application', () => {
     let app: TheiaSampleApp;
 
     test.beforeAll(async ({ playwright, browser }) => {
-        app = await TheiaAppLoader.load({ playwright, browser }, new TheiaWorkspace(), TheiaSampleApp);
+        let args;
+        if (process.env.USE_ELECTRON === 'true') {
+            args = {
+                playwright: playwright,
+                browser: browser,
+                useElectron: {
+                    electronAppPath: '../electron',
+                    pluginsPath: '../../plugins'
+                }
+            };
+        } else {
+            args = {
+                playwright: playwright,
+                browser: browser
+            };
+        }
+        app = await TheiaAppLoader.load(args, new TheiaWorkspace(), TheiaSampleApp);
     });
 
     test.afterAll(async () => {

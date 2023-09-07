@@ -30,7 +30,23 @@ test.describe('Theia Status Bar', () => {
     let statusBar: TheiaStatusBar;
 
     test.beforeAll(async ({ playwright, browser }) => {
-        app = await TheiaAppLoader.load({ playwright, browser });
+        let args;
+        if (process.env.USE_ELECTRON === 'true') {
+            args = {
+                playwright: playwright,
+                browser: browser,
+                useElectron: {
+                    electronAppPath: '../electron',
+                    pluginsPath: '../../plugins'
+                }
+            };
+        } else {
+            args = {
+                playwright: playwright,
+                browser: browser
+            };
+        }
+        app = await TheiaAppLoader.load(args);
         statusBar = app.statusBar;
     });
 

@@ -43,6 +43,15 @@ jobs:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
+      - name: Build Electron
+        shell: bash
+        run: |
+          yarn --skip-integrity-check --network-timeout 100000
+          yarn electron build
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+
       - name: Build Playwright
         shell: bash
         run: |
@@ -51,4 +60,4 @@ jobs:
       - name: Test (playwright)
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: yarn test:playwright
+          run: yarn --cwd examples/playwright ui-tests-ci 
