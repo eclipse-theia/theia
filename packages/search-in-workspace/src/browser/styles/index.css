@@ -38,7 +38,9 @@
 .t-siw-search-container .theia-input {
   flex: 1;
   line-height: var(--theia-content-line-height);
-  padding: 3px 0 3px 4px;
+  max-height: calc(7 * var(--theia-content-line-height));
+  min-width: 16px;
+  padding: 3px 0 0 4px;
   resize: none;
   width: 100%;
 }
@@ -309,7 +311,7 @@
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  border-radius: 3px;
+  border-radius: 5px;
 }
 
 .result-node-buttons > span:hover {

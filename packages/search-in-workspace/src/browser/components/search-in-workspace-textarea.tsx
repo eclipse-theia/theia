@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as React from '@theia/core/shared/react';
 import { Key, KeyCode } from '@theia/core/lib/browser';
+import * as React from '@theia/core/shared/react';
+import TextareaAutosize from 'react-autosize-textarea';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 interface HistoryState {
@@ -26,7 +27,6 @@ type TextareaAttributes = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
 export class SearchInWorkspaceTextArea extends React.Component<TextareaAttributes, HistoryState> {
     static LIMIT = 100;
-    static MAX_ROWS = 7;
 
     private textarea = React.createRef<HTMLTextAreaElement>();
 
@@ -36,14 +36,6 @@ export class SearchInWorkspaceTextArea extends React.Component<TextareaAttribute
             history: [],
             index: 0,
         };
-    }
-
-    override componentDidMount(): void {
-        this.resizeTextarea();
-    }
-
-    override componentDidUpdate(prevProps: Readonly<TextareaAttributes>, prevState: Readonly<HistoryState>): void {
-        this.resizeTextarea();
     }
 
     updateState(index: number, history?: string[]): void {
@@ -67,28 +59,8 @@ export class SearchInWorkspaceTextArea extends React.Component<TextareaAttribute
     set value(value: string) {
         if (this.textarea.current) {
             this.textarea.current.value = value;
-            this.resizeTextarea();
         }
     }
-
-    protected resizeTextarea(): void {
-        if (this.textarea.current) {
-            const computedStyle = window.getComputedStyle(this.textarea.current);
-            const lineHeight = parseInt(computedStyle.getPropertyValue('line-height'));
-            // Since the minimum scrollHeight of a textarea is always going to be its current height, we have
-            // to set the height to its minimum first to get an accurate scrollHeight value afterwards.
-            this.textarea.current.style.height = `${lineHeight}px`;
-            const textHeight = Math.min(
-                SearchInWorkspaceTextArea.MAX_ROWS * lineHeight,
-                this.textarea.current.scrollHeight
-                    - parseInt(computedStyle.getPropertyValue('border-bottom-width'))
-                    - parseInt(computedStyle.getPropertyValue('border-top-width'))
-                    - parseInt(computedStyle.getPropertyValue('padding-bottom'))
-                    - parseInt(computedStyle.getPropertyValue('padding-top'))
-            );
-            this.textarea.current.style.height = `${textHeight}px`;
-        }
-    };
 
     /**
      * Handle history navigation without overriding the parent's onKeyDown handler, if any.
@@ -142,7 +114,6 @@ export class SearchInWorkspaceTextArea extends React.Component<TextareaAttribute
      */
     protected readonly onChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
         this.addToHistory();
-        this.resizeTextarea();
         this.props.onChange?.(e);
     };
 
@@ -163,16 +134,20 @@ export class SearchInWorkspaceTextArea extends React.Component<TextareaAttribute
     }
 
     override render(): React.ReactNode {
+        const { onResize, ...filteredProps } = this.props;
         return (
-            <textarea
-                {...this.props}
-                onKeyDown={this.onKeyDown}
-                onChange={this.onChange}
-                spellCheck={false}
-                autoCorrect="off"
+            <TextareaAutosize
+                {...filteredProps}
                 autoCapitalize="off"
+                autoCorrect="off"
+                maxRows={7} /* from VS Code */
+                onChange={this.onChange}
+                onKeyDown={this.onKeyDown}
                 ref={this.textarea}
-            />
+                rows={1}
+                spellCheck={false}
+            >
+            </TextareaAutosize>
         );
     }
 }
