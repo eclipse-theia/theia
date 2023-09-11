@@ -16,6 +16,7 @@
 
 /* eslint-disable @typescript-eslint/indent */
 
+import { EOL } from 'os';
 import { AbstractGenerator, GeneratorOptions } from './abstract-generator';
 import { existsSync, readFileSync } from 'fs';
 
@@ -96,7 +97,7 @@ async function preload(parent) {
     container.parent = parent;
     try {
 ${Array.from(frontendPreloadModules.values(), jsModulePath => `\
-        await load(container, import('${jsModulePath}'));`).join('\n')}
+        await load(container, import('${jsModulePath}'));`).join(EOL)}
         const { Preloader } = require('@theia/core/lib/browser/preload/preloader');
         const preloader = container.get(Preloader);
         await preloader.initialize();
@@ -124,7 +125,7 @@ module.exports = (async () => {
 
     try {
 ${Array.from(frontendModules.values(), jsModulePath => `\
-        await load(container, import('${jsModulePath}'));`).join('\n')}
+        await load(container, import('${jsModulePath}'));`).join(EOL)}
         await start();
     } catch (reason) {
         console.error('Failed to start the frontend application.');
@@ -187,16 +188,7 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
 </html>`;
     }
 
-    protected compileSecondaryModuleImports(secondaryWindowModules: Map<string, string>): string {
-        const lines = Array.from(secondaryWindowModules.entries())
-            .map(([moduleName, path]) => `    container.load(require('${path}').default);`);
-        return '\n' + lines.join('\n');
-    }
-
     protected compileSecondaryIndexJs(secondaryWindowModules: Map<string, string>): string {
-        const compiledModuleImports = this.compileSecondaryModuleImports(secondaryWindowModules)
-            // fix the generated indentation
-            .replace(/^    /g, '        ');
         return `\
 // @ts-check
 require('reflect-metadata');
@@ -206,19 +198,16 @@ module.exports = Promise.resolve().then(() => {
     const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');
     const container = new Container();
     container.load(frontendApplicationModule);
-    ${compiledModuleImports}
+${Array.from(secondaryWindowModules.values(), jsModulePath => `\
+    container.load(require('${jsModulePath}').default);`).join(EOL)}
 });
 `;
     }
 
     compilePreloadJs(): string {
-        const lines = Array.from(this.pck.preloadModules)
-            .map(([moduleName, path]) => `require('${path}').preload();`);
-        const imports = '\n' + lines.join('\n');
-
         return `\
 // @ts-check
-${imports}
+${Array.from(this.pck.preloadModules.values(), path => `require('${path}').preload();`).join(EOL)}
 `;
     }
 }

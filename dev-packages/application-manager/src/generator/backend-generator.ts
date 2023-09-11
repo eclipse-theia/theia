@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { EOL } from 'os';
 import { AbstractGenerator } from './abstract-generator';
 
 export class BackendGenerator extends AbstractGenerator {
@@ -87,7 +88,7 @@ async function start() {
 module.exports = async () => {
     try {
         ${Array.from(electronMainModules?.values() ?? [], jsModulePath => `\
-        await load(container, import('${jsModulePath}'));`).join('\n')}
+        await load(container, import('${jsModulePath}'));`).join(EOL)}
         await start();
     } catch (reason) {
         console.error('Failed to start the electron application.');
@@ -147,7 +148,7 @@ async function start(port, host, argv = process.argv) {
 module.exports = async (port, host, argv) => {
     try {
 ${Array.from(backendModules.values(), jsModulePath => `\
-        await load(require('${jsModulePath}'));`).join('\n')}
+        await load(require('${jsModulePath}'));`).join(EOL)}
         return await start(port, host, argv);
     } catch (error) {
         console.error('Failed to start the backend application:');
