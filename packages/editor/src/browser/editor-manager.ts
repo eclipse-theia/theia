@@ -61,6 +61,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     protected override init(): void {
         super.init();
         this.shell.onDidChangeActiveWidget(() => this.updateActiveEditor());
+        this.shell.onDidChangeCurrentWidget(() => this.updateCurrentEditor());
         this.shell.onDidDoubleClickMainArea(() =>
             this.commands.executeCommand(CommonCommands.NEW_UNTITLED_TEXT_FILE.id)
         );
