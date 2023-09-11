@@ -115,7 +115,6 @@
 .t-siw-search-container .searchHeader .search-field-container.tooManyResults {
   border-style: solid;
   border-width: var(--theia-border-width);
-  margin: -1px;
   border-color: var(--theia-inputValidation-warningBorder);
 }
 
@@ -350,7 +349,6 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  overflow: hidden;
 }
 
 .replace-field {
