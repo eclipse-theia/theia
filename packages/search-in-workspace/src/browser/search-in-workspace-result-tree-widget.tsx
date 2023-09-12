@@ -36,7 +36,7 @@ import {
 import { CancellationTokenSource, Emitter, EOL, Event, ProgressService } from '@theia/core';
 import {
     EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane,
-    EditorWidget, EditorOpenerOptions, FindMatch
+    EditorWidget, EditorOpenerOptions, FindMatch, Position
 } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileResourceResolver, FileSystemPreferences } from '@theia/filesystem/lib/browser';
@@ -878,32 +878,16 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             const widget: EditorWidget = replaceOne ? await this.doOpen(toReplace[0]) : await this.doGetWidget(toReplace[0]);
             const source: string = widget.editor.document.getText();
 
-            const replaceOperations = toReplace.map(resultLineNode => {
-                const lineText = typeof resultLineNode.lineText === 'string' ? resultLineNode.lineText : resultLineNode.lineText.text;
-                const lines = lineText.split('\n');
-                let endCharacter = resultLineNode.character - 1 + resultLineNode.length;
-                if (lines.length > 1) {
-                    endCharacter = resultLineNode.length - lines[0].length + resultLineNode.character - lines.length;
-                    if (lines.length > 2) {
-                        for (const lineNum of Array(lines.length - 2).keys()) {
-                            endCharacter -= lines[lineNum + 1].length;
-                        }
-                    }
+            const replaceOperations = toReplace.map(resultLineNode => ({
+                text: replacementText,
+                range: {
+                    start: {
+                        line: resultLineNode.line - 1,
+                        character: resultLineNode.character - 1
+                    },
+                    end: this.findEndCharacterPosition(resultLineNode),
                 }
-                return {
-                    text: replacementText,
-                    range: {
-                        start: {
-                            line: resultLineNode.line - 1,
-                            character: resultLineNode.character - 1
-                        },
-                        end: {
-                            line: resultLineNode.line + lines.length - 2,
-                            character: endCharacter
-                        }
-                    }
-                };
-            });
+            }));
 
             // Replace the text.
             await widget.editor.replaceText({
@@ -972,6 +956,23 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 this.removeFileNode(fileNode);
             }
         }
+    }
+
+    private findEndCharacterPosition(node: SearchInWorkspaceResultLineNode): Position {
+        const lineText = typeof node.lineText === 'string' ? node.lineText : node.lineText.text;
+        const lines = lineText.split('\n');
+        const line = node.line + lines.length - 2;
+        let character = node.character - 1 + node.length;
+        if (lines.length > 1) {
+            character = node.length - lines[0].length + node.character - lines.length;
+            if (lines.length > 2) {
+                for (const lineNum of Array(lines.length - 2).keys()) {
+                    character -= lines[lineNum + 1].length;
+                }
+            }
+        }
+
+        return { line, character };
     }
 
     protected renderRootFolderNode(node: SearchInWorkspaceRootFolderNode): React.ReactNode {
@@ -1089,29 +1090,13 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             fileUri = new URI(node.fileUri);
         }
 
-        const lineText = typeof node.lineText === 'string' ? node.lineText : node.lineText.text;
-        const lines = lineText.split('\n');
-
-        let endCharacter = node.character - 1 + node.length;
-        if (lines.length > 1) {
-            endCharacter = node.length - lines[0].length + node.character - lines.length;
-            if (lines.length > 2) {
-                for (const lineNum of Array(lines.length - 2).keys()) {
-                    endCharacter -= lines[lineNum + 1].length;
-                }
-            }
-        }
-
         const opts: EditorOpenerOptions = {
             selection: {
                 start: {
                     line: node.line - 1,
                     character: node.character - 1
                 },
-                end: {
-                    line: node.line + lines.length - 2,
-                    character: endCharacter
-                }
+                end: this.findEndCharacterPosition(node),
             },
             mode: preview ? 'reveal' : 'activate',
             preview,
