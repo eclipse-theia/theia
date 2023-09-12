@@ -32,7 +32,8 @@ export interface ApplicationConfig {
 export type ElectronFrontendApplicationConfig = RequiredRecursive<ElectronFrontendApplicationConfig.Partial>;
 export namespace ElectronFrontendApplicationConfig {
     export const DEFAULT: ElectronFrontendApplicationConfig = {
-        windowOptions: {}
+        windowOptions: {},
+        showWindowEarly: true
     };
     export interface Partial {
 
@@ -42,6 +43,13 @@ export namespace ElectronFrontendApplicationConfig {
          * Defaults to `{}`.
          */
         readonly windowOptions?: BrowserWindowConstructorOptions;
+
+        /**
+         * Whether or not to show an empty Electron window as early as possible.
+         *
+         * Defaults to `true`.
+         */
+        readonly showWindowEarly?: boolean;
     }
 }
 
@@ -59,6 +67,11 @@ export namespace DefaultTheme {
             return theme.dark;
         }
         return theme.light;
+    }
+    export function defaultBackgroundColor(dark?: boolean): string {
+        // The default light background color is based on the `colors#editor.background` value from
+        // `packages/monaco/data/monaco-themes/vscode/dark_vs.json` and the dark background comes from the `light_vs.json`.
+        return dark ? '#1E1E1E' : '#FFFFFF';
     }
 }
 

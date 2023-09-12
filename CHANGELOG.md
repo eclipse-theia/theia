@@ -12,6 +12,7 @@
 - [vscode] stub TestController invalidateTestResults [#12944](https://github.com/eclipse-theia/theia/pull/12944) - Contributed by STMicroelectronics
 - [vscode] support iconPath in QuickPickItem [#12945](https://github.com/eclipse-theia/theia/pull/12945) - Contributed by STMicroelectronics
 - [vsx-registry] added a hint to extension fetching ENOTFOUND errors [#12858](https://github.com/eclipse-theia/theia/pull/12858) - Contributed by STMicroelectronics
+- [electron] Open initial electron window early to improve perceived performance [#12897](https://github.com/eclipse-theia/theia/pull/12897) - Contributed on behalf of STMicroelectronics.
 
 ## v1.41.0 - 08/31/2023
 
