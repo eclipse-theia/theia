@@ -54,41 +54,38 @@ const { Container } = require('inversify');
 const { resolve } = require('path');
 const { app } = require('electron');
 
-// Fix the window reloading issue, see: https://github.com/electron/electron/issues/22119
-app.allowRendererProcessReuse = false;
-
 const config = ${this.prettyStringify(this.pck.props.frontend.config)};
 const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true ? 'true' : 'false'};
 
-if (isSingleInstance && !app.requestSingleInstanceLock()) {
-    // There is another instance running, exit now. The other instance will request focus.
-    app.quit();
-    return;
-}
+(async () => {
+    if (isSingleInstance && !app.requestSingleInstanceLock()) {
+        // There is another instance running, exit now. The other instance will request focus.
+        app.quit();
+        return;
+    }
+    
+    const container = new Container();
+    container.load(electronMainApplicationModule);
+    container.bind(ElectronMainApplicationGlobals).toConstantValue({
+        THEIA_APP_PROJECT_PATH: resolve(__dirname, '..', '..'),
+        THEIA_BACKEND_MAIN_PATH: resolve(__dirname, 'main.js'),
+        THEIA_FRONTEND_HTML_PATH: resolve(__dirname, '..', '..', 'lib', 'frontend', 'index.html'),
+    });
+    
+    function load(raw) {
+        return Promise.resolve(raw.default).then(module =>
+            container.load(module)
+        );
+    }
+    
+    async function start() {
+        const application = container.get(ElectronMainApplication);
+        await application.start(config);
+    }
 
-const container = new Container();
-container.load(electronMainApplicationModule);
-container.bind(ElectronMainApplicationGlobals).toConstantValue({
-    THEIA_APP_PROJECT_PATH: resolve(__dirname, '..', '..'),
-    THEIA_BACKEND_MAIN_PATH: resolve(__dirname, 'main.js'),
-    THEIA_FRONTEND_HTML_PATH: resolve(__dirname, '..', '..', 'lib', 'frontend', 'index.html'),
-});
-
-function load(raw) {
-    return Promise.resolve(raw.default).then(module =>
-        container.load(module)
-    );
-}
-
-async function start() {
-    const application = container.get(ElectronMainApplication);
-    await application.start(config);
-}
-
-module.exports = async () => {
     try {
-        ${Array.from(electronMainModules?.values() ?? [], jsModulePath => `\
-        await load(container, import('${jsModulePath}'));`).join(EOL)}
+${Array.from(electronMainModules?.values() ?? [], jsModulePath => `\
+        await load(require('${jsModulePath}'));`).join(EOL)}
         await start();
     } catch (reason) {
         console.error('Failed to start the electron application.');
@@ -96,7 +93,8 @@ module.exports = async () => {
             console.error(reason);
         }
         app.quit();
-    });
+    };
+})();
 `;
     }
 
