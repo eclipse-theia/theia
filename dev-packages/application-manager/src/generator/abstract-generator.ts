@@ -59,8 +59,7 @@ export abstract class AbstractGenerator {
     }
 
     protected prettyStringify(object: object): string {
-        // eslint-disable-next-line no-null/no-null
-        return JSON.stringify(object, null, 4);
+        return JSON.stringify(object, undefined, 4);
     }
 
 }
