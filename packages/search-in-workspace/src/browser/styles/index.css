@@ -296,7 +296,6 @@
   justify-content: flex-end;
   align-items: center;
   align-self: center;
-  flex-grow: 1;
 }
 
 .theia-TreeNode:hover .result-head .notification-count-container {
