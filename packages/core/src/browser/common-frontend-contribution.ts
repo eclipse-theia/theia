@@ -428,6 +428,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     protected pinnedKey: ContextKey<boolean>;
 
     async configure(app: FrontendApplication): Promise<void> {
+        // FIXME: This request blocks valuable startup time (~200ms).
         const configDirUri = await this.environments.getConfigDirUri();
         // Global settings
         this.encodingRegistry.registerOverride({

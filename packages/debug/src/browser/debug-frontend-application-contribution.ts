@@ -473,8 +473,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         this.schemaUpdater.update();
         this.configurations.load();
-        await this.breakpointManager.load();
-        await this.watchManager.load();
+        this.breakpointManager.load();
+        this.watchManager.load();
     }
 
     onStop(): void {

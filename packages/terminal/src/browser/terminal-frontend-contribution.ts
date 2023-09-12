@@ -268,7 +268,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     }
 
     async onStart(app: FrontendApplication): Promise<void> {
-        await this.contributeDefaultProfiles();
+        this.contributeDefaultProfiles();
 
         this.terminalPreferences.onPreferenceChanged(e => {
             if (e.preferenceName.startsWith('terminal.integrated.')) {
