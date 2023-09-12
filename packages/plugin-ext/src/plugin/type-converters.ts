@@ -1212,11 +1212,12 @@ export function convertToTransferQuickPickItems(items: rpc.Item[]): rpc.Transfer
         } else if (item.kind === QuickPickItemKind.Separator) {
             return { type: 'separator', label: item.label, handle: index };
         } else {
-            const { label, description, detail, picked, alwaysShow, buttons } = item;
+            const { label, description, iconPath, detail, picked, alwaysShow, buttons } = item;
             return {
                 type: 'item',
                 label,
                 description,
+                iconPath,
                 detail,
                 picked,
                 alwaysShow,
