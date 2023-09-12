@@ -50,7 +50,8 @@ import {
     CHANNEL_SET_MENU_BAR_VISIBLE,
     CHANNEL_TOGGLE_FULL_SCREEN,
     CHANNEL_IS_MAXIMIZED,
-    CHANNEL_REQUEST_SECONDARY_CLOSE
+    CHANNEL_REQUEST_SECONDARY_CLOSE,
+    CHANNEL_SET_BACKGROUND_COLOR
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
 import { Disposable, DisposableCollection, isOSX, MaybePromise } from '../common';
@@ -151,6 +152,8 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         ipcMain.handle(CHANNEL_GET_TITLE_STYLE_AT_STARTUP, event => application.getTitleBarStyleAtStartup(event.sender));
 
         ipcMain.on(CHANNEL_SET_TITLE_STYLE, (event, style) => application.setTitleBarStyle(event.sender, style));
+
+        ipcMain.on(CHANNEL_SET_BACKGROUND_COLOR, (event, backgroundColor) => application.setBackgroundColor(event.sender, backgroundColor));
 
         ipcMain.on(CHANNEL_MINIMIZE, event => {
             BrowserWindow.fromWebContents(event.sender)?.minimize();
