@@ -59,7 +59,9 @@ export class NativeWebpackPlugin {
                     recursive: true
                 });
             }
-            await fs.promises.mkdir(directory);
+            await fs.promises.mkdir(directory, {
+                recursive: true
+            });
             const bindingsFile = await buildFile(directory, 'bindings.js', bindingsReplacement(Array.from(this.bindings.entries())));
             const ripgrepFile = await buildFile(directory, 'ripgrep.js', ripgrepReplacement(this.options.out));
             const keymappingFile = './build/Release/keymapping.node';
