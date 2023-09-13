@@ -490,6 +490,8 @@ const config = {
             module: /ws/
         }, {
             module: /express/
+        }, {
+            module: /cross-spawn/
         }
     ]
 };
