@@ -17,7 +17,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
-import * as temp from 'temp';
 
 import type { Compiler } from 'webpack';
 
@@ -38,11 +37,9 @@ export class NativeWebpackPlugin {
 
     private bindings = new Map<string, string>();
     private options: NativeWebpackPluginOptions;
-    private tracker: typeof temp;
 
     constructor(options: NativeWebpackPluginOptions) {
         this.options = options;
-        this.tracker = temp.track();
         for (const [name, value] of Object.entries(options.nativeBindings ?? {})) {
             this.nativeBinding(name, value);
         }
@@ -54,12 +51,17 @@ export class NativeWebpackPlugin {
 
     apply(compiler: Compiler): void {
         let replacements: Record<string, string> = {};
-        compiler.hooks.initialize.tap(NativeWebpackPlugin.name, () => {
-            const directory = this.tracker.mkdirSync({
-                dir: path.resolve(compiler.outputPath, 'native-webpack-plugin')
-            });
-            const bindingsFile = buildFile(directory, 'bindings.js', bindingsReplacement(Array.from(this.bindings.entries())));
-            const ripgrepFile = buildFile(directory, 'ripgrep.js', ripgrepReplacement(this.options.out));
+        compiler.hooks.initialize.tap(NativeWebpackPlugin.name, async () => {
+            const directory = path.resolve(compiler.outputPath, 'native-webpack-plugin');
+            if (fs.existsSync(directory)) {
+                await fs.promises.rm(directory, {
+                    force: true,
+                    recursive: true
+                });
+            }
+            await fs.promises.mkdir(directory);
+            const bindingsFile = await buildFile(directory, 'bindings.js', bindingsReplacement(Array.from(this.bindings.entries())));
+            const ripgrepFile = await buildFile(directory, 'ripgrep.js', ripgrepReplacement(this.options.out));
             const keymappingFile = './build/Release/keymapping.node';
             const windowsCaCertsFile = '@vscode/windows-ca-certs/build/Release/crypt32.node';
             replacements = {
@@ -90,7 +92,7 @@ export class NativeWebpackPlugin {
                 });
             }
         );
-        compiler.hooks.afterEmit.tapAsync(NativeWebpackPlugin.name, async () => {
+        compiler.hooks.afterEmit.tapPromise(NativeWebpackPlugin.name, async () => {
             await this.copyTrashHelper(compiler);
             if (this.options.ripgrep) {
                 await this.copyRipgrep(compiler);
@@ -98,10 +100,6 @@ export class NativeWebpackPlugin {
             if (this.options.pty) {
                 await this.copyNodePtySpawnHelper(compiler);
             }
-            this.tracker.cleanupSync();
-        });
-        compiler.hooks.failed.tap(NativeWebpackPlugin.name, async () => {
-            this.tracker.cleanupSync();
         });
     }
 
@@ -151,9 +149,9 @@ export class NativeWebpackPlugin {
     }
 }
 
-function buildFile(root: string, name: string, content: string): string {
+async function buildFile(root: string, name: string, content: string): Promise<string> {
     const tmpFile = path.join(root, name);
-    fs.writeFileSync(tmpFile, content);
+    await fs.promises.writeFile(tmpFile, content);
     return tmpFile;
 }
 
