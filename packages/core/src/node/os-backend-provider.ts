@@ -14,17 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as express from 'express';
 import { injectable } from 'inversify';
-import { BackendApplicationContribution } from './backend-application';
-import { OS } from '../common/os';
+import { OS, OSBackendProvider } from '../common/os';
 
 @injectable()
-export class OSBackendApplicationContribution implements BackendApplicationContribution {
-
-    configure(app: express.Application): void {
-        app.get('/os', (_, res) => {
-            res.send(OS.type());
-        });
+export class OSBackendProviderImpl implements OSBackendProvider {
+    getBackendOS(): Promise<OS.Type> {
+        return Promise.resolve(OS.type());
     }
 }

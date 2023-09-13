@@ -131,6 +131,7 @@
   },
   "theiaExtensions": [
     {
+      "frontendPreload": "lib/browser/preload/preload-module",
       "preload": "lib/electron-browser/preload"
     },
     {

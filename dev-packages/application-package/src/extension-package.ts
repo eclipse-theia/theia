@@ -20,6 +20,7 @@ import * as semver from 'semver';
 import { NpmRegistry, PublishedNodePackage, NodePackage } from './npm-registry';
 
 export interface Extension {
+    frontendPreload?: string;
     frontend?: string;
     frontendElectron?: string;
     secondaryWindow?: string;
