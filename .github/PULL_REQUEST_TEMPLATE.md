@@ -19,12 +19,12 @@ vulnerabilities.
 
 #### Follow-ups
 
-<!-- Please list potential follow-up work, including know issues, possible future work, identified technical debt and potentially introduced technical debt. If the PR introduces technical debt, specify the reason, why this is acceptable. Please create tickets and link them here. Please use the label "technical debt" for new issues when it applies. -->
+<!-- Please list potential follow-up work, including known issues, possible future work, identified technical debt, and potentially introduced technical debt. If the PR introduces technical debt, specify the reason why this is acceptable. Please create tickets and link them here. Please use the label "technical debt" for new issues when it applies. -->
 
 #### Review checklist
 
--   [ ] As an author, I have thoroughly tested my changes and carefully followed [the review guidelines](https://github.com/theia-ide/theia/blob/master/doc/pull-requests.md#requesting-a-review)
+- [ ] As an author, I have thoroughly tested my changes and carefully followed [the review guidelines](https://github.com/theia-ide/theia/blob/master/doc/pull-requests.md#requesting-a-review)
 
 #### Reminder for reviewers
 
--   As a reviewer, I agree to behave in accordance with [the review guidelines](https://github.com/theia-ide/theia/blob/master/doc/pull-requests.md#reviewing)
+- As a reviewer, I agree to behave in accordance with [the review guidelines](https://github.com/theia-ide/theia/blob/master/doc/pull-requests.md#reviewing)
