@@ -32,6 +32,11 @@ export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
             type: 'string',
             enum: ['auto', 'alwaysCollapse', 'alwaysExpand'],
         },
+        'search.quickOpen.includeHistory': {
+            description: nls.localizeByDefault('Whether to include results from recently opened files in the file results for Quick Open.'),
+            default: true,
+            type: 'boolean',
+        },
         'search.searchOnType': {
             description: nls.localizeByDefault('Search all files as you type.'),
             default: true,
