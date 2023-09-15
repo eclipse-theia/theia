@@ -22,7 +22,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { IconFontDefinition, IconContribution as Icon, IconRegistry, IconStyleSheetService } from '@theia/monaco/lib/browser/monaco-icon-registry-types';
 import * as path from 'path';
-import { IconContribution, DeployedPlugin } from '../../common/plugin-protocol';
+import { IconContribution, DeployedPlugin, IconDefinition } from '../../common/plugin-protocol';
 import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 import { UnthemedProductIconTheme } from '@theia/monaco-editor-core/esm/vs/platform/theme/browser/iconsStyleSheet';
 
@@ -38,39 +38,21 @@ export class PluginIconService implements Disposable {
     protected readonly toDispose = new DisposableCollection();
 
     styleSheet: string = '';
-
     styleElement: HTMLStyleElement;
 
     register(contribution: IconContribution, plugin: DeployedPlugin): Disposable {
         const defaultIcon = contribution.defaults;
         if (IconContribution.isIconDefinition(defaultIcon)) {
-            const location = defaultIcon.location;
-            const format = getFileExtension(location);
-            const fontId = getFontId(contribution.extensionId, location);
-            const definition = this.iconRegistry.registerIconFont(fontId, { src: [{ location: URI.file(location), format }] });
-            this.iconRegistry.registerIcon(contribution.id, {
-                fontCharacter: defaultIcon.fontCharacter,
-                font: {
-                    id: fontId,
-                    definition
-                }
-            }, contribution.description);
+            this.registerFontIcon(contribution, defaultIcon);
         } else {
-            this.iconRegistry.registerIcon(contribution.id, { id: defaultIcon.id }, contribution.description);
+            this.registerRegularIcon(contribution, defaultIcon.id);
         }
         this.updateStyle(contribution);
         return Disposable.NULL;
     }
 
     updateStyle(contribution: IconContribution): void {
-        if (!this.styleElement) {
-            const styleElement = document.createElement('style');
-            styleElement.type = 'text/css';
-            styleElement.media = 'screen';
-            styleElement.id = 'contributedIconsStyles';
-            document.head.appendChild(styleElement);
-            this.styleElement = styleElement;
-        }
+        this.updateStyleElement();
         const css = this.getCSS(contribution);
         if (css) {
             this.styleElement.innerText = css;
@@ -83,6 +65,34 @@ export class PluginIconService implements Disposable {
         this.toDispose.dispose();
     }
 
+    protected registerFontIcon(contribution: IconContribution, defaultIcon: IconDefinition): void {
+        const location = defaultIcon.location;
+        const format = getFileExtension(location);
+        const fontId = getFontId(contribution.extensionId, location);
+        const definition = this.iconRegistry.registerIconFont(fontId, { src: [{ location: URI.file(location), format }] });
+        this.iconRegistry.registerIcon(contribution.id, {
+            fontCharacter: defaultIcon.fontCharacter,
+            font: {
+                id: fontId,
+                definition
+            }
+        }, contribution.description);
+    }
+
+    protected registerRegularIcon(contribution: IconContribution, defaultIconId: string): void {
+        this.iconRegistry.registerIcon(contribution.id, { id: defaultIconId }, contribution.description);
+    }
+
+    protected updateStyleElement(): void {
+        if (!this.styleElement) {
+            const styleElement = document.createElement('style');
+            styleElement.type = 'text/css';
+            styleElement.media = 'screen';
+            styleElement.id = 'contributedIconsStyles';
+            document.head.appendChild(styleElement);
+            this.styleElement = styleElement;
+        }
+    }
     protected getCSS(iconContribution: IconContribution, themeService?: IThemeService): string | undefined {
         const iconRegistry = getIconRegistry();
         const productIconTheme = themeService ? themeService.getProductIconTheme() : new UnthemedProductIconTheme();
@@ -135,10 +145,7 @@ export class PluginIconService implements Disposable {
 
 function getIconRelativePath(iconPath: string): string {
     const index = iconPath.indexOf('extension');
-    if (index === -1) {
-        return '';
-    }
-    return iconPath.substring(index + 'extension'.length + 1);
+    return index === -1 ? '' : iconPath.substring(index + 'extension'.length + 1);
 }
 
 function getFontId(extensionId: string, fontPath: string): string {
