@@ -22,7 +22,7 @@
 import { Disposable, DisposableCollection, Emitter } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ApplicationShell } from '@theia/core/lib/browser';
-import { NotebookEditorWidget, NOTEBOOK_EDITOR_ID_PREFIX } from '../notebook-editor-widget';
+import { NotebookEditorWidget } from '../notebook-editor-widget';
 
 @injectable()
 export class NotebookEditorWidgetService implements Disposable {
@@ -33,37 +33,42 @@ export class NotebookEditorWidgetService implements Disposable {
     private readonly notebookEditors = new Map<string, NotebookEditorWidget>();
 
     private readonly onNotebookEditorAddEmitter = new Emitter<NotebookEditorWidget>();
-    private readonly onNotebookEditorsRemoveEmitter = new Emitter<NotebookEditorWidget>();
+    private readonly onNotebookEditorRemoveEmitter = new Emitter<NotebookEditorWidget>();
     readonly onDidAddNotebookEditor = this.onNotebookEditorAddEmitter.event;
-    readonly onDidRemoveNotebookEditor = this.onNotebookEditorsRemoveEmitter.event;
+    readonly onDidRemoveNotebookEditor = this.onNotebookEditorRemoveEmitter.event;
 
-    private readonly onFocusedEditorChangedEmitter = new Emitter<NotebookEditorWidget>();
-    readonly onFocusedEditorChanged = this.onFocusedEditorChangedEmitter.event;
+    private readonly onDidChangeFocusedEditorEmitter = new Emitter<NotebookEditorWidget | undefined>();
+    readonly onDidChangeFocusedEditor = this.onDidChangeFocusedEditorEmitter.event;
 
     private readonly toDispose = new DisposableCollection();
 
-    currentFocusedEditor?: NotebookEditorWidget = undefined;
+    focusedEditor?: NotebookEditorWidget = undefined;
 
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.applicationShell.onDidChangeActiveWidget(event => {
-            if (event.newValue?.id.startsWith(NOTEBOOK_EDITOR_ID_PREFIX) && event.newValue !== this.currentFocusedEditor) {
-                this.currentFocusedEditor = event.newValue as NotebookEditorWidget;
-                this.onFocusedEditorChangedEmitter.fire(this.currentFocusedEditor);
+            if (event.newValue instanceof NotebookEditorWidget && event.newValue !== this.focusedEditor) {
+                this.focusedEditor = event.newValue;
+                this.onDidChangeFocusedEditorEmitter.fire(this.focusedEditor);
+            } else {
+                this.onDidChangeFocusedEditorEmitter.fire(undefined);
             }
         }));
     }
 
     dispose(): void {
         this.onNotebookEditorAddEmitter.dispose();
-        this.onNotebookEditorsRemoveEmitter.dispose();
-        this.onFocusedEditorChangedEmitter.dispose();
+        this.onNotebookEditorRemoveEmitter.dispose();
+        this.onDidChangeFocusedEditorEmitter.dispose();
         this.toDispose.dispose();
     }
 
     // --- editor management
 
     addNotebookEditor(editor: NotebookEditorWidget): void {
+        if (this.notebookEditors.has(editor.id)) {
+            console.log('WARN: notebook editor already added previously: ' + editor.id);
+        }
         this.notebookEditors.set(editor.id, editor);
         this.onNotebookEditorAddEmitter.fire(editor);
     }
@@ -71,7 +76,9 @@ export class NotebookEditorWidgetService implements Disposable {
     removeNotebookEditor(editor: NotebookEditorWidget): void {
         if (this.notebookEditors.has(editor.id)) {
             this.notebookEditors.delete(editor.id);
-            this.onNotebookEditorsRemoveEmitter.fire(editor);
+            this.onNotebookEditorRemoveEmitter.fire(editor);
+        } else {
+            console.log('WARN: trying to remove not registered editor: ' + editor.id);
         }
     }
 

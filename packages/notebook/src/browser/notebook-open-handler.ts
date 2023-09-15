@@ -28,9 +28,8 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
 
     id: string = 'notebook';
 
-    constructor(@inject(NotebookTypeRegistry) private notebookTypeRegistry: NotebookTypeRegistry) {
-        super();
-    }
+    @inject(NotebookTypeRegistry)
+    protected notebookTypeRegistry: NotebookTypeRegistry;
 
     canHandle(uri: URI, options?: WidgetOpenerOptions | undefined): MaybePromise<number> {
         const priorities = this.notebookTypeRegistry.notebookTypes
@@ -59,7 +58,7 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
 
     protected calculatePriority(notebookType: NotebookTypeDescriptor | undefined): number {
         if (!notebookType) {
-            return -1;
+            return 0;
         }
         return notebookType.priority === 'option' ? 100 : 200;
     }

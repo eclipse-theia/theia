@@ -216,7 +216,7 @@ export abstract class NotebookKernelQuickPickServiceImpl {
 
         if (isSourcePick(pick)) {
             // selected explicitly, it should trigger the execution?
-            pick.action.run();
+            pick.action.run(this.commandService);
         }
 
         return true;
@@ -386,7 +386,7 @@ export class KernelPickerMRUStrategy extends NotebookKernelQuickPickServiceImpl 
             } else if (isSourcePick(selectedKernelPickItem)) {
                 // selected explicilty, it should trigger the execution?
                 try {
-                    await selectedKernelPickItem.action.run();
+                    await selectedKernelPickItem.action.run(this.commandService);
                     return true;
                 } catch (ex) {
                     return false;
@@ -422,12 +422,12 @@ export class KernelPickerMRUStrategy extends NotebookKernelQuickPickServiceImpl 
         const actions = await this.notebookKernelService.getKernelSourceActionsFromProviders(notebook);
         const matchResult = this.getMatchingResult(notebook);
 
-        const others = matchResult.all.filter(item => item.extension !== JUPYTER_EXTENSION_ID);
+        const others = matchResult.all.filter(item => item.extensionId !== JUPYTER_EXTENSION_ID);
         const quickPickItems: QuickPickInput<KernelQuickPickItem>[] = [];
 
         // group controllers by extension
-        for (const group of ArrayUtils.groupBy(others, (a, b) => a.extension === b.extension ? 0 : 1)) {
-            const source = group[0].extension;
+        for (const group of ArrayUtils.groupBy(others, (a, b) => a.extensionId === b.extensionId ? 0 : 1)) {
+            const source = group[0].extensionId;
             if (group.length > 1) {
                 quickPickItems.push({
                     label: source,

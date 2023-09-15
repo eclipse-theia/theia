@@ -27,7 +27,7 @@ export class URI {
         return new URI(Uri.file(path));
     }
 
-    public static isUri(uri: unknown): boolean {
+    public static isUri(uri: unknown): uri is URI {
         return Uri.isUri(uri);
     }
 

@@ -36,7 +36,7 @@ abstract class NotebookKernel {
 
     readonly id: string;
     readonly viewType: string;
-    readonly extension: string;
+    readonly extensionId: string;
 
     implementsInterrupt: boolean;
     label: string;
@@ -57,7 +57,7 @@ abstract class NotebookKernel {
     constructor(data: NotebookKernelDto, private languageService: LanguageService) {
         this.id = data.id;
         this.viewType = data.notebookType;
-        this.extension = data.extensionId;
+        this.extensionId = data.extensionId;
 
         this.implementsInterrupt = data.supportsInterrupt ?? false;
         this.label = data.label;
@@ -202,7 +202,7 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
         if (!kernel.selected || kernel.selected.id !== controllerId) {
             throw new Error(`Kernel is not selected: ${kernel.selected?.id} !== ${controllerId}`);
         }
-        const execution = this.notebookExecutionStateService.createCellExecution(uri, cellHandle);
+        const execution = this.notebookExecutionStateService.getOrCreateCellExecution(uri, cellHandle);
         execution.confirm();
         this.executions.set(handle, execution);
     }

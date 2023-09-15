@@ -25,7 +25,7 @@ export interface CellOutputWebview extends Disposable {
 
     readonly id: string;
 
-    render(): React.JSX.Element;
+    render(): React.ReactNode;
 
     attachWebview(): void;
     isAttached(): boolean

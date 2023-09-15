@@ -33,7 +33,11 @@ export interface NotebookRendererInfo {
 @injectable()
 export class NotebookRendererRegistry {
 
-    readonly notebookRenderers: NotebookRendererInfo[] = [];
+    private readonly _notebookRenderers: NotebookRendererInfo[] = [];
+
+    get notebookRenderers(): readonly NotebookRendererInfo[] {
+        return this._notebookRenderers;
+    }
 
     registerNotebookRenderer(type: NotebookRendererDescriptor, basePath: string): Disposable {
         let entrypoint;
@@ -48,14 +52,14 @@ export class NotebookRendererRegistry {
             };
         }
 
-        this.notebookRenderers.push({
+        this._notebookRenderers.push({
             ...type,
             mimeTypes: type.mimeTypes || [],
             requiresMessaging: type.requiresMessaging === 'always' || type.requiresMessaging === 'optional',
             entrypoint
         });
         return Disposable.create(() => {
-            this.notebookRenderers.splice(this.notebookRenderers.findIndex(renderer => renderer.id === type.id), 1);
+            this._notebookRenderers.splice(this._notebookRenderers.findIndex(renderer => renderer.id === type.id), 1);
         });
     }
 }

@@ -65,7 +65,7 @@ export class NotebookExecutionService {
         for (const cell of cellsArr) {
             const cellExe = this.notebookExecutionStateService.getCellExecution(cell.uri);
             if (!cellExe) {
-                cellExecutions.push([cell, this.notebookExecutionStateService.createCellExecution(notebook.uri, cell.handle)]);
+                cellExecutions.push([cell, this.notebookExecutionStateService.getOrCreateCellExecution(notebook.uri, cell.handle)]);
             }
         }
 

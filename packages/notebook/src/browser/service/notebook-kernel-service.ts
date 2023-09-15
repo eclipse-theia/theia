@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Command, CommandRegistry, Disposable, Emitter, Event, URI } from '@theia/core';
+import { Command, CommandService, Disposable, Emitter, Event, URI } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { StorageService } from '@theia/core/lib/browser';
 import { NotebookKernelSourceAction } from '../../common';
@@ -51,11 +51,8 @@ export interface NotebookKernel {
     readonly id: string;
     readonly viewType: string;
     readonly onDidChange: Event<Readonly<NotebookKernelChangeEvent>>;
-    readonly extension: string;
-
-    readonly localResourceRoot: URI;
-    readonly preloadUris: URI[];
-    readonly preloadProvides: string[];
+    // ID of the extension providing this kernel
+    readonly extensionId: string;
 
     label: string;
     description?: string;
@@ -86,16 +83,16 @@ export interface NotebookTextModelLike { uri: URI; viewType: string }
 
 class KernelInfo {
 
-    private static logicClock = 0;
+    private static instanceCounter = 0;
 
+    score: number;
     readonly kernel: NotebookKernel;
-    public score: number;
-    readonly time: number;
+    readonly handle: number;
 
     constructor(kernel: NotebookKernel) {
         this.kernel = kernel;
         this.score = -1;
-        this.time = KernelInfo.logicClock++;
+        this.handle = KernelInfo.instanceCounter++;
     }
 }
 
@@ -116,27 +113,25 @@ export class SourceCommand implements Disposable {
     readonly onDidChangeState = this.onDidChangeStateEmitter.event;
 
     constructor(
-        readonly commandRegistry: CommandRegistry,
         readonly command: Command,
         readonly model: NotebookTextModelLike,
-        readonly isPrimary: boolean
     ) { }
 
-    async run(): Promise<void> {
+    async run(commandService: CommandService): Promise<void> {
         if (this.execution) {
             return this.execution;
         }
 
-        this.execution = this.runCommand();
+        this.execution = this.runCommand(commandService);
         this.onDidChangeStateEmitter.fire();
         await this.execution;
         this.execution = undefined;
         this.onDidChangeStateEmitter.fire();
     }
 
-    private async runCommand(): Promise<void> {
+    private async runCommand(commandService: CommandService): Promise<void> {
         try {
-            await this.commandRegistry.executeCommand(this.command.id, {
+            await commandService.executeCommand(this.command.id, {
                 uri: this.model.uri,
             });
 
@@ -196,7 +191,7 @@ export class NotebookKernelService implements Disposable {
 
     registerKernel(kernel: NotebookKernel): Disposable {
         if (this.kernels.has(kernel.id)) {
-            throw new Error(`NOTEBOOK CONTROLLER with id '${kernel.id}' already exists`);
+            throw new Error(`Notebook Controller with id '${kernel.id}' already exists`);
         }
 
         this.kernels.set(kernel.id, new KernelInfo(kernel));
