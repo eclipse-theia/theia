@@ -592,6 +592,12 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         this._state = state;
     }
 
+    setIframeHeight(height: number): void {
+        if (this.element) {
+            this.element.style.height = `${height}px`;
+        }
+    }
+
     protected async doSend(channel: string, data?: any): Promise<void> {
         if (!this.element) {
             return;

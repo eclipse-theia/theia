@@ -139,6 +139,7 @@ export class EditorsAndDocumentsMain implements Disposable {
             uri: model.textEditorModel.uri,
             versionId: model.textEditorModel.getVersionId(),
             lines: model.textEditorModel.getLinesContent(),
+            languageId: model.getLanguageId(),
             EOL: model.textEditorModel.getEOL(),
             modeId: model.languageId,
             isDirty: model.dirty

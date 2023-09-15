@@ -26,12 +26,7 @@ process.on('unhandledRejection', (reason, promise) => {
     throw reason;
 });
 
-export interface Address {
-    readonly port: number;
-    readonly address: string;
-}
-
-export async function start(serverModule: MaybePromise<http.Server | https.Server>): Promise<Address> {
+export async function start(serverModule: MaybePromise<http.Server | https.Server>): Promise<AddressInfo> {
     const server = await serverModule;
     return server.address() as AddressInfo;
 }

@@ -32,6 +32,7 @@ import {
     LanguagesExt,
     WorkspaceEditDto,
     WorkspaceTextEditDto,
+    WorkspaceFileEditDto,
     PluginInfo,
     LanguageStatus as LanguageStatusDTO,
     InlayHintDto,
@@ -1418,13 +1419,15 @@ export function toMonacoWorkspaceEdit(data: WorkspaceEditDto | undefined): monac
                     metadata: edit.metadata
                 };
             } else {
+                const fileEdit = edit as WorkspaceFileEditDto;
                 return <monaco.languages.IWorkspaceFileEdit>{
-                    newResource: monaco.Uri.revive(edit.newResource),
-                    oldResource: monaco.Uri.revive(edit.oldResource),
-                    options: edit.options,
-                    metadata: edit.metadata
+                    newResource: monaco.Uri.revive(fileEdit.newResource),
+                    oldResource: monaco.Uri.revive(fileEdit.oldResource),
+                    options: fileEdit.options,
+                    metadata: fileEdit.metadata
                 };
             }
+            // TODO implement WorkspaceNotebookCellEditDto
         })
     };
 }

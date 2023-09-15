@@ -36,7 +36,7 @@ import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model
 import { EditorModelService } from '../text-editor-model-service';
 import { CustomEditorService } from './custom-editor-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { UndoRedoService } from './undo-redo-service';
+import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
 import { WebviewsMainImpl } from '../webviews-main';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { ApplicationShell, DefaultUriLabelProviderContribution, Saveable, SaveOptions, WidgetOpenerOptions } from '@theia/core/lib/browser';

@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2019 Red Hat, Inc. and others.
+// Copyright (C) 2023 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,12 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Disposable } from '@theia/core';
+import { NotebookCellModel } from '../view-model/notebook-cell-model';
 
-declare module 'macaddress' {
-    export type MacAddresCallback = (err: any, data: any) => void;
-    export type MacAddressOneCallback = (err: any, mac: string) => void;
-    export function one(ifaceOrCallback: string | MacAddressOneCallback, callback?: MacAddressOneCallback): void;
-    export function all(callback: MacAddresCallback): void;
-    export function networkInterfaces(): any;
+export const CellOutputWebviewFactory = Symbol('outputWebviewFactory');
+
+export type CellOutputWebviewFactory = (cell: NotebookCellModel) => Promise<CellOutputWebview>;
+
+export interface CellOutputWebview extends Disposable {
+
+    readonly id: string;
+
+    render(): React.JSX.Element;
+
+    attachWebview(): void;
+    isAttached(): boolean
 }

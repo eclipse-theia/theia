@@ -19,23 +19,24 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import { NamedProblemPattern, ProblemLocationKind, ProblemPattern, ProblemPatternContribution } from '../common';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 
 @injectable()
 export class ProblemPatternRegistry {
     private readonly patterns = new Map<string, NamedProblemPattern | NamedProblemPattern[]>();
-    private readyPromise: Promise<void>;
+    private readyPromise = new Deferred<void>();
 
     @postConstruct()
     protected init(): void {
         this.fillDefaults();
-        this.readyPromise = new Promise<void>((res, rej) => res(undefined));
+        this.readyPromise.resolve();
     }
 
     onReady(): Promise<void> {
-        return this.readyPromise;
+        return this.readyPromise.promise;
     }
 
     /**

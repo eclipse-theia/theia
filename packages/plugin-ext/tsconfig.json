@@ -54,6 +54,9 @@
       "path": "../navigator"
     },
     {
+      "path": "../notebook"
+    },
+    {
       "path": "../output"
     },
     {

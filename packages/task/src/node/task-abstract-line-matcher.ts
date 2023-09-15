@@ -26,10 +26,9 @@ import {
     ProblemMatch, ProblemMatchData, ProblemLocationKind
 } from '../common/problem-matcher-protocol';
 import URI from '@theia/core/lib/common/uri';
-// TODO use only URI from '@theia/core'
-import { URI as vscodeURI } from '@theia/core/shared/vscode-uri';
 import { Severity } from '@theia/core/lib/common/severity';
 import { MAX_SAFE_INTEGER } from '@theia/core/lib/common/numbers';
+import { join } from 'path';
 
 const endOfLine: string = EOL;
 
@@ -247,7 +246,7 @@ export abstract class AbstractLineMatcher {
         return Severity.toDiagnosticSeverity(result);
     }
 
-    private getResource(filename: string, matcher: ProblemMatcher): vscodeURI {
+    private getResource(filename: string, matcher: ProblemMatcher): URI {
         const kind = matcher.fileLocation;
         let fullPath: string | undefined;
         if (kind === FileLocationKind.Absolute) {
@@ -257,19 +256,15 @@ export abstract class AbstractLineMatcher {
             if (relativeFileName.startsWith('./')) {
                 relativeFileName = relativeFileName.slice(2);
             }
-            fullPath = new URI(matcher.filePrefix).resolve(relativeFileName).path.toString();
+            fullPath = join(matcher.filePrefix, relativeFileName);
         }
         if (fullPath === undefined) {
             throw new Error('FileLocationKind is not actionable. Does the matcher have a filePrefix? This should never happen.');
         }
-        fullPath = fullPath.replace(/\\/g, '/');
-        if (fullPath[0] !== '/') {
-            fullPath = '/' + fullPath;
-        }
         if (matcher.uriProvider !== undefined) {
             return matcher.uriProvider(fullPath);
         } else {
-            return vscodeURI.file(fullPath);
+            return URI.fromFilePath(fullPath);
         }
     }
 

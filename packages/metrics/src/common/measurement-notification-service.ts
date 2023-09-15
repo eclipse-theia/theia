@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2022 TypeFox and others.
+// Copyright (C) 2023 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,17 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as express from 'express';
-import { injectable } from 'inversify';
-import { BackendApplicationContribution } from './backend-application';
-import { OS } from '../common/os';
+import { MeasurementResult } from '@theia/core';
 
-@injectable()
-export class OSBackendApplicationContribution implements BackendApplicationContribution {
+export const measurementNotificationServicePath = '/services/measurement-notification';
 
-    configure(app: express.Application): void {
-        app.get('/os', (_, res) => {
-            res.send(OS.type());
-        });
-    }
+export const MeasurementNotificationService = Symbol('MeasurementNotificationService');
+export interface MeasurementNotificationService {
+    /**
+     * Notify the backend when a fronted stopwatch provides a new measurement.
+     * @param frontendId The unique id associated with the frontend that sends the notification
+     * @param result The new measurement result
+     */
+    onFrontendMeasurement(frontendId: string, result: MeasurementResult): void;
 }

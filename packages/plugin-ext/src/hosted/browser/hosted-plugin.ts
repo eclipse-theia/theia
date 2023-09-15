@@ -69,6 +69,7 @@ import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
 import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
+import { NotebookTypeRegistry, NotebookService } from '@theia/notebook/lib/browser';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
@@ -114,6 +115,9 @@ export class HostedPluginSupport {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(NotebookService)
+    protected readonly notebookService: NotebookService;
+
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
 
@@ -131,6 +135,9 @@ export class HostedPluginSupport {
 
     @inject(FrontendApplicationStateService)
     protected readonly appState: FrontendApplicationStateService;
+
+    @inject(NotebookTypeRegistry)
+    protected readonly notebookTypeRegistry: NotebookTypeRegistry;
 
     @inject(PluginViewRegistry)
     protected readonly viewRegistry: PluginViewRegistry;
@@ -216,6 +223,7 @@ export class HostedPluginSupport {
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
         this.fileService.onWillActivateFileSystemProvider(event => this.ensureFileSystemActivation(event));
         this.customEditorRegistry.onWillOpenCustomEditor(event => this.activateByCustomEditor(event));
+        this.notebookService.onWillOpenNotebook(async event => this.activateByNotebook(event));
 
         this.widgets.onDidCreateWidget(({ factoryId, widget }) => {
             if ((factoryId === WebviewWidget.FACTORY_ID || factoryId === CustomEditorWidget.FACTORY_ID) && widget instanceof WebviewWidget) {
@@ -304,8 +312,6 @@ export class HostedPluginSupport {
         await this.startPlugins(contributionsByHost, toDisconnect);
 
         this.deferredDidStart.resolve();
-
-        this.restoreWebviews();
     }
 
     /**
@@ -623,6 +629,10 @@ export class HostedPluginSupport {
         await this.activateByEvent(`onCustomEditor:${viewType}`);
     }
 
+    async activateByNotebook(viewType: string): Promise<void> {
+        await this.activateByEvent(`onNotebook:${viewType}`);
+    }
+
     activateByFileSystem(event: FileSystemProviderActivationEvent): Promise<void> {
         return this.activateByEvent(`onFileSystem:${event.scheme}`);
     }
@@ -757,7 +767,7 @@ export class HostedPluginSupport {
         return `${plugins} plugin${plugins === 1 ? '' : 's'}`;
     }
 
-    protected readonly webviewsToRestore = new Set<WebviewWidget>();
+    protected readonly webviewsToRestore = new Map<string, WebviewWidget>();
     protected readonly webviewRevivers = new Map<string, (webview: WebviewWidget) => Promise<void>>();
 
     registerWebviewReviver(viewType: string, reviver: (webview: WebviewWidget) => Promise<void>): void {
@@ -765,6 +775,10 @@ export class HostedPluginSupport {
             throw new Error(`Reviver for ${viewType} already registered`);
         }
         this.webviewRevivers.set(viewType, reviver);
+
+        if (this.webviewsToRestore.has(viewType)) {
+            this.restoreWebview(this.webviewsToRestore.get(viewType) as WebviewWidget);
+        }
     }
 
     unregisterWebviewReviver(viewType: string): void {
@@ -785,21 +799,14 @@ export class HostedPluginSupport {
     }
 
     protected preserveWebview(webview: WebviewWidget): void {
-        if (!this.webviewsToRestore.has(webview)) {
-            this.webviewsToRestore.add(webview);
-            webview.disposed.connect(() => this.webviewsToRestore.delete(webview));
+        if (!this.webviewsToRestore.has(webview.viewType)) {
+            this.activateByEvent(`onWebviewPanel:${webview.viewType}`);
+            this.webviewsToRestore.set(webview.viewType, webview);
+            webview.disposed.connect(() => this.webviewsToRestore.delete(webview.viewType));
         }
-    }
-
-    protected restoreWebviews(): void {
-        for (const webview of this.webviewsToRestore) {
-            this.restoreWebview(webview);
-        }
-        this.webviewsToRestore.clear();
     }
 
     protected async restoreWebview(webview: WebviewWidget): Promise<void> {
-        await this.activateByEvent(`onWebviewPanel:${webview.viewType}`);
         const restore = this.webviewRevivers.get(webview.viewType);
         if (restore) {
             try {

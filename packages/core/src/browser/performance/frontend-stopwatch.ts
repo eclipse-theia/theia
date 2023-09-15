@@ -40,6 +40,7 @@ export class FrontendStopwatch extends Stopwatch {
             performance.mark(endMarker);
 
             let duration: number;
+            let startTime: number;
 
             try {
                 performance.measure(name, startMarker, endMarker);
@@ -47,16 +48,18 @@ export class FrontendStopwatch extends Stopwatch {
                 const entries = performance.getEntriesByName(name);
                 // If no entries, then performance measurement was disabled or failed, so
                 // signal that with a `NaN` result
-                duration = entries.length > 0 ? entries[0].duration : Number.NaN;
+                duration = entries[0].duration ?? Number.NaN;
+                startTime = entries[0].startTime ?? Number.NaN;
             } catch (e) {
                 console.warn(e);
                 duration = Number.NaN;
+                startTime = Number.NaN;
             }
 
             performance.clearMeasures(name);
             performance.clearMarks(startMarker);
             performance.clearMarks(endMarker);
-            return duration;
+            return { startTime, duration };
         }, options);
     }
 };

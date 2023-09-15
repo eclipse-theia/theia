@@ -1,0 +1,51 @@
+{
+  "name": "@theia/notebook",
+  "version": "1.41.0",
+  "description": "Theia - Notebook Extension",
+  "dependencies": {
+    "@theia/core": "1.41.0",
+    "@theia/editor": "1.41.0",
+    "@theia/filesystem": "1.41.0",
+    "@theia/monaco": "1.41.0",
+    "uuid": "^8.3.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/notebook-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "theiaext build",
+    "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "docs": "theiaext docs",
+    "lint": "theiaext lint",
+    "watch": "theiaext watch"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.41.0",
+    "@types/vscode-notebook-renderer": "^1.72.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

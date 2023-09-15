@@ -113,6 +113,7 @@
       }
     },
     "filesystem": {
+      "copiedToClipboard": "ダウンロードリンクをクリップボードにコピー。",
       "copyDownloadLink": "コピー・ダウンロード・リンク",
       "dialog": {
         "initialLocation": "初期位置へ移動",
@@ -142,7 +143,10 @@
     "getting-started": {
       "apiComparator": "{0} API互換性",
       "newExtension": "新しいエクステンションの構築",
-      "newPlugin": "新しいプラグインの構築"
+      "newPlugin": "新しいプラグインの構築",
+      "startup-editor": {
+        "welcomePage": "{0} とエクステンションを使い始めるのに役立つコンテンツを含む、ようこそページを開きます。"
+      }
     },
     "git": {
       "aFewSecondsAgo": "さきほど",

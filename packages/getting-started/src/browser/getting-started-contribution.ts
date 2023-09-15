@@ -15,10 +15,13 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { CommandRegistry, MenuModelRegistry } from '@theia/core/lib/common';
-import { CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication, NavigatableWidget, PreferenceService } from '@theia/core/lib/browser';
+import { ArrayUtils, CommandRegistry, MenuModelRegistry } from '@theia/core/lib/common';
+import { CommonCommands, CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication, PreferenceService } from '@theia/core/lib/browser';
+import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { GettingStartedWidget } from './getting-started-widget';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+import { PreviewContribution } from '@theia/preview/lib/browser/preview-contribution';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 /**
@@ -32,14 +35,26 @@ export const GettingStartedCommand = {
 @injectable()
 export class GettingStartedContribution extends AbstractViewContribution<GettingStartedWidget> implements FrontendApplicationContribution {
 
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
+
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
+    @inject(PreviewContribution)
+    protected readonly previewContribution: PreviewContribution;
+
     @inject(FrontendApplicationStateService)
     protected readonly stateService: FrontendApplicationStateService;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
-
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
 
     constructor() {
         super({
@@ -52,17 +67,47 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
     }
 
     async onStart(app: FrontendApplication): Promise<void> {
-        this.stateService.reachedState('ready').then(() => {
-            const editors = this.shell.widgets.filter((widget): widget is NavigatableWidget => NavigatableWidget.is(widget));
-            if (editors.length === 0) {
-                this.preferenceService.ready.then(() => {
-                    const showWelcomePage: boolean = this.preferenceService.get('welcome.alwaysShowWelcomePage', true);
-                    if (showWelcomePage) {
+        this.stateService.reachedState('ready').then(async () => {
+            if (this.editorManager.all.length === 0) {
+                await this.preferenceService.ready;
+                const startupEditor = this.preferenceService.get('workbench.startupEditor');
+                switch (startupEditor) {
+                    case 'welcomePage':
                         this.openView({ reveal: true, activate: true });
-                    }
-                });
+                        break;
+                    case 'welcomePageInEmptyWorkbench':
+                        if (!this.workspaceService.opened) {
+                            this.openView({ reveal: true, activate: true });
+                        }
+                        break;
+                    case 'newUntitledFile':
+                        this.commandRegistry.executeCommand(CommonCommands.NEW_UNTITLED_TEXT_FILE.id);
+                        break;
+                    case 'readme':
+                        await this.openReadme();
+                        break;
+                }
             }
         });
+    }
+
+    protected async openReadme(): Promise<void> {
+        const roots = await this.workspaceService.roots;
+        const readmes = await Promise.all(roots.map(async folder => {
+            const folderStat = await this.fileService.resolve(folder.resource);
+            const fileArr = folderStat?.children?.sort((a, b) => a.name.localeCompare(b.name)) || [];
+            const filePath = fileArr.find(file => file.name.toLowerCase() === 'readme.md') || fileArr.find(file => file.name.toLowerCase().startsWith('readme'));
+            return filePath?.resource;
+        }));
+        const validReadmes = ArrayUtils.coalesce(readmes);
+        if (validReadmes.length) {
+            for (const readme of validReadmes) {
+                await this.previewContribution.open(readme);
+            }
+        } else {
+            // If no readme is found, show the welcome page.
+            this.openView({ reveal: true, activate: true });
+        }
     }
 
     override registerCommands(registry: CommandRegistry): void {
