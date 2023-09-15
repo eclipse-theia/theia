@@ -36,8 +36,6 @@ export class IconThemeApplicationContribution implements FrontendApplicationCont
     protected readonly iconThemeContributions: ContributionProvider<IconThemeContribution>;
 
     async onStart(): Promise<void> {
-        console.log('**** alvs, IconThemeApplicationContribution onStart');
-
         for (const contribution of this.iconThemeContributions.getContributions()) {
             await contribution.registerIconThemes(this.iconThemes);
         }

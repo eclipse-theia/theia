@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { asCSSPropertyValue } from '@theia/monaco-editor-core/esm/vs/base/browser/dom';
-import { Endpoint, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { Disposable } from '@theia/core/lib/common/disposable';
+import { Endpoint } from '@theia/core/lib/browser';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { getIconRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/iconRegistry';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { URI } from '@theia/core/shared/vscode-uri';
@@ -27,7 +27,7 @@ import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/c
 import { UnthemedProductIconTheme } from '@theia/monaco-editor-core/esm/vs/platform/theme/browser/iconsStyleSheet';
 
 @injectable()
-export class PluginIconService implements Disposable, FrontendApplicationContribution {
+export class PluginIconService implements Disposable {
 
     @inject(IconRegistry)
     protected readonly iconRegistry: IconRegistry;
@@ -35,20 +35,11 @@ export class PluginIconService implements Disposable, FrontendApplicationContrib
     @inject(IconStyleSheetService)
     protected readonly iconStyleSheetService: IconStyleSheetService;
 
+    protected readonly toDispose = new DisposableCollection();
+
     styleSheet: string = '';
 
     styleElement: HTMLStyleElement;
-
-    // @inject(ContributionProvider)
-    // protected readonly iconContributions: ContributionProvider<IconContribution>;
-
-    async onStart(): Promise<void> {
-        console.log('**** alvs, PluginIconService onStart');
-        // NOTE: The registration of the following icons is performed by the icon registry by default
-        // this.iconRegistry.registerIcon('goto-previous-location', { id: 'arrow-up'}, 'Icon for goto previous editor location.');
-        // this.iconRegistry.registerIcon('goto-next-location', { id: 'arrowDown'}, 'Icon for goto next editor location.');
-
-    }
 
     register(contribution: IconContribution, plugin: DeployedPlugin): Disposable {
         const defaultIcon = contribution.defaults;
@@ -67,7 +58,6 @@ export class PluginIconService implements Disposable, FrontendApplicationContrib
         } else {
             this.iconRegistry.registerIcon(contribution.id, { id: defaultIcon.id }, contribution.description);
         }
-        console.warn('**** alvs, iconContributionr registered: ', contribution.id);
         this.updateStyle(contribution);
         return Disposable.NULL;
     }
@@ -85,11 +75,12 @@ export class PluginIconService implements Disposable, FrontendApplicationContrib
         if (css) {
             this.styleElement.innerText = css;
         }
-        // const toRemoveStyleElement = Disposable.create(() => this.styleElement.remove());
+        const toRemoveStyleElement = Disposable.create(() => this.styleElement.remove());
+        this.toDispose.push(toRemoveStyleElement);
     }
 
     dispose(): void {
-        // Implement me
+        this.toDispose.dispose();
     }
 
     protected getCSS(iconContribution: IconContribution, themeService?: IThemeService): string | undefined {

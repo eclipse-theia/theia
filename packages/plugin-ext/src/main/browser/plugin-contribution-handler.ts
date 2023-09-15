@@ -33,6 +33,7 @@ import {
     RegExpOptions,
     IconContribution
 } from '../../common';
+import { getPluginId } from '../../common/plugin-protocol';
 import {
     DefaultUriLabelProviderContribution,
     LabelProviderContribution,
