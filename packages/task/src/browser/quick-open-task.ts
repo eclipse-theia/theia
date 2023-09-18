@@ -350,9 +350,12 @@ export class QuickOpenTask implements QuickAccessProvider {
 
     async runBuildOrTestTask(buildOrTestType: 'build' | 'test'): Promise<void> {
         const shouldRunBuildTask = buildOrTestType === 'build';
-        const token: number = this.taskService.startUserAction();
 
-        await this.doInit(token);
+        const token: number = this.taskService.startUserAction();
+        const isMulti: boolean = this.workspaceService.isMultiRootWorkspaceOpened;
+        const providedTasks = await this.taskService.getProvidedTasks(token, '*');
+        const providedTasksItems = this.getItems(providedTasks, buildOrTestType + ' tasks', token, isMulti);
+        this.items = providedTasksItems;
 
         const taskItems = this.getTaskItems();
 
