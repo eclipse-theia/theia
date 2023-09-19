@@ -16,19 +16,14 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { CommandContribution, MenuContribution } from '@theia/core';
-import { FrontendApplicationContribution, KeybindingContext, KeybindingContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
 import { ConsoleContribution } from './console-contribution';
 import { ConsoleManager } from './console-manager';
-import { ConsoleInputFocusContext, ConsoleNavigationBackEnabled, ConsoleNavigationForwardEnabled, ConsoleContentFocusContext } from './console-keybinding-contexts';
 
 import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
     bind(ConsoleManager).toSelf().inSingletonScope();
-    bind(KeybindingContext).to(ConsoleInputFocusContext).inSingletonScope();
-    bind(KeybindingContext).to(ConsoleContentFocusContext).inSingletonScope();
-    bind(KeybindingContext).to(ConsoleNavigationBackEnabled).inSingletonScope();
-    bind(KeybindingContext).to(ConsoleNavigationForwardEnabled).inSingletonScope();
     bind(ConsoleContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ConsoleContribution);
     bind(CommandContribution).toService(ConsoleContribution);
