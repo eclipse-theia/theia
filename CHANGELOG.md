@@ -4,6 +4,10 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.42.0
+
+- [vsx-registry] added a hint to extension fetching ENOTFOUND errors [#12858](https://github.com/eclipse-theia/theia/pull/12858) - Contributed by STMicroelectronics
+
 ## v1.41.0 - 08/31/2023
 
 - [application-package] added handling to quit the electron app when the backend fails to start [#12778](https://github.com/eclipse-theia/theia/pull/12778) - Contributed on behalf of STMicroelectronics.
