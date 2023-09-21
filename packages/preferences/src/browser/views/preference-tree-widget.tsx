@@ -24,6 +24,7 @@ import {
 } from '@theia/core/lib/browser';
 import React = require('@theia/core/shared/react');
 import { PreferenceTreeModel, PreferenceTreeNodeRow, PreferenceTreeNodeProps } from '../preference-tree-model';
+import { Preference } from '../util/preference-types';
 
 @injectable()
 export class PreferencesTreeWidget extends TreeWidget {
@@ -84,7 +85,10 @@ export class PreferencesTreeWidget extends TreeWidget {
 
     protected override toNodeName(node: TreeNode): string {
         const visibleChildren = this.model.currentRows.get(node.id)?.visibleChildren;
-        const baseName = this.labelProvider.getName(node);
+        let baseName = this.labelProvider.getName(node);
+        if (Preference.CompositeTreeNode.is(node)) {
+            baseName = node.title ?? baseName;
+        }
         const printedNameWithVisibleChildren = this.model.isFiltered && visibleChildren !== undefined
             ? `${baseName} (${visibleChildren})`
             : baseName;

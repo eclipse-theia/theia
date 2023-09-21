@@ -165,6 +165,8 @@ export class TheiaPluginScanner implements PluginScanner {
                 for (const c of configurations) {
                     const config = this.readConfiguration(c, rawPlugin.packagePath);
                     if (config) {
+                        const keys = Object.keys(config.properties);
+                        keys.forEach(key => { config.properties[key].title = config.title; });
                         contributions.configuration.push(config);
                     }
                 }

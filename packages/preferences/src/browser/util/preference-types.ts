@@ -60,6 +60,11 @@ export namespace Preference {
 
     export interface CompositeTreeNode extends BaseCompositeTreeNode {
         depth: number;
+        title?: string;
+    }
+
+    export namespace CompositeTreeNode {
+        export const is = (node: BaseTreeNode): node is CompositeTreeNode => 'depth' in node && 'title' in node;
     }
 
     export interface LeafNode extends BaseTreeNode {
