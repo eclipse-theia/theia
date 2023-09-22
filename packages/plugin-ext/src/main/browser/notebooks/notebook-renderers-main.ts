@@ -32,7 +32,7 @@ export class NotebookRenderersMainImpl implements NotebookRenderersMain {
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT);
         this.rendererMessagingService = container.get(NotebookRendererMessagingService);
-        this.rendererMessagingService.onShouldPostMessage(e => {
+        this.rendererMessagingService.onPostMessage(e => {
             this.proxy.$postRendererMessage(e.editorId, e.rendererId, e.message);
         });
     }

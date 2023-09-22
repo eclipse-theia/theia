@@ -131,7 +131,7 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
     }
 
     async $tryCreateNotebook(options: { viewType: string; content?: NotebookDataDto }): Promise<UriComponents> {
-        const ref = await this.notebookModelResolverService.resolve({ untitledResource: undefined }, options.viewType);
+        const ref = await this.notebookModelResolverService.resolveUntitledResource({ untitledResource: undefined }, options.viewType);
 
         // untitled notebooks are disposed when they get saved. we should not hold a reference
         // to such a disposed notebook and therefore dispose the reference as well

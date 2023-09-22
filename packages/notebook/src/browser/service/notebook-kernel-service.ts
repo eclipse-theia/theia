@@ -75,10 +75,6 @@ export interface INotebookProxyKernelChangeEvent extends NotebookKernelChangeEve
     connectionState?: true;
 }
 
-export interface NotebookKernelDetectionTask {
-    readonly notebookType: string;
-}
-
 export interface NotebookTextModelLike { uri: URI; viewType: string }
 
 class KernelInfo {
@@ -160,7 +156,7 @@ export class NotebookKernelService implements Disposable {
 
     private notebookBindings: { [key: string]: string } = {};
 
-    private readonly kernelDetectionTasks = new Map<string, NotebookKernelDetectionTask[]>();
+    private readonly kernelDetectionTasks = new Map<string, string[]>();
     private readonly onDidChangeKernelDetectionTasksEmitter = new Emitter<string>();
     readonly onDidChangeKernelDetectionTasks = this.onDidChangeKernelDetectionTasksEmitter.event;
 
@@ -210,6 +206,15 @@ export class NotebookKernelService implements Disposable {
         });
     }
 
+    /**
+     * Helps to find the best matching kernel for a notebook.
+     * @param notebook notebook to get the matching kernel for
+     * @returns and object containing:
+     *  all kernels sorted to match the notebook best first (affinity ascending, score descending, label))
+     *  the selected kernel (if any)
+     *  specificly suggested kernels (if any)
+     *  hidden kernels (if any)
+     */
     getMatchingKernel(notebook: NotebookTextModelLike): NotebookKernelMatchResult {
         const kernels: { kernel: NotebookKernel; instanceAffinity: number; score: number }[] = [];
         for (const info of this.kernels.values()) {
@@ -264,10 +269,10 @@ export class NotebookKernelService implements Disposable {
     }
 
     private static score(kernel: NotebookKernel, notebook: NotebookTextModelLike): number {
-        if (kernel.viewType === '*') {
-            return 5;
-        } else if (kernel.viewType === notebook.viewType) {
+        if (kernel.viewType === notebook.viewType) {
             return 10;
+        } else if (kernel.viewType === '*') {
+            return 5;
         } else {
             return 0;
         }
@@ -290,15 +295,14 @@ export class NotebookKernelService implements Disposable {
         }
     }
 
-    registerNotebookKernelDetectionTask(task: NotebookKernelDetectionTask): Disposable {
-        const notebookType = task.notebookType;
+    registerNotebookKernelDetectionTask(notebookType: string): Disposable {
         const all = this.kernelDetectionTasks.get(notebookType) ?? [];
-        all.push(task);
+        all.push(notebookType);
         this.kernelDetectionTasks.set(notebookType, all);
         this.onDidChangeKernelDetectionTasksEmitter.fire(notebookType);
         return Disposable.create(() => {
             const allTasks = this.kernelDetectionTasks.get(notebookType) ?? [];
-            const taskIndex = allTasks.indexOf(task);
+            const taskIndex = allTasks.indexOf(notebookType);
             if (taskIndex >= 0) {
                 allTasks.splice(taskIndex, 1);
                 this.kernelDetectionTasks.set(notebookType, allTasks);
@@ -307,7 +311,7 @@ export class NotebookKernelService implements Disposable {
         });
     }
 
-    getKernelDetectionTasks(notebook: NotebookTextModelLike): NotebookKernelDetectionTask[] {
+    getKernelDetectionTasks(notebook: NotebookTextModelLike): string[] {
         return this.kernelDetectionTasks.get(notebook.viewType) ?? [];
     }
 

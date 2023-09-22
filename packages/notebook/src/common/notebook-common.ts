@@ -74,7 +74,7 @@ export interface TransientOptions {
 
 export interface NotebookExtensionDescription {
     readonly id: string;
-    readonly location: string | undefined;
+    readonly pluginUri: string | undefined;
 }
 
 export interface CellOutputItem {

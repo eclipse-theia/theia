@@ -137,7 +137,6 @@ export class NotebooksExtImpl implements NotebooksExt {
         this.notebookSerializer.set(handle, serializer);
         this.notebookProxy.$registerNotebookSerializer(
             handle,
-            { id: plugin.model.id, location: plugin.pluginUri },
             viewType,
             typeConverters.NotebookDocumentContentOptions.from(options),
         );

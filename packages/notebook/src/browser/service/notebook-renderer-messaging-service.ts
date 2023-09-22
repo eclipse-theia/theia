@@ -22,18 +22,18 @@ import { Emitter } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 
-interface MessageToSend {
+interface RendererMessage {
     editorId: string;
     rendererId: string;
     message: unknown
 };
 
-export interface ScopedRendererMessaging extends Disposable {
+export interface RendererMessaging extends Disposable {
     /**
      * Method called when a message is received. Should return a boolean
      * indicating whether a renderer received it.
      */
-    receiveMessageHandler?: (rendererId: string, message: unknown) => Promise<boolean>;
+    receiveMessage?: (rendererId: string, message: unknown) => Promise<boolean>;
 
     /**
      * Sends a message to an extension from a renderer.
@@ -44,19 +44,22 @@ export interface ScopedRendererMessaging extends Disposable {
 @injectable()
 export class NotebookRendererMessagingService implements Disposable {
 
-    private readonly postMessageEmitter = new Emitter<MessageToSend>();
-    readonly onShouldPostMessage = this.postMessageEmitter.event;
+    private readonly postMessageEmitter = new Emitter<RendererMessage>();
+    readonly onPostMessage = this.postMessageEmitter.event;
 
-    private readonly activations = new Map<string /* rendererId */, undefined | MessageToSend[]>();
-    private readonly scopedMessaging = new Map<string /* editorId */, ScopedRendererMessaging>();
+    private readonly willActivateRendererEmitter = new Emitter<string>();
+    readonly onWillActivateRenderer = this.willActivateRendererEmitter.event;
+
+    private readonly activations = new Map<string /* rendererId */, undefined | RendererMessage[]>();
+    private readonly scopedMessaging = new Map<string /* editorId */, RendererMessaging>();
 
     receiveMessage(editorId: string | undefined, rendererId: string, message: unknown): Promise<boolean> {
         if (editorId === undefined) {
-            const sends = [...this.scopedMessaging.values()].map(e => e.receiveMessageHandler?.(rendererId, message));
+            const sends = [...this.scopedMessaging.values()].map(e => e.receiveMessage?.(rendererId, message));
             return Promise.all(sends).then(values => values.some(value => !!value));
         }
 
-        return this.scopedMessaging.get(editorId)?.receiveMessageHandler?.(rendererId, message) ?? Promise.resolve(false);
+        return this.scopedMessaging.get(editorId)?.receiveMessage?.(rendererId, message) ?? Promise.resolve(false);
     }
 
     prepare(rendererId: string): void {
@@ -64,25 +67,24 @@ export class NotebookRendererMessagingService implements Disposable {
             return;
         }
 
-        const queue: MessageToSend[] = [];
+        const queue: RendererMessage[] = [];
         this.activations.set(rendererId, queue);
 
-        // activate renderer
-        // this.extensionService.activateByEvent(`onRenderer:${rendererId}`).then(() => {
-        //     for (const message of queue) {
-        //         this.postMessageEmitter.fire(message);
-        //     }
-        //     this.activations.set(rendererId, undefined);
-        // });
+        Promise.all(this.willActivateRendererEmitter.fire(rendererId)).then(() => {
+            for (const message of queue) {
+                this.postMessageEmitter.fire(message);
+            }
+            this.activations.set(rendererId, undefined);
+        });
     }
 
-    public getScoped(editorId: string): ScopedRendererMessaging {
+    public getScoped(editorId: string): RendererMessaging {
         const existing = this.scopedMessaging.get(editorId);
         if (existing) {
             return existing;
         }
 
-        const messaging: ScopedRendererMessaging = {
+        const messaging: RendererMessaging = {
             postMessage: (rendererId, message) => this.postMessage(editorId, rendererId, message),
             dispose: () => this.scopedMessaging.delete(editorId),
         };
