@@ -364,17 +364,16 @@ export class TheiaPluginScanner implements PluginScanner {
             console.error(`Could not read '${rawPlugin.name}' contribution 'terminals'.`, rawPlugin.contributes.terminal, err);
         }
 
-        const [localizationsResult, languagesResult, grammarsResult] = await Promise.allSettled([
-            this.readLocalizations(rawPlugin),
+        try {
+            contributions.localizations = this.readLocalizations(rawPlugin);
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'localizations'.`, rawPlugin.contributes.localizations, err);
+        }
+
+        const [languagesResult, grammarsResult] = await Promise.allSettled([
             rawPlugin.contributes.languages ? this.readLanguages(rawPlugin.contributes.languages, rawPlugin.packagePath) : undefined,
             rawPlugin.contributes.grammars ? this.grammarsReader.readGrammars(rawPlugin.contributes.grammars, rawPlugin.packagePath) : undefined
         ]);
-
-        if (localizationsResult.status === 'fulfilled') {
-            contributions.localizations = localizationsResult.value;
-        } else {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'localizations'.`, rawPlugin.contributes.localizations, localizationsResult.reason);
-        }
 
         if (rawPlugin.contributes.languages) {
             if (languagesResult.status === 'fulfilled') {
@@ -402,31 +401,29 @@ export class TheiaPluginScanner implements PluginScanner {
         return pck.contributes.terminal.profiles.filter(profile => profile.id && profile.title);
     }
 
-    protected async readLocalizations(pck: PluginPackage): Promise<Localization[] | undefined> {
+    protected readLocalizations(pck: PluginPackage): Localization[] | undefined {
         if (!pck.contributes || !pck.contributes.localizations) {
             return undefined;
         }
-        return Promise.all(pck.contributes.localizations.map(e => this.readLocalization(e, pck.packagePath)));
+        return pck.contributes.localizations.map(e => this.readLocalization(e, pck.packagePath));
     }
 
-    protected async readLocalization({ languageId, languageName, localizedLanguageName, translations }: PluginPackageLocalization, pluginPath: string): Promise<Localization> {
+    protected readLocalization({ languageId, languageName, localizedLanguageName, translations }: PluginPackageLocalization, pluginPath: string): Localization {
         const local: Localization = {
             languageId,
             languageName,
             localizedLanguageName,
             translations: []
         };
-        local.translations = await Promise.all(translations.map(e => this.readTranslation(e, pluginPath)));
+        local.translations = translations.map(e => this.readTranslation(e, pluginPath));
         return local;
     }
 
-    protected async readTranslation(packageTranslation: PluginPackageTranslation, pluginPath: string): Promise<Translation> {
-        const translation = await this.readJson<Translation>(path.resolve(pluginPath, packageTranslation.path));
-        if (!translation) {
-            throw new Error(`Could not read json file '${packageTranslation.path}'.`);
-        }
-        translation.id = packageTranslation.id;
-        translation.path = packageTranslation.path;
+    protected readTranslation(packageTranslation: PluginPackageTranslation, pluginPath: string): Translation {
+        const translation: Translation = {
+            id: packageTranslation.id,
+            path: packageTranslation.path
+        };
         return translation;
     }
 
