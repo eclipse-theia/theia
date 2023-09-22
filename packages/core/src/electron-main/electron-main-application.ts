@@ -19,7 +19,8 @@ import { screen, app, BrowserWindow, WebContents, Event as ElectronEvent, Browse
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
-import { promises as fs, existsSync, mkdirSync } from 'fs';
+import { promises as fs } from 'fs';
+import { pathExists, mkdir } from 'fs-extra';
 import { fork, ForkOptions } from 'child_process';
 import { DefaultTheme, FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import URI from '../common/uri';
@@ -171,11 +172,11 @@ export class ElectronMainApplication {
     @inject(TheiaElectronWindowFactory)
     protected readonly windowFactory: TheiaElectronWindowFactory;
 
-    protected isPortable = this.makePortable();
+    protected isPortable: boolean;
 
-    protected readonly electronStore = new Storage<{
+    protected electronStore: Storage<{
         windowstate?: TheiaBrowserWindowOptions
-    }>();
+    }>;
 
     protected readonly _backendPort = new Deferred<number>();
     readonly backendPort = this._backendPort.promise;
@@ -196,20 +197,29 @@ export class ElectronMainApplication {
         return this._config;
     }
 
-    protected makePortable(): boolean {
-        const dataFolderPath = path.join(process.cwd(), 'data');
+    protected async makePortable(): Promise<void> {
+        const dataFolderPath = path.join(app.getAppPath(), 'data');
         const appDataPath = path.join(dataFolderPath, 'app-data');
-        if (existsSync(dataFolderPath)) {
-            if (!existsSync(appDataPath)) {
-                mkdirSync(appDataPath);
+        if (await pathExists(dataFolderPath)) {
+            if (!await pathExists(appDataPath)) {
+                await mkdir(appDataPath);
             }
             app.setPath('userData', appDataPath);
-            return true;
+            this.isPortable = true;
+        } else {
+            this.isPortable = false;
         }
-        return false;
+    }
+
+    protected initializeStorage(): void {
+        this.electronStore = new Storage<{
+            windowstate?: TheiaBrowserWindowOptions
+        }>();
     }
 
     async start(config: FrontendApplicationConfig): Promise<void> {
+        await this.makePortable();
+        this.initializeStorage();
         this.useNativeWindowFrame = this.getTitleBarStyle(config) === 'native';
         this._config = config;
         this.hookApplicationEvents();
