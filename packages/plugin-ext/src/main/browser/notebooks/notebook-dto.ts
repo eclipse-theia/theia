@@ -88,7 +88,7 @@ export namespace NotebookDto {
     }
 
     export function toNotebookCellDto(cell: NotebookCellModel): rpc.NotebookCellDto {
-        const eol = OS.backend.isWindows ? '\r\n' : '\n';
+        const eol = OS.backend.EOL;
         return {
             handle: cell.handle,
             uri: cell.uri.toComponents(),

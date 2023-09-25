@@ -29,6 +29,7 @@ import {
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
 
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
+export type NotebookCellModelFactory = (props: NotebookCellModelProps) => NotebookCellModel;
 
 export function createNotebookCellModelContainer(parent: interfaces.Container, props: NotebookCellModelProps,
     notebookCellContextManager: new (...args: never[]) => unknown): interfaces.Container {

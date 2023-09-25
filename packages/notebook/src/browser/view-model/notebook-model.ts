@@ -25,7 +25,7 @@ import {
 } from '../../common';
 import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from './notebook-cell-model';
+import { NotebookCellModel, NotebookCellModelFactory } from './notebook-cell-model';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { NotebookKernel } from '../service/notebook-kernel-service';
@@ -53,33 +53,32 @@ export interface NotebookModelProps {
 @injectable()
 export class NotebookModel implements Saveable, Disposable {
 
-    private readonly onDirtyChangedEmitter = new Emitter<void>();
+    protected readonly onDirtyChangedEmitter = new Emitter<void>();
     readonly onDirtyChanged = this.onDirtyChangedEmitter.event;
 
-    private readonly onDidSaveNotebookEmitter = new Emitter<void>();
+    protected readonly onDidSaveNotebookEmitter = new Emitter<void>();
     readonly onDidSaveNotebook = this.onDidSaveNotebookEmitter.event;
 
-    private readonly onDidAddOrRemoveCellEmitter = new Emitter<NotebookModelWillAddRemoveEvent>();
+    protected readonly onDidAddOrRemoveCellEmitter = new Emitter<NotebookModelWillAddRemoveEvent>();
     readonly onDidAddOrRemoveCell = this.onDidAddOrRemoveCellEmitter.event;
 
-    private readonly onDidChangeContentEmitter = new Emitter<NotebookTextModelChangedEvent>();
+    protected readonly onDidChangeContentEmitter = new Emitter<NotebookTextModelChangedEvent>();
     readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
 
     @inject(FileService)
-    private readonly fileService: FileService;
+    protected readonly fileService: FileService;
 
     @inject(UndoRedoService)
-    private readonly undoRedoService: UndoRedoService;
+    protected readonly undoRedoService: UndoRedoService;
 
     @inject(NotebookModelProps)
-    private props: NotebookModelProps;
+    protected props: NotebookModelProps;
 
     @inject(MonacoTextModelService)
     modelService: MonacoTextModelService;
 
     @inject(NotebookCellModelFactory)
-    private cellModelFactory: (props: NotebookCellModelProps) => NotebookCellModel;
-
+    protected cellModelFactory: NotebookCellModelFactory;
     readonly autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
     nextHandle: number = 0;
@@ -88,7 +87,7 @@ export class NotebookModel implements Saveable, Disposable {
 
     dirty: boolean;
     selectedCell?: NotebookCellModel;
-    private dirtyCells: NotebookCellModel[] = [];
+    protected dirtyCells: NotebookCellModel[] = [];
 
     cells: NotebookCellModel[];
 
