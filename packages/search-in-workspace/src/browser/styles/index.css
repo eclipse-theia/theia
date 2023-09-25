@@ -36,9 +36,14 @@
 }
 
 .t-siw-search-container .theia-input {
+  box-sizing: border-box;
   flex: 1;
   line-height: var(--theia-content-line-height);
+  max-height: calc(2 * 3px + 7 * var(--theia-content-line-height));
+  min-width: 16px;
   padding: 3px 0 3px 4px;
+  resize: none;
+  width: 100%;
 }
 
 .t-siw-search-container #search-input-field:focus {
@@ -99,16 +104,17 @@
 }
 
 .t-siw-search-container .searchHeader .search-field .option-buttons {
-  height: 23px;
-  display: flex;
-  align-items: center;
-  background-color: none;
+    height: 23px;
+    display: flex;
+    align-items: center;
+    align-self: flex-start;
+    background-color: none;
+    margin: 2px;
 }
 
 .t-siw-search-container .searchHeader .search-field-container.tooManyResults {
   border-style: solid;
   border-width: var(--theia-border-width);
-  margin: -1px;
   border-color: var(--theia-inputValidation-warningBorder);
 }
 
@@ -234,7 +240,6 @@
 }
 
 .t-siw-search-container .resultLine .match {
-  line-height: normal;
   white-space: pre;
   background: var(--theia-editor-findMatchHighlightBackground);
   border: 1px solid var(--theia-editor-findMatchHighlightBorder);
@@ -257,13 +262,17 @@
   border-style: dashed;
 }
 
-.t-siw-search-container .noWrapInfo {
-  width: 100%;
+.t-siw-search-container .match-line-num {
+    font-size: .9em;
+    margin-left: 7px;
+    margin-right: 4px;
+    opacity: .7;
 }
 
 .t-siw-search-container .result-head-info {
-  display: inline-flex;
   align-items: center;
+  display: inline-flex;
+  flex-grow: 1;
 }
 
 .search-in-workspace-editor-match {
@@ -294,13 +303,18 @@
 }
 
 .result-node-buttons > span {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   margin-left: 2.5px;
   margin-right: 0.5px;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
+  border-radius: 5px;
+}
+
+.result-node-buttons > span:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
 }
 
 .search-and-replace-container {
@@ -346,10 +360,11 @@
 }
 
 .replace-all-button-container {
-  width: 25px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    width: 25px;
+    display: flex;
+    align-items: start;
+    justify-content: center;
+    padding-top: 3px;
 }
 
 .result-node-buttons .replace-result {
