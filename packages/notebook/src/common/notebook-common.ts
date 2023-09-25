@@ -101,7 +101,7 @@ export interface NotebookCell {
     outputs: CellOutput[];
     metadata: NotebookCellMetadata;
     internalMetadata: NotebookCellInternalMetadata;
-    textBuffer: string;
+    text: string;
     onDidChangeOutputs?: Event<NotebookCellOutputsSplice>;
     onDidChangeOutputItems?: Event<void>;
     onDidChangeLanguage: Event<string>;

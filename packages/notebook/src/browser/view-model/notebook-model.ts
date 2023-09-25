@@ -27,7 +27,7 @@ import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from './notebook-cell-model';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { NotebookKernel } from '../service/notebook-kernel-service';
 import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
 
@@ -71,6 +71,15 @@ export class NotebookModel implements Saveable, Disposable {
     @inject(UndoRedoService)
     private readonly undoRedoService: UndoRedoService;
 
+    @inject(NotebookModelProps)
+    private props: NotebookModelProps;
+
+    @inject(MonacoTextModelService)
+    modelService: MonacoTextModelService;
+
+    @inject(NotebookCellModelFactory)
+    private cellModelFactory: (props: NotebookCellModelProps) => NotebookCellModel;
+
     readonly autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
     nextHandle: number = 0;
@@ -93,13 +102,12 @@ export class NotebookModel implements Saveable, Disposable {
 
     metadata: NotebookDocumentMetadata = {};
 
-    constructor(@inject(NotebookModelProps) private props: NotebookModelProps,
-        @inject(MonacoTextModelService) modelService: MonacoTextModelService,
-        @inject(NotebookCellModelFactory) private cellModelFactory: (props: NotebookCellModelProps) => NotebookCellModel) {
+    @postConstruct()
+    initialize(): void {
         this.dirty = false;
 
-        this.cells = props.data.cells.map((cell, index) => cellModelFactory({
-            uri: CellUri.generate(props.uri, index),
+        this.cells = this.props.data.cells.map((cell, index) => this.cellModelFactory({
+            uri: CellUri.generate(this.props.uri, index),
             handle: index,
             source: cell.source,
             language: cell.language,
@@ -114,7 +122,7 @@ export class NotebookModel implements Saveable, Disposable {
 
         this.metadata = this.metadata;
 
-        modelService.onDidCreate(editorModel => {
+        this.modelService.onDidCreate(editorModel => {
             const modelUri = new URI(editorModel.uri);
             if (modelUri.scheme === CellUri.scheme) {
                 const cellUri = CellUri.parse(modelUri);

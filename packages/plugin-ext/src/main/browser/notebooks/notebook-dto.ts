@@ -92,7 +92,7 @@ export namespace NotebookDto {
         return {
             handle: cell.handle,
             uri: cell.uri.toComponents(),
-            source: cell.textBuffer.split(eol),
+            source: cell.text.split(eol),
             eol,
             language: cell.language,
             cellKind: cell.cellKind,

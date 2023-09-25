@@ -60,8 +60,8 @@ export class NotebookService implements Disposable {
     protected readonly notebookProviders = new Map<string, NotebookProviderInfo>();
     protected readonly notebookModels = new Map<string, NotebookModel>();
 
-    protected readonly didAddViewTypeEmitter = new Emitter<string>();
-    readonly onDidAddViewType = this.didAddViewTypeEmitter.event;
+    protected readonly didRegisterNotebookSerializerEmitter = new Emitter<string>();
+    readonly onDidRegisterNotebookSerializer = this.didRegisterNotebookSerializerEmitter.event;
 
     protected readonly didRemoveViewTypeEmitter = new Emitter<string>();
     readonly onDidRemoveViewType = this.didRemoveViewTypeEmitter.event;
@@ -87,17 +87,17 @@ export class NotebookService implements Disposable {
         this.ready.resolve();
     }
 
-    registerNotebookSerializer(notebookType: string, serializer: NotebookSerializer): Disposable {
-        if (this.notebookProviders.has(notebookType)) {
-            throw new Error(`notebook provider for viewtype '${notebookType}' already exists`);
+    registerNotebookSerializer(viewType: string, serializer: NotebookSerializer): Disposable {
+        if (this.notebookProviders.has(viewType)) {
+            throw new Error(`notebook provider for viewtype '${viewType}' already exists`);
         }
 
-        this.notebookProviders.set(notebookType, { notebookType: notebookType, serializer });
-        this.didAddViewTypeEmitter.fire(notebookType);
+        this.notebookProviders.set(viewType, { notebookType: viewType, serializer });
+        this.didRegisterNotebookSerializerEmitter.fire(viewType);
 
         return Disposable.create(() => {
-            this.notebookProviders.delete(notebookType);
-            this.didRemoveViewTypeEmitter.fire(notebookType);
+            this.notebookProviders.delete(viewType);
+            this.didRemoveViewTypeEmitter.fire(viewType);
         });
     }
 
@@ -118,7 +118,6 @@ export class NotebookService implements Disposable {
 
     async getNotebookDataProvider(viewType: string): Promise<NotebookProviderInfo> {
         await this.ready.promise;
-        await this.willUseNotebookSerializerEmitter.sequence(async listener => listener(`onNotebookSerializer:${viewType}`));
 
         const result = await this.waitForNotebookProvider(viewType);
         if (!result) {
@@ -136,10 +135,11 @@ export class NotebookService implements Disposable {
         if (this.notebookProviders.has(type)) {
             return this.notebookProviders.get(type);
         }
+        await this.willUseNotebookSerializerEmitter.sequence(async listener => listener(type));
         const deferred = new Deferred<NotebookProviderInfo | undefined>();
         // 20 seconds of timeout
         const timeoutDuration = 20_000;
-        const disposable = this.onDidAddViewType(viewType => {
+        const disposable = this.onDidRegisterNotebookSerializer(viewType => {
             if (viewType === type) {
                 clearTimeout(timeout);
                 disposable.dispose();

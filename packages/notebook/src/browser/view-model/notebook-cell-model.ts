@@ -134,7 +134,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         return this.htmlContext;
     }
 
-    get textBuffer(): string {
+    get text(): string {
         return this.textModel ? this.textModel.getText() : this.source;
     }
 
@@ -243,7 +243,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
             cellKind: this.cellKind,
             language: this.language,
             outputs: this.outputs.map(output => output.getData()),
-            source: this.textBuffer,
+            source: this.text,
             collapseState: this.props.collapseState,
             internalMetadata: this.internalMetadata,
             metadata: this.metadata

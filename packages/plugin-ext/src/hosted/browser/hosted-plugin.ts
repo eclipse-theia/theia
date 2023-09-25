@@ -637,6 +637,10 @@ export class HostedPluginSupport {
         await this.activateByEvent(`onNotebook:${viewType}`);
     }
 
+    async activateByNotbookSerializer(viewType: string): Promise<void> {
+        await this.activateByEvent(`onNotebookSerializer:${viewType}`);
+    }
+
     async activateByNotebookRenderer(rendererId: string): Promise<void> {
         await this.activateByEvent(`onRenderer:${rendererId}`);
     }
