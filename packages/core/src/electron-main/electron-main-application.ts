@@ -20,7 +20,7 @@ import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
 import { promises as fs } from 'fs';
-import { pathExists, mkdir } from 'fs-extra';
+import { existsSync, mkdirSync } from 'fs-extra';
 import { fork, ForkOptions } from 'child_process';
 import { DefaultTheme, FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import URI from '../common/uri';
@@ -172,11 +172,11 @@ export class ElectronMainApplication {
     @inject(TheiaElectronWindowFactory)
     protected readonly windowFactory: TheiaElectronWindowFactory;
 
-    protected isPortable: boolean;
+    protected isPortable = this.makePortable();
 
-    protected electronStore: Storage<{
+    protected readonly electronStore = new Storage<{
         windowstate?: TheiaBrowserWindowOptions
-    }>;
+    }>();
 
     protected readonly _backendPort = new Deferred<number>();
     readonly backendPort = this._backendPort.promise;
@@ -197,29 +197,21 @@ export class ElectronMainApplication {
         return this._config;
     }
 
-    protected async makePortable(): Promise<void> {
+    protected makePortable(): boolean {
         const dataFolderPath = path.join(app.getAppPath(), 'data');
         const appDataPath = path.join(dataFolderPath, 'app-data');
-        if (await pathExists(dataFolderPath)) {
-            if (!await pathExists(appDataPath)) {
-                await mkdir(appDataPath);
+        if (existsSync(dataFolderPath)) {
+            if (!existsSync(appDataPath)) {
+                mkdirSync(appDataPath);
             }
             app.setPath('userData', appDataPath);
-            this.isPortable = true;
+            return true;
         } else {
-            this.isPortable = false;
+            return false;
         }
     }
 
-    protected initializeStorage(): void {
-        this.electronStore = new Storage<{
-            windowstate?: TheiaBrowserWindowOptions
-        }>();
-    }
-
     async start(config: FrontendApplicationConfig): Promise<void> {
-        await this.makePortable();
-        this.initializeStorage();
         this.useNativeWindowFrame = this.getTitleBarStyle(config) === 'native';
         this._config = config;
         this.hookApplicationEvents();
