@@ -105,7 +105,7 @@ export class SomeClass {
     - `nsfw` (from [`nsfw@^2.2.4`](https://www.npmjs.com/package/nsfw))
     - `markdown-it` (from [`markdown-it@^12.3.2`](https://www.npmjs.com/package/markdown-it))
     - `react` (from [`react@^18.2.0`](https://www.npmjs.com/package/react))
-    - `ws` (from [`ws@^7.1.2`](https://www.npmjs.com/package/ws))
+    - `ws` (from [`ws@^8.14.1`](https://www.npmjs.com/package/ws))
     - `yargs` (from [`yargs@^15.3.1`](https://www.npmjs.com/package/yargs))
 
 ## Logging Configuration
