@@ -62,7 +62,6 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
             }
         } else {
             process.env.THEIA_CONFIG_DIR = join(homedir(), '.theia');
-            this.pathExistenceCache[process.env.THEIA_CONFIG_DIR] = true;
         }
         return FileUri.create(process.env.THEIA_CONFIG_DIR).toString();
     }
