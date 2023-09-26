@@ -63,7 +63,14 @@ export const loggerBackendModule = new ContainerModule(bind => {
     bind(DispatchingLoggerClient).toSelf().inSingletonScope();
     bindLogger(bind, {
         onLoggerServerActivation: ({ container }, server) => {
-            server.setClient(container.get(DispatchingLoggerClient));
+            const dispatchingLoggerClient = container.get(DispatchingLoggerClient);
+            server.setClient(dispatchingLoggerClient);
+
+            // register backend logger watcher as a client
+            const loggerWatcher = container.get(LoggerWatcher);
+            dispatchingLoggerClient.clients.add(loggerWatcher.getLoggerClient());
+
+            // make sure dispatching logger client is the only client
             server.setClient = () => {
                 throw new Error('use DispatchingLoggerClient');
             };
