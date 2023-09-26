@@ -153,7 +153,7 @@ export class DebugSessionConnection implements Disposable {
 
     protected checkDisposed(): void {
         if (this.disposed) {
-            throw new Error(nls.localize('theia/debug/isDisposed', 'the debug session connection is disposed, id: {0}', this.sessionId));
+            throw new Error(nls.localize('theia/debug/connectionClosed', 'Debug connection unexpectedly closed'));
         }
     }
 
@@ -197,7 +197,7 @@ export class DebugSessionConnection implements Disposable {
 
     protected cancelPendingRequests(): void {
         this.pendingRequests.forEach((deferred, requestId) => {
-            deferred.reject(new Error(nls.localize('theia/debug/requestCanceled', 'Request {0} cancelled on connection close', requestId)));
+            deferred.reject(new Error(nls.localize('theia/debug/connectionClosed', 'Debug connection unexpectedly closed')));
         });
     }
 
@@ -205,7 +205,7 @@ export class DebugSessionConnection implements Disposable {
         const result = new Deferred<K>();
 
         if (this.isClosed) {
-            result.reject(new Error(nls.localize('theia/debug/connectionClosed', 'Connection is closed')));
+            result.reject(new Error(nls.localize('theia/debug/connectionClosed', 'Debug connection unexpectedly closed')));
         } else {
             const request: DebugProtocol.Request = {
                 seq: this.sequence++,
