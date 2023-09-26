@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { pathExists, mkdir } from 'fs-extra';
 import { join } from 'path';
 import { homedir } from 'os';
 import { injectable } from 'inversify';
 import * as drivelist from 'drivelist';
+import { pathExists, mkdir } from 'fs-extra';
 import { EnvVariable, EnvVariablesServer } from '../../common/env-variables';
 import { isWindows } from '../../common/os';
 import { FileUri } from '../file-uri';
@@ -29,7 +29,7 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     protected readonly envs: { [key: string]: EnvVariable } = {};
     protected readonly homeDirUri = FileUri.create(homedir()).toString();
     protected readonly configDirUri: Promise<string>;
-    protected cachedConfigDirUri: string | undefined = undefined;
+    protected readonly pathExistenceCache: { [key: string]: boolean } = {};
 
     constructor() {
         this.configDirUri = this.createConfigDirUri();
@@ -45,28 +45,26 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     }
 
     protected async createConfigDirUri(): Promise<string> {
-        if (this.cachedConfigDirUri) {
-            return this.cachedConfigDirUri;
-        }
         let dataFolderPath: string = '';
         if (process.env.THEIA_APP_PROJECT_PATH) {
             dataFolderPath = join(process.env.THEIA_APP_PROJECT_PATH, 'data');
         }
         const userDataPath = join(dataFolderPath, 'user-data');
-        // Check if data folder exists for portable mode
-        if (await pathExists(dataFolderPath)) {
-            if (await pathExists(userDataPath)) {
+        const dataFolderExists = this.pathExistenceCache[dataFolderPath] ??= await pathExists(dataFolderPath);
+        if (dataFolderExists) {
+            const userDataExists = this.pathExistenceCache[userDataPath] ??= await pathExists(userDataPath);
+            if (userDataExists) {
                 process.env.THEIA_CONFIG_DIR = userDataPath;
             } else {
                 await mkdir(userDataPath);
                 process.env.THEIA_CONFIG_DIR = userDataPath;
+                this.pathExistenceCache[userDataPath] = true;
             }
         } else {
             process.env.THEIA_CONFIG_DIR = join(homedir(), '.theia');
+            this.pathExistenceCache[process.env.THEIA_CONFIG_DIR] = true;
         }
-        const newConfigDirUri = FileUri.create(process.env.THEIA_CONFIG_DIR).toString();
-        this.cachedConfigDirUri = newConfigDirUri;
-        return newConfigDirUri;
+        return FileUri.create(process.env.THEIA_CONFIG_DIR).toString();
     }
 
     async getExecPath(): Promise<string> {
