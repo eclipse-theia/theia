@@ -97,7 +97,7 @@ async function preload(parent) {
     container.parent = parent;
     try {
 ${Array.from(frontendPreloadModules.values(), jsModulePath => `\
-        await load(container, import('${jsModulePath}'));`).join(EOL)}
+        await load(container, ${this.importOrRequire()}('${jsModulePath}'));`).join(EOL)}
         const { Preloader } = require('@theia/core/lib/browser/preload/preloader');
         const preloader = container.get(Preloader);
         await preloader.initialize();
@@ -125,7 +125,7 @@ module.exports = (async () => {
 
     try {
 ${Array.from(frontendModules.values(), jsModulePath => `\
-        await load(container, import('${jsModulePath}'));`).join(EOL)}
+        await load(container, ${this.importOrRequire()}('${jsModulePath}'));`).join(EOL)}
         await start();
     } catch (reason) {
         console.error('Failed to start the frontend application.');
@@ -140,6 +140,10 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
     }
 })();
 `;
+    }
+
+    protected importOrRequire(): string {
+        return this.options.mode !== 'production' ? 'import' : 'require';
     }
 
     /** HTML for secondary windows that contain an extracted widget. */
