@@ -655,6 +655,7 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
                 pickItems.push({
                     kind: item.kind,
                     label: item.label,
+                    iconPath: item.iconPath ? getIconUris(item.iconPath) : undefined,
                     description: item.description,
                     handle,
                     detail: item.detail,
