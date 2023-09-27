@@ -135,7 +135,7 @@ export class NotebookService implements Disposable {
         if (this.notebookProviders.has(type)) {
             return this.notebookProviders.get(type);
         }
-        await this.willUseNotebookSerializerEmitter.sequence(async listener => listener(type));
+        await Promise.all(this.willUseNotebookSerializerEmitter.fire(type));
         const deferred = new Deferred<NotebookProviderInfo | undefined>();
         // 20 seconds of timeout
         const timeoutDuration = 20_000;

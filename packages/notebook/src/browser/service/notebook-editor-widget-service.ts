@@ -67,7 +67,7 @@ export class NotebookEditorWidgetService implements Disposable {
 
     addNotebookEditor(editor: NotebookEditorWidget): void {
         if (this.notebookEditors.has(editor.id)) {
-            console.log('WARN: notebook editor already added previously: ' + editor.id);
+            console.warn('Attempting to add duplicated notebook editor: ' + editor.id);
         }
         this.notebookEditors.set(editor.id, editor);
         this.onNotebookEditorAddEmitter.fire(editor);
@@ -78,7 +78,7 @@ export class NotebookEditorWidgetService implements Disposable {
             this.notebookEditors.delete(editor.id);
             this.onNotebookEditorRemoveEmitter.fire(editor);
         } else {
-            console.log('WARN: trying to remove not registered editor: ' + editor.id);
+            console.warn('Attempting to remove not registered editor: ' + editor.id);
         }
     }
 

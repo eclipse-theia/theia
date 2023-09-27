@@ -346,8 +346,7 @@ export class NotebooksExtImpl implements NotebooksExt {
     }
 
     async showNotebookDocument(notebookOrUri: theia.NotebookDocument | TheiaURI, options?: theia.NotebookDocumentShowOptions): Promise<theia.NotebookEditor> {
-
-        if (URI.isUri(notebookOrUri)) {
+        if (TheiaURI.isUri(notebookOrUri)) {
             notebookOrUri = await this.openNotebookDocument(notebookOrUri as TheiaURI);
         }
 

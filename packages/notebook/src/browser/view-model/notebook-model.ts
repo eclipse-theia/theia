@@ -75,7 +75,7 @@ export class NotebookModel implements Saveable, Disposable {
     protected props: NotebookModelProps;
 
     @inject(MonacoTextModelService)
-    modelService: MonacoTextModelService;
+    protected modelService: MonacoTextModelService;
 
     @inject(NotebookCellModelFactory)
     protected cellModelFactory: NotebookCellModelFactory;

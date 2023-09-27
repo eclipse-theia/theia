@@ -26,42 +26,42 @@ import { NotebookCellOutputModel } from '../view-model/notebook-cell-output-mode
 import { CellEditType } from '../../common';
 
 export namespace NotebookCellCommands {
-    // Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel
+    /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
     export const EDIT_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.edit',
         iconClass: codicon('edit')
     });
-    // Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel
+    /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
     export const STOP_EDIT_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.stop-edit',
         iconClass: codicon('check')
     });
-    // Parameters: notebookModel: NotebookModel, cell: NotebookCellModel
+    /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
     export const DELETE_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.delete',
         iconClass: codicon('trash')
     });
-    // Parameters: notebookModel: NotebookModel, cell: NotebookCellModel
+    /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
     export const SPLIT_CELL_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.split-cell',
         iconClass: codicon('split-vertical'),
     });
-    // Parameters: notebookModel: NotebookModel, cell: NotebookCellModel
+    /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
     export const EXECUTE_SINGLE_CELL_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.execute-cell',
         iconClass: codicon('play'),
     });
-    // Parameters: notebookModel: NotebookModel, cell: NotebookCellModel
+    /** Parameters: notebookModel: NotebookModel, cell: NotebookCellModel */
     export const STOP_CELL_EXECUTION_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.stop-cell-execution',
         iconClass: codicon('stop'),
     });
-    // Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel
+    /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel */
     export const CLEAR_OUTPUTS_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.clear-outputs',
         label: 'Clear Cell Outputs',
     });
-    // Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel | undefined, output: NotebookCellOutputModel
+    /** Parameters: notebookModel: NotebookModel | undefined, cell: NotebookCellModel | undefined, output: NotebookCellOutputModel */
     export const CHANGE_OUTPUT_PRESENTATION_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'notebook.cell.change-presentation',
         label: 'Change Presentation',

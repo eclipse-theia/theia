@@ -27,10 +27,6 @@ export class URI {
         return new URI(Uri.file(path));
     }
 
-    public static isUri(uri: unknown): uri is URI {
-        return Uri.isUri(uri);
-    }
-
     private readonly codeUri: Uri;
     private _path: Path | undefined;
 
