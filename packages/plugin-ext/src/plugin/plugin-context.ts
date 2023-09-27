@@ -232,7 +232,8 @@ import {
     createRunProfile,
     createTestRun,
     testItemCollection,
-    createTestItem
+    createTestItem,
+    invalidateTestResults
 } from './stubs/tests-api';
 import { TimelineExtImpl } from './timeline';
 import { ThemingExtImpl } from './theming';
@@ -1010,6 +1011,7 @@ export function createAPIFactory(
                     createRunProfile,
                     createTestRun,
                     createTestItem,
+                    invalidateTestResults,
                     dispose: () => undefined,
                 };
             },

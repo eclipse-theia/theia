@@ -96,3 +96,7 @@ export const createTestItem = (
     range: undefined,
     error: undefined,
 });
+
+export const invalidateTestResults = (
+    items?: theia.TestItem | readonly theia.TestItem[]
+): void => undefined;

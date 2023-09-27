@@ -7,6 +7,7 @@
 ## v1.42.0
 
 - [core] fixed logger level propagation when log config file changes at runtime [#12566](https://github.com/eclipse-theia/theia/pull/12566) - Contributed on behalf of STMicroelectronics
+- [vscode] stub TestController invalidateTestResults [#12944](https://github.com/eclipse-theia/theia/pull/12944) - Contributed by STMicroelectronics
 - [vsx-registry] added a hint to extension fetching ENOTFOUND errors [#12858](https://github.com/eclipse-theia/theia/pull/12858) - Contributed by STMicroelectronics
 
 ## v1.41.0 - 08/31/2023
