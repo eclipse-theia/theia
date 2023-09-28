@@ -103,7 +103,7 @@ export namespace TerminalCommands {
     export const TERMINAL_CONTEXT = Command.toDefaultLocalizedCommand({
         id: 'terminal:context',
         category: TERMINAL_CATEGORY,
-        label: 'Open in Terminal'
+        label: 'Open in Integrated Terminal'
     });
     export const SPLIT = Command.toDefaultLocalizedCommand({
         id: 'terminal:split',

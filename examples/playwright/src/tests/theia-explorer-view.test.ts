@@ -153,7 +153,7 @@ test.describe('Theia Explorer View', () => {
         const menuItems = await menu.visibleMenuItems();
         expect(menuItems).toContain('New File...');
         expect(menuItems).toContain('New Folder...');
-        expect(menuItems).toContain('Open in Terminal');
+        expect(menuItems).toContain('Open in Integrated Terminal');
         expect(menuItems).toContain('Find in Folder...');
 
         await menu.close();
