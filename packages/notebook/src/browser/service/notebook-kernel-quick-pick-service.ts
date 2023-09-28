@@ -384,7 +384,7 @@ export class KernelPickerMRUStrategy extends NotebookKernelQuickPickServiceImpl 
                 await this.selectOneKernel(notebook, selectedKernelPickItem.source, selectedKernelPickItem.kernels);
                 return true;
             } else if (isSourcePick(selectedKernelPickItem)) {
-                // selected explicilty, it should trigger the execution?
+                // selected explicitly, it should trigger the execution?
                 try {
                     await selectedKernelPickItem.action.run();
                     return true;

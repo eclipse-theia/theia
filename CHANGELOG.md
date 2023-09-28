@@ -4,20 +4,30 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## v1.42.0
+## v1.42.0 - 09/28/2023
 
-- [core] fixed logger level propagation when log config file changes at runtime [#12566](https://github.com/eclipse-theia/theia/pull/12566) - Contributed on behalf of STMicroelectronics
-- [core] improve frontend startup time [#12936](https://github.com/eclipse-theia/theia/pull/12936) - Contributed on behalf of STMicroelectronics
-- [dev-packages] restore src-gen frontend production behavior [12950](https://github.com/eclipse-theia/theia/pull/12950) - Contributed on behalf of STMicroelectronics
-- [dialogs] allow multiple selection on Open... [#12923](https://github.com/eclipse-theia/theia/pull/12923) - Contributed on behalf of STMicroelectronics.
-- [vscode] stub TestController invalidateTestResults [#12944](https://github.com/eclipse-theia/theia/pull/12944) - Contributed by STMicroelectronics
-- [vscode] support iconPath in QuickPickItem [#12945](https://github.com/eclipse-theia/theia/pull/12945) - Contributed by STMicroelectronics
-- [vsx-registry] added a hint to extension fetching ENOTFOUND errors [#12858](https://github.com/eclipse-theia/theia/pull/12858) - Contributed by STMicroelectronics
-- [electron] Open initial electron window early to improve perceived performance [#12897](https://github.com/eclipse-theia/theia/pull/12897) - Contributed on behalf of STMicroelectronics.
+- [core] added `inversify` support in the frontend preload script [#12590](https://github.com/eclipse-theia/theia/pull/12590)
+- [core] added missing localizations for keybinding error messages [#12889](https://github.com/eclipse-theia/theia/pull/12889)
+- [core] fixed logger level propagation when log config changes at runtime [#12566](https://github.com/eclipse-theia/theia/pull/12566) - Contributed on behalf of STMicroelectronics
+- [core] improved the frontend startup time [#12936](https://github.com/eclipse-theia/theia/pull/12936) - Contributed on behalf of STMicroelectronics
+- [core] updated `nls.metadata.json` for `1.81.0` [#12951](https://github.com/eclipse-theia/theia/pull/12951)
+- [core] upgraded `ws` from `7.1.2` to `8.14.1` [#12909](https://github.com/eclipse-theia/theia/pull/12909)
+- [debug] fixed erroneous inline breakpoints [#12832](https://github.com/eclipse-theia/theia/pull/12832)
+- [dev-packages] bumped the default supported API version from `1.80.0` to `1.81.0` [#12949](https://github.com/eclipse-theia/theia/pull/12949)
+- [dev-packages] restored src-gen frontend production behavior [12950](https://github.com/eclipse-theia/theia/pull/12950) - Contributed on behalf of STMicroelectronics
+- [dialogs] added functionality to allow multiple selection in open dialogs [#12923](https://github.com/eclipse-theia/theia/pull/12923) - Contributed on behalf of STMicroelectronics
+- [documentation] added follow-up section to the pull-request template [#12901](https://github.com/eclipse-theia/theia/pull/12901)
+- [editor] added functionality to create untitled files when double-clicking the tabbar [#12867](https://github.com/eclipse-theia/theia/pull/12867)
+- [electron] improved responsiveness of the initial electron window [#12897](https://github.com/eclipse-theia/theia/pull/12897) - Contributed on behalf of STMicroelectronics.
+- [plugin] added stubbing for the `TestController#invalidateTestResults` VS Code API [#12944](https://github.com/eclipse-theia/theia/pull/12944) - Contributed by STMicroelectronics
+- [plugin] added support for `iconPath` in the `QuickPickItem` VS Code API [#12945](https://github.com/eclipse-theia/theia/pull/12945) - Contributed by STMicroelectronics
+- [repo] updated deprecated instances of `context` in favor of `when` clauses [#12830](https://github.com/eclipse-theia/theia/pull/12830)
+- [search-in-workspace] added support for multiline searches [#12868](https://github.com/eclipse-theia/theia/pull/12868)
+- [vsx-registry] added a hint in `ENOTFOUND` errors when failing to fetch extensions [#12858](https://github.com/eclipse-theia/theia/pull/12858) - Contributed by STMicroelectronics
 
 ## v1.41.0 - 08/31/2023
 
-- [application-package] added handling to quit the electron app when the backend fails to start [#12778](https://github.com/eclipse-theia/theia/pull/12778) - Contributed on behalf of STMicroelectronics.
+- [application-package] added handling to quit the electron app when the backend fails to start [#12778](https://github.com/eclipse-theia/theia/pull/12778) - Contributed on behalf of STMicroelectronics
 - [core] added `--dnsDefaultResultOrder <value>` CLI argument where `value` is one of `ipv4first`, `verbatim` or `nodeDefault`. It controls how domain names are resolved [#12711](https://github.com/eclipse-theia/theia/pull/12711)
 - [core] added functionality to capture stopwatch results [#12812](https://github.com/eclipse-theia/theia/pull/12812)
 - [core] added support for `file/newFile` menu path [#12819](https://github.com/eclipse-theia/theia/pull/12819)
@@ -65,7 +75,7 @@
 
 ## v1.40.0 - 07/27/2023
 
-- [application-package] bumped the default supported VS Code API from `1.78.0` to `1.79.0` [#12764](https://github.com/eclipse-theia/theia/pull/12764) - Contributed on behalf of STMicroelectronics.
+- [application-package] bumped the default supported VS Code API from `1.78.0` to `1.79.0` [#12764](https://github.com/eclipse-theia/theia/pull/12764) - Contributed on behalf of STMicroelectronics
 - [application-package] fixed ignored resource in backend bundling [#12681](https://github.com/eclipse-theia/theia/pull/12681)
 - [cli] added `check:theia-extensions` to facilitate checking the uniqueness of `@theia` extension versions [#12596](https://github.com/eclipse-theia/theia/pull/12596) - Contributed on behalf of STMicroelectronics
 - [core] added functionality to display command shortcuts in toolbar item tooltips [#12660](https://github.com/eclipse-theia/theia/pull/12660) - Contributed on behalf of STMicroelectronics
