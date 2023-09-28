@@ -434,6 +434,7 @@
     "vsx-registry": {
       "downloadCount": "下载次数: {0}",
       "errorFetching": "取出扩展程序时出错。",
+      "errorFetchingConfigurationHint": "这可能是网络配置问题造成的。",
       "failedInstallingVSIX": "从VSIX安装{0} ,失败了。",
       "invalidVSIX": "所选文件不是有效的 \"*.vsix \"插件。",
       "license": "许可证: {0}",
