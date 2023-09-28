@@ -434,6 +434,7 @@
     "vsx-registry": {
       "downloadCount": "Скачать граф: {0}",
       "errorFetching": "Ошибка при получении расширений.",
+      "errorFetchingConfigurationHint": "Это может быть вызвано проблемами конфигурации сети.",
       "failedInstallingVSIX": "Не удалось установить {0} из VSIX.",
       "invalidVSIX": "Выбранный файл не является действительным плагином \"*.vsix\".",
       "license": "Лицензия: {0}",

@@ -434,6 +434,7 @@
     "vsx-registry": {
       "downloadCount": "Pobierz licz: {0}",
       "errorFetching": "Błąd pobierania rozszerzeń.",
+      "errorFetchingConfigurationHint": "Może to być spowodowane problemami z konfiguracją sieci.",
       "failedInstallingVSIX": "Nie udało się zainstalować {0} z VSIX.",
       "invalidVSIX": "Wybrany plik nie jest prawidłowym pluginem \"*.vsix\".",
       "license": "Licencja: {0}",

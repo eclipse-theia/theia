@@ -434,6 +434,7 @@
     "vsx-registry": {
       "downloadCount": "Descargue el recuento: {0}",
       "errorFetching": "Error en la búsqueda de extensiones.",
+      "errorFetchingConfigurationHint": "Esto podría deberse a problemas de configuración de la red.",
       "failedInstallingVSIX": "Fallo en la instalación de {0} desde VSIX.",
       "invalidVSIX": "El archivo seleccionado no es un plugin válido \"*.vsix\".",
       "license": "License: {0}",
