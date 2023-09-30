@@ -62,7 +62,9 @@
   "scripts": {
     "clean": "theia clean",
     "build": "yarn -s compile && yarn -s bundle",
+    "build:production": "yarn -s compile && yarn -s bundle:production",
     "bundle": "yarn rebuild && theia build --mode development",
+    "bundle:production": "yarn rebuild && theia build --mode production",
     "compile": "tsc -b",
     "coverage": "yarn -s test --test-coverage && yarn -s coverage:report",
     "coverage:clean": "rimraf .nyc_output && rimraf coverage",
