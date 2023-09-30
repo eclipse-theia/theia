@@ -13,7 +13,7 @@
     "idb": "^4.0.5",
     "jsonc-parser": "^2.2.0",
     "vscode-oniguruma": "1.6.1",
-    "vscode-textmate": "^7.0.3"
+    "vscode-textmate": "^9.0.0"
   },
   "publishConfig": {
     "access": "public"

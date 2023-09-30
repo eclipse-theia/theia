@@ -47,7 +47,7 @@
     "semver": "^7.5.4",
     "uuid": "^8.0.0",
     "vhost": "^3.0.2",
-    "vscode-textmate": "^7.0.3"
+    "vscode-textmate": "^9.0.0"
   },
   "publishConfig": {
     "access": "public"
