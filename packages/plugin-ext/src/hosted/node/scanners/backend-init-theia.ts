@@ -17,7 +17,6 @@
 import * as theia from '@theia/plugin';
 import { BackendInitializationFn } from '../../../common/plugin-protocol';
 import { PluginAPIFactory, Plugin, emptyPlugin } from '../../../common/plugin-api-rpc';
-import { realpathSync } from 'fs';
 
 const pluginsApiImpl = new Map<string, typeof theia>();
 const plugins = new Array<Plugin>();
@@ -30,7 +29,7 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
     const apiImpl = apiFactory(plugin);
     pluginsApiImpl.set(plugin.model.id, apiImpl);
 
-    plugins.push({ ...plugin, pluginFolder: realpathSync(plugin.pluginFolder) });
+    plugins.push(plugin);
     pluginApiFactory = apiFactory;
 
     if (!isLoadOverride) {
