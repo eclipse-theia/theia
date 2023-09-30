@@ -17,7 +17,7 @@
 import { PreloadContribution } from './preloader';
 import { DEFAULT_BACKGROUND_COLOR_STORAGE_KEY } from '../frontend-application-config-provider';
 import { injectable } from 'inversify';
-import { DefaultTheme } from '@theia/application-package';
+import { DefaultTheme } from '@theia/application-package/lib/application-props';
 
 @injectable()
 export class ThemePreloadContribution implements PreloadContribution {
