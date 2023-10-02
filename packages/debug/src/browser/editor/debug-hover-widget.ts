@@ -203,12 +203,12 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
             this.hide();
             return;
         }
-        const lineContent = this.editor
+        const expressionLineContent = this.editor
             .getControl()
             .getModel()!
             .getLineContent(this.options.selection.startLineNumber);
         const startColumn =
-            lineContent.indexOf(
+            expressionLineContent.indexOf(
                 matchingExpression,
                 this.options.selection.startColumn - matchingExpression.length
             ) + 1;
