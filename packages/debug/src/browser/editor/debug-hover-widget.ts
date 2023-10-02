@@ -203,6 +203,22 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
             this.hide();
             return;
         }
+        const lineContent = this.editor
+            .getControl()
+            .getModel()!
+            .getLineContent(this.options.selection.startLineNumber);
+        const startColumn =
+            lineContent.indexOf(
+                matchingExpression,
+                this.options.selection.startColumn - matchingExpression.length
+            ) + 1;
+        const endColumn = startColumn + matchingExpression.length;
+        this.options.selection = new monaco.Range(
+            this.options.selection.startLineNumber,
+            startColumn,
+            this.options.selection.startLineNumber,
+            endColumn
+        );
         const toFocus = new DisposableCollection();
         if (this.options.focus === true) {
             toFocus.push(this.model.onNodeRefreshed(() => {
