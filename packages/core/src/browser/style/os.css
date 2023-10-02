@@ -1,0 +1,87 @@
+/********************************************************************************
+ * Copyright (C) 2019 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.mac {
+  --theia-ui-font-family: -apple-system,BlinkMacSystemFont,sans-serif
+}
+
+.mac:lang(zh-Hans) {
+  --theia-ui-font-family: -apple-system,BlinkMacSystemFont,PingFang SC,Hiragino Sans GB,sans-serif
+}
+
+.mac:lang(zh-Hant) {
+  --theia-ui-font-family: -apple-system,BlinkMacSystemFont,PingFang TC,sans-serif
+}
+
+.mac:lang(ja) {
+  --theia-ui-font-family: -apple-system,BlinkMacSystemFont,Hiragino Kaku Gothic Pro,sans-serif
+}
+
+.mac:lang(ko) {
+  --theia-ui-font-family: -apple-system,BlinkMacSystemFont,Nanum Gothic,Apple SD Gothic Neo,AppleGothic,sans-serif
+}
+
+.windows {
+  --theia-ui-font-family: Segoe WPC,Segoe UI,sans-serif
+}
+
+.windows:lang(zh-Hans) {
+  --theia-ui-font-family: Segoe WPC,Segoe UI,Microsoft YaHei,sans-serif
+}
+
+.windows:lang(zh-Hant) {
+  --theia-ui-font-family: Segoe WPC,Segoe UI,Microsoft Jhenghei,sans-serif
+}
+
+.windows:lang(ja) {
+  --theia-ui-font-family: Segoe WPC,Segoe UI,Yu Gothic UI,Meiryo UI,sans-serif
+}
+
+.windows:lang(ko) {
+  --theia-ui-font-family: Segoe WPC,Segoe UI,Malgun Gothic,Dotom,sans-serif
+}
+
+.linux {
+  --theia-ui-font-family: system-ui,Ubuntu,Droid Sans,sans-serif
+}
+
+.linux:lang(zh-Hans) {
+  --theia-ui-font-family: system-ui,Ubuntu,Droid Sans,Source Han Sans SC,Source Han Sans CN,Source Han Sans,sans-serif
+}
+
+.linux:lang(zh-Hant) {
+  --theia-ui-font-family: system-ui,Ubuntu,Droid Sans,Source Han Sans TC,Source Han Sans TW,Source Han Sans,sans-serif
+}
+
+.linux:lang(ja) {
+  --theia-ui-font-family: system-ui,Ubuntu,Droid Sans,Source Han Sans J,Source Han Sans JP,Source Han Sans,sans-serif
+}
+
+.linux:lang(ko) {
+  --theia-ui-font-family: system-ui,Ubuntu,Droid Sans,Source Han Sans K,Source Han Sans JR,Source Han Sans,UnDotum,FBaekmuk Gulim,sans-serif
+}
+
+.mac {
+  --monaco-monospace-font: "SF Mono",Monaco,Menlo,Courier,monospace
+}
+
+.windows {
+  --monaco-monospace-font: Consolas,"Courier New",monospace
+}
+
+.linux {
+  --monaco-monospace-font: "Ubuntu Mono","Liberation Mono","DejaVu Sans Mono","Courier New",monospace
+}
