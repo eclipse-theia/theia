@@ -245,7 +245,7 @@ export class DebugThread extends DebugThreadData implements TreeElement {
         );
     }
 
-    private getlocalizedReason(reason: string | undefined): string{
+    private getlocalizedReason(reason: string | undefined): string {
         switch (reason) {
             case 'step':
                 return nls.localize('theia/debug/step', 'step');
