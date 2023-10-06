@@ -136,6 +136,10 @@
   white-space: nowrap;
 }
 
+.theia-vsx-extension-publisher-container {
+  display: flex;
+}
+
 .theia-vsx-extension-action-bar .action {
   font-size: 90%;
   min-width: auto !important;

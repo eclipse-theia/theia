@@ -211,6 +211,7 @@ export interface VSXExtensionRaw {
     version: string;
     timestamp: string;
     preview?: boolean;
+    verified?: boolean;
     displayName?: string;
     description?: string;
     categories?: string[];

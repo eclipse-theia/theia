@@ -57,6 +57,7 @@ export class VSXExtensionData {
     readonly license?: string;
     readonly readme?: string;
     readonly preview?: boolean;
+    readonly verified?: boolean;
     readonly namespaceAccess?: VSXExtensionNamespaceAccess;
     readonly publishedBy?: VSXUser;
     static KEYS: Set<(keyof VSXExtensionData)> = new Set([
@@ -75,6 +76,7 @@ export class VSXExtensionData {
         'license',
         'readme',
         'preview',
+        'verified',
         'namespaceAccess',
         'publishedBy'
     ]);
@@ -263,6 +265,10 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
 
     get preview(): boolean | undefined {
         return this.getData('preview');
+    }
+
+    get verified(): boolean | undefined {
+        return this.getData('verified');
     }
 
     get namespaceAccess(): VSXExtensionNamespaceAccess | undefined {
@@ -464,7 +470,7 @@ export namespace VSXExtensionComponent {
 
 export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = VSXExtensionComponent.Props> extends AbstractVSXExtensionComponent<Props> {
     override render(): React.ReactNode {
-        const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltip } = this.props.extension;
+        const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltip, verified } = this.props.extension;
 
         return <div
             className='theia-vsx-extension noselect'
@@ -491,7 +497,10 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
                 </div>
                 <div className='noWrapInfo theia-vsx-extension-description'>{description}</div>
                 <div className='theia-vsx-extension-action-bar'>
-                    <span className='noWrapInfo theia-vsx-extension-publisher'>{publisher}</span>
+                    <div className='theia-vsx-extension-publisher-container'>
+                        {verified ? <i className={codicon('check')} /> : undefined}
+                        <span className='noWrapInfo theia-vsx-extension-publisher'>{publisher}</span>
+                    </div>
                     {this.renderAction(this.props.host)}
                 </div>
             </div>

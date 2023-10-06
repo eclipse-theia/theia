@@ -225,13 +225,21 @@ export class VSXExtensionsModel {
                 if (!allVersions) {
                     continue;
                 }
+                const res = await client.query({ extensionId: id, extensionVersion: allVersions.version, includeAllVersions: true });
+                let verified = res.extensions?.[0].verified;
+                if (!verified) {
+                    if (res.extensions?.[0].publishedBy.loginName === 'open-vsx') {
+                        verified = true;
+                    }
+                }
                 this.setExtension(id).update(Object.assign(data, {
                     publisher: data.namespace,
                     downloadUrl: data.files.download,
                     iconUrl: data.files.icon,
                     readmeUrl: data.files.readme,
                     licenseUrl: data.files.license,
-                    version: allVersions.version
+                    version: allVersions.version,
+                    verified: verified
                 }));
                 searchResult.add(id);
             }
