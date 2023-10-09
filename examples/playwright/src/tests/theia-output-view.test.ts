@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from '@playwright/test';
-import { TheiaOutputViewChannel } from 'src/theia-output-channel';
+import { TheiaOutputViewChannel } from '../theia-output-channel';
 import { TheiaApp } from '../theia-app';
 import { TheiaOutputView } from '../theia-output-view';
 import test, { page } from './fixtures/theia-fixture';

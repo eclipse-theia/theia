@@ -16,7 +16,7 @@
 
 import { injectable } from 'inversify';
 import { DefaultSecondaryWindowService } from '../../browser/window/default-secondary-window-service';
-import { ApplicationShell, ExtractableWidget } from 'src/browser';
+import { ApplicationShell, ExtractableWidget } from '../../browser';
 
 @injectable()
 export class ElectronSecondaryWindowService extends DefaultSecondaryWindowService {
