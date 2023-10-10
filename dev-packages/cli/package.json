@@ -39,7 +39,7 @@
     "@types/chai": "^4.2.7",
     "@types/mocha": "^10.0.0",
     "@types/node-fetch": "^2.5.7",
-    "chai": "^4.2.0",
+    "chai": "^4.3.10",
     "chalk": "4.0.0",
     "decompress": "^4.2.1",
     "escape-string-regexp": "4.0.0",
