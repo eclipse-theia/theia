@@ -272,6 +272,22 @@ export class ApplicationShell extends Widget {
         @inject(SecondaryWindowHandler) protected readonly secondaryWindowHandler: SecondaryWindowHandler,
     ) {
         super(options as Widget.IOptions);
+
+        // Merge the user-defined application options with the default options
+        this.options = {
+            bottomPanel: {
+                ...ApplicationShell.DEFAULT_OPTIONS.bottomPanel,
+                ...options?.bottomPanel || {}
+            },
+            leftPanel: {
+                ...ApplicationShell.DEFAULT_OPTIONS.leftPanel,
+                ...options?.leftPanel || {}
+            },
+            rightPanel: {
+                ...ApplicationShell.DEFAULT_OPTIONS.rightPanel,
+                ...options?.rightPanel || {}
+            }
+        };
     }
 
     @postConstruct()
@@ -303,21 +319,6 @@ export class ApplicationShell extends Widget {
     protected initializeShell(): void {
         this.addClass(APPLICATION_SHELL_CLASS);
         this.id = 'theia-app-shell';
-        // Merge the user-defined application options with the default options
-        this.options = {
-            bottomPanel: {
-                ...ApplicationShell.DEFAULT_OPTIONS.bottomPanel,
-                ...this.options?.bottomPanel || {}
-            },
-            leftPanel: {
-                ...ApplicationShell.DEFAULT_OPTIONS.leftPanel,
-                ...this.options?.leftPanel || {}
-            },
-            rightPanel: {
-                ...ApplicationShell.DEFAULT_OPTIONS.rightPanel,
-                ...this.options?.rightPanel || {}
-            }
-        };
 
         this.mainPanel = this.createMainPanel();
         this.topPanel = this.createTopPanel();
