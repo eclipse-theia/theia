@@ -22,6 +22,8 @@ import { PluginPackage, PluginServer } from '@theia/plugin-ext';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { VSXSearchEntry } from '@theia/ovsx-client';
 import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
+import { nls } from '@theia/core/lib/common/nls';
+import { MessageService } from '@theia/core/lib/common/message-service';
 
 @injectable()
 export class VSXLanguageQuickPickService extends LanguageQuickPickService {
@@ -34,6 +36,9 @@ export class VSXLanguageQuickPickService extends LanguageQuickPickService {
 
     @inject(PluginServer)
     protected readonly pluginServer: PluginServer;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     protected override async getAvailableLanguages(): Promise<LanguageQuickPickItem[]> {
         const client = await this.clientProvider();
@@ -62,8 +67,13 @@ export class VSXLanguageQuickPickService extends LanguageQuickPickService {
                     languages.set(localizationContribution.languageId, {
                         ...this.createLanguageQuickPickItem(localizationContribution),
                         execute: async () => {
+                            const progress = await this.messageService.showProgress({
+                                text: nls.localizeByDefault('Installing {0} language support...',
+                                    localizationContribution.localizedLanguageName ?? localizationContribution.languageName ?? localizationContribution.languageId),
+                            });
                             const extensionUri = VSCodeExtensionUri.toUri(extension.extension.name, extension.extension.namespace).toString();
                             await this.pluginServer.deploy(extensionUri);
+                            progress.cancel();
                         }
                     });
                 }
