@@ -18,7 +18,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { ArrayUtils, Command, CommandService, DisposableCollection, Event, nls, QuickInputButton, QuickInputService, QuickPickInput, QuickPickItem, URI, } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { NotebookKernelService, NotebookKernel, NotebookKernelMatchResult, SourceCommand } from './notebook-kernel-service';
@@ -316,7 +315,7 @@ export class KernelPickerMRUStrategy extends NotebookKernelQuickPickServiceImpl 
             quickPick.onDidTriggerItemButton(async e => {
 
                 if (isKernelSourceQuickPickItem(e.item) && e.item.documentation !== undefined) {
-                    const uri: URI | undefined = Uri.isUri(e.item.documentation) ? new URI(e.item.documentation) : await this.commandService.executeCommand(e.item.documentation);
+                    const uri: URI | undefined = this.isUri(e.item.documentation) ? new URI(e.item.documentation) : await this.commandService.executeCommand(e.item.documentation);
                     if (uri) {
                         (await this.openerService.getOpener(uri, { openExternal: true })).open(uri, { openExternal: true });
                     }
@@ -414,6 +413,10 @@ export class KernelPickerMRUStrategy extends NotebookKernelQuickPickServiceImpl 
         }
 
         return false;
+    }
+
+    private isUri(value: string): boolean {
+        return /^(?<scheme>\w[\w\d+.-]*):/.test(value);
     }
 
     private async calculateKernelSources(editor: NotebookModel): Promise<QuickPickInput<KernelQuickPickItem>[]> {

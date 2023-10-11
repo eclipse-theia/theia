@@ -72,11 +72,6 @@ export interface TransientOptions {
     readonly transientDocumentMetadata: TransientDocumentMetadata;
 }
 
-export interface NotebookExtensionDescription {
-    readonly id: string;
-    readonly pluginUri: string | undefined;
-}
-
 export interface CellOutputItem {
     readonly mime: string;
     readonly data: BinaryBuffer;
