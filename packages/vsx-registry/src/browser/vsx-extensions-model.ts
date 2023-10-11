@@ -46,6 +46,7 @@ export class VSXExtensionsModel {
     protected _recommended = new Set<string>();
     protected _searchResult = new Set<string>();
     protected _searchError?: string;
+    protected _onlyShowVerified?: boolean;
 
     protected searchCancellationTokenSource = new CancellationTokenSource();
     protected updateSearchResult = debounce(async () => {
@@ -111,6 +112,15 @@ export class VSXExtensionsModel {
 
     get recommended(): IterableIterator<string> {
         return this._recommended.values();
+    }
+
+    get onlyShowVerified(): boolean | undefined {
+        return this._onlyShowVerified;
+    }
+
+    setOnlyShowVerified(bool: boolean): void {
+        this._onlyShowVerified = bool;
+        this.updateSearchResult();
     }
 
     isInstalled(id: string): boolean {
@@ -232,16 +242,18 @@ export class VSXExtensionsModel {
                         verified = true;
                     }
                 }
-                this.setExtension(id).update(Object.assign(data, {
-                    publisher: data.namespace,
-                    downloadUrl: data.files.download,
-                    iconUrl: data.files.icon,
-                    readmeUrl: data.files.readme,
-                    licenseUrl: data.files.license,
-                    version: allVersions.version,
-                    verified: verified
-                }));
-                searchResult.add(id);
+                if (!this.onlyShowVerified || verified) {
+                    this.setExtension(id).update(Object.assign(data, {
+                        publisher: data.namespace,
+                        downloadUrl: data.files.download,
+                        iconUrl: data.files.icon,
+                        readmeUrl: data.files.readme,
+                        licenseUrl: data.files.license,
+                        version: allVersions.version,
+                        verified: verified
+                    }));
+                    searchResult.add(id);
+                }
             }
             this._searchResult = searchResult;
         }, token);
