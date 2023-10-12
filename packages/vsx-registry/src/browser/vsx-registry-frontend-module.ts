@@ -33,6 +33,7 @@ import { VSXExtensionsSourceOptions } from './vsx-extensions-source';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { bindExtensionPreferences } from './recommended-extensions/recommended-extensions-preference-contribution';
 import { bindPreferenceProviderOverrides } from './recommended-extensions/preference-provider-overrides';
+import { bindVsxExtensionsPreferences } from './vsx-extensions-preferences';
 import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
 import { LanguageQuickPickService } from '@theia/core/lib/browser/i18n/language-quick-pick-service';
 import { VSXLanguageQuickPickService } from './vsx-language-quick-pick-service';
@@ -103,4 +104,5 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bindExtensionPreferences(bind);
     bindPreferenceProviderOverrides(bind, unbind);
+    bindVsxExtensionsPreferences(bind);
 });

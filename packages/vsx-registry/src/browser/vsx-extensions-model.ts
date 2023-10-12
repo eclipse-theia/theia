@@ -46,7 +46,6 @@ export class VSXExtensionsModel {
     protected _recommended = new Set<string>();
     protected _searchResult = new Set<string>();
     protected _searchError?: string;
-    protected _onlyShowVerified?: boolean;
 
     protected searchCancellationTokenSource = new CancellationTokenSource();
     protected updateSearchResult = debounce(async () => {
@@ -114,12 +113,8 @@ export class VSXExtensionsModel {
         return this._recommended.values();
     }
 
-    get onlyShowVerified(): boolean | undefined {
-        return this._onlyShowVerified;
-    }
-
-    setOnlyShowVerified(bool: boolean): void {
-        this._onlyShowVerified = bool;
+    setOnlyShowVerifiedExtensions(bool: boolean): void {
+        this.preferences.updateValue('extensions.onlyShowVerifiedExtensions', bool);
         this.updateSearchResult();
     }
 
@@ -242,7 +237,7 @@ export class VSXExtensionsModel {
                         verified = true;
                     }
                 }
-                if (!this.onlyShowVerified || verified) {
+                if (!this.preferences.get('extensions.onlyShowVerifiedExtensions') || verified) {
                     this.setExtension(id).update(Object.assign(data, {
                         publisher: data.namespace,
                         downloadUrl: data.files.download,
@@ -351,6 +346,11 @@ export class VSXExtensionsModel {
             if (data.error) {
                 return this.onDidFailRefresh(id, data.error);
             }
+            if (!data.verified) {
+                if (data.publishedBy.loginName === 'open-vsx') {
+                    data.verified = true;
+                }
+            }
             extension = this.setExtension(id);
             extension.update(Object.assign(data, {
                 publisher: data.namespace,
@@ -358,7 +358,8 @@ export class VSXExtensionsModel {
                 iconUrl: data.files.icon,
                 readmeUrl: data.files.readme,
                 licenseUrl: data.files.license,
-                version: data.version
+                version: data.version,
+                verified: data.verified
             }));
             return extension;
         } catch (e) {

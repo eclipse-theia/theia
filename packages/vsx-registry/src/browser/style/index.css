@@ -190,6 +190,11 @@
   white-space: nowrap;
 }
 
+.theia-vsx-extension-action-bar .codicon-verified-filled {
+  color: var(--theia-extensionIcon-verifiedForeground);
+  margin-right: 2px;
+}
+
 .theia-vsx-extension-publisher-container {
   display: flex;
 }

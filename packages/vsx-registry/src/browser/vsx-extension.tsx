@@ -28,7 +28,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { CommandRegistry, MenuPath, nls } from '@theia/core/lib/common';
-import { codicon, ContextMenuRenderer, HoverService, TreeWidget } from '@theia/core/lib/browser';
+import { codicon, ConfirmDialog, ContextMenuRenderer, HoverService, TreeWidget } from '@theia/core/lib/browser';
 import { VSXExtensionNamespaceAccess, VSXUser } from '@theia/ovsx-client/lib/ovsx-types';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
@@ -303,13 +303,21 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     async install(options?: PluginDeployOptions): Promise<void> {
-        this._busy++;
-        try {
-            await this.progressService.withProgress(nls.localizeByDefault("Installing extension '{0}' v{1}...", this.id, this.version ?? 0), 'extensions', () =>
-                this.pluginServer.deploy(this.uri.toString(), undefined, options)
-            );
-        } finally {
-            this._busy--;
+        if (!this.verified) {
+            const choice = await new ConfirmDialog({
+                title: nls.localize('theia/vsx-registry/confirmDialogTitle', 'Are you sure you want to proceed with the installation ?'),
+                msg: nls.localize('theia/vsx-registry/confirmDialogMessage', 'The extension "{0}" is unverified and might pose a security risk.', this.displayName)
+            }).open();
+            if (choice) {
+                this._busy++;
+                try {
+                    await this.progressService.withProgress(nls.localizeByDefault("Installing extension '{0}' v{1}...", this.id, this.version ?? 0), 'extensions', () =>
+                        this.pluginServer.deploy(this.uri.toString(), undefined, options)
+                    );
+                } finally {
+                    this._busy--;
+                }
+            }
         }
     }
 
@@ -498,7 +506,7 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
                 <div className='noWrapInfo theia-vsx-extension-description'>{description}</div>
                 <div className='theia-vsx-extension-action-bar'>
                     <div className='theia-vsx-extension-publisher-container'>
-                        {verified ? <i className={codicon('check')} /> : undefined}
+                        {verified ? <i className={codicon('verified-filled')} /> : undefined}
                         <span className='noWrapInfo theia-vsx-extension-publisher'>{publisher}</span>
                     </div>
                     {this.renderAction(this.props.host)}

@@ -17,6 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import { ReactWidget, Message, codicon } from '@theia/core/lib/browser/widgets';
+import { PreferenceService } from '@theia/core/lib/browser';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { VSXExtensionsModel } from './vsx-extensions-model';
 import { nls } from '@theia/core/lib/common/nls';
@@ -24,20 +25,31 @@ import { nls } from '@theia/core/lib/common/nls';
 @injectable()
 export class VSXExtensionsSearchBar extends ReactWidget {
 
-    @inject(VSXExtensionsSearchModel)
-    protected readonly searchModel: VSXExtensionsSearchModel;
-
     @inject(VSXExtensionsModel)
     protected readonly extensionsModel: VSXExtensionsModel;
 
+    @inject(VSXExtensionsSearchModel)
+    protected readonly searchModel: VSXExtensionsSearchModel;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
+    protected input: HTMLInputElement | undefined;
+    protected onlyShowVerifiedExtensions: boolean | undefined;
+
     @postConstruct()
     protected init(): void {
+        this.onlyShowVerifiedExtensions = this.preferenceService.get('extensions.onlyShowVerifiedExtensions');
         this.id = 'vsx-extensions-search-bar';
         this.addClass('theia-vsx-extensions-search-bar');
         this.searchModel.onDidChangeQuery((query: string) => this.updateSearchTerm(query));
+        this.preferenceService.onPreferenceChanged(change => {
+            if (change.preferenceName === 'extensions.onlyShowVerifiedExtensions') {
+                this.onlyShowVerifiedExtensions = change.newValue;
+                this.update();
+            }
+        });
     }
-
-    protected input: HTMLInputElement | undefined;
 
     protected render(): React.ReactNode {
         return <div className='vsx-search-container'>
@@ -68,14 +80,14 @@ export class VSXExtensionsSearchBar extends ReactWidget {
 
     protected renderShowVerifiedExtensions(): React.ReactNode {
         return <span
-            className={`${codicon('verified')} option action-label ${this.extensionsModel.onlyShowVerified ? 'enabled' : ''}`}
-            title={'Only Show Verified Extensions'} // localize
+            className={`${codicon('verified')} option action-label ${this.onlyShowVerifiedExtensions ? 'enabled' : ''}`}
+            title={nls.localize('theia/vsx-registry/onlyShowVerifiedExtensionsTitle', 'Only Show Verified Extensions')}
             onClick={() => this.handleShowVerifiedExtensionsClick()}>
         </span>;
     }
 
     protected handleShowVerifiedExtensionsClick(): void {
-        this.extensionsModel.setOnlyShowVerified(!this.extensionsModel.onlyShowVerified);
+        this.extensionsModel.setOnlyShowVerifiedExtensions(!this.onlyShowVerifiedExtensions);
         this.update();
     }
 
