@@ -243,12 +243,16 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 }),
             ]);
         }
+        this.node.addEventListener('mousedown', this.handleMiddleClickEvent.bind(this));
+        this.node.addEventListener('mouseup', this.handleMiddleClickEvent.bind(this));
+        this.node.addEventListener('auxclick', this.handleMiddleClickEvent.bind(this));
         this.toDispose.pushAll([
             this.model,
             this.model.onChanged(() => this.updateRows()),
             this.model.onSelectionChanged(() => this.scheduleUpdateScrollToRow({ resize: false })),
             this.focusService.onDidChangeFocus(() => this.scheduleUpdateScrollToRow({ resize: false })),
             this.model.onDidChangeBusy(() => this.update()),
+            this.model.onDidUpdate(() => this.update()),
             this.model.onNodeRefreshed(() => this.updateDecorations()),
             this.model.onExpansionChanged(() => this.updateDecorations()),
             this.decoratorService,
@@ -576,6 +580,40 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     /**
+     * Render the node expansion toggle.
+     * @param node the tree node.
+     * @param props the node properties.
+     */
+    protected renderCheckbox(node: TreeNode, props: NodeProps): React.ReactNode {
+        if (node.checkboxInfo === undefined) {
+            // eslint-disable-next-line no-null/no-null
+            return null;
+        }
+        return <input data-node-id={node.id}
+            readOnly
+            type='checkbox'
+            checked={!!node.checkboxInfo.checked}
+            title={node.checkboxInfo.tooltip}
+            aria-label={node.checkboxInfo.accessibilityInformation?.label}
+            role={node.checkboxInfo.accessibilityInformation?.role}
+            className='theia-input'
+            onClick={event => this.toggleChecked(event)} />;
+    }
+
+    protected toggleChecked(event: React.MouseEvent<HTMLElement>): void {
+        const nodeId = event.currentTarget.getAttribute('data-node-id');
+        if (nodeId) {
+            const node = this.model.getNode(nodeId);
+            if (node) {
+                this.model.markAsChecked(node, !node.checkboxInfo!.checked);
+            } else {
+                this.handleClickEvent(node, event);
+            }
+        }
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    /**
      * Render the tree node caption given the node properties.
      * @param node the tree node.
      * @param props the node properties.
@@ -902,6 +940,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         const attributes = this.createNodeAttributes(node, props);
         const content = <div className={TREE_NODE_CONTENT_CLASS}>
             {this.renderExpansionToggle(node, props)}
+            {this.renderCheckbox(node, props)}
             {this.decorateIcon(node, this.renderIcon(node, props))}
             {this.renderCaptionAffixes(node, props, 'captionPrefixes')}
             {this.renderCaption(node, props)}
@@ -924,6 +963,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             style,
             onClick: event => this.handleClickEvent(node, event),
             onDoubleClick: event => this.handleDblClickEvent(node, event),
+            onAuxClick: event => this.handleAuxClickEvent(node, event),
             onContextMenu: event => this.handleContextMenuEvent(node, event),
         };
     }
@@ -1236,6 +1276,32 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected handleDblClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         this.model.openNode(node);
         event.stopPropagation();
+    }
+
+    /**
+     * Handle the middle-click mouse event.
+     * @param node the tree node if available.
+     * @param event the middle-click mouse event.
+     */
+    protected handleAuxClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+        if (event.button === 1) {
+            this.model.openNode(node);
+            if (SelectableTreeNode.is(node)) {
+                this.model.selectNode(node);
+            }
+        }
+        event.stopPropagation();
+    }
+
+    /**
+     * Handle the middle-click mouse event.
+     * @param event the middle-click mouse event.
+     */
+    protected handleMiddleClickEvent(event: MouseEvent): void {
+        // Prevents auto-scrolling behavior when middle-clicking.
+        if (event.button === 1) {
+            event.preventDefault();
+        }
     }
 
     /**

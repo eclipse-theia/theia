@@ -153,7 +153,7 @@ export namespace WorkspaceCommands {
 export class FileMenuContribution implements MenuContribution {
 
     registerMenus(registry: MenuModelRegistry): void {
-        registry.registerMenuAction(CommonMenus.FILE_NEW, {
+        registry.registerMenuAction(CommonMenus.FILE_NEW_TEXT, {
             commandId: WorkspaceCommands.NEW_FOLDER.id,
             order: 'b'
         });

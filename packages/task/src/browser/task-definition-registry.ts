@@ -113,6 +113,9 @@ export class TaskDefinitionRegistry {
         if (oneType !== otherType) {
             return false;
         }
+        if (one['taskType'] !== other['taskType']) {
+            return false;
+        }
         const def = this.getDefinition(one);
         if (def) {
             // scope is either a string or an enum value. Anyway...they must exactly match

@@ -39,10 +39,17 @@ body {
 }
 
 .gs-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.gs-content-container {
   padding: 20px;
 }
 
-.gs-container a {
+.gs-content-container a {
   cursor: pointer;
 }
 
@@ -88,4 +95,15 @@ body {
   color: var(--theia-descriptionForeground);
   text-transform: capitalize;
   font-weight: 400;
+}
+
+.gs-preference-container {
+  display: flex;
+  justify-content: center;
+}
+
+.gs-preference {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
 }

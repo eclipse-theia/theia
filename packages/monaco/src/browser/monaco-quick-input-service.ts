@@ -18,7 +18,7 @@ import {
     ApplicationShell,
     InputBox, InputOptions, KeybindingRegistry, NormalizedQuickInputButton, PickOptions,
     QuickInputButton, QuickInputHideReason, QuickInputService, QuickPick, QuickPickItem,
-    QuickPickItemButtonEvent, QuickPickItemHighlights, QuickPickOptions, QuickPickSeparator
+    QuickPickItemButtonEvent, QuickPickItemHighlights, QuickPickOptions, QuickPickSeparator, codiconArray
 } from '@theia/core/lib/browser';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import {
@@ -42,6 +42,7 @@ import { Event } from '@theia/core';
 import { MonacoColorRegistry } from './monaco-color-registry';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 // Copied from @vscode/src/vs/base/parts/quickInput/browser/quickInputList.ts
 export interface IListElement {
@@ -316,6 +317,18 @@ export class MonacoQuickInputService implements QuickInputService {
         const monacoPicks: Promise<QuickPickInput<IQuickPickItem>[]> = new Promise(async resolve => {
             const updatedPicks = (await picks).map(pick => {
                 if (pick.type !== 'separator') {
+                    const icon = pick.iconPath;
+                    // @monaco-uplift
+                    // Other kind of icons (URI and URI dark/light) shall be supported once monaco editor has been upgraded to at least 1.81.
+                    // see https://github.com/eclipse-theia/theia/pull/12945#issue-1913645228
+                    if (ThemeIcon.isThemeIcon(icon)) {
+                        const codicon = codiconArray(icon.id);
+                        if (pick.iconClasses) {
+                            pick.iconClasses.push(...codicon);
+                        } else {
+                            pick.iconClasses = codicon;
+                        }
+                    }
                     pick.buttons &&= pick.buttons.map(QuickInputButton.normalize);
                 }
                 return pick as M;

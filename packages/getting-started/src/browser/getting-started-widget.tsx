@@ -20,7 +20,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { CommandRegistry, isOSX, environment, Path } from '@theia/core/lib/common';
 import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browser';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
-import { Message, ReactWidget, CommonCommands, LabelProvider, Key, KeyCode, codicon } from '@theia/core/lib/browser';
+import { Message, ReactWidget, CommonCommands, LabelProvider, Key, KeyCode, codicon, PreferenceService } from '@theia/core/lib/browser';
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -47,7 +47,7 @@ export class GettingStartedWidget extends ReactWidget {
     /**
      * The widget `label` which is used for display purposes.
      */
-    static readonly LABEL = nls.localizeByDefault('Get Started');
+    static readonly LABEL = nls.localizeByDefault('Welcome');
 
     /**
      * The `ApplicationInfo` for the application if available.
@@ -97,6 +97,9 @@ export class GettingStartedWidget extends ReactWidget {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     @postConstruct()
     protected init(): void {
         this.doInit();
@@ -127,32 +130,37 @@ export class GettingStartedWidget extends ReactWidget {
      */
     protected render(): React.ReactNode {
         return <div className='gs-container'>
-            {this.renderHeader()}
-            <hr className='gs-hr' />
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderOpen()}
+            <div className='gs-content-container'>
+                {this.renderHeader()}
+                <hr className='gs-hr' />
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderOpen()}
+                    </div>
+                </div>
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderRecentWorkspaces()}
+                    </div>
+                </div>
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderSettings()}
+                    </div>
+                </div>
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderHelp()}
+                    </div>
+                </div>
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderVersion()}
+                    </div>
                 </div>
             </div>
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderRecentWorkspaces()}
-                </div>
-            </div>
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderSettings()}
-                </div>
-            </div>
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderHelp()}
-                </div>
-            </div>
-            <div className='flex-grid'>
-                <div className='col'>
-                    {this.renderVersion()}
-                </div>
+            <div className='gs-preference-container'>
+                {this.renderPreferences()}
             </div>
         </div>;
     }
@@ -262,8 +270,8 @@ export class GettingStartedWidget extends ReactWidget {
                 <a
                     role={'button'}
                     tabIndex={0}
-                    onClick={this.doOpenWorkspace}
-                    onKeyDown={this.doOpenWorkspaceEnter}>
+                    onClick={this.doOpenFolder}
+                    onKeyDown={this.doOpenFolderEnter}>
                     {nls.localizeByDefault('open a folder')}
                 </a>
                 {' ' + nls.localizeByDefault('to start.')}
@@ -362,6 +370,10 @@ export class GettingStartedWidget extends ReactWidget {
                 </p>
             </div>
         </div>;
+    }
+
+    protected renderPreferences(): React.ReactNode {
+        return <WelcomePreferences preferenceService={this.preferenceService}></WelcomePreferences>;
     }
 
     /**
@@ -477,4 +489,41 @@ export class GettingStartedWidget extends ReactWidget {
     protected isEnterKey(e: React.KeyboardEvent): boolean {
         return Key.ENTER.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode;
     }
+}
+
+export interface PreferencesProps {
+    preferenceService: PreferenceService;
+}
+
+function WelcomePreferences(props: PreferencesProps): JSX.Element {
+    const [startupEditor, setStartupEditor] = React.useState<string>(
+        props.preferenceService.get('workbench.startupEditor', 'welcomePage')
+    );
+    React.useEffect(() => {
+        const prefListener = props.preferenceService.onPreferenceChanged(change => {
+            if (change.preferenceName === 'workbench.startupEditor') {
+                const prefValue = change.newValue;
+                setStartupEditor(prefValue);
+            }
+        });
+        return () => prefListener.dispose();
+    }, [props.preferenceService]);
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.checked ? 'welcomePage' : 'none';
+        props.preferenceService.updateValue('workbench.startupEditor', newValue);
+    };
+    return (
+        <div className='gs-preference'>
+            <input
+                type="checkbox"
+                className="theia-input"
+                id="startupEditor"
+                onChange={handleChange}
+                checked={startupEditor === 'welcomePage' || startupEditor === 'welcomePageInEmptyWorkbench'}
+            />
+            <label htmlFor="startupEditor">
+                {nls.localizeByDefault('Show welcome page on startup')}
+            </label>
+        </div>
+    );
 }

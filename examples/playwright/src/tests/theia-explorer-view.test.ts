@@ -110,8 +110,11 @@ test.describe('Theia Explorer View', () => {
     });
 
     test('should be able to check if compact folder "sampleFolderCompact/nestedFolder1/nestedFolder2" exists', async () => {
+        const fileStatElements = await explorer.visibleFileStatNodes();
         // default setting `explorer.compactFolders=true` renders folders in a compact form - single child folders will be compressed in a combined tree element
         expect(await explorer.existsDirectoryNode('sampleFolderCompact/nestedFolder1/nestedFolder2', true /* compact */)).toBe(true);
+        // the `existsDirectoryNode` function will expand the folder, hence we wait for the file nodes to increase as we expect a txt child file node
+        await explorer.waitForFileNodesToIncrease(fileStatElements.length);
     });
 
     test('should provide file stat node by path of compact folder "sampleFolderCompact/nestedFolder1/nestedFolder2/sampleFile1-1.txt"', async () => {
@@ -139,6 +142,48 @@ test.describe('Theia Explorer View', () => {
         expect(await explorer.existsFileNode('sample-new.txt')).toBe(true);
         await explorer.renameNode('sample-new.txt', 'sample.txt');
         expect(await explorer.existsFileNode('sample.txt')).toBe(true);
+    });
+
+    test('should open context menu on nested folder segment "nestedFolder1"', async () => {
+        expect(await explorer.existsDirectoryNode('sampleFolderCompact/nestedFolder1/nestedFolder2', true /* compact */)).toBe(true);
+        const folder = await explorer.getFileStatNodeByLabel('sampleFolderCompact/nestedFolder1/nestedFolder2', true /* compact */);
+        const menu = await folder.openContextMenuOnSegment('nestedFolder1');
+        expect(await menu.isOpen()).toBe(true);
+
+        const menuItems = await menu.visibleMenuItems();
+        expect(menuItems).toContain('New File...');
+        expect(menuItems).toContain('New Folder...');
+        expect(menuItems).toContain('Open in Integrated Terminal');
+        expect(menuItems).toContain('Find in Folder...');
+
+        await menu.close();
+        expect(await menu.isOpen()).toBe(false);
+    });
+
+    test('should rename compact folder "sampleFolderCompact" to "sampleDirectoryCompact', async () => {
+        expect(await explorer.existsDirectoryNode('sampleFolderCompact/nestedFolder1/nestedFolder2', true /* compact */)).toBe(true);
+        await explorer.renameNode(
+            'sampleFolderCompact/nestedFolder1/nestedFolder2', 'sampleDirectoryCompact',
+            true /* confirm */, 'sampleFolderCompact' /* nodeSegmentLabel */);
+        expect(await explorer.existsDirectoryNode('sampleDirectoryCompact/nestedFolder1/nestedFolder2', true /* compact */)).toBe(true);
+    });
+
+    test('should delete nested folder "sampleDirectoryCompact/nestedFolder1/nestedFolder2"', async () => {
+        const fileStatElements = await explorer.visibleFileStatNodes();
+        expect(await explorer.existsDirectoryNode('sampleDirectoryCompact/nestedFolder1/nestedFolder2', true /* compact */)).toBe(true);
+        await explorer.deleteNode('sampleDirectoryCompact/nestedFolder1/nestedFolder2', true /* confirm */, 'nestedFolder2' /* nodeSegmentLabel */);
+        await explorer.waitForFileNodesToDecrease(fileStatElements.length);
+        const updatedFileStatElements = await explorer.visibleFileStatNodes();
+        expect(updatedFileStatElements.length).toBe(fileStatElements.length - 1);
+    });
+
+    test('should delete compact folder "sampleDirectoryCompact/nestedFolder1"', async () => {
+        const fileStatElements = await explorer.visibleFileStatNodes();
+        expect(await explorer.existsDirectoryNode('sampleDirectoryCompact/nestedFolder1', true /* compact */)).toBe(true);
+        await explorer.deleteNode('sampleDirectoryCompact/nestedFolder1', true /* confirm */, 'sampleDirectoryCompact' /* nodeSegmentLabel */);
+        await explorer.waitForFileNodesToDecrease(fileStatElements.length);
+        const updatedFileStatElements = await explorer.visibleFileStatNodes();
+        expect(updatedFileStatElements.length).toBe(fileStatElements.length - 1);
     });
 
 });

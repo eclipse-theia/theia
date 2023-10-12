@@ -17,6 +17,7 @@
 import * as path from 'path';
 import * as express from '@theia/core/shared/express';
 import * as escape_html from 'escape-html';
+import { realpath } from 'fs/promises';
 import { ILogger } from '@theia/core';
 import { inject, injectable, optional, multiInject } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
@@ -93,11 +94,12 @@ export class HostedPluginReader implements BackendApplicationContribution {
         if (!pluginPath) {
             return undefined;
         }
-        const manifest = await loadManifest(pluginPath);
+        const resolvedPluginPath = await realpath(pluginPath);
+        const manifest = await loadManifest(resolvedPluginPath);
         if (!manifest) {
             return undefined;
         }
-        manifest.packagePath = pluginPath;
+        manifest.packagePath = resolvedPluginPath;
         return manifest;
     }
 
@@ -118,7 +120,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
         return pluginMetadata;
     }
 
-    readContribution(plugin: PluginPackage): PluginContribution | undefined {
+    async readContribution(plugin: PluginPackage): Promise<PluginContribution | undefined> {
         const scanner = this.scanner.getScanner(plugin);
         return scanner.getContribution(plugin);
     }

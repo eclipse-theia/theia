@@ -2,7 +2,7 @@
 
 ## Version Support Policy
 
-We try to support Node.js versions from 12 up to the current _Active LTS_ version.
+We aim to support Node.js current _Active LTS_ version.
 
 See https://nodejs.org/en/about/releases/ to see the status of Node.js versions.
 
@@ -15,6 +15,7 @@ Note that the Node.js version you should use depends on your own project's depen
 - Follow Node.js LTS cadence and initiate the update when a new Node.js version becomes _Active LTS_.
 - Use `@types/node` for the oldest supported Node version (backward compatibility).
 - Update the CI matrix to include the new Node.js versions to support.
+- Update the documentation referencing recommended Node versions.
 - Update the CHANGELOG.
 
 # Electron

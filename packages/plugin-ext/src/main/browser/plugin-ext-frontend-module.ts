@@ -72,7 +72,6 @@ import { PluginCustomEditorRegistry } from './custom-editors/plugin-custom-edito
 import { CustomEditorWidgetFactory } from '../browser/custom-editors/custom-editor-widget-factory';
 import { CustomEditorWidget } from './custom-editors/custom-editor-widget';
 import { CustomEditorService } from './custom-editors/custom-editor-service';
-import { UndoRedoService } from './custom-editors/undo-redo-service';
 import { WebviewFrontendSecurityWarnings } from './webview/webview-frontend-security-warnings';
 import { PluginAuthenticationServiceImpl } from './plugin-authentication-service';
 import { AuthenticationService } from '@theia/core/lib/browser/authentication-service';
@@ -85,6 +84,9 @@ import { DnDFileContentStore } from './view/dnd-file-content-store';
 import { WebviewContextKeys } from './webview/webview-context-keys';
 import { LanguagePackService, languagePackServicePath } from '../../common/language-pack-service';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { CellOutputWebviewFactory } from '@theia/notebook/lib/browser';
+import { CellOutputWebviewImpl, createCellOutputWebviewContainer } from './notebooks/renderers/cell-output-webview';
+import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -193,8 +195,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CustomEditorWidgetFactory).toDynamicValue(ctx => new CustomEditorWidgetFactory(ctx.container)).inSingletonScope();
     bind(WidgetFactory).toService(CustomEditorWidgetFactory);
 
-    bind(UndoRedoService).toSelf().inSingletonScope();
-
     bind(PluginViewWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: PLUGIN_VIEW_FACTORY_ID,
@@ -257,4 +257,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         const provider = ctx.container.get(WebSocketConnectionProvider);
         return provider.createProxy<LanguagePackService>(languagePackServicePath);
     }).inSingletonScope();
+
+    bind(CellOutputWebviewFactory).toFactory(ctx => async (cell: NotebookCellModel) =>
+        createCellOutputWebviewContainer(ctx.container, cell).getAsync(CellOutputWebviewImpl)
+    );
 });

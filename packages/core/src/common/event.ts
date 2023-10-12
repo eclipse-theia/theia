@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Disposable, DisposableGroup } from './disposable';
+import { Disposable, DisposableGroup, DisposableCollection } from './disposable';
 import { MaybePromise } from './types';
 
 /**
@@ -66,6 +66,16 @@ export namespace Event {
             get maxListeners(): number { return 0; },
             set maxListeners(maxListeners: number) { }
         });
+    }
+
+    /**
+     * Given a collection of events, returns a single event which emits whenever any of the provided events emit.
+     */
+    export function any<T>(...events: Event<T>[]): Event<T>;
+    export function any(...events: Event<any>[]): Event<void>;
+    export function any<T>(...events: Event<T>[]): Event<T> {
+        return (listener, thisArgs = undefined, disposables?: Disposable[]) =>
+            new DisposableCollection(...events.map(event => event(e => listener.call(thisArgs, e), undefined, disposables)));
     }
 }
 
@@ -276,7 +286,7 @@ export class Emitter<T = any> {
      */
     fire(event: T): any {
         if (this._callbacks) {
-            this._callbacks.invoke(event);
+            return this._callbacks.invoke(event);
         }
     }
 

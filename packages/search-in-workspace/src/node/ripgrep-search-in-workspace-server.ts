@@ -101,6 +101,10 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         args.add('--hidden');
         args.add('--json');
 
+        if (options?.multiline) {
+            args.add('--multiline');
+        }
+
         if (options?.matchCase) {
             args.add('--case-sensitive');
         } else {
@@ -216,7 +220,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         const rootPaths = rootUris.map(root => FileUri.fsPath(root));
         // If there are absolute paths in `include` we will remove them and use
         // those as paths to search from.
-        const searchPaths = this.extractSearchPathsFromIncludes(rootPaths, options);
+        const searchPaths = await this.extractSearchPathsFromIncludes(rootPaths, options);
         options.include = this.replaceRelativeToAbsolute(searchPaths, options.include);
         options.exclude = this.replaceRelativeToAbsolute(searchPaths, options.exclude);
         const rgArgs = this.getArgs(options);
@@ -388,23 +392,27 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
      * Any pattern that resulted in a valid search path will be removed from the 'include' list as it is
      * provided as an equivalent search path instead.
      */
-    protected extractSearchPathsFromIncludes(rootPaths: string[], options: SearchInWorkspaceOptions): string[] {
+    protected async extractSearchPathsFromIncludes(rootPaths: string[], options: SearchInWorkspaceOptions): Promise<string[]> {
         if (!options.include) {
             return rootPaths;
         }
         const resolvedPaths = new Set<string>();
-        options.include = options.include.filter(pattern => {
+        const include: string[] = [];
+        for (const pattern of options.include) {
             let keep = true;
             for (const root of rootPaths) {
-                const absolutePath = this.getAbsolutePathFromPattern(root, pattern);
+                const absolutePath = await this.getAbsolutePathFromPattern(root, pattern);
                 // undefined means the pattern cannot be converted into an absolute path
                 if (absolutePath) {
                     resolvedPaths.add(absolutePath);
                     keep = false;
                 }
             }
-            return keep;
-        });
+            if (keep) {
+                include.push(pattern);
+            }
+        }
+        options.include = include;
         return resolvedPaths.size > 0
             ? Array.from(resolvedPaths)
             : rootPaths;
@@ -417,7 +425,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
      *
      * @returns undefined if the pattern cannot be converted into an absolute path.
      */
-    protected getAbsolutePathFromPattern(root: string, pattern: string): string | undefined {
+    protected async getAbsolutePathFromPattern(root: string, pattern: string): Promise<string | undefined> {
         pattern = pattern.replace(/\\/g, '/');
         // The pattern is not referring to a single file or folder, i.e. not to be converted
         if (!path.isAbsolute(pattern) && !pattern.startsWith('./')) {
@@ -429,7 +437,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         }
         // if `pattern` is absolute then `root` will be ignored by `path.resolve()`
         const targetPath = path.resolve(root, pattern);
-        if (fs.existsSync(targetPath)) {
+        if (await fs.pathExists(targetPath)) {
             return targetPath;
         }
         return undefined;

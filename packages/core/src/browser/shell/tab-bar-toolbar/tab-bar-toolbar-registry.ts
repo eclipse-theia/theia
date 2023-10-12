@@ -17,11 +17,11 @@
 import debounce = require('lodash.debounce');
 import { inject, injectable, named } from 'inversify';
 // eslint-disable-next-line max-len
-import { CommandMenuNode, CommandRegistry, CompoundMenuNode, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuPath } from '../../../common';
+import { CommandMenuNode, CommandRegistry, CompoundMenuNode, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuNode, MenuPath } from '../../../common';
 import { ContextKeyService } from '../../context-key-service';
 import { FrontendApplicationContribution } from '../../frontend-application';
 import { Widget } from '../../widgets';
-import { MenuDelegate, ReactTabBarToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
+import { AnyToolbarItem, ConditionalToolbarItem, MenuDelegate, MenuToolbarItem, ReactTabBarToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
 import { ToolbarMenuNodeWrapper } from './tab-bar-toolbar-menu-adapters';
 
 /**
@@ -103,10 +103,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
         }
         const result: Array<TabBarToolbarItem | ReactTabBarToolbarItem> = [];
         for (const item of this.items.values()) {
-            const visible = TabBarToolbarItem.is(item)
-                ? this.commandRegistry.isVisible(item.command, widget)
-                : (!item.isVisible || item.isVisible(widget));
-            if (visible && (!item.when || this.contextKeyService.match(item.when, widget.node))) {
+            if (this.isItemVisible(item, widget)) {
                 result.push(item);
             }
         }
@@ -139,6 +136,83 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
         return result;
     }
 
+    /**
+     * Query whether a toolbar `item` should be shown in the toolbar.
+     * This implementation delegates to item-specific checks according to their type.
+     *
+     * @param item a menu toolbar item
+     * @param widget the widget that is updating the toolbar
+     * @returns `false` if the `item` should be suppressed, otherwise `true`
+     */
+    protected isItemVisible(item: TabBarToolbarItem | ReactTabBarToolbarItem, widget: Widget): boolean {
+        if (TabBarToolbarItem.is(item) && item.command && !this.isTabBarToolbarItemVisible(item, widget)) {
+            return false;
+        }
+        if (MenuToolbarItem.is(item) && !this.isMenuToolbarItemVisible(item, widget)) {
+            return false;
+        }
+        if (AnyToolbarItem.isConditional(item) && !this.isConditionalItemVisible(item, widget)) {
+            return false;
+        }
+        // The item is not vetoed. Accept it
+        return true;
+    }
+
+    /**
+     * Query whether a conditional toolbar `item` should be shown in the toolbar.
+     * This implementation delegates to the `item`'s own intrinsic conditionality.
+     *
+     * @param item a menu toolbar item
+     * @param widget the widget that is updating the toolbar
+     * @returns `false` if the `item` should be suppressed, otherwise `true`
+     */
+    protected isConditionalItemVisible(item: ConditionalToolbarItem, widget: Widget): boolean {
+        if (item.isVisible && !item.isVisible(widget)) {
+            return false;
+        }
+        if (item.when && !this.contextKeyService.match(item.when, widget.node)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Query whether a tab-bar toolbar `item` that has a command should be shown in the toolbar.
+     * This implementation returns `false` if the `item`'s command is not visible in the
+     * `widget` according to the command registry.
+     *
+     * @param item a tab-bar toolbar item that has a non-empty `command`
+     * @param widget the widget that is updating the toolbar
+     * @returns `false` if the `item` should be suppressed, otherwise `true`
+     */
+    protected isTabBarToolbarItemVisible(item: TabBarToolbarItem, widget: Widget): boolean {
+        return this.commandRegistry.isVisible(item.command, widget);
+    }
+
+    /**
+     * Query whether a menu toolbar `item` should be shown in the toolbar.
+     * This implementation returns `false` if the `item` does not have any actual menu to show.
+     *
+     * @param item a menu toolbar item
+     * @param widget the widget that is updating the toolbar
+     * @returns `false` if the `item` should be suppressed, otherwise `true`
+     */
+    protected isMenuToolbarItemVisible(item: MenuToolbarItem, widget: Widget): boolean {
+        const menu = this.menuRegistry.getMenu(item.menuPath);
+        const isVisible: (node: MenuNode) => boolean = node =>
+            node.children?.length
+                // Either the node is a sub-menu that has some visible child ...
+                ? node.children?.some(isVisible)
+                // ... or there is a command ...
+                : !!node.command
+                // ... that is visible ...
+                && this.commandRegistry.isVisible(node.command, widget)
+                // ... and a "when" clause does not suppress the menu node.
+                && (!node.when || this.contextKeyService.match(node.when, widget?.node));
+
+        return isVisible(menu);
+    }
+
     unregisterItem(itemOrId: TabBarToolbarItem | ReactTabBarToolbarItem | string): void {
         const id = typeof itemOrId === 'string' ? itemOrId : itemOrId.id;
         if (this.items.delete(id)) {
@@ -147,7 +221,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
     }
 
     registerMenuDelegate(menuPath: MenuPath, when?: string | ((widget: Widget) => boolean)): Disposable {
-        const id = menuPath.join(menuDelegateSeparator);
+        const id = this.toElementId(menuPath);
         if (!this.menuDelegates.has(id)) {
             const isVisible: MenuDelegate['isVisible'] = !when
                 ? yes
@@ -163,8 +237,20 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
     }
 
     unregisterMenuDelegate(menuPath: MenuPath): void {
-        if (this.menuDelegates.delete(menuPath.join(menuDelegateSeparator))) {
+        if (this.menuDelegates.delete(this.toElementId(menuPath))) {
             this.fireOnDidChange();
         }
     }
+
+    /**
+     * Generate a single ID string from a menu path that
+     * is likely to be unique amongst the items in the toolbar.
+     *
+     * @param menuPath a menubar path
+     * @returns a likely unique ID based on the path
+     */
+    toElementId(menuPath: MenuPath): string {
+        return menuPath.join(menuDelegateSeparator);
+    }
+
 }

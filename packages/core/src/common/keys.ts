@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { nls } from './nls';
 import { isOSX } from './os';
 import { isObject } from './types';
 
@@ -252,7 +253,7 @@ export class KeyCode {
         }
         /* If duplicates i.e ctrl+ctrl+a or alt+alt+b or b+alt+b it is invalid */
         if (keys.length !== new Set(keys).size) {
-            throw new Error(`Can't parse keybinding ${keybinding} Duplicate modifiers`);
+            throw new Error(nls.localize('theia/core/keybinding/duplicateModifierError', "Can't parse keybinding {0} Duplicate modifiers", keybinding));
         }
 
         for (let keyString of keys) {
@@ -266,7 +267,7 @@ export class KeyCode {
                 if (isOSX) {
                     schema.meta = true;
                 } else {
-                    throw new Error(`Can't parse keybinding ${keybinding} meta is for OSX only`);
+                    throw new Error(nls.localize('theia/core/keybinding/metaError', "Can't parse keybinding {0} meta is for OSX only", keybinding));
                 }
                 /* ctrlcmd for M1 keybindings that work on both macOS and other platforms */
             } else if (keyString === SpecialCases.CTRLCMD) {
@@ -288,7 +289,7 @@ export class KeyCode {
                     schema.key = key;
                 }
             } else {
-                throw new Error(`Unrecognized key '${keyString}' in '${keybinding}'`);
+                throw new Error(nls.localize('theia/core/keybinding/unrecognizedKeyError', 'Unrecognized key {0} in {1}', keyString, keybinding));
             }
         }
 

@@ -52,7 +52,7 @@ export class EditorLineNumberContribution implements FrontendApplicationContribu
     }
 
     protected handleContextMenu(editor: TextEditor, event: EditorMouseEvent): void {
-        if (event.target && event.target.type === MouseTargetType.GUTTER_LINE_NUMBERS) {
+        if (event.target && (event.target.type === MouseTargetType.GUTTER_LINE_NUMBERS || event.target.type === MouseTargetType.GUTTER_GLYPH_MARGIN)) {
             if (event.event.button === 2) {
                 editor.focus();
                 const lineNumber = lineNumberFromPosition(event.target.position);
@@ -60,7 +60,8 @@ export class EditorLineNumberContribution implements FrontendApplicationContribu
                 const uri = editor.getResourceUri()!;
                 const args = [{
                     lineNumber: lineNumber,
-                    uri: uri['codeUri']
+                    column: 1, // Compatible with Monaco editor IPosition API
+                    uri: uri['codeUri'],
                 }];
 
                 setTimeout(() => {

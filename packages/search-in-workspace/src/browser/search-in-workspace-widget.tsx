@@ -28,6 +28,7 @@ import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory
 import { EditorManager } from '@theia/editor/lib/browser';
 import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
 import { SearchInWorkspaceInput } from './components/search-in-workspace-input';
+import { SearchInWorkspaceTextArea } from './components/search-in-workspace-textarea';
 import { nls } from '@theia/core/lib/common/nls';
 
 export interface SearchFieldState {
@@ -65,8 +66,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected searchTerm = '';
     protected replaceTerm = '';
 
-    private searchRef = React.createRef<SearchInWorkspaceInput>();
-    private replaceRef = React.createRef<SearchInWorkspaceInput>();
+    private searchRef = React.createRef<SearchInWorkspaceTextArea>();
+    private replaceRef = React.createRef<SearchInWorkspaceTextArea>();
     private includeRef = React.createRef<SearchInWorkspaceInput>();
     private excludeRef = React.createRef<SearchInWorkspaceInput>();
 
@@ -142,6 +143,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             matchCase: false,
             matchWholeWord: false,
             useRegExp: false,
+            multiline: false,
             includeIgnored: false,
             include: [],
             exclude: [],
@@ -323,6 +325,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
+        this.searchRef.current?.forceUpdate();
+        this.replaceRef.current?.forceUpdate();
         MessageLoop.sendMessage(this.resultTreeWidget, Widget.ResizeMessage.UnknownSize);
     }
 
@@ -447,7 +451,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         const searchOptions: SearchInWorkspaceOptions = {
             ...this.searchInWorkspaceOptions,
             followSymlinks: this.shouldFollowSymlinks(),
-            matchCase: this.shouldMatchCase()
+            matchCase: this.shouldMatchCase(),
+            multiline: this.searchTerm.includes('\n')
         };
         this.resultTreeWidget.search(this.searchTerm, searchOptions);
     }
@@ -471,12 +476,10 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected renderSearchField(): React.ReactNode {
-        const input = <SearchInWorkspaceInput
+        const input = <SearchInWorkspaceTextArea
             id='search-input-field'
             className='theia-input'
             title={SearchInWorkspaceWidget.LABEL}
-            type='text'
-            size={1}
             placeholder={SearchInWorkspaceWidget.LABEL}
             defaultValue={this.searchTerm}
             autoComplete='off'
@@ -516,12 +519,10 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         const replaceAllButtonContainer = this.renderReplaceAllButtonContainer();
         const replace = nls.localizeByDefault('Replace');
         return <div className={`replace-field${this.showReplaceField ? '' : ' hidden'}`}>
-            <SearchInWorkspaceInput
+            <SearchInWorkspaceTextArea
                 id='replace-input-field'
                 className='theia-input'
                 title={replace}
-                type='text'
-                size={1}
                 placeholder={replace}
                 defaultValue={this.replaceTerm}
                 autoComplete='off'

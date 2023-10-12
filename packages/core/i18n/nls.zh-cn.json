@@ -113,6 +113,7 @@
       }
     },
     "filesystem": {
+      "copiedToClipboard": "将下载链接复制到剪贴板。",
       "copyDownloadLink": "复制下载链接",
       "dialog": {
         "initialLocation": "转到初始位置",
@@ -142,7 +143,10 @@
     "getting-started": {
       "apiComparator": "{0} API兼容性",
       "newExtension": "构建一个新的扩展",
-      "newPlugin": "构建一个新的插件"
+      "newPlugin": "构建一个新的插件",
+      "startup-editor": {
+        "welcomePage": "打开欢迎页面,其中包含帮助开始使用{0} 和扩展程序的内容。"
+      }
     },
     "git": {
       "aFewSecondsAgo": "几秒钟前",
@@ -430,6 +434,7 @@
     "vsx-registry": {
       "downloadCount": "下载次数: {0}",
       "errorFetching": "取出扩展程序时出错。",
+      "errorFetchingConfigurationHint": "这可能是网络配置问题造成的。",
       "failedInstallingVSIX": "从VSIX安装{0} ,失败了。",
       "invalidVSIX": "所选文件不是有效的 \"*.vsix \"插件。",
       "license": "许可证: {0}",

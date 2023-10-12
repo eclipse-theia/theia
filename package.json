@@ -4,17 +4,17 @@
   "version": "0.0.0",
   "engines": {
     "yarn": ">=1.7.0 <2",
-    "node": ">=16.14.0 <17"
+    "node": ">=16"
   },
   "resolutions": {
-    "**/@types/node": "16"
+    "**/@types/node": "18"
   },
   "devDependencies": {
     "@types/chai": "4.3.0",
     "@types/chai-spies": "1.0.3",
     "@types/chai-string": "^1.4.0",
     "@types/jsdom": "^21.1.1",
-    "@types/node": "16",
+    "@types/node": "18",
     "@types/sinon": "^10.0.6",
     "@types/temp": "^0.9.1",
     "@types/uuid": "^7.0.3",
@@ -22,7 +22,7 @@
     "@typescript-eslint/eslint-plugin-tslint": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
     "@vscode/vsce": "^2.15.0",
-    "chai": "4.3.4",
+    "chai": "4.3.10",
     "chai-spies": "1.0.0",
     "chai-string": "^1.4.0",
     "chalk": "4.0.0",
@@ -40,14 +40,14 @@
     "ignore-styles": "^5.0.1",
     "improved-yarn-audit": "^3.0.0",
     "jsdom": "^21.1.1",
-    "lerna": "^6.0.1",
+    "lerna": "^7.1.1",
     "mkdirp": "^0.5.0",
     "node-gyp": "^9.0.0",
     "nsfw": "^2.2.4",
     "nyc": "^15.0.0",
-    "puppeteer": "^19.7.2",
-    "puppeteer-core": "^19.7.2",
-    "puppeteer-to-istanbul": "^1.4.0",
+    "puppeteer": "19.7.2",
+    "puppeteer-core": "19.7.2",
+    "puppeteer-to-istanbul": "1.4.0",
     "rimraf": "^2.6.1",
     "sinon": "^12.0.0",
     "temp": "^0.9.1",
@@ -100,9 +100,11 @@
   ],
   "theiaPluginsDir": "plugins",
   "theiaPlugins": {
-    "eclipse-theia.builtin-extension-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.77.0/file/eclipse-theia.builtin-extension-pack-1.77.0.vsix",
-    "EditorConfig.EditorConfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/0.14.4/file/EditorConfig.EditorConfig-0.14.4.vsix",
-    "dbaeumer.vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.1.20/file/dbaeumer.vscode-eslint-2.1.20.vsix"
+    "eclipse-theia.builtin-extension-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.79.0/file/eclipse-theia.builtin-extension-pack-1.79.0.vsix",
+    "EditorConfig.EditorConfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/0.16.6/file/EditorConfig.EditorConfig-0.16.6.vsix",
+    "dbaeumer.vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.4.2/file/dbaeumer.vscode-eslint-2.4.2.vsix",
+    "ms-vscode.js-debug": "https://open-vsx.org/api/ms-vscode/js-debug/1.78.0/file/ms-vscode.js-debug-1.78.0.vsix",
+    "ms-vscode.js-debug-companion": "https://open-vsx.org/api/ms-vscode/js-debug-companion/1.1.2/file/ms-vscode.js-debug-companion-1.1.2.vsix"
   },
   "theiaPluginsExcludeIds": [
     "ms-vscode.js-debug-companion",
@@ -111,7 +113,6 @@
     "vscode.git-base",
     "vscode.github",
     "vscode.github-authentication",
-    "vscode.ipynb",
     "vscode.microsoft-authentication",
     "ms-vscode.references-view"
   ]

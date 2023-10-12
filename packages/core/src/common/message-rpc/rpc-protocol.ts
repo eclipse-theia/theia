@@ -134,16 +134,12 @@ export class RpcProtocol {
     }
 
     protected handleReplyErr(id: number, error: any): void {
-        try {
-            const replyHandler = this.pendingRequests.get(id);
-            if (replyHandler) {
-                this.pendingRequests.delete(id);
-                replyHandler.reject(error);
-            } else {
-                throw new Error(`No reply handler for error reply with id: ${id}`);
-            }
-        } catch (err) {
-            throw err;
+        const replyHandler = this.pendingRequests.get(id);
+        if (replyHandler) {
+            this.pendingRequests.delete(id);
+            replyHandler.reject(error);
+        } else {
+            throw new Error(`No reply handler for error reply with id: ${id}`);
         }
     }
 

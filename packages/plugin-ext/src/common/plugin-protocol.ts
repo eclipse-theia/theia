@@ -99,6 +99,7 @@ export interface PluginPackageContribution {
     localizations?: PluginPackageLocalization[];
     terminal?: PluginPackageTerminal;
     notebooks?: PluginPackageNotebook[];
+    notebookRenderer?: PluginNotebookRendererContribution[];
 }
 
 export interface PluginPackageNotebook {
@@ -106,6 +107,14 @@ export interface PluginPackageNotebook {
     displayName: string;
     selector?: readonly { filenamePattern?: string; excludeFileNamePattern?: string }[];
     priority?: string;
+}
+
+export interface PluginNotebookRendererContribution {
+    readonly id: string;
+    readonly displayName: string;
+    readonly mimeTypes: string[];
+    readonly entrypoint: string | { readonly extends: string; readonly path: string };
+    readonly requiresMessaging?: 'always' | 'optional' | 'never'
 }
 
 export interface PluginPackageAuthenticationProvider {
@@ -348,7 +357,7 @@ export interface PluginScanner {
      */
     getLifecycle(plugin: PluginPackage): PluginLifecycle;
 
-    getContribution(plugin: PluginPackage): PluginContribution | undefined;
+    getContribution(plugin: PluginPackage): Promise<PluginContribution | undefined>;
 
     /**
      * A mapping between a dependency as its defined in package.json
@@ -376,7 +385,7 @@ export interface PluginDeployerResolver {
 
 export const PluginDeployerDirectoryHandler = Symbol('PluginDeployerDirectoryHandler');
 export interface PluginDeployerDirectoryHandler {
-    accept(pluginDeployerEntry: PluginDeployerEntry): boolean;
+    accept(pluginDeployerEntry: PluginDeployerEntry): Promise<boolean>;
 
     handle(context: PluginDeployerDirectoryHandlerContext): Promise<void>;
 }
@@ -384,7 +393,7 @@ export interface PluginDeployerDirectoryHandler {
 export const PluginDeployerFileHandler = Symbol('PluginDeployerFileHandler');
 export interface PluginDeployerFileHandler {
 
-    accept(pluginDeployerEntry: PluginDeployerEntry): boolean;
+    accept(pluginDeployerEntry: PluginDeployerEntry): Promise<boolean>;
 
     handle(context: PluginDeployerFileHandlerContext): Promise<void>;
 }
@@ -477,9 +486,9 @@ export interface PluginDeployerEntry {
 
     getChanges(): string[];
 
-    isFile(): boolean;
+    isFile(): Promise<boolean>;
 
-    isDirectory(): boolean;
+    isDirectory(): Promise<boolean>;
 
     /**
      * Resolved if a resolver has handle this plugin
@@ -585,6 +594,7 @@ export interface PluginContribution {
     localizations?: Localization[];
     terminalProfiles?: TerminalProfile[];
     notebooks?: NotebookContribution[];
+    notebookRenderer?: NotebookRendererContribution[];
 }
 
 export interface NotebookContribution {
@@ -592,6 +602,14 @@ export interface NotebookContribution {
     displayName: string;
     selector?: readonly { filenamePattern?: string; excludeFileNamePattern?: string }[];
     priority?: string;
+}
+
+export interface NotebookRendererContribution {
+    readonly id: string;
+    readonly displayName: string;
+    readonly mimeTypes: string[];
+    readonly entrypoint: string | { readonly extends: string; readonly path: string };
+    readonly requiresMessaging?: 'always' | 'optional' | 'never'
 }
 
 export interface AuthenticationProviderInformation {

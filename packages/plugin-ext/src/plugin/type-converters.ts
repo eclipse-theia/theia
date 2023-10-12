@@ -28,7 +28,12 @@ import * as types from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { isReadonlyArray } from '../common/arrays';
 import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
-import { isObject } from '@theia/core/lib/common';
+import { DisposableCollection, isEmptyObject, isObject } from '@theia/core/lib/common';
+import * as notebooks from '@theia/notebook/lib/common';
+import { CommandsConverter } from './command-registry';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { CellData, CellExecutionUpdateType, CellOutput, CellOutputItem, CellRange, isTextStreamMime } from '@theia/notebook/lib/common';
+import { CellExecuteUpdate, CellExecutionComplete } from '@theia/notebook/lib/browser';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -198,6 +203,16 @@ export function fromMarkdown(markup: theia.MarkdownString | theia.MarkedString):
         return { value: markup };
     } else {
         return { value: '' };
+    }
+}
+
+export function fromMarkdownOrString(value: string | theia.MarkdownString | undefined): string | MarkdownStringDTO | undefined {
+    if (value === undefined) {
+        return undefined;
+    } else if (typeof value === 'string') {
+        return value;
+    } else {
+        return fromMarkdown(value);
     }
 }
 
@@ -571,26 +586,46 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
         edits: []
     };
     for (const entry of (value as types.WorkspaceEdit)._allEntries()) {
-        const [uri, uriOrEdits] = entry;
-        if (Array.isArray(uriOrEdits)) {
+        if (entry?._type === types.FileEditType.Text) {
             // text edits
-            const doc = documents ? documents.getDocument(uri.toString()) : undefined;
+            const doc = documents ? documents.getDocument(entry.uri.toString()) : undefined;
             const workspaceTextEditDto: WorkspaceTextEditDto = {
-                resource: uri,
+                resource: entry.uri,
                 modelVersionId: doc?.version,
-                textEdit: uriOrEdits.map(edit => (edit instanceof types.TextEdit) ? fromTextEdit(edit) : fromSnippetTextEdit(edit))[0],
-                metadata: entry[2] as types.WorkspaceEditMetadata
+                textEdit: (entry.edit instanceof types.TextEdit) ? fromTextEdit(entry.edit) : fromSnippetTextEdit(entry.edit),
+                metadata: entry.metadata
             };
             result.edits.push(workspaceTextEditDto);
-        } else {
+        } else if (entry?._type === types.FileEditType.File) {
             // resource edits
             const workspaceFileEditDto: WorkspaceFileEditDto = {
-                oldResource: uri,
-                newResource: uriOrEdits,
-                options: entry[2] as types.FileOperationOptions,
-                metadata: entry[3]
+                oldResource: entry.from,
+                newResource: entry.to,
+                options: entry.options,
+                metadata: entry.metadata
             };
             result.edits.push(workspaceFileEditDto);
+        } else if (entry?._type === types.FileEditType.Cell) {
+            // cell edit
+            if (entry.edit) {
+                result.edits.push({
+                    metadata: entry.metadata,
+                    resource: entry.uri,
+                    cellEdit: entry.edit,
+                });
+            }
+        } else if (entry?._type === types.FileEditType.CellReplace) {
+            // cell replace
+            result.edits.push({
+                metadata: entry.metadata,
+                resource: entry.uri,
+                cellEdit: {
+                    editType: notebooks.CellEditType.Replace,
+                    index: entry.index,
+                    count: entry.count,
+                    cells: entry.cells.map(NotebookCellData.from)
+                }
+            });
         }
     }
     return result;
@@ -1177,11 +1212,12 @@ export function convertToTransferQuickPickItems(items: rpc.Item[]): rpc.Transfer
         } else if (item.kind === QuickPickItemKind.Separator) {
             return { type: 'separator', label: item.label, handle: index };
         } else {
-            const { label, description, detail, picked, alwaysShow, buttons } = item;
+            const { label, description, iconPath, detail, picked, alwaysShow, buttons } = item;
             return {
                 type: 'item',
                 label,
                 description,
+                iconPath,
                 detail,
                 picked,
                 alwaysShow,
@@ -1386,4 +1422,327 @@ export namespace DataTransfer {
         }
         return dataTransfer;
     }
+}
+
+export namespace NotebookDocumentContentOptions {
+    export function from(options: theia.NotebookDocumentContentOptions | undefined): notebooks.TransientOptions {
+        return {
+            transientOutputs: options?.transientOutputs ?? false,
+            transientCellMetadata: options?.transientCellMetadata ?? {},
+            transientDocumentMetadata: options?.transientDocumentMetadata ?? {},
+        };
+    }
+}
+
+export namespace NotebookStatusBarItem {
+    export function from(item: theia.NotebookCellStatusBarItem, commandsConverter: CommandsConverter, disposables: DisposableCollection): notebooks.NotebookCellStatusBarItem {
+        const command = typeof item.command === 'string' ? { title: '', command: item.command } : item.command;
+        return {
+            alignment: item.alignment === types.NotebookCellStatusBarAlignment.Left ? notebooks.CellStatusbarAlignment.Left : notebooks.CellStatusbarAlignment.Right,
+            command: commandsConverter.toSafeCommand(command, disposables),
+            text: item.text,
+            tooltip: item.tooltip,
+            priority: item.priority
+        };
+    }
+}
+
+export namespace NotebookData {
+
+    export function from(data: theia.NotebookData): rpc.NotebookDataDto {
+        const res: rpc.NotebookDataDto = {
+            metadata: data.metadata ?? Object.create(null),
+            cells: [],
+        };
+        for (const cell of data.cells) {
+            // types.NotebookCellData.validate(cell);
+            res.cells.push(NotebookCellData.from(cell));
+        }
+        return res;
+    }
+
+    export function to(data: rpc.NotebookDataDto): theia.NotebookData {
+        const res = new types.NotebookData(
+            data.cells.map(NotebookCellData.to),
+        );
+        if (!isEmptyObject(data.metadata)) {
+            res.metadata = data.metadata;
+        }
+        return res;
+    }
+}
+
+export namespace NotebookCellData {
+
+    export function from(data: theia.NotebookCellData): rpc.NotebookCellDataDto {
+        return {
+            cellKind: NotebookCellKind.from(data.kind),
+            language: data.languageId,
+            source: data.value,
+            // metadata: data.metadata,
+            // internalMetadata: NotebookCellExecutionSummary.from(data.executionSummary ?? {}),
+            outputs: data.outputs ? data.outputs.map(NotebookCellOutputConverter.from) : []
+        };
+    }
+
+    export function to(data: rpc.NotebookCellDataDto): theia.NotebookCellData {
+        return new types.NotebookCellData(
+            NotebookCellKind.to(data.cellKind),
+            data.source,
+            data.language,
+            data.outputs ? data.outputs.map(NotebookCellOutput.to) : undefined,
+            data.metadata,
+            data.internalMetadata ? NotebookCellExecutionSummary.to(data.internalMetadata) : undefined
+        );
+    }
+}
+
+export namespace NotebookCellKind {
+    export function from(data: theia.NotebookCellKind): notebooks.CellKind {
+        switch (data) {
+            case types.NotebookCellKind.Markup:
+                return notebooks.CellKind.Markup;
+            case types.NotebookCellKind.Code:
+            default:
+                return notebooks.CellKind.Code;
+        }
+    }
+
+    export function to(data: notebooks.CellKind): theia.NotebookCellKind {
+        switch (data) {
+            case notebooks.CellKind.Markup:
+                return types.NotebookCellKind.Markup;
+            case notebooks.CellKind.Code:
+            default:
+                return types.NotebookCellKind.Code;
+        }
+    }
+}
+
+export namespace NotebookCellOutput {
+    export function from(output: theia.NotebookCellOutput & { outputId: string }): rpc.NotebookOutputDto {
+        return {
+            outputId: output.outputId,
+            items: output.items.map(NotebookCellOutputItem.from),
+            metadata: output.metadata
+        };
+    }
+
+    export function to(output: rpc.NotebookOutputDto): theia.NotebookCellOutput {
+        const items = output.items.map(NotebookCellOutputItem.to);
+        return new types.NotebookCellOutput(items, output.outputId, output.metadata);
+    }
+}
+
+export namespace NotebookCellOutputItem {
+    export function from(item: types.NotebookCellOutputItem): rpc.NotebookOutputItemDto {
+        return {
+            mime: item.mime,
+            valueBytes: BinaryBuffer.wrap(item.data),
+        };
+    }
+
+    export function to(item: rpc.NotebookOutputItemDto): types.NotebookCellOutputItem {
+        return new types.NotebookCellOutputItem(item.valueBytes.buffer, item.mime);
+    }
+}
+
+export namespace NotebookCellOutputConverter {
+    export function from(output: types.NotebookCellOutput): rpc.NotebookOutputDto {
+        return {
+            outputId: output.outputId,
+            items: output.items.map(NotebookCellOutputItem.from),
+            metadata: output.metadata
+        };
+    }
+
+    export function to(output: rpc.NotebookOutputDto): types.NotebookCellOutput {
+        const items = output.items.map(NotebookCellOutputItem.to);
+        return new types.NotebookCellOutput(items, output.outputId, output.metadata);
+    }
+
+    export function ensureUniqueMimeTypes(items: types.NotebookCellOutputItem[], warn: boolean = false): types.NotebookCellOutputItem[] {
+        const seen = new Set<string>();
+        const removeIdx = new Set<number>();
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            // We can have multiple text stream mime types in the same output.
+            if (!seen.has(item.mime) || isTextStreamMime(item.mime)) {
+                seen.add(item.mime);
+                continue;
+            }
+            // duplicated mime types... first has won
+            removeIdx.add(i);
+            if (warn) {
+                console.warn(`DUPLICATED mime type '${item.mime}' will be dropped`);
+            }
+        }
+        if (removeIdx.size === 0) {
+            return items;
+        }
+        return items.filter((_, index) => !removeIdx.has(index));
+    }
+}
+
+export namespace NotebookCellExecutionSummary {
+    export function to(data: notebooks.NotebookCellInternalMetadata): theia.NotebookCellExecutionSummary {
+        return {
+            timing: typeof data.runStartTime === 'number' && typeof data.runEndTime === 'number' ? { startTime: data.runStartTime, endTime: data.runEndTime } : undefined,
+            executionOrder: data.executionOrder,
+            success: data.lastRunSuccess
+        };
+    }
+
+    export function from(data: theia.NotebookCellExecutionSummary): Partial<notebooks.NotebookCellInternalMetadata> {
+        return {
+            lastRunSuccess: data.success,
+            runStartTime: data.timing?.startTime,
+            runEndTime: data.timing?.endTime,
+            executionOrder: data.executionOrder
+        };
+    }
+}
+
+export namespace NotebookRange {
+
+    export function from(range: theia.NotebookRange): CellRange {
+        return { start: range.start, end: range.end };
+    }
+
+    export function to(range: CellRange): types.NotebookRange {
+        return new types.NotebookRange(range.start, range.end);
+    }
+}
+
+export namespace NotebookKernelSourceAction {
+    export function from(item: theia.NotebookKernelSourceAction, commandsConverter: CommandsConverter, disposables: DisposableCollection): rpc.NotebookKernelSourceActionDto {
+        const command = typeof item.command === 'string' ? { title: '', command: item.command } : item.command;
+
+        return {
+            command: commandsConverter.toSafeCommand(command, disposables),
+            label: item.label,
+            description: item.description,
+            detail: item.detail,
+            documentation: item.documentation
+        };
+    }
+}
+
+export namespace NotebookDto {
+
+    export function toNotebookOutputItemDto(item: CellOutputItem): rpc.NotebookOutputItemDto {
+        return {
+            mime: item.mime,
+            valueBytes: item.data
+        };
+    }
+
+    export function toNotebookOutputDto(output: CellOutput): rpc.NotebookOutputDto {
+        return {
+            outputId: output.outputId,
+            metadata: output.metadata,
+            items: output.outputs.map(toNotebookOutputItemDto)
+        };
+    }
+
+    export function toNotebookCellDataDto(cell: CellData): rpc.NotebookCellDataDto {
+        return {
+            cellKind: cell.cellKind,
+            language: cell.language,
+            source: cell.source,
+            internalMetadata: cell.internalMetadata,
+            metadata: cell.metadata,
+            outputs: cell.outputs.map(toNotebookOutputDto)
+        };
+    }
+
+    // export function toNotebookDataDto(data: NotebookData): rpc.NotebookDataDto {
+    //     return {
+    //         metadata: data.metadata,
+    //         cells: data.cells.map(toNotebookCellDataDto)
+    //     };
+    // }
+
+    export function fromNotebookOutputItemDto(item: rpc.NotebookOutputItemDto): CellOutputItem {
+        return {
+            mime: item.mime,
+            data: item.valueBytes
+        };
+    }
+
+    export function fromNotebookOutputDto(output: rpc.NotebookOutputDto): CellOutput {
+        return {
+            outputId: output.outputId,
+            metadata: output.metadata,
+            outputs: output.items.map(fromNotebookOutputItemDto)
+        };
+    }
+
+    export function fromNotebookCellDataDto(cell: rpc.NotebookCellDataDto): CellData {
+        return {
+            cellKind: cell.cellKind,
+            language: cell.language,
+            source: cell.source,
+            outputs: cell.outputs.map(fromNotebookOutputDto),
+            metadata: cell.metadata,
+            internalMetadata: cell.internalMetadata
+        };
+    }
+
+    // export function fromNotebookDataDto(data: rpc.NotebookDataDto): NotebookData {
+    //     return {
+    //         metadata: data.metadata,
+    //         cells: data.cells.map(fromNotebookCellDataDto)
+    //     };
+    // }
+
+    // export function toNotebookCellDto(cell: Cell): rpc.NotebookCellDto {
+    //     return {
+    //         handle: cell.handle,
+    //         uri: cell.uri,
+    //         source: cell.textBuffer.getLinesContent(),
+    //         eol: cell.textBuffer.getEOL(),
+    //         language: cell.language,
+    //         cellKind: cell.cellKind,
+    //         outputs: cell.outputs.map(toNotebookOutputDto),
+    //         metadata: cell.metadata,
+    //         internalMetadata: cell.internalMetadata,
+    //     };
+    // }
+
+    export function fromCellExecuteUpdateDto(data: rpc.CellExecuteUpdateDto): CellExecuteUpdate {
+        if (data.editType === CellExecutionUpdateType.Output) {
+            return {
+                editType: data.editType,
+                cellHandle: data.cellHandle,
+                append: data.append,
+                outputs: data.outputs.map(fromNotebookOutputDto)
+            };
+        } else if (data.editType === CellExecutionUpdateType.OutputItems) {
+            return {
+                editType: data.editType,
+                append: data.append,
+                items: data.items.map(fromNotebookOutputItemDto)
+            };
+        } else {
+            return data;
+        }
+    }
+
+    export function fromCellExecuteCompleteDto(data: rpc.CellExecutionCompleteDto): CellExecutionComplete {
+        return data;
+    }
+
+    // export function fromCellEditOperationDto(edit: rpc.CellEditOperationDto): CellEditOperation {
+    //     if (edit.editType === CellEditType.Replace) {
+    //         return {
+    //             editType: edit.editType,
+    //             index: edit.index,
+    //             count: edit.count,
+    //             cells: edit.cells.map(fromNotebookCellDataDto)
+    //         };
+    //     } else {
+    //         return edit;
+    //     }
+    // }
 }

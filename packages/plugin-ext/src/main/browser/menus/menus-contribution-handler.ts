@@ -17,12 +17,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { MenuPath, CommandRegistry, Disposable, DisposableCollection, ActionMenuNode, MenuCommandAdapterRegistry, Emitter } from '@theia/core';
+import { MenuPath, CommandRegistry, Disposable, DisposableCollection, ActionMenuNode, MenuCommandAdapterRegistry, Emitter, nls } from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DeployedPlugin, IconUrl, Menu } from '../../../common';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
-import { PluginViewWidget } from '../view/plugin-view-widget';
 import { QuickCommandService } from '@theia/core/lib/browser';
 import {
     CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint,
@@ -56,9 +55,13 @@ export class MenusContributionPointHandler {
         this.initialized = true;
         this.commandAdapterRegistry.registerAdapter(this.commandAdapter);
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_EDITOR_TITLE_MENU, widget => this.codeEditorWidgetUtil.is(widget));
-        this.tabBarToolbar.registerMenuDelegate(PLUGIN_EDITOR_TITLE_RUN_MENU, widget => this.codeEditorWidgetUtil.is(widget));
+        this.tabBarToolbar.registerItem({
+            id: this.tabBarToolbar.toElementId(PLUGIN_EDITOR_TITLE_RUN_MENU), menuPath: PLUGIN_EDITOR_TITLE_RUN_MENU,
+            icon: 'debug-alt', text: nls.localizeByDefault('Run or Debug...'),
+            command: '', group: 'navigation', isVisible: widget => this.codeEditorWidgetUtil.is(widget)
+        });
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_SCM_TITLE_MENU, widget => widget instanceof ScmWidget);
-        this.tabBarToolbar.registerMenuDelegate(PLUGIN_VIEW_TITLE_MENU, widget => widget instanceof PluginViewWidget);
+        this.tabBarToolbar.registerMenuDelegate(PLUGIN_VIEW_TITLE_MENU, widget => !this.codeEditorWidgetUtil.is(widget));
         this.tabBarToolbar.registerItem({ id: 'plugin-menu-contribution-title-contribution', command: '_never_', onDidChange: this.onDidChangeTitleContributionEmitter.event });
         this.contextKeyService.onDidChange(event => {
             if (event.affects(this.titleContributionContextKeys)) {

@@ -80,6 +80,7 @@ export class LanguageQuickPickService {
                 } else {
                     resolve(undefined);
                 }
+                quickInput.hide();
             });
             quickInput.onDidHide(() => {
                 resolve(undefined);

@@ -38,6 +38,7 @@ import { Root, createRoot } from 'react-dom/client';
 import { SelectComponent } from '../widgets/select-component';
 import { createElement } from 'react';
 import { PreviewableWidget } from '../widgets/previewable-widget';
+import { EnhancedPreviewWidget } from '../widgets/enhanced-preview-widget';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -504,7 +505,13 @@ export class TabBarRenderer extends TabBar.Renderer {
         labelElement.classList.add('theia-horizontal-tabBar-hover-title');
         labelElement.textContent = title.label;
         hoverBox.append(labelElement);
-        if (title.caption) {
+        const widget = title.owner;
+        if (EnhancedPreviewWidget.is(widget)) {
+            const enhancedPreviewNode = widget.getEnhancedPreviewNode();
+            if (enhancedPreviewNode) {
+                hoverBox.appendChild(enhancedPreviewNode);
+            }
+        } else if (title.caption) {
             const captionElement = document.createElement('p');
             captionElement.classList.add('theia-horizontal-tabBar-hover-caption');
             captionElement.textContent = title.caption;

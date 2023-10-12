@@ -173,10 +173,10 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
             label: nls.localizeByDefault('Keyboard Shortcuts'),
             order: 'a20'
         });
-        menus.registerMenuAction(CommonMenus.SETTINGS_OPEN, {
+        menus.registerMenuAction(CommonMenus.MANAGE_SETTINGS, {
             commandId: KeymapsCommands.OPEN_KEYMAPS.id,
             label: nls.localizeByDefault('Keyboard Shortcuts'),
-            order: 'a20'
+            order: 'a30'
         });
         menus.registerMenuAction(KeybindingWidget.COPY_MENU, {
             commandId: KeymapsCommands.COPY_KEYBINDING.id,

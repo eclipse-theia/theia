@@ -50,7 +50,7 @@ import { AccessibilityInformation } from '@theia/plugin';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { DecoratedTreeNode } from '@theia/core/lib/browser/tree/tree-decorator';
 import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
-import { CancellationTokenSource, CancellationToken } from '@theia/core/lib/common';
+import { CancellationTokenSource, CancellationToken, Mutable } from '@theia/core/lib/common';
 import { mixin } from '../../../common/types';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { DnDFileContentStore } from './dnd-file-content-store';
@@ -165,6 +165,7 @@ export namespace CompositeTreeViewNode {
 @injectable()
 export class TreeViewWidgetOptions {
     id: string;
+    manageCheckboxStateManually: boolean | undefined;
     showCollapseAll: boolean | undefined;
     multiSelect: boolean | undefined;
     dragMimeTypes: string[] | undefined;
@@ -272,6 +273,37 @@ export class PluginTree extends TreeImpl {
         }, update);
     }
 
+    override markAsChecked(node: Mutable<TreeNode>, checked: boolean): void {
+        function findParentsToChange(child: TreeNode, nodes: TreeNode[]): void {
+            if ((child.parent?.checkboxInfo !== undefined && child.parent.checkboxInfo.checked !== checked) &&
+                (!checked || !child.parent.children.some(candidate => candidate !== child && candidate.checkboxInfo?.checked === false))) {
+                nodes.push(child.parent);
+                findParentsToChange(child.parent, nodes);
+            }
+        }
+
+        function findChildrenToChange(parent: TreeNode, nodes: TreeNode[]): void {
+            if (CompositeTreeNode.is(parent)) {
+                parent.children.forEach(child => {
+                    if (child.checkboxInfo !== undefined && child.checkboxInfo.checked !== checked) {
+                        nodes.push(child);
+                    }
+                    findChildrenToChange(child, nodes);
+                });
+            }
+        }
+
+        const nodesToChange = [node];
+        if (!this.options.manageCheckboxStateManually) {
+            findParentsToChange(node, nodesToChange);
+            findChildrenToChange(node, nodesToChange);
+
+        }
+        nodesToChange.forEach(n => n.checkboxInfo!.checked = checked);
+        this.onDidUpdateEmitter.fire(nodesToChange);
+        this.proxy?.$checkStateChanged(this.options.id, [{ id: node.id, checked: checked }]);
+    }
+
     /** Creates a resolvable tree node. If a node already exists, reset it because the underlying TreeViewItem might have been disposed in the backend. */
     protected createResolvableTreeNode(item: TreeViewItem, parent: CompositeTreeNode): TreeNode {
         const update: Partial<TreeViewNode> = this.createTreeNodeUpdate(item);
@@ -328,6 +360,7 @@ export class PluginTree extends TreeImpl {
             tooltip: item.tooltip,
             contextValue: item.contextValue,
             command: item.command,
+            checkboxInfo: item.checkboxInfo,
             accessibilityInformation: item.accessibilityInformation,
         };
     }
@@ -496,6 +529,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
                 ...attrs,
                 onMouseLeave: () => source?.cancel(),
                 onMouseEnter: async event => {
+                    const target = event.currentTarget; // event.currentTarget will be null after awaiting node resolve()
                     if (configuredTip) {
                         if (MarkdownString.is(node.tooltip)) {
                             this.hoverService.requestHover({
@@ -524,7 +558,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
                         const title = node.tooltip ||
                             (node.resourceUri && this.labelProvider.getLongName(new URI(node.resourceUri)))
                             || this.toNodeName(node);
-                        event.currentTarget.title = title;
+                        target.title = title;
                     }
                     configuredTip = true;
                 }

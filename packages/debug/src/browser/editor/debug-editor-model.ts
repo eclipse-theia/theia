@@ -341,7 +341,9 @@ export class DebugEditorModel implements Disposable {
                 const line = range.startLineNumber;
                 const column = range.startColumn;
                 const oldBreakpoint = this.breakpointRanges.get(decoration)?.[1];
-                const breakpoint = SourceBreakpoint.create(uri, { line, column }, oldBreakpoint);
+                const isLineBreakpoint = oldBreakpoint?.raw.line !== undefined && oldBreakpoint?.raw.column === undefined;
+                const change = isLineBreakpoint ? { line } : { line, column };
+                const breakpoint = SourceBreakpoint.create(uri, change, oldBreakpoint);
                 breakpoints.push(breakpoint);
                 lines.add(line);
             }
@@ -407,16 +409,7 @@ export class DebugEditorModel implements Disposable {
 
     protected handleMouseDown(event: monaco.editor.IEditorMouseEvent): void {
         if (event.target && event.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) {
-            if (event.event.rightButton) {
-                this.editor.focus();
-                setTimeout(() => {
-                    this.contextMenu.render({
-                        menuPath: DebugEditorModel.CONTEXT_MENU,
-                        anchor: event.event.browserEvent,
-                        args: [event.target.position!]
-                    });
-                });
-            } else {
+            if (!event.event.rightButton) {
                 this.toggleBreakpoint(event.target.position!);
             }
         }

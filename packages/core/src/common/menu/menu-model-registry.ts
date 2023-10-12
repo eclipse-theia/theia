@@ -255,6 +255,56 @@ export class MenuModelRegistry {
     }
 
     /**
+     * Checks the given menu model whether it will show a menu with a single submenu.
+     *
+     * @param fullMenuModel the menu model to analyze
+     * @param menuPath the menu's path
+     * @returns if the menu will show a single submenu this returns a menu that will show the child elements of the submenu,
+     * otherwise the given `fullMenuModel` is return
+     */
+    removeSingleRootNode(fullMenuModel: MutableCompoundMenuNode, menuPath: MenuPath): CompoundMenuNode {
+        // check whether all children are compound menus and that there is only one child that has further children
+        if (!this.allChildrenCompound(fullMenuModel.children)) {
+            return fullMenuModel;
+        }
+        let nonEmptyNode = undefined;
+        for (const child of fullMenuModel.children) {
+            if (!this.isEmpty(child.children || [])) {
+                if (nonEmptyNode === undefined) {
+                    nonEmptyNode = child;
+                } else {
+                    return fullMenuModel;
+                }
+            }
+        }
+
+        if (CompoundMenuNode.is(nonEmptyNode) && nonEmptyNode.children.length === 1 && CompoundMenuNode.is(nonEmptyNode.children[0])) {
+            nonEmptyNode = nonEmptyNode.children[0];
+        }
+
+        return CompoundMenuNode.is(nonEmptyNode) ? nonEmptyNode : fullMenuModel;
+    }
+
+    protected allChildrenCompound(children: ReadonlyArray<MenuNode>): boolean {
+        return children.every(CompoundMenuNode.is);
+    }
+
+    protected isEmpty(children: ReadonlyArray<MenuNode>): boolean {
+        if (children.length === 0) {
+            return true;
+        }
+        if (!this.allChildrenCompound(children)) {
+            return false;
+        }
+        for (const child of children) {
+            if (!this.isEmpty(child.children || [])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Returns the {@link MenuPath path} at which a given menu node can be accessed from this registry, if it can be determined.
      * Returns `undefined` if the `parent` of any node in the chain is unknown.
      */

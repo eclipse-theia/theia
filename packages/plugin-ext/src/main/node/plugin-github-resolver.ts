@@ -16,10 +16,11 @@
 
 import { RequestContext, RequestService } from '@theia/core/shared/@theia/request';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { promises as fs, existsSync, mkdirSync } from 'fs';
-import * as os from 'os';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { promises as fs } from 'fs';
 import * as path from 'path';
 import { PluginDeployerResolver, PluginDeployerResolverContext } from '../../common';
+import { getTempDirPathAsync } from './temp-dir-util';
 
 /**
  * Resolver that handle the github: protocol
@@ -33,16 +34,21 @@ export class GithubPluginDeployerResolver implements PluginDeployerResolver {
 
     private static GITHUB_ENDPOINT = 'https://github.com/';
 
-    private unpackedFolder: string;
+    private unpackedFolder: Deferred<string>;
 
     @inject(RequestService)
     protected readonly request: RequestService;
 
     constructor() {
-        this.unpackedFolder = path.resolve(os.tmpdir(), 'github-remote');
-        if (!existsSync(this.unpackedFolder)) {
-            mkdirSync(this.unpackedFolder);
-        }
+        this.unpackedFolder = new Deferred();
+        getTempDirPathAsync('github-remote').then(async unpackedFolder => {
+            try {
+                await fs.mkdir(unpackedFolder, { recursive: true });
+                this.unpackedFolder.resolve(unpackedFolder);
+            } catch (err) {
+                this.unpackedFolder.reject(err);
+            }
+        });
     }
 
     /**
@@ -106,7 +112,8 @@ export class GithubPluginDeployerResolver implements PluginDeployerResolver {
      * Grab the github file specified by the plugin's ID
      */
     protected async grabGithubFile(pluginResolverContext: PluginDeployerResolverContext, orgName: string, repoName: string, filename: string, version: string): Promise<void> {
-        const unpackedPath = path.resolve(this.unpackedFolder, path.basename(version + filename));
+        const unpackedFolder = await this.unpackedFolder.promise;
+        const unpackedPath = path.resolve(unpackedFolder, path.basename(version + filename));
         try {
             await fs.access(unpackedPath);
             // use of cache. If file is already there use it directly

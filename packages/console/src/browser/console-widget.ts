@@ -17,7 +17,7 @@
 import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
 import { injectable, inject, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
 import { TreeSourceNode } from '@theia/core/lib/browser/source-tree';
-import { ContextKey } from '@theia/core/lib/browser/context-key-service';
+import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { BaseWidget, PanelLayout, Widget, Message, MessageLoop, StatefulWidget, CompositeTreeNode } from '@theia/core/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import URI from '@theia/core/lib/common/uri';
@@ -75,7 +75,11 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
     @inject(MonacoEditorProvider)
     protected readonly editorProvider: MonacoEditorProvider;
 
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
     protected _input: MonacoEditor;
+    protected _inputFocusContextKey: ContextKey<boolean>;
 
     constructor() {
         super();
@@ -129,7 +133,13 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         this.updateFont();
         if (inputFocusContextKey) {
             this.toDispose.push(input.onFocusChanged(() => inputFocusContextKey.set(this.hasInputFocus())));
+            this.toDispose.push(input.onCursorPositionChanged(() => input.getControl().createContextKey('consoleNavigationBackEnabled', this.consoleNavigationBackEnabled)));
+            this.toDispose.push(input.onCursorPositionChanged(() => input.getControl().createContextKey('consoleNavigationForwardEnabled', this.consoleNavigationForwardEnabled)));
         }
+        input.getControl().createContextKey('consoleInputFocus', true);
+        const contentContext = this.contextKeyService.createScoped(this.content.node);
+        contentContext.setContext('consoleContentFocus', true);
+        this.toDispose.push(contentContext);
     }
 
     protected createInput(node: HTMLElement): Promise<MonacoEditor> {
@@ -157,6 +167,18 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
     get input(): MonacoEditor {
         return this._input;
+    }
+
+    get consoleNavigationBackEnabled(): boolean {
+        const editor = this.input.getControl();
+        return !!editor.getPosition()!.equals({ lineNumber: 1, column: 1 });
+    }
+
+    get consoleNavigationForwardEnabled(): boolean {
+        const editor = this.input.getControl();
+        const lineNumber = editor.getModel()!.getLineCount();
+        const column = editor.getModel()!.getLineMaxColumn(lineNumber);
+        return !!editor.getPosition()!.equals({ lineNumber, column });
     }
 
     selectAll(): void {

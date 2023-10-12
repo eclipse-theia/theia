@@ -19,9 +19,10 @@ import { localizationPath } from '../../common/i18n/localization';
 import { LocalizationProvider } from './localization-provider';
 import { ConnectionHandler, RpcConnectionHandler, bindContributionProvider } from '../../common';
 import { LocalizationRegistry, LocalizationContribution } from './localization-contribution';
-import { LocalizationBackendContribution } from './localization-backend-contribution';
-import { BackendApplicationContribution } from '../backend-application';
+import { LocalizationServerImpl } from './localization-server';
 import { TheiaLocalizationContribution } from './theia-localization-contribution';
+import { LocalizationServer, LocalizationServerPath } from '../../common/i18n/localization-server';
+import { BackendApplicationContribution } from '../backend-application';
 
 export default new ContainerModule(bind => {
     bind(LocalizationProvider).toSelf().inSingletonScope();
@@ -30,8 +31,12 @@ export default new ContainerModule(bind => {
     ).inSingletonScope();
     bind(LocalizationRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, LocalizationContribution);
-    bind(LocalizationBackendContribution).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toService(LocalizationBackendContribution);
+    bind(LocalizationServerImpl).toSelf().inSingletonScope();
+    bind(LocalizationServer).toService(LocalizationServerImpl);
+    bind(BackendApplicationContribution).toService(LocalizationServerImpl);
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new RpcConnectionHandler(LocalizationServerPath, () => ctx.container.get(LocalizationServer))
+    ).inSingletonScope();
     bind(TheiaLocalizationContribution).toSelf().inSingletonScope();
     bind(LocalizationContribution).toService(TheiaLocalizationContribution);
 });

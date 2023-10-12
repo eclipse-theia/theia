@@ -113,6 +113,7 @@
       }
     },
     "filesystem": {
+      "copiedToClipboard": "Skopiowałem link do pobrania do schowka.",
       "copyDownloadLink": "Kopiuj Link do pobrania",
       "dialog": {
         "initialLocation": "Przejdź do lokalizacji początkowej",
@@ -142,7 +143,10 @@
     "getting-started": {
       "apiComparator": "{0} Zgodność z API",
       "newExtension": "Budowanie nowego rozszerzenia",
-      "newPlugin": "Tworzenie nowego pluginu"
+      "newPlugin": "Tworzenie nowego pluginu",
+      "startup-editor": {
+        "welcomePage": "Otwórz stronę powitalną, zawierającą treści ułatwiające rozpoczęcie korzystania z witryny {0} i rozszerzeń."
+      }
     },
     "git": {
       "aFewSecondsAgo": "kilka sekund temu",
@@ -430,6 +434,7 @@
     "vsx-registry": {
       "downloadCount": "Pobierz licz: {0}",
       "errorFetching": "Błąd pobierania rozszerzeń.",
+      "errorFetchingConfigurationHint": "Może to być spowodowane problemami z konfiguracją sieci.",
       "failedInstallingVSIX": "Nie udało się zainstalować {0} z VSIX.",
       "invalidVSIX": "Wybrany plik nie jest prawidłowym pluginem \"*.vsix\".",
       "license": "Licencja: {0}",
