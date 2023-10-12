@@ -26,7 +26,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { NavigatableWidget, NavigatableWidgetOpenHandler } from '@theia/core/lib/browser/navigatable';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { WidgetOpenerOptions } from '@theia/core/lib/browser/widget-open-handler';
 import { MiniBrowserService } from '../common/mini-browser-service';
 import { MiniBrowser, MiniBrowserProps } from './mini-browser';

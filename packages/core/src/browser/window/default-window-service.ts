@@ -18,11 +18,12 @@ import { inject, injectable, named } from 'inversify';
 import { Event, Emitter } from '../../common';
 import { CorePreferences } from '../core-preferences';
 import { ContributionProvider } from '../../common/contribution-provider';
-import { FrontendApplicationContribution, FrontendApplication, OnWillStopAction } from '../frontend-application';
+import { FrontendApplicationContribution, OnWillStopAction } from '../frontend-application-contribution';
 import { WindowService } from './window-service';
 import { DEFAULT_WINDOW_HASH } from '../../common/window';
 import { confirmExit } from '../dialogs';
 import { StopReason } from '../../common/frontend-application-state';
+import { FrontendApplication } from '../frontend-application';
 
 @injectable()
 export class DefaultWindowService implements WindowService, FrontendApplicationContribution {

@@ -16,6 +16,7 @@
 
 export * from './shell';
 export * from './frontend-application';
+export * from './frontend-application-contribution';
 export * from './keyboard';
 export * from './opener-service';
 export * from './browser';

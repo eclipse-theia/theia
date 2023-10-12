@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { FrontendApplicationContribution } from './frontend-application';
+import { FrontendApplicationContribution } from './frontend-application-contribution';
 import { ContributionProvider } from '../common/contribution-provider';
 import { IconThemeService, IconTheme } from './icon-theme-service';
 import { MaybePromise } from '../common/types';
