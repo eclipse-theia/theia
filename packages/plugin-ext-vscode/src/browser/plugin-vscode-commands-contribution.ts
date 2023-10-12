@@ -229,7 +229,10 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
             isVisible: () => false,
-            execute: async (resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions) => {
+            execute: async (resource: URI | string, columnOrOptions?: ViewColumn | TextDocumentShowOptions) => {
+                if (typeof resource === 'string') {
+                    resource = URI.parse(resource);
+                }
                 try {
                     await this.openWith(VscodeCommands.OPEN.id, resource, columnOrOptions);
                 } catch (error) {
