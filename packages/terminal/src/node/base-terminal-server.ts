@@ -15,33 +15,21 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ILogger, DisposableCollection, isWindows } from '@theia/core/lib/common';
+import { ILogger, DisposableCollection } from '@theia/core/lib/common';
 import {
     IBaseTerminalServer,
     IBaseTerminalServerOptions,
     IBaseTerminalClient,
     TerminalProcessInfo,
-    EnvironmentVariableCollection,
-    MergedEnvironmentVariableCollection,
-    SerializableEnvironmentVariableCollection,
-    EnvironmentVariableMutator,
-    ExtensionOwnedEnvironmentVariableMutator,
-    EnvironmentVariableMutatorType,
-    EnvironmentVariableCollectionWithPersistence,
-    SerializableExtensionEnvironmentVariableCollection,
     TerminalExitReason
 } from '../common/base-terminal-protocol';
 import { TerminalProcess, ProcessManager, TaskTerminalProcess } from '@theia/process/lib/node';
 import { ShellProcess } from './shell-process';
-import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 
 @injectable()
 export abstract class BaseTerminalServer implements IBaseTerminalServer {
     protected client: IBaseTerminalClient | undefined = undefined;
     protected terminalToDispose = new Map<number, DisposableCollection>();
-
-    readonly collections: Map<string, EnvironmentVariableCollectionWithPersistence> = new Map();
-    mergedCollection: MergedEnvironmentVariableCollection;
 
     constructor(
         @inject(ProcessManager) protected readonly processManager: ProcessManager,
@@ -54,7 +42,6 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
                 this.terminalToDispose.delete(id);
             }
         });
-        this.mergedCollection = this.resolveMergedCollection();
     }
 
     abstract create(options: IBaseTerminalServerOptions): Promise<number>;
@@ -101,18 +88,6 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
             executable: terminal.executable,
             arguments: terminal.arguments,
         };
-    }
-
-    async getEnvVarCollectionDescriptionsByExtension(id: number): Promise<Map<string, string | MarkdownString | undefined>> {
-        const terminal = this.processManager.get(id);
-        if (!(terminal instanceof TerminalProcess)) {
-            throw new Error(`terminal "${id}" does not exist`);
-        }
-        const result = new Map<string, string | MarkdownString | undefined>();
-        this.collections.forEach((value, key) => {
-            result.set(key, value.description);
-        });
-        return result;
     }
 
     async getCwdURI(id: number): Promise<string> {
@@ -194,118 +169,5 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
     protected postAttachAttempted(term: TaskTerminalProcess): void {
         const toDispose = this.notifyClientOnExit(term);
         this.terminalToDispose.set(term.id, toDispose);
-    }
-
-    /*---------------------------------------------------------------------------------------------
-     *  Copyright (c) Microsoft Corporation. All rights reserved.
-     *  Licensed under the MIT License. See License.txt in the project root for license information.
-     *--------------------------------------------------------------------------------------------*/
-    // some code copied and modified from https://github.com/microsoft/vscode/blob/1.49.0/src/vs/workbench/contrib/terminal/common/environmentVariableService.ts
-
-    setCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection, description: string | MarkdownString | undefined): void {
-        const translatedCollection = { persistent, description, map: new Map<string, EnvironmentVariableMutator>(collection) };
-        this.collections.set(extensionIdentifier, translatedCollection);
-        this.updateCollections();
-    }
-
-    deleteCollection(extensionIdentifier: string): void {
-        this.collections.delete(extensionIdentifier);
-        this.updateCollections();
-    }
-
-    private updateCollections(): void {
-        this.persistCollections();
-        this.mergedCollection = this.resolveMergedCollection();
-    }
-
-    protected persistCollections(): void {
-        const collectionsJson: SerializableExtensionEnvironmentVariableCollection[] = [];
-        this.collections.forEach((collection, extensionIdentifier) => {
-            if (collection.persistent) {
-                collectionsJson.push({
-                    extensionIdentifier,
-                    collection: [...this.collections.get(extensionIdentifier)!.map.entries()],
-                    description: collection.description
-                });
-            }
-        });
-        if (this.client) {
-            const stringifiedJson = JSON.stringify(collectionsJson);
-            this.client.storeTerminalEnvVariables(stringifiedJson);
-        }
-    }
-
-    private resolveMergedCollection(): MergedEnvironmentVariableCollection {
-        return new MergedEnvironmentVariableCollectionImpl(this.collections);
-    }
-
-}
-
-/*---------------------------------------------------------------------------------------------
-     *  Copyright (c) Microsoft Corporation. All rights reserved.
-     *  Licensed under the MIT License. See License.txt in the project root for license information.
-     *--------------------------------------------------------------------------------------------*/
-// some code copied and modified from https://github.com/microsoft/vscode/blob/1.49.0/src/vs/workbench/contrib/terminal/common/environmentVariableCollection.ts
-
-export class MergedEnvironmentVariableCollectionImpl implements MergedEnvironmentVariableCollection {
-    readonly map: Map<string, ExtensionOwnedEnvironmentVariableMutator[]> = new Map();
-
-    constructor(collections: Map<string, EnvironmentVariableCollection>) {
-        collections.forEach((collection, extensionIdentifier) => {
-            const it = collection.map.entries();
-            let next = it.next();
-            while (!next.done) {
-                const variable = next.value[0];
-                let entry = this.map.get(variable);
-                if (!entry) {
-                    entry = [];
-                    this.map.set(variable, entry);
-                }
-
-                // If the first item in the entry is replace ignore any other entries as they would
-                // just get replaced by this one.
-                if (entry.length > 0 && entry[0].type === EnvironmentVariableMutatorType.Replace) {
-                    next = it.next();
-                    continue;
-                }
-
-                // Mutators get applied in the reverse order than they are created
-                const mutator = next.value[1];
-                entry.unshift({
-                    extensionIdentifier,
-                    value: mutator.value,
-                    type: mutator.type,
-                    options: mutator.options
-                });
-
-                next = it.next();
-            }
-        });
-    }
-
-    applyToProcessEnvironment(env: { [key: string]: string | null }): void {
-        let lowerToActualVariableNames: { [lowerKey: string]: string | undefined } | undefined;
-        if (isWindows) {
-            lowerToActualVariableNames = {};
-            Object.keys(env).forEach(e => lowerToActualVariableNames![e.toLowerCase()] = e);
-        }
-        this.map.forEach((mutators, variable) => {
-            const actualVariable = isWindows ? lowerToActualVariableNames![variable.toLowerCase()] || variable : variable;
-            mutators.forEach(mutator => {
-                if (mutator.options?.applyAtProcessCreation ?? true) {
-                    switch (mutator.type) {
-                        case EnvironmentVariableMutatorType.Append:
-                            env[actualVariable] = (env[actualVariable] || '') + mutator.value;
-                            break;
-                        case EnvironmentVariableMutatorType.Prepend:
-                            env[actualVariable] = mutator.value + (env[actualVariable] || '');
-                            break;
-                        case EnvironmentVariableMutatorType.Replace:
-                            env[actualVariable] = mutator.value;
-                            break;
-                    }
-                }
-            });
-        });
     }
 }

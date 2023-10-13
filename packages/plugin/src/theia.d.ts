@@ -3693,6 +3693,39 @@ export module '@theia/plugin' {
     }
 
     /**
+     * A collection of mutations that an extension can apply to a process environment. Applies to all scopes.
+     */
+    export interface GlobalEnvironmentVariableCollection extends EnvironmentVariableCollection {
+        /**
+         * Gets scope-specific environment variable collection for the extension. This enables alterations to
+         * terminal environment variables solely within the designated scope, and is applied in addition to (and
+         * after) the global collection.
+         *
+         * Each object obtained through this method is isolated and does not impact objects for other scopes,
+         * including the global collection.
+         *
+         * @param scope The scope to which the environment variable collection applies to.
+         *
+         * If a scope parameter is omitted, collection applicable to all relevant scopes for that parameter is
+         * returned. For instance, if the 'workspaceFolder' parameter is not specified, the collection that applies
+         * across all workspace folders will be returned.
+         *
+         * @return Environment variable collection for the passed in scope.
+         */
+        getScoped(scope: EnvironmentVariableScope): EnvironmentVariableCollection;
+    }
+
+    /**
+     * The scope object to which the environment variable collection applies.
+     */
+    export interface EnvironmentVariableScope {
+        /**
+         * Any specific workspace folder to get collection for.
+         */
+        workspaceFolder?: WorkspaceFolder;
+    }
+
+    /**
      * The ExtensionMode is provided on the `ExtensionContext` and indicates the
      * mode the specific extension is running in.
      */
@@ -3879,7 +3912,7 @@ export module '@theia/plugin' {
          * Gets the extension's environment variable collection for this workspace, enabling changes
          * to be applied to terminal environment variables.
          */
-        readonly environmentVariableCollection: EnvironmentVariableCollection;
+        readonly environmentVariableCollection: GlobalEnvironmentVariableCollection;
 
         /**
          * Get the absolute path of a resource contained in the extension.
