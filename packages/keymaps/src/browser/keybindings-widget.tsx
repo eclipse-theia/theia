@@ -187,14 +187,14 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
      * Determine if there currently is a search term.
      * @returns `true` if a search term is present.
      */
-    public hasSearch(): boolean {
+    hasSearch(): boolean {
         return !!this.query.length;
     }
 
     /**
      * Clear the search and reset the view.
      */
-    public clearSearch(): void {
+    clearSearch(): void {
         const search = this.findSearchField();
         if (search) {
             search.value = '';
@@ -207,7 +207,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
      * Show keybinding items with the same key sequence as the given item.
      * @param item the keybinding item
      */
-    public showSameKeybindings(item: KeybindingItem): void {
+    showSameKeybindings(item: KeybindingItem): void {
         const keybinding = item.keybinding;
         if (keybinding) {
             const search = this.findSearchField();
@@ -459,11 +459,11 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
     protected handleItemContextMenu(item: KeybindingItem, index: number, event: React.MouseEvent<HTMLElement>): void {
         event.preventDefault();
         this.selectItem(item, index, event.currentTarget);
-        setTimeout(() => this.contextMenuRenderer.render({
+        this.contextMenuRenderer.render({
             menuPath: KeybindingWidget.CONTEXT_MENU,
             anchor: event.nativeEvent,
             args: [item, this]
-        }));
+        });
     }
 
     protected selectItem(item: KeybindingItem, index: number, element: HTMLElement): void {
@@ -665,7 +665,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
      * Prompt users to update the keybinding for the given command.
      * @param item the keybinding item.
      */
-    public editKeybinding(item: KeybindingItem): void {
+    editKeybinding(item: KeybindingItem): void {
         const command = item.command.id;
         const oldKeybinding = item.keybinding;
         const dialog = new EditKeybindingDialog({
@@ -689,7 +689,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
      * Prompt users to update when expression for the given keybinding.
      * @param item the keybinding item
      */
-    public editWhenExpression(item: KeybindingItem): void {
+    editWhenExpression(item: KeybindingItem): void {
         const keybinding = item.keybinding;
         if (!keybinding) {
             return;
@@ -719,7 +719,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
      * Prompt users to add a keybinding for the given command.
      * @param item the keybinding item
      */
-    public addKeybinding(item: KeybindingItem): void {
+    addKeybinding(item: KeybindingItem): void {
         const command = item.command.id;
         const dialog = new SingleTextInputDialog({
             title: nls.localize('theia/keymaps/addKeybindingTitle', 'Add Keybinding for {0}', item.labels.command.value),
@@ -763,7 +763,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
      * Reset the keybinding to its default value.
      * @param item the keybinding item.
      */
-    public async resetKeybinding(item: KeybindingItem): Promise<void> {
+    async resetKeybinding(item: KeybindingItem): Promise<void> {
         const confirmed = await this.confirmResetKeybinding(item);
         if (confirmed) {
             this.keymapsService.removeKeybinding(item.command.id);
@@ -774,7 +774,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
      * Whether the keybinding can be reset to its default value.
      * @param item the keybinding item
      */
-    public canResetKeybinding(item: KeybindingItem): boolean {
+    canResetKeybinding(item: KeybindingItem): boolean {
         return item.keybinding?.scope === KeybindingScope.USER || this.keymapsService.hasKeybinding('-' + item.command.id);
     }
 
