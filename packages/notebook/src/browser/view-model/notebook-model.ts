@@ -83,9 +83,17 @@ export class NotebookModel implements Saveable, Disposable {
 
     protected nextHandle: number = 0;
 
-    kernel?: NotebookKernel;
+    protected _dirty: boolean = false;
 
-    dirty: boolean;
+    set dirty(dirty: boolean) {
+        this._dirty = dirty;
+        this.onDirtyChangedEmitter.fire();
+    }
+
+    get dirty(): boolean {
+        return this._dirty;
+    }
+
     selectedCell?: NotebookCellModel;
     protected dirtyCells: NotebookCellModel[] = [];
 
@@ -147,7 +155,6 @@ export class NotebookModel implements Saveable, Disposable {
     async save(options: SaveOptions): Promise<void> {
         this.dirtyCells = [];
         this.dirty = false;
-        this.onDirtyChangedEmitter.fire();
 
         const serializedNotebook = await this.props.serializer.fromNotebook({
             cells: this.cells.map(cell => cell.getData()),
@@ -172,7 +179,6 @@ export class NotebookModel implements Saveable, Disposable {
 
     async revert(options?: Saveable.RevertOptions): Promise<void> {
         this.dirty = false;
-        this.onDirtyChangedEmitter.fire();
     }
 
     isDirty(): boolean {
@@ -186,8 +192,8 @@ export class NotebookModel implements Saveable, Disposable {
             this.dirtyCells.splice(this.dirtyCells.indexOf(cell), 1);
         }
 
-        const oldDirtyState = this.dirty;
-        this.dirty = this.dirtyCells.length > 0;
+        const oldDirtyState = this._dirty;
+        this._dirty = this.dirtyCells.length > 0;
         if (this.dirty !== oldDirtyState) {
             this.onDirtyChangedEmitter.fire();
         }
@@ -211,7 +217,6 @@ export class NotebookModel implements Saveable, Disposable {
         for (const cell of cells) {
             cell.onDidChangeOutputs(() => {
                 this.dirty = true;
-                this.onDirtyChangedEmitter.fire();
             });
         }
     }
@@ -294,7 +299,7 @@ export class NotebookModel implements Saveable, Disposable {
         });
         this.addCellOutputListeners(cells);
 
-        const changes: NotebookCellTextModelSplice<NotebookCellModel>[] = [[start, deleteCount, cells]];
+        const changes: NotebookCellTextModelSplice<NotebookCellModel>[] = [{ start, deleteCount, newItems: cells }];
 
         const deletedCells = this.cells.splice(start, deleteCount, ...cells);
 
@@ -308,7 +313,7 @@ export class NotebookModel implements Saveable, Disposable {
                 async () => this.replaceCells(start, deleteCount, newCells, false));
         }
 
-        this.onDidAddOrRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes } });
+        this.onDidAddOrRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes }, newCellIds: cells.map(cell => cell.handle) });
         this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.ModelChange, changes }]);
     }
 
