@@ -7,6 +7,7 @@
 ## v1.43.0 - Unreleased
 
 - [vsode] evolve proposed API for dropDocument [#13009](https://github.com/eclipse-theia/theia/pull/13009) - contributed on behalf of STMicroelectronics
+- [vsode] evolve proposed API for terminalQuickFixProvider [#13006](https://github.com/eclipse-theia/theia/pull/13006) - contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.43.0">[Breaking Changes:](#breaking_changes_1.43.0)</a>
 

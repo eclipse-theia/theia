@@ -161,7 +161,6 @@ import {
     TerminalLocation,
     TerminalExitReason,
     TerminalProfile,
-    TerminalQuickFixType,
     InlayHint,
     InlayHintKind,
     InlayHintLabelPart,
@@ -199,7 +198,9 @@ import {
     DocumentPasteEdit,
     ExternalUriOpenerPriority,
     EditSessionIdentityMatch,
-    TerminalOutputAnchor
+    TerminalOutputAnchor,
+    TerminalQuickFixExecuteTerminalCommand,
+    TerminalQuickFixOpener
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -1391,7 +1392,8 @@ export function createAPIFactory(
             TerminalExitReason,
             DocumentPasteEdit,
             ExternalUriOpenerPriority,
-            TerminalQuickFixType,
+            TerminalQuickFixExecuteTerminalCommand,
+            TerminalQuickFixOpener,
             EditSessionIdentityMatch
         };
     };
