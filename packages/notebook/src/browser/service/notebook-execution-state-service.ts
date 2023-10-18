@@ -43,10 +43,6 @@ export interface CellExecutionStateUpdate {
     isPaused?: boolean;
 }
 
-export interface ICellExecutionComplete {
-    runEndTime?: number;
-    lastRunSuccess?: boolean;
-}
 export enum NotebookExecutionType {
     cell,
     notebook

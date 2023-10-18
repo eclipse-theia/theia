@@ -200,13 +200,6 @@ export interface SelectionIndexState {
 
 export type SelectionState = SelectionHandleState | SelectionIndexState;
 
-export interface NotebookTextModelChangedEvent {
-    readonly rawEvents: NotebookRawContentEvent[];
-    // readonly versionId: number;
-    readonly synchronous?: boolean;
-    readonly endSelectionState?: SelectionState;
-};
-
 export interface NotebookCellsInitializeEvent<T> {
     readonly kind: NotebookCellsChangeType.Initialize;
     readonly changes: NotebookCellTextModelSplice<T>[];
@@ -271,17 +264,10 @@ export interface NotebookCellContentChangeEvent {
     readonly index: number;
 }
 
-export type NotebookRawContentEvent = (NotebookCellsInitializeEvent<NotebookCell> | NotebookDocumentChangeMetadataEvent | NotebookCellContentChangeEvent |
+export type NotebookContentChangedEvent = (NotebookCellsInitializeEvent<NotebookCell> | NotebookDocumentChangeMetadataEvent | NotebookCellContentChangeEvent |
     NotebookCellsModelChangedEvent<NotebookCell> | NotebookCellsModelMoveEvent<NotebookCell> | NotebookOutputChangedEvent | NotebookOutputItemChangedEvent |
     NotebookCellsChangeLanguageEvent | NotebookCellsChangeMetadataEvent |
     NotebookCellsChangeInternalMetadataEvent | NotebookDocumentUnknownChangeEvent); // & { transient: boolean };
-
-export interface NotebookModelChangedEvent {
-    readonly rawEvents: NotebookRawContentEvent[];
-    readonly versionId: number;
-    // readonly synchronous: boolean | undefined;
-    // readonly endSelectionState: ISelectionState | undefined;
-};
 
 export interface NotebookModelWillAddRemoveEvent {
     readonly rawEvent: NotebookCellsModelChangedEvent<CellData>;

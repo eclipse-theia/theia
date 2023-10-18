@@ -37,7 +37,7 @@ import { NotebookActionsContribution } from './contributions/notebook-actions-co
 import { NotebookExecutionService } from './service/notebook-execution-service';
 import { NotebookExecutionStateService } from './service/notebook-execution-state-service';
 import { NotebookKernelService } from './service/notebook-kernel-service';
-import { KernelPickerMRUStrategy, NotebookKernelQuickPickService } from './service/notebook-kernel-quick-pick-service';
+import { NotebookKernelQuickPickService, NotebookKernelQuickPickServiceImpl } from './service/notebook-kernel-quick-pick-service';
 import { NotebookKernelHistoryService } from './service/notebook-kernel-history-service';
 import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service';
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
@@ -65,7 +65,7 @@ export default new ContainerModule(bind => {
     bind(NotebookKernelService).toSelf().inSingletonScope();
     bind(NotebookRendererMessagingService).toSelf().inSingletonScope();
     bind(NotebookKernelHistoryService).toSelf().inSingletonScope();
-    bind(NotebookKernelQuickPickService).to(KernelPickerMRUStrategy).inSingletonScope();
+    bind(NotebookKernelQuickPickService).to(NotebookKernelQuickPickServiceImpl).inSingletonScope();
 
     bind(NotebookCellResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(NotebookCellResourceResolver);
