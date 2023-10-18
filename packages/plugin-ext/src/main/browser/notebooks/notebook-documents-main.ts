@@ -56,14 +56,14 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
 
         for (const textModel of notebooks) {
             const disposableStore = new DisposableCollection();
-            disposableStore.push(textModel.onDidChangeContent(event => {
+            disposableStore.push(textModel.onDidChangeContent(events => {
 
                 const eventDto: NotebookCellsChangedEventDto = {
                     versionId: 1, // TODO implement version ID support
                     rawEvents: []
                 };
 
-                for (const e of event.rawEvents) {
+                for (const e of events) {
 
                     switch (e.kind) {
                         case NotebookCellsChangeType.ModelChange:
@@ -106,7 +106,7 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
                     }
                 }
 
-                const hasDocumentMetadataChangeEvent = event.rawEvents.find(e => e.kind === NotebookCellsChangeType.ChangeDocumentMetadata);
+                const hasDocumentMetadataChangeEvent = events.find(e => e.kind === NotebookCellsChangeType.ChangeDocumentMetadata);
 
                 // using the model resolver service to know if the model is dirty or not.
                 // assuming this is the first listener it can mean that at first the model

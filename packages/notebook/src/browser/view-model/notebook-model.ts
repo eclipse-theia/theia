@@ -21,7 +21,7 @@ import {
     CellEditOperation, CellEditType, CellUri, NotebookCellInternalMetadata,
     NotebookCellsChangeType, NotebookCellTextModelSplice, NotebookData,
     NotebookDocumentMetadata, NotebookModelWillAddRemoveEvent,
-    NotebookTextModelChangedEvent, NullablePartialNotebookCellInternalMetadata
+    NullablePartialNotebookCellInternalMetadata, NotebookContentChangedEvent
 } from '../../common';
 import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -62,7 +62,7 @@ export class NotebookModel implements Saveable, Disposable {
     protected readonly onDidAddOrRemoveCellEmitter = new Emitter<NotebookModelWillAddRemoveEvent>();
     readonly onDidAddOrRemoveCell = this.onDidAddOrRemoveCellEmitter.event;
 
-    protected readonly onDidChangeContentEmitter = new Emitter<NotebookTextModelChangedEvent>();
+    private readonly onDidChangeContentEmitter = new Emitter<NotebookContentChangedEvent[]>();
     readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
 
     @inject(FileService)
@@ -81,7 +81,7 @@ export class NotebookModel implements Saveable, Disposable {
     protected cellModelFactory: NotebookCellModelFactory;
     readonly autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
-    nextHandle: number = 0;
+    protected nextHandle: number = 0;
 
     kernel?: NotebookKernel;
 
@@ -309,7 +309,7 @@ export class NotebookModel implements Saveable, Disposable {
         }
 
         this.onDidAddOrRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes } });
-        this.onDidChangeContentEmitter.fire({ rawEvents: [{ kind: NotebookCellsChangeType.ModelChange, changes }] });
+        this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.ModelChange, changes }]);
     }
 
     private changeCellInternalMetadataPartial(cell: NotebookCellModel, internalMetadata: NullablePartialNotebookCellInternalMetadata): void {
@@ -323,11 +323,9 @@ export class NotebookModel implements Saveable, Disposable {
         }
 
         cell.internalMetadata = newInternalMetadata;
-        this.onDidChangeContentEmitter.fire({
-            rawEvents: [
-                { kind: NotebookCellsChangeType.ChangeCellInternalMetadata, index: this.cells.indexOf(cell), internalMetadata: newInternalMetadata }
-            ]
-        });
+        this.onDidChangeContentEmitter.fire([
+            { kind: NotebookCellsChangeType.ChangeCellInternalMetadata, index: this.cells.indexOf(cell), internalMetadata: newInternalMetadata }
+        ]);
     }
 
     private updateNotebookMetadata(metadata: NotebookDocumentMetadata, computeUndoRedo: boolean): void {
@@ -340,10 +338,7 @@ export class NotebookModel implements Saveable, Disposable {
         }
 
         this.metadata = metadata;
-        this.onDidChangeContentEmitter.fire({
-            rawEvents: [{ kind: NotebookCellsChangeType.ChangeDocumentMetadata, metadata: this.metadata }],
-            synchronous: true,
-        });
+        this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.ChangeDocumentMetadata, metadata: this.metadata }]);
     }
 
     private changeCellLanguage(cell: NotebookCellModel, languageId: string, computeUndoRedo: boolean): void {
@@ -353,10 +348,7 @@ export class NotebookModel implements Saveable, Disposable {
 
         cell.language = languageId;
 
-        this.onDidChangeContentEmitter.fire({
-            rawEvents: [{ kind: NotebookCellsChangeType.ChangeCellLanguage, index: this.cells.indexOf(cell), language: languageId }],
-            synchronous: true,
-        });
+        this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.ChangeCellLanguage, index: this.cells.indexOf(cell), language: languageId }]);
     }
 
     private moveCellToIndex(fromIndex: number, length: number, toIndex: number, computeUndoRedo: boolean): boolean {
@@ -369,9 +361,7 @@ export class NotebookModel implements Saveable, Disposable {
 
         const cells = this.cells.splice(fromIndex, length);
         this.cells.splice(toIndex, 0, ...cells);
-        this.onDidChangeContentEmitter.fire({
-            rawEvents: [{ kind: NotebookCellsChangeType.Move, index: fromIndex, length, newIdx: toIndex, cells }],
-        });
+        this.onDidChangeContentEmitter.fire([{ kind: NotebookCellsChangeType.Move, index: fromIndex, length, newIdx: toIndex, cells }]);
 
         return true;
     }
