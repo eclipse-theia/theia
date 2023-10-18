@@ -161,11 +161,11 @@ export interface CellInternalMetadataChangedEvent {
     readonly lastRunSuccessChanged?: boolean;
 }
 
-export type NotebookCellTextModelSplice<T> = [
+export interface NotebookCellTextModelSplice<T> {
     start: number,
     deleteCount: number,
     newItems: T[]
-];
+};
 
 export enum NotebookCellsChangeType {
     ModelChange = 1,
@@ -270,6 +270,7 @@ export type NotebookContentChangedEvent = (NotebookCellsInitializeEvent<Notebook
     NotebookCellsChangeInternalMetadataEvent | NotebookDocumentUnknownChangeEvent); // & { transient: boolean };
 
 export interface NotebookModelWillAddRemoveEvent {
+    readonly newCellIds?: number[];
     readonly rawEvent: NotebookCellsModelChangedEvent<CellData>;
 };
 

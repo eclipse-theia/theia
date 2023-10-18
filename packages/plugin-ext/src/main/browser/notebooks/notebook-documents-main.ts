@@ -20,7 +20,7 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { NotebookModelResolverService } from '@theia/notebook/lib/browser';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { NotebookCellsChangeType } from '@theia/notebook/lib/common';
-import { MAIN_RPC_CONTEXT, NotebookCellDto, NotebookCellsChangedEventDto, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain } from '../../../common';
+import { MAIN_RPC_CONTEXT, NotebookCellsChangedEventDto, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { NotebookDto } from './notebook-dto';
 
@@ -70,7 +70,7 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
                             eventDto.rawEvents.push({
                                 kind: e.kind,
                                 changes: e.changes.map(diff =>
-                                    [diff[0], diff[1], diff[2].map(NotebookDto.toNotebookCellDto)] as [number, number, NotebookCellDto[]])
+                                    ({ ...diff, newItems: diff.newItems.map(NotebookDto.toNotebookCellDto) }))
                             });
                             break;
                         case NotebookCellsChangeType.Move:

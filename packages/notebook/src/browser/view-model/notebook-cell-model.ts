@@ -144,6 +144,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     }
     set source(source: string) {
         this.props.source = source;
+        this.textModel?.textEditorModel.setValue(source);
     }
     get language(): string {
         return this.props.language;
