@@ -740,7 +740,8 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     createDocumentDropEditProvider(handle: number, _metadata?: DocumentDropEditProviderMetadata): DocumentOnDropEditProvider {
         return {
-            // @monaco-uplift dropMimeTypes should be supported by the monaco drop editor provider after 1.79.0
+            // @monaco-uplift id and dropMimeTypes should be supported by the monaco drop editor provider after 1.82.0
+            // id?: string;
             // dropMimeTypes: metadata?.dropMimeTypes ?? ['*/*'],
             provideDocumentOnDropEdits: async (model, position, dataTransfer, token) => this.provideDocumentDropEdits(handle, model, position, dataTransfer, token)
         };
@@ -752,10 +753,11 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         const edit = await this.proxy.$provideDocumentDropEdits(handle, model.uri, position, await DataTransfer.toDataTransferDTO(dataTransfer), token);
         if (edit) {
             return {
-                // @monaco-uplift id, priority and label should be supported by monaco after 1.79.0. The implementation relies on a copy of the plugin data
-                // id: edit.id ? plugin.identifier.value + '.' + edit.id : plugin.identifier.value,
-                // label: edit.label ?? nls.localizeByDefault("Drop using '{0}' extension", plugin.displayName || plugin.name),
-                // priority: edit.priority ?? 0,
+                // @monaco-uplift label and yieldTo should be supported by monaco after 1.82.0. The implementation relies on a copy of the plugin data
+                // label: label: edit.label ?? localize('defaultDropLabel', "Drop using '{0}' extension", this._extension.displayName || this._extension.name),,
+                // yieldTo: edit.yieldTo?.map(yTo => {
+                //      return 'mimeType' in yTo ? yTo : { providerId: DocumentOnDropEditAdapter.toInternalProviderId(yTo.extensionId, yTo.providerId) };
+                // }),
                 insertText: edit.insertText instanceof SnippetString ? { snippet: edit.insertText.value } : edit.insertText,
                 additionalEdit: toMonacoWorkspaceEdit(edit?.additionalEdit)
             };
