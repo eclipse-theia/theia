@@ -77,7 +77,6 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             }));
             this.toDispose.push(this.editor.onDocumentContentChanged(e => {
                 notebookModel.cellDirtyChanged(cell, true);
-                cell.source = e.document.getText();
             }));
         }
     }
