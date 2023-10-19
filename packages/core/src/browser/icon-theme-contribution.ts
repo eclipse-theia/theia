@@ -50,6 +50,7 @@ export class DefaultFileIconThemeContribution implements IconTheme, IconThemeCon
     readonly label = 'File Icons (Theia)';
     readonly hasFileIcons = true;
     readonly hasFolderIcons = true;
+    readonly showLanguageModeIcons = true;
 
     registerIconThemes(iconThemes: IconThemeService): MaybePromise<void> {
         iconThemes.register(this);

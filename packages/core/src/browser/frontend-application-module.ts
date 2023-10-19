@@ -137,6 +137,7 @@ import { StylingParticipant, StylingService } from './styling-service';
 import { bindCommonStylingParticipants } from './common-styling-participants';
 import { HoverService } from './hover-service';
 import { AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget';
+import { LanguageIconLabelProvider } from './language-icon-provider';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -149,6 +150,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(IconThemeContribution).toService(DefaultFileIconThemeContribution);
     bind(IconThemeApplicationContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(IconThemeApplicationContribution);
+    bind(LanguageIconLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(LanguageIconLabelProvider);
 
     bind(ColorRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, ColorContribution);

@@ -351,7 +351,7 @@ export class TheiaPluginScanner implements PluginScanner {
 
         const [localizationsResult, languagesResult, grammarsResult] = await Promise.allSettled([
             this.readLocalizations(rawPlugin),
-            rawPlugin.contributes.languages ? this.readLanguages(rawPlugin.contributes.languages, rawPlugin.packagePath) : undefined,
+            rawPlugin.contributes.languages ? this.readLanguages(rawPlugin.contributes.languages, rawPlugin) : undefined,
             rawPlugin.contributes.grammars ? this.grammarsReader.readGrammars(rawPlugin.contributes.grammars, rawPlugin.packagePath) : undefined
         ]);
 
@@ -658,8 +658,8 @@ export class TheiaPluginScanner implements PluginScanner {
         return result;
     }
 
-    private async readLanguages(rawLanguages: PluginPackageLanguageContribution[], pluginPath: string): Promise<LanguageContribution[]> {
-        return Promise.all(rawLanguages.map(language => this.readLanguage(language, pluginPath)));
+    private async readLanguages(rawLanguages: PluginPackageLanguageContribution[], plugin: PluginPackage): Promise<LanguageContribution[]> {
+        return Promise.all(rawLanguages.map(language => this.readLanguage(language, plugin)));
     }
 
     private readSubmenus(rawSubmenus: PluginPackageSubmenu[], plugin: PluginPackage): Submenu[] {
@@ -676,8 +676,9 @@ export class TheiaPluginScanner implements PluginScanner {
 
     }
 
-    private async readLanguage(rawLang: PluginPackageLanguageContribution, pluginPath: string): Promise<LanguageContribution> {
+    private async readLanguage(rawLang: PluginPackageLanguageContribution, plugin: PluginPackage): Promise<LanguageContribution> {
         // TODO: add validation to all parameters
+        const icon = this.transformIconUrl(plugin, rawLang.icon);
         const result: LanguageContribution = {
             id: rawLang.id,
             aliases: rawLang.aliases,
@@ -685,10 +686,11 @@ export class TheiaPluginScanner implements PluginScanner {
             filenamePatterns: rawLang.filenamePatterns,
             filenames: rawLang.filenames,
             firstLine: rawLang.firstLine,
-            mimetypes: rawLang.mimetypes
+            mimetypes: rawLang.mimetypes,
+            icon: icon?.iconUrl ?? icon?.themeIcon
         };
         if (rawLang.configuration) {
-            const rawConfiguration = await this.readJson<PluginPackageLanguageContributionConfiguration>(path.resolve(pluginPath, rawLang.configuration));
+            const rawConfiguration = await this.readJson<PluginPackageLanguageContributionConfiguration>(path.resolve(plugin.packagePath, rawLang.configuration));
             if (rawConfiguration) {
                 const configuration: LanguageConfiguration = {
                     brackets: rawConfiguration.brackets,
