@@ -103,7 +103,8 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
 
     protected onDragStart(event: React.DragEvent<HTMLLIElement>, index: number): void {
         event.stopPropagation();
-        event.dataTransfer.setData('text/notebook-cell-index', index.toString());
+        event.dataTransfer.setData('text/theia-notbook-cell-index', index.toString());
+        event.dataTransfer.setData('text/plain', this.props.notebookModel.cells[index].source);
     }
 
     protected onDragOver(event: React.DragEvent<HTMLLIElement>, cell: NotebookCellModel, position?: 'top' | 'bottom'): void {
@@ -114,7 +115,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
     }
 
     protected onDrop(event: React.DragEvent<HTMLLIElement>, dropElementIndex: number): void {
-        const index = parseInt(event.dataTransfer.getData('text/notebook-cell-index'));
+        const index = parseInt(event.dataTransfer.getData('text/theia-notbook-cell-index'));
         const isTargetBelow = index < dropElementIndex;
         let newIdx = this.state.dragOverIndicator?.position === 'top' ? dropElementIndex : dropElementIndex + 1;
         newIdx = isTargetBelow ? newIdx - 1 : newIdx;

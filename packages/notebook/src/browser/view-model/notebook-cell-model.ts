@@ -20,6 +20,7 @@
 
 import { Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
+import { ContextKeyChangeEvent } from '@theia/core/lib/browser/context-key-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import {
@@ -47,7 +48,7 @@ const NotebookCellContextManager = Symbol('NotebookCellContextManager');
 interface NotebookCellContextManager {
     updateCellContext(cell: NotebookCellModel, context: HTMLElement): void;
     dispose(): void;
-    onDidChangeContext: Event<void>;
+    onDidChangeContext: Event<ContextKeyChangeEvent>;
 }
 
 const NotebookCellModelProps = Symbol('NotebookModelProps');
@@ -275,6 +276,9 @@ export class NotebookCellModel implements NotebookCell, Disposable {
 
         const ref = await this.textModelService.createModelReference(this.uri);
         this.textModel = ref.object;
+        this.textModel.onDidChangeContent(e => {
+            this.source = e.model.getText();
+        });
         return ref.object;
     }
 }

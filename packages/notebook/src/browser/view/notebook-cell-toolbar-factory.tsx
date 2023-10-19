@@ -29,6 +29,7 @@ export interface NotebookCellToolbarItem {
     icon?: string;
     label?: string;
     onClick: (e: React.MouseEvent) => void;
+    contextKeys?: Set<string>
 }
 
 @injectable()
@@ -85,7 +86,8 @@ export class NotebookCellToolbarFactory {
                         includeAnchorArg: false,
                         args: [notebookModel, cell, output]
                     }) :
-                () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell, output)
+                () => this.commandRegistry.executeCommand(menuNode.command!, notebookModel, cell, output),
+            contextKeys: menuNode.when ? this.contextKeyService.parseKeys(menuNode.when) : undefined
         };
     }
 }
