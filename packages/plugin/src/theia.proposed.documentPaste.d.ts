@@ -60,23 +60,17 @@ export module '@theia/plugin' {
      */
     class DocumentPasteEdit {
         /**
-         * Identifies the type of edit.
-         *
-         * This id should be unique within the extension but does not need to be unique across extensions.
-         */
-        id: string;
-
-        /**
          * Human readable label that describes the edit.
          */
         label: string;
 
         /**
-         * The relative priority of this edit. Higher priority items are shown first in the UI.
-         *
-         * Defaults to `0`.
+         * Controls the ordering or multiple paste edits. If this provider yield to edits, it will be shown lower in the list.
          */
-        priority?: number;
+        yieldTo?: ReadonlyArray<
+            | { readonly extensionId: string; readonly providerId: string }
+            | { readonly mimeType: string }
+        >;
 
         /**
          * The text or snippet to insert at the pasted locations.
@@ -97,6 +91,15 @@ export module '@theia/plugin' {
     }
 
     interface DocumentPasteProviderMetadata {
+        /**
+         * Identifies the provider.
+         *
+         * This id is used when users configure the default provider for paste.
+         *
+         * This id should be unique within the extension but does not need to be unique across extensions.
+         */
+        readonly id: string;
+
         /**
          * Mime types that {@link DocumentPasteEditProvider.prepareDocumentPaste provideDocumentPasteEdits} may add on copy.
          */
