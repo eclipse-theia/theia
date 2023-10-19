@@ -308,6 +308,7 @@ export interface PluginPackageLanguageContribution {
     aliases?: string[];
     mimetypes?: string[];
     configuration?: string;
+    icon?: IconUrl;
 }
 
 export interface PluginPackageLanguageContributionConfiguration {
@@ -715,6 +716,10 @@ export interface LanguageContribution {
     aliases?: string[];
     mimetypes?: string[];
     configuration?: LanguageConfiguration;
+    /**
+     * @internal
+     */
+    icon?: IconUrl;
 }
 
 export interface RegExpOptions {

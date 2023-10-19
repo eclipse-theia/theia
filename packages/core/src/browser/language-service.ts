@@ -15,12 +15,14 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
+import { Disposable } from '../common';
 
 export interface Language {
     readonly id: string;
     readonly name: string;
     readonly extensions: Set<string>;
     readonly filenames: Set<string>;
+    readonly iconClass?: string;
 }
 
 @injectable()
@@ -37,6 +39,27 @@ export class LanguageService {
      * It should be implemented by an extension, e.g. by the monaco extension.
      */
     getLanguage(languageId: string): Language | undefined {
+        return undefined;
+    }
+
+    /**
+     * It should be implemented by an extension, e.g. by the monaco extension.
+     */
+    detectLanguage(obj: unknown): Language | undefined {
+        return undefined;
+    }
+
+    /**
+     * It should be implemented by an extension, e.g. by the monaco extension.
+     */
+    registerIcon(languageId: string, iconClass: string): Disposable {
+        return Disposable.NULL;
+    }
+
+    /**
+     * It should be implemented by an extension, e.g. by the monaco extension.
+     */
+    getIcon(obj: unknown): string | undefined {
         return undefined;
     }
 
