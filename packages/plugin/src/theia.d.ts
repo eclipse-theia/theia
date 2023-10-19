@@ -3575,6 +3575,24 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Options applied to the mutator.
+     */
+    export interface EnvironmentVariableMutatorOptions {
+        /**
+         * Apply to the environment just before the process is created. Defaults to true
+         */
+        applyAtProcessCreation?: boolean;
+
+        /**
+         * Apply to the environment in the shell integration script. Note that this _will not_ apply
+         * the mutator if shell integration is disabled or not working for some reason. Defaults to
+         * false.
+         * @stubbed
+         */
+        applyAtShellIntegration?: boolean;
+    }
+
+    /**
      * A type of mutation and its value to be applied to an environment variable.
      */
     export interface EnvironmentVariableMutator {
@@ -3587,6 +3605,11 @@ export module '@theia/plugin' {
          * The value to use for the variable.
          */
         readonly value: string;
+
+        /**
+         * Options applied to the mutator.
+         */
+        readonly options: EnvironmentVariableMutatorOptions;
     }
 
     /**
@@ -3617,7 +3640,7 @@ export module '@theia/plugin' {
          * @param variable The variable to replace.
          * @param value The value to replace the variable with.
          */
-        replace(variable: string, value: string): void;
+        replace(variable: string, value: string, options?: EnvironmentVariableMutatorOptions): void;
 
         /**
          * Append a value to an environment variable.
@@ -3628,7 +3651,7 @@ export module '@theia/plugin' {
          * @param variable The variable to append to.
          * @param value The value to append to the variable.
          */
-        append(variable: string, value: string): void;
+        append(variable: string, value: string, options?: EnvironmentVariableMutatorOptions): void;
 
         /**
          * Prepend a value to an environment variable.
@@ -3639,7 +3662,7 @@ export module '@theia/plugin' {
          * @param variable The variable to prepend.
          * @param value The value to prepend to the variable.
          */
-        prepend(variable: string, value: string): void;
+        prepend(variable: string, value: string, options?: EnvironmentVariableMutatorOptions): void;
 
         /**
          * Gets the mutator that this collection applies to a variable, if any.
