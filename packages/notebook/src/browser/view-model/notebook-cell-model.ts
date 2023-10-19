@@ -277,7 +277,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         const ref = await this.textModelService.createModelReference(this.uri);
         this.textModel = ref.object;
         this.textModel.onDidChangeContent(e => {
-            this.source = e.model.getText();
+            this.props.source = e.model.getText();
         });
         return ref.object;
     }

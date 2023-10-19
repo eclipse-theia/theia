@@ -129,18 +129,6 @@ export class NotebookModel implements Saveable, Disposable {
 
         this.metadata = this.metadata;
 
-        this.modelService.onDidCreate(editorModel => {
-            const modelUri = new URI(editorModel.uri);
-            if (modelUri.scheme === CellUri.scheme) {
-                const cellUri = CellUri.parse(modelUri);
-                if (cellUri && cellUri.notebook.isEqual(this.uri)) {
-                    const cell = this.cells.find(c => c.handle === cellUri.handle);
-                    if (cell) {
-                        cell.textModel = editorModel;
-                    }
-                }
-            }
-        });
         this.nextHandle = this.cells.length;
     }
 
