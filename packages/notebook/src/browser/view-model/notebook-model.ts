@@ -28,7 +28,6 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NotebookCellModel, NotebookCellModelFactory } from './notebook-cell-model';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
-import { NotebookKernel } from '../service/notebook-kernel-service';
 import { UndoRedoService } from '@theia/editor/lib/browser/undo-redo-service';
 
 export const NotebookModelFactory = Symbol('NotebookModelFactory');
