@@ -165,6 +165,28 @@ export class NotebookModel implements Saveable, Disposable {
         };
     }
 
+    async applySnapshot(snapshot: Saveable.Snapshot): Promise<void> {
+        const data = 'read' in snapshot ? JSON.parse(snapshot.read()!) : JSON.parse(snapshot.value);
+        const cells = data.cells.map((cell: CellData, index: number) => {
+            const handle = this.nextHandle++;
+            return this.cellModelFactory({
+                uri: CellUri.generate(this.uri, handle),
+                handle: handle,
+                source: cell.source,
+                language: cell.language,
+                cellKind: cell.cellKind,
+                outputs: cell.outputs,
+                metadata: cell.metadata,
+                internalMetadata: cell.internalMetadata,
+                collapseState: cell.collapseState
+            });
+        });
+        this.addCellOutputListeners(cells);
+
+        this.metadata = data.metadata;
+
+    }
+
     async revert(options?: Saveable.RevertOptions): Promise<void> {
         this.dirty = false;
     }
