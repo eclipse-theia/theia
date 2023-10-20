@@ -2464,7 +2464,7 @@ export interface NotebooksExt extends NotebookDocumentsAndEditorsExt {
 }
 
 export interface NotebooksMain extends Disposable {
-    $registerNotebookSerializer(handle: number, extension: notebookCommon.NotebookExtensionDescription, viewType: string, options: notebookCommon.TransientOptions): void;
+    $registerNotebookSerializer(handle: number, viewType: string, options: notebookCommon.TransientOptions): void;
     $unregisterNotebookSerializer(handle: number): void;
 
     $registerNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined, viewType: string): Promise<void>;

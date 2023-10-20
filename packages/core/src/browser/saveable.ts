@@ -50,7 +50,7 @@ export interface SaveableSource {
     readonly saveable: Saveable;
 }
 
-export class SaveableDelegate implements Saveable {
+export class DelegatingSaveable implements Saveable {
     dirty = false;
     protected readonly onDirtyChangedEmitter = new Emitter<void>();
 
@@ -60,20 +60,20 @@ export class SaveableDelegate implements Saveable {
     autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange' = 'off';
 
     async save(options?: SaveOptions): Promise<void> {
-        await this.delegate?.save(options);
+        await this._delegate?.save(options);
     }
 
     revert?(options?: Saveable.RevertOptions): Promise<void>;
     createSnapshot?(): Saveable.Snapshot;
     applySnapshot?(snapshot: object): void;
 
-    protected delegate?: Saveable;
+    protected _delegate?: Saveable;
     protected toDispose?: Disposable;
 
-    set(delegate: Saveable): void {
+    set delegate(delegate: Saveable) {
         this.toDispose?.dispose();
-        this.delegate = delegate;
-        this.toDispose = this.delegate.onDirtyChanged(() => {
+        this._delegate = delegate;
+        this.toDispose = delegate.onDirtyChanged(() => {
             this.dirty = delegate.dirty;
             this.onDirtyChangedEmitter.fire();
         });

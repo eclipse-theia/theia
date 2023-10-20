@@ -26,7 +26,7 @@ import { Dimension, EditorMouseEvent, MouseTarget, Position, TextDocumentChangeE
 import * as monaco from '@theia/monaco-editor-core';
 import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
 
-export class MonacoCodeEditor extends MonacoEditorServices implements Disposable {
+export class SimpleMonacoEditor extends MonacoEditorServices implements Disposable {
 
     protected editor: CodeEditorWidget;
     protected readonly toDispose = new DisposableCollection();

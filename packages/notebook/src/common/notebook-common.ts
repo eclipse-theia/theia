@@ -72,11 +72,6 @@ export interface TransientOptions {
     readonly transientDocumentMetadata: TransientDocumentMetadata;
 }
 
-export interface NotebookExtensionDescription {
-    readonly id: string;
-    readonly location: string | undefined;
-}
-
 export interface CellOutputItem {
     readonly mime: string;
     readonly data: BinaryBuffer;
@@ -101,7 +96,7 @@ export interface NotebookCell {
     outputs: CellOutput[];
     metadata: NotebookCellMetadata;
     internalMetadata: NotebookCellInternalMetadata;
-    textBuffer: string;
+    text: string;
     onDidChangeOutputs?: Event<NotebookCellOutputsSplice>;
     onDidChangeOutputItems?: Event<void>;
     onDidChangeLanguage: Event<string>;
