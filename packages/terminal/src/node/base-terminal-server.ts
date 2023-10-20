@@ -274,7 +274,8 @@ export class MergedEnvironmentVariableCollectionImpl implements MergedEnvironmen
                 entry.unshift({
                     extensionIdentifier,
                     value: mutator.value,
-                    type: mutator.type
+                    type: mutator.type,
+                    options: mutator.options
                 });
 
                 next = it.next();
@@ -291,16 +292,18 @@ export class MergedEnvironmentVariableCollectionImpl implements MergedEnvironmen
         this.map.forEach((mutators, variable) => {
             const actualVariable = isWindows ? lowerToActualVariableNames![variable.toLowerCase()] || variable : variable;
             mutators.forEach(mutator => {
-                switch (mutator.type) {
-                    case EnvironmentVariableMutatorType.Append:
-                        env[actualVariable] = (env[actualVariable] || '') + mutator.value;
-                        break;
-                    case EnvironmentVariableMutatorType.Prepend:
-                        env[actualVariable] = mutator.value + (env[actualVariable] || '');
-                        break;
-                    case EnvironmentVariableMutatorType.Replace:
-                        env[actualVariable] = mutator.value;
-                        break;
+                if (mutator.options?.applyAtProcessCreation ?? true) {
+                    switch (mutator.type) {
+                        case EnvironmentVariableMutatorType.Append:
+                            env[actualVariable] = (env[actualVariable] || '') + mutator.value;
+                            break;
+                        case EnvironmentVariableMutatorType.Prepend:
+                            env[actualVariable] = mutator.value + (env[actualVariable] || '');
+                            break;
+                        case EnvironmentVariableMutatorType.Replace:
+                            env[actualVariable] = mutator.value;
+                            break;
+                    }
                 }
             });
         });
