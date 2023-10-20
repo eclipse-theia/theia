@@ -19,12 +19,16 @@ import { NotebookTypeDescriptor } from '../common/notebook-protocol';
 
 @injectable()
 export class NotebookTypeRegistry {
-    readonly notebookTypes: NotebookTypeDescriptor[] = [];
+    private readonly _notebookTypes: NotebookTypeDescriptor[] = [];
+
+    get notebookTypes(): readonly NotebookTypeDescriptor[] {
+        return this._notebookTypes;
+    }
 
     registerNotebookType(type: NotebookTypeDescriptor): Disposable {
-        this.notebookTypes.push(type);
+        this._notebookTypes.push(type);
         return Disposable.create(() => {
-            this.notebookTypes.splice(this.notebookTypes.indexOf(type), 1);
+            this._notebookTypes.splice(this._notebookTypes.indexOf(type), 1);
         });
     }
 }

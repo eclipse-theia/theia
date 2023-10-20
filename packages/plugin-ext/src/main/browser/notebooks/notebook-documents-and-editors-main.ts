@@ -111,7 +111,7 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         // this.WidgetManager.onActiveEditorChanged(() => this.updateState(), this, this.disposables);
         this.notebookEditorService.onDidAddNotebookEditor(async editor => this.handleEditorAdd(editor), this, this.disposables);
         this.notebookEditorService.onDidRemoveNotebookEditor(async editor => this.handleEditorRemove(editor), this, this.disposables);
-        this.notebookEditorService.onFocusedEditorChanged(async editor => this.updateState(editor), this, this.disposables);
+        this.notebookEditorService.onDidChangeFocusedEditor(async editor => this.updateState(editor), this, this.disposables);
     }
 
     dispose(): void {
@@ -154,7 +154,7 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
             }
         }
 
-        const activeNotebookEditor = this.notebookEditorService.currentFocusedEditor;
+        const activeNotebookEditor = this.notebookEditorService.focusedEditor;
         let activeEditor: string | null = null;
         if (activeNotebookEditor) {
             activeEditor = activeNotebookEditor.id;

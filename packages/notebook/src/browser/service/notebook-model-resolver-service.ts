@@ -23,6 +23,7 @@ import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from './notebook-service';
 import { NotebookTypeRegistry } from '../notebook-type-registry';
 import { NotebookFileSelector } from '../../common/notebook-protocol';
+import { match } from '@theia/core/lib/common/glob';
 
 export interface UntitledResource {
     untitledResource: URI | undefined
@@ -44,38 +45,19 @@ export class NotebookModelResolverService {
     protected onDidSaveNotebookEmitter = new Emitter<UriComponents>();
     readonly onDidSaveNotebook = this.onDidSaveNotebookEmitter.event;
 
-    async resolve(resource: URI, viewType?: string): Promise<NotebookModel>;
-    async resolve(resource: UntitledResource, viewType: string): Promise<NotebookModel>;
-    async resolve(arg: URI | UntitledResource, viewType: string): Promise<NotebookModel> {
-        let resource: URI;
-        // let hasAssociatedFilePath = false;
-        if (arg instanceof URI) {
-            resource = arg;
-        } else {
-            arg = arg as UntitledResource;
-            if (!arg.untitledResource) {
-                const notebookTypeInfo = this.notebookTypeRegistry.notebookTypes.find(info => info.type === viewType);
-                if (!notebookTypeInfo) {
-                    throw new Error('UNKNOWN view type: ' + viewType);
-                }
+    async resolve(resource: URI, viewType?: string): Promise<NotebookModel> {
 
-                const suffix = this.getPossibleFileEndings(notebookTypeInfo.selector ?? []) ?? '';
-                for (let counter = 1; ; counter++) {
-                    const candidate = new URI()
-                        .withScheme('untitled')
-                        .withPath(`Untitled-notebook-${counter}${suffix}`)
-                        .withQuery(viewType);
-                    if (!this.notebookService.getNotebookEditorModel(candidate)) {
-                        resource = candidate;
-                        break;
-                    }
-                }
-            } else if (arg.untitledResource.scheme === 'untitled') {
-                resource = arg.untitledResource;
+        if (!viewType) {
+            const existingViewType = this.notebookService.getNotebookEditorModel(resource)?.viewType;
+            if (existingViewType) {
+                viewType = existingViewType;
             } else {
-                resource = arg.untitledResource.withScheme('untitled');
-                // hasAssociatedFilePath = true;
+                viewType = this.findViewTypeForResource(resource);
             }
+        }
+
+        if (!viewType) {
+            throw new Error(`Missing viewType for '${resource}'`);
         }
 
         const notebookData = await this.resolveExistingNotebookData(resource, viewType!);
@@ -86,6 +68,39 @@ export class NotebookModelResolverService {
         notebookModel.onDidSaveNotebook(() => this.onDidSaveNotebookEmitter.fire(notebookModel.uri.toComponents()));
 
         return notebookModel;
+    }
+
+    async resolveUntitledResource(arg: UntitledResource, viewType: string): Promise<NotebookModel> {
+        let resource: URI;
+        // let hasAssociatedFilePath = false;
+        arg = arg as UntitledResource;
+        if (!arg.untitledResource) {
+            const notebookTypeInfo = this.notebookTypeRegistry.notebookTypes.find(info => info.type === viewType);
+            if (!notebookTypeInfo) {
+                throw new Error('UNKNOWN view type: ' + viewType);
+            }
+
+            const suffix = this.getPossibleFileEnding(notebookTypeInfo.selector ?? []) ?? '';
+            for (let counter = 1; ; counter++) {
+                const candidate = new URI()
+                    .withScheme('untitled')
+                    .withPath(`Untitled-notebook-${counter}${suffix}`)
+                    .withQuery(viewType);
+                if (!this.notebookService.getNotebookEditorModel(candidate)) {
+                    resource = candidate;
+                    break;
+                }
+            }
+        } else if (arg.untitledResource.scheme === 'untitled') {
+            resource = arg.untitledResource;
+        } else {
+            throw new Error('Invalid untitled resource: ' + arg.untitledResource.toString() + ' untitled resources with associated file path are not supported yet');
+            // TODO implement associated file path support
+            // resource = arg.untitledResource.withScheme('untitled');
+            // hasAssociatedFilePath = true;
+        }
+
+        return this.resolve(resource, viewType);
     }
 
     protected async resolveExistingNotebookData(resource: URI, viewType: string): Promise<NotebookData> {
@@ -106,13 +121,13 @@ export class NotebookModelResolverService {
             const file = await this.fileService.readFile(resource);
 
             const dataProvider = await this.notebookService.getNotebookDataProvider(viewType);
-            const notebook = await dataProvider.serializer.dataToNotebook(file.value);
+            const notebook = await dataProvider.serializer.toNotebook(file.value);
 
             return notebook;
         }
     }
 
-    protected getPossibleFileEndings(selectors: readonly NotebookFileSelector[]): string | undefined {
+    protected getPossibleFileEnding(selectors: readonly NotebookFileSelector[]): string | undefined {
         for (const selector of selectors) {
             const ending = this.possibleFileEnding(selector);
             if (ending) {
@@ -126,16 +141,22 @@ export class NotebookModelResolverService {
 
         const pattern = /^.*(\.[a-zA-Z0-9_-]+)$/;
 
-        const candidate: string | undefined = typeof selector === 'string' ? selector : selector.filenamePattern;
+        const candidate = typeof selector === 'string' ? selector : selector.filenamePattern;
 
         if (candidate) {
-            const match = pattern.exec(candidate);
-            if (match) {
-                return match[1];
+            const matches = pattern.exec(candidate);
+            if (matches) {
+                return matches[1];
             }
         }
 
         return undefined;
+    }
+
+    protected findViewTypeForResource(resource: URI): string | undefined {
+        return this.notebookTypeRegistry.notebookTypes.find(info =>
+            info.selector?.some(selector => selector.filenamePattern && match(selector.filenamePattern, resource.path.name + resource.path.ext))
+        )?.type;
     }
 
 }

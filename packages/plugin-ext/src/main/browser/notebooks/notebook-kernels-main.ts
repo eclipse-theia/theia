@@ -36,7 +36,7 @@ abstract class NotebookKernel {
 
     readonly id: string;
     readonly viewType: string;
-    readonly extension: string;
+    readonly extensionId: string;
 
     implementsInterrupt: boolean;
     label: string;
@@ -57,7 +57,7 @@ abstract class NotebookKernel {
     constructor(data: NotebookKernelDto, private languageService: LanguageService) {
         this.id = data.id;
         this.viewType = data.notebookType;
-        this.extension = data.extensionId;
+        this.extensionId = data.extensionId;
 
         this.implementsInterrupt = data.supportsInterrupt ?? false;
         this.label = data.label;
@@ -104,10 +104,6 @@ abstract class NotebookKernel {
     abstract cancelNotebookCellExecution(uri: URI, cellHandles: number[]): Promise<void>;
 }
 
-class KernelDetectionTask {
-    constructor(readonly notebookType: string) { }
-}
-
 export interface KernelSourceActionProvider {
     readonly viewType: string;
     onDidChangeSourceActions?: Event<void>;
@@ -120,7 +116,7 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
 
     private readonly kernels = new Map<number, [kernel: NotebookKernel, registration: Disposable]>();
 
-    private readonly kernelDetectionTasks = new Map<number, [task: KernelDetectionTask, registration: Disposable]>();
+    private readonly kernelDetectionTasks = new Map<number, [task: string, registration: Disposable]>();
 
     private readonly kernelSourceActionProviders = new Map<number, [provider: KernelSourceActionProvider, registration: Disposable]>();
     private readonly kernelSourceActionProvidersEventRegistrations = new Map<number, Disposable>();
@@ -202,7 +198,7 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
         if (!kernel.selected || kernel.selected.id !== controllerId) {
             throw new Error(`Kernel is not selected: ${kernel.selected?.id} !== ${controllerId}`);
         }
-        const execution = this.notebookExecutionStateService.createCellExecution(uri, cellHandle);
+        const execution = this.notebookExecutionStateService.getOrCreateCellExecution(uri, cellHandle);
         execution.confirm();
         this.executions.set(handle, execution);
     }
@@ -234,9 +230,8 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
     }
 
     async $addKernelDetectionTask(handle: number, notebookType: string): Promise<void> {
-        const kernelDetectionTask = new KernelDetectionTask(notebookType);
-        const registration = this.notebookKernelService.registerNotebookKernelDetectionTask(kernelDetectionTask);
-        this.kernelDetectionTasks.set(handle, [kernelDetectionTask, registration]);
+        const registration = this.notebookKernelService.registerNotebookKernelDetectionTask(notebookType);
+        this.kernelDetectionTasks.set(handle, [notebookType, registration]);
     }
     $removeKernelDetectionTask(handle: number): void {
         const tuple = this.kernelDetectionTasks.get(handle);

@@ -17,7 +17,7 @@
 import { URI } from '@theia/core';
 import { WidgetFactory, NavigatableWidgetOptions, LabelProvider } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { NotebookEditorWidget, NotebookEditorContainerFactory, NotebookEditorProps } from './notebook-editor-widget';
+import { NotebookEditorWidget, NotebookEditorWidgetContainerFactory, NotebookEditorProps } from './notebook-editor-widget';
 import { NotebookService } from './service/notebook-service';
 import { NotebookModelResolverService } from './service/notebook-model-resolver-service';
 
@@ -38,7 +38,7 @@ export class NotebookEditorWidgetFactory implements WidgetFactory {
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
-    @inject(NotebookEditorContainerFactory)
+    @inject(NotebookEditorWidgetContainerFactory)
     protected readonly createNotebookEditorWidget: (props: NotebookEditorProps) => NotebookEditorWidget;
 
     async createWidget(options?: NotebookEditorWidgetOptions): Promise<NotebookEditorWidget> {

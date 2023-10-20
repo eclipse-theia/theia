@@ -137,7 +137,6 @@ export class NotebooksExtImpl implements NotebooksExt {
         this.notebookSerializer.set(handle, serializer);
         this.notebookProxy.$registerNotebookSerializer(
             handle,
-            { id: plugin.model.id, location: plugin.pluginUri },
             viewType,
             typeConverters.NotebookDocumentContentOptions.from(options),
         );
@@ -347,8 +346,7 @@ export class NotebooksExtImpl implements NotebooksExt {
     }
 
     async showNotebookDocument(notebookOrUri: theia.NotebookDocument | TheiaURI, options?: theia.NotebookDocumentShowOptions): Promise<theia.NotebookEditor> {
-
-        if (URI.isUri(notebookOrUri)) {
+        if (TheiaURI.isUri(notebookOrUri)) {
             notebookOrUri = await this.openNotebookDocument(notebookOrUri as TheiaURI);
         }
 

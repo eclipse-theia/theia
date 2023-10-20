@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Command, CommandRegistry, Disposable, Emitter, Event, URI } from '@theia/core';
+import { Command, CommandService, Disposable, Emitter, Event, URI } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { StorageService } from '@theia/core/lib/browser';
 import { NotebookKernelSourceAction } from '../../common';
@@ -51,11 +51,8 @@ export interface NotebookKernel {
     readonly id: string;
     readonly viewType: string;
     readonly onDidChange: Event<Readonly<NotebookKernelChangeEvent>>;
-    readonly extension: string;
-
-    readonly localResourceRoot: URI;
-    readonly preloadUris: URI[];
-    readonly preloadProvides: string[];
+    // ID of the extension providing this kernel
+    readonly extensionId: string;
 
     label: string;
     description?: string;
@@ -78,24 +75,20 @@ export interface INotebookProxyKernelChangeEvent extends NotebookKernelChangeEve
     connectionState?: true;
 }
 
-export interface NotebookKernelDetectionTask {
-    readonly notebookType: string;
-}
-
 export interface NotebookTextModelLike { uri: URI; viewType: string }
 
 class KernelInfo {
 
-    private static logicClock = 0;
+    private static instanceCounter = 0;
 
+    score: number;
     readonly kernel: NotebookKernel;
-    public score: number;
-    readonly time: number;
+    readonly handle: number;
 
     constructor(kernel: NotebookKernel) {
         this.kernel = kernel;
         this.score = -1;
-        this.time = KernelInfo.logicClock++;
+        this.handle = KernelInfo.instanceCounter++;
     }
 }
 
@@ -116,27 +109,25 @@ export class SourceCommand implements Disposable {
     readonly onDidChangeState = this.onDidChangeStateEmitter.event;
 
     constructor(
-        readonly commandRegistry: CommandRegistry,
         readonly command: Command,
         readonly model: NotebookTextModelLike,
-        readonly isPrimary: boolean
     ) { }
 
-    async run(): Promise<void> {
+    async run(commandService: CommandService): Promise<void> {
         if (this.execution) {
             return this.execution;
         }
 
-        this.execution = this.runCommand();
+        this.execution = this.runCommand(commandService);
         this.onDidChangeStateEmitter.fire();
         await this.execution;
         this.execution = undefined;
         this.onDidChangeStateEmitter.fire();
     }
 
-    private async runCommand(): Promise<void> {
+    private async runCommand(commandService: CommandService): Promise<void> {
         try {
-            await this.commandRegistry.executeCommand(this.command.id, {
+            await commandService.executeCommand(this.command.id, {
                 uri: this.model.uri,
             });
 
@@ -165,7 +156,7 @@ export class NotebookKernelService implements Disposable {
 
     private notebookBindings: { [key: string]: string } = {};
 
-    private readonly kernelDetectionTasks = new Map<string, NotebookKernelDetectionTask[]>();
+    private readonly kernelDetectionTasks = new Map<string, string[]>();
     private readonly onDidChangeKernelDetectionTasksEmitter = new Emitter<string>();
     readonly onDidChangeKernelDetectionTasks = this.onDidChangeKernelDetectionTasksEmitter.event;
 
@@ -196,7 +187,7 @@ export class NotebookKernelService implements Disposable {
 
     registerKernel(kernel: NotebookKernel): Disposable {
         if (this.kernels.has(kernel.id)) {
-            throw new Error(`NOTEBOOK CONTROLLER with id '${kernel.id}' already exists`);
+            throw new Error(`Notebook Controller with id '${kernel.id}' already exists`);
         }
 
         this.kernels.set(kernel.id, new KernelInfo(kernel));
@@ -215,6 +206,15 @@ export class NotebookKernelService implements Disposable {
         });
     }
 
+    /**
+     * Helps to find the best matching kernel for a notebook.
+     * @param notebook notebook to get the matching kernel for
+     * @returns and object containing:
+     *  all kernels sorted to match the notebook best first (affinity ascending, score descending, label))
+     *  the selected kernel (if any)
+     *  specificly suggested kernels (if any)
+     *  hidden kernels (if any)
+     */
     getMatchingKernel(notebook: NotebookTextModelLike): NotebookKernelMatchResult {
         const kernels: { kernel: NotebookKernel; instanceAffinity: number; score: number }[] = [];
         for (const info of this.kernels.values()) {
@@ -269,10 +269,10 @@ export class NotebookKernelService implements Disposable {
     }
 
     private static score(kernel: NotebookKernel, notebook: NotebookTextModelLike): number {
-        if (kernel.viewType === '*') {
-            return 5;
-        } else if (kernel.viewType === notebook.viewType) {
+        if (kernel.viewType === notebook.viewType) {
             return 10;
+        } else if (kernel.viewType === '*') {
+            return 5;
         } else {
             return 0;
         }
@@ -295,15 +295,14 @@ export class NotebookKernelService implements Disposable {
         }
     }
 
-    registerNotebookKernelDetectionTask(task: NotebookKernelDetectionTask): Disposable {
-        const notebookType = task.notebookType;
+    registerNotebookKernelDetectionTask(notebookType: string): Disposable {
         const all = this.kernelDetectionTasks.get(notebookType) ?? [];
-        all.push(task);
+        all.push(notebookType);
         this.kernelDetectionTasks.set(notebookType, all);
         this.onDidChangeKernelDetectionTasksEmitter.fire(notebookType);
         return Disposable.create(() => {
             const allTasks = this.kernelDetectionTasks.get(notebookType) ?? [];
-            const taskIndex = allTasks.indexOf(task);
+            const taskIndex = allTasks.indexOf(notebookType);
             if (taskIndex >= 0) {
                 allTasks.splice(taskIndex, 1);
                 this.kernelDetectionTasks.set(notebookType, allTasks);
@@ -312,7 +311,7 @@ export class NotebookKernelService implements Disposable {
         });
     }
 
-    getKernelDetectionTasks(notebook: NotebookTextModelLike): NotebookKernelDetectionTask[] {
+    getKernelDetectionTasks(notebook: NotebookTextModelLike): string[] {
         return this.kernelDetectionTasks.get(notebook.viewType) ?? [];
     }
 

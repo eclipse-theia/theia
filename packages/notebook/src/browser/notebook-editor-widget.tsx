@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { CommandRegistry, MenuModelRegistry, URI } from '@theia/core';
-import { ReactWidget, Navigatable, SaveableSource, Message, SaveableDelegate } from '@theia/core/lib/browser';
+import { ReactWidget, Navigatable, SaveableSource, Message, DelegatingSaveable } from '@theia/core/lib/browser';
 import { ReactNode } from '@theia/core/shared/react';
 import { CellKind } from '../common';
 import { CellRenderer as CellRenderer, NotebookCellListView } from './view/notebook-cell-list-view';
@@ -24,12 +24,12 @@ import { NotebookCodeCellRenderer } from './view/notebook-code-cell-view';
 import { NotebookMarkdownCellRenderer } from './view/notebook-markdown-cell-view';
 import { NotebookModel } from './view-model/notebook-model';
 import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
-import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
-import { NotebookEditorWidgetService } from './service/notebook-editor-service';
+import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service';
 import { NotebookMainToolbarRenderer } from './view/notebook-main-toolbar';
 
-export const NotebookEditorContainerFactory = Symbol('NotebookModelFactory');
+export const NotebookEditorWidgetContainerFactory = Symbol('NotebookEditorWidgetContainerFactory');
 
 export function createNotebookEditorWidgetContainer(parent: interfaces.Container, props: NotebookEditorProps): interfaces.Container {
     const child = parent.createChild();
@@ -53,7 +53,7 @@ export const NOTEBOOK_EDITOR_ID_PREFIX = 'notebook:';
 export class NotebookEditorWidget extends ReactWidget implements Navigatable, SaveableSource {
     static readonly ID = 'notebook';
 
-    readonly saveable = new SaveableDelegate();
+    readonly saveable = new DelegatingSaveable();
 
     @inject(NotebookCellToolbarFactory)
     protected readonly cellToolbarFactory: NotebookCellToolbarFactory;
@@ -70,6 +70,13 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     @inject(NotebookMainToolbarRenderer)
     protected notebookMainToolbarRenderer: NotebookMainToolbarRenderer;
 
+    @inject(NotebookCodeCellRenderer)
+    protected codeCellRenderer: NotebookCodeCellRenderer;
+    @inject(NotebookMarkdownCellRenderer)
+    protected markdownCellRenderer: NotebookMarkdownCellRenderer;
+    @inject(NotebookEditorProps)
+    protected readonly props: NotebookEditorProps;
+
     protected readonly onDidChangeModelEmitter = new Emitter<void>();
     readonly onDidChangeModel = this.onDidChangeModelEmitter.event;
 
@@ -84,11 +91,8 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         return this._model;
     }
 
-    constructor(
-        @inject(NotebookCodeCellRenderer) codeCellRenderer: NotebookCodeCellRenderer,
-        @inject(NotebookMarkdownCellRenderer) markdownCellRenderer: NotebookMarkdownCellRenderer,
-        @inject(NotebookEditorProps) private readonly props: NotebookEditorProps) {
-        super();
+    @postConstruct()
+    protected init(): void {
         this.id = NOTEBOOK_EDITOR_ID_PREFIX + this.props.uri.toString();
         this.node.tabIndex = -1;
 
@@ -97,14 +101,15 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
         this.toDispose.push(this.onDidChangeModelEmitter);
 
-        this.renderers.set(CellKind.Markup, markdownCellRenderer);
-        this.renderers.set(CellKind.Code, codeCellRenderer);
+        this.renderers.set(CellKind.Markup, this.markdownCellRenderer);
+        this.renderers.set(CellKind.Code, this.codeCellRenderer);
         this.waitForData();
+
     }
 
     protected async waitForData(): Promise<void> {
         this._model = await this.props.notebookData;
-        this.saveable.set(this._model);
+        this.saveable.delegate = this._model;
         this.toDispose.push(this._model);
         // Ensure that the model is loaded before adding the editor
         this.notebookEditorService.addNotebookEditor(this);
