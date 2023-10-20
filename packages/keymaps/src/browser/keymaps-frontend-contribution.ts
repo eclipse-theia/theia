@@ -51,33 +51,51 @@ export namespace KeymapsCommands {
         id: 'keymaps.clearSearch',
         iconClass: codicon('clear-all')
     };
-    export const COPY_KEYBINDING: Command = {
-        id: 'keymaps:keybinding.copy'
-    };
-    export const COPY_COMMAND_ID: Command = {
-        id: 'keymaps:keybinding.copyCommandId'
-    };
-    export const COPY_COMMAND_TITLE: Command = {
-        id: 'keymaps:keybinding.copyCommandTitle'
-    };
-    export const EDIT_KEYBINDING: Command = {
-        id: 'keymaps:keybinding.edit'
-    };
-    export const EDIT_WHEN_EXPRESSION: Command = {
-        id: 'keymaps:keybinding.editWhenExpression'
-    };
-    export const ADD_KEYBINDING: Command = {
-        id: 'keymaps:keybinding.add'
-    };
-    export const REMOVE_KEYBINDING: Command = {
-        id: 'keymaps:keybinding.remove'
-    };
-    export const RESET_KEYBINDING: Command = {
-        id: 'keymaps:keybinding.reset'
-    };
-    export const SHOW_SAME: Command = {
-        id: 'keymaps:keybinding.showSame'
-    };
+    export const COPY_KEYBINDING = Command.toLocalizedCommand({
+        id: 'keymaps:keybinding.copy',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Copy Keybinding'
+    }, 'theia/keymaps/keybinding/copy', CommonCommands.PREFERENCES_CATEGORY_KEY);
+    export const COPY_COMMAND_ID = Command.toLocalizedCommand({
+        id: 'keymaps:keybinding.copyCommandId',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Copy Keybinding Command ID'
+    }, 'theia/keymaps/keybinding/copyCommandId', CommonCommands.PREFERENCES_CATEGORY_KEY);
+    export const COPY_COMMAND_TITLE = Command.toLocalizedCommand({
+        id: 'keymaps:keybinding.copyCommandTitle',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Copy Keybinding Command Title'
+    }, 'theia/keymaps/keybinding/copyCommandTitle', CommonCommands.PREFERENCES_CATEGORY_KEY);
+    export const EDIT_KEYBINDING = Command.toLocalizedCommand({
+        id: 'keymaps:keybinding.edit',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Edit Keybinding...'
+    }, 'theia/keymaps/keybinding/edit', CommonCommands.PREFERENCES_CATEGORY_KEY);
+    export const EDIT_WHEN_EXPRESSION = Command.toLocalizedCommand({
+        id: 'keymaps:keybinding.editWhenExpression',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Edit Keybinding When Expression...'
+    }, 'theia/keymaps/keybinding/editWhenExpression', CommonCommands.PREFERENCES_CATEGORY_KEY);
+    export const ADD_KEYBINDING = Command.toDefaultLocalizedCommand({
+        id: 'keymaps:keybinding.add',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Add Keybinding...'
+    });
+    export const REMOVE_KEYBINDING = Command.toDefaultLocalizedCommand({
+        id: 'keymaps:keybinding.remove',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Remove Keybinding'
+    });
+    export const RESET_KEYBINDING = Command.toDefaultLocalizedCommand({
+        id: 'keymaps:keybinding.reset',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Reset Keybinding'
+    });
+    export const SHOW_SAME = Command.toDefaultLocalizedCommand({
+        id: 'keymaps:keybinding.showSame',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Show Same Keybindings'
+    });
 }
 
 @injectable()
