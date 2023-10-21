@@ -2183,11 +2183,6 @@ export enum TerminalExitReason {
     Extension = 4,
 }
 
-export enum TerminalQuickFixType {
-    command = 'command',
-    opener = 'opener'
-}
-
 @es5ClassCompat
 export class FileDecoration {
 
@@ -3629,4 +3624,28 @@ export enum EditSessionIdentityMatch {
     Partial = 50,
     None = 0
 }
+// #endregion
+
+// #region terminalQuickFixProvider
+export class TerminalQuickFixExecuteTerminalCommand {
+    /**
+     * The terminal command to run
+     */
+    terminalCommand: string;
+    /**
+     * @stubbed
+     */
+    constructor(terminalCommand: string) { }
+}
+export class TerminalQuickFixOpener {
+    /**
+     * The uri to open
+     */
+    uri: theia.Uri;
+    /**
+     * @stubbed
+     */
+    constructor(uri: theia.Uri) { }
+}
+
 // #endregion
