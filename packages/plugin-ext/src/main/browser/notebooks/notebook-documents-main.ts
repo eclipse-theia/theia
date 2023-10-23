@@ -118,7 +118,7 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
                 );
             });
 
-            this.documentEventListenersMapping.set(notebook.uri.toString(), new DisposableCollection());
+            this.documentEventListenersMapping.set(notebook.uri.toString(), new DisposableCollection(listener));
         }
     }
 
