@@ -14,15 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
-import { RemoteCopyContribution, RemoteCopyRegistry } from './remote-copy-contribution';
+import { injectable } from '@theia/core/shared/inversify';
 
 @injectable()
-export class CoreCopyContribution implements RemoteCopyContribution {
-    async copy(registry: RemoteCopyRegistry): Promise<void> {
-        registry.file('package.json');
-        await registry.glob('lib/backend/!(native)');
-        await registry.directory('lib/frontend');
-        await registry.directory('lib/webview');
+export class RemoteService {
+
+    protected _connected: boolean;
+
+    isConnected(): boolean {
+        return this._connected;
+    }
+
+    setConnected(value: boolean): void {
+        this._connected = value;
     }
 }

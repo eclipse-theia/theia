@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
-import { RemoteNativeDependencyContribution, DownloadOptions, DependencyDownload, RemotePlatform } from './remote-native-dependency-contribution';
+import { injectable } from '@theia/core/shared/inversify';
+import { RemoteNativeDependencyContribution, DownloadOptions, DependencyDownload } from './remote-native-dependency-contribution';
+import { RemotePlatform } from '../remote-types';
 
 @injectable()
 export class AppNativeDependencyContribution implements RemoteNativeDependencyContribution {
@@ -25,8 +26,8 @@ export class AppNativeDependencyContribution implements RemoteNativeDependencyCo
     // 'https://github.com/eclipse-theia/theia/releases/download'
     appDownloadUrlBase = 'https://github.com/msujew/theia/releases/download';
 
-    getDefaultURLForFile(remotePlatform: RemotePlatform, theiaVersion: string): string {
-        return `${this.appDownloadUrlBase}/v${theiaVersion}/native-dependencies-${remotePlatform}-x64.zip`;
+    protected getDefaultURLForFile(remotePlatform: RemotePlatform, theiaVersion: string): string {
+        return `${this.appDownloadUrlBase}/v${theiaVersion}/native-dependencies-${remotePlatform.os}-${remotePlatform.arch}.zip`;
     }
 
     async download(options: DownloadOptions): Promise<DependencyDownload> {

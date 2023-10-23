@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ApplicationPackage } from '@theia/application-package';
-import { inject, injectable } from 'inversify';
+import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { glob as globCallback } from 'glob';
-import { MaybePromise } from '../../common';
 import { promisify } from 'util';
 import * as path from 'path';
+import { MaybePromise } from '@theia/core';
 
 const promiseGlob = promisify(globCallback);
 
@@ -30,6 +30,11 @@ export interface RemoteCopyContribution {
 }
 
 export interface RemoteCopyOptions {
+    /**
+     * The mode that the file should be set to once copied to the remote.
+     *
+     * Only relevant for POSIX-like systems
+     */
     mode?: number;
 }
 

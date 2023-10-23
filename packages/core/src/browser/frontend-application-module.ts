@@ -97,7 +97,7 @@ import { EncodingRegistry } from './encoding-registry';
 import { EncodingService } from '../common/encoding-service';
 import { AuthenticationService, AuthenticationServiceImpl } from '../browser/authentication-service';
 import { DecorationsService, DecorationsServiceImpl } from './decorations-service';
-import { keytarServicePath, KeytarService } from '../common/keytar-protocol';
+import { keyStoreServicePath, KeyStoreService } from '../common/key-store';
 import { CredentialsService, CredentialsServiceImpl } from './credentials-service';
 import { ContributionFilterRegistry, ContributionFilterRegistryImpl } from '../common/contribution-filter';
 import { QuickCommandFrontendContribution } from './quick-input/quick-command-frontend-contribution';
@@ -137,7 +137,6 @@ import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from 
 import { StylingParticipant, StylingService } from './styling-service';
 import { bindCommonStylingParticipants } from './common-styling-participants';
 import { HoverService } from './hover-service';
-import { NullRemoteService, RemoteService } from './remote-service';
 import { AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
@@ -400,9 +399,9 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(AuthenticationService).to(AuthenticationServiceImpl).inSingletonScope();
     bind(DecorationsService).to(DecorationsServiceImpl).inSingletonScope();
 
-    bind(KeytarService).toDynamicValue(ctx => {
+    bind(KeyStoreService).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<KeytarService>(keytarServicePath);
+        return connection.createProxy<KeyStoreService>(keyStoreServicePath);
     }).inSingletonScope();
 
     bind(CredentialsService).to(CredentialsServiceImpl);
@@ -449,9 +448,6 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(StylingService).toSelf().inSingletonScope();
     bindContributionProvider(bind, StylingParticipant);
     bind(FrontendApplicationContribution).toService(StylingService);
-
-    bind(NullRemoteService).toSelf().inSingletonScope();
-    bind(RemoteService).toService(NullRemoteService);
 
     bind(SecondaryWindowHandler).toSelf().inSingletonScope();
 });

@@ -14,19 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import * as ssh2 from 'ssh2';
+import * as net from 'net';
 import * as fs from '@theia/core/shared/fs-extra';
+import SftpClient = require('ssh2-sftp-client');
 import { Emitter, Event, MessageService, QuickInputService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { RemoteSSHConnectionProvider } from '../../electron-common/remote-ssh-connection-provider';
 import { RemoteConnectionService } from '../remote-connection-service';
 import { RemoteProxyServerProvider } from '../remote-proxy-server-provider';
 import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester, RemoteStatusReport } from '../remote-types';
-import * as ssh2 from 'ssh2';
-import SftpClient = require('ssh2-sftp-client');
-import * as net from 'net';
 import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
 import { SSHIdentityFileCollector, SSHKey } from './ssh-identity-file-collector';
 import { RemoteSetupService } from '../setup/remote-setup-service';
+import { v4 } from 'uuid';
 
 @injectable()
 export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvider {
@@ -69,6 +70,13 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
                 server.close();
                 registration.dispose();
             });
+            server.on('connection', socket => {
+                // This event is triggered once the frontend connects to the proxy server.
+                // When the connection drops, we need to dispose the remote connection
+                socket.once('close', () => {
+                    remote.dispose();
+                });
+            });
             const localPort = (server.address() as net.AddressInfo).port;
             remote.localPort = localPort;
             return localPort.toString();
@@ -79,7 +87,6 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
 
     async establishSSHConnection(host: string, user: string): Promise<RemoteSSHConnection> {
         const deferred = new Deferred<RemoteSSHConnection>();
-        const sessionId = this.remoteConnectionService.getConnectionId();
         const sshClient = new ssh2.Client();
         const identityFiles = await this.identityFileCollector.gatherIdentityFiles();
         const sshAuthHandler = this.getAuthHandler(user, host, identityFiles);
@@ -87,7 +94,7 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
             .on('ready', async () => {
                 const connection = new RemoteSSHConnection({
                     client: sshClient,
-                    id: sessionId,
+                    id: v4(),
                     name: host,
                     type: 'SSH'
                 });
@@ -97,6 +104,8 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
                 } catch (err) {
                     deferred.reject(err);
                 }
+            }).on('end', () => {
+                console.log(`Ended remote connection to host '${user}@${host}'`);
             }).on('error', err => {
                 deferred.reject(err);
             }).connect({
@@ -154,7 +163,7 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
 
                 const keyBuffer = await fs.promises.readFile(identityKey.filename);
                 let result = ssh2.utils.parseKey(keyBuffer); // First try without passphrase
-                if (result instanceof Error && result.message === 'Encrypted private OpenSSH key detected, but no passphrase given') {
+                if (result instanceof Error && result.message.match(/no passphrase given/)) {
                     let passphraseRetryCount = this.passphraseRetryCount;
                     while (result instanceof Error && passphraseRetryCount > 0) {
                         const passphrase = await this.quickInputService.input({

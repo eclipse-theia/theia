@@ -15,13 +15,12 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { RemoteConnection, RemoteExecResult, RemoteStatusReport } from '../remote-types';
+import { RemoteConnection, RemoteExecResult, RemotePlatform, RemoteStatusReport } from '../remote-types';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { RemoteCopyService } from './remote-copy-service';
 import { RemoteNativeDependencyService } from './remote-native-dependency-service';
-import { THEIA_VERSION } from '@theia/core';
+import { OS, THEIA_VERSION } from '@theia/core';
 import { RemoteNodeSetupService } from './remote-node-setup-service';
-import { RemotePlatform } from '@theia/core/lib/node/remote';
 import { RemoteSetupScriptService } from './remote-setup-script-service';
 
 @injectable()
@@ -48,29 +47,29 @@ export class RemoteSetupService {
         const platform = await this.detectRemotePlatform(connection);
         // 2. Setup home directory
         const remoteHome = await this.getRemoteHomeDirectory(connection, platform);
-        const applicationDirectory = RemotePlatform.joinPath(platform, remoteHome, `.${this.getRemoteAppName()}`);
+        const applicationDirectory = this.scriptService.joinPath(platform, remoteHome, `.${this.getRemoteAppName()}`);
         await this.mkdirRemote(connection, platform, applicationDirectory);
         // 3. Download+copy node for that platform
         const nodeFileName = this.nodeSetupService.getNodeFileName(platform);
         const nodeDirName = this.nodeSetupService.getNodeDirectoryName(platform);
-        const remoteNodeDirectory = RemotePlatform.joinPath(platform, applicationDirectory, nodeDirName);
+        const remoteNodeDirectory = this.scriptService.joinPath(platform, applicationDirectory, nodeDirName);
         const nodeDirExists = await this.dirExistsRemote(connection, remoteNodeDirectory);
         if (!nodeDirExists) {
             report('Downloading and installing Node.js on remote...');
             // Download the binaries locally and move it via SSH
             const nodeArchive = await this.nodeSetupService.downloadNode(platform);
-            const remoteNodeZip = RemotePlatform.joinPath(platform, applicationDirectory, nodeFileName);
+            const remoteNodeZip = this.scriptService.joinPath(platform, applicationDirectory, nodeFileName);
             await connection.copy(nodeArchive, remoteNodeZip);
-            await this.unzipRemote(connection, remoteNodeZip, applicationDirectory);
+            await this.unzipRemote(connection, platform, remoteNodeZip, applicationDirectory);
         }
         // 4. Copy backend to remote system
-        const libDir = RemotePlatform.joinPath(platform, applicationDirectory, 'lib');
+        const libDir = this.scriptService.joinPath(platform, applicationDirectory, 'lib');
         const libDirExists = await this.dirExistsRemote(connection, libDir);
         if (!libDirExists) {
             report('Installing application on remote...');
-            const applicationZipFile = RemotePlatform.joinPath(platform, applicationDirectory, `${this.getRemoteAppName()}.tar`);
+            const applicationZipFile = this.scriptService.joinPath(platform, applicationDirectory, `${this.getRemoteAppName()}.tar`);
             await this.copyService.copyToRemote(connection, platform, applicationZipFile);
-            await this.unzipRemote(connection, applicationZipFile, applicationDirectory);
+            await this.unzipRemote(connection, platform, applicationZipFile, applicationDirectory);
         }
         // 5. start remote backend
         report('Starting application on remote...');
@@ -79,8 +78,8 @@ export class RemoteSetupService {
     }
 
     protected async startApplication(connection: RemoteConnection, platform: RemotePlatform, remotePath: string, nodeDir: string): Promise<number> {
-        const nodeExecutable = RemotePlatform.joinPath(platform, nodeDir, 'bin', platform === 'windows' ? 'node.exe' : 'node');
-        const mainJsFile = RemotePlatform.joinPath(platform, remotePath, 'lib', 'backend', 'main.js');
+        const nodeExecutable = this.scriptService.joinPath(platform, nodeDir, 'bin', platform.os === OS.Type.Windows ? 'node.exe' : 'node');
+        const mainJsFile = this.scriptService.joinPath(platform, remotePath, 'lib', 'backend', 'main.js');
         const localAddressRegex = /listening on http:\/\/127.0.0.1:(\d+)/;
         // Change to the remote application path and start a node process with the copied main.js file
         // This way, our current working directory is set as expected
@@ -97,31 +96,54 @@ export class RemoteSetupService {
     }
 
     protected async detectRemotePlatform(connection: RemoteConnection): Promise<RemotePlatform> {
-        const result = await connection.exec('uname -s');
+        const osResult = await connection.exec('uname -s');
 
-        if (result.stderr) {
+        let os: OS.Type | undefined;
+        if (osResult.stderr) {
             // Only Windows systems return an error output here
-            return 'windows';
-        } else if (result.stdout) {
-            if (result.stdout.includes('windows32') || result.stdout.includes('MINGW64')) {
-                return 'windows';
-            } else if (result.stdout.includes('Linux')) {
-                return 'linux';
-            } else if (result.stdout.includes('Darwin')) {
-                return 'darwin';
+            os = OS.Type.Windows;
+        } else if (osResult.stdout) {
+            if (osResult.stdout.includes('windows32') || osResult.stdout.includes('MINGW64')) {
+                os = OS.Type.Windows;
+            } else if (osResult.stdout.includes('Linux')) {
+                os = OS.Type.Linux;
+            } else if (osResult.stdout.includes('Darwin')) {
+                os = OS.Type.OSX;
             }
         }
-        throw new Error('Failed to identify remote system: ' + result.stdout + '\n' + result.stderr);
+        if (os === undefined) {
+            throw new Error('Failed to identify remote system: ' + osResult.stdout + '\n' + osResult.stderr);
+        }
+        let arch: string | undefined;
+        if (os === OS.Type.Windows) {
+            const wmicResult = await connection.exec('wmic OS get OSArchitecture');
+            if (wmicResult.stdout.includes('64-bit')) {
+                arch = 'x64';
+            } else if (wmicResult.stdout.includes('32-bit')) {
+                arch = 'x86';
+            }
+        } else {
+            const archResult = (await connection.exec('uname -m')).stdout;
+            if (archResult.includes('x86_64')) {
+                arch = 'x64';
+            } else if (archResult.match(/i\d83/)) { // i386, i483, i683
+                arch = 'x32';
+            } else {
+                arch = archResult.trim();
+            }
+        }
+        if (!arch) {
+            throw new Error('Could not identify remote system architecture');
+        }
+        return {
+            os,
+            arch
+        };
     }
 
     protected async getRemoteHomeDirectory(connection: RemoteConnection, platform: RemotePlatform): Promise<string> {
-        if (platform === 'windows') {
-            const powershellHome = await connection.exec('PowerShell -Command $HOME');
-            return powershellHome.stdout.trim();
-        } else {
-            const result = await connection.exec('eval echo ~');
-            return result.stdout.trim();
-        }
+        const result = await connection.exec(this.scriptService.home(platform));
+        return result.stdout.trim();
     }
 
     protected getRemoteAppName(): string {
@@ -146,18 +168,14 @@ export class RemoteSetupService {
         return !Boolean(cdResult.stderr);
     }
 
-    protected async unzipRemote(connection: RemoteConnection, remoteFile: string, remoteDirectory: string): Promise<void> {
-        const result = await connection.exec(this.scriptService.unzip(remoteFile, remoteDirectory));
+    protected async unzipRemote(connection: RemoteConnection, platform: RemotePlatform, remoteFile: string, remoteDirectory: string): Promise<void> {
+        const result = await connection.exec(this.scriptService.unzip(platform, remoteFile, remoteDirectory));
         if (result.stderr) {
             throw new Error('Failed to unzip: ' + result.stderr);
         }
     }
 
     protected async executeScriptRemote(connection: RemoteConnection, platform: RemotePlatform, script: string): Promise<RemoteExecResult> {
-        if (platform === 'windows') {
-            return connection.exec('PowerShell -Command', [script]);
-        } else {
-            return connection.exec('sh -c', [script]);
-        }
+        return connection.exec(this.scriptService.exec(platform), [script]);
     }
 }

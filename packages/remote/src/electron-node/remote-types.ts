@@ -14,8 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, Emitter, Event } from '@theia/core';
+import { Disposable, Event, OS } from '@theia/core';
 import * as net from 'net';
+
+export interface RemotePlatform {
+    os: OS.Type
+    arch: string
+}
 
 export type RemoteStatusReport = (message: string) => void;
 
@@ -48,36 +53,4 @@ export interface RemoteConnection extends Disposable {
     exec(cmd: string, args?: string[], options?: RemoteExecOptions): Promise<RemoteExecResult>;
     execPartial(cmd: string, tester: RemoteExecTester, args?: string[], options?: RemoteExecOptions): Promise<RemoteExecResult>;
     copy(localPath: string | Buffer | NodeJS.ReadableStream, remotePath: string): Promise<void>;
-}
-
-export interface RemoteSessionOptions {
-    port: number;
-}
-
-export class RemoteTunnel implements Disposable {
-
-    readonly port: number;
-
-    private readonly onDidRemoteDisconnectEmitter = new Emitter<void>();
-    private readonly onDidSocketDisconnectEmitter = new Emitter<void>();
-
-    get onDidRemoteDisconnect(): Event<void> {
-        return this.onDidRemoteDisconnectEmitter.event;
-    }
-
-    get onDidSocketDisconnect(): Event<void> {
-        return this.onDidSocketDisconnectEmitter.event;
-    }
-
-    constructor(options: RemoteSessionOptions) {
-        this.port = options.port;
-    }
-
-    disconnect(): void {
-        this.onDidRemoteDisconnectEmitter.fire();
-    }
-
-    dispose(): void {
-        this.onDidSocketDisconnectEmitter.fire();
-    }
 }

@@ -56,14 +56,28 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
     async connect(newWindow: boolean): Promise<void> {
         let host: string | undefined;
         let user: string | undefined;
-        host = await this.requestQuickInput('host');
-        if (host?.includes('@')) {
+        host = await this.quickInputService.input({
+            title: nls.localize('theia/remote/enterHost', 'Enter SSH host name'),
+            placeHolder: nls.localize('theia/remote/hostPlaceHolder', 'E.g. hello@example.com')
+        });
+        if (!host) {
+            this.messageService.error(nls.localize('theia/remote/needsHost', 'Please enter a host name.'));
+            return;
+        }
+        if (host.includes('@')) {
             const split = host.split('@');
             user = split[0];
             host = split[1];
         }
         if (!user) {
-            user = await this.requestQuickInput('user');
+            user = await this.quickInputService.input({
+                title: nls.localize('theia/remote/enterUser', 'Enter SSH user name'),
+                placeHolder: nls.localize('theia/remote/userPlaceHolder', 'E.g. hello')
+            });
+        }
+        if (!user) {
+            this.messageService.error(nls.localize('theia/remote/needsUser', 'Please enter a user name.'));
+            return;
         }
 
         try {
@@ -72,12 +86,6 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
         } catch (err) {
             this.messageService.error(`${nls.localize('theia/remote/sshFailure', 'Could not open SSH connection to remote.')} ${err.message ?? String(err)}`);
         }
-    }
-
-    async requestQuickInput(prompt: string): Promise<string | undefined> {
-        return this.quickInputService.input({
-            prompt
-        });
     }
 
     async sendSSHConnect(host: string, user: string): Promise<string> {

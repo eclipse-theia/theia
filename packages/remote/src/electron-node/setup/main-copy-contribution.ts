@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2021 Red Hat, Inc. and others.
+// Copyright (C) 2023 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,13 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export const keytarServicePath = '/services/keytar';
+import { injectable } from '@theia/core/shared/inversify';
+import { RemoteCopyContribution, RemoteCopyRegistry } from './remote-copy-contribution';
 
-export const KeytarService = Symbol('KeytarService');
-export interface KeytarService {
-    setPassword(service: string, account: string, password: string): Promise<void>;
-    getPassword(service: string, account: string): Promise<string | undefined>;
-    deletePassword(service: string, account: string): Promise<boolean>;
-    findPassword(service: string): Promise<string | undefined>;
-    findCredentials(service: string): Promise<Array<{ account: string, password: string }>>;
+@injectable()
+export class MainCopyContribution implements RemoteCopyContribution {
+    async copy(registry: RemoteCopyRegistry): Promise<void> {
+        registry.file('package.json');
+        await registry.glob('lib/backend/!(native)');
+        await registry.directory('lib/frontend');
+        await registry.directory('lib/webview');
+    }
 }

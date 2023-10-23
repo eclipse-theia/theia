@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 TypeFox and others.
+// Copyright (C) 2021 Red Hat, Inc. and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,15 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { RemoteService } from '@theia/core/lib/browser';
-import { injectable } from '@theia/core/shared/inversify';
+export const keyStoreServicePath = '/services/keyStore';
 
-@injectable()
-export class RemoteServiceImpl implements RemoteService {
-
-    connected: boolean;
-
-    isConnected(): boolean {
-        return this.connected;
-    }
+export const KeyStoreService = Symbol('KeyStoreService');
+export interface KeyStoreService {
+    setPassword(service: string, account: string, password: string): Promise<void>;
+    getPassword(service: string, account: string): Promise<string | undefined>;
+    deletePassword(service: string, account: string): Promise<boolean>;
+    findPassword(service: string): Promise<string | undefined>;
+    findCredentials(service: string): Promise<Array<{ account: string, password: string }>>;
 }

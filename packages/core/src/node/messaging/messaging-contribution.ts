@@ -60,11 +60,11 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     }
 
     wsChannel(spec: string, callback: (params: MessagingService.PathParams, channel: Channel) => void): void {
-        return this.channelHandlers.push(spec, (params, channel) => callback(params, channel));
+        this.channelHandlers.push(spec, (params, channel) => callback(params, channel));
     }
 
     ws(spec: string, callback: (params: MessagingService.PathParams, socket: Socket) => void): void {
-        return this.wsHandlers.push(spec, callback);
+        this.wsHandlers.push(spec, callback);
     }
 
     protected checkAliveTimeout = 30000; // 30 seconds

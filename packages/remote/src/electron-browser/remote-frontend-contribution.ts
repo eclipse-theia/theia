@@ -19,7 +19,7 @@ import { FrontendApplicationContribution, StatusBar, StatusBarAlignment, StatusB
 import { inject, injectable, named, optional } from '@theia/core/shared/inversify';
 import { RemoteStatus, RemoteStatusService } from '../electron-common/remote-status-service';
 import { RemoteRegistry, RemoteRegistryContribution } from './remote-registry-contribution';
-import { RemoteServiceImpl } from './remote-service-impl';
+import { RemoteService } from './remote-service';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 
 export namespace RemoteCommands {
@@ -44,8 +44,8 @@ export class RemoteFrontendContribution implements CommandContribution, Frontend
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
-    @inject(RemoteServiceImpl)
-    protected readonly remoteService: RemoteServiceImpl;
+    @inject(RemoteService)
+    protected readonly remoteService: RemoteService;
 
     @inject(RemoteStatusService)
     protected readonly remoteStatusService: RemoteStatusService;
@@ -71,7 +71,7 @@ export class RemoteFrontendContribution implements CommandContribution, Frontend
     }
 
     protected async setStatusBar(info: RemoteStatus): Promise<void> {
-        this.remoteService.connected = info.alive;
+        this.remoteService.setConnected(info.alive);
         const entry: StatusBarEntry = {
             alignment: StatusBarAlignment.LEFT,
             command: RemoteCommands.REMOTE_SELECT.id,
@@ -87,7 +87,7 @@ export class RemoteFrontendContribution implements CommandContribution, Frontend
                     tooltip: nls.localizeByDefault('Open a Remote Window'),
                 })
         };
-        this.statusBar.setElement('remoteInfo', entry);
+        this.statusBar.setElement('remoteStatus', entry);
     }
 
     registerCommands(commands: CommandRegistry): void {

@@ -20,31 +20,27 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.55.2/src/vs/platform/native/electron-main/nativeHostMainService.ts#L679-L771
 
-import { KeytarService } from '../common/keytar-protocol';
-import { inject, injectable } from 'inversify';
+import { KeyStoreService } from '../common/key-store';
+import { injectable } from 'inversify';
 import { isWindows } from '../common';
-import { BackendRemoteService } from './remote/backend-remote-service';
 
 @injectable()
-export class KeytarServiceImpl implements KeytarService {
-
-    @inject(BackendRemoteService)
-    protected readonly backendRemoteService: BackendRemoteService;
+export class KeyStoreServiceImpl implements KeyStoreService {
 
     private static readonly MAX_PASSWORD_LENGTH = 2500;
-    private static readonly PASSWORD_CHUNK_SIZE = KeytarServiceImpl.MAX_PASSWORD_LENGTH - 100;
+    private static readonly PASSWORD_CHUNK_SIZE = KeyStoreServiceImpl.MAX_PASSWORD_LENGTH - 100;
 
-    protected cache?: typeof import('keytar');
+    protected keytarImplementation?: typeof import('keytar');
 
     async setPassword(service: string, account: string, password: string): Promise<void> {
         const keytar = await this.getKeytar();
-        if (isWindows && password.length > KeytarServiceImpl.MAX_PASSWORD_LENGTH) {
+        if (isWindows && password.length > KeyStoreServiceImpl.MAX_PASSWORD_LENGTH) {
             let index = 0;
             let chunk = 0;
             let hasNextChunk = true;
             while (hasNextChunk) {
-                const passwordChunk = password.substring(index, index + KeytarServiceImpl.PASSWORD_CHUNK_SIZE);
-                index += KeytarServiceImpl.PASSWORD_CHUNK_SIZE;
+                const passwordChunk = password.substring(index, index + KeyStoreServiceImpl.PASSWORD_CHUNK_SIZE);
+                index += KeyStoreServiceImpl.PASSWORD_CHUNK_SIZE;
                 hasNextChunk = password.length - index > 0;
 
                 const content: ChunkedPassword = {
@@ -94,9 +90,7 @@ export class KeytarServiceImpl implements KeytarService {
     async findPassword(service: string): Promise<string | undefined> {
         const keytar = await this.getKeytar();
         const password = await keytar.findPassword(service);
-        if (password) {
-            return password;
-        }
+        return password ?? undefined;
     }
 
     async findCredentials(service: string): Promise<Array<{ account: string, password: string }>> {
@@ -105,20 +99,18 @@ export class KeytarServiceImpl implements KeytarService {
     }
 
     protected async getKeytar(): Promise<typeof import('keytar')> {
-        if (this.cache) {
-            return this.cache;
+        if (this.keytarImplementation) {
+            return this.keytarImplementation;
         }
         try {
-            return (this.cache = await import('keytar'));
+            this.keytarImplementation = await import('keytar');
+            // Try using keytar to see if it throws or not.
+            await this.keytarImplementation.findCredentials('test-keytar-loads');
         } catch (err) {
-            if (this.backendRemoteService.isRemoteServer()) {
-                // When running as a remote server, the necessary prerequisites might not be installed on the system
-                // Just use an in-memory cache for credentials
-                return (this.cache = new InMemoryCredentialsProvider());
-            } else {
-                throw err;
-            }
+            this.keytarImplementation = new InMemoryCredentialsProvider();
+            console.warn('OS level credential store could not be accessed. Using in-memory credentials provider', err);
         }
+        return this.keytarImplementation;
     }
 }
 

@@ -19,9 +19,10 @@ import * as fs from '@theia/core/shared/fs-extra';
 import * as os from 'os';
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { RemotePlatform } from '@theia/core/lib/node/remote';
 import { RequestService } from '@theia/core/shared/@theia/request';
 import { RemoteSetupScriptService } from './remote-setup-script-service';
+import { RemotePlatform } from '../remote-types';
+import { OS } from '@theia/core';
 
 /**
  * The current node version that Theia recommends.
@@ -40,7 +41,9 @@ export class RemoteNodeSetupService {
     protected readonly scriptService: RemoteSetupScriptService;
 
     getNodeDirectoryName(platform: RemotePlatform): string {
-        const platformId = platform === 'windows' ? 'win' : platform;
+        const platformId =
+            platform.os === OS.Type.Windows ? 'win' :
+                platform.os === OS.Type.Linux ? 'linux' : 'darwin';
         // Always use x64 architecture for now
         const arch = 'x64';
         const dirName = `node-v${REMOTE_NODE_VERSION}-${platformId}-${arch}`;
@@ -49,9 +52,9 @@ export class RemoteNodeSetupService {
 
     getNodeFileName(platform: RemotePlatform): string {
         let fileExtension = '';
-        if (platform === 'windows') {
+        if (platform.os === OS.Type.Windows) {
             fileExtension = 'zip';
-        } else if (platform === 'darwin') {
+        } else if (platform.os === OS.Type.OSX) {
             fileExtension = 'tar.gz';
         } else {
             fileExtension = 'tar.xz';
@@ -76,9 +79,9 @@ export class RemoteNodeSetupService {
     generateDownloadScript(platform: RemotePlatform, targetPath: string): string {
         const fileName = this.getNodeFileName(platform);
         const downloadPath = this.getDownloadPath(fileName);
-        const zipPath = RemotePlatform.joinPath(platform, targetPath, fileName);
+        const zipPath = this.scriptService.joinPath(platform, targetPath, fileName);
         const download = this.scriptService.downloadFile(platform, downloadPath, zipPath);
-        const unzip = this.scriptService.unzip(zipPath, targetPath);
+        const unzip = this.scriptService.unzip(platform, zipPath, targetPath);
         return this.scriptService.joinScript(platform, download, unzip);
     }
 

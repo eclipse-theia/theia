@@ -14,21 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { RequestOptions } from '@theia/request';
-import { isObject } from '../../common';
+import { isObject } from '@theia/core';
+import { RequestOptions } from '@theia/core/shared/@theia/request';
+import { RemotePlatform } from '../remote-types';
 
 export interface FileDependencyResult {
     path: string;
     mode?: number;
-}
-
-export type RemotePlatform = 'windows' | 'linux' | 'darwin';
-
-export namespace RemotePlatform {
-    export function joinPath(platform: RemotePlatform, ...segments: string[]): string {
-        const separator = platform === 'windows' ? '\\' : '/';
-        return segments.join(separator);
-    }
 }
 
 export type DependencyDownload = FileDependencyDownload | DirectoryDependencyDownload;
@@ -56,7 +48,7 @@ export namespace DirectoryDependencyDownload {
 }
 
 export interface DownloadOptions {
-    remotePlatform: RemotePlatform;
+    remotePlatform: RemotePlatform
     theiaVersion: string;
     download: (requestInfo: string | RequestOptions) => Promise<Buffer>
 }

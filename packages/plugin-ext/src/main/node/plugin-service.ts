@@ -26,7 +26,7 @@ import { environment } from '@theia/core/shared/@theia/application-package/lib/e
 import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
 import { MaybePromise } from '@theia/core/lib/common';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
-import { BackendRemoteService } from '@theia/core/lib/node/remote/backend-remote-service';
+import { BackendRemoteService } from '@theia/core/lib/node/backend-remote-service';
 
 @injectable()
 export class PluginApiContribution implements BackendApplicationContribution, WsRequestValidatorContribution {
@@ -52,8 +52,9 @@ export class PluginApiContribution implements BackendApplicationContribution, Ws
         const webviewApp = express();
         webviewApp.use('/webview', express.static(path.join(this.applicationPackage.projectPath, 'lib', 'webview', 'pre')));
         if (this.remoteService.isRemoteServer()) {
-            // If we are a remote server, the subdomain information gets lost
-            // We simply serve the webviews on a path
+            // Any request to `subdomain.localhost:port/webview/...` will get redirected to the remote system.
+            // However, it will get redirected directly to the `localhost:remotePort` address, losing the subdomain info.
+            // In this case, we simply serve the webviews on a path.
             app.use(webviewApp);
         } else {
             app.use(vhost(this.webviewExternalEndpointRegExp, webviewApp));

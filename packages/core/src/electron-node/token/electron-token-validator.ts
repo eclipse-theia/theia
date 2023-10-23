@@ -84,6 +84,8 @@ export class ElectronTokenValidator implements WsRequestValidatorContribution {
         if (token) {
             return JSON.parse(token);
         } else {
+            // No token has been passed to the backend server
+            // That indicates we're running without a local frontend
             return undefined;
         }
     }

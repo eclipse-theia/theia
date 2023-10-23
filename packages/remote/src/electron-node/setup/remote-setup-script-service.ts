@@ -14,17 +14,65 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
-import { RemotePlatform } from '@theia/core/lib/node/remote';
+import { OS } from '@theia/core';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { RemotePlatform } from '../remote-types';
+
+export interface RemoteScriptStrategy {
+    exec(): string;
+    downloadFile(url: string, output: string): string;
+    unzip(file: string, directory: string): string;
+    mkdir(path: string): string;
+    home(): string;
+    joinPath(...segments: string[]): string;
+    joinScript(...segments: string[]): string;
+}
 
 @injectable()
-export class RemoteSetupScriptService {
+export class RemoteWindowsScriptStrategy implements RemoteScriptStrategy {
 
-    downloadFile(platform: RemotePlatform, url: string, output: string): string {
-        if (platform === 'windows') {
-            return `Invoke-WebRequest -Uri "${url}" -OutFile ${output}`;
-        } else {
-            return `
+    home(): string {
+        return 'PowerShell -Command $HOME';
+    }
+
+    exec(): string {
+        return 'PowerShell -Command';
+    }
+
+    downloadFile(url: string, output: string): string {
+        return `Invoke-WebRequest -Uri "${url}" -OutFile ${output}`;
+    }
+
+    unzip(file: string, directory: string): string {
+        return `tar -xf "${file}" -C "${directory}"`;
+    }
+
+    mkdir(path: string): string {
+        return `New-Item -Force -itemType Directory -Path "${path}"`;
+    }
+
+    joinPath(...segments: string[]): string {
+        return segments.join('\\');
+    }
+
+    joinScript(...segments: string[]): string {
+        return segments.join('\r\n');
+    }
+}
+
+@injectable()
+export class RemotePosixScriptStrategy implements RemoteScriptStrategy {
+
+    home(): string {
+        return 'eval echo ~';
+    }
+
+    exec(): string {
+        return 'sh -c';
+    }
+
+    downloadFile(url: string, output: string): string {
+        return `
 if [ "$(command -v wget)" ]; then
     echo "Downloading using wget"
     wget -O "${output}" "${url}"
@@ -36,22 +84,63 @@ else
     exit 1
 fi
 `.trim();
-        }
     }
 
     unzip(file: string, directory: string): string {
         return `tar -xf "${file}" -C "${directory}"`;
     }
 
+    mkdir(path: string): string {
+        return `mkdir -p "${path}"`;
+    }
+
+    joinPath(...segments: string[]): string {
+        return segments.join('/');
+    }
+
+    joinScript(...segments: string[]): string {
+        return segments.join('\n');
+    }
+}
+
+@injectable()
+export class RemoteSetupScriptService {
+
+    @inject(RemoteWindowsScriptStrategy)
+    protected windowsStrategy: RemoteWindowsScriptStrategy;
+
+    @inject(RemotePosixScriptStrategy)
+    protected posixStrategy: RemotePosixScriptStrategy;
+
+    protected getStrategy(platform: RemotePlatform): RemoteScriptStrategy {
+        return platform.os === OS.Type.Windows ? this.windowsStrategy : this.posixStrategy;
+    }
+
+    home(platform: RemotePlatform): string {
+        return this.getStrategy(platform).home();
+    }
+
+    exec(platform: RemotePlatform): string {
+        return this.getStrategy(platform).exec();
+    }
+
+    downloadFile(platform: RemotePlatform, url: string, output: string): string {
+        return this.getStrategy(platform).downloadFile(url, output);
+    }
+
+    unzip(platform: RemotePlatform, file: string, directory: string): string {
+        return this.getStrategy(platform).unzip(file, directory);
+    }
+
     mkdir(platform: RemotePlatform, path: string): string {
-        if (platform === 'windows') {
-            return `New-Item -Force -itemType Directory -Path "${path}"`;
-        } else {
-            return `mkdir -p "${path}"`;
-        }
+        return this.getStrategy(platform).mkdir(path);
+    }
+
+    joinPath(platform: RemotePlatform, ...segments: string[]): string {
+        return this.getStrategy(platform).joinPath(...segments);
     }
 
     joinScript(platform: RemotePlatform, ...segments: string[]): string {
-        return segments.join(platform === 'windows' ? '\r\n' : '\n');
+        return this.getStrategy(platform).joinScript(...segments);
     }
 }

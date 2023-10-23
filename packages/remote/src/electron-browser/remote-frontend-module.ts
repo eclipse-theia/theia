@@ -16,13 +16,15 @@
 
 import { bindContributionProvider, CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, RemoteService, WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { RemoteSSHContribution } from './remote-ssh-contribution';
 import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderPath } from '../electron-common/remote-ssh-connection-provider';
 import { RemoteFrontendContribution } from './remote-frontend-contribution';
 import { RemoteRegistryContribution } from './remote-registry-contribution';
-import { RemoteServiceImpl } from './remote-service-impl';
+import { RemoteService } from './remote-service';
 import { RemoteStatusService, RemoteStatusServicePath } from '../electron-common/remote-status-service';
+import { ElectronFileDialogService } from '@theia/filesystem/lib/electron-browser/file-dialog/electron-file-dialog-service';
+import { RemoteElectronFileDialogService } from './remote-electron-file-dialog-service';
 
 export default new ContainerModule((bind, _, __, rebind) => {
     bind(RemoteFrontendContribution).toSelf().inSingletonScope();
@@ -33,8 +35,9 @@ export default new ContainerModule((bind, _, __, rebind) => {
     bind(RemoteSSHContribution).toSelf().inSingletonScope();
     bind(RemoteRegistryContribution).toService(RemoteSSHContribution);
 
-    bind(RemoteServiceImpl).toSelf().inSingletonScope();
-    rebind(RemoteService).toService(RemoteServiceImpl);
+    rebind(ElectronFileDialogService).to(RemoteElectronFileDialogService).inSingletonScope();
+
+    bind(RemoteService).toSelf().inSingletonScope();
 
     bind(RemoteSSHConnectionProvider).toDynamicValue(ctx =>
         WebSocketConnectionProvider.createLocalProxy<RemoteSSHConnectionProvider>(ctx.container, RemoteSSHConnectionProviderPath)).inSingletonScope();
