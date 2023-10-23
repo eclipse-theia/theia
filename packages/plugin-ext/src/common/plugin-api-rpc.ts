@@ -2332,7 +2332,7 @@ export interface NotebookOutputItemDto {
 export interface NotebookOutputDto {
     outputId: string;
     items: NotebookOutputItemDto[];
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 export interface NotebookCellDataDto {

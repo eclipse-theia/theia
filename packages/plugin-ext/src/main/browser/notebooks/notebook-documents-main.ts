@@ -54,9 +54,8 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
 
     handleNotebooksAdded(notebooks: readonly NotebookModel[]): void {
 
-        for (const textModel of notebooks) {
-            const disposableStore = new DisposableCollection();
-            disposableStore.push(textModel.onDidChangeContent(events => {
+        for (const notebook of notebooks) {
+            const listener = notebook.onDidChangeContent(events => {
 
                 const eventDto: NotebookCellsChangedEventDto = {
                     versionId: 1, // TODO implement version ID support
@@ -112,14 +111,14 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
                 // assuming this is the first listener it can mean that at first the model
                 // is marked as dirty and that another event is fired
                 this.proxy.$acceptModelChanged(
-                    textModel.uri.toComponents(),
+                    notebook.uri.toComponents(),
                     eventDto,
-                    textModel.isDirty(),
-                    hasDocumentMetadataChangeEvent ? textModel.metadata : undefined
+                    notebook.isDirty(),
+                    hasDocumentMetadataChangeEvent ? notebook.metadata : undefined
                 );
-            }));
+            });
 
-            this.documentEventListenersMapping.set(textModel.uri.toString(), disposableStore);
+            this.documentEventListenersMapping.set(notebook.uri.toString(), new DisposableCollection());
         }
     }
 

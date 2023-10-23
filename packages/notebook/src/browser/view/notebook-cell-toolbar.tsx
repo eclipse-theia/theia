@@ -28,7 +28,7 @@ interface NotebookCellToolbarState {
     inlineItems: NotebookCellToolbarItem[];
 }
 
-abstract class NotebookCellActionItems extends React.Component<NotebookCellToolbarProps, NotebookCellToolbarState> {
+abstract class NotebookCellActionBar extends React.Component<NotebookCellToolbarProps, NotebookCellToolbarState> {
 
     protected toDispose = new DisposableCollection();
 
@@ -52,7 +52,7 @@ abstract class NotebookCellActionItems extends React.Component<NotebookCellToolb
 
 }
 
-export class NotebookCellToolbar extends NotebookCellActionItems {
+export class NotebookCellToolbar extends NotebookCellActionBar {
 
     override render(): React.ReactNode {
         return <div className='theia-notebook-cell-toolbar'>
@@ -62,7 +62,7 @@ export class NotebookCellToolbar extends NotebookCellActionItems {
 
 }
 
-export class NotebookCellSidebar extends NotebookCellActionItems {
+export class NotebookCellSidebar extends NotebookCellActionBar {
 
     override render(): React.ReactNode {
         return <div className='theia-notebook-cell-sidebar'>
