@@ -42,7 +42,7 @@ interface NotebookAndEditorDelta {
 }
 
 class NotebookAndEditorState {
-    static delta(before: NotebookAndEditorState | undefined, after: NotebookAndEditorState): NotebookAndEditorDelta {
+    static computeDelta(before: NotebookAndEditorState | undefined, after: NotebookAndEditorState): NotebookAndEditorDelta {
         if (!before) {
             return {
                 addedDocuments: [...after.documents],
@@ -148,7 +148,7 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         const editors = new Map<string, NotebookEditorWidget>();
         const visibleEditorsMap = new Map<string, NotebookEditorWidget>();
 
-        for (const editor of this.notebookEditorService.listNotebookEditors()) {
+        for (const editor of this.notebookEditorService.getNotebookEditors()) {
             if (editor.model) {
                 editors.set(editor.id, editor);
             }
@@ -176,12 +176,12 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
             new Set(this.notebookService.listNotebookDocuments()),
             editors,
             activeEditor, visibleEditorsMap);
-        await this.onDelta(NotebookAndEditorState.delta(this.currentState, newState));
+        await this.onDelta(NotebookAndEditorState.computeDelta(this.currentState, newState));
         this.currentState = newState;
     }
 
     private async onDelta(delta: NotebookAndEditorDelta): Promise<void> {
-        if (NotebooksAndEditorsMain._isDeltaEmpty(delta)) {
+        if (NotebooksAndEditorsMain.isDeltaEmpty(delta)) {
             return;
         }
 
@@ -204,23 +204,23 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         this.notebookEditorsMain.handleEditorsAdded(delta.addedEditors);
     }
 
-    private static _isDeltaEmpty(delta: NotebookAndEditorDelta): boolean {
-        if (delta.addedDocuments !== undefined && delta.addedDocuments.length > 0) {
+    private static isDeltaEmpty(delta: NotebookAndEditorDelta): boolean {
+        if (delta.addedDocuments?.length) {
             return false;
         }
-        if (delta.removedDocuments !== undefined && delta.removedDocuments.length > 0) {
+        if (delta.removedDocuments?.length) {
             return false;
         }
-        if (delta.addedEditors !== undefined && delta.addedEditors.length > 0) {
+        if (delta.addedEditors?.length) {
             return false;
         }
-        if (delta.removedEditors !== undefined && delta.removedEditors.length > 0) {
+        if (delta.removedEditors?.length) {
             return false;
         }
-        if (delta.visibleEditors !== undefined && delta.visibleEditors.length > 0) {
+        if (delta.visibleEditors?.length) {
             return false;
         }
-        if (delta.newActiveEditor !== undefined) {
+        if (delta.newActiveEditor) {
             return false;
         }
         return true;
