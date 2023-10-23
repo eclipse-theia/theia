@@ -27,6 +27,9 @@ export class AppNativeDependencyContribution implements RemoteNativeDependencyCo
     appDownloadUrlBase = 'https://github.com/msujew/theia/releases/download';
 
     protected getDefaultURLForFile(remotePlatform: RemotePlatform, theiaVersion: string): string {
+        if (remotePlatform.arch !== 'x64') {
+            throw new Error(`Unsupported remote architecture '${remotePlatform.arch}'. Remote support is only available for x64 architectures.`);
+        }
         return `${this.appDownloadUrlBase}/v${theiaVersion}/native-dependencies-${remotePlatform.os}-${remotePlatform.arch}.zip`;
     }
 

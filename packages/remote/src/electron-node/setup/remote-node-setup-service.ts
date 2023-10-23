@@ -41,17 +41,34 @@ export class RemoteNodeSetupService {
     protected readonly scriptService: RemoteSetupScriptService;
 
     getNodeDirectoryName(platform: RemotePlatform): string {
-        const platformId =
-            platform.os === OS.Type.Windows ? 'win' :
-                platform.os === OS.Type.Linux ? 'linux' : 'darwin';
-        // Always use x64 architecture for now
-        const arch = 'x64';
-        const dirName = `node-v${REMOTE_NODE_VERSION}-${platformId}-${arch}`;
+        let platformId: string;
+        if (platform.os === OS.Type.Windows) {
+            platformId = 'win';
+        } else if (platform.os === OS.Type.OSX) {
+            platformId = 'darwin';
+        } else {
+            platformId = 'linux';
+        }
+        const dirName = `node-v${REMOTE_NODE_VERSION}-${platformId}-${platform.arch}`;
         return dirName;
     }
 
+    protected validatePlatform(platform: RemotePlatform): void {
+        if (platform.os === OS.Type.Windows && !platform.arch.match(/^x(64|86)$/)) {
+            this.throwPlatformError(platform, 'x64 and x86');
+        } else if (platform.os === OS.Type.Linux && !platform.arch.match(/^(x64|armv7l|arm64)$/)) {
+            this.throwPlatformError(platform, 'x64, armv7l and arm64');
+        } else if (platform.os === OS.Type.Linux && !platform.arch.match(/^(x64|arm64)$/)) {
+            this.throwPlatformError(platform, 'x64 and arm64');
+        }
+    }
+
+    protected throwPlatformError(platform: RemotePlatform, supportedArch: string): never {
+        throw new Error(`Invalid architecture for ${platform.os}: '${platform.arch}'. Only ${supportedArch} are supported.`);
+    }
+
     getNodeFileName(platform: RemotePlatform): string {
-        let fileExtension = '';
+        let fileExtension: string;
         if (platform.os === OS.Type.Windows) {
             fileExtension = 'zip';
         } else if (platform.os === OS.Type.OSX) {
@@ -63,6 +80,7 @@ export class RemoteNodeSetupService {
     }
 
     async downloadNode(platform: RemotePlatform): Promise<string> {
+        this.validatePlatform(platform);
         const fileName = this.getNodeFileName(platform);
         const tmpdir = os.tmpdir();
         const localPath = path.join(tmpdir, fileName);
@@ -77,6 +95,7 @@ export class RemoteNodeSetupService {
     }
 
     generateDownloadScript(platform: RemotePlatform, targetPath: string): string {
+        this.validatePlatform(platform);
         const fileName = this.getNodeFileName(platform);
         const downloadPath = this.getDownloadPath(fileName);
         const zipPath = this.scriptService.joinPath(platform, targetPath, fileName);

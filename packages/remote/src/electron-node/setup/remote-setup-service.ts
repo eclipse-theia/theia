@@ -100,7 +100,7 @@ export class RemoteSetupService {
 
         let os: OS.Type | undefined;
         if (osResult.stderr) {
-            // Only Windows systems return an error output here
+            // Only Windows systems return an error stream here
             os = OS.Type.Windows;
         } else if (osResult.stdout) {
             if (osResult.stdout.includes('windows32') || osResult.stdout.includes('MINGW64')) {
@@ -111,7 +111,7 @@ export class RemoteSetupService {
                 os = OS.Type.OSX;
             }
         }
-        if (os === undefined) {
+        if (!os) {
             throw new Error('Failed to identify remote system: ' + osResult.stdout + '\n' + osResult.stderr);
         }
         let arch: string | undefined;
@@ -127,7 +127,7 @@ export class RemoteSetupService {
             if (archResult.includes('x86_64')) {
                 arch = 'x64';
             } else if (archResult.match(/i\d83/)) { // i386, i483, i683
-                arch = 'x32';
+                arch = 'x86';
             } else {
                 arch = archResult.trim();
             }
