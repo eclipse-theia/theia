@@ -82,7 +82,7 @@ class TheiaElectronAppLoader {
         factory?: TheiaAppFactory<T>,
     ): Promise<T> {
         const workspace = initializeWorkspace(initialWorkspace);
-        const playwrightOptions = this.toPlaywrightOptions(launchOptions, initialWorkspace);
+        const playwrightOptions = this.toPlaywrightOptions(launchOptions, workspace);
         const electronApp = await electron.launch(playwrightOptions);
         const page = await electronApp.firstWindow();
         const appFactory = theiaAppFactory<T>(factory);
@@ -176,7 +176,7 @@ export class TheiaAppLoader {
         }
         const appPath = electronConfig.electronAppPath!;
         const pluginsPath = electronConfig.pluginsPath;
-        const launchOptions = electronConfig.launchOptions ?? new ElectronLaunchOptions(appPath, pluginsPath).playwrightOptions(initialWorkspace);
+        const launchOptions = electronConfig.launchOptions ?? new ElectronLaunchOptions(appPath, pluginsPath);
         return TheiaElectronAppLoader.load(launchOptions, initialWorkspace, factory);
     }
 }
