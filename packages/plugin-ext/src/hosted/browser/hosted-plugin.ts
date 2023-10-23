@@ -69,7 +69,7 @@ import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
 import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
-import { NotebookTypeRegistry, NotebookService } from '@theia/notebook/lib/browser';
+import { NotebookTypeRegistry, NotebookService, NotebookRendererMessagingService } from '@theia/notebook/lib/browser';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
@@ -117,6 +117,9 @@ export class HostedPluginSupport {
 
     @inject(NotebookService)
     protected readonly notebookService: NotebookService;
+
+    @inject(NotebookRendererMessagingService)
+    protected readonly notebookRendererMessagingService: NotebookRendererMessagingService;
 
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
@@ -224,6 +227,7 @@ export class HostedPluginSupport {
         this.fileService.onWillActivateFileSystemProvider(event => this.ensureFileSystemActivation(event));
         this.customEditorRegistry.onWillOpenCustomEditor(event => this.activateByCustomEditor(event));
         this.notebookService.onWillOpenNotebook(async event => this.activateByNotebook(event));
+        this.notebookRendererMessagingService.onWillActivateRenderer(rendererId => this.activateByNotebookRenderer(rendererId));
 
         this.widgets.onDidCreateWidget(({ factoryId, widget }) => {
             if ((factoryId === WebviewWidget.FACTORY_ID || factoryId === CustomEditorWidget.FACTORY_ID) && widget instanceof WebviewWidget) {
@@ -631,6 +635,14 @@ export class HostedPluginSupport {
 
     async activateByNotebook(viewType: string): Promise<void> {
         await this.activateByEvent(`onNotebook:${viewType}`);
+    }
+
+    async activateByNotebookSerializer(viewType: string): Promise<void> {
+        await this.activateByEvent(`onNotebookSerializer:${viewType}`);
+    }
+
+    async activateByNotebookRenderer(rendererId: string): Promise<void> {
+        await this.activateByEvent(`onRenderer:${rendererId}`);
     }
 
     activateByFileSystem(event: FileSystemProviderActivationEvent): Promise<void> {

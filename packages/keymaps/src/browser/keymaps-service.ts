@@ -128,62 +128,62 @@ export class KeymapsService {
      */
     async setKeybinding(newKeybinding: Keybinding, oldKeybinding: ScopedKeybinding | undefined): Promise<void> {
         return this.updateKeymap(() => {
-            let newAdded = false;
-            let isOldKeybindingDisabled = false;
-            let addedDisabledEntry = false;
-            const keybindings = [];
-            for (let keybinding of this.keybindingRegistry.getKeybindingsByScope(KeybindingScope.USER)) {
-                // search for the old keybinding and modify it
-                if (oldKeybinding && Keybinding.equals(keybinding, oldKeybinding, false, true)) {
-                    newAdded = true;
-                    keybinding = {
-                        ...keybinding,
-                        keybinding: newKeybinding.keybinding
-                    };
-                }
-
-                // we have an disabled entry for the same command and the oldKeybinding
-                if (oldKeybinding?.keybinding &&
-                    Keybinding.equals(keybinding, { ...newKeybinding, keybinding: oldKeybinding.keybinding, command: '-' + newKeybinding.command }, false, true)) {
-                    isOldKeybindingDisabled = true;
-                }
-                keybindings.push(keybinding);
-            }
-            if (!newAdded) {
-                keybindings.push({
-                    command: newKeybinding.command,
-                    keybinding: newKeybinding.keybinding,
-                    context: newKeybinding.context,
-                    when: newKeybinding.when,
-                    args: newKeybinding.args
-                });
-                newAdded = true;
-            }
-            // we want to add a disabled entry for the old keybinding only when we are modifying the default value
-            if (!isOldKeybindingDisabled && oldKeybinding?.scope === KeybindingScope.DEFAULT) {
+            const keybindings: Keybinding[] = [...this.keybindingRegistry.getKeybindingsByScope(KeybindingScope.USER)];
+            if (!oldKeybinding) {
+                Keybinding.addKeybinding(keybindings, newKeybinding);
+                return keybindings;
+            } else if (oldKeybinding.scope === KeybindingScope.DEFAULT) {
+                Keybinding.addKeybinding(keybindings, newKeybinding);
                 const disabledBinding = {
-                    command: '-' + newKeybinding.command,
-                    // TODO key: oldKeybinding, see https://github.com/eclipse-theia/theia/issues/6879
-                    keybinding: oldKeybinding.keybinding,
-                    context: newKeybinding.context,
-                    when: newKeybinding.when,
-                    args: newKeybinding.args
+                    ...oldKeybinding,
+                    command: '-' + oldKeybinding.command
                 };
-                // Add disablement of the old keybinding if it isn't already disabled in the list to avoid duplicate disabled entries
-                if (!keybindings.some(binding => Keybinding.equals(binding, disabledBinding, false, true))) {
-                    keybindings.push(disabledBinding);
-                }
-                isOldKeybindingDisabled = true;
-                addedDisabledEntry = true;
-            }
-            if (newAdded || addedDisabledEntry) {
+                Keybinding.addKeybinding(keybindings, disabledBinding);
+                return keybindings;
+            } else if (Keybinding.replaceKeybinding(keybindings, oldKeybinding, newKeybinding)) {
                 return keybindings;
             }
         });
     }
 
     /**
-     * Remove the given keybinding with the given command id from the JSON.
+     * Unset the given keybinding in the JSON.
+     * If the given keybinding has a default scope, it will be disabled in the JSON.
+     * Otherwise, it will be removed from the JSON.
+     * @param keybinding the keybinding to unset
+     */
+    unsetKeybinding(keybinding: ScopedKeybinding): Promise<void> {
+        return this.updateKeymap(() => {
+            const keybindings = this.keybindingRegistry.getKeybindingsByScope(KeybindingScope.USER);
+            if (keybinding.scope === KeybindingScope.DEFAULT) {
+                const result: Keybinding[] = [...keybindings];
+                const disabledBinding = {
+                    ...keybinding,
+                    command: '-' + keybinding.command
+                };
+                Keybinding.addKeybinding(result, disabledBinding);
+                return result;
+            } else {
+                const filtered = keybindings.filter(a => !Keybinding.equals(a, keybinding, false, true));
+                if (filtered.length !== keybindings.length) {
+                    return filtered;
+                }
+            }
+        });
+    }
+
+    /**
+     * Whether there is a keybinding with the given command id in the JSON.
+     * @param commandId the keybinding command id
+     */
+    hasKeybinding(commandId: string): boolean {
+        const keybindings = this.keybindingRegistry.getKeybindingsByScope(KeybindingScope.USER);
+        return keybindings.some(a => a.command === commandId);
+    }
+
+    /**
+     * Remove the keybindings with the given command id from the JSON.
+     * This includes disabled keybindings.
      * @param commandId the keybinding command id.
      */
     removeKeybinding(commandId: string): Promise<void> {

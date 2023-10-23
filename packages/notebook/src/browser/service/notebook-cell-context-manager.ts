@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ContextKeyService, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NOTEBOOK_CELL_EXECUTING, NOTEBOOK_CELL_EXECUTION_STATE, NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, NOTEBOOK_CELL_TYPE } from '../contributions/notebook-context-keys';
 import { Disposable, DisposableCollection, Emitter } from '@theia/core';
@@ -31,7 +31,6 @@ export class NotebookCellContextManager implements Disposable {
 
     protected readonly toDispose = new DisposableCollection();
 
-    protected currentStore: ScopedValueStore;
     protected currentContext: HTMLLIElement;
 
     protected readonly onDidChangeContextEmitter = new Emitter<void>();
@@ -40,21 +39,21 @@ export class NotebookCellContextManager implements Disposable {
     updateCellContext(cell: NotebookCellModel, newHtmlContext: HTMLLIElement): void {
         if (newHtmlContext !== this.currentContext) {
             this.toDispose.dispose();
-            this.currentStore?.dispose();
 
             this.currentContext = newHtmlContext;
-            this.currentStore = this.contextKeyService.createScoped(newHtmlContext);
+            const currentStore = this.contextKeyService.createScoped(newHtmlContext);
+            this.toDispose.push(currentStore);
 
-            this.currentStore.setContext(NOTEBOOK_CELL_TYPE, cell.cellKind === CellKind.Code ? 'code' : 'markdown');
+            currentStore.setContext(NOTEBOOK_CELL_TYPE, cell.cellKind === CellKind.Code ? 'code' : 'markdown');
 
             this.toDispose.push(cell.onDidRequestCellEditChange(cellEdit => {
-                this.currentStore?.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cellEdit);
+                currentStore?.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cellEdit);
                 this.onDidChangeContextEmitter.fire();
             }));
             this.toDispose.push(this.executionStateService.onDidChangeExecution(e => {
                 if (e.affectsCell(cell.uri)) {
-                    this.currentStore?.setContext(NOTEBOOK_CELL_EXECUTING, !!e.changed);
-                    this.currentStore?.setContext(NOTEBOOK_CELL_EXECUTION_STATE, e.changed?.state ?? 'idle');
+                    currentStore?.setContext(NOTEBOOK_CELL_EXECUTING, !!e.changed);
+                    currentStore?.setContext(NOTEBOOK_CELL_EXECUTION_STATE, e.changed?.state ?? 'idle');
                     this.onDidChangeContextEmitter.fire();
                 }
             }));
@@ -64,7 +63,6 @@ export class NotebookCellContextManager implements Disposable {
 
     dispose(): void {
         this.toDispose.dispose();
-        this.currentStore?.dispose();
         this.onDidChangeContextEmitter.dispose();
     }
 }

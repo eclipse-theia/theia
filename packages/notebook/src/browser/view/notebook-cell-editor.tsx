@@ -17,7 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
-import { MonacoCodeEditor } from '@theia/monaco/lib/browser/monaco-code-editor';
+import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { DisposableCollection } from '@theia/core';
@@ -40,7 +40,7 @@ const DEFAULT_EDITOR_OPTIONS = {
 
 export class CellEditor extends React.Component<CellEditorProps, {}> {
 
-    protected editor?: MonacoCodeEditor;
+    protected editor?: SimpleMonacoEditor;
     protected toDispose = new DisposableCollection();
     protected container?: HTMLDivElement;
 
@@ -64,7 +64,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             const editorNode = this.container;
             const editorModel = await cell.resolveTextModel();
             const uri = cell.uri;
-            this.editor = new MonacoCodeEditor(uri,
+            this.editor = new SimpleMonacoEditor(uri,
                 editorModel,
                 editorNode,
                 monacoServices,

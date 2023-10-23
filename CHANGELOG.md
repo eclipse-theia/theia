@@ -7,6 +7,11 @@
 ## v1.43.0 - Unreleased
 
 - [task] prevent task widget title from being changed by task process [#13003](https://github.com/eclipse-theia/theia/pull/13003)
+- [vscode] evolve proposed API for dropDocument [#13009](https://github.com/eclipse-theia/theia/pull/13009) - contributed on behalf of STMicroelectronics
+- [vscode] evolve proposed API for documentPaste (stubbed) [#13010](https://github.com/eclipse-theia/theia/pull/13010) - contributed on behalf of STMicroelectronics
+- [vscode] evolve proposed API for terminalQuickFixProvider [#13006](https://github.com/eclipse-theia/theia/pull/13006) - contributed on behalf of STMicroelectronics
+- [vscode] added 'provideDocumentRangesFormattingEdits' in the `DocumentRangeFormattingEditProvider` VS Code API [#13020](https://github.com/eclipse-theia/theia/pull/13020) - contributed on behalf of STMicroelectronics
+
 
 <a name="breaking_changes_1.43.0">[Breaking Changes:](#breaking_changes_1.43.0)</a>
 

@@ -330,6 +330,7 @@ export interface DocumentDropEdit {
 }
 
 export interface DocumentDropEditProviderMetadata {
+    readonly id: string;
     readonly dropMimeTypes: readonly string[];
 }
 
