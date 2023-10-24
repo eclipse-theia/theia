@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { Disposable, Emitter } from '@theia/core';
-import { CellOutput, CellOutputItem } from '../../common';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { CellOutput, CellOutputItem, isTextStreamMime } from '../../common';
 
 export class NotebookCellOutputModel implements Disposable {
 
@@ -41,11 +42,13 @@ export class NotebookCellOutputModel implements Disposable {
 
     replaceData(rawData: CellOutput): void {
         this.rawOutput = rawData;
+        this.optimizeOutputItems();
         this.didChangeDataEmitter.fire();
     }
 
     appendData(items: CellOutputItem[]): void {
         this.rawOutput.outputs.push(...items);
+        this.optimizeOutputItems();
         this.didChangeDataEmitter.fire();
     }
 
@@ -64,6 +67,33 @@ export class NotebookCellOutputModel implements Disposable {
             metadata: this.metadata,
             outputId: this.outputId
         };
+    }
+
+    private optimizeOutputItems(): void {
+        if (this.outputs.length > 1 && this.outputs.every(item => isTextStreamMime(item.mime))) {
+            // Look for the mimes in the items, and keep track of their order.
+            // Merge the streams into one output item, per mime type.
+            const mimeOutputs = new Map<string, BinaryBuffer[]>();
+            const mimeTypes: string[] = [];
+            this.outputs.forEach(item => {
+                let items: BinaryBuffer[];
+                if (mimeOutputs.has(item.mime)) {
+                    items = mimeOutputs.get(item.mime)!;
+                } else {
+                    items = [];
+                    mimeOutputs.set(item.mime, items);
+                    mimeTypes.push(item.mime);
+                }
+                items.push(item.data);
+            });
+            this.outputs.length = 0;
+            mimeTypes.forEach(mime => {
+                this.outputs.push({
+                    mime,
+                    data: BinaryBuffer.concat(mimeOutputs.get(mime)!)
+                });
+            });
+        }
     }
 
 }

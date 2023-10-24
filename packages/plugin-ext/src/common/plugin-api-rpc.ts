@@ -2423,6 +2423,7 @@ export interface CellExecuteOutputEditDto {
 export interface CellExecuteOutputItemEditDto {
     editType: CellExecutionUpdateType.OutputItems;
     append?: boolean;
+    outputId: string;
     items: NotebookOutputItemDto[];
 }
 

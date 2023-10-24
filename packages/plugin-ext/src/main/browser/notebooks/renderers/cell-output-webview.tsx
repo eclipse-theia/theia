@@ -75,6 +75,9 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     @postConstruct()
     protected async init(): Promise<void> {
         this.cell.onDidChangeOutputs(outputChange => this.updateOutput(outputChange));
+        this.cell.onDidChangeOutputItems(output => {
+            this.updateOutput({start: this.cell.outputs.findIndex(o => o.getData().outputId === o.outputId), deleteCount: 1, newOutputs: [output]});
+        });
 
         this.webviewWidget = await this.widgetManager.getOrCreateWidget(WebviewWidget.FACTORY_ID, { id: this.id });
         this.webviewWidget.setContentOptions({ allowScripts: true });
