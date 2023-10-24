@@ -1722,6 +1722,7 @@ export namespace NotebookDto {
             return {
                 editType: data.editType,
                 append: data.append,
+                outputId: data.outputId,
                 items: data.items.map(fromNotebookOutputItemDto)
             };
         } else {

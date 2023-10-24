@@ -98,7 +98,7 @@ export interface NotebookCell {
     internalMetadata: NotebookCellInternalMetadata;
     text: string;
     onDidChangeOutputs?: Event<NotebookCellOutputsSplice>;
-    onDidChangeOutputItems?: Event<void>;
+    onDidChangeOutputItems?: Event<CellOutput>;
     onDidChangeLanguage: Event<string>;
     onDidChangeMetadata: Event<void>;
     onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent>;
@@ -309,6 +309,7 @@ export interface CellExecuteOutputEdit {
 export interface CellExecuteOutputItemEdit {
     editType: CellExecutionUpdateType.OutputItems;
     append?: boolean;
+    outputId: string,
     items: CellOutputItem[];
 }
 
@@ -337,6 +338,7 @@ export interface CellOutputEditByHandle {
 export interface CellOutputItemEdit {
     editType: CellEditType.OutputItems;
     items: CellOutputItem[];
+    outputId: string;
     append?: boolean;
 }
 

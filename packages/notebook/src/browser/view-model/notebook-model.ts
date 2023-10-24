@@ -223,6 +223,8 @@ export class NotebookModel implements Saveable, Disposable {
                 cellIndex = edit.index;
             } else if ('handle' in edit) {
                 cellIndex = this.getCellIndexByHandle(edit.handle);
+            } else if ('outputId' in edit) {
+                cellIndex = this.cells.findIndex(cell => cell.outputs.some(output => output.outputId === edit.outputId));
             }
 
             return {
@@ -254,6 +256,7 @@ export class NotebookModel implements Saveable, Disposable {
                     break;
                 }
                 case CellEditType.OutputItems:
+                    cell.changeOutputItems(edit.outputId, !!edit.append, edit.items);
                     break;
                 case CellEditType.Metadata:
                     this.updateNotebookMetadata(edit.metadata, computeUndoRedo);
