@@ -18,7 +18,6 @@ import { CancellationToken, Command, Event, URI } from '@theia/core';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { UriComponents } from '@theia/core/lib/common/uri';
-import { CellRange } from './notebook-range';
 
 export enum CellKind {
     Markup = 1,
@@ -86,23 +85,6 @@ export interface CellOutput {
 export interface NotebookCellCollapseState {
     inputCollapsed?: boolean;
     outputCollapsed?: boolean;
-}
-
-export interface NotebookCell {
-    readonly uri: URI;
-    handle: number;
-    language: string;
-    cellKind: CellKind;
-    outputs: CellOutput[];
-    metadata: NotebookCellMetadata;
-    internalMetadata: NotebookCellInternalMetadata;
-    text: string;
-    onDidChangeOutputs?: Event<NotebookCellOutputsSplice>;
-    onDidChangeOutputItems?: Event<CellOutput>;
-    onDidChangeLanguage: Event<string>;
-    onDidChangeMetadata: Event<void>;
-    onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent>;
-
 }
 
 export interface CellData {
@@ -182,62 +164,12 @@ export enum NotebookCellsChangeType {
     Unknown = 100
 }
 
-export enum SelectionStateType {
-    Handle = 0,
-    Index = 1
-}
-export interface SelectionHandleState {
-    kind: SelectionStateType.Handle;
-    primary: number | null;
-    selections: number[];
-}
-
-export interface SelectionIndexState {
-    kind: SelectionStateType.Index;
-    focus: CellRange;
-    selections: CellRange[];
-}
-
-export type SelectionState = SelectionHandleState | SelectionIndexState;
-
-export interface NotebookCellsInitializeEvent<T> {
-    readonly kind: NotebookCellsChangeType.Initialize;
-    readonly changes: NotebookCellTextModelSplice<T>[];
-}
-
 export interface NotebookCellsChangeLanguageEvent {
     readonly kind: NotebookCellsChangeType.ChangeCellLanguage;
     readonly index: number;
     readonly language: string;
 }
 
-export interface NotebookCellsModelChangedEvent<T> {
-    readonly kind: NotebookCellsChangeType.ModelChange;
-    readonly changes: NotebookCellTextModelSplice<T>[];
-}
-
-export interface NotebookCellsModelMoveEvent<T> {
-    readonly kind: NotebookCellsChangeType.Move;
-    readonly index: number;
-    readonly length: number;
-    readonly newIdx: number;
-    readonly cells: T[];
-}
-
-export interface NotebookOutputChangedEvent {
-    readonly kind: NotebookCellsChangeType.Output;
-    readonly index: number;
-    readonly outputs: CellOutput[];
-    readonly append: boolean;
-}
-
-export interface NotebookOutputItemChangedEvent {
-    readonly kind: NotebookCellsChangeType.OutputItem;
-    readonly index: number;
-    readonly outputId: string;
-    readonly outputItems: CellOutputItem[];
-    readonly append: boolean;
-}
 export interface NotebookCellsChangeMetadataEvent {
     readonly kind: NotebookCellsChangeType.ChangeCellMetadata;
     readonly index: number;
@@ -250,29 +182,10 @@ export interface NotebookCellsChangeInternalMetadataEvent {
     readonly internalMetadata: NotebookCellInternalMetadata;
 }
 
-export interface NotebookDocumentChangeMetadataEvent {
-    readonly kind: NotebookCellsChangeType.ChangeDocumentMetadata;
-    readonly metadata: NotebookDocumentMetadata;
-}
-
-export interface NotebookDocumentUnknownChangeEvent {
-    readonly kind: NotebookCellsChangeType.Unknown;
-}
-
 export interface NotebookCellContentChangeEvent {
     readonly kind: NotebookCellsChangeType.ChangeCellContent;
     readonly index: number;
 }
-
-export type NotebookContentChangedEvent = (NotebookCellsInitializeEvent<NotebookCell> | NotebookDocumentChangeMetadataEvent | NotebookCellContentChangeEvent |
-    NotebookCellsModelChangedEvent<NotebookCell> | NotebookCellsModelMoveEvent<NotebookCell> | NotebookOutputChangedEvent | NotebookOutputItemChangedEvent |
-    NotebookCellsChangeLanguageEvent | NotebookCellsChangeMetadataEvent |
-    NotebookCellsChangeInternalMetadataEvent | NotebookDocumentUnknownChangeEvent); // & { transient: boolean };
-
-export interface NotebookModelWillAddRemoveEvent {
-    readonly newCellIds?: number[];
-    readonly rawEvent: NotebookCellsModelChangedEvent<CellData>;
-};
 
 export enum NotebookCellExecutionState {
     Unconfirmed = 1,

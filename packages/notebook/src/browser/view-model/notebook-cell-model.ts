@@ -25,7 +25,7 @@ import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import {
     CellInternalMetadataChangedEvent, CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata,
-    NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput, CellData, NotebookCell, CellOutputItem
+    NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput, CellData, CellOutputItem
 } from '../../common';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
 
@@ -49,6 +49,23 @@ interface NotebookCellContextManager {
     updateCellContext(cell: NotebookCellModel, context: HTMLElement): void;
     dispose(): void;
     onDidChangeContext: Event<ContextKeyChangeEvent>;
+}
+
+export interface NotebookCell {
+    readonly uri: URI;
+    handle: number;
+    language: string;
+    cellKind: CellKind;
+    outputs: CellOutput[];
+    metadata: NotebookCellMetadata;
+    internalMetadata: NotebookCellInternalMetadata;
+    text: string;
+    onDidChangeOutputs?: Event<NotebookCellOutputsSplice>;
+    onDidChangeOutputItems?: Event<CellOutput>;
+    onDidChangeLanguage: Event<string>;
+    onDidChangeMetadata: Event<void>;
+    onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent>;
+
 }
 
 const NotebookCellModelProps = Symbol('NotebookModelProps');
