@@ -73,10 +73,12 @@ export class ApplicationPackageManager {
     }
 
     async clean(): Promise<void> {
+        const webpackGenerator = new WebpackGenerator(this.pck);
         await Promise.all([
             this.remove(this.pck.lib()),
             this.remove(this.pck.srcGen()),
-            this.remove(new WebpackGenerator(this.pck).genConfigPath)
+            this.remove(webpackGenerator.genConfigPath),
+            this.remove(webpackGenerator.genNodeConfigPath)
         ]);
     }
 
