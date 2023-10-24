@@ -437,7 +437,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.shellTerminalServer.getProcessInfo(this.terminalId);
     }
 
-    get envVarCollectionDescriptionsByExtension(): Promise<Map<string, string | MarkdownString | undefined>> {
+    get envVarCollectionDescriptionsByExtension(): Promise<Map<string, (string | MarkdownString | undefined)[]>> {
         if (!IBaseTerminalServer.validateId(this.terminalId)) {
             return Promise.reject(new Error('terminal is not started'));
         }
@@ -898,7 +898,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.enhancedPreviewNode = document.createElement('div');
 
         Promise.all([this.envVarCollectionDescriptionsByExtension, this.processId, this.processInfo])
-            .then((values: [Map<string, string | MarkdownString | undefined>, number, TerminalProcessInfo]) => {
+            .then((values: [Map<string, (string | MarkdownString | undefined)[]>, number, TerminalProcessInfo]) => {
                 const extensions = values[0];
                 const processId = values[1];
                 const processInfo = values[2];
@@ -911,14 +911,16 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                     processInfo.arguments.join(' ') +
                     '\n\n---\n\n');
                 markdown.appendMarkdown('The following extensions have contributed to this terminal\'s environment:\n');
-                extensions.forEach((value, key) => {
-                    if (value === undefined) {
-                        markdown.appendMarkdown('* ' + key + '\n');
-                    } else if (typeof value === 'string') {
-                        markdown.appendMarkdown('* ' + key + ': ' + value + '\n');
-                    } else {
-                        markdown.appendMarkdown('* ' + key + ': ' + value.value + '\n');
-                    }
+                extensions.forEach((arr, key) => {
+                    arr.forEach(value => {
+                        if (value === undefined) {
+                            markdown.appendMarkdown('* ' + key + '\n');
+                        } else if (typeof value === 'string') {
+                            markdown.appendMarkdown('* ' + key + ': ' + value + '\n');
+                        } else {
+                            markdown.appendMarkdown('* ' + key + ': ' + value.value + '\n');
+                        }
+                    });
                 });
 
                 const enhancedPreviewNode = this.enhancedPreviewNode;
