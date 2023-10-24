@@ -17,13 +17,11 @@
 import { Disposable, Emitter, URI } from '@theia/core';
 import { Saveable, SaveOptions } from '@theia/core/lib/browser';
 import {
-    CellData,
-    CellEditOperation, CellEditType, CellUri, NotebookCellInternalMetadata,
+    CellData, CellEditType, CellUri, NotebookCellInternalMetadata,
     NotebookCellsChangeType, NotebookCellTextModelSplice, NotebookData,
     NotebookDocumentMetadata,
-    NullablePartialNotebookCellInternalMetadata
 } from '../../common';
-import { NotebookContentChangedEvent, NotebookModelWillAddRemoveEvent } from '../notebook-types';
+import { NotebookContentChangedEvent, NotebookModelWillAddRemoveEvent, CellEditOperation, NullablePartialNotebookCellInternalMetadata } from '../notebook-types';
 import { NotebookSerializer } from '../service/notebook-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { NotebookCellModel, NotebookCellModelFactory } from './notebook-cell-model';

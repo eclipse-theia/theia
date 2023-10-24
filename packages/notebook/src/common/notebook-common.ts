@@ -97,13 +97,6 @@ export interface CellData {
     collapseState?: NotebookCellCollapseState;
 }
 
-export interface CellReplaceEdit {
-    editType: CellEditType.Replace;
-    index: number;
-    count: number;
-    cells: CellData[];
-}
-
 export interface NotebookDocumentMetadataEdit {
     editType: CellEditType.DocumentMetadata;
     metadata: NotebookDocumentMetadata;
@@ -221,49 +214,10 @@ export interface CellExecutionStateUpdateDto {
     isPaused?: boolean;
 }
 
-export interface CellOutputEdit {
-    editType: CellEditType.Output;
-    index: number;
-    outputs: CellOutput[];
-    append?: boolean;
-}
-
-export interface CellOutputEditByHandle {
-    editType: CellEditType.Output;
-    handle: number;
-    outputs: CellOutput[];
-    append?: boolean;
-}
-
-export interface CellOutputItemEdit {
-    editType: CellEditType.OutputItems;
-    items: CellOutputItem[];
-    outputId: string;
-    append?: boolean;
-}
-
 export interface CellMetadataEdit {
     editType: CellEditType.Metadata;
     index: number;
     metadata: NotebookCellMetadata;
-}
-
-export interface CellLanguageEdit {
-    editType: CellEditType.CellLanguage;
-    index: number;
-    language: string;
-}
-
-export interface DocumentMetadataEdit {
-    editType: CellEditType.DocumentMetadata;
-    metadata: NotebookDocumentMetadata;
-}
-
-export interface CellMoveEdit {
-    editType: CellEditType.Move;
-    index: number;
-    length: number;
-    newIdx: number;
 }
 
 export const enum CellEditType {
@@ -276,19 +230,6 @@ export const enum CellEditType {
     OutputItems = 7,
     PartialMetadata = 8,
     PartialInternalMetadata = 9,
-}
-
-export type ImmediateCellEditOperation = CellOutputEditByHandle | CellOutputItemEdit | CellPartialInternalMetadataEditByHandle; // add more later on
-export type CellEditOperation = ImmediateCellEditOperation | CellReplaceEdit | CellOutputEdit |
-    CellMetadataEdit | CellLanguageEdit | DocumentMetadataEdit | CellMoveEdit; // add more later on
-
-export type NullablePartialNotebookCellInternalMetadata = {
-    [Key in keyof Partial<NotebookCellInternalMetadata>]: NotebookCellInternalMetadata[Key] | null
-};
-export interface CellPartialInternalMetadataEditByHandle {
-    editType: CellEditType.PartialInternalMetadata;
-    handle: number;
-    internalMetadata: NullablePartialNotebookCellInternalMetadata;
 }
 
 export interface NotebookKernelSourceAction {

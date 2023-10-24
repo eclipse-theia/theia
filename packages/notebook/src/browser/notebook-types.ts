@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import {
-    CellData, CellOutput, CellOutputItem, CellRange, NotebookCellContentChangeEvent,
+    CellData, CellEditType, CellMetadataEdit, CellOutput, CellOutputItem, CellRange, NotebookCellContentChangeEvent,
+    NotebookCellInternalMetadata,
     NotebookCellsChangeInternalMetadataEvent,
     NotebookCellsChangeLanguageEvent,
     NotebookCellsChangeMetadataEvent,
@@ -104,3 +105,62 @@ export interface NotebookModelWillAddRemoveEvent {
     readonly newCellIds?: number[];
     readonly rawEvent: NotebookCellsModelChangedEvent<CellData>;
 };
+
+export interface CellOutputEdit {
+    editType: CellEditType.Output;
+    index: number;
+    outputs: CellOutput[];
+    append?: boolean;
+}
+
+export interface CellOutputEditByHandle {
+    editType: CellEditType.Output;
+    handle: number;
+    outputs: CellOutput[];
+    append?: boolean;
+}
+
+export interface CellOutputItemEdit {
+    editType: CellEditType.OutputItems;
+    items: CellOutputItem[];
+    outputId: string;
+    append?: boolean;
+}
+
+export interface CellLanguageEdit {
+    editType: CellEditType.CellLanguage;
+    index: number;
+    language: string;
+}
+
+export interface DocumentMetadataEdit {
+    editType: CellEditType.DocumentMetadata;
+    metadata: NotebookDocumentMetadata;
+}
+
+export interface CellMoveEdit {
+    editType: CellEditType.Move;
+    index: number;
+    length: number;
+    newIdx: number;
+}
+
+export interface CellReplaceEdit {
+    editType: CellEditType.Replace;
+    index: number;
+    count: number;
+    cells: CellData[];
+}
+
+export type ImmediateCellEditOperation = CellOutputEditByHandle | CellOutputItemEdit | CellPartialInternalMetadataEditByHandle; // add more later on
+export type CellEditOperation = ImmediateCellEditOperation | CellReplaceEdit | CellOutputEdit |
+    CellMetadataEdit | CellLanguageEdit | DocumentMetadataEdit | CellMoveEdit; // add more later on
+
+export type NullablePartialNotebookCellInternalMetadata = {
+    [Key in keyof Partial<NotebookCellInternalMetadata>]: NotebookCellInternalMetadata[Key] | null
+};
+export interface CellPartialInternalMetadataEditByHandle {
+    editType: CellEditType.PartialInternalMetadata;
+    handle: number;
+    internalMetadata: NullablePartialNotebookCellInternalMetadata;
+}
