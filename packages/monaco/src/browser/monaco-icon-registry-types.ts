@@ -13,22 +13,17 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+// code copied and modified from https://github.com/Microsoft/vscode/blob/main/src/vs/platform/theme/common/iconRegistry.ts
 
 import { Event } from '@theia/core';
-import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 import { URI } from '@theia/core/shared/vscode-uri';
 
 //  ------ API types
-
-export type IconIdentifier = string;
-
-// icon registry
-export const Extensions = {
-    IconContribution: 'base.contributions.icons'
-};
-
-export type IconDefaults = ThemeIcon | IconDefinition;
 
 export interface IconDefinition {
     font?: IconFontContribution; // undefined for the default font (codicon)
@@ -39,7 +34,7 @@ export interface IconContribution {
     readonly id: string;
     description: string | undefined;
     deprecationMessage?: string;
-    readonly defaults: IconDefaults;
+    readonly defaults: ThemeIcon | IconDefinition;
 }
 
 export interface IconFontContribution {
@@ -69,32 +64,12 @@ export interface IconRegistry {
      * @param defaults The default values
      * @param description The description
      */
-    registerIcon(id: IconIdentifier, defaults: IconDefaults, description?: string): ThemeIcon;
+    registerIcon(id: string, defaults: ThemeIcon | IconDefinition, description?: string): ThemeIcon;
 
     /**
      * Deregister a icon from the registry.
      */
-    deregisterIcon(id: IconIdentifier): void;
-
-    /**
-     * Get all icon contributions
-     */
-    getIcons(): IconContribution[];
-
-    /**
-     * Get the icon for the given id
-     */
-    getIcon(id: IconIdentifier): IconContribution | undefined;
-
-    /**
-     * JSON schema for an object to assign icon values to one of the icon contributions.
-     */
-    getIconSchema(): IJSONSchema;
-
-    /**
-     * JSON schema to for a reference to a icon contribution.
-     */
-    getIconReferenceSchema(): IJSONSchema;
+    deregisterIcon(id: string): void;
 
     /**
      * Register a icon font to the registry.
@@ -112,16 +87,5 @@ export interface IconRegistry {
      * Get the icon font for the given id
      */
     getIconFont(id: string): IconFontDefinition | undefined;
-}
-
-export const IconsStyleSheet = Symbol('IconsStyleSheet');
-export interface IconsStyleSheet {
-    getCSS(): string;
-    readonly onDidChange: Event<void>;
-}
-
-export const IconStyleSheetService = Symbol('IconStyleSheetService');
-export interface IconStyleSheetService {
-    getIconsStyleSheet(): IconsStyleSheet;
 }
 

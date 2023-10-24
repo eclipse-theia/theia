@@ -22,16 +22,8 @@ import { MenusContributionPointHandler } from './menus/menus-contribution-handle
 import { PluginViewRegistry } from './view/plugin-view-registry';
 import { PluginCustomEditorRegistry } from './custom-editors/plugin-custom-editor-registry';
 import {
-    PluginContribution,
-    IndentationRules,
-    FoldingRules,
-    ScopeMap,
-    DeployedPlugin,
-    GrammarsContribution,
-    EnterAction,
-    OnEnterRule,
-    RegExpOptions,
-    IconContribution
+    PluginContribution, IndentationRules, FoldingRules, ScopeMap, DeployedPlugin,
+    GrammarsContribution, EnterAction, OnEnterRule, RegExpOptions, IconContribution
 } from '../../common';
 import { getPluginId } from '../../common/plugin-protocol';
 import {
