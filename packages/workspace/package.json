@@ -5,7 +5,6 @@
   "dependencies": {
     "@theia/core": "1.42.0",
     "@theia/filesystem": "1.42.0",
-    "@theia/monaco-editor-core": "1.72.3",
     "@theia/variable-resolver": "1.42.0",
     "jsonc-parser": "^2.2.0",
     "valid-filename": "^2.0.1"

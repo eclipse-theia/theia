@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, Stopwatch, isObject } from '../common';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, Stopwatch } from '../common';
 import { MaybePromise } from '../common/types';
 import { KeybindingRegistry } from './keybinding';
 import { Widget } from './widgets';
@@ -26,99 +26,9 @@ import { preventNavigation, parseCssTime, animationFrame } from './browser';
 import { CorePreferences } from './core-preferences';
 import { WindowService } from './window/window-service';
 import { TooltipService } from './tooltip-service';
-import { StopReason } from '../common/frontend-application-state';
-
-/**
- * Clients can implement to get a callback for contributing widgets to a shell on start.
- */
-export const FrontendApplicationContribution = Symbol('FrontendApplicationContribution');
-export interface FrontendApplicationContribution {
-
-    /**
-     * Called on application startup before configure is called.
-     */
-    initialize?(): void;
-
-    /**
-     * Called before commands, key bindings and menus are initialized.
-     * Should return a promise if it runs asynchronously.
-     */
-    configure?(app: FrontendApplication): MaybePromise<void>;
-
-    /**
-     * Called when the application is started. The application shell is not attached yet when this method runs.
-     * Should return a promise if it runs asynchronously.
-     */
-    onStart?(app: FrontendApplication): MaybePromise<void>;
-
-    /**
-     * Called on `beforeunload` event, right before the window closes.
-     * Return `true` or an OnWillStopAction in order to prevent exit.
-     * Note: No async code allowed, this function has to run on one tick.
-     */
-    onWillStop?(app: FrontendApplication): boolean | undefined | OnWillStopAction<unknown>;
-
-    /**
-     * Called when an application is stopped or unloaded.
-     *
-     * Note that this is implemented using `window.beforeunload` which doesn't allow any asynchronous code anymore.
-     * I.e. this is the last tick.
-     */
-    onStop?(app: FrontendApplication): void;
-
-    /**
-     * Called after the application shell has been attached in case there is no previous workbench layout state.
-     * Should return a promise if it runs asynchronously.
-     */
-    initializeLayout?(app: FrontendApplication): MaybePromise<void>;
-
-    /**
-     * An event is emitted when a layout is initialized, but before the shell is attached.
-     */
-    onDidInitializeLayout?(app: FrontendApplication): MaybePromise<void>;
-}
-
-export interface OnWillStopAction<T = unknown> {
-    /**
-     * @resolves to a prepared value to be passed into the `action` function.
-     */
-    prepare?: (stopReason?: StopReason) => MaybePromise<T>;
-    /**
-     * @resolves to `true` if it is safe to close the application; `false` otherwise.
-     */
-    action: (prepared: T, stopReason?: StopReason) => MaybePromise<boolean>;
-    /**
-     * A descriptive string for the reason preventing close.
-     */
-    reason: string;
-    /**
-     * A number representing priority. Higher priority items are run later.
-     * High priority implies that some options of this check will have negative impacts if
-     * the user subsequently cancels the shutdown.
-     */
-    priority?: number;
-}
-
-export namespace OnWillStopAction {
-    export function is(candidate: unknown): candidate is OnWillStopAction {
-        return isObject(candidate) && 'action' in candidate && 'reason' in candidate;
-    }
-}
+import { FrontendApplicationContribution } from './frontend-application-contribution';
 
 const TIMER_WARNING_THRESHOLD = 100;
-
-/**
- * Default frontend contribution that can be extended by clients if they do not want to implement any of the
- * methods from the interface but still want to contribute to the frontend application.
- */
-@injectable()
-export abstract class DefaultFrontendApplicationContribution implements FrontendApplicationContribution {
-
-    initialize(): void {
-        // NOOP
-    }
-
-}
 
 @injectable()
 export class FrontendApplication {

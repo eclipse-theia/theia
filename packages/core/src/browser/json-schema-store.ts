@@ -16,7 +16,7 @@
 
 import { injectable, inject, named } from 'inversify';
 import { ContributionProvider } from '../common/contribution-provider';
-import { FrontendApplicationContribution } from './frontend-application';
+import { FrontendApplicationContribution } from './frontend-application-contribution';
 import { MaybePromise } from '../common';
 import { Endpoint } from './endpoint';
 import { timeout, Deferred } from '../common/promise-util';

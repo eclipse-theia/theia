@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { Widget } from '../widgets';
-import { FrontendApplication, FrontendApplicationContribution } from '../frontend-application';
+import { FrontendApplication } from '../frontend-application';
+import { FrontendApplicationContribution } from '../frontend-application-contribution';
 import { NavigatableWidget } from '../navigatable-types';
 import { inject, injectable } from 'inversify';
 import { WindowTitleService } from './window-title-service';

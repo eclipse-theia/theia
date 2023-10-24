@@ -17,7 +17,7 @@
 import { ContainerModule } from 'inversify';
 import { WindowService } from '../../browser/window/window-service';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
-import { FrontendApplicationContribution } from '../frontend-application';
+import { FrontendApplicationContribution } from '../frontend-application-contribution';
 import { ClipboardService } from '../clipboard-service';
 import { BrowserClipboardService } from '../browser-clipboard-service';
 import { SecondaryWindowService } from './secondary-window-service';

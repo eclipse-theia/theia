@@ -17,7 +17,7 @@
 import { ContainerModule } from 'inversify';
 import { WindowService } from '../../browser/window/window-service';
 import { ElectronWindowService } from './electron-window-service';
-import { FrontendApplicationContribution } from '../../browser/frontend-application';
+import { FrontendApplicationContribution } from '../../browser/frontend-application-contribution';
 import { ElectronClipboardService } from '../electron-clipboard-service';
 import { ClipboardService } from '../../browser/clipboard-service';
 import { ElectronMainWindowService, electronMainWindowServicePath } from '../../electron-common/electron-main-window-service';

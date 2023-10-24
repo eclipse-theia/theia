@@ -38,7 +38,8 @@ import {
     MenuCommandExecutorImpl
 } from '../common';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
-import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
+import { FrontendApplication } from './frontend-application';
+import { FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application-contribution';
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 import { HttpOpenHandler } from './http-open-handler';
 import { CommonFrontendContribution } from './common-frontend-contribution';
