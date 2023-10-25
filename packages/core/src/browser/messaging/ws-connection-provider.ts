@@ -54,7 +54,7 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
         return container.get<WebSocketConnectionProvider>(LocalWebSocketConnectionProvider).createProxy<T>(path, arg);
     }
 
-    static createDualProxy(container: interfaces.Container, path: string, arg?: object): void {
+    static createHandler(container: interfaces.Container, path: string, arg?: object): void {
         const remote = container.get(WebSocketConnectionProvider);
         const local = container.get<WebSocketConnectionProvider>(LocalWebSocketConnectionProvider);
         remote.createProxy(path, arg);

@@ -248,7 +248,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(SelectionService).toSelf().inSingletonScope();
     bind(CommandRegistry).toSelf().inSingletonScope().onActivation(({ container }, registry) => {
-        WebSocketConnectionProvider.createDualProxy(container, commandServicePath, registry);
+        WebSocketConnectionProvider.createHandler(container, commandServicePath, registry);
         return registry;
     });
     bind(CommandService).toService(CommandRegistry);
@@ -268,7 +268,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bindMessageService(bind).onActivation(({ container }, messages) => {
         const client = container.get(MessageClient);
-        WebSocketConnectionProvider.createDualProxy(container, messageServicePath, client);
+        WebSocketConnectionProvider.createHandler(container, messageServicePath, client);
         return messages;
     });
 
@@ -296,7 +296,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(QuickAccessContribution).toService(QuickHelpService);
 
     bind(QuickPickService).to(QuickPickServiceImpl).inSingletonScope().onActivation(({ container }, quickPickService: QuickPickService) => {
-        WebSocketConnectionProvider.createDualProxy(container, quickPickServicePath, quickPickService);
+        WebSocketConnectionProvider.createHandler(container, quickPickServicePath, quickPickService);
         return quickPickService;
     });
 

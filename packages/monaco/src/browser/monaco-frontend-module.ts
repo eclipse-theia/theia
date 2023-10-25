@@ -160,7 +160,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoQuickInputImplementation).toSelf().inSingletonScope();
     bind(MonacoQuickInputService).toSelf().inSingletonScope().onActivation(({ container }, quickInputService: MonacoQuickInputService) => {
-        WebSocketConnectionProvider.createDualProxy(container, quickInputServicePath, quickInputService);
+        WebSocketConnectionProvider.createHandler(container, quickInputServicePath, quickInputService);
         return quickInputService;
     });
     bind(QuickInputService).toService(MonacoQuickInputService);
