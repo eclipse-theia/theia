@@ -68,8 +68,8 @@ import { MimeService } from '@theia/core/lib/browser/mime-service';
 import { MonacoEditorServices } from './monaco-editor';
 import { MonacoColorRegistry } from './monaco-color-registry';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
-import { IconRegistry } from './monaco-icon-registry-types';
-import { getIconRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/iconRegistry';
+import { IconRegistry } from '@theia/core/lib/browser/icon-registry';
+import { MonacoIconRegistry } from './monaco-icon-registry';
 import { MonacoThemingService } from './monaco-theming-service';
 import { bindContributionProvider } from '@theia/core';
 import { WorkspaceSymbolCommand } from './workspace-symbol-command';
@@ -190,7 +190,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(ThemeServiceWithDB).toSelf().inSingletonScope();
     rebind(ThemeService).toService(ThemeServiceWithDB);
 
-    bind(IconRegistry).toDynamicValue(() => getIconRegistry()).inSingletonScope();
+    bind(MonacoIconRegistry).toSelf().inSingletonScope();
+    rebind(IconRegistry).toService(MonacoIconRegistry);
 });
 
 export const MonacoConfigurationService = Symbol('MonacoConfigurationService');

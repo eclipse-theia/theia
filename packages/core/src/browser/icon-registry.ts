@@ -19,14 +19,12 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/Microsoft/vscode/blob/main/src/vs/platform/theme/common/iconRegistry.ts
 
-import { Event } from '@theia/core';
-import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
-import { URI } from '@theia/core/shared/vscode-uri';
-
-//  ------ API types
+import { injectable } from 'inversify';
+import { Emitter } from '../common/event';
+import { URI } from 'vscode-uri';
 
 export interface IconDefinition {
-    font?: IconFontContribution; // undefined for the default font (codicon)
+    font?: IconFontContribution;
     fontCharacter: string;
 }
 
@@ -53,39 +51,26 @@ export interface IconFontSource {
     readonly format: string;
 }
 
-export const IconRegistry = Symbol('IconRegistry');
-export interface IconRegistry {
+export interface ThemeIcon {
+    readonly id: string;
+    readonly color?: ThemeColor;
+}
 
-    readonly onDidChange: Event<void>;
+export interface ThemeColor {
+    id: string;
+}
 
-    /**
-     * Register a icon to the registry.
-     * @param id The icon id
-     * @param defaults The default values
-     * @param description The description
-     */
-    registerIcon(id: string, defaults: ThemeIcon | IconDefinition, description?: string): ThemeIcon;
+@injectable()
+export abstract class IconRegistry {
+    protected readonly onDidChangeEmitter = new Emitter<void>();
+    readonly onDidChange = this.onDidChangeEmitter.event;
 
-    /**
-     * Deregister a icon from the registry.
-     */
-    deregisterIcon(id: string): void;
+    protected fireDidChange(): void {
+        this.onDidChangeEmitter.fire(undefined);
+    }
 
-    /**
-     * Register a icon font to the registry.
-     * @param id The icon font id
-     * @param definition The icon font definition
-     */
-    registerIconFont(id: string, definition: IconFontDefinition): IconFontDefinition;
-
-    /**
-     * Deregister an icon font to the registry.
-     */
-    deregisterIconFont(id: string): void;
-
-    /**
-     * Get the icon font for the given id
-     */
-    getIconFont(id: string): IconFontDefinition | undefined;
+    abstract registerIcon(id: string, defaults: ThemeIcon | IconDefinition, description?: string): ThemeIcon;
+    abstract deregisterIcon(id: string): void;
+    abstract getIconFont(id: string): IconFontDefinition | undefined;
 }
 

@@ -20,7 +20,8 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { getIconRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/iconRegistry';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { IconFontDefinition, IconContribution as Icon, IconRegistry } from '@theia/monaco/lib/browser/monaco-icon-registry-types';
+import { IconFontDefinition, IconContribution as Icon } from '@theia/core/lib/browser/icon-registry';
+import { MonacoIconRegistry } from '@theia/monaco/lib/browser/monaco-icon-registry';
 import * as path from 'path';
 import { IconContribution, DeployedPlugin, IconDefinition } from '../../common/plugin-protocol';
 import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
@@ -29,8 +30,8 @@ import { UnthemedProductIconTheme } from '@theia/monaco-editor-core/esm/vs/platf
 @injectable()
 export class PluginIconService implements Disposable {
 
-    @inject(IconRegistry)
-    protected readonly iconRegistry: IconRegistry;
+    @inject(MonacoIconRegistry)
+    protected readonly iconRegistry: MonacoIconRegistry;
 
     protected readonly toDispose = new DisposableCollection();
 
