@@ -23,6 +23,12 @@ import { OS, THEIA_VERSION } from '@theia/core';
 import { RemoteNodeSetupService } from './remote-node-setup-service';
 import { RemoteSetupScriptService } from './remote-setup-script-service';
 
+export interface RemoteSetupOptions {
+    connection: RemoteConnection;
+    report: RemoteStatusReport;
+    nodeDownloadTemplate?: string;
+}
+
 @injectable()
 export class RemoteSetupService {
 
@@ -41,7 +47,12 @@ export class RemoteSetupService {
     @inject(ApplicationPackage)
     protected readonly applicationPackage: ApplicationPackage;
 
-    async setup(connection: RemoteConnection, report: RemoteStatusReport): Promise<void> {
+    async setup(options: RemoteSetupOptions): Promise<void> {
+        const {
+            connection,
+            report,
+            nodeDownloadTemplate
+        } = options;
         report('Identifying remote system...');
         // 1. Identify remote platform
         const platform = await this.detectRemotePlatform(connection);
@@ -57,7 +68,7 @@ export class RemoteSetupService {
         if (!nodeDirExists) {
             report('Downloading and installing Node.js on remote...');
             // Download the binaries locally and move it via SSH
-            const nodeArchive = await this.nodeSetupService.downloadNode(platform);
+            const nodeArchive = await this.nodeSetupService.downloadNode(platform, nodeDownloadTemplate);
             const remoteNodeZip = this.scriptService.joinPath(platform, applicationDirectory, nodeFileName);
             await connection.copy(nodeArchive, remoteNodeZip);
             await this.unzipRemote(connection, platform, remoteNodeZip, applicationDirectory);

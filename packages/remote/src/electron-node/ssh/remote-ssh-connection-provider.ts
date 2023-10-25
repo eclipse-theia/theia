@@ -20,7 +20,7 @@ import * as fs from '@theia/core/shared/fs-extra';
 import SftpClient = require('ssh2-sftp-client');
 import { Emitter, Event, MessageService, QuickInputService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { RemoteSSHConnectionProvider } from '../../electron-common/remote-ssh-connection-provider';
+import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderOptions } from '../../electron-common/remote-ssh-connection-provider';
 import { RemoteConnectionService } from '../remote-connection-service';
 import { RemoteProxyServerProvider } from '../remote-proxy-server-provider';
 import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester, RemoteStatusReport } from '../remote-types';
@@ -53,15 +53,19 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
     protected passwordRetryCount = 3;
     protected passphraseRetryCount = 3;
 
-    async establishConnection(host: string, user: string): Promise<string> {
+    async establishConnection(options: RemoteSSHConnectionProviderOptions): Promise<string> {
         const progress = await this.messageService.showProgress({
             text: 'Remote SSH'
         });
         const report: RemoteStatusReport = message => progress.report({ message });
         report('Connecting to remote system...');
         try {
-            const remote = await this.establishSSHConnection(host, user);
-            await this.remoteSetup.setup(remote, report);
+            const remote = await this.establishSSHConnection(options.host, options.user);
+            await this.remoteSetup.setup({
+                connection: remote,
+                report,
+                nodeDownloadTemplate: options.nodeDownloadTemplate
+            });
             const registration = this.remoteConnectionService.register(remote);
             const server = await this.serverProvider.getProxyServer(socket => {
                 remote.forwardOut(socket);
@@ -230,11 +234,6 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
             callback(END_AUTH);
         };
     }
-
-    isConnectionAlive(remoteId: string): Promise<boolean> {
-        return Promise.resolve(Boolean(this.remoteConnectionService.getConnection(remoteId)));
-    }
-
 }
 
 export interface RemoteSSHConnectionOptions {

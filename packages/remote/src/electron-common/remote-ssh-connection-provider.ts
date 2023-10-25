@@ -18,12 +18,12 @@ export const RemoteSSHConnectionProviderPath = '/remote/ssh';
 
 export const RemoteSSHConnectionProvider = Symbol('RemoteSSHConnectionProvider');
 
-export interface RemoteSSHConnectionOptions {
-    user?: string;
-    host?: string;
+export interface RemoteSSHConnectionProviderOptions {
+    user: string;
+    host: string;
+    nodeDownloadTemplate?: string;
 }
 
 export interface RemoteSSHConnectionProvider {
-    establishConnection(host: string, user: string): Promise<string>;
-    isConnectionAlive(remoteId: string): Promise<boolean>;
+    establishConnection(options: RemoteSSHConnectionProviderOptions): Promise<string>;
 }

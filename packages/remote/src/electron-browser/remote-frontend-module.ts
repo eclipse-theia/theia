@@ -25,6 +25,7 @@ import { RemoteService } from './remote-service';
 import { RemoteStatusService, RemoteStatusServicePath } from '../electron-common/remote-status-service';
 import { ElectronFileDialogService } from '@theia/filesystem/lib/electron-browser/file-dialog/electron-file-dialog-service';
 import { RemoteElectronFileDialogService } from './remote-electron-file-dialog-service';
+import { bindRemotePreferences } from './remote-preferences';
 
 export default new ContainerModule((bind, _, __, rebind) => {
     bind(RemoteFrontendContribution).toSelf().inSingletonScope();
@@ -34,6 +35,8 @@ export default new ContainerModule((bind, _, __, rebind) => {
     bindContributionProvider(bind, RemoteRegistryContribution);
     bind(RemoteSSHContribution).toSelf().inSingletonScope();
     bind(RemoteRegistryContribution).toService(RemoteSSHContribution);
+
+    bindRemotePreferences(bind);
 
     rebind(ElectronFileDialogService).to(RemoteElectronFileDialogService).inSingletonScope();
 

@@ -41,6 +41,10 @@ export class RemoteNodeSetupService {
     protected readonly scriptService: RemoteSetupScriptService;
 
     getNodeDirectoryName(platform: RemotePlatform): string {
+        return `node-v${REMOTE_NODE_VERSION}-${this.getPlatformName(platform)}-${platform.arch}`;
+    }
+
+    protected getPlatformName(platform: RemotePlatform): string {
         let platformId: string;
         if (platform.os === OS.Type.Windows) {
             platformId = 'win';
@@ -49,8 +53,7 @@ export class RemoteNodeSetupService {
         } else {
             platformId = 'linux';
         }
-        const dirName = `node-v${REMOTE_NODE_VERSION}-${platformId}-${platform.arch}`;
-        return dirName;
+        return platformId;
     }
 
     protected validatePlatform(platform: RemotePlatform): void {
@@ -67,7 +70,7 @@ export class RemoteNodeSetupService {
         throw new Error(`Invalid architecture for ${platform.os}: '${platform.arch}'. Only ${supportedArch} are supported.`);
     }
 
-    getNodeFileName(platform: RemotePlatform): string {
+    protected getNodeFileExtension(platform: RemotePlatform): string {
         let fileExtension: string;
         if (platform.os === OS.Type.Windows) {
             fileExtension = 'zip';
@@ -76,16 +79,20 @@ export class RemoteNodeSetupService {
         } else {
             fileExtension = 'tar.xz';
         }
-        return `${this.getNodeDirectoryName(platform)}.${fileExtension}`;
+        return fileExtension;
     }
 
-    async downloadNode(platform: RemotePlatform): Promise<string> {
+    getNodeFileName(platform: RemotePlatform): string {
+        return `${this.getNodeDirectoryName(platform)}.${this.getNodeFileExtension(platform)}`;
+    }
+
+    async downloadNode(platform: RemotePlatform, downloadTemplate?: string): Promise<string> {
         this.validatePlatform(platform);
         const fileName = this.getNodeFileName(platform);
         const tmpdir = os.tmpdir();
         const localPath = path.join(tmpdir, fileName);
         if (!await fs.pathExists(localPath)) {
-            const downloadPath = this.getDownloadPath(fileName);
+            const downloadPath = this.getDownloadPath(platform, downloadTemplate);
             const downloadResult = await this.requestService.request({
                 url: downloadPath
             });
@@ -94,18 +101,23 @@ export class RemoteNodeSetupService {
         return localPath;
     }
 
-    generateDownloadScript(platform: RemotePlatform, targetPath: string): string {
+    generateDownloadScript(platform: RemotePlatform, targetPath: string, downloadTemplate?: string): string {
         this.validatePlatform(platform);
         const fileName = this.getNodeFileName(platform);
-        const downloadPath = this.getDownloadPath(fileName);
+        const downloadPath = this.getDownloadPath(platform, downloadTemplate);
         const zipPath = this.scriptService.joinPath(platform, targetPath, fileName);
         const download = this.scriptService.downloadFile(platform, downloadPath, zipPath);
         const unzip = this.scriptService.unzip(platform, zipPath, targetPath);
         return this.scriptService.joinScript(platform, download, unzip);
     }
 
-    protected getDownloadPath(fileName: string): string {
-        return `https://nodejs.org/dist/v${REMOTE_NODE_VERSION}/${fileName}`;
+    protected getDownloadPath(platform: RemotePlatform, downloadTemplate?: string): string {
+        const template = downloadTemplate || 'https://nodejs.org/dist/v{version}/node-v{version}-{os}-{arch}.{ext}';
+        const downloadPath = template
+            .replace(/{version}/g, REMOTE_NODE_VERSION)
+            .replace(/{os}/g, this.getPlatformName(platform))
+            .replace(/{arch}/g, platform.arch)
+            .replace(/{ext}/g, this.getNodeFileExtension(platform));
+        return downloadPath;
     }
-
 }

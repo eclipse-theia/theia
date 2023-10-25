@@ -18,6 +18,7 @@ import { Command, MessageService, nls, QuickInputService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { RemoteSSHConnectionProvider } from '../electron-common/remote-ssh-connection-provider';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from './remote-registry-contribution';
+import { RemotePreferences } from './remote-preferences';
 
 export namespace RemoteSSHCommands {
     export const CONNECT: Command = Command.toLocalizedCommand({
@@ -43,6 +44,9 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(RemotePreferences)
+    protected readonly remotePreferences: RemotePreferences;
 
     registerRemoteCommands(registry: RemoteRegistry): void {
         registry.registerCommand(RemoteSSHCommands.CONNECT, {
@@ -89,6 +93,10 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
     }
 
     async sendSSHConnect(host: string, user: string): Promise<string> {
-        return this.sshConnectionProvider.establishConnection(host, user);
+        return this.sshConnectionProvider.establishConnection({
+            host,
+            user,
+            nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate']
+        });
     }
 }
