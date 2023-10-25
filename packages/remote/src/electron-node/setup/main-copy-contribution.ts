@@ -21,7 +21,7 @@ import { RemoteCopyContribution, RemoteCopyRegistry } from './remote-copy-contri
 export class MainCopyContribution implements RemoteCopyContribution {
     async copy(registry: RemoteCopyRegistry): Promise<void> {
         registry.file('package.json');
-        await registry.glob('lib/backend/!(native)');
+        await registry.glob('lib/backend/**/*.js');
         await registry.directory('lib/frontend');
         await registry.directory('lib/webview');
     }
