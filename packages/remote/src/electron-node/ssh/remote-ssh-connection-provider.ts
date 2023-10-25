@@ -74,13 +74,6 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
                 server.close();
                 registration.dispose();
             });
-            server.on('connection', socket => {
-                // This event is triggered once the frontend connects to the proxy server.
-                // When the connection drops, we need to dispose the remote connection
-                socket.once('close', () => {
-                    remote.dispose();
-                });
-            });
             const localPort = (server.address() as net.AddressInfo).port;
             remote.localPort = localPort;
             return localPort.toString();
