@@ -472,6 +472,14 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         return this.tree.markAsBusy(node, ms, token);
     }
 
+    get onDidUpdate(): Event<TreeNode[]> {
+        return this.tree.onDidUpdate;
+    }
+
+    markAsChecked(node: TreeNode, checked: boolean): void {
+        this.tree.markAsChecked(node, checked);
+    }
+
 }
 export namespace TreeModelImpl {
     export interface State {

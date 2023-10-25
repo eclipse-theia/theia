@@ -24,16 +24,18 @@ import { Event, Emitter } from '@theia/core/lib/common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
     ApplyToKind, FileLocationKind, NamedProblemMatcher,
-    ProblemPattern, ProblemMatcher, ProblemMatcherContribution, WatchingMatcher
+    ProblemPattern, ProblemMatcher, ProblemMatcherContribution, WatchingMatcher,
+    fromVariableName
 } from '../common';
 import { ProblemPatternRegistry } from './task-problem-pattern-registry';
 import { Severity } from '@theia/core/lib/common/severity';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 @injectable()
 export class ProblemMatcherRegistry {
 
     private readonly matchers = new Map<string, NamedProblemMatcher>();
-    private readyPromise: Promise<void>;
+    private readyPromise = new Deferred<void>();
 
     @inject(ProblemPatternRegistry)
     protected readonly problemPatternRegistry: ProblemPatternRegistry;
@@ -47,13 +49,13 @@ export class ProblemMatcherRegistry {
     protected init(): void {
         this.problemPatternRegistry.onReady().then(() => {
             this.fillDefaults();
-            this.readyPromise = new Promise<void>((res, rej) => res(undefined));
+            this.readyPromise.resolve();
             this.onDidChangeProblemMatcherEmitter.fire(undefined);
         });
     }
 
     onReady(): Promise<void> {
-        return this.readyPromise;
+        return this.readyPromise.promise;
     }
 
     /**
@@ -73,6 +75,7 @@ export class ProblemMatcherRegistry {
         this.doRegister(matcher, toDispose).then(() => this.onDidChangeProblemMatcherEmitter.fire(undefined));
         return toDispose;
     }
+
     protected async doRegister(matcher: ProblemMatcherContribution, toDispose: DisposableCollection): Promise<void> {
         const problemMatcher = await this.getProblemMatcherFromContribution(matcher);
         if (toDispose.disposed) {
@@ -88,10 +91,7 @@ export class ProblemMatcherRegistry {
      * @return the problem matcher. If the task definition is not found, `undefined` is returned.
      */
     get(name: string): NamedProblemMatcher | undefined {
-        if (name.startsWith('$')) {
-            return this.matchers.get(name.slice(1));
-        }
-        return this.matchers.get(name);
+        return this.matchers.get(fromVariableName(name));
     }
 
     /**
@@ -132,7 +132,7 @@ export class ProblemMatcherRegistry {
         if (matcher.pattern) {
             if (typeof matcher.pattern === 'string') {
                 await this.problemPatternRegistry.onReady();
-                const registeredPattern = this.problemPatternRegistry.get(matcher.pattern);
+                const registeredPattern = this.problemPatternRegistry.get(fromVariableName(matcher.pattern));
                 if (Array.isArray(registeredPattern)) {
                     patterns.push(...registeredPattern);
                 } else if (!!registeredPattern) {

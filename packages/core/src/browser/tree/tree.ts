@@ -20,6 +20,7 @@ import { Disposable, DisposableCollection } from '../../common/disposable';
 import { CancellationToken, CancellationTokenSource } from '../../common/cancellation';
 import { timeout } from '../../common/promise-util';
 import { isObject, Mutable } from '../../common';
+import { AccessibilityInformation } from '../../common/accessibility';
 
 export const Tree = Symbol('Tree');
 
@@ -70,6 +71,19 @@ export interface Tree extends Disposable {
      * A token source of the given token should be canceled to unmark.
      */
     markAsBusy(node: Readonly<TreeNode>, ms: number, token: CancellationToken): Promise<void>;
+
+    /**
+     * An update to the tree node occurred, but the tree structure remains unchanged
+     */
+    readonly onDidUpdate: Event<TreeNode[]>;
+
+    markAsChecked(node: TreeNode, checked: boolean): void;
+}
+
+export interface TreeViewItemCheckboxInfo {
+    checked: boolean;
+    tooltip?: string;
+    accessibilityInformation?: AccessibilityInformation
 }
 
 /**
@@ -120,6 +134,11 @@ export interface TreeNode {
      * Whether this node is busy. Greater than 0 then busy; otherwise not.
      */
     readonly busy?: number;
+
+    /**
+     * Whether this node is checked.
+     */
+    readonly checkboxInfo?: TreeViewItemCheckboxInfo;
 }
 
 export namespace TreeNode {
@@ -238,6 +257,8 @@ export class TreeImpl implements Tree {
 
     protected readonly onDidChangeBusyEmitter = new Emitter<TreeNode>();
     readonly onDidChangeBusy = this.onDidChangeBusyEmitter.event;
+    protected readonly onDidUpdateEmitter = new Emitter<TreeNode[]>();
+    readonly onDidUpdate = this.onDidUpdateEmitter.event;
 
     protected nodes: {
         [id: string]: Mutable<TreeNode> | undefined
@@ -368,6 +389,12 @@ export class TreeImpl implements Tree {
             await this.doMarkAsBusy(node, ms, token);
         }
     }
+
+    markAsChecked(node: Mutable<TreeNode>, checked: boolean): void {
+        node.checkboxInfo!.checked = checked;
+        this.onDidUpdateEmitter.fire([node]);
+    }
+
     protected async doMarkAsBusy(node: Mutable<TreeNode>, ms: number, token: CancellationToken): Promise<void> {
         try {
             await timeout(ms, token);

@@ -137,7 +137,7 @@ describe('log-level-cli-contribution', () => {
 
         const args: yargs.Arguments = yargs.parse(['--log-config', file.path]);
         await cli.setArguments(args);
-        sinon.assert.calledWithMatch(consoleErrorSpy, 'Unexpected token { in JSON at position 1');
+        sinon.assert.calledWithMatch(consoleErrorSpy, 'Error reading log config file');
     });
 
     // Skip this test because it is flaky, sometimes we don't receive the event.

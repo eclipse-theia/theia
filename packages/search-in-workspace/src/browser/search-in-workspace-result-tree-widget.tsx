@@ -36,7 +36,7 @@ import {
 import { CancellationTokenSource, Emitter, EOL, Event, ProgressService } from '@theia/core';
 import {
     EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane,
-    EditorWidget, EditorOpenerOptions, FindMatch
+    EditorWidget, EditorOpenerOptions, FindMatch, Position
 } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileResourceResolver, FileSystemPreferences } from '@theia/filesystem/lib/browser';
@@ -303,12 +303,16 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
         const matches: SearchMatch[] = [];
         results.forEach(r => {
-            const lineText: string = widget.editor.document.getLineContent(r.range.start.line);
+            const numberOfLines = searchTerm.split('\n').length;
+            const lineTexts = [];
+            for (let i = 0; i < numberOfLines; i++) {
+                lineTexts.push(widget.editor.document.getLineContent(r.range.start.line + i));
+            }
             matches.push({
                 line: r.range.start.line,
                 character: r.range.start.character,
-                length: r.range.end.character - r.range.start.character,
-                lineText
+                length: searchTerm.length,
+                lineText: lineTexts.join('\n')
             });
         });
 
@@ -873,6 +877,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             // Open the file only if the function is called to replace all matches under a specific node.
             const widget: EditorWidget = replaceOne ? await this.doOpen(toReplace[0]) : await this.doGetWidget(toReplace[0]);
             const source: string = widget.editor.document.getText();
+
             const replaceOperations = toReplace.map(resultLineNode => ({
                 text: replacementText,
                 range: {
@@ -880,12 +885,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                         line: resultLineNode.line - 1,
                         character: resultLineNode.character - 1
                     },
-                    end: {
-                        line: resultLineNode.line - 1,
-                        character: resultLineNode.character - 1 + resultLineNode.length
-                    }
+                    end: this.findEndCharacterPosition(resultLineNode),
                 }
             }));
+
             // Replace the text.
             await widget.editor.replaceText({
                 source,
@@ -955,6 +958,23 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }
     }
 
+    private findEndCharacterPosition(node: SearchInWorkspaceResultLineNode): Position {
+        const lineText = typeof node.lineText === 'string' ? node.lineText : node.lineText.text;
+        const lines = lineText.split('\n');
+        const line = node.line + lines.length - 2;
+        let character = node.character - 1 + node.length;
+        if (lines.length > 1) {
+            character = node.length - lines[0].length + node.character - lines.length;
+            if (lines.length > 2) {
+                for (const lineNum of Array(lines.length - 2).keys()) {
+                    character -= lines[lineNum + 1].length;
+                }
+            }
+        }
+
+        return { line, character };
+    }
+
     protected renderRootFolderNode(node: SearchInWorkspaceRootFolderNode): React.ReactNode {
         return <div className='result'>
             <div className='result-head'>
@@ -1017,28 +1037,33 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             wordBreak.lastIndex++;
         }
 
-        const before = lineText.slice(start, character - 1).trimLeft();
+        const before = lineText.slice(start, character - 1).trimStart();
+        const lineCount = lineText.split('\n').length;
 
-        return <div className={`resultLine noWrapInfo noselect ${node.selected ? 'selected' : ''}`} title={lineText.trim()}>
-            {this.searchInWorkspacePreferences['search.lineNumbers'] && <span className='theia-siw-lineNumber'>{node.line}</span>}
-            <span>
-                {before}
-            </span>
-            {this.renderMatchLinePart(node)}
-            <span>
-                {lineText.slice(node.character + node.length - 1, 250 - before.length + node.length)}
-            </span>
-        </div>;
+        return <>
+            <div className={`resultLine noWrapInfo noselect ${node.selected ? 'selected' : ''}`} title={lineText.trim()}>
+                {this.searchInWorkspacePreferences['search.lineNumbers'] && <span className='theia-siw-lineNumber'>{node.line}</span>}
+                <span>
+                    {before}
+                </span>
+                {this.renderMatchLinePart(node)}
+                {lineCount > 1 || <span>
+                    {lineText.slice(node.character + node.length - 1, 250 - before.length + node.length)}
+                </span>}
+            </div>
+            {lineCount > 1 && <div className='match-line-num'>+{lineCount - 1}</div>}
+        </>;
     }
 
     protected renderMatchLinePart(node: SearchInWorkspaceResultLineNode): React.ReactNode {
-        const replaceTerm = this.isReplacing ? <span className='replace-term'>{this._replaceTerm}</span> : '';
+        const replaceTermLines = this._replaceTerm.split('\n');
+        const replaceTerm = this.isReplacing ? <span className='replace-term'>{replaceTermLines[0]}</span> : '';
         const className = `match${this.isReplacing ? ' strike-through' : ''}`;
-        const match = typeof node.lineText === 'string' ?
-            node.lineText.substring(node.character - 1, node.length + node.character - 1)
-            : node.lineText.text.substring(node.lineText.character - 1, node.length + node.lineText.character - 1);
+        const text = typeof node.lineText === 'string' ? node.lineText : node.lineText.text;
+        const match = text.substring(node.character - 1, node.character + node.length - 1);
+        const matchLines = match.split('\n');
         return <React.Fragment>
-            <span className={className}>{match}</span>
+            <span className={className}>{matchLines[0]}</span>
             {replaceTerm}
         </React.Fragment>;
     }
@@ -1071,10 +1096,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     line: node.line - 1,
                     character: node.character - 1
                 },
-                end: {
-                    line: node.line - 1,
-                    character: node.character - 1 + node.length
-                }
+                end: this.findEndCharacterPosition(node),
             },
             mode: preview ? 'reveal' : 'activate',
             preview,
@@ -1100,16 +1122,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             content = await resource.readContents();
         }
 
-        const lines = content.split('\n');
-        node.children.forEach(l => {
-            const leftPositionedNodes = node.children.filter(rl => rl.line === l.line && rl.character < l.character);
-            const diff = (this._replaceTerm.length - this.searchTerm.length) * leftPositionedNodes.length;
-            const start = lines[l.line - 1].substring(0, l.character - 1 + diff);
-            const end = lines[l.line - 1].substring(l.character - 1 + diff + l.length);
-            lines[l.line - 1] = start + this._replaceTerm + end;
-        });
-
-        return fileUri.withScheme(MEMORY_TEXT).withQuery(lines.join('\n'));
+        const searchTermRegExp = new RegExp(this.searchTerm, 'g');
+        return fileUri.withScheme(MEMORY_TEXT).withQuery(content.replace(searchTermRegExp, this._replaceTerm));
     }
 
     protected decorateEditor(node: SearchInWorkspaceFileNode | undefined, editorWidget: EditorWidget): void {

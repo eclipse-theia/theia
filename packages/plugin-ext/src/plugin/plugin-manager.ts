@@ -43,6 +43,7 @@ import { WebviewsExtImpl } from './webviews';
 import { URI as Uri } from './types-impl';
 import { SecretsExtImpl, SecretStorageExt } from '../plugin/secrets-ext';
 import { PluginExt } from './plugin-context';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export interface PluginHost {
 
@@ -96,7 +97,9 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         'onFileSystem',
         'onCustomEditor',
         'onStartupFinished',
-        'onAuthenticationRequest'
+        'onAuthenticationRequest',
+        'onNotebook',
+        'onNotebookSerializer'
     ]);
 
     private configStorage: ConfigStorage | undefined;
@@ -115,6 +118,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     protected jsonValidation: PluginJsonValidationContribution[] = [];
+    protected ready = new Deferred();
 
     constructor(
         private readonly host: PluginHost,
@@ -230,6 +234,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             this.registerPlugin(plugin);
         }
 
+        // ensure plugins are registered before running activation events
+        this.ready.resolve();
         // run eager plugins
         await this.$activateByEvent('*');
         for (const activationEvent of params.activationEvents) {
@@ -333,6 +339,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     async $activateByEvent(activationEvent: string): Promise<void> {
+        // Prevent the plugin manager from performing activations before plugins are registered
+        await this.ready.promise;
         if (activationEvent.endsWith(':*')) {
             const baseEvent = activationEvent.substring(0, activationEvent.length - 2);
             await this.activateByBaseEvent(baseEvent);

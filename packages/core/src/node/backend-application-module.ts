@@ -19,7 +19,7 @@ import { ApplicationPackage } from '@theia/application-package';
 import { REQUEST_SERVICE_PATH } from '@theia/request';
 import {
     bindContributionProvider, MessageService, MessageClient, ConnectionHandler, RpcConnectionHandler,
-    CommandService, commandServicePath, messageServicePath
+    CommandService, commandServicePath, messageServicePath, OSBackendProvider, OSBackendProviderPath
 } from '../common';
 import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution, BackendApplicationServer } from './backend-application';
 import { CliManager, CliContribution } from './cli';
@@ -38,7 +38,7 @@ import { EnvironmentUtils } from './environment-utils';
 import { ProcessUtils } from './process-utils';
 import { ProxyCliContribution } from './request/proxy-cli-contribution';
 import { bindNodeStopwatch, bindBackendStopwatchServer } from './performance';
-import { OSBackendApplicationContribution } from './os-backend-application-contribution';
+import { OSBackendProviderImpl } from './os-backend-provider';
 import { BackendRequestFacade } from './request/backend-request-facade';
 import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
 
@@ -116,8 +116,11 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(EnvironmentUtils).toSelf().inSingletonScope();
     bind(ProcessUtils).toSelf().inSingletonScope();
 
-    bind(OSBackendApplicationContribution).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toService(OSBackendApplicationContribution);
+    bind(OSBackendProviderImpl).toSelf().inSingletonScope();
+    bind(OSBackendProvider).toService(OSBackendProviderImpl);
+    bind(ConnectionHandler).toDynamicValue(
+        ctx => new RpcConnectionHandler(OSBackendProviderPath, () => ctx.container.get(OSBackendProvider))
+    ).inSingletonScope();
 
     bind(ProxyCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(ProxyCliContribution);

@@ -270,8 +270,8 @@ export class GettingStartedWidget extends ReactWidget {
                 <a
                     role={'button'}
                     tabIndex={0}
-                    onClick={this.doOpenWorkspace}
-                    onKeyDown={this.doOpenWorkspaceEnter}>
+                    onClick={this.doOpenFolder}
+                    onKeyDown={this.doOpenFolderEnter}>
                     {nls.localizeByDefault('open a folder')}
                 </a>
                 {' ' + nls.localizeByDefault('to start.')}
@@ -496,32 +496,32 @@ export interface PreferencesProps {
 }
 
 function WelcomePreferences(props: PreferencesProps): JSX.Element {
-    const [alwaysShowWelcomePage, setAlwaysShowWelcomePage] = React.useState<boolean>(
-        props.preferenceService.get('welcome.alwaysShowWelcomePage', true)
+    const [startupEditor, setStartupEditor] = React.useState<string>(
+        props.preferenceService.get('workbench.startupEditor', 'welcomePage')
     );
     React.useEffect(() => {
         const prefListener = props.preferenceService.onPreferenceChanged(change => {
-            if (change.preferenceName === 'welcome.alwaysShowWelcomePage') {
+            if (change.preferenceName === 'workbench.startupEditor') {
                 const prefValue = change.newValue;
-                setAlwaysShowWelcomePage(prefValue);
+                setStartupEditor(prefValue);
             }
         });
         return () => prefListener.dispose();
     }, [props.preferenceService]);
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newChecked = e.target.checked;
-        props.preferenceService.updateValue('welcome.alwaysShowWelcomePage', newChecked);
+        const newValue = e.target.checked ? 'welcomePage' : 'none';
+        props.preferenceService.updateValue('workbench.startupEditor', newValue);
     };
     return (
         <div className='gs-preference'>
             <input
                 type="checkbox"
                 className="theia-input"
-                id="alwaysShowWelcomePage"
+                id="startupEditor"
                 onChange={handleChange}
-                checked={alwaysShowWelcomePage}
+                checked={startupEditor === 'welcomePage' || startupEditor === 'welcomePageInEmptyWorkbench'}
             />
-            <label htmlFor="alwaysShowWelcomePage">
+            <label htmlFor="startupEditor">
                 {nls.localizeByDefault('Show welcome page on startup')}
             </label>
         </div>

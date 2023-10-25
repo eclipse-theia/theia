@@ -18,7 +18,6 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, CommandHandler } from '@theia/core';
 import { FrontendApplicationContribution, KeybindingContribution, KeybindingRegistry, CommonCommands } from '@theia/core/lib/browser';
 import { ConsoleManager } from './console-manager';
-import { ConsoleKeybindingContexts } from './console-keybinding-contexts';
 import { ConsoleWidget } from './console-widget';
 import { ConsoleContentWidget } from './console-content-widget';
 import { nls } from '@theia/core/lib/common/nls';
@@ -70,22 +69,22 @@ export class ConsoleContribution implements FrontendApplicationContribution, Com
         keybindings.registerKeybinding({
             command: ConsoleCommands.SELECT_ALL.id,
             keybinding: 'ctrlcmd+a',
-            context: ConsoleKeybindingContexts.consoleContentFocus
+            when: 'consoleContentFocus'
         });
         keybindings.registerKeybinding({
             command: ConsoleCommands.EXECUTE.id,
             keybinding: 'enter',
-            context: ConsoleKeybindingContexts.consoleInputFocus
+            when: 'consoleInputFocus'
         });
         keybindings.registerKeybinding({
             command: ConsoleCommands.NAVIGATE_BACK.id,
             keybinding: 'up',
-            context: ConsoleKeybindingContexts.consoleNavigationBackEnabled
+            when: 'consoleInputFocus && consoleNavigationBackEnabled'
         });
         keybindings.registerKeybinding({
             command: ConsoleCommands.NAVIGATE_FORWARD.id,
             keybinding: 'down',
-            context: ConsoleKeybindingContexts.consoleNavigationForwardEnabled
+            when: 'consoleInputFocus && consoleNavigationForwardEnabled'
         });
     }
 

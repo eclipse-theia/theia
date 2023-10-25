@@ -252,6 +252,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.model.onSelectionChanged(() => this.scheduleUpdateScrollToRow({ resize: false })),
             this.focusService.onDidChangeFocus(() => this.scheduleUpdateScrollToRow({ resize: false })),
             this.model.onDidChangeBusy(() => this.update()),
+            this.model.onDidUpdate(() => this.update()),
             this.model.onNodeRefreshed(() => this.updateDecorations()),
             this.model.onExpansionChanged(() => this.updateDecorations()),
             this.decoratorService,
@@ -579,6 +580,40 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     /**
+     * Render the node expansion toggle.
+     * @param node the tree node.
+     * @param props the node properties.
+     */
+    protected renderCheckbox(node: TreeNode, props: NodeProps): React.ReactNode {
+        if (node.checkboxInfo === undefined) {
+            // eslint-disable-next-line no-null/no-null
+            return null;
+        }
+        return <input data-node-id={node.id}
+            readOnly
+            type='checkbox'
+            checked={!!node.checkboxInfo.checked}
+            title={node.checkboxInfo.tooltip}
+            aria-label={node.checkboxInfo.accessibilityInformation?.label}
+            role={node.checkboxInfo.accessibilityInformation?.role}
+            className='theia-input'
+            onClick={event => this.toggleChecked(event)} />;
+    }
+
+    protected toggleChecked(event: React.MouseEvent<HTMLElement>): void {
+        const nodeId = event.currentTarget.getAttribute('data-node-id');
+        if (nodeId) {
+            const node = this.model.getNode(nodeId);
+            if (node) {
+                this.model.markAsChecked(node, !node.checkboxInfo!.checked);
+            } else {
+                this.handleClickEvent(node, event);
+            }
+        }
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    /**
      * Render the tree node caption given the node properties.
      * @param node the tree node.
      * @param props the node properties.
@@ -905,6 +940,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         const attributes = this.createNodeAttributes(node, props);
         const content = <div className={TREE_NODE_CONTENT_CLASS}>
             {this.renderExpansionToggle(node, props)}
+            {this.renderCheckbox(node, props)}
             {this.decorateIcon(node, this.renderIcon(node, props))}
             {this.renderCaptionAffixes(node, props, 'captionPrefixes')}
             {this.renderCaption(node, props)}

@@ -113,6 +113,7 @@
       }
     },
     "filesystem": {
+      "copiedToClipboard": "ダウンロードリンクをクリップボードにコピー。",
       "copyDownloadLink": "コピー・ダウンロード・リンク",
       "dialog": {
         "initialLocation": "初期位置へ移動",
@@ -142,7 +143,10 @@
     "getting-started": {
       "apiComparator": "{0} API互換性",
       "newExtension": "新しいエクステンションの構築",
-      "newPlugin": "新しいプラグインの構築"
+      "newPlugin": "新しいプラグインの構築",
+      "startup-editor": {
+        "welcomePage": "{0} とエクステンションを使い始めるのに役立つコンテンツを含む、ようこそページを開きます。"
+      }
     },
     "git": {
       "aFewSecondsAgo": "さきほど",
@@ -430,6 +434,7 @@
     "vsx-registry": {
       "downloadCount": "ダウンロード回数{0}",
       "errorFetching": "拡張機能の取得にエラーが発生しました。",
+      "errorFetchingConfigurationHint": "これは、ネットワーク設定の問題が原因である可能性がある。",
       "failedInstallingVSIX": "VSIXから{0} のインストールに失敗しました。",
       "invalidVSIX": "選択されたファイルは、有効な \"*.vsix \"プラグインではありません。",
       "license": "ライセンス{0}",

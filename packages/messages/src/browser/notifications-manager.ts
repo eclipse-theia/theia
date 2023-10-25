@@ -82,6 +82,7 @@ export class NotificationManager extends MessageClient {
 
     protected notificationToastsVisibleKey: ContextKey<boolean>;
     protected notificationCenterVisibleKey: ContextKey<boolean>;
+    protected notificationsVisible: ContextKey<boolean>;
 
     @postConstruct()
     protected init(): void {
@@ -91,11 +92,13 @@ export class NotificationManager extends MessageClient {
     protected async doInit(): Promise<void> {
         this.notificationToastsVisibleKey = this.contextKeyService.createKey<boolean>('notificationToastsVisible', false);
         this.notificationCenterVisibleKey = this.contextKeyService.createKey<boolean>('notificationCenterVisible', false);
+        this.notificationsVisible = this.contextKeyService.createKey<boolean>('notificationsVisible', false);
     }
 
     protected updateContextKeys(): void {
         this.notificationToastsVisibleKey.set(this.toastsVisible);
         this.notificationCenterVisibleKey.set(this.centerVisible);
+        this.notificationsVisible.set(this.toastsVisible || this.centerVisible);
     }
 
     get toastsVisible(): boolean {
@@ -137,7 +140,7 @@ export class NotificationManager extends MessageClient {
         }
         this.deferredResults.delete(messageId);
         if ((this.centerVisible && !this.notifications.size) || (this.toastsVisible && !this.toasts.size)) {
-            this.visibilityState = 'hidden';
+            this.setVisibilityState('hidden');
         }
         result.resolve(action);
         this.fireUpdatedEvent();

@@ -72,3 +72,11 @@ export namespace OS {
     };
 
 }
+
+export const OSBackendProviderPath = '/os';
+
+export const OSBackendProvider = Symbol('OSBackendProvider');
+
+export interface OSBackendProvider {
+    getBackendOS(): Promise<OS.Type>;
+}

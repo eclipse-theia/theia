@@ -157,6 +157,7 @@ export class DebugBreakpointWidget implements Disposable {
             this.zone.layout(heightInLines);
             this.updatePlaceholder();
         }));
+        this._input.getControl().createContextKey<boolean>('breakpointWidgetFocus', true);
     }
 
     dispose(): void {
@@ -198,10 +199,12 @@ export class DebugBreakpointWidget implements Disposable {
         this.zone.show({ afterLineNumber, afterColumn, heightInLines, frameWidth: 1 });
         editor.setPosition(editor.getModel()!.getPositionAt(editor.getModel()!.getValueLength()));
         this._input.focus();
+        this.editor.getControl().createContextKey<boolean>('isBreakpointWidgetVisible', true);
     }
 
     hide(): void {
         this.zone.hide();
+        this.editor.getControl().createContextKey<boolean>('isBreakpointWidgetVisible', false);
         this.editor.focus();
     }
 
@@ -271,13 +274,17 @@ export class DebugBreakpointWidget implements Disposable {
             .setDecorationsByType('Debug breakpoint placeholder', DebugBreakpointWidget.PLACEHOLDER_DECORATION, decorations);
     }
     protected get placeholder(): string {
+        const acceptString = 'Enter';
+        const closeString = 'Escape';
         if (this.context === 'logMessage') {
-            return nls.localizeByDefault("Message to log when breakpoint is hit. Expressions within {} are interpolated. 'Enter' to accept, 'esc' to cancel.");
+            return nls.localizeByDefault(
+                "Message to log when breakpoint is hit. Expressions within {} are interpolated. '{0}' to accept, '{1}' to cancel.", acceptString, closeString
+            );
         }
         if (this.context === 'hitCondition') {
-            return nls.localizeByDefault("Break when hit count condition is met. 'Enter' to accept, 'esc' to cancel.");
+            return nls.localizeByDefault("Break when hit count condition is met. '{0}' to accept, '{1}' to cancel.", acceptString, closeString);
         }
-        return nls.localizeByDefault("Break when expression evaluates to true. 'Enter' to accept, 'esc' to cancel.");
+        return nls.localizeByDefault("Break when expression evaluates to true. '{0}' to accept, '{1}' to cancel.", acceptString, closeString);
     }
 
 }

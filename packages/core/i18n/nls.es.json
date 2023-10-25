@@ -113,6 +113,7 @@
       }
     },
     "filesystem": {
+      "copiedToClipboard": "Copiado el enlace de descarga en el portapapeles.",
       "copyDownloadLink": "Copiar el enlace de descarga",
       "dialog": {
         "initialLocation": "Ir a la ubicación inicial",
@@ -142,7 +143,10 @@
     "getting-started": {
       "apiComparator": "{0} Compatibilidad con la API",
       "newExtension": "Construir una nueva extensión",
-      "newPlugin": "Creación de un nuevo plugin"
+      "newPlugin": "Creación de un nuevo plugin",
+      "startup-editor": {
+        "welcomePage": "Abra la página de bienvenida, con contenidos que le ayudarán a empezar a utilizar {0} y las extensiones."
+      }
     },
     "git": {
       "aFewSecondsAgo": "hace unos segundos",
@@ -430,6 +434,7 @@
     "vsx-registry": {
       "downloadCount": "Descargue el recuento: {0}",
       "errorFetching": "Error en la búsqueda de extensiones.",
+      "errorFetchingConfigurationHint": "Esto podría deberse a problemas de configuración de la red.",
       "failedInstallingVSIX": "Fallo en la instalación de {0} desde VSIX.",
       "invalidVSIX": "El archivo seleccionado no es un plugin válido \"*.vsix\".",
       "license": "License: {0}",

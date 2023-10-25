@@ -79,7 +79,9 @@ export default async function runTest(options: TestOptions): Promise<void> {
             }
         }
     });
-
-    const server = await start();
-    await testPage.goto(`http://${server.address}:${server.port}`);
+    const { address, port } = await start();
+    const url = net.isIPv6(address)
+        ? `http://[${address}]:${port}`
+        : `http://${address}:${port}`;
+    await testPage.goto(url);
 }

@@ -83,7 +83,7 @@ export interface MenuToolbarItem {
     menuPath: MenuPath;
 }
 
-interface ConditionalToolbarItem {
+export interface ConditionalToolbarItem {
     /**
      * https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts
      */
@@ -130,6 +130,7 @@ export interface TabBarToolbarItem extends RegisteredToolbarItem,
     RenderedToolbarItem,
     Omit<ConditionalToolbarItem, 'isVisible'>,
     Pick<InlineToolbarItemMetadata, 'priority'>,
+    Partial<MenuToolbarItem>,
     Partial<MenuToolbarItemMetadata> { }
 
 /**
@@ -174,7 +175,33 @@ export namespace TabBarToolbarItem {
 }
 
 export namespace MenuToolbarItem {
+    /**
+     * Type guard for a toolbar item that actually is a menu item, amongst
+     * the other kinds of item that it may also be.
+     *
+     * @param item a toolbar item
+     * @returns whether the `item` is a menu item
+     */
+    export function is<T extends AnyToolbarItem>(item: T): item is T & MenuToolbarItem {
+        return Array.isArray(item.menuPath);
+    }
+
     export function getMenuPath(item: AnyToolbarItem): MenuPath | undefined {
         return Array.isArray(item.menuPath) ? item.menuPath : undefined;
+    }
+}
+
+export namespace AnyToolbarItem {
+    /**
+     * Type guard for a toolbar item that actually manifests any of the
+     * features of a conditional toolbar item.
+     *
+     * @param item a toolbar item
+     * @returns whether the `item` is a conditional item
+     */
+    export function isConditional<T extends AnyToolbarItem>(item: T): item is T & ConditionalToolbarItem {
+        return 'isVisible' in item && typeof item.isVisible === 'function'
+            || 'onDidChange' in item && typeof item.onDidChange === 'function'
+            || 'when' in item && typeof item.when === 'string';
     }
 }

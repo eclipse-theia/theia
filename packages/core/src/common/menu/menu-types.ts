@@ -19,7 +19,7 @@ import { isObject } from '../types';
 
 export type MenuPath = string[];
 export const MAIN_MENU_BAR: MenuPath = ['menubar'];
-export const SETTINGS_MENU: MenuPath = ['settings_menu'];
+export const MANAGE_MENU: MenuPath = ['manage_menu'];
 export const ACCOUNTS_MENU: MenuPath = ['accounts_menu'];
 export const ACCOUNTS_SUBMENU = [...ACCOUNTS_MENU, '1_accounts_submenu'];
 

@@ -113,6 +113,7 @@
       }
     },
     "filesystem": {
+      "copiedToClipboard": "A letöltési linket a vágólapra másolta.",
       "copyDownloadLink": "Letöltési link másolása",
       "dialog": {
         "initialLocation": "Menj a kezdeti helyszínre",
@@ -142,7 +143,10 @@
     "getting-started": {
       "apiComparator": "{0} API kompatibilitás",
       "newExtension": "Új bővítmény építése",
-      "newPlugin": "Egy új plugin építése"
+      "newPlugin": "Egy új plugin építése",
+      "startup-editor": {
+        "welcomePage": "Nyissa meg az Üdvözlő oldalt, amelynek tartalma segíti a {0} és a bővítmények használatának megkezdését."
+      }
     },
     "git": {
       "aFewSecondsAgo": "néhány másodperccel ezelőtt",
@@ -430,6 +434,7 @@
     "vsx-registry": {
       "downloadCount": "Letöltési szám: {0}",
       "errorFetching": "Hiba a kiterjesztések lekérdezésében.",
+      "errorFetchingConfigurationHint": "Ezt hálózati konfigurációs problémák okozhatják.",
       "failedInstallingVSIX": "Nem sikerült telepíteni a {0} oldalt a VSIX-ből.",
       "invalidVSIX": "A kiválasztott fájl nem érvényes \"*.vsix\" bővítmény.",
       "license": "Engedély: {0}",

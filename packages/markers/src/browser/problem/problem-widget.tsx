@@ -21,7 +21,7 @@ import { ProblemTreeModel } from './problem-tree-model';
 import { MarkerInfoNode, MarkerNode, MarkerRootNode } from '../marker-tree';
 import {
     TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel,
-    ApplicationShell, Navigatable, ExpandableTreeNode, SelectableTreeNode, TREE_NODE_INFO_CLASS, codicon
+    ApplicationShell, Navigatable, ExpandableTreeNode, SelectableTreeNode, TREE_NODE_INFO_CLASS, codicon, Message
 } from '@theia/core/lib/browser';
 import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
 import * as React from '@theia/core/shared/react';
@@ -71,6 +71,11 @@ export class ProblemWidget extends TreeWidget {
                 this.updateFollowActiveEditor();
             }
         }));
+    }
+
+    protected override onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.update();
     }
 
     protected updateFollowActiveEditor(): void {

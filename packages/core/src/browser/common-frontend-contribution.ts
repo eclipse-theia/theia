@@ -18,7 +18,7 @@
 
 import debounce = require('lodash.debounce');
 import { injectable, inject, optional } from 'inversify';
-import { MAIN_MENU_BAR, SETTINGS_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU } from '../common/menu';
+import { MAIN_MENU_BAR, MANAGE_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { FrontendApplication, FrontendApplicationContribution, OnWillStopAction } from './frontend-application';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
@@ -36,7 +36,7 @@ import { OS, isOSX, isWindows, EOL } from '../common/os';
 import { ResourceContextKey } from './resource-context-key';
 import { UriSelection } from '../common/selection';
 import { StorageService } from './storage-service';
-import { Navigatable } from './navigatable';
+import { Navigatable, NavigatableWidget } from './navigatable';
 import { QuickViewService } from './quick-input/quick-view-service';
 import { environment } from '@theia/application-package/lib/environment';
 import { IconTheme, IconThemeService } from './icon-theme-service';
@@ -63,7 +63,7 @@ import { DecorationStyle } from './decoration-style';
 import { isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveResourceService } from './save-resource-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
-import { UntitledResourceResolver } from '../common';
+import { UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
 import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
 
 export namespace CommonMenus {
@@ -100,8 +100,10 @@ export namespace CommonMenus {
     export const VIEW_LAYOUT = [...VIEW, '3_layout'];
     export const VIEW_TOGGLE = [...VIEW, '4_toggle'];
 
-    export const SETTINGS_OPEN = [...SETTINGS_MENU, '1_settings_open'];
-    export const SETTINGS__THEME = [...SETTINGS_MENU, '2_settings_theme'];
+    export const MANAGE_GENERAL = [...MANAGE_MENU, '1_manage_general'];
+    export const MANAGE_SETTINGS = [...MANAGE_MENU, '2_manage_settings'];
+    export const MANAGE_SETTINGS_THEMES = [...MANAGE_SETTINGS, '1_manage_settings_themes'];
+
     // last menu item
     export const HELP = [...MAIN_MENU_BAR, '9_help'];
 
@@ -113,6 +115,7 @@ export namespace CommonCommands {
     export const VIEW_CATEGORY = 'View';
     export const CREATE_CATEGORY = 'Create';
     export const PREFERENCES_CATEGORY = 'Preferences';
+    export const MANAGE_CATEGORY = 'Manage';
     export const FILE_CATEGORY_KEY = nls.getDefaultKey(FILE_CATEGORY);
     export const VIEW_CATEGORY_KEY = nls.getDefaultKey(VIEW_CATEGORY);
     export const PREFERENCES_CATEGORY_KEY = nls.getDefaultKey(PREFERENCES_CATEGORY);
@@ -428,6 +431,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     protected pinnedKey: ContextKey<boolean>;
 
     async configure(app: FrontendApplication): Promise<void> {
+        // FIXME: This request blocks valuable startup time (~200ms).
         const configDirUri = await this.environments.getConfigDirUri();
         // Global settings
         this.encodingRegistry.registerOverride({
@@ -454,16 +458,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         app.shell.leftPanelHandler.addBottomMenu({
             id: 'settings-menu',
             iconClass: 'codicon codicon-settings-gear',
-            title: nls.localizeByDefault(CommonCommands.PREFERENCES_CATEGORY),
-            menuPath: SETTINGS_MENU,
-            order: 0,
+            title: nls.localizeByDefault(CommonCommands.MANAGE_CATEGORY),
+            menuPath: MANAGE_MENU,
+            order: 1,
         });
         const accountsMenu = {
             id: 'accounts-menu',
             iconClass: 'codicon codicon-person',
             title: nls.localizeByDefault('Accounts'),
             menuPath: ACCOUNTS_MENU,
-            order: 1,
+            order: 0,
         };
         this.authenticationService.onDidRegisterAuthenticationProvider(() => {
             app.shell.leftPanelHandler.addBottomMenu(accountsMenu);
@@ -699,11 +703,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.SELECT_ICON_THEME.id
         });
 
-        registry.registerMenuAction(CommonMenus.SETTINGS__THEME, {
-            commandId: CommonCommands.SELECT_COLOR_THEME.id
+        registry.registerSubmenu(CommonMenus.MANAGE_SETTINGS_THEMES, nls.localizeByDefault('Themes'), { order: 'a50' });
+        registry.registerMenuAction(CommonMenus.MANAGE_SETTINGS_THEMES, {
+            commandId: CommonCommands.SELECT_COLOR_THEME.id,
+            order: '0'
         });
-        registry.registerMenuAction(CommonMenus.SETTINGS__THEME, {
-            commandId: CommonCommands.SELECT_ICON_THEME.id
+        registry.registerMenuAction(CommonMenus.MANAGE_SETTINGS_THEMES, {
+            commandId: CommonCommands.SELECT_ICON_THEME.id,
+            order: '1'
         });
 
         registry.registerSubmenu(CommonMenus.VIEW_APPEARANCE_SUBMENU, nls.localizeByDefault('Appearance'));
@@ -1171,20 +1178,37 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     onWillStop(): OnWillStopAction | undefined {
-        try {
-            if (this.shouldPreventClose || this.shell.canSaveAll()) {
-                const captionsToSave = this.unsavedTabsCaptions();
+        if (this.shouldPreventClose || this.shell.canSaveAll()) {
+            return {
+                reason: 'Dirty editors present',
+                action: async () => {
+                    const captionsToSave = this.unsavedTabsCaptions();
+                    const untitledCaptionsToSave = this.unsavedUntitledTabsCaptions();
+                    const result = await confirmExitWithOrWithoutSaving(captionsToSave, async () => {
+                        await this.saveDirty(untitledCaptionsToSave);
+                        await this.shell.saveAll();
+                    });
+                    if (this.shell.canSaveAll()) {
+                        this.shouldPreventClose = true;
+                        return false;
+                    } else {
+                        this.shouldPreventClose = false;
+                        return result;
+                    }
 
-                return { reason: 'Dirty editors present', action: async () => confirmExitWithOrWithoutSaving(captionsToSave, async () => this.shell.saveAll()) };
-            }
-        } finally {
-            this.shouldPreventClose = false;
+                }
+            };
         }
     }
     protected unsavedTabsCaptions(): string[] {
         return this.shell.widgets
             .filter(widget => this.saveResourceService.canSave(widget))
             .map(widget => widget.title.label);
+    }
+    protected unsavedUntitledTabsCaptions(): Widget[] {
+        return this.shell.widgets.filter(widget =>
+            NavigatableWidget.getUri(widget)?.scheme === UNTITLED_SCHEME && this.saveResourceService.canSaveAs(widget)
+        );
     }
     protected async configureDisplayLanguage(): Promise<void> {
         const languageInfo = await this.languageQuickPickService.pickDisplayLanguage();
@@ -1196,7 +1220,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             this.windowService.reload();
         }
     }
-
+    protected async saveDirty(toSave: Widget[]): Promise<void> {
+        for (const widget of toSave) {
+            const saveable = Saveable.get(widget);
+            if (saveable?.dirty) {
+                await this.saveResourceService.save(widget);
+            }
+        }
+    }
     protected toggleBreadcrumbs(): void {
         const value: boolean | undefined = this.preferenceService.get('breadcrumbs.enabled');
         this.preferenceService.set('breadcrumbs.enabled', !value, PreferenceScope.User);

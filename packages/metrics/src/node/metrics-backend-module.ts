@@ -16,16 +16,24 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { bindContributionProvider } from '@theia/core/lib/common';
+import { ConnectionHandler, RpcConnectionHandler, bindContributionProvider } from '@theia/core/lib/common';
 import { MetricsContribution } from './metrics-contribution';
 import { NodeMetricsContribution } from './node-metrics-contribution';
 import { ExtensionMetricsContribution } from './extensions-metrics-contribution';
 import { MetricsBackendApplicationContribution } from './metrics-backend-application-contribution';
+import { measurementNotificationServicePath } from '../common';
+import { MeasurementMetricsBackendContribution } from './measurement-metrics-contribution';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, MetricsContribution);
     bind(MetricsContribution).to(NodeMetricsContribution).inSingletonScope();
     bind(MetricsContribution).to(ExtensionMetricsContribution).inSingletonScope();
+
+    bind(MeasurementMetricsBackendContribution).toSelf().inSingletonScope();
+    bind(MetricsContribution).toService(MeasurementMetricsBackendContribution);
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new RpcConnectionHandler(measurementNotificationServicePath,
+            () => ctx.container.get(MeasurementMetricsBackendContribution)));
 
     bind(BackendApplicationContribution).to(MetricsBackendApplicationContribution).inSingletonScope();
 

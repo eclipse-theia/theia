@@ -39,7 +39,7 @@ export class FileDownloadService {
         if (downloadUrl && event.clipboardData) {
             event.clipboardData.setData('text/plain', downloadUrl);
             event.preventDefault();
-            this.messageService.info('Copied the download link to the clipboard.');
+            this.messageService.info(nls.localize('theia/filesystem/copiedToClipboard', 'Copied the download link to the clipboard.'));
         }
     }
 
