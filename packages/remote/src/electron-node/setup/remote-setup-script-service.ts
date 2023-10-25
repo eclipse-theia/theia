@@ -40,7 +40,7 @@ export class RemoteWindowsScriptStrategy implements RemoteScriptStrategy {
     }
 
     downloadFile(url: string, output: string): string {
-        return `Invoke-WebRequest -Uri "${url}" -OutFile ${output}`;
+        return `PowerShell -Command Invoke-WebRequest -Uri "${url}" -OutFile ${output}`;
     }
 
     unzip(file: string, directory: string): string {
@@ -48,7 +48,7 @@ export class RemoteWindowsScriptStrategy implements RemoteScriptStrategy {
     }
 
     mkdir(path: string): string {
-        return `New-Item -Force -itemType Directory -Path "${path}"`;
+        return `PowerShell -Command New-Item -Force -itemType Directory -Path "${path}"`;
     }
 
     joinPath(...segments: string[]): string {
