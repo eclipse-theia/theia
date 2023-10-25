@@ -18,7 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import { ColorRegistry } from './color-registry';
 import { Emitter } from '../common/event';
 import { ThemeService } from './theming';
-import { FrontendApplicationContribution } from './frontend-application';
+import { FrontendApplicationContribution } from './frontend-application-contribution';
 import { ContributionProvider } from '../common/contribution-provider';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { DEFAULT_BACKGROUND_COLOR_STORAGE_KEY } from './frontend-application-config-provider';

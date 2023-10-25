@@ -2183,11 +2183,6 @@ export enum TerminalExitReason {
     Extension = 4,
 }
 
-export enum TerminalQuickFixType {
-    command = 'command',
-    opener = 'opener'
-}
-
 @es5ClassCompat
 export class FileDecoration {
 
@@ -3227,6 +3222,16 @@ export class LinkedEditingRanges {
     }
 }
 
+// Copied from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/workbench/api/common/extHostTypes.ts
+export enum TestResultState {
+    Queued = 1,
+    Running = 2,
+    Passed = 3,
+    Failed = 4,
+    Skipped = 5,
+    Errored = 6
+}
+
 export enum TestRunProfileKind {
     Run = 1,
     Debug = 2,
@@ -3238,8 +3243,11 @@ export class TestTag implements theia.TestTag {
     constructor(public readonly id: string) { }
 }
 
+let nextTestRunId = 0;
 @es5ClassCompat
 export class TestRunRequest implements theia.TestRunRequest {
+    testRunId: number = nextTestRunId++;
+
     constructor(
         public readonly include: theia.TestItem[] | undefined = undefined,
         public readonly exclude: theia.TestItem[] | undefined = undefined,
@@ -3630,3 +3638,26 @@ export enum EditSessionIdentityMatch {
     None = 0
 }
 // #endregion
+
+// #region terminalQuickFixProvider
+export class TerminalQuickFixExecuteTerminalCommand {
+    /**
+     * The terminal command to run
+     */
+    terminalCommand: string;
+    /**
+     * @stubbed
+     */
+    constructor(terminalCommand: string) { }
+}
+export class TerminalQuickFixOpener {
+    /**
+     * The uri to open
+     */
+    uri: theia.Uri;
+    /**
+     * @stubbed
+     */
+    constructor(uri: theia.Uri) { }
+}
+

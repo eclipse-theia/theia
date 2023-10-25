@@ -25,27 +25,36 @@ export module '@theia/plugin' {
     // https://github.com/microsoft/vscode/issues/179430
 
     export interface DocumentDropEdit {
-        /**
-         * Identifies the type of edit.
-         *
-         * This id should be unique within the extension but does not need to be unique across extensions.
-         */
-        id?: string;
-
-        /**
-         * The relative priority of this edit. Higher priority items are shown first in the UI.
-         *
-         * Defaults to `0`.
-         */
-        priority?: number;
 
         /**
          * Human readable label that describes the edit.
          */
         label?: string;
+
+        /**
+         * The mime type from the {@link DataTransfer} that this edit applies.
+         */
+        handledMimeType?: string;
+
+        /**
+         * Controls the ordering or multiple paste edits. If this provider yield to edits, it will be shown lower in the list.
+         */
+        yieldTo?: ReadonlyArray<
+            | { readonly extensionId: string; readonly providerId: string }
+            | { readonly mimeType: string }
+        >;
     }
 
     export interface DocumentDropEditProviderMetadata {
+        /**
+         * Identifies the provider.
+         *
+         * This id is used when users configure the default provider for drop.
+         *
+         * This id should be unique within the extension but does not need to be unique across extensions.
+         */
+        readonly id: string;
+
         /**
          * List of data transfer types that the provider supports.
          *

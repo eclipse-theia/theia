@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct, optional } from '@theia/core/shared/
 import {
     ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager, QuickViewService,
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
-    StatefulWidget, CommonMenus, TreeViewWelcomeWidget, codicon, ViewContainerPart, BaseWidget
+    StatefulWidget, CommonMenus, TreeViewWelcomeWidget, ViewContainerPart, BaseWidget
 } from '@theia/core/lib/browser';
 import { ViewContainer, View, ViewWelcome, PluginViewType } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
@@ -39,6 +39,7 @@ import { OutputWidget } from '@theia/output/lib/browser/output-widget';
 import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug-console-contribution';
 import { TreeViewWidget } from './tree-view-widget';
 import { SEARCH_VIEW_CONTAINER_ID } from '@theia/search-in-workspace/lib/browser/search-in-workspace-factory';
+import { TEST_VIEW_CONTAINER_ID } from '@theia/test/lib/browser/view/test-view-contribution';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 import { WebviewView, WebviewViewResolver } from '../webview-views/webview-views';
 import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
@@ -111,6 +112,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         [DebugWidget.ID, 'workbench.view.debug'],
         ['vsx-extensions-view-container', 'workbench.view.extensions'], // cannot use the id from 'vsx-registry' package because of circular dependency
         [PROBLEMS_WIDGET_ID, 'workbench.panel.markers'],
+        [TEST_VIEW_CONTAINER_ID, 'workbench.view.testing'],
         [OutputWidget.ID, 'workbench.panel.output'],
         [DebugConsoleContribution.options.id, 'workbench.panel.repl'],
         // Theia does not have a single terminal widget, but instead each terminal gets its own widget. Therefore "the terminal widget is active" doesn't make sense in Theia
@@ -136,6 +138,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             if (factoryId === SEARCH_VIEW_CONTAINER_ID && widget instanceof ViewContainerWidget) {
                 waitUntil(this.prepareViewContainer('search', widget));
             }
+            if (factoryId === TEST_VIEW_CONTAINER_ID && widget instanceof ViewContainerWidget) {
+                waitUntil(this.prepareViewContainer('test', widget));
+            }
             if (factoryId === DebugWidget.ID && widget instanceof DebugWidget) {
                 const viewContainer = widget['sessionWidget']['viewContainer'];
                 waitUntil(this.prepareViewContainer('debug', viewContainer));
@@ -160,11 +165,6 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 }));
                 disposable.push(event.widget.onDidDispose(() => disposable.dispose()));
             }
-        });
-        this.doRegisterViewContainer('test', 'left', {
-            label: nls.localizeByDefault('Test'),
-            iconClass: codicon('beaker'),
-            closeable: true
         });
         this.contextKeyService.onDidChange(e => {
             for (const [, view] of this.views.values()) {
@@ -653,6 +653,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             case EXPLORER_VIEW_CONTAINER_ID: return 'explorer';
             case SCM_VIEW_CONTAINER_ID: return 'scm';
             case SEARCH_VIEW_CONTAINER_ID: return 'search';
+            case TEST_VIEW_CONTAINER_ID: return 'test';
             case undefined: return container.parent?.parent instanceof DebugWidget ? 'debug' : container.id;
             case PLUGIN_VIEW_CONTAINER_FACTORY_ID: return this.toViewContainerId(description.options);
             default: return container.id;
@@ -668,6 +669,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }
         if (viewContainerId === 'search') {
             return this.widgetManager.getWidget<ViewContainerWidget>(SEARCH_VIEW_CONTAINER_ID);
+        }
+        if (viewContainerId === 'test') {
+            return this.widgetManager.getWidget<ViewContainerWidget>(TEST_VIEW_CONTAINER_ID);
         }
         if (viewContainerId === 'debug') {
             const debug = await this.widgetManager.getWidget(DebugWidget.ID);
@@ -715,6 +719,12 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             const search = await this.widgetManager.getWidget(SEARCH_VIEW_CONTAINER_ID);
             if (search instanceof ViewContainerWidget) {
                 await this.prepareViewContainer('search', search);
+            }
+        })().catch(console.error));
+        promises.push((async () => {
+            const test = await this.widgetManager.getWidget(TEST_VIEW_CONTAINER_ID);
+            if (test instanceof ViewContainerWidget) {
+                await this.prepareViewContainer('test', test);
             }
         })().catch(console.error));
         promises.push((async () => {

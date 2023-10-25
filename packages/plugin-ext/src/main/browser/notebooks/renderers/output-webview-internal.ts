@@ -160,8 +160,8 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             if (this.rendererApi) {
                 return this.rendererApi;
             }
-
-            const rendererModule = await __import(this.data.entrypoint.uri) as { activate: rendererApi.ActivationFunction };
+            const baseUri = window.location.href.replace(/\/webview\/index\.html.*/, '');
+            const rendererModule = await __import(`${baseUri}/${this.data.entrypoint.uri}`) as { activate: rendererApi.ActivationFunction };
             this.rendererApi = await rendererModule.activate(this.createRendererContext());
             return this.rendererApi;
         }
@@ -381,6 +381,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
     function clearOutput(outputId: string): void {
         outputs.get(outputId)?.clear();
         outputs.delete(outputId);
+        document.getElementById(outputId)?.remove();
     }
 
     function outputsChanged(changedEvent: webviewCommunication.OutputChangedMessage): void {

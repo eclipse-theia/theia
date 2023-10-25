@@ -18,11 +18,12 @@ import { Terminal, TerminalOptions, PseudoTerminalOptions, ExtensionTerminalOpti
 import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
+import { MultiKeyMap } from '@theia/core/lib/common/collections';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as theia from '@theia/plugin';
 import * as Converter from './type-converters';
 import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIcon } from './types-impl';
-import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
+import { NO_ROOT_URI, SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { ProvidedTerminalLink } from '../common/plugin-api-rpc-model';
 import { ThemeIcon as MonacoThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
@@ -68,7 +69,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
     private readonly onDidChangeTerminalStateEmitter = new Emitter<Terminal>();
     readonly onDidChangeTerminalState: theia.Event<Terminal> = this.onDidChangeTerminalStateEmitter.event;
 
-    protected environmentVariableCollections: Map<string, EnvironmentVariableCollection> = new Map();
+    protected environmentVariableCollections: MultiKeyMap<string, EnvironmentVariableCollectionImpl> = new MultiKeyMap(2);
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TERMINAL_MAIN);
@@ -303,46 +304,53 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
      *--------------------------------------------------------------------------------------------*/
     // some code copied and modified from https://github.com/microsoft/vscode/blob/1.49.0/src/vs/workbench/api/common/extHostTerminalService.ts
 
-    getEnvironmentVariableCollection(extensionIdentifier: string): theia.EnvironmentVariableCollection {
-        let collection = this.environmentVariableCollections.get(extensionIdentifier);
+    getEnvironmentVariableCollection(extensionIdentifier: string, rootUri: string = NO_ROOT_URI): theia.GlobalEnvironmentVariableCollection {
+        const that = this;
+        let collection = this.environmentVariableCollections.get([extensionIdentifier, rootUri]);
         if (!collection) {
-            collection = new EnvironmentVariableCollection();
-            this.setEnvironmentVariableCollection(extensionIdentifier, collection);
+            collection = new class extends EnvironmentVariableCollectionImpl {
+                override getScoped(scope: theia.EnvironmentVariableScope): theia.EnvironmentVariableCollection {
+                    return that.getEnvironmentVariableCollection(extensionIdentifier, scope.workspaceFolder?.uri.toString());
+                }
+            }(true);
+            this.setEnvironmentVariableCollection(extensionIdentifier, rootUri, collection);
         }
         return collection;
     }
 
-    private syncEnvironmentVariableCollection(extensionIdentifier: string, collection: EnvironmentVariableCollection): void {
+    private syncEnvironmentVariableCollection(extensionIdentifier: string, rootUri: string, collection: EnvironmentVariableCollectionImpl): void {
         const serialized = [...collection.map.entries()];
-        this.proxy.$setEnvironmentVariableCollection(collection.persistent, {
-            extensionIdentifier,
-            collection: serialized.length === 0 ? undefined : serialized,
-            description: Converter.fromMarkdownOrString(collection.description)
-        });
+        this.proxy.$setEnvironmentVariableCollection(collection.persistent, extensionIdentifier,
+            rootUri,
+            {
+                mutators: serialized,
+                description: Converter.fromMarkdownOrString(collection.description)
+            });
     }
 
-    private setEnvironmentVariableCollection(extensionIdentifier: string, collection: EnvironmentVariableCollection): void {
-        this.environmentVariableCollections.set(extensionIdentifier, collection);
+    private setEnvironmentVariableCollection(pluginIdentifier: string, rootUri: string, collection: EnvironmentVariableCollectionImpl): void {
+        this.environmentVariableCollections.set([pluginIdentifier, rootUri], collection);
         collection.onDidChangeCollection(() => {
             // When any collection value changes send this immediately, this is done to ensure
             // following calls to createTerminal will be created with the new environment. It will
             // result in more noise by sending multiple updates when called but collections are
             // expected to be small.
-            this.syncEnvironmentVariableCollection(extensionIdentifier, collection);
+            this.syncEnvironmentVariableCollection(pluginIdentifier, rootUri, collection);
         });
     }
 
-    $initEnvironmentVariableCollections(collections: [string, SerializableEnvironmentVariableCollection][]): void {
+    $initEnvironmentVariableCollections(collections: [string, string, boolean, SerializableEnvironmentVariableCollection][]): void {
         collections.forEach(entry => {
             const extensionIdentifier = entry[0];
-            const collection = new EnvironmentVariableCollection(entry[1]);
-            this.setEnvironmentVariableCollection(extensionIdentifier, collection);
+            const rootUri = entry[1];
+            const collection = new EnvironmentVariableCollectionImpl(entry[2], entry[3]);
+            this.setEnvironmentVariableCollection(extensionIdentifier, rootUri, collection);
         });
     }
 
 }
 
-export class EnvironmentVariableCollection implements theia.EnvironmentVariableCollection {
+export class EnvironmentVariableCollectionImpl implements theia.GlobalEnvironmentVariableCollection {
     readonly map: Map<string, theia.EnvironmentVariableMutator> = new Map();
     private _description?: string | theia.MarkdownString;
     private _persistent: boolean = true;
@@ -363,25 +371,31 @@ export class EnvironmentVariableCollection implements theia.EnvironmentVariableC
     onDidChangeCollection: Event<void> = this.onDidChangeCollectionEmitter.event;
 
     constructor(
+        persistent: boolean,
         serialized?: SerializableEnvironmentVariableCollection
     ) {
-        this.map = new Map(serialized);
+        this._persistent = persistent;
+        this.map = new Map(serialized?.mutators);
+    }
+
+    getScoped(scope: theia.EnvironmentVariableScope): theia.EnvironmentVariableCollection {
+        throw new Error('Cannot get scoped from a regular env var collection');
     }
 
     get size(): number {
         return this.map.size;
     }
 
-    replace(variable: string, value: string): void {
-        this._setIfDiffers(variable, { value, type: EnvironmentVariableMutatorType.Replace });
+    replace(variable: string, value: string, options?: theia.EnvironmentVariableMutatorOptions): void {
+        this._setIfDiffers(variable, { value, type: EnvironmentVariableMutatorType.Replace, options: options ?? { applyAtProcessCreation: true } });
     }
 
-    append(variable: string, value: string): void {
-        this._setIfDiffers(variable, { value, type: EnvironmentVariableMutatorType.Append });
+    append(variable: string, value: string, options?: theia.EnvironmentVariableMutatorOptions): void {
+        this._setIfDiffers(variable, { value, type: EnvironmentVariableMutatorType.Append, options: options ?? { applyAtProcessCreation: true } });
     }
 
-    prepend(variable: string, value: string): void {
-        this._setIfDiffers(variable, { value, type: EnvironmentVariableMutatorType.Prepend });
+    prepend(variable: string, value: string, options?: theia.EnvironmentVariableMutatorOptions): void {
+        this._setIfDiffers(variable, { value, type: EnvironmentVariableMutatorType.Prepend, options: options ?? { applyAtProcessCreation: true } });
     }
 
     private _setIfDiffers(variable: string, mutator: theia.EnvironmentVariableMutator): void {

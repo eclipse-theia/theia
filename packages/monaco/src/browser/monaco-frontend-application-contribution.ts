@@ -34,6 +34,7 @@ import { isHighContrast } from '@theia/core/lib/common/theme';
 import { editorOptionsRegistry, IEditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import { MAX_SAFE_INTEGER } from '@theia/core';
 import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
+import { WorkspaceFileService } from '@theia/workspace/lib/common/workspace-file-service';
 
 let theiaDidInitialize = false;
 const originalInitialize = StandaloneServices.initialize;
@@ -71,6 +72,8 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
 
     @inject(MonacoThemingService) protected readonly monacoThemingService: MonacoThemingService;
 
+    @inject(WorkspaceFileService) protected readonly workspaceFileService: WorkspaceFileService;
+
     @postConstruct()
     protected init(): void {
         this.addAdditionalPreferenceValidations();
@@ -104,7 +107,16 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
         this.monacoThemingService.initialize();
     }
 
-    initialize(): void { }
+    initialize(): void {
+        const workspaceExtensions = this.workspaceFileService.getWorkspaceFileExtensions();
+        monaco.languages.register({
+            id: 'jsonc',
+            'aliases': [
+                'JSON with Comments'
+            ],
+            'extensions': workspaceExtensions.map(ext => `.${ext}`)
+        });
+    }
 
     registerThemeStyle(theme: ColorTheme, collector: CssStyleCollector): void {
         if (isHighContrast(theme.type)) {

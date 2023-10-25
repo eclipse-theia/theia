@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Ericsson and others.
+// Copyright (C) 2023 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,23 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { KeybindingContext, ApplicationShell } from '@theia/core/lib/browser';
-import { FileNavigatorWidget } from './navigator-widget';
-
-export namespace NavigatorKeybindingContexts {
-    export const navigatorActive = 'navigatorActive';
-}
+import { AbstractViewContribution } from '@theia/core/lib/browser';
+import { TestOutputWidget } from './test-output-widget';
+import { injectable } from '@theia/core/shared/inversify';
+import { nls } from '@theia/core';
 
 @injectable()
-export class NavigatorActiveContext implements KeybindingContext {
+export class TestOutputViewContribution extends AbstractViewContribution<TestOutputWidget> {
+    constructor() {
+        super({
+            widgetId: TestOutputWidget.ID,
+            widgetName: nls.localizeByDefault('Test Output'),
+            defaultWidgetOptions: {
+                area: 'bottom'
+            }
+        });
 
-    readonly id: string = NavigatorKeybindingContexts.navigatorActive;
-
-    @inject(ApplicationShell)
-    protected readonly applicationShell: ApplicationShell;
-
-    isEnabled(): boolean {
-        return this.applicationShell.activeWidget instanceof FileNavigatorWidget;
     }
 }

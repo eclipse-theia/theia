@@ -19,7 +19,7 @@ import { Title, Widget } from '@phosphor/widgets';
 import { inject, injectable, named } from 'inversify';
 import { Event, Emitter, ContributionProvider } from '../../common';
 import { WidgetDecoration } from '../widget-decoration';
-import { FrontendApplicationContribution } from '../frontend-application';
+import { FrontendApplicationContribution } from '../frontend-application-contribution';
 
 export const TabBarDecorator = Symbol('TabBarDecorator');
 

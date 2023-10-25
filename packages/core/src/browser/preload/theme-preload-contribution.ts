@@ -17,15 +17,14 @@
 import { PreloadContribution } from './preloader';
 import { DEFAULT_BACKGROUND_COLOR_STORAGE_KEY } from '../frontend-application-config-provider';
 import { injectable } from 'inversify';
+import { DefaultTheme } from '@theia/application-package/lib/application-props';
 
 @injectable()
 export class ThemePreloadContribution implements PreloadContribution {
 
     initialize(): void {
-        // The default light background color is based on the `colors#editor.background` value from
-        // `packages/monaco/data/monaco-themes/vscode/dark_vs.json` and the dark background comes from the `light_vs.json`.
         const dark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-        const value = window.localStorage.getItem(DEFAULT_BACKGROUND_COLOR_STORAGE_KEY) || (dark ? '#1E1E1E' : '#FFFFFF');
+        const value = window.localStorage.getItem(DEFAULT_BACKGROUND_COLOR_STORAGE_KEY) || DefaultTheme.defaultBackgroundColor(dark);
         document.documentElement.style.setProperty('--theia-editor-background', value);
     }
 

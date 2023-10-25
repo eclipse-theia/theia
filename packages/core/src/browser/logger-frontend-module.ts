@@ -19,7 +19,7 @@ import { ILoggerServer, loggerPath, ConsoleLogger } from '../common/logger-proto
 import { ILogger, Logger, LoggerFactory, setRootLogger, LoggerName, rootLoggerName } from '../common/logger';
 import { LoggerWatcher } from '../common/logger-watcher';
 import { WebSocketConnectionProvider } from './messaging';
-import { FrontendApplicationContribution } from './frontend-application';
+import { FrontendApplicationContribution } from './frontend-application-contribution';
 import { EncodingError } from '../common/message-rpc/rpc-message-encoder';
 
 export const loggerFrontendModule = new ContainerModule(bind => {

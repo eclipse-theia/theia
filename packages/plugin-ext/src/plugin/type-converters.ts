@@ -27,13 +27,15 @@ import { MarkdownString as PluginMarkdownStringImpl } from './markdown-string';
 import * as types from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { isReadonlyArray } from '../common/arrays';
-import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
-import { DisposableCollection, isEmptyObject, isObject } from '@theia/core/lib/common';
+import { DisposableCollection, Mutable, isEmptyObject, isObject } from '@theia/core/lib/common';
 import * as notebooks from '@theia/notebook/lib/common';
 import { CommandsConverter } from './command-registry';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { CellData, CellExecutionUpdateType, CellOutput, CellOutputItem, CellRange, isTextStreamMime } from '@theia/notebook/lib/common';
 import { CellExecuteUpdate, CellExecutionComplete } from '@theia/notebook/lib/browser';
+import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
+
+import { TestItemDTO, TestMessageDTO } from '../common/test-types';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -459,7 +461,13 @@ export function toInlineValueContext(inlineValueContext: model.InlineValueContex
     };
 }
 
-export function fromLocation(location: theia.Location): model.Location {
+// eslint-disable-next-line @typescript-eslint/no-shadow
+export function fromLocation(location: theia.Location): model.Location;
+export function fromLocation(location: theia.Location | undefined): model.Location | undefined;
+export function fromLocation(location: theia.Location | undefined): model.Location | undefined {
+    if (!location) {
+        return undefined;
+    }
     return <model.Location>{
         uri: location.uri,
         range: fromRange(location.range)
@@ -1212,11 +1220,12 @@ export function convertToTransferQuickPickItems(items: rpc.Item[]): rpc.Transfer
         } else if (item.kind === QuickPickItemKind.Separator) {
             return { type: 'separator', label: item.label, handle: index };
         } else {
-            const { label, description, detail, picked, alwaysShow, buttons } = item;
+            const { label, description, iconPath, detail, picked, alwaysShow, buttons } = item;
             return {
                 type: 'item',
                 label,
                 description,
+                iconPath,
                 detail,
                 picked,
                 alwaysShow,
@@ -1721,6 +1730,7 @@ export namespace NotebookDto {
             return {
                 editType: data.editType,
                 append: data.append,
+                outputId: data.outputId,
                 items: data.items.map(fromNotebookOutputItemDto)
             };
         } else {
@@ -1744,4 +1754,79 @@ export namespace NotebookDto {
     //         return edit;
     //     }
     // }
+}
+
+export namespace TestMessage {
+    export function from(message: theia.TestMessage | readonly theia.TestMessage[]): TestMessageDTO[] {
+        if (isReadonlyArray(message)) {
+            return message.map(msg => TestMessage.from(msg)[0]);
+        }
+        return [{
+            location: fromLocation(message.location),
+            message: fromMarkdown(message.message)!,
+            expected: message.expectedOutput,
+            actual: message.actualOutput
+        }];
+    }
+}
+
+export namespace TestItem {
+    export function from(test: theia.TestItem): TestItemDTO {
+        return <TestItemDTO>TestItem.fromPartial(test);
+    }
+
+    export function fromPartial(test: Partial<theia.TestItem>): Partial<TestItemDTO> {
+        const result: Partial<Mutable<TestItemDTO>> = {};
+
+        if ('id' in test) {
+            result.id = test.id;
+        }
+
+        if ('uri' in test) {
+            result.uri = test.uri;
+        }
+
+        if ('label' in test) {
+            result.label = test.label;
+        }
+
+        if ('range' in test) {
+            result.range = fromRange(test.range);
+        }
+
+        if ('sortKey' in test) {
+            result.sortKey = test.sortText;
+        }
+
+        if ('tags' in test) {
+            result.tags = test.tags ? test.tags.map(tag => tag.id) : [];
+        }
+        if ('busy' in test) {
+            result.busy = test.busy!;
+        }
+        if ('sortKey' in test) {
+            result.sortKey = test.sortText;
+        }
+        if ('canResolveChildren' in test) {
+            result.canResolveChildren = test.canResolveChildren!;
+        }
+        if ('description' in test) {
+            result.description = test.description;
+        }
+
+        if ('description' in test) {
+            result.error = test.error;
+        }
+
+        if (test.children) {
+            const children: TestItemDTO[] = [];
+            test.children.forEach(item => {
+                children.push(TestItem.from(item));
+            });
+            result.children = children;
+        }
+
+        return result;
+
+    }
 }

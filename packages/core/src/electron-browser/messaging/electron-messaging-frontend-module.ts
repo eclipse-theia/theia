@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { FrontendApplicationContribution } from '../../browser/frontend-application';
+import { FrontendApplicationContribution } from '../../browser/frontend-application-contribution';
 import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider';
 import { ElectronWebSocketConnectionProvider } from './electron-ws-connection-provider';
 import { ElectronIpcConnectionProvider } from './electron-ipc-connection-provider';

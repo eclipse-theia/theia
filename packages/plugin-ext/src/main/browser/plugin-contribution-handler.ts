@@ -23,9 +23,8 @@ import { PluginViewRegistry } from './view/plugin-view-registry';
 import { PluginCustomEditorRegistry } from './custom-editors/plugin-custom-editor-registry';
 import {
     PluginContribution, IndentationRules, FoldingRules, ScopeMap, DeployedPlugin,
-    GrammarsContribution, EnterAction, OnEnterRule, RegExpOptions, IconContribution
+    GrammarsContribution, EnterAction, OnEnterRule, RegExpOptions, IconContribution, PluginPackage
 } from '../../common';
-import { getPluginId } from '../../common/plugin-protocol';
 import {
     DefaultUriLabelProviderContribution,
     LabelProviderContribution,
@@ -434,7 +433,7 @@ export class PluginContributionHandler {
         if (contributions.notebookRenderer) {
             for (const renderer of contributions.notebookRenderer) {
                 pushContribution(`notebookRenderer.${renderer.id}`,
-                    () => this.notebookRendererRegistry.registerNotebookRenderer(renderer, `/hostedPlugin/${getPluginId(plugin.metadata.model)}`)
+                    () => this.notebookRendererRegistry.registerNotebookRenderer(renderer, PluginPackage.toPluginUrl(plugin.metadata.model, ''))
                 );
             }
         }

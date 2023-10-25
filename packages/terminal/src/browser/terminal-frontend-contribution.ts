@@ -36,7 +36,6 @@ import {
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl } from './terminal-widget-impl';
-import { TerminalKeybindingContexts } from './terminal-keybinding-contexts';
 import { TerminalService } from './base/terminal-service';
 import { TerminalWidgetOptions, TerminalWidget, TerminalLocation } from './base/terminal-widget';
 import { ContributedTerminalProfileStore, NULL_PROFILE, TerminalProfile, TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore } from './terminal-profile-service';
@@ -52,10 +51,6 @@ import { terminalAnsiColorMap } from './terminal-theme-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import {
-    ENVIRONMENT_VARIABLE_COLLECTIONS_KEY,
-    SerializableExtensionEnvironmentVariableCollection
-} from '../common/base-terminal-protocol';
 import { nls } from '@theia/core/lib/common/nls';
 import { Profiles, TerminalPreferences } from './terminal-preferences';
 import { ShellTerminalProfile } from './shell-terminal-profile';
@@ -104,7 +99,7 @@ export namespace TerminalCommands {
     export const TERMINAL_CONTEXT = Command.toDefaultLocalizedCommand({
         id: 'terminal:context',
         category: TERMINAL_CATEGORY,
-        label: 'Open in Terminal'
+        label: 'Open in Integrated Terminal'
     });
     export const SPLIT = Command.toDefaultLocalizedCommand({
         id: 'terminal:split',
@@ -173,6 +168,7 @@ export namespace TerminalCommands {
     });
 }
 
+const ENVIRONMENT_VARIABLE_COLLECTIONS_KEY = 'terminal.integrated.environmentVariableCollections';
 @injectable()
 export class TerminalFrontendContribution implements FrontendApplicationContribution, TerminalService, CommandContribution, MenuContribution,
     KeybindingContribution, TabBarToolbarContribution, ColorContribution {
@@ -239,7 +235,11 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
 
         const terminalFocusKey = this.contextKeyService.createKey<boolean>('terminalFocus', false);
-        const updateFocusKey = () => terminalFocusKey.set(this.shell.activeWidget instanceof TerminalWidget);
+        const terminalSearchToggle = this.contextKeyService.createKey<boolean>('terminalHideSearch', false);
+        const updateFocusKey = () => {
+            terminalFocusKey.set(this.shell.activeWidget instanceof TerminalWidget);
+            terminalSearchToggle.set(this.terminalHideSearch);
+        };
         updateFocusKey();
         this.shell.onDidChangeActiveWidget(updateFocusKey);
 
@@ -249,15 +249,22 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         this.terminalWatcher.onUpdateTerminalEnvVariablesRequested(() => {
             this.storageService.getData<string>(ENVIRONMENT_VARIABLE_COLLECTIONS_KEY).then(data => {
                 if (data) {
-                    const collectionsJson: SerializableExtensionEnvironmentVariableCollection[] = JSON.parse(data);
-                    collectionsJson.forEach(c => this.shellTerminalServer.setCollection(c.extensionIdentifier, true, c.collection ? c.collection : [], c.description));
+                    this.shellTerminalServer.restorePersisted(data);
                 }
             });
         });
     }
 
+    get terminalHideSearch(): boolean {
+        if (!(this.shell.activeWidget instanceof TerminalWidget)) {
+            return false;
+        }
+        const searchWidget = this.shell.activeWidget.getSearchBox();
+        return searchWidget.isVisible;
+    }
+
     async onStart(app: FrontendApplication): Promise<void> {
-        await this.contributeDefaultProfiles();
+        this.contributeDefaultProfiles();
 
         this.terminalPreferences.onPreferenceChanged(e => {
             if (e.preferenceName.startsWith('terminal.integrated.')) {
@@ -844,7 +851,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         keybindings.registerKeybinding({
             command: TerminalCommands.TERMINAL_FIND_TEXT_CANCEL.id,
             keybinding: 'esc',
-            context: TerminalKeybindingContexts.terminalHideSearch
+            when: 'terminalHideSearch'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.SCROLL_LINE_UP.id,

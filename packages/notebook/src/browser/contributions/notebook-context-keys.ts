@@ -13,11 +13,18 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 export type NotebookCellExecutionStateContext = 'idle' | 'pending' | 'executing' | 'succeeded' | 'failed';
 
+/**
+ * Context Keys for the Notebook Editor as defined by vscode in https://github.com/microsoft/vscode/blob/main/src/vs/workbench/contrib/notebook/common/notebookContextKeys.ts
+ */
 export const HAS_OPENED_NOTEBOOK = 'userHasOpenedNotebook';
 export const KEYBINDING_CONTEXT_NOTEBOOK_FIND_WIDGET_FOCUSED = 'notebookFindWidgetFocused';
 export const NOTEBOOK_EDITOR_FOCUSED = 'notebookEditorFocused';

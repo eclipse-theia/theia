@@ -246,6 +246,9 @@ export class ApplicationShell extends Widget {
     protected readonly onDidChangeCurrentWidgetEmitter = new Emitter<FocusTracker.IChangedArgs<Widget>>();
     readonly onDidChangeCurrentWidget = this.onDidChangeCurrentWidgetEmitter.event;
 
+    protected readonly onDidDoubleClickMainAreaEmitter = new Emitter<void>();
+    readonly onDidDoubleClickMainArea = this.onDidDoubleClickMainAreaEmitter.event;
+
     @inject(TheiaDockPanel.Factory)
     protected readonly dockPanelFactory: TheiaDockPanel.Factory;
 
@@ -269,6 +272,22 @@ export class ApplicationShell extends Widget {
         @inject(SecondaryWindowHandler) protected readonly secondaryWindowHandler: SecondaryWindowHandler,
     ) {
         super(options as Widget.IOptions);
+
+        // Merge the user-defined application options with the default options
+        this.options = {
+            bottomPanel: {
+                ...ApplicationShell.DEFAULT_OPTIONS.bottomPanel,
+                ...options?.bottomPanel || {}
+            },
+            leftPanel: {
+                ...ApplicationShell.DEFAULT_OPTIONS.leftPanel,
+                ...options?.leftPanel || {}
+            },
+            rightPanel: {
+                ...ApplicationShell.DEFAULT_OPTIONS.rightPanel,
+                ...options?.rightPanel || {}
+            }
+        };
     }
 
     @postConstruct()
@@ -300,21 +319,6 @@ export class ApplicationShell extends Widget {
     protected initializeShell(): void {
         this.addClass(APPLICATION_SHELL_CLASS);
         this.id = 'theia-app-shell';
-        // Merge the user-defined application options with the default options
-        this.options = {
-            bottomPanel: {
-                ...ApplicationShell.DEFAULT_OPTIONS.bottomPanel,
-                ...this.options?.bottomPanel || {}
-            },
-            leftPanel: {
-                ...ApplicationShell.DEFAULT_OPTIONS.leftPanel,
-                ...this.options?.leftPanel || {}
-            },
-            rightPanel: {
-                ...ApplicationShell.DEFAULT_OPTIONS.rightPanel,
-                ...this.options?.rightPanel || {}
-            }
-        };
 
         this.mainPanel = this.createMainPanel();
         this.topPanel = this.createTopPanel();
@@ -578,6 +582,14 @@ export class ApplicationShell extends Widget {
                 }
             }
         });
+
+        dockPanel.node.addEventListener('dblclick', event => {
+            const el = event.target as Element;
+            if (el.id === MAIN_AREA_ID || el.classList.contains('p-TabBar-content')) {
+                this.onDidDoubleClickMainAreaEmitter.fire();
+            }
+        });
+
         const handler = (e: DragEvent) => {
             if (e.dataTransfer) {
                 e.dataTransfer.dropEffect = 'link';

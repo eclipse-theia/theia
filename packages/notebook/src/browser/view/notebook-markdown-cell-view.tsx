@@ -67,7 +67,7 @@ function MarkdownCell({ markdownRenderer, monacoServices, cell, notebookModel }:
             onDoubleClick={() => cell.requestEdit()}
             // This sets the non React HTML node from the markdown renderers output as a child node to this react component
             // This is currently sadly the best way we have to combine React (Virtual Nodes) and normal dom nodes
-            // the HTML is allready sanitized by the markdown renderer, so we don't need to sanitize it again
+            // the HTML is already sanitized by the markdown renderer, so we don't need to sanitize it again
             dangerouslySetInnerHTML={{ __html: markdownContent }} // eslint-disable-line react/no-danger
         />;
 }

@@ -30,7 +30,7 @@ import { NotebookCellActionContribution } from './contributions/notebook-cell-ac
 import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
 import { createNotebookModelContainer, NotebookModel, NotebookModelFactory, NotebookModelProps } from './view-model/notebook-model';
 import { createNotebookCellModelContainer, NotebookCellModel, NotebookCellModelFactory, NotebookCellModelProps } from './view-model/notebook-cell-model';
-import { createNotebookEditorWidgetContainer, NotebookEditorContainerFactory, NotebookEditorProps, NotebookEditorWidget } from './notebook-editor-widget';
+import { createNotebookEditorWidgetContainer, NotebookEditorWidgetContainerFactory, NotebookEditorProps, NotebookEditorWidget } from './notebook-editor-widget';
 import { NotebookCodeCellRenderer } from './view/notebook-code-cell-view';
 import { NotebookMarkdownCellRenderer } from './view/notebook-markdown-cell-view';
 import { NotebookActionsContribution } from './contributions/notebook-actions-contribution';
@@ -39,7 +39,7 @@ import { NotebookExecutionStateService } from './service/notebook-execution-stat
 import { NotebookKernelService } from './service/notebook-kernel-service';
 import { KernelPickerMRUStrategy, NotebookKernelQuickPickService } from './service/notebook-kernel-quick-pick-service';
 import { NotebookKernelHistoryService } from './service/notebook-kernel-history-service';
-import { NotebookEditorWidgetService } from './service/notebook-editor-service';
+import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service';
 import { NotebookRendererMessagingService } from './service/notebook-renderer-messaging-service';
 import { NotebookColorContribution } from './contributions/notebook-color-contribution';
 import { NotebookCellContextManager } from './service/notebook-cell-context-manager';
@@ -83,7 +83,7 @@ export default new ContainerModule(bind => {
     bind(NotebookMarkdownCellRenderer).toSelf().inSingletonScope();
     bind(NotebookMainToolbarRenderer).toSelf().inSingletonScope();
 
-    bind(NotebookEditorContainerFactory).toFactory(ctx => (props: NotebookEditorProps) =>
+    bind(NotebookEditorWidgetContainerFactory).toFactory(ctx => (props: NotebookEditorProps) =>
         createNotebookEditorWidgetContainer(ctx.container, props).get(NotebookEditorWidget)
     );
     bind(NotebookModelFactory).toFactory(ctx => (props: NotebookModelProps) =>

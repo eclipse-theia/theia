@@ -18,9 +18,10 @@
 
 import debounce = require('lodash.debounce');
 import { injectable, inject, optional } from 'inversify';
-import { MAIN_MENU_BAR, SETTINGS_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU } from '../common/menu';
+import { MAIN_MENU_BAR, MANAGE_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
-import { FrontendApplication, FrontendApplicationContribution, OnWillStopAction } from './frontend-application';
+import { FrontendApplication } from './frontend-application';
+import { FrontendApplicationContribution, OnWillStopAction } from './frontend-application-contribution';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
 import { UriAwareCommandHandler } from '../common/uri-command-handler';
 import { SelectionService } from '../common/selection-service';
@@ -100,8 +101,10 @@ export namespace CommonMenus {
     export const VIEW_LAYOUT = [...VIEW, '3_layout'];
     export const VIEW_TOGGLE = [...VIEW, '4_toggle'];
 
-    export const SETTINGS_OPEN = [...SETTINGS_MENU, '1_settings_open'];
-    export const SETTINGS__THEME = [...SETTINGS_MENU, '2_settings_theme'];
+    export const MANAGE_GENERAL = [...MANAGE_MENU, '1_manage_general'];
+    export const MANAGE_SETTINGS = [...MANAGE_MENU, '2_manage_settings'];
+    export const MANAGE_SETTINGS_THEMES = [...MANAGE_SETTINGS, '1_manage_settings_themes'];
+
     // last menu item
     export const HELP = [...MAIN_MENU_BAR, '9_help'];
 
@@ -113,6 +116,7 @@ export namespace CommonCommands {
     export const VIEW_CATEGORY = 'View';
     export const CREATE_CATEGORY = 'Create';
     export const PREFERENCES_CATEGORY = 'Preferences';
+    export const MANAGE_CATEGORY = 'Manage';
     export const FILE_CATEGORY_KEY = nls.getDefaultKey(FILE_CATEGORY);
     export const VIEW_CATEGORY_KEY = nls.getDefaultKey(VIEW_CATEGORY);
     export const PREFERENCES_CATEGORY_KEY = nls.getDefaultKey(PREFERENCES_CATEGORY);
@@ -428,6 +432,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     protected pinnedKey: ContextKey<boolean>;
 
     async configure(app: FrontendApplication): Promise<void> {
+        // FIXME: This request blocks valuable startup time (~200ms).
         const configDirUri = await this.environments.getConfigDirUri();
         // Global settings
         this.encodingRegistry.registerOverride({
@@ -454,16 +459,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         app.shell.leftPanelHandler.addBottomMenu({
             id: 'settings-menu',
             iconClass: 'codicon codicon-settings-gear',
-            title: nls.localizeByDefault(CommonCommands.PREFERENCES_CATEGORY),
-            menuPath: SETTINGS_MENU,
-            order: 0,
+            title: nls.localizeByDefault(CommonCommands.MANAGE_CATEGORY),
+            menuPath: MANAGE_MENU,
+            order: 1,
         });
         const accountsMenu = {
             id: 'accounts-menu',
             iconClass: 'codicon codicon-person',
             title: nls.localizeByDefault('Accounts'),
             menuPath: ACCOUNTS_MENU,
-            order: 1,
+            order: 0,
         };
         this.authenticationService.onDidRegisterAuthenticationProvider(() => {
             app.shell.leftPanelHandler.addBottomMenu(accountsMenu);
@@ -699,11 +704,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.SELECT_ICON_THEME.id
         });
 
-        registry.registerMenuAction(CommonMenus.SETTINGS__THEME, {
-            commandId: CommonCommands.SELECT_COLOR_THEME.id
+        registry.registerSubmenu(CommonMenus.MANAGE_SETTINGS_THEMES, nls.localizeByDefault('Themes'), { order: 'a50' });
+        registry.registerMenuAction(CommonMenus.MANAGE_SETTINGS_THEMES, {
+            commandId: CommonCommands.SELECT_COLOR_THEME.id,
+            order: '0'
         });
-        registry.registerMenuAction(CommonMenus.SETTINGS__THEME, {
-            commandId: CommonCommands.SELECT_ICON_THEME.id
+        registry.registerMenuAction(CommonMenus.MANAGE_SETTINGS_THEMES, {
+            commandId: CommonCommands.SELECT_ICON_THEME.id,
+            order: '1'
         });
 
         registry.registerSubmenu(CommonMenus.VIEW_APPEARANCE_SUBMENU, nls.localizeByDefault('Appearance'));

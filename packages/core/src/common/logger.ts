@@ -261,6 +261,11 @@ export class Logger implements ILogger {
                 }
             });
         });
+
+        /* Refetch log level if overall config in backend changed. */
+        this.loggerWatcher.onLogConfigChanged(() => {
+            this._logLevel = this.created.then(_ => this.server.getLogLevel(this.name));
+        });
     }
 
     setLogLevel(logLevel: number): Promise<void> {

@@ -102,7 +102,6 @@ import {
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-protocol';
-import { ArgumentProcessor } from '../plugin/command-registry';
 import * as files from '@theia/filesystem/lib/common/files';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
@@ -112,7 +111,7 @@ import type {
     TimelineChangeEvent,
     TimelineProviderDescriptor
 } from '@theia/timeline/lib/common/timeline-model';
-import { SerializableEnvironmentVariableCollection, SerializableExtensionEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
+import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { ThemeType } from '@theia/core/lib/common/theme';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { isString, isObject, PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
@@ -122,6 +121,10 @@ import * as notebookCommon from '@theia/notebook/lib/common';
 import { CellExecutionUpdateType, CellRange, NotebookCellExecutionState } from '@theia/notebook/lib/common';
 import { LanguagePackBundle } from './language-pack-service';
 import { AccessibilityInformation } from '@theia/core/lib/common/accessibility';
+
+import { TreeDelta } from '@theia/test/lib/common/tree-delta';
+import { TestItemDTO, TestOutputDTO, TestRunDTO, TestRunProfileDTO, TestRunRequestDTO, TestStateChangeDTO } from './test-types';
+import { ArgumentProcessor } from './commands';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -270,6 +273,8 @@ export interface CommandRegistryMain {
     $executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined>;
     $getCommands(): PromiseLike<string[]>;
     $getKeyBinding(commandId: string): PromiseLike<theia.CommandKeyBinding[] | undefined>;
+
+    registerArgumentProcessor(processor: ArgumentProcessor): void;
 }
 
 export interface CommandRegistryExt {
@@ -287,10 +292,10 @@ export interface TerminalServiceExt {
     $terminalSizeChanged(id: string, cols: number, rows: number): void;
     $currentTerminalChanged(id: string | undefined): void;
     $terminalStateChanged(id: string): void;
-    $initEnvironmentVariableCollections(collections: [string, SerializableEnvironmentVariableCollection][]): void;
+    $initEnvironmentVariableCollections(collections: [string, string, boolean, SerializableEnvironmentVariableCollection][]): void;
     $provideTerminalLinks(line: string, terminalId: string, token: theia.CancellationToken): Promise<ProvidedTerminalLink[]>;
     $handleTerminalLink(link: ProvidedTerminalLink): Promise<void>;
-    getEnvironmentVariableCollection(extensionIdentifier: string): theia.EnvironmentVariableCollection;
+    getEnvironmentVariableCollection(extensionIdentifier: string): theia.GlobalEnvironmentVariableCollection;
 }
 export interface OutputChannelRegistryExt {
     createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel,
@@ -408,7 +413,7 @@ export interface TerminalServiceMain {
      */
     $disposeByTerminalId(id: number, waitOnExit?: boolean | string): void;
 
-    $setEnvironmentVariableCollection(persistent: boolean, collection: SerializableExtensionEnvironmentVariableCollection): void;
+    $setEnvironmentVariableCollection(persistent: boolean, extensionIdentifier: string, rootUri: string, collection: SerializableEnvironmentVariableCollection): void;
 
     /**
      * Set the terminal widget name.
@@ -2142,6 +2147,60 @@ export interface TelemetryExt {
 
 // endregion
 
+// based from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/workbench/api/common/extHostTesting.ts
+export const enum TestingResourceExt {
+    Workspace,
+    TextDocument
+}
+
+// based from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/workbench/api/common/extHostTesting.ts
+export interface TestingExt {
+    $onCancelTestRun(controllerId: string, runId: string): void;
+    /** Configures a test run config. */
+    $onConfigureRunProfile(controllerId: string, profileId: string): void;
+
+    $onRunControllerTests(reqs: TestRunRequestDTO[]): void;
+
+    /** Asks the controller to refresh its tests */
+    $refreshTests(controllerId: string, token: CancellationToken): Promise<void>;
+
+    $onResolveChildren(controllerId: string, path: string[]): void;
+}
+
+export interface TestControllerUpdate {
+    label: string;
+    canRefresh: boolean;
+    canResolve: boolean;
+}
+
+// based from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/workbench/api/common/extHostTesting.ts
+export interface TestingMain {
+    // --- test lifecycle:
+
+    /** Registers that there's a test controller with the given ID */
+    $registerTestController(controllerId: string, label: string): void;
+    /** Updates the label of an existing test controller. */
+    $updateController(controllerId: string, patch: Partial<TestControllerUpdate>): void;
+    /** Diposes of the test controller with the given ID */
+    $unregisterTestController(controllerId: string): void;
+    $notifyDelta(controllerId: string, diff: TreeDelta<string, TestItemDTO>[]): void;
+
+    // --- test run configurations:
+
+    /** Called when a new test run profile is available */
+    $notifyTestRunProfileCreated(controllerId: string, profile: TestRunProfileDTO): void;
+    /** Updates an existing test run profile */
+    $updateTestRunProfile(controllerId: string, profileId: string, update: Partial<TestRunProfileDTO>): void;
+    /** Removes a previously-published test run profile */
+    $removeTestRunProfile(controllerId: string, profileId: string): void;
+
+    // Test runs
+
+    $notifyTestRunCreated(controllerId: string, run: TestRunDTO): void;
+    $notifyTestStateChanged(controllerId: string, runId: string, stateChanges: TestStateChangeDTO[], outputChanges: TestOutputDTO[]): void;
+    $notifyTestRunEnded(controllerId: string, runId: string): void;
+}
+
 export const PLUGIN_RPC_CONTEXT = {
     AUTHENTICATION_MAIN: <ProxyIdentifier<AuthenticationMain>>createProxyIdentifier<AuthenticationMain>('AuthenticationMain'),
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
@@ -2185,6 +2244,7 @@ export const PLUGIN_RPC_CONTEXT = {
     TABS_MAIN: <ProxyIdentifier<TabsMain>>createProxyIdentifier<TabsMain>('TabsMain'),
     TELEMETRY_MAIN: <ProxyIdentifier<TelemetryMain>>createProxyIdentifier<TelemetryMain>('TelemetryMain'),
     LOCALIZATION_MAIN: <ProxyIdentifier<LocalizationMain>>createProxyIdentifier<LocalizationMain>('LocalizationMain'),
+    TESTING_MAIN: createProxyIdentifier<TestingMain>('TestingMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -2225,7 +2285,8 @@ export const MAIN_RPC_CONTEXT = {
     THEMING_EXT: createProxyIdentifier<ThemingExt>('ThemingExt'),
     COMMENTS_EXT: createProxyIdentifier<CommentsExt>('CommentsExt'),
     TABS_EXT: createProxyIdentifier<TabsExt>('TabsExt'),
-    TELEMETRY_EXT: createProxyIdentifier<TelemetryExt>('TelemetryExt)')
+    TELEMETRY_EXT: createProxyIdentifier<TelemetryExt>('TelemetryExt)'),
+    TESTING_EXT: createProxyIdentifier<TestingExt>('TestingExt')
 };
 
 export interface TasksExt {
@@ -2423,6 +2484,7 @@ export interface CellExecuteOutputEditDto {
 export interface CellExecuteOutputItemEditDto {
     editType: CellExecutionUpdateType.OutputItems;
     append?: boolean;
+    outputId: string;
     items: NotebookOutputItemDto[];
 }
 
@@ -2464,7 +2526,7 @@ export interface NotebooksExt extends NotebookDocumentsAndEditorsExt {
 }
 
 export interface NotebooksMain extends Disposable {
-    $registerNotebookSerializer(handle: number, extension: notebookCommon.NotebookExtensionDescription, viewType: string, options: notebookCommon.TransientOptions): void;
+    $registerNotebookSerializer(handle: number, viewType: string, options: notebookCommon.TransientOptions): void;
     $unregisterNotebookSerializer(handle: number): void;
 
     $registerNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined, viewType: string): Promise<void>;

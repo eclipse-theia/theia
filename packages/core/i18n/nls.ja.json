@@ -434,6 +434,7 @@
     "vsx-registry": {
       "downloadCount": "ダウンロード回数{0}",
       "errorFetching": "拡張機能の取得にエラーが発生しました。",
+      "errorFetchingConfigurationHint": "これは、ネットワーク設定の問題が原因である可能性がある。",
       "failedInstallingVSIX": "VSIXから{0} のインストールに失敗しました。",
       "invalidVSIX": "選択されたファイルは、有効な \"*.vsix \"プラグインではありません。",
       "license": "ライセンス{0}",

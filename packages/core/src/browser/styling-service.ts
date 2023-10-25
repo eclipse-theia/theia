@@ -19,7 +19,7 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { Theme, ThemeType } from '../common/theme';
 import { ColorRegistry } from './color-registry';
 import { DecorationStyle } from './decoration-style';
-import { FrontendApplicationContribution } from './frontend-application';
+import { FrontendApplicationContribution } from './frontend-application-contribution';
 import { ThemeService } from './theming';
 import { Disposable } from '../common';
 

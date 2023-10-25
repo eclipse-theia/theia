@@ -59,6 +59,11 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
             commandId: quickCommand.id,
             label: nls.localizeByDefault('Command Palette...')
         });
+        menus.registerMenuAction(CommonMenus.MANAGE_GENERAL, {
+            commandId: quickCommand.id,
+            label: nls.localizeByDefault('Command Palette...'),
+            order: '0'
+        });
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {

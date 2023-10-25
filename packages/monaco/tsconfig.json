@@ -23,6 +23,9 @@
     },
     {
       "path": "../outline-view"
+    },
+    {
+      "path": "../workspace"
     }
   ]
 }

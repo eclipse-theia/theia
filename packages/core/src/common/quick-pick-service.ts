@@ -54,6 +54,7 @@ export interface QuickPickItem {
     description?: string;
     detail?: string;
     keySequence?: KeySequence;
+    iconPath?: URI | Uri | { light?: URI | Uri; dark: URI | Uri } | { id: string };
     iconClasses?: string[];
     alwaysShow?: boolean;
     highlights?: QuickPickItemHighlights;

@@ -78,6 +78,9 @@
       "path": "../terminal"
     },
     {
+      "path": "../test"
+    },
+    {
       "path": "../timeline"
     },
     {

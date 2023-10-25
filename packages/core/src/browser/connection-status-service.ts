@@ -17,7 +17,7 @@
 import { inject, injectable, optional, postConstruct } from 'inversify';
 import { ILogger } from '../common/logger';
 import { Event, Emitter } from '../common/event';
-import { DefaultFrontendApplicationContribution } from './frontend-application';
+import { DefaultFrontendApplicationContribution } from './frontend-application-contribution';
 import { StatusBar, StatusBarAlignment } from './status-bar/status-bar';
 import { WebSocketConnectionProvider } from './messaging/ws-connection-provider';
 import { Disposable, DisposableCollection, nls } from '../common';

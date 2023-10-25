@@ -434,6 +434,7 @@
     "vsx-registry": {
       "downloadCount": "Počet stažení: {0}",
       "errorFetching": "Chyba při načítání rozšíření.",
+      "errorFetchingConfigurationHint": "To může být způsobeno problémy s konfigurací sítě.",
       "failedInstallingVSIX": "Nepodařilo se nainstalovat {0} z VSIX.",
       "invalidVSIX": "Vybraný soubor není platný zásuvný modul \"*.vsix\".",
       "license": "Licence: {0}",

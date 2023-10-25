@@ -22,7 +22,8 @@ import {
     MenuModelRegistry, MAIN_MENU_BAR, MenuPath, MenuNode, MenuCommandExecutor, CompoundMenuNode, CompoundMenuNodeRole, CommandMenuNode
 } from '../../common';
 import { KeybindingRegistry } from '../keybinding';
-import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
+import { FrontendApplication } from '../frontend-application';
+import { FrontendApplicationContribution } from '../frontend-application-contribution';
 import { ContextKeyService, ContextMatcher } from '../context-key-service';
 import { ContextMenuContext } from './context-menu-context';
 import { waitForRevealed } from '../widgets';

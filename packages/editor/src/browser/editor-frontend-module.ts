@@ -19,13 +19,12 @@ import '../../src/browser/language-status/editor-language-status.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { OpenHandler, WidgetFactory, FrontendApplicationContribution, KeybindingContext, KeybindingContribution } from '@theia/core/lib/browser';
+import { OpenHandler, WidgetFactory, FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
 import { VariableContribution } from '@theia/variable-resolver/lib/browser';
 import { EditorManager, EditorAccess, ActiveEditorAccess, CurrentEditorAccess } from './editor-manager';
 import { EditorContribution } from './editor-contribution';
 import { EditorMenuContribution } from './editor-menu';
 import { EditorCommandContribution } from './editor-command';
-import { EditorTextFocusContext, StrictEditorTextFocusContext, DiffEditorTextFocusContext } from './editor-keybinding-contexts';
 import { EditorKeybindingContribution } from './editor-keybinding';
 import { bindEditorPreferences } from './editor-preferences';
 import { EditorWidgetFactory } from './editor-widget-factory';
@@ -55,10 +54,6 @@ export default new ContainerModule(bind => {
     bind(EditorMenuContribution).toSelf().inSingletonScope();
     bind(MenuContribution).toService(EditorMenuContribution);
 
-    bind(StrictEditorTextFocusContext).toSelf().inSingletonScope();
-    bind(KeybindingContext).toService(StrictEditorTextFocusContext);
-    bind(KeybindingContext).to(EditorTextFocusContext).inSingletonScope();
-    bind(KeybindingContext).to(DiffEditorTextFocusContext).inSingletonScope();
     bind(EditorKeybindingContribution).toSelf().inSingletonScope();
     bind(KeybindingContribution).toService(EditorKeybindingContribution);
 

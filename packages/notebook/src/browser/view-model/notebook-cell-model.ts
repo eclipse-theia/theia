@@ -24,11 +24,12 @@ import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import {
     CellInternalMetadataChangedEvent, CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata,
-    NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput, CellData, NotebookCell
+    NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput, CellData, NotebookCell, CellOutputItem
 } from '../../common';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
 
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
+export type NotebookCellModelFactory = (props: NotebookCellModelProps) => NotebookCellModel;
 
 export function createNotebookCellModelContainer(parent: interfaces.Container, props: NotebookCellModelProps,
     notebookCellContextManager: new (...args: never[]) => unknown): interfaces.Container {
@@ -69,8 +70,8 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     protected readonly onDidChangeOutputsEmitter = new Emitter<NotebookCellOutputsSplice>();
     readonly onDidChangeOutputs: Event<NotebookCellOutputsSplice> = this.onDidChangeOutputsEmitter.event;
 
-    protected readonly onDidChangeOutputItemsEmitter = new Emitter<void>();
-    readonly onDidChangeOutputItems: Event<void> = this.onDidChangeOutputItemsEmitter.event;
+    protected readonly onDidChangeOutputItemsEmitter = new Emitter<CellOutput>();
+    readonly onDidChangeOutputItems: Event<CellOutput> = this.onDidChangeOutputItemsEmitter.event;
 
     protected readonly onDidChangeContentEmitter = new Emitter<'content' | 'language' | 'mime'>();
     readonly onDidChangeContent: Event<'content' | 'language' | 'mime'> = this.onDidChangeContentEmitter.event;
@@ -134,7 +135,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         return this.htmlContext;
     }
 
-    get textBuffer(): string {
+    get text(): string {
         return this.textModel ? this.textModel.getText() : this.source;
     }
 
@@ -215,7 +216,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
                 const currentOutput = this.outputs[splice.start + i];
                 const newOutput = splice.newOutputs[i];
 
-                this.replaceOutputItems(currentOutput.outputId, newOutput);
+                this.replaceOutputData(currentOutput.outputId, newOutput);
             }
 
             this.outputs.splice(splice.start + commonLen, splice.deleteCount - commonLen, ...splice.newOutputs.slice(commonLen).map(op => new NotebookCellOutputModel(op)));
@@ -226,15 +227,31 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         }
     }
 
-    replaceOutputItems(outputId: string, newOutputItem: CellOutput): boolean {
+    replaceOutputData(outputId: string, newOutputData: CellOutput): boolean {
         const output = this.outputs.find(out => out.outputId === outputId);
 
         if (!output) {
             return false;
         }
 
-        output.replaceData(newOutputItem);
-        this.onDidChangeOutputItemsEmitter.fire();
+        output.replaceData(newOutputData);
+        this.onDidChangeOutputItemsEmitter.fire(output);
+        return true;
+    }
+
+    changeOutputItems(outputId: string, append: boolean, items: CellOutputItem[]): boolean {
+        const output = this.outputs.find(out => out.outputId === outputId);
+
+        if (!output) {
+            return false;
+        }
+
+        if (append) {
+            output.appendData(items);
+        } else {
+            output.replaceData({ outputId: outputId, outputs: items, metadata: output.metadata });
+        }
+        this.onDidChangeOutputItemsEmitter.fire(output);
         return true;
     }
 
@@ -243,7 +260,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
             cellKind: this.cellKind,
             language: this.language,
             outputs: this.outputs.map(output => output.getData()),
-            source: this.textBuffer,
+            source: this.text,
             collapseState: this.props.collapseState,
             internalMetadata: this.internalMetadata,
             metadata: this.metadata

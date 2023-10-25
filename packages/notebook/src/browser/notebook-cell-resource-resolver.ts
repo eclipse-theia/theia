@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Emitter, Resource, ResourceReadOptions, ResourceResolver, ResourceVersion, URI } from '@theia/core';
+import { Emitter, Resource, ResourceReadOptions, ResourceResolver, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { CellUri } from '../common';
 import { NotebookService } from './service/notebook-service';
@@ -24,10 +24,6 @@ export class NotebookCellResource implements Resource {
 
     protected readonly didChangeContentsEmitter = new Emitter<void>();
     readonly onDidChangeContents = this.didChangeContentsEmitter.event;
-
-    version?: ResourceVersion | undefined;
-    encoding?: string | undefined;
-    isReadonly?: boolean | undefined;
 
     private cell: NotebookCellModel;
 

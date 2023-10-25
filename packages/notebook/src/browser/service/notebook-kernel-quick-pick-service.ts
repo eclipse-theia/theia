@@ -18,7 +18,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-
 import { ArrayUtils, Command, CommandService, DisposableCollection, Event, nls, QuickInputButton, QuickInputService, QuickPickInput, QuickPickItem, URI, } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { NotebookKernelService, NotebookKernel, NotebookKernelMatchResult, SourceCommand } from './notebook-kernel-service';
@@ -216,7 +215,7 @@ export abstract class NotebookKernelQuickPickServiceImpl {
 
         if (isSourcePick(pick)) {
             // selected explicitly, it should trigger the execution?
-            pick.action.run();
+            pick.action.run(this.commandService);
         }
 
         return true;
@@ -316,7 +315,7 @@ export class KernelPickerMRUStrategy extends NotebookKernelQuickPickServiceImpl 
             quickPick.onDidTriggerItemButton(async e => {
 
                 if (isKernelSourceQuickPickItem(e.item) && e.item.documentation !== undefined) {
-                    const uri: URI | undefined = URI.isUri(e.item.documentation) ? new URI(e.item.documentation) : await this.commandService.executeCommand(e.item.documentation);
+                    const uri: URI | undefined = this.isUri(e.item.documentation) ? new URI(e.item.documentation) : await this.commandService.executeCommand(e.item.documentation);
                     if (uri) {
                         (await this.openerService.getOpener(uri, { openExternal: true })).open(uri, { openExternal: true });
                     }
@@ -384,9 +383,9 @@ export class KernelPickerMRUStrategy extends NotebookKernelQuickPickServiceImpl 
                 await this.selectOneKernel(notebook, selectedKernelPickItem.source, selectedKernelPickItem.kernels);
                 return true;
             } else if (isSourcePick(selectedKernelPickItem)) {
-                // selected explicilty, it should trigger the execution?
+                // selected explicitly, it should trigger the execution?
                 try {
-                    await selectedKernelPickItem.action.run();
+                    await selectedKernelPickItem.action.run(this.commandService);
                     return true;
                 } catch (ex) {
                     return false;
@@ -416,18 +415,22 @@ export class KernelPickerMRUStrategy extends NotebookKernelQuickPickServiceImpl 
         return false;
     }
 
+    private isUri(value: string): boolean {
+        return /^(?<scheme>\w[\w\d+.-]*):/.test(value);
+    }
+
     private async calculateKernelSources(editor: NotebookModel): Promise<QuickPickInput<KernelQuickPickItem>[]> {
         const notebook: NotebookModel = editor;
 
         const actions = await this.notebookKernelService.getKernelSourceActionsFromProviders(notebook);
         const matchResult = this.getMatchingResult(notebook);
 
-        const others = matchResult.all.filter(item => item.extension !== JUPYTER_EXTENSION_ID);
+        const others = matchResult.all.filter(item => item.extensionId !== JUPYTER_EXTENSION_ID);
         const quickPickItems: QuickPickInput<KernelQuickPickItem>[] = [];
 
         // group controllers by extension
-        for (const group of ArrayUtils.groupBy(others, (a, b) => a.extension === b.extension ? 0 : 1)) {
-            const source = group[0].extension;
+        for (const group of ArrayUtils.groupBy(others, (a, b) => a.extensionId === b.extensionId ? 0 : 1)) {
+            const source = group[0].extensionId;
             if (group.length > 1) {
                 quickPickItems.push({
                     label: source,

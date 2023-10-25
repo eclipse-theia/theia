@@ -72,11 +72,6 @@ export interface TransientOptions {
     readonly transientDocumentMetadata: TransientDocumentMetadata;
 }
 
-export interface NotebookExtensionDescription {
-    readonly id: string;
-    readonly location: string | undefined;
-}
-
 export interface CellOutputItem {
     readonly mime: string;
     readonly data: BinaryBuffer;
@@ -101,9 +96,9 @@ export interface NotebookCell {
     outputs: CellOutput[];
     metadata: NotebookCellMetadata;
     internalMetadata: NotebookCellInternalMetadata;
-    textBuffer: string;
+    text: string;
     onDidChangeOutputs?: Event<NotebookCellOutputsSplice>;
-    onDidChangeOutputItems?: Event<void>;
+    onDidChangeOutputItems?: Event<CellOutput>;
     onDidChangeLanguage: Event<string>;
     onDidChangeMetadata: Event<void>;
     onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent>;
@@ -314,6 +309,7 @@ export interface CellExecuteOutputEdit {
 export interface CellExecuteOutputItemEdit {
     editType: CellExecutionUpdateType.OutputItems;
     append?: boolean;
+    outputId: string,
     items: CellOutputItem[];
 }
 
@@ -342,6 +338,7 @@ export interface CellOutputEditByHandle {
 export interface CellOutputItemEdit {
     editType: CellEditType.OutputItems;
     items: CellOutputItem[];
+    outputId: string;
     append?: boolean;
 }
 

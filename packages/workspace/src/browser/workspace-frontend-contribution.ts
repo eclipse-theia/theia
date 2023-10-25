@@ -39,7 +39,6 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { UntitledWorkspaceExitDialog } from './untitled-workspace-exit-dialog';
 import { FilesystemSaveResourceService } from '@theia/filesystem/lib/browser/filesystem-save-resource-service';
 import { StopReason } from '@theia/core/lib/common/frontend-application-state';
-import * as monaco from '@theia/monaco-editor-core';
 
 export enum WorkspaceStates {
     /**
@@ -78,13 +77,6 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
 
     configure(): void {
         const workspaceExtensions = this.workspaceFileService.getWorkspaceFileExtensions();
-        monaco.languages.register({
-            id: 'jsonc',
-            'aliases': [
-                'JSON with Comments'
-            ],
-            'extensions': workspaceExtensions.map(ext => `.${ext}`)
-        });
         for (const extension of workspaceExtensions) {
             this.encodingRegistry.registerOverride({ encoding: UTF8, extension });
         }
@@ -262,50 +254,76 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
      * This is the generic `Open` method. Opens files and directories too. Resolves to the opened URI.
      * Except when you are on either Windows or Linux `AND` running in electron. If so, it opens a file.
      */
-    protected async doOpen(): Promise<URI | undefined> {
+    protected async doOpen(): Promise<URI[] | undefined> {
         if (!isOSX && this.isElectron()) {
             return this.doOpenFile();
         }
         const [rootStat] = await this.workspaceService.roots;
-        const destinationUri = await this.fileDialogService.showOpenDialog({
+        let selectedUris = await this.fileDialogService.showOpenDialog({
             title: WorkspaceCommands.OPEN.dialogLabel,
             canSelectFolders: true,
-            canSelectFiles: true
+            canSelectFiles: true,
+            canSelectMany: true
         }, rootStat);
-        if (destinationUri && this.getCurrentWorkspaceUri()?.toString() !== destinationUri.toString()) {
-            const destination = await this.fileService.resolve(destinationUri);
-            if (destination.isDirectory) {
-                this.workspaceService.open(destinationUri);
-            } else {
-                await open(this.openerService, destinationUri);
+        if (selectedUris) {
+            if (!Array.isArray(selectedUris)) {
+                selectedUris = [selectedUris];
             }
-            return destinationUri;
+            const folders: URI[] = [];
+            //  Only open files then open all folders in a new workspace, as done with Electron see doOpenFolder.
+            for (const uri of selectedUris) {
+                const destination = await this.fileService.resolve(uri);
+                if (destination.isDirectory) {
+                    if (this.getCurrentWorkspaceUri()?.toString() !== uri.toString()) {
+                        folders.push(uri);
+                    }
+                } else {
+                    await open(this.openerService, uri);
+                }
+            }
+            if (folders.length > 0) {
+                const openableURI = await this.getOpenableWorkspaceUri(folders);
+                if (openableURI && (!this.workspaceService.workspace || !openableURI.isEqual(this.workspaceService.workspace.resource))) {
+                    this.workspaceService.open(openableURI);
+                }
+            }
+
+            return selectedUris;
         }
         return undefined;
     }
 
     /**
-     * Opens a file after prompting the `Open File` dialog. Resolves to `undefined`, if
+     * Opens a set of files after prompting the `Open File` dialog. Resolves to `undefined`, if
      *  - the workspace root is not set,
      *  - the file to open does not exist, or
      *  - it was not a file, but a directory.
      *
-     * Otherwise, resolves to the URI of the file.
+     * Otherwise, resolves to the set of URIs of the files.
      */
-    protected async doOpenFile(): Promise<URI | undefined> {
+    protected async doOpenFile(): Promise<URI[] | undefined> {
         const props: OpenFileDialogProps = {
             title: WorkspaceCommands.OPEN_FILE.dialogLabel,
             canSelectFolders: false,
-            canSelectFiles: true
+            canSelectFiles: true,
+            canSelectMany: true
         };
         const [rootStat] = await this.workspaceService.roots;
-        const destinationFileUri = await this.fileDialogService.showOpenDialog(props, rootStat);
-        if (destinationFileUri) {
-            const destinationFile = await this.fileService.resolve(destinationFileUri);
-            if (!destinationFile.isDirectory) {
-                await open(this.openerService, destinationFileUri);
-                return destinationFileUri;
+        let selectedFilesUris: MaybeArray<URI> | undefined = await this.fileDialogService.showOpenDialog(props, rootStat);
+        if (selectedFilesUris) {
+            if (!Array.isArray(selectedFilesUris)) {
+                selectedFilesUris = [selectedFilesUris];
             }
+
+            const result = [];
+            for (const uri of selectedFilesUris) {
+                const destination = await this.fileService.resolve(uri);
+                if (destination.isFile) {
+                    await open(this.openerService, uri);
+                    result.push(uri);
+                }
+            }
+            return result;
         }
         return undefined;
     }
@@ -329,11 +347,11 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         const [rootStat] = await this.workspaceService.roots;
         const targetFolders = await this.fileDialogService.showOpenDialog(props, rootStat);
         if (targetFolders) {
-            const openableURI = await this.getOpenableWorkspaceUri(targetFolders);
-            if (openableURI) {
-                if (!this.workspaceService.workspace || !openableURI.isEqual(this.workspaceService.workspace.resource)) {
-                    this.workspaceService.open(openableURI);
-                    return openableURI;
+            const openableUri = await this.getOpenableWorkspaceUri(targetFolders);
+            if (openableUri) {
+                if (!this.workspaceService.workspace || !openableUri.isEqual(this.workspaceService.workspace.resource)) {
+                    this.workspaceService.open(openableUri);
+                    return openableUri;
                 }
             };
         }

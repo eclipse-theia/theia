@@ -101,6 +101,10 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         args.add('--hidden');
         args.add('--json');
 
+        if (options?.multiline) {
+            args.add('--multiline');
+        }
+
         if (options?.matchCase) {
             args.add('--case-sensitive');
         } else {

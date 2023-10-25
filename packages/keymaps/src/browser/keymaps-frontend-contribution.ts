@@ -23,10 +23,12 @@ import {
     MenuModelRegistry
 } from '@theia/core/lib/common';
 import { AbstractViewContribution, codicon, Widget } from '@theia/core/lib/browser';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { CommonCommands, CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { KeymapsService } from './keymaps-service';
+import { Keybinding } from '@theia/core/lib/common/keybinding';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
-import { KeybindingWidget } from './keybindings-widget';
+import { KeybindingItem, KeybindingWidget } from './keybindings-widget';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { nls } from '@theia/core/lib/common/nls';
 
@@ -49,6 +51,51 @@ export namespace KeymapsCommands {
         id: 'keymaps.clearSearch',
         iconClass: codicon('clear-all')
     };
+    export const COPY_KEYBINDING = Command.toLocalizedCommand({
+        id: 'keymaps:keybinding.copy',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Copy Keybinding'
+    }, 'theia/keymaps/keybinding/copy', CommonCommands.PREFERENCES_CATEGORY_KEY);
+    export const COPY_COMMAND_ID = Command.toLocalizedCommand({
+        id: 'keymaps:keybinding.copyCommandId',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Copy Keybinding Command ID'
+    }, 'theia/keymaps/keybinding/copyCommandId', CommonCommands.PREFERENCES_CATEGORY_KEY);
+    export const COPY_COMMAND_TITLE = Command.toLocalizedCommand({
+        id: 'keymaps:keybinding.copyCommandTitle',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Copy Keybinding Command Title'
+    }, 'theia/keymaps/keybinding/copyCommandTitle', CommonCommands.PREFERENCES_CATEGORY_KEY);
+    export const EDIT_KEYBINDING = Command.toLocalizedCommand({
+        id: 'keymaps:keybinding.edit',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Edit Keybinding...'
+    }, 'theia/keymaps/keybinding/edit', CommonCommands.PREFERENCES_CATEGORY_KEY);
+    export const EDIT_WHEN_EXPRESSION = Command.toLocalizedCommand({
+        id: 'keymaps:keybinding.editWhenExpression',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Edit Keybinding When Expression...'
+    }, 'theia/keymaps/keybinding/editWhenExpression', CommonCommands.PREFERENCES_CATEGORY_KEY);
+    export const ADD_KEYBINDING = Command.toDefaultLocalizedCommand({
+        id: 'keymaps:keybinding.add',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Add Keybinding...'
+    });
+    export const REMOVE_KEYBINDING = Command.toDefaultLocalizedCommand({
+        id: 'keymaps:keybinding.remove',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Remove Keybinding'
+    });
+    export const RESET_KEYBINDING = Command.toDefaultLocalizedCommand({
+        id: 'keymaps:keybinding.reset',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Reset Keybinding'
+    });
+    export const SHOW_SAME = Command.toDefaultLocalizedCommand({
+        id: 'keymaps:keybinding.showSame',
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Show Same Keybindings'
+    });
 }
 
 @injectable()
@@ -56,6 +103,9 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
 
     @inject(KeymapsService)
     protected readonly keymaps: KeymapsService;
+
+    @inject(ClipboardService)
+    protected readonly clipboard: ClipboardService;
 
     constructor() {
         super({
@@ -86,6 +136,53 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
             isVisible: w => this.withWidget(w, () => true),
             execute: w => this.withWidget(w, widget => widget.clearSearch()),
         });
+        commands.registerCommand(KeymapsCommands.COPY_KEYBINDING, {
+            isEnabled: (...args) => this.withItem(() => true, ...args),
+            isVisible: (...args) => this.withItem(() => true, ...args),
+            execute: (...args) => this.withItem(item => this.clipboard.writeText(
+                JSON.stringify(Keybinding.apiObjectify(KeybindingItem.keybinding(item)), undefined, '  ')
+            ), ...args)
+        });
+        commands.registerCommand(KeymapsCommands.COPY_COMMAND_ID, {
+            isEnabled: (...args) => this.withItem(() => true, ...args),
+            isVisible: (...args) => this.withItem(() => true, ...args),
+            execute: (...args) => this.withItem(item => this.clipboard.writeText(item.command.id), ...args)
+        });
+        commands.registerCommand(KeymapsCommands.COPY_COMMAND_TITLE, {
+            isEnabled: (...args) => this.withItem(item => !!item.command.label, ...args),
+            isVisible: (...args) => this.withItem(() => true, ...args),
+            execute: (...args) => this.withItem(item => this.clipboard.writeText(item.command.label!), ...args)
+        });
+        commands.registerCommand(KeymapsCommands.EDIT_KEYBINDING, {
+            isEnabled: (...args) => this.withWidgetItem(() => true, ...args),
+            isVisible: (...args) => this.withWidgetItem(() => true, ...args),
+            execute: (...args) => this.withWidgetItem((item, widget) => widget.editKeybinding(item), ...args)
+        });
+        commands.registerCommand(KeymapsCommands.EDIT_WHEN_EXPRESSION, {
+            isEnabled: (...args) => this.withWidgetItem(item => !!item.keybinding, ...args),
+            isVisible: (...args) => this.withWidgetItem(() => true, ...args),
+            execute: (...args) => this.withWidgetItem((item, widget) => widget.editWhenExpression(item), ...args)
+        });
+        commands.registerCommand(KeymapsCommands.ADD_KEYBINDING, {
+            isEnabled: (...args) => this.withWidgetItem(item => !!item.keybinding, ...args),
+            isVisible: (...args) => this.withWidgetItem(item => !!item.keybinding, ...args),
+            execute: (...args) => this.withWidgetItem((item, widget) => widget.addKeybinding(item), ...args)
+        });
+        commands.registerCommand(KeymapsCommands.REMOVE_KEYBINDING, {
+            isEnabled: (...args) => this.withItem(item => !!item.keybinding, ...args),
+            isVisible: (...args) => this.withItem(() => true, ...args),
+            execute: (...args) => this.withItem(item => this.keymaps.unsetKeybinding(item.keybinding!), ...args)
+        });
+        commands.registerCommand(KeymapsCommands.RESET_KEYBINDING, {
+            isEnabled: (...args) => this.withWidgetItem((item, widget) => widget.canResetKeybinding(item), ...args),
+            isVisible: (...args) => this.withWidgetItem(() => true, ...args),
+            execute: (...args) => this.withWidgetItem((item, widget) => widget.resetKeybinding(item), ...args)
+        });
+        commands.registerCommand(KeymapsCommands.SHOW_SAME, {
+            isEnabled: (...args) => this.withWidgetItem(item => !!item.keybinding, ...args),
+            isVisible: (...args) => this.withWidgetItem(() => true, ...args),
+            execute: (...args) => this.withWidgetItem((item, widget) => widget.showSameKeybindings(item), ...args)
+        });
     }
 
     override registerMenus(menus: MenuModelRegistry): void {
@@ -94,10 +191,55 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
             label: nls.localizeByDefault('Keyboard Shortcuts'),
             order: 'a20'
         });
-        menus.registerMenuAction(CommonMenus.SETTINGS_OPEN, {
+        menus.registerMenuAction(CommonMenus.MANAGE_SETTINGS, {
             commandId: KeymapsCommands.OPEN_KEYMAPS.id,
             label: nls.localizeByDefault('Keyboard Shortcuts'),
-            order: 'a20'
+            order: 'a30'
+        });
+        menus.registerMenuAction(KeybindingWidget.COPY_MENU, {
+            commandId: KeymapsCommands.COPY_KEYBINDING.id,
+            label: nls.localizeByDefault('Copy'),
+            order: 'a'
+        });
+        menus.registerMenuAction(KeybindingWidget.COPY_MENU, {
+            commandId: KeymapsCommands.COPY_COMMAND_ID.id,
+            label: nls.localizeByDefault('Copy Command ID'),
+            order: 'b'
+        });
+        menus.registerMenuAction(KeybindingWidget.COPY_MENU, {
+            commandId: KeymapsCommands.COPY_COMMAND_TITLE.id,
+            label: nls.localizeByDefault('Copy Command Title'),
+            order: 'c'
+        });
+        menus.registerMenuAction(KeybindingWidget.EDIT_MENU, {
+            commandId: KeymapsCommands.EDIT_KEYBINDING.id,
+            label: nls.localize('theia/keymaps/editKeybinding', 'Edit Keybinding...'),
+            order: 'a'
+        });
+        menus.registerMenuAction(KeybindingWidget.EDIT_MENU, {
+            commandId: KeymapsCommands.EDIT_WHEN_EXPRESSION.id,
+            label: nls.localize('theia/keymaps/editWhenExpression', 'Edit When Expression...'),
+            order: 'b'
+        });
+        menus.registerMenuAction(KeybindingWidget.ADD_MENU, {
+            commandId: KeymapsCommands.ADD_KEYBINDING.id,
+            label: nls.localizeByDefault('Add Keybinding...'),
+            order: 'a'
+        });
+        menus.registerMenuAction(KeybindingWidget.REMOVE_MENU, {
+            commandId: KeymapsCommands.REMOVE_KEYBINDING.id,
+            label: nls.localizeByDefault('Remove Keybinding'),
+            order: 'a'
+        });
+        menus.registerMenuAction(KeybindingWidget.REMOVE_MENU, {
+            commandId: KeymapsCommands.RESET_KEYBINDING.id,
+            label: nls.localizeByDefault('Reset Keybinding'),
+            order: 'b'
+        });
+        menus.registerMenuAction(KeybindingWidget.SHOW_MENU, {
+            commandId: KeymapsCommands.SHOW_SAME.id,
+            label: nls.localizeByDefault('Show Same Keybindings'),
+            order: 'a'
         });
     }
 
@@ -132,6 +274,22 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
     protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), fn: (widget: KeybindingWidget) => T): T | false {
         if (widget instanceof KeybindingWidget && widget.id === KeybindingWidget.ID) {
             return fn(widget);
+        }
+        return false;
+    }
+
+    protected withItem<T>(fn: (item: KeybindingItem, ...rest: unknown[]) => T, ...args: unknown[]): T | false {
+        const [item] = args;
+        if (KeybindingItem.is(item)) {
+            return fn(item, args.slice(1));
+        }
+        return false;
+    }
+
+    protected withWidgetItem<T>(fn: (item: KeybindingItem, widget: KeybindingWidget, ...rest: unknown[]) => T, ...args: unknown[]): T | false {
+        const [item, widget] = args;
+        if (widget instanceof KeybindingWidget && widget.id === KeybindingWidget.ID && KeybindingItem.is(item)) {
+            return fn(item, widget, args.slice(2));
         }
         return false;
     }

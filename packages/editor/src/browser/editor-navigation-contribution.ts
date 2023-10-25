@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { ILogger } from '@theia/core/lib/common/logger';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { EditorCommands } from './editor-command';
 import { EditorWidget } from './editor-widget';
@@ -175,7 +175,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
     }
 
     async onStart(): Promise<void> {
-        await this.restoreState();
+        this.restoreState();
     }
 
     onStop(): void {
