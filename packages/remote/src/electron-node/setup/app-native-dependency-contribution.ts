@@ -17,6 +17,7 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { RemoteNativeDependencyContribution, DownloadOptions, DependencyDownload } from './remote-native-dependency-contribution';
 import { RemotePlatform } from '../remote-types';
+import { OS } from '@theia/core';
 
 @injectable()
 export class AppNativeDependencyContribution implements RemoteNativeDependencyContribution {
@@ -30,7 +31,15 @@ export class AppNativeDependencyContribution implements RemoteNativeDependencyCo
         if (remotePlatform.arch !== 'x64') {
             throw new Error(`Unsupported remote architecture '${remotePlatform.arch}'. Remote support is only available for x64 architectures.`);
         }
-        return `${this.appDownloadUrlBase}/v${theiaVersion}/native-dependencies-${remotePlatform.os}-${remotePlatform.arch}.zip`;
+        let platform: string;
+        if (remotePlatform.os === OS.Type.Windows) {
+            platform = 'win32';
+        } else if (remotePlatform.os === OS.Type.OSX) {
+            platform = 'darwin';
+        } else {
+            platform = 'linux';
+        }
+        return `${this.appDownloadUrlBase}/v${theiaVersion}/native-dependencies-${platform}-${remotePlatform.arch}.zip`;
     }
 
     async download(options: DownloadOptions): Promise<DependencyDownload> {
