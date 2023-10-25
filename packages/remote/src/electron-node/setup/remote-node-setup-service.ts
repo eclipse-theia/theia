@@ -58,7 +58,7 @@ export class RemoteNodeSetupService {
             this.throwPlatformError(platform, 'x64 and x86');
         } else if (platform.os === OS.Type.Linux && !platform.arch.match(/^(x64|armv7l|arm64)$/)) {
             this.throwPlatformError(platform, 'x64, armv7l and arm64');
-        } else if (platform.os === OS.Type.Linux && !platform.arch.match(/^(x64|arm64)$/)) {
+        } else if (platform.os === OS.Type.OSX && !platform.arch.match(/^(x64|arm64)$/)) {
             this.throwPlatformError(platform, 'x64 and arm64');
         }
     }
