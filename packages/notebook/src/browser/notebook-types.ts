@@ -164,3 +164,9 @@ export interface CellPartialInternalMetadataEditByHandle {
     handle: number;
     internalMetadata: NullablePartialNotebookCellInternalMetadata;
 }
+
+export interface NotebookCellOutputsSplice {
+    start: number;
+    deleteCount: number;
+    newOutputs: CellOutput[];
+};

@@ -24,9 +24,10 @@ import { ContextKeyChangeEvent } from '@theia/core/lib/browser/context-key-servi
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import {
-    CellInternalMetadataChangedEvent, CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata,
-    NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput, CellData, CellOutputItem
+    CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata,
+    NotebookCellMetadata, CellOutput, CellData, CellOutputItem
 } from '../../common';
+import { NotebookCellOutputsSplice } from '../notebook-types';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
 
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
@@ -49,6 +50,10 @@ interface NotebookCellContextManager {
     updateCellContext(cell: NotebookCellModel, context: HTMLElement): void;
     dispose(): void;
     onDidChangeContext: Event<ContextKeyChangeEvent>;
+}
+
+export interface CellInternalMetadataChangedEvent {
+    readonly lastRunSuccessChanged?: boolean;
 }
 
 export interface NotebookCell {

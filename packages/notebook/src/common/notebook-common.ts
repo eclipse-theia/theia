@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationToken, Command, Event, URI } from '@theia/core';
+import { Command, URI } from '@theia/core';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { UriComponents } from '@theia/core/lib/common/uri';
@@ -113,27 +113,6 @@ export interface NotebookContributionData {
     displayName: string;
     filenamePattern: (string)[];
     exclusive: boolean;
-}
-
-export interface NotebookCellStatusBarItemList {
-    items: NotebookCellStatusBarItem[];
-    dispose?(): void;
-}
-
-export interface NotebookCellStatusBarItemProvider {
-    viewType: string;
-    onDidChangeStatusBarItems?: Event<void>;
-    provideCellStatusBarItems(uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarItemList | undefined>;
-}
-
-export interface NotebookCellOutputsSplice {
-    start: number /* start */;
-    deleteCount: number /* delete count */;
-    newOutputs: CellOutput[];
-};
-
-export interface CellInternalMetadataChangedEvent {
-    readonly lastRunSuccessChanged?: boolean;
 }
 
 export interface NotebookCellTextModelSplice<T> {
