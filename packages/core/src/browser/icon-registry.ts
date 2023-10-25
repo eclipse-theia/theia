@@ -19,8 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/Microsoft/vscode/blob/main/src/vs/platform/theme/common/iconRegistry.ts
 
-import { injectable } from 'inversify';
-import { Emitter } from '../common/event';
+import { Event } from '../common/event';
 import { URI } from 'vscode-uri';
 
 export interface IconDefinition {
@@ -60,17 +59,40 @@ export interface ThemeColor {
     id: string;
 }
 
-@injectable()
-export abstract class IconRegistry {
-    protected readonly onDidChangeEmitter = new Emitter<void>();
-    readonly onDidChange = this.onDidChangeEmitter.event;
+export const IconRegistry = Symbol('IconRegistry');
+export interface IconRegistry {
+    readonly onDidChange: Event<void>;
+    /**
+     * Register a icon to the registry.
+     * @param id The icon id
+     * @param defaults The default values
+     * @param description The description
+     */
+    registerIcon(id: string, defaults: ThemeIcon | IconDefinition, description?: string): ThemeIcon;
 
-    protected fireDidChange(): void {
-        this.onDidChangeEmitter.fire(undefined);
-    }
+    /**
+     * Deregister a icon from the registry.
+     * @param id The icon id
+     */
+    deregisterIcon(id: string): void;
 
-    abstract registerIcon(id: string, defaults: ThemeIcon | IconDefinition, description?: string): ThemeIcon;
-    abstract deregisterIcon(id: string): void;
-    abstract getIconFont(id: string): IconFontDefinition | undefined;
+    /**
+     * Register a icon font to the registry.
+     * @param id The icon font id
+     * @param definition The icon font definition
+     */
+    registerIconFont(id: string, definition: IconFontDefinition): IconFontDefinition;
+
+    /**
+     * Deregister an icon font from the registry.
+     * @param id The icon font id
+     */
+    deregisterIconFont(id: string): void;
+
+    /**
+     * Get the icon font for the given id
+     * @param id The icon font id
+     */
+    getIconFont(id: string): IconFontDefinition | undefined;
 }
 
