@@ -89,12 +89,17 @@ export class RemoteSetupService {
     }
 
     protected async startApplication(connection: RemoteConnection, platform: RemotePlatform, remotePath: string, nodeDir: string): Promise<number> {
-        const nodeExecutable = this.scriptService.joinPath(platform, nodeDir, 'bin', platform.os === OS.Type.Windows ? 'node.exe' : 'node');
+        const nodeExecutable = this.scriptService.joinPath(platform, nodeDir, ...(platform.os === OS.Type.Windows ? ['node.exe'] : ['bin', 'node']));
         const mainJsFile = this.scriptService.joinPath(platform, remotePath, 'lib', 'backend', 'main.js');
         const localAddressRegex = /listening on http:\/\/127.0.0.1:(\d+)/;
+        let prefix = '';
+        if (platform.os === OS.Type.Windows) {
+            // We might to switch to PowerShell beforehand on Windows
+            prefix = this.scriptService.exec(platform) + ' ';
+        }
         // Change to the remote application path and start a node process with the copied main.js file
         // This way, our current working directory is set as expected
-        const result = await connection.execPartial(`cd "${remotePath}";${nodeExecutable}`,
+        const result = await connection.execPartial(`${prefix}cd "${remotePath}";${nodeExecutable}`,
             stdout => localAddressRegex.test(stdout),
             [mainJsFile, '--hostname=127.0.0.1', '--port=0', '--remote']);
 
