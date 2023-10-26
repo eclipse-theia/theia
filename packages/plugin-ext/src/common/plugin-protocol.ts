@@ -643,8 +643,7 @@ export interface Localization {
 export interface Translation {
     id: string;
     path: string;
-    version: string;
-    contents: { [scope: string]: { [key: string]: string } }
+    cachedContents?: { [scope: string]: { [key: string]: string } };
 }
 
 export interface SnippetContribution {
