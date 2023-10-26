@@ -1,12 +1,12 @@
 {
   "name": "@theia/notebook",
-  "version": "1.42.0",
+  "version": "1.43.0",
   "description": "Theia - Notebook Extension",
   "dependencies": {
-    "@theia/core": "1.42.0",
-    "@theia/editor": "1.42.0",
-    "@theia/filesystem": "1.42.0",
-    "@theia/monaco": "1.42.0",
+    "@theia/core": "1.43.0",
+    "@theia/editor": "1.43.0",
+    "@theia/filesystem": "1.43.0",
+    "@theia/monaco": "1.43.0",
     "uuid": "^8.3.2"
   },
   "publishConfig": {
@@ -42,7 +42,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.42.0",
+    "@theia/ext-scripts": "1.43.0",
     "@types/vscode-notebook-renderer": "^1.72.0"
   },
   "nyc": {
