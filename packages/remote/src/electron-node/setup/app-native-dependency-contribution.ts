@@ -22,10 +22,7 @@ import { OS } from '@theia/core';
 @injectable()
 export class AppNativeDependencyContribution implements RemoteNativeDependencyContribution {
 
-    // TODO: Points for testing purposes to a non-theia repo
-    // Should be replaced with:
-    // 'https://github.com/eclipse-theia/theia/releases/download'
-    appDownloadUrlBase = 'https://github.com/msujew/theia/releases/download';
+    appDownloadUrlBase = 'https://github.com/eclipse-theia/theia/releases/download';
 
     protected getDefaultURLForFile(remotePlatform: RemotePlatform, theiaVersion: string): string {
         if (remotePlatform.arch !== 'x64') {
