@@ -196,8 +196,8 @@ export class DefaultTestService implements TestService {
 
     private testRunCounter = 0;
 
-    private onDidChangeIsRefreshingEmmitter = new Emitter<void>();
-    onDidChangeIsRefreshing: Event<void> = this.onDidChangeIsRefreshingEmmitter.event;
+    private onDidChangeIsRefreshingEmitter = new Emitter<void>();
+    onDidChangeIsRefreshing: Event<void> = this.onDidChangeIsRefreshingEmitter.event;
 
     private controllers: Map<string, TestController> = new Map();
     private refreshing: Set<CancellationTokenSource> = new Set();
@@ -236,12 +236,12 @@ export class DefaultTestService implements TestService {
         Promise.all(this.getControllers().map(controller => controller.refreshTests(cts.token))).then(() => {
             this.refreshing.delete(cts);
             if (this.refreshing.size === 0) {
-                this.onDidChangeIsRefreshingEmmitter.fire();
+                this.onDidChangeIsRefreshingEmitter.fire();
             }
         });
 
         if (this.refreshing.size === 1) {
-            this.onDidChangeIsRefreshingEmmitter.fire();
+            this.onDidChangeIsRefreshingEmitter.fire();
         }
     }
 
@@ -249,7 +249,7 @@ export class DefaultTestService implements TestService {
         if (this.refreshing.size > 0) {
             this.refreshing.forEach(cts => cts.cancel());
             this.refreshing.clear();
-            this.onDidChangeIsRefreshingEmmitter.fire();
+            this.onDidChangeIsRefreshingEmitter.fire();
         }
     }
 

@@ -2181,7 +2181,7 @@ export interface TestingMain {
     $registerTestController(controllerId: string, label: string): void;
     /** Updates the label of an existing test controller. */
     $updateController(controllerId: string, patch: Partial<TestControllerUpdate>): void;
-    /** Diposes of the test controller with the given ID */
+    /** Disposes of the test controller with the given ID */
     $unregisterTestController(controllerId: string): void;
     $notifyDelta(controllerId: string, diff: TreeDelta<string, TestItemDTO>[]): void;
 

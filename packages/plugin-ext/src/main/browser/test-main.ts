@@ -527,7 +527,7 @@ class TestControllerImpl implements TestController {
     get tests(): readonly TestItemImpl[] {
         return this.items.values;
     }
-    onItemsChanged: Event<TreeDelta<string, TestItemImpl>[]> = this.deltaBuilder.ondDidFlush;
+    onItemsChanged: Event<TreeDelta<string, TestItemImpl>[]> = this.deltaBuilder.onDidFlush;
 
     resolveChildren(item: TestItem): void {
         if (this.canResolveChildren) {
@@ -554,7 +554,7 @@ export class TestingMainImpl implements TestingMain {
             processArgument(arg: any): any {
                 if (arg instanceof TestItemImpl) {
                     if (!arg.controller || !arg.path) {
-                        throw new Error(`Passing unnattached test item ${arg.id} as a command arugment`);
+                        throw new Error(`Passing unattached test item ${arg.id} as a command argument`);
                     }
                     return TestItemReference.create(arg.controller.id, arg.path);
                 }

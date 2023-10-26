@@ -19,14 +19,14 @@ This facilitates features similar to the features offered by Microsoft's popular
 
 The following explains the basic flow of any remote connection. It will be exemplified using the remote SSH feature:
 
-1. When the user runs the `SSH: Connect to Host...` command, we send the host info to the local backend. 
+1. When the user runs the `SSH: Connect to Host...` command, we send the host info to the local backend.
 The corresponding `RemoteSSHConnectionProvider` is scoped to the current connection and can request additional information from the user, such as SSH key passphrases.
 2. Once the `RemoteSSHConnectionProvider` has every information it needs, it creates a SSH connection and registers this connection to the general `RemoteConnectionService`.
 Every `RemoteConnection` type implements an interface that is able to handle 3 kinds of messages to the remote system:
     1. Executing commands in the shell of the remote system
     2. Copying data to the remote
 3. Once the connection has been established, a setup process takes place on the remote system:
-    1. Idenfying the remote platform (i.e. Windows, MacOS or Linux). This information is needed for all the following steps.
+    1. Identifying the remote platform (i.e. Windows, MacOS or Linux). This information is needed for all the following steps.
     2. Setting up various directories for storing the application and its dependencies.
     3. Download and install the correct Node.js version for the remote platform.
     4. Packaging, copying, and unpackaging the local backend to the remote backend.
@@ -56,5 +56,6 @@ Although these backend services live on a different remote system, the frontend 
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
 https://www.eclipse.org/theia
