@@ -375,7 +375,7 @@ export class TestControllerImpl implements TestController {
     get tests(): readonly TestItemImpl[] {
         return this.items.values;
     }
-    onItemsChanged: Event<TreeDelta<string, TestItemImpl>[]> = this.deltaBuilder.ondDidFlush;
+    onItemsChanged: Event<TreeDelta<string, TestItemImpl>[]> = this.deltaBuilder.onDidFlush;
 
     resolveChildren(item: TestItem): void {
         // nothing to do

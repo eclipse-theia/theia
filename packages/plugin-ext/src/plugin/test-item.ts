@@ -87,8 +87,8 @@ export class TestItemImpl implements theia.TestItem {
 
     protected iterate(toDo: (v: TestItemImpl) => boolean): boolean {
         if (toDo(this)) {
-            for (const tupel of this.children) {
-                const child: TestItemImpl = tupel[1] as TestItemImpl;
+            for (const tuple of this.children) {
+                const child: TestItemImpl = tuple[1] as TestItemImpl;
                 if (!child.iterate(toDo)) {
                     return false;
                 }

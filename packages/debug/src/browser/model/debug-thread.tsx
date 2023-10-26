@@ -230,7 +230,7 @@ export class DebugThread extends DebugThreadData implements TreeElement {
 
     render(): React.ReactNode {
         const reason = this.stoppedDetails && this.stoppedDetails.reason;
-        const localizedReason = this.getlocalizedReason(reason);
+        const localizedReason = this.getLocalizedReason(reason);
 
         const status = this.stoppedDetails
             ? reason
@@ -245,7 +245,7 @@ export class DebugThread extends DebugThreadData implements TreeElement {
         );
     }
 
-    protected getlocalizedReason(reason: string | undefined): string {
+    protected getLocalizedReason(reason: string | undefined): string {
         switch (reason) {
             case 'step':
                 return nls.localize('theia/debug/step', 'step');

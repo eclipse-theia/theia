@@ -56,7 +56,7 @@ export interface DownloadOptions {
 export const RemoteNativeDependencyContribution = Symbol('RemoteNativeDependencyContribution');
 
 /**
- * contribution used for downloading prebuild nativ dependency when connecting to a remote machine with a different system
+ * contribution used for downloading prebuild native dependency when connecting to a remote machine with a different system
  */
 export interface RemoteNativeDependencyContribution {
     download(options: DownloadOptions): Promise<DependencyDownload>;

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 /**
- * A convencience class for managing a "map of maps" of arbitrary depth
+ * A convenience class for managing a "map of maps" of arbitrary depth
  */
 export class MultiKeyMap<K, V> {
     private rootMap = new Map();
@@ -33,7 +33,7 @@ export class MultiKeyMap<K, V> {
 
     set(key: readonly K[], value: V): V | undefined {
         if (this.keyLength !== key.length) {
-            throw new Error(`innappropriate key length: ${key.length}, should be ${this.keyLength}`);
+            throw new Error(`inappropriate key length: ${key.length}, should be ${this.keyLength}`);
         }
         let map = this.rootMap;
         for (let i = 0; i < this.keyLength - 1; i++) {
@@ -51,7 +51,7 @@ export class MultiKeyMap<K, V> {
 
     get(key: readonly K[]): V | undefined {
         if (this.keyLength !== key.length) {
-            throw new Error(`innappropriate key length: ${key.length}, should be ${this.keyLength}`);
+            throw new Error(`inappropriate key length: ${key.length}, should be ${this.keyLength}`);
         }
         let map = this.rootMap;
         for (let i = 0; i < this.keyLength - 1; i++) {
@@ -70,7 +70,7 @@ export class MultiKeyMap<K, V> {
      */
     has(key: readonly K[]): boolean {
         if (this.keyLength < key.length) {
-            throw new Error(`innappropriate key length: ${key.length}, should <= ${this.keyLength}`);
+            throw new Error(`inappropriate key length: ${key.length}, should <= ${this.keyLength}`);
         }
         let map = this.rootMap;
         for (let i = 0; i < key.length - 1; i++) {
@@ -89,7 +89,7 @@ export class MultiKeyMap<K, V> {
      */
     delete(key: readonly K[]): boolean {
         if (this.keyLength < key.length) {
-            throw new Error(`innappropriate key length: ${key.length}, should <= ${this.keyLength}`);
+            throw new Error(`inappropriate key length: ${key.length}, should <= ${this.keyLength}`);
         }
         let map = this.rootMap;
         for (let i = 0; i < this.keyLength - 1; i++) {
@@ -102,7 +102,7 @@ export class MultiKeyMap<K, V> {
     }
 
     /**
-     * Iterates over all entries in the map. The ordering semantices are like iterating over a map of maps.
+     * Iterates over all entries in the map. The ordering semantics are like iterating over a map of maps.
      * @param handler Handler for each entry
      */
     forEach(handler: (value: V, key: K[]) => void): void {

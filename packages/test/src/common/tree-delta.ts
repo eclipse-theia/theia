@@ -185,7 +185,7 @@ function doFindNode<K, T>(rootCollection: TreeDelta<K, T>[], path: K[],
         if (commonPrefixLength === child.path.length) {
             // we matched a child
             if (commonPrefixLength === path.length) {
-                // it's an exact match: we alread have a node for the given path
+                // it's an exact match: we already have a node for the given path
                 handler(rootCollection, childIndex, []);
                 return;
             }
@@ -219,7 +219,7 @@ function computePrefixLength<K>(left: K[], right: K[]): number {
 export class AccumulatingTreeDeltaEmitter<K, T> extends TreeDeltaBuilderImpl<K, T> {
     private batcher: ChangeBatcher;
     private onDidFlushEmitter: Emitter<TreeDelta<K, T>[]> = new Emitter();
-    ondDidFlush: Event<TreeDelta<K, T>[]> = this.onDidFlushEmitter.event;
+    onDidFlush: Event<TreeDelta<K, T>[]> = this.onDidFlushEmitter.event;
 
     constructor(timeoutMillis: number) {
         super();

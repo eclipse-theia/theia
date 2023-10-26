@@ -64,7 +64,7 @@ export class TestControllerImpl implements theia.TestController {
         this.proxy.$registerTestController(id, _label);
 
         this.deltaBuilder = new AccumulatingTreeDeltaEmitter<string, TestItemImpl>(200);
-        this.deltaBuilder.ondDidFlush(delta => {
+        this.deltaBuilder.onDidFlush(delta => {
             // console.debug('flushing delta'); // logging levels don't work in plugin host: https://github.com/eclipse-theia/theia/issues/12234
             const mapped = this.mapDeltas(delta);
             // console.debug(JSON.stringify(mapped, undefined, 3));
@@ -196,7 +196,7 @@ export class TestControllerImpl implements theia.TestController {
             .filter(isDefined);
 
         const request = new TestRunRequest(
-            includeTests, excludeTests, profile, false // don't support continouus run yet
+            includeTests, excludeTests, profile, false // don't support continuous run yet
         );
 
         const run = this.testRunStarted(request, name, false, false);
