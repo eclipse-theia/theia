@@ -30,6 +30,9 @@
         "showPreviousTabInGroup": "Switch to Previous Tab in Group",
         "toggleMaximized": "Toggle Maximized"
       },
+      "copyInfo": "Open a file first to copy its path",
+      "copyWarn": "Please use the browser's copy command or shortcut.",
+      "cutWarn": "Please use the browser's cut command or shortcut.",
       "enhancedPreview": {
         "classic": "Display a simple preview of the tab with basic information.",
         "enhanced": "Display an enhanced preview of the tab with additional information.",
@@ -54,6 +57,7 @@
         "clipboardWarnFirefox": "Clipboard API is not available. It can be enabled by '{0}' preference on '{1}' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard."
       },
       "offline": "Offline",
+      "pasteWarn": "Please use the browser's paste command or shortcut.",
       "quitMessage": "Any unsaved changes will not be saved.",
       "resetWorkbenchLayout": "Reset Workbench Layout",
       "searchbox": {
@@ -69,14 +73,23 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Select workspace root to add configuration to",
+      "breakpoint": "breakpoint",
       "compound-cycle": "Launch configuration '{0}' contains a cycle with itself",
       "continueAll": "Continue All",
       "copyExpressionValue": "Copy Expression Value",
+      "dataBreakpoint": "data breakpoint",
       "debugVariableInput": "Set {0} Value",
+      "entry": "entry",
+      "exception": "exception",
+      "functionBreakpoint": "function breakpoint",
+      "goto": "goto",
       "instruction-breakpoint": "Instruction Breakpoint",
+      "instructionBreakpoint": "instruction breakpoint",
       "missingConfiguration": "Dynamic configuration '{0}:{1}' is missing or not applicable",
+      "pause": "pause",
       "pauseAll": "Pause All",
       "reveal": "Reveal",
+      "step": "step",
       "threads": "Threads",
       "toggleTracing": "Enable/disable tracing communications with debug adapters"
     },
@@ -183,7 +196,18 @@
       "deprecation": "Use `when` clause instead."
     },
     "keymaps": {
+      "addKeybindingTitle": "Add Keybinding for {0}",
+      "editKeybinding": "Edit Keybinding...",
       "editKeybindingTitle": "Edit Keybinding for {0}",
+      "editWhenExpression": "Edit When Expression...",
+      "editWhenExpressionTitle": "Edit When Expression for {0}",
+      "keybinding": {
+        "copy": "Copy Keybinding",
+        "copyCommandId": "Copy Keybinding Command ID",
+        "copyCommandTitle": "Copy Keybinding Command Title",
+        "edit": "Edit Keybinding...",
+        "editWhenExpression": "Edit Keybinding When Expression..."
+      },
       "keybindingCollidesValidation": "keybinding currently collides",
       "requiredKeybindingValidation": "keybinding value is required",
       "resetKeybindingConfirmation": "Do you really want to reset this keybinding to its default value?",
@@ -406,6 +430,11 @@
       "shellLinux": "The path of the shell that the terminal uses on Linux (default: '{0}'}).",
       "shellOsx": "The path of the shell that the terminal uses on macOS (default: '{0}'}).",
       "shellWindows": "The path of the shell that the terminal uses on Windows. (default: '{0}')."
+    },
+    "test": {
+      "cancelAllTestRuns": "Cancel All Test Runs",
+      "testRunDefaultName": "{0} run {1}",
+      "testRuns": "Test Runs"
     },
     "toolbar": {
       "addCommand": "Add Command to Toolbar",

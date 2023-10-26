@@ -30,6 +30,9 @@
         "showPreviousTabInGroup": "Mudar para a guia Anterior em Grupo",
         "toggleMaximized": "Alternar ao máximo"
       },
+      "copyInfo": "Abra um arquivo primeiro para copiar seu caminho",
+      "copyWarn": "Use o comando ou atalho de cópia do navegador.",
+      "cutWarn": "Use o comando de corte ou o atalho do navegador.",
       "enhancedPreview": {
         "classic": "Exibir uma visualização simples da guia com informações básicas.",
         "enhanced": "Exibir uma visualização aprimorada da guia com informações adicionais.",
@@ -54,6 +57,7 @@
         "clipboardWarnFirefox": "A API da área de transferência não está disponível. Ela pode ser ativada pela preferência '{0}' na página '{1}'. Em seguida, recarregue o Theia. Observe que isso permitirá que o FireFox obtenha acesso total à área de transferência do sistema."
       },
       "offline": "Offline",
+      "pasteWarn": "Use o comando de colar ou o atalho do navegador.",
       "quitMessage": "Quaisquer mudanças não salvas não serão salvas.",
       "resetWorkbenchLayout": "Restabelecer o layout do Workbench",
       "searchbox": {
@@ -69,14 +73,23 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Selecione a raiz do espaço de trabalho para adicionar configuração a",
+      "breakpoint": "ponto de interrupção",
       "compound-cycle": "A configuração de lançamento '{0}' contém um ciclo consigo mesmo",
       "continueAll": "Continuar Todos",
       "copyExpressionValue": "Valor de Expressão de Cópia",
+      "dataBreakpoint": "ponto de interrupção de dados",
       "debugVariableInput": "Conjunto {0} Valor",
+      "entry": "entrada",
+      "exception": "exceção",
+      "functionBreakpoint": "ponto de interrupção da função",
+      "goto": "goto",
       "instruction-breakpoint": "Ponto de Interrupção da Instrução",
+      "instructionBreakpoint": "ponto de parada de instrução",
       "missingConfiguration": "A configuração dinâmica '{0}:{1}' está ausente ou não é aplicável",
+      "pause": "pausa",
       "pauseAll": "Pausa Todos",
       "reveal": "Revelar",
+      "step": "etapa",
       "threads": "Tópicos",
       "toggleTracing": "Habilitar/desabilitar as comunicações de rastreamento com adaptadores de depuração"
     },
@@ -183,7 +196,18 @@
       "deprecation": "Utilize a cláusula `when` em seu lugar."
     },
     "keymaps": {
+      "addKeybindingTitle": "Adicionar vinculação de teclas para {0}",
+      "editKeybinding": "Editar vinculação de teclas...",
       "editKeybindingTitle": "Editar Keybinding para {0}",
+      "editWhenExpression": "Editar quando a expressão...",
+      "editWhenExpressionTitle": "Editar quando a expressão para {0}",
+      "keybinding": {
+        "copy": "Copiar vinculação de teclas",
+        "copyCommandId": "Copiar ID do comando de vinculação de teclas",
+        "copyCommandTitle": "Título do comando Copy Keybinding",
+        "edit": "Editar vinculação de teclas...",
+        "editWhenExpression": "Editar vinculação de teclas quando a expressão..."
+      },
       "keybindingCollidesValidation": "a chave de encadernação colide atualmente",
       "requiredKeybindingValidation": "valor vinculante é necessário",
       "resetKeybindingConfirmation": "Você realmente quer redefinir esta ligação de chave para seu valor padrão?",
@@ -406,6 +430,11 @@
       "shellLinux": "O caminho do shell que o terminal usa no Linux (padrão: '{0}'}).",
       "shellOsx": "O caminho da concha que o terminal usa em macOS (padrão: '{0}'}).",
       "shellWindows": "O caminho da concha que o terminal utiliza no Windows. (padrão: '{0}')."
+    },
+    "test": {
+      "cancelAllTestRuns": "Cancelar todas as execuções de teste",
+      "testRunDefaultName": "{0} executar {1}",
+      "testRuns": "Execuções de teste"
     },
     "toolbar": {
       "addCommand": "Adicionar Comando à Barra de Ferramentas",

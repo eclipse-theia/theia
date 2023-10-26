@@ -30,6 +30,9 @@
         "showPreviousTabInGroup": "グループ内の前のタブに切り替える",
         "toggleMaximized": "トグル・マキシマイズ"
       },
+      "copyInfo": "まずファイルを開き、そのパスをコピーする",
+      "copyWarn": "ブラウザのコピーコマンドまたはショートカットをご利用ください。",
+      "cutWarn": "ブラウザのカットコマンドまたはショートカットをご利用ください。",
       "enhancedPreview": {
         "classic": "タブの基本情報を含む簡単なプレビューを表示する。",
         "enhanced": "追加情報を含むタブの拡張プレビューを表示します。",
@@ -54,6 +57,7 @@
         "clipboardWarnFirefox": "クリップボードAPIは使用できません。これは、'{1}' ページの '{0}' 環境設定によって有効にすることができます。その後Theiaをリロードしてください。これにより、FireFoxがシステムクリップボードにフルアクセスできるようになります。"
       },
       "offline": "オフライン",
+      "pasteWarn": "ブラウザの貼り付けコマンドまたはショートカットをご利用ください。",
       "quitMessage": "保存されていない変更は、保存されません。",
       "resetWorkbenchLayout": "ワークベンチレイアウトのリセット",
       "searchbox": {
@@ -69,14 +73,23 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "設定を追加するワークスペース・ルートを選択します。",
+      "breakpoint": "ブレークポイント",
       "compound-cycle": "起動構成 '{0}' は自分自身とのサイクルを含む",
       "continueAll": "すべてを続ける",
       "copyExpressionValue": "コピー式の値",
+      "dataBreakpoint": "データブレークポイント",
       "debugVariableInput": "設定{0} 値",
+      "entry": "エントリー",
+      "exception": "例外",
+      "functionBreakpoint": "関数ブレークポイント",
+      "goto": "行く",
       "instruction-breakpoint": "命令ブレークポイント",
+      "instructionBreakpoint": "命令ブレークポイント",
       "missingConfiguration": "ダイナミックコンフィギュレーション「{0}:{1}」が存在しないか、適用できない",
+      "pause": "ポーズ",
       "pauseAll": "ポーズ・オール",
       "reveal": "暴露",
+      "step": "ステップ",
       "threads": "スレッド",
       "toggleTracing": "デバッグアダプタとの通信のトレースの有効化/無効化"
     },
@@ -183,7 +196,18 @@
       "deprecation": "代わりに `when` 句を使用してください。"
     },
     "keymaps": {
+      "addKeybindingTitle": "のキーバインドを追加{0}",
+      "editKeybinding": "キーバインドを編集...",
       "editKeybindingTitle": "{0}のキーバインドを編集する",
+      "editWhenExpression": "Edit When Expression...",
+      "editWhenExpressionTitle": "を表す式を編集する{0}",
+      "keybinding": {
+        "copy": "コピー・キーバインド",
+        "copyCommandId": "キーバインドコマンドIDのコピー",
+        "copyCommandTitle": "キーバインドコマンドのタイトルをコピーする",
+        "edit": "キーバインドを編集...",
+        "editWhenExpression": "キーバインドを編集する(Expression..."
+      },
       "keybindingCollidesValidation": "キーバインドがコリジョン中",
       "requiredKeybindingValidation": "キーバインド値が必要です",
       "resetKeybindingConfirmation": "このキーバインドを本当に初期値に戻すのですか?",
@@ -406,6 +430,11 @@
       "shellLinux": "Linuxでターミナルが使用するシェルのパス(デフォルト:'{0}'})。",
       "shellOsx": "macOSでターミナルが使用するシェルのパスです(デフォルト:'{0}'})。",
       "shellWindows": "Windowsでターミナルが使用するシェルのパスです。(デフォルト: '{0}')を指定します。"
+    },
+    "test": {
+      "cancelAllTestRuns": "すべてのテスト実行をキャンセルする",
+      "testRunDefaultName": "{0} 走る{1}",
+      "testRuns": "テスト走行"
     },
     "toolbar": {
       "addCommand": "ツールバーへのコマンド追加",
