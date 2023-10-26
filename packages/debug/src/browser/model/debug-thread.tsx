@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { CancellationTokenSource, Emitter, Event } from '@theia/core';
+import { CancellationTokenSource, Emitter, Event, nls } from '@theia/core';
 import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugStackFrame } from './debug-stack-frame';
@@ -230,11 +230,44 @@ export class DebugThread extends DebugThreadData implements TreeElement {
 
     render(): React.ReactNode {
         const reason = this.stoppedDetails && this.stoppedDetails.reason;
-        const status = this.stoppedDetails ? reason ? `Paused on ${reason}` : 'Paused' : 'Running';
-        return <div className='theia-debug-thread' title='Thread'>
-            <span className='label'>{this.raw.name}</span>
-            <span className='status'>{status}</span>
-        </div>;
+        const localizedReason = this.getlocalizedReason(reason);
+
+        const status = this.stoppedDetails
+            ? reason
+                ? nls.localizeByDefault('Paused on {0}', localizedReason)
+                : nls.localizeByDefault('Paused')
+            : nls.localizeByDefault('Running');
+        return (
+            <div className="theia-debug-thread" title={nls.localizeByDefault('Session')}>
+                <span className="label">{this.raw.name}</span>
+                <span className="status">{status}</span>
+            </div>
+        );
+    }
+
+    protected getlocalizedReason(reason: string | undefined): string {
+        switch (reason) {
+            case 'step':
+                return nls.localize('theia/debug/step', 'step');
+            case 'breakpoint':
+                return nls.localize('theia/debug/breakpoint', 'breakpoint');
+            case 'exception':
+                return nls.localize('theia/debug/exception', 'exception');
+            case 'pause':
+                return nls.localize('theia/debug/pause', 'pause');
+            case 'entry':
+                return nls.localize('theia/debug/entry', 'entry');
+            case 'goto':
+                return nls.localize('theia/debug/goto', 'goto');
+            case 'function breakpoint':
+                return nls.localize('theia/debug/functionBreakpoint', 'function breakpoint');
+             case 'data breakpoint':
+                return nls.localize('theia/debug/dataBreakpoint', 'data breakpoint');
+            case 'instruction breakpoint':
+                return nls.localize('theia/debug/instructionBreakpoint', 'instruction breakpoint');
+            default:
+                return '';
+        }
     }
 
 }
