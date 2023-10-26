@@ -19,7 +19,6 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/Microsoft/vscode/blob/main/src/vs/platform/theme/common/iconRegistry.ts
 
-import { Event } from '../common/event';
 import { URI } from 'vscode-uri';
 
 export interface IconDefinition {
@@ -61,7 +60,6 @@ export interface ThemeColor {
 
 export const IconRegistry = Symbol('IconRegistry');
 export interface IconRegistry {
-    readonly onDidChange: Event<void>;
     /**
      * Register a icon to the registry.
      * @param id The icon id

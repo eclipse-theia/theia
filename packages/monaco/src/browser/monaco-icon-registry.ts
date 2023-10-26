@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { Event } from '@theia/core';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 import { IconRegistry } from '@theia/core/lib/browser/icon-registry';
 import { IconDefinition, IconFontDefinition, getIconRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/iconRegistry';
@@ -23,27 +22,26 @@ import { IconDefinition, IconFontDefinition, getIconRegistry } from '@theia/mona
 @injectable()
 export class MonacoIconRegistry implements IconRegistry {
 
-    readonly onDidChange: Event<void>;
-    protected readonly monacoIconService = getIconRegistry();
+    protected readonly iconRegistry = getIconRegistry();
 
     registerIcon(id: string, defaults: ThemeIcon | IconDefinition, description?: string): ThemeIcon {
-        return this.monacoIconService.registerIcon(id, defaults, description);
+        return this.iconRegistry.registerIcon(id, defaults, description);
     }
 
     deregisterIcon(id: string): void {
-        return this.monacoIconService.deregisterIcon(id);
+        return this.iconRegistry.deregisterIcon(id);
     }
 
     registerIconFont(id: string, definition: IconFontDefinition): IconFontDefinition {
-        return this.monacoIconService.registerIconFont(id, definition);
+        return this.iconRegistry.registerIconFont(id, definition);
     }
 
     deregisterIconFont(id: string): void {
-        return this.monacoIconService.deregisterIconFont(id);
+        return this.iconRegistry.deregisterIconFont(id);
     }
 
     getIconFont(id: string): IconFontDefinition | undefined {
-        return this.monacoIconService.getIconFont(id);
+        return this.iconRegistry.getIconFont(id);
     }
 }
 
