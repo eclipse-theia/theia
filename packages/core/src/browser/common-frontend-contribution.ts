@@ -738,7 +738,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 if (supportCut) {
                     document.execCommand('cut');
                 } else {
-                    this.messageService.warn(nls.localize('theia/workspace/cut', "Please use the browser's cut command or shortcut."));
+                    this.messageService.warn(nls.localize('theia/core/cutWarn', "Please use the browser's cut command or shortcut."));
                 }
             }
         });
@@ -747,7 +747,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 if (supportCopy) {
                     document.execCommand('copy');
                 } else {
-                    this.messageService.warn(nls.localize('theia/workspace/copy', "Please use the browser's copy command or shortcut."));
+                    this.messageService.warn(nls.localize('theia/core/copyWarn', "Please use the browser's copy command or shortcut."));
                 }
             }
         });
@@ -756,7 +756,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 if (supportPaste) {
                     document.execCommand('paste');
                 } else {
-                    this.messageService.warn(nls.localize('theia/workspace/paste', "Please use the browser's paste command or shortcut."));
+                    this.messageService.warn(nls.localize('theia/core/pasteWarn', "Please use the browser's paste command or shortcut."));
                 }
             }
         });
@@ -769,7 +769,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     const text = uris.map(resource => resource.path.fsPath()).join(lineDelimiter);
                     await this.clipboardService.writeText(text);
                 } else {
-                    await this.messageService.info(nls.localize('theia/workspace/copyingWarn', 'Open a file first to copy its path'));
+                    await this.messageService.info(nls.localize('theia/core/copyInfo', 'Open a file first to copy its path'));
                 }
             }
         }));
