@@ -30,6 +30,9 @@
         "showPreviousTabInGroup": "Pasar a la pestaña anterior del grupo",
         "toggleMaximized": "Alternar maximizado"
       },
+      "copyInfo": "Abra primero un archivo para copiar su ruta",
+      "copyWarn": "Utilice el comando de copia del navegador o el acceso directo.",
+      "cutWarn": "Utiliza el comando o atajo de teclado del navegador.",
       "enhancedPreview": {
         "classic": "Muestra una vista previa sencilla de la ficha con información básica.",
         "enhanced": "Mostrar una vista previa mejorada de la ficha con información adicional.",
@@ -54,6 +57,7 @@
         "clipboardWarnFirefox": "La API del portapapeles no está disponible. Se puede activar mediante la preferencia '{0}' en la página '{1}'. A continuación, vuelva a cargar Theia. Tenga en cuenta que esto permitirá a FireFox tener acceso completo al portapapeles del sistema."
       },
       "offline": "Fuera de línea",
+      "pasteWarn": "Por favor, utilice el comando de pegar o el atajo de teclado del navegador.",
       "quitMessage": "Cualquier cambio no guardado no se guardará.",
       "resetWorkbenchLayout": "Restablecer la disposición del banco de trabajo",
       "searchbox": {
@@ -69,14 +73,23 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Seleccione la raíz del espacio de trabajo para añadir la configuración",
+      "breakpoint": "punto de interrupción",
       "compound-cycle": "La configuración de lanzamiento '{0}' contiene un ciclo consigo mismo",
       "continueAll": "Continuar todo",
       "copyExpressionValue": "Copiar el valor de la expresión",
+      "dataBreakpoint": "punto de interrupción de datos",
       "debugVariableInput": "Establecer {0} Valor",
+      "entry": "entrada",
+      "exception": "excepción",
+      "functionBreakpoint": "punto de interrupción de la función",
+      "goto": "ir a",
       "instruction-breakpoint": "Punto de interrupción de la instrucción",
+      "instructionBreakpoint": "punto de interrupción de instrucción",
       "missingConfiguration": "La configuración dinámica '{0}:{1}' falta o no es aplicable",
+      "pause": "pausa",
       "pauseAll": "Pausa Todo",
       "reveal": "Revelar",
+      "step": "paso",
       "threads": "Hilos",
       "toggleTracing": "Activar/desactivar las comunicaciones de rastreo con los adaptadores de depuración"
     },
@@ -183,7 +196,18 @@
       "deprecation": "Utilice la cláusula `when` en su lugar."
     },
     "keymaps": {
+      "addKeybindingTitle": "Añadir Keybinding para {0}",
+      "editKeybinding": "Editar asignación de teclas...",
       "editKeybindingTitle": "Editar enlace de teclas para {0}",
+      "editWhenExpression": "Editar cuando la expresión...",
+      "editWhenExpressionTitle": "Editar cuando Expresión para {0}",
+      "keybinding": {
+        "copy": "Copiar enlace de teclas",
+        "copyCommandId": "Copiar ID de comando de combinación de teclas",
+        "copyCommandTitle": "Copiar comando de combinación de teclas Título",
+        "edit": "Editar asignación de teclas...",
+        "editWhenExpression": "Editar vinculación de teclas cuando la expresión..."
+      },
       "keybindingCollidesValidation": "la vinculación de teclas actualmente colisiona",
       "requiredKeybindingValidation": "se requiere el valor del keybinding",
       "resetKeybindingConfirmation": "¿Realmente quieres restablecer este keybinding a su valor por defecto?",
@@ -406,6 +430,11 @@
       "shellLinux": "La ruta del shell que utiliza la terminal en Linux (por defecto: '{0}'}).",
       "shellOsx": "La ruta del shell que utiliza el terminal en macOS (por defecto: '{0}'}).",
       "shellWindows": "La ruta del shell que utiliza la terminal en Windows. (por defecto: '{0}')."
+    },
+    "test": {
+      "cancelAllTestRuns": "Cancelar todas las pruebas",
+      "testRunDefaultName": "{0} ejecute {1}",
+      "testRuns": "Pruebas"
     },
     "toolbar": {
       "addCommand": "Añadir comando a la barra de herramientas",

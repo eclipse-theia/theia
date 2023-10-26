@@ -30,6 +30,9 @@
         "showPreviousTabInGroup": "Przełączanie do poprzedniej karty w grupie",
         "toggleMaximized": "Przełącz maksymalny"
       },
+      "copyInfo": "Najpierw otwórz plik, aby skopiować jego ścieżkę",
+      "copyWarn": "Użyj polecenia kopiowania lub skrótu przeglądarki.",
+      "cutWarn": "Użyj polecenia \"wytnij\" lub skrótu przeglądarki.",
       "enhancedPreview": {
         "classic": "Wyświetla prosty podgląd karty z podstawowymi informacjami.",
         "enhanced": "Wyświetla rozszerzony podgląd karty z dodatkowymi informacjami.",
@@ -54,6 +57,7 @@
         "clipboardWarnFirefox": "Interfejs API schowka nie jest dostępny. Można go włączyć za pomocą opcji '{0}' na stronie '{1}'. Następnie należy ponownie załadować Theia. Uwaga, pozwoli to FireFox uzyskać pełny dostęp do schowka systemowego."
       },
       "offline": "Offline",
+      "pasteWarn": "Użyj polecenia wklejania lub skrótu przeglądarki.",
       "quitMessage": "Wszelkie niezapisane zmiany nie zostaną zapisane.",
       "resetWorkbenchLayout": "Resetuj układ stołu warsztatowego",
       "searchbox": {
@@ -69,14 +73,23 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Wybierz główny obszar roboczy, do którego chcesz dodać konfigurację",
+      "breakpoint": "punkt przerwania",
       "compound-cycle": "Konfiguracja startowa \"{0}\" zawiera cykl z samym sobą",
       "continueAll": "Kontynuuj Wszystko",
       "copyExpressionValue": "Kopiuj wartość wyrażenia",
+      "dataBreakpoint": "punkt przerwania danych",
       "debugVariableInput": "Ustaw {0} Wartość",
+      "entry": "wejście",
+      "exception": "wyjątek",
+      "functionBreakpoint": "punkt przerwania funkcji",
+      "goto": "goto",
       "instruction-breakpoint": "Punkt przerwania instrukcji",
+      "instructionBreakpoint": "punkt przerwania instrukcji",
       "missingConfiguration": "Brak konfiguracji dynamicznej \"{0}:{1}\" lub nie ma ona zastosowania.",
+      "pause": "pauza",
       "pauseAll": "Pauza Wszystkie",
       "reveal": "Ujawnij",
+      "step": "krok",
       "threads": "Nici",
       "toggleTracing": "Włączanie/wyłączanie śledzenia komunikacji z adapterami debugowania"
     },
@@ -183,7 +196,18 @@
       "deprecation": "Zamiast tego użyj klauzuli `when`."
     },
     "keymaps": {
+      "addKeybindingTitle": "Dodaj powiązanie klawiszy dla {0}",
+      "editKeybinding": "Edytuj powiązanie klawiszy...",
       "editKeybindingTitle": "Edytuj przypisanie klawiszy dla {0}",
+      "editWhenExpression": "Edit When Expression...",
+      "editWhenExpressionTitle": "Edytuj, gdy wyrażenie dla {0}",
+      "keybinding": {
+        "copy": "Kopiowanie powiązań klawiszy",
+        "copyCommandId": "Identyfikator polecenia kopiowania powiązania klawiszy",
+        "copyCommandTitle": "Tytuł polecenia kopiowania powiązania klawiszy",
+        "edit": "Edytuj powiązanie klawiszy...",
+        "editWhenExpression": "Edytuj powiązanie klawiszy, gdy wyrażenie..."
+      },
       "keybindingCollidesValidation": "przypisanie klawiszy aktualnie koliduje",
       "requiredKeybindingValidation": "wymagana jest wartość wiązania klawiszy",
       "resetKeybindingConfirmation": "Czy naprawdę chcesz przywrócić domyślną wartość tego powiązania klawiszy?",
@@ -406,6 +430,11 @@
       "shellLinux": "Ścieżka do powłoki, z której korzysta terminal na Linuksie (domyślnie: '{0}'}).",
       "shellOsx": "Ścieżka do powłoki, z której korzysta terminal na macOS (domyślnie: '{0}'}).",
       "shellWindows": "Ścieżka do powłoki, której terminal używa na Windows. (domyślnie: '{0}')."
+    },
+    "test": {
+      "cancelAllTestRuns": "Anulowanie wszystkich testów",
+      "testRunDefaultName": "{0} bieg {1}",
+      "testRuns": "Przebiegi testowe"
     },
     "toolbar": {
       "addCommand": "Dodaj polecenie do paska narzędzi",
