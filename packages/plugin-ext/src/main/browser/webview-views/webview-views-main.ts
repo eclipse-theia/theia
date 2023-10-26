@@ -83,7 +83,10 @@ export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
                     webviewView.webview.options = options;
                 }
 
-                webviewView.onDidChangeVisibility(visible => {
+                webviewView.onDidChangeVisibility(async visible => {
+                    if (visible) {
+                        await webviewView.resolve();
+                    }
                     this.proxy.$onDidChangeWebviewViewVisibility(handle, visible);
                 });
 
@@ -93,7 +96,7 @@ export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
                 });
 
                 try {
-                    this.proxy.$resolveWebviewView(handle, viewType, webviewView.title, state, cancellation);
+                    await this.proxy.$resolveWebviewView(handle, viewType, webviewView.title, state, cancellation);
                 } catch (error) {
                     this.logger.error(`Error resolving webview view '${viewType}': ${error}`);
                     webviewView.webview.setHTML('failed to load plugin webview view');
