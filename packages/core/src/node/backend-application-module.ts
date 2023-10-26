@@ -29,10 +29,10 @@ import { ApplicationServer, applicationPath } from '../common/application-protoc
 import { EnvVariablesServer, envVariablesPath } from './../common/env-variables';
 import { EnvVariablesServerImpl } from './env-variables';
 import { ConnectionContainerModule } from './messaging/connection-container-module';
-import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
+import { QuickInputService, quickInputServicePath, QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 import { WsRequestValidator, WsRequestValidatorContribution } from './ws-request-validators';
-import { KeytarService, keytarServicePath } from '../common/keytar-protocol';
-import { KeytarServiceImpl } from './keytar-server';
+import { KeyStoreService, keyStoreServicePath } from '../common/key-store';
+import { KeyStoreServiceImpl } from './key-store-server';
 import { ContributionFilterRegistry, ContributionFilterRegistryImpl } from '../common/contribution-filter';
 import { EnvironmentUtils } from './environment-utils';
 import { ProcessUtils } from './process-utils';
@@ -41,6 +41,7 @@ import { bindNodeStopwatch, bindBackendStopwatchServer } from './performance';
 import { OSBackendProviderImpl } from './os-backend-provider';
 import { BackendRequestFacade } from './request/backend-request-facade';
 import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
+import { BackendRemoteService } from './backend-remote-service';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -54,6 +55,7 @@ const messageConnectionModule = ConnectionContainerModule.create(({ bind, bindFr
 });
 
 const quickPickConnectionModule = ConnectionContainerModule.create(({ bindFrontendService }) => {
+    bindFrontendService(quickInputServicePath, QuickInputService);
     bindFrontendService(quickPickServicePath, QuickPickService);
 });
 
@@ -106,9 +108,9 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(WsRequestValidator).toSelf().inSingletonScope();
     bindContributionProvider(bind, WsRequestValidatorContribution);
-    bind(KeytarService).to(KeytarServiceImpl).inSingletonScope();
+    bind(KeyStoreService).to(KeyStoreServiceImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new RpcConnectionHandler(keytarServicePath, () => ctx.container.get<KeytarService>(KeytarService))
+        new RpcConnectionHandler(keyStoreServicePath, () => ctx.container.get<KeyStoreService>(KeyStoreService))
     ).inSingletonScope();
 
     bind(ContributionFilterRegistry).to(ContributionFilterRegistryImpl).inSingletonScope();
@@ -125,6 +127,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(ProxyCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(ProxyCliContribution);
 
+    bind(BackendRemoteService).toSelf().inSingletonScope();
     bind(BackendRequestFacade).toSelf().inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(
         ctx => new RpcConnectionHandler(REQUEST_SERVICE_PATH, () => ctx.container.get(BackendRequestFacade))

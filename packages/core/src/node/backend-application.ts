@@ -228,6 +228,10 @@ export class BackendApplication {
         this.app.get('*.gif', this.serveGzipped.bind(this, 'image/gif'));
         this.app.get('*.png', this.serveGzipped.bind(this, 'image/png'));
         this.app.get('*.svg', this.serveGzipped.bind(this, 'image/svg+xml'));
+        this.app.get('*.eot', this.serveGzipped.bind(this, 'application/vnd.ms-fontobject'));
+        this.app.get('*.ttf', this.serveGzipped.bind(this, 'font/ttf'));
+        this.app.get('*.woff', this.serveGzipped.bind(this, 'font/woff'));
+        this.app.get('*.woff2', this.serveGzipped.bind(this, 'font/woff2'));
 
         for (const contribution of this.contributionsProvider.getContributions()) {
             if (contribution.configure) {

@@ -1,0 +1,66 @@
+{
+  "name": "@theia/remote",
+  "version": "1.42.0",
+  "description": "Theia - Remote",
+  "dependencies": {
+    "@theia/core": "1.42.0",
+    "@theia/filesystem": "1.42.0",
+    "archiver": "^5.3.1",
+    "decompress": "^4.2.1",
+    "decompress-tar": "^4.0.0",
+    "decompress-targz": "^4.0.0",
+    "decompress-unzip": "^4.0.1",
+    "express-http-proxy": "^1.6.3",
+    "glob": "^8.1.0",
+    "ssh2": "^1.12.0",
+    "ssh2-sftp-client": "^9.1.0",
+    "socket.io": "^4.5.3",
+    "socket.io-client": "^4.5.3",
+    "uuid": "^8.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontendElectron": "lib/electron-browser/remote-frontend-module",
+      "backendElectron": "lib/electron-node/remote-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "theiaext build",
+    "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.42.0",
+    "@types/archiver": "^5.3.2",
+    "@types/decompress": "^4.2.4",
+    "@types/express-http-proxy": "^1.6.3",
+    "@types/glob": "^8.1.0",
+    "@types/ssh2": "^1.11.11",
+    "@types/ssh2-sftp-client": "^9.0.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

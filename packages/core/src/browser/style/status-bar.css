@@ -30,7 +30,7 @@ body.theia-no-open-workspace #theia-statusBar {
   background: var(--theia-statusBar-noFolderBackground);
   color: var(--theia-statusBar-noFolderForeground);
   border-top: var(--theia-border-width) solid
-    var(--theia-statusBar-noFolderBorder);
+  var(--theia-statusBar-noFolderBorder);
 }
 
 #theia-statusBar .area {
@@ -41,7 +41,6 @@ body.theia-no-open-workspace #theia-statusBar {
 
 #theia-statusBar .area.left {
   justify-content: flex-start;
-  padding-left: calc(var(--theia-ui-padding) * 2);
 }
 
 #theia-statusBar .area.right {
@@ -56,8 +55,14 @@ body.theia-no-open-workspace #theia-statusBar {
   font-size: var(--theia-statusBar-font-size);
 }
 
-#theia-statusBar .area .element > * {
-  margin-left: calc(var(--theia-ui-padding) / 2);
+#theia-statusBar .area.left .element.has-background {
+  margin-left: 0px;
+  margin-right: 3px;
+  padding-left: 7px;
+  padding-right: 7px;
+}
+#theia-statusBar .area .element>* {
+  margin-left: calc(var(--theia-ui-padding)/2);
 }
 
 #theia-statusBar .area .element .codicon {
@@ -77,6 +82,9 @@ body.theia-no-open-workspace #theia-statusBar {
   color: var(--theia-statusBar-offlineForeground) !important;
 }
 
+#theia-statusBar .area.left .element:first-child:not(.has-background) {
+    margin-left: calc(var(--theia-ui-padding) * 3);
+}
 #theia-statusBar .area.left .element {
   margin-right: var(--theia-ui-padding);
 }

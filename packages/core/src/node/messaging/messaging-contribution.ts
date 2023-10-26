@@ -83,7 +83,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
             // We provide a `fix-origin` header in the `WebSocketConnectionProvider`
             request.headers.origin = request.headers['fix-origin'] as string;
             if (await this.allowConnect(socket.request)) {
-                this.handleConnection(socket);
+                await this.handleConnection(socket);
                 this.messagingListener.onDidWebSocketUpgrade(socket.request, socket);
             } else {
                 socket.disconnect(true);
@@ -91,7 +91,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         });
     }
 
-    protected handleConnection(socket: Socket): void {
+    protected async handleConnection(socket: Socket): Promise<void> {
         const pathname = socket.nsp.name;
         if (pathname && !this.wsHandlers.route(pathname, socket)) {
             console.error('Cannot find a ws handler for the path: ' + pathname);
@@ -166,14 +166,15 @@ export namespace MessagingContribution {
 
         push(spec: string, callback: (params: MessagingService.PathParams, connection: T) => void): void {
             const route = new Route(spec);
-            this.handlers.push((path, channel) => {
+            const handler = (path: string, channel: T): string | false => {
                 const params = route.match(path);
                 if (!params) {
                     return false;
                 }
                 callback(params, channel);
                 return route.reverse(params);
-            });
+            };
+            this.handlers.push(handler);
         }
 
         route(path: string, connection: T): string | false {
