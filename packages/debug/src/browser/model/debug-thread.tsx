@@ -238,33 +238,33 @@ export class DebugThread extends DebugThreadData implements TreeElement {
                 : nls.localizeByDefault('Paused')
             : nls.localizeByDefault('Running');
         return (
-            <div className="theia-debug-thread" title="Thread">
+            <div className="theia-debug-thread" title={nls.localizeByDefault('Session')}>
                 <span className="label">{this.raw.name}</span>
                 <span className="status">{status}</span>
             </div>
         );
     }
 
-    private getlocalizedReason(reason: string | undefined): string {
+    protected getlocalizedReason(reason: string | undefined): string {
         switch (reason) {
             case 'step':
                 return nls.localize('theia/debug/step', 'step');
             case 'breakpoint':
                 return nls.localize('theia/debug/breakpoint', 'breakpoint');
-            case 'breakpoint':
+            case 'exception':
                 return nls.localize('theia/debug/exception', 'exception');
-            case 'breakpoint':
+            case 'pause':
                 return nls.localize('theia/debug/pause', 'pause');
-            case 'breakpoint':
+            case 'entry':
                 return nls.localize('theia/debug/entry', 'entry');
-            case 'breakpoint':
+            case 'goto':
                 return nls.localize('theia/debug/goto', 'goto');
-            case 'breakpoint':
-                return nls.localize('theia/debug/function breakpoint', 'function breakpoint');
-             case 'breakpoint':
-                return nls.localize('theia/debug/data breakpoint', 'data breakpoint');
-            case 'breakpoint':
-                return nls.localize('theia/debug/instruction breakpoint', 'instruction breakpoint');
+            case 'function breakpoint':
+                return nls.localize('theia/debug/functionBreakpoint', 'function breakpoint');
+             case 'data breakpoint':
+                return nls.localize('theia/debug/dataBreakpoint', 'data breakpoint');
+            case 'instruction breakpoint':
+                return nls.localize('theia/debug/instructionBreakpoint', 'instruction breakpoint');
             default:
                 return '';
         }
