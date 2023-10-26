@@ -147,7 +147,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
             default: false
         },
         'terminal.integrated.cursorStyle': {
-            description: nls.localizeByDefault('Controls the style of terminal cursor.'),
+            description: nls.localizeByDefault('Controls the style of terminal cursor when the terminal is focused.'),
             enum: ['block', 'underline', 'line'],
             default: 'block'
         },

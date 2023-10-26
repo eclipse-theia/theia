@@ -66,7 +66,8 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
         'files.associations': {
             type: 'object',
             markdownDescription: nls.localizeByDefault(
-                'Configure file associations to languages (for example `"*.extension": "html"`). These have precedence over the default associations of the languages installed.'
+                // eslint-disable-next-line max-len
+                'Configure [glob patterns](https://aka.ms/vscode-glob-patterns) of file associations to languages (for example `\"*.extension\": \"html\"`). Patterns will match on the absolute path of a file if they contain a path separator and will match on the name of the file otherwise. These have precedence over the default associations of the languages installed.'
             )
         },
         'files.autoGuessEncoding': {
