@@ -34,6 +34,7 @@ import { PluginIconPath } from '../plugin-icon-path';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { isObject } from '@theia/core';
+import { coalesce } from '../../common/arrays';
 
 export class TreeViewsExtImpl implements TreeViewsExt {
     private proxy: TreeViewsMain;
@@ -407,7 +408,7 @@ class TreeViewExtImpl<T> implements Disposable {
         // ask data provider for children for cached element
         const result = await this.options.treeDataProvider.getChildren(parent);
         if (result) {
-            const treeItemPromises = result.map(async value => {
+            const treeItemPromises = coalesce(result).map(async value => {
 
                 // Ask data provider for a tree item for the value
                 // Data provider must return theia.TreeItem
