@@ -52,6 +52,7 @@ export class TheiaApp {
     public constructor(
         public page: Page,
         public workspace: TheiaWorkspace,
+        public isElectronApp: boolean,
         mainPageObjects: TheiaAppMainPageObjects = new TheiaAppMainPageObjects()
     ) {
         this.statusBar = new mainPageObjects.statusBar(this);
