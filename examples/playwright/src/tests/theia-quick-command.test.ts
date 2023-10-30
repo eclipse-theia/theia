@@ -27,8 +27,6 @@ if (process.env.USE_ELECTRON === 'true') {
     // TODO: remove this once the test is stable enough with electron
     test.describe.skip('Theia Quick Command', () => { });
 } else {
-    // the tests in this file reuse a page to run faster and thus are executed serially
-    test.describe.configure({ mode: 'serial' });
     test.describe('Theia Quick Command', () => {
 
         let app: TheiaApp;

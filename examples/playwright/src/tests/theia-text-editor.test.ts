@@ -21,8 +21,6 @@ import { DefaultPreferences, PreferenceIds, TheiaPreferenceView } from '../theia
 import { TheiaTextEditor } from '../theia-text-editor';
 import { TheiaWorkspace } from '../theia-workspace';
 
-// the tests in this file reuse a page to run faster and thus are executed serially
-test.describe.configure({ mode: 'serial' });
 test.describe('Theia Text Editor', () => {
 
     let app: TheiaApp;

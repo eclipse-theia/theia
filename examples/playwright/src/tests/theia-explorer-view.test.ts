@@ -21,8 +21,6 @@ import { PreferenceIds, TheiaPreferenceView } from '../theia-preference-view';
 import { DOT_FILES_FILTER, TheiaExplorerView } from '../theia-explorer-view';
 import { TheiaWorkspace } from '../theia-workspace';
 
-// the tests in this file reuse a page to run faster and thus are executed serially
-test.describe.configure({ mode: 'serial' });
 test.describe('Theia Explorer View', () => {
 
     let app: TheiaApp;

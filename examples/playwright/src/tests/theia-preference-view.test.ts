@@ -19,14 +19,12 @@ import { TheiaApp } from '../theia-app';
 import { TheiaAppLoader } from '../theia-app-loader';
 import { DefaultPreferences, PreferenceIds, TheiaPreferenceView } from '../theia-preference-view';
 
-// the tests in this file reuse a page to run faster and thus are executed serially
-test.describe.configure({ mode: 'serial' });
 test.describe('Preference View', () => {
 
     let app: TheiaApp;
 
     test.beforeAll(async ({ playwright, browser }) => {
-        app = await TheiaAppLoader.load({playwright, browser});
+        app = await TheiaAppLoader.load({ playwright, browser });
     });
 
     test.afterAll(async () => {

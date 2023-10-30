@@ -21,8 +21,6 @@ import { TheiaAboutDialog } from '../theia-about-dialog';
 import { TheiaMenuBar } from '../theia-main-menu';
 import { OSUtil } from '../util';
 
-// the tests in this file reuse a page to run faster and thus are executed serially
-test.describe.configure({ mode: 'serial' });
 test.describe('Theia Main Menu', () => {
 
     let app: TheiaApp;

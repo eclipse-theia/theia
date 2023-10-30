@@ -20,6 +20,7 @@ const config: PlaywrightTestConfig = {
     testDir: '../lib/tests',
     testMatch: ['**/*.js'],
     workers: 1,
+    fullyParallel: false,
     // Timeout for each test in milliseconds.
     timeout: 60 * 1000,
     use: {

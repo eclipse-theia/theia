@@ -36,14 +36,12 @@ class TheiaSampleApp extends TheiaApp {
     }
 }
 
-// the tests in this file reuse a page to run faster and thus are executed serially
-test.describe.configure({ mode: 'serial' });
 test.describe('Theia Sample Application', () => {
 
     let app: TheiaSampleApp;
 
     test.beforeAll(async ({ playwright, browser }) => {
-        app = await TheiaAppLoader.load({playwright, browser}, new TheiaWorkspace(), TheiaSampleApp);
+        app = await TheiaAppLoader.load({ playwright, browser }, new TheiaWorkspace(), TheiaSampleApp);
     });
 
     test.afterAll(async () => {

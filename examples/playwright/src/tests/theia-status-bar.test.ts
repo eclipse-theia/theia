@@ -22,8 +22,6 @@ import { TheiaProblemIndicator } from '../theia-problem-indicator';
 import { TheiaStatusBar } from '../theia-status-bar';
 import { TheiaToggleBottomIndicator } from '../theia-toggle-bottom-indicator';
 
-// the tests in this file reuse a page to run faster and thus are executed serially
-test.describe.configure({ mode: 'serial' });
 test.describe('Theia Status Bar', () => {
 
     let app: TheiaApp;

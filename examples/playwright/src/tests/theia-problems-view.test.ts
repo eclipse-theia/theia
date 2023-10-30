@@ -19,8 +19,6 @@ import { TheiaApp } from '../theia-app';
 import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaProblemsView } from '../theia-problem-view';
 
-// the tests in this file reuse a page to run faster and thus are executed serially
-test.describe.configure({ mode: 'serial' });
 test.describe('Theia Problems View', () => {
 
     let app: TheiaApp;
