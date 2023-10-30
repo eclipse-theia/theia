@@ -96,7 +96,8 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
         return this.sshConnectionProvider.establishConnection({
             host,
             user,
-            nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate']
+            nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
+            remoteHttpCopyPort: this.remotePreferences['remote.httpRemoteCopyPort']
         });
     }
 }

@@ -27,6 +27,7 @@ export interface RemoteSetupOptions {
     connection: RemoteConnection;
     report: RemoteStatusReport;
     nodeDownloadTemplate?: string;
+    remoteHttpCopyPort?: number;
 }
 
 @injectable()
@@ -51,7 +52,8 @@ export class RemoteSetupService {
         const {
             connection,
             report,
-            nodeDownloadTemplate
+            nodeDownloadTemplate,
+            remoteHttpCopyPort
         } = options;
         report('Identifying remote system...');
         // 1. Identify remote platform
@@ -73,23 +75,23 @@ export class RemoteSetupService {
             await connection.copy(nodeArchive, remoteNodeZip);
             await this.unzipRemote(connection, platform, remoteNodeZip, applicationDirectory);
         }
+        const nodeExecutable = this.scriptService.joinPath(platform, remoteNodeDirectory, ...(platform.os === OS.Type.Windows ? ['node.exe'] : ['bin', 'node']));
         // 4. Copy backend to remote system
         const libDir = this.scriptService.joinPath(platform, applicationDirectory, 'lib');
         const libDirExists = await this.dirExistsRemote(connection, libDir);
         if (!libDirExists) {
             report('Installing application on remote...');
             const applicationZipFile = this.scriptService.joinPath(platform, applicationDirectory, `${this.getRemoteAppName()}.tar`);
-            await this.copyService.copyToRemote(connection, platform, applicationZipFile);
+            await this.copyService.copyToRemote(connection, platform, applicationZipFile, nodeExecutable, remoteHttpCopyPort);
             await this.unzipRemote(connection, platform, applicationZipFile, applicationDirectory);
         }
         // 5. start remote backend
         report('Starting application on remote...');
-        const port = await this.startApplication(connection, platform, applicationDirectory, remoteNodeDirectory);
+        const port = await this.startApplication(connection, platform, applicationDirectory, nodeExecutable);
         connection.remotePort = port;
     }
 
-    protected async startApplication(connection: RemoteConnection, platform: RemotePlatform, remotePath: string, nodeDir: string): Promise<number> {
-        const nodeExecutable = this.scriptService.joinPath(platform, nodeDir, ...(platform.os === OS.Type.Windows ? ['node.exe'] : ['bin', 'node']));
+    protected async startApplication(connection: RemoteConnection, platform: RemotePlatform, remotePath: string, nodeExecutable: string): Promise<number> {
         const mainJsFile = this.scriptService.joinPath(platform, remotePath, 'lib', 'backend', 'main.js');
         const localAddressRegex = /listening on http:\/\/127.0.0.1:(\d+)/;
         let prefix = '';

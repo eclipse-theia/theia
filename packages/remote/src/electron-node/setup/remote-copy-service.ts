@@ -18,12 +18,15 @@ import * as archiver from 'archiver';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
+import * as http from 'http';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { RemoteConnection, RemotePlatform } from '../remote-types';
 import { RemoteNativeDependencyService } from './remote-native-dependency-service';
 import { ContributionProvider } from '@theia/core';
 import { RemoteCopyContribution, RemoteCopyRegistry, RemoteFile } from './remote-copy-contribution';
+import { RemoteSetupScriptService } from './remote-setup-script-service';
+import { launchNodeHttpCopyServer } from './http-copy-server';
 
 @injectable()
 export class RemoteCopyService {
@@ -37,12 +40,15 @@ export class RemoteCopyService {
     @inject(RemoteNativeDependencyService)
     protected readonly nativeDependencyService: RemoteNativeDependencyService;
 
+    @inject(RemoteSetupScriptService)
+    protected readonly scriptService: RemoteSetupScriptService;
+
     @inject(ContributionProvider) @named(RemoteCopyContribution)
     protected readonly copyContributions: ContributionProvider<RemoteCopyContribution>;
 
     protected initialized = false;
 
-    async copyToRemote(remote: RemoteConnection, remotePlatform: RemotePlatform, destination: string): Promise<void> {
+    async copyToRemote(remote: RemoteConnection, remotePlatform: RemotePlatform, destination: string, nodeExecutable: string, remoteHttpCopyPort?: number): Promise<void> {
         const zipName = path.basename(destination);
         const projectPath = this.applicationPackage.projectPath;
         const tempDir = await this.getTempDir();
@@ -66,10 +72,60 @@ export class RemoteCopyService {
             });
         }
         await archive.finalize();
-        await remote.copy(zipPath, destination);
+
+        const copyMethodOrder = [this.httpCopy, this.sftpCopy];
+        for (const copyMethod of copyMethodOrder) {
+            try {
+                await copyMethod.call(this, zipPath, destination, remote, remotePlatform, nodeExecutable, remoteHttpCopyPort);
+                break;
+            } catch (error) {
+                console.warn(`Failed to ${copyMethod.name} application to remote system: ${error.message}`);
+                if (copyMethod === copyMethodOrder[copyMethodOrder.length - 1]) {
+                    throw new Error('could not find a working way to copy backend to remote system');
+                }
+            }
+        }
+
         await fs.promises.rm(tempDir, {
             recursive: true,
             force: true
+        });
+    }
+
+    protected async sftpCopy(zipPath: string, destination: string, remote: RemoteConnection): Promise<void> {
+        await remote.copy(zipPath, destination);
+    }
+
+    protected async httpCopy(zipPath: string, destination: string,
+        remote: RemoteConnection, remotePlatform: RemotePlatform,
+        nodeExecutable: string, remoteHttpCopyPort?: number): Promise<void> {
+        const httpServerScript = Buffer.from(`
+            const __require = require;
+            ${launchNodeHttpCopyServer}
+            launchNodeHttpCopyServer('${destination}', ${remoteHttpCopyPort ?? 8080})`, 'utf-8'
+        );
+        const serverScriptLocation = (await remote.exec(this.scriptService.tempFile(remotePlatform))).stdout.trim();
+        await remote.copy(httpServerScript, serverScriptLocation); // TODO get remote tempPath
+        const serverProcess = await remote.execPartial(`${nodeExecutable} ${serverScriptLocation}`, stdout => stdout.includes('Port:'));
+        if (serverProcess.stderr.includes('Error')) {
+            throw new Error('error launching http server on target system: ' + serverProcess.stderr);
+        }
+        const port = Number(serverProcess.stdout.trim().split(':')[1]);
+
+        return new Promise((res, rej) => {
+            try {
+                const zipStat = fs.statSync(zipPath);
+                const request = http.request(`http://${remote.name}:${port}`, { method: 'POST', headers: { 'Content-Length': zipStat.size } }, response => {
+                    if (response.statusCode !== 200) {
+                        rej(new Error('http server returned status code ' + response.statusCode));
+                    } else {
+                        res();
+                    }
+                });
+                fs.createReadStream(zipPath).pipe(request);
+            } catch (err) {
+                rej(err);
+            }
         });
     }
 

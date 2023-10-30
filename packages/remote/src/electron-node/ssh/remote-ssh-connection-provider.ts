@@ -64,7 +64,8 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
             await this.remoteSetup.setup({
                 connection: remote,
                 report,
-                nodeDownloadTemplate: options.nodeDownloadTemplate
+                nodeDownloadTemplate: options.nodeDownloadTemplate,
+                remoteHttpCopyPort: options.remoteHttpCopyPort
             });
             const registration = this.remoteConnectionService.register(remote);
             const server = await this.serverProvider.getProxyServer(socket => {
@@ -83,6 +84,12 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
     }
 
     async establishSSHConnection(host: string, user: string): Promise<RemoteSSHConnection> {
+        let port = undefined;
+        if (host.includes(':')) {
+            const parts = host.split(':');
+            host = parts[0];
+            port = parseInt(parts[1]);
+        }
         const deferred = new Deferred<RemoteSSHConnection>();
         const sshClient = new ssh2.Client();
         const identityFiles = await this.identityFileCollector.gatherIdentityFiles();
@@ -107,6 +114,7 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
                 deferred.reject(err);
             }).connect({
                 host: host,
+                port,
                 username: user,
                 authHandler: (methodsLeft, successes, callback) => (sshAuthHandler(methodsLeft, successes, callback), undefined)
             });
