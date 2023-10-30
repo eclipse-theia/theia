@@ -23,29 +23,25 @@ import { FileDialogTree } from '../../browser/file-dialog/file-dialog-tree';
 import { FileDialogTreeFiltersRenderer, FileDialogTreeFiltersRendererFactory, FileDialogTreeFiltersRendererOptions } from '../../browser/file-dialog';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
-    if (window.electronTheiaFilesystem.useNativeDialogs) {
-        bind(ElectronFileDialogService).toSelf().inSingletonScope();
-        rebind(FileDialogService).toService(ElectronFileDialogService);
-    } else {
-        bind(DefaultFileDialogService).toSelf().inSingletonScope();
-        bind(FileDialogService).toService(DefaultFileDialogService);
-        bind(LocationListRendererFactory).toFactory(context => (options: LocationListRendererOptions) => {
-            const childContainer = context.container.createChild();
-            childContainer.bind(LocationListRendererOptions).toConstantValue(options);
-            childContainer.bind(LocationListRenderer).toSelf().inSingletonScope();
-            return childContainer.get(LocationListRenderer);
-        });
-        bind(FileDialogTreeFiltersRendererFactory).toFactory(context => (options: FileDialogTreeFiltersRendererOptions) => {
-            const childContainer = context.container.createChild();
-            childContainer.bind(FileDialogTreeFiltersRendererOptions).toConstantValue(options);
-            childContainer.bind(FileDialogTreeFiltersRenderer).toSelf().inSingletonScope();
-            return childContainer.get(FileDialogTreeFiltersRenderer);
-        });
-        bind(HiddenFilesToggleRendererFactory).toFactory(({ container }) => (fileDialogTree: FileDialogTree) => {
-            const child = container.createChild();
-            child.bind(FileDialogTree).toConstantValue(fileDialogTree);
-            child.bind(FileDialogHiddenFilesToggleRenderer).toSelf().inSingletonScope();
-            return child.get(FileDialogHiddenFilesToggleRenderer);
-        });
-    }
+    bind(DefaultFileDialogService).toSelf().inSingletonScope();
+    bind(LocationListRendererFactory).toFactory(context => (options: LocationListRendererOptions) => {
+        const childContainer = context.container.createChild();
+        childContainer.bind(LocationListRendererOptions).toConstantValue(options);
+        childContainer.bind(LocationListRenderer).toSelf().inSingletonScope();
+        return childContainer.get(LocationListRenderer);
+    });
+    bind(FileDialogTreeFiltersRendererFactory).toFactory(context => (options: FileDialogTreeFiltersRendererOptions) => {
+        const childContainer = context.container.createChild();
+        childContainer.bind(FileDialogTreeFiltersRendererOptions).toConstantValue(options);
+        childContainer.bind(FileDialogTreeFiltersRenderer).toSelf().inSingletonScope();
+        return childContainer.get(FileDialogTreeFiltersRenderer);
+    });
+    bind(HiddenFilesToggleRendererFactory).toFactory(({ container }) => (fileDialogTree: FileDialogTree) => {
+        const child = container.createChild();
+        child.bind(FileDialogTree).toConstantValue(fileDialogTree);
+        child.bind(FileDialogHiddenFilesToggleRenderer).toSelf().inSingletonScope();
+        return child.get(FileDialogHiddenFilesToggleRenderer);
+    });
+    bind(ElectronFileDialogService).toSelf().inSingletonScope();
+    rebind(FileDialogService).toService(ElectronFileDialogService);
 });
