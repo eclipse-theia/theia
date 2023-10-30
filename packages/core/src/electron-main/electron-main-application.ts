@@ -264,15 +264,7 @@ export class ElectronMainApplication {
         if (browserWindow) {
             this.saveWindowState(browserWindow);
         } else {
-            console.warn(`no BrowserWindow wit  "theia": {
-                "frontend": {
-                  "config": {
-                    "electron": {
-                      "showWindowEarly": false
-                    }
-                  }
-                }
-              },h id: ${webContents.id}`);
+            console.warn(`no BrowserWindow with id: ${webContents.id}`);
         }
     }
 
