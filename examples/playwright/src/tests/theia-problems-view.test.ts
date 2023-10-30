@@ -26,23 +26,7 @@ test.describe('Theia Problems View', () => {
     let app: TheiaApp;
 
     test.beforeAll(async ({ playwright, browser }) => {
-        let args;
-        if (process.env.USE_ELECTRON === 'true') {
-            args = {
-                playwright: playwright,
-                browser: browser,
-                useElectron: {
-                    electronAppPath: '../electron',
-                    pluginsPath: '../../plugins'
-                }
-            };
-        } else {
-            args = {
-                playwright: playwright,
-                browser: browser
-            };
-        }
-        app = await TheiaAppLoader.load(args);
+        app = await TheiaAppLoader.load({ playwright, browser });
     });
 
     test.afterAll(async () => {

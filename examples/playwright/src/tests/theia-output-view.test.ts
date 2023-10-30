@@ -22,29 +22,13 @@ import { TheiaOutputView } from '../theia-output-view';
 
 if (process.env.USE_ELECTRON === 'true') {
     // TODO: remove this once the test is stable enough with electron
-    test.describe.skip('Theia Output View', () => {});
+    test.describe.skip('Theia Output View', () => { });
 } else {
     let app: TheiaApp; let outputView: TheiaOutputView; let testChannel: TheiaOutputViewChannel;
     test.describe('Theia Output View', () => {
 
         test.beforeAll(async ({ playwright, browser }) => {
-            let args;
-            if (process.env.USE_ELECTRON === 'true') {
-                args = {
-                    playwright: playwright,
-                    browser: browser,
-                    useElectron: {
-                        electronAppPath: '../electron',
-                        pluginsPath: '../../plugins'
-                    }
-                };
-            } else {
-                args = {
-                    playwright: playwright,
-                    browser: browser
-                };
-            }
-            app = await TheiaAppLoader.load(args);
+            app = await TheiaAppLoader.load({ playwright, browser });
         });
 
         test.afterAll(async () => {

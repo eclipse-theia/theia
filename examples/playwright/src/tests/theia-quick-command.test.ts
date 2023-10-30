@@ -25,7 +25,7 @@ import { TheiaQuickCommandPalette } from '../theia-quick-command-palette';
 
 if (process.env.USE_ELECTRON === 'true') {
     // TODO: remove this once the test is stable enough with electron
-    test.describe.skip('Theia Quick Command', () => {});
+    test.describe.skip('Theia Quick Command', () => { });
 } else {
     // the tests in this file reuse a page to run faster and thus are executed serially
     test.describe.configure({ mode: 'serial' });
@@ -35,23 +35,7 @@ if (process.env.USE_ELECTRON === 'true') {
         let quickCommand: TheiaQuickCommandPalette;
 
         test.beforeAll(async ({ playwright, browser }) => {
-            let args;
-            if (process.env.USE_ELECTRON === 'true') {
-                args = {
-                    playwright: playwright,
-                    browser: browser,
-                    useElectron: {
-                        electronAppPath: '../electron',
-                        pluginsPath: '../../plugins'
-                    }
-                };
-            } else {
-                args = {
-                    playwright: playwright,
-                    browser: browser
-                };
-            }
-            app = await TheiaAppLoader.load(args);
+            app = await TheiaAppLoader.load({ playwright, browser });
             quickCommand = app.quickCommandPalette;
         });
 

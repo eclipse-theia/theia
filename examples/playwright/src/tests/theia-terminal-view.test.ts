@@ -26,23 +26,7 @@ test.describe('Theia Terminal View', () => {
 
     test.beforeAll(async ({ playwright, browser }) => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
-        let args;
-        if (process.env.USE_ELECTRON === 'true') {
-            args = {
-                playwright: playwright,
-                browser: browser,
-                useElectron: {
-                    electronAppPath: '../electron',
-                    pluginsPath: '../../plugins'
-                }
-            };
-        } else {
-            args = {
-                playwright: playwright,
-                browser: browser
-            };
-        }
-        app = await TheiaAppLoader.load(args, ws);
+        app = await TheiaAppLoader.load({ playwright, browser }, ws);
     });
 
     test.afterAll(async () => {

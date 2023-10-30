@@ -26,23 +26,7 @@ test.describe('Theia Application', () => {
     });
 
     test('should load and should show main content panel', async ({ playwright, browser }) => {
-        let args;
-        if (process.env.USE_ELECTRON === 'true') {
-            args = {
-                playwright: playwright,
-                browser: browser,
-                useElectron: {
-                    electronAppPath: '../electron',
-                    pluginsPath: '../../plugins'
-                }
-            };
-        } else {
-            args = {
-                playwright: playwright,
-                browser: browser
-            };
-        }
-        app = await TheiaAppLoader.load(args);
+        app = await TheiaAppLoader.load({ playwright, browser });
         expect(await app.isMainContentPanelVisible()).toBe(true);
     });
 

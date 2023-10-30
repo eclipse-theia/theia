@@ -27,30 +27,12 @@ test.describe('Theia Explorer View', () => {
 
     let app: TheiaApp;
     let explorer: TheiaExplorerView;
-    let isElectron: boolean;
 
     test.beforeAll(async ({ playwright, browser }) => {
-        isElectron = process.env.USE_ELECTRON === 'true';
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
-        let args;
-        if (isElectron) {
-            args = {
-                playwright: playwright,
-                browser: browser,
-                useElectron: {
-                    electronAppPath: '../electron',
-                    pluginsPath: '../../plugins'
-                }
-            };
-        } else {
-            args = {
-                playwright: playwright,
-                browser: browser
-            };
-        }
-        app = await TheiaAppLoader.load(args, ws);
+        app = await TheiaAppLoader.load({ playwright, browser }, ws);
 
-        if (isElectron) {
+        if (app.isElectron) {
             // set trash preference to off
             const preferenceView = await app.openPreferences(TheiaPreferenceView);
             await preferenceView.setBooleanPreferenceById(PreferenceIds.Files.EnableTrash, false);
@@ -164,7 +146,7 @@ test.describe('Theia Explorer View', () => {
         const menuItems = await menu.visibleMenuItems();
         expect(menuItems).toContain('Open');
         expect(menuItems).toContain('Delete');
-        if (!isElectron) {
+        if (!app.isElectron) {
             expect(menuItems).toContain('Download');
         }
 

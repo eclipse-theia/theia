@@ -82,7 +82,10 @@ class TheiaElectronAppLoader {
         factory?: TheiaAppFactory<T>,
     ): Promise<T> {
         const workspace = initializeWorkspace(initialWorkspace);
-        const electronConfig = args.useElectron;
+        const electronConfig = args.useElectron ?? {
+            electronAppPath: '../electron',
+            pluginsPath: '../../plugins'
+        };
         if (electronConfig === undefined || electronConfig.launchOptions === undefined && electronConfig.electronAppPath === undefined) {
             throw Error('The Theia Playwright configuration must either specify `useElectron.electronAppPath` or `useElectron.launchOptions`');
         }
@@ -165,7 +168,7 @@ export class TheiaAppLoader {
         initialWorkspace?: TheiaWorkspace,
         factory?: TheiaAppFactory<T>,
     ): Promise<T> {
-        if (args.useElectron) {
+        if (process.env.USE_ELECTRON === 'true') {
             return TheiaElectronAppLoader.load(args, initialWorkspace, factory);
         }
         const page = await args.browser.newPage();
