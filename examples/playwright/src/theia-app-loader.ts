@@ -71,7 +71,6 @@ class TheiaBrowserAppLoader {
             }
         }
     }
-
 }
 
 class TheiaElectronAppLoader {
@@ -91,8 +90,13 @@ class TheiaElectronAppLoader {
         }
         const appPath = electronConfig.electronAppPath!;
         const pluginsPath = electronConfig.pluginsPath;
-        const launchOptions = electronConfig.launchOptions ?? new ElectronLaunchOptions(appPath, pluginsPath);
+        const launchOptions = electronConfig.launchOptions ?? {
+            additionalArgs: ['--no-cluster'],
+            electronAppPath: appPath,
+            pluginsPath: pluginsPath
+        };
         const playwrightOptions = this.toPlaywrightOptions(launchOptions, workspace);
+        console.log(`Launching Electron with options: ${JSON.stringify(playwrightOptions)}`);
         const electronApp = await electron.launch(playwrightOptions);
         const page = await electronApp.firstWindow();
         const appFactory = theiaAppFactory<T>(factory);
@@ -102,49 +106,33 @@ class TheiaElectronAppLoader {
     }
 
     protected static toPlaywrightOptions(
-        electronLaunchOptions: ElectronLaunchOptions | object,
+        electronLaunchOptions: { additionalArgs: string[], electronAppPath: string, pluginsPath?: string } | object,
         workspace?: TheiaWorkspace
-    ): object {
-        if (electronLaunchOptions instanceof ElectronLaunchOptions) {
-            return electronLaunchOptions.playwrightOptions(workspace);
+    ): { executablePath: string, args: string[] } | object {
+        if ('additionalArgs' in electronLaunchOptions && 'electronAppPath' in electronLaunchOptions) {
+            const executablePath = path.normalize(path.join(electronLaunchOptions.electronAppPath, 'node_modules/.bin/electron')) + (OSUtil.isWindows ? '.cmd' : '');
+            if (!fs.existsSync(executablePath)) {
+                const errorMsg = `executablePath: ${executablePath} does not exist`;
+                console.log(errorMsg);
+                throw new Error(errorMsg);
+            }
+            const args = [
+                electronLaunchOptions.electronAppPath,
+                ...electronLaunchOptions.additionalArgs,
+                `--app-project-path=${electronLaunchOptions.electronAppPath}`
+            ];
+            if (electronLaunchOptions.pluginsPath) {
+                args.push(`--plugins=local-dir:${electronLaunchOptions.pluginsPath}`);
+            }
+            if (workspace) {
+                args.push(workspace.path);
+            }
+
+            process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS = '1';
+            process.env.THEIA_ELECTRON_NO_EARLY_WINDOW = '1';
+            return { executablePath: executablePath, args: args };
         }
         return electronLaunchOptions;
-    }
-}
-
-export class ElectronLaunchOptions {
-
-    constructor(
-        protected readonly electronAppPath: string,
-        protected readonly pluginsPath?: string,
-        protected readonly additionalArgs: string[] = ['--no-cluster']
-    ) { }
-
-    playwrightOptions(workspace?: TheiaWorkspace): object {
-        let executablePath = path.normalize(path.join(this.electronAppPath, 'node_modules/.bin/electron'));
-        if (OSUtil.isWindows) {
-            executablePath += '.cmd';
-        }
-        if (!fs.existsSync(executablePath)) {
-            const errorMsg = `executablePath: ${executablePath} does not exist`;
-            console.log(errorMsg);
-            throw new Error(errorMsg);
-        }
-
-        const args: string[] = [];
-        args.push(this.electronAppPath);
-        args.push(...this.additionalArgs);
-        args.push(`--app-project-path=${this.electronAppPath}`);
-        if (this.pluginsPath) {
-            args.push(`--plugins=local-dir:${this.pluginsPath}`);
-        };
-        if (workspace) {
-            args.push(workspace.path);
-        }
-        process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS = '1';
-        process.env.THEIA_ELECTRON_NO_EARLY_WINDOW = '1';
-        console.log(`Launching Electron: ${executablePath} ${args.join(' ')}`);
-        return { executablePath, args };
     }
 }
 
