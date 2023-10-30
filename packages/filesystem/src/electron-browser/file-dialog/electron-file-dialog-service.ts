@@ -31,6 +31,8 @@ import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } fr
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { OpenDialogOptions, SaveDialogOptions } from '../../electron-common/electron-api';
 
+import '@theia/core/lib/electron-common/electron-api';
+
 @injectable()
 export class ElectronFileDialogService extends DefaultFileDialogService {
 
@@ -39,7 +41,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     override async showOpenDialog(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<URI> | undefined>;
     override async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<URI | undefined>;
     override async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<URI> | undefined> {
-        if (window.electronTheiaFilesystem.useNativeDialogs) {
+        if (window.electronTheiaCore.useNativeElements) {
             const rootNode = await this.getRootNode(folder);
             if (rootNode) {
                 const filePaths = await window.electronTheiaFilesystem.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props));
@@ -58,7 +60,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     }
 
     override async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
-        if (window.electronTheiaFilesystem.useNativeDialogs) {
+        if (window.electronTheiaCore.useNativeElements) {
             const rootNode = await this.getRootNode(folder);
             if (rootNode) {
                 const filePath = await window.electronTheiaFilesystem.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props));

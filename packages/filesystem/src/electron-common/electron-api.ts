@@ -43,7 +43,6 @@ export interface SaveDialogOptions {
 export interface TheiaFilesystemAPI {
     showOpenDialog(options: OpenDialogOptions): Promise<string[] | undefined>;
     showSaveDialog(options: SaveDialogOptions): Promise<string | undefined>;
-    useNativeDialogs: boolean;
 }
 
 declare global {
