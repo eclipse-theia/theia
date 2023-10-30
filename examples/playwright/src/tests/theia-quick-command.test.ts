@@ -51,7 +51,6 @@ if (process.env.USE_ELECTRON === 'true') {
         });
 
         test('should trigger \'About\' command after typing', async () => {
-            await quickCommand.open();
             await quickCommand.type('About');
             await quickCommand.trigger('About');
             expect(await quickCommand.isOpen()).toBe(false);
@@ -66,7 +65,6 @@ if (process.env.USE_ELECTRON === 'true') {
         });
 
         test('should trigger \'Toggle Explorer View\' command after typing', async () => {
-            await quickCommand.open();
             await quickCommand.type('Toggle Explorer');
             await quickCommand.trigger('Toggle Explorer View');
             expect(await quickCommand.isOpen()).toBe(false);
