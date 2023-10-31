@@ -128,8 +128,6 @@ class TheiaElectronAppLoader {
                 args.push(workspace.path);
             }
 
-            process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS = '1';
-            process.env.THEIA_ELECTRON_NO_EARLY_WINDOW = '1';
             return { executablePath: executablePath, args: args };
         }
         return electronLaunchOptions;
@@ -157,6 +155,9 @@ export class TheiaAppLoader {
         factory?: TheiaAppFactory<T>,
     ): Promise<T> {
         if (process.env.USE_ELECTRON === 'true') {
+            // disable native elements and early window to avoid issues with the electron app
+            process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS = '1';
+            process.env.THEIA_ELECTRON_NO_EARLY_WINDOW = '1';
             return TheiaElectronAppLoader.load(args, initialWorkspace, factory);
         }
         const page = await args.browser.newPage();
