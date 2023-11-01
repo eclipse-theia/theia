@@ -318,6 +318,15 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
                     this._busy--;
                 }
             }
+        } else {
+            this._busy++;
+            try {
+                await this.progressService.withProgress(nls.localizeByDefault("Installing extension '{0}' v{1}...", this.id, this.version ?? 0), 'extensions', () =>
+                    this.pluginServer.deploy(this.uri.toString(), undefined, options)
+                );
+            } finally {
+                this._busy--;
+            }
         }
     }
 

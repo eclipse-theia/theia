@@ -114,7 +114,9 @@ export class VSXExtensionsModel {
     }
 
     setOnlyShowVerifiedExtensions(bool: boolean): void {
-        this.preferences.updateValue('extensions.onlyShowVerifiedExtensions', bool);
+        if (this.preferences.get('extensions.onlyShowVerifiedExtensions') !== bool) {
+            this.preferences.updateValue('extensions.onlyShowVerifiedExtensions', bool);
+        }
         this.updateSearchResult();
     }
 
