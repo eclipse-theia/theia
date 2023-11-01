@@ -19,6 +19,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as http from 'http';
+import * as crypto from 'crypto';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { RemoteConnection, RemotePlatform } from '../remote-types';
@@ -99,10 +100,11 @@ export class RemoteCopyService {
     protected async httpCopy(zipPath: string, destination: string,
         remote: RemoteConnection, remotePlatform: RemotePlatform,
         nodeExecutable: string, remoteHttpCopyPort?: number): Promise<void> {
+        const zipChecksum = crypto.createHash('sha512').update(fs.readFileSync(zipPath)).digest('hex');
         const httpServerScript = Buffer.from(`
             const __require = require;
             ${launchNodeHttpCopyServer}
-            launchNodeHttpCopyServer('${destination}', ${remoteHttpCopyPort ?? 8080})`, 'utf-8'
+            launchNodeHttpCopyServer('${destination}', ${remoteHttpCopyPort ?? 8080}, '${zipChecksum}')`, 'utf-8'
         );
         const serverScriptLocation = (await remote.exec(this.scriptService.tempFile(remotePlatform))).stdout.trim();
         await remote.copy(httpServerScript, serverScriptLocation); // TODO get remote tempPath

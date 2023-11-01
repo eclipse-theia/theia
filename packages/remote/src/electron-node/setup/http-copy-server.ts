@@ -19,18 +19,26 @@ import { AddressInfo } from 'net';
 
 declare function __require(module: string): unknown;
 
-export function launchNodeHttpCopyServer(destination: string, port: number): void {
+export function launchNodeHttpCopyServer(destination: string, port: number, checksum: string): void {
 
     const http = __require('http') as typeof import('http');
     const fs = __require('fs') as typeof import('fs');
+    const crypto = __require('crypto') as typeof import('crypto');
 
     const server = http.createServer((req: IncomingMessage, res: ServerResponse) => {
 
         const stream = req.pipe(fs.createWriteStream(destination));
         stream.on('finish', () => {
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'text/plain');
-            res.end('Copyed successful');
+            const zipChecksum = crypto.createHash('sha512').update(fs.readFileSync(destination)).digest('hex');
+            if (zipChecksum === checksum) {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'text/plain');
+                res.end('Copyed successful');
+            } else {
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'text/plain');
+                res.end('Copy failed: Checksum mismatch');
+            }
             server.close();
         });
         stream.on('error', (err: Error) => {
