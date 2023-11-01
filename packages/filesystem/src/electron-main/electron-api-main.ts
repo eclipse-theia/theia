@@ -49,7 +49,7 @@ export class ElectronApi implements ElectronMainApplicationContribution {
                 properties: properties
             };
 
-            if (options.modal) {
+            if (options.modal !== false) {
                 const win = BrowserWindow.fromWebContents(event.sender);
                 if (win) {
                     return (await dialog.showOpenDialog(win, dialogOpts)).filePaths;
@@ -65,7 +65,7 @@ export class ElectronApi implements ElectronMainApplicationContribution {
                 filters: options.filters,
                 title: options.title
             };
-            if (options.modal) {
+            if (options.modal !== false) {
                 const win = BrowserWindow.fromWebContents(event.sender);
                 if (win) {
                     return (await dialog.showSaveDialog(win, dialogOpts)).filePath;
