@@ -32,7 +32,6 @@ import * as notebooks from '@theia/notebook/lib/common';
 import { CommandsConverter } from './command-registry';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { CellRange, isTextStreamMime } from '@theia/notebook/lib/common';
-import { CellExecuteUpdate, CellExecutionComplete } from '@theia/notebook/lib/browser';
 import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
 
 import { TestItemDTO, TestMessageDTO } from '../common/test-types';
