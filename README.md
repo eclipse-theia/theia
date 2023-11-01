@@ -5,6 +5,8 @@
     <h3>Cloud & Desktop IDE Framework</h3>
 </div>
 
+Test
+
 <div id="badges" align="center">
 
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/help%20wanted)
