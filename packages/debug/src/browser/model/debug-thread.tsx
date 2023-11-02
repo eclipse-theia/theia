@@ -229,20 +229,33 @@ export class DebugThread extends DebugThreadData implements TreeElement {
     }
 
     render(): React.ReactNode {
-        const reason = this.stoppedDetails && this.stoppedDetails.reason;
-        const localizedReason = this.getLocalizedReason(reason);
-
-        const status = this.stoppedDetails
-            ? reason
-                ? nls.localizeByDefault('Paused on {0}', localizedReason)
-                : nls.localizeByDefault('Paused')
-            : nls.localizeByDefault('Running');
         return (
             <div className="theia-debug-thread" title={nls.localizeByDefault('Session')}>
                 <span className="label">{this.raw.name}</span>
-                <span className="status">{status}</span>
+                <span className="status">{this.threadStatus()}</span>
             </div>
         );
+    }
+
+    protected threadStatus(): string {
+        
+        if (!this.stoppedDetails) {
+            return nls.localizeByDefault('Running');
+        }
+        
+        const description = this.stoppedDetails.description;
+        
+        if (description) {
+            // According to DAP we must show description as is. Translation is made by debug adapter
+            return description;
+        }
+        
+        const reason = this.stoppedDetails.reason;
+        const localizedReason = this.getLocalizedReason(reason);
+
+        return reason
+                ? nls.localizeByDefault('Paused on {0}', localizedReason)
+                : nls.localizeByDefault('Paused');
     }
 
     protected getLocalizedReason(reason: string | undefined): string {
@@ -269,5 +282,4 @@ export class DebugThread extends DebugThreadData implements TreeElement {
                 return '';
         }
     }
-
 }
