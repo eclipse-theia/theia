@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 export * from './notebook-type-registry';
-export * from './notebook-renderer-registry';
 export * from './notebook-editor-widget';
 export * from './service/notebook-service';
 export * from './service/notebook-editor-widget-service';

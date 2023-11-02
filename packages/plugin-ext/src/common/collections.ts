@@ -36,17 +36,17 @@ export function diffSets<T>(before: Set<T>, after: Set<T>): { removed: T[]; adde
     return { removed, added };
 }
 
-export function diffMaps<K, V>(before: Map<K, V>, after: Map<K, V>): { removed: V[]; added: V[] } {
-    const removed: V[] = [];
-    const added: V[] = [];
+export function diffMaps<K, V>(before: Map<K, V>, after: Map<K, V>): { removed: [K, V][]; added: [K, V][] } {
+    const removed: [K, V][] = [];
+    const added: [K, V][] = [];
     for (const [index, value] of before) {
         if (!after.has(index)) {
-            removed.push(value);
+            removed.push([index, value]);
         }
     }
     for (const [index, value] of after) {
         if (!before.has(index)) {
-            added.push(value);
+            added.push([index, value]);
         }
     }
     return { removed, added };

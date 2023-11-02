@@ -88,6 +88,7 @@ import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar
 import { CellOutputWebviewFactory } from '@theia/notebook/lib/browser';
 import { CellOutputWebviewImpl, createCellOutputWebviewContainer } from './notebooks/renderers/cell-output-webview';
 import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
+import { NotebookRendererRegistry } from './notebooks/notebook-renderer-registry';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -265,4 +266,5 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CellOutputWebviewFactory).toFactory(ctx => async (cell: NotebookCellModel) =>
         createCellOutputWebviewContainer(ctx.container, cell).getAsync(CellOutputWebviewImpl)
     );
+    bind(NotebookRendererRegistry).toSelf().inSingletonScope();
 });

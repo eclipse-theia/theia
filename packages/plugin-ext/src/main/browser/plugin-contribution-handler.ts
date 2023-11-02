@@ -38,7 +38,7 @@ import { CommandRegistry, Command, CommandHandler } from '@theia/core/lib/common
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter } from '@theia/core/lib/common/event';
 import { TaskDefinitionRegistry, ProblemMatcherRegistry, ProblemPatternRegistry } from '@theia/task/lib/browser';
-import { NotebookRendererRegistry, NotebookTypeRegistry } from '@theia/notebook/lib/browser';
+import { NotebookTypeRegistry } from '@theia/notebook/lib/browser';
 import { PluginDebugService } from './debug/plugin-debug-service';
 import { DebugSchemaUpdater } from '@theia/debug/lib/browser/debug-schema-updater';
 import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-service';
@@ -53,6 +53,7 @@ import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { PluginTerminalRegistry } from './plugin-terminal-registry';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { NotebookRendererRegistry } from './notebooks/notebook-renderer-registry';
 
 @injectable()
 export class PluginContributionHandler {

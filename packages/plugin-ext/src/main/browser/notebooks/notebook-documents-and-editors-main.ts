@@ -61,8 +61,8 @@ class NotebookAndEditorState {
         return {
             addedDocuments: documentDelta.added,
             removedDocuments: documentDelta.removed.map(e => e.uri.toComponents()),
-            addedEditors: editorDelta.added,
-            removedEditors: editorDelta.removed.map(removed => removed.id),
+            addedEditors: editorDelta.added.map(added => added[1]),
+            removedEditors: editorDelta.removed.map(removed => removed[1].id),
             newActiveEditor: newActiveEditor,
             visibleEditors: visibleEditorDelta.added.length === 0 && visibleEditorDelta.removed.length === 0
                 ? undefined

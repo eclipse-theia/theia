@@ -170,3 +170,15 @@ export interface NotebookCellOutputsSplice {
     deleteCount: number;
     newOutputs: CellOutput[];
 };
+
+export interface NotebookTypeDescriptor {
+    readonly type: string;
+    readonly displayName: string;
+    readonly priority?: string | undefined;
+    readonly selector?: readonly NotebookFileSelector[];
+}
+
+export interface NotebookFileSelector {
+    readonly filenamePattern?: string;
+    readonly excludeFileNamePattern?: string;
+}

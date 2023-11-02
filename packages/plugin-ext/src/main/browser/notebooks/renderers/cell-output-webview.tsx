@@ -20,7 +20,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
-import { NotebookRendererMessagingService, CellOutputWebview, NotebookRendererRegistry, NotebookEditorWidgetService, NotebookCellOutputsSplice } from '@theia/notebook/lib/browser';
+import { NotebookRendererMessagingService, CellOutputWebview, NotebookEditorWidgetService, NotebookCellOutputsSplice } from '@theia/notebook/lib/browser';
 import { v4 } from 'uuid';
 import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import { WebviewWidget } from '../../webview/webview';
@@ -31,6 +31,7 @@ import { ChangePreferredMimetypeMessage, FromWebviewMessage, OutputChangedMessag
 import { CellUri } from '@theia/notebook/lib/common';
 import { Disposable, DisposableCollection, nls, QuickPickService } from '@theia/core';
 import { NotebookCellOutputModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-output-model';
+import { NotebookRendererRegistry } from '../notebook-renderer-registry';
 
 const CellModel = Symbol('CellModel');
 

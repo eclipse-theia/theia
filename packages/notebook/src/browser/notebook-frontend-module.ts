@@ -21,7 +21,6 @@ import { ColorContribution } from '@theia/core/lib/browser/color-application-con
 import { NotebookOpenHandler } from './notebook-open-handler';
 import { CommandContribution, MenuContribution, ResourceResolver, } from '@theia/core';
 import { NotebookTypeRegistry } from './notebook-type-registry';
-import { NotebookRendererRegistry } from './notebook-renderer-registry';
 import { NotebookService } from './service/notebook-service';
 import { NotebookEditorWidgetFactory } from './notebook-editor-widget-factory';
 import { NotebookCellResourceResolver } from './notebook-cell-resource-resolver';
@@ -53,7 +52,6 @@ export default new ContainerModule(bind => {
     bind(OpenHandler).toService(NotebookOpenHandler);
 
     bind(NotebookTypeRegistry).toSelf().inSingletonScope();
-    bind(NotebookRendererRegistry).toSelf().inSingletonScope();
 
     bind(WidgetFactory).to(NotebookEditorWidgetFactory).inSingletonScope();
     bind(NotebookCellToolbarFactory).toSelf().inSingletonScope();

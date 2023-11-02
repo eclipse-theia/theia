@@ -22,7 +22,7 @@ import { CellKind, NotebookData } from '../../common';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from './notebook-service';
 import { NotebookTypeRegistry } from '../notebook-type-registry';
-import { NotebookFileSelector } from '../../common/notebook-protocol';
+import { NotebookFileSelector } from '../notebook-types';
 import { match } from '@theia/core/lib/common/glob';
 
 export interface UntitledResource {

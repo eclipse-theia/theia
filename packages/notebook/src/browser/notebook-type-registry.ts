@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { Disposable } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
-import { NotebookTypeDescriptor } from '../common/notebook-protocol';
+import { NotebookTypeDescriptor } from './notebook-types';
 
 @injectable()
 export class NotebookTypeRegistry {

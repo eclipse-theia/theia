@@ -219,6 +219,18 @@ export interface NotebookKernelSourceAction {
     readonly documentation?: UriComponents | string;
 }
 
+export interface CellRange {
+    /**
+     * zero based index
+     */
+    start: number;
+
+    /**
+     * zero based index
+     */
+    end: number;
+}
+
 /**
  * Whether the provided mime type is a text stream like `stdout`, `stderr`.
  */
@@ -230,16 +242,21 @@ export namespace CellUri {
 
     export const scheme = 'vscode-notebook-cell';
 
-    const _lengths = ['W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f'];
-    const _padRegexp = new RegExp(`^[${_lengths.join('')}]+`);
-    const _radix = 7;
+    const lengths = ['W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f'];
+    const padRegexp = new RegExp(`^[${lengths.join('')}]+`);
+    const radix = 7;
 
+    /**
+     * generates a unique URI for the given notebook cell.
+     * the format is: `vscode-notebook-cell:#${encodede handle}s${base64 encoded notebook uri scheme}`
+     * this is based on vscodes implementation see: https://github.com/microsoft/vscode/blob/main/src/vs/workbench/contrib/notebook/common/notebookCommon.ts;
+     */
     export function generate(notebook: URI, handle: number): URI {
 
-        const s = handle.toString(_radix);
-        const p = s.length < _lengths.length ? _lengths[s.length - 1] : 'z';
+        const s = handle.toString(radix);
+        const p = s.length < lengths.length ? lengths[s.length - 1] : 'z';
 
-        const fragment = `${p}${s}s${Buffer.from(BinaryBuffer.fromString(notebook.scheme).buffer).toString('base64')} `;
+        const fragment = `${p}${s}s${Buffer.from(notebook.scheme).toString('base64')} `;
         return notebook.withScheme(scheme).withFragment(fragment);
     }
 
@@ -253,7 +270,7 @@ export namespace CellUri {
             return undefined;
         }
 
-        const handle = parseInt(cell.fragment.substring(0, idx).replace(_padRegexp, ''), _radix);
+        const handle = parseInt(cell.fragment.substring(0, idx).replace(padRegexp, ''), radix);
         const parsedScheme = Buffer.from(cell.fragment.substring(idx + 1), 'base64').toString();
 
         if (isNaN(handle)) {

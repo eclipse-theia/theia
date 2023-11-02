@@ -15,4 +15,3 @@
 // *****************************************************************************
 
 export * from './notebook-common';
-export * from './notebook-range';
