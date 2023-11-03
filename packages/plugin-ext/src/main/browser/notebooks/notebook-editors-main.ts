@@ -19,9 +19,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { UriComponents, URI } from '@theia/core/lib/common/uri';
-import { CellRange } from '@theia/notebook/lib/common';
 import { NotebookEditorWidget } from '@theia/notebook/lib/browser';
-import { MAIN_RPC_CONTEXT, NotebookDocumentShowOptions, NotebookEditorRevealType, NotebookEditorsExt, NotebookEditorsMain } from '../../../common';
+import { MAIN_RPC_CONTEXT, NotebookDocumentShowOptions, NotebookEditorsExt, NotebookEditorsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { interfaces } from '@theia/core/shared/inversify';
 import { open, OpenerService } from '@theia/core/lib/browser';
@@ -44,12 +43,6 @@ export class NotebookEditorsMainImpl implements NotebookEditorsMain {
     async $tryShowNotebookDocument(uriComponents: UriComponents, viewType: string, options: NotebookDocumentShowOptions): Promise<string> {
         const editor = await open(this.openerService, URI.fromComponents(uriComponents), {});
         return (editor as NotebookEditorWidget).id;
-    }
-    $tryRevealRange(id: string, range: CellRange, revealType: NotebookEditorRevealType): Promise<void> {
-        throw new Error('Method not implemented.');
-    }
-    $trySetSelections(id: string, range: CellRange[]): void {
-        throw new Error('Method not implemented.');
     }
 
     handleEditorsAdded(editors: readonly NotebookEditorWidget[]): void {

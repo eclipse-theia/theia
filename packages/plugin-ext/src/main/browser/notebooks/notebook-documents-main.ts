@@ -29,7 +29,6 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
     private readonly disposables = new DisposableCollection();
 
     private readonly proxy: NotebookDocumentsExt;
-    private readonly documentEventListenersMapping = new Map<string, DisposableCollection>();
 
     private readonly notebookModelResolverService: NotebookModelResolverService;
 
@@ -49,13 +48,12 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
     dispose(): void {
         this.disposables.dispose();
         // this.modelReferenceCollection.dispose();
-        this.documentEventListenersMapping.forEach(value => value.dispose());
     }
 
     handleNotebooksAdded(notebooks: readonly NotebookModel[]): void {
 
         for (const notebook of notebooks) {
-            const listener = notebook.onDidChangeContent(events => {
+            notebook.onDidChangeContent(events => {
 
                 const eventDto: NotebookCellsChangedEventDto = {
                     versionId: 1, // TODO implement version ID support
@@ -117,20 +115,11 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
                     hasDocumentMetadataChangeEvent ? notebook.metadata : undefined
                 );
             });
-
-            this.documentEventListenersMapping.set(notebook.uri.toString(), new DisposableCollection(listener));
-        }
-    }
-
-    handleNotebooksRemoved(uris: UriComponents[]): void {
-        for (const uri of uris) {
-            this.documentEventListenersMapping.get(uri.toString())?.dispose();
-            this.documentEventListenersMapping.delete(uri.toString());
         }
     }
 
     async $tryCreateNotebook(options: { viewType: string; content?: NotebookDataDto }): Promise<UriComponents> {
-        const ref = await this.notebookModelResolverService.resolveUntitledResource({ untitledResource: undefined }, options.viewType);
+        const createdNotebook = await this.notebookModelResolverService.resolveUntitledResource({ untitledResource: undefined }, options.viewType);
 
         // untitled notebooks are disposed when they get saved. we should not hold a reference
         // to such a disposed notebook and therefore dispose the reference as well
@@ -139,19 +128,14 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
         // });
 
         // untitled notebooks are dirty by default
-        this.proxy.$acceptDirtyStateChanged(ref.uri.toComponents(), true);
+        this.proxy.$acceptDirtyStateChanged(createdNotebook.uri.toComponents(), true);
 
         // apply content changes... slightly HACKY -> this triggers a change event
         // if (options.content) {
         //     const data = NotebookDto.fromNotebookDataDto(options.content);
         //     ref.notebook.reset(data.cells, data.metadata, ref.object.notebook.transientOptions);
         // }
-        return ref.uri.toComponents();
-    }
-
-    async $tryOpenNotebook(uriComponents: UriComponents): Promise<UriComponents> {
-        const uri = URI.fromComponents(uriComponents);
-        return uri.toComponents();
+        return createdNotebook.uri.toComponents();
     }
 
     async $trySaveNotebook(uriComponents: UriComponents): Promise<boolean> {

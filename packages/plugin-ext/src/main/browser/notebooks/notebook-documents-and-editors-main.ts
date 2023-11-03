@@ -195,11 +195,10 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         };
 
         // send to extension FIRST
-        await this.proxy.$acceptDocumentsAndEditorsDelta(dto);
+        this.proxy.$acceptDocumentsAndEditorsDelta(dto);
 
         // handle internally
         this.notebookEditorsMain.handleEditorsRemoved(delta.removedEditors);
-        this.notebookDocumentsMain.handleNotebooksRemoved(delta.removedDocuments);
         this.notebookDocumentsMain.handleNotebooksAdded(delta.addedDocuments);
         this.notebookEditorsMain.handleEditorsAdded(delta.addedEditors);
     }

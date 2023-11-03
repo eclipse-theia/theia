@@ -222,6 +222,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         this.notebookCellContextManager.dispose();
         this.textModel.dispose();
         this.toDispose.dispose();
+        this.outputs.forEach(output => output.dispose());
     }
 
     requestEdit(): void {

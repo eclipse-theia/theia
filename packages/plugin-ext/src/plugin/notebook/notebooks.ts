@@ -340,8 +340,7 @@ export class NotebooksExtImpl implements NotebooksExt {
         if (cached) {
             return cached.apiNotebook;
         }
-        const canonicalUri = await this.notebookDocumentsProxy.$tryOpenNotebook(uri);
-        const document = this.documents.get(URI.fromComponents(canonicalUri).toString());
+        const document = this.documents.get(uri.toString());
         return document?.apiNotebook!;
     }
 

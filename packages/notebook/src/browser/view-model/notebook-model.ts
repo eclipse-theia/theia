@@ -63,6 +63,9 @@ export class NotebookModel implements Saveable, Disposable {
     private readonly onDidChangeContentEmitter = new Emitter<NotebookContentChangedEvent[]>();
     readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
 
+    private readonly onWillDisposeEmitter = new Emitter<void>();
+    readonly onWillDispose = this.onWillDisposeEmitter.event;
+
     @inject(FileService)
     protected readonly fileService: FileService;
 
@@ -131,11 +134,13 @@ export class NotebookModel implements Saveable, Disposable {
     }
 
     dispose(): void {
+        this.onWillDisposeEmitter.fire();
         this.onDirtyChangedEmitter.dispose();
         this.onDidSaveNotebookEmitter.dispose();
         this.onDidAddOrRemoveCellEmitter.dispose();
         this.onDidChangeContentEmitter.dispose();
         this.cells.forEach(cell => cell.dispose());
+        this.onWillDisposeEmitter.dispose();
     }
 
     async save(options: SaveOptions): Promise<void> {

@@ -2568,7 +2568,6 @@ export interface NotebookKernelsMain extends Disposable {
 
 export interface NotebookDocumentsMain extends Disposable {
     $tryCreateNotebook(options: { viewType: string; content?: NotebookDataDto }): Promise<UriComponents>;
-    $tryOpenNotebook(uriComponents: UriComponents): Promise<UriComponents>;
     $trySaveNotebook(uri: UriComponents): Promise<boolean>;
 }
 
@@ -2594,8 +2593,8 @@ export interface NotebookEditorsExt {
 
 export interface NotebookEditorsMain extends Disposable {
     $tryShowNotebookDocument(uriComponents: UriComponents, viewType: string, options: NotebookDocumentShowOptions): Promise<string>;
-    $tryRevealRange(id: string, range: CellRange, revealType: NotebookEditorRevealType): Promise<void>;
-    $trySetSelections(id: string, range: CellRange[]): void;
+    // $tryRevealRange(id: string, range: CellRange, revealType: NotebookEditorRevealType): Promise<void>;
+    // $trySetSelections(id: string, range: CellRange[]): void;
 }
 export interface NotebookRenderersExt {
     $postRendererMessage(editorId: string, rendererId: string, message: unknown): void;

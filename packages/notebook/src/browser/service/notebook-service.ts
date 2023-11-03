@@ -109,6 +109,10 @@ export class NotebookService implements Disposable {
 
         const model = this.notebookModelFactory({ data, uri, viewType, serializer });
         this.notebookModels.set(uri.toString(), model);
+        model.onWillDispose(() => {
+            this.notebookModels.delete(uri.toString());
+            this.didRemoveNotebookDocumentEmitter.fire(model);
+        });
         // Resolve cell text models right after creating the notebook model
         // This ensures that all text models are available in the plugin host
         await Promise.all(model.cells.map(e => e.resolveTextModel()));

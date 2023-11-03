@@ -35,7 +35,6 @@ export class NotebookEditor {
 
     constructor(
         readonly id: string,
-        // private readonly _proxy: MainThreadNotebookEditorsShape,
         readonly notebookData: NotebookDocument,
         visibleRanges: theia.NotebookRange[],
         selections: theia.NotebookRange[],

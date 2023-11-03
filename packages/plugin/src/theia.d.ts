@@ -14622,6 +14622,7 @@ export module '@theia/plugin' {
          * All selections in this notebook editor.
          *
          * The primary selection (or focused range) is `selections[0]`. When the document has no cells, the primary selection is empty `{ start: 0, end: 0 }`;
+         * @stubbed
          */
         selections: readonly NotebookRange[];
 
