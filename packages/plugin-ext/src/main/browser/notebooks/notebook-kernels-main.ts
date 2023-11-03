@@ -23,17 +23,13 @@ import { UriComponents } from '@theia/core/lib/common/uri';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { CellExecuteUpdateDto, CellExecutionCompleteDto, MAIN_RPC_CONTEXT, NotebookKernelDto, NotebookKernelsExt, NotebookKernelsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
-import { CellExecution, NotebookExecutionStateService, NotebookKernelChangeEvent, NotebookKernelService, NotebookService } from '@theia/notebook/lib/browser';
+import { CellExecution, NotebookExecutionStateService, NotebookKernelChangeEvent, NotebookKernelService, NotebookService, NotebookKernel } from '@theia/notebook/lib/browser';
 import { combinedDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { interfaces } from '@theia/core/shared/inversify';
 import { NotebookKernelSourceAction } from '@theia/notebook/lib/common';
 import { NotebookDto } from './notebook-dto';
 
-abstract class NotebookKernel {
-    private readonly onDidChangeEmitter = new Emitter<NotebookKernelChangeEvent>();
-    private readonly preloads: { uri: URI; provides: readonly string[] }[];
-    readonly onDidChange: Event<NotebookKernelChangeEvent> = this.onDidChangeEmitter.event;
-
+class NotebookKernelImpl implements NotebookKernel {
     readonly id: string;
     readonly viewType: string;
     readonly extensionId: string;
@@ -46,15 +42,7 @@ abstract class NotebookKernel {
     implementsExecutionOrder: boolean;
     localResourceRoot: URI;
 
-    public get preloadUris(): URI[] {
-        return this.preloads.map(p => p.uri);
-    }
-
-    public get preloadProvides(): string[] {
-        return this.preloads.map(p => p.provides).flat();
-    }
-
-    constructor(data: NotebookKernelDto, private languageService: LanguageService) {
+    constructor(data: NotebookKernelDto, private languageService: LanguageService, private handle: number, private proxy: NotebookKernelsExt) {
         this.id = data.id;
         this.viewType = data.notebookType;
         this.extensionId = data.extensionId;
@@ -65,7 +53,6 @@ abstract class NotebookKernel {
         this.detail = data.detail;
         this.supportedLanguages = (data.supportedLanguages && data.supportedLanguages.length > 0) ? data.supportedLanguages : languageService.languages.map(lang => lang.id);
         this.implementsExecutionOrder = data.supportsExecutionOrder ?? false;
-        this.preloads = data.preloads?.map(u => ({ uri: URI.fromComponents(u.uri), provides: u.provides })) ?? [];
     }
 
     update(data: Partial<NotebookKernelDto>): void {
@@ -97,11 +84,16 @@ abstract class NotebookKernel {
             this.implementsInterrupt = data.supportsInterrupt;
             event.hasInterruptHandler = true;
         }
-        this.onDidChangeEmitter.fire(event);
     }
 
-    abstract executeNotebookCellsRequest(uri: URI, cellHandles: number[]): Promise<void>;
-    abstract cancelNotebookCellExecution(uri: URI, cellHandles: number[]): Promise<void>;
+    async executeNotebookCellsRequest(uri: URI, cellHandles: number[]): Promise<void> {
+        await this.proxy.$executeCells(this.handle, uri.toComponents(), cellHandles);
+
+    };
+    async cancelNotebookCellExecution(uri: URI, cellHandles: number[]): Promise<void> {
+        await this.proxy.$cancelCells(this.handle, uri.toComponents(), cellHandles);
+
+    };
 }
 
 export interface KernelSourceActionProvider {
@@ -114,7 +106,7 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
 
     private readonly proxy: NotebookKernelsExt;
 
-    private readonly kernels = new Map<number, [kernel: NotebookKernel, registration: Disposable]>();
+    private readonly kernels = new Map<number, [kernel: NotebookKernelImpl, registration: Disposable]>();
 
     private readonly kernelDetectionTasks = new Map<number, [task: string, registration: Disposable]>();
 
@@ -145,15 +137,7 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
     }
 
     async $addKernel(handle: number, data: NotebookKernelDto): Promise<void> {
-        const that = this;
-        const kernel = new class extends NotebookKernel {
-            async executeNotebookCellsRequest(uri: URI, handles: number[]): Promise<void> {
-                await that.proxy.$executeCells(handle, uri.toComponents(), handles);
-            }
-            async cancelNotebookCellExecution(uri: URI, handles: number[]): Promise<void> {
-                await that.proxy.$cancelCells(handle, uri.toComponents(), handles);
-            }
-        }(data, this.languageService);
+        const kernel = new NotebookKernelImpl(data, this.languageService, handle, this.proxy);
 
         const listener = this.notebookKernelService.onDidChangeSelectedKernel(e => {
             if (e.oldKernel === kernel.id) {

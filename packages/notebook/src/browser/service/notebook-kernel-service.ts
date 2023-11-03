@@ -50,7 +50,6 @@ export interface NotebookKernelChangeEvent {
 export interface NotebookKernel {
     readonly id: string;
     readonly viewType: string;
-    readonly onDidChange: Event<Readonly<NotebookKernelChangeEvent>>;
     // ID of the extension providing this kernel
     readonly extensionId: string;
 
