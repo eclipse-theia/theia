@@ -23,6 +23,7 @@ export interface ElectronMessagingService {
      */
     ipcChannel(path: string, callback: (params: ElectronMessagingService.PathParams, socket: Channel) => void): void;
 }
+
 export namespace ElectronMessagingService {
     export interface PathParams {
         [name: string]: string

@@ -129,8 +129,9 @@ export class TheiaElectronWindow {
         }, this.toDispose);
     }
 
-    protected doCloseWindow(): void {
+    protected async doCloseWindow(): Promise<void> {
         this.closeIsConfirmed = true;
+        await TheiaRendererAPI.sendAboutToClose(this._window.webContents);
         this._window.close();
     }
 
@@ -139,13 +140,13 @@ export class TheiaElectronWindow {
     }
 
     protected reload(): void {
-        this.handleStopRequest(() => {
+        this.handleStopRequest(async () => {
             this.applicationState = 'init';
             this._window.reload();
         }, StopReason.Reload);
     }
 
-    protected async handleStopRequest(onSafeCallback: () => unknown, reason: StopReason): Promise<boolean> {
+    protected async handleStopRequest(onSafeCallback: () => Promise<unknown>, reason: StopReason): Promise<boolean> {
         // Only confirm close to windows that have loaded our frontend.
         // Both the windows's URL and the FS path of the `index.html` should be converted to the "same" format to be able to compare them. (#11226)
         // Notes:

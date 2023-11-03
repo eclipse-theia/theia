@@ -37,7 +37,7 @@ export class DebugAdapterSessionManager implements MessagingService.Contribution
     protected readonly debugAdapterFactory: DebugAdapterFactory;
 
     configure(service: MessagingService): void {
-        service.wsChannel(`${DebugAdapterPath}/:id`, ({ id }: { id: string }, wsChannel) => {
+        service.registerChannelHandler(`${DebugAdapterPath}/:id`, ({ id }: { id: string }, wsChannel) => {
             const session = this.find(id);
             if (!session) {
                 wsChannel.close();

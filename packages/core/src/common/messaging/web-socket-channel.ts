@@ -19,7 +19,11 @@
 import { WriteBuffer } from '../message-rpc';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../message-rpc/uint8-array-message-buffer';
 import { AbstractChannel } from '../message-rpc/channel';
-import { Disposable } from '../disposable';
+import { Socket as ClientSocket } from 'socket.io-client';
+import { Socket as ServerSocket } from 'socket.io';
+import { Emitter } from 'vscode-languageserver-protocol';
+
+export type WebSocket = ClientSocket | ServerSocket;
 
 /**
  * A channel that manages the main websocket connection between frontend and backend. All service channels
@@ -29,65 +33,44 @@ import { Disposable } from '../disposable';
 export class WebSocketChannel extends AbstractChannel {
     static wsPath = '/services';
 
-    constructor(protected readonly socket: IWebSocket) {
+    private onDidConnectEmitter = new Emitter<void>();
+    onDidConnect = this.onDidConnectEmitter.event;
+
+    constructor(protected readonly socket: WebSocket) {
         super();
-        this.toDispose.push(Disposable.create(() => socket.close()));
-        socket.onClose((reason, code) => this.onCloseEmitter.fire({ reason, code }));
-        socket.onClose(() => this.close());
-        socket.onError(error => this.onErrorEmitter.fire(error));
-        socket.onMessage(data => this.onMessageEmitter.fire(() => {
+        socket.on('connect', () => {
+            this.onDidConnectEmitter.fire();
+        });
+
+        socket.on('disconnect', reason => {
+            this.onCloseEmitter.fire({
+                reason: reason
+            });
+        });
+
+        socket.on('error', reason => this.onErrorEmitter.fire(reason));
+        socket.on('message', data => {
             // In the browser context socketIO receives binary messages as ArrayBuffers.
             // So we have to convert them to a Uint8Array before delegating the message to the read buffer.
             const buffer = data instanceof ArrayBuffer ? new Uint8Array(data) : data;
-            return new Uint8ArrayReadBuffer(buffer);
-        }));
+            this.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(buffer));
+        });
     }
 
     getWriteBuffer(): WriteBuffer {
         const result = new Uint8ArrayWriteBuffer();
 
         result.onCommit(buffer => {
-            if (this.socket.isConnected()) {
+            if (this.socket.connected) {
                 this.socket.send(buffer);
             }
         });
 
         return result;
     }
-}
 
-/**
- * An abstraction that enables reuse of the `{@link WebSocketChannel} class in the frontend and backend
- * independent of the actual underlying socket implementation.
- */
-export interface IWebSocket {
-    /**
-     * Sends the given message over the web socket in binary format.
-     * @param message The binary message.
-     */
-    send(message: Uint8Array): void;
-    /**
-     * Closes the websocket from the local side.
-     */
-    close(): void;
-    /**
-     * The connection state of the web socket.
-     */
-    isConnected(): boolean;
-    /**
-     * Listener callback to handle incoming messages.
-     * @param cb The callback.
-     */
-    onMessage(cb: (message: Uint8Array) => void): void;
-    /**
-     * Listener callback to handle socket errors.
-     * @param cb The callback.
-     */
-    onError(cb: (reason: any) => void): void;
-    /**
-     * Listener callback to handle close events (Remote side).
-     * @param cb The callback.
-     */
-    onClose(cb: (reason: string, code?: number) => void): void;
+    override close(): void {
+        this.socket.disconnect();
+        super.close();
+    }
 }
-

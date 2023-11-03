@@ -541,6 +541,7 @@ export class HostedPluginSupport {
             if (toDisconnect.disposed) {
                 return undefined;
             }
+            this.activationEvents.forEach(event => manager!.$activateByEvent(event));
         }
         return manager;
     }

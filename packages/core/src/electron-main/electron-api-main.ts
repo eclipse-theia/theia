@@ -51,7 +51,9 @@ import {
     CHANNEL_TOGGLE_FULL_SCREEN,
     CHANNEL_IS_MAXIMIZED,
     CHANNEL_REQUEST_SECONDARY_CLOSE,
-    CHANNEL_SET_BACKGROUND_COLOR
+    CHANNEL_SET_BACKGROUND_COLOR,
+    CHANNEL_WC_METADATA,
+    CHANNEL_ABOUT_TO_CLOSE
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
 import { Disposable, DisposableCollection, isOSX, MaybePromise } from '../common';
@@ -65,6 +67,10 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
     protected readonly openPopups = new Map<number, Menu>();
 
     onStart(application: ElectronMainApplication): MaybePromise<void> {
+        ipcMain.on(CHANNEL_WC_METADATA, event => {
+            event.returnValue = event.sender.id.toString();
+        });
+
         // electron security token
         ipcMain.on(CHANNEL_GET_SECURITY_TOKEN, event => {
             event.returnValue = this.electronSecurityToken.value;
@@ -252,6 +258,19 @@ let nextReplyChannel: number = 0;
 export namespace TheiaRendererAPI {
     export function sendWindowEvent(wc: WebContents, event: WindowEvent): void {
         wc.send(CHANNEL_ON_WINDOW_EVENT, event);
+    }
+
+    export function sendAboutToClose(wc: WebContents): Promise<void> {
+        return new Promise<void>(resolve => {
+            const channelNr = nextReplyChannel++;
+            const replyChannel = `aboutToClose${channelNr}`;
+            const l = createDisposableListener(ipcMain, replyChannel, e => {
+                l.dispose();
+                resolve();
+            });
+
+            wc.send(CHANNEL_ABOUT_TO_CLOSE, replyChannel);
+        });
     }
 
     export function requestClose(wc: WebContents, stopReason: StopReason): Promise<boolean> {

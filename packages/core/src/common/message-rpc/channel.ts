@@ -220,6 +220,8 @@ export class ChannelMultiplexer implements Disposable {
             this.openChannels.set(id, channel);
             resolve(channel);
             this.onOpenChannelEmitter.fire({ id, channel });
+        } else {
+            console.error(`not expecting ack-open on for ${id}`);
         }
     }
 
@@ -234,6 +236,8 @@ export class ChannelMultiplexer implements Disposable {
             }
             this.underlyingChannel.getWriteBuffer().writeUint8(MessageTypes.AckOpen).writeString(id).commit();
             this.onOpenChannelEmitter.fire({ id, channel });
+        } else {
+            console.error(`channel already open: ${id}`);
         }
     }
 
@@ -275,7 +279,7 @@ export class ChannelMultiplexer implements Disposable {
     }
 
     open(id: string): Promise<Channel> {
-        if (this.openChannels.has(id)) {
+        if (this.openChannels.has(id) || this.pendingOpen.has(id)) {
             throw new Error(`Another channel with the id '${id}' is already open.`);
         }
         const result = new Promise<Channel>((resolve, reject) => {

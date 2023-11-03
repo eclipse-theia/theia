@@ -25,7 +25,7 @@ import {
     CHANNEL_ON_WINDOW_EVENT, CHANNEL_GET_ZOOM_LEVEL, CHANNEL_SET_ZOOM_LEVEL, CHANNEL_IS_FULL_SCREENABLE, CHANNEL_TOGGLE_FULL_SCREEN,
     CHANNEL_IS_FULL_SCREEN, CHANNEL_SET_MENU_BAR_VISIBLE, CHANNEL_REQUEST_CLOSE, CHANNEL_SET_TITLE_STYLE, CHANNEL_RESTART,
     CHANNEL_REQUEST_RELOAD, CHANNEL_APP_STATE_CHANGED, CHANNEL_SHOW_ITEM_IN_FOLDER, CHANNEL_READ_CLIPBOARD, CHANNEL_WRITE_CLIPBOARD,
-    CHANNEL_KEYBOARD_LAYOUT_CHANGED, CHANNEL_IPC_CONNECTION, InternalMenuDto, CHANNEL_REQUEST_SECONDARY_CLOSE, CHANNEL_SET_BACKGROUND_COLOR
+    CHANNEL_KEYBOARD_LAYOUT_CHANGED, CHANNEL_IPC_CONNECTION, InternalMenuDto, CHANNEL_REQUEST_SECONDARY_CLOSE, CHANNEL_SET_BACKGROUND_COLOR, CHANNEL_WC_METADATA, CHANNEL_ABOUT_TO_CLOSE
 } from '../electron-common/electron-api';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -65,6 +65,7 @@ function convertMenu(menu: MenuDto[] | undefined, handlerMap: Map<number, () => 
 }
 
 const api: TheiaCoreAPI = {
+    WindowMetadata: { webcontentId: 'none' },
     setMenuBarVisible: (visible: boolean, windowName?: string) => ipcRenderer.send(CHANNEL_SET_MENU_BAR_VISIBLE, visible, windowName),
     setMenu: (menu: MenuDto[] | undefined) => {
         commandHandlers.delete(mainMenuId);
@@ -119,6 +120,17 @@ const api: TheiaCoreAPI = {
     close: function (): void {
         ipcRenderer.send(CHANNEL_CLOSE);
     },
+
+    onAboutToClose(handler: () => void): Disposable {
+        const h = (event: Electron.IpcRendererEvent, replyChannel: string) => {
+            handler();
+            event.sender.send(replyChannel);
+        }
+
+        ipcRenderer.on(CHANNEL_ABOUT_TO_CLOSE, h);
+        return Disposable.create(() => ipcRenderer.off(CHANNEL_ABOUT_TO_CLOSE, h));
+    },
+
     onWindowEvent: function (event: WindowEvent, handler: () => void): Disposable {
         const h = (_event: unknown, evt: WindowEvent) => {
             if (event === evt) {
@@ -227,6 +239,7 @@ export function preload(): void {
             }
         }
     });
+    api.WindowMetadata.webcontentId = ipcRenderer.sendSync(CHANNEL_WC_METADATA);
 
     contextBridge.exposeInMainWorld('electronTheiaCore', api);
 }

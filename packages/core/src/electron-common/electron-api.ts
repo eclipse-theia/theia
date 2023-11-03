@@ -41,6 +41,9 @@ export type InternalMenuDto = Omit<MenuDto, 'execute' | 'submenu'> & {
 export type WindowEvent = 'maximize' | 'unmaximize' | 'focus';
 
 export interface TheiaCoreAPI {
+    WindowMetadata: {
+        webcontentId: string;
+    }
     getSecurityToken: () => string;
     attachSecurityToken: (endpoint: string) => Promise<void>;
 
@@ -63,6 +66,7 @@ export interface TheiaCoreAPI {
     unMaximize(): void;
     close(): void;
     onWindowEvent(event: WindowEvent, handler: () => void): Disposable;
+    onAboutToClose(handler: () => void): Disposable;
     setCloseRequestHandler(handler: (reason: StopReason) => Promise<boolean>): void;
 
     setSecondaryWindowCloseRequestHandler(windowName: string, handler: () => Promise<boolean>): void;
@@ -96,6 +100,7 @@ declare global {
     }
 }
 
+export const CHANNEL_WC_METADATA = 'WebContentMetadata';
 export const CHANNEL_SET_MENU = 'SetMenu';
 export const CHANNEL_SET_MENU_BAR_VISIBLE = 'SetMenuBarVisible';
 export const CHANNEL_INVOKE_MENU = 'InvokeMenu';
@@ -116,6 +121,8 @@ export const CHANNEL_CLOSE = 'Close';
 export const CHANNEL_MINIMIZE = 'Minimize';
 export const CHANNEL_MAXIMIZE = 'Maximize';
 export const CHANNEL_IS_MAXIMIZED = 'IsMaximized';
+
+export const CHANNEL_ABOUT_TO_CLOSE = "AboutToClose";
 
 export const CHANNEL_UNMAXIMIZE = 'UnMaximize';
 export const CHANNEL_ON_WINDOW_EVENT = 'OnWindowEvent';

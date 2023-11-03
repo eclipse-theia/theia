@@ -17,9 +17,10 @@
 import * as http from 'http';
 import * as https from 'https';
 import { AddressInfo } from 'net';
-import { io, Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import { Channel, ChannelMultiplexer } from '../../../common/message-rpc/channel';
-import { IWebSocket, WebSocketChannel } from '../../../common/messaging/web-socket-channel';
+import { servicesPath } from '../../../common';
+import { WebSocketChannel } from '../../../common/messaging/web-socket-channel';
 
 export class TestWebSocketChannelSetup {
     public readonly multiplexer: ChannelMultiplexer;
@@ -29,28 +30,12 @@ export class TestWebSocketChannelSetup {
         server: http.Server | https.Server,
         path: string
     }) {
-        const socket = io(`ws://localhost:${(server.address() as AddressInfo).port}${WebSocketChannel.wsPath}`);
-        this.channel = new WebSocketChannel(toIWebSocket(socket));
+        const socket = io(`ws://localhost:${(server.address() as AddressInfo).port}${servicesPath}`);
+        this.channel = new WebSocketChannel(socket);
         this.multiplexer = new ChannelMultiplexer(this.channel);
         socket.on('connect', () => {
             this.multiplexer.open(path);
         });
         socket.connect();
     }
-}
-
-function toIWebSocket(socket: Socket): IWebSocket {
-    return {
-        close: () => {
-            socket.removeAllListeners('disconnect');
-            socket.removeAllListeners('error');
-            socket.removeAllListeners('message');
-            socket.close();
-        },
-        isConnected: () => socket.connected,
-        onClose: cb => socket.on('disconnect', reason => cb(reason)),
-        onError: cb => socket.on('error', reason => cb(reason)),
-        onMessage: cb => socket.on('message', data => cb(data)),
-        send: message => socket.emit('message', message)
-    };
 }

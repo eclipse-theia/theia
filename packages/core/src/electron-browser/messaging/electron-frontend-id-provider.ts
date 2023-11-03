@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2017 TypeFox and others.
+// Copyright (C) 2023 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,13 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Channel } from '../message-rpc/channel';
+import { injectable } from "inversify";
+import { FrontendIdProvider } from "../../browser/messaging/frontend-id-provider";
 
-export const servicesPath = '/services';
-
-export const ConnectionHandler = Symbol('ConnectionHandler');
-
-export interface ConnectionHandler {
-    readonly path: string;
-    onConnection(connection: Channel): void;
+@injectable()
+export class ElectronFrontendIdProvider implements FrontendIdProvider {
+    getId(): string {
+        return window.electronTheiaCore.WindowMetadata.webcontentId;
+    }
 }
