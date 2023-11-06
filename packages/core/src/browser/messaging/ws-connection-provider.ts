@@ -119,7 +119,7 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
     protected createWebSocketUrl(path: string): string {
         // Since we are using Socket.io, the path should look like the following:
         // proto://domain.com/{path}
-        return this.createEndpoint(path).getWebSocketUrl().toString();
+        return this.createEndpoint(path).getWebSocketUrl().withPath(path).toString();
     }
 
     protected createHttpWebSocketUrl(path: string): string {
