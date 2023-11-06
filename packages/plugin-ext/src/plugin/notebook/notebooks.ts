@@ -178,7 +178,7 @@ export class NotebooksExtImpl implements NotebooksExt {
 
         return Disposable.create(() => {
             this.notebookStatusBarItemProviders.delete(handle);
-            this.notebookProxy.$unregisterNotebookCellStatusBarItemProvider(handle, eventHandle);
+            this.notebookProxy.$unregisterNotebookCellStatusBarItemProvider(eventHandle);
             subscription?.dispose();
         });
     }

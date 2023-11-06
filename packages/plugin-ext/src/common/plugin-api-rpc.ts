@@ -1293,7 +1293,6 @@ export interface ModelAddedData {
     lines: string[];
     languageId?: string;
     EOL: string;
-    modeId: string;
     isDirty: boolean;
 }
 
@@ -2530,7 +2529,7 @@ export interface NotebooksMain extends Disposable {
     $unregisterNotebookSerializer(handle: number): void;
 
     $registerNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined, viewType: string): Promise<void>;
-    $unregisterNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined): Promise<void>;
+    $unregisterNotebookCellStatusBarItemProvider(eventHandle: number | undefined): Promise<void>;
     $emitCellStatusBarEvent(eventHandle: number): void;
 }
 
@@ -2548,7 +2547,6 @@ export interface NotebookKernelsMain extends Disposable {
     $addKernel(handle: number, data: NotebookKernelDto): Promise<void>;
     $updateKernel(handle: number, data: Partial<NotebookKernelDto>): void;
     $removeKernel(handle: number): void;
-    $updateNotebookPriority(handle: number, uri: UriComponents, value: number | undefined): void;
 
     $createExecution(handle: number, controllerId: string, uri: UriComponents, cellHandle: number): void;
     $updateExecution(handle: number, data: CellExecuteUpdateDto[]): void;

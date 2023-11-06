@@ -15580,6 +15580,7 @@ export module '@theia/plugin' {
          *
          * @param notebook The notebook for which a priority is set.
          * @param affinity A controller affinity
+         * @stubbed
          */
         updateNotebookAffinity(notebook: NotebookDocument, affinity: NotebookControllerAffinity): void;
 

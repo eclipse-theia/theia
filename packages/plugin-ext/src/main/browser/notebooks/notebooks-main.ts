@@ -41,7 +41,7 @@ export class NotebooksMainImpl implements NotebooksMain {
     private readonly disposables = new DisposableCollection();
 
     private readonly proxy: NotebooksExt;
-    private readonly notebookSerializer = new Map<number, Disposable>();
+    private readonly notebookSerializerRegistrations = new Map<number, Disposable>();
     private readonly notebookCellStatusBarRegistrations = new Map<number, Disposable>();
 
     constructor(
@@ -56,7 +56,7 @@ export class NotebooksMainImpl implements NotebooksMain {
 
     dispose(): void {
         this.disposables.dispose();
-        for (const disposable of this.notebookSerializer.values()) {
+        for (const disposable of this.notebookSerializerRegistrations.values()) {
             disposable.dispose();
         }
     }
@@ -75,12 +75,12 @@ export class NotebooksMainImpl implements NotebooksMain {
 
         }));
 
-        this.notebookSerializer.set(handle, disposables);
+        this.notebookSerializerRegistrations.set(handle, disposables);
     }
 
     $unregisterNotebookSerializer(handle: number): void {
-        this.notebookSerializer.get(handle)?.dispose();
-        this.notebookSerializer.delete(handle);
+        this.notebookSerializerRegistrations.get(handle)?.dispose();
+        this.notebookSerializerRegistrations.delete(handle);
     }
 
     $emitCellStatusBarEvent(eventHandle: number): void {
@@ -113,22 +113,17 @@ export class NotebooksMainImpl implements NotebooksMain {
             provider.onDidChangeStatusBarItems = emitter.event;
         }
 
-        // const disposable = this._cellStatusBarService.registerCellStatusBarItemProvider(provider);
+        // const disposable = this.cellStatusBarService.registerCellStatusBarItemProvider(provider);
         // this.notebookCellStatusBarRegistrations.set(handle, disposable);
     }
 
-    async $unregisterNotebookCellStatusBarItemProvider(handle: number, eventHandle: number | undefined): Promise<void> {
-        // eslint-disable-next-line @typescript-eslint/no-shadow
-        const unregisterThing = (statusBarHandle: number) => {
-            const entry = this.notebookCellStatusBarRegistrations.get(statusBarHandle);
+    async $unregisterNotebookCellStatusBarItemProvider(eventHandle: number | undefined): Promise<void> {
+        if (eventHandle) {
+            const entry = this.notebookCellStatusBarRegistrations.get(eventHandle);
             if (entry) {
-                this.notebookCellStatusBarRegistrations.get(statusBarHandle)?.dispose();
-                this.notebookCellStatusBarRegistrations.delete(statusBarHandle);
+                this.notebookCellStatusBarRegistrations.get(eventHandle)?.dispose();
+                this.notebookCellStatusBarRegistrations.delete(eventHandle);
             }
-        };
-        unregisterThing(handle);
-        if (typeof eventHandle === 'number') {
-            unregisterThing(eventHandle);
         }
     }
 }

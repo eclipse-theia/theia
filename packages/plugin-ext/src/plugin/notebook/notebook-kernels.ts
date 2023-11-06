@@ -211,7 +211,7 @@ export class NotebookKernelsExtImpl implements NotebookKernelsExt {
                 }
             },
             updateNotebookAffinity(notebook, priority): void {
-                that.proxy.$updateNotebookPriority(handle, notebook.uri, priority);
+                // stubbed
             },
             async postMessage(message: unknown, editor?: theia.NotebookEditor): Promise<boolean> {
                 return Promise.resolve(true); // TODO needs implementation

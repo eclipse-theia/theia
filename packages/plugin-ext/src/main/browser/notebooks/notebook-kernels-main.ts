@@ -111,7 +111,7 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
     private readonly kernelDetectionTasks = new Map<number, [task: string, registration: Disposable]>();
 
     private readonly kernelSourceActionProviders = new Map<number, [provider: KernelSourceActionProvider, registration: Disposable]>();
-    private readonly kernelSourceActionProvidersEventRegistrations = new Map<number, Disposable>();
+    private readonly kernelSourceActionProvidersEventRegistrations = new Map<number, Emitter<void>>();
 
     private notebookKernelService: NotebookKernelService;
     private notebookService: NotebookService;
@@ -165,10 +165,6 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
             tuple[1].dispose();
             this.kernels.delete(handle);
         }
-    }
-
-    $updateNotebookPriority(handle: number, uri: UriComponents, value: number | undefined): void {
-        throw new Error('Method not implemented.');
     }
 
     $createExecution(handle: number, controllerId: string, uriComponents: UriComponents, cellHandle: number): void {
@@ -261,6 +257,7 @@ export class NotebookKernelsMainImpl implements NotebookKernelsMain {
         }
     }
     $emitNotebookKernelSourceActionsChangeEvent(eventHandle: number): void {
+        this.kernelSourceActionProvidersEventRegistrations.get(eventHandle)?.fire();
     }
 
     dispose(): void {

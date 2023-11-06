@@ -43,7 +43,7 @@ export class EditorsAndDocumentsExtImpl implements EditorsAndDocumentsExt {
     constructor(private readonly rpc: RPCProtocol) {
     }
 
-    async $acceptEditorsAndDocumentsDelta(delta: EditorsAndDocumentsDelta): Promise<void> {
+    $acceptEditorsAndDocumentsDelta(delta: EditorsAndDocumentsDelta): void {
         const removedDocuments = new Array<DocumentDataExt>();
         const addedDocuments = new Array<DocumentDataExt>();
         const removedEditors = new Array<TextEditorExt>();
@@ -69,7 +69,7 @@ export class EditorsAndDocumentsExtImpl implements EditorsAndDocumentsExt {
                     resource,
                     data.lines,
                     data.EOL,
-                    data.modeId,
+                    data.languageId!,
                     data.versionId,
                     data.isDirty
                 );

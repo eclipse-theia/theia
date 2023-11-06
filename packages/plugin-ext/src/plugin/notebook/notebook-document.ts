@@ -58,7 +58,6 @@ export class Cell {
             isDirty: false,
             versionId: 1,
             notebook,
-            modeId: ''
         };
     }
 
