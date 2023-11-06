@@ -19,7 +19,6 @@ import { WindowState } from '@theia/plugin';
 import { WindowStateExt, WindowMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { Schemes } from '../common/uri-components';
 
 export class WindowStateExtImpl implements WindowStateExt {
 
@@ -50,15 +49,16 @@ export class WindowStateExtImpl implements WindowStateExt {
     }
 
     openUri(uri: URI): Promise<boolean> {
+        if (!uri.scheme.trim().length) {
+            throw new Error('Invalid scheme - cannot be empty');
+        }
+
         return this.proxy.$openUri(uri);
     }
 
     async asExternalUri(target: URI): Promise<URI> {
         if (!target.scheme.trim().length) {
             throw new Error('Invalid scheme - cannot be empty');
-        }
-        if (Schemes.http !== target.scheme && Schemes.https !== target.scheme) {
-            throw new Error(`Invalid scheme '${target.scheme}'`);
         }
 
         const uri = await this.proxy.$asExternalUri(target);
