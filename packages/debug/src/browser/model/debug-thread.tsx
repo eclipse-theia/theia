@@ -238,18 +238,18 @@ export class DebugThread extends DebugThreadData implements TreeElement {
     }
 
     protected threadStatus(): string {
-        
+
         if (!this.stoppedDetails) {
             return nls.localizeByDefault('Running');
         }
-        
+
         const description = this.stoppedDetails.description;
-        
+
         if (description) {
             // According to DAP we must show description as is. Translation is made by debug adapter
             return description;
         }
-        
+
         const reason = this.stoppedDetails.reason;
         const localizedReason = this.getLocalizedReason(reason);
 
