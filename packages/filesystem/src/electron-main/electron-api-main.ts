@@ -49,7 +49,7 @@ export class ElectronApi implements ElectronMainApplicationContribution {
                 properties: properties
             };
 
-            if (options.modal !== false) {
+            if (options.modal) {
                 const win = BrowserWindow.fromWebContents(event.sender);
                 if (win) {
                     return (await dialog.showOpenDialog(win, dialogOpts)).filePaths;

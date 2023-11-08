@@ -107,7 +107,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
         result.title = props.title;
         result.buttonLabel = props.openLabel;
         result.maxWidth = props.maxWidth;
-        result.modal = props.modal;
+        result.modal = props.modal ?? true;
         result.openFiles = props.canSelectFiles;
         result.openFolders = props.canSelectFolders;
         result.selectMany = props.canSelectMany;
@@ -141,7 +141,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
         result.title = props.title;
         result.buttonLabel = props.saveLabel;
         result.maxWidth = props.maxWidth;
-        result.modal = props.modal;
+        result.modal = props.modal ?? true;
 
         if (props.filters) {
             result.filters = [];
