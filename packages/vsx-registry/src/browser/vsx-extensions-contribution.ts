@@ -37,6 +37,7 @@ import { IGNORE_RECOMMENDATIONS_ID } from './recommended-extensions/recommended-
 import { VSXExtensionsCommands } from './vsx-extension-commands';
 import { VSXExtensionRaw, OVSXApiFilter } from '@theia/ovsx-client';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export namespace VSXCommands {
     export const TOGGLE_EXTENSIONS: Command = {
@@ -45,7 +46,8 @@ export namespace VSXCommands {
 }
 
 @injectable()
-export class VSXExtensionsContribution extends AbstractViewContribution<VSXExtensionsViewContainer> implements ColorContribution, FrontendApplicationContribution {
+export class VSXExtensionsContribution extends AbstractViewContribution<VSXExtensionsViewContainer>
+    implements ColorContribution, FrontendApplicationContribution, TabBarToolbarContribution {
 
     @inject(VSXExtensionsModel) protected model: VSXExtensionsModel;
     @inject(CommandRegistry) protected commandRegistry: CommandRegistry;
@@ -183,6 +185,10 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
                 }, description: 'Border color for a table row of the extension editor view'
             },
         );
+    }
+
+    registerToolbarItems(registry: TabBarToolbarRegistry): void {
+
     }
 
     /**
