@@ -31,6 +31,7 @@ export interface IconThemeDefinition {
     readonly hasFileIcons?: boolean;
     readonly hasFolderIcons?: boolean;
     readonly hidesExplorerArrows?: boolean;
+    readonly showLanguageModeIcons?: boolean;
 }
 
 export interface IconTheme extends IconThemeDefinition {

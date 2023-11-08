@@ -53,6 +53,7 @@ import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { PluginTerminalRegistry } from './plugin-terminal-registry';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { LanguageService } from '@theia/core/lib/browser/language-service';
 
 @injectable()
 export class PluginContributionHandler {
@@ -88,6 +89,9 @@ export class PluginContributionHandler {
 
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
+
+    @inject(LanguageService)
+    protected readonly languageService: LanguageService;
 
     @inject(PluginSharedStyle)
     protected readonly style: PluginSharedStyle;
@@ -195,6 +199,11 @@ export class PluginContributionHandler {
                     firstLine: lang.firstLine,
                     mimetypes: lang.mimetypes
                 });
+                if (lang.icon) {
+                    const languageIcon = this.style.toFileIconClass(lang.icon);
+                    pushContribution(`language.${lang.id}.icon`, () => languageIcon);
+                    pushContribution(`language.${lang.id}.iconRegistration`, () => this.languageService.registerIcon(lang.id, languageIcon.object.iconClass));
+                }
                 const langConfiguration = lang.configuration;
                 if (langConfiguration) {
                     pushContribution(`language.${lang.id}.configuration`, () => monaco.languages.setLanguageConfiguration(lang.id, {
