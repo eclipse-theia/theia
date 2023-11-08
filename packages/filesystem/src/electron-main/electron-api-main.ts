@@ -65,7 +65,7 @@ export class ElectronApi implements ElectronMainApplicationContribution {
                 filters: options.filters,
                 title: options.title
             };
-            if (options.modal !== false) {
+            if (options.modal) {
                 const win = BrowserWindow.fromWebContents(event.sender);
                 if (win) {
                     return (await dialog.showSaveDialog(win, dialogOpts)).filePath;
