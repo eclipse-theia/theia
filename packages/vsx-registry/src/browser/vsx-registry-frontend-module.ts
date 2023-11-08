@@ -36,6 +36,7 @@ import { bindPreferenceProviderOverrides } from './recommended-extensions/prefer
 import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
 import { LanguageQuickPickService } from '@theia/core/lib/browser/i18n/language-quick-pick-service';
 import { VSXLanguageQuickPickService } from './vsx-language-quick-pick-service';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(VSXEnvironment)
@@ -100,6 +101,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindViewContribution(bind, VSXExtensionsContribution);
     bind(FrontendApplicationContribution).toService(VSXExtensionsContribution);
     bind(ColorContribution).toService(VSXExtensionsContribution);
+    bind(TabBarToolbarContribution).toService(VSXExtensionsContribution);
 
     bindExtensionPreferences(bind);
     bindPreferenceProviderOverrides(bind, unbind);
