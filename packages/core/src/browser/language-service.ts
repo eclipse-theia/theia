@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { Disposable } from '../common';
+import { Disposable, Emitter, Event } from '../common';
 
 export interface Language {
     readonly id: string;
@@ -27,6 +27,7 @@ export interface Language {
 
 @injectable()
 export class LanguageService {
+    protected readonly onDidChangeIconEmitter = new Emitter<DidChangeIconEvent>();
 
     /**
      * It should be implemented by an extension, e.g. by the monaco extension.
@@ -63,4 +64,14 @@ export class LanguageService {
         return undefined;
     }
 
+    /**
+     * Emit when the icon of a particular language was changed.
+     */
+    get onDidChangeIcon(): Event<DidChangeIconEvent> {
+        return this.onDidChangeIconEmitter.event;
+    }
+}
+
+export interface DidChangeIconEvent {
+    languageId: string;
 }

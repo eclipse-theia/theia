@@ -36,7 +36,7 @@ export interface WorkspaceSymbolProvider {
 }
 
 @injectable()
-export class MonacoLanguages implements LanguageService {
+export class MonacoLanguages extends LanguageService {
 
     readonly workspaceSymbolProviders: WorkspaceSymbolProvider[] = [];
 
@@ -78,15 +78,15 @@ export class MonacoLanguages implements LanguageService {
         });
     }
 
-    get languages(): Language[] {
+    override get languages(): Language[] {
         return [...this.mergeLanguages(monaco.languages.getLanguages()).values()];
     }
 
-    getLanguage(languageId: string): Language | undefined {
+    override getLanguage(languageId: string): Language | undefined {
         return this.mergeLanguages(monaco.languages.getLanguages().filter(language => language.id === languageId)).get(languageId);
     }
 
-    detectLanguage(obj: unknown): Language | undefined {
+    override detectLanguage(obj: unknown): Language | undefined {
         if (obj === undefined) {
             return undefined;
         }
@@ -124,12 +124,16 @@ export class MonacoLanguages implements LanguageService {
         return this.getLanguage(languageId)?.extensions.values().next().value;
     }
 
-    registerIcon(languageId: string, iconClass: string): Disposable {
+    override registerIcon(languageId: string, iconClass: string): Disposable {
         this.icons.set(languageId, iconClass);
-        return Disposable.create(() => this.icons.delete(languageId));
+        this.onDidChangeIconEmitter.fire({ languageId });
+        return Disposable.create(() => {
+            this.icons.delete(languageId);
+            this.onDidChangeIconEmitter.fire({ languageId });
+        });
     }
 
-    getIcon(obj: unknown): string | undefined {
+    override getIcon(obj: unknown): string | undefined {
         const language = this.detectLanguage(obj);
         return language ? this.icons.get(language.id) : undefined;
     }

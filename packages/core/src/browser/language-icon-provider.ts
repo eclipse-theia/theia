@@ -14,15 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
+import { Emitter, Event } from '../common';
 import { IconThemeService } from './icon-theme-service';
-import { LabelProviderContribution } from './label-provider';
+import { DidChangeLabelEvent, LabelProviderContribution } from './label-provider';
 import { LanguageService } from './language-service';
 
 @injectable()
 export class LanguageIconLabelProvider implements LabelProviderContribution {
     @inject(IconThemeService) protected readonly iconThemeService: IconThemeService;
     @inject(LanguageService) protected readonly languageService: LanguageService;
+
+    protected readonly onDidChangeEmitter = new Emitter<DidChangeLabelEvent>();
+
+    @postConstruct()
+    protected init(): void {
+        this.languageService.onDidChangeIcon(() => this.fireDidChange());
+    }
 
     canHandle(element: object): number {
         const current = this.iconThemeService.getDefinition(this.iconThemeService.current);
@@ -33,4 +41,15 @@ export class LanguageIconLabelProvider implements LabelProviderContribution {
         const language = this.languageService.detectLanguage(element);
         return this.languageService.getIcon(language!.id);
     }
+
+    get onDidChange(): Event<DidChangeLabelEvent> {
+        return this.onDidChangeEmitter.event;
+    }
+
+    protected fireDidChange(): void {
+        this.onDidChangeEmitter.fire({
+            affects: element => this.canHandle(element) > 0
+        });
+    }
+
 }
