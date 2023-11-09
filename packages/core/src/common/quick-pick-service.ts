@@ -272,6 +272,7 @@ export interface QuickPickOptions<T extends QuickPickItemOrSeparator> {
     onDidTriggerItemButton?: (ItemButtonEvent: QuickPickItemButtonContext<T>) => void
 }
 
+export const quickInputServicePath = '/services/quickInput';
 export const QuickInputService = Symbol('QuickInputService');
 export interface QuickInputService {
     readonly backButton: QuickInputButton;

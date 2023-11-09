@@ -30,6 +30,9 @@
         "showPreviousTabInGroup": "Zur vorherigen Registerkarte in der Gruppe wechseln",
         "toggleMaximized": "Maximiert umschalten"
       },
+      "copyInfo": "Öffnen Sie zuerst eine Datei, um ihren Pfad zu kopieren",
+      "copyWarn": "Bitte verwenden Sie den Kopierbefehl des Browsers oder eine Tastenkombination.",
+      "cutWarn": "Bitte verwenden Sie den Ausschneidebefehl des Browsers oder eine Tastenkombination.",
       "enhancedPreview": {
         "classic": "Zeigt eine einfache Vorschau der Registerkarte mit grundlegenden Informationen an.",
         "enhanced": "Anzeige einer erweiterten Vorschau der Registerkarte mit zusätzlichen Informationen.",
@@ -54,6 +57,7 @@
         "clipboardWarnFirefox": "Die Zwischenablage-API ist nicht verfügbar. Sie kann durch die Einstellung '{0}' auf der Seite '{1}' aktiviert werden. Dann laden Sie Theia neu. Beachten Sie, dass FireFox dadurch vollen Zugriff auf die Zwischenablage des Systems erhält."
       },
       "offline": "Offline",
+      "pasteWarn": "Bitte verwenden Sie den Einfügebefehl des Browsers oder eine Tastenkombination.",
       "quitMessage": "Alle nicht gespeicherten Änderungen werden nicht gespeichert.",
       "resetWorkbenchLayout": "Workbench-Layout zurücksetzen",
       "searchbox": {
@@ -69,14 +73,23 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Wählen Sie das Stammverzeichnis des Arbeitsbereichs, dem Sie die Konfiguration hinzufügen möchten",
+      "breakpoint": "Haltepunkt",
       "compound-cycle": "Startkonfiguration '{0}' enthält einen Zyklus mit sich selbst",
       "continueAll": "Alle fortsetzen",
       "copyExpressionValue": "Ausdruckswert kopieren",
+      "dataBreakpoint": "Daten-Haltepunkt",
       "debugVariableInput": "{0} Wert einstellen",
+      "entry": "Eintrag",
+      "exception": "Ausnahme",
+      "functionBreakpoint": "Funktionsunterbrechungspunkt",
+      "goto": "siehe",
       "instruction-breakpoint": "Anweisung Haltepunkt",
+      "instructionBreakpoint": "Befehlshaltepunkt",
       "missingConfiguration": "Die dynamische Konfiguration '{0}:{1}' fehlt oder ist nicht anwendbar",
+      "pause": "Pause",
       "pauseAll": "Pause Alle",
       "reveal": "Enthüllen",
+      "step": "Schritt",
       "threads": "Threads",
       "toggleTracing": "Aktivieren/Deaktivieren der Verfolgung der Kommunikation mit Debug-Adaptern"
     },
@@ -183,7 +196,18 @@
       "deprecation": "Verwenden Sie stattdessen die `when`-Klausel."
     },
     "keymaps": {
+      "addKeybindingTitle": "Tastenbelegung hinzufügen für {0}",
+      "editKeybinding": "Tastaturbelegung bearbeiten...",
       "editKeybindingTitle": "Tastaturbelegung für {0} bearbeiten",
+      "editWhenExpression": "Bearbeiten Wenn Ausdruck...",
+      "editWhenExpressionTitle": "Bearbeiten Wenn Ausdruck für {0}",
+      "keybinding": {
+        "copy": "Tastaturbelegung kopieren",
+        "copyCommandId": "Kopieren der Tastaturbelegung Befehls-ID",
+        "copyCommandTitle": "Tastaturbelegung kopieren Befehl Titel",
+        "edit": "Tastaturbelegung bearbeiten...",
+        "editWhenExpression": "Tastenkombinationen bearbeiten, wenn der Ausdruck..."
+      },
       "keybindingCollidesValidation": "Tastenkombinationen kollidieren",
       "requiredKeybindingValidation": "Schlüsselbindung Wert ist erforderlich",
       "resetKeybindingConfirmation": "Möchten Sie diese Tastaturbelegung wirklich auf den Standardwert zurücksetzen?",
@@ -406,6 +430,11 @@
       "shellLinux": "Der Pfad der Shell, die das Terminal unter Linux verwendet (Standard: '{0}'}).",
       "shellOsx": "Der Pfad der Shell, die das Terminal unter macOS verwendet (Standard: '{0}'}).",
       "shellWindows": "Der Pfad der Shell, die das Terminal unter Windows verwendet. (Standard: '{0}')."
+    },
+    "test": {
+      "cancelAllTestRuns": "Alle Testläufe abbrechen",
+      "testRunDefaultName": "{0} laufen. {1}",
+      "testRuns": "Testläufe"
     },
     "toolbar": {
       "addCommand": "Befehl zur Symbolleiste hinzufügen",

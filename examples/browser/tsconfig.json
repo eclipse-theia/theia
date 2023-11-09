@@ -1,6 +1,6 @@
 {
   "extends": "../../configs/base.tsconfig",
-  "include": [],
+  "include": [ ],
   "compilerOptions": {
     "composite": true
   },
@@ -99,6 +99,9 @@
       "path": "../../packages/property-view"
     },
     {
+      "path": "../../packages/remote"
+    },
+    {
       "path": "../../packages/scm"
     },
     {
@@ -115,6 +118,9 @@
     },
     {
       "path": "../../packages/terminal"
+    },
+    {
+      "path": "../../packages/test"
     },
     {
       "path": "../../packages/timeline"

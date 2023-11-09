@@ -35,6 +35,7 @@ export interface WebviewView {
 
     dispose(): void;
     show(preserveFocus: boolean): void;
+    resolve(): Promise<void>;
 }
 
 export interface WebviewViewResolver {

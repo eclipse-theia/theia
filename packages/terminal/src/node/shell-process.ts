@@ -39,7 +39,7 @@ export interface ShellProcessOptions {
     isPseudo?: boolean,
 }
 
-function getRootPath(rootURI?: string): string {
+export function getRootPath(rootURI?: string): string {
     if (rootURI) {
         const uri = new URI(rootURI);
         return FileUri.fsPath(uri);

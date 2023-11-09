@@ -381,6 +381,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
     function clearOutput(outputId: string): void {
         outputs.get(outputId)?.clear();
         outputs.delete(outputId);
+        document.getElementById(outputId)?.remove();
     }
 
     function outputsChanged(changedEvent: webviewCommunication.OutputChangedMessage): void {

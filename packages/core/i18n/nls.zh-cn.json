@@ -30,6 +30,9 @@
         "showPreviousTabInGroup": "切换到组中的上一个标签页",
         "toggleMaximized": "切换最大化面板"
       },
+      "copyInfo": "先打开文件,复制其路径",
+      "copyWarn": "请使用浏览器的复制命令或快捷方式。",
+      "cutWarn": "请使用浏览器的剪切命令或快捷键。",
       "enhancedPreview": {
         "classic": "显示选项卡的简单预览和基本信息。",
         "enhanced": "显示选项卡的增强预览,并提供更多信息。",
@@ -54,6 +57,7 @@
         "clipboardWarnFirefox": "剪贴板API是不可用的。它可以通过'{0}'页面上的'{1}'偏好启用。然后重新加载Theia。注意,这将允许FireFox获得对系统剪贴板的完全访问。"
       },
       "offline": "离线",
+      "pasteWarn": "请使用浏览器的粘贴命令或快捷方式。",
       "quitMessage": "任何未保存的修改都不会被保存。",
       "resetWorkbenchLayout": "重置工作台面布局",
       "searchbox": {
@@ -69,14 +73,23 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "选择要添加配置的工作区根",
+      "breakpoint": "断点",
       "compound-cycle": "启动配置'{0}'包含一个与自己的循环",
       "continueAll": "继续所有",
       "copyExpressionValue": "复制表达式的值",
+      "dataBreakpoint": "数据断点",
       "debugVariableInput": "设置{0} 值",
+      "entry": "条目",
+      "exception": "例外情况",
+      "functionBreakpoint": "功能断点",
+      "goto": "开始",
       "instruction-breakpoint": "指令断点",
+      "instructionBreakpoint": "指令断点",
       "missingConfiguration": "动态配置'{0}:{1}'缺少或不适用",
+      "pause": "暂停",
       "pauseAll": "暂停所有",
       "reveal": "显示",
+      "step": "步骤",
       "threads": "线程",
       "toggleTracing": "启用/禁用与调试适配器的跟踪通信"
     },
@@ -183,7 +196,18 @@
       "deprecation": "使用`when`子句来代替。"
     },
     "keymaps": {
+      "addKeybindingTitle": "为{0}",
+      "editKeybinding": "编辑按键绑定...",
       "editKeybindingTitle": "编辑{0}的按键绑定",
+      "editWhenExpression": "编辑表达时...",
+      "editWhenExpressionTitle": "编辑{0}",
+      "keybinding": {
+        "copy": "复制绑定键",
+        "copyCommandId": "复制按键绑定命令 ID",
+        "copyCommandTitle": "复制按键绑定命令 标题",
+        "edit": "编辑按键绑定...",
+        "editWhenExpression": "编辑按键绑定时的表达式..."
+      },
       "keybindingCollidesValidation": "键盘绑定目前碰撞",
       "requiredKeybindingValidation": "键盘绑定值是必需的",
       "resetKeybindingConfirmation": "你真的想把这个按键绑定重置为默认值吗?",
@@ -406,6 +430,11 @@
       "shellLinux": "终端在Linux上使用的shell的路径(默认:'{0}'})。",
       "shellOsx": "终端在macOS上使用的shell的路径(默认:'{0}'})。",
       "shellWindows": "终端在Windows上使用的shell的路径。(默认:'{0}')。"
+    },
+    "test": {
+      "cancelAllTestRuns": "取消所有测试运行",
+      "testRunDefaultName": "{0} 运行{1}",
+      "testRuns": "测试运行"
     },
     "toolbar": {
       "addCommand": "将命令添加到工具栏",

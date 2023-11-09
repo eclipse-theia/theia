@@ -28,3 +28,7 @@ export interface NewWindowOptions {
      */
     readonly external?: boolean;
 }
+
+export interface WindowSearchParams {
+    [key: string]: string
+}

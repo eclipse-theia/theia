@@ -25,14 +25,10 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { Disposable } from './types-impl';
 import { DisposableCollection } from '@theia/core';
 import { KnownCommands } from './known-commands';
+import { ArgumentProcessor } from '../common/commands';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Handler = <T>(...args: any[]) => T | PromiseLike<T | undefined>;
-
-export interface ArgumentProcessor {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    processArgument(arg: any): any;
-}
 
 export class CommandRegistryImpl implements CommandRegistryExt {
 

@@ -30,6 +30,9 @@
         "showPreviousTabInGroup": "Váltás a csoport előző lapjára",
         "toggleMaximized": "Maximált kapcsoló"
       },
+      "copyInfo": "Először nyisson meg egy fájlt az elérési útvonalának másolásához",
+      "copyWarn": "Kérjük, használja a böngésző másolás parancsát vagy parancsikonját.",
+      "cutWarn": "Kérjük, használja a böngésző kivágás parancsát vagy parancsikonját.",
       "enhancedPreview": {
         "classic": "A lap egyszerű előnézetének megjelenítése az alapvető információkkal.",
         "enhanced": "A lap bővített előnézetének megjelenítése további információkkal.",
@@ -54,6 +57,7 @@
         "clipboardWarnFirefox": "A vágólap API nem érhető el. A '{0}' beállítással engedélyezhető a '{1}' oldalon. Ezután töltse be újra a Theia-t. Figyelem, ez lehetővé teszi, hogy a FireFox teljes hozzáférést kapjon a rendszer vágólapjához."
       },
       "offline": "Offline",
+      "pasteWarn": "Kérjük, használja a böngésző beillesztés parancsát vagy parancsikonját.",
       "quitMessage": "A mentetlen módosítások nem kerülnek mentésre.",
       "resetWorkbenchLayout": "A munkapad elrendezésének visszaállítása",
       "searchbox": {
@@ -69,14 +73,23 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Válassza ki a munkaterület gyökerét a konfiguráció hozzáadásához",
+      "breakpoint": "töréspont",
       "compound-cycle": "Indítási konfiguráció '{0}' tartalmaz egy ciklust önmagával együtt",
       "continueAll": "Folytassa az összes",
       "copyExpressionValue": "Kifejezés értékének másolása",
+      "dataBreakpoint": "adatmegszakítási pont",
       "debugVariableInput": "A {0} érték beállítása",
+      "entry": "belépés",
+      "exception": "kivétel",
+      "functionBreakpoint": "megállási pont",
+      "goto": "gooto",
       "instruction-breakpoint": "Megszakítási pont",
+      "instructionBreakpoint": "utasítás-megszakítási pont",
       "missingConfiguration": "A '{0}:{1}' dinamikus konfiguráció hiányzik vagy nem alkalmazható.",
+      "pause": "szünet",
       "pauseAll": "Minden szünet",
       "reveal": "Kiderül",
+      "step": "lépés",
       "threads": "Szálak",
       "toggleTracing": "A hibakeresési adapterekkel folytatott kommunikáció nyomon követésének engedélyezése/letiltása"
     },
@@ -183,7 +196,18 @@
       "deprecation": "Használja helyette a `when` záradékot."
     },
     "keymaps": {
+      "addKeybindingTitle": "Billentyűkötés hozzáadása a {0}",
+      "editKeybinding": "Billentyűkötés szerkesztése...",
       "editKeybindingTitle": "Billentyűkötés szerkesztése {0}",
+      "editWhenExpression": "Szerkesztés Amikor kifejezés...",
+      "editWhenExpressionTitle": "Szerkeszteni, amikor kifejezés a {0}",
+      "keybinding": {
+        "copy": "Billentyűkötés másolása",
+        "copyCommandId": "Billentyűkötözés másolása Parancs azonosítója",
+        "copyCommandTitle": "Billentyűkötözés másolása Parancs címe",
+        "edit": "Billentyűkötés szerkesztése...",
+        "editWhenExpression": "Billentyűkötés szerkesztése, amikor kifejezés..."
+      },
       "keybindingCollidesValidation": "billentyűkötözés jelenleg ütközik",
       "requiredKeybindingValidation": "billentyűkötés értéke szükséges",
       "resetKeybindingConfirmation": "Tényleg vissza akarja állítani ezt a billentyűkötést az alapértelmezett értékre?",
@@ -406,6 +430,11 @@
       "shellLinux": "A terminál által Linuxon használt shell elérési útja (alapértelmezett: '{0}'}).",
       "shellOsx": "A terminál által macOS alatt használt shell elérési útja (alapértelmezett: '{0}'}).",
       "shellWindows": "A Windows alatt a terminál által használt shell elérési útja. (alapértelmezett: '{0}')."
+    },
+    "test": {
+      "cancelAllTestRuns": "Minden tesztfuttatás törlése",
+      "testRunDefaultName": "{0} fuss {1}",
+      "testRuns": "Tesztfutások"
     },
     "toolbar": {
       "addCommand": "Parancs hozzáadása az eszköztárhoz",

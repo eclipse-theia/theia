@@ -47,3 +47,4 @@ export * from './telemetry';
 export * from './types';
 export { default as URI } from './uri';
 export * from './view-column';
+export * from './version';

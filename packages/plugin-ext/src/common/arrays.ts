@@ -52,3 +52,19 @@ export function isReadonlyArray(arg: unknown): arg is readonly unknown[] {
     // Since Typescript does not properly narrow down typings for 'ReadonlyArray' we need to help it.
     return Array.isArray(arg);
 }
+
+// Copied from https://github.com/microsoft/vscode/blob/1.72.2/src/vs/base/common/arrays.ts
+
+/**
+ * Returns the first mapped value of the array which is not undefined.
+ */
+export function mapFind<T, R>(array: Iterable<T>, mapFn: (value: T) => R | undefined): R | undefined {
+    for (const value of array) {
+        const mapped = mapFn(value);
+        if (mapped !== undefined) {
+            return mapped;
+        }
+    }
+
+    return undefined;
+}

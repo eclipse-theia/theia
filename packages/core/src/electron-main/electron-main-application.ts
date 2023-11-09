@@ -31,7 +31,7 @@ import { ElectronSecurityTokenService } from './electron-security-token-service'
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
 import { Disposable, DisposableCollection, isOSX, isWindows } from '../common';
-import { DEFAULT_WINDOW_HASH } from '../common/window';
+import { DEFAULT_WINDOW_HASH, WindowSearchParams } from '../common/window';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
 import { createDisposableListener } from './event-utils';
@@ -343,9 +343,9 @@ export class ElectronMainApplication {
         };
     }
 
-    async openDefaultWindow(): Promise<BrowserWindow> {
+    async openDefaultWindow(params?: WindowSearchParams): Promise<BrowserWindow> {
         const options = this.getDefaultTheiaWindowOptions();
-        const [uri, electronWindow] = await Promise.all([this.createWindowUri(), this.reuseOrCreateWindow(options)]);
+        const [uri, electronWindow] = await Promise.all([this.createWindowUri(params), this.reuseOrCreateWindow(options)]);
         electronWindow.loadURL(uri.withFragment(DEFAULT_WINDOW_HASH).toString(true));
         return electronWindow;
     }
@@ -419,9 +419,13 @@ export class ElectronMainApplication {
         }
     }
 
-    protected async createWindowUri(): Promise<URI> {
+    protected async createWindowUri(params: WindowSearchParams = {}): Promise<URI> {
+        if (!('port' in params)) {
+            params.port = (await this.backendPort).toString();
+        }
+        const query = Object.entries(params).map(([name, value]) => `${name}=${value}`).join('&');
         return FileUri.create(this.globals.THEIA_FRONTEND_HTML_PATH)
-            .withQuery(`port=${await this.backendPort}`);
+            .withQuery(query);
     }
 
     protected getDefaultTheiaWindowOptions(): TheiaBrowserWindowOptions {

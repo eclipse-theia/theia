@@ -21,7 +21,7 @@ import { ElectronKeyboardLayoutChangeNotifier } from './electron-keyboard-layout
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(KeyboardLayoutProvider).toDynamicValue(ctx =>
-        WebSocketConnectionProvider.createProxy<KeyboardLayoutProvider>(ctx.container, keyboardPath)
+        WebSocketConnectionProvider.createLocalProxy<KeyboardLayoutProvider>(ctx.container, keyboardPath)
     ).inSingletonScope();
     bind(ElectronKeyboardLayoutChangeNotifier).toSelf().inSingletonScope();
     bind(KeyboardLayoutChangeNotifier).toService(ElectronKeyboardLayoutChangeNotifier);

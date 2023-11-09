@@ -32,11 +32,11 @@ Object.assign(MonacoNls, {
 
 import '../../src/browser/style/index.css';
 import { ContainerModule, decorate, injectable, interfaces } from '@theia/core/shared/inversify';
-import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
+import { MenuContribution, CommandContribution, quickInputServicePath } from '@theia/core/lib/common';
 import {
     FrontendApplicationContribution, KeybindingContribution,
     PreferenceService, PreferenceSchemaProvider, createPreferenceProxy,
-    PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService, StylingParticipant
+    PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService, StylingParticipant, WebSocketConnectionProvider
 } from '@theia/core/lib/browser';
 import { TextEditorProvider, DiffNavigatorProvider, TextEditor } from '@theia/editor/lib/browser';
 import { MonacoEditorProvider, MonacoEditorFactory } from './monaco-editor-provider';
@@ -66,6 +66,8 @@ import { MimeService } from '@theia/core/lib/browser/mime-service';
 import { MonacoEditorServices } from './monaco-editor';
 import { MonacoColorRegistry } from './monaco-color-registry';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { MonacoIconRegistry } from './monaco-icon-registry';
+import { IconRegistry } from '@theia/core/lib/browser/icon-registry';
 import { MonacoThemingService } from './monaco-theming-service';
 import { bindContributionProvider } from '@theia/core';
 import { WorkspaceSymbolCommand } from './workspace-symbol-command';
@@ -159,7 +161,10 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(KeybindingContribution).toService(MonacoKeybindingContribution);
 
     bind(MonacoQuickInputImplementation).toSelf().inSingletonScope();
-    bind(MonacoQuickInputService).toSelf().inSingletonScope();
+    bind(MonacoQuickInputService).toSelf().inSingletonScope().onActivation(({ container }, quickInputService: MonacoQuickInputService) => {
+        WebSocketConnectionProvider.createHandler(container, quickInputServicePath, quickInputService);
+        return quickInputService;
+    });
     bind(QuickInputService).toService(MonacoQuickInputService);
 
     bind(MonacoQuickAccessRegistry).toSelf().inSingletonScope();
@@ -184,6 +189,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(ThemeServiceWithDB).toSelf().inSingletonScope();
     rebind(ThemeService).toService(ThemeServiceWithDB);
+
+    bind(MonacoIconRegistry).toSelf().inSingletonScope();
+    bind(IconRegistry).toService(MonacoIconRegistry);
 });
 
 export const MonacoConfigurationService = Symbol('MonacoConfigurationService');

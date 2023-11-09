@@ -60,7 +60,7 @@ export abstract class TerminalWidget extends BaseWidget {
     abstract processInfo: Promise<TerminalProcessInfo>;
 
     /** The ids of extensions contributing to the environment of this terminal mapped to the provided description for their changes. */
-    abstract envVarCollectionDescriptionsByExtension: Promise<Map<string, string | MarkdownString | undefined>>;
+    abstract envVarCollectionDescriptionsByExtension: Promise<Map<string, (string | MarkdownString | undefined)[]>>;
 
     /** Terminal kind that indicates whether a terminal is created by a user or by some extension for a user */
     abstract readonly kind: 'user' | string;

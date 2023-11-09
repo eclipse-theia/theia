@@ -36,3 +36,4 @@ dependency-check-summary.txt*
 .tours
 /performance-result.json
 *.vsix
+/scripts/native-dependencies-*

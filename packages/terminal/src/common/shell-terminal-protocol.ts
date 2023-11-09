@@ -17,11 +17,25 @@
 import { RpcProxy } from '@theia/core';
 import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol';
 import { OS } from '@theia/core/lib/common/os';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 
 export const IShellTerminalServer = Symbol('IShellTerminalServer');
 
 export interface IShellTerminalServer extends IBaseTerminalServer {
     hasChildProcesses(processId: number | undefined): Promise<boolean>;
+    getEnvVarCollectionDescriptionsByExtension(id: number): Promise<Map<string, (string | MarkdownString | undefined)[]>>;
+    getEnvVarCollections(): Promise<[string, string, boolean, SerializableEnvironmentVariableCollection][]>;
+
+    restorePersisted(jsonValue: string): void;
+    /**
+     * Sets an extension's environment variable collection.
+     */
+    setCollection(extensionIdentifier: string, rootUri: string, persistent: boolean,
+        collection: SerializableEnvironmentVariableCollection, description: string | MarkdownString | undefined): void;
+    /**
+     * Deletes an extension's environment variable collection.
+     */
+    deleteCollection(extensionIdentifier: string): void;
 }
 
 export const shellTerminalPath = '/services/shell-terminal';
@@ -48,3 +62,42 @@ export interface IShellTerminalServerOptions extends IBaseTerminalServerOptions 
 
 export const ShellTerminalServerProxy = Symbol('ShellTerminalServerProxy');
 export type ShellTerminalServerProxy = RpcProxy<IShellTerminalServer>;
+
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+// some code copied and modified from https://github.com/microsoft/vscode/blob/1.49.0/src/vs/workbench/contrib/terminal/common/environmentVariable.ts
+
+export const NO_ROOT_URI = '<none>';
+
+export interface EnvironmentVariableCollection {
+    readonly variableMutators: ReadonlyMap<string, EnvironmentVariableMutator>;
+    readonly description: string | MarkdownString | undefined;
+}
+
+export interface EnvironmentVariableCollectionWithPersistence extends EnvironmentVariableCollection {
+    readonly persistent: boolean;
+}
+
+export enum EnvironmentVariableMutatorType {
+    Replace = 1,
+    Append = 2,
+    Prepend = 3
+}
+
+export interface EnvironmentVariableMutatorOptions {
+    applyAtProcessCreation?: boolean;
+}
+
+export interface EnvironmentVariableMutator {
+    readonly value: string;
+    readonly type: EnvironmentVariableMutatorType;
+    readonly options: EnvironmentVariableMutatorOptions;
+}
+
+export interface SerializableEnvironmentVariableCollection {
+    readonly description: string | MarkdownString | undefined;
+    readonly mutators: [string, EnvironmentVariableMutator][]
+};
+

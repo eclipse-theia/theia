@@ -99,6 +99,9 @@
       "path": "../../packages/property-view"
     },
     {
+      "path": "../../packages/remote"
+    },
+    {
       "path": "../../packages/scm"
     },
     {

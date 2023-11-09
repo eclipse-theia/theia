@@ -212,7 +212,7 @@ export class NotebookKernelService implements Disposable {
      * @returns and object containing:
      *  all kernels sorted to match the notebook best first (affinity ascending, score descending, label))
      *  the selected kernel (if any)
-     *  specificly suggested kernels (if any)
+     *  specific suggested kernels (if any)
      *  hidden kernels (if any)
      */
     getMatchingKernel(notebook: NotebookTextModelLike): NotebookKernelMatchResult {

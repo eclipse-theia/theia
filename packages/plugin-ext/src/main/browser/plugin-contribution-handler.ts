@@ -23,7 +23,7 @@ import { PluginViewRegistry } from './view/plugin-view-registry';
 import { PluginCustomEditorRegistry } from './custom-editors/plugin-custom-editor-registry';
 import {
     PluginContribution, IndentationRules, FoldingRules, ScopeMap, DeployedPlugin,
-    GrammarsContribution, EnterAction, OnEnterRule, RegExpOptions, PluginPackage
+    GrammarsContribution, EnterAction, OnEnterRule, RegExpOptions, IconContribution, PluginPackage
 } from '../../common';
 import {
     DefaultUriLabelProviderContribution,
@@ -43,6 +43,7 @@ import { PluginDebugService } from './debug/plugin-debug-service';
 import { DebugSchemaUpdater } from '@theia/debug/lib/browser/debug-schema-updater';
 import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-service';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { PluginIconService } from './plugin-icon-service';
 import { PluginIconThemeService } from './plugin-icon-theme-service';
 import { ContributionProvider } from '@theia/core/lib/common';
 import * as monaco from '@theia/monaco-editor-core';
@@ -52,6 +53,7 @@ import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { PluginTerminalRegistry } from './plugin-terminal-registry';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { LanguageService } from '@theia/core/lib/browser/language-service';
 
 @injectable()
 export class PluginContributionHandler {
@@ -88,6 +90,9 @@ export class PluginContributionHandler {
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
 
+    @inject(LanguageService)
+    protected readonly languageService: LanguageService;
+
     @inject(PluginSharedStyle)
     protected readonly style: PluginSharedStyle;
 
@@ -111,6 +116,9 @@ export class PluginContributionHandler {
 
     @inject(ColorRegistry)
     protected readonly colors: ColorRegistry;
+
+    @inject(PluginIconService)
+    protected readonly iconService: PluginIconService;
 
     @inject(PluginIconThemeService)
     protected readonly iconThemeService: PluginIconThemeService;
@@ -191,6 +199,11 @@ export class PluginContributionHandler {
                     firstLine: lang.firstLine,
                     mimetypes: lang.mimetypes
                 });
+                if (lang.icon) {
+                    const languageIcon = this.style.toFileIconClass(lang.icon);
+                    pushContribution(`language.${lang.id}.icon`, () => languageIcon);
+                    pushContribution(`language.${lang.id}.iconRegistration`, () => this.languageService.registerIcon(lang.id, languageIcon.object.iconClass));
+                }
                 const langConfiguration = lang.configuration;
                 if (langConfiguration) {
                     pushContribution(`language.${lang.id}.configuration`, () => monaco.languages.setLanguageConfiguration(lang.id, {
@@ -329,6 +342,19 @@ export class PluginContributionHandler {
         if (contributions.iconThemes && contributions.iconThemes.length) {
             for (const iconTheme of contributions.iconThemes) {
                 pushContribution(`iconThemes.${iconTheme.uri}`, () => this.iconThemeService.register(iconTheme, plugin));
+            }
+        }
+
+        if (contributions.icons && contributions.icons.length) {
+            for (const icon of contributions.icons) {
+                const defaultIcon = icon.defaults;
+                let key: string;
+                if (IconContribution.isIconDefinition(defaultIcon)) {
+                    key = defaultIcon.location;
+                } else {
+                    key = defaultIcon.id;
+                }
+                pushContribution(`icons.${key}`, () => this.iconService.register(icon, plugin));
             }
         }
 

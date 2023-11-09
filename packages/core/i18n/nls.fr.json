@@ -30,6 +30,9 @@
         "showPreviousTabInGroup": "Passer à l'onglet précédent dans le groupe",
         "toggleMaximized": "Toggle Maximisé"
       },
+      "copyInfo": "Ouvrir d'abord un fichier pour copier son chemin d'accès",
+      "copyWarn": "Veuillez utiliser la commande de copie du navigateur ou un raccourci.",
+      "cutWarn": "Veuillez utiliser la commande ou le raccourci \"couper\" du navigateur.",
       "enhancedPreview": {
         "classic": "Affiche un simple aperçu de l'onglet avec des informations de base.",
         "enhanced": "Affiche un aperçu amélioré de l'onglet avec des informations supplémentaires.",
@@ -54,6 +57,7 @@
         "clipboardWarnFirefox": "L'API Presse-papiers n'est pas disponible. Elle peut être activée par la préférence '{0}' sur la page '{1}'. Rechargez ensuite Theia. Notez que cela permettra à FireFox d'avoir un accès complet au presse-papiers du système."
       },
       "offline": "Hors ligne",
+      "pasteWarn": "Veuillez utiliser la commande \"coller\" du navigateur ou un raccourci.",
       "quitMessage": "Les modifications non sauvegardées ne seront pas enregistrées.",
       "resetWorkbenchLayout": "Réinitialisation de la disposition de l'établi",
       "searchbox": {
@@ -69,14 +73,23 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Sélectionnez la racine de l'espace de travail pour y ajouter la configuration",
+      "breakpoint": "point de rupture",
       "compound-cycle": "La configuration de lancement '{0}' contient un cycle avec elle-même",
       "continueAll": "Continuer tout",
       "copyExpressionValue": "Copier la valeur de l'expression",
+      "dataBreakpoint": "point d'arrêt des données",
       "debugVariableInput": "Définir la valeur de {0} ",
+      "entry": "entrée",
+      "exception": "exception",
+      "functionBreakpoint": "point d'arrêt de la fonction",
+      "goto": "goto",
       "instruction-breakpoint": "Point d'arrêt de l'instruction",
+      "instructionBreakpoint": "point d'arrêt de l'instruction",
       "missingConfiguration": "La configuration dynamique '{0}:{1}' est manquante ou non applicable.",
+      "pause": "pause",
       "pauseAll": "Pause tout",
       "reveal": "Révéler",
+      "step": "étape",
       "threads": "Les fils",
       "toggleTracing": "Activer/désactiver le traçage des communications avec les adaptateurs de débogage"
     },
@@ -183,7 +196,18 @@
       "deprecation": "Utilisez la clause `when` à la place."
     },
     "keymaps": {
+      "addKeybindingTitle": "Ajouter un raccourci clavier pour {0}",
+      "editKeybinding": "Modifier le couplage de touches...",
       "editKeybindingTitle": "Modifier le raccourci clavier pour {0}",
+      "editWhenExpression": "Modifier lorsque l'expression...",
+      "editWhenExpressionTitle": "Modifier l'expression pour {0}",
+      "keybinding": {
+        "copy": "Copier la reliure du clavier",
+        "copyCommandId": "Copier l'ID de la commande de liaison au clavier",
+        "copyCommandTitle": "Titre de la commande Copy Keybinding",
+        "edit": "Modifier le couplage de touches...",
+        "editWhenExpression": "Modifier l'association de touches lorsque l'expression..."
+      },
       "keybindingCollidesValidation": "Les combinaisons de touches sont actuellement en conflit",
       "requiredKeybindingValidation": "la valeur du keybinding est requise",
       "resetKeybindingConfirmation": "Voulez-vous vraiment réinitialiser ce raccourci clavier à sa valeur par défaut?",
@@ -406,6 +430,11 @@
       "shellLinux": "Le chemin du shell que le terminal utilise sous Linux (par défaut : '{0}'}).",
       "shellOsx": "Le chemin de l'interpréteur de commandes que le terminal utilise sous macOS (par défaut : '{0}'}).",
       "shellWindows": "Le chemin du shell que le terminal utilise sous Windows. (par défaut : '{0}')."
+    },
+    "test": {
+      "cancelAllTestRuns": "Annuler tous les essais",
+      "testRunDefaultName": "{0} courir {1}",
+      "testRuns": "Essais"
     },
     "toolbar": {
       "addCommand": "Ajouter une commande à la barre d'outils",

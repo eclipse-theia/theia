@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { FrontendApplicationContribution } from '../frontend-application';
+import { FrontendApplicationContribution } from '../frontend-application-contribution';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { BrowserMenuBarContribution, BrowserMainMenuFactory } from './browser-menu-plugin';
 import { BrowserContextMenuRenderer } from './browser-context-menu-renderer';

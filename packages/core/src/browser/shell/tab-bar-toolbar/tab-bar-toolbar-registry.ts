@@ -19,7 +19,7 @@ import { inject, injectable, named } from 'inversify';
 // eslint-disable-next-line max-len
 import { CommandMenuNode, CommandRegistry, CompoundMenuNode, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuNode, MenuPath } from '../../../common';
 import { ContextKeyService } from '../../context-key-service';
-import { FrontendApplicationContribution } from '../../frontend-application';
+import { FrontendApplicationContribution } from '../../frontend-application-contribution';
 import { Widget } from '../../widgets';
 import { AnyToolbarItem, ConditionalToolbarItem, MenuDelegate, MenuToolbarItem, ReactTabBarToolbarItem, TabBarToolbarItem } from './tab-bar-toolbar-types';
 import { ToolbarMenuNodeWrapper } from './tab-bar-toolbar-menu-adapters';

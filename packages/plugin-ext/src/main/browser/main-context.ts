@@ -68,6 +68,7 @@ import { NotebookEditorsMainImpl } from './notebooks/notebook-editors-main';
 import { NotebookDocumentsMainImpl } from './notebooks/notebook-documents-main';
 import { NotebookKernelsMainImpl } from './notebooks/notebook-kernels-main';
 import { NotebooksAndEditorsMain } from './notebooks/notebook-documents-and-editors-main';
+import { TestingMainImpl } from './test-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -129,6 +130,9 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const notificationMain = new NotificationMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTIFICATION_MAIN, notificationMain);
+
+    const testingMain = new TestingMainImpl(rpc, container, commandRegistryMain);
+    rpc.set(PLUGIN_RPC_CONTEXT.TESTING_MAIN, testingMain);
 
     const terminalMain = new TerminalServiceMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.TERMINAL_MAIN, terminalMain);

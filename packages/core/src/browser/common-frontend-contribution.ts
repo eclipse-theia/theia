@@ -20,7 +20,8 @@ import debounce = require('lodash.debounce');
 import { injectable, inject, optional } from 'inversify';
 import { MAIN_MENU_BAR, MANAGE_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
-import { FrontendApplication, FrontendApplicationContribution, OnWillStopAction } from './frontend-application';
+import { FrontendApplication } from './frontend-application';
+import { FrontendApplicationContribution, OnWillStopAction } from './frontend-application-contribution';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
 import { UriAwareCommandHandler } from '../common/uri-command-handler';
 import { SelectionService } from '../common/selection-service';
@@ -737,7 +738,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 if (supportCut) {
                     document.execCommand('cut');
                 } else {
-                    this.messageService.warn("Please use the browser's cut command or shortcut.");
+                    this.messageService.warn(nls.localize('theia/core/cutWarn', "Please use the browser's cut command or shortcut."));
                 }
             }
         });
@@ -746,7 +747,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 if (supportCopy) {
                     document.execCommand('copy');
                 } else {
-                    this.messageService.warn("Please use the browser's copy command or shortcut.");
+                    this.messageService.warn(nls.localize('theia/core/copyWarn', "Please use the browser's copy command or shortcut."));
                 }
             }
         });
@@ -755,7 +756,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 if (supportPaste) {
                     document.execCommand('paste');
                 } else {
-                    this.messageService.warn("Please use the browser's paste command or shortcut.");
+                    this.messageService.warn(nls.localize('theia/core/pasteWarn', "Please use the browser's paste command or shortcut."));
                 }
             }
         });
@@ -768,7 +769,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     const text = uris.map(resource => resource.path.fsPath()).join(lineDelimiter);
                     await this.clipboardService.writeText(text);
                 } else {
-                    await this.messageService.info('Open a file first to copy its path');
+                    await this.messageService.info(nls.localize('theia/core/copyInfo', 'Open a file first to copy its path'));
                 }
             }
         }));
@@ -2298,6 +2299,24 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hcDark: Color.lighten('statusBar.offlineBackground', 0.6),
                     hcLight: Color.lighten('statusBar.offlineBackground', 0.6)
                 }, description: 'Background of active statusbar item in case the theia server is offline.'
+            },
+            {
+                id: 'statusBarItem.remoteBackground',
+                defaults: {
+                    dark: 'activityBarBadge.background',
+                    light: 'activityBarBadge.background',
+                    hcDark: 'activityBarBadge.background',
+                    hcLight: 'activityBarBadge.background'
+                }, description: 'Background color for the remote indicator on the status bar.'
+            },
+            {
+                id: 'statusBarItem.remoteForeground',
+                defaults: {
+                    dark: 'activityBarBadge.foreground',
+                    light: 'activityBarBadge.foreground',
+                    hcDark: 'activityBarBadge.foreground',
+                    hcLight: 'activityBarBadge.foreground'
+                }, description: 'Foreground color for the remote indicator on the status bar.'
             },
             // Buttons
             {

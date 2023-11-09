@@ -75,7 +75,9 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
                 added.push(newMarker);
             } else {
                 // We emit all existing markers as 'changed', but we only fire an event if something really did change.
-                didChangeMarkers ||= !!added.length || !deepEqual(oldMarker, newMarker);
+                // We also fire an event if oldMarker === newMarker, as we cannot actually detect a change in this case
+                // (https://github.com/eclipse-theia/theia/issues/12546).
+                didChangeMarkers ||= !!added.length || oldMarker === newMarker || !deepEqual(oldMarker, newMarker);
                 changed.push(newMarker);
             }
         }

@@ -4,17 +4,48 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## v1.43.0 - Unreleased
-
+## v1.44.0
 - [task] prevent task widget title from being changed by task process [#13003](https://github.com/eclipse-theia/theia/pull/13003)
-- [vscode] evolve proposed API for dropDocument [#13009](https://github.com/eclipse-theia/theia/pull/13009) - contributed on behalf of STMicroelectronics
-- [vscode] evolve proposed API for documentPaste (stubbed) [#13010](https://github.com/eclipse-theia/theia/pull/13010) - contributed on behalf of STMicroelectronics
-- [vscode] evolve proposed API for terminalQuickFixProvider [#13006](https://github.com/eclipse-theia/theia/pull/13006) - contributed on behalf of STMicroelectronics
-- [vscode] added 'provideDocumentRangesFormattingEdits' in the `DocumentRangeFormattingEditProvider` VS Code API [#13020](https://github.com/eclipse-theia/theia/pull/13020) - contributed on behalf of STMicroelectronics
 
+## v1.43.0 - 10/26/2023
+
+- [application-manager] fixed backend webpack output and watching [#12902](https://github.com/eclipse-theia/theia/pull/12902)
+- [application-manager] updated `clean` command to delete `gen-webpack.node.config.js` [#12975](https://github.com/eclipse-theia/theia/pull/12975)
+- [application-package] bumped the default supported API version from `1.81.0` to `1.82.0` [#13025](https://github.com/eclipse-theia/theia/pull/13025)
+- [cli] upgraded`chai` dependency from `^4.2.0` to `^4.3.10` [#12958](https://github.com/eclipse-theia/theia/pull/12958)
+- [core] added `manage` related menus to the bottom sidebar [#12803](https://github.com/eclipse-theia/theia/pull/12803)
+- [core] added lazy loading support for localizations [#12932](https://github.com/eclipse-theia/theia/pull/12932)
+- [core] added localizations for clipboard commands [#13031](https://github.com/eclipse-theia/theia/pull/13031)
+- [core] fixed file saving dialog for dirty editors [#12864](https://github.com/eclipse-theia/theia/pull/12864)
+- [core] fixed preload application package import [#12964](https://github.com/eclipse-theia/theia/pull/12964)
+- [core] improved responsiveness when selecting a localization language [#12992](https://github.com/eclipse-theia/theia/pull/12992)
+- [core] removed unnecessary `try-catch` from `RpcProtocol` [#12961](https://github.com/eclipse-theia/theia/pull/12961)
+- [core] updated `nls.metadata.json` for `1.82.0` [#13028](https://github.com/eclipse-theia/theia/pull/13028)
+- [core] updated handling to ensure `ApplicationShellOptions` are properly applied on init [#12983](https://github.com/eclipse-theia/theia/pull/12983)
+- [debug] added missing localizations for debug paused labels [#12973](https://github.com/eclipse-theia/theia/pull/12973)
+- [debug] fixed an issue which caused jumping of the hover widget [#12971](https://github.com/eclipse-theia/theia/pull/12971)
+- [file-search] implemented `search.quickOpen.includeHistory` preference [#12913](https://github.com/eclipse-theia/theia/pull/12913)
+- [keymaps] added context-menu items for the keyboard shortcuts view [#12791](https://github.com/eclipse-theia/theia/pull/12791)
+- [monaco] upgraded `vscode-textmate` dependency from `7.0.3` to `9.0.0` [#12963](https://github.com/eclipse-theia/theia/pull/12963)
+- [notebook] updated handling to correctly updated when output items are updated [#13023](https://github.com/eclipse-theia/theia/pull/13023)
+- [plugin] added support for string arguments for `vscode.open` [#12997](https://github.com/eclipse-theia/theia/pull/12997)
+- [plugin] added support for the `EnvironmentVariableMutatorOptions` VS Code API [#12984](https://github.com/eclipse-theia/theia/pull/12984)
+- [plugin] added support for the icons contribution point [#12912](https://github.com/eclipse-theia/theia/pull/12912)
+- [plugin] fixed output renderer scripts path [#12979](https://github.com/eclipse-theia/theia/pull/12979)
+- [plugin] fixed symlink handling when initializing plugins [#12841](https://github.com/eclipse-theia/theia/pull/12841)
+- [plugin] improved resolution of webview views [#12998](https://github.com/eclipse-theia/theia/pull/12998)
+- [plugin] updated handling to allow null items in tree data providers [#13018](https://github.com/eclipse-theia/theia/pull/13018)
+- [remote] added remote ssh support [#12618](https://github.com/eclipse-theia/theia/pull/12618)
+- [test] added support for the `test` API [#12935](https://github.com/eclipse-theia/theia/pull/12935)
+- [vscode] added support for `provideDocumentRangesFormattingEdits` in the `DocumentRangeFormattingEditProvider` VS Code API [#13020](https://github.com/eclipse-theia/theia/pull/13020) - contributed on behalf of STMicroelectronics
+- [vscode] evolved proposed API for `documentPaste` (stubbed) [#13010](https://github.com/eclipse-theia/theia/pull/13010) - contributed on behalf of STMicroelectronics
+- [vscode] evolved proposed API for `dropDocument` [#13009](https://github.com/eclipse-theia/theia/pull/13009) - contributed on behalf of STMicroelectronics
+- [vscode] evolved proposed API for `terminalQuickFixProvider` [#13006](https://github.com/eclipse-theia/theia/pull/13006) - contributed on behalf of STMicroelectronics
+- [vscode] implemented scope API on env var collections [#12999](https://github.com/eclipse-theia/theia/pull/12999) - contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.43.0">[Breaking Changes:](#breaking_changes_1.43.0)</a>
 
+- [core] moved `FrontendApplicationContribution` from `@theia/core/lib/browser/frontend-application` to `@theia/core/lib/browser/frontend-application-contribution` [#12993](https://github.com/eclipse-theia/theia/pull/12993)
 - [core] removed `SETTINGS_OPEN` menupath constant - replaced by `MANAGE_GENERAL` [#12803](https://github.com/eclipse-theia/theia/pull/12803)
 - [core] removed `SETTINGS__THEME` menupath constant - replaced by `MANAGE_SETTINGS` [#12803](https://github.com/eclipse-theia/theia/pull/12803)
 

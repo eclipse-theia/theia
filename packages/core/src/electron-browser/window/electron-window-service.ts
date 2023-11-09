@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { NewWindowOptions } from '../../common/window';
+import { NewWindowOptions, WindowSearchParams } from '../../common/window';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
 import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
 import { ElectronWindowPreferences } from './electron-window-preferences';
@@ -44,8 +44,8 @@ export class ElectronWindowService extends DefaultWindowService {
         return undefined;
     }
 
-    override openNewDefaultWindow(): void {
-        this.delegate.openNewDefaultWindow();
+    override openNewDefaultWindow(params?: WindowSearchParams): void {
+        this.delegate.openNewDefaultWindow(params);
     }
 
     @postConstruct()
@@ -75,7 +75,12 @@ export class ElectronWindowService extends DefaultWindowService {
         }
     }
 
-    override reload(): void {
-        window.electronTheiaCore.requestReload();
+    override reload(params?: WindowSearchParams): void {
+        if (params) {
+            const query = Object.entries(params).map(([name, value]) => `${name}=${value}`).join('&');
+            location.search = query;
+        } else {
+            window.electronTheiaCore.requestReload();
+        }
     }
 }

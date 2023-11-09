@@ -30,6 +30,9 @@
         "showPreviousTabInGroup": "Přepnutí na předchozí kartu ve skupině",
         "toggleMaximized": "Přepínání Maximalizováno"
       },
+      "copyInfo": "Nejprve otevřete soubor a zkopírujte jeho cestu",
+      "copyWarn": "Použijte příkaz pro kopírování v prohlížeči nebo klávesovou zkratku.",
+      "cutWarn": "Použijte příkaz pro vyjmutí v prohlížeči nebo klávesovou zkratku.",
       "enhancedPreview": {
         "classic": "Zobrazí jednoduchý náhled karty se základními informacemi.",
         "enhanced": "Zobrazení rozšířeného náhledu karty s dalšími informacemi.",
@@ -54,6 +57,7 @@
         "clipboardWarnFirefox": "Rozhraní API schránky není k dispozici. Lze ji povolit pomocí předvolby '{0}' na stránce '{1}'. Poté znovu načtěte aplikaci Theia. Všimněte si, že to umožní FireFoxu získat plný přístup k systémové schránce."
       },
       "offline": "Offline",
+      "pasteWarn": "Použijte příkaz vložit v prohlížeči nebo klávesovou zkratku.",
       "quitMessage": "Neuložené změny se neuloží.",
       "resetWorkbenchLayout": "Obnovení rozložení pracovního stolu",
       "searchbox": {
@@ -69,14 +73,23 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "Vyberte kořenový pracovní prostor, do kterého chcete přidat konfiguraci",
+      "breakpoint": "bod přerušení",
       "compound-cycle": "Konfigurace spuštění '{0}' obsahuje cyklus se sebou samým",
       "continueAll": "Pokračovat ve všem",
       "copyExpressionValue": "Kopírování hodnoty výrazu",
+      "dataBreakpoint": "bod přerušení dat",
       "debugVariableInput": "Nastavení hodnoty {0} ",
+      "entry": "vstup",
+      "exception": "výjimka",
+      "functionBreakpoint": "bod přerušení funkce",
+      "goto": "přejít na stránku",
       "instruction-breakpoint": "Bod přerušení instrukcí",
+      "instructionBreakpoint": "bod přerušení instrukcí",
       "missingConfiguration": "Dynamická konfigurace '{0}:{1}' chybí nebo není použitelná",
+      "pause": "pauza",
       "pauseAll": "Pozastavit vše",
       "reveal": "Odhalení",
+      "step": "krok",
       "threads": "Vlákna",
       "toggleTracing": "Povolení/zakázání sledování komunikace s ladicími adaptéry"
     },
@@ -183,7 +196,18 @@
       "deprecation": "Místo toho použijte klauzuli `when`."
     },
     "keymaps": {
+      "addKeybindingTitle": "Přidání vazby na klávesy pro {0}",
+      "editKeybinding": "Upravit vazbu kláves...",
       "editKeybindingTitle": "Upravit vazbu kláves pro {0}",
+      "editWhenExpression": "Upravit Při vyjádření...",
+      "editWhenExpressionTitle": "Upravit, když výraz pro {0}",
+      "keybinding": {
+        "copy": "Kopírování vazby kláves",
+        "copyCommandId": "Kopírování vazby na klávesy ID příkazu",
+        "copyCommandTitle": "Kopírovat vazbu kláves Název příkazu",
+        "edit": "Upravit vazbu kláves...",
+        "editWhenExpression": "Upravit vazbu kláves Při výrazu..."
+      },
       "keybindingCollidesValidation": "vazba kláves v současné době koliduje",
       "requiredKeybindingValidation": "je vyžadována hodnota keybindingu",
       "resetKeybindingConfirmation": "Opravdu chcete obnovit výchozí hodnotu této vazby kláves?",
@@ -406,6 +430,11 @@
       "shellLinux": "Cesta k shellu, který terminál používá v Linuxu (výchozí: '{0}'}).",
       "shellOsx": "Cesta k shellu, který terminál používá v systému macOS (výchozí: '{0}'}).",
       "shellWindows": "Cesta k shellu, který terminál používá v systému Windows. (výchozí: '{0}')."
+    },
+    "test": {
+      "cancelAllTestRuns": "Zrušení všech testovacích běhů",
+      "testRunDefaultName": "{0} spustit {1}",
+      "testRuns": "Testovací běhy"
     },
     "toolbar": {
       "addCommand": "Přidání příkazu na panel nástrojů",

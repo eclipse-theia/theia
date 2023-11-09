@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2021 Red Hat, Inc. and others.
+// Copyright (C) 2023 ST Microelectronics, Inc. and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -12,15 +12,8 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
-// *****************************************************************************
 
-export const keytarServicePath = '/services/keytar';
-
-export const KeytarService = Symbol('KeytarService');
-export interface KeytarService {
-    setPassword(service: string, account: string, password: string): Promise<void>;
-    getPassword(service: string, account: string): Promise<string | undefined>;
-    deletePassword(service: string, account: string): Promise<boolean>;
-    findPassword(service: string): Promise<string | undefined>;
-    findCredentials(service: string): Promise<Array<{ account: string, password: string }>>;
+export interface ArgumentProcessor {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    processArgument(arg: any): any;
 }

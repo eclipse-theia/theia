@@ -16,7 +16,7 @@
 
 import { injectable } from 'inversify';
 import { WebSocketConnectionProvider, WebSocketOptions } from '../../browser/messaging/ws-connection-provider';
-import { FrontendApplicationContribution } from '../../browser/frontend-application';
+import { FrontendApplicationContribution } from '../../browser/frontend-application-contribution';
 import { Channel } from '../../common';
 
 /**

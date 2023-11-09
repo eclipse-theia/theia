@@ -39,7 +39,6 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { UntitledWorkspaceExitDialog } from './untitled-workspace-exit-dialog';
 import { FilesystemSaveResourceService } from '@theia/filesystem/lib/browser/filesystem-save-resource-service';
 import { StopReason } from '@theia/core/lib/common/frontend-application-state';
-import * as monaco from '@theia/monaco-editor-core';
 
 export enum WorkspaceStates {
     /**
@@ -78,13 +77,6 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
 
     configure(): void {
         const workspaceExtensions = this.workspaceFileService.getWorkspaceFileExtensions();
-        monaco.languages.register({
-            id: 'jsonc',
-            'aliases': [
-                'JSON with Comments'
-            ],
-            'extensions': workspaceExtensions.map(ext => `.${ext}`)
-        });
         for (const extension of workspaceExtensions) {
             this.encodingRegistry.registerOverride({ encoding: UTF8, extension });
         }

@@ -1,0 +1,50 @@
+name: Package Native Dependencies
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-20.04', 'windows-latest', 'macos-latest']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Update the node version here after every Electron upgrade
+      - name: Use Node.js 18.17.0
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.17.0'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Use Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install and Build
+        shell: bash
+        run: |
+          yarn --skip-integrity-check --network-timeout 100000
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+
+      - name: Build Browser App
+        shell: bash
+        run: |
+          yarn browser build
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+
+      - name: Zip Native Dependencies
+        shell: bash
+        run: yarn zip:native:dependencies
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3 
+        with: 
+          name: native-dependencies
+          path: ./scripts/native-dependencies-*.zip

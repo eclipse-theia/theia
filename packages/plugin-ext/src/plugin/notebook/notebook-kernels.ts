@@ -483,11 +483,13 @@ class NotebookCellExecutionTask implements Disposable {
             });
     }
 
-    private async updateOutputItems(items: theia.NotebookCellOutputItem | theia.NotebookCellOutputItem[], output: theia.NotebookCellOutput, append: boolean): Promise<void> {
+    private async updateOutputItems(items: theia.NotebookCellOutputItem | theia.NotebookCellOutputItem[],
+        output: theia.NotebookCellOutput, append: boolean): Promise<void> {
         items = NotebookCellOutputConverter.ensureUniqueMimeTypes(Array.isArray(items) ? items : [items], true);
         return this.updateSoon({
             editType: CellExecutionUpdateType.OutputItems,
             items: items.map(NotebookCellOutputItem.from),
+            outputId: output instanceof NotebookCellOutput ? output.outputId : '',
             append
         });
     }

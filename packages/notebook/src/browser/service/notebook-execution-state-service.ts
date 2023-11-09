@@ -293,6 +293,7 @@ export function updateToEdit(update: CellExecuteUpdate, cellHandle: number): Cel
         return {
             editType: CellEditType.OutputItems,
             items: update.items,
+            outputId: update.outputId,
             append: update.append,
         };
     } else if (update.editType === CellExecutionUpdateType.ExecutionState) {

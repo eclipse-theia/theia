@@ -16,13 +16,13 @@
 
 import * as path from 'path';
 import * as fs from '@theia/core/shared/fs-extra';
-import { LocalizationProvider } from '@theia/core/lib/node/i18n/localization-provider';
+import { LazyLocalization, LocalizationProvider } from '@theia/core/lib/node/i18n/localization-provider';
 import { Localization } from '@theia/core/lib/common/i18n/localization';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { DeployedPlugin, Localization as PluginLocalization, PluginIdentifiers, Translation } from '../../common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { Disposable, DisposableCollection, isObject, MaybePromise, nls, URI } from '@theia/core';
+import { Disposable, DisposableCollection, isObject, MaybePromise, nls, Path, URI } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { LanguagePackBundle, LanguagePackService } from '../../common/language-pack-service';
 
@@ -70,11 +70,8 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
         if (plugin.contributes?.localizations) {
             // Indicator that this plugin is a vscode language pack
             // Language packs translate Theia and some builtin vscode extensions
-            const localizations = buildLocalizations(plugin.contributes.localizations);
-            disposable.push(Disposable.create(() => {
-                this.localizationProvider.removeLocalizations(...localizations);
-            }));
-            this.localizationProvider.addLocalizations(...localizations);
+            const localizations = buildLocalizations(plugin.metadata.model.packageUri, plugin.contributes.localizations);
+            disposable.push(this.localizationProvider.addLocalizations(...localizations));
         }
         if (plugin.metadata.model.l10n || plugin.contributes?.localizations) {
             // Indicator that this plugin is a vscode language pack or has its own localization bundles
@@ -100,26 +97,29 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
         const pluginId = plugin.metadata.model.id;
         const packageUri = new URI(plugin.metadata.model.packageUri);
         if (plugin.contributes?.localizations) {
+            const l10nPromises: Promise<void>[] = [];
             for (const localization of plugin.contributes.localizations) {
                 for (const translation of localization.translations) {
-                    const l10n = getL10nTranslation(translation);
-                    if (l10n) {
-                        const translatedPluginId = translation.id;
-                        const translationUri = packageUri.resolve(translation.path);
-                        const locale = localization.languageId;
-                        // We store a bundle for another extension in here
-                        // Hence we use `translatedPluginId` instead of `pluginId`
-                        this.languagePackService.storeBundle(translatedPluginId, locale, {
-                            contents: processL10nBundle(l10n),
-                            uri: translationUri.toString()
-                        });
-                        disposable.push(Disposable.create(() => {
-                            // Only dispose the deleted locale for the specific plugin
-                            this.languagePackService.deleteBundle(translatedPluginId, locale);
-                        }));
-                    }
+                    l10nPromises.push(getL10nTranslation(plugin.metadata.model.packageUri, translation).then(l10n => {
+                        if (l10n) {
+                            const translatedPluginId = translation.id;
+                            const translationUri = packageUri.resolve(translation.path);
+                            const locale = localization.languageId;
+                            // We store a bundle for another extension in here
+                            // Hence we use `translatedPluginId` instead of `pluginId`
+                            this.languagePackService.storeBundle(translatedPluginId, locale, {
+                                contents: processL10nBundle(l10n),
+                                uri: translationUri.toString()
+                            });
+                            disposable.push(Disposable.create(() => {
+                                // Only dispose the deleted locale for the specific plugin
+                                this.languagePackService.deleteBundle(translatedPluginId, locale);
+                            }));
+                        }
+                    }));
                 }
             }
+            await Promise.all(l10nPromises);
         }
         // The `l10n` field of the plugin model points to a relative directory path within the plugin
         // It is supposed to contain localization bundles that contain translations of the plugin strings into different languages
@@ -150,11 +150,13 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
      */
     async localizePlugin(plugin: DeployedPlugin): Promise<DeployedPlugin> {
         const currentLanguage = this.localizationProvider.getCurrentLanguage();
-        const localization = this.localizationProvider.loadLocalization(currentLanguage);
         const pluginPath = new URI(plugin.metadata.model.packageUri).path.fsPath();
         const pluginId = plugin.metadata.model.id;
         try {
-            const translations = await loadPackageTranslations(pluginPath, currentLanguage);
+            const [localization, translations] = await Promise.all([
+                this.localizationProvider.loadLocalization(currentLanguage),
+                loadPackageTranslations(pluginPath, currentLanguage),
+            ]);
             plugin = localizePackage(plugin, translations, (key, original) => {
                 const fullKey = `${pluginId}/package/${key}`;
                 return Localization.localize(localization, fullKey, original);
@@ -218,10 +220,24 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
 
 // New plugin localization logic using vscode.l10n
 
-function getL10nTranslation(translation: Translation): UnprocessedL10nBundle | undefined {
+async function getL10nTranslation(packageUri: string, translation: Translation): Promise<UnprocessedL10nBundle | undefined> {
     // 'bundle' is a special key that contains all translations for the l10n vscode API
     // If that doesn't exist, we can assume that the language pack is using the old vscode-nls API
-    return translation.contents.bundle;
+    if (translation.cachedContents) {
+        return translation.cachedContents.bundle;
+    } else {
+        const translationPath = new URI(packageUri).path.join(translation.path).fsPath();
+        try {
+            const translationJson = await fs.readJson(translationPath);
+            translation.cachedContents = translationJson?.contents;
+            return translationJson?.contents?.bundle;
+        } catch (err) {
+            console.error('Failed reading translation file from: ' + translationPath, err);
+            // Store an empty object, so we don't reattempt to load the file
+            translation.cachedContents = {};
+            return undefined;
+        }
+    }
 }
 
 async function loadPluginBundles(l10nUri: URI): Promise<Record<string, LanguagePackBundle> | undefined> {
@@ -262,28 +278,47 @@ function processL10nBundle(bundle: UnprocessedL10nBundle): Record<string, string
 
 // Old plugin localization logic for vscode-nls
 // vscode-nls was used until version 1.73 of VSCode to translate extensions
+// This style of localization is still used by vscode language packs
 
-function buildLocalizations(localizations: PluginLocalization[]): Localization[] {
-    const theiaLocalizations: Localization[] = [];
+function buildLocalizations(packageUri: string, localizations: PluginLocalization[]): LazyLocalization[] {
+    const theiaLocalizations: LazyLocalization[] = [];
+    const packagePath = new URI(packageUri).path;
     for (const localization of localizations) {
-        const theiaLocalization: Localization = {
+        let cachedLocalization: Promise<Record<string, string>> | undefined;
+        const theiaLocalization: LazyLocalization = {
             languageId: localization.languageId,
             languageName: localization.languageName,
             localizedLanguageName: localization.localizedLanguageName,
             languagePack: true,
-            translations: {}
+            async getTranslations(): Promise<Record<string, string>> {
+                cachedLocalization ??= loadTranslations(packagePath, localization.translations);
+                return cachedLocalization;
+            },
         };
-        for (const translation of localization.translations) {
-            for (const [scope, value] of Object.entries(translation.contents)) {
-                for (const [key, item] of Object.entries(value)) {
-                    const translationKey = buildTranslationKey(translation.id, scope, key);
-                    theiaLocalization.translations[translationKey] = item;
-                }
-            }
-        }
         theiaLocalizations.push(theiaLocalization);
     }
     return theiaLocalizations;
+}
+
+async function loadTranslations(packagePath: Path, translations: Translation[]): Promise<Record<string, string>> {
+    const allTranslations = await Promise.all(translations.map(async translation => {
+        const values: Record<string, string> = {};
+        const translationPath = packagePath.join(translation.path).fsPath();
+        try {
+            const translationJson = await fs.readJson(translationPath);
+            const translationContents: Record<string, Record<string, string>> = translationJson?.contents;
+            for (const [scope, value] of Object.entries(translationContents ?? {})) {
+                for (const [key, item] of Object.entries(value)) {
+                    const translationKey = buildTranslationKey(translation.id, scope, key);
+                    values[translationKey] = item;
+                }
+            }
+        } catch (err) {
+            console.error('Failed to load translation from: ' + translationPath, err);
+        }
+        return values;
+    }));
+    return Object.assign({}, ...allTranslations);
 }
 
 function buildTranslationKey(pluginId: string, scope: string, key: string): string {

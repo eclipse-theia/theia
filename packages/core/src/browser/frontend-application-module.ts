@@ -38,7 +38,8 @@ import {
     MenuCommandExecutorImpl
 } from '../common';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
-import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
+import { FrontendApplication } from './frontend-application';
+import { FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application-contribution';
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 import { HttpOpenHandler } from './http-open-handler';
 import { CommonFrontendContribution } from './common-frontend-contribution';
@@ -96,7 +97,7 @@ import { EncodingRegistry } from './encoding-registry';
 import { EncodingService } from '../common/encoding-service';
 import { AuthenticationService, AuthenticationServiceImpl } from '../browser/authentication-service';
 import { DecorationsService, DecorationsServiceImpl } from './decorations-service';
-import { keytarServicePath, KeytarService } from '../common/keytar-protocol';
+import { keyStoreServicePath, KeyStoreService } from '../common/key-store';
 import { CredentialsService, CredentialsServiceImpl } from './credentials-service';
 import { ContributionFilterRegistry, ContributionFilterRegistryImpl } from '../common/contribution-filter';
 import { QuickCommandFrontendContribution } from './quick-input/quick-command-frontend-contribution';
@@ -137,6 +138,7 @@ import { StylingParticipant, StylingService } from './styling-service';
 import { bindCommonStylingParticipants } from './common-styling-participants';
 import { HoverService } from './hover-service';
 import { AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget';
+import { LanguageIconLabelProvider } from './language-icon-provider';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -149,6 +151,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(IconThemeContribution).toService(DefaultFileIconThemeContribution);
     bind(IconThemeApplicationContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(IconThemeApplicationContribution);
+    bind(LanguageIconLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(LanguageIconLabelProvider);
 
     bind(ColorRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, ColorContribution);
@@ -247,7 +251,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(SelectionService).toSelf().inSingletonScope();
     bind(CommandRegistry).toSelf().inSingletonScope().onActivation(({ container }, registry) => {
-        WebSocketConnectionProvider.createProxy(container, commandServicePath, registry);
+        WebSocketConnectionProvider.createHandler(container, commandServicePath, registry);
         return registry;
     });
     bind(CommandService).toService(CommandRegistry);
@@ -267,7 +271,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bindMessageService(bind).onActivation(({ container }, messages) => {
         const client = container.get(MessageClient);
-        WebSocketConnectionProvider.createProxy(container, messageServicePath, client);
+        WebSocketConnectionProvider.createHandler(container, messageServicePath, client);
         return messages;
     });
 
@@ -295,7 +299,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(QuickAccessContribution).toService(QuickHelpService);
 
     bind(QuickPickService).to(QuickPickServiceImpl).inSingletonScope().onActivation(({ container }, quickPickService: QuickPickService) => {
-        WebSocketConnectionProvider.createProxy(container, quickPickServicePath, quickPickService);
+        WebSocketConnectionProvider.createHandler(container, quickPickServicePath, quickPickService);
         return quickPickService;
     });
 
@@ -398,9 +402,9 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(AuthenticationService).to(AuthenticationServiceImpl).inSingletonScope();
     bind(DecorationsService).to(DecorationsServiceImpl).inSingletonScope();
 
-    bind(KeytarService).toDynamicValue(ctx => {
+    bind(KeyStoreService).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<KeytarService>(keytarServicePath);
+        return connection.createProxy<KeyStoreService>(keyStoreServicePath);
     }).inSingletonScope();
 
     bind(CredentialsService).to(CredentialsServiceImpl);

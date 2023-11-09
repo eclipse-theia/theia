@@ -24,6 +24,8 @@ import { IWebSocket, WebSocketChannel } from '../../common/messaging/web-socket-
 decorate(injectable(), RpcProxyFactory);
 decorate(unmanaged(), RpcProxyFactory, 0);
 
+export const LocalWebSocketConnectionProvider = Symbol('LocalWebSocketConnectionProvider');
+
 export interface WebSocketOptions {
     /**
      * True by default.
@@ -46,6 +48,19 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
 
     static override createProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): RpcProxy<T> {
         return container.get(WebSocketConnectionProvider).createProxy<T>(path, arg);
+    }
+
+    static createLocalProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): RpcProxy<T> {
+        return container.get<WebSocketConnectionProvider>(LocalWebSocketConnectionProvider).createProxy<T>(path, arg);
+    }
+
+    static createHandler(container: interfaces.Container, path: string, arg?: object): void {
+        const remote = container.get(WebSocketConnectionProvider);
+        const local = container.get<WebSocketConnectionProvider>(LocalWebSocketConnectionProvider);
+        remote.createProxy(path, arg);
+        if (remote !== local) {
+            local.createProxy(path, arg);
+        }
     }
 
     protected readonly socket: Socket;
@@ -104,11 +119,15 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
     protected createWebSocketUrl(path: string): string {
         // Since we are using Socket.io, the path should look like the following:
         // proto://domain.com/{path}
-        return new Endpoint().getWebSocketUrl().withPath(path).toString();
+        return this.createEndpoint(path).getWebSocketUrl().withPath(path).toString();
     }
 
     protected createHttpWebSocketUrl(path: string): string {
-        return new Endpoint({ path }).getRestUrl().toString();
+        return this.createEndpoint(path).getRestUrl().toString();
+    }
+
+    protected createEndpoint(path: string): Endpoint {
+        return new Endpoint({ path });
     }
 
     /**
