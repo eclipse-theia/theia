@@ -25,6 +25,19 @@ export interface TheiaAppFactory<T extends TheiaApp> {
     new(page: Page, initialWorkspace?: TheiaWorkspace, isElectron?: boolean, mainPageObjects?: TheiaAppMainPageObjects): T;
 }
 
+// TODO this is just a sketch, we need a proper way to configure tests and pass this configuration to the `TheiaAppLoader`:
+export interface TheiaPlaywrightTestConfig {
+    useElectron?: {
+        /** Path to the Theia Electron app package (absolute or relative to this package). */
+        electronAppPath?: string,
+        /** Path to the folder containing the plugins to load (absolute or relative to this package). */
+        pluginsPath?: string,
+        // eslint-disable-next-line max-len
+        /** Electron launch options as [specified by Playwright](https://github.com/microsoft/playwright/blob/396487fc4c19bf27554eac9beea9db135e96cfb4/packages/playwright-core/types/types.d.ts#L14182). */
+        launchOptions?: object,
+    }
+}
+
 function theiaAppFactory<T extends TheiaApp>(factory?: TheiaAppFactory<T>): TheiaAppFactory<T> {
     return (factory ?? TheiaApp) as TheiaAppFactory<T>;
 }
@@ -35,30 +48,30 @@ function initializeWorkspace(initialWorkspace?: TheiaWorkspace): TheiaWorkspace 
     return workspace;
 }
 
-class TheiaBrowserAppLoader {
+namespace TheiaBrowserAppLoader {
 
-    static async load<T extends TheiaApp>(
+    export async function load<T extends TheiaApp>(
         page: Page,
         initialWorkspace?: TheiaWorkspace,
         factory?: TheiaAppFactory<T>
     ): Promise<T> {
         const workspace = initializeWorkspace(initialWorkspace);
-        return this.createAndLoad<T>(page, workspace, factory);
+        return createAndLoad<T>(page, workspace, factory);
     }
 
-    protected static async createAndLoad<T extends TheiaApp>(
+    async function createAndLoad<T extends TheiaApp>(
         page: Page,
         workspace: TheiaWorkspace,
         factory?: TheiaAppFactory<T>
     ): Promise<T> {
         const appFactory = theiaAppFactory<T>(factory);
         const app = new appFactory(page, workspace, false);
-        await this.loadOrReload(app, '/#' + app.workspace.urlEncodedPath);
+        await loadOrReload(app, '/#' + app.workspace.urlEncodedPath);
         await app.waitForShellAndInitialized();
         return app;
     }
 
-    protected static async loadOrReload(app: TheiaApp, url: string): Promise<void> {
+    async function loadOrReload(app: TheiaApp, url: string): Promise<void> {
         if (app.page.url() === url) {
             await app.page.reload();
         } else {
@@ -73,9 +86,9 @@ class TheiaBrowserAppLoader {
     }
 }
 
-class TheiaElectronAppLoader {
+namespace TheiaElectronAppLoader {
 
-    static async load<T extends TheiaApp>(
+    export async function load<T extends TheiaApp>(
         args: TheiaPlaywrightTestConfig & PlaywrightWorkerArgs,
         initialWorkspace?: TheiaWorkspace,
         factory?: TheiaAppFactory<T>,
@@ -95,17 +108,18 @@ class TheiaElectronAppLoader {
             electronAppPath: appPath,
             pluginsPath: pluginsPath
         };
-        const playwrightOptions = this.toPlaywrightOptions(launchOptions, workspace);
+        const playwrightOptions = toPlaywrightOptions(launchOptions, workspace);
         console.log(`Launching Electron with options: ${JSON.stringify(playwrightOptions)}`);
         const electronApp = await electron.launch(playwrightOptions);
         const page = await electronApp.firstWindow();
+
         const appFactory = theiaAppFactory<T>(factory);
         const app = new appFactory(page, workspace, true);
         await app.waitForShellAndInitialized();
         return app;
     }
 
-    protected static toPlaywrightOptions(
+    export function toPlaywrightOptions(
         electronLaunchOptions: { additionalArgs: string[], electronAppPath: string, pluginsPath?: string } | object,
         workspace?: TheiaWorkspace
     ): { executablePath: string, args: string[] } | object {
@@ -134,22 +148,9 @@ class TheiaElectronAppLoader {
     }
 }
 
-// TODO this is just a sketch, we need a proper way to configure tests and pass this configuration to the `TheiaAppLoader`:
+export namespace TheiaAppLoader {
 
-export interface TheiaPlaywrightTestConfig {
-    useElectron?: {
-        /** Path to the Theia Electron app package (absolute or relative to this package). */
-        electronAppPath?: string,
-        /** Path to the folder containing the plugins to load (absolute or relative to this package). */
-        pluginsPath?: string,
-        // eslint-disable-next-line max-len
-        /** Electron launch options as [specified by Playwright](https://github.com/microsoft/playwright/blob/396487fc4c19bf27554eac9beea9db135e96cfb4/packages/playwright-core/types/types.d.ts#L14182). */
-        launchOptions?: object,
-    }
-}
-
-export class TheiaAppLoader {
-    static async load<T extends TheiaApp>(
+    export async function load<T extends TheiaApp>(
         args: TheiaPlaywrightTestConfig & PlaywrightWorkerArgs,
         initialWorkspace?: TheiaWorkspace,
         factory?: TheiaAppFactory<T>,
