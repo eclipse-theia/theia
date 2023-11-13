@@ -17,12 +17,12 @@
 import { Page, PlaywrightWorkerArgs, _electron as electron } from '@playwright/test';
 import * as path from 'path';
 import * as fs from 'fs';
-import { TheiaApp, TheiaAppMainPageObjects } from './theia-app';
+import { TheiaApp } from './theia-app';
 import { TheiaWorkspace } from './theia-workspace';
 import { OSUtil } from './util';
 
 export interface TheiaAppFactory<T extends TheiaApp> {
-    new(page: Page, initialWorkspace?: TheiaWorkspace, isElectron?: boolean, mainPageObjects?: TheiaAppMainPageObjects): T;
+    new(page: Page, initialWorkspace?: TheiaWorkspace, isElectron?: boolean): T;
 }
 
 // TODO this is just a sketch, we need a proper way to configure tests and pass this configuration to the `TheiaAppLoader`:

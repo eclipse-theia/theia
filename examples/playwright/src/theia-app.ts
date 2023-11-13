@@ -35,12 +35,6 @@ export const DefaultTheiaAppData: TheiaAppData = {
     shellSelector: '.theia-ApplicationShell'
 };
 
-export class TheiaAppMainPageObjects {
-    statusBar: new (page: TheiaApp) => TheiaStatusBar = TheiaStatusBar;
-    quickCommandPalette: new (page: TheiaApp) => TheiaQuickCommandPalette = TheiaQuickCommandPalette;
-    menuBar: new (page: TheiaApp) => TheiaMenuBar = TheiaMenuBar;
-}
-
 export class TheiaApp {
 
     statusBar: TheiaStatusBar;
@@ -53,11 +47,22 @@ export class TheiaApp {
         public page: Page,
         public workspace: TheiaWorkspace,
         public isElectron: boolean,
-        mainPageObjects: TheiaAppMainPageObjects = new TheiaAppMainPageObjects()
     ) {
-        this.statusBar = new mainPageObjects.statusBar(this);
-        this.quickCommandPalette = new mainPageObjects.quickCommandPalette(this);
-        this.menuBar = new mainPageObjects.menuBar(this);
+        this.statusBar = this.createStatusBar();
+        this.quickCommandPalette = this.createQuickCommandPalette();
+        this.menuBar = this.createMenuBar();
+    }
+
+    protected createStatusBar(): TheiaStatusBar {
+        return new TheiaStatusBar(this);
+    }
+
+    protected createQuickCommandPalette(): TheiaQuickCommandPalette {
+        return new TheiaQuickCommandPalette(this);
+    }
+
+    protected createMenuBar(): TheiaMenuBar {
+        return new TheiaMenuBar(this);
     }
 
     async isShellVisible(): Promise<boolean> {
