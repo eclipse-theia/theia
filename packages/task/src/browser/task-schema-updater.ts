@@ -294,7 +294,13 @@ const commandAndArgs = {
 const group: IJSONSchema = {
     oneOf: [
         {
-            type: 'string'
+            type: 'string',
+            enum: ['build', 'test', 'none'],
+            enumDescriptions: [
+                'Marks the task as a build task accessible through the \'Run Build Task\' command.',
+                'Marks the task as a test task accessible through the \'Run Test Task\' command.',
+                'Assigns the task to no group'
+            ]
         },
         {
             type: 'object',
@@ -302,7 +308,13 @@ const group: IJSONSchema = {
                 kind: {
                     type: 'string',
                     default: 'none',
-                    description: 'The task\'s execution group.'
+                    description: 'The task\'s execution group.',
+                    enum: ['build', 'test', 'none'],
+                    enumDescriptions: [
+                        'Marks the task as a build task accessible through the \'Run Build Task\' command.',
+                        'Marks the task as a test task accessible through the \'Run Test Task\' command.',
+                        'Assigns the task to no group'
+                    ]
                 },
                 isDefault: {
                     type: 'boolean',
@@ -311,20 +323,6 @@ const group: IJSONSchema = {
                 }
             }
         }
-    ],
-    enum: [
-        { kind: 'build', isDefault: true },
-        { kind: 'test', isDefault: true },
-        'build',
-        'test',
-        'none'
-    ],
-    enumDescriptions: [
-        'Marks the task as the default build task.',
-        'Marks the task as the default test task.',
-        'Marks the task as a build task accessible through the \'Run Build Task\' command.',
-        'Marks the task as a test task accessible through the \'Run Test Task\' command.',
-        'Assigns the task to no group'
     ],
     // eslint-disable-next-line max-len
     description: 'Defines to which execution group this task belongs to. It supports "build" to add it to the build group and "test" to add it to the test group.'

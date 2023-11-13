@@ -6,6 +6,7 @@
 
 ## v1.44.0
 - [task] prevent task widget title from being changed by task process [#13003](https://github.com/eclipse-theia/theia/pull/13003)
+- [task] support `isDefault: false` in task group definition [#12917](https://github.com/eclipse-theia/theia/issues/12917) - contributed on behalf of STMicroelectronics
 
 ## v1.43.0 - 10/26/2023
 
