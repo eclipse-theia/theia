@@ -239,6 +239,10 @@
   margin-left: 3px;
 }
 
+.t-siw-search-container .resultLine {
+  flex-grow: 1;
+}
+
 .t-siw-search-container .resultLine .match {
   white-space: pre;
   background: var(--theia-editor-findMatchHighlightBackground);
