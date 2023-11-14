@@ -309,24 +309,10 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
                 msg: nls.localize('theia/vsx-registry/confirmDialogMessage', 'The extension "{0}" is unverified and might pose a security risk.', this.displayName)
             }).open();
             if (choice) {
-                this._busy++;
-                try {
-                    await this.progressService.withProgress(nls.localizeByDefault("Installing extension '{0}' v{1}...", this.id, this.version ?? 0), 'extensions', () =>
-                        this.pluginServer.deploy(this.uri.toString(), undefined, options)
-                    );
-                } finally {
-                    this._busy--;
-                }
+                this.doInstall(options);
             }
         } else {
-            this._busy++;
-            try {
-                await this.progressService.withProgress(nls.localizeByDefault("Installing extension '{0}' v{1}...", this.id, this.version ?? 0), 'extensions', () =>
-                    this.pluginServer.deploy(this.uri.toString(), undefined, options)
-                );
-            } finally {
-                this._busy--;
-            }
+            this.doInstall(options);
         }
     }
 
@@ -340,6 +326,17 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
                     () => this.pluginServer.uninstall(PluginIdentifiers.componentsToVersionedId(plugin.metadata.model))
                 );
             }
+        } finally {
+            this._busy--;
+        }
+    }
+
+    protected async doInstall(options?: PluginDeployOptions): Promise<void> {
+        this._busy++;
+        try {
+            await this.progressService.withProgress(nls.localizeByDefault("Installing extension '{0}' v{1}...", this.id, this.version ?? 0), 'extensions', () =>
+                this.pluginServer.deploy(this.uri.toString(), undefined, options)
+            );
         } finally {
             this._busy--;
         }
