@@ -1,0 +1,52 @@
+name: Production Build Smoke Test
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-and-test-playwright:
+    name: Smoke Test for Browser Example Production Build on ubuntu-latest with Node.js 18.x
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Node.js "18.x"
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Use Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Build Browser Example Application for Production
+        shell: bash
+        run: |
+          yarn global add node-gyp
+          yarn --skip-integrity-check --network-timeout 100000
+          yarn browser build:production
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+
+      - name: Build Playwright
+        shell: bash
+        run: |
+          yarn --cwd examples/playwright build
+
+      - name: Run Smoke Test (examples/playwright/src/tests/theia-app)
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: yarn test:playwright theia-app
