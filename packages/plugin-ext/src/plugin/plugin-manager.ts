@@ -79,7 +79,7 @@ class ActivatedPlugin {
 
 export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
-    static SUPPORTED_ACTIVATION_EVENTS = new Set([
+    static BUILTIN_ACTIVATION_EVENTS = new Set([
         '*',
         'onLanguage',
         'onCommand',
@@ -101,6 +101,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         'onNotebook',
         'onNotebookSerializer'
     ]);
+    static ADDITIONAL_ACTIVATION_EVENTS_ENV = 'ADDITIONAL_ACTIVATION_EVENTS';
 
     private configStorage: ConfigStorage | undefined;
     private readonly registry = new Map<string, Plugin>();
@@ -113,6 +114,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     private onDidChangeEmitter = new Emitter<void>();
     private messageRegistryProxy: MessageRegistryMain;
     private notificationMain: NotificationMain;
+    private supportedActivationEvents: Set<string>;
     protected fireOnDidChange(): void {
         this.onDidChangeEmitter.fire(undefined);
     }
@@ -219,6 +221,12 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
         this.webview.init(params.webview);
         this.jsonValidation = params.jsonValidation;
+
+        this.supportedActivationEvents = new Set(PluginManagerExtImpl.BUILTIN_ACTIVATION_EVENTS);
+        const additionalActivationEvents = await this.envExt.getEnvVariable(PluginManagerExtImpl.ADDITIONAL_ACTIVATION_EVENTS_ENV);
+        if (additionalActivationEvents) {
+            additionalActivationEvents.split(',').forEach(event => this.supportedActivationEvents.add(event));
+        }
     }
 
     async $start(params: PluginManagerStartParams): Promise<void> {
@@ -263,7 +271,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             const activation = () => this.$activatePlugin(plugin.model.id);
             // an internal activation event is a subject to change
             this.setActivation(`onPlugin:${plugin.model.id}`, activation);
-            const unsupportedActivationEvents = plugin.rawModel.activationEvents.filter(e => !PluginManagerExtImpl.SUPPORTED_ACTIVATION_EVENTS.has(e.split(':')[0]));
+            const unsupportedActivationEvents = plugin.rawModel.activationEvents.filter(e => !this.supportedActivationEvents.has(e.split(':')[0]));
             if (unsupportedActivationEvents.length) {
                 console.warn(`Unsupported activation events: ${unsupportedActivationEvents.join(', ')}, please open an issue: https://github.com/eclipse-theia/theia/issues/new`);
             }
