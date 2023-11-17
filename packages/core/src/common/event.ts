@@ -456,7 +456,7 @@ export class AsyncEmitter<T extends WaitUntilEvent> extends Emitter<T> {
                 delete (asyncEvent as any)['waitUntil'];
             }
             if (!waitables.length) {
-                return;
+                continue;
             }
             try {
                 await Promise.all(waitables);
