@@ -20,6 +20,11 @@ import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget';
 import { TerminalProfile } from './terminal-profile-service';
 
 export class ShellTerminalProfile implements TerminalProfile {
+
+    get shellPath(): string | undefined {
+        return this.options.shellPath;
+    }
+
     constructor(protected readonly terminalService: TerminalService, protected readonly options: TerminalWidgetOptions) { }
 
     async start(): Promise<TerminalWidget> {

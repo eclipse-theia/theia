@@ -7721,6 +7721,12 @@ export module '@theia/plugin' {
         export const isTelemetryEnabled: boolean;
 
         /**
+         * An {@link Event} which fires when the default shell changes. This fires with the new
+         * shell path.
+         */
+        export const onDidChangeShell: Event<string>;
+
+        /**
          * An {@link Event} which fires when the user enabled or disables telemetry.
          * `true` if the user has enabled telemetry or `false` if the user has disabled telemetry.
          */
@@ -7747,7 +7753,9 @@ export module '@theia/plugin' {
         export const remoteName: string | undefined;
 
         /**
-         * The detected default shell for the extension host.
+         * The detected default shell for the extension host, this is overridden by the
+         * `terminal.integrated.defaultProfile` setting for the extension host's platform. Note that in
+         * environments that do not support a shell the value is the empty string.
          */
         export const shell: string;
 

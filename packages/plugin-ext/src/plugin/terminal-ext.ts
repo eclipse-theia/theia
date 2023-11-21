@@ -71,12 +71,27 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
 
     protected environmentVariableCollections: MultiKeyMap<string, EnvironmentVariableCollectionImpl> = new MultiKeyMap(2);
 
+    private shell: string;
+    private readonly onDidChangeShellEmitter = new Emitter<string>();
+    readonly onDidChangeShell: theia.Event<string> = this.onDidChangeShellEmitter.event;
+
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TERMINAL_MAIN);
     }
 
     get terminals(): TerminalExtImpl[] {
         return [...this._terminals.values()];
+    }
+
+    get defaultShell(): string {
+        return this.shell || '';
+    }
+
+    async $setShell(shell: string): Promise<void> {
+        if (this.shell !== shell) {
+            this.shell = shell;
+            this.onDidChangeShellEmitter.fire(shell);
+        }
     }
 
     createTerminal(

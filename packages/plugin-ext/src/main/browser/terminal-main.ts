@@ -18,6 +18,7 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalEditorLocationOptions, TerminalOptions } from '@theia/plugin';
 import { TerminalLocation, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalProfileService } from '@theia/terminal/lib/browser/terminal-profile-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
@@ -36,6 +37,7 @@ import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLinkProvider, Disposable {
 
     private readonly terminals: TerminalService;
+    private readonly terminalProfileService: TerminalProfileService;
     private readonly pluginTerminalRegistry: PluginTerminalRegistry;
     private readonly hostedPluginSupport: HostedPluginSupport;
     private readonly shell: ApplicationShell;
@@ -47,6 +49,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.terminals = container.get(TerminalService);
+        this.terminalProfileService = container.get(TerminalProfileService);
         this.pluginTerminalRegistry = container.get(PluginTerminalRegistry);
         this.hostedPluginSupport = container.get(HostedPluginSupport);
         this.shell = container.get(ApplicationShell);
@@ -64,6 +67,10 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         this.pluginTerminalRegistry.startCallback = id => this.startProfile(id);
 
         container.bind(TerminalLinkProvider).toDynamicValue(() => this);
+
+        this.toDispose.push(this.terminalProfileService.onDidChangeDefaultShell(shell => {
+            this.extProxy.$setShell(shell);
+        }));
     }
 
     async startProfile(id: string): Promise<string> {

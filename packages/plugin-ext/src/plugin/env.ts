@@ -25,7 +25,6 @@ export abstract class EnvExtImpl {
     private queryParameters: QueryParameters;
     private lang: string;
     private applicationName: string;
-    private defaultShell: string;
     private ui: theia.UIKind;
     private envMachineId: string;
     private envSessionId: string;
@@ -68,10 +67,6 @@ export abstract class EnvExtImpl {
         this.lang = lang;
     }
 
-    setShell(shell: string): void {
-        this.defaultShell = shell;
-    }
-
     setUIKind(uiKind: theia.UIKind): void {
         this.ui = uiKind;
     }
@@ -111,9 +106,6 @@ export abstract class EnvExtImpl {
     }
     get uriScheme(): string {
         return 'theia';
-    }
-    get shell(): string {
-        return this.defaultShell;
     }
     get uiKind(): theia.UIKind {
         return this.ui;
