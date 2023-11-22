@@ -16,7 +16,7 @@
 
 import { DebuggerDescription, DebugPath, DebugService } from '@theia/debug/lib/common/debug-service';
 import debounce = require('@theia/core/shared/lodash.debounce');
-import { Emitter, Event } from '@theia/core';
+import { deepClone, Emitter, Event, nls } from '@theia/core';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
@@ -293,10 +293,92 @@ export class PluginDebugService implements DebugService {
         for (const contribution of this.debuggers) {
             if (contribution.configurationAttributes &&
                 (contribution.type === debugType || contribution.type === '*' || debugType === '*')) {
-                schemas = schemas.concat(contribution.configurationAttributes);
+                schemas = schemas.concat(this.resolveSchemaAttributes(contribution.type, contribution.configurationAttributes));
             }
         }
         return schemas;
+    }
+
+    protected resolveSchemaAttributes(type: string, configurationAttributes: { [request: string]: IJSONSchema }): IJSONSchema[] {
+        const taskSchema = {};
+        return Object.keys(configurationAttributes).map(request => {
+            const attributes: IJSONSchema = deepClone(configurationAttributes[request]);
+            const defaultRequired = ['name', 'type', 'request'];
+            attributes.required = attributes.required && attributes.required.length ? defaultRequired.concat(attributes.required) : defaultRequired;
+            attributes.additionalProperties = false;
+            attributes.type = 'object';
+            if (!attributes.properties) {
+                attributes.properties = {};
+            }
+            const properties = attributes.properties;
+            properties['type'] = {
+                enum: [type],
+                description: nls.localizeByDefault('Type of configuration.'),
+                pattern: '^(?!node2)',
+                errorMessage: nls.localizeByDefault('The debug type is not recognized. Make sure that you have a corresponding debug extension installed and that it is enabled.'),
+                patternErrorMessage: nls.localizeByDefault('"node2" is no longer supported, use "node" instead and set the "protocol" attribute to "inspector".')
+            };
+            properties['name'] = {
+                type: 'string',
+                description: nls.localizeByDefault('Name of configuration; appears in the launch configuration dropdown menu.'),
+                default: 'Launch'
+            };
+            properties['request'] = {
+                enum: [request],
+                description: nls.localizeByDefault('Request type of configuration. Can be "launch" or "attach".'),
+            };
+            properties['debugServer'] = {
+                type: 'number',
+                description: nls.localizeByDefault(
+                    'For debug extension development only: if a port is specified VS Code tries to connect to a debug adapter running in server mode'
+                ),
+                default: 4711
+            };
+            properties['preLaunchTask'] = {
+                anyOf: [taskSchema, {
+                    type: ['string'],
+                }],
+                default: '',
+                description: nls.localizeByDefault('Task to run before debug session starts.')
+            };
+            properties['postDebugTask'] = {
+                anyOf: [taskSchema, {
+                    type: ['string'],
+                }],
+                default: '',
+                description: nls.localizeByDefault('Task to run after debug session ends.')
+            };
+            properties['internalConsoleOptions'] = {
+                enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart'],
+                default: 'openOnFirstSessionStart',
+                description: nls.localizeByDefault('Controls when the internal Debug Console should open.')
+            };
+
+            const osProperties = Object.assign({}, properties);
+            properties['windows'] = {
+                type: 'object',
+                description: nls.localizeByDefault('Windows specific launch configuration attributes.'),
+                properties: osProperties
+            };
+            properties['osx'] = {
+                type: 'object',
+                description: nls.localizeByDefault('OS X specific launch configuration attributes.'),
+                properties: osProperties
+            };
+            properties['linux'] = {
+                type: 'object',
+                description: nls.localizeByDefault('Linux specific launch configuration attributes.'),
+                properties: osProperties
+            };
+            Object.keys(attributes.properties).forEach(name => {
+                // Use schema allOf property to get independent error reporting #21113
+                attributes!.properties![name].pattern = attributes!.properties![name].pattern || '^(?!.*\\$\\{(env|config|command)\\.)';
+                attributes!.properties![name].patternErrorMessage = attributes!.properties![name].patternErrorMessage ||
+                    nls.localizeByDefault("'env.', 'config.' and 'command.' are deprecated, use 'env:', 'config:' and 'command:' instead.");
+            });
+
+            return attributes;
+        });
     }
 
     async getConfigurationSnippets(): Promise<IJSONSchemaSnippet[]> {
