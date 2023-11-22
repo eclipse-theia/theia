@@ -167,6 +167,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
             wordPattern: reviveRegExp(configuration.wordPattern),
             indentationRules: reviveIndentationRule(configuration.indentationRules),
             onEnterRules: reviveOnEnterRules(configuration.onEnterRules),
+            autoClosingPairs: configuration.autoClosingPairs
         };
 
         this.register(handle, monaco.languages.setLanguageConfiguration(languageId, config));

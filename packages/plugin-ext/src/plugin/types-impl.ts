@@ -845,6 +845,38 @@ export enum IndentAction {
     Outdent = 3
 }
 
+export namespace SyntaxTokenType {
+    export function toString(v: SyntaxTokenType | unknown): 'other' | 'comment' | 'string' | 'regex' {
+        switch (v) {
+            case SyntaxTokenType.Other: return 'other';
+            case SyntaxTokenType.Comment: return 'comment';
+            case SyntaxTokenType.String: return 'string';
+            case SyntaxTokenType.RegEx: return 'regex';
+        }
+        return 'other';
+    }
+}
+
+export enum SyntaxTokenType {
+    /**
+     * Everything except tokens that are part of comments, string literals and regular expressions.
+     */
+    Other = 0,
+    /**
+     * A comment.
+     */
+    Comment = 1,
+    /**
+     * A string literal.
+     */
+    String = 2,
+    /**
+     * A regular expression.
+     */
+    RegEx = 3
+}
+
+
 @es5ClassCompat
 export class TextEdit {
 

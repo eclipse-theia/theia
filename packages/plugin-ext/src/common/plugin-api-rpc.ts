@@ -1437,12 +1437,19 @@ export interface SerializedEnterAction {
     removeText?: number;
 }
 
+export interface SerializedAutoClosingPair {
+    open: string;
+    close: string;
+    notIn?: string[];
+}
+
 export interface SerializedLanguageConfiguration {
     comments?: CommentRule;
     brackets?: CharacterPair[];
     wordPattern?: SerializedRegExp;
     indentationRules?: SerializedIndentationRule;
     onEnterRules?: SerializedOnEnterRule[];
+    autoClosingPairs?: SerializedAutoClosingPair[]
 }
 
 export interface CodeActionDto {
