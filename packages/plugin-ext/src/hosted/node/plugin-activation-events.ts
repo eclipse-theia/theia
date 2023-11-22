@@ -42,8 +42,8 @@ export function updateActivationEvents(manifest: PluginPackage): void {
         const commands = Array.isArray(value) ? value : [value];
         updateCommandsContributions(commands, activationEvents);
     }
-    if (Array.isArray(manifest.contributes.views)) {
-        const views = flatten(Object.values(manifest.contributes.views)) as PluginPackageView[];
+    if (isObject(manifest.contributes.views)) {
+        const views = flatten(Object.values(manifest.contributes.views) as PluginPackageView[][]);
         updateViewsContribution(views, activationEvents);
     }
     if (Array.isArray(manifest.contributes.customEditors)) {
