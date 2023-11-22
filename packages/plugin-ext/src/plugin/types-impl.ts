@@ -876,7 +876,6 @@ export enum SyntaxTokenType {
     RegEx = 3
 }
 
-
 @es5ClassCompat
 export class TextEdit {
 

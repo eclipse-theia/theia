@@ -58,13 +58,11 @@ export function serializeIndentation(indentationRules?: theia.IndentationRule): 
 
 export function serializeAutoClosingPairs(pairs: theia.AutoClosingPair[] | undefined): SerializedAutoClosingPair[] | undefined {
     if (!pairs) {
-        return undefined
+        return undefined;
     };
-    return pairs.map(pair => {
-        return {
-            open: pair.open,
-            close: pair.close,
-            notIn: pair.notIn ? pair.notIn.map(tokenType => SyntaxTokenType.toString(tokenType)) : undefined
-        }
-    });
+    return pairs.map(pair => ({
+        open: pair.open,
+        close: pair.close,
+        notIn: pair.notIn ? pair.notIn.map(tokenType => SyntaxTokenType.toString(tokenType)) : undefined
+    }));
 }
