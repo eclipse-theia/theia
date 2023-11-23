@@ -512,7 +512,13 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
                 <div className='noWrapInfo theia-vsx-extension-description'>{description}</div>
                 <div className='theia-vsx-extension-action-bar'>
                     <div className='theia-vsx-extension-publisher-container'>
-                        {verified ? <i className={codicon('verified-filled')} /> : undefined}
+                        {verified === true ? (
+                            <i className={codicon('verified-filled')} />
+                        ) : verified === false ? (
+                            <i className={codicon('verified')} />
+                        ) : (
+                            <i className={codicon('question')} />
+                        )}
                         <span className='noWrapInfo theia-vsx-extension-publisher'>{publisher}</span>
                     </div>
                     {this.renderAction(this.props.host)}
