@@ -75,9 +75,9 @@ export class PluginDeployerImpl implements PluginDeployer {
     @inject(ContributionProvider) @named(PluginDeployerParticipant)
     protected readonly participants: ContributionProvider<PluginDeployerParticipant>;
 
-    public start(): void {
+    public start(): Promise<void> {
         this.logger.debug('Starting the deployer with the list of resolvers', this.pluginResolvers);
-        this.doStart();
+        return this.doStart();
     }
 
     public async initResolvers(): Promise<Array<void>> {

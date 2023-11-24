@@ -88,9 +88,11 @@ ${Array.from(electronMainModules?.values() ?? [], jsModulePath => `\
         await load(require('${jsModulePath}'));`).join(EOL)}
         await start();
     } catch (reason) {
-        console.error('Failed to start the electron application.');
-        if (reason) {
-            console.error(reason);
+        if (typeof reason !== 'number') {
+            console.error('Failed to start the electron application.');
+            if (reason) {
+                console.error(reason);
+            }
         }
         app.quit();
     };
@@ -139,8 +141,17 @@ async function start(port, host, argv = process.argv) {
     if (!container.isBound(BackendApplicationServer)) {
         container.bind(BackendApplicationServer).toConstantValue({ configure: defaultServeStatic });
     }
-    await container.get(CliManager).initializeCli(argv);
-    return container.get(BackendApplication).start(port, host);
+    let result = undefined;
+    await container.get(CliManager).initializeCli(argv.slice(2), 
+        () => container.get(BackendApplication).configured,
+        async () => {
+            result = container.get(BackendApplication).start(port, host);
+        });
+    if (result) {
+        return result;
+    } else {
+        return Promise.reject(0);
+    }
 }
 
 module.exports = async (port, host, argv) => {
@@ -149,9 +160,11 @@ ${Array.from(backendModules.values(), jsModulePath => `\
         await load(require('${jsModulePath}'));`).join(EOL)}
         return await start(port, host, argv);
     } catch (error) {
-        console.error('Failed to start the backend application:');
-        console.error(error);
-        process.exitCode = 1;
+        if (typeof error !== 'number') {
+            console.error('Failed to start the backend application:');
+            console.error(error); 
+            process.exitCode = 1;
+        }
         throw error;
     }
 }
@@ -168,9 +181,9 @@ BackendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.backe
 const serverModule = require('./server');
 const serverAddress = main.start(serverModule());
 
-serverAddress.then(({ port, address, family }) => {
-    if (process && process.send) {
-        process.send({ port, address, family });
+serverAddress.then((addressInfo) => {
+    if (process && process.send && addressInfo) {
+        process.send(addressInfo);
     }
 });
 

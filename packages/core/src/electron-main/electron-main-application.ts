@@ -564,8 +564,8 @@ export class ElectronMainApplication {
                 backendProcess.on('error', error => {
                     reject(error);
                 });
-                backendProcess.on('exit', () => {
-                    reject(new Error('backend process exited'));
+                backendProcess.on('exit', code => {
+                    reject(code);
                 });
                 app.on('quit', () => {
                     // Only issue a kill signal if the backend process is running.

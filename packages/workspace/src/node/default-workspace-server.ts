@@ -43,7 +43,7 @@ export class WorkspaceCliContribution implements CliContribution {
     }
 
     async setArguments(args: yargs.Arguments): Promise<void> {
-        const workspaceArguments = args._.slice(2).map(probablyAlreadyString => String(probablyAlreadyString));
+        const workspaceArguments = args._.map(probablyAlreadyString => String(probablyAlreadyString));
         if (workspaceArguments.length === 0 && args['root-dir']) {
             workspaceArguments.push(String(args['root-dir']));
         }

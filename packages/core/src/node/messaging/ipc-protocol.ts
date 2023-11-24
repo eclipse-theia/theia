@@ -51,7 +51,7 @@ export function checkParentAlive(): void {
                 } catch {
                     process.exit();
                 }
-            }, 5000);
+            }, 5000).unref(); // we don't want this timeout to keep the process alive
         }
     }
 }
