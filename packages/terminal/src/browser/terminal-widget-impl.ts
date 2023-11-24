@@ -29,7 +29,8 @@ import { IBaseTerminalServer, TerminalProcessInfo, TerminalExitReason } from '..
 import { TerminalWatcher } from '../common/terminal-watcher';
 import {
     TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus, TerminalLocationOptions,
-    TerminalLocation
+    TerminalLocation,
+    TerminalBuffer
 } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences } from './terminal-preferences';
@@ -58,6 +59,23 @@ export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOpti
 export const TerminalContribution = Symbol('TerminalContribution');
 export interface TerminalContribution {
     onCreate(term: TerminalWidgetImpl): void;
+}
+
+class TerminalBufferImpl implements TerminalBuffer {
+    constructor(private readonly term: Terminal) {
+    }
+
+    get length(): number {
+        return this.term.buffer.active.length;
+    };
+    getLines(start: number, length: number): string[] {
+        const result: string[] = [];
+        for (let i = 0; i < length && this.length - 1 - i >= 0; i++) {
+            result.push(this.term.buffer.active.getLine(this.length - 1 - i)!.translateToString());
+        }
+        return result;
+    }
+
 }
 
 @injectable()
@@ -123,6 +141,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected readonly onDataEmitter = new Emitter<string>();
     readonly onData: Event<string> = this.onDataEmitter.event;
 
+    protected readonly onOutputEmitter = new Emitter<string>();
+    readonly onOutput: Event<string> = this.onOutputEmitter.event;
+
     protected readonly onKeyEmitter = new Emitter<{ key: string, domEvent: KeyboardEvent }>();
     readonly onKey: Event<{ key: string, domEvent: KeyboardEvent }> = this.onKeyEmitter.event;
 
@@ -133,6 +154,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     readonly onMouseLeaveLinkHover: Event<MouseEvent> = this.onMouseLeaveLinkHoverEmitter.event;
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
+
+    private _buffer: TerminalBuffer;
+    override get buffer(): TerminalBuffer {
+        return this._buffer;
+    }
 
     @postConstruct()
     protected init(): void {
@@ -174,6 +200,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             fastScrollSensitivity: this.preferences['terminal.integrated.fastScrollSensitivity'],
             theme: this.themeService.theme
         });
+        this._buffer = new TerminalBufferImpl(this.term);
 
         this.fitAddon = new FitAddon();
         this.term.loadAddon(this.fitAddon);
@@ -711,6 +738,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     write(data: string): void {
         if (this.termOpened) {
             this.term.write(data);
+            this.onOutputEmitter.fire(data);
         } else {
             this.initialData += data;
         }
@@ -762,6 +790,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     writeLine(text: string): void {
         this.term.writeln(text);
+        this.onOutputEmitter.fire(text + '\n');
     }
 
     get onTerminalDidClose(): Event<TerminalWidget> {

@@ -363,6 +363,26 @@ export module '@theia/plugin' {
         color?: ThemeColor;
     }
 
+    export interface TerminalObserver {
+
+        /**
+         * A regex to match against the latest terminal output.
+         */
+        readonly outputMatcherRegex: string;
+        /**
+         * The maximum number of lines to match the regex against. Maximum is 40 lines.
+         */
+        readonly nrOfLinesToMatch: number;
+        /**
+         * Invoked when the regex matched against the terminal contents.
+         * @param groups The matched groups
+         */
+        matchOccurred(groups: string[]): void;
+    }
+
+    export namespace window {
+        export function registerTerminalObserver(observer: TerminalObserver): Disposable;
+    }
 }
 
 /**

@@ -49,7 +49,6 @@ export function getIconClass(options: theia.TerminalOptions | theia.ExtensionTer
  */
  @injectable()
 export class TerminalServiceExtImpl implements TerminalServiceExt {
-
     private readonly proxy: TerminalServiceMain;
 
     private readonly _terminals = new Map<string, TerminalExtImpl>();
@@ -58,6 +57,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
 
     private static nextProviderId = 0;
     private readonly terminalLinkProviders = new Map<string, theia.TerminalLinkProvider>();
+    private readonly terminalObservers = new Map<string, theia.TerminalObserver>();
     private readonly terminalProfileProviders = new Map<string, theia.TerminalProfileProvider>();
     private readonly onDidCloseTerminalEmitter = new Emitter<Terminal>();
     readonly onDidCloseTerminal: theia.Event<Terminal> = this.onDidCloseTerminalEmitter.event;
@@ -268,6 +268,25 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
     /** @stubbed */
     registerTerminalQuickFixProvider(id: string, provider: theia.TerminalQuickFixProvider): theia.Disposable {
         return Disposable.NULL;
+    }
+
+    registerTerminalObserver(observer: theia.TerminalObserver): theia.Disposable {
+        const id = (TerminalServiceExtImpl.nextProviderId++).toString();
+        this.terminalObservers.set(id, observer);
+        this.proxy.$registerTerminalObserver(id, observer.nrOfLinesToMatch, observer.outputMatcherRegex);
+        return Disposable.create(() => {
+            this.proxy.$unregisterTerminalObserver(id);
+            this.terminalObservers.delete(id);
+        });
+    }
+
+    $reportOutputMatch(observerId: string, groups: string[]): void {
+        const observer = this.terminalObservers.get(observerId);
+        if (observer) {
+            observer.matchOccurred(groups);
+        } else {
+            throw new Error(`reporting matches for unregistered observer: ${observerId} `);
+        }
     }
 
     protected isExtensionTerminalOptions(options: theia.TerminalOptions | theia.ExtensionTerminalOptions): options is theia.ExtensionTerminalOptions {
