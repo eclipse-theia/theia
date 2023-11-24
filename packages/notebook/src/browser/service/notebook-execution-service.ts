@@ -25,7 +25,7 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookKernelService } from './notebook-kernel-service';
 import { CommandService, Disposable } from '@theia/core';
-import { NotebookKernelQuickPickService, NotebookKernelQuickPickServiceImpl } from './notebook-kernel-quick-pick-service';
+import { NotebookKernelQuickPickService } from './notebook-kernel-quick-pick-service';
 import { NotebookKernelHistoryService } from './notebook-kernel-history-service';
 
 export interface CellExecutionParticipant {
@@ -48,7 +48,7 @@ export class NotebookExecutionService {
     protected commandService: CommandService;
 
     @inject(NotebookKernelQuickPickService)
-    protected notebookKernelQuickPickService: NotebookKernelQuickPickServiceImpl;
+    protected notebookKernelQuickPickService: NotebookKernelQuickPickService;
 
     private readonly cellExecutionParticipants = new Set<CellExecutionParticipant>();
 

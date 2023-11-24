@@ -29,8 +29,6 @@ import debounce = require('@theia/core/shared/lodash.debounce');
 
 export const JUPYTER_EXTENSION_ID = 'ms-toolsai.jupyter';
 
-export const NotebookKernelQuickPickService = Symbol('NotebookKernelQuickPickService');
-
 type KernelPick = QuickPickItem & { kernel: NotebookKernel };
 function isKernelPick(item: QuickPickInput<QuickPickItem>): item is KernelPick {
     return 'kernel' in item;
@@ -82,7 +80,7 @@ function toKernelQuickPick(kernel: NotebookKernel, selected: NotebookKernel | un
 }
 
 @injectable()
-export class NotebookKernelQuickPickServiceImpl {
+export class NotebookKernelQuickPickService {
 
     @inject(NotebookKernelService)
     protected readonly notebookKernelService: NotebookKernelService;

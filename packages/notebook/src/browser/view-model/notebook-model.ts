@@ -60,7 +60,7 @@ export class NotebookModel implements Saveable, Disposable {
     protected readonly onDidAddOrRemoveCellEmitter = new Emitter<NotebookModelWillAddRemoveEvent>();
     readonly onDidAddOrRemoveCell = this.onDidAddOrRemoveCellEmitter.event;
 
-    private readonly onDidChangeContentEmitter = new Emitter<NotebookContentChangedEvent[]>();
+    protected readonly onDidChangeContentEmitter = new Emitter<NotebookContentChangedEvent[]>();
     readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
 
     @inject(FileService)
@@ -164,7 +164,11 @@ export class NotebookModel implements Saveable, Disposable {
     }
 
     async applySnapshot(snapshot: Saveable.Snapshot): Promise<void> {
-        const data = 'read' in snapshot ? JSON.parse(snapshot.read()!) : JSON.parse(snapshot.value);
+        const rawData = 'read' in snapshot ? snapshot.read() : snapshot.value;
+        if (!rawData) {
+            throw new Error('could not read notebook snapshot');
+        }
+        const data = JSON.parse(rawData);
         const cells = data.cells.map((cell: CellData, index: number) => {
             const handle = this.nextHandle++;
             return this.cellModelFactory({
