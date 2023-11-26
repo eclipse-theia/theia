@@ -125,8 +125,9 @@ export class PluginSharedStyle {
             toDispose.push(this.insertRule('.' + iconClass + '::before', theme => `
                     content: "";
                     background-position: 2px;
-                    width: ${size}'px';
-                    height: ${size}'px';
+                    display: block;
+                    width: ${size}px;
+                    height: ${size}px;
                     background: center no-repeat url("${theme.type === 'light' ? lightIconUrl : darkIconUrl}");
                     background-size: ${size}px;
                 `));
