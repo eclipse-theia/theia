@@ -21,7 +21,7 @@ import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/messag
 import { ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider';
 import { ConnectionSource } from '../../browser/messaging/connection-source';
 import { Emitter } from 'vscode-languageserver-protocol';
-import { FrontendApplicationContribution } from 'src/browser';
+import { FrontendApplicationContribution } from '../../browser';
 
 export interface ElectronIpcOptions {
 }
