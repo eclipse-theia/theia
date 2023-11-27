@@ -10001,6 +10001,24 @@ export module '@theia/plugin' {
          */
         static readonly SourceFixAll: CodeActionKind;
 
+        /**
+         * Base kind for all code actions applying to the enitre notebook's scope. CodeActionKinds using
+         * this should always begin with `notebook.`
+         *
+         * This requires that new CodeActions be created for it and contributed via extensions.
+         * Pre-existing kinds can not just have the new `notebook.` prefix added to them, as the functionality
+         * is unique to the full-notebook scope.
+         *
+         * Notebook CodeActionKinds can be initialized as either of the following (both resulting in `notebook.source.xyz`):
+         * - `const newKind =  CodeActionKind.Notebook.append(CodeActionKind.Source.append('xyz').value)`
+         * - `const newKind =  CodeActionKind.Notebook.append('source.xyz')`
+         *
+         * Example Kinds/Actions:
+         * - `notebook.source.organizeImports` (might move all imports to a new top cell)
+         * - `notebook.source.normalizeVariableNames` (might rename all variables to a standardized casing format)
+         */
+        static readonly Notebook: CodeActionKind;
+
         private constructor(value: string);
 
         /**

@@ -1657,6 +1657,7 @@ export class CodeActionKind {
     public static readonly Source = CodeActionKind.Empty.append('source');
     public static readonly SourceOrganizeImports = CodeActionKind.Source.append('organizeImports');
     public static readonly SourceFixAll = CodeActionKind.Source.append('fixAll');
+    public static readonly Notebook = CodeActionKind.Empty.append('notebook');
 
     constructor(
         public readonly value: string
