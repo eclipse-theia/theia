@@ -69,7 +69,8 @@ export const enum WebviewMessageChannels {
     webviewReady = 'webview-ready',
     didKeydown = 'did-keydown',
     didMouseDown = 'did-mousedown',
-    didMouseUp = 'did-mouseup'
+    didMouseUp = 'did-mouseup',
+    onconsole = 'onconsole'
 }
 
 export interface WebviewContentOptions {
@@ -78,6 +79,12 @@ export interface WebviewContentOptions {
     readonly localResourceRoots?: ReadonlyArray<string>;
     readonly portMapping?: ReadonlyArray<WebviewPortMapping>;
     readonly enableCommandUris?: boolean | readonly string[];
+}
+
+export interface WebviewConsoleLog {
+    level: Extract<keyof typeof console, 'log' | 'info' | 'warn' | 'error' | 'trace' | 'debug'>;
+    message?: string;
+    optionalParams?: string;
 }
 
 @injectable()
@@ -318,6 +325,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         this.toHide.push(subscription);
 
         this.toHide.push(this.on(WebviewMessageChannels.onmessage, (data: any) => this.onMessageEmitter.fire(data)));
+        this.toHide.push(this.on(WebviewMessageChannels.onconsole, (data: WebviewConsoleLog) => this.forwardConsoleLog(data)));
         this.toHide.push(this.on(WebviewMessageChannels.didClickLink, (uri: string) => this.openLink(new URI(uri))));
         this.toHide.push(this.on(WebviewMessageChannels.doUpdateState, (state: any) => {
             this._state = state;
@@ -460,6 +468,15 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
 
     reload(): void {
         this.doUpdateContent();
+    }
+
+    protected forwardConsoleLog(log: WebviewConsoleLog): void {
+        const message = `[webview: ${this.identifier.id}] ${log.message ? JSON.parse(log.message) : undefined}`;
+        if (log.optionalParams !== undefined) {
+            console[log.level](message, JSON.parse(log.optionalParams));
+        } else {
+            console[log.level](message);
+        }
     }
 
     protected style(): void {

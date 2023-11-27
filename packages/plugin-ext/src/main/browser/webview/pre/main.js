@@ -144,40 +144,65 @@
      * @param {*} [state]
      * @return {string}
      */
-    function getVsCodeApiScript(state) {
+    function getDefaultScript(state) {
         return `
-        const acquireVsCodeApi = (function() {
-            const originalPostMessage = window.parent.postMessage.bind(window.parent);
-            const targetOrigin = '*';
-            let acquired = false;
+const acquireVsCodeApi = (function() {
+    const originalPostMessage = window.parent.postMessage.bind(window.parent);
+    const originalConsole = {...console};
+    const targetOrigin = '*';
+    let acquired = false;
 
-            let state = ${state ? `JSON.parse(${JSON.stringify(state)})` : undefined};
+    let state = ${state ? `JSON.parse(${JSON.stringify(state)})` : undefined};
 
-            return () => {
-                if (acquired) {
-                    throw new Error('An instance of the VS Code API has already been acquired');
-                }
-                acquired = true;
-                return Object.freeze({
-                    postMessage: function(msg) {
-                        return originalPostMessage({ command: 'onmessage', data: msg }, targetOrigin);
-                    },
-                    setState: function(newState) {
-                        state = newState;
-                        originalPostMessage({ command: 'do-update-state', data: JSON.stringify(newState) }, targetOrigin);
-                        return newState;
-                    },
-                    getState: function() {
-                        return state;
-                    }
-                });
-            };
-        })();
-        const acquireTheiaApi = acquireVsCodeApi;
-        delete window.parent;
-        delete window.top;
-        delete window.frameElement;
-        `;
+    const forwardConsoleLog = (level, msg, args) => {
+        let message, optionalParams;
+        try {
+            if (msg) {
+                message = JSON.stringify(msg) ?? null;
+            }
+            if (args) {
+                optionalParams = JSON.stringify(args) ?? null;
+            }
+        } catch (e) {
+            // Log non serializable objects inside of view
+            originalConsole[level](msg, args);
+            return;
+        }
+        originalPostMessage({ command: 'onconsole', data: { level, message, optionalParams } }, targetOrigin);
+    };
+
+    console.log = (message, args) => forwardConsoleLog('log', message, args);
+    console.info = (message, args) => forwardConsoleLog('info', message, args);
+    console.warn = (message, args) => forwardConsoleLog('warn', message, args);
+    console.error = (message, args) => forwardConsoleLog('error', message, args);
+    console.debug = (message, args) => forwardConsoleLog('debug', message, args);
+    console.trace = (message, args) => forwardConsoleLog('trace', message, args);
+
+    return () => {
+        if (acquired) {
+            throw new Error('An instance of the VS Code API has already been acquired');
+        }
+        acquired = true;
+        return Object.freeze({
+            postMessage: function (msg) {
+                return originalPostMessage({ command: 'onmessage', data: msg }, targetOrigin);
+            },
+            setState: function (newState) {
+                state = newState;
+                originalPostMessage({ command: 'do-update-state', data: JSON.stringify(newState) }, targetOrigin);
+                return newState;
+            },
+            getState: function () {
+                return state;
+            }
+        });
+    };
+})();
+const acquireTheiaApi = acquireVsCodeApi;
+delete window.parent;
+delete window.top;
+delete window.frameElement;        
+`;
     }
 
     /**
@@ -369,7 +394,7 @@
             // apply default script
             if (options.allowScripts) {
                 const defaultScript = newDocument.createElement('script');
-                defaultScript.textContent = getVsCodeApiScript(data.state);
+                defaultScript.textContent = getDefaultScript(data.state);
                 newDocument.head.prepend(defaultScript);
             }
 
