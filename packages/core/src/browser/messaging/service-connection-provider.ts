@@ -20,7 +20,6 @@ import { ChannelMultiplexer } from '../../common/message-rpc/channel';
 import { Deferred } from '../../common/promise-util';
 import { ConnectionSource } from './connection-source';
 
-
 export const LocalConnectionProvider = Symbol('LocalConnectionProvider');
 export const RemoteConnectionProvider = Symbol('RemoteConnectionProvider');
 

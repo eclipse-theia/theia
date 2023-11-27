@@ -47,6 +47,7 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
     }
 
     protected async handleConnection(socket: Socket, channelCreatedHandler: (channel: Channel) => void): Promise<void> {
+        // eslint-disable-next-line prefer-const
         let reconnectListener: (frontEndId: string) => void;
         const initialConnectListener = (frontEndId: string) => {
             socket.off(ConnectionManagementMessages.INITIAL_CONNECT, initialConnectListener);
@@ -119,7 +120,7 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
         return channel;
     }
 
-    markForClose(channelId: string) {
+    markForClose(channelId: string): void {
         this.channelsMarkedForClose.add(channelId);
     }
 }
@@ -140,12 +141,13 @@ class ReconnectableSocketChannel extends AbstractChannel {
         }));
         socket.on('error', errorHandler);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const dataListener = (data: any) => {
             // In the browser context socketIO receives binary messages as ArrayBuffers.
             // So we have to convert them to a Uint8Array before delegating the message to the read buffer.
             const buffer = data instanceof ArrayBuffer ? new Uint8Array(data) : data;
             this.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(buffer));
-        }
+        };
         this.disposables.push(Disposable.create(() => {
             socket.off('message', dataListener);
         }));
@@ -153,7 +155,7 @@ class ReconnectableSocketChannel extends AbstractChannel {
         this.socketBuffer.flush(socket);
     }
 
-    disconnect() {
+    disconnect(): void {
         this.disposables.dispose();
         this.socket = undefined;
     }

@@ -14,17 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AbstractChannel, Channel, Disposable, DisposableCollection, Emitter, Event, servicesPath } from "../../common";
-import { ConnectionSource } from "./connection-source";
-import { Socket, io } from "socket.io-client";
-import { Endpoint } from "../endpoint";
-import { ForwardingChannel } from "../../common/message-rpc/channel";
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from "../../common/message-rpc/uint8-array-message-buffer";
-import { inject, injectable } from "inversify";
-import { FrontendIdProvider } from "./frontend-id-provider";
-import { FrontendApplicationConfigProvider } from "../frontend-application-config-provider";
-import { SocketWriteBuffer } from "../../common/messaging/socket-write-buffer";
-import { ConnectionManagementMessages } from "../../common/messaging/connection-management";
+import { AbstractChannel, Channel, Disposable, DisposableCollection, Emitter, Event, servicesPath } from '../../common';
+import { ConnectionSource } from './connection-source';
+import { Socket, io } from 'socket.io-client';
+import { Endpoint } from '../endpoint';
+import { ForwardingChannel } from '../../common/message-rpc/channel';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
+import { inject, injectable } from 'inversify';
+import { FrontendIdProvider } from './frontend-id-provider';
+import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
+import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer';
+import { ConnectionManagementMessages } from '../../common/messaging/connection-management';
 
 @injectable()
 export class WebsocketConnectionSource implements ConnectionSource {
@@ -74,7 +74,7 @@ export class WebsocketConnectionSource implements ConnectionSource {
 
         this._socket.on('disconnect', () => {
             this.onSocketDidCloseEmitter.fire();
-        })
+        });
 
         this._socket.on('error', reason => {
             if (this.currentChannel) {
@@ -83,7 +83,7 @@ export class WebsocketConnectionSource implements ConnectionSource {
         });
     }
 
-    protected handleSocketConnected() {
+    protected handleSocketConnected(): void {
         if (this.currentChannel) {
             const reconnectListener = (hasConnection: boolean) => {
                 this._socket.off(ConnectionManagementMessages.RECONNECT, reconnectListener);
@@ -122,6 +122,7 @@ export class WebsocketConnectionSource implements ConnectionSource {
     protected createChannel(): AbstractChannel {
         const toDispose = new DisposableCollection();
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const messageHandler = (data: any) => {
             this.onIncomingMessageActivityEmitter.fire();
             if (this.currentChannel) {

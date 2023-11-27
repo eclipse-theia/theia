@@ -36,15 +36,12 @@ export namespace ElectronIpcConnectionProvider {
     export function createProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): RpcProxy<T> {
         return container.get<ServiceConnectionProvider>(ElectronMainConnectionProvider).createProxy<T>(path, arg);
     }
-
-
 }
 
 @injectable()
 export class ElectronIpcConnectionSource implements ConnectionSource, FrontendApplicationContribution {
     protected readonly onConnectionDidOpenEmitter: Emitter<Channel> = new Emitter();
     onConnectionDidOpen: Event<Channel> = this.onConnectionDidOpenEmitter.event;
-
 
     onStart(): MaybePromise<void> {
         const channel = new ElectronIpcRendererChannel();

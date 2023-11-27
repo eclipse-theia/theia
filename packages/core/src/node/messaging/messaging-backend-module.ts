@@ -43,12 +43,10 @@ export const messagingBackendModule = new ContainerModule(bind => {
 
     bind(ConnectionHandler).toDynamicValue(context => {
         const connectionService = context.container.get<WebsocketFrontendConnectionService>(FrontendConnectionService);
-        return new RpcConnectionHandler<object>(connectionCloseServicePath, () => {
-            return {
-                markForClose: (channelId: string) => {
-                    connectionService.markForClose(channelId);
-                }
-            };
-        });
+        return new RpcConnectionHandler<object>(connectionCloseServicePath, () => ({
+            markForClose: (channelId: string) => {
+                connectionService.markForClose(channelId);
+            }
+        }));
     }).inSingletonScope();
 });

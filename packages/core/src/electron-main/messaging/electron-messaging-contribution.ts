@@ -54,7 +54,6 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
         TheiaRendererAPI.onIpcData((sender, data) => this.handleIpcEvent(sender, data));
     }
 
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcChannel(spec: string, callback: (params: any, channel: Channel) => void): void {
         this.channelHandlers.push(spec, callback);
@@ -99,7 +98,7 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
         return mainChannel;
     }
 
-    protected deleteChannel(senderId: number, reason: string) {
+    protected deleteChannel(senderId: number, reason: string): void {
         const channel = this.openChannels.get(senderId);
         if (channel) {
             this.openChannels.delete(senderId);

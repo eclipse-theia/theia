@@ -31,9 +31,7 @@ const backendServiceProvider = Symbol('backendServiceProvider2');
 const localServiceProvider = Symbol('localServiceProvider');
 
 export const messagingFrontendModule = new ContainerModule(bind => {
-    bind(ConnectionCloseService).toDynamicValue(ctx => {
-        return WebSocketConnectionProvider.createProxy(ctx.container, connectionCloseServicePath);
-    }).inSingletonScope();
+    bind(ConnectionCloseService).toDynamicValue(ctx => WebSocketConnectionProvider.createProxy(ctx.container, connectionCloseServicePath)).inSingletonScope();
     bind(ElectronWebSocketConnectionSource).toSelf().inSingletonScope();
     bind(WebsocketConnectionSource).toService(ElectronWebSocketConnectionSource);
     bind(ElectronIpcConnectionSource).toSelf().inSingletonScope();

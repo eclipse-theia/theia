@@ -122,7 +122,7 @@ export const CHANNEL_MINIMIZE = 'Minimize';
 export const CHANNEL_MAXIMIZE = 'Maximize';
 export const CHANNEL_IS_MAXIMIZED = 'IsMaximized';
 
-export const CHANNEL_ABOUT_TO_CLOSE = "AboutToClose";
+export const CHANNEL_ABOUT_TO_CLOSE = 'AboutToClose';
 
 export const CHANNEL_UNMAXIMIZE = 'UnMaximize';
 export const CHANNEL_ON_WINDOW_EVENT = 'OnWindowEvent';

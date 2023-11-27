@@ -25,9 +25,7 @@ import { WebSocketConnectionProvider } from './ws-connection-provider';
 const backendServiceProvider = Symbol('backendServiceProvider');
 
 export const messagingFrontendModule = new ContainerModule(bind => {
-    bind(ConnectionCloseService).toDynamicValue(ctx => {
-        return WebSocketConnectionProvider.createProxy(ctx.container, connectionCloseServicePath);
-    }).inSingletonScope();
+    bind(ConnectionCloseService).toDynamicValue(ctx => WebSocketConnectionProvider.createProxy(ctx.container, connectionCloseServicePath)).inSingletonScope();
     bind(BrowserFrontendIdProvider).toSelf().inSingletonScope();
     bind(FrontendIdProvider).toService(BrowserFrontendIdProvider);
     bind(WebsocketConnectionSource).toSelf().inSingletonScope();

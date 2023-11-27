@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from "inversify";
-import { generateUuid } from "../../common/uuid";
+import { injectable } from 'inversify';
+import { generateUuid } from '../../common/uuid';
 
 export const FrontendIdProvider = Symbol('FrontendIdProvider');
 
 /**
- * A FronendIdProvider computes an id for an instance of the front end that may be reconnected to a back end 
+ * A FronendIdProvider computes an id for an instance of the front end that may be reconnected to a back end
  * connection context.
  */
 export interface FrontendIdProvider {
@@ -34,5 +34,4 @@ export class BrowserFrontendIdProvider implements FrontendIdProvider {
     getId(): string {
         return this.id;
     }
-
 }

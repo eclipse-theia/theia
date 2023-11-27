@@ -27,7 +27,7 @@ export class SocketWriteBuffer {
     private disconnectedBuffer: Uint8Array | undefined;
     private bufferWritePosition = 0;
 
-    buffer(data: Uint8Array) {
+    buffer(data: Uint8Array): void {
         this.ensureWriteBuffer(data.byteLength);
         this.disconnectedBuffer?.set(data, this.bufferWritePosition);
         this.bufferWritePosition += data.byteLength;
@@ -44,7 +44,7 @@ export class SocketWriteBuffer {
         }
     }
 
-    flush(socket: WebSocket) {
+    flush(socket: WebSocket): void {
         if (this.disconnectedBuffer) {
             socket.send(this.disconnectedBuffer.slice(0, this.bufferWritePosition));
             this.disconnectedBuffer = undefined;

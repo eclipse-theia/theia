@@ -45,6 +45,4 @@ export class WebSocketConnectionProvider {
     createProxy<T extends object>(path: string, factory: RpcProxyFactory<T>): RpcProxy<T> {
         return this.remoteConnectionProvider.createProxy(path, factory);
     }
-
-
 }
