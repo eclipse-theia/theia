@@ -18,7 +18,7 @@ import * as chai from 'chai';
 import { expect } from 'chai';
 chai.use(require('chai-string'));
 
-import { DiffComputer, DirtyDiff } from './diff-computer';
+import { DiffComputer, DirtyDiff, EmptyLineRange } from './diff-computer';
 import { ContentLines } from './content-lines';
 
 let diffComputer: DiffComputer;
@@ -45,6 +45,12 @@ describe('dirty-diff-computer', () => {
             added: [],
             modified: [],
             removed: [0],
+            rangeMappings: [
+                {
+                    previousRange: { start: 1, end: 1 },
+                    currentRange: EmptyLineRange.afterLine(0),
+                },
+            ],
         });
     });
 
@@ -59,19 +65,32 @@ describe('dirty-diff-computer', () => {
                 modified: [],
                 removed: [1],
                 added: [],
+                rangeMappings: [
+                    {
+                        previousRange: { start: 2, end: 2 + lines - 1 },
+                        currentRange: EmptyLineRange.afterLine(1),
+                    },
+                ],
             });
         });
     });
 
     it('remove all lines', () => {
+        const numberOfLines = 10;
         const dirtyDiff = computeDirtyDiff(
-            sequenceOfN(10, () => 'TO-BE-REMOVED'),
+            sequenceOfN(numberOfLines, () => 'TO-BE-REMOVED'),
             ['']
         );
         expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
             added: [],
             modified: [],
             removed: [0],
+            rangeMappings: [
+                {
+                    previousRange: { start: 0, end: numberOfLines - 1 },
+                    currentRange: EmptyLineRange.atBeginning,
+                },
+            ],
         });
     });
 
@@ -86,6 +105,12 @@ describe('dirty-diff-computer', () => {
                 modified: [],
                 removed: [0],
                 added: [],
+                rangeMappings: [
+                    {
+                        previousRange: { start: 0, end: lines - 1 },
+                        currentRange: EmptyLineRange.atBeginning,
+                    },
+                ],
             });
         });
     });
@@ -99,6 +124,12 @@ describe('dirty-diff-computer', () => {
                 modified: [],
                 removed: [],
                 added: [{ start: 2, end: 2 + lines - 1 }],
+                rangeMappings: [
+                    {
+                        previousRange: EmptyLineRange.afterLine(1),
+                        currentRange: { start: 2, end: 2 + lines - 1 },
+                    },
+                ],
             });
         });
     });
@@ -114,6 +145,12 @@ describe('dirty-diff-computer', () => {
                 modified: [],
                 removed: [],
                 added: [{ start: 0, end: lines - 1 }],
+                rangeMappings: [
+                    {
+                        previousRange: EmptyLineRange.atBeginning,
+                        currentRange: { start: 0, end: lines - 1 },
+                    },
+                ],
             });
         });
     });
@@ -128,6 +165,12 @@ describe('dirty-diff-computer', () => {
             modified: [],
             removed: [],
             added: [{ start: 0, end: numberOfLines - 1 }],
+            rangeMappings: [
+                {
+                    previousRange: EmptyLineRange.atBeginning,
+                    currentRange: { start: 0, end: numberOfLines - 1 },
+                },
+            ],
         });
     });
 
@@ -148,6 +191,12 @@ describe('dirty-diff-computer', () => {
             modified: [],
             removed: [],
             added: [{ start: 1, end: 2 }],
+            rangeMappings: [
+                {
+                    previousRange: EmptyLineRange.afterLine(0),
+                    currentRange: { start: 1, end: 2 },
+                },
+            ],
         });
     });
 
@@ -165,6 +214,12 @@ describe('dirty-diff-computer', () => {
             modified: [],
             removed: [],
             added: [{ start: 1, end: 1 }],
+            rangeMappings: [
+                {
+                    previousRange: EmptyLineRange.afterLine(0),
+                    currentRange: { start: 1, end: 1 },
+                },
+            ],
         });
     });
 
@@ -178,7 +233,13 @@ describe('dirty-diff-computer', () => {
             expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
                 modified: [],
                 removed: [],
-                added: [{ start: 2, end: 1 + lines }],
+                added: [{ start: 2, end: 2 + lines - 1 }],
+                rangeMappings: [
+                    {
+                        previousRange: EmptyLineRange.afterLine(1),
+                        currentRange: { start: 2, end: 2 + lines - 1 },
+                    },
+                ],
             });
         });
     });
@@ -203,6 +264,12 @@ describe('dirty-diff-computer', () => {
             modified: [],
             removed: [],
             added: [{ start: 1, end: 5 }],
+            rangeMappings: [
+                {
+                    previousRange: EmptyLineRange.afterLine(0),
+                    currentRange: { start: 1, end: 5 },
+                },
+            ],
         });
     });
 
@@ -216,6 +283,12 @@ describe('dirty-diff-computer', () => {
                 modified: [],
                 removed: [],
                 added: [{ start: 1, end: lines }],
+                rangeMappings: [
+                    {
+                        previousRange: EmptyLineRange.afterLine(0),
+                        currentRange: { start: 1, end: lines },
+                    },
+                ],
             });
         });
     });
@@ -237,6 +310,12 @@ describe('dirty-diff-computer', () => {
             removed: [],
             added: [],
             modified: [{ start: 1, end: 1 }],
+            rangeMappings: [
+                {
+                    previousRange: { start: 1, end: 1 },
+                    currentRange: { start: 1, end: 1 },
+                },
+            ],
         });
     });
 
@@ -250,6 +329,12 @@ describe('dirty-diff-computer', () => {
             removed: [],
             added: [],
             modified: [{ start: 0, end: numberOfLines - 1 }],
+            rangeMappings: [
+                {
+                    previousRange: { start: 0, end: numberOfLines - 1 },
+                    currentRange: { start: 0, end: numberOfLines - 1 },
+                },
+            ],
         });
     });
 
@@ -271,6 +356,12 @@ describe('dirty-diff-computer', () => {
             removed: [],
             added: [],
             modified: [{ start: 1, end: 2 }],
+            rangeMappings: [
+                {
+                    previousRange: { start: 1, end: 3 },
+                    currentRange: { start: 1, end: 2 },
+                },
+            ],
         });
     });
 
@@ -308,6 +399,20 @@ describe('dirty-diff-computer', () => {
             removed: [3],
             added: [{ start: 10, end: 11 }],
             modified: [{ start: 0, end: 0 }],
+            rangeMappings: [
+                {
+                    previousRange: { start: 0, end: 0 },
+                    currentRange: { start: 0, end: 0 },
+                },
+                {
+                    previousRange: { start: 4, end: 4 },
+                    currentRange: EmptyLineRange.afterLine(3),
+                },
+                {
+                    previousRange: EmptyLineRange.afterLine(10),
+                    currentRange: { start: 10, end: 11 },
+                },
+            ],
         });
     });
 
@@ -343,6 +448,20 @@ describe('dirty-diff-computer', () => {
             removed: [11],
             added: [{ start: 5, end: 5 }, { start: 9, end: 9 }],
             modified: [],
+            rangeMappings: [
+                {
+                    previousRange: EmptyLineRange.afterLine(4),
+                    currentRange: { start: 5, end: 5 },
+                },
+                {
+                    previousRange: EmptyLineRange.afterLine(7),
+                    currentRange: { start: 9, end: 9 },
+                },
+                {
+                    previousRange: { start: 9, end: 9 },
+                    currentRange: EmptyLineRange.afterLine(11),
+                },
+            ],
         });
     });
 
@@ -369,7 +488,7 @@ function computeDirtyDiff(previous: string[], modified: string[]): DirtyDiff {
             return value;
         },
     });
-    return diffComputer.computeDirtyDiff(a, b);
+    return diffComputer.computeDirtyDiff(a, b, { rangeMappings: true });
 }
 
 function sequenceOfN(n: number, mapFn: (index: number) => string = i => i.toString()): string[] {

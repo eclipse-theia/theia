@@ -26,6 +26,7 @@ import {
     MinimapPosition
 } from '@theia/editor/lib/browser';
 import { DirtyDiff, LineRange } from './diff-computer';
+import { URI } from '@theia/core';
 
 export enum DirtyDiffDecorationType {
     AddedLine = 'dirty-diff-added-line',
@@ -86,6 +87,7 @@ const ModifiedLineDecoration = <EditorDecorationOptions>{
 
 export interface DirtyDiffUpdate extends DirtyDiff {
     readonly editor: TextEditor;
+    readonly previousRevisionUri?: URI;
 }
 
 @injectable()

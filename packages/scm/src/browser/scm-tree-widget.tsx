@@ -605,7 +605,7 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
 
     protected readonly contextMenuPath = ScmTreeWidget.RESOURCE_CONTEXT_MENU;
     protected get contextMenuArgs(): any[] {
-        if (!this.props.model.selectedNodes.some(node => ScmFileChangeNode.is(node) && node.sourceUri === this.props.sourceUri)) {
+        if (!this.props.model.selectedNodes.some(node => ScmFileChangeNode.is(node) && node === this.props.treeNode)) {
             // Clicked node is not in selection, so ignore selection and action on just clicked node
             return this.singleNodeArgs;
         } else {

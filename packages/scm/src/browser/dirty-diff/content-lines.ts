@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { TextEditorDocument } from '@theia/editor/lib/browser';
+
 export interface ContentLines extends ArrayLike<string> {
     readonly length: number,
     getLineContent: (line: number) => string,
@@ -62,6 +64,13 @@ export namespace ContentLines {
                 const lineContent = content.substring(start, end);
                 return lineContent;
             }
+        };
+    }
+
+    export function fromTextEditorDocument(document: TextEditorDocument): ContentLines {
+        return {
+            length: document.lineCount,
+            getLineContent: line => document.getLineContent(line + 1),
         };
     }
 
