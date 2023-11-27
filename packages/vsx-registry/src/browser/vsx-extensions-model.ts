@@ -213,9 +213,8 @@ export class VSXExtensionsModel {
         });
     }
 
-    protected async doUpdateSearchResult(param: VSXSearchOptions, token: CancellationToken): Promise<void> {
+    protected doUpdateSearchResult(param: VSXSearchOptions, token: CancellationToken): Promise<void> {
         return this.doChange(async () => {
-            const fetchPromisesArray: Promise<void>[] = [];
             this._searchResult = new Set<string>();
             if (!param.query) {
                 return;
@@ -233,23 +232,26 @@ export class VSXExtensionsModel {
                     continue;
                 }
                 if (this.preferences.get('extensions.onlyShowVerifiedExtensions')) {
-                    const verified = await this.fetchVerifiedStatus(id, client, allVersions);
-                    this.updateExtensions(data, id, allVersions, !!verified);
-                } else {
-                    this.updateExtensions(data, id, allVersions);
-                    const fetchPromise = this.fetchVerifiedStatus(id, client, allVersions).then(verified => {
-                        let extension = this.getExtension(id);
-                        extension = this.setExtension(id);
-                        extension.update(Object.assign({
-                            verified: verified
-                        }));
+                    this.fetchVerifiedStatus(id, client, allVersions).then(verified => {
+                        this.doChange(() => {
+                            this.addExtensions(data, id, allVersions, !!verified);
+                            return Promise.resolve();
+                        });
                     });
-                    fetchPromisesArray.push(fetchPromise);
+                } else {
+                    this.addExtensions(data, id, allVersions);
+                    this.fetchVerifiedStatus(id, client, allVersions).then(verified => {
+                        this.doChange(() => {
+                            let extension = this.getExtension(id);
+                            extension = this.setExtension(id);
+                            extension.update(Object.assign({
+                                verified: verified
+                            }));
+                            return Promise.resolve();
+                        });
+                    });
                 }
             }
-            Promise.all(fetchPromisesArray).then(async () => this.doChange(async () => {
-                await this.initialized;
-            }));
         }, token);
     }
 
@@ -262,7 +264,7 @@ export class VSXExtensionsModel {
         return verified;
     }
 
-    protected updateExtensions(data: VSXSearchEntry, id: string, allVersions: VSXAllVersions, verified?: boolean): void {
+    protected addExtensions(data: VSXSearchEntry, id: string, allVersions: VSXAllVersions, verified?: boolean): void {
         if (!this.preferences.get('extensions.onlyShowVerifiedExtensions') || verified) {
             const extension = this.setExtension(id);
             extension.update(Object.assign(data, {
