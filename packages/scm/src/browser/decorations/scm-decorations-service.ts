@@ -15,64 +15,81 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { ResourceProvider } from '@theia/core';
-import { DirtyDiffDecorator } from '../dirty-diff/dirty-diff-decorator';
+import { DisposableCollection, Emitter, Event, ResourceProvider } from '@theia/core';
+import { DirtyDiffDecorator, DirtyDiffUpdate } from '../dirty-diff/dirty-diff-decorator';
 import { DiffComputer } from '../dirty-diff/diff-computer';
 import { ContentLines } from '../dirty-diff/content-lines';
-import { EditorManager, TextEditor } from '@theia/editor/lib/browser';
+import { EditorManager, EditorWidget, TextEditor } from '@theia/editor/lib/browser';
 import { ScmService } from '../scm-service';
+
+import throttle = require('@theia/core/shared/lodash.throttle');
 
 @injectable()
 export class ScmDecorationsService {
-    private readonly diffComputer: DiffComputer;
-    private dirtyState: boolean = true;
+    private readonly diffComputer = new DiffComputer();
 
-    constructor(@inject(DirtyDiffDecorator) protected readonly decorator: DirtyDiffDecorator,
+    protected readonly onDirtyDiffUpdateEmitter = new Emitter<DirtyDiffUpdate>();
+    readonly onDirtyDiffUpdate: Event<DirtyDiffUpdate> = this.onDirtyDiffUpdateEmitter.event;
+
+    constructor(
+        @inject(DirtyDiffDecorator) protected readonly decorator: DirtyDiffDecorator,
         @inject(ScmService) protected readonly scmService: ScmService,
         @inject(EditorManager) protected readonly editorManager: EditorManager,
-        @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider) {
-        this.diffComputer = new DiffComputer();
-        this.editorManager.onCreated(async editor => this.applyEditorDecorations(editor.editor));
-        this.scmService.onDidAddRepository(repository => repository.provider.onDidChange(() => {
-            const editor = this.editorManager.currentEditor;
-            if (editor) {
-                if (this.dirtyState) {
-                    this.applyEditorDecorations(editor.editor);
-                    this.dirtyState = false;
-                } else {
-                    /** onDidChange event might be called several times one after another, so need to prevent repeated events. */
-                    setTimeout(() => {
-                        this.dirtyState = true;
-                    }, 500);
-                }
+        @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider
+    ) {
+        const updateTasks = new Map<EditorWidget, () => void>();
+        this.editorManager.onCreated(editorWidget => {
+            const { editor } = editorWidget;
+            if (editor.uri.scheme !== 'file') {
+                return;
             }
-        }));
-        this.scmService.onDidChangeSelectedRepository(() => {
-            const editor = this.editorManager.currentEditor;
-            if (editor) {
-                this.applyEditorDecorations(editor.editor);
-            }
+            const toDispose = new DisposableCollection();
+            const updateTask = this.createUpdateTask(editor);
+            updateTasks.set(editorWidget, updateTask);
+            toDispose.push(editor.onDocumentContentChanged(() => updateTask()));
+            editorWidget.disposed.connect(() => {
+                updateTasks.delete(editorWidget);
+                toDispose.dispose();
+            });
+            updateTask();
         });
+        const runUpdateTasks = () => {
+            for (const updateTask of updateTasks.values()) {
+                updateTask();
+            }
+        };
+        this.scmService.onDidAddRepository(({ provider }) => {
+            provider.onDidChange(runUpdateTasks);
+            provider.onDidChangeResources?.(runUpdateTasks);
+        });
+        this.scmService.onDidChangeSelectedRepository(runUpdateTasks);
     }
 
     async applyEditorDecorations(editor: TextEditor): Promise<void> {
         const currentRepo = this.scmService.selectedRepository;
         if (currentRepo) {
             try {
-                const uri = editor.uri.withScheme(currentRepo.provider.id).withQuery(`{"ref":"", "path":"${editor.uri.path.toString()}"}`);
+                const uri = editor.uri.withScheme(currentRepo.provider.id).withQuery(`{"path":"${editor.uri['codeUri'].fsPath}","ref":"~"}`);
                 const previousResource = await this.resourceProvider(uri);
-                const previousContent = await previousResource.readContents();
-                const previousLines = ContentLines.fromString(previousContent);
-                const currentResource = await this.resourceProvider(editor.uri);
-                const currentContent = await currentResource.readContents();
-                const currentLines = ContentLines.fromString(currentContent);
-                const { added, removed, modified } = this.diffComputer.computeDirtyDiff(ContentLines.arrayLike(previousLines), ContentLines.arrayLike(currentLines));
-                this.decorator.applyDecorations({ editor: editor, added, removed, modified });
-                currentResource.dispose();
-                previousResource.dispose();
+                try {
+                    const previousContent = await previousResource.readContents();
+                    const previousLines = ContentLines.fromString(previousContent);
+                    const currentLines = ContentLines.fromTextEditorDocument(editor.document);
+                    const dirtyDiff = this.diffComputer.computeDirtyDiff(ContentLines.arrayLike(previousLines), ContentLines.arrayLike(currentLines),
+                        { rangeMappings: true });
+                    const update = <DirtyDiffUpdate>{ editor, previousRevisionUri: uri, ...dirtyDiff };
+                    this.decorator.applyDecorations(update);
+                    this.onDirtyDiffUpdateEmitter.fire(update);
+                } finally {
+                    previousResource.dispose();
+                }
             } catch (e) {
                 // Scm resource may not be found, do nothing.
             }
         }
+    }
+
+    protected createUpdateTask(editor: TextEditor): () => void {
+        return throttle(() => this.applyEditorDecorations(editor), 500);
     }
 }

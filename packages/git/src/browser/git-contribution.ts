@@ -32,7 +32,7 @@ import {
     TabBarToolbarRegistry
 } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { EditorContextMenu, EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
-import { Git, GitFileChange, GitFileStatus } from '../common';
+import { Git, GitFileChange, GitFileStatus, GitWatcher, Repository } from '../common';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitAction, GitQuickOpenService } from './git-quick-open-service';
 import { GitSyncService } from './git-sync-service';
@@ -42,6 +42,8 @@ import { GitErrorHandler } from '../browser/git-error-handler';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
 import { ScmCommand, ScmResource } from '@theia/scm/lib/browser/scm-provider';
+import { LineRange } from '@theia/scm/lib/browser/dirty-diff/diff-computer';
+import { DirtyDiffWidget, SCM_CHANGE_TITLE_MENU } from '@theia/scm/lib/browser/dirty-diff/dirty-diff-widget';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { GitPreferences } from './git-preferences';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
@@ -166,6 +168,18 @@ export namespace GIT_COMMANDS {
         label: 'Stage All Changes',
         iconClass: codicon('add')
     }, 'vscode.git/package/command.stageAll', GIT_CATEGORY_KEY);
+    export const STAGE_CHANGE = Command.toLocalizedCommand({
+        id: 'git.stage.change',
+        category: GIT_CATEGORY,
+        label: 'Stage Change',
+        iconClass: codicon('add')
+    }, 'vscode.git/package/command.stageChange', GIT_CATEGORY_KEY);
+    export const REVERT_CHANGE = Command.toLocalizedCommand({
+        id: 'git.revert.change',
+        category: GIT_CATEGORY,
+        label: 'Revert Change',
+        iconClass: codicon('discard')
+    }, 'vscode.git/package/command.revertChange', GIT_CATEGORY_KEY);
     export const UNSTAGE = Command.toLocalizedCommand({
         id: 'git.unstage',
         category: GIT_CATEGORY,
@@ -280,6 +294,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
     @inject(GitPreferences) protected readonly gitPreferences: GitPreferences;
     @inject(DecorationsService) protected readonly decorationsService: DecorationsService;
     @inject(GitDecorationProvider) protected readonly gitDecorationProvider: GitDecorationProvider;
+    @inject(GitWatcher) protected readonly gitWatcher: GitWatcher;
 
     onStart(): void {
         this.updateStatusBar();
@@ -384,6 +399,15 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         registerResourceGroupAction('1_modification', {
             commandId: GIT_COMMANDS.DISCARD_ALL.id,
             when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges',
+        });
+
+        menus.registerMenuAction(SCM_CHANGE_TITLE_MENU, {
+            commandId: GIT_COMMANDS.STAGE_CHANGE.id,
+            when: 'scmProvider == git'
+        });
+        menus.registerMenuAction(SCM_CHANGE_TITLE_MENU, {
+            commandId: GIT_COMMANDS.REVERT_CHANGE.id,
+            when: 'scmProvider == git'
         });
     }
 
@@ -572,6 +596,14 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             execute: () => this.quickOpenService.initRepository(),
             isEnabled: widget => this.workspaceService.opened && (!widget || widget instanceof ScmWidget) && !this.repositoryProvider.selectedRepository,
             isVisible: widget => this.workspaceService.opened && (!widget || widget instanceof ScmWidget) && !this.repositoryProvider.selectedRepository
+        });
+        registry.registerCommand(GIT_COMMANDS.STAGE_CHANGE, {
+            execute: (widget: DirtyDiffWidget) => this.withProgress(() => this.stageChange(widget)),
+            isEnabled: widget => widget instanceof DirtyDiffWidget
+        });
+        registry.registerCommand(GIT_COMMANDS.REVERT_CHANGE, {
+            execute: (widget: DirtyDiffWidget) => this.withProgress(() => this.revertChange(widget)),
+            isEnabled: widget => widget instanceof DirtyDiffWidget
         });
     }
     async amend(): Promise<void> {
@@ -920,6 +952,62 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             };
         }
 
+    }
+
+    async stageChange(widget: DirtyDiffWidget): Promise<void> {
+        const scmRepository = this.repositoryProvider.selectedScmRepository;
+        if (!scmRepository) {
+            return;
+        }
+
+        const repository = scmRepository.provider.repository;
+
+        const path = Repository.relativePath(repository, widget.uri)?.toString();
+        if (!path) {
+            return;
+        }
+
+        const { currentChange } = widget;
+        if (!currentChange) {
+            return;
+        }
+
+        const dataToStage = await widget.getContentWithSelectedChanges(change => change === currentChange);
+
+        try {
+            const hash = (await this.git.exec(repository, ['hash-object', '--stdin', '-w', '--path', path], { stdin: dataToStage, stdinEncoding: 'utf8' })).stdout.trim();
+
+            let mode = (await this.git.exec(repository, ['ls-files', '--format=%(objectmode)', '--', path])).stdout.split('\n').filter(line => !!line.trim())[0];
+            if (!mode) {
+                mode = '100644'; // regular non-executable file
+            }
+
+            await this.git.exec(repository, ['update-index', '--add', '--cacheinfo', mode, hash, path]);
+
+            // enforce a notification as there would be no status update if the file had been staged already
+            this.gitWatcher.onGitChanged({ source: repository, status: await this.git.status(repository) });
+        } catch (error) {
+            this.gitErrorHandler.handleError(error);
+        }
+
+        widget.editor.cursor = LineRange.getStartPosition(currentChange.currentRange);
+    }
+
+    async revertChange(widget: DirtyDiffWidget): Promise<void> {
+        const { currentChange } = widget;
+        if (!currentChange) {
+            return;
+        }
+
+        const editor = widget.editor.getControl();
+        editor.pushUndoStop();
+        editor.executeEdits('Revert Change', [{
+            range: editor.getModel()!.getFullModelRange(),
+            text: await widget.getContentWithSelectedChanges(change => change !== currentChange)
+        }]);
+        editor.pushUndoStop();
+
+        widget.editor.cursor = LineRange.getStartPosition(currentChange.currentRange);
     }
 
     /**

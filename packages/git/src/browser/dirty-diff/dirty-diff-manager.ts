@@ -101,11 +101,14 @@ export class DirtyDiffManager {
     }
 
     protected createPreviousFileRevision(fileUri: URI): DirtyDiffModel.PreviousFileRevision {
+        const getOriginalUri = (staged: boolean): URI => {
+            const query = staged ? '' : 'HEAD';
+            return fileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery(query);
+        };
         return <DirtyDiffModel.PreviousFileRevision>{
             fileUri,
             getContents: async (staged: boolean) => {
-                const query = staged ? '' : 'HEAD';
-                const uri = fileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery(query);
+                const uri = getOriginalUri(staged);
                 const gitResource = await this.gitResourceResolver.getResource(uri);
                 return gitResource.readContents();
             },
@@ -115,7 +118,8 @@ export class DirtyDiffManager {
                     return this.git.lsFiles(repository, fileUri.toString(), { errorUnmatch: true });
                 }
                 return false;
-            }
+            },
+            getOriginalUri
         };
     }
 
@@ -128,7 +132,6 @@ export class DirtyDiffManager {
             await model.handleGitStatusUpdate(repository, changes);
         }
     }
-
 }
 
 export class DirtyDiffModel implements Disposable {
@@ -137,7 +140,7 @@ export class DirtyDiffModel implements Disposable {
 
     protected enabled = true;
     protected staged: boolean;
-    protected previousContent: ContentLines | undefined;
+    protected previousContent: DirtyDiffModel.PreviousRevisionContent | undefined;
     protected currentContent: ContentLines | undefined;
 
     protected readonly onDirtyDiffUpdateEmitter = new Emitter<DirtyDiffUpdate>();
@@ -200,7 +203,7 @@ export class DirtyDiffModel implements Disposable {
                 // a new update task should be scheduled anyway.
                 return;
             }
-            const dirtyDiffUpdate = <DirtyDiffUpdate>{ editor, ...dirtyDiff };
+            const dirtyDiffUpdate = <DirtyDiffUpdate>{ editor, previousRevisionUri: previous.uri, ...dirtyDiff };
             this.onDirtyDiffUpdateEmitter.fire(dirtyDiffUpdate);
         }, 100);
     }
@@ -251,9 +254,13 @@ export class DirtyDiffModel implements Disposable {
         return modelUri.startsWith(repoUri) && this.previousRevision.isVersionControlled();
     }
 
-    protected async getPreviousRevisionContent(): Promise<ContentLines | undefined> {
-        const contents = await this.previousRevision.getContents(this.staged);
-        return contents ? ContentLines.fromString(contents) : undefined;
+    protected async getPreviousRevisionContent(): Promise<DirtyDiffModel.PreviousRevisionContent | undefined> {
+        const { previousRevision, staged } = this;
+        const contents = await previousRevision.getContents(staged);
+        if (contents) {
+            const uri = previousRevision.getOriginalUri?.(staged);
+            return { ...ContentLines.fromString(contents), uri };
+        }
     }
 
     dispose(): void {
@@ -275,23 +282,26 @@ export namespace DirtyDiffModel {
      */
     export function computeDirtyDiff(previous: ContentLines, current: ContentLines): DirtyDiff | undefined {
         try {
-            return diffComputer.computeDirtyDiff(ContentLines.arrayLike(previous), ContentLines.arrayLike(current));
+            return diffComputer.computeDirtyDiff(ContentLines.arrayLike(previous), ContentLines.arrayLike(current),
+                { rangeMappings: true });
         } catch {
             return undefined;
         }
     }
 
     export function documentContentLines(document: TextEditorDocument): ContentLines {
-        return {
-            length: document.lineCount,
-            getLineContent: line => document.getLineContent(line + 1),
-        };
+        return ContentLines.fromTextEditorDocument(document);
     }
 
     export interface PreviousFileRevision {
         readonly fileUri: URI;
         getContents(staged: boolean): Promise<string>;
         isVersionControlled(): Promise<boolean>;
+        getOriginalUri?(staged: boolean): URI;
+    }
+
+    export interface PreviousRevisionContent extends ContentLines {
+        readonly uri?: URI;
     }
 
 }
