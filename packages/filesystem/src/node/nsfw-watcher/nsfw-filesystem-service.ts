@@ -73,7 +73,7 @@ export class NsfwWatcher {
     /**
      * When the ref count hits zero, we schedule this watch handle to be disposed.
      */
-    protected deferredDisposalTimer: NodeJS.Timer | undefined;
+    protected deferredDisposalTimer: NodeJS.Timeout | undefined;
 
     /**
      * This deferred only rejects with `WatcherDisposal` and never resolves.
