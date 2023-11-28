@@ -50,6 +50,15 @@ export const FilterContribution = Symbol('FilterContribution');
 export interface FilterContribution {
     /**
      * Use the registry to register your contribution filters.
+     * * Note that filtering contributions based on their class (constructor) name is discouraged.
+     * Class names are minified in production builds and therefore not reliable.
+     * Use instance of checks or direct constructor comparison instead:
+     *
+     * ```ts
+     * registry.addFilters('*', [
+     *     contrib => !(contrib instanceof SampleFilteredCommandContribution)
+     * ]);
+     * ```
      */
     registerContributionFilters(registry: ContributionFilterRegistry): void;
 }

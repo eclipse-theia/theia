@@ -79,18 +79,6 @@ import { ColorDefinition } from '@theia/core/lib/common/color';
 import { CSSIcon } from '@theia/core/lib/common/markdown-rendering/icon-utilities';
 import { PluginUriFactory } from './plugin-uri-factory';
 
-namespace nls {
-    export function localize(key: string, _default: string): string {
-        return _default;
-    }
-}
-
-const INTERNAL_CONSOLE_OPTIONS_SCHEMA = {
-    enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart'],
-    default: 'openOnFirstSessionStart',
-    description: nls.localize('internalConsoleOptions', 'Controls when the internal debug console should open.')
-};
-
 const colorIdPattern = '^\\w+[.\\w+]*$';
 const iconIdPattern = `^${CSSIcon.iconNameSegment}(-${CSSIcon.iconNameSegment})+$`;
 
@@ -795,11 +783,9 @@ export class TheiaPluginScanner implements PluginScanner {
             program: rawDebugger.program,
             args: rawDebugger.args,
             runtime: rawDebugger.runtime,
-            runtimeArgs: rawDebugger.runtimeArgs
+            runtimeArgs: rawDebugger.runtimeArgs,
+            configurationAttributes: rawDebugger.configurationAttributes
         };
-
-        result.configurationAttributes = rawDebugger.configurationAttributes
-            && this.resolveSchemaAttributes(rawDebugger.type, rawDebugger.configurationAttributes);
 
         return result;
     }
@@ -827,85 +813,6 @@ export class TheiaPluginScanner implements PluginScanner {
         schema.type = 'object';
         schema.properties!.type = { type: 'string', const: definition.type };
         return schema;
-    }
-
-    protected resolveSchemaAttributes(type: string, configurationAttributes: { [request: string]: IJSONSchema }): IJSONSchema[] {
-        const taskSchema = {};
-        return Object.keys(configurationAttributes).map(request => {
-            const attributes: IJSONSchema = deepClone(configurationAttributes[request]);
-            const defaultRequired = ['name', 'type', 'request'];
-            attributes.required = attributes.required && attributes.required.length ? defaultRequired.concat(attributes.required) : defaultRequired;
-            attributes.additionalProperties = false;
-            attributes.type = 'object';
-            if (!attributes.properties) {
-                attributes.properties = {};
-            }
-            const properties = attributes.properties;
-            properties['type'] = {
-                enum: [type],
-                description: nls.localize('debugType', 'Type of configuration.'),
-                pattern: '^(?!node2)',
-                errorMessage: nls.localize('debugTypeNotRecognised',
-                    'The debug type is not recognized. Make sure that you have a corresponding debug extension installed and that it is enabled.'),
-                patternErrorMessage: nls.localize('node2NotSupported',
-                    '"node2" is no longer supported, use "node" instead and set the "protocol" attribute to "inspector".')
-            };
-            properties['name'] = {
-                type: 'string',
-                description: nls.localize('debugName', 'Name of configuration; appears in the launch configuration drop down menu.'),
-                default: 'Launch'
-            };
-            properties['request'] = {
-                enum: [request],
-                description: nls.localize('debugRequest', 'Request type of configuration. Can be "launch" or "attach".'),
-            };
-            properties['debugServer'] = {
-                type: 'number',
-                description: nls.localize('debugServer',
-                    'For debug extension development only: if a port is specified VS Code tries to connect to a debug adapter running in server mode'),
-                default: 4711
-            };
-            properties['preLaunchTask'] = {
-                anyOf: [taskSchema, {
-                    type: ['string'],
-                }],
-                default: '',
-                description: nls.localize('debugPrelaunchTask', 'Task to run before debug session starts.')
-            };
-            properties['postDebugTask'] = {
-                anyOf: [taskSchema, {
-                    type: ['string'],
-                }],
-                default: '',
-                description: nls.localize('debugPostDebugTask', 'Task to run after debug session ends.')
-            };
-            properties['internalConsoleOptions'] = INTERNAL_CONSOLE_OPTIONS_SCHEMA;
-
-            const osProperties = Object.assign({}, properties);
-            properties['windows'] = {
-                type: 'object',
-                description: nls.localize('debugWindowsConfiguration', 'Windows specific launch configuration attributes.'),
-                properties: osProperties
-            };
-            properties['osx'] = {
-                type: 'object',
-                description: nls.localize('debugOSXConfiguration', 'OS X specific launch configuration attributes.'),
-                properties: osProperties
-            };
-            properties['linux'] = {
-                type: 'object',
-                description: nls.localize('debugLinuxConfiguration', 'Linux specific launch configuration attributes.'),
-                properties: osProperties
-            };
-            Object.keys(attributes.properties).forEach(name => {
-                // Use schema allOf property to get independent error reporting #21113
-                attributes!.properties![name].pattern = attributes!.properties![name].pattern || '^(?!.*\\$\\{(env|config|command)\\.)';
-                attributes!.properties![name].patternErrorMessage = attributes!.properties![name].patternErrorMessage ||
-                    nls.localize('deprecatedVariables', "'env.', 'config.' and 'command.' are deprecated, use 'env:', 'config:' and 'command:' instead.");
-            });
-
-            return attributes;
-        });
     }
 
     private extractValidAutoClosingPairs(langId: string, configuration: PluginPackageLanguageContributionConfiguration): AutoClosingPairConditional[] | undefined {

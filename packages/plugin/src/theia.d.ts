@@ -7721,6 +7721,12 @@ export module '@theia/plugin' {
         export const isTelemetryEnabled: boolean;
 
         /**
+         * An {@link Event} which fires when the default shell changes. This fires with the new
+         * shell path.
+         */
+        export const onDidChangeShell: Event<string>;
+
+        /**
          * An {@link Event} which fires when the user enabled or disables telemetry.
          * `true` if the user has enabled telemetry or `false` if the user has disabled telemetry.
          */
@@ -7747,7 +7753,9 @@ export module '@theia/plugin' {
         export const remoteName: string | undefined;
 
         /**
-         * The detected default shell for the extension host.
+         * The detected default shell for the extension host, this is overridden by the
+         * `terminal.integrated.defaultProfile` setting for the extension host's platform. Note that in
+         * environments that do not support a shell the value is the empty string.
          */
         export const shell: string;
 
@@ -10000,6 +10008,24 @@ export module '@theia/plugin' {
          * They should not suppress errors or perform unsafe fixes such as generating new types or classes.
          */
         static readonly SourceFixAll: CodeActionKind;
+
+        /**
+         * Base kind for all code actions applying to the enitre notebook's scope. CodeActionKinds using
+         * this should always begin with `notebook.`
+         *
+         * This requires that new CodeActions be created for it and contributed via extensions.
+         * Pre-existing kinds can not just have the new `notebook.` prefix added to them, as the functionality
+         * is unique to the full-notebook scope.
+         *
+         * Notebook CodeActionKinds can be initialized as either of the following (both resulting in `notebook.source.xyz`):
+         * - `const newKind =  CodeActionKind.Notebook.append(CodeActionKind.Source.append('xyz').value)`
+         * - `const newKind =  CodeActionKind.Notebook.append('source.xyz')`
+         *
+         * Example Kinds/Actions:
+         * - `notebook.source.organizeImports` (might move all imports to a new top cell)
+         * - `notebook.source.normalizeVariableNames` (might rename all variables to a standardized casing format)
+         */
+        static readonly Notebook: CodeActionKind;
 
         private constructor(value: string);
 

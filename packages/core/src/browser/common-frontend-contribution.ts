@@ -360,6 +360,10 @@ export const supportPaste = browser.isNative || (!browser.isChrome && document.q
 
 export const RECENT_COMMANDS_STORAGE_KEY = 'commands';
 
+export const CLASSNAME_OS_MAC = 'mac';
+export const CLASSNAME_OS_WINDOWS = 'windows';
+export const CLASSNAME_OS_LINUX = 'linux';
+
 @injectable()
 export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution, ColorContribution {
 
@@ -452,6 +456,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.initResourceContextKeys();
         this.registerCtrlWHandling();
 
+        this.setOsClass();
         this.updateStyles();
         this.preferences.ready.then(() => this.setSashProperties());
         this.preferences.onPreferenceChanged(e => this.handlePreferenceChange(e, app));
@@ -478,6 +483,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 app.shell.leftPanelHandler.removeBottomMenu(accountsMenu.id);
             }
         });
+    }
+
+    protected setOsClass(): void {
+        if (isOSX) {
+            document.body.classList.add(CLASSNAME_OS_MAC);
+        } else if (isWindows) {
+            document.body.classList.add(CLASSNAME_OS_WINDOWS);
+        } else {
+            document.body.classList.add(CLASSNAME_OS_LINUX);
+        }
     }
 
     protected updateStyles(): void {

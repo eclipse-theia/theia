@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { Localization } from 'src/common/i18n/localization';
+import { Localization } from '../../common/i18n/localization';
 import { LocalizationServer } from '../../common/i18n/localization-server';
 import { nls } from '../../common/nls';
 import { Deferred } from '../../common/promise-util';

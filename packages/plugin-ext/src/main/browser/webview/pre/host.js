@@ -36,7 +36,7 @@
                         break;
                     }
                 }
-                if (sourceIsChildFrame && e.data && (e.data.command === 'onmessage' || e.data.command === 'do-update-state')) {
+                if (sourceIsChildFrame && e.data && (e.data.command === 'onmessage' || e.data.command === 'do-update-state' || e.data.command === 'onconsole')) {
                     this.postMessage(e.data.command, e.data.data);
                 } else if (sourceIsChildFrame || sourceIsSelfOrParentFrame) {
                     const channel = e.data.channel;

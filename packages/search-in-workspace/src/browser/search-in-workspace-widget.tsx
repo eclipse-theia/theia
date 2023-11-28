@@ -501,9 +501,14 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             {notification}
         </div>;
     }
-
-    protected handleFocusSearchInputBox = () => this.contextKeyService.setSearchInputBoxFocus(true);
-    protected handleBlurSearchInputBox = () => this.contextKeyService.setSearchInputBoxFocus(false);
+    protected handleFocusSearchInputBox = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+        event.target.placeholder = `${SearchInWorkspaceWidget.LABEL} (⇅ ${nls.localizeByDefault('for history')})`;
+        this.contextKeyService.setSearchInputBoxFocus(true);
+    };
+    protected handleBlurSearchInputBox = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+        event.target.placeholder = SearchInWorkspaceWidget.LABEL;
+        this.contextKeyService.setSearchInputBoxFocus(false);
+    };
 
     protected readonly updateReplaceTerm = (e: React.KeyboardEvent) => this.doUpdateReplaceTerm(e);
     protected doUpdateReplaceTerm(e: React.KeyboardEvent): void {
@@ -535,8 +540,14 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         </div>;
     }
 
-    protected handleFocusReplaceInputBox = () => this.contextKeyService.setReplaceInputBoxFocus(true);
-    protected handleBlurReplaceInputBox = () => this.contextKeyService.setReplaceInputBoxFocus(false);
+    protected handleFocusReplaceInputBox = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+        event.target.placeholder = `${nls.localizeByDefault('Replace')} (⇅ ${nls.localizeByDefault('for history')})`;
+        this.contextKeyService.setReplaceInputBoxFocus(true);
+    };
+    protected handleBlurReplaceInputBox = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+        event.target.placeholder = nls.localizeByDefault('Replace');
+        this.contextKeyService.setReplaceInputBoxFocus(false);
+    };
 
     protected renderReplaceAllButtonContainer(): React.ReactNode {
         // The `Replace All` button is enabled if there is a search term present with results.
