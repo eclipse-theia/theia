@@ -27,6 +27,7 @@ const REQUIRE_KEYMAPPING = './build/Release/keymapping';
 
 export interface NativeWebpackPluginOptions {
     out: string;
+    trash: boolean;
     ripgrep: boolean;
     pty: boolean;
     replacements?: Record<string, string>;
@@ -95,7 +96,9 @@ export class NativeWebpackPlugin {
             }
         );
         compiler.hooks.afterEmit.tapPromise(NativeWebpackPlugin.name, async () => {
-            await this.copyTrashHelper(compiler);
+            if (this.options.trash) {
+                await this.copyTrashHelper(compiler);
+            }
             if (this.options.ripgrep) {
                 await this.copyRipgrep(compiler);
             }

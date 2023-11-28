@@ -393,6 +393,7 @@ if (process.platform !== 'win32') {
 
 const nativePlugin = new NativeWebpackPlugin({
     out: 'native',
+    trash: ${this.ifPackage('@theia/filesystem', 'true', 'false')},
     ripgrep: ${this.ifPackage(['@theia/search-in-workspace', '@theia/file-search'], 'true', 'false')},
     pty: ${this.ifPackage('@theia/process', 'true', 'false')},
     nativeBindings: {
