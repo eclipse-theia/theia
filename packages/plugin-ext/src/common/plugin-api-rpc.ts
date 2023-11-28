@@ -296,6 +296,7 @@ export interface TerminalServiceExt {
     $provideTerminalLinks(line: string, terminalId: string, token: theia.CancellationToken): Promise<ProvidedTerminalLink[]>;
     $handleTerminalLink(link: ProvidedTerminalLink): Promise<void>;
     getEnvironmentVariableCollection(extensionIdentifier: string): theia.GlobalEnvironmentVariableCollection;
+    $setShell(shell: string): void;
 }
 export interface OutputChannelRegistryExt {
     createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel,
