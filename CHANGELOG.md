@@ -5,7 +5,7 @@
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
 ## v1.44.0
-
+- [vscode] added support for `autoClosingPairs` in the `LanguageConfiguration ` VS Code API [#13088](https://github.com/eclipse-theia/theia/pull/13088) - contributed on behalf of STMicroelectronics
 - [task] prevent task widget title from being changed by task process [#13003](https://github.com/eclipse-theia/theia/pull/13003)
 - [vscode] added Notebook CodeActionKind [#13093](https://github.com/eclipse-theia/theia/pull/13093) - contributed on behalf of STMicroelectronics
 - [vscode] added support to env.ondidChangeShell event [#13097](https://github.com/eclipse-theia/theia/pull/13097) - contributed on behalf of STMicroelectronics
