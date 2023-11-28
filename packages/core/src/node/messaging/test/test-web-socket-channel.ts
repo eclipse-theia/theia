@@ -1,3 +1,4 @@
+/* eslint-disable @theia/runtime-import-check */
 // *****************************************************************************
 // Copyright (C) 2018 TypeFox and others.
 //
@@ -17,25 +18,44 @@
 import * as http from 'http';
 import * as https from 'https';
 import { AddressInfo } from 'net';
-import { io } from 'socket.io-client';
-import { Channel, ChannelMultiplexer } from '../../../common/message-rpc/channel';
 import { servicesPath } from '../../../common';
-import { WebSocketChannel } from '../../../common/messaging/web-socket-channel';
+import { WebsocketConnectionSource } from '../../../browser/messaging/ws-connection-source';
+import { Container, inject } from 'inversify';
+import { RemoteConnectionProvider, ServiceConnectionProvider } from '../../../browser/messaging/service-connection-provider';
+import { messagingFrontendModule } from '../../../browser/messaging/messaging-frontend-module';
+import { Socket, io } from 'socket.io-client';
+
+const websocketUrl = Symbol('testWebsocketUrl');
+class TestWebsocketConnectionSource extends WebsocketConnectionSource {
+    @inject(websocketUrl)
+    readonly websocketUrl: string;
+
+    protected override createWebSocketUrl(path: string): string {
+        return this.websocketUrl;
+    }
+
+    protected override createWebSocket(url: string): Socket {
+        return io(url);
+    }
+}
 
 export class TestWebSocketChannelSetup {
-    public readonly multiplexer: ChannelMultiplexer;
-    public readonly channel: Channel;
+    public readonly connectionProvider: ServiceConnectionProvider;
 
     constructor({ server, path }: {
         server: http.Server | https.Server,
         path: string
     }) {
-        const socket = io(`ws://localhost:${(server.address() as AddressInfo).port}${servicesPath}`);
-        this.channel = new WebSocketChannel(socket);
-        this.multiplexer = new ChannelMultiplexer(this.channel);
-        socket.on('connect', () => {
-            this.multiplexer.open(path);
-        });
-        socket.connect();
+        const address = (server.address() as AddressInfo);
+        const url = `ws://${address.address}:${address.port}${servicesPath}`;
+        this.connectionProvider = this.createConnectionProvider(url);
+    }
+
+    protected createConnectionProvider(socketUrl: string): ServiceConnectionProvider {
+        const container = new Container();
+        container.bind(websocketUrl).toConstantValue(socketUrl);
+        container.load(messagingFrontendModule);
+        container.rebind(WebsocketConnectionSource).to(TestWebsocketConnectionSource);
+        return container.get(RemoteConnectionProvider);
     }
 }

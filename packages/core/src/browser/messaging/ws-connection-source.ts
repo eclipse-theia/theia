@@ -20,7 +20,7 @@ import { Socket, io } from 'socket.io-client';
 import { Endpoint } from '../endpoint';
 import { ForwardingChannel } from '../../common/message-rpc/channel';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { FrontendIdProvider } from './frontend-id-provider';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
 import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer';
@@ -35,7 +35,7 @@ export class WebsocketConnectionSource implements ConnectionSource {
 
     private readonly writeBuffer = new SocketWriteBuffer();
 
-    protected readonly _socket: Socket;
+    private _socket: Socket;
     get socket(): Socket {
         return this._socket;
     }
@@ -63,9 +63,12 @@ export class WebsocketConnectionSource implements ConnectionSource {
     }
 
     constructor() {
+    }
+
+    @postConstruct()
+    openSocket(): void {
         const url = this.createWebSocketUrl(servicesPath);
         this._socket = this.createWebSocket(url);
-        this._socket.connect();
 
         this._socket.on('connect', () => {
             this.onSocketDidOpenEmitter.fire();
@@ -81,6 +84,7 @@ export class WebsocketConnectionSource implements ConnectionSource {
                 this.currentChannel.onErrorEmitter.fire(reason);
             };
         });
+        this._socket.connect();
     }
 
     protected handleSocketConnected(): void {

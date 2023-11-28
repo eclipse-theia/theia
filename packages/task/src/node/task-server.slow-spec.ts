@@ -72,7 +72,7 @@ describe('Task server / back-end', function (): void {
         taskServer = testContainer.get(TaskServer);
         taskServer.setClient(taskWatcher.getTaskClient());
         backend = testContainer.get(BackendApplication);
-        server = await backend.start();
+        server = await backend.start(3000, 'localhost');
     });
 
     afterEach(async () => {
@@ -104,11 +104,11 @@ describe('Task server / back-end', function (): void {
         await new Promise<void>((resolve, reject) => {
             const setup = new TestWebSocketChannelSetup({ server, path: `${terminalsPath}/${terminalId}` });
             const stringBuffer = new StringBufferingStream();
-            setup.multiplexer.onDidOpenChannel(event => {
-                event.channel.onMessage(e => stringBuffer.push(e().readString()));
-                event.channel.onError(reject);
-                event.channel.onClose(() => reject(new Error('Channel has been closed')));
-            });
+            setup.connectionProvider.listen(`${terminalsPath}/${terminalId}`, (path, channel) => {
+                channel.onMessage(e => stringBuffer.push(e().readString()));
+                channel.onError(reject);
+                channel.onClose(() => reject(new Error('Channel has been closed')));
+            }, false);
             stringBuffer.onData(currentMessage => {
                 // Instead of waiting for one message from the terminal, we wait for several ones as the very first message can be something unexpected.
                 // For instance: `nvm is not compatible with the \"PREFIX\" environment variable: currently set to \"/usr/local\"\r\n`
