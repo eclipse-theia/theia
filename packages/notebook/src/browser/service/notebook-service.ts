@@ -135,22 +135,31 @@ export class NotebookService implements Disposable {
         if (this.notebookProviders.has(type)) {
             return this.notebookProviders.get(type);
         }
-        await Promise.all(this.willUseNotebookSerializerEmitter.fire(type));
         const deferred = new Deferred<NotebookProviderInfo | undefined>();
         // 20 seconds of timeout
         const timeoutDuration = 20_000;
-        const disposable = this.onDidRegisterNotebookSerializer(viewType => {
+
+        // Must declare these variables where they can be captured by the closure
+        let disposable: Disposable;
+        // eslint-disable-next-line
+        let timeout: ReturnType<typeof setTimeout>;
+
+        // eslint-disable-next-line
+        disposable = this.onDidRegisterNotebookSerializer(viewType => {
             if (viewType === type) {
                 clearTimeout(timeout);
                 disposable.dispose();
                 deferred.resolve(this.notebookProviders.get(type));
             }
         });
-        const timeout = setTimeout(() => {
+        timeout = setTimeout(() => {
             clearTimeout(timeout);
             disposable.dispose();
-            deferred.reject();
+            deferred.reject(new Error(`Timed out while waiting for notebook serializer for type ${type} to be registered`));
         }, timeoutDuration);
+
+        await Promise.all(this.willUseNotebookSerializerEmitter.fire(type));
+
         return deferred.promise;
     }
 
