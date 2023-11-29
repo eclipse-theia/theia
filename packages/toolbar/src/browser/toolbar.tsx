@@ -143,7 +143,7 @@ export class ToolbarImpl extends TabBarToolbar {
 
     protected renderGroupsInColumn(groups: ToolbarItem[][], alignment: ToolbarAlignment): React.ReactNode[] {
         const nodes: React.ReactNode[] = [];
-        groups.forEach((group, groupIndex) => {
+        groups?.forEach((group, groupIndex) => {
             if (nodes.length && group.length) {
                 nodes.push(<div key={`toolbar-separator-${groupIndex}`} className='separator' />);
             }
