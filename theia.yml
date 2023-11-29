@@ -1,0 +1,39 @@
+name: Theia Environment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - name: Install Theia
+        run: |
+          git clone https://github.com/eclipse-theia/theia.git
+          cd theia
+          yarn install
+
+      - name: Start Theia
+        run: |
+          cd theia
+          yarn start &
+          
+      - name: Expose Theia with ngrok
+        run: |
+          curl -sLo ngrok.zip https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip
+          unzip ngrok.zip
+          ./ngrok http 3000 &
+
+      - name: Sleep for a while
+        run: sleep 30
