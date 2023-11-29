@@ -1,0 +1,39 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      # ... (existing steps)
+
+  build:
+    name: Build and Test (${{ matrix.os }}, node-${{ matrix.node }})
+    # ... (existing matrix and other configurations)
+
+    steps:
+      # ... (existing steps)
+
+      - name: Start Ngrok
+        run: |
+          ngrok http 3000 > ngrok_url.txt &
+          sleep 10 # Wait for ngrok to start and generate URL
+          cat ngrok_url.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ... (existing steps)
+
+
