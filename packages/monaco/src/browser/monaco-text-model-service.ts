@@ -127,12 +127,15 @@ export class MonacoTextModelService implements ITextModelService {
 
     protected readonly modelOptions: { [name: string]: (keyof ITextModelUpdateOptions | undefined) } = {
         'editor.tabSize': 'tabSize',
-        'editor.insertSpaces': 'insertSpaces'
+        'editor.insertSpaces': 'insertSpaces',
+        'editor.indentSize': 'indentSize'
     };
 
     protected toModelOption(editorPreference: EditorPreferenceChange['preferenceName']): keyof ITextModelUpdateOptions | undefined {
         switch (editorPreference) {
             case 'editor.tabSize': return 'tabSize';
+            // @monaco-uplift: uncomment this line once 'editor.indentSize' preference is available
+            //  case 'editor.indentSize': return 'indentSize';
             case 'editor.insertSpaces': return 'insertSpaces';
             case 'editor.bracketPairColorization.enabled':
             case 'editor.bracketPairColorization.independentColorPoolPerBracketType':
@@ -170,6 +173,8 @@ export class MonacoTextModelService implements ITextModelService {
         const overrideIdentifier = typeof arg === 'string' ? undefined : arg.languageId;
         return {
             tabSize: this.editorPreferences.get({ preferenceName: 'editor.tabSize', overrideIdentifier }, undefined, uri),
+            // @monaco-uplift: when available, switch to 'editor.indentSize' preference.
+            indentSize: this.editorPreferences.get({ preferenceName: 'editor.tabSize', overrideIdentifier }, undefined, uri),
             insertSpaces: this.editorPreferences.get({ preferenceName: 'editor.insertSpaces', overrideIdentifier }, undefined, uri),
             bracketColorizationOptions: {
                 enabled: this.editorPreferences.get({ preferenceName: 'editor.bracketPairColorization.enabled', overrideIdentifier }, undefined, uri),

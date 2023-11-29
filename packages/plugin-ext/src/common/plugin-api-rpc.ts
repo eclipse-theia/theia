@@ -1125,6 +1125,7 @@ export interface Selection {
 
 export interface TextEditorConfiguration {
     tabSize: number;
+    indentSize: number;
     insertSpaces: boolean;
     cursorStyle: TextEditorCursorStyle;
     lineNumbers: TextEditorLineNumbersStyle;
@@ -1132,6 +1133,7 @@ export interface TextEditorConfiguration {
 
 export interface TextEditorConfigurationUpdate {
     tabSize?: number | 'auto';
+    indentSize?: number | 'tabSize';
     insertSpaces?: boolean | 'auto';
     cursorStyle?: TextEditorCursorStyle;
     lineNumbers?: TextEditorLineNumbersStyle;
