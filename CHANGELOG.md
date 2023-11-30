@@ -11,6 +11,7 @@
 - [vscode] added support for editor.indentSize API [#13105](https://github.com/eclipse-theia/theia/pull/13105) - contributed on behalf of STMicroelectronics
 - [vscode] added support to env.ondidChangeShell event [#13097](https://github.com/eclipse-theia/theia/pull/13097) - contributed on behalf of STMicroelectronics
 - [task] support `isDefault: false` in task group definition [#13075](https://github.com/eclipse-theia/theia/pull/13075) - contributed on behalf of STMicroelectronics
+- [terminal] Use application shell methods for expanding/collapsing bottom panel for "Terminal: Toggle Terminal" command [#13131](https://github.com/eclipse-theia/theia/pull/13131)
 
 ## v1.43.0 - 10/26/2023
 
