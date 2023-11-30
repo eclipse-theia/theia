@@ -130,8 +130,9 @@ export class PluginDeployerImpl implements PluginDeployer {
             id,
             type: PluginType.System
         }));
+        const resolvePlugins = this.measure('resolvePlugins');
         const plugins = await this.resolvePlugins([...unresolvedUserEntries, ...unresolvedSystemEntries]);
-        deployPlugins.log('Resolve plugins list');
+        resolvePlugins.log('Resolve plugins list');
         await this.deployPlugins(plugins);
         deployPlugins.log('Deploy plugins list');
     }
