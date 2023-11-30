@@ -14,20 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { TheiaOutputViewChannel } from '../theia-output-channel';
 import { TheiaApp } from '../theia-app';
+import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaOutputView } from '../theia-output-view';
-import test, { page } from './fixtures/theia-fixture';
 
-let app: TheiaApp;
-let outputView: TheiaOutputView;
-let testChannel: TheiaOutputViewChannel;
-
+let app: TheiaApp; let outputView: TheiaOutputView; let testChannel: TheiaOutputViewChannel;
 test.describe('Theia Output View', () => {
 
-    test.beforeAll(async () => {
-        app = await TheiaApp.load(page);
+    test.beforeAll(async ({ playwright, browser }) => {
+        app = await TheiaAppLoader.load({ playwright, browser });
+    });
+
+    test.afterAll(async () => {
+        await app.page.close();
     });
 
     test('should open the output view and check if is visible and active', async () => {
@@ -82,4 +83,3 @@ test.describe('Theia Output View', () => {
     });
 
 });
-

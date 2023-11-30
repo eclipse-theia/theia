@@ -14,19 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { TheiaApp } from '../theia-app';
+import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaWorkspace } from '../theia-workspace';
-import test, { page } from './fixtures/theia-fixture';
 import { TheiaTerminal } from '../theia-terminal';
 
 let app: TheiaApp;
 
 test.describe('Theia Terminal View', () => {
 
-    test.beforeAll(async () => {
+    test.beforeAll(async ({ playwright, browser }) => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
-        app = await TheiaApp.load(page, ws);
+        app = await TheiaAppLoader.load({ playwright, browser }, ws);
+    });
+
+    test.afterAll(async () => {
+        await app.page.close();
     });
 
     test('should be possible to open a new terminal', async () => {

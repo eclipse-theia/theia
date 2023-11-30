@@ -14,21 +14,26 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { TheiaApp } from '../theia-app';
+import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaNotificationIndicator } from '../theia-notification-indicator';
 import { TheiaProblemIndicator } from '../theia-problem-indicator';
 import { TheiaStatusBar } from '../theia-status-bar';
 import { TheiaToggleBottomIndicator } from '../theia-toggle-bottom-indicator';
-import test, { page } from './fixtures/theia-fixture';
-
-let statusBar: TheiaStatusBar;
 
 test.describe('Theia Status Bar', () => {
 
-    test.beforeAll(async () => {
-        const app = await TheiaApp.load(page);
+    let app: TheiaApp;
+    let statusBar: TheiaStatusBar;
+
+    test.beforeAll(async ({ playwright, browser }) => {
+        app = await TheiaAppLoader.load({ playwright, browser });
         statusBar = app.statusBar;
+    });
+
+    test.afterAll(async () => {
+        await app.page.close();
     });
 
     test('should show status bar', async () => {

@@ -87,6 +87,7 @@ export interface TheiaCoreAPI {
 
     sendData(data: Uint8Array): void;
     onData(handler: (data: Uint8Array) => void): Disposable;
+    useNativeElements: boolean;
 }
 
 declare global {
