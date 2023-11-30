@@ -637,7 +637,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     }
 
     protected toggleTerminal(): void {
-
         const terminals = this.shell.getWidgets('bottom').filter(w => w instanceof TerminalWidget);
 
         if (terminals.length === 0) {
@@ -645,20 +644,17 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             return;
         }
 
-        if (this.shell.bottomPanel.isHidden) {
-            this.shell.bottomPanel.setHidden(false);
+        if (!this.shell.isExpanded("bottom")) {
+            this.shell.expandPanel("bottom");
             terminals[0].activate();
-            return;
-        }
-
-        if (this.shell.bottomPanel.isVisible) {
+        } else {
             const visibleTerminal = terminals.find(t => t.isVisible);
             if (!visibleTerminal) {
                 this.shell.bottomPanel.activateWidget(terminals[0]);
             } else if (this.shell.activeWidget !== visibleTerminal) {
                 this.shell.bottomPanel.activateWidget(visibleTerminal);
             } else {
-                this.shell.bottomPanel.setHidden(true);
+                this.shell.collapsePanel("bottom");
             }
         }
 
