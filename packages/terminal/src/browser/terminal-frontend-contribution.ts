@@ -644,8 +644,8 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             return;
         }
 
-        if (!this.shell.isExpanded("bottom")) {
-            this.shell.expandPanel("bottom");
+        if (!this.shell.isExpanded('bottom')) {
+            this.shell.expandPanel('bottom');
             terminals[0].activate();
         } else {
             const visibleTerminal = terminals.find(t => t.isVisible);
@@ -654,7 +654,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             } else if (this.shell.activeWidget !== visibleTerminal) {
                 this.shell.bottomPanel.activateWidget(visibleTerminal);
             } else {
-                this.shell.collapsePanel("bottom");
+                this.shell.collapsePanel('bottom');
             }
         }
 
