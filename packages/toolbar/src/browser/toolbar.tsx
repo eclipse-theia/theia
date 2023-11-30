@@ -173,9 +173,9 @@ export class ToolbarImpl extends TabBarToolbar {
                 tabIndex={0}
                 ref={this.assignRef}
             >
-                {this.renderColumnWrapper(ToolbarAlignment.LEFT, leftGroups)}
-                {this.renderColumnWrapper(ToolbarAlignment.CENTER, centerGroups)}
-                {this.renderColumnWrapper(ToolbarAlignment.RIGHT, rightGroups)}
+                {leftGroups ? this.renderColumnWrapper(ToolbarAlignment.LEFT, leftGroups) : <></>}
+                {centerGroups ? this.renderColumnWrapper(ToolbarAlignment.CENTER, centerGroups) : <></>}
+                {rightGroups ? this.renderColumnWrapper(ToolbarAlignment.RIGHT, rightGroups) : <></>}
             </div>
         );
     }
