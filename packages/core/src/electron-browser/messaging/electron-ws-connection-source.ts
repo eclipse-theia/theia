@@ -16,7 +16,7 @@
 
 import { injectable } from 'inversify';
 import { FrontendApplicationContribution } from '../../browser/frontend-application-contribution';
-import { WebsocketConnectionSource } from '../../browser/messaging/ws-connection-source';
+import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source';
 
 /**
  * Customized connection provider between the frontend and the backend in electron environment.
@@ -24,7 +24,7 @@ import { WebsocketConnectionSource } from '../../browser/messaging/ws-connection
  * once the electron-browser window is refreshed. Otherwise, backend resources are not disposed.
  */
 @injectable()
-export class ElectronWebSocketConnectionSource extends WebsocketConnectionSource implements FrontendApplicationContribution {
+export class ElectronWebSocketConnectionSource extends WebSocketConnectionSource implements FrontendApplicationContribution {
     constructor() {
         super();
     }

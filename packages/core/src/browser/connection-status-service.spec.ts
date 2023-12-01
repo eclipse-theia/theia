@@ -34,7 +34,7 @@ import * as sinon from 'sinon';
 
 import { Container } from 'inversify';
 import { ILogger, Emitter, Loggable } from '../common';
-import { WebsocketConnectionSource } from './messaging/ws-connection-source';
+import { WebSocketConnectionSource } from './messaging/ws-connection-source';
 
 disableJSDOM();
 
@@ -101,7 +101,7 @@ describe('frontend-connection-status', function (): void {
     let timer: sinon.SinonFakeTimers;
     let pingSpy: sinon.SinonSpy;
     beforeEach(() => {
-        const mockWebSocketConnectionSource = sinon.createStubInstance(WebsocketConnectionSource);
+        const mockWebSocketConnectionSource = sinon.createStubInstance(WebSocketConnectionSource);
         const mockPingService: PingService = <PingService>{
             ping(): Promise<void> {
                 return Promise.resolve(undefined);
@@ -118,7 +118,7 @@ describe('frontend-connection-status', function (): void {
         testContainer.bind(PingService).toConstantValue(mockPingService);
         testContainer.bind(ILogger).toConstantValue(mockILogger);
         testContainer.bind(ConnectionStatusOptions).toConstantValue({ offlineTimeout: OFFLINE_TIMEOUT });
-        testContainer.bind(WebsocketConnectionSource).toConstantValue(mockWebSocketConnectionSource);
+        testContainer.bind(WebSocketConnectionSource).toConstantValue(mockWebSocketConnectionSource);
 
         sinon.stub(mockWebSocketConnectionSource, 'onSocketDidOpen').value(mockSocketOpenedEmitter.event);
         sinon.stub(mockWebSocketConnectionSource, 'onSocketDidClose').value(mockSocketClosedEmitter.event);

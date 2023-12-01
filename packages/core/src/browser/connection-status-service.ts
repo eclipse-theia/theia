@@ -20,7 +20,7 @@ import { Event, Emitter } from '../common/event';
 import { DefaultFrontendApplicationContribution } from './frontend-application-contribution';
 import { StatusBar, StatusBarAlignment } from './status-bar/status-bar';
 import { Disposable, DisposableCollection, nls } from '../common';
-import { WebsocketConnectionSource } from './messaging/ws-connection-source';
+import { WebSocketConnectionSource } from './messaging/ws-connection-source';
 
 /**
  * Service for listening on backend connection changes.
@@ -119,7 +119,7 @@ export class FrontendConnectionStatusService extends AbstractConnectionStatusSer
 
     private scheduledPing: number | undefined;
 
-    @inject(WebsocketConnectionSource) protected readonly wsConnectionProvider: WebsocketConnectionSource;
+    @inject(WebSocketConnectionSource) protected readonly wsConnectionProvider: WebSocketConnectionSource;
     @inject(PingService) protected readonly pingService: PingService;
 
     @postConstruct()

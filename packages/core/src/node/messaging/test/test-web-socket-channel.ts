@@ -19,14 +19,14 @@ import * as http from 'http';
 import * as https from 'https';
 import { AddressInfo } from 'net';
 import { servicesPath } from '../../../common';
-import { WebsocketConnectionSource } from '../../../browser/messaging/ws-connection-source';
+import { WebSocketConnectionSource } from '../../../browser/messaging/ws-connection-source';
 import { Container, inject } from 'inversify';
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '../../../browser/messaging/service-connection-provider';
 import { messagingFrontendModule } from '../../../browser/messaging/messaging-frontend-module';
 import { Socket, io } from 'socket.io-client';
 
 const websocketUrl = Symbol('testWebsocketUrl');
-class TestWebsocketConnectionSource extends WebsocketConnectionSource {
+class TestWebsocketConnectionSource extends WebSocketConnectionSource {
     @inject(websocketUrl)
     readonly websocketUrl: string;
 
@@ -55,7 +55,7 @@ export class TestWebSocketChannelSetup {
         const container = new Container();
         container.bind(websocketUrl).toConstantValue(socketUrl);
         container.load(messagingFrontendModule);
-        container.rebind(WebsocketConnectionSource).to(TestWebsocketConnectionSource);
+        container.rebind(WebSocketConnectionSource).to(TestWebsocketConnectionSource);
         return container.get(RemoteConnectionProvider);
     }
 }

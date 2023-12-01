@@ -27,7 +27,7 @@ import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer';
 import { ConnectionManagementMessages } from '../../common/messaging/connection-management';
 
 @injectable()
-export class WebsocketConnectionSource implements ConnectionSource {
+export class WebSocketConnectionSource implements ConnectionSource {
     static readonly NO_CONNECTION = '<none>';
 
     @inject(FrontendIdProvider)

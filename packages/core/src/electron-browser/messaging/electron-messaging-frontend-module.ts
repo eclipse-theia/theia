@@ -25,7 +25,7 @@ import { ConnectionSource } from '../../browser/messaging/connection-source';
 import { LocalConnectionProvider, RemoteConnectionProvider, ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider';
 import { WebSocketConnectionProvider } from '../../browser';
 import { ConnectionCloseService, connectionCloseServicePath } from '../../common/messaging/connection-management';
-import { WebsocketConnectionSource } from '../../browser/messaging/ws-connection-source';
+import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source';
 
 const backendServiceProvider = Symbol('backendServiceProvider2');
 const localServiceProvider = Symbol('localServiceProvider');
@@ -33,7 +33,7 @@ const localServiceProvider = Symbol('localServiceProvider');
 export const messagingFrontendModule = new ContainerModule(bind => {
     bind(ConnectionCloseService).toDynamicValue(ctx => WebSocketConnectionProvider.createProxy(ctx.container, connectionCloseServicePath)).inSingletonScope();
     bind(ElectronWebSocketConnectionSource).toSelf().inSingletonScope();
-    bind(WebsocketConnectionSource).toService(ElectronWebSocketConnectionSource);
+    bind(WebSocketConnectionSource).toService(ElectronWebSocketConnectionSource);
     bind(ElectronIpcConnectionSource).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ElectronIpcConnectionSource);
     bind(ElectronLocalWebSocketConnectionSource).toSelf().inSingletonScope();
