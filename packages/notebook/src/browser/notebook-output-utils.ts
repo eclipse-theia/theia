@@ -16,6 +16,7 @@
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *  Copied from commit 18b2c92451b076943e5b508380e0eba66ba7d934
  *--------------------------------------------------------------------------------------------*/
 
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
