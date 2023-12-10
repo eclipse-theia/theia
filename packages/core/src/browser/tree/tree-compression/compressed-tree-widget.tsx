@@ -58,6 +58,12 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
         }
     }
 
+    protected override shouldRenderIndent(node: TreeNode): boolean {
+        return !this.compressionToggle.compress
+            || !this.compressionService.isCompressionParticipant(node)
+            || this.compressionService.getCompressionHead(node) === node;
+    }
+
     protected override shouldDisplayNode(node: TreeNode): boolean {
         if (this.compressionToggle.compress && this.compressionService.isCompressionParticipant(node) && !this.compressionService.isCompressionHead(node)) {
             return false;
@@ -66,14 +72,18 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
     }
 
     protected override getDepthForNode(node: TreeNode, depths: Map<CompositeTreeNode | undefined, number>): number {
-        if (!this.compressionToggle.compress) { return super.getDepthForNode(node, depths); }
+        if (!this.compressionToggle.compress) {
+            return super.getDepthForNode(node, depths);
+        }
         const parent = this.compressionService.getCompressionHead(node.parent) ?? node.parent;
         const parentDepth = depths.get(parent);
         return parentDepth === undefined ? 0 : TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
     }
 
     protected override toNodeRow(node: TreeNode, index: number, depth: number): CompressedNodeRow {
-        if (!this.compressionToggle.compress) { return super.toNodeRow(node, index, depth); }
+        if (!this.compressionToggle.compress) {
+            return super.toNodeRow(node, index, depth);
+        }
         const row: CompressedNodeRow = { node, index, depth };
         if (this.compressionService.isCompressionHead(node)) {
             row.compressionChain = this.compressionService.getCompressionChain(node);
@@ -102,7 +112,9 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
     }
 
     protected override getCaptionChildren(node: TreeNode, props: CompressedNodeProps): React.ReactNode {
-        if (!this.compressionToggle.compress || !props.compressionChain) { return super.getCaptionChildren(node, props); }
+        if (!this.compressionToggle.compress || !props.compressionChain) {
+            return super.getCaptionChildren(node, props);
+        }
         return props.compressionChain.map((subNode, index, self) => {
             const classes = ['theia-tree-compressed-label-part'];
             if (SelectableTreeNode.isSelected(subNode)) {
@@ -129,21 +141,27 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
     }
 
     protected override handleUp(event: KeyboardEvent): void {
-        if (!this.compressionToggle.compress) { return super.handleUp(event); }
+        if (!this.compressionToggle.compress) {
+            return super.handleUp(event);
+        }
         const type = this.props.multiSelect && this.hasShiftMask(event) ? TreeSelection.SelectionType.RANGE : undefined;
         this.model.selectPrevRow(type);
         this.node.focus();
     }
 
     protected override handleDown(event: KeyboardEvent): void {
-        if (!this.compressionToggle.compress) { return super.handleDown(event); }
+        if (!this.compressionToggle.compress) {
+            return super.handleDown(event);
+        }
         const type = this.props.multiSelect && this.hasShiftMask(event) ? TreeSelection.SelectionType.RANGE : undefined;
         this.model.selectNextRow(type);
         this.node.focus();
     }
 
     protected override async handleLeft(event: KeyboardEvent): Promise<void> {
-        if (!this.compressionToggle.compress) { return super.handleLeft(event); }
+        if (!this.compressionToggle.compress) {
+            return super.handleLeft(event);
+        }
         if (Boolean(this.props.multiSelect) && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
             return;
         }
@@ -160,7 +178,9 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
     }
 
     protected override async handleRight(event: KeyboardEvent): Promise<void> {
-        if (!this.compressionToggle.compress) { return super.handleRight(event); }
+        if (!this.compressionToggle.compress) {
+            return super.handleRight(event);
+        }
         if (Boolean(this.props.multiSelect) && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
             return;
         }

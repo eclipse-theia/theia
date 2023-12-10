@@ -894,20 +894,31 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         let current: TreeNode | undefined = node;
         let depth = props.depth;
         while (current && depth) {
-            const classNames: string[] = [TREE_NODE_INDENT_GUIDE_CLASS];
-            if (this.needsActiveIndentGuideline(current)) {
-                classNames.push('active');
-            } else {
-                classNames.push(renderIndentGuides === 'onHover' ? 'hover' : 'always');
+            if (this.shouldRenderIndent(current)) {
+                const classNames: string[] = [TREE_NODE_INDENT_GUIDE_CLASS];
+                if (this.needsActiveIndentGuideline(current)) {
+                    classNames.push('active');
+                } else {
+                    classNames.push(renderIndentGuides === 'onHover' ? 'hover' : 'always');
+                }
+                const paddingLeft = this.getDepthPadding(depth);
+                indentDivs.unshift(<div key={depth} className={classNames.join(' ')} style={{
+                    paddingLeft: `${paddingLeft}px`
+                }} />);
+                depth--;
             }
-            const paddingLeft = this.getDepthPadding(depth);
-            indentDivs.unshift(<div key={depth} className={classNames.join(' ')} style={{
-                paddingLeft: `${paddingLeft}px`
-            }} />);
             current = current.parent;
-            depth--;
         }
         return indentDivs;
+    }
+
+    /**
+     * Determines whether an indentation div should be rendered for the specified tree node.
+     * If there are multiple tree node inside of a single rendered row,
+     * this method should only return true for the first node.
+     */
+    protected shouldRenderIndent(node: TreeNode): boolean {
+        return true;
     }
 
     protected needsActiveIndentGuideline(node: TreeNode): boolean {
