@@ -19,13 +19,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Disposable, DisposableCollection, Emitter } from '@theia/core';
+import { Emitter } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ApplicationShell } from '@theia/core/lib/browser';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
 
 @injectable()
-export class NotebookEditorWidgetService implements Disposable {
+export class NotebookEditorWidgetService {
 
     @inject(ApplicationShell)
     protected applicationShell: ApplicationShell;
@@ -40,27 +40,22 @@ export class NotebookEditorWidgetService implements Disposable {
     private readonly onDidChangeFocusedEditorEmitter = new Emitter<NotebookEditorWidget | undefined>();
     readonly onDidChangeFocusedEditor = this.onDidChangeFocusedEditorEmitter.event;
 
-    private readonly toDispose = new DisposableCollection();
-
     focusedEditor?: NotebookEditorWidget = undefined;
 
     @postConstruct()
     protected init(): void {
-        this.toDispose.push(this.applicationShell.onDidChangeActiveWidget(event => {
-            if (event.newValue instanceof NotebookEditorWidget && event.newValue !== this.focusedEditor) {
-                this.focusedEditor = event.newValue;
-                this.onDidChangeFocusedEditorEmitter.fire(this.focusedEditor);
-            } else {
+        this.applicationShell.onDidChangeActiveWidget(event => {
+            if (event.newValue instanceof NotebookEditorWidget) {
+                if (event.newValue !== this.focusedEditor) {
+                    this.focusedEditor = event.newValue;
+                    this.onDidChangeFocusedEditorEmitter.fire(this.focusedEditor);
+                }
+            } else if (event.newValue) {
+                // Only unfocus editor if a new widget has been focused
+                this.focusedEditor = undefined;
                 this.onDidChangeFocusedEditorEmitter.fire(undefined);
             }
-        }));
-    }
-
-    dispose(): void {
-        this.onNotebookEditorAddEmitter.dispose();
-        this.onNotebookEditorRemoveEmitter.dispose();
-        this.onDidChangeFocusedEditorEmitter.dispose();
-        this.toDispose.dispose();
+        });
     }
 
     // --- editor management

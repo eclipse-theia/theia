@@ -28,6 +28,7 @@ import { inject, injectable, interfaces, postConstruct } from '@theia/core/share
 import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service';
 import { NotebookMainToolbarRenderer } from './view/notebook-main-toolbar';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export const NotebookEditorWidgetContainerFactory = Symbol('NotebookEditorWidgetContainerFactory');
 
@@ -82,9 +83,14 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     protected readonly renderers = new Map<CellKind, CellRenderer>();
     protected _model?: NotebookModel;
+    protected _ready: Deferred<NotebookModel> = new Deferred();
 
     get notebookType(): string {
         return this.props.notebookType;
+    }
+
+    get ready(): Promise<NotebookModel> {
+        return this._ready.promise;
     }
 
     get model(): NotebookModel | undefined {
@@ -103,17 +109,17 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
         this.renderers.set(CellKind.Markup, this.markdownCellRenderer);
         this.renderers.set(CellKind.Code, this.codeCellRenderer);
-        this.waitForData();
-
+        this._ready.resolve(this.waitForData());
     }
 
-    protected async waitForData(): Promise<void> {
+    protected async waitForData(): Promise<NotebookModel> {
         this._model = await this.props.notebookData;
         this.saveable.delegate = this._model;
         this.toDispose.push(this._model);
         // Ensure that the model is loaded before adding the editor
         this.notebookEditorService.addNotebookEditor(this);
         this.update();
+        return this._model;
     }
 
     protected override onActivateRequest(msg: Message): void {
@@ -130,11 +136,11 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     }
 
     undo(): void {
-        this.model?.undo();
+        this._model?.undo();
     }
 
     redo(): void {
-        this.model?.redo();
+        this._model?.redo();
     }
 
     protected render(): ReactNode {
