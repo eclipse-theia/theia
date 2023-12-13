@@ -40,10 +40,11 @@ import { TestItemImpl, TestItemCollection } from './test-item';
 import { AccumulatingTreeDeltaEmitter, TreeDelta } from '@theia/test/lib/common/tree-delta';
 import {
     TestItemDTO, TestOutputDTO, TestExecutionState, TestRunProfileDTO,
-    TestRunProfileKind, TestRunRequestDTO, TestStateChangeDTO, TestItemReference
+    TestRunProfileKind, TestRunRequestDTO, TestStateChangeDTO, TestItemReference, TestMessageArg, TestMessageDTO
 } from '../common/test-types';
 import { ChangeBatcher, observableProperty } from '@theia/test/lib/common/collections';
 import { TestRunRequest } from './types-impl';
+import { MarkdownString } from '../common/plugin-api-rpc-model';
 
 type RefreshHandler = (token: theia.CancellationToken) => void | theia.Thenable<void>;
 type ResolveHandler = (item: theia.TestItem | undefined) => theia.Thenable<void> | void;
@@ -335,12 +336,35 @@ export class TestingExtImpl implements TestingExt {
                     return this.toTestItem(arg);
                 } else if (Array.isArray(arg)) {
                     return arg.map(param => TestItemReference.is(param) ? this.toTestItem(param) : param);
+                } else if (TestMessageArg.is(arg)) {
+                    return this.fromTestMessageArg(arg);
                 } else {
                     return arg;
                 }
             }
         });
 
+    }
+
+    fromTestMessageArg(arg: TestMessageArg): { test?: theia.TestItem, message: theia.TestMessage } {
+        const testItem = arg.testItemReference ? this.toTestItem(arg.testItemReference) : undefined;
+        const message = this.toTestMessage(arg.testMessage);
+        return {
+            test: testItem,
+            message: message
+        };
+    }
+
+    toTestMessage(testMessage: TestMessageDTO): theia.TestMessage {
+        const message = MarkdownString.is(testMessage.message) ? Convert.toMarkdown(testMessage.message) : testMessage.message;
+
+        return {
+            message: message,
+            actualOutput: testMessage.actual,
+            expectedOutput: testMessage.expected,
+            contextValue: testMessage.contextValue,
+            location: testMessage.location ? Convert.toLocation(testMessage.location) : undefined
+        };
     }
 
     toTestItem(ref: TestItemReference): theia.TestItem {

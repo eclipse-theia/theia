@@ -58,6 +58,13 @@ export interface TestMessage {
     readonly actual?: string;
     readonly location: Location;
     readonly message: string | MarkdownString;
+    readonly contextValue?: string;
+}
+
+export namespace TestMessage {
+    export function is(obj: unknown): obj is TestMessage {
+        return isObject<TestMessage>(obj) && (MarkdownString.is(obj.message) || typeof obj.message === 'string');
+    }
 }
 
 export interface TestState {
@@ -136,6 +143,7 @@ export interface TestItem {
     readonly controller: TestController | undefined;
     readonly canResolveChildren: boolean;
     resolveChildren(): void;
+    readonly path: string[];
 }
 
 export namespace TestItem {

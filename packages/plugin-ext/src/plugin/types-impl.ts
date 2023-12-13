@@ -3293,6 +3293,7 @@ export class TestMessage implements theia.TestMessage {
     public expectedOutput?: string;
     public actualOutput?: string;
     public location?: theia.Location;
+    public contextValue?: string;
 
     public static diff(message: string | theia.MarkdownString, expected: string, actual: string): theia.TestMessage {
         const msg = new TestMessage(message);

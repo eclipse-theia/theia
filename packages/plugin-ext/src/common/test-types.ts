@@ -84,6 +84,7 @@ export interface TestMessageDTO {
     readonly actual?: string;
     readonly location?: Location;
     readonly message: string | MarkdownString;
+    readonly contextValue?: string;
 }
 
 export interface TestItemDTO {
@@ -131,3 +132,22 @@ export namespace TestItemReference {
     }
 }
 
+export interface TestMessageArg {
+    testItemReference: TestItemReference | undefined,
+    testMessage: TestMessageDTO
+}
+
+export namespace TestMessageArg {
+    export function is(arg: unknown): arg is TestMessageArg {
+        return isObject<TestMessageArg>(arg)
+            && isObject<TestMessageDTO>(arg.testMessage)
+            && (MarkdownString.is(arg.testMessage.message) || typeof arg.testMessage.message === 'string');
+    }
+
+    export function create(testItemReference: TestItemReference | undefined, testMessageDTO: TestMessageDTO): TestMessageArg {
+        return {
+            testItemReference: testItemReference,
+            testMessage: testMessageDTO
+        };
+    }
+}

@@ -20,7 +20,7 @@ import { ContextMenuRenderer, codicon } from '@theia/core/lib/browser';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { TestController, TestExecutionState, TestItem, TestOutputItem, TestRun, TestService } from '../test-service';
+import { TestController, TestExecutionState, TestFailure, TestItem, TestMessage, TestOutputItem, TestRun, TestService } from '../test-service';
 import * as React from '@theia/core/shared/react';
 import { Disposable, DisposableCollection, Event, nls } from '@theia/core';
 import { TestExecutionStateManager } from './test-execution-state-manager';
@@ -251,11 +251,16 @@ export class TestRunTreeWidget extends TreeWidget {
         }
     }
 
-    protected override toContextMenuArgs(node: SelectableTreeNode): (TestRun | TestItem)[] {
+    protected override toContextMenuArgs(node: SelectableTreeNode): (TestRun | TestItem | TestMessage[])[] {
         if (node instanceof TestRunNode) {
             return [node.run];
         } else if (node instanceof TestItemNode) {
-            return [node.item];
+            const item = node.item;
+            const executionState = node.parent.run.getTestState(node.item);
+            if (TestFailure.is(executionState)) {
+                return [item, executionState.messages];
+            }
+            return [item];
         }
         return [];
     }

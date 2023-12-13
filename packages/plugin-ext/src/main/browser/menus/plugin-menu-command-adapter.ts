@@ -23,10 +23,13 @@ import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { TimelineItem } from '@theia/timeline/lib/common/timeline-model';
 import { ScmCommandArg, TimelineCommandArg, TreeViewItemReference } from '../../../common';
+import { TestItemReference, TestMessageArg } from '../../../common/test-types';
 import { PluginScmProvider, PluginScmResource, PluginScmResourceGroup } from '../scm-main';
 import { TreeViewWidget } from '../view/tree-view-widget';
 import { CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint } from './vscode-theia-menu-mappings';
 import { TAB_BAR_TOOLBAR_CONTEXT_MENU } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { TestItem, TestMessage } from '@theia/test/lib/browser/test-service';
+import { fromLocation } from '../hierarchy/hierarchy-types-converters';
 
 export type ArgumentAdapter = (...args: unknown[]) => unknown[];
 
@@ -79,6 +82,7 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
     @postConstruct()
     protected init(): void {
         const toCommentArgs: ArgumentAdapter = (...args) => this.toCommentArgs(...args);
+        const toTestMessageArgs: ArgumentAdapter = (...args) => this.toTestMessageArgs(...args);
         const firstArgOnly: ArgumentAdapter = (...args) => [args[0]];
         const noArgs: ArgumentAdapter = () => [];
         const toScmArgs: ArgumentAdapter = (...args) => this.toScmArgs(...args);
@@ -100,6 +104,7 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
             ['scm/resourceGroup/context', toScmArgs],
             ['scm/resourceState/context', toScmArgs],
             ['scm/title', () => [this.toScmArg(this.scmService.selectedRepository)]],
+            ['testing/message/context', toTestMessageArgs],
             ['timeline/item/context', (...args) => this.toTimelineArgs(...args)],
             ['view/item/context', (...args) => this.toTreeArgs(...args)],
             ['view/title', noArgs],
@@ -228,6 +233,30 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
         timelineArgs.push(CodeUri.parse(arg.uri));
         timelineArgs.push(arg.source ?? '');
         return timelineArgs;
+    }
+
+    protected toTestMessageArgs(...args: any[]): any[] {
+        let testItem: TestItem | undefined;
+        let testMessage: TestMessage | undefined;
+        for (const arg of args) {
+            if (TestItem.is(arg)) {
+                testItem = arg;
+            } else if (Array.isArray(arg) && TestMessage.is(arg[0])) {
+                testMessage = arg[0];
+            }
+        }
+        if (testMessage) {
+            const testItemReference = (testItem && testItem.controller) ? TestItemReference.create(testItem.controller.id, testItem.path) : undefined;
+            const testMessageDTO = {
+                message: testMessage.message,
+                actual: testMessage.actual,
+                expected: testMessage.expected,
+                contextValue: testMessage.contextValue,
+                location: testMessage.location ? fromLocation(testMessage.location) : undefined
+            };
+            return [TestMessageArg.create(testItemReference, testMessageDTO)];
+        }
+        return [];
     }
 
     protected toTimelineArg(arg: TimelineItem): TimelineCommandArg {
