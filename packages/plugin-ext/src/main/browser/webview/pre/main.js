@@ -345,7 +345,6 @@ delete window.frameElement;
         };
 
         const handleContextMenu = (e) => {
-            console.log('onContextMenu', e);
             if (e.defaultPrevented) {
                 return;
             }
