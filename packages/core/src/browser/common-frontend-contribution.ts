@@ -57,7 +57,7 @@ import { QuickInputService, QuickPickItem, QuickPickItemOrSeparator, QuickPickSe
 import { AsyncLocalizationProvider } from '../common/i18n/localization';
 import { nls } from '../common/nls';
 import { CurrentWidgetCommandAdapter } from './shell/current-widget-command-adapter';
-import { ConfirmDialog, confirmExitWithOrWithoutSaving, Dialog } from './dialogs';
+import { ConfirmDialog, confirmExit, ConfirmSaveDialog, Dialog } from './dialogs';
 import { WindowService } from './window/window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { DecorationStyle } from './decoration-style';
@@ -1200,21 +1200,59 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 action: async () => {
                     const captionsToSave = this.unsavedTabsCaptions();
                     const untitledCaptionsToSave = this.unsavedUntitledTabsCaptions();
-                    const result = await confirmExitWithOrWithoutSaving(captionsToSave, async () => {
+                    const shouldExit = await this.confirmExitWithOrWithoutSaving(captionsToSave, async () => {
                         await this.saveDirty(untitledCaptionsToSave);
                         await this.shell.saveAll();
                     });
-                    if (this.shell.canSaveAll()) {
-                        this.shouldPreventClose = true;
-                        return false;
-                    } else {
-                        this.shouldPreventClose = false;
-                        return result;
-                    }
+                    const allSavedOrDoNotSave = (
+                        shouldExit === true && untitledCaptionsToSave.length === 0 // Should save and cancel if any captions failed to save
+                    ) || shouldExit === false; // Do not save
+
+                    this.shouldPreventClose = !allSavedOrDoNotSave;
+                    return allSavedOrDoNotSave;
 
                 }
             };
         }
+    }
+    // Asks the user to confirm whether they want to exit with or without saving the changes
+    private async confirmExitWithOrWithoutSaving(captionsToSave: string[], performSave: () => Promise<void>): Promise<boolean | undefined> {
+        const div: HTMLElement = document.createElement('div');
+        div.innerText = nls.localizeByDefault("Your changes will be lost if you don't save them.");
+
+        let result;
+        if (captionsToSave.length > 0) {
+            const span = document.createElement('span');
+            span.appendChild(document.createElement('br'));
+            captionsToSave.forEach(cap => {
+                const b = document.createElement('b');
+                b.innerText = cap;
+                span.appendChild(b);
+                span.appendChild(document.createElement('br'));
+            });
+            span.appendChild(document.createElement('br'));
+            div.appendChild(span);
+            result = await new ConfirmSaveDialog({
+                title: nls.localizeByDefault('Do you want to save the changes to the following {0} files?', captionsToSave.length),
+                msg: div,
+                dontSave: nls.localizeByDefault("Don't Save"),
+                save: nls.localizeByDefault('Save All'),
+                cancel: Dialog.CANCEL
+            }).open();
+
+            if (result) {
+                await performSave();
+            }
+        } else {
+            // fallback if not passed with an empty caption-list.
+            result = confirmExit();
+        }
+        if (result !== undefined) {
+            return result === true;
+        } else {
+            return undefined;
+        };
+
     }
     protected unsavedTabsCaptions(): string[] {
         return this.shell.widgets
@@ -1236,11 +1274,19 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             this.windowService.reload();
         }
     }
+    /**
+     * saves any dirty widget in toSave
+     * side effect - will pop all widgets from toSave that was saved
+     * @param toSave
+     */
     protected async saveDirty(toSave: Widget[]): Promise<void> {
         for (const widget of toSave) {
             const saveable = Saveable.get(widget);
             if (saveable?.dirty) {
                 await this.saveResourceService.save(widget);
+                if (!this.saveResourceService.canSave(widget)) {
+                    toSave.pop();
+                }
             }
         }
     }
