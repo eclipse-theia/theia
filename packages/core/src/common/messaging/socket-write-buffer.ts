@@ -14,12 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { Socket as ClientSocket } from 'socket.io-client';
-import { Socket as ServerSocket } from 'socket.io';
-
-export type WebSocket = ClientSocket | ServerSocket;
+import { WebSocket } from './web-socket-channel';
 
 export class SocketWriteBuffer {
     private static DISCONNECTED_BUFFER_SIZE = 100 * 1024;

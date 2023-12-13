@@ -15,7 +15,7 @@
 
 import { Channel, WriteBuffer } from '../../common/message-rpc';
 import { MessagingService } from './messaging-service';
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { Socket } from 'socket.io';
 import { ConnectionHandlers } from './default-messaging-service';
 import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer';
@@ -37,10 +37,6 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
     protected readonly connectionsByFrontend = new Map<string, ReconnectableSocketChannel>();
     protected readonly closeTimeouts = new Map<string, NodeJS.Timeout>();
     protected readonly channelsMarkedForClose = new Set<string>();
-
-    @postConstruct()
-    init(): void {
-    }
 
     registerConnectionHandler(spec: string, callback: (params: MessagingService.PathParams, channel: Channel) => void): void {
         this.websocketServer.registerConnectionHandler(spec, (params, socket) => this.handleConnection(socket, channel => callback(params, channel)));

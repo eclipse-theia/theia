@@ -16,11 +16,10 @@
 
 import { injectable, interfaces } from 'inversify';
 import { RpcProxy } from '../../common/messaging';
-import { AbstractChannel, Channel, Event, MaybePromise, WriteBuffer } from '../../common';
+import { AbstractChannel, Channel, Emitter, Event, MaybePromise, WriteBuffer } from '../../common';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
 import { ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider';
 import { ConnectionSource } from '../../browser/messaging/connection-source';
-import { Emitter } from 'vscode-languageserver-protocol';
 import { FrontendApplicationContribution } from '../../browser';
 
 export interface ElectronIpcOptions {
