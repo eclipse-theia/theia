@@ -51,9 +51,15 @@ import { BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
 import { ViewColumn } from '../../../plugin/types-impl';
 import { ExtractableWidget } from '@theia/core/lib/browser/widgets/extractable-widget';
 import { BadgeWidget } from '@theia/core/lib/browser/view-container';
+import { MenuPath } from '@theia/core';
+import { ContextMenuRenderer } from '@theia/core/lib/browser';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { PluginViewWidget } from '../view/plugin-view-widget';
 
 // Style from core
 const TRANSPARENT_OVERLAY_STYLE = 'theia-transparent-overlay';
+
+export const WEBVIEW_CONTEXT_MENU: MenuPath = ['webview-context-menu'];
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -70,7 +76,8 @@ export const enum WebviewMessageChannels {
     didKeydown = 'did-keydown',
     didMouseDown = 'did-mousedown',
     didMouseUp = 'did-mouseup',
-    onconsole = 'onconsole'
+    onconsole = 'onconsole',
+    didcontextmenu = 'did-context-menu'
 }
 
 export interface WebviewContentOptions {
@@ -151,6 +158,12 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
 
     @inject(WebviewResourceCache)
     protected readonly resourceCache: WebviewResourceCache;
+
+    @inject(ContextMenuRenderer)
+    protected readonly contextMenuRenderer: ContextMenuRenderer;
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
 
     viewState: WebviewPanelViewState = {
         visible: false,
@@ -357,6 +370,10 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
             this.dispatchMouseEvent('mouseup', data);
         }));
 
+        this.toHide.push(this.on(WebviewMessageChannels.didcontextmenu, (event: { clientX: number, clientY: number, context: any }) => {
+            this.handleContextMenu(event);
+        }));
+
         this.style();
         this.toHide.push(this.themeDataProvider.onDidChangeThemeData(() => this.style()));
 
@@ -378,6 +395,20 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
             clientX: domRect.x + data.clientX,
             clientY: domRect.y + data.clientY
         }));
+    }
+
+    handleContextMenu(event: { clientX: number, clientY: number, context: any }): void {
+        const domRect = this.node.getBoundingClientRect();
+        this.contextKeyService.with(this.parent instanceof PluginViewWidget ?
+            { webviewId: this.parent.options.viewId, ...event.context } : {},
+            () => {
+                this.contextMenuRenderer.render({
+                    menuPath: WEBVIEW_CONTEXT_MENU,
+                    anchor: {
+                        x: domRect.x + event.clientX, y: domRect.y + event.clientY
+                    }
+                });
+            });
     }
 
     protected async getRedirect(url: string): Promise<string | undefined> {

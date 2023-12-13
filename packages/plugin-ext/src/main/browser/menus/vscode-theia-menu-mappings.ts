@@ -29,7 +29,7 @@ import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
 import { TIMELINE_ITEM_CONTEXT_MENU } from '@theia/timeline/lib/browser/timeline-tree-widget';
 import { COMMENT_CONTEXT, COMMENT_THREAD_CONTEXT, COMMENT_TITLE } from '../comments/comment-thread-widget';
 import { VIEW_ITEM_CONTEXT_MENU } from '../view/tree-view-widget';
-import { WebviewWidget } from '../webview/webview';
+import { WEBVIEW_CONTEXT_MENU, WebviewWidget } from '../webview/webview';
 import { EDITOR_LINENUMBER_CONTEXT_MENU } from '@theia/editor/lib/browser/editor-linenumber-contribution';
 import { TEST_VIEW_CONTEXT_MENU } from '@theia/test/lib/browser/view/test-view-contribution';
 
@@ -58,7 +58,8 @@ export const implementedVSCodeContributionPoints = [
     'timeline/item/context',
     'testing/item/context',
     'view/item/context',
-    'view/title'
+    'view/title',
+    'webview/context'
 ] as const;
 
 export type ContributionPoint = (typeof implementedVSCodeContributionPoints)[number];
@@ -85,6 +86,7 @@ export const codeToTheiaMappings = new Map<ContributionPoint, MenuPath[]>([
     ['timeline/item/context', [TIMELINE_ITEM_CONTEXT_MENU]],
     ['view/item/context', [VIEW_ITEM_CONTEXT_MENU]],
     ['view/title', [PLUGIN_VIEW_TITLE_MENU]],
+    ['webview/context', [WEBVIEW_CONTEXT_MENU]]
 ]);
 
 type CodeEditorWidget = EditorWidget | WebviewWidget;
