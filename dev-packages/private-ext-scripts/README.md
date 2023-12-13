@@ -16,12 +16,12 @@
 `theiaext` is a command line tool to run shared npm scripts in Theia packages.\
 For instance, if you want add a new `hello` script that prints `Hello World`:
 
-- add a new script to [package.json](./package.json) with the `ext:` prefix.
+- add a new script to [./package.json](./package.json) with the `ext:` prefix.
 
 ```json
 {
     "name": "@theia/ext-scripts",
-    "scripts": {
+    "theia-monorepo-scripts": {
         "ext:hello": "echo 'Hello World'"
     }
 }

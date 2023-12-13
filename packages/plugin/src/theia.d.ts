@@ -10059,7 +10059,7 @@ export module '@theia/plugin' {
         static readonly SourceFixAll: CodeActionKind;
 
         /**
-         * Base kind for all code actions applying to the enitre notebook's scope. CodeActionKinds using
+         * Base kind for all code actions applying to the entire notebook's scope. CodeActionKinds using
          * this should always begin with `notebook.`
          *
          * This requires that new CodeActions be created for it and contributed via extensions.

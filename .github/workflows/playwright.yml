@@ -51,4 +51,4 @@ jobs:
       - name: Test (playwright)
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: yarn test:playwright
+          run: yarn --cwd examples/playwright ui-tests-ci

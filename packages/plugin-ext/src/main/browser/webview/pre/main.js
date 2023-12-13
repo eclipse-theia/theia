@@ -339,9 +339,34 @@ delete window.frameElement;
                 clientY: e.clientY,
                 ctrlKey: e.ctrlKey,
                 metaKey: e.metaKey,
-                shiftKey: e.shiftKey
+                shiftKey: e.shiftKey,
+                // @ts-ignore the dataset should exist if the target is an element
             });
         };
+
+        const handleContextMenu = (e) => {
+            if (e.defaultPrevented) {
+                return;
+            }
+
+            e.preventDefault();
+
+            host.postMessage('did-context-menu', {
+                clientX: e.clientX,
+                clientY: e.clientY,
+                context: findVscodeContext(e.target)
+            });
+        };
+
+        function findVscodeContext(node) {
+            if (node) {
+                if (node.dataset?.vscodeContext) {
+                    return JSON.parse(node.dataset.vscodeContext);
+                }
+                return findVscodeContext(node.parentElement);
+            }
+            return {};
+        }
 
         function preventDefaultBrowserHotkeys(e) {
             var isOSX = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -602,7 +627,7 @@ delete window.frameElement;
                     newFrame.contentWindow.addEventListener('keydown', handleInnerKeydown);
                     newFrame.contentWindow.addEventListener('mousedown', handleInnerMousedown);
                     newFrame.contentWindow.addEventListener('mouseup', handleInnerMouseup);
-                    newFrame.contentWindow.addEventListener('contextmenu', e => e.preventDefault());
+                    newFrame.contentWindow.addEventListener('contextmenu', handleContextMenu);
 
                     if (host.onIframeLoaded) {
                         host.onIframeLoaded(newFrame);

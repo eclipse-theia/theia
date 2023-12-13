@@ -110,7 +110,7 @@ class LocalizationKeyProvider {
             if (!foundPreferredKeys.has(message)) {
                 data.set(message, key);
                 if (this.preferredKeys.has(key)) {
-                    // Prevent messages with preferred keys to be overriden
+                    // Prevent messages with preferred keys to be overridden
                     foundPreferredKeys.add(message);
                 }
             }

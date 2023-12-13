@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { TheiaApp } from '../theia-app';
+import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaToolbar } from '../theia-toolbar';
-import test, { page } from './fixtures/theia-fixture';
+import { TheiaWorkspace } from '../theia-workspace';
 
 class TheiaSampleApp extends TheiaApp {
     protected toolbar = new TheiaToolbar(this);
@@ -35,12 +36,16 @@ class TheiaSampleApp extends TheiaApp {
     }
 }
 
-let app: TheiaSampleApp;
-
 test.describe('Theia Sample Application', () => {
 
-    test('should load', async () => {
-        app = await TheiaApp.loadApp(page, TheiaSampleApp);
+    let app: TheiaSampleApp;
+
+    test.beforeAll(async ({ playwright, browser }) => {
+        app = await TheiaAppLoader.load({ playwright, browser }, new TheiaWorkspace(), TheiaSampleApp);
+    });
+
+    test.afterAll(async () => {
+        await app.page.close();
     });
 
     test('should start with visible toolbar', async () => {

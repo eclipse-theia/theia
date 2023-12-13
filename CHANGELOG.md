@@ -4,14 +4,43 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## v1.44.0
-- [vscode] added support for `autoClosingPairs` in the `LanguageConfiguration ` VS Code API [#13088](https://github.com/eclipse-theia/theia/pull/13088) - contributed on behalf of STMicroelectronics
-- [task] prevent task widget title from being changed by task process [#13003](https://github.com/eclipse-theia/theia/pull/13003)
-- [vscode] added Notebook CodeActionKind [#13093](https://github.com/eclipse-theia/theia/pull/13093) - contributed on behalf of STMicroelectronics
-- [vscode] added support for editor.indentSize API [#13105](https://github.com/eclipse-theia/theia/pull/13105) - contributed on behalf of STMicroelectronics
-- [vscode] added support to env.ondidChangeShell event [#13097](https://github.com/eclipse-theia/theia/pull/13097) - contributed on behalf of STMicroelectronics
-- [task] support `isDefault: false` in task group definition [#13075](https://github.com/eclipse-theia/theia/pull/13075) - contributed on behalf of STMicroelectronics
+## Unreleased
 - [terminal] Use application shell methods for expanding/collapsing bottom panel for "Terminal: Toggle Terminal" command [#13131](https://github.com/eclipse-theia/theia/pull/13131)
+
+## v1.44.0 - 11/30/2023
+
+- [application-manager] added option to copy `trash` dependency to the bundle [#13112](https://github.com/eclipse-theia/theia/pull/13112)
+- [application-package] bumped the default supported API from `1.82.0` to `1.83.1` [#13118](https://github.com/eclipse-theia/theia/pull/13118)
+- [ci] added smokes tests for production builds [#12965](https://github.com/eclipse-theia/theia/pull/12965)
+- [ci] updated CI to pin Python at `3.11` to resolve `node-gyp` errors [#13040](https://github.com/eclipse-theia/theia/pull/13040)
+- [core] added handling to prevent class name based contribution filtering [#13103](https://github.com/eclipse-theia/theia/pull/13103)
+- [core] added support for portable mode for electron apps [#12690](https://github.com/eclipse-theia/theia/pull/12690)
+- [core] fixed logic when handling listener events [#13079](https://github.com/eclipse-theia/theia/pull/13079)
+- [core] improved default translations using preferred keys [#13078](https://github.com/eclipse-theia/theia/pull/13078)
+- [core] updated `nls.metadata.json` for `1.83.1` [#13119](https://github.com/eclipse-theia/theia/pull/13119)
+- [core] updated proxy path handling for `socket.io` [#13054](https://github.com/eclipse-theia/theia/pull/13054)
+- [debug] fixed issue where the UI was not updated upon editing breakpoint conditions [#12980](https://github.com/eclipse-theia/theia/pull/12980)
+- [debug] fixed localizations of debug schema attributes [#13017](https://github.com/eclipse-theia/theia/pull/13017)
+- [debug] updated description field for thread stopped status [#13050](https://github.com/eclipse-theia/theia/pull/13050)
+- [documentation] added coding guidelines regarding `@stubbed` and `@monaco-uplift` tags [#13029](https://github.com/eclipse-theia/theia/pull/13029)
+- [documentation] updated broken link to `private-ext-scripts/README.md` [#13122](https://github.com/eclipse-theia/theia/pull/13122)
+- [filesystem] updated electron dialogs so they are modal by default [#13043](https://github.com/eclipse-theia/theia/pull/13043)
+- [notebook] fixed race condition for view registrations [#13115](https://github.com/eclipse-theia/theia/pull/13115)
+- [playwright] added basic support for electron [#12207](https://github.com/eclipse-theia/theia/pull/12207)
+- [plugin] added a command to list installed plugins [#12818](https://github.com/eclipse-theia/theia/pull/12818)
+- [plugin] added handling to forward webview log messages to the browser console [#13084](https://github.com/eclipse-theia/theia/pull/13084)
+- [plugin] added support for VS Code default language icons [#13014](https://github.com/eclipse-theia/theia/pull/13014)
+- [plugin] added support for `autoClosingPairs` in the `LanguageConfiguration` VS Code API [#13088](https://github.com/eclipse-theia/theia/pull/13088) - contributed on behalf of STMicroelectronics
+- [plugin] added support for the `CodeActionKind#Notebook` VS Code API [#13093](https://github.com/eclipse-theia/theia/pull/13093) - contributed on behalf of STMicroelectronics
+- [plugin] added support for the `TextEditorOptions.indentSize` VS Code API [#13105](https://github.com/eclipse-theia/theia/pull/13105) - contributed on behalf of STMicroelectronics
+- [plugin] added support for the `env.onDidChangeShell` VS Code API [#13097](https://github.com/eclipse-theia/theia/pull/13097) - contributed on behalf of STMicroelectronics
+- [private-ext-scripts] updated information regarding scripts [#13127](https://github.com/eclipse-theia/theia/pull/13127)
+- [repo] removed usages of `baseUrl` in `tsconfig` [#12981](https://github.com/eclipse-theia/theia/pull/12981)
+- [search-in-workspace] added support for search history hint in input fields [#12967](https://github.com/eclipse-theia/theia/pull/12967)
+- [search-in-workspace] fixed search-in-workspace line styling [#13071](https://github.com/eclipse-theia/theia/pull/13071)
+- [task] added handling to prevent the task widget title from being changed by task process [#13003](https://github.com/eclipse-theia/theia/pull/13003)
+- [task] added support for `isDefault: false` in task group definitions [#13075](https://github.com/eclipse-theia/theia/pull/13075) - contributed on behalf of STMicroelectronics
+- [toolbar] fixed rendering error for undefined toolbar groups [#13124](https://github.com/eclipse-theia/theia/pull/13124)
 
 ## v1.43.0 - 10/26/2023
 

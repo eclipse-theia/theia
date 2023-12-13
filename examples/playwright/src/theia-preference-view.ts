@@ -33,6 +33,9 @@ export const PreferenceIds = {
     },
     DiffEditor: {
         MaxComputationTime: 'diffEditor.maxComputationTime'
+    },
+    Files: {
+        EnableTrash: 'files.enableTrash'
     }
 };
 
@@ -59,6 +62,11 @@ export const DefaultPreferences = {
     },
     DiffEditor: {
         MaxComputationTime: '5000'
+    },
+    Files: {
+        EnableTrash: {
+            Enabled: true
+        }
     }
 };
 
