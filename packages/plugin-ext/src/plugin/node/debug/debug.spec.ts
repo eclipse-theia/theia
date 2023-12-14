@@ -18,12 +18,15 @@ import * as chai from 'chai';
 import { ProxyIdentifier, RPCProtocol } from '../../../common/rpc-protocol';
 
 import { DebugExtImpl } from '../../debug/debug-ext';
+import { Emitter, Event } from '@theia/core';
 
 const expect = chai.expect;
 
 describe('Debug API', () => {
 
     describe('#asDebugSourceURI', () => {
+
+        const mockEmitter = new Emitter<string>();
 
         const mockRPCProtocol: RPCProtocol = {
             getProxy<T>(_proxyId: ProxyIdentifier<T>): T {
@@ -33,6 +36,12 @@ describe('Debug API', () => {
                 return instance;
             },
             dispose(): void {
+                // Nothing
+            },
+            get onInitialize(): Event<string> {
+                return mockEmitter.event;
+            },
+            initialize<T>(_proxyId: ProxyIdentifier<T>): void {
                 // Nothing
             }
         };

@@ -98,6 +98,11 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         private untitledResourceResolver: UntitledResourceResolver,
         private languageService: MonacoLanguages,
     ) {
+        rpc.onInitialize(proxyId => {
+            if (proxyId === MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT.id) {
+                rpc.initialize(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
+            }
+        });
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
 
         this.toDispose.push(editorsAndDocuments);

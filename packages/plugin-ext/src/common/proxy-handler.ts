@@ -25,6 +25,7 @@ export interface RpcHandlerOptions {
 }
 export interface ProxyHandlerOptions extends RpcHandlerOptions {
     channelProvider: () => Promise<Channel>,
+    onInitialize?: () => void,
 }
 
 export interface InvocationHandlerOptions extends RpcHandlerOptions {
@@ -40,6 +41,7 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
 
     readonly id: string;
     private readonly channelProvider: () => Promise<Channel>;
+    private readonly onInitialize?: () => void;
     private readonly encoder: RpcMessageEncoder;
     private readonly decoder: RpcMessageDecoder;
 
@@ -47,21 +49,22 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
         Object.assign(this, options);
     }
 
-    private initializeRpc(): void {
-        // we need to set the flag to true before waiting for the channel provider. Otherwise `get` might
-        // get called again and we'll try to open a channel more than once
-        this.isRpcInitialized = true;
-        const clientOptions: RpcProtocolOptions = { encoder: this.encoder, decoder: this.decoder, mode: 'clientOnly' };
-        this.channelProvider().then(channel => {
-            const rpc = new RpcProtocol(channel, undefined, clientOptions);
-            this.rpcDeferred.resolve(rpc);
-        });
+    initializeRpc(): void {
+        if (!this.isRpcInitialized) {
+            const clientOptions: RpcProtocolOptions = { encoder: this.encoder, decoder: this.decoder, mode: 'clientOnly' };
+            this.channelProvider().then(channel => {
+                const rpc = new RpcProtocol(channel, undefined, clientOptions);
+                this.rpcDeferred.resolve(rpc);
+                this.isRpcInitialized = true;
+                if (this.onInitialize) {
+                    this.onInitialize();
+                }
+            });
+        }
     }
 
     get(target: any, name: string, receiver: any): any {
-        if (!this.isRpcInitialized) {
-            this.initializeRpc();
-        }
+        this.initializeRpc();
 
         if (target[name] || name.charCodeAt(0) !== 36 /* CharCode.DollarSign */) {
             return target[name];
