@@ -18,13 +18,14 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { ArrayUtils, Command, CommandService, DisposableCollection, Event, nls, QuickInputButton, QuickInputService, QuickPickInput, QuickPickItem, URI, } from '@theia/core';
+import { ArrayUtils, CommandService, DisposableCollection, Event, nls, QuickInputButton, QuickInputService, QuickPickInput, QuickPickItem, URI, } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { NotebookKernelService, NotebookKernel, NotebookKernelMatchResult, SourceCommand } from './notebook-kernel-service';
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
 import { codicon, OpenerService } from '@theia/core/lib/browser';
 import { NotebookKernelHistoryService } from './notebook-kernel-history-service';
+import { NotebookCommand, NotebookModelResource } from '../../common';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 export const JUPYTER_EXTENSION_ID = 'ms-toolsai.jupyter';
@@ -43,7 +44,7 @@ function isSourcePick(item: QuickPickInput<QuickPickItem>): item is SourcePick {
 }
 type InstallExtensionPick = QuickPickItem & { extensionIds: string[] };
 
-type KernelSourceQuickPickItem = QuickPickItem & { command: Command; documentation?: string };
+type KernelSourceQuickPickItem = QuickPickItem & { command: NotebookCommand; documentation?: string };
 function isKernelSourceQuickPickItem(item: QuickPickItem): item is KernelSourceQuickPickItem {
     return 'command' in item;
 }
@@ -469,10 +470,8 @@ export class NotebookKernelQuickPickService {
         quickPick.show();
     }
 
-    private async executeCommand<T>(notebook: NotebookModel, command: string | Command): Promise<T | undefined | void> {
-        const id = typeof command === 'string' ? command : command.id;
-
-        return this.commandService.executeCommand(id, { uri: notebook.uri });
-
+    private async executeCommand<T>(notebook: NotebookModel, command: NotebookCommand): Promise<T | undefined | void> {
+        const args = (command.arguments || []).concat([NotebookModelResource.create(notebook.uri)]);
+        return this.commandService.executeCommand(command.id, ...args);
     }
 }

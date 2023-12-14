@@ -23,7 +23,7 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { NotebookEditorWidget, NotebookService, NotebookEditorWidgetService } from '@theia/notebook/lib/browser';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
-import { MAIN_RPC_CONTEXT, NotebookDocumentsAndEditorsDelta, NotebookDocumentsAndEditorsMain, NotebookModelAddedData, NotebooksExt } from '../../../common';
+import { MAIN_RPC_CONTEXT, NotebookDocumentsAndEditorsDelta, NotebookDocumentsAndEditorsMain, NotebookEditorAddData, NotebookModelAddedData, NotebooksExt } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { NotebookDto } from './notebook-dto';
 import { WidgetManager } from '@theia/core/lib/browser';
@@ -31,6 +31,7 @@ import { NotebookEditorsMainImpl } from './notebook-editors-main';
 import { NotebookDocumentsMainImpl } from './notebook-documents-main';
 import { diffMaps, diffSets } from '../../../common/collections';
 import { Mutex } from 'async-mutex';
+import throttle = require('@theia/core/shared/lodash.throttle');
 
 interface NotebookAndEditorDelta {
     removedDocuments: UriComponents[];
@@ -106,12 +107,12 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         this.notebookEditorService = container.get(NotebookEditorWidgetService);
         this.WidgetManager = container.get(WidgetManager);
 
-        this.notebookService.onDidAddNotebookDocument(async () => this.updateState(), this, this.disposables);
-        this.notebookService.onDidRemoveNotebookDocument(async () => this.updateState(), this, this.disposables);
+        this.notebookService.onDidAddNotebookDocument(async () => this.throttleStateUpdate(), this, this.disposables);
+        this.notebookService.onDidRemoveNotebookDocument(async () => this.throttleStateUpdate(), this, this.disposables);
         // this.WidgetManager.onActiveEditorChanged(() => this.updateState(), this, this.disposables);
         this.notebookEditorService.onDidAddNotebookEditor(async editor => this.handleEditorAdd(editor), this, this.disposables);
         this.notebookEditorService.onDidRemoveNotebookEditor(async editor => this.handleEditorRemove(editor), this, this.disposables);
-        this.notebookEditorService.onDidChangeFocusedEditor(async editor => this.updateState(editor), this, this.disposables);
+        this.notebookEditorService.onDidChangeFocusedEditor(async editor => this.throttleStateUpdate(editor), this, this.disposables);
     }
 
     dispose(): void {
@@ -129,15 +130,17 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         } else {
             this.editorListeners.set(editor.id, [disposable]);
         }
-        await this.updateState();
+        await this.throttleStateUpdate();
     }
 
     private handleEditorRemove(editor: NotebookEditorWidget): void {
         const listeners = this.editorListeners.get(editor.id);
         listeners?.forEach(listener => listener.dispose());
         this.editorListeners.delete(editor.id);
-        this.updateState();
+        this.throttleStateUpdate();
     }
+
+    private throttleStateUpdate = throttle((focusedEditor?: NotebookEditorWidget) => this.updateState(focusedEditor), 100);
 
     private async updateState(focusedEditor?: NotebookEditorWidget): Promise<void> {
         await this.updateMutex.runExclusive(async () => this.doUpdateState(focusedEditor));
@@ -149,9 +152,7 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
         const visibleEditorsMap = new Map<string, NotebookEditorWidget>();
 
         for (const editor of this.notebookEditorService.getNotebookEditors()) {
-            if (editor.model) {
-                editors.set(editor.id, editor);
-            }
+            editors.set(editor.id, editor);
         }
 
         const activeNotebookEditor = this.notebookEditorService.focusedEditor;
@@ -167,7 +168,7 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
 
         const notebookEditors = this.WidgetManager.getWidgets(NotebookEditorWidget.ID) as NotebookEditorWidget[];
         for (const notebookEditor of notebookEditors) {
-            if (notebookEditor?.model && editors.has(notebookEditor.id) && notebookEditor.isVisible) {
+            if (editors.has(notebookEditor.id) && notebookEditor.isVisible) {
                 visibleEditorsMap.set(notebookEditor.id, notebookEditor);
             }
         }
@@ -191,7 +192,7 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
             newActiveEditor: delta.newActiveEditor,
             visibleEditors: delta.visibleEditors,
             addedDocuments: delta.addedDocuments.map(NotebooksAndEditorsMain.asModelAddData),
-            // addedEditors: delta.addedEditors.map(this.asEditorAddData, this),
+            addedEditors: delta.addedEditors.map(NotebooksAndEditorsMain.asEditorAddData),
         };
 
         // send to extension FIRST
@@ -233,6 +234,19 @@ export class NotebooksAndEditorsMain implements NotebookDocumentsAndEditorsMain 
             metadata: e.metadata,
             versionId: 1, // TODO implement versionID support
             cells: e.cells.map(NotebookDto.toNotebookCellDto)
+        };
+    }
+
+    private static asEditorAddData(notebookEditor: NotebookEditorWidget): NotebookEditorAddData {
+        const uri = notebookEditor.getResourceUri();
+        if (!uri) {
+            throw new Error('Notebook editor without resource URI');
+        }
+        return {
+            id: notebookEditor.id,
+            documentUri: uri.toComponents(),
+            selections: [],
+            visibleRanges: []
         };
     }
 }

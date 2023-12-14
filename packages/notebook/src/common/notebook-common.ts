@@ -14,10 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, URI } from '@theia/core';
+import { Command, URI, isObject } from '@theia/core';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { UriComponents } from '@theia/core/lib/common/uri';
+
+export interface NotebookCommand {
+    id: string;
+    title?: string;
+    tooltip?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    arguments?: any[];
+}
 
 export enum CellKind {
     Markup = 1,
@@ -157,6 +165,19 @@ export interface NotebookCellsChangeInternalMetadataEvent {
 export interface NotebookCellContentChangeEvent {
     readonly kind: NotebookCellsChangeType.ChangeCellContent;
     readonly index: number;
+}
+
+export interface NotebookModelResource {
+    notebookModelUri: URI;
+}
+
+export namespace NotebookModelResource {
+    export function is(item: unknown): item is NotebookModelResource {
+        return isObject<NotebookModelResource>(item) && item.notebookModelUri instanceof URI;
+    }
+    export function create(uri: URI): NotebookModelResource {
+        return { notebookModelUri: uri };
+    }
 }
 
 export enum NotebookCellExecutionState {
