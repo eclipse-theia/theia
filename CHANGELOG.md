@@ -4,6 +4,9 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## Unreleased
+- [terminal] Use application shell methods for expanding/collapsing bottom panel for "Terminal: Toggle Terminal" command [#13131](https://github.com/eclipse-theia/theia/pull/13131)
+
 ## v1.44.0 - 11/30/2023
 
 - [application-manager] added option to copy `trash` dependency to the bundle [#13112](https://github.com/eclipse-theia/theia/pull/13112)
