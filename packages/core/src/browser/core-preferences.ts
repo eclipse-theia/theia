@@ -119,6 +119,17 @@ export const corePreferenceSchema: PreferenceSchema = {
             scope: 'application',
             markdownDescription: nls.localizeByDefault('Separator used by {0}.', '`#window.title#`')
         },
+        'window.secondaryWindowPlacement': {
+            type: 'string',
+            enum: ['originalSize', 'splitScreen', 'fullScreen'],
+            enumDescriptions: [
+                nls.localize('theia/core/secondaryWindow', 'The position and size of the widget will be the same as the original widget.'),
+                nls.localize('theia/core/secondaryWindow', 'The position and size of the widget will be half of the Theia application.'),
+                nls.localize('theia/core/secondaryWindow', 'The position and size of the widget will be the same as the Theia application.'),
+            ],
+            default: 'originalSize',
+            description: nls.localize('theia/core/secondaryWindow', 'Set the initial position and size of the extracted secondary window.'),
+        },
         'http.proxy': {
             type: 'string',
             pattern: '^https?://([^:]*(:[^@]*)?@)?([^:]+|\\[[:0-9a-fA-F]+\\])(:\\d+)?/?$|^$',

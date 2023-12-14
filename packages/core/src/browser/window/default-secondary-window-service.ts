@@ -19,6 +19,7 @@ import { WindowService } from './window-service';
 import { ExtractableWidget } from '../widgets';
 import { ApplicationShell } from '../shell';
 import { Saveable } from '../saveable';
+import { PreferenceService } from '../preferences';
 
 @injectable()
 export class DefaultSecondaryWindowService implements SecondaryWindowService {
@@ -37,6 +38,9 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
 
     @inject(WindowService)
     protected readonly windowService: WindowService;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     @postConstruct()
     init(): void {
@@ -106,27 +110,8 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
         console.log('**** widget.id: ' + widget.id);
         let options;
         if (widget.node) {
-            const clientBounds = widget.node.getBoundingClientRect();
-
-            // shift a bit right and down (enough to clear the editor's preview button)
-            const offsetX = 0; // 50 + widget.node.clientWidth;
-            const offsetY = 0;
-            const offsetHeight = 0;
-            const offsetWidth = 0;
-
-            // try to place secondary window left of the main window
-            // const offsetX = widget.node.clientWidth;
-            // const offsetY = 0;
-
-            const h = widget.node.clientHeight + offsetHeight;
-            const w = widget.node.clientWidth + offsetWidth;
-            // window.screenLeft: horizontal offset of main window (top left corner) vs desktop
-            // window.screenTop: vertical offset of main window vs desktop
-            const l = widget.node.clientLeft + window.screenLeft + clientBounds.x + offsetX;
-            const t = widget.node.clientTop + window.screenTop + clientBounds.y + offsetY;
-
-            options = `popup=1,width=${w},height=${h},left=${l},top=${t}`;
-            // TODO: add a preference?
+            const [height, width, left, top] = this.findSecondaryWindowCoordinates(widget);
+            options = `popup=1,width=${width},height=${height},left=${left},top=${top}`;
             options += ',alwaysOnTop=true';
             console.log('*** creating secondary window with options: ' + options);
         }
@@ -153,6 +138,54 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
             });
         }
         return newWindow;
+    }
+
+    protected findSecondaryWindowCoordinates(widget: ExtractableWidget): (number | undefined)[] {
+        const clientBounds = widget.node.getBoundingClientRect();
+        const preference = this.preferenceService.get('window.secondaryWindowPlacement');
+
+        let height; let width; let left; let top;
+
+        switch (preference) {
+            case 'originalSize': {
+                // shift a bit right and down (enough to clear the editor's preview button)
+                // const offsetX = 0; // 50 + widget.node.clientWidth;
+                // const offsetY = 0;
+                const offsetHeight = 50;
+                const offsetWidth = 0;
+
+                // try to place secondary window left of the main window
+                // const offsetX = widget.node.clientWidth;
+                // const offsetY = 0;
+
+                height = widget.node.clientHeight;
+                width = widget.node.clientWidth + offsetWidth;
+                // window.screenLeft: horizontal offset of main window (top left corner) vs desktop
+                // window.screenTop: vertical offset of main window vs desktop
+                left = widget.node.clientLeft + window.screenLeft + clientBounds.x;
+                top = widget.node.clientTop + window.screenTop + clientBounds.y + offsetHeight;
+
+                console.log('***height, width' + height + width);
+                console.log('***client left / screen left' + `${widget.node.clientLeft}` + `${window.screenLeft}`);
+                console.log('***client top / screen top' + `${widget.node.clientTop}` + `${window.screenTop}`);
+                break;
+            }
+            case 'splitScreen': {
+                height = window.screen.availHeight;
+                width = window.screen.availWidth / 2;
+                left = window.screen.availWidth / 2;
+                top = 0;
+                break;
+            }
+            case 'fullScreen': {
+                height = window.screen.availHeight;
+                width = window.screen.availWidth;
+                left = window.screen.availWidth;
+                top = window.screen.availHeight;
+                break;
+            }
+        }
+        return [height, width, left, top];
     }
 
     focus(win: Window): void {
