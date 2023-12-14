@@ -147,7 +147,7 @@ export function createAPIFactory(rpc: RPCProtocol): ApiFactory {
 ```
 
 In the example above the API object creates a local object that will fulfill the API contract.
-The implementation details are hidden by the object and it could be a local implementation that only lives inside the plugin host but it could also be an implementation that uses the `RPCProtocol` to communicate with the main application to retrieve additional information.
+The implementation details are hidden by the object and it could be a local implementation that only lives inside the plugin host but it could also be an implementation that uses the `RPCProtocol` to communicate with the main application to trigger changes, register functionality or retrieve information.
 
 ### Implementing Main-Ext communication
 
@@ -172,12 +172,12 @@ export interface FooExt {
 
 // Plugin host will obtain a proxy using these IDs, main application will register an implementation for it.
 export const PLUGIN_RPC_CONTEXT = {
-    FOO_MAIN: <ProxyIdentifier<FooMain>>createProxyIdentifier<FooMain>('FooMain')
+    FOO_MAIN: createProxyIdentifier<FooMain>('FooMain')
 };
 
 // Main application will obtain a proxy using these IDs, plugin host will register an implementation for it.
 export const MAIN_RPC_CONTEXT = {
-    FOO_EXT: <ProxyIdentifier<FooExt>>createProxyIdentifier<FooExt>('FooExt')
+    FOO_EXT: createProxyIdentifier<FooExt>('FooExt')
 };
 ```
 
