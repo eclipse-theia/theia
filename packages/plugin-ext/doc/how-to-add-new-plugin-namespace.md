@@ -208,13 +208,16 @@ Example `foo-main.ts`:
 ```typescript
 @injectable()
 export class FooMainImpl implements FooMain {
+    @inject(MessageService) protected messageService: MessageService;
     protected proxy: FooExt;
 
     init(rpc: RPCProtocol) {
+        // We would use this if we had a need to call back into the plugin-host/plugin
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.FOO_EXT);
     }
 
     async $getFooImpl(): Promise<Foo> {
+        this.messageService.info('We were called from the plugin-host at the behest of the plugin.');
         return new Foo();
     }
 }
@@ -224,7 +227,7 @@ export class FooMainPluginApiProvider implements MainPluginApiProvider {
     @inject(MessageService) protected messageService: MessageService;
 
     initialize(rpc: RPCProtocol, container: interfaces.Container): void {
-        this.messageService.info('We were called from an extension!');
+        this.messageService.info('Initialize RPC communication for FooMain!');
         // create a new FooMainImpl as it is not bound as singleton
         const fooMainImpl = container.get(FooMainImpl);
         fooMainImpl.init(rpc);
