@@ -20,7 +20,7 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { NotebookModelResolverService } from '@theia/notebook/lib/browser';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { NotebookCellsChangeType } from '@theia/notebook/lib/common';
-import { MAIN_RPC_CONTEXT, NotebookCellDto, NotebookCellsChangedEventDto, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain } from '../../../common';
+import { MAIN_RPC_CONTEXT, NotebookCellsChangedEventDto, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain } from '../../../common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { NotebookDto } from './notebook-dto';
 
@@ -54,23 +54,22 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
 
     handleNotebooksAdded(notebooks: readonly NotebookModel[]): void {
 
-        for (const textModel of notebooks) {
-            const disposableStore = new DisposableCollection();
-            disposableStore.push(textModel.onDidChangeContent(event => {
+        for (const notebook of notebooks) {
+            const listener = notebook.onDidChangeContent(events => {
 
                 const eventDto: NotebookCellsChangedEventDto = {
                     versionId: 1, // TODO implement version ID support
                     rawEvents: []
                 };
 
-                for (const e of event.rawEvents) {
+                for (const e of events) {
 
                     switch (e.kind) {
                         case NotebookCellsChangeType.ModelChange:
                             eventDto.rawEvents.push({
                                 kind: e.kind,
                                 changes: e.changes.map(diff =>
-                                    [diff[0], diff[1], diff[2].map(NotebookDto.toNotebookCellDto)] as [number, number, NotebookCellDto[]])
+                                    ({ ...diff, newItems: diff.newItems.map(NotebookDto.toNotebookCellDto) }))
                             });
                             break;
                         case NotebookCellsChangeType.Move:
@@ -106,20 +105,20 @@ export class NotebookDocumentsMainImpl implements NotebookDocumentsMain {
                     }
                 }
 
-                const hasDocumentMetadataChangeEvent = event.rawEvents.find(e => e.kind === NotebookCellsChangeType.ChangeDocumentMetadata);
+                const hasDocumentMetadataChangeEvent = events.find(e => e.kind === NotebookCellsChangeType.ChangeDocumentMetadata);
 
                 // using the model resolver service to know if the model is dirty or not.
                 // assuming this is the first listener it can mean that at first the model
                 // is marked as dirty and that another event is fired
                 this.proxy.$acceptModelChanged(
-                    textModel.uri.toComponents(),
+                    notebook.uri.toComponents(),
                     eventDto,
-                    textModel.isDirty(),
-                    hasDocumentMetadataChangeEvent ? textModel.metadata : undefined
+                    notebook.isDirty(),
+                    hasDocumentMetadataChangeEvent ? notebook.metadata : undefined
                 );
-            }));
+            });
 
-            this.documentEventListenersMapping.set(textModel.uri.toString(), disposableStore);
+            this.documentEventListenersMapping.set(notebook.uri.toString(), new DisposableCollection(listener));
         }
     }
 

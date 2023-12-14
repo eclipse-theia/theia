@@ -20,7 +20,7 @@ import { ApplicationShell, codicon, CommonCommands } from '@theia/core/lib/brows
 import { NotebookModel } from '../view-model/notebook-model';
 import { NotebookService } from '../service/notebook-service';
 import { CellEditType, CellKind } from '../../common';
-import { KernelPickerMRUStrategy, NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
+import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
 
@@ -66,7 +66,7 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
     protected notebookService: NotebookService;
 
     @inject(NotebookKernelQuickPickService)
-    protected notebookKernelQuickPickService: KernelPickerMRUStrategy;
+    protected notebookKernelQuickPickService: NotebookKernelQuickPickService;
 
     @inject(NotebookExecutionService)
     protected notebookExecutionService: NotebookExecutionService;

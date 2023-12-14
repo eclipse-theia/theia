@@ -77,13 +77,12 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             }));
             this.toDispose.push(this.editor.onDocumentContentChanged(e => {
                 notebookModel.cellDirtyChanged(cell, true);
-                cell.source = e.document.getText();
             }));
         }
     }
 
-    protected assignRef = (component: HTMLDivElement) => {
-        this.container = component;
+    protected setContainer(component: HTMLDivElement | null): void {
+        this.container = component ?? undefined;
     };
 
     protected handleResize = () => {
@@ -91,7 +90,10 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
     };
 
     override render(): React.ReactNode {
-        return <div className='theia-notebook-cell-editor' onResize={this.handleResize} id={this.props.cell.uri.toString()} ref={this.assignRef}></div>;
-    }
+        return <div className='theia-notebook-cell-editor' onResize={this.handleResize} id={this.props.cell.uri.toString()}
+                    ref={container => this.setContainer(container)}>
+
+        </div>;
+     }
 
 }

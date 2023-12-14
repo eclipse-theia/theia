@@ -47,7 +47,11 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
         super(props);
         this.state = { selectedCell: undefined, dragOverIndicator: undefined };
         this.toDispose.push(props.notebookModel.onDidAddOrRemoveCell(e => {
-            this.setState({ selectedCell: undefined });
+            if (e.newCellIds && e.newCellIds.length > 0) {
+                this.setState({ ...this.state, selectedCell: this.props.notebookModel.cells.find(model => model.handle === e.newCellIds![e.newCellIds!.length - 1]) });
+            } else {
+                this.setState({ ...this.state, selectedCell: this.props.notebookModel.cells.find(cell => cell === this.state.selectedCell)});
+            }
         }));
     }
 
@@ -101,7 +105,8 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
 
     protected onDragStart(event: React.DragEvent<HTMLLIElement>, index: number): void {
         event.stopPropagation();
-        event.dataTransfer.setData('text/notebook-cell-index', index.toString());
+        event.dataTransfer.setData('text/theia-notebook-cell-index', index.toString());
+        event.dataTransfer.setData('text/plain', this.props.notebookModel.cells[index].source);
     }
 
     protected onDragOver(event: React.DragEvent<HTMLLIElement>, cell: NotebookCellModel, position?: 'top' | 'bottom'): void {
@@ -112,7 +117,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
     }
 
     protected onDrop(event: React.DragEvent<HTMLLIElement>, dropElementIndex: number): void {
-        const index = parseInt(event.dataTransfer.getData('text/notebook-cell-index'));
+        const index = parseInt(event.dataTransfer.getData('text/theia-notebook-cell-index'));
         const isTargetBelow = index < dropElementIndex;
         let newIdx = this.state.dragOverIndicator?.position === 'top' ? dropElementIndex : dropElementIndex + 1;
         newIdx = isTargetBelow ? newIdx - 1 : newIdx;

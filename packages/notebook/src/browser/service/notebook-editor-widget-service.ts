@@ -86,8 +86,8 @@ export class NotebookEditorWidgetService implements Disposable {
         return this.notebookEditors.get(editorId);
     }
 
-    listNotebookEditors(): readonly NotebookEditorWidget[] {
-        return [...this.notebookEditors].map(e => e[1]);
+    getNotebookEditors(): readonly NotebookEditorWidget[] {
+        return Array.from(this.notebookEditors.values());
     }
 
 }

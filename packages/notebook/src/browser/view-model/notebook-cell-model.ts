@@ -20,12 +20,14 @@
 
 import { Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
+import { ContextKeyChangeEvent } from '@theia/core/lib/browser/context-key-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import {
-    CellInternalMetadataChangedEvent, CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata,
-    NotebookCellMetadata, NotebookCellOutputsSplice, CellOutput, CellData, NotebookCell, CellOutputItem
+    CellKind, NotebookCellCollapseState, NotebookCellInternalMetadata,
+    NotebookCellMetadata, CellOutput, CellData, CellOutputItem
 } from '../../common';
+import { NotebookCellOutputsSplice } from '../notebook-types';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
 
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
@@ -47,7 +49,28 @@ const NotebookCellContextManager = Symbol('NotebookCellContextManager');
 interface NotebookCellContextManager {
     updateCellContext(cell: NotebookCellModel, context: HTMLElement): void;
     dispose(): void;
-    onDidChangeContext: Event<void>;
+    onDidChangeContext: Event<ContextKeyChangeEvent>;
+}
+
+export interface CellInternalMetadataChangedEvent {
+    readonly lastRunSuccessChanged?: boolean;
+}
+
+export interface NotebookCell {
+    readonly uri: URI;
+    handle: number;
+    language: string;
+    cellKind: CellKind;
+    outputs: CellOutput[];
+    metadata: NotebookCellMetadata;
+    internalMetadata: NotebookCellInternalMetadata;
+    text: string;
+    onDidChangeOutputs?: Event<NotebookCellOutputsSplice>;
+    onDidChangeOutputItems?: Event<CellOutput>;
+    onDidChangeLanguage: Event<string>;
+    onDidChangeMetadata: Event<void>;
+    onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent>;
+
 }
 
 const NotebookCellModelProps = Symbol('NotebookModelProps');
@@ -144,6 +167,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     }
     set source(source: string) {
         this.props.source = source;
+        this.textModel?.textEditorModel.setValue(source);
     }
     get language(): string {
         return this.props.language;
@@ -274,6 +298,9 @@ export class NotebookCellModel implements NotebookCell, Disposable {
 
         const ref = await this.textModelService.createModelReference(this.uri);
         this.textModel = ref.object;
+        this.textModel.onDidChangeContent(e => {
+            this.props.source = e.model.getText();
+        });
         return ref.object;
     }
 }

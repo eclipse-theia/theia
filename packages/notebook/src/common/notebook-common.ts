@@ -14,11 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationToken, Command, Event, URI } from '@theia/core';
+import { Command, URI } from '@theia/core';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { UriComponents } from '@theia/core/lib/common/uri';
-import { CellRange } from './notebook-range';
 
 export enum CellKind {
     Markup = 1,
@@ -88,23 +87,6 @@ export interface NotebookCellCollapseState {
     outputCollapsed?: boolean;
 }
 
-export interface NotebookCell {
-    readonly uri: URI;
-    handle: number;
-    language: string;
-    cellKind: CellKind;
-    outputs: CellOutput[];
-    metadata: NotebookCellMetadata;
-    internalMetadata: NotebookCellInternalMetadata;
-    text: string;
-    onDidChangeOutputs?: Event<NotebookCellOutputsSplice>;
-    onDidChangeOutputItems?: Event<CellOutput>;
-    onDidChangeLanguage: Event<string>;
-    onDidChangeMetadata: Event<void>;
-    onDidChangeInternalMetadata: Event<CellInternalMetadataChangedEvent>;
-
-}
-
 export interface CellData {
     source: string;
     language: string;
@@ -113,13 +95,6 @@ export interface CellData {
     metadata?: NotebookCellMetadata;
     internalMetadata?: NotebookCellInternalMetadata;
     collapseState?: NotebookCellCollapseState;
-}
-
-export interface CellReplaceEdit {
-    editType: CellEditType.Replace;
-    index: number;
-    count: number;
-    cells: CellData[];
 }
 
 export interface NotebookDocumentMetadataEdit {
@@ -140,32 +115,11 @@ export interface NotebookContributionData {
     exclusive: boolean;
 }
 
-export interface NotebookCellStatusBarItemList {
-    items: NotebookCellStatusBarItem[];
-    dispose?(): void;
-}
-
-export interface NotebookCellStatusBarItemProvider {
-    viewType: string;
-    onDidChangeStatusBarItems?: Event<void>;
-    provideCellStatusBarItems(uri: UriComponents, index: number, token: CancellationToken): Promise<NotebookCellStatusBarItemList | undefined>;
-}
-
-export interface NotebookCellOutputsSplice {
-    start: number /* start */;
-    deleteCount: number /* delete count */;
-    newOutputs: CellOutput[];
-};
-
-export interface CellInternalMetadataChangedEvent {
-    readonly lastRunSuccessChanged?: boolean;
-}
-
-export type NotebookCellTextModelSplice<T> = [
+export interface NotebookCellTextModelSplice<T> {
     start: number,
     deleteCount: number,
     newItems: T[]
-];
+};
 
 export enum NotebookCellsChangeType {
     ModelChange = 1,
@@ -182,69 +136,12 @@ export enum NotebookCellsChangeType {
     Unknown = 100
 }
 
-export enum SelectionStateType {
-    Handle = 0,
-    Index = 1
-}
-export interface SelectionHandleState {
-    kind: SelectionStateType.Handle;
-    primary: number | null;
-    selections: number[];
-}
-
-export interface SelectionIndexState {
-    kind: SelectionStateType.Index;
-    focus: CellRange;
-    selections: CellRange[];
-}
-
-export type SelectionState = SelectionHandleState | SelectionIndexState;
-
-export interface NotebookTextModelChangedEvent {
-    readonly rawEvents: NotebookRawContentEvent[];
-    // readonly versionId: number;
-    readonly synchronous?: boolean;
-    readonly endSelectionState?: SelectionState;
-};
-
-export interface NotebookCellsInitializeEvent<T> {
-    readonly kind: NotebookCellsChangeType.Initialize;
-    readonly changes: NotebookCellTextModelSplice<T>[];
-}
-
 export interface NotebookCellsChangeLanguageEvent {
     readonly kind: NotebookCellsChangeType.ChangeCellLanguage;
     readonly index: number;
     readonly language: string;
 }
 
-export interface NotebookCellsModelChangedEvent<T> {
-    readonly kind: NotebookCellsChangeType.ModelChange;
-    readonly changes: NotebookCellTextModelSplice<T>[];
-}
-
-export interface NotebookCellsModelMoveEvent<T> {
-    readonly kind: NotebookCellsChangeType.Move;
-    readonly index: number;
-    readonly length: number;
-    readonly newIdx: number;
-    readonly cells: T[];
-}
-
-export interface NotebookOutputChangedEvent {
-    readonly kind: NotebookCellsChangeType.Output;
-    readonly index: number;
-    readonly outputs: CellOutput[];
-    readonly append: boolean;
-}
-
-export interface NotebookOutputItemChangedEvent {
-    readonly kind: NotebookCellsChangeType.OutputItem;
-    readonly index: number;
-    readonly outputId: string;
-    readonly outputItems: CellOutputItem[];
-    readonly append: boolean;
-}
 export interface NotebookCellsChangeMetadataEvent {
     readonly kind: NotebookCellsChangeType.ChangeCellMetadata;
     readonly index: number;
@@ -257,35 +154,10 @@ export interface NotebookCellsChangeInternalMetadataEvent {
     readonly internalMetadata: NotebookCellInternalMetadata;
 }
 
-export interface NotebookDocumentChangeMetadataEvent {
-    readonly kind: NotebookCellsChangeType.ChangeDocumentMetadata;
-    readonly metadata: NotebookDocumentMetadata;
-}
-
-export interface NotebookDocumentUnknownChangeEvent {
-    readonly kind: NotebookCellsChangeType.Unknown;
-}
-
 export interface NotebookCellContentChangeEvent {
     readonly kind: NotebookCellsChangeType.ChangeCellContent;
     readonly index: number;
 }
-
-export type NotebookRawContentEvent = (NotebookCellsInitializeEvent<NotebookCell> | NotebookDocumentChangeMetadataEvent | NotebookCellContentChangeEvent |
-    NotebookCellsModelChangedEvent<NotebookCell> | NotebookCellsModelMoveEvent<NotebookCell> | NotebookOutputChangedEvent | NotebookOutputItemChangedEvent |
-    NotebookCellsChangeLanguageEvent | NotebookCellsChangeMetadataEvent |
-    NotebookCellsChangeInternalMetadataEvent | NotebookDocumentUnknownChangeEvent); // & { transient: boolean };
-
-export interface NotebookModelChangedEvent {
-    readonly rawEvents: NotebookRawContentEvent[];
-    readonly versionId: number;
-    // readonly synchronous: boolean | undefined;
-    // readonly endSelectionState: ISelectionState | undefined;
-};
-
-export interface NotebookModelWillAddRemoveEvent {
-    readonly rawEvent: NotebookCellsModelChangedEvent<CellData>;
-};
 
 export enum NotebookCellExecutionState {
     Unconfirmed = 1,
@@ -321,49 +193,10 @@ export interface CellExecutionStateUpdateDto {
     isPaused?: boolean;
 }
 
-export interface CellOutputEdit {
-    editType: CellEditType.Output;
-    index: number;
-    outputs: CellOutput[];
-    append?: boolean;
-}
-
-export interface CellOutputEditByHandle {
-    editType: CellEditType.Output;
-    handle: number;
-    outputs: CellOutput[];
-    append?: boolean;
-}
-
-export interface CellOutputItemEdit {
-    editType: CellEditType.OutputItems;
-    items: CellOutputItem[];
-    outputId: string;
-    append?: boolean;
-}
-
 export interface CellMetadataEdit {
     editType: CellEditType.Metadata;
     index: number;
     metadata: NotebookCellMetadata;
-}
-
-export interface CellLanguageEdit {
-    editType: CellEditType.CellLanguage;
-    index: number;
-    language: string;
-}
-
-export interface DocumentMetadataEdit {
-    editType: CellEditType.DocumentMetadata;
-    metadata: NotebookDocumentMetadata;
-}
-
-export interface CellMoveEdit {
-    editType: CellEditType.Move;
-    index: number;
-    length: number;
-    newIdx: number;
 }
 
 export const enum CellEditType {
@@ -376,19 +209,6 @@ export const enum CellEditType {
     OutputItems = 7,
     PartialMetadata = 8,
     PartialInternalMetadata = 9,
-}
-
-export type ImmediateCellEditOperation = CellOutputEditByHandle | CellOutputItemEdit | CellPartialInternalMetadataEditByHandle; // add more later on
-export type CellEditOperation = ImmediateCellEditOperation | CellReplaceEdit | CellOutputEdit |
-    CellMetadataEdit | CellLanguageEdit | DocumentMetadataEdit | CellMoveEdit; // add more later on
-
-export type NullablePartialNotebookCellInternalMetadata = {
-    [Key in keyof Partial<NotebookCellInternalMetadata>]: NotebookCellInternalMetadata[Key] | null
-};
-export interface CellPartialInternalMetadataEditByHandle {
-    editType: CellEditType.PartialInternalMetadata;
-    handle: number;
-    internalMetadata: NullablePartialNotebookCellInternalMetadata;
 }
 
 export interface NotebookKernelSourceAction {
