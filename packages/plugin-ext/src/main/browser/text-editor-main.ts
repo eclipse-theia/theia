@@ -194,6 +194,13 @@ export class TextEditorMain implements Disposable {
         if (typeof newConfiguration.tabSize !== 'undefined') {
             newOpts.tabSize = newConfiguration.tabSize;
         }
+        if (typeof newConfiguration.indentSize !== 'undefined') {
+            if (newConfiguration.indentSize === 'tabSize') {
+                newOpts.indentSize = newConfiguration.tabSize;
+            } else if (typeof newConfiguration.indentSize == 'number') {
+                newOpts.indentSize = newConfiguration.indentSize;
+            }
+        }
         this.model.updateOptions(newOpts);
     }
 
@@ -408,6 +415,7 @@ export class TextEditorPropertiesMain {
         const modelOptions = model.getOptions();
         return {
             insertSpaces: modelOptions.insertSpaces,
+            indentSize: modelOptions.indentSize,
             tabSize: modelOptions.tabSize,
             cursorStyle,
             lineNumbers,
@@ -443,6 +451,7 @@ export class TextEditorPropertiesMain {
         return (
             a.tabSize === b.tabSize
             && a.insertSpaces === b.insertSpaces
+            && a.indentSize === b.indentSize
             && a.cursorStyle === b.cursorStyle
             && a.lineNumbers === b.lineNumbers
         );

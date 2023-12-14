@@ -20,6 +20,7 @@ import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
 import { promises as fs } from 'fs';
+import { existsSync, mkdirSync } from 'fs-extra';
 import { fork, ForkOptions } from 'child_process';
 import { DefaultTheme, FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import URI from '../common/uri';
@@ -171,6 +172,8 @@ export class ElectronMainApplication {
     @inject(TheiaElectronWindowFactory)
     protected readonly windowFactory: TheiaElectronWindowFactory;
 
+    protected isPortable = this.makePortable();
+
     protected readonly electronStore = new Storage<{
         windowstate?: TheiaBrowserWindowOptions
     }>();
@@ -194,7 +197,22 @@ export class ElectronMainApplication {
         return this._config;
     }
 
+    protected makePortable(): boolean {
+        const dataFolderPath = path.join(app.getAppPath(), 'data');
+        const appDataPath = path.join(dataFolderPath, 'app-data');
+        if (existsSync(dataFolderPath)) {
+            if (!existsSync(appDataPath)) {
+                mkdirSync(appDataPath);
+            }
+            app.setPath('userData', appDataPath);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     async start(config: FrontendApplicationConfig): Promise<void> {
+        const args = this.processArgv.getProcessArgvWithoutBin(process.argv);
         this.useNativeWindowFrame = this.getTitleBarStyle(config) === 'native';
         this._config = config;
         this.hookApplicationEvents();
@@ -206,12 +224,15 @@ export class ElectronMainApplication {
         await this.startContributions();
         await this.launch({
             secondInstance: false,
-            argv: this.processArgv.getProcessArgvWithoutBin(process.argv),
+            argv: args,
             cwd: process.cwd()
         });
     }
 
     protected getTitleBarStyle(config: FrontendApplicationConfig): 'native' | 'custom' {
+        if ('THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS' in process.env && process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS === '1') {
+            return 'custom';
+        }
         if (isOSX) {
             return 'native';
         }
@@ -256,7 +277,9 @@ export class ElectronMainApplication {
     }
 
     protected showInitialWindow(): void {
-        if (this.config.electron.showWindowEarly) {
+        if (this.config.electron.showWindowEarly &&
+            !('THEIA_ELECTRON_NO_EARLY_WINDOW' in process.env && process.env.THEIA_ELECTRON_NO_EARLY_WINDOW === '1')) {
+            console.log('Showing main window early');
             app.whenReady().then(async () => {
                 const options = await this.getLastWindowOptions();
                 this.initialWindow = await this.createWindow({ ...options });
@@ -472,7 +495,7 @@ export class ElectronMainApplication {
      */
     protected attachSaveWindowState(electronWindow: BrowserWindow): void {
         const windowStateListeners = new DisposableCollection();
-        let delayedSaveTimeout: NodeJS.Timer | undefined;
+        let delayedSaveTimeout: NodeJS.Timeout | undefined;
         const saveWindowStateDelayed = () => {
             if (delayedSaveTimeout) {
                 clearTimeout(delayedSaveTimeout);
@@ -559,8 +582,8 @@ export class ElectronMainApplication {
                 backendProcess.on('error', error => {
                     reject(error);
                 });
-                backendProcess.on('exit', () => {
-                    reject(new Error('backend process exited'));
+                backendProcess.on('exit', code => {
+                    reject(code);
                 });
                 app.on('quit', () => {
                     // Only issue a kill signal if the backend process is running.

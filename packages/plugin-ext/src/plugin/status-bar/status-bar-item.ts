@@ -40,7 +40,7 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
     private _accessibilityInformation: theia.AccessibilityInformation;
 
     private _isVisible: boolean;
-    private _timeoutHandle: NodeJS.Timer | undefined;
+    private _timeoutHandle: NodeJS.Timeout | undefined;
 
     _proxy: StatusBarMessageRegistryMain;
 

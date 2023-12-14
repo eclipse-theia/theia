@@ -108,7 +108,7 @@ import { isReadonlyArray } from '../common/arrays';
 import { DisposableCollection, disposableTimeout, Disposable as TheiaDisposable } from '@theia/core/lib/common/disposable';
 import { Severity } from '@theia/core/lib/common/severity';
 import { LinkedEditingRangeAdapter } from './languages/linked-editing-range';
-import { serializeEnterRules, serializeIndentation, serializeRegExp } from './languages-utils';
+import { serializeAutoClosingPairs, serializeEnterRules, serializeIndentation, serializeRegExp } from './languages-utils';
 import { InlayHintsAdapter } from './languages/inlay-hints';
 import { InlineCompletionAdapter, InlineCompletionAdapterBase } from './languages/inline-completion';
 import { DocumentDropEditAdapter } from './languages/document-drop-edit';
@@ -208,7 +208,8 @@ export class LanguagesExtImpl implements LanguagesExt {
             comments: configuration.comments,
             onEnterRules: serializeEnterRules(configuration.onEnterRules),
             wordPattern: serializeRegExp(configuration.wordPattern),
-            indentationRules: serializeIndentation(configuration.indentationRules)
+            indentationRules: serializeIndentation(configuration.indentationRules),
+            autoClosingPairs: serializeAutoClosingPairs(configuration.autoClosingPairs)
         };
 
         this.proxy.$setLanguageConfiguration(callId, language, config);

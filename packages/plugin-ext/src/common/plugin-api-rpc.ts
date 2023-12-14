@@ -296,6 +296,7 @@ export interface TerminalServiceExt {
     $provideTerminalLinks(line: string, terminalId: string, token: theia.CancellationToken): Promise<ProvidedTerminalLink[]>;
     $handleTerminalLink(link: ProvidedTerminalLink): Promise<void>;
     getEnvironmentVariableCollection(extensionIdentifier: string): theia.GlobalEnvironmentVariableCollection;
+    $setShell(shell: string): void;
 }
 export interface OutputChannelRegistryExt {
     createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel,
@@ -1124,6 +1125,7 @@ export interface Selection {
 
 export interface TextEditorConfiguration {
     tabSize: number;
+    indentSize: number;
     insertSpaces: boolean;
     cursorStyle: TextEditorCursorStyle;
     lineNumbers: TextEditorLineNumbersStyle;
@@ -1131,6 +1133,7 @@ export interface TextEditorConfiguration {
 
 export interface TextEditorConfigurationUpdate {
     tabSize?: number | 'auto';
+    indentSize?: number | 'tabSize';
     insertSpaces?: boolean | 'auto';
     cursorStyle?: TextEditorCursorStyle;
     lineNumbers?: TextEditorLineNumbersStyle;
@@ -1436,12 +1439,19 @@ export interface SerializedEnterAction {
     removeText?: number;
 }
 
+export interface SerializedAutoClosingPair {
+    open: string;
+    close: string;
+    notIn?: string[];
+}
+
 export interface SerializedLanguageConfiguration {
     comments?: CommentRule;
     brackets?: CharacterPair[];
     wordPattern?: SerializedRegExp;
     indentationRules?: SerializedIndentationRule;
     onEnterRules?: SerializedOnEnterRule[];
+    autoClosingPairs?: SerializedAutoClosingPair[]
 }
 
 export interface CodeActionDto {
@@ -2332,7 +2342,7 @@ export interface NotebookOutputItemDto {
 export interface NotebookOutputDto {
     outputId: string;
     items: NotebookOutputItemDto[];
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 export interface NotebookCellDataDto {

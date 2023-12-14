@@ -16,6 +16,7 @@
 
 export * from './theia-about-dialog';
 export * from './theia-app';
+export * from './theia-app-loader';
 export * from './theia-context-menu';
 export * from './theia-dialog';
 export * from './theia-editor';

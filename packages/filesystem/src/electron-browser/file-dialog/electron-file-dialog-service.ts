@@ -31,6 +31,8 @@ import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } fr
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { OpenDialogOptions, SaveDialogOptions } from '../../electron-common/electron-api';
 
+import '@theia/core/lib/electron-common/electron-api';
+
 @injectable()
 export class ElectronFileDialogService extends DefaultFileDialogService {
 
@@ -39,40 +41,46 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     override async showOpenDialog(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<URI> | undefined>;
     override async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<URI | undefined>;
     override async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<URI> | undefined> {
-        const rootNode = await this.getRootNode(folder);
-        if (rootNode) {
-            const filePaths = await window.electronTheiaFilesystem.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props));
-            if (!filePaths || filePaths.length === 0) {
-                return undefined;
-            }
+        if (window.electronTheiaCore.useNativeElements) {
+            const rootNode = await this.getRootNode(folder);
+            if (rootNode) {
+                const filePaths = await window.electronTheiaFilesystem.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props));
+                if (!filePaths || filePaths.length === 0) {
+                    return undefined;
+                }
 
-            const uris = filePaths.map(path => FileUri.create(path));
-            const canAccess = await this.canRead(uris);
-            const result = canAccess ? uris.length === 1 ? uris[0] : uris : undefined;
-            return result;
+                const uris = filePaths.map(path => FileUri.create(path));
+                const canAccess = await this.canRead(uris);
+                const result = canAccess ? uris.length === 1 ? uris[0] : uris : undefined;
+                return result;
+            }
+            return undefined;
         }
-        return undefined;
+        return super.showOpenDialog(props, folder);
     }
 
     override async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
-        const rootNode = await this.getRootNode(folder);
-        if (rootNode) {
-            const filePath = await window.electronTheiaFilesystem.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props));
+        if (window.electronTheiaCore.useNativeElements) {
+            const rootNode = await this.getRootNode(folder);
+            if (rootNode) {
+                const filePath = await window.electronTheiaFilesystem.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props));
 
-            if (!filePath) {
-                return undefined;
+                if (!filePath) {
+                    return undefined;
+                }
+
+                const uri = FileUri.create(filePath);
+                const exists = await this.fileService.exists(uri);
+                if (!exists) {
+                    return uri;
+                }
+
+                const canWrite = await this.canReadWrite(uri);
+                return canWrite ? uri : undefined;
             }
-
-            const uri = FileUri.create(filePath);
-            const exists = await this.fileService.exists(uri);
-            if (!exists) {
-                return uri;
-            }
-
-            const canWrite = await this.canReadWrite(uri);
-            return canWrite ? uri : undefined;
+            return undefined;
         }
-        return undefined;
+        return super.showSaveDialog(props, folder);
     }
 
     protected async canReadWrite(uris: MaybeArray<URI>): Promise<boolean> {
@@ -107,7 +115,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
         result.title = props.title;
         result.buttonLabel = props.openLabel;
         result.maxWidth = props.maxWidth;
-        result.modal = props.modal;
+        result.modal = props.modal ?? true;
         result.openFiles = props.canSelectFiles;
         result.openFolders = props.canSelectFolders;
         result.selectMany = props.canSelectMany;
@@ -141,7 +149,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
         result.title = props.title;
         result.buttonLabel = props.saveLabel;
         result.maxWidth = props.maxWidth;
-        result.modal = props.modal;
+        result.modal = props.modal ?? true;
 
         if (props.filters) {
             result.filters = [];

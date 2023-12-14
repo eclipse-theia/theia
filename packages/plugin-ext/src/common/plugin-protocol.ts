@@ -308,6 +308,7 @@ export interface PluginPackageLanguageContribution {
     aliases?: string[];
     mimetypes?: string[];
     configuration?: string;
+    icon?: IconUrl;
 }
 
 export interface PluginPackageLanguageContributionConfiguration {
@@ -428,7 +429,7 @@ export interface PluginDeployerStartContext {
 export const PluginDeployer = Symbol('PluginDeployer');
 export interface PluginDeployer {
 
-    start(): void;
+    start(): Promise<void>;
 
 }
 
@@ -715,6 +716,10 @@ export interface LanguageContribution {
     aliases?: string[];
     mimetypes?: string[];
     configuration?: LanguageConfiguration;
+    /**
+     * @internal
+     */
+    icon?: IconUrl;
 }
 
 export interface RegExpOptions {
@@ -743,7 +748,9 @@ export interface DebuggerContribution extends PlatformSpecificAdapterContributio
     enableBreakpointsFor?: {
         languageIds: string[]
     },
-    configurationAttributes?: IJSONSchema[],
+    configurationAttributes?: {
+        [request: string]: IJSONSchema
+    },
     configurationSnippets?: IJSONSchemaSnippet[],
     variables?: ScopeMap,
     adapterExecutableCommand?: string

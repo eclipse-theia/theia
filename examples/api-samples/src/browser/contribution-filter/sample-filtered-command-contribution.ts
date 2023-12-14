@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry, FilterContribution, ContributionFilterRegistry, bindContribution, Filter } from '@theia/core/lib/common';
+import { Command, CommandContribution, CommandRegistry, ContributionFilterRegistry, FilterContribution, bindContribution } from '@theia/core/lib/common';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 
 export namespace SampleFilteredCommand {
@@ -58,8 +58,8 @@ export class SampleFilterAndCommandContribution implements FilterContribution, C
             contrib => contrib.constructor !== this.constructor
         ]);
         registry.addFilters('*', [
-            // filter a contribution based on its class name
-            filterClassName(name => name !== 'SampleFilteredCommandContribution')
+            // filter a contribution based on its class type
+            contrib => !(contrib instanceof SampleFilteredCommandContribution)
         ]);
     }
 }
@@ -68,13 +68,4 @@ export function bindSampleFilteredCommandContribution(bind: interfaces.Bind): vo
     bind(CommandContribution).to(SampleFilteredCommandContribution).inSingletonScope();
     bind(SampleFilterAndCommandContribution).toSelf().inSingletonScope();
     bindContribution(bind, SampleFilterAndCommandContribution, [CommandContribution, FilterContribution]);
-}
-
-function filterClassName(filter: Filter<string>): Filter<Object> {
-    return object => {
-        const className = object?.constructor?.name;
-        return className
-            ? filter(className)
-            : false;
-    };
 }

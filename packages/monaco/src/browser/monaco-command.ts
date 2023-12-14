@@ -265,10 +265,12 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             ({
                 label: size === tabSize ? size + '   ' + nls.localizeByDefault('Configured Tab Size') : size.toString(),
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                execute: () => model.updateOptions({
-                    tabSize: size || tabSize,
-                    insertSpaces: useSpaces
-                })
+                execute: () =>
+                    model.updateOptions({
+                        tabSize: size || tabSize,
+                        indentSize: size || tabSize,
+                        insertSpaces: useSpaces
+                    })
             })
             );
             this.quickInputService?.showQuickPick(tabSizeOptions, { placeholder: nls.localizeByDefault('Select Tab Size for Current File') });

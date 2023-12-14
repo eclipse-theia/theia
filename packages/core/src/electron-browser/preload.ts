@@ -207,6 +207,7 @@ const api: TheiaCoreAPI = {
     sendData: data => {
         ipcRenderer.send(CHANNEL_IPC_CONNECTION, data);
     },
+    useNativeElements: !('THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS' in process.env && process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS === '1')
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

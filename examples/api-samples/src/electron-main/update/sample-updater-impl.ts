@@ -22,7 +22,7 @@ import { SampleUpdater, SampleUpdaterClient, UpdateStatus } from '../../common/u
 export class SampleUpdaterImpl implements SampleUpdater, ElectronMainApplicationContribution {
 
     protected clients: Array<SampleUpdaterClient> = [];
-    protected inProgressTimer: NodeJS.Timer | undefined;
+    protected inProgressTimer: NodeJS.Timeout | undefined;
     protected available = false;
 
     async checkForUpdates(): Promise<{ status: UpdateStatus }> {

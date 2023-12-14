@@ -11,15 +11,17 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import test, { Page } from '@playwright/test';
+import { PlaywrightTestConfig } from '@playwright/test';
 
-export let page: Page;
+import baseConfig from './playwright.config';
 
-test.beforeAll(async ({ browser }) => {
-    page = await browser.newPage();
-});
+const debugConfig: PlaywrightTestConfig = {
+    ...baseConfig,
+    workers: 1,
+    timeout: 15000000
+};
 
-export default test;
+export default debugConfig;

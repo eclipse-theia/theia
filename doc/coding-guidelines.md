@@ -445,12 +445,11 @@ this.logger.info(``);
 console.info(``)
 ```
 > Why? All calls to console are intercepted on the frontend and backend and then forwarded to an `ILogger` instance already. The log level can be configured from the CLI: `theia start --log-level=debug`.
-> 
 
 ## "To Do" Tags
 There are situations where we can't properly implement some functionality at the time we merge a PR. In those cases, it is sometimes good practice to leave an indication that something needs to be fixed later in the code. This can be done by putting a "tag" string in a comment. This allows us to find the places we need to fix again later. Currently, we use two "standard" tags in Theia:
- * `@stubbed`  
-   This tag is used in VS Code API implementations. Sometimes we need an implementation of an API in order for VS Code extensions to start up correctly, but we can't provide a proper  implementation of the underlying feature at this time. This might be because a certain feature has no corresponding UI in Theia or becuase we do not have the resources to provide a proper implementation.  
+ * `@stubbed`
+   This tag is used in VS Code API implementations. Sometimes we need an implementation of an API in order for VS Code extensions to start up correctly, but we can't provide a proper  implementation of the underlying feature at this time. This might be because a certain feature has no corresponding UI in Theia or because we do not have the resources to provide a proper implementation.
 Using the `@stubbed` tag in a JSDoc comment will mark the element as "stubbed" on the [API status page](https://eclipse-theia.github.io/vscode-theia-comparator/status.html)
- * `@monaco-uplift`  
-   Use this tag when some functionality can be added or needs to be fixed when we move to a newer version of the monaco editor. If you know which minimum version of Monaco we need, you can add that as a reminder. 
+ * `@monaco-uplift`
+   Use this tag when some functionality can be added or needs to be fixed when we move to a newer version of the monaco editor. If you know which minimum version of Monaco we need, you can add that as a reminder.

@@ -4,13 +4,12 @@
     "composite": true,
     "rootDir": "src",
     "outDir": "lib",
-    "baseUrl": ".",
     "paths": {
       "mv": [
-        "src/typings/mv"
+        "./src/typings/mv"
       ],
       "trash": [
-        "src/typings/trash"
+        "./src/typings/trash"
       ]
     }
   },

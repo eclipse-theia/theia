@@ -14,22 +14,35 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaApp } from '../theia-app';
+import { PreferenceIds, TheiaPreferenceView } from '../theia-preference-view';
 import { DOT_FILES_FILTER, TheiaExplorerView } from '../theia-explorer-view';
 import { TheiaWorkspace } from '../theia-workspace';
-import test, { page } from './fixtures/theia-fixture';
-
-let app: TheiaApp;
-let explorer: TheiaExplorerView;
 
 test.describe('Theia Explorer View', () => {
 
-    test.beforeAll(async () => {
+    let app: TheiaApp;
+    let explorer: TheiaExplorerView;
+
+    test.beforeAll(async ({ playwright, browser }) => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
-        app = await TheiaApp.load(page, ws);
+        app = await TheiaAppLoader.load({ playwright, browser }, ws);
+
+        if (app.isElectron) {
+            // set trash preference to off
+            const preferenceView = await app.openPreferences(TheiaPreferenceView);
+            await preferenceView.setBooleanPreferenceById(PreferenceIds.Files.EnableTrash, false);
+            await preferenceView.close();
+        }
+
         explorer = await app.openView(TheiaExplorerView);
         await explorer.waitForVisibleFileNodes();
+    });
+
+    test.afterAll(async () => {
+        await app.page.close();
     });
 
     test('should be visible and active after being opened', async () => {
@@ -131,7 +144,9 @@ test.describe('Theia Explorer View', () => {
         const menuItems = await menu.visibleMenuItems();
         expect(menuItems).toContain('Open');
         expect(menuItems).toContain('Delete');
-        expect(menuItems).toContain('Download');
+        if (!app.isElectron) {
+            expect(menuItems).toContain('Download');
+        }
 
         await menu.close();
         expect(await menu.isOpen()).toBe(false);
@@ -184,6 +199,13 @@ test.describe('Theia Explorer View', () => {
         await explorer.waitForFileNodesToDecrease(fileStatElements.length);
         const updatedFileStatElements = await explorer.visibleFileStatNodes();
         expect(updatedFileStatElements.length).toBe(fileStatElements.length - 1);
+    });
+
+    test('open "sample.txt" via the context menu', async () => {
+        expect(await explorer.existsFileNode('sample.txt')).toBe(true);
+        await explorer.clickContextMenuItem('sample.txt', ['Open']);
+        const span = await app.page.waitForSelector('span:has-text("content line 2")');
+        expect(await span.isVisible()).toBe(true);
     });
 
 });

@@ -17,24 +17,27 @@ import * as React from '@theia/core/shared/react';
 import { ACTION_ITEM } from '@theia/core/lib/browser';
 import { NotebookCellToolbarItem } from './notebook-cell-toolbar-factory';
 import { DisposableCollection, Event } from '@theia/core';
+import { ContextKeyChangeEvent } from '@theia/core/lib/browser/context-key-service';
 
 export interface NotebookCellToolbarProps {
     getMenuItems: () => NotebookCellToolbarItem[];
-    onContextKeysChanged: Event<void>;
+    onContextKeysChanged: Event<ContextKeyChangeEvent>;
 }
 
 interface NotebookCellToolbarState {
     inlineItems: NotebookCellToolbarItem[];
 }
 
-abstract class NotebookCellActionItems extends React.Component<NotebookCellToolbarProps, NotebookCellToolbarState> {
+abstract class NotebookCellActionBar extends React.Component<NotebookCellToolbarProps, NotebookCellToolbarState> {
 
     protected toDispose = new DisposableCollection();
 
     constructor(props: NotebookCellToolbarProps) {
         super(props);
         this.toDispose.push(props.onContextKeysChanged(e => {
-            this.setState({ inlineItems: this.props.getMenuItems() });
+            if (this.props.getMenuItems().some(item => item.contextKeys ? e.affects(item.contextKeys) : false)) {
+                this.setState({ inlineItems: this.props.getMenuItems() });
+            }
         }));
         this.state = { inlineItems: this.props.getMenuItems() };
     }
@@ -49,7 +52,7 @@ abstract class NotebookCellActionItems extends React.Component<NotebookCellToolb
 
 }
 
-export class NotebookCellToolbar extends NotebookCellActionItems {
+export class NotebookCellToolbar extends NotebookCellActionBar {
 
     override render(): React.ReactNode {
         return <div className='theia-notebook-cell-toolbar'>
@@ -59,7 +62,7 @@ export class NotebookCellToolbar extends NotebookCellActionItems {
 
 }
 
-export class NotebookCellSidebar extends NotebookCellActionItems {
+export class NotebookCellSidebar extends NotebookCellActionBar {
 
     override render(): React.ReactNode {
         return <div className='theia-notebook-cell-sidebar'>

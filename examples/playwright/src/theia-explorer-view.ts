@@ -182,6 +182,7 @@ export class TheiaExplorerView extends TheiaView {
                 console.debug('Waiting for clicked tree node to be selected: ' + filePath);
             }
         }
+        await this.page.waitForSelector(this.treeNodeSelector(filePath) + '.theia-mod-selected');
     }
 
     async isTreeNodeSelected(filePath: string): Promise<boolean> {

@@ -25,6 +25,10 @@ import { Language, LanguageService } from '@theia/core/lib/browser/language-serv
 import { MonacoMarkerCollection } from './monaco-marker-collection';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import * as monaco from '@theia/monaco-editor-core';
+import { FileStat } from '@theia/filesystem/lib/common/files';
+import { FileStatNode } from '@theia/filesystem/lib/browser';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 
 export interface WorkspaceSymbolProvider {
     provideWorkspaceSymbols(params: WorkspaceSymbolParams, token: CancellationToken): MaybePromise<SymbolInformation[] | undefined>;
@@ -32,11 +36,12 @@ export interface WorkspaceSymbolProvider {
 }
 
 @injectable()
-export class MonacoLanguages implements LanguageService {
+export class MonacoLanguages extends LanguageService {
 
     readonly workspaceSymbolProviders: WorkspaceSymbolProvider[] = [];
 
     protected readonly markers = new Map<string, MonacoMarkerCollection>();
+    protected readonly icons = new Map<string, string>();
 
     @inject(ProblemManager) protected readonly problemManager: ProblemManager;
     @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter;
@@ -73,16 +78,68 @@ export class MonacoLanguages implements LanguageService {
         });
     }
 
-    get languages(): Language[] {
+    override get languages(): Language[] {
         return [...this.mergeLanguages(monaco.languages.getLanguages()).values()];
     }
 
-    getLanguage(languageId: string): Language | undefined {
+    override getLanguage(languageId: string): Language | undefined {
         return this.mergeLanguages(monaco.languages.getLanguages().filter(language => language.id === languageId)).get(languageId);
+    }
+
+    override detectLanguage(obj: unknown): Language | undefined {
+        if (obj === undefined) {
+            return undefined;
+        }
+        if (typeof obj === 'string') {
+            return this.detectLanguageByIdOrName(obj) ?? this.detectLanguageByURI(new URI(obj));
+        }
+        if (obj instanceof URI) {
+            return this.detectLanguageByURI(obj);
+        }
+        if (FileStat.is(obj)) {
+            return this.detectLanguageByURI(obj.resource);
+        }
+        if (FileStatNode.is(obj)) {
+            return this.detectLanguageByURI(obj.uri);
+        }
+        return undefined;
+    }
+
+    protected detectLanguageByIdOrName(obj: string): Language | undefined {
+        const languageById = this.getLanguage(obj);
+        if (languageById) {
+            return languageById;
+        }
+
+        const languageId = this.getLanguageIdByLanguageName(obj);
+        return languageId ? this.getLanguage(languageId) : undefined;
+    }
+
+    protected detectLanguageByURI(uri: URI): Language | undefined {
+        const languageId = StandaloneServices.get(ILanguageService).guessLanguageIdByFilepathOrFirstLine(uri['codeUri']);
+        return languageId ? this.getLanguage(languageId) : undefined;
     }
 
     getExtension(languageId: string): string | undefined {
         return this.getLanguage(languageId)?.extensions.values().next().value;
+    }
+
+    override registerIcon(languageId: string, iconClass: string): Disposable {
+        this.icons.set(languageId, iconClass);
+        this.onDidChangeIconEmitter.fire({ languageId });
+        return Disposable.create(() => {
+            this.icons.delete(languageId);
+            this.onDidChangeIconEmitter.fire({ languageId });
+        });
+    }
+
+    override getIcon(obj: unknown): string | undefined {
+        const language = this.detectLanguage(obj);
+        return language ? this.icons.get(language.id) : undefined;
+    }
+
+    getLanguageIdByLanguageName(languageName: string): string | undefined {
+        return monaco.languages.getLanguages().find(language => language.aliases?.includes(languageName))?.id;
     }
 
     protected mergeLanguages(registered: monaco.languages.ILanguageExtensionPoint[]): Map<string, Mutable<Language>> {

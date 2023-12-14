@@ -67,8 +67,9 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
         if (editor && editorModel) {
             const modelOptions = editorModel.getOptions();
             const tabSize = modelOptions.tabSize;
+            const indentSize = modelOptions.indentSize;
             const spaceOrTabSizeMessage = modelOptions.insertSpaces
-                ? nls.localizeByDefault('Spaces: {0}', tabSize)
+                ? nls.localizeByDefault('Spaces: {0}', indentSize)
                 : nls.localizeByDefault('Tab Size: {0}', tabSize);
             this.statusBar.setElement('editor-status-tabbing-config', {
                 text: spaceOrTabSizeMessage,

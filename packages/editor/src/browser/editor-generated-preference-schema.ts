@@ -598,7 +598,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("`cursorSurroundingLines` is enforced only when triggered via the keyboard or API."),
             nls.localizeByDefault("`cursorSurroundingLines` is enforced always.")
         ],
-        "description": nls.localizeByDefault("Controls when `cursorSurroundingLines` should be enforced."),
+        "description": nls.localizeByDefault("Controls when `#cursorSurroundingLines#` should be enforced."),
         "type": "string",
         "enum": [
             "default",

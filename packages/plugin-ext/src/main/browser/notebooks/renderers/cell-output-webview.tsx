@@ -20,7 +20,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
-import { NotebookRendererMessagingService, CellOutputWebview, NotebookRendererRegistry, NotebookEditorWidgetService } from '@theia/notebook/lib/browser';
+import { NotebookRendererMessagingService, CellOutputWebview, NotebookRendererRegistry, NotebookEditorWidgetService, NotebookCellOutputsSplice } from '@theia/notebook/lib/browser';
 import { v4 } from 'uuid';
 import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import { WebviewWidget } from '../../webview/webview';
@@ -28,7 +28,7 @@ import { Message, WidgetManager } from '@theia/core/lib/browser';
 import { outputWebviewPreload, PreloadContext } from './output-webview-internal';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
 import { ChangePreferredMimetypeMessage, FromWebviewMessage, OutputChangedMessage } from './webview-communication';
-import { CellUri, NotebookCellOutputsSplice } from '@theia/notebook/lib/common';
+import { CellUri } from '@theia/notebook/lib/common';
 import { Disposable, DisposableCollection, nls, QuickPickService } from '@theia/core';
 import { NotebookCellOutputModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-output-model';
 
@@ -76,7 +76,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
     protected async init(): Promise<void> {
         this.cell.onDidChangeOutputs(outputChange => this.updateOutput(outputChange));
         this.cell.onDidChangeOutputItems(output => {
-            this.updateOutput({start: this.cell.outputs.findIndex(o => o.getData().outputId === o.outputId), deleteCount: 1, newOutputs: [output]});
+            this.updateOutput({start: this.cell.outputs.findIndex(o => o.outputId === output.outputId), deleteCount: 1, newOutputs: [output]});
         });
 
         this.webviewWidget = await this.widgetManager.getOrCreateWidget(WebviewWidget.FACTORY_ID, { id: this.id });

@@ -27,4 +27,5 @@ export function preload(): void {
     console.log('exposing theia filesystem electron api');
 
     contextBridge.exposeInMainWorld('electronTheiaFilesystem', api);
+
 }

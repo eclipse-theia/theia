@@ -322,6 +322,7 @@ button.secondary[disabled],
 | Import children style files
 |----------------------------------------------------------------------------*/
 
+@import "./os.css";
 @import "./dockpanel.css";
 @import "./dialog.css";
 @import "./menus.css";

@@ -14,23 +14,27 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaAboutDialog } from '../theia-about-dialog';
 import { TheiaApp } from '../theia-app';
 import { TheiaExplorerView } from '../theia-explorer-view';
 import { TheiaNotificationIndicator } from '../theia-notification-indicator';
 import { TheiaNotificationOverlay } from '../theia-notification-overlay';
 import { TheiaQuickCommandPalette } from '../theia-quick-command-palette';
-import test, { page } from './fixtures/theia-fixture';
-
-let app: TheiaApp;
-let quickCommand: TheiaQuickCommandPalette;
 
 test.describe('Theia Quick Command', () => {
 
-    test.beforeAll(async () => {
-        app = await TheiaApp.load(page);
+    let app: TheiaApp;
+    let quickCommand: TheiaQuickCommandPalette;
+
+    test.beforeAll(async ({ playwright, browser }) => {
+        app = await TheiaAppLoader.load({ playwright, browser });
         quickCommand = app.quickCommandPalette;
+    });
+
+    test.afterAll(async () => {
+        await app.page.close();
     });
 
     test('should show quick command palette', async () => {

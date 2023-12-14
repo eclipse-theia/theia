@@ -14,25 +14,29 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect } from '@playwright/test';
-import { DefaultPreferences, PreferenceIds, TheiaPreferenceView } from '../theia-preference-view';
+import { expect, test } from '@playwright/test';
 import { TheiaApp } from '../theia-app';
+import { TheiaAppLoader } from '../theia-app-loader';
+import { DefaultPreferences, PreferenceIds, TheiaPreferenceView } from '../theia-preference-view';
 import { TheiaTextEditor } from '../theia-text-editor';
 import { TheiaWorkspace } from '../theia-workspace';
-import test, { page } from './fixtures/theia-fixture';
-
-let app: TheiaApp;
 
 test.describe('Theia Text Editor', () => {
 
-    test.beforeAll(async () => {
+    let app: TheiaApp;
+
+    test.beforeAll(async ({ playwright, browser }) => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
-        app = await TheiaApp.load(page, ws);
+        app = await TheiaAppLoader.load({ playwright, browser }, ws);
 
         // set auto-save preference to off
         const preferenceView = await app.openPreferences(TheiaPreferenceView);
         await preferenceView.setOptionsPreferenceById(PreferenceIds.Editor.AutoSave, DefaultPreferences.Editor.AutoSave.Off);
         await preferenceView.close();
+    });
+
+    test.afterAll(async () => {
+        await app.page.close();
     });
 
     test('should be visible and active after opening "sample.txt"', async () => {

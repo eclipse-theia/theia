@@ -81,6 +81,10 @@ interface NlsInfo {
 
 class LocalizationKeyProvider {
 
+    private preferredKeys = new Set([
+        // We only want the `File` translation used in the menu
+        'vscode/fileActions.contribution/filesCategory'
+    ]);
     private data = this.buildData();
 
     get(defaultValue: string): string | undefined {
@@ -100,9 +104,16 @@ class LocalizationKeyProvider {
         const keys: NlsKeys = bundles.keys;
         const messages: Record<string, string[]> = bundles.messages;
         const data = new Map<string, string>();
+        const foundPreferredKeys = new Set<string>();
         const keysAndMessages = this.buildKeyMessageTuples(keys, messages);
         for (const { key, message } of keysAndMessages) {
-            data.set(message, key);
+            if (!foundPreferredKeys.has(message)) {
+                data.set(message, key);
+                if (this.preferredKeys.has(key)) {
+                    // Prevent messages with preferred keys to be overridden
+                    foundPreferredKeys.add(message);
+                }
+            }
         }
         // Second pass adds each message again in upper case, if the message doesn't already exist in upper case
         // The second pass is needed to not accidentally override any translations which actually use the upper case message

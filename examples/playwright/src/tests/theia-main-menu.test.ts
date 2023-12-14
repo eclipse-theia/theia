@@ -14,19 +14,25 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect } from '@playwright/test';
-import { OSUtil } from '../util';
+import { expect, test } from '@playwright/test';
 import { TheiaApp } from '../theia-app';
+import { TheiaAppLoader } from '../theia-app-loader';
+import { TheiaAboutDialog } from '../theia-about-dialog';
 import { TheiaMenuBar } from '../theia-main-menu';
-import test, { page } from './fixtures/theia-fixture';
-
-let menuBar: TheiaMenuBar;
+import { OSUtil } from '../util';
 
 test.describe('Theia Main Menu', () => {
 
-    test.beforeAll(async () => {
-        const app = await TheiaApp.load(page);
+    let app: TheiaApp;
+    let menuBar: TheiaMenuBar;
+
+    test.beforeAll(async ({ playwright, browser }) => {
+        app = await TheiaAppLoader.load({ playwright, browser });
         menuBar = app.menuBar;
+    });
+
+    test.afterAll(async () => {
+        await app.page.close();
     });
 
     test('should show the main menu bar', async () => {
@@ -57,7 +63,7 @@ test.describe('Theia Main Menu', () => {
         expect(label).toBe('New Text File');
 
         const shortCut = await menuItem?.shortCut();
-        expect(shortCut).toBe(OSUtil.isMacOS ? '⌥ N' : 'Alt+N');
+        expect(shortCut).toBe(OSUtil.isMacOS ? '⌥ N' : app.isElectron ? 'Ctrl+N' : 'Alt+N');
 
         const hasSubmenu = await menuItem?.hasSubmenu();
         expect(hasSubmenu).toBe(false);
@@ -84,6 +90,23 @@ test.describe('Theia Main Menu', () => {
         const mainMenu = await menuBar.openMenu('File');
         await mainMenu.close();
         expect(await mainMenu.isOpen()).toBe(false);
+    });
+
+    test('open about dialog using menu', async () => {
+        await (await menuBar.openMenu('Help')).clickMenuItem('About');
+        const aboutDialog = new TheiaAboutDialog(app);
+        expect(await aboutDialog.isVisible()).toBe(true);
+        await aboutDialog.page.getByRole('button', { name: 'OK' }).click();
+        expect(await aboutDialog.isVisible()).toBe(false);
+    });
+
+    test('open file via file menu and cancel', async () => {
+        const openFileEntry = app.isElectron ? 'Open File...' : 'Open...';
+        await (await menuBar.openMenu('File')).clickMenuItem(openFileEntry);
+        const fileDialog = await app.page.waitForSelector('div[class="dialogBlock"]');
+        expect(await fileDialog.isVisible()).toBe(true);
+        await app.page.locator('#theia-dialog-shell').getByRole('button', { name: 'Cancel' }).click();
+        expect(await fileDialog.isVisible()).toBe(false);
     });
 
 });

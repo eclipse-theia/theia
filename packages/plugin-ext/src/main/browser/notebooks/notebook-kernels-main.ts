@@ -27,7 +27,7 @@ import { CellExecution, NotebookExecutionStateService, NotebookKernelChangeEvent
 import { combinedDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { interfaces } from '@theia/core/shared/inversify';
 import { NotebookKernelSourceAction } from '@theia/notebook/lib/common';
-import { NotebookDto } from '../../../plugin/type-converters';
+import { NotebookDto } from './notebook-dto';
 
 abstract class NotebookKernel {
     private readonly onDidChangeEmitter = new Emitter<NotebookKernelChangeEvent>();

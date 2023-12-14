@@ -1910,6 +1910,14 @@ export module '@theia/plugin' {
         tabSize?: number | string;
 
         /**
+         * The number of spaces to insert when {@link TextEditorOptions.insertSpaces insertSpaces} is true.
+         *
+         * When getting a text editor's options, this property will always be a number (resolved).
+         * When setting a text editor's options, this property is optional and it can be a number or `"tabSize"`.
+         */
+        indentSize?: number | string;
+
+        /**
          * When pressing Tab insert {@link TextEditorOptions.tabSize n} spaces.
          * When getting a text editor's options, this property will always be a boolean (resolved).
          * When setting a text editor's options, this property is optional and it can be a boolean or `"auto"`.
@@ -7721,6 +7729,12 @@ export module '@theia/plugin' {
         export const isTelemetryEnabled: boolean;
 
         /**
+         * An {@link Event} which fires when the default shell changes. This fires with the new
+         * shell path.
+         */
+        export const onDidChangeShell: Event<string>;
+
+        /**
          * An {@link Event} which fires when the user enabled or disables telemetry.
          * `true` if the user has enabled telemetry or `false` if the user has disabled telemetry.
          */
@@ -7747,7 +7761,9 @@ export module '@theia/plugin' {
         export const remoteName: string | undefined;
 
         /**
-         * The detected default shell for the extension host.
+         * The detected default shell for the extension host, this is overridden by the
+         * `terminal.integrated.defaultProfile` setting for the extension host's platform. Note that in
+         * environments that do not support a shell the value is the empty string.
          */
         export const shell: string;
 
@@ -8038,6 +8054,43 @@ export module '@theia/plugin' {
         unIndentedLinePattern?: RegExp;
     }
 
+    export enum SyntaxTokenType {
+        /**
+         * Everything except tokens that are part of comments, string literals and regular expressions.
+         */
+        Other = 0,
+        /**
+         * A comment.
+         */
+        Comment = 1,
+        /**
+         * A string literal.
+         */
+        String = 2,
+        /**
+         * A regular expression.
+         */
+        RegEx = 3
+    }
+
+    /**
+     * Describes pairs of strings where the close string will be automatically inserted when typing the opening string.
+     */
+    export interface AutoClosingPair {
+        /**
+         * The string that will trigger the automatic insertion of the closing string.
+         */
+        open: string;
+        /**
+         * The closing string that will be automatically inserted when typing the opening string.
+         */
+        close: string;
+        /**
+         * A set of tokens where the pair should not be auto closed.
+         */
+        notIn?: SyntaxTokenType[];
+    }
+
     /**
      * The language configuration interfaces defines the contract between extensions
      * and various editor features, like automatic bracket insertion, automatic indentation etc.
@@ -8077,6 +8130,10 @@ export module '@theia/plugin' {
          */
         onEnterRules?: OnEnterRule[];
 
+        /**
+         * The language's auto closing pairs.
+         */
+        autoClosingPairs?: AutoClosingPair[];
     }
 
     /**
@@ -10000,6 +10057,24 @@ export module '@theia/plugin' {
          * They should not suppress errors or perform unsafe fixes such as generating new types or classes.
          */
         static readonly SourceFixAll: CodeActionKind;
+
+        /**
+         * Base kind for all code actions applying to the entire notebook's scope. CodeActionKinds using
+         * this should always begin with `notebook.`
+         *
+         * This requires that new CodeActions be created for it and contributed via extensions.
+         * Pre-existing kinds can not just have the new `notebook.` prefix added to them, as the functionality
+         * is unique to the full-notebook scope.
+         *
+         * Notebook CodeActionKinds can be initialized as either of the following (both resulting in `notebook.source.xyz`):
+         * - `const newKind =  CodeActionKind.Notebook.append(CodeActionKind.Source.append('xyz').value)`
+         * - `const newKind =  CodeActionKind.Notebook.append('source.xyz')`
+         *
+         * Example Kinds/Actions:
+         * - `notebook.source.organizeImports` (might move all imports to a new top cell)
+         * - `notebook.source.normalizeVariableNames` (might rename all variables to a standardized casing format)
+         */
+        static readonly Notebook: CodeActionKind;
 
         private constructor(value: string);
 
