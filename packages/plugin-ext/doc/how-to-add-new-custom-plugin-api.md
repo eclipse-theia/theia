@@ -1,17 +1,21 @@
-# How to add a new plugin API namespace
+# How to add new custom plugin API
 
-This document describes how to add new plugin API namespace in the plugin host.
-Depending on the plugin host we can either provide a frontend or backend API extension:
+As a Theia developer, you might want to make your app extensible by plugins in ways that are unique to your application.
+That will require API that goes beyond what's in the VS Code Extension API and the Theia plugin API.
+You can do that by implementing a Theia extension that creates and exposes an API object within the plugin host.
+The API object can be imported by your plugins and exposes one or more API namespaces.
+
+Depending on the plugin host we can either provide a frontend or backend plugin API:
 
 - In the backend plugin host that runs in the Node environment in a separate process, we adapt the module loading to return a custom API object instead of loading a module with a particular name.
 - In the frontend plugin host that runs in the browser environment via a web worker, we import the API scripts and put it in the global context.
 
-In this document we focus on the implementation of a backend plugin API.
+In this document we focus on the implementation of a custom backend plugin API.
 However, both APIs can be provided by implementing and binding an `ExtPluginApiProvider` which should be packaged as a Theia extension.
 
 ## Declare your plugin API provider
 
-The plugin API provider is executed on the respective plugin host to add your custom API namespace.
+The plugin API provider is executed on the respective plugin host to add your custom API object and namespaces.
 
 Example Foo Plugin API provider:
 
@@ -149,7 +153,7 @@ export function createAPIFactory(rpc: RPCProtocol): ApiFactory {
 In the example above the API object creates a local object that will fulfill the API contract.
 The implementation details are hidden by the object and it could be a local implementation that only lives inside the plugin host but it could also be an implementation that uses the `RPCProtocol` to communicate with the main application to trigger changes, register functionality or retrieve information.
 
-### Implementing Main-Ext communication
+### Implement Main-Ext communication
 
 In this document, we will only highlight the individual parts needed to establish the communication between the main application and the external plugin host.
 For a more elaborate example of an API that communicates with the main application, please have a look at the definition of the [Theia Plugin API](https://github.com/eclipse-theia/theia/blob/master/doc/Plugin-API.md).
