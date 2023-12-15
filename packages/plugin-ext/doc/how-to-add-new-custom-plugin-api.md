@@ -16,6 +16,7 @@ However, both APIs can be provided by implementing and binding an `ExtPluginApiP
 ## Declare your plugin API provider
 
 The plugin API provider is executed on the respective plugin host to add your custom API object and namespaces.
+Add `@theia/plugin-ext` as a dependency in your `package.json`
 
 Example Foo Plugin API provider:
 
@@ -50,6 +51,8 @@ Example `foo.d.ts`:
 
 ```typescript
 declare module '@bar/foo' {
+    export class Foo { }
+
     export namespace fooBar {
         export function getFoo(): Promise<Foo>;
     }
@@ -61,7 +64,7 @@ declare module '@bar/foo' {
 In our example, we aim to provide a new API object for the backend.
 Theia expects that the `backendInitPath` that we specified in our API provider is a function called `provideApi` that follows the `ExtPluginApiBackendInitializationFn` signature.
 
-Example `foo-init.ts`:
+Example `node/foo-init.ts`:
 
 ```typescript
 import * as fooBarAPI from '@bar/foo';
@@ -132,7 +135,7 @@ We create a dedicated API object for each individual plugin as part of the modul
 Each API object is returned as part of the module loading process if a script imports `@bar/foo` and should therefore match the API definition that we provided in the `*.d.ts` file.
 Multiple imports will not lead to the creation of multiple API objects as we cache it in our custom `overrideInternalLoad` function.
 
-Example `foo-init.ts` (continued):
+Example `node/foo-init.ts` (continued):
 
 ```typescript
 export function createAPIFactory(rpc: RPCProtocol): ApiFactory {
@@ -175,19 +178,19 @@ export interface FooExt {
 }
 
 // Plugin host will obtain a proxy using these IDs, main application will register an implementation for it.
-export const PLUGIN_RPC_CONTEXT = {
+export const FOO_PLUGIN_RPC_CONTEXT = {
     FOO_MAIN: createProxyIdentifier<FooMain>('FooMain')
 };
 
 // Main application will obtain a proxy using these IDs, plugin host will register an implementation for it.
-export const MAIN_RPC_CONTEXT = {
+export const FOO_MAIN_RPC_CONTEXT = {
     FOO_EXT: createProxyIdentifier<FooExt>('FooExt')
 };
 ```
 
 On the plugin host side we can register our implementation and retrieve the proxy as part of our `createAPIFactory` implementation:
 
-Example `foo-ext.ts`:
+Example `plugin/foo-ext.ts`:
 
 ```typescript
 export class FooExtImpl implements FooExt {
@@ -195,8 +198,8 @@ export class FooExtImpl implements FooExt {
     private proxy: FooMain;
 
     constructor(rpc: RPCProtocol) {
-        rpc.set(MAIN_RPC_CONTEXT.FOO_EXT, this); // register ourselves
-        this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.FOO_MAIN); // retrieve proxy
+        rpc.set(FOO_MAIN_RPC_CONTEXT.FOO_EXT, this); // register ourselves
+        this.proxy = rpc.getProxy(FOO_PLUGIN_RPC_CONTEXT.FOO_MAIN); // retrieve proxy
     }
 
     getFooImpl(): Promise<Foo> {
@@ -207,7 +210,7 @@ export class FooExtImpl implements FooExt {
 
 On the main side we need to implement the counterpart of the ExtPluginApiProvider, the `MainPluginApiProvider`, and expose it in a browser frontend module:
 
-Example `foo-main.ts`:
+Example `main/browser/foo-main.ts`:
 
 ```typescript
 @injectable()
@@ -217,7 +220,7 @@ export class FooMainImpl implements FooMain {
 
     init(rpc: RPCProtocol) {
         // We would use this if we had a need to call back into the plugin-host/plugin
-        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.FOO_EXT);
+        this.proxy = rpc.getProxy(FOO_MAIN_RPC_CONTEXT.FOO_EXT);
     }
 
     async $getFooImpl(): Promise<Foo> {
@@ -235,7 +238,7 @@ export class FooMainPluginApiProvider implements MainPluginApiProvider {
         // create a new FooMainImpl as it is not bound as singleton
         const fooMainImpl = container.get(FooMainImpl);
         fooMainImpl.init(rpc);
-        rpc.set(PLUGIN_RPC_CONTEXT.FOO_MAIN, fooMainImpl);
+        rpc.set(FOO_PLUGIN_RPC_CONTEXT.FOO_MAIN, fooMainImpl);
     }
 }
 
@@ -260,6 +263,7 @@ foo.fooBar.getFoo();
 ## Packaging
 
 When bundling our application with the generated `gen-webpack.node.config.js` we need to make sure that our initialization function is bundled as a `commonjs2` library so it can be dynamically loaded.
+Adjust the `webpack.config.js` accordingly:
 
 ```typescript
 const configs = require('./gen-webpack.config.js');
