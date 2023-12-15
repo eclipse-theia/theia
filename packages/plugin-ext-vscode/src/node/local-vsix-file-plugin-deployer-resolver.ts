@@ -14,18 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { FileUri } from '@theia/core/lib/node';
 import { PluginDeployerResolverContext } from '@theia/plugin-ext';
 import { LocalPluginDeployerResolver } from '@theia/plugin-ext/lib/main/node/resolvers/local-plugin-deployer-resolver';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
 import { isVSCodePluginFile } from './plugin-vscode-file-handler';
+import { existsInDeploymentDir, unpackToDeploymentDir } from './plugin-vscode-utils';
 
 @injectable()
 export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerResolver {
     static LOCAL_FILE = 'local-file';
+    static FILE_EXTENSION = '.vsix';
 
     @inject(PluginVSCodeEnvironment) protected readonly environment: PluginVSCodeEnvironment;
 
@@ -38,28 +38,14 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
     }
 
     async resolveFromLocalPath(pluginResolverContext: PluginDeployerResolverContext, localPath: string): Promise<void> {
-        const fileName = path.basename(localPath);
-        const pathInUserExtensionsDirectory = await this.ensureDiscoverability(localPath);
-        pluginResolverContext.addPlugin(fileName, pathInUserExtensionsDirectory);
-    }
+        const extensionId = path.basename(localPath, LocalVSIXFilePluginDeployerResolver.FILE_EXTENSION);
 
-    /**
-     * Ensures that a user-installed plugin file is transferred to the user extension folder.
-     */
-    protected async ensureDiscoverability(localPath: string): Promise<string> {
-        const userExtensionsDir = await this.environment.getExtensionsDirUri();
-        if (!userExtensionsDir.isEqualOrParent(FileUri.create(localPath))) {
-            try {
-                const newPath = FileUri.fsPath(userExtensionsDir.resolve(path.basename(localPath)));
-                await fs.mkdirp(FileUri.fsPath(userExtensionsDir));
-                await new Promise<void>((resolve, reject) => {
-                    fs.copyFile(localPath, newPath, error => error ? reject(error) : resolve());
-                });
-                return newPath;
-            } catch (e) {
-                console.warn(`Problem copying plugin at ${localPath}:`, e);
-            }
+        if (await existsInDeploymentDir(this.environment, extensionId)) {
+            console.log(`[${pluginResolverContext.getOriginId()}]: Target dir already exists in plugin deployment dir`);
+            return;
         }
-        return localPath;
+
+        const extensionDeploymentDir = await unpackToDeploymentDir(this.environment, localPath, extensionId);
+        pluginResolverContext.addPlugin(extensionId, extensionDeploymentDir);
     }
 }

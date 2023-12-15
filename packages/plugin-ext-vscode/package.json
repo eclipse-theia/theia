@@ -16,6 +16,7 @@
     "@theia/typehierarchy": "1.44.0",
     "@theia/userstorage": "1.44.0",
     "@theia/workspace": "1.44.0",
+    "decompress": "^4.2.1",
     "filenamify": "^4.1.0"
   },
   "publishConfig": {

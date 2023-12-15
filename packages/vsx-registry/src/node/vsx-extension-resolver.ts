@@ -20,6 +20,7 @@ import * as fs from '@theia/core/shared/fs-extra';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { PluginDeployerHandler, PluginDeployerResolver, PluginDeployerResolverContext, PluginDeployOptions, PluginIdentifiers } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { FileUri } from '@theia/core/lib/node';
 import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { OVSXApiFilter, VSXExtensionRaw } from '@theia/ovsx-client';
@@ -40,6 +41,8 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
     accept(pluginId: string): boolean {
         return !!VSCodeExtensionUri.toId(new URI(pluginId));
     }
+
+    static readonly TEMP_DIR_PREFIX = 'vscode-download';
 
     async resolve(context: PluginDeployerResolverContext, options?: PluginDeployOptions): Promise<void> {
         const id = VSCodeExtensionUri.toId(new URI(context.getOriginId()));
@@ -74,16 +77,24 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
                 return;
             }
         }
-        const downloadPath = (await this.environment.getExtensionsDirUri()).path.fsPath();
-        await fs.ensureDir(downloadPath);
-        const extensionPath = path.resolve(downloadPath, path.basename(downloadUrl));
-        console.log(`[${resolvedId}]: trying to download from "${downloadUrl}"...`, 'to path', downloadPath);
-        if (!await this.download(downloadUrl, extensionPath)) {
+        const downloadDir = await this.getTempDir();
+        await fs.ensureDir(downloadDir);
+        const downloadedExtensionPath = path.resolve(downloadDir, path.basename(downloadUrl));
+        console.log(`[${resolvedId}]: trying to download from "${downloadUrl}"...`, 'to path', downloadDir);
+        if (!await this.download(downloadUrl, downloadedExtensionPath)) {
             console.log(`[${resolvedId}]: not found`);
             return;
         }
-        console.log(`[${resolvedId}]: downloaded to ${extensionPath}"`);
-        context.addPlugin(resolvedId, extensionPath);
+        console.log(`[${resolvedId}]: downloaded to ${downloadedExtensionPath}"`);
+        context.addPlugin(resolvedId, downloadedExtensionPath);
+    }
+
+    protected async getTempDir(): Promise<string> {
+        const tempDir = FileUri.fsPath(await this.environment.getTempDirUri(VSXExtensionResolver.TEMP_DIR_PREFIX));
+        if (!await fs.pathExists(tempDir)) {
+            await fs.mkdirs(tempDir);
+        }
+        return tempDir;
     }
 
     protected hasSameOrNewerVersion(id: string, extension: VSXExtensionRaw): string | undefined {
