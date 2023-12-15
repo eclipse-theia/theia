@@ -34,7 +34,7 @@ export class WebSocketConnectionProvider {
     }
 
     static createLocalProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): RpcProxy<T> {
-        return ServiceConnectionProvider.createProxy(container, path, arg);
+        return ServiceConnectionProvider.createLocalProxy(container, path, arg);
     }
 
     static createHandler(container: interfaces.Container, path: string, arg?: object): void {
