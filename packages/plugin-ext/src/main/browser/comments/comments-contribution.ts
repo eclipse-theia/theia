@@ -26,6 +26,7 @@ import { CommandRegistry, DisposableCollection, MenuModelRegistry } from '@theia
 import { URI } from '@theia/core/shared/vscode-uri';
 import { CommentsContextKeyService } from './comments-context-key-service';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { Uri } from '@theia/plugin';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -64,14 +65,16 @@ export class CommentsContribution {
             if (editor instanceof MonacoDiffEditor) {
                 const originalEditorModel = editor.diffEditor.getOriginalEditor().getModel();
                 if (originalEditorModel) {
-                    const originalComments = await this.commentService.getComments(originalEditorModel.uri);
+                    // need to cast because of vscode issue https://github.com/microsoft/vscode/issues/190584
+                    const originalComments = await this.commentService.getComments(originalEditorModel.uri as Uri);
                     if (originalComments) {
                         this.rangeDecorator.update(editor.diffEditor.getOriginalEditor(), <CommentInfoMain[]>originalComments.filter(c => !!c));
                     }
                 }
                 const modifiedEditorModel = editor.diffEditor.getModifiedEditor().getModel();
                 if (modifiedEditorModel) {
-                    const modifiedComments = await this.commentService.getComments(modifiedEditorModel.uri);
+                    // need to cast because of vscode issue https://github.com/microsoft/vscode/issues/190584
+                    const modifiedComments = await this.commentService.getComments(modifiedEditorModel.uri as Uri);
                     if (modifiedComments) {
                         this.rangeDecorator.update(editor.diffEditor.getModifiedEditor(), <CommentInfoMain[]>modifiedComments.filter(c => !!c));
                     }
@@ -164,7 +167,8 @@ export class CommentsContribution {
         const editorModel = this.editor && this.editor.getModel();
         const editorURI = this.editor && editorModel && editorModel.uri;
         if (editorURI) {
-            const comments = await this.commentService.getComments(editorURI);
+            // need to cast because of vscode issue https://github.com/microsoft/vscode/issues/190584
+            const comments = await this.commentService.getComments(editorURI as Uri);
             this.setComments(<CommentInfoMain[]>comments.filter(c => !!c));
         }
     }

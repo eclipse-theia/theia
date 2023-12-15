@@ -42,7 +42,6 @@ export class NotebookCellContextManager implements NotebookCellContextManager, D
             this.toDispose.dispose();
 
             this.currentContext = newHtmlContext;
-            this.currentStore = this.contextKeyService.createScoped(newHtmlContext);
 
             this.currentStore.setContext(NOTEBOOK_CELL_TYPE, cell.cellKind === CellKind.Code ? 'code' : 'markdown');
 
@@ -67,7 +66,6 @@ export class NotebookCellContextManager implements NotebookCellContextManager, D
 
     dispose(): void {
         this.toDispose.dispose();
-        this.currentStore?.dispose();
         this.onDidChangeContextEmitter.dispose();
     }
 }

@@ -125,8 +125,7 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
                     return parsed.evaluate(ctx);
                 }
                 return true;
-            },
-            dispose: () => delegate.dispose(),
+            }
         };
     }
 

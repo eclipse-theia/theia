@@ -23,16 +23,15 @@ import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import * as monaco from '@theia/monaco-editor-core';
 import { IDiffEditorConstructionOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { IDiffNavigatorOptions } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneEditor';
-import { StandaloneDiffEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { StandaloneDiffEditor2 } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 
 export namespace MonacoDiffEditor {
-    export interface IOptions extends MonacoEditor.ICommonOptions, IDiffEditorConstructionOptions, IDiffNavigatorOptions {
+    export interface IOptions extends MonacoEditor.ICommonOptions, IDiffEditorConstructionOptions {
     }
 }
 
 export class MonacoDiffEditor extends MonacoEditor {
-    protected _diffEditor: monaco.editor.IStandaloneDiffEditor;
+    protected _diffEditor: StandaloneDiffEditor2;
     protected _diffNavigator: DiffNavigator;
 
     constructor(
@@ -43,18 +42,18 @@ export class MonacoDiffEditor extends MonacoEditor {
         services: MonacoEditorServices,
         protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
         options?: MonacoDiffEditor.IOptions,
-        override?: EditorServiceOverrides,
+        override?: EditorServiceOverrides
     ) {
         super(uri, modifiedModel, node, services, options, override);
         this.documents.add(originalModel);
         const original = originalModel.textEditorModel;
         const modified = modifiedModel.textEditorModel;
-        this._diffNavigator = diffNavigatorFactory.createdDiffNavigator(this._diffEditor, options);
+        this._diffNavigator = diffNavigatorFactory.createdDiffNavigator(this._diffEditor);
         this._diffEditor.setModel({ original, modified });
     }
 
     get diffEditor(): monaco.editor.IStandaloneDiffEditor {
-        return this._diffEditor;
+        return this._diffEditor as unknown as monaco.editor.IStandaloneDiffEditor;
     }
 
     get diffNavigator(): DiffNavigator {
@@ -68,8 +67,8 @@ export class MonacoDiffEditor extends MonacoEditor {
          *  Incomparable enums prevent TypeScript from believing that public IStandaloneDiffEditor is satisfied by private StandaloneDiffEditor
          */
         this._diffEditor = instantiator
-            .createInstance(StandaloneDiffEditor, this.node, { ...options, fixedOverflowWidgets: true }) as unknown as monaco.editor.IStandaloneDiffEditor;
-        this.editor = this._diffEditor.getModifiedEditor();
+            .createInstance(StandaloneDiffEditor2, this.node, { ...options, fixedOverflowWidgets: true });
+        this.editor = this._diffEditor.getModifiedEditor() as unknown as monaco.editor.IStandaloneCodeEditor;
         return this._diffEditor;
     }
 

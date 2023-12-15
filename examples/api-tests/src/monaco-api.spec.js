@@ -175,7 +175,7 @@ describe('Monaco API', async function () {
     });
 
     it('Supports setting contexts using the command registry', async () => {
-        const setContext = 'setContext';
+        const setContext = '_setContext';
         const key = 'monaco-api-test-context';
         const firstValue = 'first setting';
         const secondValue = 'second setting';

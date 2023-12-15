@@ -669,7 +669,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
 
         this.model.proxy!.$dragStarted(this.options.id, selectedNodes.map(selected => selected.id), CancellationToken.None).then(maybeUris => {
             if (maybeUris) {
-                this.applicationShell.addAdditionalDraggedEditorUris(maybeUris.map(URI.fromComponents));
+                this.applicationShell.addAdditionalDraggedEditorUris(maybeUris.map(uri => URI.fromComponents(uri)));
             }
         });
     }
@@ -921,8 +921,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
                     menuPath: contextMenuPath,
                     anchor: { x, y },
                     args,
-                    contextKeyService,
-                    onHide: () => contextKeyService.dispose(),
+                    contextKeyService
                 }), 10);
             }
         }

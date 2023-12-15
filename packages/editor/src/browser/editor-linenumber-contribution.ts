@@ -69,8 +69,7 @@ export class EditorLineNumberContribution implements FrontendApplicationContribu
                         menuPath: EDITOR_LINENUMBER_CONTEXT_MENU,
                         anchor: event.event,
                         args,
-                        contextKeyService,
-                        onHide: () => contextKeyService.dispose()
+                        contextKeyService
                     });
                 });
             }

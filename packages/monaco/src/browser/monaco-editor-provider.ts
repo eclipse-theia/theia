@@ -42,20 +42,20 @@ import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { MonacoQuickInputImplementation } from './monaco-quick-input-service';
 import { ContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
 import * as monaco from '@theia/monaco-editor-core';
-import { OpenerService as MonacoOpenerService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/openerService';
 import { StandaloneCommandService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { OpenerService as MonacoOpenerService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/openerService';
 import { IOpenerService, OpenExternalOptions, OpenInternalOptions } from '@theia/monaco-editor-core/esm/vs/platform/opener/common/opener';
-import { SimpleKeybinding } from '@theia/monaco-editor-core/esm/vs/base/common/keybindings';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
-import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 import { IKeybindingService } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding';
 import { timeoutReject } from '@theia/core/lib/common/promise-util';
-import { ITextModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
-import { IBulkEditService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { KeyCodeChord } from '@theia/monaco-editor-core/esm/vs/base/common/keybindings';
+import { ITextModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { IQuickInputService } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
 import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
+import { IBulkEditService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
@@ -212,16 +212,16 @@ export class MonacoEditorProvider {
 
     protected injectKeybindingResolver(editor: MonacoEditor): void {
         const keybindingService = StandaloneServices.get(IKeybindingService);
-        keybindingService.resolveKeybinding = keybinding => [new MonacoResolvedKeybinding(MonacoResolvedKeybinding.keySequence(keybinding), this.keybindingRegistry)];
+        keybindingService.resolveKeybinding = keybinding => [new MonacoResolvedKeybinding(MonacoResolvedKeybinding.keySequence(keybinding.chords), this.keybindingRegistry)];
         keybindingService.resolveKeyboardEvent = keyboardEvent => {
-            const keybinding = new SimpleKeybinding(
+            const keybinding = new KeyCodeChord(
                 keyboardEvent.ctrlKey,
                 keyboardEvent.shiftKey,
                 keyboardEvent.altKey,
                 keyboardEvent.metaKey,
                 keyboardEvent.keyCode
-            ).toChord();
-            return new MonacoResolvedKeybinding(MonacoResolvedKeybinding.keySequence(keybinding), this.keybindingRegistry);
+            );
+            return new MonacoResolvedKeybinding(MonacoResolvedKeybinding.keySequence([keybinding]), this.keybindingRegistry);
         };
     }
 
@@ -403,10 +403,10 @@ export class MonacoEditorProvider {
             const overrides = override ? Array.from(override) : [];
             overrides.push([IContextMenuService, { showContextMenu: () => {/** no op! */ } }]);
             const document = new MonacoEditorModel({
-                    uri,
-                    readContents: async () => '',
-                    dispose: () => { }
-                }, this.m2p, this.p2m);
+                uri,
+                readContents: async () => '',
+                dispose: () => { }
+            }, this.m2p, this.p2m);
             toDispose.push(document);
             const model = (await document.load()).textEditorModel;
             return new MonacoEditor(

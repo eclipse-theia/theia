@@ -131,8 +131,8 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         const workspaceEdit = toMonacoWorkspaceEdit(dto);
         try {
             const edits = ResourceEdit.convert(workspaceEdit);
-            const { success } = await this.bulkEditService.apply(edits, { respectAutoSaveConfig: metadata?.isRefactoring });
-            return success;
+            const { isApplied } = await this.bulkEditService.apply(edits, { respectAutoSaveConfig: metadata?.isRefactoring });
+            return isApplied;
         } catch {
             return false;
         }
@@ -145,7 +145,7 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         return Promise.resolve(this.editorsAndDocuments.getEditor(id)!.insertSnippet(template, ranges, opts));
     }
 
-    $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions | IDecorationRenderOptions): void {
+    $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions): void {
         this.injectRemoteUris(options);
         this.monacoEditorService.registerDecorationType('Plugin decoration', key, options as IDecorationRenderOptions);
         this.toDispose.push(Disposable.create(() => this.$removeTextEditorDecorationType(key)));

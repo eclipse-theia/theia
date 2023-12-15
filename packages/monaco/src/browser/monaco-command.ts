@@ -135,7 +135,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
      * and execute them using the instantiation service of the current editor.
      */
     protected registerMonacoCommands(): void {
-        const editorActions = new Map(EditorExtensionsRegistry.getEditorActions().map(({ id, label, alias }) => [id, { label, alias }]));
+        const editorActions = new Map([...EditorExtensionsRegistry.getEditorActions()].map(({ id, label, alias }) => [id, { label, alias }]));
 
         const { codeEditorService } = this;
         const globalInstantiationService = StandaloneServices.initialize({});

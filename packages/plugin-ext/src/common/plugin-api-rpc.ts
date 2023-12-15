@@ -114,7 +114,7 @@ import type {
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { ThemeType } from '@theia/core/lib/common/theme';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { isString, isObject, PickOptions, QuickInputButtonHandle } from '@theia/core/lib/common';
+import { isString, isObject, QuickInputButtonHandle } from '@theia/core/lib/common';
 import { Severity } from '@theia/core/lib/common/severity';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
 import * as notebookCommon from '@theia/notebook/lib/common';
@@ -482,8 +482,6 @@ export interface StatusBarMessageRegistryMain {
     $dispose(id: string): void;
 }
 
-export type Item = string | theia.QuickPickItem;
-
 export interface QuickOpenExt {
     $onItemSelected(handle: number): void;
     $validateInput(input: string): Promise<string | { content: string; severity: Severity; } | null | undefined> | undefined;
@@ -501,7 +499,6 @@ export interface QuickOpenExt {
         token?: theia.CancellationToken): Promise<Array<theia.QuickPickItem> | undefined>;
     showQuickPick(itemsOrItemsPromise: string[] | Promise<string[]>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<string | undefined>;
     showQuickPick(itemsOrItemsPromise: Array<theia.QuickPickItem> | Promise<Array<theia.QuickPickItem>>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<theia.QuickPickItem | undefined>;
-    showQuickPick(itemsOrItemsPromise: Item[] | Promise<Item[]>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<Item | Item[] | undefined>;
 
     showInput(options?: theia.InputBoxOptions, token?: theia.CancellationToken): PromiseLike<string | undefined>;
     // showWorkspaceFolderPick(options?: theia.WorkspaceFolderPickOptions, token?: theia.CancellationToken): Promise<theia.WorkspaceFolder | undefined>
@@ -621,22 +618,36 @@ export interface WorkspaceFolderPickOptionsMain {
     ignoreFocusOut?: boolean;
 }
 
-export type TransferQuickPickItems = TransferQuickPickItemValue | TransferQuickPickSeparator;
-
-export interface TransferQuickPickItemValue extends theia.QuickPickItem {
+export interface TransferQuickPickItem {
     handle: number;
-    type?: 'item'
+    kind: 'item' | 'separator',
+    label: string;
+    iconPath?: UriComponents | { light: UriComponents; dark: UriComponents } | ThemeIcon;
+    description?: string;
+    detail?: string;
+    picked?: boolean;
+    alwaysShow?: boolean;
+    buttons?: readonly TransferQuickInputButton[];
 }
 
-export interface TransferQuickPickSeparator extends theia.QuickPickItem {
-    handle: number;
-    type: 'separator';
+export interface TransferQuickPickOptions<T extends TransferQuickPickItem> {
+    title?: string;
+    placeHolder?: string;
+    matchOnDescription?: boolean;
+    matchOnDetail?: boolean;
+    matchOnLabel?: boolean;
+    autoFocusOnList?: boolean;
+    ignoreFocusLost?: boolean;
+    canPickMany?: boolean;
+    contextKey?: string;
+    activeItem?: Promise<T> | T;
+    onDidFocus?: (entry: T) => void;
 }
 
-export interface TransferQuickInputButton extends theia.QuickInputButton {
-    iconPath: theia.Uri | { light: theia.Uri, dark: theia.Uri } | ThemeIcon;
-    iconClass?: string;
+export interface TransferQuickInputButton {
     handle?: number;
+    readonly iconPath: UriComponents | { light: UriComponents; dark: UriComponents } | ThemeIcon;
+    readonly tooltip?: string | undefined;
 }
 
 export type TransferQuickInput = TransferQuickPick | TransferInputBox;
@@ -655,7 +666,7 @@ export interface TransferQuickPick extends BaseTransferQuickInput {
     value?: string;
     placeholder?: string;
     buttons?: TransferQuickInputButton[];
-    items?: TransferQuickPickItems[];
+    items?: TransferQuickPickItem[];
     activeItems?: ReadonlyArray<theia.QuickPickItem>;
     selectedItems?: ReadonlyArray<theia.QuickPickItem>;
     canSelectMany?: boolean;
@@ -685,8 +696,8 @@ export interface IInputBoxOptions {
 }
 
 export interface QuickOpenMain {
-    $show(instance: number, options: PickOptions<TransferQuickPickItemValue>, token: CancellationToken): Promise<number | number[] | undefined>;
-    $setItems(instance: number, items: TransferQuickPickItems[]): Promise<any>;
+    $show(instance: number, options: TransferQuickPickOptions<TransferQuickPickItem>, token: CancellationToken): Promise<number | number[] | undefined>;
+    $setItems(instance: number, items: TransferQuickPickItem[]): Promise<any>;
     $setError(instance: number, error: Error): Promise<void>;
     $input(options: theia.InputBoxOptions, validateInput: boolean, token: CancellationToken): Promise<string | undefined>;
     $createOrUpdate<T extends theia.QuickPickItem>(params: TransferQuickInput): Promise<void>;

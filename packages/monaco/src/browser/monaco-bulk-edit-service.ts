@@ -31,12 +31,12 @@ export class MonacoBulkEditService implements IBulkEditService {
 
     private _previewHandler?: IBulkEditPreviewHandler;
 
-    async apply(editsIn: ResourceEdit[] | WorkspaceEdit, options?: IBulkEditOptions): Promise<IBulkEditResult & { success: boolean }> {
+    async apply(editsIn: ResourceEdit[] | WorkspaceEdit, options?: IBulkEditOptions): Promise<IBulkEditResult> {
         const edits = Array.isArray(editsIn) ? editsIn : ResourceEdit.convert(editsIn);
 
         if (this._previewHandler && (options?.showPreview || edits.some(value => value.metadata?.needsConfirmation))) {
             editsIn = await this._previewHandler(edits, options);
-            return { ariaSummary: '', success: true };
+            return { ariaSummary: '', isApplied: true };
         } else {
             return this.workspace.applyBulkEdit(edits, options);
         }

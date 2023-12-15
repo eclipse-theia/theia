@@ -75,7 +75,6 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
         this.id = this.options.id;
         const localContext = this.contextKeyService.createScoped(this.node);
         localContext.setContext('view', this.options.viewId);
-        this.toDispose.push(localContext);
     }
 
     get onDidChangeDescription(): Event<void> {

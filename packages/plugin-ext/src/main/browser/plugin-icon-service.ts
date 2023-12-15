@@ -102,7 +102,7 @@ export class PluginIconService implements Disposable {
             }
             const fontContribution = definition.font;
             if (fontContribution) {
-                usedFontIds[fontContribution.id] = fontContribution.definition;
+                usedFontIds[fontContribution.id] = fontContribution.definition as IconFontDefinition;
                 return `.codicon-${contribution.id}:before { content: '${definition.fontCharacter}'; font-family: ${asCSSPropertyValue(iconContribution.extensionId)}; }`;
             }
             // default font (codicon)
@@ -111,7 +111,7 @@ export class PluginIconService implements Disposable {
 
         const rules = [];
         for (const contribution of iconRegistry.getIcons()) {
-            const rule = formatIconRule(contribution);
+            const rule = formatIconRule(contribution as Icon);
             if (rule) {
                 rules.push(rule);
             }

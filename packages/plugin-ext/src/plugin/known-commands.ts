@@ -261,6 +261,7 @@ export namespace KnownCommands {
     mappings['closeReferenceSearch'] = ['closeReferenceSearch', CONVERT_VSCODE_TO_MONACO];
     mappings['goToNextReference'] = ['goToNextReference', CONVERT_VSCODE_TO_MONACO];
     mappings['goToPreviousReference'] = ['goToPreviousReference', CONVERT_VSCODE_TO_MONACO];
+    mappings['setContext'] = ['_setContext', CONVERT_VSCODE_TO_MONACO];
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const CONVERT_MONACO_TO_VSCODE = (args: any | undefined) => {

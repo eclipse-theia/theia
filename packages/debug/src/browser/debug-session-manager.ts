@@ -179,7 +179,7 @@ export class DebugSessionManager {
     }
 
     isCurrentEditorFrame(uri: URI | string | monaco.Uri): boolean {
-        return this.currentFrame?.source?.uri.toString() === (uri instanceof URI ? uri : new URI(uri)).toString();
+        return this.currentFrame?.source?.uri.toString() === (uri instanceof URI ? uri : new URI(uri.toString())).toString();
     }
 
     protected async saveAll(): Promise<boolean> {

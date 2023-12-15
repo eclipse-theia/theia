@@ -19,9 +19,13 @@ import { UriComponents } from '../uri';
 import { escapeIcons } from './icon-utilities';
 import { isObject, isString } from '../types';
 
+export interface MarkdownStringTrustedOptions {
+    readonly enabledCommands: readonly string[];
+}
+
 export interface MarkdownString {
     readonly value: string;
-    readonly isTrusted?: boolean;
+    readonly isTrusted?: boolean | MarkdownStringTrustedOptions;
     readonly supportThemeIcons?: boolean;
     readonly supportHtml?: boolean;
     readonly baseUri?: UriComponents;
@@ -45,9 +49,8 @@ export namespace MarkdownString {
 // Copied from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/base/common/htmlContent.ts
 
 export class MarkdownStringImpl implements MarkdownString {
-
     public value: string;
-    public isTrusted?: boolean;
+    public isTrusted?: boolean | MarkdownStringTrustedOptions;
     public supportThemeIcons?: boolean;
     public supportHtml?: boolean;
     public baseUri?: UriComponents;

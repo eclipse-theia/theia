@@ -35,7 +35,8 @@ import {
     EditorDecoration,
     EditorMouseEvent,
     EncodingMode,
-    EditorDecorationOptions
+    EditorDecorationOptions,
+    MouseTargetType
 } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
@@ -46,9 +47,9 @@ import * as monaco from '@theia/monaco-editor-core';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import { IInstantiationService, ServiceIdentifier } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
-import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
+import { ICodeEditor, IMouseTargetMargin } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
 import { IStandaloneEditorConstructionOptions, StandaloneEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
 
 export type ServicePair<T> = [ServiceIdentifier<T>, T];
 
@@ -185,12 +186,12 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
             const { element, position, range } = e.target;
             this.onMouseDownEmitter.fire({
                 target: {
-                    ...e.target,
+                    type: e.target.type as unknown as MouseTargetType,
                     element: element || undefined,
                     mouseColumn: this.m2p.asPosition(undefined, e.target.mouseColumn).character,
                     range: range && this.m2p.asRange(range) || undefined,
                     position: position && this.m2p.asPosition(position.lineNumber, position.column) || undefined,
-                    detail: (e.target as monaco.editor.IMouseTargetMargin).detail || {},
+                    detail: (e.target as unknown as IMouseTargetMargin).detail || {},
                 },
                 event: e.event.browserEvent
             });

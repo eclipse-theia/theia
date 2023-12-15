@@ -246,11 +246,12 @@ export function createMonacoConfigurationService(container: interfaces.Container
             overrides.push([override, [...values]]);
         }
         service['_onDidChangeConfiguration'].fire(<IConfigurationChangeEvent>{
+            sourceConfig: {},
             change: {
                 keys: [...context.keys],
                 overrides
             },
-            affectedKeys: [...context.affectedKeys],
+            affectedKeys: context.affectedKeys,
             source,
             affectsConfiguration: (prefix, options) => {
                 if (!context.affectedKeys.has(prefix)) {
