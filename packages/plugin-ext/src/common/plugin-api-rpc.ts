@@ -234,6 +234,7 @@ export interface PluginManagerInitializeParams {
     extApi?: ExtPluginApi[]
     webview: WebviewInitData
     jsonValidation: PluginJsonValidationContribution[]
+    supportedActivationEvents?: string[]
 }
 
 export interface PluginManagerStartParams {

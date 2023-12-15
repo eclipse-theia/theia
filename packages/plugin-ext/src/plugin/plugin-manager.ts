@@ -79,30 +79,6 @@ class ActivatedPlugin {
 
 export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
-    static BUILTIN_ACTIVATION_EVENTS = new Set([
-        '*',
-        'onLanguage',
-        'onCommand',
-        'onDebug',
-        'onDebugInitialConfigurations',
-        'onDebugResolve',
-        'onDebugAdapterProtocolTracker',
-        'onDebugDynamicConfigurations',
-        'onTaskType',
-        'workspaceContains',
-        'onView',
-        'onUri',
-        'onTerminalProfile',
-        'onWebviewPanel',
-        'onFileSystem',
-        'onCustomEditor',
-        'onStartupFinished',
-        'onAuthenticationRequest',
-        'onNotebook',
-        'onNotebookSerializer'
-    ]);
-    static ADDITIONAL_ACTIVATION_EVENTS_ENV = 'ADDITIONAL_ACTIVATION_EVENTS';
-
     private configStorage: ConfigStorage | undefined;
     private readonly registry = new Map<string, Plugin>();
     private readonly activations = new Map<string, (() => Promise<void>)[] | undefined>();
@@ -222,11 +198,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.webview.init(params.webview);
         this.jsonValidation = params.jsonValidation;
 
-        this.supportedActivationEvents = new Set(PluginManagerExtImpl.BUILTIN_ACTIVATION_EVENTS);
-        const additionalActivationEvents = await this.envExt.getEnvVariable(PluginManagerExtImpl.ADDITIONAL_ACTIVATION_EVENTS_ENV);
-        if (additionalActivationEvents) {
-            additionalActivationEvents.split(',').forEach(event => this.supportedActivationEvents.add(event));
-        }
+        this.supportedActivationEvents = new Set(params.supportedActivationEvents ?? []);
     }
 
     async $start(params: PluginManagerStartParams): Promise<void> {

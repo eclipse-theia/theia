@@ -80,6 +80,30 @@ export const ALL_ACTIVATION_EVENT = '*';
 @injectable()
 export class HostedPluginSupport {
 
+    protected static ADDITIONAL_ACTIVATION_EVENTS_ENV = 'ADDITIONAL_ACTIVATION_EVENTS';
+    protected static BUILTIN_ACTIVATION_EVENTS = [
+        '*',
+        'onLanguage',
+        'onCommand',
+        'onDebug',
+        'onDebugInitialConfigurations',
+        'onDebugResolve',
+        'onDebugAdapterProtocolTracker',
+        'onDebugDynamicConfigurations',
+        'onTaskType',
+        'workspaceContains',
+        'onView',
+        'onUri',
+        'onTerminalProfile',
+        'onWebviewPanel',
+        'onFileSystem',
+        'onCustomEditor',
+        'onStartupFinished',
+        'onAuthenticationRequest',
+        'onNotebook',
+        'onNotebookSerializer'
+    ];
+
     protected readonly clientId = UUID.uuid4();
 
     protected container: interfaces.Container;
@@ -519,6 +543,13 @@ export class HostedPluginSupport {
             }
 
             const isElectron = environment.electron.is();
+
+            const supportedActivationEvents = [...HostedPluginSupport.BUILTIN_ACTIVATION_EVENTS];
+            const additionalActivationEvents = await this.envServer.getValue(HostedPluginSupport.ADDITIONAL_ACTIVATION_EVENTS_ENV);
+            if (additionalActivationEvents && additionalActivationEvents.value) {
+                additionalActivationEvents.value.split(',').forEach(event => supportedActivationEvents.push(event));
+            }
+
             await manager.$init({
                 preferences: getPreferences(this.preferenceProviderProvider, this.workspaceService.tryGetRoots()),
                 globalState,
@@ -536,7 +567,8 @@ export class HostedPluginSupport {
                     webviewResourceRoot,
                     webviewCspSource
                 },
-                jsonValidation
+                jsonValidation,
+                supportedActivationEvents
             });
             if (toDisconnect.disposed) {
                 return undefined;
