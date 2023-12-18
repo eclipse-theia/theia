@@ -28,6 +28,7 @@ export class WorkspaceUserWorkingDirectoryProvider extends UserWorkingDirectoryP
 
     override async getUserWorkingDir(): Promise<URI> {
         return await this.getFromSelection()
+            ?? await this.getFromLastOpenResource()
             ?? await this.getFromWorkspace()
             ?? this.getFromUserHome();
     }

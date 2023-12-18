@@ -445,6 +445,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(SaveResourceService).toSelf().inSingletonScope();
     bind(UserWorkingDirectoryProvider).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(UserWorkingDirectoryProvider);
 
     bind(HoverService).toSelf().inSingletonScope();
 

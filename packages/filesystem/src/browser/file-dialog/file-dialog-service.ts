@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { MaybeArray, nls } from '@theia/core/lib/common';
+import { MaybeArray, UNTITLED_SCHEME, nls } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { FileStat } from '../../common/files';
 import { DirNode } from '../file-tree';
@@ -81,7 +81,9 @@ export class DefaultFileDialogService implements FileDialogService {
     }
 
     protected async getRootNode(folderToOpen?: FileStat): Promise<DirNode | undefined> {
-        const folderExists = folderToOpen && await this.fileService.exists(folderToOpen.resource);
+        const folderExists = folderToOpen
+            && folderToOpen.resource.scheme !== UNTITLED_SCHEME
+            && await this.fileService.exists(folderToOpen.resource);
         const folder = folderToOpen && folderExists ? folderToOpen : {
             resource: await this.rootProvider.getUserWorkingDir(),
             isDirectory: true
