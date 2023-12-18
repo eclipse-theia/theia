@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider';
 import { Endpoint } from '../../browser/endpoint';
+import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source';
 
 export function getLocalPort(): string | undefined {
     const params = new URLSearchParams(location.search);
@@ -24,7 +24,7 @@ export function getLocalPort(): string | undefined {
 }
 
 @injectable()
-export class ElectronLocalWebSocketConnectionProvider extends WebSocketConnectionProvider {
+export class ElectronLocalWebSocketConnectionSource extends WebSocketConnectionSource {
 
     protected override createEndpoint(path: string): Endpoint {
         const localPort = getLocalPort();

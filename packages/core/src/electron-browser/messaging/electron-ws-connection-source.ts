@@ -15,9 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { WebSocketConnectionProvider, WebSocketOptions } from '../../browser/messaging/ws-connection-provider';
 import { FrontendApplicationContribution } from '../../browser/frontend-application-contribution';
-import { Channel } from '../../common';
+import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source';
 
 /**
  * Customized connection provider between the frontend and the backend in electron environment.
@@ -25,25 +24,15 @@ import { Channel } from '../../common';
  * once the electron-browser window is refreshed. Otherwise, backend resources are not disposed.
  */
 @injectable()
-export class ElectronWebSocketConnectionProvider extends WebSocketConnectionProvider implements FrontendApplicationContribution {
-
-    /**
-     * Do not try to reconnect when the frontend application is stopping. The browser is navigating away from this page.
-     */
-    protected stopping = false;
+export class ElectronWebSocketConnectionSource extends WebSocketConnectionSource implements FrontendApplicationContribution {
+    constructor() {
+        super();
+    }
 
     onStop(): void {
-        this.stopping = true;
         // Manually close the websocket connections `onStop`. Otherwise, the channels will be closed with 30 sec (`MessagingContribution#checkAliveTimeout`) delay.
         // https://github.com/eclipse-theia/theia/issues/6499
         // `1001` indicates that an endpoint is "going away", such as a server going down or a browser having navigated away from a page.
-        this.channelMultiplexer?.onUnderlyingChannelClose({ reason: 'The frontend is "going away"', code: 1001 });
+        this.socket.close();
     }
-
-    override async openChannel(path: string, handler: (channel: Channel) => void, options?: WebSocketOptions): Promise<void> {
-        if (!this.stopping) {
-            super.openChannel(path, handler, options);
-        }
-    }
-
 }

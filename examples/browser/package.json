@@ -9,8 +9,15 @@
         "applicationName": "Theia Browser Example",
         "preferences": {
           "files.enableTrash": false
-        }
+        },
+        "reloadOnReconnect": true
       }
+    },
+    "backend": {
+      "config": {
+        "frontendConnectionTimeout": 3000
+      }
+
     }
   },
   "dependencies": {

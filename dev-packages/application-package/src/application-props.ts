@@ -86,7 +86,8 @@ export namespace FrontendApplicationConfig {
         defaultIconTheme: 'theia-file-icons',
         electron: ElectronFrontendApplicationConfig.DEFAULT,
         defaultLocale: '',
-        validatePreferencesSchema: true
+        validatePreferencesSchema: true,
+        reloadOnReconnect: false
     };
     export interface Partial extends ApplicationConfig {
 
@@ -132,6 +133,12 @@ export namespace FrontendApplicationConfig {
          * Defaults to `true`.
          */
         readonly validatePreferencesSchema?: boolean;
+
+        /**
+         * When 'true', the window will reload in case the front end reconnects to a back-end,
+         * but the back end does not have a connection context for this front end anymore.
+         */
+        readonly reloadOnReconnect?: boolean;
     }
 }
 
@@ -142,6 +149,7 @@ export type BackendApplicationConfig = RequiredRecursive<BackendApplicationConfi
 export namespace BackendApplicationConfig {
     export const DEFAULT: BackendApplicationConfig = {
         singleInstance: false,
+        frontendConnectionTimeout: 0
     };
     export interface Partial extends ApplicationConfig {
 
@@ -151,6 +159,11 @@ export namespace BackendApplicationConfig {
          * Defaults to `false`.
          */
         readonly singleInstance?: boolean;
+
+        /**
+         * The time in ms the connection context will be preserved for reconnection after a front end disconnects.
+         */
+        readonly frontendConnectionTimeout?: number;
     }
 }
 

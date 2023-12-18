@@ -48,11 +48,13 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
     }
 
     private initializeRpc(): void {
+        // we need to set the flag to true before waiting for the channel provider. Otherwise `get` might
+        // get called again and we'll try to open a channel more than once
+        this.isRpcInitialized = true;
         const clientOptions: RpcProtocolOptions = { encoder: this.encoder, decoder: this.decoder, mode: 'clientOnly' };
         this.channelProvider().then(channel => {
             const rpc = new RpcProtocol(channel, undefined, clientOptions);
             this.rpcDeferred.resolve(rpc);
-            this.isRpcInitialized = true;
         });
     }
 

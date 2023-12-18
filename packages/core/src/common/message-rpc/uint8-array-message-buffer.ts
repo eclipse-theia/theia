@@ -76,6 +76,13 @@ export class Uint8ArrayWriteBuffer implements WriteBuffer, Disposable {
         return this;
     }
 
+    writeRaw(bytes: Uint8Array): this {
+        this.ensureCapacity(bytes.byteLength);
+        this.buffer.set(bytes, this.offset);
+        this.offset += bytes.byteLength;
+        return this;
+    }
+
     writeUint16(value: number): this {
         this.ensureCapacity(2);
         this.msg.setUint16(this.offset, value);

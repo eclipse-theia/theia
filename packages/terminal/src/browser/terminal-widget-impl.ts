@@ -19,7 +19,7 @@ import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, Channel, OS } from '@theia/core';
 import {
-    Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon, ExtractableWidget, ContextMenuRenderer
+    Widget, Message, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon, ExtractableWidget, ContextMenuRenderer
 } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -46,6 +46,7 @@ import debounce = require('p-debounce');
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { EnhancedPreviewWidget } from '@theia/core/lib/browser/widgets/enhanced-preview-widget';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
+import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -88,7 +89,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     override lastCwd = new URI();
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
+    @inject(RemoteConnectionProvider) protected readonly conectionProvider: ServiceConnectionProvider;
     @inject(TerminalWidgetOptions) options: TerminalWidgetOptions;
     @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
     @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
@@ -629,9 +630,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDisposeOnConnect.dispose();
         this.toDispose.push(this.toDisposeOnConnect);
         const waitForConnection = this.waitForConnection = new Deferred<Channel>();
-        this.webSocketConnectionProvider.listen({
-            path: `${terminalsPath}/${this.terminalId}`,
-            onConnection: connection => {
+        this.conectionProvider.listen(
+            `${terminalsPath}/${this.terminalId}`,
+            (path, connection) => {
                 connection.onMessage(e => {
                     this.write(e().readString());
                 });
@@ -652,8 +653,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 if (waitForConnection) {
                     waitForConnection.resolve(connection);
                 }
-            }
-        }, { reconnecting: false });
+            }, false);
     }
     protected async reconnectTerminalProcess(): Promise<void> {
         if (this.options.isPseudoTerminal) {

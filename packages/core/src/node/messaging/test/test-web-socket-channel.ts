@@ -1,3 +1,4 @@
+/* eslint-disable @theia/runtime-import-check */
 // *****************************************************************************
 // Copyright (C) 2018 TypeFox and others.
 //
@@ -17,40 +18,44 @@
 import * as http from 'http';
 import * as https from 'https';
 import { AddressInfo } from 'net';
-import { io, Socket } from 'socket.io-client';
-import { Channel, ChannelMultiplexer } from '../../../common/message-rpc/channel';
-import { IWebSocket, WebSocketChannel } from '../../../common/messaging/web-socket-channel';
+import { servicesPath } from '../../../common';
+import { WebSocketConnectionSource } from '../../../browser/messaging/ws-connection-source';
+import { Container, inject } from 'inversify';
+import { RemoteConnectionProvider, ServiceConnectionProvider } from '../../../browser/messaging/service-connection-provider';
+import { messagingFrontendModule } from '../../../browser/messaging/messaging-frontend-module';
+import { Socket, io } from 'socket.io-client';
+
+const websocketUrl = Symbol('testWebsocketUrl');
+class TestWebsocketConnectionSource extends WebSocketConnectionSource {
+    @inject(websocketUrl)
+    readonly websocketUrl: string;
+
+    protected override createWebSocketUrl(path: string): string {
+        return this.websocketUrl;
+    }
+
+    protected override createWebSocket(url: string): Socket {
+        return io(url);
+    }
+}
 
 export class TestWebSocketChannelSetup {
-    public readonly multiplexer: ChannelMultiplexer;
-    public readonly channel: Channel;
+    public readonly connectionProvider: ServiceConnectionProvider;
 
     constructor({ server, path }: {
         server: http.Server | https.Server,
         path: string
     }) {
-        const socket = io(`ws://localhost:${(server.address() as AddressInfo).port}${WebSocketChannel.wsPath}`);
-        this.channel = new WebSocketChannel(toIWebSocket(socket));
-        this.multiplexer = new ChannelMultiplexer(this.channel);
-        socket.on('connect', () => {
-            this.multiplexer.open(path);
-        });
-        socket.connect();
+        const address = (server.address() as AddressInfo);
+        const url = `ws://${address.address}:${address.port}${servicesPath}`;
+        this.connectionProvider = this.createConnectionProvider(url);
     }
-}
 
-function toIWebSocket(socket: Socket): IWebSocket {
-    return {
-        close: () => {
-            socket.removeAllListeners('disconnect');
-            socket.removeAllListeners('error');
-            socket.removeAllListeners('message');
-            socket.close();
-        },
-        isConnected: () => socket.connected,
-        onClose: cb => socket.on('disconnect', reason => cb(reason)),
-        onError: cb => socket.on('error', reason => cb(reason)),
-        onMessage: cb => socket.on('message', data => cb(data)),
-        send: message => socket.emit('message', message)
-    };
+    protected createConnectionProvider(socketUrl: string): ServiceConnectionProvider {
+        const container = new Container();
+        container.bind(websocketUrl).toConstantValue(socketUrl);
+        container.load(messagingFrontendModule);
+        container.rebind(WebSocketConnectionSource).to(TestWebsocketConnectionSource);
+        return container.get(RemoteConnectionProvider);
+    }
 }

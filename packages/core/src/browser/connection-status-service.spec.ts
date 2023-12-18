@@ -33,8 +33,8 @@ import { MockConnectionStatusService } from './test/mock-connection-status-servi
 import * as sinon from 'sinon';
 
 import { Container } from 'inversify';
-import { WebSocketConnectionProvider } from './messaging/ws-connection-provider';
 import { ILogger, Emitter, Loggable } from '../common';
+import { WebSocketConnectionSource } from './messaging/ws-connection-source';
 
 disableJSDOM();
 
@@ -101,7 +101,7 @@ describe('frontend-connection-status', function (): void {
     let timer: sinon.SinonFakeTimers;
     let pingSpy: sinon.SinonSpy;
     beforeEach(() => {
-        const mockWebSocketConnectionProvider = sinon.createStubInstance(WebSocketConnectionProvider);
+        const mockWebSocketConnectionSource = sinon.createStubInstance(WebSocketConnectionSource);
         const mockPingService: PingService = <PingService>{
             ping(): Promise<void> {
                 return Promise.resolve(undefined);
@@ -118,11 +118,11 @@ describe('frontend-connection-status', function (): void {
         testContainer.bind(PingService).toConstantValue(mockPingService);
         testContainer.bind(ILogger).toConstantValue(mockILogger);
         testContainer.bind(ConnectionStatusOptions).toConstantValue({ offlineTimeout: OFFLINE_TIMEOUT });
-        testContainer.bind(WebSocketConnectionProvider).toConstantValue(mockWebSocketConnectionProvider);
+        testContainer.bind(WebSocketConnectionSource).toConstantValue(mockWebSocketConnectionSource);
 
-        sinon.stub(mockWebSocketConnectionProvider, 'onSocketDidOpen').value(mockSocketOpenedEmitter.event);
-        sinon.stub(mockWebSocketConnectionProvider, 'onSocketDidClose').value(mockSocketClosedEmitter.event);
-        sinon.stub(mockWebSocketConnectionProvider, 'onIncomingMessageActivity').value(mockIncomingMessageActivityEmitter.event);
+        sinon.stub(mockWebSocketConnectionSource, 'onSocketDidOpen').value(mockSocketOpenedEmitter.event);
+        sinon.stub(mockWebSocketConnectionSource, 'onSocketDidClose').value(mockSocketClosedEmitter.event);
+        sinon.stub(mockWebSocketConnectionSource, 'onIncomingMessageActivity').value(mockIncomingMessageActivityEmitter.event);
 
         timer = sinon.useFakeTimers();
 

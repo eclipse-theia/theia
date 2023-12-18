@@ -25,6 +25,7 @@ export interface WriteBuffer {
     writeBytes(value: Uint8Array): this
     writeNumber(value: number): this
     writeLength(value: number): this
+    writeRaw(bytes: Uint8Array): this;
     /**
      * Makes any writes to the buffer permanent, for example by sending the writes over a channel.
      * You must obtain a new write buffer after committing
@@ -68,6 +69,11 @@ export class ForwardingWriteBuffer implements WriteBuffer {
 
     writeNumber(value: number): this {
         this.underlying.writeNumber(value);
+        return this;
+    }
+
+    writeRaw(bytes: Uint8Array): this {
+        this.underlying.writeRaw(bytes);
         return this;
     }
 

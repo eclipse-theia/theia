@@ -9,7 +9,13 @@
     "target": "electron",
     "frontend": {
       "config": {
-        "applicationName": "Theia Electron Example"
+        "applicationName": "Theia Electron Example",
+        "reloadOnReconnect": true
+      }
+    },
+    "backend": {
+      "config": {
+        "frontendConnectionTimeout": -1
       }
     }
   },

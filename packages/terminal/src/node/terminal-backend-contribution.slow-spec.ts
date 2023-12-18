@@ -32,7 +32,7 @@ describe('Terminal Backend Contribution', function (): void {
         const container = createTerminalTestContainer();
         const application = container.get(BackendApplication);
         shellTerminalServer = container.get(IShellTerminalServer);
-        server = await application.start();
+        server = await application.start(3000, 'localhost');
     });
 
     afterEach(() => {
@@ -46,16 +46,16 @@ describe('Terminal Backend Contribution', function (): void {
         const terminalId = await shellTerminalServer.create({});
         await new Promise<void>((resolve, reject) => {
             const path = `${terminalsPath}/${terminalId}`;
-            const { channel, multiplexer } = new TestWebSocketChannelSetup({ server, path });
-            channel.onError(reject);
-            channel.onClose(event => reject(new Error(`channel is closed with '${event.code}' code and '${event.reason}' reason}`)));
+            const { connectionProvider } = new TestWebSocketChannelSetup({ server, path });
 
-            multiplexer.onDidOpenChannel(event => {
-                if (event.id === path) {
+            connectionProvider.listen(path, (path2, channel) => {
+                channel.onError(reject);
+                channel.onClose(event => reject(new Error(`channel is closed with '${event.code}' code and '${event.reason}' reason}`)));
+                if (path2 === path) {
                     resolve();
                     channel.close();
                 }
-            });
+            }, false);
 
         });
     });

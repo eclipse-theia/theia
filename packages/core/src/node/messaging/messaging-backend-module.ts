@@ -15,23 +15,38 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { bindContributionProvider } from '../../common';
-import { BackendApplicationContribution } from '../backend-application';
-import { MessagingContribution, MessagingContainer } from './messaging-contribution';
+import { ConnectionHandler, RpcConnectionHandler, bindContributionProvider } from '../../common';
+// import { BackendApplicationContribution } from '../backend-application';
+import { DefaultMessagingService, MessagingContainer } from './default-messaging-service';
 import { ConnectionContainerModule } from './connection-container-module';
 import { MessagingService } from './messaging-service';
 import { MessagingListener, MessagingListenerContribution } from './messaging-listeners';
+import { FrontendConnectionService } from './frontend-connection-service';
+import { BackendApplicationContribution } from '../backend-application';
+import { connectionCloseServicePath } from '../../common/messaging/connection-management';
+import { WebsocketFrontendConnectionService } from './websocket-frontend-connection-service';
+import { WebsocketEndpoint } from './websocket-endpoint';
 
 export const messagingBackendModule = new ContainerModule(bind => {
     bindContributionProvider(bind, ConnectionContainerModule);
     bindContributionProvider(bind, MessagingService.Contribution);
-    bind(MessagingService.Identifier).to(MessagingContribution).inSingletonScope();
-    bind(MessagingContribution).toDynamicValue(({ container }) => {
-        const child = container.createChild();
-        child.bind(MessagingContainer).toConstantValue(container);
-        return child.get(MessagingService.Identifier);
-    }).inSingletonScope();
-    bind(BackendApplicationContribution).toService(MessagingContribution);
+    bind(DefaultMessagingService).toSelf().inSingletonScope();
+    bind(MessagingService.Identifier).toService(DefaultMessagingService);
+    bind(BackendApplicationContribution).toService(DefaultMessagingService);
+    bind(MessagingContainer).toDynamicValue(({ container }) => container).inSingletonScope();
+    bind(WebsocketEndpoint).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(WebsocketEndpoint);
+    bind(WebsocketFrontendConnectionService).toSelf().inSingletonScope();
+    bind(FrontendConnectionService).toService(WebsocketFrontendConnectionService);
     bind(MessagingListener).toSelf().inSingletonScope();
     bindContributionProvider(bind, MessagingListenerContribution);
+
+    bind(ConnectionHandler).toDynamicValue(context => {
+        const connectionService = context.container.get<WebsocketFrontendConnectionService>(FrontendConnectionService);
+        return new RpcConnectionHandler<object>(connectionCloseServicePath, () => ({
+            markForClose: (channelId: string) => {
+                connectionService.markForClose(channelId);
+            }
+        }));
+    }).inSingletonScope();
 });

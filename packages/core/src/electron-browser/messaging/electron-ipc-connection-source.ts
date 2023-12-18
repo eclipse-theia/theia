@@ -16,32 +16,36 @@
 
 import { injectable, interfaces } from 'inversify';
 import { RpcProxy } from '../../common/messaging';
-import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
-import { AbstractChannel, Channel, WriteBuffer } from '../../common';
+import { AbstractChannel, Channel, Emitter, Event, MaybePromise, WriteBuffer } from '../../common';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
+import { ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider';
+import { ConnectionSource } from '../../browser/messaging/connection-source';
+import { FrontendApplicationContribution } from '../../browser';
 
 export interface ElectronIpcOptions {
 }
 
+export const ElectronMainConnectionProvider = Symbol('ElectronMainConnectionProvider');
+
 /**
  * Connection provider between the Theia frontend and the electron-main process via IPC.
  */
+export namespace ElectronIpcConnectionProvider {
+
+    export function createProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): RpcProxy<T> {
+        return container.get<ServiceConnectionProvider>(ElectronMainConnectionProvider).createProxy<T>(path, arg);
+    }
+}
+
 @injectable()
-export class ElectronIpcConnectionProvider extends AbstractConnectionProvider<ElectronIpcOptions> {
+export class ElectronIpcConnectionSource implements ConnectionSource, FrontendApplicationContribution {
+    protected readonly onConnectionDidOpenEmitter: Emitter<Channel> = new Emitter();
+    onConnectionDidOpen: Event<Channel> = this.onConnectionDidOpenEmitter.event;
 
-    static override createProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): RpcProxy<T> {
-        return container.get(ElectronIpcConnectionProvider).createProxy<T>(path, arg);
+    onStart(): MaybePromise<void> {
+        const channel = new ElectronIpcRendererChannel();
+        this.onConnectionDidOpenEmitter.fire(channel);
     }
-
-    constructor() {
-        super();
-        this.initializeMultiplexer();
-    }
-
-    protected createMainChannel(): Channel {
-        return new ElectronIpcRendererChannel();
-    }
-
 }
 
 export class ElectronIpcRendererChannel extends AbstractChannel {

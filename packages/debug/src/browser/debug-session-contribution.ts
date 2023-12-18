@@ -19,7 +19,6 @@ import { MessageClient } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { DebugSession } from './debug-session';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugConfigurationSessionOptions, DebugSessionOptions } from './debug-session-options';
@@ -31,6 +30,7 @@ import { ContributionProvider } from '@theia/core/lib/common/contribution-provid
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DebugContribution } from './debug-contribution';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 
 /**
  * DebugSessionContribution symbol for DI.
@@ -95,8 +95,8 @@ export interface DebugSessionFactory {
 
 @injectable()
 export class DefaultDebugSessionFactory implements DebugSessionFactory {
-    @inject(WebSocketConnectionProvider)
-    protected readonly connectionProvider: WebSocketConnectionProvider;
+    @inject(RemoteConnectionProvider)
+    protected readonly connectionProvider: ServiceConnectionProvider;
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
     @inject(EditorManager)
@@ -122,9 +122,9 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
         const connection = new DebugSessionConnection(
             sessionId,
             () => new Promise<DebugChannel>(resolve =>
-                this.connectionProvider.openChannel(`${DebugAdapterPath}/${sessionId}`, wsChannel => {
+                this.connectionProvider.listen(`${DebugAdapterPath}/${sessionId}`, (_, wsChannel) => {
                     resolve(new ForwardingDebugChannel(wsChannel));
-                }, { reconnecting: false })
+                }, false)
             ),
             this.getTraceOutputChannel());
         return new DebugSession(

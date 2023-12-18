@@ -16,15 +16,15 @@
 
 import { WebContents } from '@theia/electron/shared/electron';
 import { inject, injectable, named, postConstruct } from 'inversify';
-import { ContributionProvider } from '../../common/contribution-provider';
-import { MessagingContribution } from '../../node/messaging/messaging-contribution';
-import { ElectronConnectionHandler } from '../../electron-common/messaging/electron-connection-handler';
-import { ElectronMainApplicationContribution } from '../electron-main-application';
-import { ElectronMessagingService } from './electron-messaging-service';
+import { ConnectionHandlers } from '../../node/messaging/default-messaging-service';
 import { AbstractChannel, Channel, ChannelMultiplexer, MessageProvider } from '../../common/message-rpc/channel';
-import { ConnectionHandler, Emitter, WriteBuffer } from '../../common';
+import { ConnectionHandler, ContributionProvider, Emitter, WriteBuffer } from '../../common';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
 import { TheiaRendererAPI } from '../electron-api-main';
+import { MessagingService } from '../../node';
+import { ElectronMessagingService } from './electron-messaging-service';
+import { ElectronConnectionHandler } from './electron-connection-handler';
+import { ElectronMainApplicationContribution } from '../electron-main-application';
 
 /**
  * This component replicates the role filled by `MessagingContribution` but for Electron.
@@ -36,64 +36,27 @@ import { TheiaRendererAPI } from '../electron-api-main';
 
 @injectable()
 export class ElectronMessagingContribution implements ElectronMainApplicationContribution, ElectronMessagingService {
-
     @inject(ContributionProvider) @named(ElectronMessagingService.Contribution)
     protected readonly messagingContributions: ContributionProvider<ElectronMessagingService.Contribution>;
 
     @inject(ContributionProvider) @named(ElectronConnectionHandler)
     protected readonly connectionHandlers: ContributionProvider<ConnectionHandler>;
 
-    protected readonly channelHandlers = new MessagingContribution.ConnectionHandlers<Channel>();
+    protected readonly channelHandlers = new ConnectionHandlers<Channel>();
+
     /**
      * Each electron window has a main channel and its own multiplexer to route multiple client messages the same IPC connection.
      */
-    protected readonly windowChannelMultiplexer = new Map<number, { channel: ElectronWebContentChannel, multiplexer: ChannelMultiplexer }>();
+    protected readonly openChannels = new Map<number, ElectronWebContentChannel>();
 
     @postConstruct()
     protected init(): void {
         TheiaRendererAPI.onIpcData((sender, data) => this.handleIpcEvent(sender, data));
     }
 
-    protected handleIpcEvent(sender: WebContents, data: Uint8Array): void {
-        // Get the multiplexer for a given window id
-        try {
-            const windowChannelData = this.windowChannelMultiplexer.get(sender.id) ?? this.createWindowChannelData(sender);
-            windowChannelData!.channel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(data));
-        } catch (error) {
-            console.error('IPC: Failed to handle message', { error, data });
-        }
-    }
-
-    // Creates a new multiplexer for a given sender/window
-    protected createWindowChannelData(sender: Electron.WebContents): { channel: ElectronWebContentChannel, multiplexer: ChannelMultiplexer } {
-        const mainChannel = this.createWindowMainChannel(sender);
-        const multiplexer = new ChannelMultiplexer(mainChannel);
-        multiplexer.onDidOpenChannel(openEvent => {
-            const { channel, id } = openEvent;
-            if (this.channelHandlers.route(id, channel)) {
-                console.debug(`Opening channel for service path '${id}'.`);
-                channel.onClose(() => console.debug(`Closing channel on service path '${id}'.`));
-            }
-        });
-
-        sender.once('did-navigate', () => this.disposeMultiplexer(sender.id, multiplexer, 'Window was refreshed')); // When refreshing the browser window.
-        sender.once('destroyed', () => this.disposeMultiplexer(sender.id, multiplexer, 'Window was closed')); // When closing the browser window.
-        const data = { channel: mainChannel, multiplexer };
-        this.windowChannelMultiplexer.set(sender.id, data);
-        return data;
-    }
-
-    /**
-     * Creates the main channel to a window.
-     * @param sender The window that the channel should be established to.
-     */
-    protected createWindowMainChannel(sender: WebContents): ElectronWebContentChannel {
-        return new ElectronWebContentChannel(sender);
-    }
-
-    protected disposeMultiplexer(windowId: number, multiplexer: ChannelMultiplexer, reason: string): void {
-        multiplexer.onUnderlyingChannelClose({ reason });
-        this.windowChannelMultiplexer.delete(windowId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ipcChannel(spec: string, callback: (params: any, channel: Channel) => void): void {
+        this.channelHandlers.push(spec, callback);
     }
 
     onStart(): void {
@@ -107,9 +70,48 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ipcChannel(spec: string, callback: (params: any, channel: Channel) => void): void {
-        this.channelHandlers.push(spec, callback);
+    protected handleIpcEvent(sender: WebContents, data: Uint8Array): void {
+        // Get the multiplexer for a given window id
+        try {
+            const windowChannel = this.openChannels.get(sender.id) ?? this.createWindowChannel(sender);
+            windowChannel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(data));
+        } catch (error) {
+            console.error('IPC: Failed to handle message', { error, data });
+        }
+    }
+
+    // Creates a new channel for a given sender/window
+    protected createWindowChannel(sender: Electron.WebContents): ElectronWebContentChannel {
+        const mainChannel = new ElectronWebContentChannel(sender);
+
+        const multiplexer = new ChannelMultiplexer(mainChannel);
+        multiplexer.onDidOpenChannel(openEvent => {
+            const { channel, id } = openEvent;
+            if (this.channelHandlers.route(id, channel)) {
+                console.debug(`Opening channel for service path '${id}'.`);
+                channel.onClose(() => console.debug(`Closing channel on service path '${id}'.`));
+            }
+        });
+        sender.once('did-navigate', () => this.deleteChannel(sender.id, 'Window was refreshed'));
+        sender.once('destroyed', () => this.deleteChannel(sender.id, 'Window was closed'));
+        this.openChannels.set(sender.id, mainChannel);
+        return mainChannel;
+    }
+
+    protected deleteChannel(senderId: number, reason: string): void {
+        const channel = this.openChannels.get(senderId);
+        if (channel) {
+            this.openChannels.delete(senderId);
+            channel.onCloseEmitter.fire({
+                reason: reason
+            });
+        }
+    }
+
+    protected readonly wsHandlers = new ConnectionHandlers();
+
+    registerConnectionHandler(spec: string, callback: (params: MessagingService.PathParams, channel: Channel) => void): void {
+        this.wsHandlers.push(spec, callback);
     }
 }
 

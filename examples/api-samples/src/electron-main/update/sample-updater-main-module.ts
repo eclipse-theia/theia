@@ -17,15 +17,15 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { RpcConnectionHandler } from '@theia/core/lib/common/messaging/proxy-factory';
 import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
-import { ElectronConnectionHandler } from '@theia/core/lib/electron-common/messaging/electron-connection-handler';
 import { SampleUpdaterPath, SampleUpdater, SampleUpdaterClient } from '../../common/updater/sample-updater';
 import { SampleUpdaterImpl } from './sample-updater-impl';
+import { ConnectionHandler } from '@theia/core';
 
 export default new ContainerModule(bind => {
     bind(SampleUpdaterImpl).toSelf().inSingletonScope();
     bind(SampleUpdater).toService(SampleUpdaterImpl);
     bind(ElectronMainApplicationContribution).toService(SampleUpdater);
-    bind(ElectronConnectionHandler).toDynamicValue(context =>
+    bind(ConnectionHandler).toDynamicValue(context =>
         new RpcConnectionHandler<SampleUpdaterClient>(SampleUpdaterPath, client => {
             const server = context.container.get<SampleUpdater>(SampleUpdater);
             server.setClient(client);
