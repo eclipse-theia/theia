@@ -75,7 +75,7 @@ The `Ext` side then gets the cached object, executes appropriate functions and r
 
 ## Adding new API
 
-This section gives an introduction to extending Theia’s plugin API. If you want to add a whole new namespace in your own extension, see this [readme](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/doc/how-to-add-new-plugin-namespace.md).
+This section gives an introduction to extending Theia’s plugin API. If you want to add a complete custom plugin API in your own extension, see this [readme](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/doc/how-to-add-new-custom-plugin-api.md).
 
 For adding new API, the first step is to declare it in the [theia.d.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin/src/theia.d.ts) file in the plugin package.
 In a second step, the implementation for the new API must be made available in the returned object of the API factory in [plugin-context.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/plugin/plugin-context.ts).
@@ -173,7 +173,7 @@ They can be added here and the added to the API object created in the API factor
 
 Talk by Thomas Maeder on writing plugin API: <https://www.youtube.com/watch?v=Z_65jy8_9SM>
 
-Adding a new plugin API namespace outside of theia plugin API: [how-to-add-new-plugin-namespace.md](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/doc/how-to-add-new-plugin-namespace.md)
+Adding a new custom plugin API outside of Theia plugin API: [how-to-add-new-custom-plugin-api.md](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/doc/how-to-add-new-custom-plugin-api.md)
 
 Theia Plugin Implementation wiki page: <https://github.com/eclipse-theia/theia/wiki/Theia-Plugin-Implementation>
 
@@ -183,4 +183,4 @@ Theia versus VS Code API Comparator: <https://github.com/eclipse-theia/vscode-th
 
 Theia's extension mechanisms: VS Code extensions, Theia extensions, and Theia plugins: <https://theia-ide.org/docs/extensions>
 
-Example of creating a custom namespace API and using in VS Code extensions: https://github.com/thegecko/vscode-theia-extension
+Example of creating a custom namespace API and using in VS Code extensions: <https://github.com/thegecko/vscode-theia-extension>
