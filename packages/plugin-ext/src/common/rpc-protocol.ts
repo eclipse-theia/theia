@@ -48,17 +48,7 @@ export interface RPCProtocol extends Disposable {
     /**
      * Register manually created instance.
      */
-    set<T, R extends T>(identifier: ProxyIdentifier<T>, instance: R): R;
-
-    /**
-     * Sent when a proxy handler is initialized.
-     */
-    onInitialize: Event<string>;
-
-    /**
-     * Makes sure that the proxy is eagerly initialized.
-     */
-    initialize<T>(proxyId: ProxyIdentifier<T>): void;
+    set<T, R extends T>(identifier: ProxyIdentifier<T>, instance: R, remoteDependencies?: Set<ProxyIdentifier<T>>): R;
 
 }
 
@@ -91,6 +81,7 @@ export class RPCProtocolImpl implements RPCProtocol {
     private readonly locals = new Map<string, RpcInvocationHandler>();
     private readonly proxies = new Map<string, any>();
     private readonly handler = new Map<string, any>();
+    private readonly remoteDependencies = new Map<string, Set<ProxyIdentifier<any>>>();
     private readonly multiplexer: ChannelMultiplexer;
     private readonly encoder = new MsgPackMessageEncoder();
     private readonly decoder = new MsgPackMessageDecoder();
@@ -104,6 +95,7 @@ export class RPCProtocolImpl implements RPCProtocol {
         this.toDispose.push(this.multiplexer = new ChannelMultiplexer(new BatchingChannel(channel)));
         this.toDispose.push(Disposable.create(() => this.proxies.clear()));
         this.toDispose.push(Disposable.create(() => this.handler.clear()));
+        this.toDispose.push(Disposable.create(() => this.remoteDependencies.clear()));
         this.toDispose.push(this.onInitializeEmitter);
     }
 
@@ -131,13 +123,20 @@ export class RPCProtocolImpl implements RPCProtocol {
         const handler = new ClientProxyHandler({
             id: proxyId, encoder: this.encoder, decoder: this.decoder,
             channelProvider: () => this.multiplexer.open(proxyId),
-            onInitialize: () => this.onInitializeEmitter.fire(proxyId),
+            onInitialize: () => {
+                const dependencies = this.remoteDependencies.get(proxyId);
+                if (dependencies) {
+                    dependencies.forEach(dep => {
+                        this.initialize(dep);
+                    });
+                }
+            },
         });
         this.handler.set(proxyId, handler);
         return new Proxy(Object.create(null), handler);
     }
 
-    set<T, R extends T>(identifier: ProxyIdentifier<T>, instance: R): R {
+    set<T, R extends T>(identifier: ProxyIdentifier<T>, instance: R, remoteDependencies: Set<ProxyIdentifier<T>> = new Set()): R {
         if (this.isDisposed) {
             throw ConnectionClosedError.create();
         }
@@ -161,15 +160,21 @@ export class RPCProtocolImpl implements RPCProtocol {
             if (Disposable.is(instance)) {
                 this.toDispose.push(instance);
             }
+
             this.toDispose.push(Disposable.create(() => this.locals.delete(identifier.id)));
+
+            for (const remoteDep of remoteDependencies) {
+                const deps = new Set(remoteDependencies);
+                deps.delete(remoteDep);
+                if (!this.remoteDependencies.has(remoteDep.id)) {
+                    this.remoteDependencies.set(remoteDep.id, new Set());
+                }
+                deps.forEach(dep => this.remoteDependencies.get(remoteDep.id)?.add(dep));
+            }
 
         }
         return instance;
     }
-
-    get onInitialize(): Event<string> {
-        return this.onInitializeEmitter.event;
-    };
 
     initialize<T>(proxyId: ProxyIdentifier<T>): void {
         /* make sure proxy exists */

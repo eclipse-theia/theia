@@ -101,7 +101,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const untitledResourceResolver = container.get(UntitledResourceResolver);
     const languageService = container.get(MonacoLanguages);
     const documentsMain = new DocumentsMainImpl(editorsAndDocuments, modelService, rpc, editorManager, openerService, shell, untitledResourceResolver, languageService);
-    rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, documentsMain);
+    rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, documentsMain, new Set([MAIN_RPC_CONTEXT.DOCUMENTS_EXT, MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT]));
 
     const notebookService = container.get(NotebookService);
     const pluginSupport = container.get(HostedPluginSupport);
