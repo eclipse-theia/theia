@@ -111,13 +111,14 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN, notebookEditorsMain);
     const notebookDocumentsMain = new NotebookDocumentsMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN, notebookDocumentsMain);
-    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_AND_EDITORS_MAIN, new NotebooksAndEditorsMain(rpc, container, notebookDocumentsMain, notebookEditorsMain));
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_AND_EDITORS_MAIN, new NotebooksAndEditorsMain(rpc, container, notebookDocumentsMain, notebookEditorsMain),
+        new Set([MAIN_RPC_CONTEXT.NOTEBOOKS_EXT, MAIN_RPC_CONTEXT.NOTEBOOK_EDITORS_EXT, MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT]));
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOK_KERNELS_MAIN, new NotebookKernelsMainImpl(rpc, container));
 
     const bulkEditService = container.get(MonacoBulkEditService);
     const monacoEditorService = container.get(MonacoEditorService);
     const editorsMain = new TextEditorsMainImpl(editorsAndDocuments, documentsMain, rpc, bulkEditService, monacoEditorService);
-    rpc.set(PLUGIN_RPC_CONTEXT.TEXT_EDITORS_MAIN, editorsMain);
+    rpc.set(PLUGIN_RPC_CONTEXT.TEXT_EDITORS_MAIN, editorsMain, new Set([MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, MAIN_RPC_CONTEXT.DOCUMENTS_EXT]));
 
     // start listening only after all clients are subscribed to events
     editorsAndDocuments.listen();
@@ -132,7 +133,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     rpc.set(PLUGIN_RPC_CONTEXT.NOTIFICATION_MAIN, notificationMain);
 
     const testingMain = new TestingMainImpl(rpc, container, commandRegistryMain);
-    rpc.set(PLUGIN_RPC_CONTEXT.TESTING_MAIN, testingMain);
+    rpc.set(PLUGIN_RPC_CONTEXT.TESTING_MAIN, testingMain, new Set([MAIN_RPC_CONTEXT.TESTING_EXT, MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT]));
 
     const terminalMain = new TerminalServiceMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.TERMINAL_MAIN, terminalMain);
@@ -152,10 +153,10 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     rpc.set(PLUGIN_RPC_CONTEXT.WEBVIEWS_MAIN, webviewsMain);
 
     const customEditorsMain = new CustomEditorsMainImpl(rpc, container, webviewsMain);
-    rpc.set(PLUGIN_RPC_CONTEXT.CUSTOM_EDITORS_MAIN, customEditorsMain);
+    rpc.set(PLUGIN_RPC_CONTEXT.CUSTOM_EDITORS_MAIN, customEditorsMain, new Set([MAIN_RPC_CONTEXT.CUSTOM_EDITORS_EXT, MAIN_RPC_CONTEXT.WEBVIEWS_EXT]));
 
     const webviewViewsMain = new WebviewViewsMainImpl(rpc, container, webviewsMain);
-    rpc.set(PLUGIN_RPC_CONTEXT.WEBVIEW_VIEWS_MAIN, webviewViewsMain);
+    rpc.set(PLUGIN_RPC_CONTEXT.WEBVIEW_VIEWS_MAIN, webviewViewsMain, new Set([MAIN_RPC_CONTEXT.WEBVIEW_VIEWS_EXT, MAIN_RPC_CONTEXT.WEBVIEWS_EXT]));
 
     const storageMain = new StorageMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.STORAGE_MAIN, storageMain);
@@ -167,7 +168,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     rpc.set(PLUGIN_RPC_CONTEXT.TASKS_MAIN, tasksMain);
 
     const debugMain = new DebugMainImpl(rpc, connectionMain, container);
-    rpc.set(PLUGIN_RPC_CONTEXT.DEBUG_MAIN, debugMain);
+    rpc.set(PLUGIN_RPC_CONTEXT.DEBUG_MAIN, debugMain, new Set([MAIN_RPC_CONTEXT.DEBUG_EXT, MAIN_RPC_CONTEXT.CONNECTION_EXT]));
 
     const fs = new FileSystemMainImpl(rpc, container);
     const fsEventService = new MainFileSystemEventService(rpc, container);

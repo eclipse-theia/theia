@@ -85,7 +85,6 @@ export class RPCProtocolImpl implements RPCProtocol {
     private readonly multiplexer: ChannelMultiplexer;
     private readonly encoder = new MsgPackMessageEncoder();
     private readonly decoder = new MsgPackMessageDecoder();
-    private readonly onInitializeEmitter: Emitter<string> = new Emitter();
 
     private readonly toDispose = new DisposableCollection(
         Disposable.create(() => { /* mark as no disposed */ })
@@ -96,7 +95,6 @@ export class RPCProtocolImpl implements RPCProtocol {
         this.toDispose.push(Disposable.create(() => this.proxies.clear()));
         this.toDispose.push(Disposable.create(() => this.handler.clear()));
         this.toDispose.push(Disposable.create(() => this.remoteDependencies.clear()));
-        this.toDispose.push(this.onInitializeEmitter);
     }
 
     dispose(): void {
@@ -176,7 +174,7 @@ export class RPCProtocolImpl implements RPCProtocol {
         return instance;
     }
 
-    initialize<T>(proxyId: ProxyIdentifier<T>): void {
+    protected initialize<T>(proxyId: ProxyIdentifier<T>): void {
         /* make sure proxy exists */
         this.getProxy(proxyId);
         /* init */

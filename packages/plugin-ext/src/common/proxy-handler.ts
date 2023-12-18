@@ -38,6 +38,7 @@ export interface InvocationHandlerOptions extends RpcHandlerOptions {
 export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
     private rpcDeferred: Deferred<RpcProtocol> = new Deferred();
     private isRpcInitialized = false;
+    private isInitializing = false;
 
     readonly id: string;
     private readonly channelProvider: () => Promise<Channel>;
@@ -50,12 +51,14 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
     }
 
     initializeRpc(): void {
-        if (!this.isRpcInitialized) {
+        if (!this.isRpcInitialized && !this.isInitializing) {
+            this.isInitializing = true;
             const clientOptions: RpcProtocolOptions = { encoder: this.encoder, decoder: this.decoder, mode: 'clientOnly' };
             this.channelProvider().then(channel => {
                 const rpc = new RpcProtocol(channel, undefined, clientOptions);
                 this.rpcDeferred.resolve(rpc);
                 this.isRpcInitialized = true;
+                this.isInitializing = false;
                 if (this.onInitialize) {
                     this.onInitialize();
                 }
@@ -64,7 +67,9 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
     }
 
     get(target: any, name: string, receiver: any): any {
-        this.initializeRpc();
+        if (!this.isRpcInitialized) {
+            this.initializeRpc();
+        }
 
         if (target[name] || name.charCodeAt(0) !== 36 /* CharCode.DollarSign */) {
             return target[name];

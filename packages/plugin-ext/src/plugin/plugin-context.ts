@@ -272,31 +272,43 @@ export function createAPIFactory(
     const notificationExt = rpc.set(MAIN_RPC_CONTEXT.NOTIFICATION_EXT, new NotificationExtImpl(rpc));
     const editors = rpc.set(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, new TextEditorsExtImpl(rpc, editorsAndDocumentsExt));
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocumentsExt));
-    const notebooksExt = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT, new NotebooksExtImpl(rpc, commandRegistry, editorsAndDocumentsExt, documents));
+    const notebooksExt = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOKS_EXT, new NotebooksExtImpl(rpc, commandRegistry, editorsAndDocumentsExt, documents),
+        new Set([PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN, PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN,
+        PLUGIN_RPC_CONTEXT.COMMAND_REGISTRY_MAIN, PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN]));
     const notebookEditors = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_EDITORS_EXT, new NotebookEditorsExtImpl(notebooksExt));
-    const notebookRenderers = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT, new NotebookRenderersExtImpl(rpc, notebooksExt));
-    const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt, commandRegistry));
+    const notebookRenderers = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT, new NotebookRenderersExtImpl(rpc, notebooksExt),
+        new Set([PLUGIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_MAIN, PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN,
+        PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN]));
+    const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt, commandRegistry),
+        new Set([PLUGIN_RPC_CONTEXT.NOTEBOOK_KERNELS_MAIN, PLUGIN_RPC_CONTEXT.COMMAND_REGISTRY_MAIN, PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN,
+        PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN]));
     const notebookDocuments = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT, new NotebookDocumentsExtImpl(notebooksExt));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = rpc.set(MAIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_EXT, new OutputChannelRegistryExtImpl(rpc));
-    const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
-    const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc, terminalExt));
+    const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry),
+        new Set([PLUGIN_RPC_CONTEXT.TREE_VIEWS_MAIN, PLUGIN_RPC_CONTEXT.COMMAND_REGISTRY_MAIN]));
+    const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc, terminalExt), new Set([PLUGIN_RPC_CONTEXT.TASKS_MAIN, PLUGIN_RPC_CONTEXT.TERMINAL_MAIN]));
     const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionImpl(rpc.getProxy(PLUGIN_RPC_CONTEXT.CONNECTION_MAIN)));
     const fileSystemExt = rpc.set(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT, new FileSystemExtImpl(rpc));
-    const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry, fileSystemExt));
+    const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry, fileSystemExt),
+        new Set([PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN, PLUGIN_RPC_CONTEXT.COMMAND_REGISTRY_MAIN, PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, PLUGIN_RPC_CONTEXT.FILE_SYSTEM_MAIN]));
     const extHostFileSystemEvent = rpc.set(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService, new ExtHostFileSystemEventService(rpc, editorsAndDocumentsExt));
-    const scmExt = rpc.set(MAIN_RPC_CONTEXT.SCM_EXT, new ScmExtImpl(rpc, commandRegistry));
+    const scmExt = rpc.set(MAIN_RPC_CONTEXT.SCM_EXT, new ScmExtImpl(rpc, commandRegistry), new Set([PLUGIN_RPC_CONTEXT.SCM_MAIN, PLUGIN_RPC_CONTEXT.COMMAND_REGISTRY_MAIN]));
     const decorationsExt = rpc.set(MAIN_RPC_CONTEXT.DECORATIONS_EXT, new DecorationsExtImpl(rpc));
     const labelServiceExt = rpc.set(MAIN_RPC_CONTEXT.LABEL_SERVICE_EXT, new LabelServiceExtImpl(rpc));
-    const timelineExt = rpc.set(MAIN_RPC_CONTEXT.TIMELINE_EXT, new TimelineExtImpl(rpc, commandRegistry));
+    const timelineExt = rpc.set(MAIN_RPC_CONTEXT.TIMELINE_EXT, new TimelineExtImpl(rpc, commandRegistry),
+        new Set([PLUGIN_RPC_CONTEXT.TIMELINE_MAIN, PLUGIN_RPC_CONTEXT.COMMAND_REGISTRY_MAIN]));
     const themingExt = rpc.set(MAIN_RPC_CONTEXT.THEMING_EXT, new ThemingExtImpl(rpc));
-    const commentsExt = rpc.set(MAIN_RPC_CONTEXT.COMMENTS_EXT, new CommentsExtImpl(rpc, commandRegistry, documents));
+    const commentsExt = rpc.set(MAIN_RPC_CONTEXT.COMMENTS_EXT, new CommentsExtImpl(rpc, commandRegistry, documents),
+        new Set([PLUGIN_RPC_CONTEXT.COMMENTS_MAIN, PLUGIN_RPC_CONTEXT.COMMAND_REGISTRY_MAIN, PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN]));
     const tabsExt = rpc.set(MAIN_RPC_CONTEXT.TABS_EXT, new TabsExtImpl(rpc));
-    const customEditorExt = rpc.set(MAIN_RPC_CONTEXT.CUSTOM_EDITORS_EXT, new CustomEditorsExtImpl(rpc, documents, webviewExt, workspaceExt));
+    const customEditorExt = rpc.set(MAIN_RPC_CONTEXT.CUSTOM_EDITORS_EXT, new CustomEditorsExtImpl(rpc, documents, webviewExt, workspaceExt),
+        new Set([PLUGIN_RPC_CONTEXT.CUSTOM_EDITORS_MAIN, PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN]));
     const webviewViewsExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEW_VIEWS_EXT, new WebviewViewsExtImpl(rpc, webviewExt));
     const telemetryExt = rpc.set(MAIN_RPC_CONTEXT.TELEMETRY_EXT, new TelemetryExtImpl());
-    const testingExt = rpc.set(MAIN_RPC_CONTEXT.TESTING_EXT, new TestingExtImpl(rpc, commandRegistry));
+    const testingExt = rpc.set(MAIN_RPC_CONTEXT.TESTING_EXT, new TestingExtImpl(rpc, commandRegistry),
+        new Set([PLUGIN_RPC_CONTEXT.TESTING_MAIN, PLUGIN_RPC_CONTEXT.COMMAND_REGISTRY_MAIN]));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {

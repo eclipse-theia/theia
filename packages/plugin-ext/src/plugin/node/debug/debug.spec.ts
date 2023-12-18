@@ -34,7 +34,7 @@ describe('Debug API', () => {
             },
             dispose(): void {
                 // Nothing
-            },
+            }
         };
 
         const debug = new DebugExtImpl(mockRPCProtocol);

@@ -18,7 +18,7 @@ import 'reflect-metadata';
 import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
 import * as theia from '@theia/plugin';
-import { emptyPlugin, MAIN_RPC_CONTEXT, Plugin, TerminalServiceExt } from '../../../common/plugin-api-rpc';
+import { emptyPlugin, MAIN_RPC_CONTEXT, Plugin, TerminalServiceExt, PLUGIN_RPC_CONTEXT } from '../../../common/plugin-api-rpc';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
 import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
 import { RPCProtocolImpl } from '../../../common/rpc-protocol';
@@ -208,12 +208,14 @@ const handler = {
 };
 ctx['theia'] = new Proxy(Object.create(null), handler);
 
-rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager);
+rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager,
+    new Set([PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN, PLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN, PLUGIN_RPC_CONTEXT.NOTIFICATION_MAIN, PLUGIN_RPC_CONTEXT.STORAGE_MAIN,
+    PLUGIN_RPC_CONTEXT.WEBVIEWS_MAIN]));
 rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, editorsAndDocuments);
-rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt);
-rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
+rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt, new Set([PLUGIN_RPC_CONTEXT.WORKSPACE_MAIN, PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, PLUGIN_RPC_CONTEXT.TEXT_EDITORS_MAIN]));
+rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt, new Set([PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN, PLUGIN_RPC_CONTEXT.WORKSPACE_MAIN]));
 rpc.set(MAIN_RPC_CONTEXT.STORAGE_EXT, storageProxy);
-rpc.set(MAIN_RPC_CONTEXT.WEBVIEWS_EXT, webviewExt);
+rpc.set(MAIN_RPC_CONTEXT.WEBVIEWS_EXT, webviewExt, new Set([PLUGIN_RPC_CONTEXT.WEBVIEWS_MAIN, PLUGIN_RPC_CONTEXT.WORKSPACE_MAIN]));
 
 function isElectron(): boolean {
     if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {
