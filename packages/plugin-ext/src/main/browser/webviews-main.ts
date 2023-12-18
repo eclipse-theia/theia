@@ -63,7 +63,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         showOptions: WebviewPanelShowOptions,
         options: WebviewPanelOptions & WebviewOptions
     ): Promise<void> {
-        const view = await this.widgetManager.getOrCreateWidget<WebviewWidget>(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: panelId });
+        const view = await this.widgetManager.getOrCreateWidget<WebviewWidget>(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: panelId, viewId: viewType });
         this.hookWebview(view);
         view.viewType = viewType;
         view.title.label = title;
@@ -269,7 +269,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
     }
 
     private async tryGetWebview(id: string): Promise<WebviewWidget | undefined> {
-        const webview = await this.widgetManager.getWidget<WebviewWidget>(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id })
+        const webview = this.widgetManager.getWidgets(WebviewWidget.FACTORY_ID).find(widget => widget instanceof WebviewWidget && widget.identifier.id === id) as WebviewWidget
             || await this.widgetManager.getWidget<CustomEditorWidget>(CustomEditorWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id });
         return webview;
     }
