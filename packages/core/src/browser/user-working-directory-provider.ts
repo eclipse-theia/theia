@@ -16,13 +16,33 @@
 
 import { inject, injectable } from 'inversify';
 import URI from '../common/uri';
-import { MaybePromise, SelectionService, UriSelection } from '../common';
+import { MaybePromise, SelectionService, UNTITLED_SCHEME, UriSelection } from '../common';
 import { EnvVariablesServer } from '../common/env-variables';
+import { FrontendApplication } from './frontend-application';
+import { FrontendApplicationContribution } from './frontend-application-contribution';
+import { Widget } from './widgets';
+import { Navigatable } from './navigatable-types';
 
 @injectable()
-export class UserWorkingDirectoryProvider {
+export class UserWorkingDirectoryProvider implements FrontendApplicationContribution {
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(EnvVariablesServer) protected readonly envVariables: EnvVariablesServer;
+
+    protected lastOpenResource: URI | undefined;
+
+    configure(app: FrontendApplication): void {
+        app.shell.onDidChangeCurrentWidget(e => this.setLastOpenResource(e.newValue ?? undefined));
+        this.setLastOpenResource(app.shell.currentWidget);
+    }
+
+    protected setLastOpenResource(widget?: Widget): void {
+        if (Navigatable.is(widget)) {
+            const uri = widget.getResourceUri();
+            if (uri && uri.scheme !== UNTITLED_SCHEME) {
+                this.lastOpenResource = uri;
+            }
+        }
+    }
 
     /**
      * @returns A {@link URI} that represents a good guess about the directory in which the user is currently operating.
@@ -35,7 +55,16 @@ export class UserWorkingDirectoryProvider {
     }
 
     protected getFromSelection(): MaybePromise<URI | undefined> {
-        return this.ensureIsDirectory(UriSelection.getUri(this.selectionService.selection));
+        const uri = UriSelection.getUri(this.selectionService.selection);
+        if (uri?.scheme === UNTITLED_SCHEME) {
+            // An untitled file is not a valid working directory context.
+            return undefined;
+        }
+        return this.ensureIsDirectory(uri);
+    }
+
+    protected getFromLastOpenResource(): MaybePromise<URI | undefined> {
+        return this.ensureIsDirectory(this.lastOpenResource);
     }
 
     protected getFromUserHome(): MaybePromise<URI> {
