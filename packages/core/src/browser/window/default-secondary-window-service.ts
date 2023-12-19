@@ -20,6 +20,7 @@ import { ExtractableWidget } from '../widgets';
 import { ApplicationShell } from '../shell';
 import { Saveable } from '../saveable';
 import { PreferenceService } from '../preferences';
+import { environment, isWindows } from '../../common';
 
 @injectable()
 export class DefaultSecondaryWindowService implements SecondaryWindowService {
@@ -137,6 +138,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 });
             });
         }
+        newWindow?.focus();
         return newWindow;
     }
 
@@ -144,44 +146,53 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
         const clientBounds = widget.node.getBoundingClientRect();
         const preference = this.preferenceService.get('window.secondaryWindowPlacement');
 
+        // const offsetY = 50;
+
         let height; let width; let left; let top;
+
+        console.log(`***height, width + ${widget.node.clientHeight} + ${widget.node.clientWidth}`);
+        console.log(`***client left/screen left/clienx' + ${widget.node.clientLeft} + ${window.screenLeft} + ${clientBounds.x}`);
+        console.log(`***client top / screen top' + ${widget.node.clientTop} + ${window.screenTop} + ${clientBounds.y}`);
+        console.log(`*** avail height/width ${window.screen.availHeight} ${window.screen.availWidth}`);
 
         switch (preference) {
             case 'originalSize': {
-                // shift a bit right and down (enough to clear the editor's preview button)
-                // const offsetX = 0; // 50 + widget.node.clientWidth;
-                // const offsetY = 0;
-                const offsetHeight = 50;
-                const offsetWidth = 0;
-
-                // try to place secondary window left of the main window
-                // const offsetX = widget.node.clientWidth;
-                // const offsetY = 0;
-
+                if (isWindows) {
+                    height = widget.node.clientHeight;
+                    width = widget.node.clientWidth;
+                    left = window.screenLeft + clientBounds.x - 8;
+                    if (environment.electron.is()) {
+                        top = window.screenTop + clientBounds.y;
+                    } else {
+                        top = window.screenTop + clientBounds.y + 48;
+                    }
+                    break;
+                }
                 height = widget.node.clientHeight;
-                width = widget.node.clientWidth + offsetWidth;
-                // window.screenLeft: horizontal offset of main window (top left corner) vs desktop
-                // window.screenTop: vertical offset of main window vs desktop
-                left = widget.node.clientLeft + window.screenLeft + clientBounds.x;
-                top = widget.node.clientTop + window.screenTop + clientBounds.y + offsetHeight;
-
-                console.log('***height, width' + height + width);
-                console.log('***client left / screen left' + `${widget.node.clientLeft}` + `${window.screenLeft}`);
-                console.log('***client top / screen top' + `${widget.node.clientTop}` + `${window.screenTop}`);
+                width = widget.node.clientWidth;
+                left = window.screenLeft + clientBounds.x;
+                if (environment.electron.is()) {
+                    top = window.screenTop + clientBounds.y;
+                } else {
+                    top = window.screenTop + clientBounds.y + 60;
+                }
                 break;
             }
             case 'splitScreen': {
                 height = window.screen.availHeight;
                 width = window.screen.availWidth / 2;
-                left = window.screen.availWidth / 2;
+                left = 0;
                 top = 0;
                 break;
             }
             case 'fullScreen': {
                 height = window.screen.availHeight;
                 width = window.screen.availWidth;
-                left = window.screen.availWidth;
-                top = window.screen.availHeight;
+                left = 0;
+                top = 0;
+                // if (isWindows) {
+                //     width = window.screen.availWidth - 30;
+                // }
                 break;
             }
         }
