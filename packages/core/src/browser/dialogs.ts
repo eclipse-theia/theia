@@ -458,40 +458,6 @@ export class ConfirmSaveDialog extends AbstractDialog<boolean | undefined> {
 
 }
 
-// Asks the user to confirm whether they want to exit with or without saving the changes
-export async function confirmExitWithOrWithoutSaving(captionsToSave: string[], performSave: () => Promise<void>): Promise<boolean> {
-    const div: HTMLElement = document.createElement('div');
-    div.innerText = nls.localizeByDefault("Your changes will be lost if you don't save them.");
-
-    if (captionsToSave.length > 0) {
-        const span = document.createElement('span');
-        span.appendChild(document.createElement('br'));
-        captionsToSave.forEach(cap => {
-            const b = document.createElement('b');
-            b.innerText = cap;
-            span.appendChild(b);
-            span.appendChild(document.createElement('br'));
-        });
-        span.appendChild(document.createElement('br'));
-        div.appendChild(span);
-        const result = await new ConfirmSaveDialog({
-            title: nls.localizeByDefault('Do you want to save the changes to the following {0} files?', captionsToSave.length),
-            msg: div,
-            dontSave: nls.localizeByDefault("Don't Save"),
-            save: nls.localizeByDefault('Save All'),
-            cancel: Dialog.CANCEL
-        }).open();
-
-        if (result) {
-            await performSave();
-        }
-        return result !== undefined;
-    } else {
-        // fallback if not passed with an empty caption-list.
-        return confirmExit();
-    }
-
-}
 @injectable()
 export class SingleTextInputDialogProps extends DialogProps {
     readonly confirmButtonLabel?: string;
