@@ -404,8 +404,12 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     async spliceRoots(start: number, deleteCount?: number, ...rootsToAdd: URI[]): Promise<URI[]> {
-        if (!this._workspace) {
-            throw new Error('There is no active workspace');
+        if (!this._workspace || this._workspace.isDirectory) {
+            const untitledWorkspace = await this.getUntitledWorkspace();
+            await this.save(untitledWorkspace);
+            if (!this._workspace) {
+                throw new Error('Could not create new untitled workspace');
+            }
         }
         const dedup = new Set<string>();
         const roots = this._roots.map(root => (dedup.add(root.resource.toString()), root.resource.toString()));
@@ -421,10 +425,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         if (!toRemove.length && !toAdd.length) {
             return [];
         }
-        if (this._workspace.isDirectory) {
-            const untitledWorkspace = await this.getUntitledWorkspace();
-            await this.save(untitledWorkspace);
-        }
+
         const currentData = await this.getWorkspaceDataFromFile();
         const newData = WorkspaceData.buildWorkspaceData(roots, currentData);
         await this.writeWorkspaceFile(this._workspace, newData);
