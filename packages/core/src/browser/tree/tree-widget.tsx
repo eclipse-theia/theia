@@ -914,7 +914,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     /**
      * Determines whether an indentation div should be rendered for the specified tree node.
-     * If there are multiple tree node inside of a single rendered row,
+     * If there are multiple tree nodes inside of a single rendered row,
      * this method should only return true for the first node.
      */
     protected shouldRenderIndent(node: TreeNode): boolean {
