@@ -303,7 +303,6 @@ export class ElectronMainApplication {
      * @param options
      */
     async createWindow(asyncOptions: MaybePromise<TheiaBrowserWindowOptions> = this.getDefaultTheiaWindowOptions()): Promise<BrowserWindow> {
-        console.log('** ** ** createWindow() - ');
         let options = await asyncOptions;
         options = this.avoidOverlap(options);
         const electronWindow = this.windowFactory(options, this.config);
@@ -319,7 +318,6 @@ export class ElectronMainApplication {
     }
 
     async getLastWindowOptions(): Promise<TheiaBrowserWindowOptions> {
-        console.log('*** *** getLastWindowOptions() ');
         const previousWindowState: TheiaBrowserWindowOptions | undefined = this.electronStore.get('windowstate');
         const windowState = previousWindowState?.screenLayout === this.getCurrentScreenLayout()
             ? previousWindowState
@@ -397,16 +395,13 @@ export class ElectronMainApplication {
         electronWindow.webContents.setWindowOpenHandler(() => {
             const { minWidth, minHeight } = this.getDefaultOptions();
             const options: BrowserWindowConstructorOptions = {
-                ...this.getDefaultTheiaSecondaryWindowBounds(),
+                ...this.getDefaultTheiaWindowBounds(),
                 // We always need the native window frame for now because the secondary window does not have Theia's title bar by default.
                 // In 'custom' title bar mode this would leave the window without any window controls (close, min, max)
                 // TODO set to this.useNativeWindowFrame when secondary windows support a custom title bar.
                 frame: true,
                 minWidth,
                 minHeight
-                // ,
-                // // TODO: add a preference?
-                // alwaysOnTop: true
             };
             if (!this.useNativeWindowFrame) {
                 // If the main window does not have a native window frame, do not show  an icon in the secondary window's native title bar.
@@ -457,7 +452,6 @@ export class ElectronMainApplication {
     }
 
     protected getDefaultTheiaWindowOptions(): TheiaBrowserWindowOptions {
-        console.log('*** getDefaultTheiaWindowOptions() ');
         return {
             frame: this.useNativeWindowFrame,
             isFullScreen: false,
@@ -477,17 +471,12 @@ export class ElectronMainApplication {
         const width = Math.round(bounds.width * (2 / 3));
         const y = Math.round(bounds.y + (bounds.height - height) / 2);
         const x = Math.round(bounds.x + (bounds.width - width) / 2);
-        console.log(`*** getDefaultTheiaWindowBounds(): { width=${width}, height=${height}, x=${x}}, y=${y} }`);
         return {
             width,
             height,
             x,
             y
         };
-    }
-
-    protected getDefaultTheiaSecondaryWindowBounds(): TheiaBrowserWindowOptions {
-        return {};
     }
 
     /**
@@ -513,7 +502,6 @@ export class ElectronMainApplication {
     }
 
     protected saveWindowState(electronWindow: BrowserWindow): void {
-        console.log('*** *** saveWindowState() ');
         // In some circumstances the `electronWindow` can be `null`
         if (!electronWindow) {
             return;
