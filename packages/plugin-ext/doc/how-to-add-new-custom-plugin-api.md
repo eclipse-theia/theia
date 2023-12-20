@@ -260,6 +260,16 @@ import * as foo from '@bar/foo';
 foo.fooBar.getFoo();
 ```
 
+## Adding custom plugin activation events
+
+When creating a custom plugin API there may also arise a need to trigger the activation of your plugins at a certain point in time.
+The events that trigger the activation of a plugin are simply called `activation events`.
+By default Theia supports a set of built-in activation events that contains the [activation events from VS Code](https://code.visualstudio.com/api/references/activation-events) as well as some additional Theia-specific events.
+Technically, an activation event is nothing more than a unique string fired at a specific point in time.
+To add more flexibility to activations events, Theia allows you to provide additional custom activation events when initializing a plugin host.
+These additional events can be specified by adopters through the `ADDITIONAL_ACTIVATION_EVENTS` environment variable.
+To fire an activation event, you need to call the plugin hosts `$activateByEvent(eventName)` method.
+
 ## Packaging
 
 When bundling our application with the generated `gen-webpack.node.config.js` we need to make sure that our initialization function is bundled as a `commonjs2` library so it can be dynamically loaded.
