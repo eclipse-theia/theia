@@ -20,6 +20,8 @@ import {
     MenuContribution, MenuModelRegistry, MenuNode, MessageService, SubMenuOptions
 } from '@theia/core/lib/common';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileDialogService } from '@theia/filesystem/lib/browser';
 
 const SampleCommand: Command = {
     id: 'sample-command',
@@ -60,6 +62,12 @@ export class SampleCommandContribution implements CommandContribution {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
+    @inject(FileDialogService)
+    protected readonly fileDialogService: FileDialogService;
+
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand({ id: 'create-quick-pick-sample', label: 'Internal QuickPick' }, {
             execute: () => {
@@ -78,8 +86,30 @@ export class SampleCommandContribution implements CommandContribution {
             }
         });
         commands.registerCommand(SampleCommand2, {
-            execute: () => {
-                alert('This is sample command2!');
+            execute: async () => {
+                const uri = await this.fileDialogService.showOpenDialog({ title: 'Open File' });
+                if (!uri) {
+                    return;
+                }
+                let progress = await this.messageService.showProgress({ text: 'FileService.readFile...' });
+                try {
+                    const read = await this.fileService.readFile(uri, { length: 10 });
+                    this.messageService.info('FileService.readFile: ' + read.value.byteLength + ' - ' + read.value);
+                } catch (error) {
+                    this.messageService.error(error?.message ?? error);
+                } finally {
+                    progress.cancel();
+                }
+
+                progress = await this.messageService.showProgress({ text: 'FileService.read...' });
+                try {
+                    const read = await this.fileService.read(uri, { length: 10, limits: { size: Number.MAX_SAFE_INTEGER } });
+                    this.messageService.info('FileService.read: ' + read.value.length + ' - ' + read);
+                } catch (error) {
+                    this.messageService.error(error?.message ?? error);
+                } finally {
+                    progress.cancel();
+                }
             }
         });
         commands.registerCommand(SampleCommandConfirmDialog, {
