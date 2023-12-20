@@ -36,6 +36,7 @@ import { NotebookDocument } from './notebook-document';
 import { NotebookEditor } from './notebook-editor';
 import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
 import { DocumentsExtImpl } from '../documents';
+import { NotebookModelResource } from '@theia/notebook/lib/common';
 
 export class NotebooksExtImpl implements NotebooksExt {
 
@@ -82,11 +83,12 @@ export class NotebooksExtImpl implements NotebooksExt {
         this.notebookEditors = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN);
 
         commands.registerArgumentProcessor({
-            processArgument: (arg: { uri: URI }) => {
-                if (arg && arg.uri && this.documents.has(arg.uri.toString())) {
-                    return this.documents.get(arg.uri.toString())?.apiNotebook;
+            processArgument: arg => {
+                if (NotebookModelResource.is(arg)) {
+                    return this.documents.get(arg.notebookModelUri.toString())?.apiNotebook;
+                } else {
+                    return arg;
                 }
-                return arg;
             }
         });
     }

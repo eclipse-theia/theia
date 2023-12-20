@@ -23,8 +23,9 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { NotebookService } from './notebook-service';
 import {
     CellEditType, CellExecuteOutputEdit, CellExecuteOutputItemEdit, CellExecutionUpdateType,
-    CellUri, CellPartialInternalMetadataEditByHandle, NotebookCellExecutionState, CellEditOperation, NotebookCellInternalMetadata
+    CellUri, NotebookCellExecutionState, NotebookCellInternalMetadata
 } from '../../common';
+import { CellPartialInternalMetadataEditByHandle, CellEditOperation } from '../notebook-types';
 import { NotebookModel } from '../view-model/notebook-model';
 import { v4 } from 'uuid';
 
@@ -43,10 +44,6 @@ export interface CellExecutionStateUpdate {
     isPaused?: boolean;
 }
 
-export interface ICellExecutionComplete {
-    runEndTime?: number;
-    lastRunSuccess?: boolean;
-}
 export enum NotebookExecutionType {
     cell,
     notebook

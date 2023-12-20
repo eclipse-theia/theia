@@ -21,7 +21,9 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { StorageService } from '@theia/core/lib/browser';
 import { NotebookKernel, NotebookTextModelLike, NotebookKernelService } from './notebook-kernel-service';
-import { Disposable } from '@theia/core';
+import { CommandService, Disposable } from '@theia/core';
+import { NotebookModel } from '../view-model/notebook-model';
+import { NotebookCommands } from '../contributions/notebook-actions-contribution';
 
 interface KernelsList {
     [viewType: string]: string[];
@@ -42,6 +44,9 @@ export class NotebookKernelHistoryService implements Disposable {
 
     @inject(NotebookKernelService)
     protected notebookKernelService: NotebookKernelService;
+
+    @inject(CommandService)
+    protected commandService: CommandService;
 
     declare serviceBrand: undefined;
 
@@ -66,6 +71,18 @@ export class NotebookKernelHistoryService implements Disposable {
             selected: selectedKernel ?? suggested,
             all
         };
+    }
+
+    async resolveSelectedKernel(notebook: NotebookModel): Promise<NotebookKernel | undefined> {
+        const alreadySelected = this.getKernels(notebook);
+
+        if (alreadySelected.selected) {
+            return alreadySelected.selected;
+        }
+
+        await this.commandService.executeCommand(NotebookCommands.SELECT_KERNEL_COMMAND.id, notebook);
+        const { selected } = this.getKernels(notebook);
+        return selected;
     }
 
     addMostRecentKernel(kernel: NotebookKernel): void {

@@ -204,11 +204,16 @@ export class CommandsConverter {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private executeSafeCommand<R>(...args: any[]): PromiseLike<R | undefined> {
-        const command = this.commandsMap.get(args[0]);
-        if (!command || !command.command) {
-            return Promise.reject(`command ${args[0]} not found`);
+        const handle = args[0];
+        if (typeof handle !== 'number') {
+            return Promise.reject(`Invalid handle ${handle}`);
         }
-        return this.commands.executeCommand(command.command, ...(command.arguments || []));
+        const command = this.commandsMap.get(handle);
+        if (!command || !command.command) {
+            return Promise.reject(`Safe command with handle ${handle} not found`);
+        }
+        const allArgs = (command.arguments ?? []).concat(args.slice(1));
+        return this.commands.executeCommand(command.command, ...allArgs);
     }
 
 }

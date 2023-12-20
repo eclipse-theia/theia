@@ -288,17 +288,17 @@ export class NotebookDocument implements Disposable {
                 this.setCellOutputs(rawEvent.index, rawEvent.outputs);
                 relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, outputs: this.cells[rawEvent.index].apiCell.outputs });
 
-            // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.OutputItem) {
-            //     this._setCellOutputItems(rawEvent.index, rawEvent.outputId, rawEvent.append, rawEvent.outputItems);
-            //     relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, outputs: this.cells[rawEvent.index].apiCell.outputs });
+                // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.OutputItem) {
+                //     this._setCellOutputItems(rawEvent.index, rawEvent.outputId, rawEvent.append, rawEvent.outputItems);
+                //     relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, outputs: this.cells[rawEvent.index].apiCell.outputs });
             } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellLanguage) {
                 this.changeCellLanguage(rawEvent.index, rawEvent.language);
                 relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, document: this.cells[rawEvent.index].apiCell.document });
             } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellContent) {
                 relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, document: this.cells[rawEvent.index].apiCell.document });
 
-            // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellMime) {
-            //     this._changeCellMime(rawEvent.index, rawEvent.mime);
+                // } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellMime) {
+                //     this._changeCellMime(rawEvent.index, rawEvent.mime);
             } else if (rawEvent.kind === notebookCommon.NotebookCellsChangeType.ChangeCellMetadata) {
                 this.changeCellMetadata(rawEvent.index, rawEvent.metadata);
                 relaxedCellChanges.push({ cell: this.cells[rawEvent.index].apiCell, metadata: this.cells[rawEvent.index].apiCell.metadata });
@@ -351,7 +351,7 @@ export class NotebookDocument implements Disposable {
         const removedCellDocuments: UriComponents[] = [];
 
         splices.reverse().forEach(splice => {
-            const cellDtos = splice[2];
+            const cellDtos = splice.newItems;
             const newCells = cellDtos.map((cell: NotebookCellDto) => {
 
                 const extCell = new Cell(this, this.editorsAndDocuments, cell);
@@ -361,8 +361,8 @@ export class NotebookDocument implements Disposable {
                 return extCell;
             });
 
-            const changeEvent = new RawContentChangeEvent(splice[0], splice[1], [], newCells);
-            const deletedItems = this.cells.splice(splice[0], splice[1], ...newCells);
+            const changeEvent = new RawContentChangeEvent(splice.start, splice.deleteCount, [], newCells);
+            const deletedItems = this.cells.splice(splice.start, splice.deleteCount, ...newCells);
             for (const cell of deletedItems) {
                 removedCellDocuments.push(cell.uri.toComponents());
                 changeEvent.deletedItems.push(cell.apiCell);

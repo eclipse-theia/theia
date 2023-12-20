@@ -24,3 +24,4 @@ export * from './service/notebook-execution-state-service';
 export * from './service/notebook-model-resolver-service';
 export * from './service/notebook-renderer-messaging-service';
 export * from './renderers/cell-output-webview';
+export * from './notebook-types';

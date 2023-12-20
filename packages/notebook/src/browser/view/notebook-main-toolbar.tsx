@@ -66,6 +66,15 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
                 this.setState({ selectedKernelLabel: props.notebookKernelService.getSelectedOrSuggestedKernel(props.notebookModel)?.label });
             }
         }));
+
+        // TODO maybe we need a mechanism to check for changes in the menu to update this toolbar
+        const contextKeys = new Set<string>();
+        this.getMenuItems().filter(item => item.when).forEach(item => props.contextKeyService.parseKeys(item.when!)?.forEach(key => contextKeys.add(key)));
+        props.contextKeyService.onDidChange(e => {
+            if (e.affects(contextKeys)) {
+                this.forceUpdate();
+            }
+        });
     }
 
     override componentWillUnmount(): void {

@@ -18,6 +18,8 @@ import { OS } from '@theia/core';
 import * as notebookCommon from '@theia/notebook/lib/common';
 import { NotebookCellModel } from '@theia/notebook/lib/browser/view-model/notebook-cell-model';
 import * as rpc from '../../../common';
+import { CellExecutionUpdateType } from '@theia/notebook/lib/common';
+import { CellExecuteUpdate, CellExecutionComplete } from '@theia/notebook/lib/browser';
 
 export namespace NotebookDto {
 
@@ -102,40 +104,28 @@ export namespace NotebookDto {
         };
     }
 
-    // export function fromCellExecuteUpdateDto(data: extHostProtocol.ICellExecuteUpdateDto): ICellExecuteUpdate {
-    //     if (data.editType === CellExecutionUpdateType.Output) {
-    //         return {
-    //             editType: data.editType,
-    //             cellHandle: data.cellHandle,
-    //             append: data.append,
-    //             outputs: data.outputs.map(fromNotebookOutputDto)
-    //         };
-    //     } else if (data.editType === CellExecutionUpdateType.OutputItems) {
-    //         return {
-    //             editType: data.editType,
-    //             append: data.append,
-    //             outputId: data.outputId,
-    //             items: data.items.map(fromNotebookOutputItemDto)
-    //         };
-    //     } else {
-    //         return data;
-    //     }
-    // }
+    export function fromCellExecuteUpdateDto(data: rpc.CellExecuteUpdateDto): CellExecuteUpdate {
+        if (data.editType === CellExecutionUpdateType.Output) {
+            return {
+                editType: data.editType,
+                cellHandle: data.cellHandle,
+                append: data.append,
+                outputs: data.outputs.map(fromNotebookOutputDto)
+            };
+        } else if (data.editType === CellExecutionUpdateType.OutputItems) {
+            return {
+                editType: data.editType,
+                outputId: data.outputId,
+                append: data.append,
+                items: data.items.map(fromNotebookOutputItemDto)
+            };
+        } else {
+            return data;
+        }
+    }
 
-    // export function fromCellExecuteCompleteDto(data: extHostProtocol.ICellExecutionCompleteDto): ICellExecutionComplete {
-    //     return data;
-    // }
+    export function fromCellExecuteCompleteDto(data: rpc.CellExecutionCompleteDto): CellExecutionComplete {
+        return data;
+    }
 
-    // export function fromCellEditOperationDto(edit: extHostProtocol.ICellEditOperationDto): notebookCommon.ICellEditOperation {
-    //     if (edit.editType === notebookCommon.CellEditType.Replace) {
-    //         return {
-    //             editType: edit.editType,
-    //             index: edit.index,
-    //             count: edit.count,
-    //             cells: edit.cells.map(fromNotebookCellDataDto)
-    //         };
-    //     } else {
-    //         return edit;
-    //     }
-    // }
 }
