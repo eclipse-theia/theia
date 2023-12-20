@@ -57,7 +57,7 @@ export interface ElectronMainCommandOptions {
     readonly cwd: string;
 
     /**
-     * If the app is launched for the first time, `secondInstance` is false. 
+     * If the app is launched for the first time, `secondInstance` is false.
      * If the app is already running but user relaunches it, `secondInstance` is true.
      */
     readonly secondInstance: boolean;
