@@ -10,6 +10,10 @@
 - [terminal] Use application shell methods for expanding/collapsing bottom panel for "Terminal: Toggle Terminal" command [#13131](https://github.com/eclipse-theia/theia/pull/13131)
 - [workspace] Create an empty workspace if no workspace is active on updateWorkspaceFolders [#13181](https://github.com/eclipse-theia/theia/pull/13181) - contributed on behalf of STMicroelectronics
 
+<a name="breaking_changes_1.43.0">[Breaking Changes:](#breaking_changes_1.45.0)</a>
+
+- [plugin] handling of vscode extension locations has changed: deployment dir switched to `$CONFDIR/deployedPlugin`, `.vsix` files from `$CONFDIR/extensions` are deployed automatically [#13178](https://github.com/eclipse-theia/theia/pull/13178) - Contributed on behalf of STMicroelectronics
+
 ## v1.44.0 - 11/30/2023
 
 - [application-manager] added option to copy `trash` dependency to the bundle [#13112](https://github.com/eclipse-theia/theia/pull/13112)
