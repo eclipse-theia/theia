@@ -272,9 +272,9 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "off"
         ],
         "enumDescriptions": [
-            nls.localizeByDefault('Use platform APIs to detect when a Screen Reader is attached'),
-            nls.localizeByDefault("Optimize for usage with a Screen Reader"),
-            nls.localizeByDefault("Assume a screen reader is not attached")
+            nls.localizeByDefault('Use platform APIs to detect when a Screen Reader is attached.'),
+            nls.localizeByDefault("Optimize for usage with a Screen Reader."),
+            nls.localizeByDefault("Assume a screen reader is not attached.")
         ],
         "default": "auto",
         "description": nls.localizeByDefault("Controls if the UI should run in a mode where it is optimized for screen readers."),
