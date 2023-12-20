@@ -54,19 +54,13 @@ export interface ElectronMainCommandOptions {
      */
     readonly file?: string;
 
-}
-
-/**
- * Fields related to a launch event.
- *
- * This kind of event is triggered in two different contexts:
- *  1. The app is launched for the first time, `secondInstance` is false.
- *  2. The app is already running but user relaunches it, `secondInstance` is true.
- */
-export interface ElectronMainExecutionParams {
-    readonly secondInstance: boolean;
-    readonly argv: string[];
     readonly cwd: string;
+
+    /**
+     * If the app is launched for the first time, `secondInstance` is false.
+     * If the app is already running but user relaunches it, `secondInstance` is true.
+     */
+    readonly secondInstance: boolean;
 }
 
 /**
@@ -212,21 +206,38 @@ export class ElectronMainApplication {
     }
 
     async start(config: FrontendApplicationConfig): Promise<void> {
-        const args = this.processArgv.getProcessArgvWithoutBin(process.argv);
-        this.useNativeWindowFrame = this.getTitleBarStyle(config) === 'native';
-        this._config = config;
-        this.hookApplicationEvents();
-        this.showInitialWindow();
-        const port = await this.startBackend();
-        this._backendPort.resolve(port);
-        await app.whenReady();
-        await this.attachElectronSecurityToken(port);
-        await this.startContributions();
-        await this.launch({
-            secondInstance: false,
-            argv: args,
-            cwd: process.cwd()
-        });
+        const argv = this.processArgv.getProcessArgvWithoutBin(process.argv);
+        createYargs(argv, process.cwd())
+            .command('$0 [file]', false,
+                cmd => cmd
+                    .option('electronUserData', {
+                        type: 'string',
+                        describe: 'The area where the electron main process puts its data'
+                    })
+                    .positional('file', { type: 'string' }),
+                async args => {
+                    if (args.electronUserData) {
+                        console.info(`using electron user data area : '${args.electronUserData}'`);
+                        await fs.mkdir(args.electronUserData, { recursive: true });
+                        app.setPath('userData', args.electronUserData);
+                    }
+                    this.useNativeWindowFrame = this.getTitleBarStyle(config) === 'native';
+                    this._config = config;
+                    this.hookApplicationEvents();
+                    this.showInitialWindow();
+                    const port = await this.startBackend();
+                    this._backendPort.resolve(port);
+                    await app.whenReady();
+                    await this.attachElectronSecurityToken(port);
+                    await this.startContributions();
+
+                    this.handleMainCommand({
+                        file: args.file,
+                        cwd: process.cwd(),
+                        secondInstance: false
+                    });
+                },
+            ).parse();
     }
 
     protected getTitleBarStyle(config: FrontendApplicationConfig): 'native' | 'custom' {
@@ -286,15 +297,6 @@ export class ElectronMainApplication {
                 this.initialWindow.show();
             });
         }
-    }
-
-    protected async launch(params: ElectronMainExecutionParams): Promise<void> {
-        createYargs(params.argv, params.cwd)
-            .command('$0 [file]', false,
-                cmd => cmd
-                    .positional('file', { type: 'string' }),
-                args => this.handleMainCommand(params, { file: args.file }),
-            ).parse();
     }
 
     /**
@@ -422,15 +424,15 @@ export class ElectronMainApplication {
         app.quit();
     }
 
-    protected async handleMainCommand(params: ElectronMainExecutionParams, options: ElectronMainCommandOptions): Promise<void> {
-        if (params.secondInstance === false) {
+    protected async handleMainCommand(options: ElectronMainCommandOptions): Promise<void> {
+        if (options.secondInstance === false) {
             await this.openWindowWithWorkspace(''); // restore previous workspace.
         } else if (options.file === undefined) {
             await this.openDefaultWindow();
         } else {
             let workspacePath: string | undefined;
             try {
-                workspacePath = await fs.realpath(path.resolve(params.cwd, options.file));
+                workspacePath = await fs.realpath(path.resolve(options.cwd, options.file));
             } catch {
                 console.error(`Could not resolve the workspace path. "${options.file}" is not a valid 'file' option. Falling back to the default workspace location.`);
             }
@@ -645,9 +647,8 @@ export class ElectronMainApplication {
         if (wrapper) {
             const listener = wrapper.onDidClose(async () => {
                 listener.dispose();
-                await this.launch({
+                await this.handleMainCommand({
                     secondInstance: false,
-                    argv: this.processArgv.getProcessArgvWithoutBin(process.argv),
                     cwd: process.cwd()
                 });
                 this.restarting = false;
