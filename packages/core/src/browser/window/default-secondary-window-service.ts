@@ -20,7 +20,7 @@ import { ExtractableWidget } from '../widgets';
 import { ApplicationShell } from '../shell';
 import { Saveable } from '../saveable';
 import { PreferenceService } from '../preferences';
-import { environment, isWindows } from '../../common';
+import { environment } from '../../common';
 
 @injectable()
 export class DefaultSecondaryWindowService implements SecondaryWindowService {
@@ -105,18 +105,12 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     }
 
     protected doCreateSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): Window | undefined {
-        // const options = 'popup';
-        // const options = 'popup,width=500,height=500,left=500,top=500';
-        console.log('**** widget: ' + widget);
-        console.log('**** widget.id: ' + widget.id);
         let options;
-        if (widget.node) {
-            const [height, width, left, top] = this.findSecondaryWindowCoordinates(widget);
-            options = `popup=1,width=${width},height=${height},left=${left},top=${top}`;
+        const [height, width, left, top] = this.findSecondaryWindowCoordinates(widget);
+        options = `popup=1,width=${width},height=${height},left=${left},top=${top}`;
+        if (this.preferenceService.get('window.secondaryWindowAlwaysOnTop')) {
             options += ',alwaysOnTop=true';
-            console.log('*** creating secondary window with options: ' + options);
         }
-
         const newWindow = window.open(DefaultSecondaryWindowService.SECONDARY_WINDOW_URL, this.nextWindowId(), options) ?? undefined;
         if (newWindow) {
             newWindow.addEventListener('DOMContentLoaded', () => {
@@ -138,7 +132,6 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 });
             });
         }
-        newWindow?.focus();
         return newWindow;
     }
 
@@ -146,53 +139,38 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
         const clientBounds = widget.node.getBoundingClientRect();
         const preference = this.preferenceService.get('window.secondaryWindowPlacement');
 
-        // const offsetY = 50;
-
         let height; let width; let left; let top;
-
-        console.log(`***height, width + ${widget.node.clientHeight} + ${widget.node.clientWidth}`);
-        console.log(`***client left/screen left/clienx' + ${widget.node.clientLeft} + ${window.screenLeft} + ${clientBounds.x}`);
-        console.log(`***client top / screen top' + ${widget.node.clientTop} + ${window.screenTop} + ${clientBounds.y}`);
-        console.log(`*** avail height/width ${window.screen.availHeight} ${window.screen.availWidth}`);
+        const offsetY = 20;
 
         switch (preference) {
             case 'originalSize': {
-                if (isWindows) {
-                    height = widget.node.clientHeight;
-                    width = widget.node.clientWidth;
-                    left = window.screenLeft + clientBounds.x - 8;
-                    if (environment.electron.is()) {
-                        top = window.screenTop + clientBounds.y;
-                    } else {
-                        top = window.screenTop + clientBounds.y + 48;
-                    }
-                    break;
-                }
                 height = widget.node.clientHeight;
                 width = widget.node.clientWidth;
                 left = window.screenLeft + clientBounds.x;
+                top = window.screenTop + (window.outerHeight - window.innerHeight) + offsetY;
                 if (environment.electron.is()) {
                     top = window.screenTop + clientBounds.y;
-                } else {
-                    top = window.screenTop + clientBounds.y + 60;
                 }
                 break;
             }
-            case 'splitScreen': {
-                height = window.screen.availHeight;
-                width = window.screen.availWidth / 2;
-                left = 0;
-                top = 0;
+            case 'halfSize': {
+                height = window.innerHeight - (window.outerHeight - window.innerHeight);
+                width = window.innerWidth / 2;
+                left = window.screenLeft;
+                top = window.screenTop;
+                if (!environment.electron.is()) {
+                    height = window.innerHeight + clientBounds.y - offsetY;
+                }
                 break;
             }
-            case 'fullScreen': {
-                height = window.screen.availHeight;
-                width = window.screen.availWidth;
-                left = 0;
-                top = 0;
-                // if (isWindows) {
-                //     width = window.screen.availWidth - 30;
-                // }
+            case 'fullSize': {
+                height = window.innerHeight - (window.outerHeight - window.innerHeight);
+                width = window.innerWidth;
+                left = window.screenLeft;
+                top = window.screenTop;
+                if (!environment.electron.is()) {
+                    height = window.innerHeight + clientBounds.y - offsetY;
+                }
                 break;
             }
         }
