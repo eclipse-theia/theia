@@ -15,8 +15,9 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { TestController, TestOutputItem, TestRun, TestService, TestState, TestStateChangedEvent } from '../test-service';
+import { TestController, TestFailure, TestOutputItem, TestRun, TestService, TestState, TestStateChangedEvent } from '../test-service';
 import { Disposable, Emitter, Event } from '@theia/core';
+import { TestContextKeyService } from './test-context-key-service';
 
 export interface ActiveRunEvent {
     controller: TestController;
@@ -41,6 +42,7 @@ interface ActiveTestRunInfo {
 
 @injectable()
 export class TestOutputUIModel {
+    @inject(TestContextKeyService) protected readonly testContextKeys: TestContextKeyService;
     @inject(TestService) protected testService: TestService;
 
     protected readonly activeRuns = new Map<string, ActiveTestRunInfo>();
@@ -139,6 +141,12 @@ export class TestOutputUIModel {
     set selectedTestState(element: TestState | undefined) {
         if (element !== this._selectedTestState) {
             this._selectedTestState = element;
+            if (this._selectedTestState && TestFailure.is(this._selectedTestState.state)) {
+                const message = this._selectedTestState.state.messages[0];
+                this.testContextKeys.contextValue.set(message.contextValue);
+            } else {
+                this.testContextKeys.contextValue.reset();
+            }
             this.onDidChangeSelectedTestStateEmitter.fire(element);
         }
     }

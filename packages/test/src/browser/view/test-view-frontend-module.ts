@@ -35,10 +35,12 @@ import { TestOutputUIModel } from './test-output-ui-model';
 import { TestRunTree, TestRunTreeWidget } from './test-run-widget';
 import { TestResultViewContribution } from './test-result-view-contribution';
 import { TEST_RUNS_CONTEXT_MENU, TestRunViewContribution } from './test-run-view-contribution';
+import { TestContextKeyService } from './test-context-key-service';
 
 export default new ContainerModule(bind => {
 
     bindContributionProvider(bind, TestContribution);
+    bind(TestContextKeyService).toSelf().inSingletonScope();
     bind(TestService).to(DefaultTestService).inSingletonScope();
 
     bind(WidgetFactory).toDynamicValue(({ container }) => ({

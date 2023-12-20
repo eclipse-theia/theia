@@ -1644,7 +1644,8 @@ export namespace TestMessage {
             location: fromLocation(message.location),
             message: fromMarkdown(message.message)!,
             expected: message.expectedOutput,
-            actual: message.actualOutput
+            actual: message.actualOutput,
+            contextValue: message.contextValue
         }];
     }
 }
