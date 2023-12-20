@@ -55,6 +55,11 @@ export interface ElectronMainCommandOptions {
     readonly file?: string;
 
     readonly cwd: string;
+
+    /**
+     * If the app is launched for the first time, `secondInstance` is false. 
+     * If the app is already running but user relaunches it, `secondInstance` is true.
+     */
     readonly secondInstance: boolean;
 }
 
@@ -205,16 +210,16 @@ export class ElectronMainApplication {
         createYargs(argv, process.cwd())
             .command('$0 [file]', false,
                 cmd => cmd
-                    .option('userDataArea', {
+                    .option('electronUserData', {
                         type: 'string',
                         describe: 'The area where the electron main process puts its data'
                     })
                     .positional('file', { type: 'string' }),
                 async args => {
-                    if (args.userDataArea) {
-                        console.info(`using electron user data area : '${args.userDataArea}'`);
-                        await fs.mkdir(args.userDataArea, { recursive: true });
-                        app.setPath('userData', args.userDataArea);
+                    if (args.electronUserData) {
+                        console.info(`using electron user data area : '${args.electronUserData}'`);
+                        await fs.mkdir(args.electronUserData, { recursive: true });
+                        app.setPath('userData', args.electronUserData);
                     }
                     this.useNativeWindowFrame = this.getTitleBarStyle(config) === 'native';
                     this._config = config;
