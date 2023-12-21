@@ -164,7 +164,7 @@
     "git": {
       "aFewSecondsAgo": "さきほど",
       "addSignedOff": "サイン・オフ・バイの追加",
-      "amendReuseMessag": "最後のコミットメッセージを再利用するには、「Enter」または「Escape」を押してキャンセルしてください。",
+      "amendReuseMessage": "最後のコミットメッセージを再利用するには、「Enter」または「Escape」を押してキャンセルしてください。",
       "amendRewrite": "前回のコミットメッセージを書き換えます。確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
       "checkoutCreateLocalBranchWithName": "名前:{0}で新しいローカルブランチを作成します。確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
       "checkoutProvideBranchName": "支店名をご記入ください。",

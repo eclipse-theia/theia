@@ -164,7 +164,7 @@
     "git": {
       "aFewSecondsAgo": "il y a quelques secondes",
       "addSignedOff": "Ajouter Signé-par",
-      "amendReuseMessag": "Pour réutiliser le dernier message de validation, appuyez sur 'Enter' ou 'Escape' pour annuler.",
+      "amendReuseMessage": "Pour réutiliser le dernier message de validation, appuyez sur 'Enter' ou 'Escape' pour annuler.",
       "amendRewrite": "Réécrire le message de livraison précédent. Appuyez sur 'Enter' pour confirmer ou 'Escape' pour annuler.",
       "checkoutCreateLocalBranchWithName": "Créez une nouvelle branche locale avec le nom : {0}. Appuyez sur 'Enter' pour confirmer ou 'Escape' pour annuler.",
       "checkoutProvideBranchName": "Veuillez indiquer le nom de la succursale.",

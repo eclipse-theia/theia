@@ -164,7 +164,7 @@
     "git": {
       "aFewSecondsAgo": "néhány másodperccel ezelőtt",
       "addSignedOff": "Signed-off-by hozzáadása",
-      "amendReuseMessag": "Az utolsó átadási üzenet újbóli használatához nyomja meg az 'Enter' billentyűt, vagy az 'Escape' billentyűt a törléshez.",
+      "amendReuseMessage": "Az utolsó átadási üzenet újbóli használatához nyomja meg az 'Enter' billentyűt, vagy az 'Escape' billentyűt a törléshez.",
       "amendRewrite": "Írja át az előző commit üzenetet. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
       "checkoutCreateLocalBranchWithName": "Hozzon létre egy új helyi ágat {0} névvel. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
       "checkoutProvideBranchName": "Kérjük, adja meg a fióktelep nevét.",

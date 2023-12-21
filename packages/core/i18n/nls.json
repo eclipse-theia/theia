@@ -164,7 +164,7 @@
     "git": {
       "aFewSecondsAgo": "a few seconds ago",
       "addSignedOff": "Add Signed-off-by",
-      "amendReuseMessag": "To reuse the last commit message, press 'Enter' or 'Escape' to cancel.",
+      "amendReuseMessage": "To reuse the last commit message, press 'Enter' or 'Escape' to cancel.",
       "amendRewrite": "Rewrite previous commit message. Press 'Enter' to confirm or 'Escape' to cancel.",
       "checkoutCreateLocalBranchWithName": "Create a new local branch with name: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
       "checkoutProvideBranchName": "Please provide a branch name. ",

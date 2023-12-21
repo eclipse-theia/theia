@@ -164,7 +164,7 @@
     "git": {
       "aFewSecondsAgo": "pochi secondi fa",
       "addSignedOff": "Aggiungi Firmato-da",
-      "amendReuseMessag": "Per riutilizzare l'ultimo messaggio di commit, premi 'Enter' o 'Escape' per annullare.",
+      "amendReuseMessage": "Per riutilizzare l'ultimo messaggio di commit, premi 'Enter' o 'Escape' per annullare.",
       "amendRewrite": "Riscrivere il messaggio di commit precedente. Premi 'Enter' per confermare o 'Escape' per annullare.",
       "checkoutCreateLocalBranchWithName": "Crea un nuovo ramo locale con nome: {0}. Premi 'Enter' per confermare o 'Escape' per annullare.",
       "checkoutProvideBranchName": "Si prega di fornire il nome di una filiale.",

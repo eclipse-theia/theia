@@ -20,7 +20,7 @@ import { generateUuid } from '../../common/uuid';
 export const FrontendIdProvider = Symbol('FrontendIdProvider');
 
 /**
- * A FronendIdProvider computes an id for an instance of the front end that may be reconnected to a back end
+ * A FrontendIdProvider computes an id for an instance of the front end that may be reconnected to a back end
  * connection context.
  */
 export interface FrontendIdProvider {

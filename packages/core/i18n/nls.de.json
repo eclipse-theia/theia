@@ -164,7 +164,7 @@
     "git": {
       "aFewSecondsAgo": "vor ein paar Sekunden",
       "addSignedOff": "Abgezeichnet von hinzufügen",
-      "amendReuseMessag": "Um die letzte Meldung wieder zu verwenden, drücken Sie \"Enter\" oder \"Escape\", um den Vorgang abzubrechen.",
+      "amendReuseMessage": "Um die letzte Meldung wieder zu verwenden, drücken Sie \"Enter\" oder \"Escape\", um den Vorgang abzubrechen.",
       "amendRewrite": "Vorherige Übermittlungsnachricht neu schreiben. Bestätigen Sie mit \"Enter\" oder brechen Sie mit \"Escape\" ab.",
       "checkoutCreateLocalBranchWithName": "Erstellen Sie einen neuen lokalen Zweig mit dem Namen: {0}. Drücken Sie \"Enter\" zur Bestätigung oder \"Escape\" zum Abbrechen.",
       "checkoutProvideBranchName": "Bitte geben Sie den Namen einer Zweigstelle an.",
