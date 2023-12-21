@@ -65,6 +65,13 @@
         "next": "Avanti (Giù)",
         "previous": "Precedente (Up)"
       },
+      "secondaryWindow": {
+        "alwaysOnTop": "Quando è attivata, la finestra secondaria rimane al di sopra di tutte le altre finestre, comprese quelle di applicazioni diverse.",
+        "description": "Imposta la posizione e le dimensioni iniziali della finestra secondaria estratta.",
+        "fullSize": "La posizione e le dimensioni del widget estratto saranno le stesse dell'applicazione Theia in esecuzione.",
+        "halfWidth": "La posizione e le dimensioni del widget estratto saranno pari alla metà della larghezza dell'applicazione Theia in esecuzione.",
+        "originalSize": "La posizione e le dimensioni del widget estratto saranno uguali a quelle del widget originale."
+      },
       "silentNotifications": "Controlla se sopprimere i popup di notifica.",
       "tabDefaultSize": "Specifica la dimensione predefinita delle schede.",
       "tabMaximize": "Controlla se massimizzare le schede al doppio clic.",
@@ -313,6 +320,7 @@
       "autoReveal": "Rivelazione auto",
       "clipboardWarn": "L'accesso agli appunti è negato. Controllare i permessi del browser.",
       "clipboardWarnFirefox": "L'API Appunti non è disponibile. È possibile abilitarla tramite la preferenza '{0}' nella pagina '{1}'. Quindi ricaricare Theia. Ciò consentirà a FireFox di avere pieno accesso agli appunti di sistema.",
+      "noFolderOpened": "Nessuna cartella aperta",
       "refresh": "Aggiorna in Explorer",
       "reveal": "Rivelare in Explorer",
       "toggleHiddenFiles": "Toggle Hidden Files"
@@ -401,8 +409,7 @@
       "extract-widget": "Sposta la vista nella finestra secondaria"
     },
     "shell-area": {
-      "secondary": "Finestra secondaria",
-      "top": "Alto"
+      "secondary": "Finestra secondaria"
     },
     "task": {
       "attachTask": "Allegare il compito...",

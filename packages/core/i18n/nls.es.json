@@ -65,6 +65,13 @@
         "next": "Siguiente (abajo)",
         "previous": "Anterior (Arriba)"
       },
+      "secondaryWindow": {
+        "alwaysOnTop": "Cuando está activada, la ventana secundaria se mantiene por encima de todas las demás ventanas, incluidas las de distintas aplicaciones.",
+        "description": "Establece la posición inicial y el tamaño de la ventana secundaria extraída.",
+        "fullSize": "La posición y el tamaño del widget extraído serán los mismos que los de la aplicación Theia en ejecución.",
+        "halfWidth": "La posición y el tamaño del widget extraído serán la mitad de la anchura de la aplicación Theia en ejecución.",
+        "originalSize": "La posición y el tamaño del widget extraído serán los mismos que los del widget original."
+      },
       "silentNotifications": "Controla si se suprimen las ventanas emergentes de notificación.",
       "tabDefaultSize": "Especifica el tamaño por defecto de las pestañas.",
       "tabMaximize": "Controla si se maximizan las pestañas al hacer doble clic.",
@@ -313,6 +320,7 @@
       "autoReveal": "Auto Reveal",
       "clipboardWarn": "El acceso al portapapeles está denegado. Comprueba los permisos de tu navegador.",
       "clipboardWarnFirefox": "La API del portapapeles no está disponible. Se puede activar mediante la preferencia '{0}' en la página '{1}'. A continuación, vuelva a cargar Theia. Tenga en cuenta que esto permitirá a FireFox tener acceso completo al portapapeles del sistema.",
+      "noFolderOpened": "Ninguna carpeta abierta",
       "refresh": "Actualizar en el Explorador",
       "reveal": "Revelar en el Explorador",
       "toggleHiddenFiles": "Activar los archivos ocultos"
@@ -401,8 +409,7 @@
       "extract-widget": "Mover la vista a la ventana secundaria"
     },
     "shell-area": {
-      "secondary": "Ventana secundaria",
-      "top": "Top"
+      "secondary": "Ventana secundaria"
     },
     "task": {
       "attachTask": "Adjuntar tarea...",

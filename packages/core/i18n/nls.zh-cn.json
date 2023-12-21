@@ -65,6 +65,13 @@
         "next": "下一页 (向下)",
         "previous": "上一页 (向上)"
       },
+      "secondaryWindow": {
+        "alwaysOnTop": "启用后,辅助窗口将保持在所有其他窗口(包括不同应用程序的窗口)之上。",
+        "description": "设置提取的辅助窗口的初始位置和大小。",
+        "fullSize": "提取部件的位置和大小将与运行中的 Theia 应用程序相同。",
+        "halfWidth": "提取部件的位置和大小将是运行中的 Theia 应用程序宽度的一半。",
+        "originalSize": "提取部件的位置和大小将与原始部件相同。"
+      },
       "silentNotifications": "控制是否抑制弹出通知。",
       "tabDefaultSize": "指定标签的默认尺寸。",
       "tabMaximize": "控制是否在双击时最大化标签。",
@@ -313,6 +320,7 @@
       "autoReveal": "自动显示",
       "clipboardWarn": "对剪贴板的访问被拒绝了。检查你的浏览器的权限。",
       "clipboardWarnFirefox": "剪贴板API是不可用的。它可以通过'{0}'页面上的'{1}'偏好启用。然后重新加载Theia。注意,这将允许FireFox获得对系统剪贴板的完全访问。",
+      "noFolderOpened": "未打开文件夹",
       "refresh": "在资源管理器中刷新",
       "reveal": "在资源管理器中显示",
       "toggleHiddenFiles": "切换隐藏文件"
@@ -401,8 +409,7 @@
       "extract-widget": "将视图移至第二窗口"
     },
     "shell-area": {
-      "secondary": "二级窗口",
-      "top": "返回顶部"
+      "secondary": "二级窗口"
     },
     "task": {
       "attachTask": "附加任务...",

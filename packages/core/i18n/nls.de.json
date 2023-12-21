@@ -65,6 +65,13 @@
         "next": "Nächste (Unten)",
         "previous": "Zurück (Oben)"
       },
+      "secondaryWindow": {
+        "alwaysOnTop": "Wenn diese Funktion aktiviert ist, bleibt das sekundäre Fenster über allen anderen Fenstern, auch über denen anderer Anwendungen.",
+        "description": "Legt die Anfangsposition und -größe des extrahierten Sekundärfensters fest.",
+        "fullSize": "Die Position und Größe des extrahierten Widgets entspricht der der laufenden Theia-Anwendung.",
+        "halfWidth": "Die Position und Größe des extrahierten Widgets entspricht der halben Breite der laufenden Theia-Anwendung.",
+        "originalSize": "Position und Größe des extrahierten Widgets entsprechen denen des ursprünglichen Widgets."
+      },
       "silentNotifications": "Legt fest, ob Benachrichtigungs-Popups unterdrückt werden sollen.",
       "tabDefaultSize": "Gibt die Standardgröße für Registerkarten an.",
       "tabMaximize": "Steuert, ob die Registerkarten bei einem Doppelklick maximiert werden sollen.",
@@ -313,6 +320,7 @@
       "autoReveal": "Auto-Enthüllung",
       "clipboardWarn": "Der Zugriff auf die Zwischenablage wird verweigert. Überprüfen Sie die Berechtigung Ihres Browsers.",
       "clipboardWarnFirefox": "Die Zwischenablage-API ist nicht verfügbar. Sie kann durch die Einstellung '{0}' auf der Seite '{1}' aktiviert werden. Dann laden Sie Theia neu. Beachten Sie, dass FireFox dadurch vollen Zugriff auf die Systemzwischenablage erhält.",
+      "noFolderOpened": "Kein Ordner geöffnet",
       "refresh": "Aktualisieren im Explorer",
       "reveal": "Enthüllen im Explorer",
       "toggleHiddenFiles": "Versteckte Dateien umschalten"
@@ -401,8 +409,7 @@
       "extract-widget": "Ansicht in sekundäres Fenster verschieben"
     },
     "shell-area": {
-      "secondary": "Sekundäres Fenster",
-      "top": "Top"
+      "secondary": "Sekundäres Fenster"
     },
     "task": {
       "attachTask": "Aufgabe anhängen...",

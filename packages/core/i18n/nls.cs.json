@@ -65,6 +65,13 @@
         "next": "Další (dolů)",
         "previous": "Předchozí (Nahoru)"
       },
+      "secondaryWindow": {
+        "alwaysOnTop": "Je-li tato funkce povolena, zůstane sekundární okno nad všemi ostatními okny, včetně oken různých aplikací.",
+        "description": "Nastaví počáteční pozici a velikost extrahovaného sekundárního okna.",
+        "fullSize": "Pozice a velikost extrahovaného widgetu bude stejná jako u spuštěné aplikace Theia.",
+        "halfWidth": "Pozice a velikost extrahovaného widgetu bude odpovídat polovině šířky spuštěné aplikace Theia.",
+        "originalSize": "Pozice a velikost extrahovaného widgetu bude stejná jako u původního widgetu."
+      },
       "silentNotifications": "Řídí, zda se mají potlačit vyskakovací okna s oznámeními.",
       "tabDefaultSize": "Určuje výchozí velikost karet s ouškem.",
       "tabMaximize": "Ovládá, zda se mají karty maximalizovat při dvojím kliknutí.",
@@ -313,6 +320,7 @@
       "autoReveal": "Automatické odhalení",
       "clipboardWarn": "Přístup do schránky je odepřen. Zkontrolujte oprávnění prohlížeče.",
       "clipboardWarnFirefox": "Rozhraní API schránky není k dispozici. Lze ji povolit pomocí předvolby '{0}' na stránce '{1}'. Poté znovu načtěte aplikaci Theia. Všimněte si, že to umožní FireFoxu získat plný přístup k systémové schránce.",
+      "noFolderOpened": "Žádná otevřená složka",
       "refresh": "Obnovení v Průzkumníku",
       "reveal": "Odhalení v Průzkumníkovi",
       "toggleHiddenFiles": "Přepínání skrytých souborů"
@@ -401,8 +409,7 @@
       "extract-widget": "Přesunutí zobrazení do sekundárního okna"
     },
     "shell-area": {
-      "secondary": "Sekundární okno",
-      "top": "Nahoru"
+      "secondary": "Sekundární okno"
     },
     "task": {
       "attachTask": "Připojte úkol...",
