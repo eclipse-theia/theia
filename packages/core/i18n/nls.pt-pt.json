@@ -65,6 +65,13 @@
         "next": "Próximo (Para baixo)",
         "previous": "Anterior (Para cima)"
       },
+      "secondaryWindow": {
+        "alwaysOnTop": "Quando activada, a janela secundária permanece acima de todas as outras janelas, incluindo as de diferentes aplicações.",
+        "description": "Define a posição inicial e o tamanho da janela secundária extraída.",
+        "fullSize": "A posição e o tamanho do widget extraído serão os mesmos da aplicação Theia em execução.",
+        "halfWidth": "A posição e o tamanho do widget extraído serão metade da largura da aplicação Theia em execução.",
+        "originalSize": "A posição e o tamanho do widget extraído serão os mesmos que os do widget original."
+      },
       "silentNotifications": "Controla se deve suprimir popups de notificação.",
       "tabDefaultSize": "Especifica o tamanho predefinido dos separadores.",
       "tabMaximize": "Controla se pretende maximizar os separadores com um duplo clique.",
@@ -313,6 +320,7 @@
       "autoReveal": "Auto Revelação",
       "clipboardWarn": "O acesso à área de transferência foi negado. Verifique a permissão do seu browser.",
       "clipboardWarnFirefox": "A API da área de transferência não está disponível. Pode ser activada através da preferência '{0}' na página '{1}'. Em seguida, recarregue o Theia. Note que isso permitirá ao FireFox obter acesso total à área de transferência do sistema.",
+      "noFolderOpened": "Nenhuma pasta aberta",
       "refresh": "Actualizar no Explorer",
       "reveal": "Revelar no Explorer",
       "toggleHiddenFiles": "Alternar ficheiros escondidos"
@@ -401,8 +409,7 @@
       "extract-widget": "Mover vista para a janela secundária"
     },
     "shell-area": {
-      "secondary": "Janela Secundária",
-      "top": "Início"
+      "secondary": "Janela Secundária"
     },
     "task": {
       "attachTask": "Anexar Tarefa...",

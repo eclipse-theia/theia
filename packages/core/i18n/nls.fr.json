@@ -65,6 +65,13 @@
         "next": "Suivant (en bas)",
         "previous": "Précédent (en haut)"
       },
+      "secondaryWindow": {
+        "alwaysOnTop": "Lorsqu'elle est activée, la fenêtre secondaire reste au-dessus de toutes les autres fenêtres, y compris celles des différentes applications.",
+        "description": "Définit la position et la taille initiales de la fenêtre secondaire extraite.",
+        "fullSize": "La position et la taille du widget extrait seront identiques à celles de l'application Theia en cours d'exécution.",
+        "halfWidth": "La position et la taille du widget extrait correspondront à la moitié de la largeur de l'application Theia en cours d'exécution.",
+        "originalSize": "La position et la taille du widget extrait seront identiques à celles du widget original."
+      },
       "silentNotifications": "Contrôle la suppression des popups de notification.",
       "tabDefaultSize": "Spécifie la taille par défaut des onglets.",
       "tabMaximize": "Contrôle si les onglets doivent être maximisés lors d'un double-clic.",
@@ -313,6 +320,7 @@
       "autoReveal": "Révélation automobile",
       "clipboardWarn": "L'accès au presse-papiers est refusé. Vérifiez les autorisations de votre navigateur.",
       "clipboardWarnFirefox": "L'API Presse-papiers n'est pas disponible. Elle peut être activée par la préférence '{0}' sur la page '{1}'. Rechargez ensuite Theia. Notez que cela permettra à FireFox d'avoir un accès complet au presse-papiers du système.",
+      "noFolderOpened": "Aucun dossier ouvert",
       "refresh": "Rafraîchir dans l'Explorateur",
       "reveal": "Révéler dans Explorer",
       "toggleHiddenFiles": "Basculer les fichiers cachés"
@@ -401,8 +409,7 @@
       "extract-widget": "Déplacer la vue vers une fenêtre secondaire"
     },
     "shell-area": {
-      "secondary": "Fenêtre secondaire",
-      "top": "Haut"
+      "secondary": "Fenêtre secondaire"
     },
     "task": {
       "attachTask": "Attacher la tâche...",

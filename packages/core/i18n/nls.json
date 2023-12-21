@@ -65,6 +65,13 @@
         "next": "Next (Down)",
         "previous": "Previous (Up)"
       },
+      "secondaryWindow": {
+        "alwaysOnTop": "When enabled, the secondary window stays above all other windows, including those of different applications.",
+        "description": "Sets the initial position and size of the extracted secondary window.",
+        "fullSize": "The position and size of the extracted widget will be the same as the running Theia application.",
+        "halfWidth": "The position and size of the extracted widget will be half the width of the running Theia application.",
+        "originalSize": "The position and size of the extracted widget will be the same as the original widget."
+      },
       "silentNotifications": "Controls whether to suppress notification popups.",
       "tabDefaultSize": "Specifies the default size for tabs.",
       "tabMaximize": "Controls whether to maximize tabs on double click.",
@@ -313,6 +320,7 @@
       "autoReveal": "Auto Reveal",
       "clipboardWarn": "Access to the clipboard is denied. Check your browser's permission.",
       "clipboardWarnFirefox": "Clipboard API is not available. It can be enabled by '{0}' preference on '{1}' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard.",
+      "noFolderOpened": "No Folder Opened",
       "refresh": "Refresh in Explorer",
       "reveal": "Reveal in Explorer",
       "toggleHiddenFiles": "Toggle Hidden Files"
@@ -401,8 +409,7 @@
       "extract-widget": "Move View to Secondary Window"
     },
     "shell-area": {
-      "secondary": "Secondary Window",
-      "top": "Top"
+      "secondary": "Secondary Window"
     },
     "task": {
       "attachTask": "Attach Task...",

@@ -65,6 +65,13 @@
         "next": "Następny (w dół)",
         "previous": "Poprzedni (Up)"
       },
+      "secondaryWindow": {
+        "alwaysOnTop": "Po włączeniu tej opcji okno dodatkowe pozostaje nad wszystkimi innymi oknami, w tym nad oknami różnych aplikacji.",
+        "description": "Ustawia początkową pozycję i rozmiar wyodrębnionego okna pomocniczego.",
+        "fullSize": "Pozycja i rozmiar wyodrębnionego widżetu będą takie same jak uruchomionej aplikacji Theia.",
+        "halfWidth": "Pozycja i rozmiar wyodrębnionego widżetu będą równe połowie szerokości uruchomionej aplikacji Theia.",
+        "originalSize": "Pozycja i rozmiar wyodrębnionego widżetu będą takie same jak oryginalnego widżetu."
+      },
       "silentNotifications": "Określa, czy wyłączyć wyskakujące okienka powiadomień.",
       "tabDefaultSize": "Określa domyślny rozmiar dla zakładek.",
       "tabMaximize": "Określa, czy karty mają być maksymalizowane po dwukrotnym kliknięciu.",
@@ -313,6 +320,7 @@
       "autoReveal": "Auto ujawnienie",
       "clipboardWarn": "Dostęp do schowka jest zablokowany. Sprawdź uprawnienia przeglądarki.",
       "clipboardWarnFirefox": "Interfejs API schowka nie jest dostępny. Można go włączyć za pomocą opcji '{0}' na stronie '{1}'. Następnie należy ponownie załadować Theia. Uwaga, pozwoli to FireFox uzyskać pełny dostęp do schowka systemowego.",
+      "noFolderOpened": "Folder nie został otwarty",
       "refresh": "Odśwież w Eksploratorze",
       "reveal": "Ujawnij w Eksploratorze",
       "toggleHiddenFiles": "Przełącz ukryte pliki"
@@ -401,8 +409,7 @@
       "extract-widget": "Przenieś widok do okna podrzędnego"
     },
     "shell-area": {
-      "secondary": "Drugie okno",
-      "top": "Top"
+      "secondary": "Drugie okno"
     },
     "task": {
       "attachTask": "Dołącz zadanie...",
