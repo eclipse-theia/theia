@@ -20,6 +20,7 @@ import {
     PluginPackage,
     PluginPackageAuthenticationProvider,
     PluginPackageCommand,
+    PluginPackageContribution,
     PluginPackageCustomEditor,
     PluginPackageLanguageContribution,
     PluginPackageNotebook,
@@ -31,7 +32,7 @@ import {
  * This function will update the manifest based on the plugin contributions.
  */
 export function updateActivationEvents(manifest: PluginPackage): void {
-    if (!isObject(manifest) || !isObject(manifest.contributes) || !manifest.contributes) {
+    if (!isObject<PluginPackage>(manifest) || !isObject<PluginPackageContribution>(manifest.contributes) || !manifest.contributes) {
         return;
     }
 
@@ -42,8 +43,8 @@ export function updateActivationEvents(manifest: PluginPackage): void {
         const commands = Array.isArray(value) ? value : [value];
         updateCommandsContributions(commands, activationEvents);
     }
-    if (Array.isArray(manifest.contributes.views)) {
-        const views = flatten(Object.values(manifest.contributes.views)) as PluginPackageView[];
+    if (isObject(manifest.contributes.views)) {
+        const views = flatten(Object.values(manifest.contributes.views));
         updateViewsContribution(views, activationEvents);
     }
     if (Array.isArray(manifest.contributes.customEditors)) {
@@ -64,7 +65,7 @@ export function updateActivationEvents(manifest: PluginPackage): void {
 
 function updateViewsContribution(views: PluginPackageView[], activationEvents: Set<string>): void {
     for (const view of views) {
-        if (isObject(view) && typeof view.id === 'string') {
+        if (isObject<PluginPackageView>(view) && typeof view.id === 'string') {
             activationEvents.add(`onView:${view.id}`);
         }
     }
@@ -72,7 +73,7 @@ function updateViewsContribution(views: PluginPackageView[], activationEvents: S
 
 function updateCustomEditorsContribution(customEditors: PluginPackageCustomEditor[], activationEvents: Set<string>): void {
     for (const customEditor of customEditors) {
-        if (isObject(customEditor) && typeof customEditor.viewType === 'string') {
+        if (isObject<PluginPackageCustomEditor>(customEditor) && typeof customEditor.viewType === 'string') {
             activationEvents.add(`onCustomEditor:${customEditor.viewType}`);
         }
     }
@@ -80,7 +81,7 @@ function updateCustomEditorsContribution(customEditors: PluginPackageCustomEdito
 
 function updateCommandsContributions(commands: PluginPackageCommand[], activationEvents: Set<string>): void {
     for (const command of commands) {
-        if (isObject(command) && typeof command.command === 'string') {
+        if (isObject<PluginPackageCommand>(command) && typeof command.command === 'string') {
             activationEvents.add(`onCommand:${command.command}`);
         }
     }
@@ -88,7 +89,7 @@ function updateCommandsContributions(commands: PluginPackageCommand[], activatio
 
 function updateAuthenticationProviderContributions(authProviders: PluginPackageAuthenticationProvider[], activationEvents: Set<string>): void {
     for (const authProvider of authProviders) {
-        if (isObject(authProvider) && typeof authProvider.id === 'string') {
+        if (isObject<PluginPackageAuthenticationProvider>(authProvider) && typeof authProvider.id === 'string') {
             activationEvents.add(`onAuthenticationRequest:${authProvider.id}`);
         }
     }
@@ -96,7 +97,7 @@ function updateAuthenticationProviderContributions(authProviders: PluginPackageA
 
 function updateLanguageContributions(languages: PluginPackageLanguageContribution[], activationEvents: Set<string>): void {
     for (const language of languages) {
-        if (isObject(language) && typeof language.id === 'string') {
+        if (isObject<PluginPackageLanguageContribution>(language) && typeof language.id === 'string') {
             activationEvents.add(`onLanguage:${language.id}`);
         }
     }
@@ -104,7 +105,7 @@ function updateLanguageContributions(languages: PluginPackageLanguageContributio
 
 function updateNotebookContributions(notebooks: PluginPackageNotebook[], activationEvents: Set<string>): void {
     for (const notebook of notebooks) {
-        if (isObject(notebook) && typeof notebook.type === 'string') {
+        if (isObject<PluginPackageNotebook>(notebook) && typeof notebook.type === 'string') {
             activationEvents.add(`onNotebookSerializer:${notebook.type}`);
         }
     }
