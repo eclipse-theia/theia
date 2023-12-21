@@ -92,9 +92,7 @@ function load(container, jsModule) {
         .then(containerModule => container.load(containerModule.default));
 }
 
-async function preload(parent) {
-    const container = new Container();
-    container.parent = parent;
+async function preload(container) {
     try {
 ${Array.from(frontendPreloadModules.values(), jsModulePath => `\
         await load(container, ${this.importOrRequire()}('${jsModulePath}'));`).join(EOL)}
