@@ -164,7 +164,7 @@
     "git": {
       "aFewSecondsAgo": "几秒钟前",
       "addSignedOff": "添加 \"已签署\"。",
-      "amendReuseMessag": "要重新使用最后一条提交信息,请按'Enter'或'Escape'来取消。",
+      "amendReuseMessage": "要重新使用最后一条提交信息,请按'Enter'或'Escape'来取消。",
       "amendRewrite": "重写之前的提交信息。按'Enter'键确认或按'Escape'键取消。",
       "checkoutCreateLocalBranchWithName": "创建一个新的本地分支,名称为:{0}。按'Enter'键确认或按'Escape'键取消。",
       "checkoutProvideBranchName": "请提供分支机构名称。",

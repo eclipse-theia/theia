@@ -164,7 +164,7 @@
     "git": {
       "aFewSecondsAgo": "há alguns segundos",
       "addSignedOff": "Adicionar Signed-off-by",
-      "amendReuseMessag": "Para reutilizar a última mensagem de compromisso, prima 'Enter' ou 'Escape' para cancelar.",
+      "amendReuseMessage": "Para reutilizar a última mensagem de compromisso, prima 'Enter' ou 'Escape' para cancelar.",
       "amendRewrite": "Reescrever mensagem de compromisso anterior. Prima 'Enter' para confirmar ou 'Escape' para cancelar.",
       "checkoutCreateLocalBranchWithName": "Criar uma nova filial local com o nome: {0}. Prima 'Enter' para confirmar ou 'Escape' para cancelar.",
       "checkoutProvideBranchName": "Por favor, forneça um nome de filial.",

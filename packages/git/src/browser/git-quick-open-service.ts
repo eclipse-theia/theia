@@ -364,7 +364,7 @@ export class GitQuickOpenService {
                 const getItems = (lookFor?: string) => {
                     const items = [];
                     if (!lookFor) {
-                        const label = nls.localize('theia/git/amendReuseMessag', "To reuse the last commit message, press 'Enter' or 'Escape' to cancel.");
+                        const label = nls.localize('theia/git/amendReuseMessage', "To reuse the last commit message, press 'Enter' or 'Escape' to cancel.");
                         items.push(new GitQuickPickItem(label, () => resolve(lastMessage), label));
                     } else {
                         items.push(new GitQuickPickItem(

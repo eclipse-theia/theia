@@ -22,7 +22,7 @@ decorate(injectable(), RpcProxyFactory);
 decorate(unmanaged(), RpcProxyFactory, 0);
 
 /**
- * @deprecated This class serves to keep API compatiliblity for a while. Use {@linkcode ServiceConnectionProvider} instead.
+ * @deprecated This class serves to keep API compatibility for a while. Use {@linkcode ServiceConnectionProvider} instead.
  */
 @injectable()
 export class WebSocketConnectionProvider {

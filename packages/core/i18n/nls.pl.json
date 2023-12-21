@@ -164,7 +164,7 @@
     "git": {
       "aFewSecondsAgo": "kilka sekund temu",
       "addSignedOff": "Dodaj podpisane przez",
-      "amendReuseMessag": "Aby ponownie użyć ostatniego komunikatu commit, należy nacisnąć 'Enter' lub 'Escape', aby anulować.",
+      "amendReuseMessage": "Aby ponownie użyć ostatniego komunikatu commit, należy nacisnąć 'Enter' lub 'Escape', aby anulować.",
       "amendRewrite": "Ponownie napisać poprzednią wiadomość. Wcisnąć 'Enter', aby potwierdzić lub 'Escape', aby anulować.",
       "checkoutCreateLocalBranchWithName": "Utworzyć nowy oddział lokalny o nazwie: {0}. Wcisnąć 'Enter', aby potwierdzić lub 'Escape', aby anulować.",
       "checkoutProvideBranchName": "Proszę podać nazwę oddziału.",

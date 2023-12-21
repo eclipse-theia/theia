@@ -164,7 +164,7 @@
     "git": {
       "aFewSecondsAgo": "hace unos segundos",
       "addSignedOff": "Agregar a la lista de firmas",
-      "amendReuseMessag": "Para reutilizar el último mensaje de confirmación, pulse \"Enter\" o \"Escape\" para cancelar.",
+      "amendReuseMessage": "Para reutilizar el último mensaje de confirmación, pulse \"Enter\" o \"Escape\" para cancelar.",
       "amendRewrite": "Reescribir el mensaje de confirmación anterior. Pulse 'Enter' para confirmar o 'Escape' para cancelar.",
       "checkoutCreateLocalBranchWithName": "Cree una nueva sucursal local con el nombre: {0}. Pulse 'Enter' para confirmar o 'Escape' para cancelar.",
       "checkoutProvideBranchName": "Por favor, indique el nombre de la sucursal.",

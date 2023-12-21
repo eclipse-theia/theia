@@ -89,7 +89,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     override lastCwd = new URI();
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(RemoteConnectionProvider) protected readonly conectionProvider: ServiceConnectionProvider;
+    @inject(RemoteConnectionProvider) protected readonly connectionProvider: ServiceConnectionProvider;
     @inject(TerminalWidgetOptions) options: TerminalWidgetOptions;
     @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
     @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
@@ -630,7 +630,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDisposeOnConnect.dispose();
         this.toDispose.push(this.toDisposeOnConnect);
         const waitForConnection = this.waitForConnection = new Deferred<Channel>();
-        this.conectionProvider.listen(
+        this.connectionProvider.listen(
             `${terminalsPath}/${this.terminalId}`,
             (path, connection) => {
                 connection.onMessage(e => {
