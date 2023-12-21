@@ -4,15 +4,36 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## Unreleased
+## v1.45.0 - 12/21/2023
 
-- [plugin] Support TestMessage.contextValue from vscode API [#13176](https://github.com/eclipse-theia/theia/pull/13176) - contributed on behalf of STMicroelectronics
-- [terminal] Use application shell methods for expanding/collapsing bottom panel for "Terminal: Toggle Terminal" command [#13131](https://github.com/eclipse-theia/theia/pull/13131)
-- [workspace] Create an empty workspace if no workspace is active on updateWorkspaceFolders [#13181](https://github.com/eclipse-theia/theia/pull/13181) - contributed on behalf of STMicroelectronics
+- [application-manager] updated logic to allow rebinding messaging services in preload [#13199](https://github.com/eclipse-theia/theia/pull/13199)
+- [application-package] bumped the default supported API from `1.83.1` to `1.84.2` [#13198](https://github.com/eclipse-theia/theia/pull/13198)
+- [core] added cli parameter `--electronUserData` to control `userDataPath` [#13155](https://github.com/eclipse-theia/theia/pull/13155)
+- [core] added logic to control the size and position of secondary windows [#13201](https://github.com/eclipse-theia/theia/pull/13201)
+- [core] added logic to save untitled files to the last active folder [#13184](https://github.com/eclipse-theia/theia/pull/13184)
+- [core] fixed regression preventing closing the application when a dirty editor is present [#13173](https://github.com/eclipse-theia/theia/pull/13173)
+- [core] fixed styling for compressed navigator indents [#13162](https://github.com/eclipse-theia/theia/pull/13162)
+- [core] introduced timeout logic for keeping connection contexts alive [#13082](https://github.com/eclipse-theia/theia/pull/13082)
+- [core] updated `nls.metadata.json` for `1.84.2` [#13200](https://github.com/eclipse-theia/theia/pull/13200)
+- [debug] fixed issue where debug configuration providers would replace other providers [#13196](https://github.com/eclipse-theia/theia/pull/13196)
+- [documentation] improved documentation regarding the addition of the plugin API in the plugin host [#13153](https://github.com/eclipse-theia/theia/pull/13153)
+- [notebook] fixed notebook kernel selection [#13171](https://github.com/eclipse-theia/theia/pull/13171)
+- [notebook] implemented general API improvements [#13012](https://github.com/eclipse-theia/theia/pull/13012)
+- [notebook] optimized output logic [#13137](https://github.com/eclipse-theia/theia/pull/13137)
+- [plugin] added documentation about adding custom activation events [#13190](https://github.com/eclipse-theia/theia/pull/13190)
+- [plugin] added logic to deploy plugins asynchronously [#13134](https://github.com/eclipse-theia/theia/pull/13134)
+- [plugin] added logic to not reject unknown schemas in `WindowStateExt.asExternalUri` [#13057](https://github.com/eclipse-theia/theia/pull/13057)
+- [plugin] added support for the `TestMessage.contextValue` VS Code API [#13176](https://github.com/eclipse-theia/theia/pull/13176) - contributed on behalf of STMicroelectronics
+- [plugin] added support for the `webview/context` menu contribution point [#13166](https://github.com/eclipse-theia/theia/pull/13166)
+- [plugin] fixed incorrect `unsupported activation error` in stdout [#13095](https://github.com/eclipse-theia/theia/pull/13095)
+- [plugin] fixed issue where the `onView` activation event was incorrectly generated [#13091](https://github.com/eclipse-theia/theia/pull/13091)
+- [plugin] fixed plugin icon styling [#13101](https://github.com/eclipse-theia/theia/pull/13101)
+- [terminal] updated logic to use `ApplicationShell` when expanding/collapsing the bottom panel [#13131](https://github.com/eclipse-theia/theia/pull/13131)
+- [workspace] added logic to create an empty workspace if no workspace is active on `updateWorkspaceFolders` event [#13181](https://github.com/eclipse-theia/theia/pull/13181) - contributed on behalf of STMicroelectronics
 
-<a name="breaking_changes_1.43.0">[Breaking Changes:](#breaking_changes_1.45.0)</a>
+<a name="breaking_changes_1.45.0">[Breaking Changes:](#breaking_changes_1.45.0)</a>
 
-- [plugin] handling of vscode extension locations has changed: deployment dir switched to `$CONFDIR/deployedPlugin`, `.vsix` files from `$CONFDIR/extensions` are deployed automatically [#13178](https://github.com/eclipse-theia/theia/pull/13178) - Contributed on behalf of STMicroelectronics
+- [plugin] updated VS Code extension locations: deployment dir switched to `$CONFDIR/deployedPlugin`, `.vsix` files from `$CONFDIR/extensions` are deployed automatically [#13178](https://github.com/eclipse-theia/theia/pull/13178) - Contributed on behalf of STMicroelectronics
 
 ## v1.44.0 - 11/30/2023
 
