@@ -15,18 +15,16 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import * as filenamify from 'filenamify';
 import * as fs from '@theia/core/shared/fs-extra';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import type { RecursivePartial, URI } from '@theia/core';
 import { Deferred, firstTrue } from '@theia/core/lib/common/promise-util';
-import { getTempDirPathAsync } from '@theia/plugin-ext/lib/main/node/temp-dir-util';
 import {
     PluginDeployerDirectoryHandler, PluginDeployerEntry, PluginDeployerDirectoryHandlerContext,
-    PluginDeployerEntryType, PluginPackage, PluginType, PluginIdentifiers
+    PluginDeployerEntryType, PluginPackage, PluginIdentifiers
 } from '@theia/plugin-ext';
-import { FileUri } from '@theia/core/lib/node';
 import { PluginCliContribution } from '@theia/plugin-ext/lib/main/node/plugin-cli-contribution';
+import { TMP_DIR_PREFIX } from './plugin-vscode-utils';
 
 @injectable()
 export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHandler {
@@ -35,14 +33,12 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
 
     @inject(PluginCliContribution) protected readonly pluginCli: PluginCliContribution;
 
-    constructor() {
-        this.deploymentDirectory = new Deferred();
-        getTempDirPathAsync('vscode-copied')
-            .then(deploymentDirectoryPath => this.deploymentDirectory.resolve(FileUri.create(deploymentDirectoryPath)));
-    }
-
     async accept(plugin: PluginDeployerEntry): Promise<boolean> {
         console.debug(`Resolving "${plugin.id()}" as a VS Code extension...`);
+        if (plugin.path().startsWith(TMP_DIR_PREFIX)) {
+            // avoid adding corrupted plugins from temporary directories
+            return false;
+        }
         return this.attemptResolution(plugin);
     }
 
@@ -62,7 +58,6 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
     }
 
     async handle(context: PluginDeployerDirectoryHandlerContext): Promise<void> {
-        await this.copyDirectory(context);
         const types: PluginDeployerEntryType[] = [];
         const packageJson: PluginPackage = context.pluginEntry().getValue('package.json');
         if (packageJson.browser) {
@@ -72,33 +67,6 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
             types.push(PluginDeployerEntryType.BACKEND);
         }
         context.pluginEntry().accept(...types);
-    }
-
-    protected async copyDirectory(context: PluginDeployerDirectoryHandlerContext): Promise<void> {
-        if (this.pluginCli.copyUncompressedPlugins() && context.pluginEntry().type === PluginType.User) {
-            const entry = context.pluginEntry();
-            const id = entry.id();
-            const pathToRestore = entry.path();
-            const origin = entry.originalPath();
-            const targetDir = await this.getExtensionDir(context);
-            try {
-                if (await fs.pathExists(targetDir) || !entry.path().startsWith(origin)) {
-                    console.log(`[${id}]: already copied.`);
-                } else {
-                    console.log(`[${id}]: copying to "${targetDir}"`);
-                    const deploymentDirectory = await this.deploymentDirectory.promise;
-                    await fs.mkdirp(FileUri.fsPath(deploymentDirectory));
-                    await context.copy(origin, targetDir);
-                    entry.updatePath(targetDir);
-                    if (!this.deriveMetadata(entry)) {
-                        throw new Error('Unable to resolve plugin metadata after copying');
-                    }
-                }
-            } catch (e) {
-                console.warn(`[${id}]: Error when copying.`, e);
-                entry.updatePath(pathToRestore);
-            }
-        }
     }
 
     protected async resolveFromSources(plugin: PluginDeployerEntry): Promise<boolean> {
@@ -151,10 +119,5 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
         } catch {
             return undefined;
         }
-    }
-
-    protected async getExtensionDir(context: PluginDeployerDirectoryHandlerContext): Promise<string> {
-        const deploymentDirectory = await this.deploymentDirectory.promise;
-        return FileUri.fsPath(deploymentDirectory.resolve(filenamify(context.pluginEntry().id(), { replacement: '_' })));
     }
 }
