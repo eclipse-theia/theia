@@ -97,6 +97,13 @@ export class PluginDebugService implements DebugService {
     }, 100);
 
     registerDebugConfigurationProvider(provider: PluginDebugConfigurationProvider): Disposable {
+        if (this.configurationProviders.has(provider.handle)) {
+            const configuration = this.configurationProviders.get(provider.handle);
+            if (configuration && configuration.type !== provider.type) {
+                console.warn(`Different debug configuration provider with type '${configuration.type}' already registered.`);
+                provider.handle = this.configurationProviders.size;
+            }
+        }
         const handle = provider.handle;
         this.configurationProviders.set(handle, provider);
         this.fireOnDidConfigurationProvidersChanged();
