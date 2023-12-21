@@ -121,10 +121,10 @@ export const corePreferenceSchema: PreferenceSchema = {
         },
         'window.secondaryWindowPlacement': {
             type: 'string',
-            enum: ['originalSize', 'halfSize', 'fullSize'],
+            enum: ['originalSize', 'halfWidth', 'fullSize'],
             enumDescriptions: [
                 nls.localize('theia/core/secondaryWindow/originalSize', 'The position and size of the extracted widget will be the same as the original widget.'),
-                nls.localize('theia/core/secondaryWindow/halfSize', 'The position and size of the extracted widget will be half the size of the running Theia application.'),
+                nls.localize('theia/core/secondaryWindow/halfWidth', 'The position and size of the extracted widget will be half the width of the running Theia application.'),
                 nls.localize('theia/core/secondaryWindow/fullSize', 'The position and size of the extracted widget will be the same as the running Theia application.'),
             ],
             default: 'originalSize',
@@ -132,8 +132,8 @@ export const corePreferenceSchema: PreferenceSchema = {
         },
         'window.secondaryWindowAlwaysOnTop': {
             type: 'boolean',
-            default: 'true',
-            description: nls.localize('theia/core/secondaryWindow/alwaysOnTop', 'The secondary window will always pop-up on top of the current application.'),
+            default: false,
+            description: nls.localize('theia/core/secondaryWindow/alwaysOnTop', 'When enabled, the secondary window stays above all other windows, including those of different applications.'),
         },
         'http.proxy': {
             type: 'string',

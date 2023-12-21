@@ -140,7 +140,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
         const preference = this.preferenceService.get('window.secondaryWindowPlacement');
 
         let height; let width; let left; let top;
-        const offsetY = 20;
+        const offsetY = 20; // Offset to avoid the window title bar
 
         switch (preference) {
             case 'originalSize': {
@@ -153,7 +153,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 }
                 break;
             }
-            case 'halfSize': {
+            case 'halfWidth': {
                 height = window.innerHeight - (window.outerHeight - window.innerHeight);
                 width = window.innerWidth / 2;
                 left = window.screenLeft;
