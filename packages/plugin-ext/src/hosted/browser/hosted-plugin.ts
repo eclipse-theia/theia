@@ -401,8 +401,12 @@ export class HostedPluginSupport {
                 waitPluginsMeasurement.error('Backend deployment failed.');
             }
         }
-
-        syncPluginsMeasurement?.log(`Sync of ${this.getPluginCount(initialized)}`);
+        if (initialized > 0) {
+            // Only log sync measurement if there are were plugins to sync.
+            syncPluginsMeasurement?.log(`Sync of ${this.getPluginCount(initialized)}`);
+        } else {
+            syncPluginsMeasurement.stop();
+        }
     }
 
     /**
@@ -440,8 +444,12 @@ export class HostedPluginSupport {
                 }));
             }
         }
-
-        loadPluginsMeasurement.log(`Load contributions of ${this.getPluginCount(loaded)}`);
+        if (loaded > 0) {
+            // Only log load measurement if there are were plugins to load.
+            loadPluginsMeasurement?.log(`Load contributions of ${this.getPluginCount(loaded)}`);
+        } else {
+            loadPluginsMeasurement.stop();
+        }
 
         return hostContributions;
     }
@@ -512,7 +520,11 @@ export class HostedPluginSupport {
             return;
         }
 
-        startPluginsMeasurement.log(`Start of ${this.getPluginCount(started)}`);
+        if (started > 0) {
+            startPluginsMeasurement.log(`Start of ${this.getPluginCount(started)}`);
+        } else {
+            startPluginsMeasurement.stop();
+        }
     }
 
     protected async obtainManager(host: string, hostContributions: PluginContributions[], toDisconnect: DisposableCollection): Promise<PluginManagerExt | undefined> {
