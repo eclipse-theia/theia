@@ -397,7 +397,7 @@ export class ElectronMainApplication {
         electronWindow.webContents.setWindowOpenHandler(() => {
             const { minWidth, minHeight } = this.getDefaultOptions();
             const options: BrowserWindowConstructorOptions = {
-                ...this.getDefaultTheiaWindowBounds(),
+                ...this.getDefaultTheiaSecondaryWindowBounds(),
                 // We always need the native window frame for now because the secondary window does not have Theia's title bar by default.
                 // In 'custom' title bar mode this would leave the window without any window controls (close, min, max)
                 // TODO set to this.useNativeWindowFrame when secondary windows support a custom title bar.
@@ -461,6 +461,10 @@ export class ElectronMainApplication {
             ...this.getDefaultTheiaWindowBounds(),
             ...this.getDefaultOptions()
         };
+    }
+
+    protected getDefaultTheiaSecondaryWindowBounds(): TheiaBrowserWindowOptions {
+        return {};
     }
 
     protected getDefaultTheiaWindowBounds(): TheiaBrowserWindowOptions {
