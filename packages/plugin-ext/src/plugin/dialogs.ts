@@ -41,7 +41,7 @@ export class DialogsExtImpl {
                 if (result) {
                     const uris = [];
                     for (let i = 0; i < result.length; i++) {
-                        const uri = URI.parse('file://' + result[i]);
+                        const uri = URI.file(result[i]);
                         uris.push(uri);
                     }
                     resolve(uris);
