@@ -131,7 +131,7 @@ export namespace QuickInputButton {
 }
 
 export interface QuickInputButtonHandle extends QuickInputButton {
-    index: number; // index of where they are in buttons array if QuickInputButton or -1 if QuickInputButtons.Back
+    handle: number; // index of where the button is in buttons array if QuickInputButton or -1 if QuickInputButtons.Back
 }
 
 export enum QuickInputHideReason {
