@@ -40,12 +40,13 @@ import { TextEditorMain } from './text-editor-main';
 import { disposed } from '../../common/errors';
 import { toMonacoWorkspaceEdit } from './languages-main';
 import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
-import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { theiaUritoUriComponents, UriComponents } from '../../common/uri-components';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import * as monaco from '@theia/monaco-editor-core';
 import { ResourceEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 import { IDecorationRenderOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
 
 export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
@@ -59,7 +60,6 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         private readonly documents: DocumentsMain,
         rpc: RPCProtocol,
         private readonly bulkEditService: MonacoBulkEditService,
-        private readonly monacoEditorService: MonacoEditorService,
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT);
         this.toDispose.push(editorsAndDocuments);
@@ -147,7 +147,7 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
     $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions): void {
         this.injectRemoteUris(options);
-        this.monacoEditorService.registerDecorationType('Plugin decoration', key, options as IDecorationRenderOptions);
+        StandaloneServices.get(ICodeEditorService).registerDecorationType('Plugin decoration', key, options as IDecorationRenderOptions);
         this.toDispose.push(Disposable.create(() => this.$removeTextEditorDecorationType(key)));
     }
 
@@ -177,7 +177,7 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
     }
 
     $removeTextEditorDecorationType(key: string): void {
-        this.monacoEditorService.removeDecorationType(key);
+        StandaloneServices.get(ICodeEditorService).removeDecorationType(key);
     }
 
     $tryHideEditor(id: string): Promise<void> {

@@ -108,7 +108,7 @@ ${Array.from(frontendPreloadModules.values(), jsModulePath => `\
 }
 
 module.exports = (async () => {
-    const { messagingFrontendModule } = require('@theia/core/lib/${!this.pck.isElectron()
+    const { messagingFrontendModule } = require('@theia/core/lib/${this.pck.isBrowser()
                 ? 'browser/messaging/messaging-frontend-module'
                 : 'electron-browser/messaging/electron-messaging-frontend-module'}');
     const container = new Container();
@@ -117,6 +117,11 @@ module.exports = (async () => {
     container.load(messagingFrontendOnlyModule);`)}
 
     await preload(container);
+
+    ${this.ifMonaco(() => `
+    const { MonacoInit } = require('@theia/monaco/lib/browser/monaco-init');
+    `)};
+
     const { FrontendApplication } = require('@theia/core/lib/browser');
     const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');    
     const { loggerFrontendModule } = require('@theia/core/lib/browser/logger-frontend-module');
@@ -132,6 +137,9 @@ module.exports = (async () => {
     try {
 ${Array.from(frontendModules.values(), jsModulePath => `\
         await load(container, ${this.importOrRequire()}('${jsModulePath}'));`).join(EOL)}
+        ${this.ifMonaco(() => `
+        MonacoInit.init(container);
+        `)};
         await start();
     } catch (reason) {
         console.error('Failed to start the frontend application.');

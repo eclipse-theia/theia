@@ -39,8 +39,7 @@ export class MonacoContextMenuService implements IContextMenuService {
         return this.onDidShowContextMenuEmitter.event;
     };
 
-    constructor(@inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) {
-    }
+    @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
 
     toAnchor(anchor: HTMLElement | Coordinate | StandardMouseEvent): Anchor {
         if (anchor instanceof HTMLElement) {

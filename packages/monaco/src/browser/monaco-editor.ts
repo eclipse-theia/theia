@@ -152,7 +152,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     }
 
     protected getInstantiatorWithOverrides(override?: EditorServiceOverrides): IInstantiationService {
-        const instantiator = StandaloneServices.initialize({});
+        const instantiator = StandaloneServices.get(IInstantiationService);
         if (override) {
             const overrideServices = new ServiceCollection(...override);
             return instantiator.createChild(overrideServices);

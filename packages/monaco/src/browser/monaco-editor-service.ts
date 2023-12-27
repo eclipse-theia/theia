@@ -22,14 +22,19 @@ import { MonacoEditor } from './monaco-editor';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { MonacoEditorModel } from './monaco-editor-model';
 import { IResourceEditorInput, ITextResourceEditorInput } from '@theia/monaco-editor-core/esm/vs/platform/editor/common/editor';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { StandaloneCodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditorService';
 import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
+import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 decorate(injectable(), StandaloneCodeEditorService);
+
+export const VSCodeContextKeyService = Symbol('VSCodeContextKeyService');
+export const VSCodeThemeService = Symbol('VSCodeThemeService');
+
+export const MonacoEditorServiceFactory = Symbol('MonacoEditorServiceFactory');
+export type MonacoEditorServiceFactoryType = (contextKeyService: IContextKeyService, themeService: IThemeService) => MonacoEditorService;
 
 @injectable()
 export class MonacoEditorService extends StandaloneCodeEditorService {
@@ -51,8 +56,8 @@ export class MonacoEditorService extends StandaloneCodeEditorService {
     @inject(PreferenceService)
     protected readonly preferencesService: PreferenceService;
 
-    constructor(@inject(VSCodeContextKeyService) contextKeyService: VSCodeContextKeyService) {
-        super(contextKeyService, StandaloneServices.get(IStandaloneThemeService));
+    constructor(@inject(VSCodeContextKeyService) contextKeyService: IContextKeyService, @inject(VSCodeThemeService) themeService: IThemeService) {
+        super(contextKeyService, themeService);
     }
 
     /**
