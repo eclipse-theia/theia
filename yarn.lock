@@ -1707,10 +1707,10 @@
   dependencies:
     defer-to-connect "^2.0.0"
 
-"@theia/monaco-editor-core@1.72.3":
-  version "1.72.3"
-  resolved "https://registry.yarnpkg.com/@theia/monaco-editor-core/-/monaco-editor-core-1.72.3.tgz#911d674c6e0c490442a355cfaa52beec919a025e"
-  integrity sha512-2FK5m0G5oxiqCv0ZrjucMx5fVgQ9Jqv0CgxGvSzDc4wRrauBdeBoX90J99BEIOJ8Jp3W0++GoRBdh0yQNIGL2g==
+"@theia/monaco-editor-core@1.83.1":
+  version "1.83.1"
+  resolved "https://registry.yarnpkg.com/@theia/monaco-editor-core/-/monaco-editor-core-1.83.1.tgz#8a249f4d9807e10ace38f411570aa24e6c16312f"
+  integrity sha512-UP5V78MeHclEuT0eu21TX4gug4La8ekFxFM8LK/xNECSnhZ1I1dGTXIWBpY6J/Zq3tL0VKCVbvb1eqHWqdXrFw==
 
 "@tootallnate/once@1", "@tootallnate/once@^1.1.2":
   version "1.1.2"

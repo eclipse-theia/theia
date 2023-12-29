@@ -5,7 +5,7 @@
   "dependencies": {
     "@theia/core": "1.46.0",
     "@theia/metrics": "1.46.0",
-    "@theia/monaco-editor-core": "1.72.3",
+    "@theia/monaco-editor-core": "1.83.1",
     "@theia/plugin": "1.46.0",
     "@theia/plugin-ext": "1.46.0"
   },

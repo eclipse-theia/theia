@@ -5,7 +5,7 @@
   "dependencies": {
     "@theia/core": "1.46.0",
     "@theia/monaco": "1.46.0",
-    "@theia/monaco-editor-core": "1.72.3",
+    "@theia/monaco-editor-core": "1.83.1",
     "@theia/preferences": "1.46.0",
     "@theia/userstorage": "1.46.0",
     "jsonc-parser": "^2.2.0"
