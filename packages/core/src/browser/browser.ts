@@ -18,6 +18,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { environment } from '../common';
+
 const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
 
 export const isIE = (userAgent.indexOf('Trident') >= 0);
@@ -31,7 +33,10 @@ export const isChrome = (userAgent.indexOf('Chrome') >= 0);
 export const isSafari = (userAgent.indexOf('Chrome') === -1) && (userAgent.indexOf('Safari') >= 0);
 export const isIPad = (userAgent.indexOf('iPad') >= 0);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const isNative = typeof (window as any).process !== 'undefined';
+/**
+ * @deprecated us Environment.electron.is
+ */
+export const isNative = environment.electron.is();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isBasicWasmSupported = typeof (window as any).WebAssembly !== 'undefined';
 
