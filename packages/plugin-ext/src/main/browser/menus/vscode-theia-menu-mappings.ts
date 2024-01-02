@@ -61,7 +61,8 @@ export const implementedVSCodeContributionPoints = [
     'testing/message/context',
     'view/item/context',
     'view/title',
-    'webview/context'
+    'webview/context',
+    'extension/context'
 ] as const;
 
 export type ContributionPoint = (typeof implementedVSCodeContributionPoints)[number];
@@ -89,7 +90,9 @@ export const codeToTheiaMappings = new Map<ContributionPoint, MenuPath[]>([
     ['timeline/item/context', [TIMELINE_ITEM_CONTEXT_MENU]],
     ['view/item/context', [VIEW_ITEM_CONTEXT_MENU]],
     ['view/title', [PLUGIN_VIEW_TITLE_MENU]],
-    ['webview/context', [WEBVIEW_CONTEXT_MENU]]
+    ['webview/context', [WEBVIEW_CONTEXT_MENU]],
+    ['extension/context', [['extensions_context_menu', '3_contribution']]]
+
 ]);
 
 type CodeEditorWidget = EditorWidget | WebviewWidget;
