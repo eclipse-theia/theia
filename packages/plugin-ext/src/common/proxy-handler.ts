@@ -56,12 +56,12 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
             const clientOptions: RpcProtocolOptions = { encoder: this.encoder, decoder: this.decoder, mode: 'clientOnly' };
             this.channelProvider().then(channel => {
                 const rpc = new RpcProtocol(channel, undefined, clientOptions);
-                this.rpcDeferred.resolve(rpc);
                 this.isRpcInitialized = true;
-                this.isInitializing = false;
                 if (this.onInitialize) {
                     this.onInitialize();
                 }
+                this.rpcDeferred.resolve(rpc);
+                this.isInitializing = false;
             });
         }
     }
