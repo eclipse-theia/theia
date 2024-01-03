@@ -108,7 +108,10 @@ export class PluginMenuCommandAdapter implements MenuCommandAdapter {
             ['timeline/item/context', (...args) => this.toTimelineArgs(...args)],
             ['view/item/context', (...args) => this.toTreeArgs(...args)],
             ['view/title', noArgs],
-            ['webview/context', firstArgOnly]
+            ['webview/context', firstArgOnly],
+            ['extension/context', noArgs],
+            ['terminal/context', noArgs],
+            ['terminal/title/context', noArgs],
         ]).forEach(([contributionPoint, adapter]) => {
             if (adapter) {
                 const paths = codeToTheiaMappings.get(contributionPoint);
