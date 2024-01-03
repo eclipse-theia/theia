@@ -463,8 +463,8 @@ export class TerminalExtImpl implements Terminal {
         this.creationOptions = this.options;
     }
 
-    sendText(text: string, addNewLine: boolean = true): void {
-        this.id.promise.then(id => this.proxy.$sendText(id, text, addNewLine));
+    sendText(text: string, shouldExecute: boolean = true): void {
+        this.id.promise.then(id => this.proxy.$sendText(id, text, shouldExecute));
     }
 
     show(preserveFocus?: boolean): void {

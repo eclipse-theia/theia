@@ -327,9 +327,9 @@ export interface TerminalServiceMain {
      * Send text to the terminal by id.
      * @param id - terminal widget id.
      * @param text - text content.
-     * @param addNewLine - in case true - add new line after the text, otherwise - don't apply new line.
+     * @param shouldExecute - in case true - Indicates that the text being sent should be executed rather than just inserted in the terminal.
      */
-    $sendText(id: string, text: string, addNewLine?: boolean): void;
+    $sendText(id: string, text: string, shouldExecute?: boolean): void;
 
     /**
      * Write data to the terminal by id.

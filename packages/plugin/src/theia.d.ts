@@ -3043,10 +3043,11 @@ export module '@theia/plugin' {
 
         /**
          * Send text to the terminal.
-         * @param text - text content.
-         * @param addNewLine - in case true - apply new line after the text, otherwise don't apply new line. This defaults to `true`.
+         * @param text - The text to send.
+         * @param shouldExecute - Indicates that the text being sent should be executed rather than just inserted in the terminal.
+         * The character added is \r, independent from the platform (compared to platform specific in vscode). This defaults to `true`.
          */
-        sendText(text: string, addNewLine?: boolean): void;
+        sendText(text: string, shouldExecute?: boolean): void;
 
         /**
          * Show created terminal on the UI.
