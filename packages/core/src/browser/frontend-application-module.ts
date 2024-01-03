@@ -200,7 +200,9 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         const commandService = container.get<CommandService>(CommandService);
         const corePreferences = container.get<CorePreferences>(CorePreferences);
         const hoverService = container.get(HoverService);
-        return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService, commandService, corePreferences, hoverService);
+        const contextKeyService: ContextKeyService = container.get(ContextKeyService);
+        return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService,
+            selectionService, commandService, corePreferences, hoverService, contextKeyService);
     });
     bind(TheiaDockPanel.Factory).toFactory(({ container }) => (options?: DockPanel.IOptions) => {
         const corePreferences = container.get<CorePreferences>(CorePreferences);
