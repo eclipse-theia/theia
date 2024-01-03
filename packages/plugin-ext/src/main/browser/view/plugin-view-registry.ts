@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct, optional } from '@theia/core/shared/
 import {
     ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager, QuickViewService,
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
-    StatefulWidget, CommonMenus, TreeViewWelcomeWidget, ViewContainerPart, BaseWidget
+    StatefulWidget, CommonMenus, TreeViewWelcomeWidget, ViewContainerPart, BaseWidget,
 } from '@theia/core/lib/browser';
 import { ViewContainer, View, ViewWelcome, PluginViewType } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
@@ -424,7 +424,10 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     protected async createNewWebviewView(viewId: string): Promise<WebviewView> {
         const webview = await this.widgetManager.getOrCreateWidget<WebviewWidget>(
-            WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: v4() });
+            WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{
+                id: v4(),
+                viewId,
+            });
         webview.setContentOptions({ allowScripts: true });
 
         let _description: string | undefined;
@@ -893,7 +896,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             const webviewView = await this.createNewWebviewView(viewId);
             webviewId = webviewView.webview.identifier.id;
         }
-        const webviewWidget = this.widgetManager.getWidget(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: webviewId });
+        const webviewWidget = this.widgetManager.getWidget(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: webviewId, viewId });
         return webviewWidget;
     }
 

@@ -97,6 +97,7 @@ export interface WebviewConsoleLog {
 @injectable()
 export class WebviewWidgetIdentifier {
     id: string;
+    viewId?: string;
 }
 
 export const WebviewWidgetExternalEndpoint = Symbol('WebviewWidgetExternalEndpoint');
