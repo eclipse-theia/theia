@@ -4,6 +4,10 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## not yet released
+
+- [terminal] update terminalQuickFixProvider proposed API according to vscode 1.85 version [#13240](https://github.com/eclipse-theia/theia/pull/13240) - contributed on behalf of STMicroelectronics
+
 ## v1.45.0 - 12/21/2023
 
 - [application-manager] updated logic to allow rebinding messaging services in preload [#13199](https://github.com/eclipse-theia/theia/pull/13199)
