@@ -1,6 +1,6 @@
 {
   "extends": "./configs/base.tsconfig.json",
-  "include": [ ],
+  "include": [],
   "compilerOptions": {
     "composite": true,
     "allowJs": true
@@ -43,7 +43,13 @@
       "path": "examples/browser"
     },
     {
+      "path": "examples/browser-app"
+    },
+    {
       "path": "examples/electron"
+    },
+    {
+      "path": "examples/hello-world"
     },
     {
       "path": "examples/playwright"
