@@ -21,7 +21,7 @@ import { addExtension } from 'msgpackr';
  * required for the default RPC communication. MsgPackR extensions
  * are installed globally on both ends of the communication channel.
  * (frontend-backend, pluginExt-pluginMain).
- * Is implemented as singleton as it is  also used in plugin child processes which have no access to inversify.
+ * Is implemented as singleton as it is also used in plugin child processes which have no access to inversify.
  */
 export class MsgPackExtensionManager {
     private static readonly INSTANCE = new MsgPackExtensionManager();
