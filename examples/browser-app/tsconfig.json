@@ -19,6 +19,9 @@
     },
     {
       "path": "../../packages/preferences"
+    },
+    {
+      "path": "../hello-world"
     }
   ]
 }

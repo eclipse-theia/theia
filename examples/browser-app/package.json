@@ -23,7 +23,8 @@
     "@theia/core": "1.45.0",
     "@theia/messages": "1.45.0",
     "@theia/monaco": "1.45.0",
-    "@theia/preferences": "1.45.0"
+    "@theia/preferences": "1.45.0",
+    "@theia/hello-world": "1.45.0"
   },
   "scripts": {
     "clean": "theia clean",
