@@ -351,12 +351,12 @@ export namespace CommonCommands {
     });
 }
 
-export const supportCut = browser.isNative || document.queryCommandSupported('cut');
-export const supportCopy = browser.isNative || document.queryCommandSupported('copy');
+export const supportCut = environment.electron.is() || document.queryCommandSupported('cut');
+export const supportCopy = environment.electron.is() || document.queryCommandSupported('copy');
 // Chrome incorrectly returns true for document.queryCommandSupported('paste')
 // when the paste feature is available but the calling script has insufficient
 // privileges to actually perform the action
-export const supportPaste = browser.isNative || (!browser.isChrome && document.queryCommandSupported('paste'));
+export const supportPaste = environment.electron.is() || (!browser.isChrome && document.queryCommandSupported('paste'));
 
 export const RECENT_COMMANDS_STORAGE_KEY = 'commands';
 
