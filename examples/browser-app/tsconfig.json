@@ -1,0 +1,24 @@
+{
+  "extends": "../../configs/base.tsconfig",
+  "include": [],
+  "compilerOptions": {
+    "composite": true
+  },
+  "references": [
+    {
+      "path": "../../dev-packages/cli"
+    },
+    {
+      "path": "../../packages/core"
+    },
+    {
+      "path": "../../packages/messages"
+    },
+    {
+      "path": "../../packages/monaco"
+    },
+    {
+      "path": "../../packages/preferences"
+    }
+  ]
+}

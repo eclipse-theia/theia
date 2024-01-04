@@ -1,0 +1,7 @@
+{
+  "defaultLevel": "info",
+  "levels": {
+    "terminal": "debug",
+    "task": "error"
+  }
+}

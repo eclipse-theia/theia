@@ -1,0 +1,51 @@
+{
+  "private": true,
+  "name": "@theia/example-browser-app",
+  "version": "1.45.0",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "theia": {
+    "frontend": {
+      "config": {
+        "applicationName": "Theia Browser Example",
+        "preferences": {
+          "files.enableTrash": false
+        },
+        "reloadOnReconnect": true
+      }
+    },
+    "backend": {
+      "config": {
+        "frontendConnectionTimeout": 3000
+      }
+    }
+  },
+  "dependencies": {
+    "@theia/core": "1.45.0",
+    "@theia/messages": "1.45.0",
+    "@theia/monaco": "1.45.0",
+    "@theia/preferences": "1.45.0"
+  },
+  "scripts": {
+    "clean": "theia clean",
+    "build": "yarn -s compile && yarn -s bundle",
+    "build:production": "yarn -s compile && yarn -s bundle:production",
+    "bundle": "yarn rebuild && theia build --mode development",
+    "bundle:production": "yarn rebuild && theia build --mode production",
+    "compile": "tsc -b",
+    "coverage": "yarn -s test --test-coverage && yarn -s coverage:report",
+    "coverage:clean": "rimraf .nyc_output && rimraf coverage",
+    "coverage:report": "nyc report --reporter=html",
+    "rebuild": "theia rebuild:browser --cacheRoot ../..",
+    "start": "theia start --plugins=local-dir:../../plugins --ovsx-router-config=../ovsx-router-config.json",
+    "start:debug": "yarn -s start --log-level=debug",
+    "start:watch": "concurrently --kill-others -n tsc,bundle,run -c red,yellow,green \"tsc -b -w --preserveWatchOutput\" \"yarn -s watch:bundle\" \"yarn -s start\"",
+    "test": "theia test . --plugins=local-dir:../../plugins --test-spec=../api-tests/**/*.spec.js",
+    "test:debug": "yarn -s test --test-inspect",
+    "watch": "concurrently --kill-others -n tsc,bundle -c red,yellow \"tsc -b -w --preserveWatchOutput\" \"yarn -s watch:bundle\"",
+    "watch:bundle": "theia build --watch --mode development",
+    "watch:compile": "tsc -b -w"
+  },
+  "devDependencies": {
+    "@theia/cli": "1.45.0"
+  }
+}
