@@ -29,6 +29,7 @@ import { CellExecution, NotebookExecutionStateService } from '../service/noteboo
 import { codicon } from '@theia/core/lib/browser';
 import { NotebookCellExecutionState } from '../../common';
 import { DisposableCollection } from '@theia/core';
+import { isThenable } from '@theia/core/lib/common/promise-util';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {
@@ -148,7 +149,9 @@ interface NotebookCellOutputProps {
 
 export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputProps> {
 
-    protected outputsWebview: CellOutputWebview | undefined;
+    protected outputsWebview: CellOutputWebview | Promise<CellOutputWebview> | undefined;
+
+    protected toDispose = new DisposableCollection();
 
     constructor(props: NotebookCellOutputProps) {
         super(props);
@@ -156,29 +159,42 @@ export class NotebookCodeCellOutputs extends React.Component<NotebookCellOutputP
 
     override async componentDidMount(): Promise<void> {
         const { cell, outputWebviewFactory } = this.props;
-        cell.onDidChangeOutputs(async () => {
+        this.toDispose.push(cell.onDidChangeOutputs(async () => {
             if (!this.outputsWebview && cell.outputs.length > 0) {
-                this.outputsWebview = await outputWebviewFactory(cell);
-            } else if (this.outputsWebview && cell.outputs.length === 0) {
-                this.outputsWebview.dispose();
+                this.outputsWebview = outputWebviewFactory(cell).then(webview => {
+                    this.outputsWebview = webview;
+                    this.forceUpdate();
+                    return webview;
+                    });
+                this.forceUpdate();
+            } else if (this.outputsWebview && cell.outputs.length === 0 && cell.internalMetadata.runEndTime) {
+                (await this.outputsWebview).dispose();
                 this.outputsWebview = undefined;
+                this.forceUpdate();
             }
-            this.forceUpdate();
-        });
+        }));
         if (cell.outputs.length > 0) {
-            this.outputsWebview = await outputWebviewFactory(cell);
-            this.forceUpdate();
+            this.outputsWebview = outputWebviewFactory(cell).then(webview => {
+                this.outputsWebview = webview;
+                this.forceUpdate();
+                return webview;
+            });
         }
     }
 
-    override componentDidUpdate(): void {
-        if (!this.outputsWebview?.isAttached()) {
-            this.outputsWebview?.attachWebview();
+    override async componentDidUpdate(): Promise<void> {
+        if (!(await this.outputsWebview)?.isAttached()) {
+            (await this.outputsWebview)?.attachWebview();
         }
+    }
+
+    override async componentWillUnmount(): Promise<void> {
+        this.toDispose.dispose();
+        (await this.outputsWebview)?.dispose();
     }
 
     override render(): React.ReactNode {
-        return this.outputsWebview ?
+        return this.outputsWebview && !isThenable(this.outputsWebview) ?
             <>
                 {this.props.renderSidebar()}
                 {this.outputsWebview.render()}
