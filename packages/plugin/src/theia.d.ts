@@ -35,6 +35,7 @@ import './theia.proposed.notebookKernelSource';
 import './theia.proposed.notebookMessaging';
 import './theia.proposed.findTextInFiles';
 import './theia.proposed.fsChunks';
+import './theia.proposed.multiDocumentHighlightProvider';
 import './theia.proposed.profileContentHandlers';
 import './theia.proposed.resolvers';
 import './theia.proposed.scmValidation';
