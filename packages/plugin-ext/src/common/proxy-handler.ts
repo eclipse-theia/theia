@@ -25,7 +25,6 @@ export interface RpcHandlerOptions {
 }
 export interface ProxyHandlerOptions extends RpcHandlerOptions {
     channelProvider: () => Promise<Channel>,
-    onInitialize?: () => void,
 }
 
 export interface InvocationHandlerOptions extends RpcHandlerOptions {
@@ -38,11 +37,9 @@ export interface InvocationHandlerOptions extends RpcHandlerOptions {
 export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
     private rpcDeferred: Deferred<RpcProtocol> = new Deferred();
     private isRpcInitialized = false;
-    private isInitializing = false;
 
     readonly id: string;
     private readonly channelProvider: () => Promise<Channel>;
-    private readonly onInitialize?: () => void;
     private readonly encoder: RpcMessageEncoder;
     private readonly decoder: RpcMessageDecoder;
 
@@ -50,20 +47,15 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
         Object.assign(this, options);
     }
 
-    initializeRpc(): void {
-        if (!this.isRpcInitialized && !this.isInitializing) {
-            this.isInitializing = true;
-            const clientOptions: RpcProtocolOptions = { encoder: this.encoder, decoder: this.decoder, mode: 'clientOnly' };
-            this.channelProvider().then(channel => {
-                const rpc = new RpcProtocol(channel, undefined, clientOptions);
-                this.isRpcInitialized = true;
-                if (this.onInitialize) {
-                    this.onInitialize();
-                }
-                this.rpcDeferred.resolve(rpc);
-                this.isInitializing = false;
-            });
-        }
+    private initializeRpc(): void {
+        // we need to set the flag to true before waiting for the channel provider. Otherwise `get` might
+        // get called again and we'll try to open a channel more than once
+        this.isRpcInitialized = true;
+        const clientOptions: RpcProtocolOptions = { encoder: this.encoder, decoder: this.decoder, mode: 'clientOnly' };
+        this.channelProvider().then(channel => {
+            const rpc = new RpcProtocol(channel, undefined, clientOptions);
+            this.rpcDeferred.resolve(rpc);
+        });
     }
 
     get(target: any, name: string, receiver: any): any {
