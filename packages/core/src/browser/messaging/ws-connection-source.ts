@@ -87,38 +87,58 @@ export class WebSocketConnectionSource implements ConnectionSource {
         this._socket.connect();
     }
 
+    protected negogiateReconnect(): void {
+        const reconnectListener = (hasConnection: boolean) => {
+            this._socket.off(ConnectionManagementMessages.RECONNECT, reconnectListener);
+            if (hasConnection) {
+                console.info(`reconnect succeeded on ${this.socket.id}`);
+                this.writeBuffer!.flush(this.socket);
+            } else {
+                if (FrontendApplicationConfigProvider.get().reloadOnReconnect) {
+                    window.location.reload(); // this might happen in the preload module, when we have no window service yet
+                } else {
+                    console.info(`reconnect failed on ${this.socket.id}`);
+                    this.currentChannel.onCloseEmitter.fire({ reason: 'reconnecting channel' });
+                    this.currentChannel.close();
+                    this.writeBuffer.drain();
+                    this.socket.disconnect();
+                    this.socket.connect();
+                    this.negotiateInitialConnect();
+                }
+            }
+        };
+        this._socket.on(ConnectionManagementMessages.RECONNECT, reconnectListener);
+        console.info(`sending reconnect on ${this.socket.id}`);
+        this._socket.emit(ConnectionManagementMessages.RECONNECT, this.frontendIdProvider.getId());
+    }
+
+    protected negotiateInitialConnect(): void {
+        const initialConnectListener = () => {
+            console.info(`initial connect received on ${this.socket.id}`);
+
+            this._socket.off(ConnectionManagementMessages.INITIAL_CONNECT, initialConnectListener);
+            this.connectNewChannel();
+        };
+        this._socket.on(ConnectionManagementMessages.INITIAL_CONNECT, initialConnectListener);
+        console.info(`sending initial connect on ${this.socket.id}`);
+
+        this._socket.emit(ConnectionManagementMessages.INITIAL_CONNECT, this.frontendIdProvider.getId());
+    }
+
     protected handleSocketConnected(): void {
         if (this.currentChannel) {
-            const reconnectListener = (hasConnection: boolean) => {
-                this._socket.off(ConnectionManagementMessages.RECONNECT, reconnectListener);
-                if (hasConnection) {
-                    this.writeBuffer.flush(this.socket);
-                } else {
-                    if (FrontendApplicationConfigProvider.get().reloadOnReconnect) {
-                        window.location.reload(); // this might happen in the preload module, when we have no window service yet
-                    } else {
-                        this.connectNewChannel();
-                    }
-                }
-            };
-            this._socket.on(ConnectionManagementMessages.RECONNECT, reconnectListener);
-            this._socket.emit(ConnectionManagementMessages.RECONNECT, this.frontendIdProvider.getId());
+            this.negogiateReconnect();
         } else {
-            const initialConnectListener = () => {
-                this._socket.off(ConnectionManagementMessages.INITIAL_CONNECT, initialConnectListener);
-                this.connectNewChannel();
-            };
-            this._socket.on(ConnectionManagementMessages.INITIAL_CONNECT, initialConnectListener);
-            this._socket.emit(ConnectionManagementMessages.INITIAL_CONNECT, this.frontendIdProvider.getId());
+            this.negotiateInitialConnect();
         }
     }
 
     connectNewChannel(): void {
         if (this.currentChannel) {
-            this.writeBuffer.drain();
             this.currentChannel.close();
             this.currentChannel.onCloseEmitter.fire({ reason: 'reconnecting channel' });
         }
+        this.writeBuffer.drain();
         this.currentChannel = this.createChannel();
         this.onConnectionDidOpenEmitter.fire(this.currentChannel);
     }
