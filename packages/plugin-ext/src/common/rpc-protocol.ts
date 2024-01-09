@@ -27,7 +27,7 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ChannelMultiplexer, MessageProvider } from '@theia/core/lib/common/message-rpc/channel';
 import { MsgPackMessageDecoder, MsgPackMessageEncoder } from '@theia/core/lib/common/message-rpc/rpc-message-encoder';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
-import { ClientProxyHandler, InitializationCallback, RpcInvocationHandler } from './proxy-handler';
+import { ClientProxyHandler, ProxySynchronizer, RpcInvocationHandler } from './proxy-handler';
 import { MsgPackExtensionManager } from '@theia/core/lib/common/message-rpc/msg-pack-extension-manager';
 import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
@@ -84,7 +84,7 @@ export class RPCProtocolImpl implements RPCProtocol {
     private readonly multiplexer: ChannelMultiplexer;
     private readonly encoder = new MsgPackMessageEncoder();
     private readonly decoder = new MsgPackMessageDecoder();
-    private readonly initCallback: InitializationCallback;
+    private readonly initCallback: ProxySynchronizer;
 
     private readonly toDispose = new DisposableCollection(
         Disposable.create(() => { /* mark as no disposed */ })
@@ -118,7 +118,7 @@ export class RPCProtocolImpl implements RPCProtocol {
 
     protected createProxy<T>(proxyId: string): T {
         const handler = new ClientProxyHandler({
-            id: proxyId, encoder: this.encoder, decoder: this.decoder, channelProvider: () => this.multiplexer.open(proxyId), initCallback: this.initCallback
+            id: proxyId, encoder: this.encoder, decoder: this.decoder, channelProvider: () => this.multiplexer.open(proxyId), proxySynchronizer: this.initCallback
         });
         return new Proxy(Object.create(null), handler);
     }
@@ -154,7 +154,7 @@ export class RPCProtocolImpl implements RPCProtocol {
     }
 }
 
-export class InitializationCallbackImpl implements InitializationCallback {
+export class InitializationCallbackImpl implements ProxySynchronizer {
 
     private readonly runningInits = new Set<string>();
 
@@ -166,21 +166,22 @@ export class InitializationCallbackImpl implements InitializationCallback {
         this.checkInitDeferred.resolve();
     }
 
-    reportInit(id: string): void {
+    startProxyInitialization(id: string, init: Promise<void>): void {
         if (this.runningInits.size === 0) {
             this.checkInitDeferred = new Deferred();
         }
+        init.then(() => this.finishProxyInitialization(id));
         this.runningInits.add(id);
     }
 
-    reportInitDone(id: string): void {
+    protected finishProxyInitialization(id: string): void {
         this.runningInits.delete(id);
         if (this.runningInits.size === 0) {
             this.checkInitDeferred.resolve();
         }
     }
 
-    checkInit(): Promise<void> {
+    pendingProxyInitializations(): Promise<void> {
         return this.checkInitDeferred.promise;
     }
 
