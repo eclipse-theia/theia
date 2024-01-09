@@ -52,6 +52,8 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
     private readonly encoder: RpcMessageEncoder;
     private readonly decoder: RpcMessageDecoder;
 
+    static staticCount = 0;
+
     constructor(options: ProxyHandlerOptions) {
         Object.assign(this, options);
     }
@@ -70,6 +72,12 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
     }
 
     get(target: any, name: string, receiver: any): any {
+        ClientProxyHandler.staticCount += 1;
+
+        const staticCountToLog = ClientProxyHandler.staticCount;
+
+        console.log(`[proxyhandler:get:${this.id}] name=${name} static=${staticCountToLog}`);
+
         if (!this.isRpcInitialized) {
             this.initializeRpc();
         }
@@ -81,6 +89,7 @@ export class ClientProxyHandler<T extends object> implements ProxyHandler<T> {
         return (...args: any[]) => {
             const method = name.toString();
             return this.initCallback.checkInit().then(() => this.rpcDeferred.promise.then(async (connection: RpcProtocol) => {
+                console.log(`[proxyhandler:exe:${this.id}] name=${name} static=${staticCountToLog}`);
                 if (isNotify) {
                     connection.sendNotification(method, args);
                 } else {
